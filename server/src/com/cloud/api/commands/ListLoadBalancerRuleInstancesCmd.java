@@ -15,99 +15,85 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-
 package com.cloud.api.commands;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
-import com.cloud.api.ServerApiException;
-import com.cloud.network.LoadBalancerVO;
+import com.cloud.api.ApiDBUtils;
+import com.cloud.api.BaseListCmd;
+import com.cloud.api.Implementation;
+import com.cloud.api.Parameter;
+import com.cloud.api.response.ListResponse;
+import com.cloud.api.response.UserVmResponse;
 import com.cloud.user.Account;
-import com.cloud.utils.Pair;
 import com.cloud.vm.UserVmVO;
 
-public class ListLoadBalancerRuleInstancesCmd extends BaseCmd {
+@Implementation(method="listLoadBalancerInstances", description="List all virtual machine instances that are assigned to a load balancer rule.")
+public class ListLoadBalancerRuleInstancesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger (ListLoadBalancerRuleInstancesCmd.class.getName());
 
     private static final String s_name = "listloadbalancerruleinstancesresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
-    
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.APPLIED, Boolean.FALSE));
+
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="applied", type=CommandType.BOOLEAN, description="true if listing all virtual machines currently applied to the load balancer rule; default is true")
+    private Boolean applied;
+
+    @Parameter(name="id", type=CommandType.LONG, required=true, description="the ID of the load balancer rule")
+    private Long id;
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public Boolean isApplied() {
+        return applied;
     }
+
+    public Long getId() {
+        return id;
+    }
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
 
     @Override
     public String getName() {
         return s_name;
     }
-    @Override
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
 
-    @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-        Account account = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-        Long loadBalancerId = (Long)params.get(BaseCmd.Properties.ID.getName());
-        Boolean applied = (Boolean)params.get(BaseCmd.Properties.APPLIED.getName());
+    @Override @SuppressWarnings("unchecked")
+    public ListResponse<UserVmResponse> getResponse() {
+        List<UserVmVO> instances = (List<UserVmVO>)getResponseObject();
 
-        if (applied == null) {
-            applied = Boolean.TRUE;
-        }
-
-        LoadBalancerVO loadBalancer = getManagementServer().findLoadBalancerById(loadBalancerId.longValue());
-        if (loadBalancer == null) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "no load balancer rule with id " + loadBalancerId + " exists.");
-        }
-
-        if (account != null) {
-            long lbAcctId = loadBalancer.getAccountId();
-            if (isAdmin(account.getType())) {
-                Account userAccount = getManagementServer().findAccountById(Long.valueOf(lbAcctId));
-                if (!getManagementServer().isChildDomain(account.getDomainId(), userAccount.getDomainId())) {
-                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid load balancer rule id (" + loadBalancerId + ") given, unable to list instances.");
-                }
-            } else if (account.getId() != lbAcctId) {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "account " + account.getAccountName() + " does not own load balancer rule " + loadBalancer.getName());
-            }
-        }
-
-        List<UserVmVO> instances = getManagementServer().listLoadBalancerInstances(loadBalancerId.longValue(), applied.booleanValue());
-
-        if (instances == null) {
-            throw new ServerApiException(BaseCmd.NET_LIST_ERROR, "unable to find instances for load balancer rule " + loadBalancerId);
-        }
-
-        List<Pair<String, Object>> instanceTags = new ArrayList<Pair<String, Object>>();
-        Object[] instanceTag = new Object[instances.size()];
-        int i = 0;
+        ListResponse<UserVmResponse> response = new ListResponse<UserVmResponse>();
+        List<UserVmResponse> vmResponses = new ArrayList<UserVmResponse>();
         for (UserVmVO instance : instances) {
-            List<Pair<String, Object>> instanceData = new ArrayList<Pair<String, Object>>();
+            UserVmResponse userVmResponse = new UserVmResponse();
+            userVmResponse.setId(instance.getId());
+            userVmResponse.setName(instance.getName());
+            userVmResponse.setDisplayName(instance.getDisplayName());
+            userVmResponse.setIpAddress(instance.getPrivateIpAddress());
 
-            instanceData.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), Long.toString(instance.getId())));
-            instanceData.add(new Pair<String, Object>(BaseCmd.Properties.NAME.getName(), instance.getName()));
-            instanceData.add(new Pair<String, Object>(BaseCmd.Properties.DISPLAY_NAME.getName(), instance.getDisplayName()));
-            instanceData.add(new Pair<String, Object>(BaseCmd.Properties.PRIVATE_IP.getName(), instance.getPrivateIpAddress()));
-            
-            Account accountTemp = getManagementServer().findAccountById(instance.getAccountId());
+            Account accountTemp = ApiDBUtils.findAccountById(instance.getAccountId());
             if (accountTemp != null) {
-            	instanceData.add(new Pair<String, Object>(BaseCmd.Properties.ACCOUNT.getName(), accountTemp.getAccountName()));
-            	instanceData.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN_ID.getName(), accountTemp.getDomainId()));
-            	instanceData.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN.getName(), getManagementServer().findDomainIdById(accountTemp.getDomainId()).getName()));
+                userVmResponse.setAccountName(accountTemp.getAccountName());
+                userVmResponse.setDomainId(accountTemp.getDomainId());
+                userVmResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
             }
-            instanceTag[i++] = instanceData;
+
+            userVmResponse.setResponseName("loadbalancerruleinstance");
+            vmResponses.add(userVmResponse);
         }
-        Pair<String, Object> ruleTag = new Pair<String, Object>("loadbalancerruleinstance", instanceTag);
-        instanceTags.add(ruleTag);
-        return instanceTags;
+
+        response.setResponses(vmResponses);
+        response.setResponseName(getName());
+        return response;
     }
 }
-
-

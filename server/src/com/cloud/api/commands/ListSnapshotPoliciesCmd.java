@@ -20,67 +20,82 @@ package com.cloud.api.commands;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
-import com.cloud.api.ServerApiException;
+import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.BaseListCmd;
+import com.cloud.api.Implementation;
+import com.cloud.api.Parameter;
+import com.cloud.api.response.ListResponse;
+import com.cloud.api.response.SnapshotPolicyResponse;
 import com.cloud.storage.SnapshotPolicyVO;
-import com.cloud.storage.VolumeVO;
-import com.cloud.utils.Pair;
 
-public class ListSnapshotPoliciesCmd extends BaseCmd {
+@Implementation(method="listPoliciesforVolume", manager=Manager.SnapshotManager, description="Lists snapshot policies.")
+public class ListSnapshotPoliciesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListSnapshotPoliciesCmd.class.getName());
 
     private static final String s_name = "listsnapshotpoliciesresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DOMAIN_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.VOLUME_ID, Boolean.TRUE));
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="account", type=CommandType.STRING, description="lists snapshot policies for the specified account. Must be used with domainid parameter.")
+    private String accountName;
+
+    @Parameter(name="domainid", type=CommandType.LONG, description="the domain ID. If used with the account parameter, lists snapshot policies for the specified account in this domain.")
+    private Long domainId;
+
+    @Parameter(name="volumeid", type=CommandType.LONG, required=true, description="the ID of the disk volume")
+    private Long volumeId;
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public String getAccountName() {
+        return accountName;
     }
+
+    public Long getDomainId() {
+        return domainId;
+    }
+
+    public Long getVolumeId() {
+        return volumeId;
+    }
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
 
     @Override
     public String getName() {
         return s_name;
     }
-    @Override
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
 
-    @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-        Long volumeId = (Long)params.get(BaseCmd.Properties.VOLUME_ID.getName());
+    @Override @SuppressWarnings("unchecked")
+    public ListResponse<SnapshotPolicyResponse> getResponse() {
+        List<SnapshotPolicyVO> policies = (List<SnapshotPolicyVO>)getResponseObject();
 
-        // Verify that a volume exists with the specified volume ID
-        VolumeVO volume = getManagementServer().findVolumeById(volumeId);
-        if (volume == null) {
-            throw new ServerApiException (BaseCmd.PARAM_ERROR, "Unable to find a volume with id " + volumeId);
+        ListResponse<SnapshotPolicyResponse> response = new ListResponse<SnapshotPolicyResponse>();
+        List<SnapshotPolicyResponse> policyResponses = new ArrayList<SnapshotPolicyResponse>();
+        for (SnapshotPolicyVO policy : policies) {
+            SnapshotPolicyResponse policyResponse = new SnapshotPolicyResponse();
+            policyResponse.setId(policy.getId());
+            policyResponse.setVolumeId(policy.getVolumeId());
+            policyResponse.setSchedule(policy.getSchedule());
+            policyResponse.setIntervalType(policy.getInterval());
+            policyResponse.setMaxSnaps(policy.getMaxSnaps());
+            policyResponse.setTimezone(policy.getTimezone());
+
+            policyResponse.setResponseName("snapshotpolicy");
+            policyResponses.add(policyResponse);
         }
-        checkAccountPermissions(params, volume.getAccountId(), volume.getDomainId(), "volume", volumeId);
 
-        List<SnapshotPolicyVO> polices = getManagementServer().listSnapshotPolicies(volumeId);
-
-        List<Pair<String, Object>> policesTags = new ArrayList<Pair<String, Object>>();
-        Object[] policyTag = new Object[polices.size()];
-        int i = 0;
-        for (SnapshotPolicyVO policy : polices) {
-            List<Pair<String, Object>> policyData = new ArrayList<Pair<String, Object>>();
-            policyData.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), policy.getId()));
-            policyData.add(new Pair<String, Object>(BaseCmd.Properties.VOLUME_ID.getName(), policy.getVolumeId()));
-            policyData.add(new Pair<String, Object>(BaseCmd.Properties.SCHEDULE.getName(), policy.getSchedule()));
-            policyData.add(new Pair<String, Object>(BaseCmd.Properties.INTERVAL_TYPE.getName(), policy.getInterval()));
-            policyData.add(new Pair<String, Object>(BaseCmd.Properties.MAX_SNAPS.getName(), policy.getMaxSnaps()));
-            policyData.add(new Pair<String, Object>(BaseCmd.Properties.TIMEZONE.getName(), policy.getTimezone()));
-            policyTag[i++] = policyData;
-        }
-        Pair<String, Object> eventTag = new Pair<String, Object>("snapshotpolicy", policyTag);
-        policesTags.add(eventTag);
-        return policesTags;
-        
+        response.setResponses(policyResponses);
+        response.setResponseName(getName());
+        return response;
     }
 }

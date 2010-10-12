@@ -1,85 +1,75 @@
+/**
+ *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
+ * 
+ * This software is licensed under the GNU General License v3 or later.
+ * 
+ * It is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General License as published by
+ * the Free Software Foundation, either version 3 of the License, or any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General License for more details.
+ * 
+ * You should have received a copy of the GNU General License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * 
+ */
 package com.cloud.api.commands;
-
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
-import com.cloud.api.ServerApiException;
-import com.cloud.dc.DataCenterVO;
-import com.cloud.server.ManagementServer;
+import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.ApiDBUtils;
+import com.cloud.api.Implementation;
+import com.cloud.api.Parameter;
+import com.cloud.api.response.ExtractResponse;
+import com.cloud.event.EventTypes;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.user.Account;
-import com.cloud.utils.Pair;
 
-public class ExtractTemplateCmd extends BaseCmd {
-
+@Implementation(method="extract", manager=Manager.TemplateManager)
+public class ExtractTemplateCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(ExtractTemplateCmd.class.getName());
 
     private static final String s_name = "extracttemplateresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
-    static {        
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.URL, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ZONE_ID, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    //FIXME - add description
+    @Parameter(name="id", type=CommandType.LONG, required=true)
+    private Long id;
+
+    //FIXME - add description
+    @Parameter(name="url", type=CommandType.STRING, required=true)
+    private String url;
+
+    //FIXME - add description
+    @Parameter(name="zoneid", type=CommandType.LONG, required=true)
+    private Long zoneId;
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public Long getId() {
+        return id;
     }
-    
-	@Override
-	public List<Pair<String, Object>> execute(Map<String, Object> params) {
-		String url		   = (String) params.get(BaseCmd.Properties.URL.getName());
-		Long templateId    = (Long) params.get(BaseCmd.Properties.ID.getName());
-		Long zoneId		   = (Long) params.get(BaseCmd.Properties.ZONE_ID.getName());
-		Account account = (Account) params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());				
-		
-		ManagementServer managementServer = getManagementServer();
-        VMTemplateVO template = managementServer.findTemplateById(templateId.longValue());
-        if (template == null) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to find template with id " + templateId);
-        }
-        if (template.getFormat() == ImageFormat.ISO ){
-        	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unsupported format, could not extract the template");
-        }
-        if (template.getName().startsWith("SystemVM Template") ){
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to extract " + template.getName() + ". It is not allowed.");
-        }
-		
-        if(url.toLowerCase().contains("file://")){
-        	throw new ServerApiException(BaseCmd.PARAM_ERROR, "file:// type urls are currently unsupported");
-        }
-                
-    	if (account != null) {    		    	
-    		if(!isAdmin(account.getType())){
-    			if (template.getAccountId() != account.getId()){
-    				throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find template with ID: " + templateId + " for account: " + account.getAccountName());
-    			}
-    		}else if(!managementServer.isChildDomain(account.getDomainId(), managementServer.findDomainIdByAccountId(template.getAccountId())) ) {
-    			throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to extract template " + templateId + " to " + url + ", permission denied.");
-    		}
-    	}
-    	Long jobId;
-        try {
-			jobId = managementServer.extractTemplateAsync(url, templateId, zoneId);
-		} catch (Exception e) {			
-			s_logger.error(e.getMessage(), e);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Internal Error Extracting the template " + e.getMessage());
-		}
-		DataCenterVO zone = managementServer.getDataCenterBy(zoneId);		
-		List<Pair<String, Object>> response = new ArrayList<Pair<String, Object>>();
-		response.add(new Pair<String, Object>(BaseCmd.Properties.TEMPLATE_ID.getName(), templateId));
-		response.add(new Pair<String, Object>(BaseCmd.Properties.NAME.getName(), template.getName()));
-		response.add(new Pair<String, Object>(BaseCmd.Properties.DISPLAY_TEXT.getName(), template.getDisplayText()));
-		response.add(new Pair<String, Object>(BaseCmd.Properties.URL.getName(), url));
-		response.add(new Pair<String, Object>(BaseCmd.Properties.ZONE_ID.getName(), zoneId));
-		response.add(new Pair<String, Object>(BaseCmd.Properties.ZONE_NAME.getName(), zone.getName()));
-		response.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), jobId));
-		return response;
-	}
+
+    public String getUrl() {
+        return url;
+    }
+
+    public Long getZoneId() {
+        return zoneId;
+    }
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
 
 	@Override
 	public String getName() {
@@ -90,9 +80,31 @@ public class ExtractTemplateCmd extends BaseCmd {
         return "ExtractTemplate";
     }
 
-	@Override
-	public List<Pair<Enum, Boolean>> getProperties() {
-		return s_properties;
-	}
+    @Override
+    public long getAccountId() {
+        VMTemplateVO template = ApiDBUtils.findTemplateById(getId());
+        if (template != null) {
+            return template.getId();
+        }
 
+        // invalid id, parent this command to SYSTEM so ERROR events are tracked
+        return Account.ACCOUNT_ID_SYSTEM;
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_TEMPLATE_EXTRACT;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  "Extraction job";
+    }
+
+	@Override @SuppressWarnings("unchecked")
+	public ExtractResponse getResponse() {
+        ExtractResponse response = (ExtractResponse)getResponseObject();
+        response.setResponseName(getName());
+        return response;
+	}
 }

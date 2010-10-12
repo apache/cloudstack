@@ -18,163 +18,118 @@
 
 package com.cloud.api.commands;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
-import com.cloud.api.ServerApiException;
-import com.cloud.dc.ClusterVO;
-import com.cloud.dc.DataCenterVO;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceInUseException;
+import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.Implementation;
+import com.cloud.api.Parameter;
+import com.cloud.api.response.StoragePoolResponse;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
-import com.cloud.utils.Pair;
 
+@SuppressWarnings("rawtypes")
+@Implementation(method="createPool", manager=Manager.StorageManager, description="Creates a storage pool.")
 public class CreateStoragePoolCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateStoragePoolCmd.class.getName());
 
     private static final String s_name = "createstoragepoolresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ZONE_ID, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.URL, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.POD_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.CLUSTER_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.TAGS, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DETAILS, Boolean.FALSE));
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="clusterid", type=CommandType.LONG, description="the cluster ID for the storage pool")
+    private Long clusterId;
+
+    @Parameter(name="details", type=CommandType.MAP, description="the details for the storage pool")
+    private Map details;
+
+    @Parameter(name="name", type=CommandType.STRING, required=true, description="the name for the storage pool")
+    private String storagePoolName;
+
+    @Parameter(name="podid", type=CommandType.LONG, description="the Pod ID for the storage pool")
+    private Long podId;
+
+    @Parameter(name="tags", type=CommandType.STRING, description="the tags for the storage pool")
+    private String tags;
+
+    @Parameter(name="url", type=CommandType.STRING, required=true, description="the URL of the storage pool")
+    private String url;
+
+    @Parameter(name="zoneid", type=CommandType.LONG, required=true, description="the Zone ID for the storage pool")
+    private Long zoneId;
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public Long getClusterId() {
+        return clusterId;
     }
+
+    public Map getDetails() {
+        return details;
+    }
+
+    public String getStoragePoolName() {
+        return storagePoolName;
+    }
+
+    public Long getPodId() {
+        return podId;
+    }
+
+    public String getTags() {
+        return tags;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public Long getZoneId() {
+        return zoneId;
+    }
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
 
     @Override
     public String getName() {
         return s_name;
     }
-    @Override
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
 
-    @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("CreateStoragePoolCmd Params @ " +params.toString());
-        }
-        
-        Long zoneId = (Long)params.get(BaseCmd.Properties.ZONE_ID.getName());
-        String poolName = (String)params.get(BaseCmd.Properties.NAME.getName());
-        String storageUri = (String)params.get(BaseCmd.Properties.URL.getName());
-        Long podId = (Long)params.get(BaseCmd.Properties.POD_ID.getName());
-        String tags = (String)params.get(BaseCmd.Properties.TAGS.getName());
-        Map ds = (Map)params.get(BaseCmd.Properties.DETAILS.getName());
-        Long clusterId = (Long)params.get(BaseCmd.Properties.CLUSTER_ID.getName());
-        
-        if (clusterId != null && podId == null) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Cluster id requires pod id");
-        }
-    
-        Map<String, String> details = new HashMap<String, String>();
-        if (ds != null) {
-            Collection detailsCollection = ds.values();
-            Iterator it = detailsCollection.iterator();
-            while (it.hasNext()) {
-                HashMap d = (HashMap)it.next();
-                Iterator it2 = d.entrySet().iterator();
-                while (it2.hasNext()) {
-                    Map.Entry entry = (Map.Entry)it2.next();
-                    details.put((String)entry.getKey(), (String)entry.getValue());
-                }
-            }
-        }
-        //verify input parameters
-    	DataCenterVO zone = getManagementServer().findDataCenterById(zoneId);
-    	if (zone == null) {
-    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find zone by id " + zoneId);
-    	}
-    	
-    	try {
-    		URI uri = new URI(storageUri);
-    		if (uri.getScheme() == null)
-    			throw new ServerApiException(BaseCmd.PARAM_ERROR, "scheme is null " + storageUri + ", add nfs:// as a prefix");
-    		else if (uri.getScheme().equalsIgnoreCase("nfs")) {
-    			String uriHost = uri.getHost();
-    			String uriPath = uri.getPath();
-    			if (uriHost == null || uriPath == null || uriHost.trim().isEmpty() || uriPath.trim().isEmpty()) {
-    				throw new ServerApiException(BaseCmd.PARAM_ERROR, "host or path is null, should be nfs://hostname/path");
-    			}
-    		}
-    	} catch (URISyntaxException e) {
-    		throw new ServerApiException(BaseCmd.PARAM_ERROR, storageUri + " is not a valid uri");
-    	}
-    	s_logger.debug("CreateStoragePoolCmd - Input parameters verified ");
-        StoragePoolVO storagePool = null;
-		try {
-			storagePool = getManagementServer().addPool(zoneId, podId, clusterId, poolName, storageUri, tags, details);
-		} catch (ResourceInUseException e) {
-    		throw new ServerApiException(BaseCmd.STORAGE_RESOURCE_IN_USE, e.getMessage());
-		} catch (URISyntaxException e) {
-    		throw new ServerApiException(BaseCmd.PARAM_ERROR, storageUri + " is not a valid uri");
-		} catch (IllegalArgumentException e) {
-			throw new ServerApiException(BaseCmd.PARAM_ERROR, e.getMessage());
-		} catch (UnknownHostException e) {
-			throw new ServerApiException(BaseCmd.PARAM_ERROR, e.getMessage());
-		} catch (ResourceAllocationException e) {
-			throw new ServerApiException(BaseCmd.PARAM_ERROR,e.getMessage());
-		}
- 
-        if (storagePool == null) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create storage pool");
-        }
-        s_logger.debug("Successfully created storagePool " + storagePool.toString() );
-        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), Long.toString(storagePool.getId())));
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.ZONE_ID.getName(), storagePool.getDataCenterId()));
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.ZONE_NAME.getName(), getManagementServer().getDataCenterBy(storagePool.getDataCenterId()).getName()));
-        if (storagePool.getPodId() != null) {
-            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.POD_ID.getName(), storagePool.getPodId()));
-            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.POD_NAME.getName(), getManagementServer().getPodBy(storagePool.getPodId()).getName()));
-        }
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.NAME.getName(), storagePool.getName()));
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.IP_ADDRESS.getName(), storagePool.getHostAddress()));
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.PATH.getName(), storagePool.getPath()));
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.CREATED.getName(), getDateString(storagePool.getCreated())));
-        
-        if (storagePool.getPoolType() != null) {
-        	returnValues.add(new Pair<String, Object>(BaseCmd.Properties.TYPE.getName(), storagePool.getPoolType().toString()));
-        }
-        
-        if (storagePool.getClusterId() != null) {
-        	ClusterVO cluster = getManagementServer().findClusterById(storagePool.getClusterId());
-        	returnValues.add(new Pair<String, Object>(BaseCmd.Properties.CLUSTER_ID.getName(), cluster.getId()));
-        	returnValues.add(new Pair<String, Object>(BaseCmd.Properties.CLUSTER_NAME.getName(), cluster.getName()));
-        }
-        
-        StorageStats stats = getManagementServer().getStoragePoolStatistics(storagePool.getId());
-        long capacity = storagePool.getCapacityBytes();
-        long available = storagePool.getAvailableBytes() ;
-        long used = capacity - available;
+    @Override @SuppressWarnings("unchecked")
+    public StoragePoolResponse getResponse() {
+        StoragePoolVO pool = (StoragePoolVO)getResponseObject();
 
+        StoragePoolResponse response = new StoragePoolResponse();
+        response.setClusterId(pool.getClusterId());
+        response.setClusterName(ApiDBUtils.findClusterById(pool.getClusterId()).getName());
+        response.setPodName(ApiDBUtils.findPodById(pool.getPodId()).getName());
+        response.setCreated(pool.getCreated());
+        response.setId(pool.getId());
+        response.setIpAddress(pool.getHostAddress());
+        response.setName(pool.getName());
+        response.setPath(pool.getPath());
+        response.setPodId(pool.getPodId());
+        response.setType(pool.getPoolType().toString());
+        response.setTags(ApiDBUtils.getStoragePoolTags(pool.getId()));
+
+        StorageStats stats = ApiDBUtils.getStoragePoolStatistics(pool.getId());
+        long used = pool.getCapacityBytes() - pool.getAvailableBytes();
         if (stats != null) {
-       	 used = stats.getByteUsed();
-       	 available = capacity - used;
+            used = stats.getByteUsed();
         }
-        s_logger.debug("Successfully recieved the storagePool statistics. TotalDiskSize - " +capacity+ " AllocatedDiskSize - " +used );
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.DISK_SIZE_TOTAL.getName(), Long.valueOf(storagePool.getCapacityBytes()).toString()));        
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.DISK_SIZE_ALLOCATED.getName(), Long.valueOf(used).toString()));        
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.TAGS.getName(), getManagementServer().getStoragePoolTags(storagePool.getId())));  
+        response.setDiskSizeTotal(pool.getCapacityBytes());
+        response.setDiskSizeAllocated(used);
 
-        List<Pair<String, Object>> embeddedObject = new ArrayList<Pair<String, Object>>();
-        embeddedObject.add(new Pair<String, Object>("storagepool", new Object[] { returnValues } ));
-        return embeddedObject;
+        response.setResponseName(getName());
+        return response;
     }
 }

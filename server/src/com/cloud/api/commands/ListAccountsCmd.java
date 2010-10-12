@@ -15,131 +15,122 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-
 package com.cloud.api.commands;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseListCmd;
+import com.cloud.api.Implementation;
+import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.response.AccountResponse;
+import com.cloud.api.response.ListResponse;
 import com.cloud.configuration.ResourceCount.ResourceType;
-import com.cloud.domain.Domain;
 import com.cloud.server.Criteria;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
+import com.cloud.user.UserContext;
 import com.cloud.user.UserStatisticsVO;
 import com.cloud.uservm.UserVm;
-import com.cloud.utils.Pair;
 import com.cloud.vm.State;
 
-public class ListAccountsCmd extends BaseCmd{
+@Implementation(method="searchForAccounts", description="Lists accounts and provides detailed account information for listed accounts")
+public class ListAccountsCmd extends BaseListCmd {
 	public static final Logger s_logger = Logger.getLogger(ListAccountsCmd.class.getName());
     private static final String s_name = "listaccountsresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
-    static {
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.FALSE));
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.FALSE));
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_TYPE, Boolean.FALSE));
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.STATE, Boolean.FALSE));
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.IS_CLEANUP_REQUIRED, Boolean.FALSE));
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.KEYWORD, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DOMAIN_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGE, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGESIZE, Boolean.FALSE));
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="account", type=CommandType.STRING, description="list account for a specified account. Must be used with the domainId parameter.")
+    private String accountName;
+
+    @Parameter(name="accounttype", type=CommandType.LONG, description="list accounts by account type. Valid account types are 1 (admin), 2 (domain-admin), and 0 (user).")
+    private Long accountType;
+
+    @Parameter(name="domainid", type=CommandType.LONG, description="list all accounts in specified domain. If used with the account parameter, retrieves account information for specified account in specified domain.")
+    private Long domainId;
+
+    @Parameter(name="id", type=CommandType.LONG, description="list account by account ID")
+    private Long id;
+
+    @Parameter(name="iscleanuprequired", type=CommandType.BOOLEAN, description="list accounts by cleanuprequred attribute (values are true or false)")
+    private Boolean cleanupRequired;
+
+    @Parameter(name="name", type=CommandType.STRING, description="list account by account name")
+    private String searchName;
+
+    @Parameter(name="state", type=CommandType.STRING, description="list accounts by state. Valid states are enabled, disabled, and locked.")
+    private String state;
+
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public String getAccountName() {
+        return accountName;
     }
 
+    public Long getAccountType() {
+        return accountType;
+    }
+
+    public Long getDomainId() {
+        return domainId;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public Boolean isCleanupRequired() {
+        return cleanupRequired;
+    }
+
+    public String getSearchName() {
+        return searchName;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
+
+    @Override
     public String getName() {
         return s_name;
     }
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
 
-    @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-    	Long id = (Long)params.get(BaseCmd.Properties.ID.getName());
-        Account account = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-        Long domainId = (Long)params.get(BaseCmd.Properties.DOMAIN_ID.getName());
-        Long type = (Long)params.get(BaseCmd.Properties.ACCOUNT_TYPE.getName());
-        String state = (String)params.get(BaseCmd.Properties.STATE.getName()); 
-        Boolean needCleanup = (Boolean)params.get(BaseCmd.Properties.IS_CLEANUP_REQUIRED.getName());
-        Integer page = (Integer)params.get(BaseCmd.Properties.PAGE.getName());
-        Integer pageSize = (Integer)params.get(BaseCmd.Properties.PAGESIZE.getName());
-        String keyword = (String)params.get(BaseCmd.Properties.KEYWORD.getName());
-        boolean isAdmin = false;
-		Long accountId = null;
+    @Override @SuppressWarnings("unchecked")
+    public ListResponse<AccountResponse> getResponse() {
+        List<AccountVO> accounts = (List<AccountVO>)getResponseObject();
 
-        String accountName = null;
+        ListResponse<AccountResponse> response = new ListResponse<AccountResponse>();
 
-        if ((account == null) || isAdmin(account.getType())) {
-        	accountName = (String)params.get(BaseCmd.Properties.NAME.getName());
-        	isAdmin = true;
-        	if (domainId == null) {
-                // default domainId to the admin's domain
-                domainId = ((account == null) ? Domain.ROOT_DOMAIN : account.getDomainId());
-        	} else if (account != null) {
-        	    if (!getManagementServer().isChildDomain(account.getDomainId(), domainId)) {
-        	        throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid domain id (" + domainId + ") given, unable to list accounts");
-        	    }
-        	}
-        } else {
-        	accountName = (String)params.get(BaseCmd.Properties.ACCOUNT.getName());
-        	accountId = account.getId();
-        }
+        List<AccountResponse> accountResponses = new ArrayList<AccountResponse>();
+        for (AccountVO account : accounts) {
+            boolean accountIsAdmin = (account.getType() == Account.ACCOUNT_TYPE_ADMIN);
 
-        Long startIndex = Long.valueOf(0);
-        int pageSizeNum = 50;
-    	if (pageSize != null) {
-    		pageSizeNum = pageSize.intValue();
-    	}
-        if (page != null) {
-            int pageNum = page.intValue();
-            if (pageNum > 0) {
-                startIndex = Long.valueOf(pageSizeNum * (pageNum-1));
-            }
-        }
-        Criteria c = new Criteria("id", Boolean.TRUE, startIndex, Long.valueOf(pageSizeNum));
-		if (isAdmin == true) {
-			c.addCriteria(Criteria.ID, id);
-			if (keyword == null) {
-				c.addCriteria(Criteria.ACCOUNTNAME, accountName);
-				c.addCriteria(Criteria.DOMAINID, domainId);
-				c.addCriteria(Criteria.TYPE, type);
-				c.addCriteria(Criteria.STATE, state);
-				c.addCriteria(Criteria.ISCLEANUPREQUIRED, needCleanup);
-			} else {
-				c.addCriteria(Criteria.KEYWORD, keyword);
-			}
-		} else {
-			c.addCriteria(Criteria.ID, accountId);
-		}
-
-        List<AccountVO> accounts = getManagementServer().searchForAccounts(c);
-
-        List<Pair<String, Object>> accountTags = new ArrayList<Pair<String, Object>>();
-        Object[] aTag = new Object[accounts.size()];
-        int i = 0;
-        for (AccountVO accountO : accounts) {
-        	boolean accountIsAdmin = (accountO.getType() == Account.ACCOUNT_TYPE_ADMIN);
-        	
-    		List<Pair<String, Object>> accountData = new ArrayList<Pair<String, Object>>();
-            accountData.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), Long.valueOf(accountO.getId()).toString()));
-            accountData.add(new Pair<String, Object>(BaseCmd.Properties.NAME.getName(), accountO.getAccountName()));
-            accountData.add(new Pair<String, Object>(BaseCmd.Properties.ACCOUNT_TYPE.getName(), Short.valueOf(accountO.getType()).toString()));
-                Domain domain = getManagementServer().findDomainIdById(accountO.getDomainId());
-                accountData.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN_ID.getName(), Long.toString(domain.getId())));
-            accountData.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN.getName(), domain.getName()));
+            AccountResponse acctResponse = new AccountResponse();
+            acctResponse.setId(account.getId());
+            acctResponse.setName(account.getAccountName());
+            acctResponse.setAccountType(account.getType());
+            acctResponse.setDomainId(account.getDomainId());
+            acctResponse.setDomainName(ApiDBUtils.findDomainById(account.getDomainId()).getName());
 
             //get network stat
-            List<UserStatisticsVO> stats = getManagementServer().listUserStatsBy(accountO.getId());
+            List<UserStatisticsVO> stats = ApiDBUtils.listUserStatsBy(account.getId());
             if (stats == null) {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Internal error searching for user stats");
             }
@@ -147,93 +138,95 @@ public class ListAccountsCmd extends BaseCmd{
             long bytesSent = 0;
             long bytesReceived = 0;
             for (UserStatisticsVO stat : stats) {
-            	long rx = stat.getNetBytesReceived() + stat.getCurrentBytesReceived();
-    			long tx = stat.getNetBytesSent() + stat.getCurrentBytesSent();
+                long rx = stat.getNetBytesReceived() + stat.getCurrentBytesReceived();
+                long tx = stat.getNetBytesSent() + stat.getCurrentBytesSent();
                 bytesReceived = bytesReceived + Long.valueOf(rx);
                 bytesSent = bytesSent + Long.valueOf(tx);
             }
-            accountData.add(new Pair<String, Object>(BaseCmd.Properties.BYTES_RECEIVED.getName(), Long.valueOf(bytesReceived).toString()));
-            accountData.add(new Pair<String, Object>(BaseCmd.Properties.BYTES_SENT.getName(), Long.valueOf(bytesSent).toString()));
+            acctResponse.setBytesReceived(bytesReceived);
+            acctResponse.setBytesSent(bytesSent);
 
             // Get resource limits and counts
             
-            long vmLimit = getManagementServer().findCorrectResourceLimit(ResourceType.user_vm, accountO.getId());
+            long vmLimit = ApiDBUtils.findCorrectResourceLimit(ResourceType.user_vm, account.getId());
             String vmLimitDisplay = (accountIsAdmin || vmLimit == -1) ? "Unlimited" : String.valueOf(vmLimit);
-            long vmTotal = getManagementServer().getResourceCount(ResourceType.user_vm, accountO.getId());
+            long vmTotal = ApiDBUtils.getResourceCount(ResourceType.user_vm, account.getId());
             String vmAvail = (accountIsAdmin || vmLimit == -1) ? "Unlimited" : String.valueOf(vmLimit - vmTotal);
-            accountData.add(new Pair<String, Object>(BaseCmd.Properties.VM_LIMIT.getName(), vmLimitDisplay));
-            accountData.add(new Pair<String, Object>(BaseCmd.Properties.VM_TOTAL.getName(), vmTotal));
-            accountData.add(new Pair<String, Object>(BaseCmd.Properties.VM_AVAIL.getName(), vmAvail));
+            acctResponse.setVmLimit(vmLimitDisplay);
+            acctResponse.setVmTotal(vmTotal);
+            acctResponse.setVmAvailable(vmAvail);
             
-            long ipLimit = getManagementServer().findCorrectResourceLimit(ResourceType.public_ip, accountO.getId());
+            long ipLimit = ApiDBUtils.findCorrectResourceLimit(ResourceType.public_ip, account.getId());
             String ipLimitDisplay = (accountIsAdmin || ipLimit == -1) ? "Unlimited" : String.valueOf(ipLimit);
-            long ipTotal = getManagementServer().getResourceCount(ResourceType.public_ip, accountO.getId());
+            long ipTotal = ApiDBUtils.getResourceCount(ResourceType.public_ip, account.getId());
             String ipAvail = (accountIsAdmin || ipLimit == -1) ? "Unlimited" : String.valueOf(ipLimit - ipTotal);
-            accountData.add(new Pair<String, Object>(BaseCmd.Properties.IP_LIMIT.getName(), ipLimitDisplay));
-            accountData.add(new Pair<String, Object>(BaseCmd.Properties.IP_TOTAL.getName(), ipTotal));
-            accountData.add(new Pair<String, Object>(BaseCmd.Properties.IP_AVAIL.getName(), ipAvail));
+            acctResponse.setIpLimit(ipLimitDisplay);
+            acctResponse.setIpTotal(ipTotal);
+            acctResponse.setIpAvailable(ipAvail);
             
-            long volumeLimit = getManagementServer().findCorrectResourceLimit(ResourceType.volume, accountO.getId());
+            long volumeLimit = ApiDBUtils.findCorrectResourceLimit(ResourceType.volume, account.getId());
             String volumeLimitDisplay = (accountIsAdmin || volumeLimit == -1) ? "Unlimited" : String.valueOf(volumeLimit);
-            long volumeTotal = getManagementServer().getResourceCount(ResourceType.volume, accountO.getId());
+            long volumeTotal = ApiDBUtils.getResourceCount(ResourceType.volume, account.getId());
             String volumeAvail = (accountIsAdmin || volumeLimit == -1) ? "Unlimited" : String.valueOf(volumeLimit - volumeTotal);
-            accountData.add(new Pair<String, Object>(BaseCmd.Properties.VOLUME_LIMIT.getName(), volumeLimitDisplay));
-            accountData.add(new Pair<String, Object>(BaseCmd.Properties.VOLUME_TOTAL.getName(), volumeTotal));
-            accountData.add(new Pair<String, Object>(BaseCmd.Properties.VOLUME_AVAIL.getName(), volumeAvail));
+            acctResponse.setVolumeLimit(volumeLimitDisplay);
+            acctResponse.setVolumeTotal(volumeTotal);
+            acctResponse.setVolumeAvailable(volumeAvail);
             
-            long snapshotLimit = getManagementServer().findCorrectResourceLimit(ResourceType.snapshot, accountO.getId());
+            long snapshotLimit = ApiDBUtils.findCorrectResourceLimit(ResourceType.snapshot, account.getId());
             String snapshotLimitDisplay = (accountIsAdmin || snapshotLimit == -1) ? "Unlimited" : String.valueOf(snapshotLimit);
-            long snapshotTotal = getManagementServer().getResourceCount(ResourceType.snapshot, accountO.getId());
+            long snapshotTotal = ApiDBUtils.getResourceCount(ResourceType.snapshot, account.getId());
             String snapshotAvail = (accountIsAdmin || snapshotLimit == -1) ? "Unlimited" : String.valueOf(snapshotLimit - snapshotTotal);
-            accountData.add(new Pair<String, Object>(BaseCmd.Properties.SNAPSHOT_LIMIT.getName(), snapshotLimitDisplay));
-            accountData.add(new Pair<String, Object>(BaseCmd.Properties.SNAPSHOT_TOTAL.getName(), snapshotTotal));
-            accountData.add(new Pair<String, Object>(BaseCmd.Properties.SNAPSHOT_AVAIL.getName(), snapshotAvail));
+            acctResponse.setSnapshotLimit(snapshotLimitDisplay);
+            acctResponse.setSnapshotTotal(snapshotTotal);
+            acctResponse.setSnapshotAvailable(snapshotAvail);
             
-            long templateLimit = getManagementServer().findCorrectResourceLimit(ResourceType.template, accountO.getId());
+            long templateLimit = ApiDBUtils.findCorrectResourceLimit(ResourceType.template, account.getId());
             String templateLimitDisplay = (accountIsAdmin || templateLimit == -1) ? "Unlimited" : String.valueOf(templateLimit);
-            long templateTotal = getManagementServer().getResourceCount(ResourceType.template, accountO.getId());
+            long templateTotal = ApiDBUtils.getResourceCount(ResourceType.template, account.getId());
             String templateAvail = (accountIsAdmin || templateLimit == -1) ? "Unlimited" : String.valueOf(templateLimit - templateTotal);
-            accountData.add(new Pair<String, Object>(BaseCmd.Properties.TEMPLATE_LIMIT.getName(), templateLimitDisplay));
-            accountData.add(new Pair<String, Object>(BaseCmd.Properties.TEMPLATE_TOTAL.getName(), templateTotal));
-            accountData.add(new Pair<String, Object>(BaseCmd.Properties.TEMPLATE_AVAIL.getName(), templateAvail));
+            acctResponse.setTemplateLimit(templateLimitDisplay);
+            acctResponse.setTemplateTotal(templateTotal);
+            acctResponse.setTemplateAvailable(templateAvail);
             
-    	    // Get stopped and running VMs
+            // Get stopped and running VMs
+            int vmStopped = 0;
+            int vmRunning = 0;
 
-    	    int vmStopped = 0;
-    	    int vmRunning = 0;
+            Long[] accountIds = new Long[1];
+            accountIds[0] = account.getId();
 
-    	    Long[] accountIds = new Long[1];
-    	    accountIds[0] = accountO.getId();
+            Criteria c1 = new Criteria();
+            c1.addCriteria(Criteria.ACCOUNTID, accountIds);
+            List<? extends UserVm> virtualMachines = ApiDBUtils.searchForUserVMs(c1);
 
-    	    Criteria c1 = new Criteria();
-    	    c1.addCriteria(Criteria.ACCOUNTID, accountIds);
-    	    List<? extends UserVm> virtualMachines = getManagementServer().searchForUserVMs(c1);
+            //get Running/Stopped VMs
+            for (Iterator<? extends UserVm> iter = virtualMachines.iterator(); iter.hasNext();) {
+                // count how many stopped/running vms we have
+                UserVm vm = iter.next();
 
-    	    //get Running/Stopped VMs
-    	    for (Iterator<? extends UserVm> iter = virtualMachines.iterator(); iter.hasNext();) {
-    	    	// count how many stopped/running vms we have
-    		    UserVm vm = iter.next();
+                if (vm.getState() == State.Stopped) {
+                    vmStopped++;
+                } else if (vm.getState() == State.Running) {
+                    vmRunning++;
+                }
+            }
 
-    		  	if (vm.getState() == State.Stopped) {
-    		  		vmStopped++;
-    		  	} else if (vm.getState() == State.Running) {
-    		  		vmRunning++;
-    		  	}
-    	    }
+            acctResponse.setVmStopped(vmStopped);
+            acctResponse.setVmRunning(vmRunning);
 
-    	    accountData.add(new Pair<String, Object>(BaseCmd.Properties.VM_STOPPED.getName(), vmStopped));
-    	    accountData.add(new Pair<String, Object>(BaseCmd.Properties.VM_RUNNING.getName(), vmRunning));
+            //show this info to admins only
+            Account ctxAccount = (Account)UserContext.current().getAccountObject();
+            if ((ctxAccount == null) || isAdmin(ctxAccount.getType())) {
+                acctResponse.setState(account.getState());
+                acctResponse.setCleanupRequired(account.getNeedsCleanup());
+            }
 
-    	    //show this info to admins only
-    	    if (isAdmin == true) {
-    	    	accountData.add(new Pair<String, Object>(BaseCmd.Properties.STATE.getName(), accountO.getState()));
-                accountData.add(new Pair<String, Object>(BaseCmd.Properties.IS_CLEANUP_REQUIRED.getName(), Boolean.valueOf(accountO.getNeedsCleanup()).toString()));
-    	    }
-
-            aTag[i++] = accountData;
+            acctResponse.setResponseName("account");
+            accountResponses.add(acctResponse);
         }
-        Pair<String, Object> accountTag = new Pair<String, Object>("account", aTag);
-        accountTags.add(accountTag);
-        return accountTags;
+
+        response.setResponses(accountResponses);
+        response.setResponseName(getName());
+        return response;
     }
 }

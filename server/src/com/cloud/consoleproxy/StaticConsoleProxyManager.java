@@ -24,8 +24,8 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.host.HostVO;
 import com.cloud.host.Host.Type;
+import com.cloud.host.HostVO;
 import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;

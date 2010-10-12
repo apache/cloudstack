@@ -15,44 +15,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
+package com.cloud.exception;
 
-package com.cloud.async.executor;
+import com.cloud.utils.SerialVersionUID;
 
-public class DeleteTemplateParam {
-	
-	private long userId;
-	private long templateId;
-	private Long zoneId;
-	private long eventId;
+public class CloudAuthenticationException extends RuntimeException {
+    private static final long serialVersionUID = SerialVersionUID.CloudAuthenticationException;
 
-	public DeleteTemplateParam() {
-	}
-
-	public DeleteTemplateParam(long userId, long templateId, Long zoneId, long eventId) {
-		this.userId = userId;
-		this.templateId = templateId;
-		this.zoneId = zoneId;
-		this.eventId = eventId;
-	}
-	
-	public long getUserId() {
-		return userId;
-	}
-	
-	public long getTemplateId() {
-		return templateId;
-	}
-	
-	public Long getZoneId() {
-		return zoneId;
-	}
-
-    public void setEventId(long eventId) {
-        this.eventId = eventId;
+    public CloudAuthenticationException(String message) {
+        super(message);
     }
 
-    public long getEventId() {
-        return eventId;
+    public CloudAuthenticationException(String message, Throwable th) {
+        super(message, th);
     }
-	
 }

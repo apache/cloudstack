@@ -20,6 +20,7 @@ package com.cloud.vm;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.Formatter;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -55,6 +56,7 @@ import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.RebootCommand;
+import com.cloud.agent.api.SnapshotCommand;
 import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.VmStatsEntry;
@@ -62,12 +64,25 @@ import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.ServerApiException;
+import com.cloud.api.commands.AttachVolumeCmd;
+import com.cloud.api.commands.CreateTemplateCmd;
+import com.cloud.api.commands.CreateVMGroupCmd;
+import com.cloud.api.commands.DeleteVMGroupCmd;
+import com.cloud.api.commands.DestroyVMCmd;
+import com.cloud.api.commands.DetachVolumeCmd;
+import com.cloud.api.commands.RebootVMCmd;
+import com.cloud.api.commands.RecoverVMCmd;
+import com.cloud.api.commands.ResetVMPasswordCmd;
+import com.cloud.api.commands.StartVMCmd;
+import com.cloud.api.commands.StopVMCmd;
+import com.cloud.api.commands.UpdateVMCmd;
+import com.cloud.api.commands.UpgradeVMCmd;
 import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.async.BaseAsyncJobExecutor;
-import com.cloud.async.executor.DestroyVMExecutor;
 import com.cloud.async.executor.OperationResponse;
 import com.cloud.async.executor.RebootVMExecutor;
 import com.cloud.async.executor.StartVMExecutor;
@@ -76,6 +91,7 @@ import com.cloud.async.executor.VMExecutorHelper;
 import com.cloud.async.executor.VMOperationListener;
 import com.cloud.async.executor.VMOperationParam;
 import com.cloud.capacity.dao.CapacityDao;
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
@@ -90,6 +106,7 @@ import com.cloud.dc.dao.VlanDao;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.EventState;
 import com.cloud.event.EventTypes;
+import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.exception.AgentUnavailableException;
@@ -98,6 +115,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.ha.HighAvailabilityManager;
@@ -150,9 +168,11 @@ import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
+import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
+import com.cloud.user.UserContext;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
@@ -160,6 +180,7 @@ import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
@@ -210,6 +231,7 @@ public class UserVmManagerImpl implements UserVmManager {
     @Inject StorageManager _storageMgr = null;
     @Inject SnapshotManager _snapshotMgr = null;
     @Inject AgentManager _agentMgr = null;
+    @Inject ConfigurationManager _configMgr = null;
     @Inject AccountDao _accountDao = null;
     @Inject UserDao _userDao = null;
     @Inject SnapshotDao _snapshotDao = null;
@@ -258,17 +280,63 @@ public class UserVmManagerImpl implements UserVmManager {
     }
 
     @Override
-    public boolean resetVMPassword(long userId, long vmId, String password) {
-        UserVmVO vm = _vmDao.findById(vmId);
-        VMTemplateVO template = _templateDao.findById(vm.getTemplateId());
+    public UserVm resetVMPassword(ResetVMPasswordCmd cmd){
+    	
+    	Long userId = UserContext.current().getUserId();
+    	boolean result = resetVMPasswordInternal(cmd);
+
+        // Log event
+        UserVmVO userVm = _vmDao.findById(cmd.getId());
+        if (userVm != null) {
+            if (result) {
+            	EventUtils.saveEvent(userId, userVm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_RESETPASSWORD, "successfully reset password for VM : " + userVm.getName(), null);
+            } else {
+            	EventUtils.saveEvent(userId, userVm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_RESETPASSWORD, "unable to reset password for VM : " + userVm.getName(), null);
+            }
+        } else {
+            s_logger.warn("Unable to find vm = " + cmd.getId()+ " to reset password");
+        }
+
+        return userVm;
+    }
+
+    private boolean resetVMPasswordInternal(ResetVMPasswordCmd cmd) {    	
+    	//Input validation
+    	Account account = (Account)UserContext.current().getAccountObject();
+    	Long userId = UserContext.current().getUserId();
+    	Long id = cmd.getId();
+
+        String password = null;
+
+        //Verify input parameters
+        UserVmVO vmInstance = _vmDao.findById(id.longValue());
+        if (vmInstance == null) {
+        	throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + id);
+        }
+
+        userId = accountAndUserValidation(id, account, userId, vmInstance);
+
+    	VMTemplateVO template = _templateDao.findById(vmInstance.getTemplateId());
+    	if (template.getEnablePassword()) {
+            password = PasswordGenerator.generateRandomPassword();;
+    	} else {
+    		password = "saved_password";
+    	}
+
+        if (password == null || password.equals("")) {
+            return false;
+        } else {
+            cmd.setPassword(password);
+        }
+
         if (template.getEnablePassword()) {
-        	if (vm.getDomainRouterId() == null)
+        	if (vmInstance.getDomainRouterId() == null)
         		/*TODO: add it for external dhcp mode*/
         		return true;
-	        if (_networkMgr.savePasswordToRouter(vm.getDomainRouterId(), vm.getPrivateIpAddress(), password)) {
+	        if (_networkMgr.savePasswordToRouter(vmInstance.getDomainRouterId(), vmInstance.getPrivateIpAddress(), password)) {
 	            // Need to reboot the virtual machine so that the password gets redownloaded from the DomR, and reset on the VM
-	        	if (!rebootVirtualMachine(userId, vmId)) {
-	        		if (vm.getState() == State.Stopped) {
+	        	if (!rebootVirtualMachine(userId, id)) {
+	        		if (vmInstance.getState() == State.Stopped) {
 	        			return true;
 	        		}
 	        		return false;
@@ -287,10 +355,86 @@ public class UserVmManagerImpl implements UserVmManager {
     }
     
     @Override
-    public void attachVolumeToVM(long vmId, long volumeId, Long deviceId, long startEventId) throws InternalErrorException {
-    	VolumeVO volume = _volsDao.findById(volumeId);
-    	UserVmVO vm = _vmDao.findById(vmId);
+    public void attachVolumeToVM(AttachVolumeCmd command) throws InternalErrorException, InvalidParameterValueException, PermissionDeniedException {
+    	Long vmId = command.getVirtualMachineId();
+    	Long volumeId = command.getId();
+    	Long deviceId = command.getDeviceId();
+    	Account account = (Account)UserContext.current().getAccountObject();
     	
+    	// Check that the volume ID is valid
+    	VolumeVO volume = _volsDao.findById(volumeId);
+        // Check that the volume is a data volume
+        if (volume == null || volume.getVolumeType() != VolumeType.DATADISK) {
+            throw new InvalidParameterValueException("Please specify a valid data volume.");
+        }
+
+        // Check that the volume is stored on shared storage
+        if (!_storageMgr.volumeOnSharedStoragePool(volume)) {
+            throw new InvalidParameterValueException("Please specify a volume that has been created on a shared storage pool.");
+        }
+        
+        // Check that the volume is not currently attached to any VM
+        if (volume.getInstanceId() != null) {
+            throw new InvalidParameterValueException("Please specify a volume that is not attached to any VM.");
+        }
+
+        // Check that the volume is not destroyed
+        if (volume.getDestroyed()) {
+            throw new InvalidParameterValueException("Please specify a volume that is not destroyed.");
+        }
+
+    	// Check that the virtual machine ID is valid and it's a user vm
+    	UserVmVO vm = _vmDao.findById(vmId);
+    	if (vm == null || vm.getType() != VirtualMachine.Type.User) {
+            throw new InvalidParameterValueException("Please specify a valid User VM.");
+        }
+    	
+        // Check that the VM is in the correct state
+        if (vm.getState() != State.Running && vm.getState() != State.Stopped) {
+        	throw new InvalidParameterValueException("Please specify a VM that is either running or stopped.");
+        }
+
+        // Check that the device ID is valid
+        if( deviceId != null ) {
+            if(deviceId.longValue() == 0) {
+                throw new ServerApiException (BaseCmd.VM_INVALID_PARAM_ERROR, "deviceId can't be 0, which is used by Root device");
+            }
+        }
+        
+        // Check that the VM has less than 6 data volumes attached
+        List<VolumeVO> existingDataVolumes = _volsDao.findByInstanceAndType(vmId, VolumeType.DATADISK);
+        if (existingDataVolumes.size() >= 6) {
+            throw new InvalidParameterValueException("The specified VM already has the maximum number of data disks (6). Please specify another VM.");
+        }
+        
+        // Check that the VM and the volume are in the same zone
+        if (vm.getDataCenterId() != volume.getDataCenterId()) {
+        	throw new InvalidParameterValueException("Please specify a VM that is in the same zone as the volume.");
+        }
+        
+        //Verify account information
+        if (volume.getAccountId() != vm.getAccountId()) {
+        	throw new PermissionDeniedException ("Virtual machine and volume belong to different accounts, can not attach. Permission denied.");
+        }
+    	
+    	// If the account is not an admin, check that the volume and the virtual machine are owned by the account that was passed in
+    	if (account != null) {
+    	    if (!isAdmin(account.getType())) {
+                if (account.getId() != volume.getAccountId())
+                    throw new PermissionDeniedException("Unable to find volume with ID: " + volumeId + " for account: " + account.getAccountName() + ". Permission denied.");
+
+                if (account.getId() != vm.getAccountId())
+                    throw new PermissionDeniedException("Unable to find VM with ID: " + vmId + " for account: " + account.getAccountName() + ". Permission denied");
+    	    } else {
+    	        if (!_domainDao.isChildDomain(account.getDomainId(), volume.getDomainId()) ||
+    	            !_domainDao.isChildDomain(account.getDomainId(), vm.getDomainId())) {
+                    throw new PermissionDeniedException("Unable to attach volume " + volumeId + " to virtual machine instance " + vmId + ". Permission denied.");
+    	        }
+    	    }
+    	}
+
+        long startEventId = EventUtils.saveScheduledEvent(1L, volume.getAccountId(), EventTypes.EVENT_VOLUME_ATTACH, "attaching volume: "+volumeId+" to Vm: "+vmId);
+
         EventVO event = new EventVO();
         event.setType(EventTypes.EVENT_VOLUME_ATTACH);
         event.setUserId(1L);
@@ -443,43 +587,76 @@ public class UserVmManagerImpl implements UserVmManager {
     }
     
     @Override
-    public void detachVolumeFromVM(long volumeId, long startEventId, long deviceId, long instanceId) throws InternalErrorException {
+    public void detachVolumeFromVM(DetachVolumeCmd cmmd) throws InternalErrorException, InvalidParameterValueException {    	
+    	Account account = (Account) UserContext.current().getAccountObject();
+    	if ((cmmd.getId() == null && cmmd.getDeviceId() == null && cmmd.getVirtualMachineId() == null) ||
+    	    (cmmd.getId() != null && (cmmd.getDeviceId() != null || cmmd.getVirtualMachineId() != null)) ||
+    	    (cmmd.getId() == null && (cmmd.getDeviceId()==null || cmmd.getVirtualMachineId() == null))) {
+    	    throw new InvalidParameterValueException("Please provide either a volume id, or a tuple(device id, instance id)");
+    	}
+
+    	Long volumeId = cmmd.getId();
     	VolumeVO volume = null;
     	
-    	if(volumeId!=0)
-    	{
+    	if(volumeId != null) {
     		volume = _volsDao.findById(volumeId);
+    	} else {
+    		volume = _volsDao.findByInstanceAndDeviceId(cmmd.getVirtualMachineId(), cmmd.getDeviceId()).get(0);
     	}
-    	else
-    	{
-    		volume = _volsDao.findByInstanceAndDeviceId(instanceId, deviceId).get(0);
-    	}
-    	
+
     	Long vmId = null;
     	
-    	if(instanceId==0)
-    	{
+    	if (cmmd.getVirtualMachineId() == null) {
     		vmId = volume.getInstanceId();
+    	} else {
+    		vmId = cmmd.getVirtualMachineId();
     	}
-    	else
-    	{
-    		vmId = instanceId;
+
+    	boolean isAdmin;
+    	if (account == null) {
+    		// Admin API call
+    		isAdmin = true;
+    	} else {
+    		// User API call
+    		isAdmin = isAdmin(account.getType());
     	}
-    	
-    	if (vmId == null) {
-    		return;
+
+    	// Check that the volume ID is valid
+    	if (volume == null)
+    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find volume with ID: " + volumeId);
+
+    	// If the account is not an admin, check that the volume is owned by the account that was passed in
+    	if (!isAdmin) {
+    		if (account.getId() != volume.getAccountId())
+    			throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find volume with ID: " + volumeId + " for account: " + account.getAccountName());
+    	} else if (account != null) {
+    	    if (!_domainDao.isChildDomain(account.getDomainId(), volume.getDomainId())) {
+                throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to detach volume with ID: " + volumeId + ", permission denied.");
+    	    }
     	}
-    	
-        EventVO event = new EventVO();
-        event.setType(EventTypes.EVENT_VOLUME_DETACH);
-        event.setUserId(1L);
-        event.setAccountId(volume.getAccountId());
-        event.setState(EventState.Started);
-        event.setStartId(startEventId);
-        event.setDescription("Detaching volume: "+volumeId+" from Vm: "+vmId);
-        _eventDao.persist(event);
-    	
-    	UserVmVO vm = _vmDao.findById(vmId);
+
+        // Check that the volume is a data volume
+        if (volume.getVolumeType() != VolumeType.DATADISK) {
+            throw new InvalidParameterValueException("Please specify a data volume.");
+        }
+
+        // Check that the volume is stored on shared storage
+        if (!_storageMgr.volumeOnSharedStoragePool(volume)) {
+            throw new InvalidParameterValueException("Please specify a volume that has been created on a shared storage pool.");
+        }
+
+        // Check that the volume is currently attached to a VM
+        if (vmId == null) {
+            throw new InvalidParameterValueException("The specified volume is not attached to a VM.");
+        }
+
+        // Check that the VM is in the correct state
+        UserVmVO vm = _vmDao.findById(vmId);
+        if (vm.getState() != State.Running && vm.getState() != State.Stopped) {
+        	throw new InvalidParameterValueException("Please specify a VM that is either running or stopped.");
+        }
+        
+        long eventId = EventUtils.saveScheduledEvent(1L, volume.getAccountId(), EventTypes.EVENT_VOLUME_DETACH, "detaching volume: "+volumeId+" from Vm: "+vmId);
     	
         AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor.getCurrentExecutor();
         if(asyncExecutor != null) {
@@ -497,10 +674,11 @@ public class UserVmManagerImpl implements UserVmManager {
     	Answer answer = null;
     	
     	if (sendCommand) {
-			AttachVolumeCommand cmd = new AttachVolumeCommand(false, vm.getInstanceName(), volume.getPoolType(), volume.getFolder(), volume.getPath(), volume.getName(), deviceId!=0 ? deviceId : volume.getDeviceId());
-    			StoragePoolVO volumePool = _storagePoolDao.findById(volume.getPoolId());
+			AttachVolumeCommand cmd = new AttachVolumeCommand(false, vm.getInstanceName(), volume.getPoolType(), volume.getFolder(), volume.getPath(), volume.getName(), cmmd.getDeviceId() != null ? cmmd.getDeviceId() : volume.getDeviceId());
+
+			StoragePoolVO volumePool = _storagePoolDao.findById(volume.getPoolId());
 			cmd.setPoolUuid(volumePool.getUuid());
-			
+
 			try {
     			answer = _agentMgr.send(vm.getHostId(), cmd);
     		} catch (Exception e) {
@@ -508,12 +686,12 @@ public class UserVmManagerImpl implements UserVmManager {
     		}
     	}
     	
-        event = new EventVO();
+        EventVO event = new EventVO();
         event.setAccountId(volume.getAccountId());
         event.setUserId(1L);
         event.setType(EventTypes.EVENT_VOLUME_DETACH);
         event.setState(EventState.Completed);
-        event.setStartId(startEventId);
+        event.setStartId(eventId);
 		if (!sendCommand || (answer != null && answer.getResult())) {
 			// Mark the volume as detached
     		_volsDao.detachVolume(volume.getId());
@@ -683,9 +861,7 @@ public class UserVmManagerImpl implements UserVmManager {
 
         VMTemplateVO template = _templateDao.findById(vm.getTemplateId());
         ServiceOffering offering = _offeringDao.findById(vm.getServiceOfferingId());
-        
-        long diskOfferingId = -1;
-        
+
         // If an ISO path is passed in, boot from that ISO
         // Else, check if the VM already has an ISO attached to it. If so, start the VM with that ISO inserted, but don't boot from it.
         boolean bootFromISO = false;
@@ -954,8 +1130,9 @@ public class UserVmManagerImpl implements UserVmManager {
     }
 
     @Override
-    public boolean stopVirtualMachine(long userId, long vmId) {
-        if (s_logger.isDebugEnabled()) {
+    public boolean stopVirtualMachine(long userId, long vmId, long eventId) {
+        boolean status = false;
+    	if (s_logger.isDebugEnabled()) {
             s_logger.debug("Stopping vm=" + vmId);
         }
 
@@ -966,8 +1143,21 @@ public class UserVmManagerImpl implements UserVmManager {
         	}
     		return true;
         }
+
+        EventUtils.saveStartedEvent(userId, vm.getAccountId(), EventTypes.EVENT_VM_STOP, "stopping Vm with Id: "+vmId, eventId);
         
-        return stop(userId, vm, 0);
+        status = stop(userId, vm, 0);
+        
+        if(status)
+        {
+        	EventUtils.saveEvent(userId, vm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_STOP, "Successfully stopped VM instance : " + vmId);
+        	return status;
+        }
+        else
+        {
+        	EventUtils.saveEvent(userId, vm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_STOP, "Error stopping VM instance : " + vmId);
+        	return status;
+        }
     }
     
     @Override
@@ -1056,8 +1246,7 @@ public class UserVmManagerImpl implements UserVmManager {
 		}
     }
 
-    @Override
-    public boolean rebootVirtualMachine(long userId, long vmId) {
+    private boolean rebootVirtualMachine(long userId, long vmId) {
         UserVmVO vm = _vmDao.findById(vmId);
 
         if (vm == null || vm.getState() == State.Destroyed || vm.getState() == State.Expunging || vm.getRemoved() != null) {
@@ -1130,14 +1319,101 @@ public class UserVmManagerImpl implements UserVmManager {
     		AsyncJobResult.STATUS_FAILED, 0, resultDescription);
     	return new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
     }
-
+    
     @Override
-    public boolean upgradeVirtualMachine(long vmId, long serviceOfferingId) {
-        UserVmVO vm = _vmDao.createForUpdate(vmId);
-        vm.setServiceOfferingId(serviceOfferingId);
-        vm.setHaEnabled(_serviceOfferingDao.findById(serviceOfferingId).getOfferHA());
-        return _vmDao.update(vmId, vm);
+    /*
+     * TODO: cleanup eventually - Refactored API call
+     */
+    public UserVm upgradeVirtualMachine(UpgradeVMCmd cmd) throws ServerApiException, InvalidParameterValueException {
+        Long virtualMachineId = cmd.getId();
+        Long serviceOfferingId = cmd.getServiceOfferingId();
+        Account account = (Account)UserContext.current().getAccountObject();
+        Long userId = UserContext.current().getUserId();
+
+        // Verify input parameters
+        UserVmVO vmInstance = _vmDao.findById(virtualMachineId);
+        if (vmInstance == null) {
+        	throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + virtualMachineId);
+        }       
+
+        userId = accountAndUserValidation(virtualMachineId, account, userId,vmInstance);                         
+            
+        // Check that the specified service offering ID is valid
+        ServiceOfferingVO newServiceOffering = _offeringDao.findById(serviceOfferingId);
+        if (newServiceOffering == null) {
+        	throw new InvalidParameterValueException("Unable to find a service offering with id " + serviceOfferingId);
+        }
+            
+        // Check that the VM is stopped
+        if (!vmInstance.getState().equals(State.Stopped)) {
+            s_logger.warn("Unable to upgrade virtual machine " + vmInstance.toString() + " in state " + vmInstance.getState());
+            throw new InvalidParameterValueException("Unable to upgrade virtual machine " + vmInstance.toString() + " in state " + vmInstance.getState() + "; make sure the virtual machine is stopped and not in an error state before upgrading.");
+        }
+        
+        // Check if the service offering being upgraded to is what the VM is already running with
+        if (vmInstance.getServiceOfferingId() == newServiceOffering.getId()) {
+            if (s_logger.isInfoEnabled()) {
+                s_logger.info("Not upgrading vm " + vmInstance.toString() + " since it already has the requested service offering (" + newServiceOffering.getName() + ")");
+            }
+            
+            throw new InvalidParameterValueException("Not upgrading vm " + vmInstance.toString() + " since it already has the requested service offering (" + newServiceOffering.getName() + ")");
+        }
+        
+        // Check that the service offering being upgraded to has the same Guest IP type as the VM's current service offering
+        ServiceOfferingVO currentServiceOffering = _offeringDao.findById(vmInstance.getServiceOfferingId());
+        if (!currentServiceOffering.getGuestIpType().equals(newServiceOffering.getGuestIpType())) {
+        	String errorMsg = "The service offering being upgraded to has a guest IP type: " + newServiceOffering.getGuestIpType();
+        	errorMsg += ". Please select a service offering with the same guest IP type as the VM's current service offering (" + currentServiceOffering.getGuestIpType() + ").";
+        	throw new InvalidParameterValueException(errorMsg);
+        }
+        
+        // Check that the service offering being upgraded to has the same storage pool preference as the VM's current service offering
+        if (currentServiceOffering.getUseLocalStorage() != newServiceOffering.getUseLocalStorage()) {
+            throw new InvalidParameterValueException("Unable to upgrade virtual machine " + vmInstance.toString() + ", cannot switch between local storage and shared storage service offerings.  Current offering useLocalStorage=" +
+                   currentServiceOffering.getUseLocalStorage() + ", target offering useLocalStorage=" + newServiceOffering.getUseLocalStorage());
+        }
+
+        // Check that there are enough resources to upgrade the service offering
+        if (!_agentMgr.isVirtualMachineUpgradable(vmInstance, newServiceOffering)) {
+           throw new InvalidParameterValueException("Unable to upgrade virtual machine, not enough resources available for an offering of " +
+                   newServiceOffering.getCpu() + " cpu(s) at " + newServiceOffering.getSpeed() + " Mhz, and " + newServiceOffering.getRamSize() + " MB of memory");
+        }
+        
+        // Check that the service offering being upgraded to has all the tags of the current service offering
+        List<String> currentTags = _configMgr.csvTagsToList(currentServiceOffering.getTags());
+        List<String> newTags = _configMgr.csvTagsToList(newServiceOffering.getTags());
+        if (!newTags.containsAll(currentTags)) {
+        	throw new InvalidParameterValueException("Unable to upgrade virtual machine; the new service offering does not have all the tags of the " +
+        											 "current service offering. Current service offering tags: " + currentTags + "; " +
+        											 "new service offering tags: " + newTags);
+        }
+
+        // FIXME:  save this eventId somewhere as part of the async process?
+		/*long eventId = */EventUtils.saveScheduledEvent(userId, vmInstance.getAccountId(), EventTypes.EVENT_VM_UPGRADE, "upgrading Vm with Id: "+vmInstance.getId());
+
+		UserVmVO vmForUpdate = _vmDao.createForUpdate();
+		vmForUpdate.setServiceOfferingId(serviceOfferingId);
+		vmForUpdate.setHaEnabled(_serviceOfferingDao.findById(serviceOfferingId).getOfferHA());
+		_vmDao.update(vmInstance.getId(), vmForUpdate);
+		
+		return _vmDao.findById(vmInstance.getId());
     }
+
+	private Long accountAndUserValidation(Long virtualMachineId,Account account, Long userId, UserVmVO vmInstance) throws ServerApiException {
+		if (account != null) {
+            if (!isAdmin(account.getType()) && (account.getId() != vmInstance.getAccountId())) {
+                throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + virtualMachineId + " for this account");
+            } else if (!_domainDao.isChildDomain(account.getDomainId(),vmInstance.getDomainId())) {
+                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid virtual machine id (" + virtualMachineId + ") given, unable to upgrade virtual machine.");
+            }
+        }
+
+        // If command is executed via 8096 port, set userId to the id of System account (1)
+        if (userId == null) {
+            userId = Long.valueOf(User.UID_SYSTEM);
+        }
+		return userId;
+	}
 
     @Override
     public HashMap<Long, VmStatsEntry> getVirtualMachineStatistics(long hostId, String hostName, List<Long> vmIds) throws InternalErrorException {
@@ -1647,117 +1923,136 @@ public class UserVmManagerImpl implements UserVmManager {
         return true;
     }
 
-    @Override @DB
-    public OperationResponse executeDestroyVM(DestroyVMExecutor executor, VMOperationParam param) {
-        UserVmVO vm = _vmDao.findById(param.getVmId());
-        State state = vm.getState();
-        OperationResponse response; 
-        String resultDescription = "Success";               
-        
-        if (vm == null || state == State.Destroyed || state == State.Expunging || vm.getRemoved() != null) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Unable to find vm or vm is destroyed: " + param.getVmId());
-            }
-            resultDescription = "VM does not exist or already in destroyed state";
-            response = new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
-        	executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
-        		AsyncJobResult.STATUS_FAILED, 0, resultDescription);
-        	return response;
-        }
-        
-        if(state == State.Stopping) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("VM is being stopped: " + param.getVmId());
-            }
-            resultDescription = "VM is being stopped, please re-try later";
-            response = new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
-        	executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
-        		AsyncJobResult.STATUS_FAILED, 0, resultDescription);
-        	return response;
-        }
-
-        if (state == State.Running) {
-            if (vm.getHostId() == null) {
-            	resultDescription = "VM host is null (invalid VM)";
-            	response = new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
-            	executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
-                		AsyncJobResult.STATUS_FAILED, 0, resultDescription);
-            	if(s_logger.isDebugEnabled())
-            		s_logger.debug("Execute asynchronize destroy VM command: " + resultDescription);
-                return response;
-            }
-        	
-            if (!_vmDao.updateIf(vm, Event.StopRequested, vm.getHostId())) {
-            	resultDescription = "Failed to issue stop command, please re-try later";
-            	response = new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
-            	executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
-                		AsyncJobResult.STATUS_FAILED, 0, resultDescription);            	    	
-            	if(s_logger.isDebugEnabled())
-            		s_logger.debug("Execute asynchronize destroy VM command:" + resultDescription);            	
-                return response;
-            }
-            long childEventId = executor.getAsyncJobMgr().getExecutorContext().getManagementServer().saveStartedEvent(param.getUserId(), param.getAccountId(),
-            		EventTypes.EVENT_VM_STOP, "stopping vm " + vm.getName(), 0);
-            param.setChildEventId(childEventId);
-            StopCommand cmd = new StopCommand(vm, vm.getInstanceName(), vm.getVnet());
-            try {
-    			long seq = _agentMgr.send(vm.getHostId(), new Commands(cmd), new VMOperationListener(executor, param, vm, 0));
-    			resultDescription = "Execute asynchronize destroy VM command: sending stop command to agent, seq - " + seq;
-            	if(s_logger.isDebugEnabled())
-            		s_logger.debug(resultDescription);
-            	response = new OperationResponse(OperationResponse.STATUS_IN_PROGRESS, resultDescription);
-            	return response;
-    		} catch (AgentUnavailableException e) {
-    			resultDescription = "Agent is not available";
-    			response = new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
-            	executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
-            		AsyncJobResult.STATUS_FAILED, 0, resultDescription);
-            	return response;
-    		}
-        }
-        
-        Transaction txn = Transaction.currentTxn();
-        txn.start();        
-        
-        _accountMgr.decrementResourceCount(vm.getAccountId(), ResourceType.user_vm);
-        if (!_vmDao.updateIf(vm, VirtualMachine.Event.DestroyRequested, vm.getHostId()) ) {
-        	resultDescription = "Unable to destroy the vm because it is not in the correct state";
-            s_logger.debug(resultDescription + vm.toString());
-            
-            txn.rollback();
-            response = new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
-        	executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
-            		AsyncJobResult.STATUS_FAILED, 0, resultDescription);
-            return response;
-        }
-
-        // Now that the VM is destroyed, clean the network rules associated with it.
-        cleanNetworkRules(param.getUserId(), vm.getId());
-
-        // Mark the VM's root disk as destroyed
-        List<VolumeVO> volumes = _volsDao.findByInstanceAndType(vm.getId(), VolumeType.ROOT);
-        for (VolumeVO volume : volumes) {
-        	_storageMgr.destroyVolume(volume);
-        }
-        
-        // Mark the VM's data disks as detached
-        volumes = _volsDao.findByInstanceAndType(vm.getId(), VolumeType.DATADISK);
-        for (VolumeVO volume : volumes) {
-        	_volsDao.detachVolume(volume.getId());
-        }
-        
-        txn.commit();
-        response = new OperationResponse(OperationResponse.STATUS_SUCCEEDED, resultDescription);
-    	executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
-    		AsyncJobResult.STATUS_SUCCEEDED, 0, "success");
-    	return response;
-    }
+//    @Override @DB
+//    public OperationResponse executeDestroyVM(DestroyVMExecutor executor, VMOperationParam param) {
+//        UserVmVO vm = _vmDao.findById(param.getVmId());
+//        State state = vm.getState();
+//        OperationResponse response; 
+//        String resultDescription = "Success";               
+//        
+//        if (vm == null || state == State.Destroyed || state == State.Expunging || vm.getRemoved() != null) {
+//            if (s_logger.isDebugEnabled()) {
+//                s_logger.debug("Unable to find vm or vm is destroyed: " + param.getVmId());
+//            }
+//            resultDescription = "VM does not exist or already in destroyed state";
+//            response = new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
+//        	executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
+//        		AsyncJobResult.STATUS_FAILED, 0, resultDescription);
+//        	return response;
+//        }
+//        
+//        if(state == State.Stopping) {
+//            if (s_logger.isDebugEnabled()) {
+//                s_logger.debug("VM is being stopped: " + param.getVmId());
+//            }
+//            resultDescription = "VM is being stopped, please re-try later";
+//            response = new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
+//        	executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
+//        		AsyncJobResult.STATUS_FAILED, 0, resultDescription);
+//        	return response;
+//        }
+//
+//        if (state == State.Running) {
+//            if (vm.getHostId() == null) {
+//            	resultDescription = "VM host is null (invalid VM)";
+//            	response = new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
+//            	executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
+//                		AsyncJobResult.STATUS_FAILED, 0, resultDescription);
+//            	if(s_logger.isDebugEnabled())
+//            		s_logger.debug("Execute asynchronize destroy VM command: " + resultDescription);
+//                return response;
+//            }
+//        	
+//            if (!_vmDao.updateIf(vm, Event.StopRequested, vm.getHostId())) {
+//            	resultDescription = "Failed to issue stop command, please re-try later";
+//            	response = new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
+//            	executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
+//                		AsyncJobResult.STATUS_FAILED, 0, resultDescription);            	    	
+//            	if(s_logger.isDebugEnabled())
+//            		s_logger.debug("Execute asynchronize destroy VM command:" + resultDescription);            	
+//                return response;
+//            }
+//            long childEventId = EventUtils.saveStartedEvent(param.getUserId(), param.getAccountId(),
+//            		EventTypes.EVENT_VM_STOP, "stopping vm " + vm.getName(), 0);
+//            param.setChildEventId(childEventId);
+//            StopCommand cmd = new StopCommand(vm, vm.getInstanceName(), vm.getVnet());
+//            try {
+//    			long seq = _agentMgr.send(vm.getHostId(), new Command[] {cmd}, true,
+//    				new VMOperationListener(executor, param, vm, 0));
+//    			resultDescription = "Execute asynchronize destroy VM command: sending stop command to agent, seq - " + seq;
+//            	if(s_logger.isDebugEnabled())
+//            		s_logger.debug(resultDescription);
+//            	response = new OperationResponse(OperationResponse.STATUS_IN_PROGRESS, resultDescription);
+//            	return response;
+//    		} catch (AgentUnavailableException e) {
+//    			resultDescription = "Agent is not available";
+//    			response = new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
+//            	executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
+//            		AsyncJobResult.STATUS_FAILED, 0, resultDescription);
+//            	return response;
+//    		}
+//        }
+//        
+//        Transaction txn = Transaction.currentTxn();
+//        txn.start();        
+//        
+//        _accountMgr.decrementResourceCount(vm.getAccountId(), ResourceType.user_vm);
+//        if (!_vmDao.updateIf(vm, VirtualMachine.Event.DestroyRequested, vm.getHostId()) ) {
+//        	resultDescription = "Unable to destroy the vm because it is not in the correct state";
+//            s_logger.debug(resultDescription + vm.toString());
+//            
+//            txn.rollback();
+//            response = new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
+//        	executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
+//            		AsyncJobResult.STATUS_FAILED, 0, resultDescription);
+//            return response;
+//        }
+//
+//        // Now that the VM is destroyed, clean the network rules associated with it.
+//        cleanNetworkRules(param.getUserId(), vm.getId());
+//
+//        // Mark the VM's root disk as destroyed
+//        List<VolumeVO> volumes = _volsDao.findByInstanceAndType(vm.getId(), VolumeType.ROOT);
+//        for (VolumeVO volume : volumes) {
+//        	_storageMgr.destroyVolume(volume);
+//        }
+//        
+//        // Mark the VM's data disks as detached
+//        volumes = _volsDao.findByInstanceAndType(vm.getId(), VolumeType.DATADISK);
+//        for (VolumeVO volume : volumes) {
+//        	_volsDao.detachVolume(volume.getId());
+//        }
+//        
+//        txn.commit();
+//        response = new OperationResponse(OperationResponse.STATUS_SUCCEEDED, resultDescription);
+//    	executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
+//    		AsyncJobResult.STATUS_SUCCEEDED, 0, "success");
+//    	return response;
+//    }
     
     @Override @DB
-    public boolean recoverVirtualMachine(long vmId) throws ResourceAllocationException, InternalErrorException {
-        UserVmVO vm = _vmDao.findById(vmId);
+    public boolean recoverVirtualMachine(RecoverVMCmd cmd) throws ResourceAllocationException, InternalErrorException {
+    	
+        Long vmId = cmd.getId();
+        Account accountHandle = (Account)UserContext.current().getAccountObject();
+   
+        //if account is removed, return error
+        if(accountHandle!=null && accountHandle.getRemoved() != null)
+        	throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "The account " + accountHandle.getId()+" is removed");
+
+        // Verify input parameters
+        UserVmVO vm = _vmDao.findById(vmId.longValue());
         
-        if (vm == null || vm.getRemoved() != null) {
+        if (vm == null) {
+        	throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + vmId);
+        }
+
+        if ((accountHandle != null) && !_domainDao.isChildDomain(accountHandle.getDomainId(), vm.getDomainId())) {
+            // the domain in which the VM lives is not in the admin's domain tree
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to recover virtual machine with id " + vmId + ", invalid id given.");
+        }
+
+        if (vm.getRemoved() != null) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Unable to find vm or vm is removed: " + vmId);
             }
@@ -2364,11 +2659,17 @@ public class UserVmManagerImpl implements UserVmManager {
             }
         }
     }
-    
-    @Override
-    public VMTemplateVO createPrivateTemplateRecord(Long userId, long volumeId, String name, String description, long guestOSId, Boolean requiresHvm, Integer bits, Boolean passwordEnabled, boolean isPublic, boolean featured)
-    	throws InvalidParameterValueException {
 
+    @Override
+    public VMTemplateVO createPrivateTemplateRecord(CreateTemplateCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+        Long userId = UserContext.current().getUserId();
+        if (userId == null) {
+            userId = User.UID_SYSTEM;
+        }
+
+        Account account = (Account)UserContext.current().getAccountObject();
+        boolean isAdmin = ((account == null) || isAdmin(account.getType()));
+        
     	VMTemplateVO privateTemplate = null;
 
     	UserVO user = _userDao.findById(userId);
@@ -2377,17 +2678,76 @@ public class UserVmManagerImpl implements UserVmManager {
     		throw new InvalidParameterValueException("User " + userId + " does not exist");
     	}
 
+    	Long volumeId = cmd.getVolumeId();
+    	Long snapshotId = cmd.getSnapshotId();
+    	if (volumeId == null) {
+    	    if (snapshotId == null) {
+                throw new InvalidParameterValueException("Failed to create private template record, neither volume ID nor snapshot ID were specified.");
+    	    }
+    	    SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
+    	    if (snapshot == null) {
+                throw new InvalidParameterValueException("Failed to create private template record, unable to find snapshot " + snapshotId);
+    	    }
+    	    volumeId = snapshot.getVolumeId();
+    	} else {
+    	    if (snapshotId != null) {
+                throw new InvalidParameterValueException("Failed to create private template record, please specify only one of volume ID (" + volumeId + ") and snapshot ID (" + snapshotId + ")");
+    	    }
+    	}
+
     	VolumeVO volume = _volsDao.findById(volumeId);
     	if (volume == null) {
             throw new InvalidParameterValueException("Volume with ID: " + volumeId + " does not exist");
     	}
 
+        if (!isAdmin) {
+            if (account.getId() != volume.getAccountId()) {
+                throw new PermissionDeniedException("Unable to create a template from volume with id " + volumeId + ", permission denied.");
+            }
+        } else if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), volume.getDomainId())) {
+            throw new PermissionDeniedException("Unable to create a template from volume with id " + volumeId + ", permission denied.");
+        }
+
+        String name = cmd.getTemplateName();
+        if ((name == null) || (name.length() > 32)) {
+            throw new InvalidParameterValueException("Template name cannot be null and should be less than 32 characters");
+        }
+
+        if (!name.matches("^[\\p{Alnum} ._-]+")) {
+            throw new InvalidParameterValueException("Only alphanumeric, space, dot, dashes and underscore characters allowed");
+        }
+        String uniqueName = Long.valueOf((userId == null)?1:userId).toString() + Long.valueOf(volumeId).toString() + UUID.nameUUIDFromBytes(name.getBytes()).toString();
+
+        VMTemplateVO existingTemplate = _templateDao.findByTemplateNameAccountId(name, volume.getAccountId());
+        if (existingTemplate != null) {
+            throw new InvalidParameterValueException("Failed to create private template " + name + ", a template with that name already exists.");
+        }
+
+        // do some parameter defaulting
+    	Integer bits = cmd.getBits();
+    	Boolean requiresHvm = cmd.getRequiresHvm();
+    	Boolean passwordEnabled = cmd.isPasswordEnabled();
+    	Boolean isPublic = cmd.isPublic();
+    	Boolean featured = cmd.isFeatured();
+
     	HypervisorType hyperType = _volsDao.getHypervisorType(volumeId);
     	int bitsValue = ((bits == null) ? 64 : bits.intValue());
     	boolean requiresHvmValue = ((requiresHvm == null) ? true : requiresHvm.booleanValue());
     	boolean passwordEnabledValue = ((passwordEnabled == null) ? false : passwordEnabled.booleanValue());
+        if (isPublic == null) {
+            isPublic = Boolean.FALSE;
+        }   
+        
+        if (!isAdmin || featured == null) {
+            featured = Boolean.FALSE;
+        }
 
-    	// if the volume is a root disk, try to find out requiresHvm and bits if possible
+        boolean allowPublicUserTemplates = Boolean.parseBoolean(_configDao.getValue("allow.public.user.templates"));        
+        if (!isAdmin && !allowPublicUserTemplates && isPublic) {
+            throw new PermissionDeniedException("Failed to create template " + name + ", only private templates can be created.");
+        }
+
+        // if the volume is a root disk, try to find out requiresHvm and bits if possible
     	if (Volume.VolumeType.ROOT.equals(volume.getVolumeType())) {
     	    Long instanceId = volume.getInstanceId();
     	    if (instanceId != null) {
@@ -2402,13 +2762,14 @@ public class UserVmManagerImpl implements UserVmManager {
     	    }
     	}
 
+    	Long guestOSId = cmd.getOsTypeId();
     	GuestOSVO guestOS = _guestOSDao.findById(guestOSId);
     	if (guestOS == null) {
     		throw new InvalidParameterValueException("GuestOS with ID: " + guestOSId + " does not exist.");
     	}
 
-        String uniqueName = Long.valueOf((userId == null)?1:userId).toString() + Long.valueOf(volumeId).toString() + UUID.nameUUIDFromBytes(name.getBytes()).toString();
     	Long nextTemplateId = _templateDao.getNextInSequence(Long.class, "id");
+    	String description = cmd.getDisplayText();
 
         privateTemplate = new VMTemplateVO(nextTemplateId,
                                            uniqueName,
@@ -2429,37 +2790,70 @@ public class UserVmManagerImpl implements UserVmManager {
                                            true,
                                            hyperType);
 
+        // FIXME:  scheduled events should get saved when the command is actually scheduled, not when it starts executing, need another callback
+        //         for when the command is scheduled?  Could this fit into the setup / execute / response lifecycle?  Right after setup you would
+        //         know your job is being scheduled, so you could save this kind of event in setup after verifying params.
+        /*long eventId = */EventUtils.saveScheduledEvent(userId, volume.getAccountId(), EventTypes.EVENT_TEMPLATE_CREATE, "creating template" +name);
+
         return _templateDao.persist(privateTemplate);
     }
 
     @Override @DB
-    public VMTemplateVO createPrivateTemplate(VMTemplateVO template, Long userId, Long snapshotId, Long volumeId, String name, String description) {
-        String uniqueName = getRandomPrivateTemplateName();
-        VMTemplateVO privateTemplate = null;
-        long templateId = template.getId();
-        VolumeVO volume = null;
-        long zoneId;
-        HostVO secondaryStorageHost;
+    public VMTemplateVO createPrivateTemplate(CreateTemplateCmd command) throws InternalErrorException {
+        Long userId = UserContext.current().getUserId();
+        if (userId == null) {
+            userId = User.UID_SYSTEM;
+        }
+
+        Long volumeId = command.getVolumeId();
+        Long snapshotId = command.getSnapshotId();
+        SnapshotVO snapshot = null;
+
+        // Verify input parameters
+        if (snapshotId != null) {
+            snapshot = _snapshotDao.findById(snapshotId);
+
+            // Set the volumeId to that of the snapshot. All further input parameter checks will be done w.r.t the volume.
+            volumeId = snapshot.getVolumeId();
+        }
         
-        Command cmd = null;
-        if( snapshotId != null ) {
-            SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
-            if( snapshot == null ) {
-                throw new CloudRuntimeException("Unable to find snapshot for Id " + snapshotId);
+        // The volume below could be destroyed or removed.
+        VolumeVO volume = _volsDao.findById(volumeId);
+
+        // If private template is created from Volume, check that the volume will not be active when the private template is created
+        if (snapshotId == null && !_storageMgr.volumeInactive(volume)) {
+            String msg = "Unable to create private template for volume: " + volume.getName() + "; volume is attached to a non-stopped VM.";
+
+            if (s_logger.isInfoEnabled()) {
+                s_logger.info(msg);
             }
+
+            throw new InternalErrorException(msg);
+        }
+
+        SnapshotCommand cmd = null;        
+        VMTemplateVO privateTemplate = null;
+    	long templateId = command.getId();
+    	long zoneId = volume.getDataCenterId();
+    	String uniqueName = getRandomPrivateTemplateName();
+
+    	HostVO secondaryStorageHost = _storageMgr.getSecondaryStorageHost(zoneId);
+        String secondaryStorageURL = _storageMgr.getSecondaryStorageURL(zoneId);
+        if (secondaryStorageHost == null || secondaryStorageURL == null) {
+            throw new CloudRuntimeException("Did not find the secondary storage URL in the database for zoneId "
+                    + zoneId);
+        }
+
+        if (snapshotId != null) {
+            volume = _volsDao.findById(volumeId);
+            StringBuilder userFolder = new StringBuilder();
+            Formatter userFolderFormat = new Formatter(userFolder);
+            userFolderFormat.format("u%06d", snapshot.getAccountId());
+
+            String name = command.getTemplateName();
             String backupSnapshotUUID = snapshot.getBackupSnapshotId();
             if (backupSnapshotUUID == null) {
                 throw new CloudRuntimeException("Unable to create private template from snapshot " + snapshotId + " due to there is no backupSnapshotUUID for this snapshot");
-            }
-            Long origVolumeId = snapshot.getVolumeId();
-            volume = _volsDao.findById(volumeId);
-            zoneId = volume.getDataCenterId();
-            secondaryStorageHost = _storageMgr.getSecondaryStorageHost(zoneId);
-            String secondaryStorageURL = _storageMgr.getSecondaryStorageURL(zoneId);
-
-            if (secondaryStorageHost == null || secondaryStorageURL == null) {
-                throw new CloudRuntimeException("Did not find the secondary storage URL in the database for zoneId "
-                        + zoneId);
             }
 
             // We are creating a private template from a snapshot which has been
@@ -2470,9 +2864,9 @@ public class UserVmManagerImpl implements UserVmManager {
             String origTemplateInstallPath = null;
 
             cmd = new CreatePrivateTemplateFromSnapshotCommand(_storageMgr.getPrimaryStorageNameLabel(volume),
-                    secondaryStorageURL, dcId, accountId, origVolumeId, backupSnapshotUUID, snapshot.getName(),
+                    secondaryStorageURL, dcId, accountId, snapshot.getVolumeId(), backupSnapshotUUID, snapshot.getName(),
                     origTemplateInstallPath, templateId, name);
-        } else if( volumeId != null ) {
+        } else if (volumeId != null) {
             volume = _volsDao.findById(volumeId);
             if( volume == null ) {
                 throw new CloudRuntimeException("Unable to find volume for Id " + volumeId);
@@ -2483,16 +2877,9 @@ public class UserVmManagerImpl implements UserVmManager {
             if( !vmState.equals(State.Stopped) && !vmState.equals(State.Destroyed)) {
                 throw new CloudRuntimeException("Please put VM " + vm.getName() + " into Stopped state first");
             }
-            
-            zoneId = volume.getDataCenterId();
-            secondaryStorageHost = _storageMgr.getSecondaryStorageHost(zoneId);
-            String secondaryStorageURL = _storageMgr.getSecondaryStorageURL(zoneId);
 
-            if (secondaryStorageHost == null || secondaryStorageURL == null) {
-                throw new CloudRuntimeException("Did not find the secondary storage URL in the database for zoneId " + zoneId);
-            }
             cmd = new CreatePrivateTemplateFromVolumeCommand(secondaryStorageURL, templateId, volume.getAccountId(),
-                    name, uniqueName, volume.getPath());
+                    command.getTemplateName(), uniqueName, volume.getPath());
 
         } else {
             throw new CloudRuntimeException("Creating private Template need to specify snapshotId or volumeId");
@@ -2505,7 +2892,6 @@ public class UserVmManagerImpl implements UserVmManager {
                 .getPoolId(), cmd, null);
 
         if ((answer != null) && answer.getResult()) {
-
             privateTemplate = _templateDao.findById(templateId);
             Long origTemplateId = volume.getTemplateId();
             VMTemplateVO origTemplate = null;
@@ -3005,12 +3391,228 @@ public class UserVmManagerImpl implements UserVmManager {
     		}
     	}
     }
+
+	private static boolean isAdmin(short accountType) {
+	    return ((accountType == Account.ACCOUNT_TYPE_ADMIN) ||
+	            (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) ||
+	            (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
+	}
 	
-	@DB
+    @Override
+    public void updateVirtualMachine(UpdateVMCmd cmd) {
+        String displayName = cmd.getDisplayName();
+        Boolean ha = cmd.getHaEnable();
+        Long id = cmd.getId();
+        Account account = (Account)UserContext.current().getAccountObject();
+        Long userId = UserContext.current().getUserId();
+    
+        //Input validation
+        UserVmVO vmInstance = null;
+        
+        // Verify input parameters
+        try 
+        {
+        	vmInstance = _vmDao.findById(id.longValue());
+        } 
+        catch (Exception ex1) 
+        {
+        	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "unable to find virtual machine by id");
+        }
+
+        if (vmInstance == null) {
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find virtual machine with id " + id);
+        }
+
+        userId = accountAndUserValidation(id, account, userId,vmInstance);  
+
+    	if (displayName == null) {
+    		displayName = vmInstance.getDisplayName();
+    	}
+    	
+    	if (ha == null) {
+    		ha = vmInstance.isHaEnabled();
+    	}
+
+    	long accountId = vmInstance.getAccountId();
+        UserVmVO vm = _vmDao.findById(id);
+        if (vm == null) {
+            throw new CloudRuntimeException("Unable to find virual machine with id " + id);
+        }
+
+        boolean haEnabled = vm.isHaEnabled();
+        _vmDao.updateVM(id, displayName, ha);
+        if (haEnabled != ha) {
+            String description = null;
+            String type = null;
+            if (ha) {
+                description = "Successfully enabled HA for virtual machine " + vm.getName();
+                type = EventTypes.EVENT_VM_ENABLE_HA;
+            } else {
+                description = "Successfully disabled HA for virtual machine " + vm.getName();
+                type = EventTypes.EVENT_VM_DISABLE_HA;
+            }
+            // create a event for the change in HA Enabled flag
+            EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_INFO, type, description, null);
+        }
+    }
+
 	@Override
-	public InstanceGroupVO createVmGroup(String name, Long accountId) {
-		final Transaction txn = Transaction.currentTxn();
-		AccountVO account = null;
+	public boolean stopVirtualMachine(StopVMCmd cmd) throws ServerApiException{
+		
+		//Input validation
+		Account account = (Account)UserContext.current().getAccountObject();
+		Long userId = UserContext.current().getUserId();
+		Long id = cmd.getId();
+		
+        //if account is removed, return error
+        if(account!=null && account.getRemoved() != null)
+        	throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "The account " + account.getId()+" is removed");
+        		
+        UserVmVO vmInstance = _vmDao.findById(id.longValue());
+        if (vmInstance == null) {
+        	throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + id);
+        }
+        
+        long eventId = EventUtils.saveScheduledEvent(userId, vmInstance.getAccountId(), EventTypes.EVENT_VM_STOP, "stopping Vm with Id: "+id);
+        
+        userId = accountAndUserValidation(id, account, userId, vmInstance);
+   
+        return stopVirtualMachine(userId, id, eventId);
+	}
+
+	@Override
+	public UserVmVO startVirtualMachine(StartVMCmd cmd) throws StorageUnavailableException, ExecutionException, ConcurrentOperationException {
+		//Input validation
+		Account account = (Account)UserContext.current().getAccountObject();
+		Long userId = UserContext.current().getUserId();
+		Long id = cmd.getId();
+		
+        //if account is removed, return error
+        if(account!=null && account.getRemoved() != null)
+        	throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "The account " + account.getId()+" is removed");
+        		
+        UserVmVO vmInstance = _vmDao.findById(id.longValue());
+        if (vmInstance == null) {
+        	throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + id);
+        }
+
+        long eventId = EventUtils.saveScheduledEvent(userId, vmInstance.getAccountId(), EventTypes.EVENT_VM_START, "Starting Vm with Id: "+id);
+        
+        userId = accountAndUserValidation(id, account, userId, vmInstance);
+        
+        return startVirtualMachine(userId, id, null, null, eventId);
+		
+	}
+
+	@Override
+	public boolean rebootVirtualMachine(RebootVMCmd cmd) {
+        Account account = (Account)UserContext.current().getAccountObject();
+        Long userId = UserContext.current().getUserId();
+        Long vmId = cmd.getId();
+        
+        //Verify input parameters
+        UserVmVO vmInstance = _vmDao.findById(vmId.longValue());
+        if (vmInstance == null) {
+        	throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + vmId);
+        }
+
+        userId = accountAndUserValidation(vmId, account, userId, vmInstance);
+        
+        EventUtils.saveScheduledEvent(userId, vmInstance.getAccountId(), EventTypes.EVENT_VM_REBOOT, "Rebooting Vm with Id: "+vmId);
+        
+        boolean status = rebootVirtualMachine(userId, vmId);
+        
+        if(status)
+        {
+        	EventUtils.saveEvent(userId, vmInstance.getAccountId(), EventTypes.EVENT_VM_REBOOT, "Successfully rebooted vm with id:"+vmId);
+        	return status;
+        }
+        else
+        {
+        	EventUtils.saveEvent(userId, vmInstance.getAccountId(), EventTypes.EVENT_VM_REBOOT, "Failed to reboot vm with id:"+vmId);
+        	return status;
+        }
+	}
+
+	@Override
+	public boolean destroyVm(DestroyVMCmd cmd) {
+	
+        Account account = (Account)UserContext.current().getAccountObject();
+        Long userId = UserContext.current().getUserId();
+        Long vmId = cmd.getId();
+        
+        //Verify input parameters
+        UserVmVO vmInstance = _vmDao.findById(vmId.longValue());
+        if (vmInstance == null) {
+        	throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + vmId);
+        }
+
+        userId = accountAndUserValidation(vmId, account, userId, vmInstance);
+        
+        EventUtils.saveScheduledEvent(userId, vmInstance.getAccountId(), EventTypes.EVENT_VM_DESTROY, "Destroying Vm with Id: "+vmId);
+        
+        boolean status = destroyVirtualMachine(userId, vmId);
+        
+        if(status)
+        {
+        	EventUtils.saveEvent(userId, vmInstance.getAccountId(), EventTypes.EVENT_VM_DESTROY, "Successfully destroyed vm with id:"+vmId);
+        	return status;
+        }
+        else
+        {
+        	EventUtils.saveEvent(userId, vmInstance.getAccountId(), EventTypes.EVENT_VM_DESTROY, "Failed to destroy vm with id:"+vmId);
+        	return status;
+        }
+	}
+
+    @Override @DB
+    public InstanceGroupVO createVmGroup(CreateVMGroupCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+        Account account = (Account)UserContext.current().getAccountObject();
+        Long domainId = cmd.getDomainId();
+        String accountName = cmd.getAccountName();
+        Long accountId = null;
+        String groupName = cmd.getGroupName();
+
+        if (account != null) {
+            if (isAdmin(account.getType())) {
+                if ((domainId != null) && (accountName != null)) {
+                    if (!_domainDao.isChildDomain(account.getDomainId(), domainId)) {
+                        throw new PermissionDeniedException("Unable to create vm group in domain " + domainId + ", permission denied.");
+                    }
+
+                    Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
+                    if (userAccount != null) {
+                        accountId = userAccount.getId();
+                    } else {
+                        throw new InvalidParameterValueException("Failed to create vm group " + groupName + ", unable to find account " + accountName + " in domain " + domainId);
+                    }
+                } else {
+                    // the admin must be creating the vm group
+                    accountId = account.getId();
+                }
+            } else {
+                accountId = account.getId();
+            }
+        }
+
+        if (accountId == null) {
+            throw new InvalidParameterValueException("Failed to create vm group " + groupName + ", unable to find account for which to create a group.");
+        }
+
+        //Check if name is already in use by this account
+        boolean isNameInUse = _vmGroupDao.isNameInUse(accountId, groupName);
+
+        if (isNameInUse) {
+            throw new InvalidParameterValueException("Unable to create vm group, a group with name " + groupName + " already exisits for account " + accountId);
+        }
+
+        return createVmGroup(groupName, accountId);
+    }
+
+    @DB
+	private InstanceGroupVO createVmGroup(String groupName, long accountId) {
+        Account account = null;
+	    final Transaction txn = Transaction.currentTxn();
 		txn.start();
 		try {
 			account = _accountDao.acquire(accountId); //to ensure duplicate vm group names are not created.
@@ -3018,9 +3620,9 @@ public class UserVmManagerImpl implements UserVmManager {
 				s_logger.warn("Failed to acquire lock on account");
 				return null;
 			}
-			InstanceGroupVO group = _vmGroupDao.findByAccountAndName(accountId, name);
+			InstanceGroupVO group = _vmGroupDao.findByAccountAndName(accountId, groupName);
 			if (group == null){
-				group = new InstanceGroupVO(name, accountId);
+				group = new InstanceGroupVO(groupName, accountId);
 				group =  _vmGroupDao.persist(group);
 			}
 			return group;
@@ -3031,10 +3633,32 @@ public class UserVmManagerImpl implements UserVmManager {
 			txn.commit();
 		}
     }
-	
+
     @Override
-    public boolean deleteVmGroup(long groupId){
-    	
+    public boolean deleteVmGroup(DeleteVMGroupCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+        Account account = (Account)UserContext.current().getAccountObject();
+        Long groupId = cmd.getId();
+
+        // Verify input parameters
+        InstanceGroupVO group = _vmGroupDao.findById(groupId);
+        if ((group == null) || (group.getRemoved() != null)) {
+            throw new InvalidParameterValueException("unable to find a vm group with id " + groupId);
+        }
+
+        if (account != null) {
+            Account tempAccount = _accountDao.findById(group.getAccountId());
+            if (!isAdmin(account.getType()) && (account.getId() != group.getAccountId())) {
+                throw new PermissionDeniedException("unable to find a group with id " + groupId);
+            } else if (!_domainDao.isChildDomain(account.getDomainId(), tempAccount.getDomainId())) {
+                throw new PermissionDeniedException("Invalid group id (" + groupId + ") given, unable to update the group.");
+            }
+        }
+
+        return deleteVmGroup(groupId);
+    }
+
+    @Override
+    public boolean deleteVmGroup(long groupId) {    	
     	//delete all the mappings from group_vm_map table
         List<InstanceGroupVMMapVO> groupVmMaps = _groupVMMapDao.listByGroupId(groupId);
         for (InstanceGroupVMMapVO groupMap : groupVmMaps) {
@@ -3049,19 +3673,17 @@ public class UserVmManagerImpl implements UserVmManager {
     		return false;
     	}
     }
-    
-	@Override
-	@DB
-	public boolean addInstanceToGroup(long userVmId, String groupName) {
-		
+
+	@Override @DB
+	public boolean addInstanceToGroup(long userVmId, String groupName) {		
 		UserVmVO vm = _vmDao.findById(userVmId);
-		
+
         InstanceGroupVO group = _vmGroupDao.findByAccountAndName(vm.getAccountId(), groupName);
     	//Create vm group if the group doesn't exist for this account
         if (group == null) {
         	group = createVmGroup(groupName, vm.getAccountId());
         }
-		
+
 		if (group != null) {
 			final Transaction txn = Transaction.currentTxn();
 			txn.start();
@@ -3134,5 +3756,4 @@ public class UserVmManagerImpl implements UserVmManager {
 			s_logger.warn("Error trying to remove vm from group: "+e);
 		}
 	}
-	
 }

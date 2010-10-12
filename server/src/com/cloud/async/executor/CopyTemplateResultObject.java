@@ -20,8 +20,6 @@ package com.cloud.async.executor;
 
 import java.util.Date;
 
-import javax.persistence.Column;
-
 import com.cloud.serializer.Param;
 import com.cloud.storage.Storage.ImageFormat;
 

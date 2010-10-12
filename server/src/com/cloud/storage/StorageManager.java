@@ -17,21 +17,28 @@
  */
 package com.cloud.storage;
 
-import java.net.URI;
 import java.net.UnknownHostException;
 import java.util.List;
-import java.util.Map;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.agent.manager.Commands;
+import com.cloud.api.commands.CancelPrimaryStorageMaintenanceCmd;
+import com.cloud.api.commands.CreateStoragePoolCmd;
+import com.cloud.api.commands.CreateVolumeCmd;
+import com.cloud.api.commands.DeletePoolCmd;
+import com.cloud.api.commands.DeleteVolumeCmd;
+import com.cloud.api.commands.PreparePrimaryStorageForMaintenanceCmd;
+import com.cloud.api.commands.UpdateStoragePoolCmd;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientStorageCapacityException;
 import com.cloud.exception.InternalErrorException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.StorageUnavailableException;
@@ -113,16 +120,14 @@ public interface StorageManager extends Manager {
 	
 	/**
 	 * Create StoragePool based on uri
-	 * 
-	 * @param zoneId
-	 * @param podId
-	 * @param poolName
-	 * @param uriString
+	 * @param cmd the command object that specifies the zone, cluster/pod, URI, details, etc. to use to create the storage pool.
 	 * @return
-	 * @throws ResourceInUseException, IllegalArgumentException
+	 * @throws ResourceInUseException
+	 * @throws IllegalArgumentException
+	 * @throws UnknownHostException
 	 * @throws ResourceAllocationException
 	 */
-	StoragePoolVO createPool(long zoneId, Long podId, Long clusterId, String poolName, URI uri, String tags, Map<String, String> details) throws ResourceInUseException, IllegalArgumentException, UnknownHostException, ResourceAllocationException;
+	StoragePoolVO createPool(CreateStoragePoolCmd cmd) throws ResourceInUseException, IllegalArgumentException, UnknownHostException, ResourceAllocationException;
 	
     /**
      * Get the storage ip address to connect to.
@@ -202,27 +207,47 @@ public interface StorageManager extends Manager {
 	 * @return VolumeVO
 	 */
 	VolumeVO moveVolume(VolumeVO volume, long destPoolDcId, Long destPoolPodId, Long destPoolClusterId) throws InternalErrorException;
-	
+
 	/**
-	 * Creates a new volume in a pool in the specified zone
-	 * @param accountId
-	 * @param userId
-	 * @param name
-	 * @param dc
-	 * @param diskOffering
-	 * @param size
-	 * @return VolumeVO
+	 * Creates the database object for a volume based on the given criteria
+	 * @param cmd the API command wrapping the criteria (account/domainId [admin only], zone, diskOffering, snapshot, name)
+	 * @return the volume object
+	 * @throws InvalidParameterValueException
+	 * @throws PermissionDeniedException
 	 */
-	public VolumeVO createVolume(VolumeVO volume, VMInstanceVO vm, VMTemplateVO template, DataCenterVO dc, HostPodVO pod, Long clusterId,
+	VolumeVO createVolumeDB(CreateVolumeCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, ResourceAllocationException;
+
+	/**
+     * Creates the volume based on the given criteria
+     * @param cmd the API command wrapping the criteria (account/domainId [admin only], zone, diskOffering, snapshot, name)
+     * @return the volume object
+	 */
+	VolumeVO createVolume(CreateVolumeCmd cmd);
+
+	/**
+	 * Create a volume based on the given criteria
+	 * @param volume
+	 * @param vm
+	 * @param template
+	 * @param dc
+	 * @param pod
+	 * @param clusterId
+	 * @param offering
+	 * @param diskOffering
+	 * @param avoids
+	 * @param size
+	 * @param hyperType
+	 * @return volume VO if success, null otherwise
+	 */
+	VolumeVO createVolume(VolumeVO volume, VMInstanceVO vm, VMTemplateVO template, DataCenterVO dc, HostPodVO pod, Long clusterId,
             ServiceOfferingVO offering, DiskOfferingVO diskOffering, List<StoragePoolVO> avoids, long size, HypervisorType hyperType);
-	
-	VolumeVO allocVolume(long accountId, long userId, String name, DataCenterVO dc, DiskOfferingVO diskOffering, long startEventId, long size);
-	
+
 	/**
 	 * Marks the specified volume as destroyed in the management server database. The expunge thread will delete the volume from its storage pool.
 	 * @param volume
 	 */
 	void destroyVolume(VolumeVO volume);
+	boolean deleteVolume(DeleteVolumeCmd cmd) throws InvalidParameterValueException;
 	
 	/** Create capacity entries in the op capacity table
 	 * @param storagePool
@@ -267,16 +292,12 @@ public interface StorageManager extends Manager {
 	
 	/**
 	 * Delete the storage pool
-	 * @param id -- id associated
+	 * @param cmd - the command specifying poolId
+	 * @return success or failure
+	 * @throws InvalidParameterValueException
 	 */
-	boolean deletePool(long id);
+	boolean deletePool(DeletePoolCmd cmd) throws InvalidParameterValueException;
 	
-	/**
-     * Updates a storage pool.
-     * @param poolId ID of the storage pool to be updated
-     * @param tags Tags that will be added to the storage pool
-     */
-    StoragePoolVO updateStoragePool(long poolId, String tags) throws IllegalArgumentException;
 
 	/**
 	 * Find all of the storage pools needed for this vm.
@@ -287,23 +308,24 @@ public interface StorageManager extends Manager {
 	List<StoragePoolVO> getStoragePoolsForVm(long vmId);
 	
     String getPrimaryStorageNameLabel(VolumeVO volume);
-    
-    /**
-     * Creates a volume from the specified snapshot. A new volume is returned which is not attached to any VM Instance
-     */
-    VolumeVO createVolumeFromSnapshot(long userId, long accountId, long snapshotId, String volumeName, long startEventId);
 
     /**
      * Enable maintenance for primary storage
-     * @return
+     * @param cmd - the command specifying primaryStorageId
+     * @return success or failure
+     * @throws InvalidParameterValueException
      */
-    public boolean preparePrimaryStorageForMaintenance(long primaryStorageId, long userId);
+    public boolean preparePrimaryStorageForMaintenance(PreparePrimaryStorageForMaintenanceCmd cmd) throws InvalidParameterValueException;
     
     /**
      * Complete maintenance for primary storage
-     * @return
+     * @param cmd - the command specifying primaryStorageId
+     * @return the primary storage pool
+     * @throws InvalidParameterValueException
      */
-    public boolean cancelPrimaryStorageForMaintenance(long primaryStorageId, long userId);
+    public StoragePoolVO cancelPrimaryStorageForMaintenance(CancelPrimaryStorageMaintenanceCmd cmd) throws InvalidParameterValueException;
+
+	public StoragePoolVO updateStoragePool(UpdateStoragePoolCmd cmd) throws IllegalArgumentException;
     
     /**
      * Allocates one volume.

@@ -21,7 +21,20 @@ import java.util.HashMap;
 import java.util.List;
 
 import com.cloud.agent.api.VmStatsEntry;
-import com.cloud.async.executor.DestroyVMExecutor;
+import com.cloud.api.ServerApiException;
+import com.cloud.api.commands.AttachVolumeCmd;
+import com.cloud.api.commands.CreateTemplateCmd;
+import com.cloud.api.commands.CreateVMGroupCmd;
+import com.cloud.api.commands.DeleteVMGroupCmd;
+import com.cloud.api.commands.DestroyVMCmd;
+import com.cloud.api.commands.DetachVolumeCmd;
+import com.cloud.api.commands.RebootVMCmd;
+import com.cloud.api.commands.RecoverVMCmd;
+import com.cloud.api.commands.ResetVMPasswordCmd;
+import com.cloud.api.commands.StartVMCmd;
+import com.cloud.api.commands.StopVMCmd;
+import com.cloud.api.commands.UpdateVMCmd;
+import com.cloud.api.commands.UpgradeVMCmd;
 import com.cloud.async.executor.OperationResponse;
 import com.cloud.async.executor.RebootVMExecutor;
 import com.cloud.async.executor.StartVMExecutor;
@@ -33,13 +46,13 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientStorageCapacityException;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.network.security.NetworkGroupVO;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.AccountVO;
@@ -91,33 +104,32 @@ public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> 
      * @param userId the id of the user performing the action
      * @param vmId the id of the virtual machine.
      */
+	boolean destroyVm(DestroyVMCmd cmd);
     boolean destroyVirtualMachine(long userId, long vmId);
-    OperationResponse executeDestroyVM(DestroyVMExecutor executor, VMOperationParam param);
+//    OperationResponse executeDestroyVM(DestroyVMExecutor executor, VMOperationParam param);
     
     
     /**
      * Resets the password of a virtual machine.
-     * @param userId the id of the user performing the action
-     * @param vmId the id of the virtual machine.
-     * @param password the password of the virtual machine.
-     * @param true if reset worked successfully, false otherwise
+     * @param cmd - the command specifying vmId, password
+     * @return the VM if reset worked successfully, null otherwise
      */
-    boolean resetVMPassword(long userId, long vmId, String password);
+    UserVm resetVMPassword(ResetVMPasswordCmd cmd);
     
     /**
      * Attaches the specified volume to the specified VM
-     * @param vmId
-     * @param volumeId
-     * @throws InternalErrorException
+     * @param cmd - the command specifying volumeId and vmId
+     * @throws InternalErrorException, InvalidParameterValueException, PermissionDeniedException
      */
-    void attachVolumeToVM(long vmId, long volumeId, Long deviceId, long startEventId) throws InternalErrorException;
+    void attachVolumeToVM(AttachVolumeCmd cmd) throws InternalErrorException, InvalidParameterValueException, PermissionDeniedException;
     
     /**
      * Detaches the specified volume from the VM it is currently attached to.
-     * @param volumeId
+     * @param cmd - the command specifying volumeId
      * @throws InternalErrorException
+     * @throws InvalidParameterValueException 
      */
-    void detachVolumeFromVM(long volumeId, long startEventId, long deviceId, long instanceId) throws InternalErrorException;
+    void detachVolumeFromVM(DetachVolumeCmd cmmd) throws InternalErrorException, InvalidParameterValueException;
     
     /**
      * Attaches an ISO to the virtual CDROM device of the specified VM. Will eject any existing virtual CDROM if isoPath is null.
@@ -151,25 +163,28 @@ public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> 
      * @throws ConcurrentOperationException 
      */
     UserVmVO startVirtualMachine(long userId, long vmId, String password, String isoPath, long startEventId) throws ExecutionException, StorageUnavailableException, ConcurrentOperationException;
+    UserVmVO startVirtualMachine(StartVMCmd cmd) throws StorageUnavailableException, ExecutionException, ConcurrentOperationException;
     
     /**
      * Stops the virtual machine
      * @param userId the id of the user performing the action
      * @param vmId
+     * @param eventId -- id of the scheduled event for stopping vm
      * @return true if stopped; false if problems.
      */
-    boolean stopVirtualMachine(long userId, long vmId);
+    boolean stopVirtualMachine(long userId, long vmId, long eventId);
+    boolean stopVirtualMachine(StopVMCmd cmd) throws ServerApiException;
     OperationResponse executeStopVM(StopVMExecutor executor, VMOperationParam param);
     void completeStopCommand(long userId, UserVmVO vm, Event e, long startEventId);
     
 
     /**
      * upgrade the service offering of the virtual machine
-     * @param vmId id of the virtual machine being upgraded
-     * @param serviceOfferingId id of the service offering the vm should now run under
-     * @return success/failure
+     * @param cmd - the command specifying vmId and new serviceOfferingId
+     * @return the vm
+     * @throws InvalidParameterValueException 
      */
-    boolean upgradeVirtualMachine(long vmId, long serviceOfferingId);
+    UserVm upgradeVirtualMachine(UpgradeVMCmd cmd) throws ServerApiException, InvalidParameterValueException;
     
     /**
      * Obtains statistics for a list of host or VMs; CPU and network utilization
@@ -181,23 +196,27 @@ public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> 
      */
     HashMap<Long, VmStatsEntry> getVirtualMachineStatistics(long hostId, String hostName, List<Long> vmIds) throws InternalErrorException;
     
-    boolean rebootVirtualMachine(long userId, long vmId);
+    boolean rebootVirtualMachine(RebootVMCmd cmd);
     OperationResponse executeRebootVM(RebootVMExecutor executor, VMOperationParam param);
     
-    boolean recoverVirtualMachine(long vmId) throws ResourceAllocationException, InternalErrorException;
+    boolean recoverVirtualMachine(RecoverVMCmd cmd) throws ResourceAllocationException, InternalErrorException;
 
-    VMTemplateVO createPrivateTemplateRecord(Long userId, long vmId, String name, String description, long guestOsId, Boolean requiresHvm, Integer bits, Boolean passwordEnabled, boolean isPublic, boolean featured)
-		throws InvalidParameterValueException;
+    /**
+     * Create a template database record in preparation for creating a private template.
+     * @param cmd the command object that defines the name, display text, snapshot/volume, bits, public/private, etc.
+     * for the private template
+     * @return the vm template object if successful, null otherwise
+     * @throws InvalidParameterValueException, PermissionDeniedException
+     */
+    VMTemplateVO createPrivateTemplateRecord(CreateTemplateCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
     
     /**
      * Creates a private template from a snapshot of a VM
-     * @param template the template record that is used to store data (we need instance be created first)
-     * @param snapshotId the id of the snaphot to use for the template
-     * @param name the user given name of the private template
-     * @param description the user give description (aka display text) for the template
+     * @param cmd - the command specifying snapshotId, name, description
      * @return a template if successfully created, null otherwise
+     * @throws InvalidParameterValueException
      */
-    VMTemplateVO createPrivateTemplate(VMTemplateVO template, Long userId, Long snapshotId, Long volumeId, String name, String description);
+    VMTemplateVO createPrivateTemplate(CreateTemplateCmd cmd) throws InternalErrorException;
 
     boolean destroyTemplateSnapshot(Long userId, long snapshotId);
 
@@ -213,20 +232,22 @@ public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> 
      * @param userVm
      */
     void releaseGuestIpAddress(UserVmVO userVm);
-    
+
     /**
      * Creates a vm group.
      * @param name - name of the group
      * @param accountId - accountId
      */
-    InstanceGroupVO createVmGroup(String name, Long accountId);
-    
+    InstanceGroupVO createVmGroup(CreateVMGroupCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+
+    boolean deleteVmGroup(DeleteVMGroupCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
     boolean deleteVmGroup(long groupId);
-    
+
     boolean addInstanceToGroup(long userVmId, String group);
-    
+
     InstanceGroupVO getGroupForVm(long vmId);
     
     void removeInstanceFromGroup(long vmId);
 
+	void updateVirtualMachine(UpdateVMCmd cmd);
 }

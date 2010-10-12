@@ -37,7 +37,6 @@ import javax.servlet.http.HttpSession;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
 import com.cloud.host.HostVO;
 import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
@@ -80,18 +79,18 @@ public class ConsoleProxyServlet extends HttpServlet {
             HttpSession session = req.getSession(false);
             if(session == null) {
             	if(verifyRequest(params)) {
-            		userId = (String)params.get(BaseCmd.Properties.USER_ID.getName())[0];
-    	            account = (String)params.get(BaseCmd.Properties.ACCOUNT.getName())[0];
-            		accountObj = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName())[0];
+                    userId = (String)params.get("userid")[0];
+                    account = (String)params.get("account")[0];
+                    accountObj = (Account)params.get("accountobj")[0];
             	} else {
 					s_logger.info("Invalid web session or API key in request, reject console/thumbnail access");
 					sendResponse(resp, "Access denied. Invalid web session or API key in request");
 					return;
             	}
             } else {
-	            userId = (String)session.getAttribute(BaseCmd.Properties.USER_ID.getName());
-	            account = (String)session.getAttribute(BaseCmd.Properties.ACCOUNT.getName());
-	            accountObj = (Account)session.getAttribute(BaseCmd.Properties.ACCOUNT_OBJ.getName());
+                userId = (String)session.getAttribute("userid");
+                account = (String)session.getAttribute("account");
+                accountObj = (Account)session.getAttribute("accountobj");
             }
 
             // Do a sanity check here to make sure the user hasn't already been deleted
@@ -100,14 +99,14 @@ public class ConsoleProxyServlet extends HttpServlet {
 				sendResponse(resp, "Access denied. Invalid or inconsistent account is found");
 				return;
             }
-			
+
 			String cmd = req.getParameter("cmd");
 			if(cmd == null || !isValidCmd(cmd)) {
 				s_logger.info("invalid console servlet command: " + cmd);
 				sendResponse(resp, "");
 				return;
 			}
-				
+
 			String vmIdString = req.getParameter("vm");
 			long vmId = 0;
 			try {
@@ -448,18 +447,7 @@ public class ConsoleProxyServlet extends HttpServlet {
             if (!user.getState().equals(Account.ACCOUNT_STATE_ENABLED) || !account.getState().equals(Account.ACCOUNT_STATE_ENABLED)) {
                 s_logger.info("disabled or locked user accessing the api, userid = " + user.getId() + "; name = " + user.getUsername() + "; state: " + user.getState() + "; accountState: " + account.getState());
                 return false;
-            }
-
-            if (account.getType() == Account.ACCOUNT_TYPE_NORMAL) {
-    			requestParameters.put(BaseCmd.Properties.USER_ID.getName(), new String[] { user.getId().toString() });
-                requestParameters.put(BaseCmd.Properties.ACCOUNT.getName(), new String[] { account.getAccountName() });
-                requestParameters.put(BaseCmd.Properties.DOMAIN_ID.getName(), new String[] { Long.toString(account.getDomainId()) });
-        		requestParameters.put(BaseCmd.Properties.ACCOUNT_OBJ.getName(), new Object[] { account });
-    		} else {
-    			requestParameters.put(BaseCmd.Properties.USER_ID.getName(), new String[] { user.getId().toString() });
-                requestParameters.put(BaseCmd.Properties.ACCOUNT.getName(), new String[] { account.getAccountName() });
-    			requestParameters.put(BaseCmd.Properties.ACCOUNT_OBJ.getName(), new Object[] { account });
-    		}           
+            }     
 
             // verify secret key exists
             secretKey = user.getSecretKey();

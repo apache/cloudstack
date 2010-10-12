@@ -18,62 +18,111 @@
 
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
-import com.cloud.api.ServerApiException;
+import com.cloud.api.ApiDBUtils;
+import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.Implementation;
+import com.cloud.api.Parameter;
+import com.cloud.api.response.DomainRouterResponse;
+import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
-import com.cloud.utils.Pair;
+import com.cloud.uservm.UserVm;
 import com.cloud.vm.DomainRouterVO;
 
-public class StopRouterCmd extends BaseCmd {
+
+@Implementation(method="stopRouter", manager=Manager.NetworkManager, description="Stops a router.")
+public class StopRouterCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(StopRouterCmd.class.getName());
-
     private static final String s_name = "stoprouterresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="id", type=CommandType.LONG, required=true, description="the ID of the router")
+    private Long id;
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public Long getId() {
+        return id;
     }
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
 
     public String getName() {
         return s_name;
     }
-    
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
-	
+
     @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-	    Long routerId = (Long)params.get(BaseCmd.Properties.ID.getName());
-        Account account = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-
-	    // verify parameters
-        DomainRouterVO router = getManagementServer().findDomainRouterById(routerId);
-        if (router == null) {
-        	throw new ServerApiException (BaseCmd.PARAM_ERROR, "unable to find a domain router with id " + routerId);
+    public long getAccountId() {
+        UserVm vm = ApiDBUtils.findUserVmById(getId());
+        if (vm != null) {
+            return vm.getAccountId();
         }
 
-        if ((account != null) && !getManagementServer().isChildDomain(account.getDomainId(), router.getDomainId())) {
-            throw new ServerApiException (BaseCmd.PARAM_ERROR, "Invalid domain router id (" + routerId + ") given, unable to stop router.");
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_ROUTER_STOP;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  "stopping router: " + getId();
+    }
+
+    @Override @SuppressWarnings("unchecked")
+    public DomainRouterResponse getResponse() {
+        DomainRouterVO router = (DomainRouterVO)getResponseObject();
+
+        DomainRouterResponse response = new DomainRouterResponse();
+        response.setId(router.getId());
+        response.setZoneId(router.getDataCenterId());
+        response.setZoneName(ApiDBUtils.findZoneById(router.getDataCenterId()).getName());
+        response.setDns1(router.getDns1());
+        response.setDns2(router.getDns2());
+        response.setNetworkDomain(router.getDomain());
+        response.setGateway(router.getGateway());
+        response.setName(router.getName());
+        response.setPodId(router.getPodId());
+        response.setPrivateIp(router.getPrivateIpAddress());
+        response.setPrivateMacAddress(router.getPrivateMacAddress());
+        response.setPrivateNetmask(router.getPrivateNetmask());
+        response.setPublicIp(router.getPublicIpAddress());
+        response.setPublicMacAddress(router.getPublicMacAddress());
+        response.setPublicNetmask(router.getPrivateNetmask());
+        response.setGuestIpAddress(router.getGuestIpAddress());
+        response.setGuestMacAddress(router.getGuestMacAddress());
+        response.setTemplateId(router.getTemplateId());
+        response.setCreated(router.getCreated());
+        response.setGuestNetmask(router.getGuestNetmask());
+
+        if (router.getHostId() != null) {
+            response.setHostName(ApiDBUtils.findHostById(router.getHostId()).getName());
+            response.setHostId(router.getHostId());
         }
 
-        long jobId = getManagementServer().stopRouterAsync(routerId.longValue());
-        if(jobId == 0) {
-        	s_logger.warn("Unable to schedule async-job for StopRouter comamnd");
-        } else {
-	        if(s_logger.isDebugEnabled())
-	        	s_logger.debug("StopRouter command has been accepted, job id: " + jobId);
+        Account acct = ApiDBUtils.findAccountById(router.getAccountId());
+        if (acct != null) {
+            response.setAccountName(acct.getAccountName());
+            response.setDomainId(acct.getDomainId());
+            response.setDomainName(ApiDBUtils.findDomainById(acct.getDomainId()).getName());
         }
 
-	    List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-	    returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId))); 
-	    return returnValues;
+        if (router.getState() != null) {
+            response.setState(router.getState());
+        }
+
+        response.setResponseName(getName());
+        return response;
     }
 }

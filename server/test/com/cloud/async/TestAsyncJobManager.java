@@ -21,14 +21,12 @@ package com.cloud.async;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
 import junit.framework.Assert;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.async.AsyncJobResult;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.domain.dao.DomainDaoImpl;
@@ -53,7 +51,8 @@ public class TestAsyncJobManager extends ComponentTestCase {
 	public void asyncCall() {
 		ManagementServer mgr = (ManagementServer)ComponentLocator.getComponent("management-server");
 
-		long jobId = mgr.rebootVirtualMachineAsync(1, 1);
+//		long jobId = mgr.rebootVirtualMachineAsync(1, 1);
+        long jobId = 0L;
 		s_logger.info("Async-call job id: " + jobId);
 		
 		while(true) {

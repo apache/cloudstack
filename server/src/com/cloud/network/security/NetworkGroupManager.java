@@ -20,10 +20,14 @@ package com.cloud.network.security;
 import java.util.HashMap;
 import java.util.List;
 
+import com.cloud.api.commands.AuthorizeNetworkGroupIngressCmd;
+import com.cloud.api.commands.CreateNetworkGroupCmd;
+import com.cloud.api.commands.DeleteNetworkGroupCmd;
+import com.cloud.api.commands.ListNetworkGroupsCmd;
+import com.cloud.api.commands.RevokeNetworkGroupIngressCmd;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceInUseException;
-import com.cloud.server.Criteria;
-import com.cloud.user.AccountVO;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
@@ -40,11 +44,16 @@ public interface NetworkGroupManager extends Manager {
 
 	public void handleVmStateTransition(UserVm userVm, State vmState);
 	
-	public List<IngressRuleVO> authorizeNetworkGroupIngress(AccountVO account,
-			String groupName, String protocol, int startPort, int endPort,
-			String [] cidrList, List<NetworkGroupVO> authorizedGroups);
+	public List<IngressRuleVO> authorizeNetworkGroupIngress(AuthorizeNetworkGroupIngressCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
 	
 	public NetworkGroupVO createNetworkGroup(String name, String description, Long domainId, Long accountId, String accountName);
+
+	/**
+	 * Create a network group with the given name and description
+	 * @param command the command specifying the name and description
+	 * @return the created network group if successful, null otherwise
+	 */
+	public NetworkGroupVO createNetworkGroup(CreateNetworkGroupCmd command) throws PermissionDeniedException, InvalidParameterValueException;
 	
 	public NetworkGroupVO createDefaultNetworkGroup( Long accountId);
 	
@@ -52,18 +61,16 @@ public interface NetworkGroupManager extends Manager {
 
 	public void removeInstanceFromGroups(Long userVmId);
 
-	boolean revokeNetworkGroupIngress(AccountVO account, String groupName,
-			String proto, int startPort, int endPort, String[] cidrList,
-			List<NetworkGroupVO> authorizedGroups);
+	boolean revokeNetworkGroupIngress(RevokeNetworkGroupIngressCmd cmd);
 	
-	public void deleteNetworkGroup(Long groupId, Long accountId) throws ResourceInUseException, PermissionDeniedException;
+	public void deleteNetworkGroup(DeleteNetworkGroupCmd cmd) throws ResourceInUseException, PermissionDeniedException, InvalidParameterValueException;
 
     /**
      * Search for network groups and associated ingress rules for the given account, domain, group name, and/or keyword.
      * The search terms are specified in the search criteria.
      * @return the list of network groups and associated ingress rules
      */
-    public List<NetworkGroupRulesVO> searchForNetworkGroupRules(Criteria c);
+    public List<NetworkGroupRulesVO> searchForNetworkGroupRules(ListNetworkGroupsCmd cmd) throws PermissionDeniedException, InvalidParameterValueException;
 
 	public void fullSync(long agentId, HashMap<String, Pair<Long, Long>> newGroupStates);
 	

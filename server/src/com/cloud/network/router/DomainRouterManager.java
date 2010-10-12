@@ -187,7 +187,7 @@ public interface DomainRouterManager extends Manager {
     boolean associateIP(DomainRouterVO router, List<String> ipAddrList, boolean add, long vmId) throws ResourceAllocationException;
     
     boolean updateFirewallRule(FirewallRuleVO fwRule, String oldPrivateIP, String oldPrivatePort);
-    boolean executeAssignToLoadBalancer(AssignToLoadBalancerExecutor executor, LoadBalancerParam param);
+//    boolean executeAssignToLoadBalancer(AssignToLoadBalancerExecutor executor, LoadBalancerParam param);
     
     /**
      * Add a DHCP entry on the domr dhcp server

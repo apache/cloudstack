@@ -45,8 +45,9 @@ public class StartRouterExecutor extends VMOperationExecutor {
 		ManagementServer managementServer = asyncMgr.getExecutorContext().getManagementServer();
     	VMOperationParam param = gson.fromJson(job.getCmdInfo(), VMOperationParam.class);
     	
+    	/*
 		if(getSyncSource() == null) {
-	    	asyncMgr.syncAsyncJobExecution(job.getId(), "Router", param.getVmId());
+	    	asyncMgr.syncAsyncJobExecution(job, "Router", param.getVmId());
 			return true;
 		} else {
 		    boolean success = false;
@@ -70,11 +71,13 @@ public class StartRouterExecutor extends VMOperationExecutor {
 			} finally {
 			    if(!success){
                     // Save completed event when operation fails
-                    asyncMgr.getExecutorContext().getManagementServer().saveEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventVO.LEVEL_ERROR, EventTypes.EVENT_ROUTER_START, "Failed to start router", null, param.getEventId());
+//                    asyncMgr.getExecutorContext().getManagementServer().saveEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventVO.LEVEL_ERROR, EventTypes.EVENT_ROUTER_START, "Failed to start router", null, param.getEventId());
 			    }
 			}
 	    	return true;
 		}
+		*/
+    	return true;
 	}
 	
 	public void processAnswer(VMOperationListener listener, long agentId, long seq, Answer answer) {

@@ -17,69 +17,87 @@
  */
 
 package com.cloud.api.commands;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.Implementation;
+import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.response.DiskOfferingResponse;
 import com.cloud.storage.DiskOfferingVO;
-import com.cloud.user.User;
-import com.cloud.utils.Pair;
 
+@Implementation(method="updateDiskOffering", manager=Manager.ConfigManager, description="Updates a disk offering.")
 public class UpdateDiskOfferingCmd extends BaseCmd{
     public static final Logger s_logger = Logger.getLogger(UpdateDiskOfferingCmd.class.getName());
     private static final String s_name = "updatediskofferingresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DISPLAY_TEXT, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.TAGS, Boolean.FALSE));
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+    
+
+    @Parameter(name="displaytext", type=CommandType.STRING, description="updates alternate display text of the disk offering with this value")
+    private String displayText;
+
+    @Parameter(name="id", type=CommandType.LONG, required=true, description="ID of the disk offering")
+    private Long id;
+
+    @Parameter(name="name", type=CommandType.STRING, description="updates name of the disk offering with this value")
+    private String diskOfferingName;
+
+    @Parameter(name="tags", type=CommandType.STRING, description="update tags of the disk offering with this value")
+    private String tags;
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public String getDisplayText() {
+        return displayText;
     }
+
+    public Long getId() {
+        return id;
+    }
+
+    public String getDiskOfferingName() {
+        return diskOfferingName;
+    }
+
+    public String getTags() {
+        return tags;
+    }
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
 
     @Override
     public String getName() {
         return s_name;
     }
-    @Override
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
-
-    @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-        Long id = (Long)params.get(BaseCmd.Properties.ID.getName());
-        String name = (String)params.get(BaseCmd.Properties.NAME.getName());
-        String displayText = (String)params.get(BaseCmd.Properties.DISPLAY_TEXT.getName());
-        Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
-        String tags = (String)params.get(BaseCmd.Properties.TAGS.getName());
-        Boolean editSOResult = false;
-        
-        if (userId == null) {
-            userId = Long.valueOf(User.UID_SYSTEM);
-        }
-        
-        //Verify input parameters
-        DiskOfferingVO offering = getManagementServer().findDiskOfferingById(id);
-    	if (offering == null) {
-    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find disk offering " + id);
-    	}
-
-        try {
-        	getManagementServer().updateDiskOffering(userId, id, name, displayText, tags);
-        } catch (Exception ex) {
-            s_logger.error("Exception updating disk offering", ex);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update disk offering " + id + ":  internal error.");
+    
+    @SuppressWarnings("unchecked")
+    public DiskOfferingResponse getResponse() {
+        DiskOfferingResponse response = new DiskOfferingResponse();
+        DiskOfferingVO responseObject = (DiskOfferingVO)getResponseObject();
+        if (responseObject != null) {
+            response.setId(responseObject.getId());
+            response.setCreated(responseObject.getCreated());
+            response.setDiskSize(responseObject.getDiskSize());
+            response.setDisplayText(responseObject.getDisplayText());
+            response.setDomainId(responseObject.getDomainId());
+            response.setName(responseObject.getName());
+            response.setTags(responseObject.getTags());
+            response.setDomainId(ApiDBUtils.findDomainById(responseObject.getDomainId()).getId());
+            response.setDomain(ApiDBUtils.findDomainById(responseObject.getDomainId()).getName());
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update disk offering");
         }
 
-        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.SUCCESS.getName(), Boolean.TRUE));
-        return returnValues;
+        response.setResponseName(getName());
+        return response;
     }
 }

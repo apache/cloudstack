@@ -18,18 +18,25 @@
 package com.cloud.storage.snapshot;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
+
 import org.apache.log4j.Logger;
+
+import com.cloud.api.commands.CreateSnapshotInternalCmd;
+import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.async.dao.AsyncJobDao;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.serializer.GsonHelper;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotScheduleVO;
@@ -39,8 +46,8 @@ import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.SnapshotScheduleDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.DateUtil;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.DateUtil.IntervalType;
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.concurrency.TestClock;
@@ -60,6 +67,7 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
     @Inject protected SnapshotDao             _snapshotDao;
     @Inject protected SnapshotScheduleDao     _snapshotScheduleDao;
     @Inject protected SnapshotPolicyDao       _snapshotPolicyDao;
+    @Inject protected AsyncJobManager         _asyncMgr;
     @Inject protected SnapshotManager         _snapshotManager;
     @Inject protected StoragePoolHostDao      _poolHostDao; 
     
@@ -186,7 +194,6 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
         }
     }
 
-    
     @DB
     protected void scheduleSnapshots() {
         String displayTime = DateUtil.displayDateInTimezone(DateUtil.GMT_TIMEZONE, _currentTimestamp);
@@ -194,7 +201,7 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
         
         List<SnapshotScheduleVO> snapshotsToBeExecuted = _snapshotScheduleDao.getSchedulesToExecute(_currentTimestamp);
         s_logger.debug("Got " + snapshotsToBeExecuted.size() + " snapshots to be executed at " + displayTime);
-        
+
         // This is done for recurring snapshots, which are executed by the system automatically
         // Hence set user id to that of system
         long userId = 1;
@@ -212,14 +219,26 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
             SnapshotScheduleVO tmpSnapshotScheduleVO = null;
             try {
                 tmpSnapshotScheduleVO = _snapshotScheduleDao.acquire(snapshotScheId);
-                long jobId = _snapshotManager.createSnapshotAsync(userId, volumeId, policyId);
+
+                Map<String, String> params = new HashMap<String, String>();
+                params.put("volumeid", ""+volumeId);
+                params.put("policyid", ""+policyId);
+                AsyncJobVO job = new AsyncJobVO();
+                job.setUserId(userId);
+                // Just have SYSTEM own the job for now.  Users won't be able to see this job, but
+                // it's an internal job so probably not a huge deal.
+                job.setAccountId(1L);
+                job.setCmd(CreateSnapshotInternalCmd.class.getName());
+                job.setCmdInfo(GsonHelper.getBuilder().create().toJson(params));
+
+                long jobId = _asyncMgr.submitAsyncJob(job);
+
                 tmpSnapshotScheduleVO.setAsyncJobId(jobId);
                 _snapshotScheduleDao.update(snapshotScheId, tmpSnapshotScheduleVO);
             } finally {
                 if (tmpSnapshotScheduleVO != null) {
                     _snapshotScheduleDao.release(snapshotScheId);
                 }
-
             }
         }
     }

@@ -18,108 +18,106 @@
 
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.ServerApiException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.server.ManagementServer;
+import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.Implementation;
+import com.cloud.api.Parameter;
+import com.cloud.api.response.SnapshotPolicyResponse;
 import com.cloud.storage.SnapshotPolicyVO;
-import com.cloud.storage.StoragePoolVO;
-import com.cloud.storage.VolumeVO;
-import com.cloud.user.Account;
-import com.cloud.utils.Pair;
 
+@Implementation(method="createPolicy", manager=Manager.SnapshotManager, description="Creates a snapshot policy for the account.")
 public class CreateSnapshotPolicyCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateSnapshotPolicyCmd.class.getName());
 
     private static final String s_name = "createsnapshotpolicyresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DOMAIN_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.VOLUME_ID, Boolean.TRUE));
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.SCHEDULE, Boolean.TRUE));
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.TIMEZONE, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.INTERVAL_TYPE, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.MAX_SNAPS, Boolean.TRUE));
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="account", type=CommandType.STRING, description="The account of the snapshot policy. The account parameter must be used with the domainId parameter.")
+    private String accountName;
+
+    @Parameter(name="domainid", type=CommandType.LONG, description="The domain ID of the snapshot. If used with the account parameter, specifies a domain for the account associated with the snapshot policy.")
+    private Long domainId;
+
+    @Parameter(name="intervaltype", type=CommandType.STRING, required=true, description="valid values are HOURLY, DAILY, WEEKLY, and MONTHLY")
+    private String intervalType;
+
+    @Parameter(name="maxsnaps", type=CommandType.INTEGER, required=true, description="maximum number of snapshots to retain")
+    private Integer maxSnaps;
+
+    @Parameter(name="schedule", type=CommandType.STRING, required=true, description="time the snapshot is scheduled to be taken. " +
+    																				"Format is:" +
+    																				"* if HOURLY, MM" +
+    																				"* if DAILY, MM:HH" +
+    																				"* if WEEKLY, MM:HH:DD (1-7)" +
+    																				"* if MONTHLY, MM:HH:DD (1-28)")
+    private String schedule;
+
+    @Parameter(name="timezone", type=CommandType.STRING, required=true, description="Specifies a timezone for this command. For more information on the timezone parameter, see Time Zone Format.")
+    private String timezone;
+
+    @Parameter(name="volumeid", type=CommandType.LONG, required=true, description="the ID of the disk volume")
+    private Long volumeId;
+
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public String getAccountName() {
+        return accountName;
     }
 
+    public Long getDomainId() {
+        return domainId;
+    }
+
+    public String getIntervalType() {
+        return intervalType;
+    }
+
+    public Integer getMaxSnaps() {
+        return maxSnaps;
+    }
+
+    public String getSchedule() {
+        return schedule;
+    }
+
+    public String getTimezone() {
+        return timezone;
+    }
+
+    public Long getVolumeId() {
+        return volumeId;
+    }
+
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
+
+    @Override
     public String getName() {
         return s_name;
     }
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
 
-    @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-        Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
-    	long volumeId = (Long)params.get(BaseCmd.Properties.VOLUME_ID.getName());
-        String schedule = (String)params.get(BaseCmd.Properties.SCHEDULE.getName());
-        String timezone = (String)params.get(BaseCmd.Properties.TIMEZONE.getName());
-        String intervalType = (String)params.get(BaseCmd.Properties.INTERVAL_TYPE.getName());
-        //ToDo: make maxSnaps optional. Use system wide max when not specified
-        int maxSnaps = (Integer)params.get(BaseCmd.Properties.MAX_SNAPS.getName());
-        
-        ManagementServer managementServer = getManagementServer();
-        // Verify that a volume exists with the specified volume ID
-        VolumeVO volume = managementServer.findVolumeById(volumeId);
-        if (volume == null) {
-            throw new ServerApiException (BaseCmd.PARAM_ERROR, "Unable to find a volume with id " + volumeId);
-        }
-        
-        // If an account was passed in, make sure that it matches the account of the volume
-        checkAccountPermissions(params, volume.getAccountId(), volume.getDomainId(), "volume", volumeId);
-        
-        StoragePoolVO storagePoolVO = managementServer.findPoolById(volume.getPoolId());
-        if (storagePoolVO == null) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "volumeId: " + volumeId + " does not have a valid storage pool. Is it destroyed?");
-        }
-        if (storagePoolVO.isLocal()) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Cannot create a snapshot from a volume residing on a local storage pool, poolId: " + volume.getPoolId());
-        }
+    @Override @SuppressWarnings("unchecked")
+    public SnapshotPolicyResponse getResponse() {
+        SnapshotPolicyVO snapshotPolicy = (SnapshotPolicyVO)getResponseObject();
 
-        Long instanceId = volume.getInstanceId();
-        if (instanceId != null) {
-            // It is not detached, but attached to a VM
-            if (managementServer.findUserVMInstanceById(instanceId) == null) {
-                // It is not a UserVM but a SystemVM or DomR
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Snapshots of volumes attached to System or router VM are not allowed");
-            }
-        }
-        
-        Long accountId = volume.getAccountId();
-        // If command is executed via 8096 port, set userId to the id of System account (1)
-        if (userId == null) {
-            userId = Long.valueOf(1);
-        }
+        SnapshotPolicyResponse response = new SnapshotPolicyResponse();
+        response.setId(snapshotPolicy.getId());
+        response.setIntervalType(snapshotPolicy.getInterval());
+        response.setMaxSnaps(snapshotPolicy.getMaxSnaps());
+        response.setSchedule(snapshotPolicy.getSchedule());
+        response.setVolumeId(snapshotPolicy.getVolumeId());
 
-        SnapshotPolicyVO snapshotPolicy = null;
-        try {
-        	snapshotPolicy = managementServer.createSnapshotPolicy(accountId, userId, volumeId, schedule, intervalType, maxSnaps, timezone);
-        } catch (InvalidParameterValueException ex) {
-        	throw new ServerApiException (BaseCmd.VM_INVALID_PARAM_ERROR, ex.getMessage());
-        }
-        
-        if (snapshotPolicy == null) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create Snapshot Policy");
-        }
-
-        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), snapshotPolicy.getId().toString()));
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.VOLUME_ID.getName(), snapshotPolicy.getVolumeId()));
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.SCHEDULE.getName(), snapshotPolicy.getSchedule()));
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.INTERVAL_TYPE.getName(), snapshotPolicy.getInterval()));
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.MAX_SNAPS.getName(), snapshotPolicy.getMaxSnaps()));
-
-        return returnValues;
+        response.setResponseName(getName());
+        return response;
     }
 }

@@ -15,72 +15,91 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-
 package com.cloud.api.commands;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
+import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.Implementation;
+import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.domain.Domain;
+import com.cloud.api.response.SuccessResponse;
+import com.cloud.domain.DomainVO;
+import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
-import com.cloud.utils.Pair;
 
-public class DeleteDomainCmd extends BaseCmd{
+@Implementation(method="deleteDomain", description="Deletes a specified domain")
+public class DeleteDomainCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteDomainCmd.class.getName());
     private static final String s_name = "deletedomainresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
-    static {
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.CLEANUP, Boolean.FALSE));
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="id", type=CommandType.LONG, required=true, description="ID of domain to delete")
+    private Long id;
+
+    @Parameter(name="cleanup", type=CommandType.BOOLEAN)
+    private Boolean cleanup;
+
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public Long getId() {
+        return id;
     }
+
+    public Boolean getCleanup() {
+        return cleanup;
+    }
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
 
     @Override
     public String getName() {
         return s_name;
     }
+
     @Override
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
+    public long getAccountId() {
+        DomainVO domain = ApiDBUtils.findDomainById(getId());
+        if (domain != null) {
+            return domain.getAccountId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
     }
 
     @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-        Long domainId = (Long)params.get(BaseCmd.Properties.ID.getName());
-        Account account = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-        Boolean cleanup = (Boolean)params.get(BaseCmd.Properties.CLEANUP.getName());
+    public String getEventType() {
+        return EventTypes.EVENT_DOMAIN_DELETE;
+    }
 
-        // If account is null, consider System as an owner for this action
-        if (account == null) {
-            account = getManagementServer().findAccountById(Long.valueOf(1L));
+    @Override
+    public String getEventDescription() {
+        return  "deleting domain: " + getId();
+    }
+
+    @Override @SuppressWarnings("unchecked")
+    public SuccessResponse getResponse() {
+        Boolean responseObject = (Boolean)getResponseObject();
+
+        SuccessResponse response = new SuccessResponse();
+        
+        if (responseObject != null) {
+        	response.setSuccess(responseObject);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete host");
         }
 
-        if ((domainId.longValue() == Domain.ROOT_DOMAIN) || !getManagementServer().isChildDomain(account.getDomainId(), domainId)) {
-            throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to delete domain " + domainId + ", permission denied.");
-        }
-
-        // check if domain exists in the system
-        Domain domain = getManagementServer().findDomainIdById(domainId);
-    	if (domain == null) {
-    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find domain " + domainId);
-    	}
-
-    	long jobId = getManagementServer().deleteDomainAsync(domainId, account.getId(), cleanup); // default owner is 'system'
-    	if (jobId == 0) {
-    	    s_logger.warn("Unable to schedule async-job for DeleteDomain comamnd");
-    	} else {
-    	    if (s_logger.isDebugEnabled())
-    	        s_logger.debug("DeleteDomain command has been accepted, job id: " + jobId);
-    	}
-
-    	List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-    	returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId))); 
-    	return returnValues;
+        response.setResponseName(getName());
+        return response;
     }
 }

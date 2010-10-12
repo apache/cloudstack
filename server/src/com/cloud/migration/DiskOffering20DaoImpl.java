@@ -1,6 +1,7 @@
 package com.cloud.migration;
 
 import javax.ejb.Local;
+
 import com.cloud.utils.db.GenericDaoBase;
 
 @Local(value={DiskOffering20Dao.class})

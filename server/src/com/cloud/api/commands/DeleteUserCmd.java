@@ -18,58 +18,81 @@
 
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
-import com.cloud.api.ServerApiException;
+import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.ApiDBUtils;
+import com.cloud.api.Implementation;
+import com.cloud.api.Parameter;
+import com.cloud.api.response.SuccessResponse;
+import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.user.User;
-import com.cloud.utils.Pair;
+import com.cloud.user.UserContext;
 
-public class DeleteUserCmd extends BaseCmd {
+@Implementation(method="deleteUser", manager=Manager.ManagementServer, description="Deletes a user account")
+public class DeleteUserCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(DeleteUserCmd.class.getName());
 	private static final String s_name = "deleteuserresponse";
-	private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
-	
-	static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.TRUE));
+
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="id", type=CommandType.LONG, required=true, description="User id")
+    private Long id;
+
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public Long getId() {
+        return id;
     }
+
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
 
 	public static String getStaticName() {
 		return s_name;
 	}
 	
+    @Override
 	public String getName() {
         return s_name;
     }
 
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
-	
     @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-        Long userId = (Long)params.get(BaseCmd.Properties.ID.getName());
-        
-        //Verify that the user exists in the system
-        User user = getManagementServer().getUser(userId.longValue());
-        if (user == null) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find user " + userId);
+    public long getAccountId() {
+        Account account = (Account)UserContext.current().getAccountObject();
+        if (account != null) {
+            return account.getId();
         }
-        
-        // If the user is a System user, return an error.  We do not allow this
-        Account account = getManagementServer().findAccountById(user.getAccountId());
-        if ((account != null) && (account.getId() == Account.ACCOUNT_ID_SYSTEM)) {
-        	throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "user id : " + userId + " is a system account, delete is not allowed");
-        }
-        
-        long jobId = getManagementServer().deleteUserAsync(userId.longValue());
-        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId))); 
-        return returnValues;
+
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
     }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_USER_DELETE;
+    }
+
+    @Override
+    public String getEventDescription() {
+        User user = ApiDBUtils.findUserById(getId());
+        return "User " + user.getUsername() + " (id: " + user.getId() + ") and accountId = " + user.getAccountId();
+    }
+
+	@Override @SuppressWarnings("unchecked")
+	public SuccessResponse getResponse() {
+        Boolean success = (Boolean)getResponseObject();
+        SuccessResponse response = new SuccessResponse();
+        response.setSuccess(success);
+        response.setResponseName(getName());
+        return response;
+	}
 }

@@ -2,15 +2,15 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.VMTemplateVO;
 
 public class ListIsoPermissionsCmd extends ListTemplateOrIsoPermissionsCmd {
 	protected String getResponseName() {
     	return "listisopermissionsresponse";
     }
     
-	protected String getMediaType() {
+	public String getMediaType() {
     	return "iso";
     }
 	

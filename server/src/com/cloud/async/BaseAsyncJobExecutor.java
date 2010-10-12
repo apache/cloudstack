@@ -18,8 +18,6 @@
 
 package com.cloud.async;
 
-import com.cloud.async.AsyncJobVO;
-import com.cloud.async.SyncQueueItemVO;
 
 public abstract class BaseAsyncJobExecutor implements AsyncJobExecutor {
 	private SyncQueueItemVO _syncSource;

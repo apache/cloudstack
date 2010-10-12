@@ -36,12 +36,14 @@ public class DeleteNetworkRuleConfigExecutor extends BaseAsyncJobExecutor {
         ManagementServer managementServer = asyncMgr.getExecutorContext().getManagementServer();
         Long param = gson.fromJson(job.getCmdInfo(), Long.class);
 
+        /*
         boolean success = managementServer.deleteNetworkRuleConfig(job.getUserId(), param.longValue());
         if (success) {
             asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_SUCCEEDED, 0, "success");
         } else {
             asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_FAILED, 0, "failed");
         }
+        */
 
         return true;
     }

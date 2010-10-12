@@ -28,6 +28,7 @@ import com.cloud.async.BaseAsyncJobExecutor;
 import com.cloud.event.EventTypes;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ManagementServer;
+import com.google.gson.Gson;
 import com.cloud.user.User;
 import com.google.gson.Gson;
 
@@ -39,6 +40,10 @@ public class DeleteUserExecutor extends BaseAsyncJobExecutor {
 		AsyncJobManager asyncMgr = getAsyncJobMgr();
 		AsyncJobVO job = getJob();
 		ManagementServer managementServer = asyncMgr.getExecutorContext().getManagementServer();
+		Long param = gson.fromJson(job.getCmdInfo(), Long.class);
+		/*
+		try {
+			if(managementServer.deleteUser(param.longValue())) {
 		DeleteUserParam param = gson.fromJson(job.getCmdInfo(), DeleteUserParam.class);
 		
 		try {
@@ -59,6 +64,7 @@ public class DeleteUserExecutor extends BaseAsyncJobExecutor {
 			asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR, 
 				e.getMessage());
 		}
+		*/
 		return true;
 	}
 }

@@ -15,93 +15,72 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-
 package com.cloud.api.commands;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.Implementation;
+import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.domain.Domain;
-import com.cloud.user.Account;
-import com.cloud.utils.Pair;
+import com.cloud.api.response.DomainResponse;
+import com.cloud.domain.DomainVO;
 
+@Implementation(method="createDomain", description="Creates a domain")
 public class CreateDomainCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateDomainCmd.class.getName());
 
     private static final String s_name = "createdomainresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PARENT_DOMAIN_ID, Boolean.FALSE));
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="name", type=CommandType.STRING, required=true, description="creates domain with this name")
+    private String domainName;
+
+    @Parameter(name="parentdomainid", type=CommandType.LONG, description="assigns new domain a parent domain by domain ID of the parent.  If no parent domain is specied, the ROOT domain is assumed.")
+    private Long parentDomainId;
+
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public String getDomainName() {
+        return domainName;
     }
+
+    public Long getParentDomainId() {
+        return parentDomainId;
+    }
+
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
 
     @Override
     public String getName() {
         return s_name;
     }
-    @Override
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
 
-    @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-        Account account = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-        String name = (String)params.get(BaseCmd.Properties.NAME.getName());
-        Long parentDomainId = (Long)params.get(BaseCmd.Properties.PARENT_DOMAIN_ID.getName());
-
-        // If account is null, consider System as an owner for this action
-        if (account == null) {
-            account = getManagementServer().findAccountById(Long.valueOf(1L));
-        }
-
-        if (parentDomainId == null){
-        	parentDomainId = Domain.ROOT_DOMAIN;
+    @Override @SuppressWarnings("unchecked")
+    public DomainResponse getResponse() {
+        DomainResponse response = new DomainResponse();
+        DomainVO responseObject = (DomainVO)getResponseObject();
+        if (responseObject != null) {
+            response.setId(responseObject.getId());
+            response.setDomainName(responseObject.getName());
+            response.setLevel(responseObject.getLevel());
+            response.setParentDomainId(responseObject.getParent());
+            response.setParentDomainName(ApiDBUtils.findDomainById(responseObject.getParent()).getName());
         } else {
-        	Domain parentDomain = null;
-            parentDomain = getManagementServer().findDomainIdById(parentDomainId);
-        	if (parentDomain == null) {
-        		throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find parent domain " + parentDomainId);
-        	}
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create domain");
         }
 
-        if (!getManagementServer().isChildDomain(account.getDomainId(), parentDomainId)) {
-            throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Invalid parent domain " + parentDomainId + ", unable to create domain " + name);
-        }
-
-        Domain domain = null;
-        try {
-            domain = getManagementServer().createDomain(name, account.getId(), parentDomainId);
-        } catch (IllegalArgumentException illArgEx) {
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info("Failed to create domain " + name + " due to invalid name given.");
-            }
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Failed to create domain " + name + ", invalid name given.  The character '/' is not valid for domain names.");
-        } catch (Exception ex) {
-            s_logger.error("Exception creating domain", ex);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create domain " + name + ":  internal error.");
-        }
-
-        List<Pair<String, Object>> embeddedObject = new ArrayList<Pair<String, Object>>();
-        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-        if (domain == null) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Failed to create domain " + name + ":  a domain with that name already exists.");
-        } else {
-            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), domain.getId()));
-            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.NAME.getName(), domain.getName()));
-            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.LEVEL.getName(), Integer.toString(domain.getLevel())));
-            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.PARENT_DOMAIN_ID.getName(), domain.getParent().toString()));
-            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.PARENT_DOMAIN_NAME.getName(), 
-        			getManagementServer().findDomainIdById(domain.getParent()).getName()));
-            embeddedObject.add(new Pair<String, Object>("domain", new Object[] { returnValues } ));
-        }
-        return embeddedObject;
+        response.setResponseName(getName());
+        return response;
     }
 }

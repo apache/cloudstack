@@ -18,138 +18,99 @@
 
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
-import com.cloud.api.ServerApiException;
-import com.cloud.dc.Vlan.VlanType;
-import com.cloud.dc.VlanVO;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
-import com.cloud.network.IPAddressVO;
+import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.Implementation;
+import com.cloud.api.Parameter;
+import com.cloud.api.response.LoadBalancerResponse;
 import com.cloud.network.LoadBalancerVO;
-import com.cloud.user.Account;
-import com.cloud.utils.Pair;
-import com.cloud.utils.component.ComponentLocator;
-import com.cloud.vm.UserVmVO;
-import com.cloud.vm.dao.UserVmDao;
 
+@Implementation(method="createLoadBalancerRule", manager=Manager.NetworkManager, description="Creates a load balancer rule")
 public class CreateLoadBalancerRuleCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateLoadBalancerRuleCmd.class.getName());
 
     private static final String s_name = "createloadbalancerruleresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
-    
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DESCRIPTION, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PUBLIC_IP, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PUBLIC_PORT, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PRIVATE_PORT, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ALGORITHM, Boolean.TRUE));
+
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="algorithm", type=CommandType.STRING, required=true, description="load balancer algorithm (source, roundrobin, leastconn)")
+    private String algorithm;
+
+    @Parameter(name="description", type=CommandType.STRING, description="the description of the load balancer rule")
+    private String description;
+
+    @Parameter(name="name", type=CommandType.STRING, required=true, description="name of the load balancer rule")
+    private String loadBalancerRuleName;
+
+    @Parameter(name="privateport", type=CommandType.STRING, required=true, description="the private port of the private ip address/virtual machine where the network traffic will be load balanced to")
+    private String privatePort;
+
+    @Parameter(name="publicip", type=CommandType.STRING, required=true, description="public ip address from where the network traffic will be load balanced from")
+    private String publicIp;
+
+    @Parameter(name="publicport", type=CommandType.STRING, required=true, description="the public port from where the network traffic will be load balanced from")
+    private String publicPort;
+
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public String getAlgorithm() {
+        return algorithm;
     }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public String getLoadBalancerRuleName() {
+        return loadBalancerRuleName;
+    }
+
+    public String getPrivatePort() {
+        return privatePort;
+    }
+
+    public String getPublicIp() {
+        return publicIp;
+    }
+
+    public String getPublicPort() {
+        return publicPort;
+    }
+
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
 
     public String getName() {
         return s_name;
     }
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
 
-    @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-        Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
-        Account account = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-        String name = (String)params.get(BaseCmd.Properties.NAME.getName());
-        String description = (String)params.get(BaseCmd.Properties.DESCRIPTION.getName());
-        String publicIP = (String)params.get(BaseCmd.Properties.PUBLIC_IP.getName());
-        String publicPort = (String)params.get(BaseCmd.Properties.PUBLIC_PORT.getName());
-        String privatePort = (String)params.get(BaseCmd.Properties.PRIVATE_PORT.getName());
-        String algorithm = (String)params.get(BaseCmd.Properties.ALGORITHM.getName());
+    @Override @SuppressWarnings("unchecked")
+    public LoadBalancerResponse getResponse() {
+        LoadBalancerVO responseObj = (LoadBalancerVO)getResponseObject();
 
-        UserVmDao _userVmDao;
-        ComponentLocator locator = ComponentLocator.getLocator("management-server");
-        _userVmDao = locator.getDao(UserVmDao.class);
-        
-        if (userId == null) {
-            userId = Long.valueOf(1);
-        }
+        LoadBalancerResponse response = new LoadBalancerResponse();
+        response.setAlgorithm(responseObj.getAlgorithm());
+        response.setDescription(responseObj.getDescription());
+        response.setId(responseObj.getId());
+        response.setName(responseObj.getName());
+        response.setPrivatePort(responseObj.getPrivatePort());
+        response.setPublicIp(responseObj.getIpAddress());
+        response.setPublicPort(responseObj.getPublicPort());
+        response.setAccountName(responseObj.getAccountName());
+        response.setDomainId(responseObj.getDomainId());
+        response.setDomainName(ApiDBUtils.findDomainById(responseObj.getDomainId()).getName());
 
-        IPAddressVO ipAddr = getManagementServer().findIPAddressById(publicIP);
-        if (ipAddr == null) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to create load balancer rule, invalid IP address " + publicIP);
-        }
-
-        VlanVO vlan = getManagementServer().findVlanById(ipAddr.getVlanDbId());
-        if (vlan != null) {
-            if (!VlanType.VirtualNetwork.equals(vlan.getVlanType())) {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to create load balancer rule for IP address " + publicIP + ", only VirtualNetwork type IP addresses can be used for load balancers.");
-            }
-        } // else ERROR?
-
-        // Verify input parameters
-        Account accountByIp = getManagementServer().findAccountByIpAddress(publicIP);
-        if(accountByIp == null) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to create load balancer rule, cannot find account owner for ip " + publicIP);
-        }
-
-        Long accountId = accountByIp.getId();
-        if (account != null) {
-            if (!isAdmin(account.getType())) {
-                if (account.getId() != accountId.longValue()) {
-                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to create load balancer rule, account " + account.getAccountName() + " doesn't own ip address " + publicIP);
-                }
-            } else if (!getManagementServer().isChildDomain(account.getDomainId(), accountByIp.getDomainId())) {
-                throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to create load balancer rule on IP address " + publicIP + ", permission denied.");
-            }
-        }
-
-        List<UserVmVO> userVmVO = _userVmDao.listByAccountId(accountId);
-        
-        if(userVmVO.size()==0)
-        {
-        	//this means there are no associated vm's to the user account, and hence, the load balancer cannot be created
-        	throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "Unable to create load balancer rule, no vm for the user exists.");
-        }
-        	
-        LoadBalancerVO existingLB = getManagementServer().findLoadBalancer(accountId, name);
-
-        if (existingLB != null) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to create load balancer rule, an existing load balancer rule with name " + name + " already exisits.");
-        }
-
-        try {
-            LoadBalancerVO loadBalancer = getManagementServer().createLoadBalancer(userId, accountId, name, description, publicIP, publicPort, privatePort, algorithm);
-            List<Pair<String, Object>> embeddedObject = new ArrayList<Pair<String, Object>>();
-            List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), loadBalancer.getId().toString()));
-            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.NAME.getName(), loadBalancer.getName()));
-            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.DESCRIPTION.getName(), loadBalancer.getDescription()));
-            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.PUBLIC_IP.getName(), loadBalancer.getIpAddress()));
-            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.PUBLIC_PORT.getName(), loadBalancer.getPublicPort()));
-            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.PRIVATE_PORT.getName(), loadBalancer.getPrivatePort()));
-            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.ALGORITHM.getName(), loadBalancer.getAlgorithm()));
-            
-            Account accountTemp = getManagementServer().findAccountById(loadBalancer.getAccountId());
-            if (accountTemp != null) {
-            	returnValues.add(new Pair<String, Object>(BaseCmd.Properties.ACCOUNT.getName(), accountTemp.getAccountName()));
-            	returnValues.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN_ID.getName(), accountTemp.getDomainId()));
-            	returnValues.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN.getName(), getManagementServer().findDomainIdById(accountTemp.getDomainId()).getName()));
-            }
-            embeddedObject.add(new Pair<String, Object>("loadbalancerrule", new Object[] { returnValues } ));
-            return embeddedObject;
-        } catch (InvalidParameterValueException paramError) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, paramError.getMessage());
-        } catch (PermissionDeniedException permissionError) {
-            throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, permissionError.getMessage());
-        } catch (Exception ex) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
-        }
+        response.setResponseName(getName());
+        return response;
     }
 }

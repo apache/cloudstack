@@ -26,7 +26,7 @@ import java.util.List;
 
 import javax.ejb.Local;
 
-import com.cloud.storage.SnapshotPolicyVO;
+import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotScheduleVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -99,12 +99,18 @@ public class SnapshotScheduleDaoImpl extends GenericDaoBase<SnapshotScheduleVO, 
     public SnapshotScheduleVO getCurrentSchedule(Long volumeId, Long policyId, boolean executing) {
         assert volumeId != null;
         SearchCriteria<SnapshotScheduleVO> sc = createSearchCriteria();
+        SearchCriteria.Op op = executing ? SearchCriteria.Op.NNULL : SearchCriteria.Op.NULL;
         sc.addAnd("volumeId", SearchCriteria.Op.EQ, volumeId);
         if (policyId != null) {
             sc.addAnd("policyId", SearchCriteria.Op.EQ, policyId);
+            if (policyId != Snapshot.MANUAL_POLICY_ID) {
+                // manual policies aren't scheduled by the snapshot poller, so don't look for the jobId here
+                sc.addAnd("asyncJobId", op);
+            }
+        } else {
+            sc.addAnd("asyncJobId", op);
         }
-        SearchCriteria.Op op = executing ? SearchCriteria.Op.NNULL : SearchCriteria.Op.NULL;
-        sc.addAnd("asyncJobId", op);
+
         List<SnapshotScheduleVO> snapshotSchedules = listBy(sc);
         // This will return only one schedule because of a DB uniqueness constraint.
         assert (snapshotSchedules.size() <= 1);

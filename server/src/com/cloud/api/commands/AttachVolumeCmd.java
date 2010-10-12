@@ -18,107 +18,107 @@
 
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
-import com.cloud.api.ServerApiException;
+import com.cloud.api.ApiDBUtils;
+import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.Implementation;
+import com.cloud.api.Parameter;
+import com.cloud.api.response.VolumeResponse;
+import com.cloud.event.EventTypes;
 import com.cloud.storage.VolumeVO;
 import com.cloud.user.Account;
-import com.cloud.utils.Pair;
-import com.cloud.vm.UserVmVO;
+import com.cloud.uservm.UserVm;
 
-public class AttachVolumeCmd extends BaseCmd {
+@Implementation(method="attachVolumeToVM", manager=Manager.UserVmManager, description="Attaches a disk volume to a virtual machine.")
+public class AttachVolumeCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(AttachVolumeCmd.class.getName());
     private static final String s_name = "attachvolumeresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
-    static {
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.VIRTUAL_MACHINE_ID, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DEVICE_ID, Boolean.FALSE));
-        
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="deviceid", type=CommandType.LONG, description="the ID of the device to map the volume to within the guest OS. " +
+    																"If no deviceId is passed in, the next available deviceId will be chosen. " +
+    																"Possible values for a Linux OS are:" +
+    																"* 1 - /dev/xvdb" +
+    																"* 2 - /dev/xvdc" +
+    																"* 4 - /dev/xvde" +
+    																"* 5 - /dev/xvdf" +
+    																"* 6 - /dev/xvdg" +
+    																"* 7 - /dev/xvdh" +
+    																"* 8 - /dev/xvdi" +
+    																"* 9 - /dev/xvdj")
+    private Long deviceId;
+
+    @Parameter(name="id", type=CommandType.LONG, required=true, description="the ID of the disk volume")
+    private Long id;
+
+    @Parameter(name="virtualmachineid", type=CommandType.LONG, required=true, description="	the ID of the virtual machine")
+    private Long virtualMachineId;
+
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public Long getDeviceId() {
+        return deviceId;
     }
 
+    public Long getId() {
+        return id;
+    }
+
+    public Long getVirtualMachineId() {
+        return virtualMachineId;
+    }
+
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
+
+    @Override
     public String getName() {
         return s_name;
     }
-    
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
 
-    public static String getResultObjectName() {
-    	return "volume";
-    }
-    
     @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-    	Account account = (Account) params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-        //Long userId = (Long) params.get(BaseCmd.Properties.USER_ID.getName());
-    	Long volumeId = (Long) params.get(BaseCmd.Properties.ID.getName());
-    	Long vmId = (Long) params.get(BaseCmd.Properties.VIRTUAL_MACHINE_ID.getName());
-        Long deviceId = (Long) params.get(BaseCmd.Properties.DEVICE_ID.getName());
-
-    	// Check that the volume ID is valid
-    	VolumeVO volume = getManagementServer().findVolumeById(volumeId);
-    	if (volume == null)
-    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find volume with ID: " + volumeId);
-
-    	// Check that the virtual machine ID is valid
-    	UserVmVO vm = getManagementServer().findUserVMInstanceById(vmId.longValue());
-        if (vm == null) {
-        	throw new ServerApiException (BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + vmId);
+    public long getAccountId() {
+        VolumeVO volume = ApiDBUtils.findVolumeById(getId());
+        if (volume == null) {
+            return Account.ACCOUNT_ID_SYSTEM; // bad id given, parent this command to SYSTEM so ERROR events are tracked
         }
-
-        // Check that the device ID is valid
-        if( deviceId != null ) {
-            if(deviceId.longValue() == 0) {
-                throw new ServerApiException (BaseCmd.VM_INVALID_PARAM_ERROR, "deviceId can't be 0, which is used by Root device");
-            }
-        }
-        
-        if (volume.getAccountId() != vm.getAccountId()) {
-        	throw new ServerApiException (BaseCmd.VM_INVALID_PARAM_ERROR, "virtual machine and volume belong to different accounts, can not attach");
-        }
-
-    	// If the account is not an admin, check that the volume and the virtual machine are owned by the account that was passed in
-    	if (account != null) {
-    	    if (!isAdmin(account.getType())) {
-                if (account.getId() != volume.getAccountId())
-                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find volume with ID: " + volumeId + " for account: " + account.getAccountName());
-
-                if (account.getId() != vm.getAccountId())
-                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find VM with ID: " + vmId + " for account: " + account.getAccountName());
-    	    } else {
-    	        if (!getManagementServer().isChildDomain(account.getDomainId(), volume.getDomainId()) ||
-    	            !getManagementServer().isChildDomain(account.getDomainId(), vm.getDomainId())) {
-                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to attach volume " + volumeId + " to virtual machine instance " + vmId + ", permission denied.");
-    	        }
-    	    }
-    	}
-
-    	try {
-    		long jobId = getManagementServer().attachVolumeToVMAsync(vmId, volumeId, deviceId);
-
-    		if (jobId == 0) {
-            	s_logger.warn("Unable to schedule async-job for AttachVolume comamnd");
-            } else {
-    	        if(s_logger.isDebugEnabled())
-    	        	s_logger.debug("AttachVolume command has been accepted, job id: " + jobId);
-            }
-
-    		List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId))); 
-
-            return returnValues;
-    	} catch (Exception ex) {
-    		throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to attach volume: " + ex.getMessage());
-    	}
+        return volume.getAccountId();
     }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_VOLUME_ATTACH;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  "attaching volume: " + getId() + " to vm: " + getVirtualMachineId();
+    }
+
+	@Override @SuppressWarnings("unchecked")
+	public VolumeResponse getResponse() {
+	    VolumeVO volume = ApiDBUtils.findVolumeById(id);
+	    VolumeResponse response = new VolumeResponse();
+	    UserVm instance = ApiDBUtils.findUserVmById(volume.getInstanceId());
+	    response.setVirtualMachineName(instance.getName());
+	    response.setVirtualMachineDisplayName(instance.getDisplayName());
+	    response.setVirtualMachineId(instance.getId());
+	    response.setVirtualMachineState(instance.getState().toString());
+	    response.setStorageType("shared"); // NOTE: You can never attach a local disk volume but if that changes, we need to change this
+	    response.setId(volume.getId());
+	    response.setName(volume.getName());
+	    response.setResponseName(getName());
+
+		return response;
+	}
 }

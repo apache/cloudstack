@@ -15,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-
 package com.cloud.api.commands;
 
 import java.util.ArrayList;
@@ -25,99 +24,71 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
-import com.cloud.api.ServerApiException;
+import com.cloud.api.ApiDBUtils;
+import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.BaseListCmd;
+import com.cloud.api.Implementation;
+import com.cloud.api.Parameter;
+import com.cloud.api.response.FirewallRuleResponse;
+import com.cloud.api.response.ListResponse;
 import com.cloud.network.FirewallRuleVO;
 import com.cloud.network.IPAddressVO;
 import com.cloud.server.Criteria;
-import com.cloud.user.Account;
-import com.cloud.utils.Pair;
 import com.cloud.vm.UserVmVO;
 
-public class ListPortForwardingRulesCmd extends BaseCmd {
+@Implementation(method="listPortForwardingRules", manager=Manager.NetworkManager, description="Lists all port forwarding rules for an IP address.")
+public class ListPortForwardingRulesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListPortForwardingRulesCmd.class.getName());
 
     private static final String s_name = "listportforwardingrulesresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
-    static {
-         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
-         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.IP_ADDRESS, Boolean.TRUE));
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="ipaddress", type=CommandType.STRING, required=true, description="the IP address of the port forwarding services")
+    private String ipAddress;
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public String getIpAddress() {
+        return ipAddress;
     }
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
 
     @Override
     public String getName() {
         return s_name;
     }
-    @Override
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
 
-    @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-        Account account = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-        String ipAddress = (String)params.get(BaseCmd.Properties.IP_ADDRESS.getName());
-
-        IPAddressVO ipAddressVO = getManagementServer().findIPAddressById(ipAddress);
-        if (ipAddressVO == null) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find IP address " + ipAddress);
-        }
-
-        Account addrOwner = getManagementServer().findAccountById(ipAddressVO.getAccountId());
-
-        // if an admin account was passed in, or no account was passed in, make sure we honor the accountName/domainId parameters
-        if ((account != null) && isAdmin(account.getType())) {
-            if (ipAddressVO.getAccountId() != null) {
-                if ((addrOwner != null) && !getManagementServer().isChildDomain(account.getDomainId(), addrOwner.getDomainId())) {
-                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to list port forwarding rules for address " + ipAddress + ", permission denied for account " + account.getId());
-                }
-            } else {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to list port forwarding rules for address " + ipAddress + ", address not in use.");
-            }
-        } else {
-            if (account != null) {
-                if ((ipAddressVO.getAccountId() == null) || (account.getId() != ipAddressVO.getAccountId().longValue())) {
-                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to list port forwarding rules for address " + ipAddress + ", permission denied for account " + account.getId());
-                }
-                addrOwner = account;
-            }
-        }
-
-        List<FirewallRuleVO> firewallRules = getManagementServer().listIPForwarding(ipAddress, true);
-
-        if (firewallRules == null) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Internal error searching port forwarding rules for address " + ipAddress);
-        }
-        /*
-        Criteria lbCriteria = new Criteria();
-        lbCriteria.addCriteria(Criteria.IPADDRESS, ipAddress);
-        List<LoadBalancerVO> loadBalancers = getManagementServer().searchForLoadBalancers(lbCriteria);
-        if (loadBalancers == null) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Internal error searching load balancer rules for address " + ipAddress);
-        }
-        */
-
+    @Override @SuppressWarnings("unchecked")
+    public ListResponse<FirewallRuleResponse> getResponse() {
+        List<FirewallRuleVO> firewallRules = (List<FirewallRuleVO>)getResponseObject();
         Map<String, UserVmVO> userVmCache = new HashMap<String, UserVmVO>();
+        IPAddressVO ipAddr = ApiDBUtils.findIpAddressById(ipAddress);
 
-        List<Pair<String, Object>> groupsTags = new ArrayList<Pair<String, Object>>();
-        Object[] forwardingTag = new Object[firewallRules.size()];
-        int i = 0;
+        ListResponse<FirewallRuleResponse> response = new ListResponse<FirewallRuleResponse>();
+        List<FirewallRuleResponse> fwResponses = new ArrayList<FirewallRuleResponse>();
         for (FirewallRuleVO fwRule : firewallRules) {
-            List<Pair<String, Object>> ruleData = new ArrayList<Pair<String, Object>>();
+            FirewallRuleResponse ruleData = new FirewallRuleResponse();
 
-            ruleData.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), fwRule.getId().toString()));
-            ruleData.add(new Pair<String, Object>(BaseCmd.Properties.PUBLIC_PORT.getName(), fwRule.getPublicPort()));
-            ruleData.add(new Pair<String, Object>(BaseCmd.Properties.PRIVATE_PORT.getName(), fwRule.getPrivatePort()));
-            ruleData.add(new Pair<String, Object>(BaseCmd.Properties.PROTOCOL.getName(), fwRule.getProtocol()));
+            ruleData.setId(fwRule.getId());
+            ruleData.setPublicPort(fwRule.getPublicPort());
+            ruleData.setPrivatePort(fwRule.getPrivatePort());
+            ruleData.setProtocol(fwRule.getProtocol());
 
             UserVmVO userVM = userVmCache.get(fwRule.getPrivateIpAddress());
             if (userVM == null) {
                 Criteria c = new Criteria();
-                c.addCriteria(Criteria.ACCOUNTID, new Object[] {addrOwner.getId()});
-                c.addCriteria(Criteria.DATACENTERID, ipAddressVO.getDataCenterId());
+                c.addCriteria(Criteria.ACCOUNTID, new Object[] {ipAddr.getAccountId()});
+                c.addCriteria(Criteria.DATACENTERID, ipAddr.getDataCenterId());
                 c.addCriteria(Criteria.IPADDRESS, fwRule.getPrivateIpAddress());
-                List<UserVmVO> userVMs = getManagementServer().searchForUserVMs(c);
+                List<UserVmVO> userVMs = ApiDBUtils.searchForUserVMs(c);
 
                 if ((userVMs != null) && (userVMs.size() > 0)) {
                     userVM = userVMs.get(0);
@@ -126,32 +97,16 @@ public class ListPortForwardingRulesCmd extends BaseCmd {
             }
 
             if (userVM != null) {
-                ruleData.add(new Pair<String, Object>(BaseCmd.Properties.VIRTUAL_MACHINE_ID.getName(), Long.toString(userVM.getId())));
-                ruleData.add(new Pair<String, Object>(BaseCmd.Properties.VIRTUAL_MACHINE_NAME.getName(), userVM.getName()));
-                ruleData.add(new Pair<String, Object>(BaseCmd.Properties.VIRTUAL_MACHINE_DISPLAYNAME.getName(), userVM.getDisplayName()));
+                ruleData.setVirtualMachineId(userVM.getId());
+                ruleData.setVirtualMachineName(userVM.getName());
             }
 
-            forwardingTag[i++] = ruleData;
+            ruleData.setResponseName("portforwardingrule");
+            fwResponses.add(ruleData);
         }
-        Pair<String, Object> forwardingTags = new Pair<String, Object>("portforwardingrule", forwardingTag);
-        groupsTags.add(forwardingTags);
 
-        /*
-        Object[] lbTag = new Object[loadBalancers.size()];
-        i = 0;
-        for (LoadBalancerVO loadBalancer : loadBalancers) {
-            List<Pair<String, Object>> lbData = new ArrayList<Pair<String, Object>>();
-
-            lbData.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), loadBalancer.getId().toString()));
-            lbData.add(new Pair<String, Object>(BaseCmd.Properties.PUBLIC_PORT.getName(), loadBalancer.getPublicPort()));
-            lbData.add(new Pair<String, Object>(BaseCmd.Properties.PRIVATE_PORT.getName(), loadBalancer.getPrivatePort()));
-            lbData.add(new Pair<String, Object>(BaseCmd.Properties.ALGORITHM.getName(), loadBalancer.getAlgorithm()));
-
-            lbTag[i++] = lbData;
-        }
-        Pair<String, Object> lbTags = new Pair<String, Object>("loadbalancer", lbTag);
-        groupsTags.add(lbTags);
-        */
-        return groupsTags;
+        response.setResponses(fwResponses);
+        response.setResponseName(getName());
+        return response;
     }
 }

@@ -44,5 +44,4 @@ public interface SnapshotScheduler extends Manager, Scheduler {
      * @return
      */
     boolean removeSchedule(Long volumeId, Long policyId);
-    
 }

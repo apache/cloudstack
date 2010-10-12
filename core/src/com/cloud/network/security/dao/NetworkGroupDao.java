@@ -26,7 +26,6 @@ import com.cloud.utils.db.GenericDao;
 public interface NetworkGroupDao extends GenericDao<NetworkGroupVO, Long> {
     List<NetworkGroupVO> listByAccountId(long accountId);
     boolean isNameInUse(Long accountId, Long domainId, String name);
-    List<NetworkGroupVO> listAvailableGroups(Long accountId, Long domainId);
     NetworkGroupVO findByAccountAndName(Long accountId, String name);
     List<NetworkGroupVO> findByAccountAndNames(Long accountId, String... names);
 }

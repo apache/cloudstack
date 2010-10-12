@@ -18,55 +18,117 @@
 
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
-import com.cloud.api.ServerApiException;
-import com.cloud.utils.Pair;
+import com.cloud.api.ApiDBUtils;
+import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.Implementation;
+import com.cloud.api.Parameter;
+import com.cloud.api.response.SystemVmResponse;
+import com.cloud.event.EventTypes;
+import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 import com.cloud.vm.ConsoleProxyVO;
+import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.VMInstanceVO;
 
-public class StopSystemVmCmd extends BaseCmd {
+@Implementation(method="stopSystemVM", manager=Manager.ManagementServer, description="Stops a system VM.")
+public class StopSystemVmCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(StopSystemVmCmd.class.getName());
 
     private static final String s_name = "stopsystemvmresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.TRUE));
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="id", type=CommandType.LONG, required=true, description="The ID of the system virtual machine")
+    private Long id;
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public Long getId() {
+        return id;
     }
-    
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
+
+    @Override
     public String getName() {
         return s_name;
     }
-    
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
+
+    @Override
+    public long getAccountId() {
+        Account account = (Account)UserContext.current().getAccountObject();
+        if (account != null) {
+            return account.getId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
     }
 
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-	    Long sysVmId = (Long)params.get(BaseCmd.Properties.ID.getName());
-	    
-	    // verify parameters
-        VMInstanceVO systemVM = getManagementServer().findSystemVMById(sysVmId);
-        if (systemVM == null) {
-        	throw new ServerApiException (BaseCmd.PARAM_ERROR, "unable to find a system vm with id " + sysVmId);
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_SSVM_STOP;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  "stopping system vm: " + getId();
+    }
+
+	@Override @SuppressWarnings("unchecked")
+	public SystemVmResponse getResponse() {
+        VMInstanceVO instance = (VMInstanceVO)getResponseObject();
+
+        SystemVmResponse response = new SystemVmResponse();
+        response.setId(instance.getId());
+        response.setName(instance.getName());
+        response.setZoneId(instance.getDataCenterId());
+        response.setZoneName(ApiDBUtils.findZoneById(instance.getDataCenterId()).getName());
+        response.setPodId(instance.getPodId());
+        response.setHostId(instance.getHostId());
+        if (response.getHostId() != null) {
+            response.setHostName(ApiDBUtils.findHostById(instance.getHostId()).getName());
         }
         
-	    long jobId = getManagementServer().stopSystemVmAsync(sysVmId.longValue());
-        if(jobId == 0) {
-        	s_logger.warn("Unable to schedule async-job for StopSystemVM comamnd");
-        } else {
-	        if(s_logger.isDebugEnabled())
-	        	s_logger.debug("StopSystemVM command has been accepted, job id: " + jobId);
+        response.setPrivateIp(instance.getPrivateIpAddress());
+        response.setPrivateMacAddress(instance.getPrivateMacAddress());
+        response.setPrivateNetmask(instance.getPrivateNetmask());
+        response.setTemplateId(instance.getTemplateId());
+        response.setCreated(instance.getCreated());
+        response.setState(instance.getState().toString());
+
+        if (instance instanceof SecondaryStorageVmVO) {
+            SecondaryStorageVmVO ssVm = (SecondaryStorageVmVO) instance;
+            response.setDns1(ssVm.getDns1());
+            response.setDns2(ssVm.getDns2());
+            response.setNetworkDomain(ssVm.getDomain());
+            response.setGateway(ssVm.getGateway());
+
+            response.setPublicIp(ssVm.getPublicIpAddress());
+            response.setPublicMacAddress(ssVm.getPublicMacAddress());
+            response.setPublicNetmask(ssVm.getPublicNetmask());
+        } else if (instance instanceof ConsoleProxyVO) {
+            ConsoleProxyVO proxy = (ConsoleProxyVO)instance;
+            response.setDns1(proxy.getDns1());
+            response.setDns2(proxy.getDns2());
+            response.setNetworkDomain(proxy.getDomain());
+            response.setGateway(proxy.getGateway());
+            
+            response.setPublicIp(proxy.getPublicIpAddress());
+            response.setPublicMacAddress(proxy.getPublicMacAddress());
+            response.setPublicNetmask(proxy.getPublicNetmask());
+            response.setActiveViewerSessions(proxy.getActiveSession());
         }
-	    
-	    List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-	    returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId))); 
-	    return returnValues;
-    }
+
+        response.setResponseName(getName());
+        return response;
+	}
 }

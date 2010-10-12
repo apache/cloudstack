@@ -15,89 +15,119 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-
 package com.cloud.api.commands;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.Implementation;
+import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.api.response.UpgradeVmResponse;
+import com.cloud.offering.ServiceOffering;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
-import com.cloud.user.User;
-import com.cloud.utils.Pair;
 import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VmStats;
 
+@Implementation(method="upgradeVirtualMachine", manager=Manager.UserVmManager, description="Changes the service offering for a virtual machine. " +
+																							"The virtual machine must be in a \"Stopped\" state for " +
+																							"this command to take effect.")
 public class UpgradeVMCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpgradeVMCmd.class.getName());
     private static final String s_name = "changeserviceforvirtualmachineresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
-    static {
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.SERVICE_OFFERING_ID, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="id", type=CommandType.LONG, required=true, description="The ID of the virtual machine")
+    private Long id;
+
+    @Parameter(name="serviceofferingid", type=CommandType.LONG, required=true, description="the service offering ID to apply to the virtual machine")
+    private Long serviceOfferingId;
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public Long getId() {
+        return id;
     }
 
+    public Long getServiceOfferingId() {
+        return serviceOfferingId;
+    }
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
+
+    @Override
     public String getName() {
         return s_name;
     }
 
     public static String getResultObjectName() {
     	return "virtualmachine";
-    }    
-    
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
     }
+    
+    @Override @SuppressWarnings("unchecked")
+    public UpgradeVmResponse getResponse() {
+        UserVmVO userVm = (UserVmVO)getResponseObject();
 
-    @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-        Long virtualMachineId = (Long)params.get(BaseCmd.Properties.ID.getName());
-        Long serviceOfferingId = (Long)params.get(BaseCmd.Properties.SERVICE_OFFERING_ID.getName());
-        Account account = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-        Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
+        UpgradeVmResponse response = new UpgradeVmResponse();
+        if (userVm != null) {
+    		Account acct = ApiDBUtils.findAccountById(userVm.getAccountId());
+    		response.setAccount(acct.getAccountName());
 
-        // Verify input parameters
-        UserVmVO vmInstance = getManagementServer().findUserVMInstanceById(virtualMachineId.longValue());
-        if (vmInstance == null) {
-        	throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + virtualMachineId);
-        }       
+    		ServiceOffering offering = ApiDBUtils.findServiceOfferingById(userVm.getServiceOfferingId());
+    		response.setCpuSpeed(offering.getSpeed());
+    		response.setMemory(offering.getRamSize());
+    		if (((ServiceOfferingVO)offering).getDisplayText() != null) {
+    		    response.setServiceOfferingName(((ServiceOfferingVO)offering).getDisplayText());
+    		} else {
+    		    response.setServiceOfferingName(offering.getName());
+    		}
 
-        if (account != null) {
-            if (!isAdmin(account.getType()) && (account.getId() != vmInstance.getAccountId())) {
-                throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + virtualMachineId + " for this account");
-            } else if (!getManagementServer().isChildDomain(account.getDomainId(), vmInstance.getDomainId())) {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid virtual machine id (" + virtualMachineId + ") given, unable to upgrade virtual machine.");
-            }
-        }
+    		response.setServiceOfferingId(userVm.getServiceOfferingId());
+    		
+    		VmStats vmStats = ApiDBUtils.getVmStatistics(userVm.getId());
+    		if (vmStats != null) {
+    		    response.setCpuUsed((long) vmStats.getCPUUtilization());
+    		    response.setNetworkKbsRead((long) vmStats.getNetworkReadKBs());
+    		    response.setNetworkKbsWrite((long) vmStats.getNetworkWriteKBs());
+    		}
+    		
+    		response.setCreated(userVm.getCreated());
+    		response.setDisplayName(userVm.getDisplayName());
+    		response.setDomain(ApiDBUtils.findDomainById(acct.getDomainId()).getName());
+    		response.setDomainId(acct.getDomainId());
+    		response.setHaEnable(userVm.isHaEnabled());
 
-        // If command is executed via 8096 port, set userId to the id of System account (1)
-        if (userId == null) {
-            userId = Long.valueOf(User.UID_SYSTEM);
-        }
-        
-        long jobId = 0;
-        try {
-        	jobId = getManagementServer().upgradeVirtualMachineAsync(userId, virtualMachineId, serviceOfferingId);
-        } catch (InvalidParameterValueException e) {
-        	throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "Failed to  upgrade VM: " + e.getMessage());
-        }
-        	
-        if (jobId == 0) {
-        	s_logger.warn("Unable to schedule async-job for UpgradeVM comamnd");
+    		if (userVm.getHostId() != null) {
+    		    response.setHostId(userVm.getHostId());
+    			response.setHostName(ApiDBUtils.findHostById(userVm.getHostId()).getName());
+    		}
+    		response.setIpAddress(userVm.getPrivateIpAddress());
+    		response.setName(userVm.getName());
+    		response.setState(userVm.getState().toString());
+    		response.setZoneId(userVm.getDataCenterId());
+    		response.setZoneName(ApiDBUtils.findZoneById(userVm.getDataCenterId()).getName());
+    		
+    		VMTemplateVO template = ApiDBUtils.findTemplateById(userVm.getTemplateId());
+    		response.setPasswordEnabled(template.getEnablePassword());
+    		response.setTemplateDisplayText(template.getDisplayText());
+    		response.setTemplateId(template.getId());
+    		response.setTemplateName(template.getName());
         } else {
-	        if(s_logger.isDebugEnabled())
-	        	s_logger.debug("UpgradeVM command has been accepted, job id: " + jobId);
+        	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update zone; internal error.");
         }
 
-        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId))); 
-        return returnValues;
+        response.setResponseName(getName());
+        return response;
     }
 }

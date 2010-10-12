@@ -27,6 +27,7 @@ import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.event.EventTypes;
+import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientStorageCapacityException;
@@ -59,6 +60,7 @@ public class DeployVMExecutor extends VMOperationExecutor {
     	AsyncJobVO job = getJob();
     	
     	DeployVMParam param = gson.fromJson(job.getCmdInfo(), DeployVMParam.class);
+    	/*
     	try {
 			UserVm vm = asyncMgr.getExecutorContext().getManagementServer().deployVirtualMachine(
 				param.getUserId(), param.getAccountId(), param.getDataCenterId(),
@@ -116,6 +118,7 @@ public class DeployVMExecutor extends VMOperationExecutor {
     		asyncMgr.completeAsyncJob(getJob().getId(),
             		AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR, e.getMessage());
 		}
+		*/
     	return true;
 	}
     
@@ -132,10 +135,7 @@ public class DeployVMExecutor extends VMOperationExecutor {
 	}
 	
     private long saveEvent(DeployVMParam param, String level, String type, String description){
-    	    
-    	return getAsyncJobMgr().getExecutorContext().getManagementServer().saveEvent(
-				param.getUserId(), param.getAccountId(),
-				level, type, description, null, param.getEventId());    	
+    	return EventUtils.saveEvent(param.getUserId(), param.getAccountId(), level, type, description, null, param.getEventId());    	
     }
     
 	private DeployVMResultObject composeResultObject(long userId, UserVm vm, DeployVMParam param) {
@@ -176,7 +176,7 @@ public class DeployVMExecutor extends VMOperationExecutor {
         if (acct != null) {
         	resultObject.setAccount(acct.getAccountName());
         	resultObject.setDomainId(acct.getDomainId());
-        	resultObject.setDomain(managementServer.findDomainIdById(acct.getDomainId()).getName());
+//        	resultObject.setDomain(managementServer.findDomainIdById(acct.getDomainId()).getName());
         }
         
         User userExecutingCmd = managementServer.getUser(userId);
@@ -247,7 +247,7 @@ public class DeployVMExecutor extends VMOperationExecutor {
         	resultObject.setRootDeviceType(storagePool.getPoolType().toString());
         }
         
-        resultObject.setNetworkGroupList(managementServer.getNetworkGroupsNamesForVm(vm.getId()));
+//        resultObject.setNetworkGroupList(managementServer.getNetworkGroupsNamesForVm(vm.getId()));
 		return resultObject;
 	}
 }

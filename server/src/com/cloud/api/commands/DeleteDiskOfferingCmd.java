@@ -15,63 +15,60 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-
 package com.cloud.api.commands;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.Implementation;
+import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.storage.DiskOfferingVO;
-import com.cloud.user.User;
-import com.cloud.utils.Pair;
+import com.cloud.api.response.SuccessResponse;
 
+@Implementation(method="deleteDiskOffering", manager=Manager.ConfigManager, description="Updates a disk offering.")
 public class DeleteDiskOfferingCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteDiskOfferingCmd.class.getName());
-
     private static final String s_name = "deletediskofferingresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="id", type=CommandType.LONG, required=true, description="ID of the disk offering")
+    private Long id;
+
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public Long getId() {
+        return id;
     }
+
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
+
 
     public String getName() {
         return s_name;
     }
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
+  
+    @Override @SuppressWarnings("unchecked")
+    public SuccessResponse getResponse() {
+    	 SuccessResponse response = new SuccessResponse();
+         Boolean responseObject = (Boolean)getResponseObject();
+       
+         if (responseObject != null) {
+         	response.setSuccess(responseObject);
+         } else {
+             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete disk offering");
+         }
 
-    @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-        Long id = (Long)params.get(BaseCmd.Properties.ID.getName());
-        Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
-        
-        if (userId == null) {
-            userId = Long.valueOf(User.UID_SYSTEM);
-        }
-        
-        //verify input parameters 
-        DiskOfferingVO disk = getManagementServer().findDiskOfferingById(id);
-        if (disk == null) {
-        	throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find a disk offering with id " + id);
-        }
-
-        if(disk.getDiskSize()==0){
-        	//block deletion of these disks
-        	throw new ServerApiException(BaseCmd.INTERNAL_ERROR,"Cannot delete this diskoffering as it is private");
-        }
-        
-        boolean result = getManagementServer().deleteDiskOffering(userId, id);
-
-        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.SUCCESS.getName(), Boolean.valueOf(result).toString()));
-        return returnValues;
+         response.setResponseName(getName());
+         return response;
     }
 }

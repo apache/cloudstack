@@ -18,107 +18,123 @@
 
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
-import com.cloud.api.ServerApiException;
-import com.cloud.domain.DomainVO;
-import com.cloud.user.Account;
-import com.cloud.user.User;
-import com.cloud.utils.Pair;
-import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.api.Implementation;
+import com.cloud.api.Parameter;
+import com.cloud.api.response.UserResponse;
+import com.cloud.user.UserAccount;
 
+@Implementation(method="createUser", description="Creates a user account")
 public class CreateUserCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateUserCmd.class.getName());
 
     private static final String s_name = "createuserresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USERNAME, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PASSWORD, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.FIRSTNAME, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.LASTNAME, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.EMAIL, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_TYPE, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DOMAIN_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.TIMEZONE, Boolean.FALSE));
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="account", type=CommandType.STRING, description="Creates the user under the specified account. If no account is specified, the username will be used as the account name.")
+    private String accountName;
+
+    @Parameter(name="accounttype", type=CommandType.LONG, required=true, description="Type of the account.  Specify 0 for user, 1 for root admin, and 2 for domain admin")
+    private Long accountType;
+
+    @Parameter(name="domainid", type=CommandType.LONG, description="Creates the user under the specified domain.")
+    private Long domainId;
+
+    @Parameter(name="email", type=CommandType.STRING, required=true, description="email")
+    private String email;
+
+    @Parameter(name="firstname", type=CommandType.STRING, required=true, description="firstname")
+    private String firstname;
+
+    @Parameter(name="lastname", type=CommandType.STRING, required=true, description="lastname")
+    private String lastname;
+
+    @Parameter(name="password", type=CommandType.STRING, required=true, description="Hashed password (Default is MD5). If you wish to use any other hashing algorithm, you would need to write a custom authentication adapter See Docs section.")
+    private String password;
+
+    @Parameter(name="timezone", type=CommandType.STRING, description="Specifies a timezone for this command. For more information on the timezone parameter, see Time Zone Format.")
+    private String timezone;
+
+    @Parameter(name="username", type=CommandType.STRING, required=true, description="Unique username.")
+    private String username;
+
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public String getAccountName() {
+        return accountName;
     }
 
+    public Long getAccountType() {
+        return accountType;
+    }
+
+    public Long getDomainId() {
+        return domainId;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public String getFirstname() {
+        return firstname;
+    }
+
+    public String getLastname() {
+        return lastname;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public String getTimezone() {
+        return timezone;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
+
+    @Override
     public String getName() {
         return s_name;
     }
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
 
-    @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-        String username = (String)params.get(BaseCmd.Properties.USERNAME.getName());
-        String password = (String)params.get(BaseCmd.Properties.PASSWORD.getName());
-        String firstname = (String)params.get(BaseCmd.Properties.FIRSTNAME.getName());
-        String lastname = (String)params.get(BaseCmd.Properties.LASTNAME.getName());
-        String email = (String)params.get(BaseCmd.Properties.EMAIL.getName());
-        Long domainId = (Long)params.get(BaseCmd.Properties.DOMAIN_ID.getName());
-        String accountName = (String)params.get(BaseCmd.Properties.ACCOUNT.getName());
-        Long accountType = (Long)params.get(BaseCmd.Properties.ACCOUNT_TYPE.getName());
-        String timezone = (String)params.get(BaseCmd.Properties.TIMEZONE.getName());
+    @Override @SuppressWarnings("unchecked")
+    public UserResponse getResponse() {
+        UserAccount user = (UserAccount)getResponseObject();
 
-        // Check the domainId
-        if (domainId == null) {
-        	domainId = DomainVO.ROOT_DOMAIN;
-        }
+        // TODO:  user keys?
+        UserResponse response = new UserResponse();
+        response.setAccountName(user.getAccountName());
+        response.setAccountType(user.getType());
+        response.setCreated(user.getCreated());
+        response.setDomainId(user.getDomainId());
+        response.setDomainName(ApiDBUtils.findDomainById(user.getDomainId()).getName());
+        response.setEmail(user.getEmail());
+        response.setFirstname(user.getFirstname());
+        response.setId(user.getId());
+        response.setLastname(user.getLastname());
+        response.setState(user.getState());
+        response.setTimezone(user.getTimezone());
+        response.setUsername(user.getUsername());
 
-        //Verify if the account exists 
-        if (accountName != null) {
-        	Account account = getManagementServer().findActiveAccount(accountName, domainId);
-            if (account !=null) {
-            	accountType = Long.valueOf((long)account.getType());
-            }
-        }
-        else {
-        	accountName = username;
-        }
-
-        User createdUser = null;
-        try {
-            createdUser = getManagementServer().createUserAPI(username, password, firstname, lastname, domainId, accountName, accountType.shortValue(), email, timezone);
-        } catch (CloudRuntimeException ex) {
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info("exception creating user: " + ex);
-            }
-            throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, ex.getMessage());
-        }
-
-        if (createdUser == null) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "failed to create user");
-        } else {
-        	Account userAccount = getManagementServer().findAccountById(Long.valueOf(createdUser.getAccountId()));
-            if (userAccount != null) {
-                domainId = userAccount.getDomainId();
-                accountName = userAccount.getAccountName();
-            }
-        }
-        List<Pair<String, Object>> embeddedObject = new ArrayList<Pair<String, Object>>();
-        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), createdUser.getId().toString()));
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.USERNAME.getName(), createdUser.getUsername()));
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.FIRSTNAME.getName(), createdUser.getFirstname()));
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.LASTNAME.getName(), createdUser.getLastname()));
-    	returnValues.add(new Pair<String, Object>(BaseCmd.Properties.EMAIL.getName(), createdUser.getEmail())); 
-    	returnValues.add(new Pair<String, Object>(BaseCmd.Properties.CREATED.getName(), getDateString(createdUser.getCreated())));
-    	returnValues.add(new Pair<String, Object>(BaseCmd.Properties.STATE.getName(), createdUser.getState()));
-    	returnValues.add(new Pair<String, Object>(BaseCmd.Properties.ACCOUNT.getName(), accountName)); 
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.ACCOUNT_TYPE.getName(), accountType)); 
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN_ID.getName(), domainId.toString()));
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN.getName(), getManagementServer().findDomainIdById(domainId).getName()));
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.TIMEZONE.getName(),createdUser.getTimezone()));
-        embeddedObject.add(new Pair<String, Object>("user", new Object[] { returnValues } ));
-        return embeddedObject;
+        response.setResponseName(getName());
+        return response;
     }
 }

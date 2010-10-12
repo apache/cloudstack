@@ -19,6 +19,7 @@ public class UpdateLoadBalancerRuleExecutor extends BaseAsyncJobExecutor {
 
     @Override
     public boolean execute() {
+        /*
         if (getSyncSource() == null) {
             Gson gson = GsonHelper.getBuilder().create();
             AsyncJobManager asyncMgr = getAsyncJobMgr();
@@ -51,6 +52,8 @@ public class UpdateLoadBalancerRuleExecutor extends BaseAsyncJobExecutor {
             }
             return true;
         }
+        */
+        return true;
     }
 
     private UpdateLoadBalancerRuleResultObject composeResultObject(ManagementServer ms, LoadBalancerVO loadBalancer) {
@@ -68,7 +71,7 @@ public class UpdateLoadBalancerRuleExecutor extends BaseAsyncJobExecutor {
         if (accountTemp != null) {
             resultObject.setAccountName(accountTemp.getAccountName());
             resultObject.setDomainId(accountTemp.getDomainId());
-            resultObject.setDomainName(ms.findDomainIdById(accountTemp.getDomainId()).getName());
+//            resultObject.setDomainName(ms.findDomainIdById(accountTemp.getDomainId()).getName());
         }
 
         return resultObject;

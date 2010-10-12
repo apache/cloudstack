@@ -17,64 +17,57 @@
  */
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.ServerApiException;
-import com.cloud.user.Account;
-import com.cloud.utils.Pair;
-import com.cloud.vm.DomainRouterVO;
+import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.Implementation;
+import com.cloud.api.Parameter;
+import com.cloud.api.response.SuccessResponse;
 
+@Implementation(method="upgradeRouter", manager=Manager.NetworkManager)
 public class UpgradeRouterCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(UpgradeRouterCmd.class.getName());
 	private static final String s_name = "changeserviceforrouterresponse";
-	private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
-	static {
-		s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.TRUE));
-		s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
-		s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.SERVICE_OFFERING_ID, Boolean.TRUE));
-	}
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
 
-	@Override
-	public List<Pair<String, Object>> execute(Map<String, Object> params) {
-		Long routerId = (Long)params.get(BaseCmd.Properties.ID.getName());
-		Account account = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-		Long serviceOfferingId = (Long)params.get(BaseCmd.Properties.SERVICE_OFFERING_ID.getName());
-		
-		  // verify parameters
-        DomainRouterVO router = getManagementServer().findDomainRouterById(routerId);
-        if (router == null) {
-        	throw new ServerApiException (BaseCmd.PARAM_ERROR, "unable to find a domain router with id " + routerId);
-        }
+    @Parameter(name="id", type=CommandType.LONG, required=true)
+    private Long id;
 
-        if ((account != null) && !getManagementServer().isChildDomain(account.getDomainId(), router.getDomainId())) {
-            throw new ServerApiException (BaseCmd.PARAM_ERROR, "Invalid domain router id (" + routerId + ") given, unable to stop router.");
-        }
-              
-        try {     
-        	getManagementServer().upgradeRouter(routerId, serviceOfferingId);
-        } catch (Exception ex) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update virtual machine" + routerId + ":  internal error.");
-        }
+    @Parameter(name="serviceofferingid", type=CommandType.LONG, required=true)
+    private Long serviceOfferingId;
 
-        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.SUCCESS.getName(), Boolean.TRUE));
-        return returnValues;
-	}
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public Long getId() {
+        return id;
+    }
+
+    public Long getServiceOfferingId() {
+        return serviceOfferingId;
+    }
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
 
 	@Override
 	public String getName() {
 		 return s_name;
 	}
 
-	@Override
-	public List<Pair<Enum, Boolean>> getProperties() {
-		 return s_properties;
-	}
+	@Override @SuppressWarnings("unchecked")
+	public SuccessResponse getResponse() {
+		 Boolean success = (Boolean)getResponseObject();
 
+		 SuccessResponse response = new SuccessResponse();
+		 response.setSuccess(success);
+		 response.setResponseName(getName());
+		 return response;
+	}
 }

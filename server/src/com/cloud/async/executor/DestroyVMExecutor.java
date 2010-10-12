@@ -28,13 +28,12 @@ import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.configuration.ResourceCount.ResourceType;
-import com.cloud.event.EventState;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ManagementServer;
-import com.cloud.storage.VolumeVO;
 import com.cloud.storage.Volume.VolumeType;
+import com.cloud.storage.VolumeVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.vm.UserVmVO;
@@ -53,7 +52,7 @@ public class DestroyVMExecutor extends VMOperationExecutor {
     	VMOperationParam param = gson.fromJson(job.getCmdInfo(), VMOperationParam.class);
     	ManagementServer managementServer = asyncMgr.getExecutorContext().getManagementServer();
 		OperationResponse response;
-		
+		/*
 		if(getSyncSource() == null) {
 	    	asyncMgr.syncAsyncJobExecution(job.getId(), "UserVM", param.getVmId());
 	    	return true;
@@ -74,6 +73,7 @@ public class DestroyVMExecutor extends VMOperationExecutor {
 	    	}
 	    	
 		}
+		*/
 		return false;
 	}
 	
@@ -104,8 +104,8 @@ public class DestroyVMExecutor extends VMOperationExecutor {
 		            s_logger.debug("Unable to destroy the vm because it is not in the correct state: " + vm.toString());
 		            
 		            txn.rollback();
-		            managementServer.saveEvent(param.getUserId(), param.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_DESTROY,
-		            		"Failed to stop VM instance : " + vm.getName(), params, param.getEventId());
+//		            managementServer.saveEvent(param.getUserId(), param.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_DESTROY,
+//		            		"Failed to stop VM instance : " + vm.getName(), params, param.getEventId());
 		        	asyncMgr.completeAsyncJob(getJob().getId(),
 	            		AsyncJobResult.STATUS_FAILED, 0, "Unable to destroy the vm because it is not in the correct state");
 		        	return;
@@ -124,8 +124,8 @@ public class DestroyVMExecutor extends VMOperationExecutor {
 		        for (VolumeVO volume : volumes) {
 		        	asyncMgr.getExecutorContext().getVolumeDao().detachVolume(volume.getId());
 		        }
-		        managementServer.saveEvent(param.getUserId(), vm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_DESTROY,
-	            		"Successfully destroyed VM instance : " + vm.getName(), params, param.getEventId());
+//		        managementServer.saveEvent(param.getUserId(), vm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_DESTROY,
+//	            		"Successfully destroyed VM instance : " + vm.getName(), params, param.getEventId());
 		        txn.commit();
 	        	
 	    		asyncMgr.completeAsyncJob(getJob().getId(),	AsyncJobResult.STATUS_SUCCEEDED, 0, "success");
@@ -133,10 +133,10 @@ public class DestroyVMExecutor extends VMOperationExecutor {
 	            asyncMgr.getExecutorContext().getVmDao().updateIf(vm, Event.OperationFailed, vm.getHostId());
 	            asyncMgr.completeAsyncJob(getJob().getId(),
 	        		AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR, "Agent failed to stop VM: " + vm.getName());
-	            managementServer.saveEvent(param.getUserId(), vm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_STOP,
-	            		"failed to stop VM instance : " + vm.getName(), params, param.getChildEventId());
-	            managementServer.saveEvent(param.getUserId(), param.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_DESTROY,
-	            		"failed to stop VM instance : " + vm.getName(), params, param.getEventId());
+//	            managementServer.saveEvent(param.getUserId(), vm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_STOP,
+//	            		"failed to stop VM instance : " + vm.getName(), params, param.getChildEventId());
+//	            managementServer.saveEvent(param.getUserId(), param.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_DESTROY,
+//	            		"failed to stop VM instance : " + vm.getName(), params, param.getEventId());
 	            
 	    	}
     	} catch(Exception e) {

@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import javax.servlet.http.HttpServlet;
@@ -32,10 +31,10 @@ import javax.servlet.http.HttpSession;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.maid.StackMaid;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
-import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @SuppressWarnings("serial")
@@ -92,8 +91,8 @@ public class ApiServlet extends HttpServlet {
                 if ("logout".equalsIgnoreCase(command)) {
                     // if this is just a logout, invalidate the session and return
                     if (session != null) {  
-                        String userIdStr = (String)session.getAttribute(BaseCmd.Properties.USER_ID.getName());
-                        Account account = (Account)session.getAttribute(BaseCmd.Properties.ACCOUNT_OBJ.getName());
+                        String userIdStr = (String)session.getAttribute("userid");
+                        Account account = (Account)session.getAttribute("accountobj");
                         auditTrailSb.insert(0, "(userId="+userIdStr+ 
                                 " accountId="+ account==null ? null:account.getId()+ 
                                 " sessionId="+session.getId() +")" );
@@ -148,21 +147,16 @@ public class ApiServlet extends HttpServlet {
                     }
 
                     if (username != null) {
-                        auditTrailSb.append(" username=" +username[0]);
                         String pwd = ((password == null) ? null : password[0]);
-                        List<Pair<String, Object>> sessionParams = _apiServer.loginUser(username[0], pwd, domainId, domain, params);
-                        if (sessionParams != null) {
-                            for (Pair<String, Object> sessionParam : sessionParams) {
-                                session.setAttribute(sessionParam.first(), sessionParam.second());
-                            }
-                            auditTrailSb.insert(0,"(userId="+session.getAttribute(BaseCmd.Properties.USER_ID.getName())+ 
-                                    " accountId="+ ((Account)session.getAttribute(BaseCmd.Properties.ACCOUNT_OBJ.getName())).getId()+ 
+                        try {
+                            _apiServer.loginUser(session, username[0], pwd, domainId, domain, params);
+                            auditTrailSb.insert(0,"(userId="+session.getAttribute("userid")+ 
+                                    " accountId="+ ((Account)session.getAttribute("accountobj")).getId()+ 
                                     " sessionId="+session.getId()+ ")" );
                             String loginResponse = getLoginSuccessResponse(session, responseType);
-                            auditTrailSb.append(" " +HttpServletResponse.SC_OK);
                             writeResponse(resp, loginResponse, false, responseType);
                             return;
-                        } else {
+                        } catch (CloudAuthenticationException ex) {
                             // TODO:  fall through to API key, or just fail here w/ auth error? (HTTP 401)
                             session.invalidate();
                             auditTrailSb.append(" " + HttpServletResponse.SC_UNAUTHORIZED + " " + "failed to authenticated user, check username/password are correct");
@@ -175,40 +169,39 @@ public class ApiServlet extends HttpServlet {
             auditTrailSb.append(req.getQueryString());
             boolean isNew = ((session == null) ? true : session.isNew());
 
-            Object accountObj = null;
-            String userId = null;
-            String account = null;
-            String domainId = null;
-            
+            // Initialize an empty context and we will update it after we have verified the request below,
+            // we no longer rely on web-session here, verifyRequest will populate user/account information
+            // if a API key exists
+            UserContext.registerContext(null, null, null, null, null, null, false);
+            Long userId = null;
+
             if (!isNew) {
-                userId = (String)session.getAttribute(BaseCmd.Properties.USER_ID.getName());
-                account = (String)session.getAttribute(BaseCmd.Properties.ACCOUNT.getName());
-                domainId = (String)session.getAttribute(BaseCmd.Properties.DOMAIN_ID.getName());
-                accountObj = session.getAttribute(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-                String sessionKey = (String)session.getAttribute(BaseCmd.Properties.SESSION_KEY.getName());
-                String[] sessionKeyParam = (String[])params.get(BaseCmd.Properties.SESSION_KEY.getName());
+                userId = (Long)session.getAttribute("userid");
+                String account = (String)session.getAttribute("account");
+                Long domainId = (Long)session.getAttribute("domainid");
+                Object accountObj = session.getAttribute("accountobj");
+                String sessionKey = (String)session.getAttribute("sessionkey");
+                String[] sessionKeyParam = (String[])params.get("sessionkey");
                 if ((sessionKeyParam == null) || (sessionKey == null) || !sessionKey.equals(sessionKeyParam[0])) {
                     session.invalidate();
                     auditTrailSb.append(" " + HttpServletResponse.SC_UNAUTHORIZED +  " " + "unable to verify user credentials");
                     resp.sendError(HttpServletResponse.SC_UNAUTHORIZED, "unable to verify user credentials");
+                    return;
                 }
 
                 // Do a sanity check here to make sure the user hasn't already been deleted
-                if ((userId != null) && (account != null) && (accountObj != null) && _apiServer.verifyUser(Long.valueOf(userId))) {
+                if ((userId != null) && (account != null) && (accountObj != null) && _apiServer.verifyUser(userId)) {
                     String[] command = (String[])params.get("command");
                     if (command == null) {
                         s_logger.info("missing command, ignoring request...");
                         auditTrailSb.append(" " + HttpServletResponse.SC_BAD_REQUEST + " " + "no command specified");
                         resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "no command specified");
                         return;
-                    }   
+                    }
+                    UserContext.updateContext(userId, accountObj, account, ((Account)accountObj).getId(), domainId, session.getId());
                 } else {
-                    // Clear out the variables we retrieved from the session and invalidate the session.  This ensures
-                    // we won't allow a request across management server restarts if the userId was serialized to the
+                    // Invalidate the session to ensure we won't allow a request across management server restarts if the userId was serialized to the
                     // stored session
-                    userId = null;
-                    account = null;
-                    accountObj = null;
                     session.invalidate();
                     auditTrailSb.append(" " + HttpServletResponse.SC_UNAUTHORIZED + " " + "unable to verify user credentials");
                     resp.sendError(HttpServletResponse.SC_UNAUTHORIZED, "unable to verify user credentials");
@@ -216,12 +209,8 @@ public class ApiServlet extends HttpServlet {
                 }
             }
 
-            // Initialize an empty context and we will update it after we have verified the request below,
-            // we no longer rely on web-session here, verifyRequest will populate user/account information
-            // if a API key exists
-            UserContext.registerContext(null, null, null, false);
-
-            if (_apiServer.verifyRequest(params, userId)) {
+            if (_apiServer.verifyRequest(params, userId.toString())) {
+                /*
             	if (accountObj != null) {
             		Account userAccount = (Account)accountObj;
             		if (userAccount.getType() == Account.ACCOUNT_TYPE_NORMAL) {
@@ -238,7 +227,10 @@ public class ApiServlet extends HttpServlet {
             	// update user context info here so that we can take information if the request is authenticated
             	// via api key mechanism
             	updateUserContext(params, session != null ? session.getId() : null);
+                */
+
             	auditTrailSb.insert(0, "(userId="+UserContext.current().getUserId()+ " accountId="+UserContext.current().getAccountId()+ " sessionId="+(session != null ? session.getId() : null)+ ")" );
+
             	try {
             		String response = _apiServer.handleRequest(params, false, responseType, auditTrailSb);            		
             		writeResponse(resp, response != null ? response : "", false, responseType);
@@ -267,7 +259,8 @@ public class ApiServlet extends HttpServlet {
             UserContext.unregisterContext();
         }
     }
-    
+
+    /*
     private void updateUserContext(Map<String, Object[]> requestParameters, String sessionId) {
     	String userIdStr = (String)(requestParameters.get(BaseCmd.Properties.USER_ID.getName())[0]);
     	Account accountObj = (Account)(requestParameters.get(BaseCmd.Properties.ACCOUNT_OBJ.getName())[0]);
@@ -281,6 +274,7 @@ public class ApiServlet extends HttpServlet {
     		accountId = accountObj.getId();    	
     	UserContext.updateContext(userId, accountId, sessionId);
     }
+    */
 
     // FIXME: rather than isError, we might was to pass in the status code to give more flexibility
     private void writeResponse(HttpServletResponse resp, String response, boolean isError, String responseType) {
@@ -308,6 +302,7 @@ public class ApiServlet extends HttpServlet {
         }
     }
 
+    @SuppressWarnings("rawtypes")
     private String getLoginSuccessResponse(HttpSession session, String responseType) {
         StringBuffer sb = new StringBuffer();
         int inactiveInterval = session.getMaxInactiveInterval();
@@ -320,8 +315,8 @@ public class ApiServlet extends HttpServlet {
                 while (attrNames.hasMoreElements()) {
                     String attrName = (String)attrNames.nextElement();
                     Object attrObj = session.getAttribute(attrName);
-                    if (attrObj instanceof String) {
-                        sb.append(", \"" + attrName + "\" : \"" + (String)attrObj + "\"");
+                    if ((attrObj instanceof String) || (attrObj instanceof Long)) {
+                        sb.append(", \"" + attrName + "\" : \"" + attrObj.toString() + "\"");
                     }
                 }
             }

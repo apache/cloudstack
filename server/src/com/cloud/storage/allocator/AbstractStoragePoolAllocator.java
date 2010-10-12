@@ -58,7 +58,6 @@ import com.cloud.template.TemplateManager;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VMInstanceVO;
@@ -86,7 +85,6 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
-        ComponentLocator locator = ComponentLocator.getCurrentLocator();
         
         Map<String, String> configs = _configDao.getConfiguration(null, params);
         

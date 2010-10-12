@@ -18,13 +18,25 @@
 package com.cloud.template;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 
+import com.cloud.api.commands.AttachIsoCmd;
+import com.cloud.api.commands.CopyIsoCmd;
+import com.cloud.api.commands.CopyTemplateCmd;
+import com.cloud.api.commands.DeleteIsoCmd;
+import com.cloud.api.commands.DeleteTemplateCmd;
+import com.cloud.api.commands.DetachIsoCmd;
+import com.cloud.api.commands.ExtractIsoCmd;
+import com.cloud.api.commands.ExtractTemplateCmd;
+import com.cloud.api.commands.RegisterIsoCmd;
+import com.cloud.api.commands.RegisterTemplateCmd;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.StoragePool;
@@ -61,9 +73,11 @@ public interface TemplateManager extends Manager {
      * @param enablePassword Does the template support password change.
      * @param guestOSId OS that is on the template
      * @param bootable true if this template will represent a bootable ISO
-     * @return id of the template created.
+     * @return the template created.
      */
-    Long create(long userId, long accountId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, ImageFormat format, TemplateType type, URI url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable, HypervisorType hyperType);
+//    Long create(long userId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, ImageFormat format, FileSystem fs, URI url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable);
+    VMTemplateVO registerTemplate(RegisterTemplateCmd cmd) throws InvalidParameterValueException, URISyntaxException, ResourceAllocationException;
+    VMTemplateVO registerIso(RegisterIsoCmd cmd) throws InvalidParameterValueException, IllegalArgumentException, ResourceAllocationException;   
 
     /**
      * Creates a Template
@@ -132,6 +146,8 @@ public interface TemplateManager extends Manager {
      * @throws InvalidParameterValueException 
      */
     boolean copy(long userId, long templateId, long sourceZoneId, long destZoneId, long startEventId) throws InternalErrorException, StorageUnavailableException, InvalidParameterValueException;
+    VMTemplateVO copyIso(CopyIsoCmd cmd) throws InvalidParameterValueException, StorageUnavailableException, PermissionDeniedException;
+    VMTemplateVO copyTemplate(CopyTemplateCmd cmd) throws InvalidParameterValueException, StorageUnavailableException, PermissionDeniedException;
     
     /**
      * Deletes a template from secondary storage servers
@@ -140,7 +156,11 @@ public interface TemplateManager extends Manager {
      * @param zoneId - optional. If specified, will only delete the template from the specified zone's secondary storage server.
      * @return true if success
      */
-    boolean delete(long userId, long templateId, Long zoneId, long startEventId) throws InternalErrorException;
+    boolean delete(long userId, long templateId, Long zoneId) throws InternalErrorException;
+    
+    boolean detachIso(DetachIsoCmd cmd) throws InternalErrorException, InvalidParameterValueException, PermissionDeniedException;
+    
+    boolean attachIso(AttachIsoCmd cmd) throws InternalErrorException, InvalidParameterValueException, PermissionDeniedException;
     
     /**
      * Lists templates in the specified storage pool that are not being used by any VM.
@@ -156,7 +176,22 @@ public interface TemplateManager extends Manager {
     void evictTemplateFromStoragePool(VMTemplateStoragePoolVO templatePoolVO);
     
     boolean templateIsDeleteable(VMTemplateHostVO templateHostRef);
+ 
+    /**
+     * Deletes a template
+     * @param cmd - the command specifying templateId
+     */
+    boolean deleteTemplate(DeleteTemplateCmd cmd) throws InvalidParameterValueException, InternalErrorException, PermissionDeniedException;
+    
+    /**
+     * Deletes a template
+     * @param cmd - the command specifying isoId
+     * @return true if deletion is successful, false otherwise
+     * @throws InvalidParameterValueException, InternalErrorException, PermissionDeniedException
+     */
+    boolean deleteIso(DeleteIsoCmd cmd) throws InvalidParameterValueException, InternalErrorException, PermissionDeniedException;
 
 	void extract(VMTemplateVO template, String url, VMTemplateHostVO tmpltHostRef, Long zoneId, long eventId, long asyncJobId, AsyncJobManager asyncMgr);
-    
+    void extract(ExtractIsoCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+    void extract(ExtractTemplateCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
 }

@@ -18,9 +18,6 @@
 
 package com.cloud.server.auth;
 
-import java.math.BigInteger;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 
 import javax.ejb.Local;
@@ -32,7 +29,6 @@ import com.cloud.server.ManagementServer;
 import com.cloud.user.UserAccount;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
  * Simple UserAuthenticator that performs a MD5 hash of the password before 

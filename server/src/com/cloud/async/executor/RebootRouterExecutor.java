@@ -41,8 +41,9 @@ public class RebootRouterExecutor extends VMOperationExecutor {
 		ManagementServer managementServer = asyncMgr.getExecutorContext().getManagementServer();
     	VMOperationParam param = gson.fromJson(job.getCmdInfo(), VMOperationParam.class);
     	
+    	/*
 		if(getSyncSource() == null) {
-	    	asyncMgr.syncAsyncJobExecution(job.getId(), "Router", param.getVmId());
+	    	asyncMgr.syncAsyncJobExecution(job, "Router", param.getVmId());
 			return true;
 		} else {
 			try {
@@ -67,6 +68,8 @@ public class RebootRouterExecutor extends VMOperationExecutor {
 			}
 	    	return true;
 		}
+		*/
+    	return true;
 	}
 	
 	public void processAnswer(VMOperationListener listener, long agentId, long seq, Answer answer) {

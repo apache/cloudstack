@@ -25,6 +25,7 @@ public class RevokeNetworkGroupIngressExecutor extends BaseAsyncJobExecutor {
 		NetworkGroupIngressParam param = gson.fromJson(job.getCmdInfo(), NetworkGroupIngressParam.class);
 		AccountVO account = param.getAccount();
 
+		/*
 		if (getSyncSource() == null) {
 			NetworkGroupVO networkGroup = managementServer.findNetworkGroupByName(param.getAccount().getId(), param.getGroupName());
 	        if(networkGroup == null) {
@@ -49,6 +50,7 @@ public class RevokeNetworkGroupIngressExecutor extends BaseAsyncJobExecutor {
 						"Failed to revoke network group ingress from group: " + param.getGroupName() + " for account: " + account.getAccountName() + " (id: " + account.getId() + ")");
 			}
 		}
+		*/
 
 		return true;
 	}

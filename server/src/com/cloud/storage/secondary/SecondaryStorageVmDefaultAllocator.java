@@ -24,7 +24,6 @@ import java.util.Random;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import com.cloud.storage.secondary.SecondaryStorageVmAllocator;
 import com.cloud.vm.SecondaryStorageVmVO;
 
 @Local(value={SecondaryStorageVmAllocator.class})

@@ -36,6 +36,7 @@ public class AttachISOExecutor extends VMOperationExecutor {
     	AsyncJobVO job = getJob();
     	Gson gson = GsonHelper.getBuilder().create();
     	
+    	/*
 		if(getSyncSource() == null) {
 	    	AttachISOParam param = gson.fromJson(job.getCmdInfo(), AttachISOParam.class);
 	    	asyncMgr.syncAsyncJobExecution(job.getId(), "AttachISO", param.getVmId());
@@ -75,6 +76,8 @@ public class AttachISOExecutor extends VMOperationExecutor {
 	    	
 			return true;
 		}
+		*/
+    	return true;
 	}
 	
 	public void processAnswer(VMOperationListener listener, long agentId, long seq, Answer answer) {

@@ -15,293 +15,220 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-
 package com.cloud.api.commands;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+
 import org.apache.log4j.Logger;
-import com.cloud.api.BaseCmd;
-import com.cloud.api.ServerApiException;
+
+import com.cloud.api.ApiDBUtils;
+import com.cloud.api.BaseListCmd;
+import com.cloud.api.Implementation;
+import com.cloud.api.Parameter;
+import com.cloud.api.response.ListResponse;
+import com.cloud.api.response.UserVmResponse;
 import com.cloud.async.AsyncJobVO;
-import com.cloud.domain.DomainVO;
-import com.cloud.host.HostVO;
-import com.cloud.server.Criteria;
-import com.cloud.service.ServiceOfferingVO;
-import com.cloud.storage.GuestOSVO;
-import com.cloud.storage.StoragePoolVO;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.VolumeVO;
 import com.cloud.user.Account;
-import com.cloud.uservm.UserVm;
-import com.cloud.utils.Pair;
+import com.cloud.user.UserContext;
 import com.cloud.vm.InstanceGroupVO;
+import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VmStats;
 
-public class ListVMsCmd extends BaseCmd {
+@Implementation(method="searchForUserVMs", description="List the virtual machines owned by the account.")
+public class ListVMsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListVMsCmd.class.getName());
 
     private static final String s_name = "listvirtualmachinesresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
-    static {
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.STATE, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ZONE_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.POD_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.GROUP_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.HOST_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.KEYWORD, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DOMAIN_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGE, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGESIZE, Boolean.FALSE));
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="account", type=CommandType.STRING, description="account. Must be used with the domainId parameter.")
+    private String accountName;
+
+    @Parameter(name="domainid", type=CommandType.LONG, description="the domain ID. If used with the account parameter, lists virtual machines for the specified account in this domain.")
+    private Long domainId;
+
+    @Parameter(name="hostid", type=CommandType.LONG, description="the host ID")
+    private Long hostId;
+
+    @Parameter(name="id", type=CommandType.LONG, description="the ID of the virtual machine")
+    private Long id;
+
+    @Parameter(name="name", type=CommandType.STRING, description="name of the virtual machine")
+    private String instanceName;
+
+    @Parameter(name="podid", type=CommandType.LONG, description="the pod ID")
+    private Long podId;
+
+    @Parameter(name="state", type=CommandType.STRING, description="state of the virtual machine")
+    private String state;
+
+    @Parameter(name="zoneid", type=CommandType.LONG, description="the availability zone ID")
+    private Long zoneId;
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public String getAccountName() {
+        return accountName;
     }
+
+    public Long getDomainId() {
+        return domainId;
+    }
+
+    public Long getHostId() {
+        return hostId;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public String getInstanceName() {
+        return instanceName;
+    }
+
+    public Long getPodId() {
+        return podId;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public Long getZoneId() {
+        return zoneId;
+    }
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
 
     @Override
 	public String getName() {
         return s_name;
     }
-    @Override
-	public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
 
-    @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-    	Long id = (Long)params.get(BaseCmd.Properties.ID.getName());
-        Account account = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-        String accountName = (String)params.get(BaseCmd.Properties.ACCOUNT.getName());
-        Long domainId = (Long)params.get(BaseCmd.Properties.DOMAIN_ID.getName());
-        String name = (String) params.get(BaseCmd.Properties.NAME.getName());
-        String state = (String) params.get(BaseCmd.Properties.STATE.getName());
-        Long zoneId = (Long)params.get(BaseCmd.Properties.ZONE_ID.getName());
-        Long podId = (Long)params.get(BaseCmd.Properties.POD_ID.getName());
-        Long hostId = (Long)params.get(BaseCmd.Properties.HOST_ID.getName());
-        Long groupId = (Long)params.get(BaseCmd.Properties.GROUP_ID.getName());
-        String keyword = (String)params.get(BaseCmd.Properties.KEYWORD.getName());
-        Integer page = (Integer)params.get(BaseCmd.Properties.PAGE.getName());
-        Integer pageSize = (Integer)params.get(BaseCmd.Properties.PAGESIZE.getName());
-        Long accountId = null;
-        Boolean isAdmin = false;
+    @Override @SuppressWarnings("unchecked")
+	public ListResponse<UserVmResponse> getResponse() {
+        List<UserVmVO> userVms = (List<UserVmVO>)getResponseObject();
 
-        if ((account == null) || isAdmin(account.getType())) {
-            isAdmin = true;
-            if (domainId != null) {
-                if ((account != null) && !getManagementServer().isChildDomain(account.getDomainId(), domainId)) {
-                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid domain id (" + domainId + ") given, unable to list virtual machines.");
-                }
-
-                if (accountName != null) {
-                    account = getManagementServer().findActiveAccount(accountName, domainId);
-                    if (account == null) {
-                        throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to find account " + accountName + " in domain " + domainId);
-                    }
-                    accountId = account.getId();
-                }
-            } else {
-                domainId = ((account == null) ? DomainVO.ROOT_DOMAIN : account.getDomainId());
-            }
-        } else {
-            accountName = account.getAccountName();
-            accountId = account.getId();
-            domainId = account.getDomainId();
-        }
-
-        if(account!=null && domainId==null){
-        	throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Please specify the domain id for this account:"+account.getId());
-        }
-        
-        Long[] accountIds = null;
-        if (accountId != null) {
-            accountIds = new Long[1];
-            accountIds[0] = accountId;
-        }
-
-        Long startIndex = Long.valueOf(0);
-        int pageSizeNum = 50;
-    	if (pageSize != null) {
-    		pageSizeNum = pageSize.intValue();
-    	}
-        if (page != null) {
-            int pageNum = page.intValue();
-            if (pageNum > 0) {
-                startIndex = Long.valueOf(pageSizeNum * (pageNum-1));
-            }
-        }
-        Criteria c = new Criteria("id", Boolean.TRUE, startIndex, Long.valueOf(pageSizeNum));
-        
-        if (keyword != null) {
-        	c.addCriteria(Criteria.KEYWORD, keyword);
-        } else {
-        	c.addCriteria(Criteria.ID, id);
-            c.addCriteria(Criteria.NAME, name);
-            c.addCriteria(Criteria.STATE, state);
-            
-            if(zoneId != null)
-            	c.addCriteria(Criteria.DATACENTERID, zoneId);
-
-            // ignore these search requests if it's not an admin
-            if (isAdmin == true) {
-    	        c.addCriteria(Criteria.DOMAINID, domainId);
-    	        
-    	        if(podId != null)
-    	        	c.addCriteria(Criteria.PODID, podId);
-    	        c.addCriteria(Criteria.HOSTID, hostId);
-            } 
-        }
-
-        c.addCriteria(Criteria.ACCOUNTID, accountIds);
-        c.addCriteria(Criteria.ISADMIN, isAdmin); 
-        c.addCriteria(Criteria.GROUPID, groupId); 
-
-        List<? extends UserVm> virtualMachines = getManagementServer().searchForUserVMs(c);
-
-        if (virtualMachines == null) {
-            throw new ServerApiException(BaseCmd.VM_LIST_ERROR, "unable to find virtual machines for account id " + accountName.toString());
-        }
-        
-        Object[] vmTag = new Object[virtualMachines.size()];
-        int i = 0;
-
-        HashMap<Long, HostVO> hostMap = new HashMap<Long, HostVO>();
-        List<HostVO> hostList = getManagementServer().listAllActiveHosts();
-        for (HostVO hostVO : hostList) {
-        	hostMap.put(hostVO.getId(), hostVO);
-        }
-
-        for (UserVm vmInstance : virtualMachines) {
-    
-        	//if the account is deleted, do not return the user vm 
-        	Account currentVmAccount = getManagementServer().getAccount(vmInstance.getAccountId());
-        	if(currentVmAccount.getRemoved()!=null)
-        	{
-        		continue; //not returning this vm
-        	}
-        	
-            List<Pair<String, Object>> vmData = new ArrayList<Pair<String, Object>>();
-            AsyncJobVO asyncJob = getManagementServer().findInstancePendingAsyncJob("vm_instance", vmInstance.getId());
-            if(asyncJob != null) {
-                vmData.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), asyncJob.getId().toString()));
-                vmData.add(new Pair<String, Object>(BaseCmd.Properties.JOB_STATUS.getName(), String.valueOf(asyncJob.getStatus())));
+        ListResponse<UserVmResponse> response = new ListResponse<UserVmResponse>();
+        List<UserVmResponse> vmResponses = new ArrayList<UserVmResponse>();
+        for (UserVmVO userVm : userVms) {
+            UserVmResponse userVmResponse = new UserVmResponse();
+            userVmResponse.setId(userVm.getId());
+            AsyncJobVO asyncJob = ApiDBUtils.findInstancePendingAsyncJob("vm_instance", userVm.getId());
+            if (asyncJob != null) {
+                userVmResponse.setJobId(asyncJob.getId());
+                userVmResponse.setJobStatus(asyncJob.getStatus());
             } 
 
-            vmData.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), Long.toString(vmInstance.getId())));
-            vmData.add(new Pair<String, Object>(BaseCmd.Properties.NAME.getName(), vmInstance.getName()));
-            vmData.add(new Pair<String, Object>(BaseCmd.Properties.CREATED.getName(), getDateString(vmInstance.getCreated())));
-            vmData.add(new Pair<String, Object>(BaseCmd.Properties.IP_ADDRESS.getName(), vmInstance.getPrivateIpAddress()));
-            
-            if (vmInstance.getState() != null) {
-                vmData.add(new Pair<String, Object>(BaseCmd.Properties.STATE.getName(), vmInstance.getState().toString()));
+            userVmResponse.setName(userVm.getName());
+            userVmResponse.setCreated(userVm.getCreated());
+            userVmResponse.setIpAddress(userVm.getPrivateIpAddress());
+            if (userVm.getState() != null) {
+                userVmResponse.setState(userVm.getState().toString());
             }
 
-            Account acct = getManagementServer().findAccountById(Long.valueOf(vmInstance.getAccountId()));
+            Account acct = ApiDBUtils.findAccountById(Long.valueOf(userVm.getAccountId()));
             if (acct != null) {
-                vmData.add(new Pair<String, Object>(BaseCmd.Properties.ACCOUNT.getName(), acct.getAccountName()));
-                vmData.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN_ID.getName(), Long.toString(acct.getDomainId())));
-                vmData.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN.getName(), getManagementServer().findDomainIdById(acct.getDomainId()).getName()));
+                userVmResponse.setAccountName(acct.getAccountName());
+                userVmResponse.setDomainId(acct.getDomainId());
+                userVmResponse.setDomainName(ApiDBUtils.findDomainById(acct.getDomainId()).getName());
             }
-            vmData.add(new Pair<String, Object>(BaseCmd.Properties.HA_ENABLE.getName(), Boolean.valueOf(vmInstance.isHaEnabled()).toString()));
+
+            userVmResponse.setHaEnable(userVm.isHaEnabled());
             
-            if (vmInstance.getDisplayName() != null) {
-    			vmData.add(new Pair<String, Object>(BaseCmd.Properties.DISPLAY_NAME.getName(), vmInstance.getDisplayName()));
-    		}
-            else {
-            	vmData.add(new Pair<String, Object>(BaseCmd.Properties.DISPLAY_NAME.getName(), vmInstance.getName()));
+            if (userVm.getDisplayName() != null) {
+                userVmResponse.setDisplayName(userVm.getDisplayName());
+            } else {
+                userVmResponse.setDisplayName(userVm.getName());
             }
-            
-            //Groups
-            InstanceGroupVO group = getManagementServer().getGroupForVm(vmInstance.getId());
+
+            InstanceGroupVO group = ApiDBUtils.findInstanceGroupForVM(userVm.getId());
             if (group != null) {
-            	vmData.add(new Pair<String, Object>(BaseCmd.Properties.GROUP_ID.getName(), group.getId()));
-                vmData.add(new Pair<String, Object>(BaseCmd.Properties.GROUP.getName(), group.getName()));
+                userVmResponse.setGroup(group.getName());
+                userVmResponse.setGroupId(group.getId());
             }
-            
+
             // Data Center Info
-            vmData.add(new Pair<String, Object>(BaseCmd.Properties.ZONE_ID.getName(), Long.valueOf(vmInstance.getDataCenterId()).toString()));
-            vmData.add(new Pair<String, Object>(BaseCmd.Properties.ZONE_NAME.getName(), getManagementServer().findDataCenterById(vmInstance.getDataCenterId()).getName()));
+            userVmResponse.setZoneId(userVm.getDataCenterId());
+            userVmResponse.setZoneName(ApiDBUtils.findZoneById(userVm.getDataCenterId()).getName());
+
+            Account account = (Account)UserContext.current().getAccountObject();
             //if user is an admin, display host id
-            if ( (isAdmin == true) && (vmInstance.getHostId() != null)) {
-            	vmData.add(new Pair<String, Object>(BaseCmd.Properties.HOST_ID.getName(), vmInstance.getHostId().toString()));
-            	vmData.add(new Pair<String, Object>(BaseCmd.Properties.HOST_NAME.getName(), getManagementServer().getHostBy(vmInstance.getHostId()).getName()));
+            if (((account == null) || isAdmin(account.getType())) && (userVm.getHostId() != null)) {
+                userVmResponse.setHostId(userVm.getHostId());
+                userVmResponse.setHostName(ApiDBUtils.findHostById(userVm.getHostId()).getName());
             }
 
             // Template Info
-            VMTemplateVO template = getManagementServer().findTemplateById(vmInstance.getTemplateId());
+            VMTemplateVO template = ApiDBUtils.findTemplateById(userVm.getTemplateId());
             if (template != null) {
-            	vmData.add(new Pair<String, Object>(BaseCmd.Properties.TEMPLATE_ID.getName(), Long.valueOf(vmInstance.getTemplateId()).toString()));
-            	vmData.add(new Pair<String, Object>(BaseCmd.Properties.TEMPLATE_NAME.getName(), template.getName()));
-            	vmData.add(new Pair<String, Object>(BaseCmd.Properties.TEMPLATE_DISPLAY_TEXT.getName(), template.getDisplayText()));
-            	vmData.add(new Pair<String, Object>(BaseCmd.Properties.PASSWORD_ENABLED.getName(), template.getEnablePassword()));
+                userVmResponse.setTemplateId(userVm.getTemplateId());
+                userVmResponse.setTemplateName(template.getName());
+                userVmResponse.setTemplateDisplayText(template.getDisplayText());
+                userVmResponse.setPasswordEnabled(template.getEnablePassword());
             } else {
-            	vmData.add(new Pair<String, Object>(BaseCmd.Properties.TEMPLATE_ID.getName(), "-1"));
-            	vmData.add(new Pair<String, Object>(BaseCmd.Properties.TEMPLATE_NAME.getName(), "ISO Boot"));
-            	vmData.add(new Pair<String, Object>(BaseCmd.Properties.TEMPLATE_DISPLAY_TEXT.getName(), "ISO Boot"));
-            	vmData.add(new Pair<String, Object>(BaseCmd.Properties.PASSWORD_ENABLED.getName(), false));
+                userVmResponse.setTemplateId(-1L);
+                userVmResponse.setTemplateName("ISO Boot");
+                userVmResponse.setTemplateDisplayText("ISO Boot");
+                userVmResponse.setPasswordEnabled(false);
             }
 
             // ISO Info
-            if (vmInstance.getIsoId() != null) {
-                VMTemplateVO iso = getManagementServer().findTemplateById(vmInstance.getIsoId().longValue());
+            if (userVm.getIsoId() != null) {
+                VMTemplateVO iso = ApiDBUtils.findTemplateById(userVm.getIsoId().longValue());
                 if (iso != null) {
-                    vmData.add(new Pair<String, Object>(BaseCmd.Properties.ISO_ID.getName(), Long.valueOf(vmInstance.getIsoId()).toString()));
-                    vmData.add(new Pair<String, Object>(BaseCmd.Properties.ISO_NAME.getName(), iso.getName()));
+                    userVmResponse.setIsoId(userVm.getIsoId());
+                    userVmResponse.setIsoName(iso.getName());
                 }
             }
 
             // Service Offering Info
-            ServiceOfferingVO offering = getManagementServer().findServiceOfferingById(vmInstance.getServiceOfferingId());
-            vmData.add(new Pair<String, Object>(BaseCmd.Properties.SERVICE_OFFERING_ID.getName(), Long.valueOf(vmInstance.getServiceOfferingId()).toString()));
-            vmData.add(new Pair<String, Object>(BaseCmd.Properties.SERVICE_OFFERING_NAME.getName(), offering.getName()));
-            vmData.add(new Pair<String, Object>(BaseCmd.Properties.CPU_NUMBER.getName(), Integer.valueOf(offering.getCpu()).toString()));
-            vmData.add(new Pair<String, Object>(BaseCmd.Properties.CPU_SPEED.getName(), Integer.valueOf(offering.getSpeed()).toString()));
-            vmData.add(new Pair<String, Object>(BaseCmd.Properties.MEMORY.getName(), Integer.valueOf(offering.getRamSize()).toString()));
+            ServiceOffering offering = ApiDBUtils.findServiceOfferingById(userVm.getServiceOfferingId());
+            userVmResponse.setServiceOfferingId(userVm.getServiceOfferingId());
+            userVmResponse.setServiceOfferingName(offering.getName());
+            userVmResponse.setCpuNumber(offering.getCpu());
+            userVmResponse.setCpuSpeed(offering.getSpeed());
+            userVmResponse.setMemory(offering.getRamSize());
             
             //stats calculation
             DecimalFormat decimalFormat = new DecimalFormat("#.##");
             String cpuUsed = null;
-            VmStats vmStats = getManagementServer().getVmStatistics(vmInstance.getId());
-            if (vmStats != null) 
-            {
+            VmStats vmStats = ApiDBUtils.getVmStatistics(userVm.getId());
+            if (vmStats != null) {
                 float cpuUtil = (float) vmStats.getCPUUtilization();
                 cpuUsed = decimalFormat.format(cpuUtil) + "%";
-                vmData.add(new Pair<String, Object>(BaseCmd.Properties.CPU_USED.getName(), cpuUsed));
-                
+                userVmResponse.setCpuUsed(cpuUsed);
+
                 long networkKbRead = (long)vmStats.getNetworkReadKBs();
-                vmData.add(new Pair<String, Object>(BaseCmd.Properties.NETWORK_KB_READ.getName(), networkKbRead));
+                userVmResponse.setNetworkKbsRead(networkKbRead);
                 
                 long networkKbWrite = (long)vmStats.getNetworkWriteKBs();
-                vmData.add(new Pair<String, Object>(BaseCmd.Properties.NETWORK_KB_WRITE.getName(), networkKbWrite));
+                userVmResponse.setNetworkKbsWrite(networkKbWrite);
             }
-            vmData.add(new Pair<String, Object>(BaseCmd.Properties.GUEST_OS_ID.getName(), vmInstance.getGuestOSId()));
             
-            GuestOSVO guestOs = getManagementServer().getGuestOs(vmInstance.getGuestOSId());
-            if(guestOs!=null)
-            	vmData.add(new Pair<String, Object>(BaseCmd.Properties.OS_TYPE_ID.getName(),guestOs.getCategoryId()));
+            userVmResponse.setOsTypeId(userVm.getGuestOSId());
 
             //network groups
-            vmData.add(new Pair<String, Object>(BaseCmd.Properties.NETWORK_GROUP_LIST.getName(), getManagementServer().getNetworkGroupsNamesForVm(vmInstance.getId())));
-            
-            //root device related
-            VolumeVO rootVolume = getManagementServer().findRootVolume(vmInstance.getId());
-            if(rootVolume!=null)
-            {
-            	vmData.add(new Pair<String, Object>(BaseCmd.Properties.ROOT_DEVICE_ID.getName(), rootVolume.getDeviceId()));
-            
-            	StoragePoolVO storagePool = getManagementServer().findPoolById(rootVolume.getPoolId());
-            	vmData.add(new Pair<String, Object>(BaseCmd.Properties.ROOT_DEVICE_TYPE.getName(), storagePool.getPoolType().toString()));
-            }
-            
-            vmTag[i++] = vmData;
+            userVmResponse.setNetworkGroupList(ApiDBUtils.getNetworkGroupsNamesForVm(userVm.getId()));
+
+            userVmResponse.setResponseName("virtualmachine");
+            vmResponses.add(userVmResponse);
         }
-        List<Pair<String, Object>> returnTags = new ArrayList<Pair<String, Object>>();
-        Pair<String, Object> vmTags = new Pair<String, Object>("virtualmachine", vmTag);
-        returnTags.add(vmTags);
-        return returnTags;
+
+        response.setResponses(vmResponses);
+        response.setResponseName(getName());
+        return response;
     }
 }

@@ -15,110 +15,100 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.StringTokenizer;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
-import com.cloud.api.ServerApiException;
+import com.cloud.api.ApiDBUtils;
+import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.Implementation;
+import com.cloud.api.Parameter;
+import com.cloud.api.response.SuccessResponse;
+import com.cloud.event.EventTypes;
+import com.cloud.network.SecurityGroupVO;
 import com.cloud.user.Account;
-import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
 
-public class AssignPortForwardingServiceCmd extends BaseCmd {
+@Implementation(method="assignSecurityGroup", manager=Manager.ManagementServer, description="Assigns a single or a list of port forwarding services to a virtual machine. If a list of port forwarding services is given, it will overwrite the previous assignment of port forwarding services. For example, on the first call, if you assigned port forwarding service A to virtual machine 1 and on the next call, you assign port forwarding services B and C to virtual machine 1, the ultimate result of these two commands would be that virtual machine 1 would only have port forwarding services B and C assigned to it. Individual port forwarding services can be assigned to the virtual machine by specifying a single port forwarding service group.")
+public class AssignPortForwardingServiceCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(AssignPortForwardingServiceCmd.class.getName());
 	
     private static final String s_name = "assignportforwardingserviceresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.IDS, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PUBLIC_IP, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.VIRTUAL_MACHINE_ID, Boolean.TRUE));
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="id", type=CommandType.LONG, description="the ID of the port forwarding service to assign to the virtual machine/public IP")
+    private Long id;
+
+    @Parameter(name="ids", type=CommandType.LIST, collectionType=CommandType.LONG, description="a comma delimited list of port forwarding service IDs to assign to the virtual machine/public IP")
+    private List<Long> ids;
+
+    @Parameter(name="publicip", type=CommandType.STRING, required=true, description="the public IP address to associate to the port forwarding service")
+    private String publicIp;
+
+    @Parameter(name="virtualmachineid", type=CommandType.LONG, required=true, description="the ID of the virtual machine to assign to the port forwarding service")
+    private Long virtualMachineId;
+
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public Long getId() {
+        return id;
     }
 
+    public List<Long> getIds() {
+        return ids;
+    }
+
+    public String getPublicIp() {
+        return publicIp;
+    }
+
+    public Long getVirtualMachineId() {
+        return virtualMachineId;
+    }
+
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
+
+    @Override
     public String getName() {
         return s_name;
     }
-    
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
+
+    @Override
+    public long getAccountId() {
+        SecurityGroupVO sg = ApiDBUtils.findPortForwardingServiceById(getId());
+        if (sg == null) {
+            return Account.ACCOUNT_ID_SYSTEM; // bad id given, parent this command to SYSTEM so ERROR events are tracked
+        }
+        return sg.getAccountId();
     }
 
     @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-        Account account = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-        Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
-        Long securityGroupId = (Long)params.get(BaseCmd.Properties.ID.getName());
-        String securityGroupIds = (String)params.get(BaseCmd.Properties.IDS.getName());
-        String publicIp = (String)params.get(BaseCmd.Properties.PUBLIC_IP.getName());
-        Long vmId = (Long)params.get(BaseCmd.Properties.VIRTUAL_MACHINE_ID.getName());
-
-        if ((securityGroupId == null) && (securityGroupIds == null)) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "No service id (or list of ids) specified.");
-        }
-
-        List<Long> sgIdList = null;
-        if (securityGroupIds != null) {
-            sgIdList = new ArrayList<Long>();
-            StringTokenizer st = new StringTokenizer(securityGroupIds, ",");
-            while (st.hasMoreTokens()) {
-                String token = st.nextToken();
-                try {
-                    Long nextSGId = Long.parseLong(token);
-                    sgIdList.add(nextSGId);
-                } catch (NumberFormatException nfe) {
-                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "The service id " + token + " is not a valid parameter.");
-                }
-            }
-        }
-
-        if (userId == null) {
-            userId = Long.valueOf(1);
-        }
-
-        List<Long> validateSGList = null;
-        if (securityGroupId == null) {
-            validateSGList = sgIdList;
-        } else {
-            validateSGList = new ArrayList<Long>();
-            validateSGList.add(securityGroupId);
-        }
-        Long validatedAccountId = getManagementServer().validateSecurityGroupsAndInstance(validateSGList, vmId);
-        if (validatedAccountId == null) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to apply port forwarding services " + StringUtils.join(sgIdList, ",") + " to instance " + vmId + ".  Invalid list of port forwarding services for the given instance.");
-        }
-        if (account != null) {
-            if (!isAdmin(account.getType()) && (account.getId() != validatedAccountId.longValue())) {
-                throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Permission denied applying port forwarding services " + StringUtils.join(sgIdList, ",") + " to instance " + vmId + ".");
-            } else {
-                Account validatedAccount = getManagementServer().findAccountById(validatedAccountId);
-                if (!getManagementServer().isChildDomain(account.getDomainId(), validatedAccount.getDomainId())) {
-                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Permission denied applying port forwarding services " + StringUtils.join(sgIdList, ",") + " to instance " + vmId + ".");
-                }
-            }
-        }
-
-        long jobId = getManagementServer().assignSecurityGroupAsync(userId, securityGroupId, sgIdList, publicIp, vmId);
-        
-        if(jobId == 0) {
-        	s_logger.warn("Unable to schedule async-job for AssignPortForwardingServiceCmd comamnd");
-        } else {
-	        if(s_logger.isDebugEnabled())
-	        	s_logger.debug("AssignPortForwardingServiceCmd command has been accepted, job id: " + jobId);
-        }
-        
-        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId))); 
-        return returnValues;
+    public String getEventType() {
+        return EventTypes.EVENT_PORT_FORWARDING_SERVICE_APPLY;
     }
+
+    @Override
+    public String getEventDescription() {
+        return "applying port forwarding service for vm with id: " + getVirtualMachineId();
+    }
+
+	@Override @SuppressWarnings("unchecked")
+	public SuccessResponse getResponse() {
+		Boolean success = (Boolean)getResponseObject();
+		SuccessResponse response = new SuccessResponse();
+		response.setSuccess(success);
+		response.setResponseName(getName());
+		return response;
+	}
 }

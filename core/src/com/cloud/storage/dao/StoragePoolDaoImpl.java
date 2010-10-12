@@ -24,31 +24,27 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.host.Status;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePoolDetailVO;
 import com.cloud.storage.StoragePoolVO;
-import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Local(value={StoragePoolDao.class}) @DB(txn=false)
 public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  implements StoragePoolDao {
-    private static final Logger s_logger = Logger.getLogger(StoragePoolDaoImpl.class);
     protected final SearchBuilder<StoragePoolVO> NameSearch;
 	protected final SearchBuilder<StoragePoolVO> UUIDSearch;
 	protected final SearchBuilder<StoragePoolVO> DatacenterSearch;
@@ -273,7 +269,6 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
 	    if (clusterId != null) {
 	        sql.append("storage_pool.cluster_id = ? OR storage_pool.cluster_id IS NULL) AND (");
 	    }
-	    Set<Map.Entry<String, String>> entries = details.entrySet();
 	    for (Map.Entry<String, String> detail : details.entrySet()) {
 	        sql.append("((storage_pool_details.name='").append(detail.getKey()).append("') AND (storage_pool_details.value='").append(detail.getValue()).append("')) OR ");
 	    }

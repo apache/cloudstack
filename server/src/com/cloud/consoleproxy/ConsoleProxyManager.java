@@ -18,29 +18,41 @@
 
 package com.cloud.consoleproxy;
 
+import com.cloud.agent.api.AgentControlAnswer;
+import com.cloud.agent.api.ConsoleAccessAuthenticationCommand;
+import com.cloud.agent.api.ConsoleProxyLoadReportCommand;
+import com.cloud.agent.api.StartupCommand;
+import com.cloud.api.ServerApiException;
+import com.cloud.api.commands.DestroyConsoleProxyCmd;
+import com.cloud.host.HostVO;
+import com.cloud.host.Status;
 import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.ConsoleProxyVO;
-
 public interface ConsoleProxyManager extends Manager {
-    public static final int DEFAULT_PROXY_CAPACITY = 50;
-    public static final int DEFAULT_STANDBY_CAPACITY = 10;
-    public static final int DEFAULT_PROXY_VM_RAMSIZE = 1024; // 1G
-
-    public static final int DEFAULT_PROXY_CMD_PORT = 8001;
-    public static final int DEFAULT_PROXY_VNC_PORT = 0;
-    public static final int DEFAULT_PROXY_URL_PORT = 80;
-    public static final int DEFAULT_PROXY_SESSION_TIMEOUT = 300000; // 5 minutes
-
-    public static final String ALERT_SUBJECT = "proxy-alert";
-
-    public ConsoleProxyInfo assignProxy(long dataCenterId, long userVmId);
-
-    public ConsoleProxyVO startProxy(long proxyVmId, long startEventId);
-
-    public boolean stopProxy(long proxyVmId, long startEventId);
-
-    public boolean rebootProxy(long proxyVmId, long startEventId);
-
-    public boolean destroyProxy(long proxyVmId, long startEventId);
+	
+	public static final int DEFAULT_PROXY_CAPACITY = 50;
+	public static final int DEFAULT_STANDBY_CAPACITY = 10;
+	public static final int DEFAULT_PROXY_VM_RAMSIZE = 1024;			// 1G
+	
+	public static final int DEFAULT_PROXY_CMD_PORT = 8001;
+	public static final int DEFAULT_PROXY_VNC_PORT = 0;
+	public static final int DEFAULT_PROXY_URL_PORT = 80;
+	public static final int DEFAULT_PROXY_SESSION_TIMEOUT = 300000;		// 5 minutes
+	
+	public static final String ALERT_SUBJECT = "proxy-alert";
+	
+	public ConsoleProxyInfo assignProxy(long dataCenterId, long userVmId);
+	
+	public ConsoleProxyVO startProxy(long proxyVmId, long startEventId);
+	public boolean stopProxy(long proxyVmId, long startEventId);
+	public boolean rebootProxy(long proxyVmId, long startEventId);
+	public boolean destroyProxy(long proxyVmId, long startEventId);
+	
+	public void onLoadReport(ConsoleProxyLoadReportCommand cmd);
+	public AgentControlAnswer onConsoleAccessAuthentication(ConsoleAccessAuthenticationCommand cmd);
+	
+    public void onAgentConnect(HostVO host, StartupCommand cmd);
+	public void onAgentDisconnect(long agentId, Status state);
+	public boolean destroyConsoleProxy(DestroyConsoleProxyCmd cmd) throws ServerApiException;
 }

@@ -19,43 +19,58 @@
 package com.cloud.api.commands;
 
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.utils.Pair;
+import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.Implementation;
+import com.cloud.api.Parameter;
+import com.cloud.api.ServerApiException;
+import com.cloud.api.response.CloudIdentifierResponse;
 
+@Implementation(method="getCloudIdentifierResponse", manager=Manager.ManagementServer, description="Retrieves a cloud identifier.")
 public class GetCloudIdentifierCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(GetCloudIdentifierCmd.class.getName());
-
     private static final String s_name = "getcloudidentifierresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.TRUE));
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="userid", type=CommandType.LONG, required=true, description="the user ID for the cloud identifier")
+    private Long userid;
+
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public Long getUserId() {
+        return userid;
     }
+
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
 
     public String getName() {
         return s_name;
     }
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
-
-    @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-        Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
-
-        ArrayList<String> signedResponse = getManagementServer().getCloudIdentifierResponse(userId);
-        
-        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-        
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.CLOUD_IDENTIFIER.getName(),signedResponse.get(0)));
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.SIGNATURE.getName(),signedResponse.get(1)));
-        return returnValues;
-    }
     
+    @Override @SuppressWarnings("unchecked")
+    public CloudIdentifierResponse getResponse() {
+        CloudIdentifierResponse response = new CloudIdentifierResponse();
+        ArrayList<String> responseObject = (ArrayList<String>)getResponseObject();
+        if (responseObject != null) {
+            response.setCloudIdentifier(responseObject.get(0));
+            response.setSignature(responseObject.get(1));
 
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add config");
+        }
+        response.setResponseName(getName());
+        return response;
+    }
 }

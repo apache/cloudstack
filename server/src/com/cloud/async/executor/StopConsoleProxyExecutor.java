@@ -41,7 +41,7 @@ public class StopConsoleProxyExecutor extends VMOperationExecutor {
     	VMOperationParam param = gson.fromJson(job.getCmdInfo(), VMOperationParam.class);
     	
 		if(getSyncSource() == null) {
-	    	asyncMgr.syncAsyncJobExecution(job.getId(), "ConsoleProxy", param.getVmId());
+	    	asyncMgr.syncAsyncJobExecution(job, "ConsoleProxy", param.getVmId());
 			return true;
 		} else {
 	    	try {

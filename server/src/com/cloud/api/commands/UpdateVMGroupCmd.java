@@ -15,83 +15,72 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-
 package com.cloud.api.commands;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
-import com.cloud.api.ServerApiException;
+import com.cloud.api.Implementation;
+import com.cloud.api.Parameter;
+import com.cloud.api.response.InstanceGroupResponse;
 import com.cloud.user.Account;
-import com.cloud.utils.Pair;
 import com.cloud.vm.InstanceGroupVO;
 
+@Implementation(method="updateVmGroup")
 public class UpdateVMGroupCmd extends BaseCmd{
 
     private static final String s_name = "updateinstancegroupresponse";
     public static final Logger s_logger = Logger.getLogger(UpdateVMGroupCmd.class.getName());
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
-    static {
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.TRUE));
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="id", type=CommandType.LONG, required=true, description="Instance group ID")
+    private Long id;
+
+    @Parameter(name="name", type=CommandType.STRING, description="new instance group name")
+    private String groupName;
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public Long getId() {
+        return id;
     }
 
+    public String getGroupName() {
+        return groupName;
+    }
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
+
+    @Override
     public String getName() {
         return s_name;
     }
 
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
+    @Override @SuppressWarnings("unchecked")
+    public InstanceGroupResponse getResponse() {
+        InstanceGroupVO group = (InstanceGroupVO)getResponseObject();
 
-    @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-        Account account = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-        Long groupId = (Long)params.get(BaseCmd.Properties.ID.getName());
-        String name = (String)params.get(BaseCmd.Properties.NAME.getName());
+        InstanceGroupResponse response = new InstanceGroupResponse();
+        response.setId(group.getId());
+        response.setName(group.getName());
+        response.setCreated(group.getCreated());
 
-        // Verify input parameters
-        InstanceGroupVO group = getManagementServer().findVmGroupById(groupId.longValue());
-        if (group == null) {
-        	throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find a vm group with id " + groupId);
-        }
-        
-        if (account != null) {
-        	Account tempAccount = getManagementServer().findAccountById(group.getAccountId());
-            if (!isAdmin(account.getType()) && (account.getId() != group.getAccountId())) {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find a group with id " + groupId + " for this account");
-            } else if (!getManagementServer().isChildDomain(account.getDomainId(), tempAccount.getDomainId())) {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid group id (" + groupId + ") given, unable to update the group.");
-            }
-        }
-        
-        //Check if name is already in use by this account (exclude this group)
-        boolean isNameInUse = getManagementServer().isVmGroupNameInUse(group.getAccountId(), name);
-
-        if (isNameInUse && !group.getName().equals(name)) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to update vm group, a group with name " + name + " already exisits for account");
-        }
-        
-    	InstanceGroupVO vmGroup = getManagementServer().updateVmGroup(groupId, name);
-        List<Pair<String, Object>> embeddedObject = new ArrayList<Pair<String, Object>>();
-        
-        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), Long.toString(vmGroup.getId())));
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.NAME.getName(), vmGroup.getName()));
-        
-        Account accountTemp = getManagementServer().findAccountById(vmGroup.getAccountId());
+        Account accountTemp = ApiDBUtils.findAccountById(group.getAccountId());
         if (accountTemp != null) {
-        	returnValues.add(new Pair<String, Object>(BaseCmd.Properties.ACCOUNT.getName(), accountTemp.getAccountName()));
-        	returnValues.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN_ID.getName(), accountTemp.getDomainId()));
-        	returnValues.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN.getName(), getManagementServer().findDomainIdById(accountTemp.getDomainId()).getName()));
+            response.setAccountName(accountTemp.getAccountName());
+            response.setDomainId(accountTemp.getDomainId());
+            response.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
         }
-        embeddedObject.add(new Pair<String, Object>("instancegroup", new Object[] { returnValues } ));
-        return embeddedObject;
+
+        response.setResponseName(getName());
+        return response;
     }
 }

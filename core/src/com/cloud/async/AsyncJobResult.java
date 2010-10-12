@@ -93,7 +93,7 @@ public class AsyncJobResult {
 	}
 	
 	public void setResultObject(Object result) {
-		this.result = SerializerHelper.toSerializedString(result);
+		this.result = SerializerHelper.toSerializedStringOld(result);
 	}
 	
 	public String toString() {

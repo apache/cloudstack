@@ -30,16 +30,14 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.host.HostVO;
-import com.cloud.host.Status.Event;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ManagementServer;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.VMTemplateHostVO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -54,6 +52,7 @@ public class CreatePrivateTemplateExecutor extends VolumeOperationExecutor {
     	AsyncJobManager asyncMgr = getAsyncJobMgr();
     	AsyncJobVO job = getJob();
 
+    	/*
 		if(getSyncSource() == null) {
 		    CreatePrivateTemplateParam param = gson.fromJson(job.getCmdInfo(), CreatePrivateTemplateParam.class);
 	    	asyncMgr.syncAsyncJobExecution(job.getId(), "Volume", param.getVolumeId());
@@ -151,6 +150,8 @@ public class CreatePrivateTemplateExecutor extends VolumeOperationExecutor {
 	        asyncMgr.completeAsyncJob(jobId, jobStatus, resultCode, resultObject);
 	    	return true;
 		}
+		*/
+    	return true;
 	}
 	
 	private CreatePrivateTemplateResultObject composeResultObject(VMTemplateVO template, VMTemplateHostVO templateHostRef, Long dataCenterId) {
@@ -165,20 +166,20 @@ public class CreatePrivateTemplateExecutor extends VolumeOperationExecutor {
 		resultObject.setPasswordEnabled(template.getEnablePassword());
 		resultObject.setCrossZones(template.isCrossZones());
 		ManagementServer managerServer = getAsyncJobMgr().getExecutorContext().getManagementServer();
-		GuestOS os = managerServer.findGuestOSById(template.getGuestOSId());
-        if (os != null) {
-        	resultObject.setOsTypeId(os.getId());
-        	resultObject.setOsTypeName(os.getDisplayName());
-        } else {
-        	resultObject.setOsTypeId(-1L);
-        	resultObject.setOsTypeName("");
-        }
+//		GuestOS os = managerServer.findGuestOSById(template.getGuestOSId());
+//        if (os != null) {
+//        	resultObject.setOsTypeId(os.getId());
+//        	resultObject.setOsTypeName(os.getDisplayName());
+//        } else {
+//        	resultObject.setOsTypeId(-1L);
+//        	resultObject.setOsTypeName("");
+//        }
         
         Account owner = managerServer.findAccountById(template.getAccountId());
         if (owner != null) {
         	resultObject.setAccount(owner.getAccountName());
         	resultObject.setDomainId(owner.getDomainId());
-        	resultObject.setDomainName(managerServer.findDomainIdById(owner.getDomainId()).getName());
+//        	resultObject.setDomainName(managerServer.findDomainIdById(owner.getDomainId()).getName());
         }
 
         

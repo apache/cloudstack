@@ -42,7 +42,7 @@ public class CancelPrimaryStorageMaintenanceExecutor extends BaseAsyncJobExecuto
 		ManagementServer managementServer = asyncMgr.getExecutorContext().getManagementServer();
 		Long param = gson.fromJson(job.getCmdInfo(), Long.class);
 		Long userId = job.getUserId();
-		
+		/*
 		try {
 			boolean result = managementServer.cancelPrimaryStorageMaintenance(param.longValue(), userId.longValue());
 			if(result)
@@ -64,6 +64,7 @@ public class CancelPrimaryStorageMaintenanceExecutor extends BaseAsyncJobExecuto
 			asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR, 
 					e.getMessage());
 		}
+		*/
 		return true;
 	}
 	
@@ -79,7 +80,7 @@ public class CancelPrimaryStorageMaintenanceExecutor extends BaseAsyncJobExecuto
 	    	primaryStorageRO.setState(storagePoolVO.getStatus().toString());
 	    	primaryStorageRO.setIpAddress(storagePoolVO.getHostAddress());
             primaryStorageRO.setZoneId(storagePoolVO.getDataCenterId());
-            primaryStorageRO.setZoneName(managementServer.getDataCenterBy(storagePoolVO.getDataCenterId()).getName());
+//            primaryStorageRO.setZoneName(managementServer.getDataCenterBy(storagePoolVO.getDataCenterId()).getName());
 
             if (storagePoolVO.getPodId() != null && managementServer.findHostPodById(storagePoolVO.getPodId()) != null) {
             	primaryStorageRO.setPodId(storagePoolVO.getPodId());
@@ -91,25 +92,25 @@ public class CancelPrimaryStorageMaintenanceExecutor extends BaseAsyncJobExecuto
             }
             primaryStorageRO.setDiskSizeTotal(storagePoolVO.getCapacityBytes());
             
-            StorageStats stats = managementServer.getStoragePoolStatistics(storagePoolVO.getId());
+//            StorageStats stats = managementServer.getStoragePoolStatistics(storagePoolVO.getId());
             long capacity = storagePoolVO.getCapacityBytes();
             long available = storagePoolVO.getAvailableBytes() ;
             long used = capacity - available;
 
-            if (stats != null) {
-                used = stats.getByteUsed();
-                available = capacity - used;
-            }
+//            if (stats != null) {
+//                used = stats.getByteUsed();
+//                available = capacity - used;
+//            }
             
             primaryStorageRO.setDiskSizeAllocated(used);
             if (storagePoolVO.getClusterId() != null) 
             {
-            	ClusterVO cluster = managementServer.findClusterById(storagePoolVO.getClusterId());
+//            	ClusterVO cluster = managementServer.findClusterById(storagePoolVO.getClusterId());
             	primaryStorageRO.setClusterId(storagePoolVO.getClusterId());
-            	primaryStorageRO.setClusterName(cluster.getName());
+//            	primaryStorageRO.setClusterName(cluster.getName());
             }
             
-            primaryStorageRO.setTags(managementServer.getStoragePoolTags(storagePoolVO.getId()));
+//            primaryStorageRO.setTags(managementServer.getStoragePoolTags(storagePoolVO.getId()));
             return primaryStorageRO;
 
 	    }

@@ -35,7 +35,6 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.host.Host;
 import com.cloud.offering.ServiceOffering;
-import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.utils.Pair;

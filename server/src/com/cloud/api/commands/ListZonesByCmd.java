@@ -15,100 +15,83 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-
 package com.cloud.api.commands;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
-import com.cloud.api.ServerApiException;
+import com.cloud.api.BaseListCmd;
+import com.cloud.api.Implementation;
+import com.cloud.api.Parameter;
+import com.cloud.api.response.ListResponse;
+import com.cloud.api.response.ZoneResponse;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.user.Account;
-import com.cloud.utils.Pair;
+import com.cloud.user.UserContext;
 
-//FIXME: consolidate this class and ListDataCentersByCmd
-public class ListZonesByCmd extends BaseCmd {
+@Implementation(method="listDataCenters")
+public class ListZonesByCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListZonesByCmd.class.getName());
 
     private static final String s_name = "listzonesresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.AVAILABLE, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="available", type=CommandType.BOOLEAN, description="true if you want to retrieve all available Zones. False if you only want to return the Zones from which you have at least one VM. Default is false.")
+    private Boolean available;
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public Boolean isAvailable() {
+        return available;
     }
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
 
     @Override
     public String getName() {
         return s_name;
     }
-    @Override
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
 
-    @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-        Account account = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-        Boolean available = (Boolean)params.get(BaseCmd.Properties.AVAILABLE.getName());
-        
-        List<DataCenterVO> dataCenters = null;
-        if (account != null) {
-        	if (available != null && available) {
-        		dataCenters = getManagementServer().listDataCenters();
-        	} else {
-        		dataCenters = getManagementServer().listDataCentersBy(account.getId());
-        	}
-        } else {
-        	// available is kinda useless in this case because we can't exactly list by
-        	// accountId if we don't have one.  In this case, we just assume the user
-        	// wants all the zones.
-            dataCenters = getManagementServer().listDataCenters();
-        }
+    @Override @SuppressWarnings("unchecked")
+    public ListResponse<ZoneResponse> getResponse() {
+        List<DataCenterVO> dataCenters = (List<DataCenterVO>)getResponseObject();
+        Account account = (Account)UserContext.current().getAccountObject();
 
-        if (dataCenters == null) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "unable to find zones for account " + account.getAccountName());
-        }
-        List<Pair<String, Object>> dcTags = new ArrayList<Pair<String, Object>>();
-        Object[] dcInstTag = new Object[dataCenters.size()];
-        int i = 0;
+        ListResponse<ZoneResponse> response = new ListResponse<ZoneResponse>();
+        List<ZoneResponse> zoneResponses = new ArrayList<ZoneResponse>();
         for (DataCenterVO dataCenter : dataCenters) {
-            List<Pair<String, Object>> dcData = new ArrayList<Pair<String, Object>>();
-            dcData.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), Long.toString(dataCenter.getId())));
-            dcData.add(new Pair<String, Object>(BaseCmd.Properties.NAME.getName(), dataCenter.getName()));
+            ZoneResponse zoneResponse = new ZoneResponse();
+            zoneResponse.setId(dataCenter.getId());
+            zoneResponse.setName(dataCenter.getName());
+
             if ((dataCenter.getDescription() != null) && !dataCenter.getDescription().equalsIgnoreCase("null")) {
-                dcData.add(new Pair<String, Object>(BaseCmd.Properties.DESCRIPTION.getName(), dataCenter.getDescription()));
-            }
-            if ((account == null) || (account.getType() == Account.ACCOUNT_TYPE_ADMIN)) {
-            	if (dataCenter.getDns1() != null) {
-            		dcData.add(new Pair<String, Object>(BaseCmd.Properties.DNS1.getName(), dataCenter.getDns1()));
-            	}
-            	if (dataCenter.getDns2() != null) {
-            		dcData.add(new Pair<String, Object>(BaseCmd.Properties.DNS2.getName(), dataCenter.getDns2()));
-            	}
-                if (dataCenter.getInternalDns1() != null) {
-                    dcData.add(new Pair<String, Object>(BaseCmd.Properties.INTERNAL_DNS1.getName(), dataCenter.getInternalDns1()));
-                }
-                if (dataCenter.getInternalDns2() != null) {
-                    dcData.add(new Pair<String, Object>(BaseCmd.Properties.INTERNAL_DNS2.getName(), dataCenter.getInternalDns2()));
-                }
-                if (dataCenter.getVnet() != null) {
-                    dcData.add(new Pair<String, Object>("vlan", dataCenter.getVnet()));
-                }
-                if (dataCenter.getGuestNetworkCidr() != null) {
-            		dcData.add(new Pair<String, Object>(BaseCmd.Properties.GUEST_CIDR_ADDRESS.getName(), dataCenter.getGuestNetworkCidr()));
-            	}
+                zoneResponse.setDescription(dataCenter.getDescription());
             }
 
-            dcInstTag[i++] = dcData;
+            if ((account == null) || (account.getType() == Account.ACCOUNT_TYPE_ADMIN)) {
+                zoneResponse.setDns1(dataCenter.getDns1());
+                zoneResponse.setDns2(dataCenter.getDns2());
+                zoneResponse.setInternalDns1(dataCenter.getInternalDns1());
+                zoneResponse.setInternalDns2(dataCenter.getInternalDns2());
+                zoneResponse.setVlan(dataCenter.getVnet());
+                zoneResponse.setGuestCidrAddress(dataCenter.getGuestNetworkCidr());
+            }
+
+            zoneResponse.setResponseName("zone");
+            zoneResponses.add(zoneResponse);
         }
-        Pair<String, Object> dcTag = new Pair<String, Object>("zone", dcInstTag);
-        dcTags.add(dcTag);
-        return dcTags;
+
+        response.setResponses(zoneResponses);
+        response.setResponseName(getName());
+        return response;
     }
 }

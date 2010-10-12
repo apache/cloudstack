@@ -15,69 +15,101 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-
 package com.cloud.api.commands;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.Implementation;
+import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.user.Account;
-import com.cloud.utils.Pair;
+import com.cloud.api.response.ConfigurationResponse;
+import com.cloud.configuration.ConfigurationVO;
 
+@Implementation(method="addConfig", manager=Manager.ConfigManager)
 public class AddConfigCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddConfigCmd.class.getName());
-
     private static final String s_name = "addconfigresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
-    static {
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.INSTANCE, Boolean.TRUE));
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.COMPONENT, Boolean.TRUE));
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.CATEGORY, Boolean.TRUE));
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.TRUE));
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.VALUE, Boolean.FALSE));
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DESCRIPTION, Boolean.FALSE));
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="category", type=CommandType.STRING, required=true, description="component's category")
+    private String category;
+
+    @Parameter(name="component", type=CommandType.STRING, required=true, description="the component of the configuration")
+    private String component;
+
+    @Parameter(name="description", type=CommandType.STRING, description="the description of the configuration")
+    private String description;
+
+    //FIXME - add description
+    @Parameter(name="instance", type=CommandType.STRING, required=true)
+    private String instance;
+
+    @Parameter(name="name", type=CommandType.STRING, required=true, description="the name of the configuration")
+    private String name;
+
+    @Parameter(name="value", type=CommandType.STRING, description="the value of the configuration")
+    private String value;
+
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public String getCategory() {
+        return category;
     }
+
+    public String getComponent() {
+        return component;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public String getInstance() {
+        return instance;
+    }
+
+    public String getConfigPropName() {
+        return name;
+    }
+
+    public String getValue() {
+        return value;
+    }
+
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
+
+
     @Override
     public String getName() {
         return s_name;
     }
     
-    @Override
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
+    @Override @SuppressWarnings("unchecked")
+    public ConfigurationResponse getResponse() {
+        ConfigurationResponse response = new ConfigurationResponse();
+        ConfigurationVO responseObject = (ConfigurationVO)getResponseObject();
+        if (responseObject != null) {
+            response.setName(responseObject.getName());
+            response.setValue(responseObject.getValue());
+            //TODO - return description and category if needed (didn't return in 2.1 release)
 
-    @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-    	String instance = (String) params.get(BaseCmd.Properties.INSTANCE.getName());
-    	String component = (String) params.get(BaseCmd.Properties.COMPONENT.getName()); 
-    	String category = (String) params.get(BaseCmd.Properties.CATEGORY.getName());
-    	String name = (String) params.get(BaseCmd.Properties.NAME.getName());
-    	String value = (String) params.get(BaseCmd.Properties.VALUE.getName());
-    	String description = (String) params.get(BaseCmd.Properties.DESCRIPTION.getName());
-    	    	
-		try 
-		{
-			boolean status = getManagementServer().addConfig(instance, component, category, name, value, description);
-			List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-			
-			if(status)
-			{	
-				returnValues.add(new Pair<String, Object>(BaseCmd.Properties.NAME.getName(), name));
-				returnValues.add(new Pair<String, Object>(BaseCmd.Properties.VALUE.getName(), value));
-			}
-            
-            return returnValues;
-		}
-		catch (Exception ex) {
-			s_logger.error("Exception adding config value: ", ex);
-			throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add config value : " + ex.getMessage());
-		}
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add config");
+        }
 
+        response.setResponseName(getName());
+        return response;
+        //return ApiResponseSerializer.toSerializedString(response);
     }
 }

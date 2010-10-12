@@ -38,6 +38,7 @@ public class ResetVMPasswordExecutor extends BaseAsyncJobExecutor {
     	Gson gson = GsonHelper.getBuilder().create();
     	AsyncJobVO job = getJob();
 
+    	/*
 		if(getSyncSource() == null) {
 	    	VMOperationParam param = gson.fromJson(job.getCmdInfo(), VMOperationParam.class);
 	    	asyncMgr.syncAsyncJobExecution(job.getId(), "UserVM", param.getVmId());
@@ -65,6 +66,7 @@ public class ResetVMPasswordExecutor extends BaseAsyncJobExecutor {
 					e.getMessage());
 			}
 		}
+		*/
 		return true;
 	}
 }

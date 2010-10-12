@@ -20,8 +20,6 @@ package com.cloud.async;
 
 import java.util.List;
 
-import com.cloud.async.SyncQueueItemVO;
-import com.cloud.async.SyncQueueVO;
 import com.cloud.utils.component.Manager;
 
 public interface SyncQueueManager extends Manager {

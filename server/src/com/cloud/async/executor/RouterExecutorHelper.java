@@ -55,7 +55,7 @@ public class RouterExecutorHelper {
         if (acct != null) {
         	resultObject.setAccount(acct.getAccountName());
         	resultObject.setDomainId(acct.getDomainId());
-        	resultObject.setDomain(managementServer.findDomainIdById(acct.getDomainId()).getName());
+//        	resultObject.setDomain(managementServer.findDomainIdById(acct.getDomainId()).getName());
         }
 
         if (router.getState() != null) 

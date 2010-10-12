@@ -18,78 +18,88 @@
 
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
-import com.cloud.api.ServerApiException;
+import com.cloud.api.ApiDBUtils;
+import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.Implementation;
+import com.cloud.api.Parameter;
+import com.cloud.api.response.SuccessResponse;
+import com.cloud.event.EventTypes;
 import com.cloud.storage.Snapshot;
 import com.cloud.user.Account;
-import com.cloud.utils.Pair;
 
-public class DeleteSnapshotCmd extends BaseCmd {
+@Implementation(method="deleteSnapshot", manager=Manager.SnapshotManager, description="Deletes a snapshot of a disk volume.")
+public class DeleteSnapshotCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteSnapshotCmd.class.getName());
     private static final String s_name = "deletesnapshotresponse";
-	private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
-	static {
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.TRUE));
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DOMAIN_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="account", type=CommandType.STRING)
+    private String accountName;
+
+    @Parameter(name="domainid", type=CommandType.LONG)
+    private Long domainId;
+
+    @Parameter(name="id", type=CommandType.LONG, required=true, description="The ID of the snapshot")
+    private Long id;
+
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public String getAccountName() {
+        return accountName;
     }
-	
-	public String getName() {
+
+    public Long getDomainId() {
+        return domainId;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
+
+    @Override
+    public String getName() {
         return s_name;
     }
-	
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
-    
+
     @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-        Long snapshotId = (Long)params.get(BaseCmd.Properties.ID.getName());
-        Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
-
-        //Verify parameters
-        Snapshot snapshotCheck = getManagementServer().findSnapshotById(snapshotId.longValue());
-        if (snapshotCheck == null) {
-            throw new ServerApiException (BaseCmd.SNAPSHOT_INVALID_PARAM_ERROR, "unable to find a snapshot with id " + snapshotId);
+    public long getAccountId() {
+        Snapshot snapshot = ApiDBUtils.findSnapshotById(getId());
+        if (snapshot != null) {
+            return snapshot.getAccountId();
         }
 
-        // If an account was passed in, make sure that it matches the account of the snapshot
-        Account snapshotOwner = getManagementServer().findAccountById(snapshotCheck.getAccountId());
-        if (snapshotOwner == null) {
-            throw new ServerApiException(BaseCmd.SNAPSHOT_INVALID_PARAM_ERROR, "Snapshot id " + snapshotId + " does not have a valid account");
-        }
-        checkAccountPermissions(params, snapshotOwner.getId(), snapshotOwner.getDomainId(), "snapshot", snapshotId);
-        
-        //If command is executed via 8096 port, set userId to the id of System account (1)
-        if (userId == null) {
-            userId = Long.valueOf(1);
-        }
-
-        try {
-            long jobId = getManagementServer().deleteSnapshotAsync(userId, snapshotId);
-            if(jobId == 0) {
-            	s_logger.warn("Unable to schedule async-job for DeleteSnapshot comamnd");
-            } else {
-    	        if(s_logger.isDebugEnabled())
-    	        	s_logger.debug("DeleteSnapshot command has been accepted, job id: " + jobId);
-            }
-            
-            List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId))); 
-            
-            return returnValues;
-            
-        } catch (Exception ex) {
-        	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "internal error deleting snapshot " + ex.getMessage());
-        }
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
     }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_SNAPSHOT_DELETE;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  "deleting snapshot: " + getId();
+    }
+
+	@Override @SuppressWarnings("unchecked")
+	public SuccessResponse getResponse() {
+        Boolean success = (Boolean)getResponseObject();
+        SuccessResponse response = new SuccessResponse();
+        response.setSuccess(success);
+        response.setResponseName(getName());
+        return response;
+	}
 }

@@ -46,7 +46,7 @@ public class AssignSecurityGroupExecutor extends BaseAsyncJobExecutor {
 		AsyncJobVO job = getJob();
 		ManagementServer managementServer = asyncMgr.getExecutorContext().getManagementServer();
 		SecurityGroupParam param = gson.fromJson(job.getCmdInfo(), SecurityGroupParam.class);
-		
+		/*
 		if(getSyncSource() == null) {
 			DomainRouterVO router = getRouterSyncSource(param);
 	        if(router == null) {
@@ -88,6 +88,7 @@ public class AssignSecurityGroupExecutor extends BaseAsyncJobExecutor {
 					e.getMessage());
 			}
 		}
+		*/
 		return true;
 	}
 	

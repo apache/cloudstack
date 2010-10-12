@@ -34,11 +34,9 @@ import org.apache.log4j.Logger;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.domain.DomainVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
-import com.cloud.storage.template.TemplateConstants;
 import com.cloud.user.Account;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
@@ -47,7 +45,6 @@ import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
-import com.cloud.utils.exception.CloudRuntimeException;
 
 @Local(value={VMTemplateDao.class})
 public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implements VMTemplateDao {
@@ -69,8 +66,9 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     protected SearchBuilder<VMTemplateVO> AccountIdSearch;
     protected SearchBuilder<VMTemplateVO> NameSearch;
     protected SearchBuilder<VMTemplateVO> TmpltsInZoneSearch;
+    private SearchBuilder<VMTemplateVO> PublicSearch;
+    private SearchBuilder<VMTemplateVO> NameAccountIdSearch;
 
-    protected SearchBuilder<VMTemplateVO> PublicSearch;
     private String routerTmpltName;
     private String consoleProxyTmpltName;
     
@@ -96,14 +94,22 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 		sc.setParameters("name", templateName);
 		return findOneIncludingRemovedBy(sc);
 	}
-	
+
+    @Override
+    public VMTemplateVO findByTemplateNameAccountId(String templateName, Long accountId) {
+        SearchCriteria<VMTemplateVO> sc = NameAccountIdSearch.create();
+        sc.setParameters("name", templateName);
+        sc.setParameters("accountId", accountId);
+        return findOneBy(sc);
+    }
+
 	@Override
 	public List<VMTemplateVO> listAllRoutingTemplates() {
 		SearchCriteria<VMTemplateVO> sc = tmpltTypeSearch.create();
 		sc.setParameters("templateType", Storage.TemplateType.SYSTEM);
 		return listBy(sc);
 	}
-	
+
 	@Override
 	public VMTemplateVO findRoutingTemplate() {
 		return findSystemVMTemplate();
@@ -168,13 +174,16 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 			consoleProxyTmpltName = "routing";
 		if(s_logger.isDebugEnabled())
 			s_logger.debug("Use console proxy template : " + consoleProxyTmpltName);
-		
-		TemplateNameSearch = createSearchBuilder();
-		TemplateNameSearch.and("name", TemplateNameSearch.entity().getName(), SearchCriteria.Op.EQ);
+
 		UniqueNameSearch = createSearchBuilder();
 		UniqueNameSearch.and("uniqueName", UniqueNameSearch.entity().getUniqueName(), SearchCriteria.Op.EQ);
 		NameSearch = createSearchBuilder();
 		NameSearch.and("name", NameSearch.entity().getName(), SearchCriteria.Op.EQ);
+
+		NameAccountIdSearch = createSearchBuilder();
+		NameAccountIdSearch.and("name", NameAccountIdSearch.entity().getName(), SearchCriteria.Op.EQ);
+		NameAccountIdSearch.and("accountId", NameAccountIdSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+
 		
 		tmpltTypeHyperSearch = createSearchBuilder();
 		tmpltTypeHyperSearch.and("templateType", tmpltTypeHyperSearch.entity().getTemplateType(), SearchCriteria.Op.EQ);
@@ -182,7 +191,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 		
 		tmpltTypeSearch = createSearchBuilder();
 		tmpltTypeSearch.and("templateType", tmpltTypeSearch.entity().getTemplateType(), SearchCriteria.Op.EQ);
-	
+
 		AccountIdSearch = createSearchBuilder();
 		AccountIdSearch.and("accountId", AccountIdSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         AccountIdSearch.and("publicTemplate", AccountIdSearch.entity().isPublicTemplate(), SearchCriteria.Op.EQ);

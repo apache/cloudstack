@@ -24,6 +24,7 @@ public class UpdatePortForwardingRuleExecutor extends BaseAsyncJobExecutor {
 
     @Override
     public boolean execute() {
+        /*
         if (getSyncSource() == null) {
             Gson gson = GsonHelper.getBuilder().create();
             AsyncJobManager asyncMgr = getAsyncJobMgr();
@@ -33,7 +34,7 @@ public class UpdatePortForwardingRuleExecutor extends BaseAsyncJobExecutor {
             ManagementServer ms = asyncMgr.getExecutorContext().getManagementServer();
             IPAddressVO ipAddr = ms.findIPAddressById(param.getAddress());
             DomainRouterVO router = ms.findDomainRouterBy(ipAddr.getAccountId(), ipAddr.getDataCenterId());
-            asyncMgr.syncAsyncJobExecution(job.getId(), "Router", router.getId()); // synchronize on the router
+            asyncMgr.syncAsyncJobExecution(job, "Router", router.getId()); // synchronize on the router
 
             // always true if it does not have sync-source
             return true;
@@ -59,6 +60,8 @@ public class UpdatePortForwardingRuleExecutor extends BaseAsyncJobExecutor {
             }
             return true;
         }
+        */
+        return true;
     }
 
     private UpdatePortForwardingRuleResultObject composeResultObject(ManagementServer ms, FirewallRuleVO firewallRule) {

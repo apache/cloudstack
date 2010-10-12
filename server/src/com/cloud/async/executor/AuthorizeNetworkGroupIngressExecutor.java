@@ -30,6 +30,7 @@ public class AuthorizeNetworkGroupIngressExecutor extends BaseAsyncJobExecutor {
         NetworkGroupIngressParam param = gson.fromJson(job.getCmdInfo(), NetworkGroupIngressParam.class);
         AccountVO account = param.getAccount();
 
+        /*
         if (getSyncSource() == null) {
             NetworkGroupVO networkGroup = managementServer.findNetworkGroupByName(param.getAccount().getId(), param.getGroupName());
             if(networkGroup == null) {
@@ -59,6 +60,7 @@ public class AuthorizeNetworkGroupIngressExecutor extends BaseAsyncJobExecutor {
                         "Failed to authorize network group ingress from group: " + param.getGroupName() + " for account: " + account.getAccountName() + " (id: " + account.getId() + ")");
             }
         }
+        */
 
         return true;
     }

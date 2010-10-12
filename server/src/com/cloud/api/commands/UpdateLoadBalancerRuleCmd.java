@@ -1,80 +1,127 @@
+/**
+ *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
+ * 
+ * This software is licensed under the GNU General Public License v3 or later.
+ * 
+ * It is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * 
+ */
 package com.cloud.api.commands;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
-import com.cloud.api.ServerApiException;
+import com.cloud.api.ApiDBUtils;
+import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.Implementation;
+import com.cloud.api.Parameter;
+import com.cloud.api.response.LoadBalancerResponse;
+import com.cloud.event.EventTypes;
 import com.cloud.network.LoadBalancerVO;
 import com.cloud.user.Account;
-import com.cloud.utils.Pair;
 
-public class UpdateLoadBalancerRuleCmd extends BaseCmd {
+@Implementation(method="updateLoadBalancerRule", manager=Manager.NetworkManager)
+public class UpdateLoadBalancerRuleCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateLoadBalancerRuleCmd.class.getName());
-
     private static final String s_name = "updateloadbalancerruleresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DESCRIPTION, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PRIVATE_PORT, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ALGORITHM, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.TRUE));
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="algorithm", type=CommandType.STRING, description="load balancer algorithm (source, roundrobin, leastconn)")
+    private String algorithm;
+
+    @Parameter(name="description", type=CommandType.STRING, description="the description of the load balancer rule")
+    private String description;
+
+    @Parameter(name="id", type=CommandType.LONG, required=true, description="the id of the load balancer rule to update")
+    private Long id;
+
+    @Parameter(name="name", type=CommandType.STRING, description="the name of the load balancer rule")
+    private String loadBalancerName;
+
+    @Parameter(name="privateport", type=CommandType.STRING, description="the private port of the private ip address/virtual machine where the network traffic will be load balanced to")
+    private String privatePort;
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public String getAlgorithm() {
+        return algorithm;
     }
 
+    public String getDescription() {
+        return description;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public String getLoadBalancerName() {
+        return loadBalancerName;
+    }
+
+    public String getPrivatePort() {
+        return privatePort;
+    }
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
+
+    @Override
     public String getName() {
         return s_name;
     }
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
+
+    @Override
+    public long getAccountId() {
+        LoadBalancerVO lb = ApiDBUtils.findLoadBalancerById(getId());
+        if (lb == null) {
+            return Account.ACCOUNT_ID_SYSTEM; // bad id given, parent this command to SYSTEM so ERROR events are tracked
+        }
+        return lb.getAccountId();
     }
 
     @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-        Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
-        Account account = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-        String name = (String)params.get(BaseCmd.Properties.NAME.getName());
-        String description = (String)params.get(BaseCmd.Properties.DESCRIPTION.getName());
-        String privatePort = (String)params.get(BaseCmd.Properties.PRIVATE_PORT.getName());
-        String algorithm = (String)params.get(BaseCmd.Properties.ALGORITHM.getName());
-        Long loadBalancerId = (Long)params.get(BaseCmd.Properties.ID.getName());
-
-        if (userId == null) {
-            userId = Long.valueOf(1);
-        }
-
-        LoadBalancerVO lb = getManagementServer().findLoadBalancerById(loadBalancerId);
-        if (lb == null) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find load balancer rule " + loadBalancerId + " for update.");
-        }
-
-        // Verify input parameters
-        Account lbOwner = getManagementServer().findAccountById(lb.getAccountId());
-        if (lbOwner == null) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to update load balancer rule, cannot find owning account");
-        }
-
-        Long accountId = lbOwner.getId();
-        if (account != null) {
-            if (!isAdmin(account.getType())) {
-                if (account.getId() != accountId.longValue()) {
-                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to update load balancer rule, permission denied");
-                }
-            } else if (!getManagementServer().isChildDomain(account.getDomainId(), lbOwner.getDomainId())) {
-                throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to update load balancer rule, permission denied.");
-            }
-        }
-
-        long jobId = getManagementServer().updateLoadBalancerRuleAsync(userId, lb.getAccountId(), lb.getId().longValue(), name, description, privatePort, algorithm);
-
-        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId).toString()));
-        return returnValues;
+    public String getEventType() {
+        return EventTypes.EVENT_LOAD_BALANCER_UPDATE;
     }
+
+    @Override
+    public String getEventDescription() {
+        return  "updating load balancer rule";
+    }
+
+	@Override @SuppressWarnings("unchecked")
+	public LoadBalancerResponse getResponse() {
+	    LoadBalancerVO loadBalancer = (LoadBalancerVO)getResponseObject();
+
+	    LoadBalancerResponse response = new LoadBalancerResponse();
+        response.setAlgorithm(loadBalancer.getAlgorithm());
+        response.setDescription(loadBalancer.getDescription());
+        response.setId(loadBalancer.getId());
+        response.setName(loadBalancer.getName());
+        response.setPrivatePort(loadBalancer.getPrivatePort());
+        response.setPublicIp(loadBalancer.getIpAddress());
+        response.setPublicPort(loadBalancer.getPublicPort());
+        response.setAccountName(loadBalancer.getAccountName());
+        response.setDomainId(loadBalancer.getDomainId());
+        response.setDomainName(ApiDBUtils.findDomainById(loadBalancer.getDomainId()).getName());
+
+        response.setResponseName(getName());
+        return response;
+	}
 }

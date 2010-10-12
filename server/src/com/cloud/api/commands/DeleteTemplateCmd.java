@@ -18,29 +18,50 @@
 
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
-import com.cloud.api.ServerApiException;
+import com.cloud.api.ApiDBUtils;
+import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.Implementation;
+import com.cloud.api.Parameter;
+import com.cloud.api.response.SuccessResponse;
+import com.cloud.event.EventTypes;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
-import com.cloud.utils.Pair;
 
-public class DeleteTemplateCmd extends BaseCmd {
+@Implementation(method="deleteTemplate", manager=Manager.TemplateManager, description="Deletes a template from the system. All virtual machines using the deleted template will not be affected.")
+public class DeleteTemplateCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(DeleteTemplateCmd.class.getName());
     private static final String s_name = "deletetemplateresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ZONE_ID, Boolean.FALSE));
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="id", type=CommandType.LONG, required=true, description="the ID of the template")
+    private Long id;
+
+    @Parameter(name="zoneid", type=CommandType.LONG, description="the ID of zone of the template")
+    private Long zoneId;
+
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public Long getId() {
+        return id;
     }
+
+    public Long getZoneId() {
+        return zoneId;
+    }
+
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
 
     @Override
     public String getName() {
@@ -50,60 +71,33 @@ public class DeleteTemplateCmd extends BaseCmd {
     public static String getStaticName() {
         return s_name;
     }
-    
+
+	@Override @SuppressWarnings("unchecked")
+	public SuccessResponse getResponse() {
+        Boolean success = (Boolean)getResponseObject();
+        SuccessResponse response = new SuccessResponse();
+        response.setSuccess(success);
+        response.setResponseName(getName());
+        return response;
+	}
+
     @Override
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
+    public long getAccountId() {
+        VMTemplateVO template = ApiDBUtils.findTemplateById(getId());
+        if (template != null) {
+            return template.getAccountId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM;
     }
 
     @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-        Long templateId = (Long)params.get(BaseCmd.Properties.ID.getName());
-        Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
-        Account account = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-        Long zoneId = (Long)params.get(BaseCmd.Properties.ZONE_ID.getName());
-        
-        if (userId == null) {
-            userId = Long.valueOf(1);
-        }
+    public String getEventType() {
+        return EventTypes.EVENT_TEMPLATE_DELETE;
+    }
 
-        VMTemplateVO template = getManagementServer().findTemplateById(templateId.longValue());
-        if (template == null) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find template with id " + templateId);
-        }
-
-        if (account != null) {
-            if (!isAdmin(account.getType())) {
-                if (template.getAccountId() != account.getId()) {
-                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "unable to delete template with id " + templateId);
-                }
-            } else {
-                Account templateOwner = getManagementServer().findAccountById(template.getAccountId());
-                if ((templateOwner == null) || !getManagementServer().isChildDomain(account.getDomainId(), templateOwner.getDomainId())) {
-                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to delete template with id " + templateId + ", permission denied.");
-                }
-            }
-        }
-        
-        try {
-    		long jobId = getManagementServer().deleteTemplateAsync(userId, templateId, zoneId);
-    		
-    		if (jobId == 0) {
-            	s_logger.warn("Unable to schedule async-job for DeleteTemplate command");
-            } else {
-    	        if(s_logger.isDebugEnabled()) {
-    	        	s_logger.debug("DeleteTemplate command has been accepted, job id: " + jobId);
-    	        }
-            }
-    		
-    		List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId))); 
-            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.TEMPLATE_ID.getName(), Long.valueOf(templateId))); 
-            
-            return returnValues;
-    	} catch (Exception ex) {
-    		throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete template: " + ex.getMessage());
-    	}
-
+    @Override
+    public String getEventDescription() {
+        return "Deleting template " + getId();
     }
 }

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# $Id: createtmplt.sh 11542 2010-08-09 03:22:31Z edison $ $HeadURL: svn://svn.lab.vmops.com/repos/vmdev/java/scripts/storage/qcow2/createtmplt.sh $
+# $Id: createtmplt.sh 11601 2010-08-11 17:26:15Z kris $ $HeadURL: svn://svn.lab.vmops.com/repos/branches/2.1.refactor/java/scripts/storage/qcow2/createtmplt.sh $
 # createtmplt.sh -- install a template
 
 usage() {

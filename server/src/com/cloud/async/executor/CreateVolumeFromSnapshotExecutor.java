@@ -35,7 +35,6 @@ import com.cloud.server.ManagementServer;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -53,7 +52,7 @@ public class CreateVolumeFromSnapshotExecutor extends BaseAsyncJobExecutor {
     	//SnapshotManager snapshotManager = context.getSnapshotMgr();
     	StorageManager storageManager = context.getStorageMgr();
     	AccountManager accountManager = context.getAccountMgr();
-    	
+    	/*
 		if (getSyncSource() == null) {
 	    	SnapshotOperationParam param = gson.fromJson(job.getCmdInfo(), SnapshotOperationParam.class);
 	    	asyncMgr.syncAsyncJobExecution(job.getId(), "Volume", param.getVolumeId());
@@ -105,6 +104,8 @@ public class CreateVolumeFromSnapshotExecutor extends BaseAsyncJobExecutor {
             asyncMgr.completeAsyncJob(jobId, result, errorCode, resultObject);
 			return true;
 		}
+		*/
+    	return true;
 	}
 
     private VolumeOperationResultObject composeResultObject(VolumeVO volume) 
@@ -122,9 +123,9 @@ public class CreateVolumeFromSnapshotExecutor extends BaseAsyncJobExecutor {
         Account account = managementServer.findAccountById(accountId);
         resultObject.setAccountName(account.getAccountName());
         resultObject.setDomainId(volume.getDomainId());
-        resultObject.setDomain(managementServer.findDomainIdById(volume.getDomainId()).getName());
+//        resultObject.setDomain(managementServer.findDomainIdById(volume.getDomainId()).getName());
         resultObject.setZoneId(volume.getDataCenterId());
-        resultObject.setZoneName(getAsyncJobMgr().getExecutorContext().getManagementServer().getDataCenterBy(volume.getDataCenterId()).getName());
+//        resultObject.setZoneName(getAsyncJobMgr().getExecutorContext().getManagementServer().getDataCenterBy(volume.getDataCenterId()).getName());
         resultObject.setStorageType("shared"); // NOTE: You can never create a local disk volume but if that changes, we need to change this
         if (volume.getPoolId() != null)
             resultObject.setStorage(managementServer.findPoolById(volume.getPoolId()).getName());

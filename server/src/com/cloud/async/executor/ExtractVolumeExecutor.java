@@ -24,6 +24,7 @@ public class ExtractVolumeExecutor extends BaseAsyncJobExecutor {
     	ExtractTemplateParam param = gson.fromJson(job.getCmdInfo(), ExtractTemplateParam.class);   	
     	ManagementServer managementServer = asyncMgr.getExecutorContext().getManagementServer();
  
+    	/*
 		try {
 				managementServer.extractVolume(param.getUrl(), param.getTemplateId(), param.getZoneId(), param.getEventId(), getJob().getId());					
 		
@@ -31,6 +32,7 @@ public class ExtractVolumeExecutor extends BaseAsyncJobExecutor {
 			s_logger.warn("Unable to extract volume: " + e.getMessage(), e);
     		asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR, e.getMessage());
 		}
+		*/
 		
     	return true;
 	}

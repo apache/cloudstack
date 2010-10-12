@@ -31,7 +31,6 @@ import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
-import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;

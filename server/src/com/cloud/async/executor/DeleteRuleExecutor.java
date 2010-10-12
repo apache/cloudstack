@@ -41,7 +41,7 @@ public class DeleteRuleExecutor extends BaseAsyncJobExecutor {
 		AsyncJobVO job = getJob();
 		ManagementServer managementServer = asyncMgr.getExecutorContext().getManagementServer();
 		DeleteRuleParam param = gson.fromJson(job.getCmdInfo(), DeleteRuleParam.class);
-		
+		/*
 		try {
 			managementServer.deleteRule(param.getRuleId(), param.getUserId(), param.getAccountId());
 			asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_SUCCEEDED, 0, 
@@ -66,6 +66,7 @@ public class DeleteRuleExecutor extends BaseAsyncJobExecutor {
 			asyncMgr.completeAsyncJob(getJob().getId(), 
 		    		AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR, e.getMessage());
 		}
+		*/
 		return true;
 	}
 }

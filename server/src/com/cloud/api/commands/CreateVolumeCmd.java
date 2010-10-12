@@ -18,40 +18,90 @@
 
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
-import com.cloud.api.ServerApiException;
-import com.cloud.async.executor.VolumeOperationResultObject;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.hypervisor.Hypervisor;
-import com.cloud.serializer.SerializerHelper;
+import com.cloud.api.ApiDBUtils;
+import com.cloud.api.BaseAsyncCreateCmd;
+import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.Implementation;
+import com.cloud.api.Parameter;
+import com.cloud.api.response.VolumeResponse;
+import com.cloud.event.EventTypes;
 import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.Snapshot;
+import com.cloud.storage.VolumeVO;
 import com.cloud.user.Account;
-import com.cloud.utils.Pair;
+import com.cloud.user.UserContext;
 
-public class CreateVolumeCmd extends BaseCmd {
+@Implementation(createMethod="createVolumeDB", method="createVolume", manager=Manager.StorageManager, description="Creates a disk volume from a disk offering. " +
+																													"This disk volume must still be attached to a virtual machine to make use of it.")
+public class CreateVolumeCmd extends BaseAsyncCreateCmd {
 	public static final Logger s_logger = Logger.getLogger(CreateVolumeCmd.class.getName());
     private static final String s_name = "createvolumeresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
-    static {
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT, Boolean.FALSE));
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DOMAIN_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ZONE_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DISK_OFFERING_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.SNAPSHOT_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.SIZE, Boolean.FALSE));
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="account", type=CommandType.STRING, description="the account associated with the disk volume. Must be used with the domainId parameter.")
+    private String accountName;
+
+    @Parameter(name="diskofferingid", type=CommandType.LONG, description="the ID of the disk offering. Either diskOfferingId or snapshotId must be passed in.")
+    private Long diskOfferingId;
+
+    @Parameter(name="domainid", type=CommandType.LONG, description="the domain ID associated with the disk offering. If used with the account parameter returns the disk volume associated with the account for the specified domain.")
+    private Long domainId;
+
+    @Parameter(name="name", type=CommandType.STRING, required=true, description="the name of the disk volume")
+    private String volumeName;
+
+    @Parameter(name="size", type=CommandType.LONG, description="Arbitrary volume size. Mutually exclusive with diskOfferingId")
+    private Long size;
+
+    @Parameter(name="snapshotid", type=CommandType.LONG, description="the snapshot ID for the disk volume. Either diskOfferingId or snapshotId must be passed in.")
+    private Long snapshotId;
+
+    @Parameter(name="zoneid", type=CommandType.LONG, description="the ID of the availability zone")
+    private Long zoneId;
+
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public String getAccountName() {
+        return accountName;
     }
 
+    public Long getDiskOfferingId() {
+        return diskOfferingId;
+    }
+
+    public Long getDomainId() {
+        return domainId;
+    }
+
+    public String getVolumeName() {
+        return volumeName;
+    }
+
+    public Long getSize() {
+        return size;
+    }
+
+    public Long getSnapshotId() {
+        return snapshotId;
+    }
+
+    public Long getZoneId() {
+        return zoneId;
+    }
+
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
+
+    @Override
     public String getName() {
         return s_name;
     }
@@ -60,165 +110,63 @@ public class CreateVolumeCmd extends BaseCmd {
     	return "volume";
     }
     
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
-
     @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-    	Account account = (Account) params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-        Long userId = (Long) params.get(BaseCmd.Properties.USER_ID.getName());
-    	String accountName = (String) params.get(BaseCmd.Properties.ACCOUNT.getName());
-    	Long domainId = (Long) params.get(BaseCmd.Properties.DOMAIN_ID.getName());
-    	String name = (String) params.get(BaseCmd.Properties.NAME.getName());
-    	Long zoneId = (Long) params.get(BaseCmd.Properties.ZONE_ID.getName());
-    	Long diskOfferingId = (Long) params.get(BaseCmd.Properties.DISK_OFFERING_ID.getName());
-        Long snapshotId = (Long)params.get(BaseCmd.Properties.SNAPSHOT_ID.getName());
-        Long size = (Long)params.get(BaseCmd.Properties.SIZE.getName());
-
-    	if (account == null) {
-    		// Admin API call
-
-    		// Check if accountName was passed in
-    		if ((accountName == null) || (domainId == null)) {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Account and domainId must be passed in.");
-    		}
-
-    		// Look up the account by name and domain ID
-    		account = getManagementServer().findActiveAccount(accountName, domainId);    		
-
-    		// If the account is null, this means that the accountName and domainId passed in were invalid
-    		if (account == null)
-    			throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find account with name: " + accountName + " and domain ID: " + domainId);
-    	} else {
-    		// User API call
-
-    	    // If the account is an admin, and accountName/domainId were passed in, use the account specified by these parameters
-    		if (isAdmin(account.getType())) {
-    		    if (domainId != null) {
-    		        if (!getManagementServer().isChildDomain(account.getDomainId(), domainId)) {
-    	                throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to create volume in domain " + domainId + ", permission denied.");
-    		        }
-    		        if (accountName != null) {
-    	                account = getManagementServer().findActiveAccount(accountName, domainId);
-
-    	                if (account == null)
-    	                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find account with name: " + accountName + " and domain ID: " + domainId);
-    		        }
-    		    }
-    		}
-    	}
-
-    	// If command is executed via the Admin API, set userId to the id of System account (1)
-        if (userId == null) {
-            userId = Long.valueOf(Account.ACCOUNT_ID_SYSTEM);
-        }
-
-        if(size==null){
-        	size = Long.valueOf(0);
-        }
-        
-        if(diskOfferingId != null){
-        	DiskOfferingVO dOffering = getManagementServer().findDiskOfferingById(diskOfferingId.longValue());
-        	
-        	if(dOffering == null){
-        		throw new ServerApiException(BaseCmd.PARAM_ERROR,"Diskoffering id:"+diskOfferingId+" is invalid");
-        	}
-        }
-        
-        boolean useSnapshot = false;
-        if (snapshotId == null) 
-        {
-            if ((zoneId == null)) 
-            {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Missing parameter,zoneid must be specified.");
-            }
-            
-            if(diskOfferingId == null && size == 0)
-            {
-            	throw new ServerApiException(BaseCmd.PARAM_ERROR, "Missing parameter(s),either a positive volume size or a valid disk offering id must be specified.");
-            }
-            else if(diskOfferingId == null && size != 0)
-            {
-            	//validate the size to ensure between min and max size range
-            	try 
-            	{
-					boolean ok = getManagementServer().validateCustomVolumeSizeRange(size);
-					
-					if(!ok)
-						throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid size for custom volume creation:");
-					
-				} catch (InvalidParameterValueException e) 
-				{
-					s_logger.warn("Invalid size for custom volume creation");
-					throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid size for custom volume creation:"+e.getMessage());
-				}
-            	
-            	//this is the case of creating var size vol with private disk offering
-            	List<DiskOfferingVO> privateTemplateList = getManagementServer().findPrivateDiskOffering();
-            	diskOfferingId = privateTemplateList.get(0).getId(); //we use this id for creating volume, randomly tagging it to a pool with an offering
-            }
-        } 
-        else 
-        {
-            useSnapshot = true;
-            //Verify parameters
-            Snapshot snapshotCheck = getManagementServer().findSnapshotById(snapshotId);
-            if (snapshotCheck == null) {
-                throw new ServerApiException (BaseCmd.SNAPSHOT_INVALID_PARAM_ERROR, "unable to find a snapshot with id " + snapshotId);
-            }
-            
-            if (account != null) {
-                if (isAdmin(account.getType())) {
-                    Account snapshotOwner = getManagementServer().findAccountById(snapshotCheck.getAccountId());
-                    if (!getManagementServer().isChildDomain(account.getDomainId(), snapshotOwner.getDomainId())) {
-                        throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to create volume from snapshot with id " + snapshotId + ", permission denied.");
-                    }
-                } else if (account.getId() != snapshotCheck.getAccountId()) {
-                    throw new ServerApiException(BaseCmd.SNAPSHOT_INVALID_PARAM_ERROR, "unable to find a snapshot with id " + snapshotId + " for this account");
+    public long getAccountId() {
+        Account account = (Account)UserContext.current().getAccountObject();
+        if ((account == null) || isAdmin(account.getType())) {
+            if ((domainId != null) && (accountName != null)) {
+                Account userAccount = ApiDBUtils.findAccountByNameDomain(accountName, domainId);
+                if (userAccount != null) {
+                    return userAccount.getId();
                 }
             }
         }
 
-    	try {
-    		long jobId = 0;
-    		if (useSnapshot) {
-                jobId = getManagementServer().createVolumeFromSnapshotAsync(userId, account.getId(), snapshotId, name);
-    		} else {
-    		    jobId = getManagementServer().createVolumeAsync(userId, account.getId(), name, zoneId, diskOfferingId, size);
-    		}
-    		
-    		if (jobId == 0) {
-            	s_logger.warn("Unable to schedule async-job for CreateVolume command");
-            } else {
-    	        if(s_logger.isDebugEnabled())
-    	        	s_logger.debug("CreateVolume command has been accepted, job id: " + jobId);
-            }
+        if (account != null) {
+            return account.getId();
+        }
 
-    		long volumeId = waitInstanceCreation(jobId);
-
-    		List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId))); 
-            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.VOLUME_ID.getName(), Long.valueOf(volumeId))); 
-            
-            return returnValues;
-    	} catch (Exception ex) {
-    	    s_logger.error("Failed to create volume " + (useSnapshot ? ("from snapshot " + snapshotId) : ("in zone " + zoneId + " with disk offering " + diskOfferingId)), ex);
-    	    if (useSnapshot) {
-    	        throw new ServerApiException(BaseCmd.CREATE_VOLUME_FROM_SNAPSHOT_ERROR, "Unable to create a volume from snapshot with id " + snapshotId + " for this account.");
-    	    } else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create volume: " + ex.getMessage());
-    	    }
-    	}
-    	
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
     }
-    
-    protected long getInstanceIdFromJobSuccessResult(String result) {
-		VolumeOperationResultObject resultObject = (VolumeOperationResultObject) SerializerHelper.fromSerializedString(result);
-		if(resultObject != null) {
-			return resultObject.getId();
-		}
-		
-		return 0;
-	}
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_VOLUME_CREATE;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  "creating volume: " + getVolumeName() + ((getSnapshotId() == null) ? "" : " from snapshot: " + getSnapshotId());
+    }
+
+    @Override @SuppressWarnings("unchecked")
+    public VolumeResponse getResponse() {
+        VolumeVO volume = (VolumeVO)getResponseObject();
+
+        VolumeResponse response = new VolumeResponse();
+        response.setId(volume.getId());
+        response.setName(volume.getName());
+        response.setVolumeType(volume.getVolumeType().toString());
+        response.setSize(volume.getSize());
+        response.setCreated(volume.getCreated());
+        response.setState(volume.getStatus().toString());
+        response.setAccountName(ApiDBUtils.findAccountById(volume.getAccountId()).getAccountName());
+        response.setDomainId(volume.getDomainId());
+        response.setDiskOfferingId(volume.getDiskOfferingId());
+
+        DiskOfferingVO diskOffering = ApiDBUtils.findDiskOfferingById(volume.getDiskOfferingId());
+        response.setDiskOfferingName(diskOffering.getName());
+        response.setDiskOfferingDisplayText(diskOffering.getDisplayText());
+
+        response.setDomainName(ApiDBUtils.findDomainById(volume.getDomainId()).getName());
+        response.setStorageType("shared"); // NOTE: You can never create a local disk volume but if that changes, we need to change this
+        if (volume.getPoolId() != null) {
+            response.setStoragePoolName(ApiDBUtils.findStoragePoolById(volume.getPoolId()).getName());
+        }
+        response.setZoneId(volume.getDataCenterId());
+        response.setZoneName(ApiDBUtils.findZoneById(volume.getDataCenterId()).getName());
+
+        response.setResponseName(getName());
+        return response;
+    }
 }

@@ -15,153 +15,137 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-
 package com.cloud.api.commands;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
-import com.cloud.api.ServerApiException;
+import com.cloud.api.ApiDBUtils;
+import com.cloud.api.BaseListCmd;
+import com.cloud.api.Implementation;
+import com.cloud.api.Parameter;
+import com.cloud.api.response.ListResponse;
+import com.cloud.api.response.SnapshotResponse;
 import com.cloud.async.AsyncJobVO;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.server.Criteria;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Snapshot.SnapshotType;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.user.Account;
-import com.cloud.utils.Pair;
 
-public class ListSnapshotsCmd extends BaseCmd {
+@Implementation(method="listSnapshots", description="Lists all available snapshots for the account.")
+public class ListSnapshotsCmd extends BaseListCmd {
 	public static final Logger s_logger = Logger.getLogger(ListSnapshotsCmd.class.getName());
 
     private static final String s_name = "listsnapshotsresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
-    static {
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.VOLUME_ID, Boolean.FALSE));
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.FALSE));
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.FALSE));
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.INTERVAL_TYPE, Boolean.FALSE));
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.SNAPSHOT_TYPE, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.KEYWORD, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DOMAIN_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGE, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGESIZE, Boolean.FALSE));
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="account", type=CommandType.STRING, description="lists snapshot belongig to the specified account. Must be used with the domainId parameter.")
+    private String accountName;
+
+    @Parameter(name="domainid", type=CommandType.LONG, description="the domain ID. If used with the account parameter, lists snapshots for the specified account in this domain.")
+    private Long domainId;
+
+    @Parameter(name="id", type=CommandType.LONG, description="lists snapshot by snapshot ID")
+    private Long id;
+
+    @Parameter(name="intervalType", type=CommandType.STRING, description="valid values are HOURLY, DAILY, WEEKLY, and MONTHLY.")
+    private String intervalType;
+
+    @Parameter(name="name", type=CommandType.STRING, description="lists snapshot by snapshot name")
+    private String snapshotName;
+
+    @Parameter(name="snapshottype", type=CommandType.STRING, description="valid values are MANUAL or RECURRING.")
+    private String snapshotType;
+
+    @Parameter(name="volumeid", type=CommandType.LONG, description="the ID of the disk volume")
+    private Long volumeId;
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public String getAccountName() {
+        return accountName;
     }
 
+    public Long getDomainId() {
+        return domainId;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public String getIntervalType() {
+        return intervalType;
+    }
+
+    public String getSnapshotName() {
+        return snapshotName;
+    }
+
+    public String getSnapshotType() {
+        return snapshotType;
+    }
+
+    public Long getVolumeId() {
+        return volumeId;
+    }
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
+
+    @Override
     public String getName() {
         return s_name;
     }
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
 
-    @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-        Long volumeId = (Long)params.get(BaseCmd.Properties.VOLUME_ID.getName());
-        String name   = (String)params.get(BaseCmd.Properties.NAME.getName());
-        Long id     = (Long)params.get(BaseCmd.Properties.ID.getName());
-        String interval = (String)params.get(BaseCmd.Properties.INTERVAL_TYPE.getName());
-        String snapshotType = (String)params.get(BaseCmd.Properties.SNAPSHOT_TYPE.getName());
-        Account account = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-        String accountName = (String)params.get(BaseCmd.Properties.ACCOUNT.getName());
-        Long domainId = (Long)params.get(BaseCmd.Properties.DOMAIN_ID.getName());
-        String keyword = (String)params.get(BaseCmd.Properties.KEYWORD.getName());
-        Integer page = (Integer)params.get(BaseCmd.Properties.PAGE.getName());
-        Integer pageSize = (Integer)params.get(BaseCmd.Properties.PAGESIZE.getName());
+    @Override @SuppressWarnings("unchecked")
+    public ListResponse<SnapshotResponse> getResponse() {
+        List<SnapshotVO> snapshots = (List<SnapshotVO>)getResponseObject();
 
-        //Verify parameters
-        if(volumeId != null){
-        	VolumeVO volume = getManagementServer().findAnyVolumeById(volumeId);
-        	if (volume == null) {
-        		throw new ServerApiException (BaseCmd.SNAPSHOT_INVALID_PARAM_ERROR, "unable to find a volume with id " + volumeId);
-        	}
-        	checkAccountPermissions(params, volume.getAccountId(), volume.getDomainId(), "volume", volumeId);
-        }
-        
-        Long accountId = null;
-        if (account == null) {
-            if (domainId != null && accountName != null) {
-                account = getManagementServer().findAccountByName(accountName, domainId);
-            }
-        }
-        
-        if( account != null && !isAdmin(account.getType())) {
-            accountId = account.getId();
-        }
-            
-        Long startIndex = Long.valueOf(0);
-        int pageSizeNum = 50;
-    	if (pageSize != null) {
-    		pageSizeNum = pageSize.intValue();
-    	}
-        if (page != null) {
-            int pageNum = page.intValue();
-            if (pageNum > 0) {
-                startIndex = Long.valueOf(pageSizeNum * (pageNum-1));
-            }
-        }
-        Criteria c = new Criteria("created", Boolean.FALSE, startIndex, Long.valueOf(pageSizeNum));
-
-        c.addCriteria(Criteria.VOLUMEID, volumeId);
-        c.addCriteria(Criteria.TYPE, snapshotType); // I don't want to create a new Criteria called SNAPSHOT_TYPE
-        c.addCriteria(Criteria.NAME, name);
-        c.addCriteria(Criteria.ID, id);
-        c.addCriteria(Criteria.KEYWORD, keyword);
-        c.addCriteria(Criteria.ACCOUNTID, accountId);
-
-        List<SnapshotVO> snapshots = null;
-		try {
-			snapshots = getManagementServer().listSnapshots(c);
-		} catch (InvalidParameterValueException e) {
-			throw new ServerApiException(SNAPSHOT_INVALID_PARAM_ERROR, e.getMessage());
-		}
-
-        if (snapshots == null) {
-            throw new ServerApiException(BaseCmd.SNAPSHOT_LIST_ERROR, "unable to find snapshots for volume with id " + volumeId);
-        }
-
-        Object[] snapshotTag = new Object[snapshots.size()];
-        int i = 0;
-
+        ListResponse<SnapshotResponse> response = new ListResponse<SnapshotResponse>();
+        List<SnapshotResponse> snapshotResponses = new ArrayList<SnapshotResponse>();
         for (Snapshot snapshot : snapshots) {
-            List<Pair<String, Object>> snapshotData = new ArrayList<Pair<String, Object>>();
-            snapshotData.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), snapshot.getId().toString()));
+            SnapshotResponse snapshotResponse = new SnapshotResponse();
+            snapshotResponse.setId(snapshot.getId());
 
-            Account acct = getManagementServer().findAccountById(Long.valueOf(snapshot.getAccountId()));
+            Account acct = ApiDBUtils.findAccountById(Long.valueOf(snapshot.getAccountId()));
             if (acct != null) {
-                snapshotData.add(new Pair<String, Object>(BaseCmd.Properties.ACCOUNT.getName(), acct.getAccountName()));
-                snapshotData.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN_ID.getName(), Long.toString(acct.getDomainId())));
-                snapshotData.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN.getName(), getManagementServer().findDomainIdById(acct.getDomainId()).getName()));
+                snapshotResponse.setAccountName(acct.getAccountName());
+                snapshotResponse.setDomainId(acct.getDomainId());
+                snapshotResponse.setDomainName(ApiDBUtils.findDomainById(acct.getDomainId()).getName());
             }
-            volumeId = snapshot.getVolumeId();
-            VolumeVO volume = getManagementServer().findAnyVolumeById(volumeId);
+
+            VolumeVO volume = ApiDBUtils.findVolumeById(snapshot.getVolumeId());
             String snapshotTypeStr = SnapshotType.values()[snapshot.getSnapshotType()].name();
-            snapshotData.add(new Pair<String, Object>(BaseCmd.Properties.SNAPSHOT_TYPE.getName(), snapshotTypeStr));
-            snapshotData.add(new Pair<String, Object>(BaseCmd.Properties.VOLUME_ID.getName(), volumeId));
-            snapshotData.add(new Pair<String, Object>(BaseCmd.Properties.VOLUME_NAME.getName(), volume.getName()));
-            snapshotData.add(new Pair<String, Object>(BaseCmd.Properties.VOLUME_TYPE.getName(), volume.getVolumeType()));
-            snapshotData.add(new Pair<String, Object>(BaseCmd.Properties.CREATED.getName(), getDateString(snapshot.getCreated())));
-            snapshotData.add(new Pair<String, Object>(BaseCmd.Properties.NAME.getName(), snapshot.getName()));
-            
-            AsyncJobVO asyncJob = getManagementServer().findInstancePendingAsyncJob("snapshot", snapshot.getId());
-            if(asyncJob != null) {
-            	snapshotData.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), asyncJob.getId().toString()));
-            	snapshotData.add(new Pair<String, Object>(BaseCmd.Properties.JOB_STATUS.getName(), String.valueOf(asyncJob.getStatus())));
-            } 
-            snapshotData.add(new Pair<String, Object>(BaseCmd.Properties.INTERVAL_TYPE.getName(), getManagementServer().getSnapshotIntervalTypes(snapshot.getId())));
-            snapshotTag[i++] = snapshotData;
+            snapshotResponse.setSnapshotType(snapshotTypeStr);
+            snapshotResponse.setVolumeId(snapshot.getVolumeId());
+            snapshotResponse.setVolumeName(volume.getName());
+            snapshotResponse.setVolumeType(volume.getVolumeType().name());
+            snapshotResponse.setCreated(snapshot.getCreated());
+            snapshotResponse.setName(snapshot.getName());
+
+            AsyncJobVO asyncJob = ApiDBUtils.findInstancePendingAsyncJob("snapshot", snapshot.getId());
+            if (asyncJob != null) {
+                snapshotResponse.setJobId(asyncJob.getId());
+                snapshotResponse.setJobStatus(asyncJob.getStatus());
+            }
+            snapshotResponse.setIntervalType(ApiDBUtils.getSnapshotIntervalTypes(snapshot.getId()));
+
+            snapshotResponse.setResponseName("snapshot");
+            snapshotResponses.add(snapshotResponse);
         }
-        List<Pair<String, Object>> returnTags = new ArrayList<Pair<String, Object>>();
-        Pair<String, Object> snapshotTags = new Pair<String, Object>("snapshot", snapshotTag);
-        returnTags.add(snapshotTags);
-        return returnTags;
+
+        response.setResponses(snapshotResponses);
+        response.setResponseName(getName());
+        return response;
     }
 }

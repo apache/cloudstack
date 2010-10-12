@@ -15,233 +15,208 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-
 package com.cloud.api.commands;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.Implementation;
+import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.response.HostResponse;
+import com.cloud.api.response.ListResponse;
 import com.cloud.dc.ClusterVO;
-import com.cloud.dc.HostPodVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostStats;
+import com.cloud.host.HostVO;
+import com.cloud.host.Status.Event;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.GuestOSCategoryVO;
-import com.cloud.utils.Pair;
 import com.cloud.vm.UserVmVO;
 
+@Implementation(method="discoverHosts", manager=Manager.AgentManager, description="Adds a new host.")
 public class AddHostCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddHostCmd.class.getName());
-    private static final String s_name = "addhostresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ZONE_ID, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.POD_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.CLUSTER_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.CLUSTER_NAME, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.URL, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USERNAME, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PASSWORD, Boolean.TRUE));
+    private static final String s_name = "addhostresponse";
+    
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="clusterid", type=CommandType.LONG, description="the cluster ID for the host")
+    private Long clusterId;
+
+    @Parameter(name="clustername", type=CommandType.STRING, description="the cluster name for the host")
+    private String clusterName;
+
+    @Parameter(name="password", type=CommandType.STRING, required=true, description="the password for the host")
+    private String password;
+
+    @Parameter(name="podid", type=CommandType.LONG, description="the Pod ID for the host")
+    private Long podId;
+
+    @Parameter(name="url", type=CommandType.STRING, required=true, description="the host URL")
+    private String url;
+
+    @Parameter(name="username", type=CommandType.STRING, required=true, description="the username for the host")
+    private String username;
+
+    @Parameter(name="zoneid", type=CommandType.LONG, required=true, description="the Zone ID for the host")
+    private Long zoneId;
+
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public Long getClusterId() {
+        return clusterId;
     }
+
+    public String getClusterName() {
+        return clusterName;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public Long getPodId() {
+        return podId;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public Long getZoneId() {
+        return zoneId;
+    }
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
 
     @Override
     public String getName() {
-        return s_name;
-    }
-    @Override
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
+    	return s_name;
     }
 
-    @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params)
-    {
-        Long zoneId = (Long)params.get(BaseCmd.Properties.ZONE_ID.getName());
-        Long podId = (Long)params.get(BaseCmd.Properties.POD_ID.getName());
-        String url = (String)params.get(BaseCmd.Properties.URL.getName());
-        String username = (String)params.get(BaseCmd.Properties.USERNAME.getName());
-        String password = (String)params.get(BaseCmd.Properties.PASSWORD.getName());
-        Long clusterId = (Long)params.get(BaseCmd.Properties.CLUSTER_ID.getName());
-        String clusterName = (String)params.get(BaseCmd.Properties.CLUSTER_NAME.getName());
-        
-        if (clusterName != null && clusterId != null) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Can't specify cluster by both id and name");
-        }
-        
-        if (clusterName == null && clusterId == null) {  
-               // Stand alone, assign a name to it
-               String[] stringarray = url.split("//");
-               String address = stringarray[stringarray.length - 1];
-               clusterName = "Standalone-" + address; 
-        }
-        
-        if ((clusterName != null || clusterId != null) && podId == null) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Can't specify cluster without specifying the pod");
-        }
-        
-        //Check if the zone exists in the system
-        if (getManagementServer().findDataCenterById(zoneId) == null ){
-        	throw new ServerApiException(BaseCmd.PARAM_ERROR, "Can't find zone by id " + zoneId);
-        }
+    @Override @SuppressWarnings("unchecked")
+    public ListResponse<HostResponse> getResponse() {
+    	List<HostVO> hosts = (List<HostVO>)getResponseObject();
 
-        //Check if the pod exists in the system
-        if (podId != null) {
-            if (getManagementServer().findHostPodById(podId) == null ){
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Can't find pod by id " + podId);
-            }
-            //check if pod belongs to the zone
-            HostPodVO pod = getManagementServer().findHostPodById(podId);
-            if (!Long.valueOf(pod.getDataCenterId()).equals(zoneId)) {
-            	throw new ServerApiException(BaseCmd.PARAM_ERROR, "Pod " + podId + " doesn't belong to the zone " + zoneId);
-            }
-        }
-
-        if (clusterId != null) {
-            if (getManagementServer().findClusterById(clusterId) == null) {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Can't find cluster by id " + clusterId);
-            }
-        }
-        
-        
-        boolean success = false;
-        List<Pair<String, Object>> serverTags = new ArrayList<Pair<String, Object>>();
-
-        try
-        {
-            if (clusterName != null) {
-                ClusterVO cluster = getManagementServer().createCluster(zoneId, podId, clusterName);
-                clusterId = cluster.getId();
-            }
-            
-        	List<? extends Host> h = getManagementServer().discoverHosts(zoneId, podId, clusterId, url, username, password);
-        	success = !h.isEmpty();
-
-        	if(success)
-        	{
-                Object[] sTag = new Object[h.size()];
-                int i=0;
-	        	for(Host host:h)
-	        	{
-	                List<Pair<String, Object>> serverData = new ArrayList<Pair<String, Object>>();
-	                serverData.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), host.getId().toString()));
-	                serverData.add(new Pair<String, Object>(BaseCmd.Properties.NAME.getName(), host.getName()));
-	                if (host.getStatus() != null) {
-	                    serverData.add(new Pair<String, Object>(BaseCmd.Properties.STATE.getName(), host.getStatus().toString()));
-	                }
-	                if (host.getDisconnectedOn() != null) {
-	                    serverData.add(new Pair<String, Object>(BaseCmd.Properties.DISCONNECTED.getName(), getDateString(host.getDisconnectedOn())));
-	                }
-	                if (host.getType() != null) {
-	                    serverData.add(new Pair<String, Object>(BaseCmd.Properties.TYPE.getName(), host.getType().toString()));
-	                }
-	                
-	                GuestOSCategoryVO guestOSCategory = getManagementServer().getHostGuestOSCategory(host.getId());
-	                if (guestOSCategory != null) {
-	                	serverData.add(new Pair<String, Object>(BaseCmd.Properties.OS_CATEGORY_ID.getName(), guestOSCategory.getId()));
-	                	serverData.add(new Pair<String, Object>(BaseCmd.Properties.OS_CATEGORY_NAME.getName(), guestOSCategory.getName()));
-	                }
-	                
-	                serverData.add(new Pair<String, Object>(BaseCmd.Properties.IP_ADDRESS.getName(), host.getPrivateIpAddress()));
-	                serverData.add(new Pair<String, Object>(BaseCmd.Properties.ZONE_ID.getName(), Long.valueOf(host.getDataCenterId()).toString()));
-	                serverData.add(new Pair<String, Object>(BaseCmd.Properties.ZONE_NAME.getName(), getManagementServer().getDataCenterBy(host.getDataCenterId()).getName()));
-	                if (host.getPodId() != null && getManagementServer().findHostPodById(host.getPodId()) != null) {
-	                    serverData.add(new Pair<String, Object>(BaseCmd.Properties.POD_ID.getName(), host.getPodId().toString()));
-	                    serverData.add(new Pair<String, Object>(BaseCmd.Properties.POD_NAME.getName(), getManagementServer().findHostPodById(host.getPodId()).getName()));
-	                }
-	                serverData.add(new Pair<String, Object>(BaseCmd.Properties.VERSION.getName(), host.getVersion().toString()));
-	                if (host.getHypervisorType() != null) {
-	                    serverData.add(new Pair<String, Object>(BaseCmd.Properties.HYPERVISOR.getName(), host.getHypervisorType().toString()));
-	                }
+    	ListResponse<HostResponse> response = new ListResponse<HostResponse>();
+        List<HostResponse> hostResponses = new ArrayList<HostResponse>();
+        if (hosts != null) {
+            for (HostVO host : hosts) {
+	        	HostResponse hostResponse = new HostResponse();
+	        	hostResponse.setId(host.getId());
+	            hostResponse.setCapabilities(host.getCapabilities());
+	            hostResponse.setClusterId(host.getClusterId());
+	            hostResponse.setCpuNumber(host.getCpus());
+	            hostResponse.setZoneId(host.getDataCenterId());
+	            hostResponse.setDisconnectedOn(host.getDisconnectedOn());
+	            hostResponse.setHypervisor(host.getHypervisorType());
+	            hostResponse.setHostType(host.getType());
+	            hostResponse.setLastPinged(new Date(host.getLastPinged()));
+	            hostResponse.setManagementServerId(host.getManagementServerId());
+	            hostResponse.setName(host.getName());
+	            hostResponse.setPodId(host.getPodId());
+	            hostResponse.setCreated(host.getCreated());
+	            hostResponse.setRemoved(host.getRemoved());
+	            hostResponse.setCpuSpeed(host.getSpeed());
+	            hostResponse.setState(host.getStatus());
+	            hostResponse.setIpAddress(host.getPrivateIpAddress());
+	            hostResponse.setVersion(host.getVersion());
 	
-	                if ((host.getCpus() != null) && (host.getSpeed() != null) && !(host.getType().toString().equals("Storage"))) {
-	                    serverData.add(new Pair<String, Object>(BaseCmd.Properties.CPU_NUMBER.getName(), host.getCpus().toString()));
-	                    serverData.add(new Pair<String, Object>(BaseCmd.Properties.CPU_SPEED.getName(), host.getSpeed().toString()));
-	                    // calculate cpu allocated by vm
-	                    int cpu = 0;
-	                    String cpuAlloc = null;
-	                    DecimalFormat decimalFormat = new DecimalFormat("#.##");
-	                    List<UserVmVO> instances = getManagementServer().listUserVMsByHostId(host.getId());
-	                    for (UserVmVO vm : instances) {
-	                        ServiceOffering so = getManagementServer().findServiceOfferingById(vm.getServiceOfferingId());
-	                        cpu += so.getCpu() * so.getSpeed();
-	                    }
-	                    cpuAlloc = decimalFormat.format(((float) cpu / (float) (host.getCpus() * host.getSpeed())) * 100f) + "%";
-	                    serverData.add(new Pair<String, Object>(BaseCmd.Properties.CPU_ALLOCATED.getName(), cpuAlloc));
+	            GuestOSCategoryVO guestOSCategory = ApiDBUtils.getHostGuestOSCategory(host.getId());
+	            if (guestOSCategory != null) {
+	                hostResponse.setOsCategoryId(guestOSCategory.getId());
+	                hostResponse.setOsCategoryName(guestOSCategory.getName());
+	            }
+	            hostResponse.setZoneName(ApiDBUtils.findZoneById(host.getDataCenterId()).getName());
+	            hostResponse.setPodName(ApiDBUtils.findPodById(host.getPodId()).getName());
 	
-	                    // calculate cpu utilized
-	                    String cpuUsed = null;
-	                    HostStats hostStats = getManagementServer().getHostStatistics(host.getId());
-	                    if (hostStats != null) {
-	                        float cpuUtil = (float) hostStats.getCpuUtilization();
-	                        cpuUsed = decimalFormat.format(cpuUtil) + "%";
-	                        serverData.add(new Pair<String, Object>(BaseCmd.Properties.CPU_USED.getName(), cpuUsed));
-	                        
-	                        long avgLoad = (long)hostStats.getAverageLoad();
-	                        serverData.add(new Pair<String, Object>(BaseCmd.Properties.AVERAGE_LOAD.getName(), avgLoad));
-	                        
-	                        long networkKbRead = (long)hostStats.getNetworkReadKBs();
-	                        serverData.add(new Pair<String, Object>(BaseCmd.Properties.NETWORK_KB_READ.getName(), networkKbRead));
-	                        
-	                        long networkKbWrite = (long)hostStats.getNetworkWriteKBs();
-	                        serverData.add(new Pair<String, Object>(BaseCmd.Properties.NETWORK_KB_WRITE.getName(), networkKbWrite));
+	            // calculate cpu allocated by vm
+	            int cpu = 0;
+	            String cpuAlloc = null;
+	            DecimalFormat decimalFormat = new DecimalFormat("#.##");
+	            List<UserVmVO> instances = ApiDBUtils.listUserVMsByHostId(host.getId());
+	            for (UserVmVO vm : instances) {
+	                ServiceOffering so = ApiDBUtils.findServiceOfferingById(vm.getServiceOfferingId());
+	                cpu += so.getCpu() * so.getSpeed();
+	            }
+	            cpuAlloc = decimalFormat.format(((float) cpu / (float) (host.getCpus() * host.getSpeed())) * 100f) + "%";
+	            hostResponse.setCpuAllocated(cpuAlloc);
+	
+	            // calculate cpu utilized
+	            String cpuUsed = null;
+	            HostStats hostStats = ApiDBUtils.getHostStatistics(host.getId());
+	            if (hostStats != null) {
+	                float cpuUtil = (float) hostStats.getCpuUtilization();
+	                cpuUsed = decimalFormat.format(cpuUtil) + "%";
+	                hostResponse.setCpuUsed(cpuUsed);
+	                hostResponse.setAverageLoad((long)hostStats.getAverageLoad());
+	                hostResponse.setNetworkKbsRead((long)hostStats.getNetworkReadKBs());
+	                hostResponse.setNetworkKbsWrite((long)hostStats.getNetworkWriteKBs());
+	            }
+	
+	            if (host.getType() == Host.Type.Routing) {
+	                hostResponse.setMemoryTotal(host.getTotalMemory());
+	                
+	                // calculate memory allocated by systemVM and userVm
+	                long mem = ApiDBUtils.getMemoryUsagebyHost(host.getId());
+	                hostResponse.setMemoryAllocated(mem);
+	                hostResponse.setMemoryUsed(mem);
+	            } else if (host.getType().toString().equals("Storage")) {
+	                hostResponse.setDiskSizeTotal(host.getTotalSize());
+	                hostResponse.setDiskSizeAllocated(0L);
+	            }
+	
+	            if (host.getClusterId() != null) {
+	                ClusterVO cluster = ApiDBUtils.findClusterById(host.getClusterId());
+	                hostResponse.setClusterName(cluster.getName());
+	            }
+	
+	            hostResponse.setLocalStorageActive(ApiDBUtils.isLocalStorageActiveOnHost(host));
+	
+	            Set<Event> possibleEvents = host.getStatus().getPossibleEvents();
+	            if ((possibleEvents != null) && !possibleEvents.isEmpty()) {
+	                String events = "";
+	                Iterator<Event> iter = possibleEvents.iterator();
+	                while (iter.hasNext()) {
+	                    Event event = iter.next();
+	                    events += event.toString();
+	                    if (iter.hasNext()) {
+	                        events += "; ";
 	                    }
 	                }
-	                if (host.getType() == Host.Type.Routing) {
-	                    Long memory = host.getTotalMemory();
-	                    serverData.add(new Pair<String, Object>(BaseCmd.Properties.MEMORY_TOTAL.getName(), memory.toString()));
-	                    
-	                    // calculate memory allocated by domR and userVm
-	                    long mem = getManagementServer().getMemoryUsagebyHost(host.getId());
-	                    serverData.add(new Pair<String, Object>(BaseCmd.Properties.MEMORY_ALLOCATED.getName(), Long.valueOf(mem).toString()));
-	                    
-	                    // calculate memory utilized, we don't provide memory over commit
-	                    serverData.add(new Pair<String, Object>(BaseCmd.Properties.MEMORY_USED.getName(), mem));
-	    
-	                }
-	                if (host.getType().toString().equals("Storage")) {
-	                    serverData.add(new Pair<String, Object>(BaseCmd.Properties.DISK_SIZE_TOTAL.getName(), Long.valueOf(host.getTotalSize()).toString()));
-	                    serverData.add(new Pair<String, Object>(BaseCmd.Properties.DISK_SIZE_ALLOCATED.getName(), Long.valueOf(0).toString()));
-	                }
-	                serverData.add(new Pair<String, Object>(BaseCmd.Properties.CAPABILITIES.getName(), host.getCapabilities()));
-	                serverData.add(new Pair<String, Object>(BaseCmd.Properties.LASTPINGED.getName(), Long.valueOf(host.getLastPinged()).toString()));
-	                if (host.getManagementServerId() != null) {
-	                    serverData.add(new Pair<String, Object>(BaseCmd.Properties.M_SERVER_ID.getName(), host.getManagementServerId().toString()));
-	                }
-	                
-	                if (host.getClusterId() != null) {
-	                	ClusterVO cluster = getManagementServer().findClusterById(host.getClusterId());
-	                	serverData.add(new Pair<String, Object>(BaseCmd.Properties.CLUSTER_ID.getName(), cluster.getId()));
-	                	serverData.add(new Pair<String, Object>(BaseCmd.Properties.CLUSTER_NAME.getName(), cluster.getName()));
-	                }
-	
-	                if (host.getCreated() != null) {
-	                    serverData.add(new Pair<String, Object>(BaseCmd.Properties.CREATED.getName(), getDateString(host.getCreated())));
-	                }
-	                if (host.getRemoved() != null) {
-	                    serverData.add(new Pair<String, Object>(BaseCmd.Properties.REMOVED.getName(), getDateString(host.getRemoved())));
-	                }
-	                sTag[i++] = serverData;
-	        		
-	        	}
-	        	
-	            Pair<String, Object> serverTag = new Pair<String, Object>("host", sTag);
-	            serverTags.add(serverTag);
-	            return serverTags;
-        	}
+	                hostResponse.setEvents(events);
+	            }
+	            hostResponse.setResponseName("host");
+	            hostResponses.add(hostResponse);
+            }
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add host");
         }
-        catch (Exception ex)
-        {
-        	s_logger.error("Failed to add host: ", ex);
-        	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
-        }
-		return serverTags;
-    
+
+        response.setResponses(hostResponses);
+        response.setResponseName(getName());
+        return response;
     }
 }

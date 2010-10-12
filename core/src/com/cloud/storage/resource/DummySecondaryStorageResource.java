@@ -40,20 +40,17 @@ import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.DownloadCommand;
 import com.cloud.agent.api.storage.DownloadProgressCommand;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.ServerResourceBase;
-import com.cloud.server.ManagementServer;
 import com.cloud.storage.Storage;
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.storage.template.TemplateInfo;
 import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.Inject;
 
 public class DummySecondaryStorageResource extends ServerResourceBase implements ServerResource {
     private static final Logger s_logger = Logger.getLogger(DummySecondaryStorageResource.class);
@@ -159,7 +156,7 @@ public class DummySecondaryStorageResource extends ServerResourceBase implements
             throw new ConfigurationException("Unable to find mount.path");
         }
         
-    	ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
+    	ComponentLocator locator = ComponentLocator.getLocator("management-server");
     	_tmpltDao = locator.getDao(VMTemplateDao.class);
     	if (_tmpltDao == null) {
     		throw new ConfigurationException("Unable to find VMTemplate dao");

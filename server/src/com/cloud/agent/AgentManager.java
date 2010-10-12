@@ -24,12 +24,20 @@ import java.util.Set;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.manager.Commands;
+import com.cloud.api.commands.AddHostCmd;
+import com.cloud.api.commands.AddSecondaryStorageCmd;
+import com.cloud.api.commands.CancelMaintenanceCmd;
+import com.cloud.api.commands.DeleteHostCmd;
+import com.cloud.api.commands.PrepareForMaintenanceCmd;
+import com.cloud.api.commands.ReconnectHostCmd;
+import com.cloud.api.commands.UpdateHostCmd;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.PodCluster;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InternalErrorException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
 import com.cloud.host.HostStats;
@@ -162,12 +170,13 @@ public interface AgentManager extends Manager {
 	List<PodCluster> listByPod(long podId);
 
 	/**
-	 * Updates a host
-	 * @param hostId
-	 * @param guestOSCategoryId
-	 */
-	void updateHost(long hostId, long guestOSCategoryId);
-	
+     * Updates a host
+     * @param cmd - the command specifying hostId
+     * @return hostObject
+     * @throws InvalidParameterValueException
+     */
+    HostVO updateHost(UpdateHostCmd cmd) throws InvalidParameterValueException;
+
 	/**
      * Deletes a host
      * 
@@ -175,7 +184,16 @@ public interface AgentManager extends Manager {
      * @param true if deleted, false otherwise
      */
     boolean deleteHost(long hostId);
-	
+
+    /**
+     * Deletes a host
+     * 
+     * @param cmd - the command specifying hostId
+     * @param true if deleted, false otherwise
+     * @throws InvalidParameterValueException
+     */
+    boolean deleteHost(DeleteHostCmd cmd) throws InvalidParameterValueException; 
+
 	/**
 	 * Find a pod based on the user id, template, and data center.
 	 * 
@@ -195,7 +213,8 @@ public interface AgentManager extends Manager {
      * @return true if it was able to put the agent into maintenance mode.  false if not.
      */
     boolean maintain(long hostId) throws AgentUnavailableException;
-    
+    boolean maintain(PrepareForMaintenanceCmd cmd) throws InvalidParameterValueException;
+
     boolean maintenanceFailed(long hostId);
     
     /**
@@ -205,6 +224,7 @@ public interface AgentManager extends Manager {
      * @return true if it's done.  false if not.
      */
     boolean cancelMaintenance(long hostId);
+    HostVO cancelMaintenance(CancelMaintenanceCmd cmd) throws InvalidParameterValueException;
 
     /**
      * Check to see if a virtual machine can be upgraded to the given service offering
@@ -217,8 +237,11 @@ public interface AgentManager extends Manager {
     
     public boolean executeUserRequest(long hostId, Event event) throws AgentUnavailableException;
     public boolean reconnect(final long hostId) throws AgentUnavailableException;
-    
-    public List<HostVO> discoverHosts(long dcId, Long podId, Long clusterId, URI url, String username, String password) throws DiscoveryException;
+    public HostVO reconnectHost(ReconnectHostCmd cmd) throws AgentUnavailableException;
+
+    public List<HostVO> discoverHosts(Long dcId, Long podId, Long clusterId, String clusterName, String url, String username, String password) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
+    public List<HostVO> discoverHosts(AddHostCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
+    public List<HostVO> discoverHosts(AddSecondaryStorageCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
 
 	Answer easySend(Long hostId, Command cmd, int timeout);
 }

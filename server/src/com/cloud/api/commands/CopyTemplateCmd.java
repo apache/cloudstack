@@ -18,35 +18,62 @@
 
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
+import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.Implementation;
+import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.async.AsyncJobResult;
-import com.cloud.async.executor.CopyTemplateResultObject;
-import com.cloud.async.executor.CreatePrivateTemplateResultObject;
-import com.cloud.serializer.SerializerHelper;
-import com.cloud.storage.Storage;
+import com.cloud.api.response.TemplateResponse;
+import com.cloud.event.EventTypes;
+import com.cloud.storage.GuestOS;
+import com.cloud.storage.VMTemplateHostVO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
-import com.cloud.utils.Pair;
+import com.cloud.user.UserContext;
 
-public class CopyTemplateCmd extends BaseCmd {
+@Implementation(method="copyTemplate", manager=Manager.TemplateManager, description="Copies a template from one zone to another.")
+public class CopyTemplateCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(CopyTemplateCmd.class.getName());
     private static final String s_name = "copytemplateresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.SOURCE_ZONE_ID, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DEST_ZONE_ID, Boolean.TRUE));
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="destzoneid", type=CommandType.LONG, required=true, description="ID of the zone the template is being copied to.")
+    private Long destZoneId;
+
+    @Parameter(name="id", type=CommandType.LONG, required=true, description="Template ID.")
+    private Long id;
+
+    @Parameter(name="sourcezoneid", type=CommandType.LONG, required=true, description="ID of the zone the template is currently hosted on.")
+    private Long sourceZoneId;
+
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public Long getDestinationZoneId() {
+        return destZoneId;
     }
+
+    public Long getId() {
+        return id;
+    }
+
+    public Long getSourceZoneId() {
+        return sourceZoneId;
+    }
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
 
     @Override
     public String getName() {
@@ -58,78 +85,100 @@ public class CopyTemplateCmd extends BaseCmd {
     }
 
     @Override
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
+    public long getAccountId() {
+        VMTemplateVO template = ApiDBUtils.findTemplateById(getId());
+        if (template != null) {
+            return template.getAccountId();
+        }
+
+        // bad id given, parent this command to SYSTEM so ERROR events are tracked
+        return Account.ACCOUNT_ID_SYSTEM;
     }
 
     @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-        Long templateId = (Long)params.get(BaseCmd.Properties.ID.getName());
-        Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
-        Account account = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-        Long sourceZoneId = (Long)params.get(BaseCmd.Properties.SOURCE_ZONE_ID.getName());
-        Long destZoneId = (Long)params.get(BaseCmd.Properties.DEST_ZONE_ID.getName());
+    public String getEventType() {
+        return EventTypes.EVENT_TEMPLATE_COPY;
+    }
 
-        if (userId == null) {
-            userId = Long.valueOf(1);
-        }
+    @Override
+    public String getEventDescription() {
+        return  "copying template: " + getId() + " from zone: " + getSourceZoneId() + " to zone: " + getDestinationZoneId();
+    }
 
-        VMTemplateVO template1 = getManagementServer().findTemplateById(templateId.longValue());
-        if (template1 == null) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find template with id " + templateId);
-        }
+	@Override @SuppressWarnings("unchecked")
+	public TemplateResponse getResponse() {
+        TemplateResponse templateResponse = new TemplateResponse();
+        VMTemplateVO template = (VMTemplateVO)getResponseObject();
         
-        boolean isIso = Storage.ImageFormat.ISO.equals(template1.getFormat());
-        if (isIso) {
-        	throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please specify a valid template.");
-        }
-
-        if (account != null) {
-            if (!isAdmin(account.getType())) {
-                if (template1.getAccountId() != account.getId()) {
-                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "unable to copy template with id " + templateId);
-                }
+        if (template != null) {
+            templateResponse.setId(template.getId());
+            templateResponse.setName(template.getName());
+            templateResponse.setDisplayText(template.getDisplayText());
+            templateResponse.setPublic(template.isPublicTemplate());
+            templateResponse.setBootable(template.isBootable());
+            templateResponse.setFeatured(template.isFeatured());
+            templateResponse.setCrossZones(template.isCrossZones());
+            templateResponse.setCreated(template.getCreated());
+            templateResponse.setFormat(template.getFormat());
+            templateResponse.setPasswordEnabled(template.getEnablePassword());
+            templateResponse.setZoneId(destZoneId);
+            templateResponse.setZoneName(ApiDBUtils.findZoneById(destZoneId).getName());
+             
+            GuestOS os = ApiDBUtils.findGuestOSById(template.getGuestOSId());
+            if (os != null) {
+                templateResponse.setOsTypeId(os.getId());
+                templateResponse.setOsTypeName(os.getDisplayName());
             } else {
-                Account templateOwner = getManagementServer().findAccountById(template1.getAccountId());
-                if ((templateOwner != null) && !getManagementServer().isChildDomain(account.getDomainId(), templateOwner.getDomainId())) {
-                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to copy template with id " + templateId + " to zone " + destZoneId);
-                }
+                templateResponse.setOsTypeId(-1L);
+                templateResponse.setOsTypeName("");
             }
-        }
-        
-        try {
-    		long jobId = getManagementServer().copyTemplateAsync(userId, templateId, sourceZoneId, destZoneId);
-
-    		if (jobId == 0) {
-            	s_logger.warn("Unable to schedule async-job for CopyTemplate command");
-            } else {
-    	        if (s_logger.isDebugEnabled()) {
-    	        	s_logger.debug("CopyTemplate command has been accepted, job id: " + jobId);
-    	        }
+                
+            // add account ID and name
+            Account owner = ApiDBUtils.findAccountById(template.getAccountId());
+            if (owner != null) {
+                templateResponse.setAccount(owner.getAccountName());
+                templateResponse.setDomainId(owner.getDomainId());
+                templateResponse.setDomainName(ApiDBUtils.findDomainById(owner.getDomainId()).getName());
+            }
+            
+            //set status 
+            Account account = (Account)UserContext.current().getAccountObject();
+            boolean isAdmin = false;
+            if ((account == null) || (account.getType() == Account.ACCOUNT_TYPE_ADMIN) || (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)) {
+                isAdmin = true;
             }
     		
-    		templateId = waitInstanceCreation(jobId);
-    		List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId))); 
-            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.TEMPLATE_ID.getName(), Long.valueOf(templateId))); 
+    		//Return download status for admin users
+            VMTemplateHostVO templateHostRef = ApiDBUtils.findTemplateHostRef(template.getId(), destZoneId);
             
-            return returnValues;
-    	} catch (Exception ex) {
-    	    if (ex instanceof ServerApiException) {
-    	        throw (ServerApiException)ex;
-    	    }
-    		throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to copy template: " + ex.getMessage());
-    	}
- 
-    }
-    
-    protected long getInstanceIdFromJobSuccessResult(String result) {
-    	CopyTemplateResultObject resultObject = (CopyTemplateResultObject)SerializerHelper.fromSerializedString(result);
-		if (resultObject != null) {
-			return resultObject.getId();
-		}
-
-		return 0;
+    		if (isAdmin || template.getAccountId() == account.getId()) {
+                if (templateHostRef.getDownloadState()!=Status.DOWNLOADED) {
+                    String templateStatus = "Processing";
+                    if (templateHostRef.getDownloadState() == VMTemplateHostVO.Status.DOWNLOAD_IN_PROGRESS) {
+                        if (templateHostRef.getDownloadPercent() == 100) {
+                            templateStatus = "Installing Template";
+                        } else {
+                            templateStatus = templateHostRef.getDownloadPercent() + "% Downloaded";
+                        }
+                    } else {
+                        templateStatus = templateHostRef.getErrorString();
+                    }
+                    templateResponse.setStatus(templateStatus);
+                } else if (templateHostRef.getDownloadState() == VMTemplateHostVO.Status.DOWNLOADED) {
+                	templateResponse.setStatus("Download Complete");
+                } else {
+                	templateResponse.setStatus("Successfully Installed");
+                }
+            }
+    		
+    		templateResponse.setReady(templateHostRef != null && templateHostRef.getDownloadState() == VMTemplateHostVO.Status.DOWNLOADED);
+            
+        } else {
+        	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to copy template");
+        }
+        
+        templateResponse.setResponseName(getName());
+        return templateResponse;
 	}
 }
 

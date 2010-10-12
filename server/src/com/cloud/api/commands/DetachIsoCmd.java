@@ -15,90 +15,76 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-
 package com.cloud.api.commands;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
-import com.cloud.api.ServerApiException;
+import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.ApiDBUtils;
+import com.cloud.api.Implementation;
+import com.cloud.api.Parameter;
+import com.cloud.api.response.SuccessResponse;
+import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
-import com.cloud.utils.Pair;
-import com.cloud.vm.UserVmVO;
+import com.cloud.uservm.UserVm;
 
-public class DetachIsoCmd extends BaseCmd {
+@Implementation(method="detachIso", manager=Manager.TemplateManager, description="Detaches any ISO file (if any) currently attached to a virtual machine.")
+public class DetachIsoCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DetachIsoCmd.class.getName());
 
     private static final String s_name = "detachisoresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.VIRTUAL_MACHINE_ID, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="virtualmachineid", type=CommandType.LONG, required=true, description="	The ID of the virtual machine")
+    private Long virtualMachineId;
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public Long getVirtualMachineId() {
+        return virtualMachineId;
     }
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
 
     @Override
     public String getName() {
         return s_name;
     }
-    
+
     @Override
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
+    public long getAccountId() {
+        UserVm vm = ApiDBUtils.findUserVmById(getVirtualMachineId());
+        if (vm != null) {
+            return vm.getAccountId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
     }
 
     @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-        Account account = (Account) params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-        Long userId = (Long) params.get(BaseCmd.Properties.USER_ID.getName());
-        Long vmId = (Long) params.get(BaseCmd.Properties.VIRTUAL_MACHINE_ID.getName());
-
-        // Verify input parameters
-        UserVmVO vmInstanceCheck = getManagementServer().findUserVMInstanceById(vmId.longValue());
-        if (vmInstanceCheck == null) {
-            throw new ServerApiException (BaseCmd.VM_INVALID_PARAM_ERROR, "Unable to find a virtual machine with id " + vmId);
-        }
-
-        if (account != null) {
-            if (!isAdmin(account.getType())) {
-                if (account.getId() != vmInstanceCheck.getAccountId()) {
-                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to detach ISO from virtual machine " + vmInstanceCheck.getName() + " for this account");
-                }
-            } else if (!getManagementServer().isChildDomain(account.getDomainId(), vmInstanceCheck.getDomainId())) {
-                throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to detach ISO from virtual machine " + vmInstanceCheck.getName() + ", permission denied.");
-            }
-        }
-
-        // If command is executed via 8096 port, set userId to the id of System account (1)
-        if (userId == null)
-            userId = new Long(1);
-
-        try {
-            long jobId = getManagementServer().detachISOFromVMAsync(vmId.longValue(), userId);
-
-            if (jobId == 0) {
-                s_logger.warn("Unable to schedule async-job for AttachIsoCmd");
-            } else {
-                if(s_logger.isDebugEnabled())
-                    s_logger.debug("AttachIsoCmd has been accepted, job id: " + jobId);
-            }
-            
-            List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId))); 
-            
-            return returnValues;
-        } catch (ServerApiException apiEx) {
-            s_logger.error("Exception detaching ISO", apiEx);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to detach ISO: " + apiEx.getDescription());
-        } catch (Exception ex) {
-            s_logger.error("Exception detaching ISO", ex);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to detach ISO: " + ex.getMessage());
-        }
-
+    public String getEventType() {
+        return EventTypes.EVENT_ISO_DETACH;
     }
+
+    @Override
+    public String getEventDescription() {
+        return  "detaching ISO from vm: " + getVirtualMachineId();
+    }
+
+	@Override @SuppressWarnings("unchecked")
+	public SuccessResponse getResponse() {
+        Boolean success = (Boolean)getResponseObject();
+        SuccessResponse response = new SuccessResponse();
+        response.setSuccess(success);
+        response.setResponseName(getName());
+        return response;
+	}
 }

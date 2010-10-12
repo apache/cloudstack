@@ -63,6 +63,9 @@ import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VirtualMachineTO.SshMonitor;
 import com.cloud.agent.manager.Commands;
+import com.cloud.api.BaseCmd;
+import com.cloud.api.ServerApiException;
+import com.cloud.api.commands.DestroyConsoleProxyCmd;
 import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
@@ -83,6 +86,7 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.domain.DomainVO;
 import com.cloud.event.EventState;
 import com.cloud.event.EventTypes;
+import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.exception.AgentUnavailableException;
@@ -1840,7 +1844,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
             return stop(proxy, startEventId);
         } catch (AgentUnavailableException e) {
             if (s_logger.isDebugEnabled())
-                s_logger.debug("Stopping console proxy " + proxy.getName() + " faled : exception " + e.toString());
+                s_logger.debug("Stopping console proxy " + proxy.getName() + " failed : exception " + e.toString());
             return false;
         }
     }
@@ -2343,6 +2347,22 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
         if (s_logger.isInfoEnabled())
             s_logger.info("Console Proxy Manager is configured.");
         return true;
+    }
+
+    @Override
+    public boolean destroyConsoleProxy(DestroyConsoleProxyCmd cmd) throws ServerApiException{
+        Long proxyId = cmd.getId();
+        
+        // verify parameters
+        ConsoleProxyVO proxy = _consoleProxyDao.findById(proxyId);
+        if (proxy == null) {
+            throw new ServerApiException (BaseCmd.PARAM_ERROR, "unable to find a console proxy with id " + proxyId);
+        }
+        
+        long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_DESTROY, "destroying console proxy with Id: "+proxyId);
+        
+        return destroyProxy(proxyId, eventId);
+        
     }
 
     protected ConsoleProxyManagerImpl() {

@@ -24,7 +24,6 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.ha.FenceBuilder;
 import com.cloud.host.HostVO;
 import com.cloud.storage.StorageManager;
 import com.cloud.utils.component.ComponentLocator;

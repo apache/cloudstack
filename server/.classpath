@@ -21,5 +21,6 @@
 	<classpathentry kind="lib" path="/thirdparty/servlet-api.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/api"/>
 	<classpathentry kind="lib" path="/thirdparty/trilead-ssh2-build213.jar"/>
+	<classpathentry kind="lib" path="/thirdparty/xstream-1.3.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

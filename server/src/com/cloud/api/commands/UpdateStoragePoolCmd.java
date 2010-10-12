@@ -18,102 +18,101 @@
 
 package com.cloud.api.commands;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
-import com.cloud.api.ServerApiException;
+import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.Implementation;
+import com.cloud.api.Parameter;
+import com.cloud.api.response.StoragePoolResponse;
 import com.cloud.dc.ClusterVO;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
-import com.cloud.utils.Pair;
 
+@Implementation(method="updateStoragePool", manager=Manager.StorageManager, description="Updates a storage pool.")
 public class UpdateStoragePoolCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateStoragePoolCmd.class.getName());
 
     private static final String s_name = "updatestoragepoolresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.TAGS, Boolean.FALSE));
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="id", type=CommandType.LONG, required=true, description="the Id of the storage pool")
+    private Long id;
+
+    @Parameter(name="tags", type=CommandType.STRING, description="the tags for the storage pool")
+    private String tags;
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public Long getId() {
+        return id;
     }
+
+    public String getTags() {
+        return tags;
+    }
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
 
     @Override
     public String getName() {
         return s_name;
     }
-    @Override
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
 
-    @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("UpdateStoragePoolCmd Params @ " + params.toString());
+    @Override @SuppressWarnings("unchecked")
+    public StoragePoolResponse getResponse() {
+        StoragePoolVO pool = (StoragePoolVO) getResponseObject();
+
+        StoragePoolResponse response = new StoragePoolResponse();
+        response.setId(pool.getId());
+        response.setZoneId(pool.getDataCenterId());
+        response.setZoneName(ApiDBUtils.findZoneById(pool.getDataCenterId()).getName());
+        if (pool.getPodId() != null) {
+            response.setPodId(pool.getPodId());
+            response.setPodName(ApiDBUtils.findPodById(pool.getPodId()).getName());
         }
-        
-        Long poolId = (Long) params.get(BaseCmd.Properties.ID.getName());
-        String tags = (String) params.get(BaseCmd.Properties.TAGS.getName());
-        
-        StoragePoolVO storagePool = null;
-		try {
-			storagePool = getManagementServer().updateStoragePool(poolId, tags);
-		} catch (IllegalArgumentException e) {
-			throw new ServerApiException(BaseCmd.PARAM_ERROR, e.getMessage());
-		} 
- 
-        s_logger.debug("Successfully updated storagePool " + storagePool.toString() );
-        
-        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), Long.toString(storagePool.getId())));
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.ZONE_ID.getName(), storagePool.getDataCenterId()));
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.ZONE_NAME.getName(), getManagementServer().getDataCenterBy(storagePool.getDataCenterId()).getName()));
-        if (storagePool.getPodId() != null) {
-            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.POD_ID.getName(), storagePool.getPodId()));
-            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.POD_NAME.getName(), getManagementServer().getPodBy(storagePool.getPodId()).getName()));
+        response.setName(pool.getName());
+        response.setIpAddress(pool.getHostAddress());
+        response.setPath(pool.getPath());
+        response.setCreated(pool.getCreated());
+
+        if (pool.getPoolType() != null) {
+            response.setType(pool.getPoolType().toString());
         }
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.NAME.getName(), storagePool.getName()));
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.IP_ADDRESS.getName(), storagePool.getHostAddress()));
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.PATH.getName(), storagePool.getPath()));
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.CREATED.getName(), getDateString(storagePool.getCreated())));
-        
-        if (storagePool.getPoolType() != null) {
-        	returnValues.add(new Pair<String, Object>(BaseCmd.Properties.TYPE.getName(), storagePool.getPoolType().toString()));
+
+        if (pool.getClusterId() != null) {
+            ClusterVO cluster = ApiDBUtils.findClusterById(pool.getClusterId());
+            response.setClusterId(cluster.getId());
+            response.setClusterName(cluster.getName());
         }
-        
-        if (storagePool.getClusterId() != null) {
-        	ClusterVO cluster = getManagementServer().findClusterById(storagePool.getClusterId());
-        	returnValues.add(new Pair<String, Object>(BaseCmd.Properties.CLUSTER_ID.getName(), cluster.getId()));
-        	returnValues.add(new Pair<String, Object>(BaseCmd.Properties.CLUSTER_NAME.getName(), cluster.getName()));
-        }
-        
-        StorageStats stats = getManagementServer().getStoragePoolStatistics(storagePool.getId());
-        long capacity = storagePool.getCapacityBytes();
-        long available = storagePool.getAvailableBytes() ;
+
+        StorageStats stats = ApiDBUtils.getStoragePoolStatistics(pool.getId());
+        long capacity = pool.getCapacityBytes();
+        long available = pool.getAvailableBytes();
         long used = capacity - available;
 
         if (stats != null) {
-       	 used = stats.getByteUsed();
-       	 available = capacity - used;
+            used = stats.getByteUsed();
+            available = capacity - used;
         }
-        s_logger.debug("Successfully recieved the storagePool statistics. TotalDiskSize - " +capacity+ " AllocatedDiskSize - " +used );
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.DISK_SIZE_TOTAL.getName(), Long.valueOf(storagePool.getCapacityBytes()).toString()));        
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.DISK_SIZE_ALLOCATED.getName(), Long.valueOf(used).toString()));        
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.TAGS.getName(), getManagementServer().getStoragePoolTags(storagePool.getId())));  
 
-        List<Pair<String, Object>> embeddedObject = new ArrayList<Pair<String, Object>>();
-        embeddedObject.add(new Pair<String, Object>("storagepool", new Object[] { returnValues } ));
-        return embeddedObject;
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Successfully recieved the storagePool statistics. TotalDiskSize - " + capacity + " AllocatedDiskSize - " + used);
+        }
+
+        response.setDiskSizeTotal(pool.getCapacityBytes());
+        response.setDiskSizeAllocated(used);
+        response.setTags(ApiDBUtils.getStoragePoolTags(pool.getId()));
+
+        response.setResponseName(getName());
+        return response;
     }
 }

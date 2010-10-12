@@ -15,79 +15,79 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-
 package com.cloud.api.commands;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
-import com.cloud.api.ServerApiException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.host.HostVO;
-import com.cloud.storage.dao.StoragePoolHostDao;
-import com.cloud.utils.Pair;
+import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.Implementation;
+import com.cloud.api.Parameter;
+import com.cloud.api.response.SuccessResponse;
+import com.cloud.event.EventTypes;
+import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 
-public class PrepareForMaintenanceCmd extends BaseCmd {
+@Implementation(method="maintain", manager=Manager.AgentManager, description="Prepares a host for maintenance.")
+public class PrepareForMaintenanceCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(PrepareForMaintenanceCmd.class.getName());
 	
     private static final String s_name = "preparehostformaintenanceresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.TRUE));
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="id", type=CommandType.LONG, required=true, description="the host ID")
+    private Long id;
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public Long getId() {
+        return id;
     }
 
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
+
+    @Override
     public String getName() {
         return s_name;
-    }
-    
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
     }
     
     public static String getResultObjectName() {
     	return "host";
     }
-    
+
     @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-        Long hostId = (Long)params.get(BaseCmd.Properties.ID.getName());
-        
-        //verify input parameters
-    	HostVO host = getManagementServer().getHostBy(hostId);
-    	if (host == null) {
-    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "Host with id " + hostId.toString() + " doesn't exist");
-    	}
-        
-    	//if this is the only host in the pool, you cannot enable maintenance on this host
-    	boolean maintenable = getManagementServer().checkIfMaintenable(host.getId());
-    	
-    	if(!maintenable)
-    	{
-    		s_logger.warn("Unable to schedule host maintenance -- there is no host to take over as master in the pool");
-    		throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to schedule host maintenance -- there is no host to take over as master in the pool");
-    	}
-    	
-    	long jobId = 0;
-    	try {
-    		jobId = getManagementServer().prepareForMaintenanceAsync(hostId);
-    	} catch (InvalidParameterValueException e) {
-    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to prepare host for maintenance: " + e.getMessage());
-    	}
-    	
-        if(jobId == 0) {
-        	s_logger.warn("Unable to schedule async-job for PrepareForMaintenance command");
-        } else {
-	        if(s_logger.isDebugEnabled())
-	        	s_logger.debug("PrepareForMaintenance command has been accepted, job id: " + jobId);
+    public long getAccountId() {
+        Account account = (Account)UserContext.current().getAccountObject();
+        if (account != null) {
+            return account.getId();
         }
-        
-        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId))); 
-        return returnValues;
+
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
     }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_MAINTENANCE_PREPARE;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  "preparing host: " + getId() + " for maintenance";
+    }
+
+	@Override @SuppressWarnings("unchecked")
+	public SuccessResponse getResponse() {
+        Boolean success = (Boolean)getResponseObject();
+        SuccessResponse response = new SuccessResponse();
+        response.setSuccess(success);
+        response.setResponseName(getName());
+        return response;
+	}
 }

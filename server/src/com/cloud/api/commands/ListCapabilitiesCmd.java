@@ -15,44 +15,36 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.utils.Pair;
+import com.cloud.api.Implementation;
+import com.cloud.api.response.CapabilitiesResponse;
 
+@Implementation(method="listCapabilities")
 public class ListCapabilitiesCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(ListCapabilitiesCmd.class.getName());
 
     private static final String s_name = "listcapabilitiesresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
+    @Override
     public String getName() {
         return s_name;
     }
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
 
-    @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-            
-        Map<String, String> capabilities = null;
-	    capabilities = getManagementServer().listCapabilities();
+    @Override @SuppressWarnings("unchecked")
+    public CapabilitiesResponse getResponse() {
+        Map<String, String> capabilities = (Map<String, String>)getResponseObject();
 
-        Iterator<String> iterator = capabilities.keySet().iterator();
-        List<Pair<String, Object>> capabilityPair = new ArrayList<Pair<String, Object>>();
-        while (iterator.hasNext()) {
-            String capability = iterator.next();
-            capabilityPair.add(new Pair<String, Object>(capability, capabilities.get(capability)));
-        }
-        return capabilityPair;
+        CapabilitiesResponse response = new CapabilitiesResponse();
+        response.setNetworkGroupsEnabled(capabilities.get("networkGroupsEnabled"));
+        response.setCloudStackVersion(capabilities.get("cloudStackVersion"));
+        response.setResponseName(getName());
+
+        return response;
     }
 }

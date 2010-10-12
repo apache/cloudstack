@@ -18,8 +18,6 @@
 
 package com.cloud.async;
 
-import com.cloud.async.AsyncJobResult;
-import com.cloud.async.AsyncJobVO;
 import com.cloud.utils.component.Manager;
 
 public interface AsyncJobManager extends Manager {
@@ -35,6 +33,6 @@ public interface AsyncJobManager extends Manager {
     public void updateAsyncJobStatus(long jobId, int processStatus, Object resultObject);
     public void updateAsyncJobAttachment(long jobId, String instanceType, Long instanceId);
     
-    public void syncAsyncJobExecution(long jobId, String syncObjType, long syncObjId);
+    public void syncAsyncJobExecution(AsyncJobVO job, String syncObjType, long syncObjId);
     public void releaseSyncSource(AsyncJobExecutor executor);
 }

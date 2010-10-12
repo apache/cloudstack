@@ -18,43 +18,114 @@
 
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
-import com.cloud.api.ServerApiException;
-import com.cloud.async.executor.CreatePrivateTemplateResultObject;
-import com.cloud.serializer.SerializerHelper;
-import com.cloud.server.Criteria;
+import com.cloud.api.ApiDBUtils;
+import com.cloud.api.BaseAsyncCreateCmd;
+import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.Implementation;
+import com.cloud.api.Parameter;
+import com.cloud.api.response.TemplateResponse;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.event.EventTypes;
+import com.cloud.storage.GuestOS;
 import com.cloud.storage.Snapshot;
+import com.cloud.storage.VMTemplateHostVO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.user.Account;
-import com.cloud.utils.Pair;
 
-public class CreateTemplateCmd extends BaseCmd {
+@Implementation(method="createPrivateTemplate", createMethod="createPrivateTemplateRecord", manager=Manager.UserVmManager, description="Creates a template of a virtual machine. " +
+																															"The virtual machine must be in a STOPPED state. " +
+																															"A template created from this command is automatically designated as a private template visible to the account that created it.")
+public class CreateTemplateCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateTemplateCmd.class.getName());
     private static final String s_name = "createtemplateresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
-    static {
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DISPLAY_TEXT, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.VOLUME_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.REQUIRES_HVM, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.BITS, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PASSWORD_ENABLED, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.OS_TYPE_ID, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE)); 
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.IS_PUBLIC, Boolean.FALSE)); 
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.IS_FEATURED, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.SNAPSHOT_ID, Boolean.FALSE));
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="bits", type=CommandType.INTEGER)
+    private Integer bits;
+
+    @Parameter(name="displaytext", type=CommandType.STRING, required=true, description="the display text of the template. This is usually used for display purposes.")
+    private String displayText;
+
+    @Parameter(name="isfeatured", type=CommandType.BOOLEAN, description="true if this template is a featured template, false otherwise")
+    private Boolean featured;
+
+    @Parameter(name="ispublic", type=CommandType.BOOLEAN, description="true if this template is a public template, false otherwise")
+    private Boolean publicTemplate;
+
+    @Parameter(name="name", type=CommandType.STRING, required=true, description="the name of the template")
+    private String templateName;
+
+    @Parameter(name="ostypeid", type=CommandType.LONG, required=true, description="	the ID of the OS Type that best represents the OS of this template.")
+    private Long osTypeId;
+
+    @Parameter(name="passwordenabled", type=CommandType.BOOLEAN, description="true if the template supports the password reset feature; default is false")
+    private Boolean passwordEnabled;
+
+    @Parameter(name="requireshvm", type=CommandType.BOOLEAN, description="true if the template requres HVM, false otherwise")
+    private Boolean requiresHvm;
+
+    @Parameter(name="snapshotid", type=CommandType.LONG, description="the ID of the snapshot the template is being created from")
+    private Long snapshotId;
+
+    @Parameter(name="volumeid", type=CommandType.LONG, description="the ID of the disk volume the template is being created from")
+    private Long volumeId;
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public Integer getBits() {
+        return bits;
     }
 
+    public String getDisplayText() {
+        return displayText;
+    }
+
+    public Boolean isFeatured() {
+        return featured;
+    }
+
+    public Boolean isPublic() {
+        return publicTemplate;
+    }
+
+    public String getTemplateName() {
+        return templateName;
+    }
+
+    public Long getOsTypeId() {
+        return osTypeId;
+    }
+
+    public Boolean isPasswordEnabled() {
+        return passwordEnabled;
+    }
+
+    public Boolean getRequiresHvm() {
+        return requiresHvm;
+    }
+
+    public Long getSnapshotId() {
+        return snapshotId;
+    }
+
+    public Long getVolumeId() {
+        return volumeId;
+    }
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
+
+    @Override
     public String getName() {
         return s_name;
     }
@@ -62,110 +133,84 @@ public class CreateTemplateCmd extends BaseCmd {
     public static String getResultObjectName() {
     	return "template";  
     }
-    
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
-	
+
     @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-        String description = (String)params.get(BaseCmd.Properties.DISPLAY_TEXT.getName());
-        String name = (String)params.get(BaseCmd.Properties.NAME.getName());
-        Long volumeId = (Long)params.get(BaseCmd.Properties.VOLUME_ID.getName());
-        Long guestOSId = (Long) params.get(BaseCmd.Properties.OS_TYPE_ID.getName());
-        Account account = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-        Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
-        Boolean requiresHvm = (Boolean)params.get(BaseCmd.Properties.REQUIRES_HVM.getName());
-        Integer bits = (Integer)params.get(BaseCmd.Properties.BITS.getName());
-        Boolean passwordEnabled = (Boolean)params.get(BaseCmd.Properties.PASSWORD_ENABLED.getName());
-        Boolean isPublic = (Boolean)params.get(BaseCmd.Properties.IS_PUBLIC.getName());
-        Boolean featured = (Boolean)params.get(BaseCmd.Properties.IS_FEATURED.getName());
-        Long snapshotId = (Long)params.get(BaseCmd.Properties.SNAPSHOT_ID.getName());
-        
-        if (volumeId == null && snapshotId == null) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Specify at least one of the two parameters volumeId or snapshotId");
-        }
-        VolumeVO volume = null;
-        // Verify input parameters
-        if (snapshotId != null) {
-            Snapshot snapshot = getManagementServer().findSnapshotById(snapshotId);
-            if (snapshot == null) {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "No snapshot exists with the given id: " + snapshotId);
+    public long getAccountId() {
+        Long volumeId = getVolumeId();
+        Long snapshotId = getSnapshotId();
+        if (volumeId != null) {
+            VolumeVO volume = ApiDBUtils.findVolumeById(volumeId);
+            if (volume != null) {
+                return volume.getAccountId();
             }
-            
-            if (volumeId != null) {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Specify only one of the two parameters volumeId or snapshotId");
-            }
-            // Set the volumeId to that of the snapshot. All further input parameter checks will be done w.r.t the volume.
-            volumeId = snapshot.getVolumeId();
-			volume = getManagementServer().findAnyVolumeById(volumeId);
         } else {
-            volume = getManagementServer().findAnyVolumeById(volumeId);
-        }
-        
-        if (volume == null) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find a volume with id " + volumeId);
-        }
-
-        boolean isAdmin = ((account == null) || isAdmin(account.getType()));
-        if (!isAdmin) {
-            if (account.getId() != volume.getAccountId()) {
-            	throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "unable to find a volume with id " + volumeId + " for this account");
+            Snapshot snapshot = ApiDBUtils.findSnapshotById(snapshotId);
+            if (snapshot != null) {
+                return snapshot.getAccountId();
             }
-        } else if ((account != null) && !getManagementServer().isChildDomain(account.getDomainId(), volume.getDomainId())) {
-            throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to create a template from volume with id " + volumeId + ", permission denied.");
         }
 
-        if (isPublic == null) {
-        	isPublic = Boolean.FALSE;
-        }   
-        
-        boolean allowPublicUserTemplates = Boolean.parseBoolean(getManagementServer().getConfigurationValue("allow.public.user.templates"));        
-        if (!isAdmin && !allowPublicUserTemplates && isPublic) {
-        	throw new ServerApiException(BaseCmd.PARAM_ERROR, "Only private templates can be created.");
-        }
-        
-        if (!isAdmin || featured == null) {
-        	featured = Boolean.FALSE;
-        }
-
-        Criteria c = new Criteria();
-        c.addCriteria(Criteria.NAME, name);
-        c.addCriteria(Criteria.CREATED_BY, Long.valueOf(volume.getAccountId()));
-        List<VMTemplateVO> templates = getManagementServer().searchForTemplates(c);
-        
-        // If command is executed via 8096 port, set userId to the id of System account (1)
-        if (userId == null) {
-            userId = Long.valueOf(1);
-        }
-
-        try {
-            long jobId = getManagementServer().createPrivateTemplateAsync(userId, volumeId, name, description, guestOSId, requiresHvm, bits, passwordEnabled, isPublic, featured, snapshotId);
-
-            if (jobId == 0) {
-            	s_logger.warn("Unable to schedule async-job for CreateTemplate command");
-            } else {
-    	        if (s_logger.isDebugEnabled())
-    	        	s_logger.debug("CreateTemplate command has been accepted, job id: " + jobId);
-            }
-
-            long templateId = waitInstanceCreation(jobId);
-            List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId))); 
-            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.TEMPLATE_ID.getName(), Long.valueOf(templateId))); 
-
-            return returnValues;
-        } catch (Exception ex) {
-            throw new ServerApiException(BaseCmd.CREATE_PRIVATE_TEMPLATE_ERROR, "Unhandled exception while creating template name: " + name + " for volume " + volumeId + ", reason, " + ex.getMessage());
-        }
+        // bad id given, parent this command to SYSTEM so ERROR events are tracked
+        return Account.ACCOUNT_ID_SYSTEM;
     }
 
-	protected long getInstanceIdFromJobSuccessResult(String result) {
-		CreatePrivateTemplateResultObject resultObject = (CreatePrivateTemplateResultObject)SerializerHelper.fromSerializedString(result);
-		if (resultObject != null) {
-			return resultObject.getId();
-		}
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_TEMPLATE_CREATE;
+    }
 
-		return 0;
-	}
+    @Override
+    public String getEventDescription() {
+        return  "creating template: " + getTemplateName();
+    }
+
+    @Override @SuppressWarnings("unchecked")
+    public TemplateResponse getResponse() {
+        VMTemplateVO template = (VMTemplateVO)getResponseObject();
+
+        TemplateResponse response = new TemplateResponse();
+        response.setId(template.getId());
+        response.setName(template.getName());
+        response.setDisplayText(template.getDisplayText());
+        response.setPublic(template.isPublicTemplate());
+        response.setPasswordEnabled(template.getEnablePassword());
+        response.setCrossZones(template.isCrossZones());
+
+        VolumeVO volume = null;
+        if (snapshotId != null) {
+            Snapshot snapshot = ApiDBUtils.findSnapshotById(snapshotId);
+            volume = ApiDBUtils.findVolumeById(snapshot.getVolumeId());
+        } else {
+            volume = ApiDBUtils.findVolumeById(volumeId);
+        }
+
+        VMTemplateHostVO templateHostRef = ApiDBUtils.findTemplateHostRef(template.getId(), volume.getDataCenterId());
+        response.setCreated(templateHostRef.getCreated());
+        response.setReady(templateHostRef != null && templateHostRef.getDownloadState() == Status.DOWNLOADED);
+
+        GuestOS os = ApiDBUtils.findGuestOSById(template.getGuestOSId());
+        if (os != null) {
+            response.setOsTypeId(os.getId());
+            response.setOsTypeName(os.getDisplayName());
+        } else {
+            response.setOsTypeId(-1L);
+            response.setOsTypeName("");
+        }
+
+        Account owner = ApiDBUtils.findAccountById(template.getAccountId());
+        if (owner != null) {
+            response.setAccount(owner.getAccountName());
+            response.setDomainId(owner.getDomainId());
+            response.setDomainName(ApiDBUtils.findDomainById(owner.getDomainId()).getName());
+        }
+
+        DataCenterVO zone = ApiDBUtils.findZoneById(volume.getDataCenterId());
+        if (zone != null) {
+            response.setZoneId(zone.getId());
+            response.setZoneName(zone.getName());
+        }
+
+        response.setResponseName(getName());
+        return response;
+    }
 }

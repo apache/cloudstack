@@ -24,6 +24,7 @@ public class DeleteSecurityGroupExecutor extends BaseAsyncJobExecutor {
         ManagementServer managementServer = asyncMgr.getExecutorContext().getManagementServer();
         SecurityGroupParam param = gson.fromJson(job.getCmdInfo(), SecurityGroupParam.class);
         
+        /*
         if(getSyncSource() == null) {
             SecurityGroupVO securityGroup = managementServer.findSecurityGroupById(param.getSecurityGroupId());
             if(securityGroup == null) {
@@ -35,17 +36,18 @@ public class DeleteSecurityGroupExecutor extends BaseAsyncJobExecutor {
             return true;
         } else {
             try {
-                managementServer.deleteSecurityGroup(param.getUserId(), param.getSecurityGroupId(), param.getEventId());
+//                managementServer.deleteSecurityGroup(param.getUserId(), param.getSecurityGroupId(), param.getEventId());
                 asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_SUCCEEDED, 0, "success");
-            } catch (PermissionDeniedException e) {
-                if(s_logger.isDebugEnabled())
-                    s_logger.debug("Unable to remove security group: " + e.getMessage());
-                asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_FAILED, BaseCmd.PARAM_ERROR, e.getMessage());
+//            } catch (PermissionDeniedException e) {
+//                if(s_logger.isDebugEnabled())
+//                    s_logger.debug("Unable to remove security group: " + e.getMessage());
+//                asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_FAILED, BaseCmd.PARAM_ERROR, e.getMessage());
             } catch(Exception e) {
                 s_logger.warn("Unable to remove security group : " + e.getMessage(), e);
                 asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_FAILED, BaseCmd.PARAM_ERROR, e.getMessage());
             }
         }
+        */
         return true;
     }
 }

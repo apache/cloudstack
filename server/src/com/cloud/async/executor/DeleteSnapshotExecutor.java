@@ -42,6 +42,7 @@ public class DeleteSnapshotExecutor extends BaseAsyncJobExecutor {
     	SnapshotManager snapshotManager = asyncMgr.getExecutorContext().getSnapshotMgr();
     	ManagementServer managementServer = asyncMgr.getExecutorContext().getManagementServer();
     	
+    	/*
 		if(getSyncSource() == null) {
 	    	SnapshotOperationParam param = gson.fromJson(job.getCmdInfo(), SnapshotOperationParam.class);
 	    	Snapshot snapshot = managementServer.findSnapshotById(param.getSnapshotId());
@@ -75,6 +76,8 @@ public class DeleteSnapshotExecutor extends BaseAsyncJobExecutor {
             asyncMgr.completeAsyncJob(jobId, result, errorCode, resultObject);
             return true;
 		}
+		*/
+    	return true;
 	}
     
 }

@@ -15,82 +15,72 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-
 package com.cloud.api.commands;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.Implementation;
+import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.user.Account;
-import com.cloud.utils.Pair;
+import com.cloud.api.response.SuccessResponse;
 
+@Implementation(method="updateAccount", manager=Manager.ManagementServer, description="Updates account information for the authenticated user")
 public class UpdateAccountCmd extends BaseCmd{
     public static final Logger s_logger = Logger.getLogger(UpdateAccountCmd.class.getName());
     private static final String s_name = "updateaccountresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
+ 
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
 
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NEW_NAME, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DOMAIN_ID, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
+    @Parameter(name="account", type=CommandType.STRING, required=true, description="the current account name")
+    private String accountName;
+
+    @Parameter(name="domainid", type=CommandType.LONG, required=true, description="the ID of the domain where the account exists")
+    private Long domainId;
+
+    @Parameter(name="newname", type=CommandType.STRING, required=true, description="new name for the account")
+    private String newName;
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public String getAccountName() {
+        return accountName;
     }
+
+    public Long getDomainId() {
+        return domainId;
+    }
+
+    public String getNewName() {
+        return newName;
+    }
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
 
     @Override
     public String getName() {
         return s_name;
     }
-    @Override
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
 
-    @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-        Long domainId = (Long)params.get(BaseCmd.Properties.DOMAIN_ID.getName());
-        String accountName = (String)params.get(BaseCmd.Properties.ACCOUNT.getName());
-        String newAccountName = (String)params.get(BaseCmd.Properties.NEW_NAME.getName());
-        Account adminAccount = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());;
-        Boolean updateAccountResult = false;
-        Account account = null;
-
-        // check if account exists in the system
-        account = getManagementServer().findAccountByName(accountName, domainId);
-    	if (account == null) {
-    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find account " + accountName + " in domain " + domainId);
-    	}
-
-    	if ((adminAccount != null) && !getManagementServer().isChildDomain(adminAccount.getDomainId(), account.getDomainId())) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid account " + accountName + " in domain " + domainId + " given, unable to update account.");
-    	}
-
-    	// don't allow modify system account
-    	if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
-    		throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "can not modify system account");
-    	}
-
-        try {
-        	getManagementServer().updateAccount(account.getId(), newAccountName);
-        	account = getManagementServer().findAccountById(account.getId());
-        	if (account.getAccountName().equals(newAccountName)) {
-        		updateAccountResult = true;
-        	}
-        } catch (Exception ex) {
-            s_logger.error("Exception updating account", ex);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update account " + accountName + " in domain " + domainId + ":  internal error.");
-        }
-
-        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-        if (updateAccountResult == true) {
-        	returnValues.add(new Pair<String, Object>(BaseCmd.Properties.SUCCESS.getName(), new Boolean(true)));
+    @Override @SuppressWarnings("unchecked")
+    public SuccessResponse getResponse() {
+        SuccessResponse response = new SuccessResponse();
+        Boolean responseObject = (Boolean)getResponseObject();
+      
+        if (responseObject != null) {
+        	response.setSuccess(responseObject);
         } else {
-        	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update account " + accountName + " in domain " + domainId);
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update account");
         }
-        return returnValues;
+
+        response.setResponseName(getName());
+        return response;
     }
 }

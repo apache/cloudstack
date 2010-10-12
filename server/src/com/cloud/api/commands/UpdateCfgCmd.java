@@ -18,56 +18,62 @@
 
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.Implementation;
+import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.user.User;
-import com.cloud.utils.Pair;
+import com.cloud.api.response.SuccessResponse;
 
+@Implementation(method="updateConfiguration", manager=Manager.ConfigManager, description="Updates a configuration.")
 public class UpdateCfgCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateCfgCmd.class.getName());
-
     private static final String s_name = "updateconfigurationresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.VALUE, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="name", type=CommandType.STRING, required=true, description="the name of the configuration")
+    private String cfgName;
+
+    @Parameter(name="value", type=CommandType.STRING, description="the value of the configuration")
+    private String value;
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public String getCfgName() {
+        return cfgName;
     }
+
+    public String getValue() {
+        return value;
+    }
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
 
     public String getName() {
         return s_name;
     }
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
-
-    @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-        String name = (String) params.get(BaseCmd.Properties.NAME.getName());
-        String value = (String) params.get(BaseCmd.Properties.VALUE.getName());
-        Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
-        
-        if (userId == null) {
-            userId = Long.valueOf(User.UID_SYSTEM);
-        }
-        
-        try {
-        	getManagementServer().updateConfiguration(userId, name, value);
-        } catch (Exception ex) {
-        	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
+    
+    @Override @SuppressWarnings("unchecked")
+    public SuccessResponse getResponse() {
+        SuccessResponse response = new SuccessResponse();
+        Boolean responseObject = (Boolean)getResponseObject();
+      
+        if (responseObject != null) {
+        	response.setSuccess(responseObject);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update config");
         }
 
-        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.SUCCESS.getName(), "true"));
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.DISPLAY_TEXT.getName(), "Successfully updated configuration value."));
-        
-        return returnValues;
+        response.setResponseName(getName());
+        return response;
     }
 }

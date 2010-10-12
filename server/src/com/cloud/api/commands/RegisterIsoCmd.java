@@ -15,201 +15,153 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-
 package com.cloud.api.commands;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
-import com.cloud.api.ServerApiException;
+import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.Implementation;
+import com.cloud.api.Parameter;
+import com.cloud.api.response.ListResponse;
+import com.cloud.api.response.TemplateResponse;
 import com.cloud.dc.DataCenterVO;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.storage.Storage.FileSystem;
-import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
-import com.cloud.utils.Pair;
 
+@Implementation(method="registerIso", manager=Manager.TemplateManager, description="Registers an existing ISO into the Cloud.com Cloud.")
 public class RegisterIsoCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(RegisterIsoCmd.class.getName());
 
     private static final String s_name = "registerisoresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DISPLAY_TEXT, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.URL, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DOMAIN_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.IS_PUBLIC, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.IS_FEATURED, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.OS_TYPE_ID, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.BOOTABLE, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ZONE_ID, Boolean.TRUE));
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="bootable", type=CommandType.BOOLEAN, description="true if this ISO is bootable")
+    private Boolean bootable;
+
+    @Parameter(name="displaytext", type=CommandType.STRING, required=true, description="the display text of the ISO. This is usually used for display purposes.")
+    private String displayText;
+
+    @Parameter(name="isfeatured", type=CommandType.BOOLEAN, description="true if you want this ISO to be featured")
+    private Boolean featured;
+
+    @Parameter(name="ispublic", type=CommandType.BOOLEAN, description="true if you want to register the ISO to be publicly available to all users, false otherwise.")
+    private Boolean publicIso;
+
+    @Parameter(name="name", type=CommandType.STRING, required=true, description="the name of the ISO")
+    private String isoName;
+
+    @Parameter(name="ostypeid", type=CommandType.LONG, required=true, description="the ID of the OS Type that best represents the OS of this ISO")
+    private Long osTypeId;
+
+    @Parameter(name="url", type=CommandType.STRING, required=true, description="the URL to where the ISO is currently being hosted")
+    private String url;
+
+    @Parameter(name="zoneid", type=CommandType.LONG, required=true, description="the ID of the zone you wish to register the ISO to.")
+    private Long zoneId;
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public Boolean isBootable() {
+        return bootable;
     }
+
+    public String getDisplayText() {
+        return displayText;
+    }
+
+    public Boolean isFeatured() {
+        return featured;
+    }
+
+    public Boolean isPublic() {
+        return publicIso;
+    }
+
+    public String getIsoName() {
+        return isoName;
+    }
+
+    public Long getOsTypeId() {
+        return osTypeId;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public Long getZoneId() {
+        return zoneId;
+    }
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
 
     @Override
     public String getName() {
         return s_name;
     }
-    @Override
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
 
-    @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-        Account account = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-        String accountName = (String)params.get(BaseCmd.Properties.ACCOUNT.getName());
-        Long domainId = (Long)params.get(BaseCmd.Properties.DOMAIN_ID.getName());
-        Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
-        String name = (String)params.get(BaseCmd.Properties.NAME.getName());
-        String displayText = (String)params.get(BaseCmd.Properties.DISPLAY_TEXT.getName());
-        String url = (String)params.get(BaseCmd.Properties.URL.getName());
-        Boolean isPublic = (Boolean)params.get(BaseCmd.Properties.IS_PUBLIC.getName());
-        Boolean featured = (Boolean)params.get(BaseCmd.Properties.IS_FEATURED.getName());
-        Long guestOSId = (Long) params.get(BaseCmd.Properties.OS_TYPE_ID.getName());
-        Boolean bootable = (Boolean) params.get(BaseCmd.Properties.BOOTABLE.getName());
-        Long zoneId = (Long) params.get(BaseCmd.Properties.ZONE_ID.getName());
+	@Override @SuppressWarnings("unchecked")
+	public ListResponse<TemplateResponse> getResponse() {
+	    VMTemplateVO template = (VMTemplateVO)getResponseObject();
 
-        if (isPublic == null) {
-            isPublic = Boolean.FALSE;
-        }
-        
-        if (zoneId.longValue() == -1) {
-        	zoneId = null;
-        }
-        
-        Long accountId = null;
-        if ((account == null) || isAdmin(account.getType())) {
-            if (domainId != null) {
-                if ((account != null) && !getManagementServer().isChildDomain(account.getDomainId(), domainId)) {
-                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid domain id (" + domainId + ") ");
-                }
-                if (accountName != null) {
-                    Account userAccount = getManagementServer().findActiveAccount(accountName, domainId);
-                    if (userAccount == null) {
-                        throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find account " + accountName + " in domain " + domainId);
-                    }
-                    accountId = userAccount.getId();
-                }
-            } else {
-                accountId = ((account != null) ? account.getId() : null);
+	    ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
+	    List<TemplateResponse> responses = new ArrayList<TemplateResponse>();
+	    List<DataCenterVO> zones = null;
+
+	    if (zoneId != null) {
+	        zones = new ArrayList<DataCenterVO>();
+	        zones.add(ApiDBUtils.findZoneById(zoneId));
+	    } else {
+	        zones = ApiDBUtils.listZones();   
+	    }
+
+	    for (DataCenterVO zone : zones) {
+	        TemplateResponse templateResponse = new TemplateResponse();
+	        templateResponse.setId(template.getId());
+	        templateResponse.setName(template.getName());
+	        templateResponse.setDisplayText(template.getDisplayText());
+	        templateResponse.setPublic(template.isPublicTemplate());
+
+	        VMTemplateHostVO isoHostRef = ApiDBUtils.findTemplateHostRef(template.getId(), zone.getId());
+	        if (isoHostRef != null) {
+	            templateResponse.setCreated(isoHostRef.getCreated());
+	            templateResponse.setReady(isoHostRef.getDownloadState() == Status.DOWNLOADED);
+	        }
+
+	        templateResponse.setFeatured(template.isFeatured());
+            templateResponse.setBootable(template.isBootable());
+            templateResponse.setOsTypeId(template.getGuestOSId());
+            templateResponse.setOsTypeName(ApiDBUtils.findGuestOSById(template.getGuestOSId()).getName());
+              
+            Account owner = ApiDBUtils.findAccountById(template.getAccountId());
+            if (owner != null) {
+                templateResponse.setAccountId(owner.getId());
+                templateResponse.setAccount(owner.getAccountName());
+                templateResponse.setDomainId(owner.getDomainId());
             }
-        } else {
-            accountId = account.getId();
-        }
 
-        if (accountId == null) {
-            throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "No valid account specified for registering ISO.");
-        }
-        
-        boolean isAdmin = getManagementServer().findAccountById(accountId).getType() == Account.ACCOUNT_TYPE_ADMIN;
-        
-        if (!isAdmin && zoneId == null) {
-        	throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please specify a valid zone Id.");
-        }
-        
-        if((!url.toLowerCase().endsWith("iso"))&&(!url.toLowerCase().endsWith("iso.zip"))&&(!url.toLowerCase().endsWith("iso.bz2"))
-        		&&(!url.toLowerCase().endsWith("iso.gz"))){
-        	throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please specify a valid iso");
-        }
-        
-        boolean allowPublicUserTemplates = Boolean.parseBoolean(getManagementServer().getConfigurationValue("allow.public.user.templates"));        
-        if (!isAdmin && !allowPublicUserTemplates && isPublic) {
-        	throw new ServerApiException(BaseCmd.PARAM_ERROR, "Only private ISOs can be created.");
-        }
-        
-        if (!isAdmin || featured == null) {
-        	featured = Boolean.FALSE;
-        }
+            templateResponse.setZoneId(zone.getId());
+            templateResponse.setZoneName(zone.getName());
+            templateResponse.setResponseName("iso");
 
-        // If command is executed via 8096 port, set userId to the id of System account (1)
-        if (userId == null) {
-            userId = Long.valueOf(1);
-        }
-        
-        if (bootable == null) {
-        	bootable = Boolean.TRUE;
-        }
-
-        //removing support for file:// type urls (bug: 4239)
-        if(url.toLowerCase().contains("file://")){
-        	throw new ServerApiException(BaseCmd.PARAM_ERROR, "File:// type urls are currently unsupported");
-        }
-        
-        Long templateId;
-        try {
-        	templateId = getManagementServer().createTemplate(userId, accountId, zoneId, name, displayText, isPublic.booleanValue(), featured.booleanValue(), ImageFormat.ISO.toString(), null, url, null, true, 64 /*bits*/, false, guestOSId, bootable, HypervisorType.None);
-        } catch (Exception ex) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
-        }
-        
-            
-        VMTemplateVO template = getManagementServer().findTemplateById(templateId);        
-        List<Pair<String, Object>> isoTags = new ArrayList<Pair<String, Object>>();
-    	List<Object> iTagList = new ArrayList<Object>();
-        if (template != null) {
-        	List<DataCenterVO> zones = null;
-        	
-        	if (zoneId != null) {
-        		zones = new ArrayList<DataCenterVO>();
-        		zones.add(getManagementServer().findDataCenterById(zoneId));
-        	} else {
-        		zones = getManagementServer().listDataCenters();   
-        	}
-        	
-        	for (DataCenterVO zone : zones) {
-        		VMTemplateHostVO isoHostRef = getManagementServer().findTemplateHostRef(templateId, zone.getId());                		
-
-        		// Use embeded object for response
-        		List<Pair<String, Object>> listForEmbeddedObject = new ArrayList<Pair<String, Object>>();
-        		listForEmbeddedObject.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), template.getId().toString()));
-        		listForEmbeddedObject.add(new Pair<String, Object>(BaseCmd.Properties.NAME.getName(), template.getName()));
-        		listForEmbeddedObject.add(new Pair<String, Object>(BaseCmd.Properties.DISPLAY_TEXT.getName(), template.getDisplayText()));
-        		listForEmbeddedObject.add(new Pair<String, Object>(BaseCmd.Properties.IS_PUBLIC.getName(), Boolean.valueOf(template.isPublicTemplate()).toString()));
-        		
-        		if (isoHostRef != null) {
-        			listForEmbeddedObject.add(new Pair<String, Object>(BaseCmd.Properties.CREATED.getName(), getDateString(isoHostRef.getCreated())));
-        		}
-        		
-        		listForEmbeddedObject.add(new Pair<String, Object>(BaseCmd.Properties.IS_READY.getName(), (isoHostRef != null && isoHostRef.getDownloadState() == Status.DOWNLOADED)));
-        		listForEmbeddedObject.add(new Pair<String, Object>(BaseCmd.Properties.IS_FEATURED.getName(), Boolean.valueOf(template.isFeatured()).toString()));
-        		listForEmbeddedObject.add(new Pair<String, Object>(BaseCmd.Properties.BOOTABLE.getName(), Boolean.valueOf(template.isBootable()).toString()));
-        		listForEmbeddedObject.add(new Pair<String, Object>(BaseCmd.Properties.OS_TYPE_ID.getName(), template.getGuestOSId()));
-        		listForEmbeddedObject.add(new Pair<String, Object>(BaseCmd.Properties.OS_TYPE_NAME.getName(), getManagementServer().findGuestOSById(template.getGuestOSId()).getDisplayName()));
-        				
-        		Account owner = getManagementServer().findAccountById(template.getAccountId());
-        		if (owner != null) {
-        			listForEmbeddedObject.add(new Pair<String, Object>(BaseCmd.Properties.ACCOUNT_ID.getName(), owner.getId()));
-        			listForEmbeddedObject.add(new Pair<String, Object>(BaseCmd.Properties.ACCOUNT.getName(), owner.getAccountName()));
-        			listForEmbeddedObject.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN_ID.getName(), owner.getDomainId()));
-        		}
-
-        		listForEmbeddedObject.add(new Pair<String, Object>(BaseCmd.Properties.ZONE_ID.getName(), zone.getId()));
-    			listForEmbeddedObject.add(new Pair<String, Object>(BaseCmd.Properties.ZONE_NAME.getName(), zone.getName()));
-
-    			iTagList.add(listForEmbeddedObject);            		
-        	}
-        }
-        
-        Object[] iTag = new Object[iTagList.size()];
-        for (int i = 0; i < iTagList.size(); i++) {
-        	iTag[i] = iTagList.get(i);
-        }
-                               
-        Pair<String, Object> templateTag = new Pair<String, Object>("iso", iTag);
-        isoTags.add(templateTag);
-
-        return isoTags;
-    }
+            responses.add(templateResponse);
+	    }
+        response.setResponseName(getName());
+        response.setResponses(responses);
+        return response;
+	}
 }

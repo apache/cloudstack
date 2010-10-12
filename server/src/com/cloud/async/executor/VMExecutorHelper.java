@@ -15,18 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-
 package com.cloud.async.executor;
 
 import com.cloud.api.BaseCmd;
 import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
-import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.VolumeVO;
 import com.cloud.user.Account;
 import com.cloud.vm.UserVmVO;
-import com.cloud.vm.InstanceGroupVO;
 
 public class VMExecutorHelper {
 	public static VMOperationResultObject composeResultObject(ManagementServer managementServer, UserVmVO vm, String vmPassword) {
@@ -51,11 +47,11 @@ public class VMExecutorHelper {
 		if(vm.getState() != null)
 			resultObject.setState(vm.getState().toString());
 		
-		InstanceGroupVO group = managementServer.getGroupForVm(vm.getId());
-		if (group != null) {
-			resultObject.setGroupId(group.getId());
-			resultObject.setGroup(group.getName());
-		}
+//		InstanceGroupVO group = managementServer.getGroupForVm(vm.getId());
+//		if (group != null) {
+//			resultObject.setGroupId(group.getId());
+//			resultObject.setGroup(group.getName());
+//		}
 		
         VMTemplateVO template = managementServer.findTemplateById(vm.getTemplateId());
         
@@ -63,7 +59,7 @@ public class VMExecutorHelper {
         if (acct != null) {
         	resultObject.setAccount(acct.getAccountName());
         	resultObject.setDomainId(acct.getDomainId());
-        	resultObject.setDomain(managementServer.findDomainIdById(acct.getDomainId()).getName());
+//        	resultObject.setDomain(managementServer.findDomainIdById(acct.getDomainId()).getName());
         }
         
         if ( BaseCmd.isAdmin(acct.getType()) && (vm.getHostId() != null)) {
@@ -114,26 +110,7 @@ public class VMExecutorHelper {
         resultObject.setMemory(String.valueOf(offering.getRamSize()));
         
         //Network groups
-        resultObject.setNetworkGroupList(managementServer.getNetworkGroupsNamesForVm(vm.getId()));
-        
-        if(vm.getHostId()!=null)
-        {
-        	resultObject.setHostid(vm.getHostId());
-        	if(managementServer.getHostBy(vm.getHostId())!=null)
-        	{
-                resultObject.setHostname(managementServer.getHostBy(vm.getHostId()).getName());
-        	}
-               
-        }
-         
-        //root device related
-        VolumeVO rootVolume = managementServer.findRootVolume(vm.getId());
-        if(rootVolume!=null)
-        {
-        	resultObject.setRootDeviceId(rootVolume.getDeviceId());
-        	StoragePoolVO storagePool = managementServer.findPoolById(rootVolume.getPoolId());
-        	resultObject.setRootDeviceType(storagePool.getPoolType().toString());
-        }
+//        resultObject.setNetworkGroupList(managementServer.getNetworkGroupsNamesForVm(vm.getId()));
         
 		return resultObject;
 	}

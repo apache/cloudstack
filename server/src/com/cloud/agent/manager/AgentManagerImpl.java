@@ -20,6 +20,7 @@ package com.cloud.agent.manager;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -68,6 +69,15 @@ import com.cloud.agent.manager.allocator.PodAllocator;
 import com.cloud.agent.transport.Request;
 import com.cloud.agent.transport.Response;
 import com.cloud.alert.AlertManager;
+import com.cloud.api.BaseCmd;
+import com.cloud.api.ServerApiException;
+import com.cloud.api.commands.AddHostCmd;
+import com.cloud.api.commands.AddSecondaryStorageCmd;
+import com.cloud.api.commands.CancelMaintenanceCmd;
+import com.cloud.api.commands.DeleteHostCmd;
+import com.cloud.api.commands.PrepareForMaintenanceCmd;
+import com.cloud.api.commands.ReconnectHostCmd;
+import com.cloud.api.commands.UpdateHostCmd;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Config;
@@ -88,6 +98,7 @@ import com.cloud.event.dao.EventDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InternalErrorException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.UnsupportedVersionException;
 import com.cloud.ha.HighAvailabilityManager;
@@ -113,6 +124,7 @@ import com.cloud.resource.ServerResource;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.Storage;
+import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateVO;
@@ -213,6 +225,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
 
     @Inject
     protected UpgradeManager _upgradeMgr = null;
+    
+    @Inject
+    protected StorageManager _storageMgr = null;
 
 
     private String _publicNic;
@@ -490,7 +505,91 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
     }
 
     @Override
-    public List<HostVO> discoverHosts(long dcId, Long podId, Long clusterId, URI url, String username, String password) throws IllegalArgumentException, DiscoveryException {
+    public List<HostVO> discoverHosts(AddHostCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
+        Long dcId = cmd.getZoneId();
+        Long podId = cmd.getPodId();
+        Long clusterId = cmd.getClusterId();
+        String clusterName = cmd.getClusterName();
+        String url = cmd.getUrl();
+        String username = cmd.getUsername();
+        String password = cmd.getPassword();
+        return discoverHosts(dcId, podId, clusterId, clusterName, url, username, password);
+    }
+
+    @Override
+    public List<HostVO> discoverHosts(AddSecondaryStorageCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
+        Long dcId = cmd.getZoneId();
+        String url = cmd.getUrl();
+        return discoverHosts(dcId, null, null, null, url, null, null);
+    }
+
+    @Override
+    public List<HostVO> discoverHosts(Long dcId, Long podId, Long clusterId, String clusterName, String url, String username, String password) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
+    	URI uri = null;
+    	
+        //Check if the zone exists in the system
+        if (_dcDao.findById(dcId) == null ){
+        	throw new InvalidParameterValueException("Can't find zone by id " + dcId);
+        }
+        
+        //Check if the pod exists in the system
+        if (podId != null) {
+            if (_podDao.findById(podId) == null ){
+                throw new InvalidParameterValueException("Can't find pod by id " + podId);
+            }
+            //check if pod belongs to the zone
+            HostPodVO pod = _podDao.findById(podId);
+            if (!Long.valueOf(pod.getDataCenterId()).equals(dcId)) {
+            	throw new InvalidParameterValueException("Pod " + podId + " doesn't belong to the zone " + dcId);
+            }
+        }
+        
+        // Deny to add a secondary storage multiple times for the same zone
+        if ((username == null) && (_hostDao.findSecondaryStorageHost(dcId) != null)) {
+        	throw new InvalidParameterValueException("A secondary storage host already exists in the specified zone");
+        }
+        
+        //Verify cluster information and create a new cluster if needed
+        if (clusterName != null && clusterId != null) {
+            throw new InvalidParameterValueException("Can't specify cluster by both id and name");
+        }
+        
+        if ((clusterName != null || clusterId != null) && podId == null) {
+            throw new InvalidParameterValueException("Can't specify cluster without specifying the pod");
+        }
+        
+        if (clusterId != null) {
+            if (_clusterDao.findById(clusterId) == null) {
+                throw new InvalidParameterValueException("Can't find cluster by id " + clusterId);
+            }
+        }
+        
+        if (clusterName != null) {      
+            ClusterVO cluster = new ClusterVO(dcId, podId, clusterName);
+            try {
+                cluster = _clusterDao.persist(cluster);
+            } catch (Exception e) {
+                cluster = _clusterDao.findBy(clusterName, podId);
+                if (cluster == null) {
+                    throw new CloudRuntimeException("Unable to create cluster " + clusterName + " in pod " + podId + " and data center " + dcId, e);
+                }
+            }
+            clusterId = cluster.getId();
+        }
+        
+        try {
+    		uri = new URI(url);
+    		if (uri.getScheme() == null)
+    			throw new InvalidParameterValueException("uri.scheme is null " + url + ", add nfs:// as a prefix");
+    		else if (uri.getScheme().equalsIgnoreCase("nfs")) {
+    			if (uri.getHost() == null || uri.getHost().equalsIgnoreCase("") || uri.getPath() == null || uri.getPath().equalsIgnoreCase("")) {
+    				throw new InvalidParameterValueException("Your host and/or path is wrong.  Make sure it's of the format nfs://hostname/path");
+    			}
+    		}
+    	} catch (URISyntaxException e) {
+			throw new InvalidParameterValueException(url + " is not a valid uri");
+    	}
+    	
         List<HostVO> hosts = new ArrayList<HostVO>();
         s_logger.info("Trying to add a new host at " + url + " in data center " + dcId);
         Enumeration<Discoverer> en = _discoverers.enumeration();
@@ -499,7 +598,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
             Map<? extends ServerResource, Map<String, String>> resources = null;
             
             try {
-            	resources = discoverer.find(dcId, podId, clusterId, url, username, password);
+            	resources = discoverer.find(dcId, podId, clusterId, uri, username, password);
             } catch(Exception e) {
             	s_logger.info("Exception in host discovery process with discoverer: " + discoverer.getName() + ", skip to another discoverer if there is any");
             }
@@ -609,6 +708,19 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
             return false;
         }
     }
+    
+    public boolean deleteHost(DeleteHostCmd cmd) throws InvalidParameterValueException{
+    	Long id = cmd.getId();
+    	
+    	//Verify that host exists
+    	HostVO host = _hostDao.findById(id);
+    	if (host == null) {
+    		throw new InvalidParameterValueException("Host with id " + id.toString() + " doesn't exist");
+    	}
+    	
+    	return deleteHost(id);
+    }
+    
 
     @DB
     protected boolean deleteSecondaryStorageHost(HostVO secStorageHost) {
@@ -973,7 +1085,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         	loadDirectlyConnectedHost(host, null);
         }
     }
-    
+
+    @SuppressWarnings("rawtypes")
     protected void loadDirectlyConnectedHost(HostVO host, ActionDelegate<Long> actionDelegate) {
         String resourceName = host.getResource();
         ServerResource resource = null;
@@ -1243,6 +1356,22 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
     }
 
     @Override
+    public HostVO reconnectHost(ReconnectHostCmd cmd) throws AgentUnavailableException {
+    	Long hostId = cmd.getId();
+
+    	HostVO host = _hostDao.findById(hostId);
+    	if (host == null) {
+    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "Host with id " + hostId.toString() + " doesn't exist");
+    	}
+
+    	boolean result = reconnect(hostId);
+    	if (result) {
+    	    return host;
+    	}
+    	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to reconnect host with id " + hostId.toString() + ", internal error.");
+    }
+
+    @Override
     public boolean reconnect(final long hostId) throws AgentUnavailableException {
         HostVO host;
 
@@ -1291,6 +1420,23 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         }
         disconnect(hostId, Event.ResetRequested, false);
         return true;
+    }
+    
+    @Override
+    public HostVO cancelMaintenance(CancelMaintenanceCmd cmd) throws InvalidParameterValueException{
+    	Long hostId = cmd.getId();
+    	
+        //verify input parameters
+    	HostVO host = _hostDao.findById(hostId);
+    	if (host == null || host.getRemoved() != null) {
+    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "Host with id " + hostId.toString() + " doesn't exist");
+    	}
+    	
+    	boolean success = cancelMaintenance(hostId);
+    	if (!success) {
+    	    throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Internal error cancelling maintenance.");
+    	}
+    	return host;
     }
 
     @Override
@@ -1380,6 +1526,31 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         }
 
         return true;
+    }
+    
+    @Override
+    public boolean maintain(PrepareForMaintenanceCmd cmd) throws InvalidParameterValueException {
+    	Long hostId = cmd.getId();
+    	HostVO host = _hostDao.findById(hostId);
+    	
+    	if (host == null) {
+            s_logger.debug("Unable to find host " + hostId);
+            throw new InvalidParameterValueException("Unable to find host with ID: " + hostId + ". Please specify a valid host ID.");
+        }
+        
+        if (_hostDao.countBy(host.getClusterId(), Status.PrepareForMaintenance, Status.ErrorInMaintenance, Status.Maintenance) > 0) {
+            throw new InvalidParameterValueException("There are other servers in maintenance mode.");
+        }
+        
+        if (_storageMgr.isLocalStorageActiveOnHost(host)) {
+        	throw new InvalidParameterValueException("There are active VMs using the host's local storage pool. Please stop all VMs on this host that use local storage.");
+        }
+        
+        try{
+        	return maintain(hostId);
+        }catch (AgentUnavailableException e) {
+        	return false;
+        }
     }
 
     public boolean checkCIDR(Host.Type type, HostPodVO pod,  String serverPrivateIP, String serverPrivateNetmask) {
@@ -1658,21 +1829,42 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
             return _hostDao.updateStatus(host, Event.UnableToMigrate, _nodeId);
         }
     }
-    
+
     @Override
-    public void updateHost(long hostId, long guestOSCategoryId) {
-    	GuestOSCategoryVO guestOSCategory = _guestOSCategoryDao.findById(guestOSCategoryId);
-    	Map<String, String> hostDetails = _hostDetailsDao.findDetails(hostId);
+    public HostVO updateHost(UpdateHostCmd cmd) throws InvalidParameterValueException{
+    	Long hostId = cmd.getId();
+    	Long guestOSCategoryId = cmd.getOsCategoryId();
     	
-    	if (guestOSCategory != null) {
-    		// Save a new entry for guest.os.category.id
-    		hostDetails.put("guest.os.category.id", String.valueOf(guestOSCategory.getId()));
-    	} else {
-    		// Delete any existing entry for guest.os.category.id
-    		hostDetails.remove("guest.os.category.id");
+    	if (guestOSCategoryId != null) {
+
+            // Verify that the host exists
+        	HostVO host = _hostDao.findById(hostId);
+        	if (host == null) {
+        		throw new InvalidParameterValueException("Host with id " + hostId + " doesn't exist");
+        	}
+        	
+        	// Verify that the guest OS Category exists
+        	if (guestOSCategoryId > 0) {
+        		if (_guestOSCategoryDao.findById(guestOSCategoryId) == null) {
+        			throw new InvalidParameterValueException("Please specify a valid guest OS category.");
+        		}
+        	}
+        	
+        	GuestOSCategoryVO guestOSCategory = _guestOSCategoryDao.findById(guestOSCategoryId);
+        	Map<String, String> hostDetails = _hostDetailsDao.findDetails(hostId);
+        	
+        	if (guestOSCategory != null) {
+        		// Save a new entry for guest.os.category.id
+        		hostDetails.put("guest.os.category.id", String.valueOf(guestOSCategory.getId()));
+        	} else {
+        		// Delete any existing entry for guest.os.category.id
+        		hostDetails.remove("guest.os.category.id");
+        	}
+        	_hostDetailsDao.persist(hostId, hostDetails);
     	}
     	
-    	_hostDetailsDao.persist(hostId, hostDetails);
+    	HostVO updatedHost = _hostDao.findById(hostId);
+    	return updatedHost;
     }
 
     protected void updateHost(final HostVO host, final StartupCommand startup, final Host.Type type, final long msId) throws IllegalArgumentException {

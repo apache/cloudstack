@@ -15,54 +15,40 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-
 package com.cloud.api.commands;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.ServerApiException;
-import com.cloud.utils.Pair;
+import com.cloud.api.Implementation;
+import com.cloud.api.Parameter;
+import com.cloud.api.response.StatusResponse;
 
+@Implementation(method="uploadCertificate")
 public class UploadCustomCertificateCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddConfigCmd.class.getName());
 
     private static final String s_name = "uploadcustomcertificateresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
-    static {
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PATH, Boolean.FALSE));
+    @Parameter(name="path", type=CommandType.STRING)
+    private String path;
+
+    public String getPath() {
+        return path;
     }
+
     @Override
     public String getName() {
         return s_name;
     }
     
-    @Override
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
+    @Override @SuppressWarnings("unchecked")
+    public StatusResponse getResponse() {
+        Boolean status = (Boolean)getResponseObject();
 
-    @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-    	String certificatePath = (String) params.get(BaseCmd.Properties.PATH.getName());
-    	    	
-		try 
-		{
-			boolean status = getManagementServer().uploadCertificate(certificatePath);
-			List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-			
-			returnValues.add(new Pair<String, Object>(BaseCmd.Properties.STATUS.getName(), status));
-            
-            return returnValues;
-		}
-		catch (Exception ex) {
-			s_logger.error("Exception updating the ssl certificate in db: ", ex);
-			throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Exception updating the ssl certificate in db: " + ex.getMessage());
-		}
-
+        StatusResponse response = new StatusResponse();
+        response.setStatus(status);
+        response.setResponseName(getName());
+        return response;
     }
 }

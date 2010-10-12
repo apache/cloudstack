@@ -18,24 +18,15 @@
 
 package com.cloud.async.executor;
 
-import java.util.List;
-
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
 import com.cloud.async.AsyncJobManager;
-import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.async.BaseAsyncJobExecutor;
-import com.cloud.event.EventTypes;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ManagementServer;
 import com.cloud.storage.Snapshot;
-import com.cloud.storage.SnapshotVO;
-import com.cloud.storage.VolumeVO;
 import com.cloud.storage.Snapshot.SnapshotType;
-import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.user.Account;
 import com.google.gson.Gson;
 
@@ -47,6 +38,7 @@ public class CreateSnapshotExecutor extends BaseAsyncJobExecutor {
     	AsyncJobVO job = getJob();
     	Gson gson = GsonHelper.getBuilder().create();
     	
+    	/*
 		if (getSyncSource() == null) {
 	    	SnapshotOperationParam param = gson.fromJson(job.getCmdInfo(), SnapshotOperationParam.class);
 	    	asyncMgr.syncAsyncJobExecution(job.getId(), "Volume", param.getVolumeId());
@@ -116,12 +108,14 @@ public class CreateSnapshotExecutor extends BaseAsyncJobExecutor {
 	    	snapshotManager.postCreateSnapshot(userId, volumeId, snapshotId, policyId, backedUp);
 	    	return true;
 		}
+		*/
+    	return true;
 	}
 	
 	private CreateSnapshotResultObject composeResultObject(Snapshot snapshot) {
 		CreateSnapshotResultObject resultObject = new CreateSnapshotResultObject();
 		ManagementServer managementServer = getAsyncJobMgr().getExecutorContext().getManagementServer();
-		VolumeVO volume = managementServer.findVolumeById(snapshot.getVolumeId());
+//		VolumeVO volume = managementServer.findVolumeById(snapshot.getVolumeId());
 		
 		resultObject.setId(snapshot.getId());
 		long domainId = -1;
@@ -134,15 +128,15 @@ public class CreateSnapshotExecutor extends BaseAsyncJobExecutor {
 			if(domainId != -1)
 			{
 				resultObject.setDomainId(domainId);
-				resultObject.setDomainName(getAsyncJobMgr().getExecutorContext().getManagementServer().findDomainIdById(domainId).getName());
+//				resultObject.setDomainName(getAsyncJobMgr().getExecutorContext().getManagementServer().findDomainIdById(domainId).getName());
 			}
 			
 		}
 		String snapshotTypeStr = SnapshotType.values()[snapshot.getSnapshotType()].name();
 		resultObject.setSnapshotType(snapshotTypeStr);
 		resultObject.setVolumeId(snapshot.getVolumeId());
-		resultObject.setVolumeName(volume.getName());
-		resultObject.setVolumeType(volume.getVolumeType());
+//		resultObject.setVolumeName(volume.getName());
+//		resultObject.setVolumeType(volume.getVolumeType());
 		resultObject.setCreated(snapshot.getCreated());
 		resultObject.setName(snapshot.getName());
 		return resultObject;

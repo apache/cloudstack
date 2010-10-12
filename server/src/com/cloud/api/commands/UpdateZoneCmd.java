@@ -18,89 +18,116 @@
 
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.Implementation;
+import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.response.ZoneResponse;
 import com.cloud.dc.DataCenterVO;
-import com.cloud.user.User;
-import com.cloud.utils.Pair;
 
+@Implementation(method="updateZone", manager=Manager.ConfigManager, description="Updates a Zone.")
 public class UpdateZoneCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateZoneCmd.class.getName());
 
     private static final String s_name = "updatezoneresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
-    static {
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DNS1, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DNS2, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.INTERNAL_DNS1, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.INTERNAL_DNS2, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.VNET, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.GUEST_CIDR_ADDRESS, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="dns1", type=CommandType.STRING, description="the first DNS for the Zone")
+    private String dns1;
+
+    @Parameter(name="dns2", type=CommandType.STRING, description="the second DNS for the Zone")
+    private String dns2;
+
+    @Parameter(name="guestcidraddress", type=CommandType.STRING, description="the guest CIDR address for the Zone")
+    private String guestCidrAddress;
+
+    @Parameter(name="id", type=CommandType.LONG, required=true, description="the ID of the Zone")
+    private Long id;
+
+    @Parameter(name="internaldns1", type=CommandType.STRING, description="the first internal DNS for the Zone")
+    private String internalDns1;
+
+    @Parameter(name="internaldns2", type=CommandType.STRING, description="the second internal DNS for the Zone")
+    private String internalDns2;
+
+    @Parameter(name="name", type=CommandType.STRING, description="the name of the Zone")
+    private String zoneName;
+
+    @Parameter(name="vnet", type=CommandType.STRING, description="the VNET for the Zone")
+    private String vnet;
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public String getDns1() {
+        return dns1;
     }
+
+    public String getDns2() {
+        return dns2;
+    }
+
+    public String getGuestCidrAddress() {
+        return guestCidrAddress;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public String getInternalDns1() {
+        return internalDns1;
+    }
+
+    public String getInternalDns2() {
+        return internalDns2;
+    }
+
+    public String getZoneName() {
+        return zoneName;
+    }
+
+    public String getVnet() {
+        return vnet;
+    }
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
 
     @Override
     public String getName() {
         return s_name;
     }
-    @Override
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
 
-    @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-    	Long zoneId = (Long) params.get(BaseCmd.Properties.ID.getName());
-    	String zoneName = (String) params.get(BaseCmd.Properties.NAME.getName());
-    	String dns1 = (String) params.get(BaseCmd.Properties.DNS1.getName());
-    	String dns2 = (String) params.get(BaseCmd.Properties.DNS2.getName());
-    	String dns3 = (String) params.get(BaseCmd.Properties.INTERNAL_DNS1.getName());
-    	String dns4 = (String) params.get(BaseCmd.Properties.INTERNAL_DNS2.getName());
-    	String vnet = (String) params.get(BaseCmd.Properties.VNET.getName());
-    	String guestCidr = (String) params.get(BaseCmd.Properties.GUEST_CIDR_ADDRESS.getName());
-    	Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
-    	
-    	if (userId == null) {
-            userId = Long.valueOf(User.UID_SYSTEM);
-        }
-    	
-    	//verify input parameters
-    	DataCenterVO zone = getManagementServer().findDataCenterById(zoneId);
-    	if (zone == null) {
-    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find zone by id " + zoneId);
-    	}
-    	
-    	if (zoneName == null) {
-    		zoneName = zone.getName();
-    	}
+    @Override @SuppressWarnings("unchecked")
+    public ZoneResponse getResponse() {
+        ZoneResponse response = new ZoneResponse();
 
-    	DataCenterVO updatedZone = null;
-    	
-        try {
-             updatedZone = getManagementServer().editZone(userId, zoneId, zoneName, dns1, dns2, dns3, dns4, vnet,guestCidr);
-        } catch (Exception ex) {
-            s_logger.error("Exception updating zone", ex);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
-        }
-
-        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-        
-        if (updatedZone == null) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update zone; internal error.");
+        DataCenterVO responseObject = (DataCenterVO)getResponseObject();
+        if (responseObject != null) {
+            response.setStatus("true");
+            response.setDisplayText("Successfully updated zone");
+            response.setId(responseObject.getId());
+            response.setGuestCidrAddress(responseObject.getGuestNetworkCidr());
+            response.setDns1(responseObject.getDns1());
+            response.setDns2(responseObject.getDns2());
+            response.setInternalDns1(responseObject.getInternalDns1());
+            response.setInternalDns2(responseObject.getInternalDns2());
+            response.setName(responseObject.getName());
+            response.setVlan(responseObject.getVnet());
         } else {
-            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.SUCCESS.getName(), "true"));
-            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.DISPLAY_TEXT.getName(), "Successfully updated zone."));
+        	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update zone; internal error.");
         }
         
-        return returnValues;
+        response.setResponseName(getName());
+        return response;
     }
 }

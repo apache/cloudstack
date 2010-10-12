@@ -25,4 +25,5 @@ import java.lang.annotation.RetentionPolicy;
 public @interface Param {
 	String name() default "";
 	String propName() default "";
+	String description() default "";
 }

@@ -124,7 +124,7 @@ public class DisableAccountExecutor extends BaseAsyncJobExecutor {
 				if(s_logger.isInfoEnabled())
 					s_logger.info("Serialize DisableAccount operation on account " + accountId
 						+ " with previous activities on router " + router.getId());
-				asyncMgr.syncAsyncJobExecution(job.getId(), "Router", router.getId());
+				asyncMgr.syncAsyncJobExecution(job, "Router", router.getId());
 			}
 			
 			txn.commit();

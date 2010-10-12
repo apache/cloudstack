@@ -38,6 +38,7 @@ public class DeleteDomainExecutor extends BaseAsyncJobExecutor {
         ManagementServer managementServer = asyncMgr.getExecutorContext().getManagementServer();
         DeleteDomainParam param = gson.fromJson(job.getCmdInfo(), DeleteDomainParam.class);
 
+        /*
         try {
             String result = managementServer.deleteDomain(param.getDomainId(), param.getOwnerId(), param.getCleanup());
             if (result == null) {
@@ -49,6 +50,7 @@ public class DeleteDomainExecutor extends BaseAsyncJobExecutor {
             s_logger.warn("Unable to delete domain : " + e.getMessage(), e);
             asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR, e.getMessage());
         }
+        */
         return true;
     }
 }

@@ -18,58 +18,50 @@
 
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.StringTokenizer;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.ServerApiException;
-import com.cloud.dc.VlanVO;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.user.User;
-import com.cloud.utils.Pair;
+import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.Implementation;
+import com.cloud.api.Parameter;
+import com.cloud.api.response.SuccessResponse;
 
+@Implementation(method="deleteVlanIpRange", manager=Manager.ConfigManager, description="Creates a VLAN IP range.")
 public class DeleteVlanIpRangeCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(DeleteVlanIpRangeCmd.class.getName());
 
     private static final String s_name = "deletevlaniprangeresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="id", type=CommandType.LONG, required=true, description="the id of the VLAN IP range")
+    private Long id;
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public Long getId() {
+        return id;
     }
 
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
+
+    @Override
     public String getName() {
         return s_name;
     }
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
 
-    @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-    	Long vlanDbId = (Long) params.get(BaseCmd.Properties.ID.getName());
-    	Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
-    	
-    	if (userId == null) {
-            userId = Long.valueOf(User.UID_SYSTEM);
-        }
-    	
-    	// Delete the VLAN and its public IP addresses
-    	boolean success = false;
-        try {
-             success = getManagementServer().deleteVlanAndPublicIpRange(userId, vlanDbId);
-        } catch (InvalidParameterValueException ex) {        	
-            s_logger.error("Exception deleting VLAN", ex);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete VLAN: " + ex.getMessage());
-        }
-    	 
-        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.SUCCESS.getName(), success));
-        return returnValues;
-    }
+	@Override @SuppressWarnings("unchecked")
+	public SuccessResponse getResponse() {
+        Boolean success = (Boolean)getResponseObject();
+        SuccessResponse response = new SuccessResponse();
+        response.setSuccess(success);
+        response.setResponseName(getName());
+        return response;
+	}
 }

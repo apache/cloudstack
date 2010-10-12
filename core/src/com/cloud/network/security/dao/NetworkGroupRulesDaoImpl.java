@@ -4,14 +4,9 @@ import java.util.List;
 
 import javax.ejb.Local;
 
-import com.cloud.domain.DomainVO;
-import com.cloud.domain.dao.DomainDao;
 import com.cloud.network.security.NetworkGroupRulesVO;
-import com.cloud.server.ManagementServer;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
-import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
@@ -19,9 +14,6 @@ import com.cloud.utils.db.SearchCriteria;
 public class NetworkGroupRulesDaoImpl extends GenericDaoBase<NetworkGroupRulesVO, Long> implements NetworkGroupRulesDao {
     private SearchBuilder<NetworkGroupRulesVO> AccountGroupNameSearch;
     private SearchBuilder<NetworkGroupRulesVO> AccountSearch;
-    private SearchBuilder<NetworkGroupRulesVO> DomainSearch;
-
-    private DomainDao _domainDao = null;
 
     protected NetworkGroupRulesDaoImpl() {
         AccountGroupNameSearch = createSearchBuilder();
@@ -56,36 +48,6 @@ public class NetworkGroupRulesDaoImpl extends GenericDaoBase<NetworkGroupRulesVO
         Filter searchFilter = new Filter(NetworkGroupRulesVO.class, "id", true, null, null);
         SearchCriteria<NetworkGroupRulesVO> sc = AccountSearch.create();
         sc.setParameters("accountId", accountId);
-
-        return listBy(sc, searchFilter);
-    }
-
-    @Override
-    public List<NetworkGroupRulesVO> listNetworkGroupRulesByDomain(long domainId, boolean recursive) {
-
-        if (_domainDao == null) {
-            ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
-            _domainDao = locator.getDao(DomainDao.class);
-
-            DomainSearch = createSearchBuilder();
-            DomainSearch.and("domainId", DomainSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
-            SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
-            domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
-            DomainSearch.join("domainSearch", domainSearch, DomainSearch.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-            DomainSearch.done();
-        }
-
-        Filter searchFilter = new Filter(NetworkGroupRulesVO.class, "id", true, null, null);
-        SearchCriteria<NetworkGroupRulesVO> sc = DomainSearch.create();
-
-        if (!recursive) {
-            sc.setParameters("domainId", domainId);
-        }
-
-        DomainVO domain = _domainDao.findById(domainId);
-        if (domain != null) {
-            sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
-        }
 
         return listBy(sc, searchFilter);
     }
