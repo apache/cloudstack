@@ -19,19 +19,20 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
+import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class AlertResponse extends BaseResponse {
-    @SerializedName("id")
+    @SerializedName("id") @Param(description="the id of the alert")
     private Long id;
 
-    @SerializedName("type")
+    @SerializedName("type") @Param(description="the alert type")
     private Short alertType;
 
-    @SerializedName("description")
+    @SerializedName("description") @Param(description="description of the alert")
     private String description;
 
-    @SerializedName("sent")
+    @SerializedName("sent") @Param(description="the date and time the alert was sent")
     private Date lastSent;
 
     public Long getId() {

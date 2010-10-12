@@ -67,7 +67,6 @@ import com.cloud.api.commands.ListPublicIpAddressesCmd;
 import com.cloud.api.commands.ListRoutersCmd;
 import com.cloud.api.commands.ListServiceOfferingsCmd;
 import com.cloud.api.commands.ListSnapshotsCmd;
-import com.cloud.api.commands.ListStoragePoolsAndHostsCmd;
 import com.cloud.api.commands.ListStoragePoolsCmd;
 import com.cloud.api.commands.ListSystemVMsCmd;
 import com.cloud.api.commands.ListTemplateOrIsoPermissionsCmd;
@@ -838,7 +837,7 @@ public interface ManagementServer {
      *   - ownerId
      *   - cleanup:  whether or not to delete all accounts/VMs/sub-domains when deleting the domain
      */
-	String deleteDomain(DeleteDomainCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+	boolean deleteDomain(DeleteDomainCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
 
     /**
      * update an existing domain
@@ -1133,13 +1132,6 @@ public interface ManagementServer {
 	 * @return a list of storage pools that match the given criteria
 	 */
 	List<? extends StoragePoolVO> searchForStoragePools(ListStoragePoolsCmd cmd);
-
-	/**
-	 * List storage pools and storage hosts that match the given criteria
-	 * @param cmd the command that wraps the search criteria (zone, pod, name, IP address, path, state)
-	 * @return a list of storage pools and hosts that match the given criteria
-	 */
-	List<Object> searchForStoragePoolsAndHosts(ListStoragePoolsAndHostsCmd cmd);
 
 	SnapshotPolicyVO findSnapshotPolicyById(Long policyId);
 

@@ -40,7 +40,7 @@ public class QueryAsyncJobResultCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="jobid", type=CommandType.LONG, required=true)
+    @Parameter(name="jobid", type=CommandType.LONG, required=true, description="the ID of the asychronous job")
     private Long id;
 
     /////////////////////////////////////////////////////

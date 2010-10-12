@@ -43,7 +43,7 @@ public class StartSystemVMCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="id", type=CommandType.LONG, required=true)
+    @Parameter(name="id", type=CommandType.LONG, required=true, description="The ID of the system virtual machine")
     private Long id;
 
     /////////////////////////////////////////////////////

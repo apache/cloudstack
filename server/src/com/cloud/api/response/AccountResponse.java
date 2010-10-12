@@ -17,85 +17,86 @@
  */
 package com.cloud.api.response;
 
+import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class AccountResponse extends BaseResponse {
-    @SerializedName("id")
+    @SerializedName("id") @Param(description="the id of the account")
     private Long id;
 
-    @SerializedName("name")
+    @SerializedName("name") @Param(description="the name of the account")
     private String name;
 
-    @SerializedName("accounttype")
+    @SerializedName("accounttype") @Param(description="account type (admin, domain-admin, user)")
     private Short accountType;
 
-    @SerializedName("domainid")
+    @SerializedName("domainid") @Param(description="id of the Domain the account belongs too")
     private Long domainId;
 
-    @SerializedName("domain")
+    @SerializedName("domain") @Param(description="name of the Domain the account belongs too")
     private String domainName;
 
-    @SerializedName("receivedbytes")
+    @SerializedName("receivedbytes") @Param(description="the total number of network traffic bytes received")
     private Long bytesReceived;
 
-    @SerializedName("sentbytes")
+    @SerializedName("sentbytes") @Param(description="the total number of network traffic bytes sent")
     private Long bytesSent;
 
-    @SerializedName("vmlimit")
+    @SerializedName("vmlimit") @Param(description="the total number of virtual machines that can be deployed by this account")
     private String vmLimit;
 
-    @SerializedName("vmtotal")
+    @SerializedName("vmtotal") @Param(description="the total number of virtual machines deployed by this account")
     private Long vmTotal;
 
-    @SerializedName("vmavailable")
+    @SerializedName("vmavailable") @Param(description="the total number of virtual machines available for this account to acquire")
     private String vmAvailable;
 
-    @SerializedName("iplimit")
+    @SerializedName("iplimit") @Param(description="the total number of public ip addresses this account can acquire")
     private String ipLimit;
 
-    @SerializedName("iptotal")
+    @SerializedName("iptotal") @Param(description="the total number of public ip addresses allocated for this account")
     private Long ipTotal;
 
-    @SerializedName("ipavailable")
+    @SerializedName("ipavailable") @Param(description="the total number of public ip addresses available for this account to acquire")
     private String ipAvailable;
 
-    @SerializedName("volumelimit")
+    @SerializedName("volumelimit") @Param(description="the total volume which can be used by this account")
     private String volumeLimit;
 
-    @SerializedName("volumetotal")
+    @SerializedName("volumetotal") @Param(description="the total volume being used by this account")
     private Long volumeTotal;
 
-    @SerializedName("volumeavailable")
+    @SerializedName("volumeavailable") @Param(description="the total volume available for this account")
     private String volumeAvailable;
 
-    @SerializedName("snapshotlimit")
+    @SerializedName("snapshotlimit") @Param(description="the total number of snapshots which can be stored by this account")
     private String snapshotLimit;
 
-    @SerializedName("snapshottotal")
+    @SerializedName("snapshottotal") @Param(description="the total number of snapshots stored by this account")
     private Long snapshotTotal;
 
-    @SerializedName("snapshotavailable")
+    @SerializedName("snapshotavailable") @Param(description="the total number of snapshots available for this account")
     private String snapshotAvailable;
 
-    @SerializedName("templatelimit")
+    @SerializedName("templatelimit") @Param(description="the total number of templates which can be created by this account")
     private String templateLimit;
 
-    @SerializedName("templatetotal")
+    @SerializedName("templatetotal") @Param(description="the total number of templates which have been created by this account")
     private Long templateTotal;
 
-    @SerializedName("templateavailable")
+    @SerializedName("templateavailable") @Param(description="the total number of templates available to be created by this account")
     private String templateAvailable;
 
-    @SerializedName("vmstopped")
+    @SerializedName("vmstopped") @Param(description="the total number of virtual machines stopped for this account")
     private Integer vmStopped;
 
-    @SerializedName("vmrunning")
+    @SerializedName("vmrunning") @Param(description="the total number of virtual machines running for this account")
     private Integer vmRunning;
 
-    @SerializedName("state")
+    @SerializedName("state") @Param(description="the state of the account")
     private String state;
 
-    @SerializedName("iscleanuprequired")
+    @SerializedName("iscleanuprequired") @Param(description="true if the account requires cleanup")
     private Boolean cleanupRequired;
 
     public Long getId() {

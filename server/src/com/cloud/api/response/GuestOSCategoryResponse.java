@@ -17,14 +17,15 @@
  */
 package com.cloud.api.response;
 
+import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class GuestOSCategoryResponse extends BaseResponse {
-    @SerializedName("id")
+    @SerializedName("id") @Param(description="the ID of the OS category")
     private Long id;
 
-    @SerializedName("name")
-    private String name;
+    @SerializedName("name") @Param(description="the name of the OS category")
+    private String name; 
 
     public Long getId() {
         return id;

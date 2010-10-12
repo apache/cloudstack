@@ -45,28 +45,28 @@ public class RegisterIsoCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="bootable", type=CommandType.BOOLEAN)
+    @Parameter(name="bootable", type=CommandType.BOOLEAN, description="true if this ISO is bootable")
     private Boolean bootable;
 
-    @Parameter(name="displaytext", type=CommandType.STRING, required=true)
+    @Parameter(name="displaytext", type=CommandType.STRING, required=true, description="the display text of the ISO. This is usually used for display purposes.")
     private String displayText;
 
-    @Parameter(name="isfeatured", type=CommandType.BOOLEAN)
+    @Parameter(name="isfeatured", type=CommandType.BOOLEAN, description="true if you want this ISO to be featured")
     private Boolean featured;
 
-    @Parameter(name="ispublic", type=CommandType.BOOLEAN)
+    @Parameter(name="ispublic", type=CommandType.BOOLEAN, description="true if you want to register the ISO to be publicly available to all users, false otherwise.")
     private Boolean publicIso;
 
-    @Parameter(name="name", type=CommandType.STRING, required=true)
+    @Parameter(name="name", type=CommandType.STRING, required=true, description="the name of the ISO")
     private String isoName;
 
-    @Parameter(name="ostypeid", type=CommandType.LONG, required=true)
+    @Parameter(name="ostypeid", type=CommandType.LONG, required=true, description="the ID of the OS Type that best represents the OS of this ISO")
     private Long osTypeId;
 
-    @Parameter(name="url", type=CommandType.STRING, required=true)
+    @Parameter(name="url", type=CommandType.STRING, required=true, description="the URL to where the ISO is currently being hosted")
     private String url;
 
-    @Parameter(name="zoneid", type=CommandType.LONG, required=true)
+    @Parameter(name="zoneid", type=CommandType.LONG, required=true, description="the ID of the zone you wish to register the ISO to.")
     private Long zoneId;
 
     /////////////////////////////////////////////////////

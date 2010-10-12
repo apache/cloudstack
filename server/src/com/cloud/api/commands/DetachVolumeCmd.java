@@ -39,13 +39,13 @@ public class DetachVolumeCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="id", type=CommandType.LONG)
+    @Parameter(name="id", type=CommandType.LONG, description="the ID of the disk volume")
     private Long id;
 
-    @Parameter(name="deviceid", type=CommandType.LONG)
+    @Parameter(name="deviceid", type=CommandType.LONG, description="the device ID on the virtual machine where volume is detached from")
     private Long deviceId;
 
-    @Parameter(name="virtualmachineid", type=CommandType.LONG)
+    @Parameter(name="virtualmachineid", type=CommandType.LONG, description="the ID of the virtual machine where the volume is detached from")
     private Long virtualMachineId;
 
     /////////////////////////////////////////////////////

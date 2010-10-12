@@ -19,43 +19,48 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
+import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class ExtractResponse extends BaseResponse {
-    @SerializedName("id")
+    @SerializedName("id") @Param(description="the id of extracted object")
     private long id;
     
-    @SerializedName("name")
+    @SerializedName("name") @Param(description="the name of the extracted object")
     private String name;
     
+    //FIXME - add description
     @SerializedName("uploadpercentage")
     private int uploadPercent;
     
+    //FIXME - add description
     @SerializedName("uploadstatus")
     private String uploadStatus;
     
-    @SerializedName("accountid")
+    @SerializedName("accountid") @Param(description="the account id to which the extracted object belongs")
     private long accountId;    
  
-    @SerializedName("resultstring")
+    @SerializedName("resultstring") @Param(description="")
     private String resultString;    
 
-    @SerializedName("created")
+    @SerializedName("created") @Param(description="the time and date the object was created")
     private Date createdDate;
 
-    @SerializedName("state")
+    @SerializedName("state") @Param(description="the state of the extracted object")
     private String state;
     
+    //FIXME - add description
     @SerializedName("storagetype")
     private String storageType;
-    
+
+    //FIXME - add description
     @SerializedName("storage")
     private String storage;
     
-    @SerializedName("zoneid")
+    @SerializedName("zoneid") @Param(description="zone ID the object was extracted from")
     private Long zoneId;
 
-    @SerializedName("zonename")
+    @SerializedName("zonename") @Param(description="zone name the object was extracted from")
     private String zoneName;
 
     public long getId() {

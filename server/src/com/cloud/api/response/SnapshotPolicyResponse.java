@@ -17,25 +17,26 @@
  */
 package com.cloud.api.response;
 
+import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class SnapshotPolicyResponse extends BaseResponse {
-    @SerializedName("id")
+    @SerializedName("id") @Param(description="the ID of the snapshot policy")
     private Long id;
 
-    @SerializedName("volumeid")
+    @SerializedName("volumeid") @Param(description="the ID of the disk volume")
     private Long volumeId;
 
-    @SerializedName("schedule")
+    @SerializedName("schedule") @Param(description="time the snapshot is scheduled to be taken.")
     private String schedule;
 
-    @SerializedName("intervaltype")
+    @SerializedName("intervaltype") @Param(description="the interval type of the snapshot policy")
     private short intervalType;
 
-    @SerializedName("maxsnaps")
+    @SerializedName("maxsnaps") @Param(description="maximum number of snapshots retained")
     private int maxSnaps;
 
-    @SerializedName("timezone")
+    @SerializedName("timezone") @Param(description="the time zone of the snapshot policy")
     private String timezone;
 
     public Long getId() {

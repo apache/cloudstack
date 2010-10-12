@@ -39,13 +39,14 @@ public class ExtractIsoCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="id", type=CommandType.LONG, required=true)
+    @Parameter(name="id", type=CommandType.LONG, required=true, description="the ID of the ISO file")
     private Long id;
 
+    //FIXME - add description
     @Parameter(name="url", type=CommandType.STRING, required=true)
     private String url;
 
-    @Parameter(name="zoneid", type=CommandType.LONG, required=true)
+    @Parameter(name="zoneid", type=CommandType.LONG, required=true, description="the ID of the zone where the ISO is originally located")
     private Long zoneId;
 
     /////////////////////////////////////////////////////

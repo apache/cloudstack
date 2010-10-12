@@ -42,28 +42,28 @@ public class ListEventsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING)
+    @Parameter(name="account", type=CommandType.STRING, description="the account for the event. Must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name="domainid", type=CommandType.LONG)
+    @Parameter(name="domainid", type=CommandType.LONG, description="the domain ID for the event. If used with the account parameter, returns all events for an account in the specified domain ID.")
     private Long domainId;
 
-    @Parameter(name="duration", type=CommandType.INTEGER)
+    @Parameter(name="duration", type=CommandType.INTEGER, description="the duration of the event")
     private Integer duration;
 
-    @Parameter(name="enddate", type=CommandType.DATE)
+    @Parameter(name="enddate", type=CommandType.DATE, description="the end date range of the list you want to retrieve (use format \"yyyy-MM-dd\")")
     private Date endDate;
 
-    @Parameter(name="entrytime", type=CommandType.INTEGER)
+    @Parameter(name="entrytime", type=CommandType.INTEGER, description="the time the event was entered")
     private Integer entryTime;
 
-    @Parameter(name="level", type=CommandType.STRING)
+    @Parameter(name="level", type=CommandType.STRING, description="the event level (INFO, WARN, ERROR)")
     private String level;
 
-    @Parameter(name="startdate", type=CommandType.DATE)
+    @Parameter(name="startdate", type=CommandType.DATE, description="the start date range of the list you want to retrieve (use format \"yyyy-MM-dd\")")
     private Date startDate;
 
-    @Parameter(name="type", type=CommandType.STRING)
+    @Parameter(name="type", type=CommandType.STRING, description="the event type (see event types)")
     private String type;
 
     /////////////////////////////////////////////////////

@@ -104,7 +104,6 @@ import com.cloud.api.commands.ListPublicIpAddressesCmd;
 import com.cloud.api.commands.ListRoutersCmd;
 import com.cloud.api.commands.ListServiceOfferingsCmd;
 import com.cloud.api.commands.ListSnapshotsCmd;
-import com.cloud.api.commands.ListStoragePoolsAndHostsCmd;
 import com.cloud.api.commands.ListStoragePoolsCmd;
 import com.cloud.api.commands.ListSystemVMsCmd;
 import com.cloud.api.commands.ListTemplateOrIsoPermissionsCmd;
@@ -4855,7 +4854,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public String deleteDomain(DeleteDomainCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+    public boolean deleteDomain(DeleteDomainCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
         Account account = (Account)UserContext.current().getAccountObject();
         Long domainId = cmd.getId();
         Boolean cleanup = cmd.getCleanup();
@@ -4872,12 +4871,14 @@ public class ManagementServerImpl implements ManagementServer {
                     boolean success = cleanupDomain(domainId, ownerId);
                     if (!success) {
                     	EventUtils.saveEvent(new Long(1), ownerId, EventVO.LEVEL_ERROR, EventTypes.EVENT_DOMAIN_DELETE, "Failed to clean up domain resources and sub domains, domain with id " + domainId + " was not deleted.");
-                        return "Failed to clean up domain resources and sub domains, delete failed on domain " + domain.getName() + " (id: " + domainId + ").";
+                        s_logger.error("Failed to clean up domain resources and sub domains, delete failed on domain " + domain.getName() + " (id: " + domainId + ").");
+                        return false;
                     }
                 } else {
                     if (!_domainDao.remove(domainId)) {
                     	EventUtils.saveEvent(new Long(1), ownerId, EventVO.LEVEL_ERROR, EventTypes.EVENT_DOMAIN_DELETE, "Domain with id " + domainId + " was not deleted");
-                        return "Delete failed on domain " + domain.getName() + " (id: " + domainId + "); please make sure all users and sub domains have been removed from the domain before deleting";
+                        s_logger.error("Delete failed on domain " + domain.getName() + " (id: " + domainId + "); please make sure all users and sub domains have been removed from the domain before deleting");
+                        return false;
                     } else {
                     	EventUtils.saveEvent(new Long(1), ownerId, EventVO.LEVEL_INFO, EventTypes.EVENT_DOMAIN_DELETE, "Domain with id " + domainId + " was deleted");
                     }
@@ -4885,12 +4886,12 @@ public class ManagementServerImpl implements ManagementServer {
             } else {
                 throw new InvalidParameterValueException("Failed to delete domain nable " + domainId + ", domain not found");
             }
-            return "success";
+            return true;
         } catch (InvalidParameterValueException ex) {
             throw ex;
         } catch (Exception ex) {
             s_logger.error("Exception deleting domain with id " + domainId, ex);
-            return "Delete failed on domain with id " + domainId + " due to an internal server error.";
+            return false;
         }
     }
 
@@ -6132,31 +6133,7 @@ public class ManagementServerImpl implements ManagementServer {
         return _poolDao.search(sc, searchFilter);
     }
 
-    @Override
-    public List<Object> searchForStoragePoolsAndHosts(ListStoragePoolsAndHostsCmd cmd) {
-        Criteria c = new Criteria("id", Boolean.TRUE, cmd.getStartIndex(), cmd.getPageSizeVal());
-        c.addCriteria(Criteria.NAME, cmd.getStoragePoolName());
-        c.addCriteria(Criteria.ADDRESS, cmd.getIpAddress());
-        c.addCriteria(Criteria.KEYWORD, cmd.getKeyword());
-        c.addCriteria(Criteria.PATH, cmd.getPath());
-        c.addCriteria(Criteria.PODID, cmd.getPodId());
-        c.addCriteria(Criteria.DATACENTERID, cmd.getZoneId());
 
-        List<Object> poolsAndHosts = new ArrayList<Object>();
-        List<? extends StoragePoolVO> pools = searchForStoragePools(c);
-        if ((pools != null) && !pools.isEmpty()) {
-            poolsAndHosts.addAll(pools);
-        }
-
-        if ((cmd.getPath() == null) && (cmd.getIpAddress() == null)) {
-            List<HostVO> hosts = searchForServers(cmd.getStartIndex(), cmd.getPageSizeVal(), cmd.getStoragePoolName(), Host.Type.Storage.toString(), cmd.getState(), cmd.getZoneId(), cmd.getPodId(), null, null, cmd.getKeyword());
-            if ((hosts != null) && !hosts.isEmpty()) {
-                poolsAndHosts.addAll(hosts);
-            }
-        }
-
-        return poolsAndHosts;
-    }
 
     @Override
     public List<String> searchForStoragePoolDetails(long poolId, String value)

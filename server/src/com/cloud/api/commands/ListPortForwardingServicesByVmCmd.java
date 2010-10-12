@@ -43,16 +43,16 @@ public class ListPortForwardingServicesByVmCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING)
+    @Parameter(name="account", type=CommandType.STRING, description="the account associated with the port forwarding services. Must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name="domainid", type=CommandType.LONG)
+    @Parameter(name="domainid", type=CommandType.LONG, description="the domain ID associated with the port forwarding services. If used with the account parameter, returns a list of all port forwarding services for an account in the specified domain ID.")
     private Long domainId;
 
-    @Parameter(name="ipaddress", type=CommandType.STRING)
+    @Parameter(name="ipaddress", type=CommandType.STRING, description="public ip address")
     private String ipAddress;
 
-    @Parameter(name="virtualmachineid", type=CommandType.LONG)
+    @Parameter(name="virtualmachineid", type=CommandType.LONG, description="ID of the virtual machine")
     private Long virtualMachineId;
 
 

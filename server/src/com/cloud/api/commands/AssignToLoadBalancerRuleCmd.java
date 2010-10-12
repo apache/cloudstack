@@ -41,13 +41,13 @@ public class AssignToLoadBalancerRuleCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="id", type=CommandType.LONG, required=true)
+    @Parameter(name="id", type=CommandType.LONG, required=true, description="the ID of the load balancer rule")
     private Long id;
 
-    @Parameter(name="virtualmachineid", type=CommandType.LONG, required=false)
+    @Parameter(name="virtualmachineid", type=CommandType.LONG, required=false, description="the ID of the virtual machine that is being assigned to the load balancer rule")
     private Long virtualMachineId;
 
-    @Parameter(name="virtualmachineids", type=CommandType.LIST, collectionType=CommandType.LONG, required=false)
+    @Parameter(name="virtualmachineids", type=CommandType.LIST, collectionType=CommandType.LONG, required=false, description="the list of IDs of the virtual machine that are being assigned to the load balancer rule(i.e. virtualMachineIds=1,2,3)")
     private List<Long> virtualMachineIds;
 
     /////////////////////////////////////////////////////

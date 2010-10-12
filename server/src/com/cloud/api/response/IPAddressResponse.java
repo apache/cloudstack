@@ -19,40 +19,41 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
+import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class IPAddressResponse extends BaseResponse {
-    @SerializedName("ipaddress")
+    @SerializedName("ipaddress") @Param(description="public IP address")
     private String ipAddress;
 
-    @SerializedName("allocated")
+    @SerializedName("allocated") @Param(description="date the public IP address was acquired")
     private Date allocated;
 
-    @SerializedName("zoneid")
+    @SerializedName("zoneid") @Param(description="the ID of the zone the public IP address belongs to")
     private Long zoneId;
 
-    @SerializedName("zonename")
+    @SerializedName("zonename") @Param(description="the name of the zone the public IP address belongs to")
     private String zoneName;
 
-    @SerializedName("issourcenat")
+    @SerializedName("issourcenat") @Param(description="true if the IP address is a source nat address, false otherwise")
     private Boolean sourceNat;
 
-    @SerializedName("account")
+    @SerializedName("account") @Param(description="the account the public IP address is associated with")
     private String accountName;
 
-    @SerializedName("domainid")
+    @SerializedName("domainid") @Param(description="the domain ID the public IP address is associated with")
     private Long domainId;
 
-    @SerializedName("domain")
+    @SerializedName("domain") @Param(description="the domain the public IP address is associated with")
     private String domainName;
 
-    @SerializedName("forvirtualnetwork")
+    @SerializedName("forvirtualnetwork") @Param(description="the virtual network for the IP address")
     private Boolean forVirtualNetwork;
 
-    @SerializedName("vlanid")
+    @SerializedName("vlanid") @Param(description="the ID of the VLAN associated with the IP address")
     private Long vlanId;
 
-    @SerializedName("vlanname")
+    @SerializedName("vlanname") @Param(description="the VLAN associated with the IP address")
     private String vlanName;
 
     public String getIpAddress() {

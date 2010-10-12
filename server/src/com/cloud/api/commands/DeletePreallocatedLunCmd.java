@@ -20,7 +20,7 @@ package com.cloud.api.commands;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.response.DeletePreallocatedLunResponse;
+import com.cloud.api.response.SuccessResponse;
 
 @Implementation(method="unregisterPreallocatedLun")
 public class DeletePreallocatedLunCmd extends BaseCmd {
@@ -30,7 +30,7 @@ public class DeletePreallocatedLunCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="id", type=CommandType.LONG, required=true)
+    @Parameter(name="id", type=CommandType.LONG, required=true, description="preallocated LUN ID")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -51,10 +51,10 @@ public class DeletePreallocatedLunCmd extends BaseCmd {
     }
 
     @Override @SuppressWarnings("unchecked")
-    public DeletePreallocatedLunResponse getResponse() {
+    public SuccessResponse getResponse() {
         Boolean result = (Boolean)getResponseObject();
 
-        DeletePreallocatedLunResponse response = new DeletePreallocatedLunResponse();
+        SuccessResponse response = new SuccessResponse();
         response.setSuccess(result);
 
         response.setResponseName(getName());

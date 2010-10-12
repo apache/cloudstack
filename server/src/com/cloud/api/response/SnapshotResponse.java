@@ -19,46 +19,47 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
+import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class SnapshotResponse extends BaseResponse {
-    @SerializedName("id")
+    @SerializedName("id") @Param(description="ID of the snapshot")
     private Long id;
 
-    @SerializedName("account")
+    @SerializedName("account") @Param(description="the account associated with the snapshot")
     private String accountName;
 
-    @SerializedName("domainid")
+    @SerializedName("domainid") @Param(description="the domain ID of the snapshot's account")
     private Long domainId;
 
-    @SerializedName("domain")
+    @SerializedName("domain") @Param(description="the domain name of the snapshot's account")
     private String domainName;
 
-    @SerializedName("snapshottype")
+    @SerializedName("snapshottype") @Param(description="the type of the snapshot")
     private String snapshotType;
 
-    @SerializedName("volumeid")
+    @SerializedName("volumeid") @Param(description="ID of the disk volume")
     private Long volumeId;
 
-    @SerializedName("volumename")
+    @SerializedName("volumename") @Param(description="name of the disk volume")
     private String volumeName;
 
-    @SerializedName("volumetype")
+    @SerializedName("volumetype") @Param(description="type of the disk volume")
     private String volumeType;
 
-    @SerializedName("created")
+    @SerializedName("created") @Param(description="	the date the snapshot was created")
     private Date created;
 
-    @SerializedName("name")
+    @SerializedName("name") @Param(description="name of the snapshot")
     private String name;
 
-    @SerializedName("jobid")
+    @SerializedName("jobid") @Param(description="the job ID associated with the snapshot. This is only displayed if the snapshot listed is part of a currently running asynchronous job.")
     private Long jobId;
 
-    @SerializedName("jobstatus")
+    @SerializedName("jobstatus") @Param(description="the job status associated with the snapshot.  This is only displayed if the snapshot listed is part of a currently running asynchronous job.")
     private Integer jobStatus;
 
-    @SerializedName("intervaltype")
+    @SerializedName("intervaltype") @Param(description="valid types are hourly, daily, weekly, monthy, template, and none.")
     private String intervalType;
 
     public Long getId() {

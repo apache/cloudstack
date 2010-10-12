@@ -40,10 +40,10 @@ public class ListCfgsByCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="category", type=CommandType.STRING)
+    @Parameter(name="category", type=CommandType.STRING, description="lists configurations by category")
     private String category;
 
-    @Parameter(name="name", type=CommandType.STRING)
+    @Parameter(name="name", type=CommandType.STRING, description="lists configuration by name")
     private String configName;
 
 

@@ -38,7 +38,7 @@ public class GetCloudIdentifierCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="userid", type=CommandType.LONG, required=true)
+    @Parameter(name="userid", type=CommandType.LONG, required=true, description="the user ID for the cloud identifier")
     private Long userid;
 
 

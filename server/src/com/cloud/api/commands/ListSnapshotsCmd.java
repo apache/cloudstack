@@ -45,25 +45,25 @@ public class ListSnapshotsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING)
+    @Parameter(name="account", type=CommandType.STRING, description="lists snapshot belongig to the specified account. Must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name="domainid", type=CommandType.LONG)
+    @Parameter(name="domainid", type=CommandType.LONG, description="the domain ID. If used with the account parameter, lists snapshots for the specified account in this domain.")
     private Long domainId;
 
-    @Parameter(name="id", type=CommandType.LONG)
+    @Parameter(name="id", type=CommandType.LONG, description="lists snapshot by snapshot ID")
     private Long id;
 
-    @Parameter(name="intervalType", type=CommandType.STRING)
+    @Parameter(name="intervalType", type=CommandType.STRING, description="valid values are HOURLY, DAILY, WEEKLY, and MONTHLY.")
     private String intervalType;
 
-    @Parameter(name="name", type=CommandType.STRING)
+    @Parameter(name="name", type=CommandType.STRING, description="lists snapshot by snapshot name")
     private String snapshotName;
 
-    @Parameter(name="snapshottype", type=CommandType.STRING)
+    @Parameter(name="snapshottype", type=CommandType.STRING, description="valid values are MANUAL or RECURRING.")
     private String snapshotType;
 
-    @Parameter(name="volumeid", type=CommandType.LONG)
+    @Parameter(name="volumeid", type=CommandType.LONG, description="the ID of the disk volume")
     private Long volumeId;
 
     /////////////////////////////////////////////////////

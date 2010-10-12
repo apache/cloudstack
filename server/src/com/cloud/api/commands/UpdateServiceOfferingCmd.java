@@ -36,22 +36,22 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="displaytext", type=CommandType.STRING)
+    @Parameter(name="displaytext", type=CommandType.STRING, description="the display text of the service offering to be updated")
     private String displayText;
 
-    @Parameter(name="id", type=CommandType.LONG, required=true)
+    @Parameter(name="id", type=CommandType.LONG, required=true, description="the ID of the service offering to be updated")
     private Long id;
 
-    @Parameter(name="name", type=CommandType.STRING)
+    @Parameter(name="name", type=CommandType.STRING, description="the name of the service offering to be updated")
     private String serviceOfferingName;
-
-    @Parameter(name="offerha", type=CommandType.BOOLEAN)
+    
+    @Parameter(name="offerha", type=CommandType.BOOLEAN, description="the HA of the service offering to be updated")
     private Boolean offerHa;
-
-    @Parameter(name="tags", type=CommandType.STRING)
+    
+    @Parameter(name="tags", type=CommandType.STRING, description="the tags for this service offering.")
     private String tags;
 
-    @Parameter(name="usevirtualnetwork", type=CommandType.BOOLEAN)
+    @Parameter(name="usevirtualnetwork", type=CommandType.BOOLEAN, description="if true, the VM created from the offering will use default virtual networking. If false, the VM created will use a direct attached networking model. The default value is true.")
     private Boolean useVirtualNetwork;
 
     /////////////////////////////////////////////////////

@@ -222,75 +222,75 @@ public class UpgradeVmResponse extends BaseResponse {
         return id;
     }
 
-    @SerializedName("name")
+    @SerializedName("name") @Param(description="the ID of the virtual machine")
     private String name;
 
-    @SerializedName("created")
+    @SerializedName("created") @Param(description="the date when this virtual machine was created")
     private Date created;
 
-    @SerializedName("ipaddress")
+    @SerializedName("ipaddress") @Param(description="the ip address of the virtual machine")
     private String ipAddress;
 
-    @SerializedName("state")
+    @SerializedName("state") @Param(description="the state of the virtual machine")
     private String state;
 
-    @SerializedName("account")
+    @SerializedName("account") @Param(description="the account associated with the virtual machine")
     private String account;
 
-    @SerializedName("domainid")
+    @SerializedName("domainid") @Param(description="the ID of the domain in which the virtual machine exists")
     private long domainId;
 
-    @SerializedName("domain")
+    @SerializedName("domain") @Param(description="the name of the domain in which the virtual machine exists")
     private String domain;
 
-    @SerializedName("haenable")
+    @SerializedName("haenable") @Param(description="true if high-availability is enabled, false otherwise")
     private boolean haEnable;
 
-    @SerializedName("zoneid")
+    @SerializedName("zoneid") @Param(description="the ID of the availablility zone for the virtual machine")
     private long zoneId;
 
-    @SerializedName("displayname")
+    @SerializedName("displayname") @Param(description="user generated name. The name of the virtual machine is returned if no displayname exists.")
     private String displayName;
 
-    @SerializedName("zonename")
+    @SerializedName("zonename") @Param(description="the name of the availability zone for the virtual machine")
     private String zoneName;
 
-    @SerializedName("hostid")
+    @SerializedName("hostid") @Param(description="the ID of the host for the virtual machine")
     private long hostId;
 
-    @SerializedName("hostname")
+    @SerializedName("hostname") @Param(description="the name of the host for the virtual machine")
     private String hostName;
 
-    @SerializedName("templateid")
+    @SerializedName("templateid") @Param(description="the ID of the template for the virtual machine. A -1 is returned if the virtual machine was created from an ISO file.")
     private long templateId;
 
-    @SerializedName("templatename")
+    @SerializedName("templatename") @Param(description="the name of the template for the virtual machine")
     private String templateName;
 
-    @SerializedName("templatedisplaytext")
+    @SerializedName("templatedisplaytext") @Param(description="	an alternate display text of the template for the virtual machine")
     private String templateDisplayText;
 
-    @SerializedName("passwordenabled")
+    @SerializedName("passwordenabled") @Param(description="true if the password rest feature is enabled, false otherwise")
     private boolean passwordEnabled;
 
-    @SerializedName("serviceofferingid")
+    @SerializedName("serviceofferingid") @Param(description="the ID of the service offering of the virtual machine")
     private long serviceOfferingId;
 
-    @SerializedName("serviceofferingname")
+    @SerializedName("serviceofferingname") @Param(description="the name of the service offering of the virtual machine")
     private String serviceOfferingName;
 
-    @SerializedName("cpunumber")
+    @SerializedName("cpunumber") @Param(description="the number of cpu this virtual machine is running with")
     private long cpuSpeed;
 
-    @SerializedName("memory")
+    @SerializedName("memory")  @Param(description="the memory allocated for the virtual machine")
     private long memory;
 
-    @SerializedName("cpuused")
+    @SerializedName("cpuused") @Param(description="the amount of the vm's CPU currently used")
     private long cpuUsed;
 
-    @SerializedName("networkkbsread")
+    @SerializedName("networkkbsread") @Param(description="the incoming network traffic on the vm")
     private long networkKbsRead;
 
-    @SerializedName("networkkbswrite")
+    @SerializedName("networkkbswrite") @Param(description="the outgoing network traffic on the host")
     private long networkKbsWrite;
 }

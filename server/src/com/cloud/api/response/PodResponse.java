@@ -17,31 +17,32 @@
  */
 package com.cloud.api.response;
 
+import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class PodResponse extends BaseResponse {
-    @SerializedName("id")
+    @SerializedName("id") @Param(description="the ID of the Pod")
     private Long id;
 
-    @SerializedName("name")
+    @SerializedName("name") @Param(description="the name of the Pod")
     private String name;
 
-    @SerializedName("zoneid")
+    @SerializedName("zoneid") @Param(description="the Zone ID of the Pod")
     private Long zoneId;
 
-    @SerializedName("zonename")
+    @SerializedName("zonename") @Param(description="the Zone name of the Pod")
     private String zoneName;
 
-    @SerializedName("gateway")
+    @SerializedName("gateway") @Param(description="the gateway of the Pod")
     private String gateway;
 
-    @SerializedName("cidr")
+    @SerializedName("cidr") @Param(description="the CIDR notation for the base IP address of the Pod")
     private String cidr;
 
-    @SerializedName("startip")
+    @SerializedName("startip") @Param(description="the starting IP for the Pod")
     private String startIp;
 
-    @SerializedName("endIp")
+    @SerializedName("endIp") @Param(description="the ending IP for the Pod")
     private String endIp;
 
     public Long getId() {

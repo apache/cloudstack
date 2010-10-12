@@ -43,13 +43,13 @@ public class RemoveFromLoadBalancerRuleCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="id", type=CommandType.LONG, required=true)
+    @Parameter(name="id", type=CommandType.LONG, required=true, description="The ID of the load balancer rule")
     private Long id;
 
-    @Parameter(name="virtualmachineid", type=CommandType.LONG)
+    @Parameter(name="virtualmachineid", type=CommandType.LONG, description="the ID of the virtual machine that is being removed from the load balancer rule")
     private Long virtualMachineId;
 
-    @Parameter(name="virtualmachineids", type=CommandType.LIST, collectionType=CommandType.LONG)
+    @Parameter(name="virtualmachineids", type=CommandType.LIST, collectionType=CommandType.LONG, description="the list of IDs of the virtual machines that are being removed from the load balancer rule (i.e. virtualMachineIds=1,2,3)")
     private List<Long> virtualMachineIds;
 
     /////////////////////////////////////////////////////

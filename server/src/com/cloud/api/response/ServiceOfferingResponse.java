@@ -19,40 +19,41 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
+import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class ServiceOfferingResponse extends BaseResponse {
-    @SerializedName("id")
+    @SerializedName("id") @Param(description="the id of the service offering")
     private Long id;
 
-    @SerializedName("name")
+    @SerializedName("name") @Param(description="the name of the service offering")
     private String name;
 
-    @SerializedName("displaytext")
+    @SerializedName("displaytext") @Param(description="an alternate display text of the service offering.")
     private String displayText;
 
-    @SerializedName("cpunumber")
+    @SerializedName("cpunumber") @Param(description="the number of CPU")
     private int cpuNumber;
 
-    @SerializedName("cpuspeed")
+    @SerializedName("cpuspeed") @Param(description="the clock rate CPU speed in Mhz")
     private int cpuSpeed;
 
-    @SerializedName("memory")
+    @SerializedName("memory") @Param(description="the memory in MB")
     private int memory;
 
-    @SerializedName("created")
+    @SerializedName("created") @Param(description="the date this service offering was created")
     private Date created;
 
-    @SerializedName("storagetype")
+    @SerializedName("storagetype") @Param(description="the storage type for this service offering")
     private String storageType;
 
-    @SerializedName("offerha")
+    @SerializedName("offerha") @Param(description="the ha support in the service offering")
     private Boolean offerHa;
 
-    @SerializedName("usevirtualnetwork")
+    @SerializedName("usevirtualnetwork") @Param(description="the virtual network for the service offering")
     private Boolean useVirtualNetwork;
 
-    @SerializedName("tags")
+    @SerializedName("tags") @Param(description="the tags for the service offering")
     private String tags;
 
     public Long getId() {

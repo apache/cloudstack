@@ -42,7 +42,7 @@ public class StartRouterCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="id", type=CommandType.LONG, required=true)
+    @Parameter(name="id", type=CommandType.LONG, required=true, description="the ID of the router")
     private Long id;
 
     /////////////////////////////////////////////////////

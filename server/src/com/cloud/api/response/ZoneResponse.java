@@ -17,36 +17,39 @@
  */
 package com.cloud.api.response;
 
+import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class ZoneResponse extends BaseResponse {
-    @SerializedName("id")
+    @SerializedName("id") @Param(description="Zone id")
     private Long id;
 
-    @SerializedName("name")
+    @SerializedName("name") @Param(description="Zone name")
     private String name;
 
-    @SerializedName("description")
+    @SerializedName("description") @Param(description="Zone description")
     private String description;
 
-    @SerializedName("dns1")
+    @SerializedName("dns1") @Param(description="the first DNS for the Zone")
     private String dns1;
 
-    @SerializedName("dns2")
+    @SerializedName("dns2") @Param(description="the second DNS for the Zone")
     private String dns2;
 
-    @SerializedName("internaldns1")
+    @SerializedName("internaldns1") @Param(description="the first internal DNS for the Zone")
     private String internalDns1;
 
-    @SerializedName("internaldns2")
+    @SerializedName("internaldns2") @Param(description="the second internal DNS for the Zone")
     private String internalDns2;
 
+    //FIXME - add description. This parameter is called "vnet" in updateZone, and vlan in createZone - figure out which one is right.
     @SerializedName("vlan")
     private String vlan;
 
-    @SerializedName("guestcidraddress")
+    @SerializedName("guestcidraddress") @Param(description="the guest CIDR address for the Zone")
     private String guestCidrAddress;
-
+    
+    //FIXME - do we need 2 parameters below at all?
     @SerializedName("status")
     private String status;
 

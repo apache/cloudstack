@@ -36,31 +36,31 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="cpunumber", type=CommandType.LONG, required=true)
+    @Parameter(name="cpunumber", type=CommandType.LONG, required=true, description="the CPU number of the service offering")
     private Long cpuNumber;
 
-    @Parameter(name="cpuspeed", type=CommandType.LONG, required=true)
+    @Parameter(name="cpuspeed", type=CommandType.LONG, required=true, description="the CPU speed of the service offering in MHz.")
     private Long cpuSpeed;
 
-    @Parameter(name="displaytext", type=CommandType.STRING, required=true)
+    @Parameter(name="displaytext", type=CommandType.STRING, required=true, description="the display text of the service offering")
     private String displayText;
 
-    @Parameter(name="memory", type=CommandType.LONG, required=true)
+    @Parameter(name="memory", type=CommandType.LONG, required=true, description="the total memory of the service offering in MB")
     private Long memory;
 
-    @Parameter(name="name", type=CommandType.STRING, required=true)
+    @Parameter(name="name", type=CommandType.STRING, required=true, description="the name of the service offering")
     private String serviceOfferingName;
 
-    @Parameter(name="offerha", type=CommandType.BOOLEAN)
+    @Parameter(name="offerha", type=CommandType.BOOLEAN, description="the HA for the service offering")
     private Boolean offerHa;
 
-    @Parameter(name="storagetype", type=CommandType.STRING)
+    @Parameter(name="storagetype", type=CommandType.STRING, description="the storage type of the service offering. Values are local and shared.")
     private String storageType;
 
-    @Parameter(name="tags", type=CommandType.STRING)
+    @Parameter(name="tags", type=CommandType.STRING, description="the tags for this service offering.")
     private String tags;
 
-    @Parameter(name="usevirtualnetwork", type=CommandType.BOOLEAN)
+    @Parameter(name="usevirtualnetwork", type=CommandType.BOOLEAN, description="if true, the VM created will use default virtual networking. If false, the VM created will use a direct attached networking model. The default value is true.")
     private Boolean useVirtualNetwork;
 
     /////////////////////////////////////////////////////

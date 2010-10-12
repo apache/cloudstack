@@ -19,86 +19,89 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
+import com.cloud.serializer.Param;
 import com.cloud.storage.Storage.ImageFormat;
 import com.google.gson.annotations.SerializedName;
 
 public class TemplateResponse extends BaseResponse {
-    @SerializedName("id")
+    @SerializedName("id") @Param(description="the template ID")
     private long id;
 
-    @SerializedName("name")
+    @SerializedName("name") @Param(description="the template name")
     private String name;
 
-    @SerializedName("displaytext")
+    @SerializedName("displaytext") @Param(description="the template display text")
     private String displayText;
 
     @SerializedName("ispublic") // propName="public"  (FIXME:  this used to be part of Param annotation, do we need it?)
+    @Param(description="true if this template is a public template, false otherwise")
     private boolean isPublic;
 
-    @SerializedName("created")
+    @SerializedName("created") @Param(description="the date this template was created")
     private Date created;
 
-    @SerializedName("removed")
+    @SerializedName("removed") @Param(description="the date this template was removed")
     private Date removed;
 
     @SerializedName("isready") // propName="ready"  (FIXME:  this used to be part of Param annotation, do we need it?)
+    @Param(description="true if the template is ready to be deployed from, false otherwise.")
     private boolean isReady;
 
-    @SerializedName("passwordenabled")
+    @SerializedName("passwordenabled") @Param(description="true if the reset password feature is enabled, false otherwise")
     private boolean passwordEnabled;
 
-    @SerializedName("format")
+    @SerializedName("format") @Param(description="the format of the template.")
     private ImageFormat format;
 
-    @SerializedName("bootable")
+    @SerializedName("bootable") @Param(description="true if the ISO is bootable, false otherwise")
     private boolean bootable;
 
-    @SerializedName("isfeatured")
+    @SerializedName("isfeatured") @Param(description="true if this template is a featured template, false otherwise")
     private boolean featured;
 
-    @SerializedName("crossZones")
+    @SerializedName("crossZones") @Param(description="true if the template is managed across all Zones, false otherwise")
     private boolean crossZones;
 
-    @SerializedName("ostypeid")
+    @SerializedName("ostypeid") @Param(description="the ID of the OS type for this template.")
     private Long osTypeId;
 
-    @SerializedName("ostypename")
+    @SerializedName("ostypename") @Param(description="the name of the OS type for this template.")
     private String osTypeName;
 
-    @SerializedName("accountid")
+    @SerializedName("accountid") @Param(description="the account id to which the template belongs")
     private Long accountId;
 
-    @SerializedName("account")
+    @SerializedName("account") @Param(description="the account name to which the template belongs")
     private String account;
 
-    @SerializedName("zoneid")
+    @SerializedName("zoneid") @Param(description="the ID of the zone for this template")
     private Long zoneId;
 
-    @SerializedName("zonename")
+    @SerializedName("zonename") @Param(description="the name of the zone for this template")
     private String zoneName;
-
-    @SerializedName("status")
+    
+    @SerializedName("status") @Param(description="the status of the template")
     private String status;
 
-    @SerializedName("size")
+    @SerializedName("size") @Param(description="the size of the template")
     private Long size;
 
-    @SerializedName("templatetype")
+    @SerializedName("templatetype") @Param(description="the type of the template")
     private String templateType;
 
-    @SerializedName("hypervisor")
+    @SerializedName("hypervisor") @Param(description="the hypervisor on which the template runs")
     private String hypervisor;
 
-    @SerializedName("jobid")
+    @SerializedName("jobid") @Param(description="shows the current pending asynchronous job ID. This tag is not returned if no current pending jobs are acting on the template")
     private Long jobId;
 
-    @SerializedName("jobstatus")
+    @SerializedName("jobstatus") @Param(description="shows the current pending asynchronous job status")
     private Integer jobStatus;
 
-    @SerializedName("domain")
+    @SerializedName("domain") @Param(description="the name of the domain to which the template belongs")
     private String domainName;  
 
-    @SerializedName("domainid")
+    @SerializedName("domainid") @Param(description="the ID of the domain to which the template belongs")
     private long domainId;
 
     public Long getZoneId() {

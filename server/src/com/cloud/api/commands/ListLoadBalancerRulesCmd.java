@@ -42,22 +42,22 @@ public class ListLoadBalancerRulesCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING)
+    @Parameter(name="account", type=CommandType.STRING, description="the account of the load balancer rule. Must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name="domainid", type=CommandType.LONG)
+    @Parameter(name="domainid", type=CommandType.LONG, description="the domain ID of the load balancer rule. If used with the account parameter, lists load balancer rules for the account in the specified domain.")
     private Long domainId;
 
-    @Parameter(name="id", type=CommandType.LONG)
+    @Parameter(name="id", type=CommandType.LONG, description="the ID of the load balancer rule")
     private Long id;
 
-    @Parameter(name="name", type=CommandType.STRING)
+    @Parameter(name="name", type=CommandType.STRING, description="the name of the load balancer rule")
     private String loadBalancerRuleName;
 
-    @Parameter(name="publicip", type=CommandType.STRING)
+    @Parameter(name="publicip", type=CommandType.STRING, description="the public IP address of the load balancer rule	")
     private String publicIp;
 
-    @Parameter(name="virtualmachineid", type=CommandType.LONG)
+    @Parameter(name="virtualmachineid", type=CommandType.LONG, description="the ID of the virtual machine of the load balancer rule")
     private Long virtualMachineId;
 
 

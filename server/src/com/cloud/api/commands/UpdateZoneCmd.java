@@ -38,28 +38,28 @@ public class UpdateZoneCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="dns1", type=CommandType.STRING)
+    @Parameter(name="dns1", type=CommandType.STRING, description="the first DNS for the Zone")
     private String dns1;
 
-    @Parameter(name="dns2", type=CommandType.STRING)
+    @Parameter(name="dns2", type=CommandType.STRING, description="the second DNS for the Zone")
     private String dns2;
 
-    @Parameter(name="guestcidraddress", type=CommandType.STRING)
+    @Parameter(name="guestcidraddress", type=CommandType.STRING, description="the guest CIDR address for the Zone")
     private String guestCidrAddress;
 
-    @Parameter(name="id", type=CommandType.LONG, required=true)
+    @Parameter(name="id", type=CommandType.LONG, required=true, description="the ID of the Zone")
     private Long id;
 
-    @Parameter(name="internaldns1", type=CommandType.STRING)
+    @Parameter(name="internaldns1", type=CommandType.STRING, description="the first internal DNS for the Zone")
     private String internalDns1;
 
-    @Parameter(name="internaldns2", type=CommandType.STRING)
+    @Parameter(name="internaldns2", type=CommandType.STRING, description="the second internal DNS for the Zone")
     private String internalDns2;
 
-    @Parameter(name="name", type=CommandType.STRING)
+    @Parameter(name="name", type=CommandType.STRING, description="the name of the Zone")
     private String zoneName;
 
-    @Parameter(name="vnet", type=CommandType.STRING)
+    @Parameter(name="vnet", type=CommandType.STRING, description="the VNET for the Zone")
     private String vnet;
 
     /////////////////////////////////////////////////////

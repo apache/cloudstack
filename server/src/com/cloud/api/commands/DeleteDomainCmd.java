@@ -21,9 +21,11 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.response.DeleteDomainResponse;
+import com.cloud.api.ServerApiException;
+import com.cloud.api.response.SuccessResponse;
 import com.cloud.domain.DomainVO;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
@@ -86,11 +88,16 @@ public class DeleteDomainCmd extends BaseAsyncCmd {
     }
 
     @Override @SuppressWarnings("unchecked")
-    public DeleteDomainResponse getResponse() {
-        String deleteResult = (String)getResponseObject();
+    public SuccessResponse getResponse() {
+        Boolean responseObject = (Boolean)getResponseObject();
 
-        DeleteDomainResponse response = new DeleteDomainResponse();
-        response.setResult(deleteResult);
+        SuccessResponse response = new SuccessResponse();
+        
+        if (responseObject != null) {
+        	response.setSuccess(responseObject);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete host");
+        }
 
         response.setResponseName(getName());
         return response;

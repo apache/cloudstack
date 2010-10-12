@@ -52,16 +52,16 @@ public class ListCapacityCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="hostid", type=CommandType.LONG)
+    @Parameter(name="hostid", type=CommandType.LONG, description="lists capacity by the Host ID")
     private Long hostId;
 
-    @Parameter(name="podid", type=CommandType.LONG)
+    @Parameter(name="podid", type=CommandType.LONG, description="lists capacity by the Pod ID")
     private Long podId;
 
-    @Parameter(name="type", type=CommandType.STRING)
+    @Parameter(name="type", type=CommandType.STRING, description="lists capacity by type")
     private String type;
 
-    @Parameter(name="zoneid", type=CommandType.LONG)
+    @Parameter(name="zoneid", type=CommandType.LONG, description="lists capacity by the Zone ID")
     private Long zoneId;
 
 

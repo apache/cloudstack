@@ -42,25 +42,25 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING)
+    @Parameter(name="account", type=CommandType.STRING, description="the account associated with the disk volume. Must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name="diskofferingid", type=CommandType.LONG)
+    @Parameter(name="diskofferingid", type=CommandType.LONG, description="the ID of the disk offering. Either diskOfferingId or snapshotId must be passed in.")
     private Long diskOfferingId;
 
-    @Parameter(name="domainid", type=CommandType.LONG)
+    @Parameter(name="domainid", type=CommandType.LONG, description="the domain ID associated with the disk offering. If used with the account parameter returns the disk volume associated with the account for the specified domain.")
     private Long domainId;
 
-    @Parameter(name="name", type=CommandType.STRING, required=true)
+    @Parameter(name="name", type=CommandType.STRING, required=true, description="the name of the disk volume")
     private String volumeName;
 
-    @Parameter(name="size", type=CommandType.LONG)
+    @Parameter(name="size", type=CommandType.LONG, description="Arbitrary volume size. Mutually exclusive with diskOfferingId")
     private Long size;
 
-    @Parameter(name="snapshotid", type=CommandType.LONG)
+    @Parameter(name="snapshotid", type=CommandType.LONG, description="the snapshot ID for the disk volume. Either diskOfferingId or snapshotId must be passed in.")
     private Long snapshotId;
 
-    @Parameter(name="zoneid", type=CommandType.LONG)
+    @Parameter(name="zoneid", type=CommandType.LONG, description="the ID of the availability zone")
     private Long zoneId;
 
 

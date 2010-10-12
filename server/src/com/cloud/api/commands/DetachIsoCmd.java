@@ -39,7 +39,7 @@ public class DetachIsoCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="virtualmachineid", type=CommandType.LONG, required=true)
+    @Parameter(name="virtualmachineid", type=CommandType.LONG, required=true, description="	The ID of the virtual machine")
     private Long virtualMachineId;
 
     /////////////////////////////////////////////////////

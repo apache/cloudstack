@@ -19,49 +19,50 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
+import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class UserResponse extends BaseResponse {
-    @SerializedName("id")
+    @SerializedName("id") @Param(description="the user ID")
     private Long id;
 
-    @SerializedName("username")
+    @SerializedName("username") @Param(description="the user name")
     private String username;
 
-    @SerializedName("firstname")
+    @SerializedName("firstname") @Param(description="the user firstname")
     private String firstname;
 
-    @SerializedName("lastname")
+    @SerializedName("lastname") @Param(description="the user lastname")
     private String lastname;
 
-    @SerializedName("email")
+    @SerializedName("email") @Param(description="the user email address")
     private String email;
 
-    @SerializedName("created")
+    @SerializedName("created") @Param(description="the date and time the user account was created")
     private Date created;
 
-    @SerializedName("state")
+    @SerializedName("state") @Param(description="the user state")
     private String state;
 
-    @SerializedName("account")
+    @SerializedName("account") @Param(description="the account name of the user")
     private String accountName;
 
-    @SerializedName("accounttype")
+    @SerializedName("accounttype") @Param(description="the account type of the user")
     private Short accountType;
 
-    @SerializedName("domainid")
+    @SerializedName("domainid") @Param(description="the domain ID of the user")
     private Long domainId;
 
-    @SerializedName("domain")
+    @SerializedName("domain") @Param(description="the domain name of the user")
     private String domainName;
 
-    @SerializedName("timezone")
+    @SerializedName("timezone") @Param(description="the timezone user was created in")
     private String timezone;
 
-    @SerializedName("apikey")
+    @SerializedName("apikey") @Param(description="the api key of the user")
     private String apiKey;
 
-    @SerializedName("secretkey")
+    @SerializedName("secretkey") @Param(description="the secret key of the user")
     private String secretKey;
 
     public Long getId() {

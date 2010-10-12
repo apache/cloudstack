@@ -37,7 +37,7 @@ public class PreparePrimaryStorageForMaintenanceCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="id", type=CommandType.LONG, required=true)
+    @Parameter(name="id", type=CommandType.LONG, required=true, description="Primary storage ID")
     private Long id;
 
     /////////////////////////////////////////////////////

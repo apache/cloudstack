@@ -19,64 +19,65 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
+import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class VolumeResponse extends BaseResponse {
-    @SerializedName("id")
+    @SerializedName("id") @Param(description="ID of the disk volume")
     private Long id;
 
-    @SerializedName("jobid")
+    @SerializedName("jobid") @Param(description="shows the current pending asynchronous job ID. This tag is not returned if no current pending jobs are acting on the volume")
     private Long jobId;
 
-    @SerializedName("jobstatus")
+    @SerializedName("jobstatus") @Param(description="shows the current pending asynchronous job status")
     private Integer jobStatus;
 
-    @SerializedName("name")
+    @SerializedName("name") @Param(description="name of the disk volume")
     private String name;
 
-    @SerializedName("zoneid")
+    @SerializedName("zoneid") @Param(description="ID of the availability zone")
     private Long zoneId;
 
-    @SerializedName("zonename")
+    @SerializedName("zonename") @Param(description="name of the availability zone")
     private String zoneName;
 
-    @SerializedName("type")
+    @SerializedName("type") @Param(description="type of the disk volume (ROOT or DATADISK)")
     private String volumeType;
 
-    @SerializedName("deviceid")
+    @SerializedName("deviceid") @Param(description="the ID of the device on user vm the volume is attahed to. This tag is not returned when the volume is detached.")
     private Long deviceId;
 
-    @SerializedName("virtualmachineid")
+    @SerializedName("virtualmachineid") @Param(description="id of the virtual machine")
     private Long virtualMachineId;
 
-    @SerializedName("virtualmachinename")
+    @SerializedName("virtualmachinename") @Param(description="name of the virtual machine")
     private String virtualMachineName;
 
-    @SerializedName("virtualmachinedisplayname")
+    @SerializedName("virtualmachinedisplayname") @Param(description="display name of the virtual machine")
     private String virtualMachineDisplayName;
 
-    @SerializedName("virtualmachinestate")
+    @SerializedName("virtualmachinestate") @Param(description="state of the virtual machine")
     private String virtualMachineState;
 
-    @SerializedName("size")
+    @SerializedName("size") @Param(description="size of the disk volume")
     private Long size;
 
-    @SerializedName("created")
+    @SerializedName("created") @Param(description="the date the disk volume was created")
     private Date created;
 
-    @SerializedName("state")
+    @SerializedName("state") @Param(description="the state of the disk volume")
     private String state;
 
-    @SerializedName("account")
+    @SerializedName("account") @Param(description="the account associated with the disk volume")
     private String accountName;
 
-    @SerializedName("domainid")
+    @SerializedName("domainid") @Param(description="the ID of the domain associated with the disk volume")
     private Long domainId;
 
-    @SerializedName("domain")
+    @SerializedName("domain") @Param(description="the domain associated with the disk volume")
     private String domainName;
 
-    @SerializedName("storagetype")
+    @SerializedName("storagetype") @Param(description="shared or local storage")
     private String storageType;
 
     @SerializedName("sourceid")
@@ -88,16 +89,16 @@ public class VolumeResponse extends BaseResponse {
     @SerializedName("hypervisor")
     private String hypervisor;
 
-    @SerializedName("diskofferingid")
+    @SerializedName("diskofferingid") @Param(description="ID of the disk offering")
     private Long diskOfferingId;
 
-    @SerializedName("diskofferingname")
+    @SerializedName("diskofferingname") @Param(description="name of the disk offering")
     private String diskOfferingName;
 
-    @SerializedName("diskofferingdisplaytext")
+    @SerializedName("diskofferingdisplaytext") @Param(description="the display text of the disk offering")
     private String diskOfferingDisplayText;
 
-    @SerializedName("storage")
+    @SerializedName("storage") @Param(description="name of the primary storage hosting the disk volume")
     private String storagePoolName;
 
     public Long getId() {

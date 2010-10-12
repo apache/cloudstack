@@ -54,7 +54,7 @@ public class CancelMaintenanceCmd extends BaseAsyncCmd  {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="id", type=CommandType.LONG, required=true)
+    @Parameter(name="id", type=CommandType.LONG, required=true, description="the host ID")
     private Long id;
 
 

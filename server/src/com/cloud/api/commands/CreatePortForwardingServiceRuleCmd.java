@@ -40,16 +40,16 @@ public class CreatePortForwardingServiceRuleCmd extends BaseAsyncCreateCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="portforwardingserviceid", type=CommandType.LONG, required=true)
+    @Parameter(name="portforwardingserviceid", type=CommandType.LONG, required=true, description="the ID of the port forwarding service the rule is being created for")
     private Long portForwardingServiceId;
 
-    @Parameter(name="privateport", type=CommandType.STRING, required=true)
+    @Parameter(name="privateport", type=CommandType.STRING, required=true, description="the port of the private ip address/virtual machine to forward traffic to")
     private String privatePort;
 
-    @Parameter(name="protocol", type=CommandType.STRING)
+    @Parameter(name="protocol", type=CommandType.STRING, description="TCP is default. UDP is the other supported protocol")
     private String protocol;
 
-    @Parameter(name="publicport", type=CommandType.STRING, required=true)
+    @Parameter(name="publicport", type=CommandType.STRING, required=true, description="the port of the public ip address to forward traffic from")
     private String publicPort;
 
 

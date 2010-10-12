@@ -19,55 +19,56 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
+import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class StoragePoolResponse extends BaseResponse {
-    @SerializedName("id")
+    @SerializedName("id") @Param(description="the ID of the storage pool")
     private Long id;
 
-    @SerializedName("zoneid")
+    @SerializedName("zoneid") @Param(description="the Zone ID of the storage pool")
     private Long zoneId;
 
-    @SerializedName("zonename")
+    @SerializedName("zonename") @Param(description="the Zone name of the storage pool")
     private String zoneName;
 
-    @SerializedName("podid")
+    @SerializedName("podid") @Param(description="the Pod ID of the storage pool")
     private Long podId;
 
-    @SerializedName("podname")
+    @SerializedName("podname") @Param(description="the Pod name of the storage pool")
     private String podName;
 
-    @SerializedName("name")
+    @SerializedName("name") @Param(description="the name of the storage pool")
     private String name;
 
-    @SerializedName("ipaddress")
+    @SerializedName("ipaddress") @Param(description="the IP address of the storage pool")
     private String ipAddress;
 
-    @SerializedName("path")
+    @SerializedName("path") @Param(description="the storage pool path")
     private String path;
 
-    @SerializedName("created")
+    @SerializedName("created") @Param(description="the date and time the storage pool was created")
     private Date created;
 
-    @SerializedName("type")
+    @SerializedName("type") @Param(description="the storage pool type")
     private String type;
 
-    @SerializedName("clusterid")
+    @SerializedName("clusterid") @Param(description="the ID of the cluster for the storage pool")
     private Long clusterId;
 
-    @SerializedName("clustername")
+    @SerializedName("clustername") @Param(description="the name of the cluster for the storage pool")
     private String clusterName;
 
-    @SerializedName("disksizetotal")
+    @SerializedName("disksizetotal") @Param(description="the total disk size of the storage pool")
     private Long diskSizeTotal;
 
-    @SerializedName("disksizeallocated")
+    @SerializedName("disksizeallocated") @Param(description="the host's currently allocated disk size")
     private Long diskSizeAllocated;
 
-    @SerializedName("tags")
+    @SerializedName("tags") @Param(description="the tags for the storage pool")
     private String tags;
 
-    @SerializedName("state")
+    @SerializedName("state") @Param(description="the state of the storage pool")
     private String state;
 
     public Long getId() {

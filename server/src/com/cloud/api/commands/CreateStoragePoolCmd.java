@@ -42,25 +42,25 @@ public class CreateStoragePoolCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="clusterid", type=CommandType.LONG)
+    @Parameter(name="clusterid", type=CommandType.LONG, description="the cluster ID for the storage pool")
     private Long clusterId;
 
-    @Parameter(name="details", type=CommandType.MAP)
+    @Parameter(name="details", type=CommandType.MAP, description="the details for the storage pool")
     private Map details;
 
-    @Parameter(name="name", type=CommandType.STRING, required=true)
+    @Parameter(name="name", type=CommandType.STRING, required=true, description="the name for the storage pool")
     private String storagePoolName;
 
-    @Parameter(name="podid", type=CommandType.LONG)
+    @Parameter(name="podid", type=CommandType.LONG, description="the Pod ID for the storage pool")
     private Long podId;
 
-    @Parameter(name="tags", type=CommandType.STRING)
+    @Parameter(name="tags", type=CommandType.STRING, description="the tags for the storage pool")
     private String tags;
 
-    @Parameter(name="url", type=CommandType.STRING, required=true)
+    @Parameter(name="url", type=CommandType.STRING, required=true, description="the URL of the storage pool")
     private String url;
 
-    @Parameter(name="zoneid", type=CommandType.LONG, required=true)
+    @Parameter(name="zoneid", type=CommandType.LONG, required=true, description="the Zone ID for the storage pool")
     private Long zoneId;
 
     /////////////////////////////////////////////////////

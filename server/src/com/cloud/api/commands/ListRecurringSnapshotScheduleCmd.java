@@ -37,10 +37,10 @@ public class ListRecurringSnapshotScheduleCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="snapshotpolicyid", type=CommandType.LONG)
+    @Parameter(name="snapshotpolicyid", type=CommandType.LONG, description="lists recurring snapshots by snapshot policy ID")
     private Long snapshotPolicyId;
 
-    @Parameter(name="volumeid", type=CommandType.LONG, required=true)
+    @Parameter(name="volumeid", type=CommandType.LONG, required=true, description="list recurring snapshots by volume ID")
     private Long volumeId;
 
     /////////////////////////////////////////////////////

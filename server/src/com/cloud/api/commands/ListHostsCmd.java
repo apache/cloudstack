@@ -52,25 +52,25 @@ public class ListHostsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="clusterid", type=CommandType.LONG)
+    @Parameter(name="clusterid", type=CommandType.LONG, description="lists hosts existing in particular cluster")
     private Long clusterId;
 
-    @Parameter(name="id", type=CommandType.LONG)
+    @Parameter(name="id", type=CommandType.LONG, description="the id of the host")
     private Long id;
 
-    @Parameter(name="name", type=CommandType.STRING)
+    @Parameter(name="name", type=CommandType.STRING, description="the name of the host")
     private String hostName;
 
-    @Parameter(name="podid", type=CommandType.LONG)
+    @Parameter(name="podid", type=CommandType.LONG, description="the Pod ID for the host")
     private Long podId;
 
-    @Parameter(name="state", type=CommandType.STRING)
+    @Parameter(name="state", type=CommandType.STRING, description="the state of the host")
     private String state;
 
-    @Parameter(name="type", type=CommandType.STRING)
+    @Parameter(name="type", type=CommandType.STRING, description="the host type")
     private String type;
 
-    @Parameter(name="zoneid", type=CommandType.LONG)
+    @Parameter(name="zoneid", type=CommandType.LONG, description="the Zone ID for the host")
     private Long zoneId;
 
 

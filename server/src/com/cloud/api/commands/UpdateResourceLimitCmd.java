@@ -40,16 +40,20 @@ public class UpdateResourceLimitCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING)
+    @Parameter(name="account", type=CommandType.STRING, description="Update resource for a specified account. Must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name="domainid", type=CommandType.LONG)
+    @Parameter(name="domainid", type=CommandType.LONG, description="Update resource limits for all accounts in specified domain. If used with the account parameter, updates resource limits for a specified account in specified domain.")
     private Long domainId;
 
-    @Parameter(name="max", type=CommandType.LONG)
+    @Parameter(name="max", type=CommandType.LONG, description="	Maximum resource limit.")
     private Long max;
 
-    @Parameter(name="resourcetype", type=CommandType.INTEGER, required=true)
+    @Parameter(name="resourcetype", type=CommandType.INTEGER, required=true, description="Type of resource to update. Values are 0, 1, 2, 3, and 4. 0 — Instance. Number of instances a user can create. " +
+    																					"1 — IP. Number of public IP addresses a user can own. " +
+    																					"2 — Volume. Number of disk volumes a user can create." +
+    																					"3 — Snapshot. Number of snapshots a user can create." +
+    																					"4 — Template. Number of templates that a user can register/create.")
     private Integer resourceType;
 
     /////////////////////////////////////////////////////

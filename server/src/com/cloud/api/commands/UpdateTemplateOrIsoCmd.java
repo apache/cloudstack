@@ -33,25 +33,25 @@ public abstract class UpdateTemplateOrIsoCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="bootable", type=CommandType.BOOLEAN)
+    @Parameter(name="bootable", type=CommandType.BOOLEAN, description="true if image is bootable, false otherwise")
     private Boolean bootable;
 
-    @Parameter(name="displaytext", type=CommandType.STRING)
+    @Parameter(name="displaytext", type=CommandType.STRING, description="the display text of the image")
     private String displayText;
 
-    @Parameter(name="id", type=CommandType.LONG, required=true)
+    @Parameter(name="id", type=CommandType.LONG, required=true, description="the ID of the image file")
     private Long id;
 
-    @Parameter(name="name", type=CommandType.STRING)
+    @Parameter(name="name", type=CommandType.STRING, description="the name of the image file")
     private String isoName;
 
-    @Parameter(name="ostypeid", type=CommandType.LONG)
+    @Parameter(name="ostypeid", type=CommandType.LONG, description="the ID of the OS type that best represents the OS of this image.")
     private Long osTypeId;
     
-    @Parameter(name="format", type=CommandType.STRING)
+    @Parameter(name="format", type=CommandType.STRING, description="the format for the image")
     private String format;
     
-    @Parameter(name="passwordenabled", type=CommandType.BOOLEAN)
+    @Parameter(name="passwordenabled", type=CommandType.BOOLEAN, description="true if the image supports the password reset feature; default is false")
     private Boolean passwordEnabled;
 
     /////////////////////////////////////////////////////

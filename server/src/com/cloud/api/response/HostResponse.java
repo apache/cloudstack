@@ -22,112 +22,113 @@ import java.util.Date;
 import com.cloud.host.Host;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class HostResponse extends BaseResponse {
-    @SerializedName("id")
+    @SerializedName("id") @Param(description="the ID of the host")
     private Long id;
 
-    @SerializedName("name")
+    @SerializedName("name") @Param(description="the name of the host")
     private String name;
 
-    @SerializedName("state")
+    @SerializedName("state") @Param(description="the state of the host")
     private Status state;
 
-    @SerializedName("disconnected")
+    @SerializedName("disconnected") @Param(description="true if the host is disconnected. False otherwise.")
     private Date disconnectedOn;
 
-    @SerializedName("type")
+    @SerializedName("type") @Param(description="the host type")
     private Host.Type hostType;
 
-    @SerializedName("oscategoryid")
+    @SerializedName("oscategoryid") @Param(description="the OS category ID of the host")
     private Long osCategoryId;
 
-    @SerializedName("oscategoryname")
+    @SerializedName("oscategoryname") @Param(description="the OS category name of the host")
     private String osCategoryName;
 
-    @SerializedName("ipaddress")
+    @SerializedName("ipaddress") @Param(description="the IP address of the host")
     private String ipAddress;
 
-    @SerializedName("zoneid")
+    @SerializedName("zoneid") @Param(description="the Zone ID of the host")
     private Long zoneId;
 
-    @SerializedName("zonename")
+    @SerializedName("zonename") @Param(description="the Zone name of the host")
     private String zoneName;
 
-    @SerializedName("podid")
+    @SerializedName("podid") @Param(description="the Pod ID of the host")
     private Long podId;
 
-    @SerializedName("podname")
+    @SerializedName("podname") @Param(description="the Pod name of the host")
     private String podName;
 
-    @SerializedName("version")
+    @SerializedName("version") @Param(description="the host version")
     private String version;
 
-    @SerializedName("hypervisor")
+    @SerializedName("hypervisor") @Param(description="the host hypervisor")
     private HypervisorType hypervisor;
 
-    @SerializedName("cpunumber")
+    @SerializedName("cpunumber") @Param(description="the CPU number of the host")
     private Integer cpuNumber;
 
-    @SerializedName("cpuspeed")
+    @SerializedName("cpuspeed") @Param(description="the CPU speed of the host")
     private Long cpuSpeed;
 
-    @SerializedName("cpuallocated")
+    @SerializedName("cpuallocated") @Param(description="the amount of the host's CPU currently allocated")
     private String cpuAllocated;
 
-    @SerializedName("cpuused")
+    @SerializedName("cpuused") @Param(description="the amount of the host's CPU currently used")
     private String cpuUsed;
 
-    @SerializedName("averageload")
+    @SerializedName("averageload") @Param(description="the cpu average load on the host")
     private Long averageLoad;
 
-    @SerializedName("networkkbsread")
+    @SerializedName("networkkbsread") @Param(description="the incoming network traffic on the host")
     private Long networkKbsRead;
 
-    @SerializedName("networkkbswrite")
+    @SerializedName("networkkbswrite") @Param(description="the outgoing network traffic on the host")
     private Long networkKbsWrite;
 
-    @SerializedName("memorytotal")
+    @SerializedName("memorytotal") @Param(description="the memory total of the host")
     private Long memoryTotal;
 
-    @SerializedName("memoryallocated")
+    @SerializedName("memoryallocated") @Param(description="the amount of the host's memory currently allocated")
     private Long memoryAllocated;
 
-    @SerializedName("memoryused")
+    @SerializedName("memoryused") @Param(description="the amount of the host's memory currently used")
     private Long memoryUsed;
 
-    @SerializedName("disksizetotal")
+    @SerializedName("disksizetotal") @Param(description="the total disk size of the host")
     private Long diskSizeTotal;
 
-    @SerializedName("disksizeallocated")
+    @SerializedName("disksizeallocated") @Param(description="the host's currently allocated disk size")
     private Long diskSizeAllocated;
 
-    @SerializedName("capabilities")
+    @SerializedName("capabilities") @Param(description="capabilities of the host")
     private String capabilities;
 
-    @SerializedName("lastpinged")
+    @SerializedName("lastpinged") @Param(description="the date and time the host was last pinged")
     private Date lastPinged;
 
-    @SerializedName("managementserverid")
+    @SerializedName("managementserverid") @Param(description="the management server ID of the host")
     private Long managementServerId;
 
-    @SerializedName("custerid")
+    @SerializedName("custerid") @Param(description="the cluster ID of the host")
     private Long clusterId;
 
-    @SerializedName("clustername")
+    @SerializedName("clustername") @Param(description="the cluster name of the host")
     private String clusterName;
 
-    @SerializedName("islocalstorageactive")
+    @SerializedName("islocalstorageactive") @Param(description="true if local storage is active, false otherwise")
     private Boolean localStorageActive;
 
-    @SerializedName("created")
+    @SerializedName("created") @Param(description="the date and time the host was created")
     private Date created;
 
-    @SerializedName("removed")
+    @SerializedName("removed") @Param(description="the date and time the host was removed")
     private Date removed;
 
-    @SerializedName("events")
+    @SerializedName("events") @Param(description="events available for the host")
     private String events;
 
     public Long getId() {

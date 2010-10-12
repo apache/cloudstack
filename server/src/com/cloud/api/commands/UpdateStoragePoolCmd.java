@@ -40,10 +40,10 @@ public class UpdateStoragePoolCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="id", type=CommandType.LONG, required=true)
+    @Parameter(name="id", type=CommandType.LONG, required=true, description="the Id of the storage pool")
     private Long id;
 
-    @Parameter(name="tags", type=CommandType.STRING)
+    @Parameter(name="tags", type=CommandType.STRING, description="the tags for the storage pool")
     private String tags;
 
     /////////////////////////////////////////////////////

@@ -36,6 +36,8 @@ import java.util.Properties;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -52,6 +54,7 @@ public class ApiXmlDocWriter {
 		Properties preProcessedCommands = new Properties();
 		Enumeration command = null;
 		String[] fileNames = null;
+		ArrayList<Command> commands = new ArrayList<Command>(); 
 		
 		List<String> argsList = Arrays.asList(args);
 		Iterator<String> iter = argsList.iterator();
@@ -99,8 +102,8 @@ public class ApiXmlDocWriter {
 			xs.alias("command", Command.class);
 			xs.alias("arg", Argument.class);
 
-			ObjectOutputStream out = xs.createObjectOutputStream(new FileWriter(dirName + "commands.xml"), "commands");
-
+			ObjectOutputStream out = xs.createObjectOutputStream(new FileWriter(dirName + "/commands.xml"), "commands");
+	
 			while (command.hasMoreElements()) {
 				String key = (String) command.nextElement();
 				Class clas = Class.forName(api_commands.getProperty(key));
@@ -110,6 +113,7 @@ public class ApiXmlDocWriter {
 				//Create a new command, set name and description
 				Command apiCommand = new Command();
 				apiCommand.setName(key);
+				
 	            Implementation impl = (Implementation)clas.getAnnotation(Implementation.class);
 	            if (impl == null)
 	            	impl = (Implementation)clas.getSuperclass().getAnnotation(Implementation.class);
@@ -122,9 +126,11 @@ public class ApiXmlDocWriter {
 	            //Get request parameters        
 	            Field[] fields = clas.getDeclaredFields();
 	            
-	            //Get fields from superclass
+//	            //Get fields from superclass
 	            Class<?> superClass = clas.getSuperclass();
-	            while (BaseCmd.class.isAssignableFrom(superClass) && !superClass.getName().equals(BaseCmd.class.getName())) {
+	            String superName = superClass.getName();
+//	            while (BaseCmd.class.isAssignableFrom(superClass) && !superClass.getName().equals(BaseCmd.class.getName())) {
+	            if (!superName.equals(BaseCmd.class.getName()) && !superName.equals(BaseAsyncCmd.class.getName()) && !superName.equals(BaseAsyncCreateCmd.class.getName())) {
 	            	Field[] superClassFields = superClass.getDeclaredFields();
 	                if (superClassFields != null) {
 	                    Field[] tmpFields = new Field[fields.length + superClassFields.length];
@@ -134,6 +140,8 @@ public class ApiXmlDocWriter {
 	                }
 	                superClass = superClass.getSuperclass();
 	            }
+
+//	            }
 	          
 				for (Field f : fields) {
 					Parameter parameterAnnotation = f.getAnnotation(Parameter.class);
@@ -171,14 +179,13 @@ public class ApiXmlDocWriter {
 					response.add(respArg);
 				}
 	            
-	            
 	            apiCommand.setRequest(request);
 	            apiCommand.setResponse(response);
+	            commands.add(apiCommand);
 	            
 	            //Write command to xml file
 				out.writeObject(apiCommand);
 			}
-			
 			out.close();
 		} catch (Exception ex) {
 			ex.printStackTrace();

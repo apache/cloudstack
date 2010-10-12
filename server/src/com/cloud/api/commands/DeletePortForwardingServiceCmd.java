@@ -41,7 +41,7 @@ public class DeletePortForwardingServiceCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="id", type=CommandType.LONG, required=true)
+    @Parameter(name="id", type=CommandType.LONG, required=true, description="ID of the port forwarding service")
     private Long id;
 
 

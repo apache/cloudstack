@@ -17,25 +17,26 @@
  */
 package com.cloud.api.response;
 
+import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class ClusterResponse extends BaseResponse {
-    @SerializedName("id")
+    @SerializedName("id") @Param(description="the cluster ID")
     private Long id;
 
-    @SerializedName("name")
+    @SerializedName("name") @Param(description="the cluster name")
     private String name;
 
-    @SerializedName("podid")
+    @SerializedName("podid") @Param(description="the Pod ID of the cluster")
     private Long podId;
 
-    @SerializedName("podname")
+    @SerializedName("podname") @Param(description="the Pod name of the cluster")
     private String podName;
 
-    @SerializedName("zoneid")
+    @SerializedName("zoneid") @Param(description="the Zone ID of the cluster")
     private Long zoneId;
 
-    @SerializedName("zonename")
+    @SerializedName("zonename") @Param(description="the Zone name of the cluster")
     private String zoneName;
 
     public Long getId() {

@@ -37,25 +37,30 @@ public class CreateSnapshotPolicyCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING)
+    @Parameter(name="account", type=CommandType.STRING, description="The account of the snapshot policy. The account parameter must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name="domainid", type=CommandType.LONG)
+    @Parameter(name="domainid", type=CommandType.LONG, description="The domain ID of the snapshot. If used with the account parameter, specifies a domain for the account associated with the snapshot policy.")
     private Long domainId;
 
-    @Parameter(name="intervaltype", type=CommandType.STRING, required=true)
+    @Parameter(name="intervaltype", type=CommandType.STRING, required=true, description="valid values are HOURLY, DAILY, WEEKLY, and MONTHLY")
     private String intervalType;
 
-    @Parameter(name="maxsnaps", type=CommandType.INTEGER, required=true)
+    @Parameter(name="maxsnaps", type=CommandType.INTEGER, required=true, description="maximum number of snapshots to retain")
     private Integer maxSnaps;
 
-    @Parameter(name="schedule", type=CommandType.STRING, required=true)
+    @Parameter(name="schedule", type=CommandType.STRING, required=true, description="time the snapshot is scheduled to be taken. " +
+    																				"Format is:" +
+    																				"* if HOURLY, MM" +
+    																				"* if DAILY, MM:HH" +
+    																				"* if WEEKLY, MM:HH:DD (1-7)" +
+    																				"* if MONTHLY, MM:HH:DD (1-28)")
     private String schedule;
 
-    @Parameter(name="timezone", type=CommandType.STRING, required=true)
+    @Parameter(name="timezone", type=CommandType.STRING, required=true, description="Specifies a timezone for this command. For more information on the timezone parameter, see Time Zone Format.")
     private String timezone;
 
-    @Parameter(name="volumeid", type=CommandType.LONG, required=true)
+    @Parameter(name="volumeid", type=CommandType.LONG, required=true, description="the ID of the disk volume")
     private Long volumeId;
 
 

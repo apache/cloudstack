@@ -66,8 +66,20 @@ public class Command {
 		this.response = response;
 	}
 	
-	public void compareArguments(Command oldCommand){
-		//TODO compare request and response arguments
+	public Argument getReqArgByName(String name){
+		for (Argument a : this.getRequest()) {
+			if (a.getName().equals(name))
+				return a;
+		}
+		return null;
+	}
+	
+	public Argument getResArgByName(String name){
+		for (Argument a : this.getResponse()) {
+			if (a.getName().equals(name))
+				return a;
+		}
+		return null;
 	}
 	
 }

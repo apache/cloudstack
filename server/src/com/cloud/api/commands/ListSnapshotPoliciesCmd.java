@@ -41,13 +41,13 @@ public class ListSnapshotPoliciesCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING)
+    @Parameter(name="account", type=CommandType.STRING, description="lists snapshot policies for the specified account. Must be used with domainid parameter.")
     private String accountName;
 
-    @Parameter(name="domainid", type=CommandType.LONG)
+    @Parameter(name="domainid", type=CommandType.LONG, description="the domain ID. If used with the account parameter, lists snapshot policies for the specified account in this domain.")
     private Long domainId;
 
-    @Parameter(name="volumeid", type=CommandType.LONG, required=true)
+    @Parameter(name="volumeid", type=CommandType.LONG, required=true, description="the ID of the disk volume")
     private Long volumeId;
 
     /////////////////////////////////////////////////////

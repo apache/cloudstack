@@ -27,7 +27,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.response.NetworkGroupResponse;
 import com.cloud.network.security.NetworkGroupVO;
 
-@Implementation(method="createLoadBalancerRule", manager=Manager.NetworkGroupManager)
+@Implementation(method="createNetworkGroup", manager=Manager.NetworkGroupManager)
 public class CreateNetworkGroupCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateNetworkGroupCmd.class.getName());
 
@@ -37,16 +37,16 @@ public class CreateNetworkGroupCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING)
+    @Parameter(name="account", type=CommandType.STRING, description="an optional account for the network group. Must be used with domainId.")
     private String accountName;
 
-    @Parameter(name="description", type=CommandType.STRING)
+    @Parameter(name="description", type=CommandType.STRING, description="the description of the network group")
     private String description;
 
-    @Parameter(name="domainid", type=CommandType.LONG)
+    @Parameter(name="domainid", type=CommandType.LONG, description="an optional domainId for the network group. If the account parameter is used, domainId must also be used.")
     private Long domainId;
 
-    @Parameter(name="name", type=CommandType.STRING, required=true)
+    @Parameter(name="name", type=CommandType.STRING, required=true, description="name of the network group")
     private String networkGroupName;
 
 

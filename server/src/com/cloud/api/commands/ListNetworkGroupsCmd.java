@@ -44,16 +44,16 @@ public class ListNetworkGroupsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING)
+    @Parameter(name="account", type=CommandType.STRING, description="lists all available port network groups for the account. Must be used with domainID parameter")
     private String accountName;
 
-    @Parameter(name="domainid", type=CommandType.LONG)
+    @Parameter(name="domainid", type=CommandType.LONG, description="lists all available network groups for the domain ID. If used with the account parameter, lists all available network groups for the account in the specified domain ID.")
     private Long domainId;
 
-    @Parameter(name="networkgroupname", type=CommandType.STRING)
+    @Parameter(name="networkgroupname", type=CommandType.STRING, description="lists network groups by name")
     private String networkGroupName;
 
-    @Parameter(name="virtualmachineid", type=CommandType.LONG)
+    @Parameter(name="virtualmachineid", type=CommandType.LONG, description="lists network groups by virtual machine id")
     private Long virtualMachineId;
 
     /////////////////////////////////////////////////////

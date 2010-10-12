@@ -28,33 +28,43 @@ public class RevokeNetworkGroupIngressCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
+    //FIXME - add description
     @Parameter(name="account", type=CommandType.STRING)
     private String accountName;
 
+    //FIXME - add description
     @Parameter(name="cidrlist", type=CommandType.STRING)
     private String cidrList;
 
+    //FIXME - add description
     @Parameter(name="domainid", type=CommandType.LONG)
     private Long domainId;
 
+    //FIXME - add description
     @Parameter(name="endport", type=CommandType.INTEGER)
     private Integer endPort;
 
+    //FIXME - add description
     @Parameter(name="icmpcode", type=CommandType.INTEGER)
     private Integer icmpCode;
 
+    //FIXME - add description
     @Parameter(name="icmptype", type=CommandType.INTEGER)
     private Integer icmpType;
 
+    //FIXME - add description
     @Parameter(name="networkgroupname", type=CommandType.STRING, required=true)
     private String networkGroupName;
 
+    //FIXME - add description
     @Parameter(name="protocol", type=CommandType.STRING)
     private String protocol;
 
+    //FIXME - add description
     @Parameter(name="startport", type=CommandType.INTEGER)
     private Integer startPort;
 
+    //FIXME - add description
     @Parameter(name="usernetworkgrouplist", type=CommandType.MAP)
     private Map userNetworkGroupList;
 

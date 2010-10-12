@@ -17,49 +17,50 @@
  */
 package com.cloud.api.response;
 
+import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class VlanIpRangeResponse extends BaseResponse {
-    @SerializedName("id")
+    @SerializedName("id") @Param(description="the ID of the VLAN IP range")
     private Long id;
 
-    @SerializedName("forvirtualnetwork")
+    @SerializedName("forvirtualnetwork") @Param(description="the virtual network for the VLAN IP range")
     private Boolean forVirtualNetwork;
 
-    @SerializedName("zoneid")
+    @SerializedName("zoneid") @Param(description="the Zone ID of the VLAN IP range")
     private Long zoneId;
 
-    @SerializedName("vlan")
+    @SerializedName("vlan") @Param(description="the ID or VID of the VLAN.")
     private String vlan;
 
-    @SerializedName("account")
+    @SerializedName("account") @Param(description="the account of the VLAN IP range")
     private String accountName;
 
-    @SerializedName("domainid")
+    @SerializedName("domainid") @Param(description="the domain ID of the VLAN IP range")
     private Long domainId;
 
-    @SerializedName("domain")
+    @SerializedName("domain") @Param(description="the domain name of the VLAN IP range")
     private String domainName;
 
-    @SerializedName("podid")
+    @SerializedName("podid") @Param(description="the Pod ID for the VLAN IP range")
     private Long podId;
 
-    @SerializedName("podname")
+    @SerializedName("podname") @Param(description="the Pod name for the VLAN IP range")
     private String podName;
 
-    @SerializedName("gateway")
+    @SerializedName("gateway") @Param(description="the gateway of the VLAN IP range")
     private String gateway;
 
-    @SerializedName("netmask")
+    @SerializedName("netmask") @Param(description="the netmask of the VLAN IP range")
     private String netmask;
 
-    @SerializedName("description")
+    @SerializedName("description") @Param(description="the description of the VLAN IP range")
     private String description;
 
-    @SerializedName("startip")
+    @SerializedName("startip") @Param(description="the start ip of the VLAN IP range")
     private String startIp;
 
-    @SerializedName("endip")
+    @SerializedName("endip") @Param(description="the end ip of the VLAN IP range")
     private String endIp;
 
     public Long getId() {
