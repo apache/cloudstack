@@ -5,15 +5,16 @@ function afterLoadResourceJSP() {
     switchBetweenDifferentTabs(tabArray, tabContentArray);       
     //***** switch between different tabs (end) **********************************************************************
   
-    var forceLogout = true;  // We force a logout only if the user has first added a POD for the very first time   
-    $("#midmenu_container").append($("#zonetree").clone().attr("id", "zonetree1").show());
+    var forceLogout = true;  // We force a logout only if the user has first added a POD for the very first time 
+    var $zoneetree1 = $("#zonetree").clone().attr("id", "zonetree1");  
+    $("#midmenu_container").append($zoneetree1.show());
     
     $.ajax({
 	    data: createURL("command=listZones&available=true"+maxPageSize),
 		dataType: "json",
 		success: function(json) {
 			var items = json.listzonesresponse.zone;
-			var container = $("#zonetree1 #zones_container").empty();
+			var container = $("#zonetree1").find("#zones_container").empty();
 			if (items != null && items.length > 0) {					    
 				for (var i = 0; i < items.length; i++) {
 					var template = $("#zone_template").clone(true).attr("id", "zone_"+items[i].id);
