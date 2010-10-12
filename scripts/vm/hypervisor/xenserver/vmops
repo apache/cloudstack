@@ -794,6 +794,13 @@ def network_rules_for_rebooted_vm(session, vmName):
         return True
     
     vif = "vif" + curr_domid + ".0"
+    tap = "tap" + curr_domid + ".0"
+    vifs = [vif]
+    try:
+        util.pread2(['ifconfig', tap])
+        vifs.append(tap)
+    except:
+        pass
     vmchain = '-'.join(vm_name.split('-')[:-1])
 
     util.pread2(['iptables', '-A', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', vif, '-j', vmchain])
