@@ -183,10 +183,10 @@ function afterLoadResourceJSP() {
 		switch (action) {
 			case "zone_expand" :
 				if (target.hasClass("zonetree_closedarrows")) {
-					$("#zone_"+id+" #zone_content").show();
+					$("#zone_"+id).find("#zone_content").show();					
 					target.removeClass().addClass("zonetree_openarrows");
 				} else {
-					$("#zone_"+id+" #zone_content").hide();
+					$("#zone_"+id).find("#zone_content").hide();
 					target.removeClass().addClass("zonetree_closedarrows");
 				}
 				break;
