@@ -244,7 +244,15 @@
                     <label><%=t.t("disk.offering")%>:</label>
                     <select class="select" id="disk_offering">
                     </select>
-                </li>					
+                </li>	
+                <li>
+                    <label><%=t.t("hypervisor")%>:</label>
+                    <select class="select" id="hypervisor">
+                        <option value='XenServer'>Citrix XenServer</option>
+                        <option value='VmWare'>VMware ESX</option>                            
+                        <option value='KVM'>KVM</option>
+                    </select>     
+                </li>						
 			</ol>
 		</form>
 	</div>
