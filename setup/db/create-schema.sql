@@ -436,7 +436,6 @@ CREATE TABLE  `cloud`.`host` (
   `ram` bigint unsigned,
   `resource` varchar(255) DEFAULT NULL COMMENT 'If it is a local resource, this is the class name',
   `version` varchar(40) NOT NULL,
-  `sequence` bigint unsigned NOT NULL DEFAULT 1,
   `parent` varchar(255) COMMENT 'parent path for the storage server',
   `total_size` bigint unsigned COMMENT 'TotalSize',
   `capabilities` varchar(255) COMMENT 'host capabilities in comma separated list',

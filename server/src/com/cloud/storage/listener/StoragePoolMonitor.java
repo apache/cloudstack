@@ -56,7 +56,7 @@ public class StoragePoolMonitor implements Listener {
     }
     
     @Override
-    public synchronized boolean processAnswer(long agentId, long seq, Answer[] resp) {
+    public synchronized boolean processAnswers(long agentId, long seq, Answer[] resp) {
         return true;
     }
     
@@ -87,7 +87,7 @@ public class StoragePoolMonitor implements Listener {
     
 
     @Override
-    public boolean processCommand(long agentId, long seq, Command[] req) {
+    public boolean processCommands(long agentId, long seq, Command[] req) {
         return false;
     }
    

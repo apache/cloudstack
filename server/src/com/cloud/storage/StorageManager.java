@@ -25,6 +25,7 @@ import java.util.Map;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.VolumeTO;
+import com.cloud.agent.manager.Commands;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.deploy.DeployDestination;
@@ -235,7 +236,7 @@ public interface StorageManager extends Manager {
 	 */
 	boolean volumeOnSharedStoragePool(VolumeVO volume);
 	
-	Answer[] sendToPool(StoragePool pool, Command[] cmds, boolean stopOnError);
+	Answer[] sendToPool(StoragePool pool, Commands cmds);
 	
 	Answer sendToPool(StoragePool pool, Command cmd);
 	

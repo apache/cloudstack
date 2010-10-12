@@ -57,6 +57,7 @@ import com.cloud.agent.api.storage.DeleteTemplateCommand;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VolumeTO;
+import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.BaseCmd;
 import com.cloud.async.AsyncInstanceCreateStatus;
@@ -427,13 +428,13 @@ public class StorageManagerImpl implements StorageManager {
     }
 
     @Override
-    public Answer[] sendToPool(StoragePool pool, Command[] cmds, boolean stopOnError) {
+    public Answer[] sendToPool(StoragePool pool, Commands cmds) {
         List<StoragePoolHostVO> poolHosts = _poolHostDao.listByHostStatus(pool.getId(), Status.Up);
         Collections.shuffle(poolHosts);
         
         for (StoragePoolHostVO poolHost: poolHosts) {
             try {
-                Answer[] answerRet = _agentMgr.send(poolHost.getHostId(), cmds, stopOnError);
+                Answer[] answerRet = _agentMgr.send(poolHost.getHostId(), cmds);
                 return answerRet;
                 
             } catch (AgentUnavailableException e) {
@@ -450,8 +451,8 @@ public class StorageManagerImpl implements StorageManager {
     
     @Override
     public Answer sendToPool(StoragePool pool, Command cmd) {
-        Command[] cmds = new Command[]{cmd};
-        Answer[] answers = sendToPool(pool, cmds, true);
+        Commands cmds = new Commands(cmd);
+        Answer[] answers = sendToPool(pool, cmds);
         if (answers == null) {
             return null;
         }

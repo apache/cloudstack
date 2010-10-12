@@ -50,7 +50,6 @@ import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
 import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.GetVmStatsAnswer;
 import com.cloud.agent.api.GetVmStatsCommand;
-import com.cloud.agent.api.ManageSnapshotAnswer;
 import com.cloud.agent.api.ManageSnapshotCommand;
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.PrepareForMigrationCommand;
@@ -60,6 +59,7 @@ import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
+import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.BaseCmd;
 import com.cloud.async.AsyncJobExecutor;
@@ -105,7 +105,6 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.DetailsDao;
 import com.cloud.host.dao.HostDao;
-import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.FirewallRuleVO;
 import com.cloud.network.IPAddressVO;
@@ -128,8 +127,6 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOSVO;
-import com.cloud.storage.Snapshot;
-import com.cloud.storage.Snapshot.SnapshotType;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
@@ -161,7 +158,6 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
-import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Adapters;
@@ -1043,8 +1039,7 @@ public class UserVmManagerImpl implements UserVmManager {
         
         StopCommand cmd = new StopCommand(vm, vm.getInstanceName(), vm.getVnet());
         try {
-			long seq = _agentMgr.send(vm.getHostId(), new Command[] {cmd}, true,
-				new VMOperationListener(executor, param, vm, 0));
+			long seq = _agentMgr.send(vm.getHostId(), new Commands(cmd), new VMOperationListener(executor, param, vm, 0));
 			resultDescription = "Execute asynchronize stop VM command: sending command to agent, seq - " + seq;
         	if(s_logger.isDebugEnabled())
         		s_logger.debug(resultDescription);
@@ -1118,8 +1113,7 @@ public class UserVmManagerImpl implements UserVmManager {
         if (vm.getState() == State.Running && vm.getHostId() != null) {
             RebootCommand cmd = new RebootCommand(vm.getInstanceName());
             try {
-				long seq = _agentMgr.send(vm.getHostId(), new Command[] {cmd}, true,
-					new VMOperationListener(executor, param, vm, 0));
+				long seq = _agentMgr.send(vm.getHostId(), new Commands(cmd), new VMOperationListener(executor, param, vm, 0));
 				resultDescription = "Execute asynchronize Reboot VM command: sending command to agent, seq - " + seq;
             	if(s_logger.isDebugEnabled())
             		s_logger.debug(resultDescription);
@@ -1707,8 +1701,7 @@ public class UserVmManagerImpl implements UserVmManager {
             param.setChildEventId(childEventId);
             StopCommand cmd = new StopCommand(vm, vm.getInstanceName(), vm.getVnet());
             try {
-    			long seq = _agentMgr.send(vm.getHostId(), new Command[] {cmd}, true,
-    				new VMOperationListener(executor, param, vm, 0));
+    			long seq = _agentMgr.send(vm.getHostId(), new Commands(cmd), new VMOperationListener(executor, param, vm, 0));
     			resultDescription = "Execute asynchronize destroy VM command: sending stop command to agent, seq - " + seq;
             	if(s_logger.isDebugEnabled())
             		s_logger.debug(resultDescription);

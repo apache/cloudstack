@@ -229,6 +229,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         return search(sc, null);
     }
 
+    @Override
     public Integer[] countRoutersAndProxies(Long hostId) {
         Transaction txn = Transaction.currentTxn();
         PreparedStatement pstmt = null;

@@ -22,6 +22,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.AgentManager.OnError;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
 import com.cloud.agent.api.AgentControlCommand;
@@ -30,6 +31,7 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
+import com.cloud.agent.manager.Commands;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -59,7 +61,7 @@ public class VmSyncListener implements Listener {
     }
 
     @Override
-    public boolean processAnswer(long agentId, long seq, Answer[] answers) {
+    public boolean processAnswers(long agentId, long seq, Answer[] answers) {
         for (final Answer answer : answers) {
             if (!answer.getResult()) {
                 s_logger.warn("Cleanup failed due to " + answer.getDetails());
@@ -83,7 +85,7 @@ public class VmSyncListener implements Listener {
     }
 
     @Override
-    public boolean processCommand(long agentId, long seq, Command[] req) {
+    public boolean processCommands(long agentId, long seq, Command[] req) {
         boolean processed = false;
         for (Command cmd : req) {
             if (cmd instanceof PingRoutingCommand) {
@@ -92,7 +94,9 @@ public class VmSyncListener implements Listener {
                     List<Command> commands = _haMgr.deltaSync(agentId, ping.getNewStates());
                     if (commands.size() > 0) {
                         try {
-                            _agentMgr.send(agentId, commands.toArray(new Command[commands.size()]), false, this);
+                            Commands cmds = new Commands(OnError.Continue);
+                            cmds.addCommands(commands);
+                            _agentMgr.send(agentId, cmds, this);
                         } catch (final AgentUnavailableException e) {
                             s_logger.warn("Agent is now unavailable", e);
                         }
@@ -128,9 +132,10 @@ public class VmSyncListener implements Listener {
         s_logger.debug("Sending clean commands to the agent");
 
         if (commands.size() > 0) {
-            final Command[] cmds = commands.toArray(new Command[commands.size()]);
+            Commands cmds = new Commands(OnError.Continue);
+            cmds.addCommands(commands);
             try {
-                _agentMgr.send(agentId, cmds, false, this);
+                _agentMgr.send(agentId, cmds, this);
             } catch (final AgentUnavailableException e) {
                 s_logger.warn("Agent is unavailable now", e);
             }

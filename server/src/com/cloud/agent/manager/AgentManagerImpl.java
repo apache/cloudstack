@@ -387,7 +387,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
     
     public void handleCommands(AgentAttache attache, final long sequence, final Command[] cmds) {
         for (Pair<Integer, Listener> listener : _cmdMonitors) {
-            boolean processed = listener.second().processCommand(attache.getId(), sequence, cmds);
+            boolean processed = listener.second().processCommands(attache.getId(), sequence, cmds);
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace("SeqA " + attache.getId() + "-" + sequence + ": " + (processed ? "processed" : "not processed") + " by " + listener.getClass());
             }
@@ -674,8 +674,11 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
     }
 
     @Override
-    public Answer send(final Long hostId, final Command cmd, final int timeout) throws AgentUnavailableException, OperationTimedoutException {
-        Answer[] answers = send(hostId, new Command[] { cmd }, true, timeout);
+    public Answer send(Long hostId, Command cmd, int timeout) throws AgentUnavailableException, OperationTimedoutException {
+        Commands cmds = new Commands(OnError.Revert);
+        cmds.addCommand(cmd);
+        send(hostId, cmds, timeout);
+        Answer[] answers = cmds.getAnswers();
         if (answers != null && !(answers[0] instanceof UnsupportedAnswer)) {
             return answers[0];
         }
@@ -689,17 +692,18 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
     }
 
     @Override
-    public Answer[] send(final Long hostId, final Command[] cmds, final boolean stopOnError, final int timeout) throws AgentUnavailableException,
-            OperationTimedoutException {
+    public Answer[] send(Long hostId, Commands commands, int timeout) throws AgentUnavailableException, OperationTimedoutException {
         assert hostId != null : "Who's not checking the agent id before sending?  ... (finger wagging)";
         if (hostId == null) {
             throw new AgentUnavailableException(-1);
         }
+        
+        Command[] cmds = commands.toCommands();
 
         assert cmds.length > 0 : "Ask yourself this about a hundred times.  Why am I  sending zero length commands?";
 
         if (cmds.length == 0) {
-            return new Answer[0];
+            commands.setAnswers(new Answer[0]);
         }
 
         final AgentAttache agent = getAttache(hostId);
@@ -708,8 +712,10 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         }
 
         long seq = _hostDao.getNextSequence(hostId);
-        Request req = new Request(seq, hostId, _nodeId, cmds, stopOnError, true);
-        return agent.send(req, timeout);
+        Request req = new Request(seq, hostId, _nodeId, cmds, commands.stopOnError(), true, commands.revertOnError());
+        Answer[] answers = agent.send(req, timeout);
+        commands.setAnswers(answers);
+        return answers;
     }
 
     protected Status investigate(AgentAttache agent) {
@@ -720,7 +726,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
 
         try {
             long seq = _hostDao.getNextSequence(hostId);
-            Request req = new Request(seq, hostId, _nodeId, new Command[] { new CheckHealthCommand() }, true, true);
+            Request req = new Request(seq, hostId, _nodeId, new CheckHealthCommand(), true);
             Answer[] answers = agent.send(req, 50 * 1000);
             if (answers != null && answers[0] != null ) {
                 Status status = answers[0].getResult() ? Status.Up : Status.Down;
@@ -754,27 +760,28 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
     }
 
     @Override
-    public long send(final Long hostId, final Command[] cmds, final boolean stopOnError, final Listener listener) throws AgentUnavailableException {
+    public long send(Long hostId, Commands commands, Listener listener) throws AgentUnavailableException {
         final AgentAttache agent = getAttache(hostId);
         if (agent.isClosed()) {
             return -1;
         }
 
+        Command[] cmds = commands.toCommands();
+        
         assert cmds.length > 0 : "Why are you sending zero length commands?";
         if (cmds.length == 0) {
             return -1;
-        }
+        } 
         long seq = _hostDao.getNextSequence(hostId);
-        Request req = new Request(seq, hostId, _nodeId, cmds, stopOnError, true);
+        Request req = new Request(seq, hostId, _nodeId, cmds, commands.stopOnError(), true, commands.revertOnError());
         agent.send(req, listener);
         return seq;
     }
 
     @Override
     public long gatherStats(final Long hostId, final Command cmd, final Listener listener) {
-        final Command[] cmds = new Command[] { cmd };
         try {
-            return send(hostId, cmds, true, listener);
+            return send(hostId, new Commands(cmd), listener);
         } catch (final AgentUnavailableException e) {
             return -1;
         }
@@ -1042,7 +1049,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         
         AgentAttache attache = null;
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Startup request from directly connected host: " + new Request(0, -1, -1, cmds, false).toString());
+            s_logger.debug("Startup request from directly connected host: " + new Request(0l, -1l, -1l, cmds, true, false, true).toString());
         }
         try {
             attache = handleDirectConnect(resource, cmds, details, old);
@@ -1231,8 +1238,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
     }
 
     @Override
-    public Answer[] send(final Long hostId, final Command[] cmds, final boolean stopOnError) throws AgentUnavailableException, OperationTimedoutException {
-        return send(hostId, cmds, stopOnError, _wait);
+    public Answer[] send(final Long hostId, Commands cmds) throws AgentUnavailableException, OperationTimedoutException {
+        return send(hostId, cmds, _wait);
     }
 
     @Override

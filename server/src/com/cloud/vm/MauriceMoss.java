@@ -18,10 +18,8 @@
 package com.cloud.vm;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
@@ -29,19 +27,23 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.agent.api.Start2Answer;
+import com.cloud.agent.AgentManager.OnError;
+import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Start2Command;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VolumeTO;
+import com.cloud.agent.manager.Commands;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner;
+import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.network.NetworkConfigurationVO;
@@ -209,7 +211,7 @@ public class MauriceMoss implements VmManager {
     }
 
     @Override
-    public <T extends VMInstanceVO> T start(T vm, DeploymentPlan plan, VirtualMachineChecker checker) throws InsufficientCapacityException, ConcurrentOperationException {
+    public <T extends VMInstanceVO> T start(T vm, DeploymentPlan plan, VirtualMachineGuru guru) throws InsufficientCapacityException, ConcurrentOperationException {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Creating actual resources for VM " + vm);
         }
@@ -230,23 +232,25 @@ public class MauriceMoss implements VmManager {
             throw new CloudRuntimeException("Guest OS is not set");
         }
         VirtualMachineProfile vmProfile = new VirtualMachineProfile(vm, offering, guestOS.getDisplayName(), template.getHypervisorType());
-        _vmDao.updateIf(vm, Event.StartRequested, null);
+        if (!_vmDao.updateIf(vm, Event.StartRequested, null)) {
+            throw new ConcurrentOperationException("Unable to start vm "  + vm + " due to concurrent operations");
+        }
 
-        Set<DeployDestination> avoids = new HashSet<DeployDestination>();
+        ExcludeList avoids = new ExcludeList();
         int retry = _retry;
         while (retry-- != 0) { // It's != so that it can match -1.
             DeployDestination dest = null;
-            for (DeploymentPlanner dispatcher : _planners) {
-                dest = dispatcher.plan(vmProfile, plan, avoids);
+            for (DeploymentPlanner planner : _planners) {
+                dest = planner.plan(vmProfile, plan, avoids);
                 if (dest != null) {
-                    avoids.add(dest);
+                    avoids.addHost(dest.getHost().getId());
                     journal.record("Deployment found ", vmProfile, dest);
                     break;
                 }
             }
             
             if (dest == null) {
-                throw new CloudRuntimeException("Unable to create a deployment for " + vmProfile);
+                throw new InsufficientServerCapacityException("Unable to create a deployment for " + vmProfile);
             }
             
             vm.setDataCenterId(dest.getDataCenter().getId());
@@ -268,20 +272,20 @@ public class MauriceMoss implements VmManager {
             vmTO.setNics(nics);
             vmTO.setDisks(volumes);
             
-            if (checker != null) {
-                checker.finalizeDeployment(vmTO, vmProfile, dest);
+            Commands cmds = new Commands(OnError.Revert);
+            cmds.addCommand(new Start2Command(vmTO));
+            if (guru != null) {
+                guru.finalizeDeployment(cmds, vmProfile, dest);
             }
-            
-            Start2Command cmd = new Start2Command(vmTO);
             try {
-                Start2Answer answer = (Start2Answer)_agentMgr.send(dest.getHost().getId(), cmd);
-                if (answer.getResult()) {
+                Answer[] answers = _agentMgr.send(dest.getHost().getId(), cmds);
+                if (answers[0].getResult()) {
                     if (!_vmDao.updateIf(vm, Event.OperationSucceeded, dest.getHost().getId())) {
                         throw new CloudRuntimeException("Unable to transition to a new state.");
                     }
                     return vm;
                 }
-                s_logger.info("Unable to start VM on " + dest.getHost() + " due to " + answer.getDetails());
+                s_logger.info("Unable to start VM on " + dest.getHost() + " due to " + answers[0].getDetails());
             } catch (AgentUnavailableException e) {
                 s_logger.debug("Unable to send the start command to host " + dest.getHost());
                 continue;

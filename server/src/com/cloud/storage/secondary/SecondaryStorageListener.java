@@ -46,7 +46,7 @@ public class SecondaryStorageListener implements Listener {
     }
 
     @Override
-    public boolean processAnswer(long agentId, long seq, Answer[] answers) {
+    public boolean processAnswers(long agentId, long seq, Answer[] answers) {
     	boolean processed = false;
     	if(answers != null) {
     		for(int i = 0; i < answers.length; i++) {
@@ -61,7 +61,7 @@ public class SecondaryStorageListener implements Listener {
     }
 
     @Override
-    public boolean processCommand(long agentId, long seq, Command[] commands) {
+    public boolean processCommands(long agentId, long seq, Command[] commands) {
         return false;
     }
     

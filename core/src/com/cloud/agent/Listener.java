@@ -26,7 +26,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 
 /**
- * Listener is a multipurpose interface for hooking into the AgentManager.
+ * Listener is a multi-purpose interface for hooking into the AgentManager.
  * There are several types of events that the AgentManager forwards
  * to the listener.
  * 
@@ -45,7 +45,7 @@ public interface Listener {
 	 * @param answers answers to the commands.
 	 * @return true if processed.  false if not.
 	 */
-    boolean processAnswer(long agentId, long seq, Answer[] answers);
+    boolean processAnswers(long agentId, long seq, Answer[] answers);
 
     /**
      * This method is called by the AgentManager when an agent sent
@@ -57,7 +57,7 @@ public interface Listener {
      * @param commands commands that were sent.
      * @return true if you processed the commands.  false if not.
      */
-    boolean processCommand(long agentId, long seq, Command[] commands);
+    boolean processCommands(long agentId, long seq, Command[] commands);
     
     /**
      * process control command sent from agent under its management
@@ -89,7 +89,7 @@ public interface Listener {
     boolean processDisconnect(long agentId, Status state);
     
     /**
-     * If ths Listener is passed to the send() method, this method
+     * If this Listener is passed to the send() method, this method
      * is called by AgentManager after processing an answer
      * from the agent.  Returning true means you're expecting more
      * answers from the agent using the same sequence number.

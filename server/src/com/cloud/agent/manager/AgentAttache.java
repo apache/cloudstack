@@ -245,7 +245,7 @@ public abstract class AgentAttache {
                 s_logger.debug(log(seq, "Unable to find listener."));
             }
         } else {
-            processed = monitor.processAnswer(_id, seq, answers);
+            processed = monitor.processAnswers(_id, seq, answers);
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace(log(seq, (processed ? "" : " did not ") + " processed "));
             }

@@ -34,6 +34,7 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.AgentManager.OnError;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckVirtualMachineAnswer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
@@ -57,6 +58,7 @@ import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.SetFirewallRuleCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.to.NicTO;
+import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.BaseCmd;
 import com.cloud.async.AsyncJobExecutor;
@@ -216,6 +218,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
     @Inject NetworkConfigurationDao _networkProfileDao = null;
     @Inject NicDao _nicDao;
     @Inject GuestOSDao _guestOSDao = null;
+//    @Inject DomainRouterManager _routerMgr;
     
     @Inject(adapter=NetworkGuru.class)
     Adapters<NetworkGuru> _networkGurus;
@@ -1183,28 +1186,27 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
     
     private boolean resendDhcpEntries(final DomainRouterVO router){
     	final List<UserVmVO> vms = _vmDao.listBy(router.getId(), State.Creating, State.Starting, State.Running, State.Stopping, State.Stopped, State.Migrating);
-    	final List<Command> cmdList = new ArrayList<Command>();
+    	Commands cmds = new Commands(OnError.Continue);
     	for (UserVmVO vm: vms) {
     		if (vm.getGuestIpAddress() == null || vm.getGuestMacAddress() == null || vm.getName() == null)
     			continue;
     		DhcpEntryCommand decmd = new DhcpEntryCommand(vm.getGuestMacAddress(), vm.getGuestIpAddress(), router.getPrivateIpAddress(), vm.getName());
-    		cmdList.add(decmd);
+    		cmds.addCommand(decmd);
     	}
-    	if (cmdList.size() > 0) {
-            final Command [] cmds = new Command[cmdList.size()];
-            Answer [] answers = null;
+    	if (cmds.size() > 0) {
             try {
-                answers = _agentMgr.send(router.getHostId(), cmdList.toArray(cmds), false);
+                _agentMgr.send(router.getHostId(), cmds);
             } catch (final AgentUnavailableException e) {
                 s_logger.warn("agent unavailable", e);
             } catch (final OperationTimedoutException e) {
                 s_logger.warn("Timed Out", e);
             }
+            Answer[] answers = cmds.getAnswers();
             if (answers == null ){
                 return false;
             }
             int i=0;
-            while (i < cmdList.size()) {
+            while (i < cmds.size()) {
                 Answer ans = answers[i];
                 i++;
                 if ((ans != null) && (ans.getResult())) {
@@ -1398,7 +1400,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
 
     @Override
     public boolean associateIP(final DomainRouterVO router, final List<String> ipAddrList, final boolean add, long vmId) {
-        final Command [] cmds = new Command[ipAddrList.size()];
+        Commands cmds = new Commands(OnError.Continue);
         int i=0;
         boolean sourceNat = false;
         for (final String ipAddress: ipAddrList) {
@@ -1423,14 +1425,14 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
 				vmGuestAddress = _vmDao.findById(vmId).getGuestIpAddress();
 			}
 			
-            cmds[i++] = new IPAssocCommand(router.getInstanceName(), router.getPrivateIpAddress(), ipAddress, add, firstIP, sourceNat, vlanId, vlanGateway, vlanNetmask, vifMacAddress, vmGuestAddress);
+            cmds.addCommand(new IPAssocCommand(router.getInstanceName(), router.getPrivateIpAddress(), ipAddress, add, firstIP, sourceNat, vlanId, vlanGateway, vlanNetmask, vifMacAddress, vmGuestAddress));
             
             sourceNat = false;
         }
 
         Answer[] answers = null;
         try {
-            answers = _agentMgr.send(router.getHostId(), cmds, false);
+            answers = _agentMgr.send(router.getHostId(), cmds);
         } catch (final AgentUnavailableException e) {
             s_logger.warn("Agent unavailable", e);
             return false;
@@ -1500,7 +1502,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
             return result;
         }
 
-        final List<Command> cmdList = new ArrayList<Command>();
+        Commands cmds = new Commands(OnError.Continue);
         final List<FirewallRuleVO> lbRules = new ArrayList<FirewallRuleVO>();
         final List<FirewallRuleVO> fwdRules = new ArrayList<FirewallRuleVO>();
         
@@ -1515,7 +1517,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
             if (rule.isForwarding()) {
                 fwdRules.add(rule);
                 final SetFirewallRuleCommand cmd = new SetFirewallRuleCommand(routerName, routerIp, rule);
-                cmdList.add(cmd);
+                cmds.addCommand(cmd);
             } else {
                 lbRules.add(rule);
             }
@@ -1526,12 +1528,11 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
             final String [] cfg = cfgrtr.generateConfiguration(fwRules);
             final String [][] addRemoveRules = cfgrtr.generateFwRules(fwRules);
             final LoadBalancerCfgCommand cmd = new LoadBalancerCfgCommand(cfg, addRemoveRules, routerName, routerIp);
-            cmdList.add(cmd);
+            cmds.addCommand(cmd);
         }
-        final Command [] cmds = new Command[cmdList.size()];
         Answer [] answers = null;
         try {
-            answers = _agentMgr.send(host.getId(), cmdList.toArray(cmds), false);
+            answers = _agentMgr.send(host.getId(), cmds);
         } catch (final AgentUnavailableException e) {
             s_logger.warn("agent unavailable", e);
         } catch (final OperationTimedoutException e) {
@@ -1585,7 +1586,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
             return result;
         }
 
-        final Command [] cmds = new Command[fwRules.size()];
+        Commands cmds = new Commands(OnError.Continue);
         int i=0;
         for (final FirewallRuleVO rule: fwRules) {
         	IPAddressVO ip = _ipAddressDao.findById(rule.getPublicIpAddress());
@@ -1595,17 +1596,17 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
             if (rule.isForwarding()) {
                 fwdRules.add(rule);
                 final SetFirewallRuleCommand cmd = new SetFirewallRuleCommand(router.getInstanceName(), router.getPrivateIpAddress(), rule);
-                cmds[i++] = cmd;
+                cmds.addCommand(cmd);
             }
         }
-        final Answer [] answers = null;
         try {
-            _agentMgr.send(hostId, cmds, false);
+            _agentMgr.send(hostId, cmds);
         } catch (final AgentUnavailableException e) {
             s_logger.warn("agent unavailable", e);
         } catch (final OperationTimedoutException e) {
             s_logger.warn("Timed Out", e);
         }
+        Answer[] answers = cmds.getAnswers();
         if (answers == null ){
             return result;
         }
@@ -1890,7 +1891,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         _agentMgr.registerForHostEvents(new SshKeysDistriMonitor(this, _hostDao, _configDao), true, false, false);
         _haMgr.registerHandler(VirtualMachine.Type.DomainRouter, this);
 
-        boolean useLocalStorage = Boolean.parseBoolean((String)params.get(Config.SystemVMUseLocalStorage.key()));
+        boolean useLocalStorage = Boolean.parseBoolean(configs.get(Config.SystemVMUseLocalStorage.key()));
         String networkRateStr = _configDao.getValue("network.throttling.rate");
         String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
         _networkRate = ((networkRateStr == null) ? 200 : Integer.parseInt(networkRateStr));
@@ -2297,14 +2298,14 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
 	        }
 	        String userData = vm.getUserData();
 	        int cmdsLength = (password == null ? 0:1) + 1;
-	        Command[] cmds = new Command[++cmdsLength];
+	        Commands cmds = new Commands(OnError.Stop);
 	        int cmdIndex = 0;
 	        int passwordIndex = -1;
 	        int vmDataIndex = -1;
-	        cmds[cmdIndex] = new DhcpEntryCommand(vm.getGuestMacAddress(), vm.getGuestIpAddress(), router.getPrivateIpAddress(), vm.getName());
+	        cmds.addCommand(new DhcpEntryCommand(vm.getGuestMacAddress(), vm.getGuestIpAddress(), router.getPrivateIpAddress(), vm.getName()));
 	        if (password != null) {
 	            final String encodedPassword = rot13(password);
-	        	cmds[++cmdIndex] = new SavePasswordCommand(encodedPassword, vm.getPrivateIpAddress(), router.getPrivateIpAddress(), vm.getName());
+	            cmds.addCommand(new SavePasswordCommand(encodedPassword, vm.getPrivateIpAddress(), router.getPrivateIpAddress(), vm.getName()));
 	        	passwordIndex = cmdIndex;
 	        }
 	        	        
@@ -2313,10 +2314,10 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
 	        String zoneName = _dcDao.findById(vm.getDataCenterId()).getName();
 	        String routerPublicIpAddress = (router.getPublicIpAddress() != null) ? router.getPublicIpAddress() : vm.getGuestIpAddress();
 	        
-	        cmds[++cmdIndex] = generateVmDataCommand(router.getPrivateIpAddress(), routerPublicIpAddress, vm.getPrivateIpAddress(), userData, serviceOffering, zoneName, vm.getGuestIpAddress(), vm.getName(), vm.getInstanceName(), vm.getId());
+	        cmds.addCommand(generateVmDataCommand(router.getPrivateIpAddress(), routerPublicIpAddress, vm.getPrivateIpAddress(), userData, serviceOffering, zoneName, vm.getGuestIpAddress(), vm.getName(), vm.getInstanceName(), vm.getId()));
 	        vmDataIndex = cmdIndex;
 	        
-	        Answer[] answers = _agentMgr.send(router.getHostId(), cmds, true);
+	        Answer[] answers = _agentMgr.send(router.getHostId(), cmds);
 	        if (!answers[0].getResult()) {
 	        	s_logger.error("Unable to set dhcp entry for " + vm.getId() + " - " + vm.getName() +" on domR: " + router.getName() + " due to " + answers[0].getDetails());
 	        	return null;

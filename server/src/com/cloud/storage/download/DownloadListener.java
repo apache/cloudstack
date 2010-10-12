@@ -208,7 +208,7 @@ public class DownloadListener implements Listener {
 
 	
 	@Override
-	public boolean processAnswer(long agentId, long seq, Answer[] answers) {
+	public boolean processAnswers(long agentId, long seq, Answer[] answers) {
 		boolean processed = false;
     	if(answers != null & answers.length > 0) {
     		if(answers[0] instanceof DownloadAnswer) {
@@ -258,7 +258,7 @@ public class DownloadListener implements Listener {
  	}
 
 	@Override
-	public boolean processCommand(long agentId, long seq, Command[] req) {
+	public boolean processCommands(long agentId, long seq, Command[] req) {
 		return false;
 	}
 

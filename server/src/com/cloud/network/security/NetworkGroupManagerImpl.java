@@ -38,9 +38,9 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.agent.api.Command;
 import com.cloud.agent.api.NetworkIngressRulesCmd;
 import com.cloud.agent.api.NetworkIngressRulesCmd.IpPortAndProto;
+import com.cloud.agent.manager.Commands;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -662,9 +662,9 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
 				if (agentId != null ) {
 					_rulesetLogDao.findByVmId(work.getInstanceId());
 					NetworkIngressRulesCmd cmd = generateRulesetCmd(vm.getInstanceName(), vm.getGuestIpAddress(), vm.getGuestMacAddress(), vm.getId(), generateRulesetSignature(rules), seqnum, rules);
-					Command[] cmds = new Command[]{cmd};
+					Commands cmds = new Commands(cmd);
 					try {
-						_agentMgr.send(agentId, cmds, false, _answerListener);
+						_agentMgr.send(agentId, cmds, _answerListener);
 					} catch (AgentUnavailableException e) {
 						s_logger.debug("Unable to send updates for vm: " + userVmId + "(agentid=" + agentId + ")");
 						_workDao.updateStep(work.getInstanceId(), seqnum, Step.Done);

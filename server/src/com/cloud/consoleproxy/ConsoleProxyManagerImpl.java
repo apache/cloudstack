@@ -52,6 +52,7 @@ import com.cloud.agent.api.ConsoleProxyLoadReportCommand;
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.RebootCommand;
+import com.cloud.agent.api.Start2Command;
 import com.cloud.agent.api.StartConsoleProxyAnswer;
 import com.cloud.agent.api.StartConsoleProxyCommand;
 import com.cloud.agent.api.StartupCommand;
@@ -61,6 +62,7 @@ import com.cloud.agent.api.proxy.ConsoleProxyLoadAnswer;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VirtualMachineTO.SshMonitor;
+import com.cloud.agent.manager.Commands;
 import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
@@ -149,7 +151,7 @@ import com.cloud.vm.State;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Event;
-import com.cloud.vm.VirtualMachineChecker;
+import com.cloud.vm.VirtualMachineGuru;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VirtualMachineProfile;
@@ -178,7 +180,7 @@ import com.google.gson.GsonBuilder;
 // because sooner or later, it will be driven into Running state
 //
 @Local(value = { ConsoleProxyManager.class })
-public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMachineManager<ConsoleProxyVO>, AgentHook, VirtualMachineChecker {
+public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMachineManager<ConsoleProxyVO>, AgentHook, VirtualMachineGuru {
     private static final Logger s_logger = Logger.getLogger(ConsoleProxyManagerImpl.class);
 
     private static final int DEFAULT_FIND_HOST_RETRY_COUNT = 2;
@@ -2322,7 +2324,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
             haMgr.registerHandler(VirtualMachine.Type.ConsoleProxy, this);
         }
 
-        boolean useLocalStorage = Boolean.parseBoolean((String) params.get(Config.SystemVMUseLocalStorage.key()));
+        boolean useLocalStorage = Boolean.parseBoolean(configs.get(Config.SystemVMUseLocalStorage.key()));
         String networkRateStr = _configDao.getValue("network.throttling.rate");
         String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
         _networkRate = ((networkRateStr == null) ? 200 : Integer.parseInt(networkRateStr));
@@ -2347,7 +2349,10 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
     }
 
     @Override
-    public boolean finalizeDeployment(VirtualMachineTO vm, VirtualMachineProfile profile, DeployDestination dest) {
+    public boolean finalizeDeployment(Commands cmds, VirtualMachineProfile profile, DeployDestination dest) {
+        Start2Command cmd = cmds.getCommand(Start2Command.class);
+        VirtualMachineTO vm = cmd.getVirtualMachine();
+        
         StringBuilder buf = new StringBuilder();
         buf.append(" template=domP type=consoleproxy");
         buf.append(" host=").append(_mgmt_host);
@@ -2372,7 +2377,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
                     buf.append(" dns2=").append(nic.getDns2());
                 }
             }
-//            buf.append(" bootproto=dhcp");  //FIXME: Not sure what the private ip address is suppose to be.
             if (nic.getType() == TrafficType.Management) {
                 buf.append(" localgw=").append(dest.getPod().getGateway());
             } else if (nic.getType() == TrafficType.Control) {
@@ -2398,7 +2402,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
     }
 
     @Override
-    public boolean finalizeDeployments(List<Pair<VirtualMachineProfile, DeployDestination>> deployments) {
-        return false;
+    public boolean checkDeploymentResult(Commands cmds, VirtualMachineProfile profile, DeployDestination dest) {
+        return true;
     }
 }

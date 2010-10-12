@@ -35,10 +35,10 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.DomainRouter.Role;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.State;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.DomainRouter.Role;
 
 @Local(value = { DomainRouterDao.class })
 public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> implements DomainRouterDao {
@@ -287,13 +287,13 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     public List<DomainRouterVO> listByDomain(Long domainId) {
         SearchCriteria<DomainRouterVO> sc = DomainIdSearch.create();
         sc.setParameters("domainId", domainId);
-        return listIncludingRemovedBy(sc);
+        return listBy(sc);
     }
 
     @Override
     public List<DomainRouterVO> listByVlanDbId(Long vlanDbId) {
         SearchCriteria<DomainRouterVO> sc = VlanDbIdSearch.create();
         sc.setParameters("vlanDbId", vlanDbId);
-        return listIncludingRemovedBy(sc);
+        return listBy(sc);
     }
 }

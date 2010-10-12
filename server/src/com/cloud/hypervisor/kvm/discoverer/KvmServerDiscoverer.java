@@ -52,13 +52,13 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 	 @Inject ClusterDao _clusterDao;
 	 
 	@Override
-	public boolean processAnswer(long agentId, long seq, Answer[] answers) {
+	public boolean processAnswers(long agentId, long seq, Answer[] answers) {
 		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
-	public boolean processCommand(long agentId, long seq, Command[] commands) {
+	public boolean processCommands(long agentId, long seq, Command[] commands) {
 		// TODO Auto-generated method stub
 		return false;
 	}

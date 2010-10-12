@@ -76,6 +76,9 @@ public interface StoragePool  {
      * @return available storage in bytes
      */
     long getAvailableBytes();
+    
+    
+    Long getClusterId();
 
     /**
      * @return the fqdn or ip address of the storage host

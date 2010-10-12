@@ -18,7 +18,6 @@
 package com.cloud.deploy;
 
 import java.util.List;
-import java.util.Set;
 
 import javax.ejb.Local;
 
@@ -43,7 +42,7 @@ public class SimplePlanner extends PlannerBase implements DeploymentPlanner {
     @Inject ClusterDao _clusterDao;
     
     @Override
-    public DeployDestination plan(VirtualMachineProfile vm, DeploymentPlan plan, Set<DeployDestination> avoid) {
+    public DeployDestination plan(VirtualMachineProfile vm, DeploymentPlan plan, ExcludeList avoid) {
         DataCenterVO dc = _dcDao.findById(plan.getDataCenterId());
         List<HostVO> hosts = _hostDao.listBy(Type.Routing, plan.getDataCenterId());
         
@@ -61,7 +60,10 @@ public class SimplePlanner extends PlannerBase implements DeploymentPlanner {
         
         return new DeployDestination(dc, pod, cluster, host);
     }
-
+    
+    public boolean check(VirtualMachineProfile vm, DeploymentPlan plan, DeployDestination dest, ExcludeList avoid) {
+        return true;
+    }
     
     protected SimplePlanner() {
         super();

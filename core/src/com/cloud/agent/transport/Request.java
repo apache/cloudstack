@@ -49,7 +49,6 @@ import com.google.gson.reflect.TypeToken;
  *   6. AgentId - 8 bytes;
  *   7. Data Package.
  *
- *   Currently flags has only if it is a request or response.
  */
 public class Request {
     private static final Logger s_logger = Logger.getLogger(Request.class);
@@ -72,8 +71,7 @@ public class Request {
     protected static final short FLAG_REQUEST = 0x1;
     protected static final short FLAG_STOP_ON_ERROR = 0x2;
     protected static final short FLAG_IN_SEQUENCE = 0x4;
-    protected static final short FLAG_WATCH = 0x8;
-    protected static final short FLAG_UPDATE = 0x10;
+    protected static final short FLAG_REVERT_ON_ERROR = 0x8;
     protected static final short FLAG_FROM_SERVER = 0x20;
     protected static final short FLAG_CONTROL = 0x40;
 
@@ -93,86 +91,88 @@ public class Request {
 
     protected Version                 _ver;
     protected long                    _seq;
-    protected Command[]               _cmds;
-    protected boolean                 _inSequence;
-    protected boolean                 _stopOnError;
-    protected boolean                 _fromServer;
-    protected boolean                 _control;
+    protected short                   _flags;
     protected long                    _mgmtId;
     protected long                    _agentId;
+    protected Command[]               _cmds;
     protected String                  _content;
 
-    public Request(long seq, long agentId, long mgmtId, final Command command, boolean fromServer) {
-        this(seq, agentId, mgmtId, new Command[] {command}, true, fromServer);
-    }
-    
-    public Request(long seq, long agentId, long mgmtId, final Command[] commands, boolean fromServer) {
-        this(seq, agentId, mgmtId, commands, true, fromServer);
+    protected Request() {
     }
 
-    protected Request(Version ver, long seq, long agentId, long mgmtId, final Command[] cmds, final Boolean inSequence, final boolean stopOnError, boolean fromServer) {
+    protected Request(Version ver, long seq, long agentId, long mgmtId, short flags, final Command[] cmds) {
         _ver = ver;
         _cmds = cmds;
-        _stopOnError = stopOnError;
-        if (inSequence != null) {
-            _inSequence = inSequence;
-        } else {
-	        for (final Command cmd : cmds) {
-	            if (cmd.executeInSequence()) {
-	                _inSequence = true;
-	                break;
-	            }
-	        }
-        }
+        _flags = flags;
         _seq = seq;
         _agentId = agentId;
         _mgmtId = mgmtId;
-        _fromServer = fromServer;
     }
     
-    protected Request(Version ver, long seq, long agentId, long mgmtId, final String content, final boolean inSequence, final boolean stopOnError, final boolean fromServer, final boolean control) {
-        _ver = ver;
-        _cmds = null;
+    protected Request(Version ver, long seq, long agentId, long mgmtId, short flags, final String content) {
+        this(ver, seq, agentId, mgmtId, flags, (Command[])null);
         _content = content;
-        _stopOnError = stopOnError;
-        _inSequence = inSequence;
-        _seq = seq;
-        _agentId = agentId;
-        _mgmtId = mgmtId;
-        _fromServer = fromServer;
-        _control = control;
     }
     
-    public Request(long seq, long agentId, long mgmtId, final Command[] cmds, final boolean stopOnError, boolean fromServer) {
-    	this(Version.v3, seq, agentId, mgmtId, cmds, null, stopOnError, fromServer);
+    public Request(long seq, long agentId, long mgmtId, final Command command, boolean fromServer) {
+        this(seq, agentId, mgmtId, new Command[] {command}, true, fromServer, true);
     }
+    
+    public Request(long seq, long agentId, long mgmtId, Command[] cmds, boolean stopOnError, boolean fromServer, boolean revert) {
+        this(Version.v3, seq, agentId, mgmtId, (short)0, cmds);
+        setStopOnError(stopOnError);
+        setFromServer(fromServer);
+        setRevertOnError(revert);
+    }
+    
+    protected Request(final Request that, final Command[] cmds) {
+        this._ver = that._ver;
+        this._seq = that._seq;
+        setInSequence(that.executeInSequence());
+        setStopOnError(that.stopOnError());
+        this._cmds = cmds;
+        this._mgmtId = that._mgmtId;
+        this._agentId = that._agentId;
+        setFromServer(!that.isFromServer());
+    }
+    
+    private final void setStopOnError(boolean stopOnError) {
+        _flags |= (stopOnError ? 1 : 0) << FLAG_STOP_ON_ERROR;
+    }
+    
+    private final void setInSequence(boolean inSequence) {
+        _flags |= (inSequence ? 1 : 0) << FLAG_IN_SEQUENCE;
+    }
+    
     
     public boolean isControl() {
-        return _control;
+        return (_flags & FLAG_CONTROL) > 0; 
     }
     
-    public void setControl() {
-        _control = true;
+    public void setControl(boolean control) {
+        _flags |= (control ? 1 : 0) << FLAG_CONTROL;
+    }
+    
+    public boolean revertOnError() {
+        return (_flags & FLAG_CONTROL) > 0;
+    }
+    
+    private final void setRevertOnError(boolean revertOnError) {
+        _flags |= (revertOnError ? 1 : 0) << FLAG_REVERT_ON_ERROR;
+    }
+    
+    private final void setFromServer(boolean fromServer) {
+        _flags |= (fromServer ? 1 : 0) << FLAG_FROM_SERVER;
     }
     
     public long getManagementServerId() {
         return _mgmtId;
     }
 
-    protected Request(final Request that, final Command[] cmds) {
-        this._ver = that._ver;
-        this._seq = that._seq;
-        this._inSequence = that._inSequence;
-        this._stopOnError = that._stopOnError;
-        this._cmds = cmds;
-        this._mgmtId = that._mgmtId;
-        this._agentId = that._agentId;
-        this._fromServer = !that._fromServer;
+    public boolean isFromServer() {
+        return (_flags & FLAG_FROM_SERVER) > 0;
     }
     
-    protected Request() {
-    }
-
     public Version getVersion() {
         return _ver;
     }
@@ -182,7 +182,7 @@ public class Request {
     }
 
     public boolean executeInSequence() {
-        return _inSequence;
+        return (_flags & FLAG_IN_SEQUENCE) > 0;
     }
 
     public long getSequence() {
@@ -190,7 +190,7 @@ public class Request {
     }
 
     public boolean stopOnError() {
-        return _stopOnError;
+        return (_flags & FLAG_STOP_ON_ERROR) > 0;
     }
 
     public Command getCommand() {
@@ -269,25 +269,7 @@ public class Request {
     }
 
     protected short getFlags() {
-        short flags = 0;
-        if (!(this instanceof Response)) {
-            flags = FLAG_REQUEST;
-        } else {
-            flags = FLAG_RESPONSE;
-        }
-        if (_inSequence) {
-            flags = (short)(flags | FLAG_IN_SEQUENCE);
-        }
-        if (_stopOnError) {
-            flags = (short)(flags | FLAG_STOP_ON_ERROR);
-        }
-        if (_fromServer) {
-        	flags = (short)(flags | FLAG_FROM_SERVER);
-        }
-        if (_control) {
-            flags = (short)(flags | FLAG_CONTROL);
-        }
-        return flags;
+        return (short)(((this instanceof Response) ? FLAG_RESPONSE : FLAG_REQUEST) | _flags);
     }
 
     /**
@@ -311,12 +293,6 @@ public class Request {
         final byte reserved = buff.get(); // tossed away for now.
         final Short flags = buff.getShort();
         final boolean isRequest = (flags & FLAG_REQUEST) > 0;
-        final boolean isControl = (flags & FLAG_IN_SEQUENCE) > 0;
-        final boolean isStopOnError = (flags & FLAG_STOP_ON_ERROR) > 0;
-        final boolean isWatch = (flags & FLAG_WATCH) > 0;
-        final boolean fromServer = (flags & FLAG_FROM_SERVER) > 0;
-        final boolean needsUpdate = (flags & FLAG_UPDATE) > 0;
-        final boolean control = (flags & FLAG_CONTROL) > 0;
 
         final long seq = buff.getLong();
         final int size = buff.getInt();
@@ -335,14 +311,11 @@ public class Request {
         }
 
         final String content = new String(command, offset, command.length - offset);
-        if (needsUpdate && !isRequest) {
-            return new UpgradeResponse(Version.get(ver), seq, content);
-        }
 
         if (isRequest) {
-            return new Request(version, seq, agentId, mgmtId, content, isControl, isStopOnError, fromServer, control);
+            return new Request(version, seq, agentId, mgmtId, flags, content);
         } else {
-            return new Response(Version.get(ver), seq, agentId, mgmtId, content, isControl, isStopOnError, fromServer, control);
+            return new Response(Version.get(ver), seq, agentId, mgmtId, flags, content);
         }
     }
 
@@ -371,8 +344,6 @@ public class Request {
     }
     
     public static boolean fromServer(final byte[] bytes) {
-  //  	int flags = NumbersUtil.bytesToShort(bytes, 2);
-    	
     	return (bytes[3] & FLAG_FROM_SERVER)  > 0;
     }
     
@@ -385,7 +356,6 @@ public class Request {
     }
     
     public static boolean isControl(final byte[] bytes) {
-//        int flags = NumbersUtil.bytesToShort(bytes, 2);
         return (bytes[3] & FLAG_CONTROL) > 0;
     }
 }

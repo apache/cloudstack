@@ -52,7 +52,7 @@ public class VolumeOperationListener implements Listener {
 		_cookie = cookie;
 	}
 	
-    public boolean processAnswer(long agentId, long seq, Answer[] answers) {
+    public boolean processAnswers(long agentId, long seq, Answer[] answers) {
     	Answer answer = null;
     	if(answers != null)
     		answer = answers[0];
@@ -64,7 +64,7 @@ public class VolumeOperationListener implements Listener {
     	return true;
     }
     
-    public boolean processCommand(long agentId, long seq, Command[] commands) {
+    public boolean processCommands(long agentId, long seq, Command[] commands) {
     	return true;
     }
     

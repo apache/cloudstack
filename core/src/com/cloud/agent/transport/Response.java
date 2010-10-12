@@ -46,8 +46,8 @@ public class Response extends Request {
         _agentId = agentId;
     }
     
-    protected Response(Version ver, long seq, long agentId, long mgmtId, String ans, boolean inSequence, boolean stopOnError, boolean fromServer, boolean control) {
-        super(ver, seq, agentId, mgmtId, ans, inSequence, stopOnError, fromServer, control);
+    protected Response(Version ver, long seq, long agentId, long mgmtId, short flags, String ans) {
+        super(ver, seq, agentId, mgmtId, flags, ans);
     }
     
     public Answer getAnswer() {

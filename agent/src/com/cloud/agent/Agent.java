@@ -49,7 +49,6 @@ import com.cloud.agent.api.UpgradeAnswer;
 import com.cloud.agent.api.UpgradeCommand;
 import com.cloud.agent.transport.Request;
 import com.cloud.agent.transport.Response;
-import com.cloud.agent.transport.UpgradeResponse;
 import com.cloud.exception.AgentControlChannelException;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.PropertiesUtil;
@@ -302,7 +301,7 @@ public class Agent implements HandlerFactory, IAgentControl {
           commands[i] = startup[i];
         }
         
-        final Request request = new Request(getNextSequence(), _id != null ? _id : -1, -1, commands, false);
+        final Request request = new Request(getNextSequence(), _id != null ? _id : -1, -1, commands, false, false, false);
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Sending Startup: " + request.toString());
@@ -624,7 +623,7 @@ public class Agent implements HandlerFactory, IAgentControl {
     @Override
 	public AgentControlAnswer sendRequest(AgentControlCommand cmd, int timeoutInMilliseconds) throws AgentControlChannelException {
         Request request = new Request(this.getNextSequence(), this.getId(),
-            -1, new Command[] {cmd}, true, false);
+            -1, new Command[] {cmd}, true, false, false);
         AgentControlListener listener = new AgentControlListener(request);
         
         registerControlListener(listener);
@@ -647,7 +646,7 @@ public class Agent implements HandlerFactory, IAgentControl {
     @Override
 	public void postRequest(AgentControlCommand cmd) throws AgentControlChannelException {
         Request request = new Request(this.getNextSequence(), this.getId(),
-        	-1, new Command[] {cmd}, true, false);
+        	-1, new Command[] {cmd}, true, false, false);
         postRequest(request);
     }
     
@@ -676,11 +675,13 @@ public class Agent implements HandlerFactory, IAgentControl {
     		return _answer;
     	}
     	
-    	public Answer processControlRequest(Request request, AgentControlCommand cmd) {
+    	@Override
+        public Answer processControlRequest(Request request, AgentControlCommand cmd) {
     		return null;
     	}
     	
-    	public void processControlResponse(Response response, AgentControlAnswer answer) {
+    	@Override
+        public void processControlResponse(Response response, AgentControlAnswer answer) {
     		if(_request.getSequence() == response.getSequence()) {
     			_answer = answer;
     			synchronized(this) {
@@ -778,9 +779,7 @@ public class Agent implements HandlerFactory, IAgentControl {
                 Request request;
                 try {
                     request = Request.parse(task.getData());
-                    if (request instanceof UpgradeResponse) {
-                        upgradeAgent(((UpgradeResponse)request).getUpgradeUrl(), null);
-                    } else if (request instanceof Response) {
+                    if (request instanceof Response) {
                         processResponse((Response)request, task.getLink());
                     } else {
                         processRequest(request, task.getLink());

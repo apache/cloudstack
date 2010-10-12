@@ -23,6 +23,7 @@ import java.util.Set;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.manager.Commands;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.PodCluster;
@@ -51,6 +52,11 @@ import com.cloud.vm.VirtualMachineProfile;
  * DAOs and the connections it manages.
  */
 public interface AgentManager extends Manager {
+    public enum OnError {
+        Revert,
+        Continue,
+        Stop
+    }
     
 	/**
 	 * easy send method that returns null if there's any errors.  It handles all exceptions.
@@ -81,9 +87,9 @@ public interface AgentManager extends Manager {
      * @param stopOnError should the agent stop execution on the first error.
      * @return an array of Answer
      */
-    Answer[] send(Long hostId, Command []  cmds, boolean stopOnError) throws AgentUnavailableException, OperationTimedoutException;
+    Answer[] send(Long hostId, Commands cmds) throws AgentUnavailableException, OperationTimedoutException;
     
-    Answer[] send(Long hostId, Command []  cmds, boolean stopOnError, int timeout) throws AgentUnavailableException, OperationTimedoutException;
+    Answer[] send(Long hostId, Commands cmds, int timeout) throws AgentUnavailableException, OperationTimedoutException;
     
     /**
      * Asynchronous sending of a command to the agent.
@@ -102,7 +108,7 @@ public interface AgentManager extends Manager {
      * @param listener the listener to process the answer.
      * @return sequence number.
      */
-    long send(Long hostId, Command[] cmds, boolean stopOnError, Listener listener) throws AgentUnavailableException;
+    long send(Long hostId, Commands cmds, Listener listener) throws AgentUnavailableException;
     
     /**
      * Register to listen for host events.  These are mostly connection and

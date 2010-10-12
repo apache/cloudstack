@@ -15,28 +15,37 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-package com.cloud.host;
+package com.cloud.capacity;
 
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.utils.SerialVersionUID;
-import com.cloud.vm.VirtualMachine;
+import java.util.Map;
 
-/**
- * This exception is thrown when a server cannot be found to host the 
- * virtual machine.  The type gives the type of virtual machine we are
- * trying to start.
- */
-public class InsufficientServerCapacityException extends InsufficientCapacityException {
-    
-    private static final long serialVersionUID = SerialVersionUID.InsufficientServerCapacityException;
-    
-    VirtualMachine.Type type;
-    public InsufficientServerCapacityException(VirtualMachine.Type type, String msg) {
-        super(msg);
-        this.type = type;
+import javax.naming.ConfigurationException;
+
+import com.cloud.capacity.dao.CapacityDao;
+import com.cloud.utils.component.Inject;
+
+public class CapacityManagerImpl implements CapacityManager {
+    String _name;
+    @Inject CapacityDao _capacityDao;
+
+    @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        _name = name;
+        return true;
     }
-    
-    VirtualMachine.Type getType() {
-        return type;
+
+    @Override
+    public boolean start() {
+        return true;
+    }
+
+    @Override
+    public boolean stop() {
+        return true;
+    }
+
+    @Override
+    public String getName() {
+        return _name;
     }
 }

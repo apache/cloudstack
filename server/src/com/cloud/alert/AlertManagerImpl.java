@@ -58,7 +58,6 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.dao.StoragePoolDao;
@@ -78,7 +77,6 @@ import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.VMInstanceDao;
 import com.sun.mail.smtp.SMTPMessage;
 import com.sun.mail.smtp.SMTPSSLTransport;
 import com.sun.mail.smtp.SMTPTransport;
@@ -94,22 +92,21 @@ public class AlertManagerImpl implements AlertManager {
 
     private String _name = null;
     private EmailAlert _emailAlert;
-    private AlertDao _alertDao;
-    private HostDao _hostDao;
+    @Inject private AlertDao _alertDao;
+    @Inject private HostDao _hostDao;
     @Inject protected StorageManager _storageMgr;
-    private ServiceOfferingDao _offeringsDao;
-    private CapacityDao _capacityDao;
-    private VMInstanceDao _vmDao;
-    private DomainRouterDao _routerDao;
-    private ConsoleProxyDao _consoleProxyDao;
-    private SecondaryStorageVmDao _secStorgaeVmDao;
-    private UserVmDao _userVmDao;
-    private DataCenterDao _dcDao;
-    private HostPodDao _podDao;
-    private VolumeDao _volumeDao;
-    private IPAddressDao _publicIPAddressDao;
-    private DataCenterIpAddressDaoImpl _privateIPAddressDao;
-    private StoragePoolDao _storagePoolDao;
+    @Inject private ServiceOfferingDao _offeringsDao;
+    @Inject private CapacityDao _capacityDao;
+    @Inject private DomainRouterDao _routerDao;
+    @Inject private ConsoleProxyDao _consoleProxyDao;
+    @Inject private SecondaryStorageVmDao _secStorgaeVmDao;
+    @Inject private UserVmDao _userVmDao;
+    @Inject private DataCenterDao _dcDao;
+    @Inject private HostPodDao _podDao;
+    @Inject private VolumeDao _volumeDao;
+    @Inject private IPAddressDao _publicIPAddressDao;
+    @Inject private DataCenterIpAddressDaoImpl _privateIPAddressDao;
+    @Inject private StoragePoolDao _storagePoolDao;
     
     private Timer _timer = null;
     private float _cpuOverProvisioningFactor = 1;
@@ -181,79 +178,6 @@ public class AlertManagerImpl implements AlertManager {
         }
         if (privateIPCapacityThreshold != null) {
         	_privateIPCapacityThreshold = Double.parseDouble(privateIPCapacityThreshold);
-        }
-
-        _hostDao = locator.getDao(HostDao.class);
-        if (_hostDao == null) {
-            s_logger.error("Unable to get the host dao.");
-            return false;
-        }
-
-        _vmDao = locator.getDao(VMInstanceDao.class);
-        if (_vmDao == null) {
-            s_logger.error("Unable to get the VM Instance dao.");
-            return false;
-        }
-        _routerDao = locator.getDao(DomainRouterDao.class);
-        _consoleProxyDao = locator.getDao(ConsoleProxyDao.class);
-        _secStorgaeVmDao = locator.getDao(SecondaryStorageVmDao.class);
-        
-        _userVmDao = locator.getDao(UserVmDao.class);
-        if (_userVmDao == null) {
-            s_logger.error("Unable to get the UserVm dao.");
-            return false;
-        }
-
-        _offeringsDao = locator.getDao(ServiceOfferingDao.class);
-        if (_offeringsDao == null) {
-            s_logger.error("Unable to get the ServiceOffering dao.");
-            return false;
-        }
-
-        _capacityDao = locator.getDao(CapacityDao.class);
-        if (_capacityDao == null) {
-            s_logger.error("Unable to get the capacity dao.");
-            return false;
-        }
-
-        _alertDao = locator.getDao(AlertDao.class);
-        if (_alertDao == null) {
-            s_logger.error("Unable to get the alert dao.");
-            return false;
-        }
-
-
-        _dcDao = locator.getDao(DataCenterDao.class);
-        if (_dcDao == null) {
-            s_logger.error("Unable to get the DataCenter dao.");
-            return false;
-        }
-
-        _podDao = locator.getDao(HostPodDao.class);
-        if (_podDao == null) {
-            s_logger.error("Unable to get the Pod dao.");
-            return false;
-        }
-
-        _volumeDao = locator.getDao(VolumeDao.class);
-        if (_volumeDao == null) {
-            s_logger.error("Unable to get the Volume dao.");
-            return false;
-        }
-        
-        _publicIPAddressDao = locator.getDao(IPAddressDao.class);
-        if (_publicIPAddressDao == null) {
-            throw new ConfigurationException("Unable to get " + IPAddressDao.class.getName());
-        }
-        
-        _privateIPAddressDao = locator.getDao(DataCenterIpAddressDaoImpl.class);
-        if (_privateIPAddressDao == null) {
-            throw new ConfigurationException("Unable to get " + DataCenterIpAddressDaoImpl.class.getName());
-        }
-        
-        _storagePoolDao = locator.getDao(StoragePoolDao.class);
-        if (_storagePoolDao == null) {
-            throw new ConfigurationException("Unable to get " + StoragePoolDao.class.getName());
         }
 
         String capacityCheckPeriodStr = configs.get("capacity.check.period");

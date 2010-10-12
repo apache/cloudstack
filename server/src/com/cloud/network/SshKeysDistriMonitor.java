@@ -56,7 +56,7 @@ public class SshKeysDistriMonitor implements Listener {
 	    }
 	    
 	    @Override
-	    public synchronized boolean processAnswer(long agentId, long seq, Answer[] resp) {
+	    public synchronized boolean processAnswers(long agentId, long seq, Answer[] resp) {
 	        return true;
 	    }
 	    
@@ -96,7 +96,7 @@ public class SshKeysDistriMonitor implements Listener {
 
 
 		@Override
-		public boolean processCommand(long agentId, long seq, Command[] commands) {
+		public boolean processCommands(long agentId, long seq, Command[] commands) {
 			// TODO Auto-generated method stub
 			return false;
 		}

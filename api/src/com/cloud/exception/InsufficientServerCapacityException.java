@@ -15,15 +15,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-package com.cloud.vm;
+package com.cloud.exception;
 
-import java.util.List;
+import com.cloud.utils.SerialVersionUID;
 
-import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.deploy.DeployDestination;
-import com.cloud.utils.Pair;
-
-public interface VirtualMachineChecker {
-    boolean finalizeDeployment(VirtualMachineTO vm, VirtualMachineProfile profile, DeployDestination dest);
-    boolean finalizeDeployments(List<Pair<VirtualMachineProfile, DeployDestination>> deployments);
+/**
+ * This exception is thrown when a server cannot be found to host the 
+ * virtual machine.  The type gives the type of virtual machine we are
+ * trying to start.
+ */
+public class InsufficientServerCapacityException extends InsufficientCapacityException {
+    
+    private static final long serialVersionUID = SerialVersionUID.InsufficientServerCapacityException;
+    
+    public InsufficientServerCapacityException(String msg) {
+        super(msg);
+    }
 }

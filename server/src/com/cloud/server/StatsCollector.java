@@ -32,12 +32,13 @@ import java.util.concurrent.TimeUnit;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.AgentManager.OnError;
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.Command;
 import com.cloud.agent.api.GetFileStatsCommand;
 import com.cloud.agent.api.GetStorageStatsCommand;
 import com.cloud.agent.api.HostStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
+import com.cloud.agent.manager.Commands;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.exception.AgentUnavailableException;
@@ -59,7 +60,6 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.concurrency.NamedThreadFactory;
-import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.vm.UserVmManager;
@@ -144,7 +144,8 @@ public class StatsCollector {
 	}
 
 	class HostCollector implements Runnable {
-		public void run() {
+		@Override
+        public void run() {
 			try {
 				s_logger.debug("HostStatsCollector is running...");
 				
@@ -184,7 +185,8 @@ public class StatsCollector {
 	}
 	
 	class VmStatsCollector implements Runnable {
-		public void run() {
+		@Override
+        public void run() {
 			try {
 				s_logger.debug("VmStatsCollector is running...");
 				
@@ -252,7 +254,8 @@ public class StatsCollector {
 	}
 
 	class StorageCollector implements Runnable {
-		public void run() {
+		@Override
+        public void run() {
 			try {
 				SearchCriteria<HostVO> sc = _hostDao.createSearchCriteria();
 				sc.addAnd("status", SearchCriteria.Op.EQ, Status.Up.toString());
@@ -371,7 +374,8 @@ public class StatsCollector {
 	}
 
 	class VolumeCollector implements Runnable {
-		public void run() {
+		@Override
+        public void run() {
 			try {
 				List<VolumeVO> volumes = _volsDao.listAll();
 				Map<Long, List<VolumeCommand>> commandsByPool = new HashMap<Long, List<VolumeCommand>>();
@@ -393,16 +397,16 @@ public class StatsCollector {
 					List<VolumeCommand> commandsList = commandsByPool.get(poolId);
 					
 					long[] volumeIdArray = new long[commandsList.size()];
-					Command[] commandsArray = new Command[commandsList.size()];
+					Commands commands = new Commands(OnError.Continue);
 					for (int i = 0; i < commandsList.size(); i++) {
 						VolumeCommand vCommand = commandsList.get(i);
 						volumeIdArray[i] = vCommand.volumeId;
-						commandsArray[i] = vCommand.command;
+						commands.addCommand(vCommand.command);
 					}
 					
 		            List<StoragePoolHostVO> poolhosts = _storagePoolHostDao.listByPoolId(poolId);
 		            for(StoragePoolHostVO poolhost : poolhosts) {
-    					Answer[] answers = _agentMgr.send(poolhost.getHostId(), commandsArray, false);
+    					Answer[] answers = _agentMgr.send(poolhost.getHostId(), commands);
     					if (answers != null) {
     					    long totalBytes = 0L;
     						for (int i = 0; i < answers.length; i++) {

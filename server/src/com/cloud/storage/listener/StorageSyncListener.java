@@ -40,7 +40,7 @@ public class StorageSyncListener implements Listener {
     }
     
     @Override
-    public boolean processAnswer(long agentId, long seq, Answer[] answers) {
+    public boolean processAnswers(long agentId, long seq, Answer[] answers) {
         for (Answer answer : answers) {
             if (answer.getResult() == false) {
                 s_logger.warn("Unable to execute sync command: " + answer.toString());
@@ -63,7 +63,7 @@ public class StorageSyncListener implements Listener {
     }
     
     @Override
-    public boolean processCommand(long agentId, long seq, Command[] request) {
+    public boolean processCommands(long agentId, long seq, Command[] request) {
         return false;
     }
 

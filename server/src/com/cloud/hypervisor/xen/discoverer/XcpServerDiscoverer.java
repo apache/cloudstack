@@ -486,12 +486,12 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
     }
 
     @Override
-    public boolean processAnswer(long agentId, long seq, Answer[] answers) {
+    public boolean processAnswers(long agentId, long seq, Answer[] answers) {
         return false;
     }
 
     @Override
-    public boolean processCommand(long agentId, long seq, Command[] commands) {
+    public boolean processCommands(long agentId, long seq, Command[] commands) {
         return false;
     }
     
