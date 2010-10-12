@@ -296,11 +296,11 @@ Group:     System Environment/Libraries
 The Cloud.com usage monitor provides usage accounting across the entire cloud for
 cloud operators to charge based on usage parameters.
 
-%package cloud-cli
+%package cli
 Summary:   Cloud.com command line tools
 Requires: python
 Group:     System Environment/Libraries
-%description cloud-cli
+%description cli
 The Cloud.com command line tools contain a few Python modules that can call cloudStack APIs.
 
 
@@ -709,7 +709,7 @@ fi
 %doc HACKING
 %doc debian/copyright
 
-%files cloud-cli
+%files cli
 %{_bindir}/%{name}-tool
 %{_bindir}/%{name}voladm
 %{_sysconfdir}/%{name}/cli/commands.xml
