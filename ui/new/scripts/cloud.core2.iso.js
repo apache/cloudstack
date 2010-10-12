@@ -397,13 +397,20 @@ function doCreateVMFromIso($actionLink, $detailsTab, midmenuItemId) {
 		    if (!isValid) return;	       
 	           
 	        thisDialog.dialog("close");   
-	                
-	        var name = trim(thisDialog.find("#name").val());		
-	        var group = trim(thisDialog.find("#group").val());		
-	        var serviceOfferingId = thisDialog.find("#service_offering").val();				        
-	        var diskOfferingId = thisDialog.find("#disk_offering").val();	        		        
+	        
+	        var array1 = [];
+	        var name = trim(thisDialog.find("#name").val());
+	        array1.push("&displayname="+todb(name));		
+	        var group = trim(thisDialog.find("#group").val());	
+	        array1.push("&group="+todb(group));	
+	        var serviceOfferingId = thisDialog.find("#service_offering").val();	
+	        array1.push("&serviceOfferingId="+serviceOfferingId);			        
+	        var diskOfferingId = thisDialog.find("#disk_offering").val();	
+	        array1.push("&diskOfferingId="+diskOfferingId);
+	        var hypervisor = thisDialog.find("#hypervisor").val();	
+	        array1.push("&hypervisor="+hypervisor);	
 	                         
-		    var apiCommand = "command=deployVirtualMachine&zoneId="+zoneId+"&serviceOfferingId="+serviceOfferingId+"&diskOfferingId="+diskOfferingId+"&templateId="+id+"&group="+todb(group)+"&displayname="+todb(name);
+		    var apiCommand = "command=deployVirtualMachine&zoneId="+zoneId+"&templateId="+id+array1.join("");
     	    doActionToDetailsTab(id, $actionLink, apiCommand, midmenuItemId);		
 	    }, 
 	    "Cancel": function() {

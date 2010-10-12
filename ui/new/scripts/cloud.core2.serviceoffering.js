@@ -164,4 +164,48 @@ function serviceOfferingJsonToDetailsTab(jsonObj) {
     $detailsTab.find("#networktype").text(toNetworkType(jsonObj.usevirtualnetwork));
     $detailsTab.find("#tags").text(fromdb(jsonObj.tags));   
     setDateField(jsonObj.created, $detailsTab.find("#created"));	
+    
+    //actions ***
+    var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
+    $actionMenu.find("#action_list").empty();
+    var midmenuItemId = getMidmenuId(jsonObj);    
+    buildActionLinkForDetailsTab("Delete Service Offering", serviceOfferingActionMap, $actionMenu, midmenuItemId);	
 }
+
+function serviceOfferingClearRightPanel() {
+    serviceOfferingClearDetailsTab();
+}
+
+function serviceOfferingClearDetailsTab() {
+    var $detailsTab = $("#right_panel_content #tab_content_details");    
+    $detailsTab.find("#id").text("");    
+    $detailsTab.find("#name").text("");
+    $detailsTab.find("#name_edit").val("");    
+    $detailsTab.find("#displaytext").text("");
+    $detailsTab.find("#displaytext_edit").val("");    
+    $detailsTab.find("#storagetype").text("");
+    $detailsTab.find("#cpu").text("");
+    $detailsTab.find("#memory").text("");    
+    $detailsTab.find("#offerha").text("");
+    $detailsTab.find("#offerha_edit").val("");    
+    $detailsTab.find("#networktype").text("");
+    $detailsTab.find("#tags").text("");  
+    $detailsTab.find("#created").text(""); 
+    
+    var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
+    $actionMenu.find("#action_list").empty(); 
+    $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());
+}
+
+var serviceOfferingActionMap = {     
+    "Delete Service Offering": {              
+        api: "deleteServiceOffering",     
+        isAsyncJob: false,           
+        inProcessText: "Deleting service offering....",
+        afterActionSeccessFn: function(json, id, midmenuItemId) {            
+            $("#"+midmenuItemId).remove();
+            clearRightPanel();
+            serviceOfferingClearRightPanel();
+        }
+    }    
+}  

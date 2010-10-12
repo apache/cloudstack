@@ -124,7 +124,7 @@ function afterLoadVolumeJSP() {
 									    if (result.jobstatus == 1) {
 										    // Succeeded										   
 										    volumeToMidmenu(result.volume[0], $midmenuItem1);
-						                    bindClickToMidMenu($midmenuItem1, volumeToRigntPanel);  
+						                    bindClickToMidMenu($midmenuItem1, volumeToRigntPanel, getMidmenuId);  
 						                    afterAddingMidMenuItem($midmenuItem1, true);	         
 									    } else if (result.jobstatus == 2) {
 									        handleAsyncJobFailInMidMenu(result.jobresult, $midmenuItem1);											   				    

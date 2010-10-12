@@ -549,7 +549,8 @@ function clickInstanceGroupHeader($arrowIcon) {
 										    $("body").stopTime(timerKey);										    
 										    if (result.jobstatus == 1) {
 											    // Succeeded						                        
-					                            vmToMidmenu(result.virtualmachine[0], $midmenuItem1);	
+					                            vmToMidmenu(result.virtualmachine[0], $midmenuItem1);
+					                            bindClickToMidMenu($midmenuItem1, vmToRightPanel, getMidmenuId);  
 					                            if (result.virtualmachine[0].passwordenabled == 'true') {							                                									        
 											        var extraMessage = "New password: " + result.virtualmachine[0].password;
 											        afterAddingMidMenuItem($midmenuItem1, true, extraMessage);

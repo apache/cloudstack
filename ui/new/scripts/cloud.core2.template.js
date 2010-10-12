@@ -353,7 +353,7 @@ var templateActionMap = {
     },
     "Copy Template": {
         isAsyncJob: true,
-        asyncJobResponse: "createtemplateresponse",            
+        asyncJobResponse: "copytemplateresponse",            
         dialogBeforeActionFn : doCopyTemplate,
         inProcessText: "Copying Template....",
         afterActionSeccessFn: function(json, id, midmenuItemId){}   
