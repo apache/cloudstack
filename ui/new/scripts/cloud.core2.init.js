@@ -62,8 +62,8 @@ $(document).ready(function() {
                                 toMidmenuFn(items[i], $midmenuItem1);    
                                 bindClickToMidMenu($midmenuItem1, toRightPanelFn, getMidmenuIdFn);             
                                 $("#midmenu_container").append($midmenuItem1.show());   
-                                if(i == 0)
-                                    $midmenuItem1.click();  //click the 1st item in middle menu as default                       
+                                if(i == 0)  //click the 1st item in middle menu as default 
+                                    $midmenuItem1.click();                        
                             }  
                         }  
 	                }
