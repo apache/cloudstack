@@ -91,13 +91,13 @@ public class ApiServlet extends HttpServlet {
                 if ("logout".equalsIgnoreCase(command)) {
                     // if this is just a logout, invalidate the session and return
                     if (session != null) {  
-                        String userIdStr = (String)session.getAttribute("userid");
+                        Long userId = (Long)session.getAttribute("userid");
                         Account account = (Account)session.getAttribute("accountobj");
-                        auditTrailSb.insert(0, "(userId="+userIdStr+ 
+                        auditTrailSb.insert(0, "(userId="+userId+ 
                                 " accountId="+ account==null ? null:account.getId()+ 
                                 " sessionId="+session.getId() +")" );
-                        if (userIdStr != null) {
-                            _apiServer.logoutUser(Long.parseLong(userIdStr));
+                        if (userId != null) {
+                            _apiServer.logoutUser(userId);
                         }
                         session.invalidate();
                     }
