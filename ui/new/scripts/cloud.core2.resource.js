@@ -27,6 +27,7 @@ function afterLoadResourceJSP() {
 
     function zoneJSONToTemplate(json, template) {
         var zoneid = json.id;
+        template.attr("id", "zone_" + zoneid);  
 	    template.data("id", zoneid).data("name", fromdb(json.name));
 	    template.find("#zone_name")
 		    .text(fromdb(json.name))
@@ -76,12 +77,15 @@ function afterLoadResourceJSP() {
 	    });
     }
     
-    function podJSONToTemplate(json, template) {		    
+    function podJSONToTemplate(json, template) {	
+        var podid = json.id;
+        template.attr("id", "pod_" + podid);  //???
+    	    
 		var ipRange = getIpRange(json.startip, json.endip);			
-		template.data("id", json.id).data("name", json.name);
+		template.data("id", podid).data("name", json.name);
 		
 		var podName = template.find("#pod_name").text(json.name);
-		podName.data("id", json.id);
+		podName.data("id", podid);
 		podName.data("zoneid", json.zoneid);
 		podName.data("name", json.name);
 		podName.data("cidr", json.cidr);
@@ -91,7 +95,7 @@ function afterLoadResourceJSP() {
 		podName.data("gateway", json.gateway);		
 		
 	    $.ajax({
-            data: createURL("command=listClusters&podid="+json.id+maxPageSize),
+            data: createURL("command=listClusters&podid="+podid+maxPageSize),
 	        dataType: "json",
 	        success: function(json) {
 		        var items = json.listclustersresponse.cluster;
@@ -108,8 +112,9 @@ function afterLoadResourceJSP() {
 	}
 		
 	function systemvmJSONToTemplate(json, template) {	
-	    template.data("id", json.id).data("name", json.name);
-	     
+	    var systemvmid = json.id;	
+	    template.attr("id", "systemvm_"+systemvmid);
+	    template.data("id", systemvmid).data("name", json.name);	     
 	    var systeymvmName = template.find("#systemvm_name").text(json.name);
 		systeymvmName.data("systemvmtype", json.systemvmtype);
 		systeymvmName.data("name", json.name);	
@@ -152,7 +157,7 @@ function afterLoadResourceJSP() {
 		        var container = template.find("#primarystorages_container").empty();
 		        if (items != null && items.length > 0) {					    
 			        for (var i = 0; i < items.length; i++) {
-				        var primaryStorageTemplate = $("#primary_storage_template").clone(true).attr("id", "primary_storage_"+items[i].id);
+				        var primaryStorageTemplate = $("#primarystorage_template").clone(true).attr("id", "primary_storage_"+items[i].id);
 				        primaryStorageJSONToTemplate(items[i], primaryStorageTemplate);
 				        container.append(primaryStorageTemplate.show());
 			        }
@@ -170,7 +175,7 @@ function afterLoadResourceJSP() {
 	function primaryStorageJSONToTemplate(json, template) {
 	    template.data("id", json.id).data("name", fromdb(json.name));
 	    
-	    var primaryStorageName = template.find("#primary_storage_name").text(fromdb(json.name));
+	    var primaryStorageName = template.find("#primarystorage_name").text(fromdb(json.name));
 	}
 	
 	$("#zone_template").bind("click", function(event) {
@@ -181,7 +186,7 @@ function afterLoadResourceJSP() {
 		var name = template.data("name");
 		
 		switch (action) {
-			case "zone_expand" :
+			case "zone_expand" :			   
 				if (target.hasClass("zonetree_closedarrows")) {
 					$("#zone_"+id).find("#zone_content").show();					
 					target.removeClass().addClass("zonetree_openarrows");
@@ -189,26 +194,102 @@ function afterLoadResourceJSP() {
 					$("#zone_"+id).find("#zone_content").hide();
 					target.removeClass().addClass("zonetree_closedarrows");
 				}
-				break;
-			case "zone_name" :
-				$(".zonetree_firstlevel_selected").removeClass().addClass("zonetree_firstlevel");
-				$(".zonetree_secondlevel_selected").removeClass().addClass("zonetree_secondlevel");
-				template.find(".zonetree_firstlevel").removeClass().addClass("zonetree_firstlevel_selected");
-									
-				var obj = {"id": target.data("id"), "name": target.data("name"), "dns1": target.data("dns1"), "dns2": target.data("dns2"), "internaldns1": target.data("internaldns1"), "internaldns2": target.data("internaldns2"), "vlan": target.data("vlan"), "guestcidraddress": target.data("guestcidraddress")};
-				//zoneObjectToRightPanel(obj);					
-				
-				break;
-				
-			case "pod_name" :
-				$(".zonetree_firstlevel_selected").removeClass().addClass("zonetree_firstlevel");
-				$(".zonetree_secondlevel_selected").removeClass().addClass("zonetree_secondlevel");
-				target.parent(".zonetree_secondlevel").removeClass().addClass("zonetree_secondlevel_selected");
-									
+				break;					
+			case "zone_icon":
+			case "zone_label":
+			case "zone_name":	
+			    $zoneetree1.find(".selected").removeClass("selected");
+			    template.find("#zone_node").addClass("selected");	
+			    var obj = {"id": target.data("id"), "name": target.data("name"), "dns1": target.data("dns1"), "dns2": target.data("dns2"), "internaldns1": target.data("internaldns1"), "internaldns2": target.data("internaldns2"), "vlan": target.data("vlan"), "guestcidraddress": target.data("guestcidraddress")};
+				//zoneObjectToRightPanel(obj);				    		   			    
+			    break;
+			
+			
+			case "pod_expand" :			   
+				if (target.hasClass("zonetree_closedarrows")) {
+					$("#zone_"+id).find("#pod_content").show();					
+					target.removeClass().addClass("zonetree_openarrows");
+				} else {
+					$("#zone_"+id).find("#pod_content").hide();
+					target.removeClass().addClass("zonetree_closedarrows");
+				}
+				break;			
+			case "pod_icon":
+			case "pod_label":	
+			case "pod_name" :			   
+				$zoneetree1.find(".selected").removeClass("selected");
+			    template.find("#pod_node").addClass("selected");
 				var obj = {"id": target.data("id"), "zoneid": target.data("zoneid"), "name": target.data("name"), "cidr": target.data("cidr"), "startip": target.data("startip"), "endip": target.data("endip"), "ipRange": target.data("ipRange"), "gateway": target.data("gateway")};
-				//podObjectToRightPanel(obj);
-				
+				//podObjectToRightPanel(obj);				
 				break;
+				
+			
+			case "cluster_expand" :			   
+				if (target.hasClass("zonetree_closedarrows")) {
+					$("#zone_"+id).find("#cluster_content").show();					
+					target.removeClass().addClass("zonetree_openarrows");
+				} else {
+					$("#zone_"+id).find("#cluster_content").hide();
+					target.removeClass().addClass("zonetree_closedarrows");
+				}
+				break;			
+			case "cluster_icon":
+			case "cluster_label":	
+			case "cluster_name" :			   
+				$zoneetree1.find(".selected").removeClass("selected");
+			    template.find("#cluster_node").addClass("selected");
+				var obj = {"id": target.data("id"), "zoneid": target.data("zoneid"), "name": target.data("name"), "cidr": target.data("cidr"), "startip": target.data("startip"), "endip": target.data("endip"), "ipRange": target.data("ipRange"), "gateway": target.data("gateway")};
+				//clusterObjectToRightPanel(obj);				
+				break;	
+				
+				
+			case "host_expand" :			   
+				if (target.hasClass("zonetree_closedarrows")) {
+					$("#zone_"+id).find("#host_content").show();					
+					target.removeClass().addClass("zonetree_openarrows");
+				} else {
+					$("#zone_"+id).find("#host_content").hide();
+					target.removeClass().addClass("zonetree_closedarrows");
+				}
+				break;			
+			case "host_icon":
+			case "host_label":	
+			case "host_name" :			   
+				$zoneetree1.find(".selected").removeClass("selected");
+			    template.find("#host_node").addClass("selected");
+				var obj = {"id": target.data("id"), "zoneid": target.data("zoneid"), "name": target.data("name"), "cidr": target.data("cidr"), "startip": target.data("startip"), "endip": target.data("endip"), "ipRange": target.data("ipRange"), "gateway": target.data("gateway")};
+				//hostObjectToRightPanel(obj);				
+				break;	
+			
+			
+			case "primarystorage_expand" :			   
+				if (target.hasClass("zonetree_closedarrows")) {
+					$("#zone_"+id).find("#primarystorage_content").show();					
+					target.removeClass().addClass("zonetree_openarrows");
+				} else {
+					$("#zone_"+id).find("#primarystorage_content").hide();
+					target.removeClass().addClass("zonetree_closedarrows");
+				}
+				break;			
+			case "primarystorage_icon":
+			case "primarystorage_label":	
+			case "primarystorage_name" :			   
+				$zoneetree1.find(".selected").removeClass("selected");
+			    template.find("#primarystorage_node").addClass("selected");
+				var obj = {"id": target.data("id"), "zoneid": target.data("zoneid"), "name": target.data("name"), "cidr": target.data("cidr"), "startip": target.data("startip"), "endip": target.data("endip"), "ipRange": target.data("ipRange"), "gateway": target.data("gateway")};
+				//primarystorageObjectToRightPanel(obj);				
+				break;
+						
+			
+			case "systemvm_icon":
+			case "systemvm_label":	
+			case "systemvm_name" :			   
+				$zoneetree1.find(".selected").removeClass("selected");
+			    template.find("#systemvm_node").addClass("selected");
+				var obj = {"id": target.data("id"), "zoneid": target.data("zoneid"), "name": target.data("name"), "cidr": target.data("cidr"), "startip": target.data("startip"), "endip": target.data("endip"), "ipRange": target.data("ipRange"), "gateway": target.data("gateway")};
+				//systemvmObjectToRightPanel(obj);				
+				break;
+			
 			
 			default:
 				break;
