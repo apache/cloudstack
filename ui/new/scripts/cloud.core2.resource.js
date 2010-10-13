@@ -1,5 +1,21 @@
 function afterLoadResourceJSP() {
     var $zonePage = $("#zone_page");
+    var $podPage = $("#pod_page");
+    var $clusterPage = $("#cluster_page");
+    var $hostPage = $("#host_page");
+    var $primarystoragePage = $("#primarystorage_page");
+    var $systemvmPage = $("#systemvm_page");
+    
+    var pageArray = [$zonePage, $podPage, $clusterPage, $hostPage, $primarystoragePage, $systemvmPage];
+    
+    function showPage($pageToShow) {        
+        for(var i=0; i<pageArray.length; i++) {
+            if(pageArray[i].attr("id") == $pageToShow.attr("id"))
+                pageArray[i].show();
+            else
+                pageArray[i].hide();
+        }            
+    }
 
     //***** switch between different tabs in zone page (begin) ********************************************************************
     var tabArray = [$zonePage.find("#tab_details"), $zonePage.find("#tab_network"), $zonePage.find("#tab_secondary_storage")];
@@ -81,7 +97,7 @@ function afterLoadResourceJSP() {
     
     function podJSONToTemplate(json, template) {	
         var podid = json.id;
-        template.attr("id", "pod_" + podid);  //???
+        template.attr("id", "pod_" + podid);  
     	    
 		var ipRange = getIpRange(json.startip, json.endip);			
 		template.data("id", podid).data("name", json.name);
@@ -199,10 +215,8 @@ function afterLoadResourceJSP() {
 				break;	
 			case "zone_name":	
 			    $zoneetree1.find(".selected").removeClass("selected");
-			    target.parent().parent().parent().addClass("selected");	
-			    
-			    //???
-			    
+			    target.parent().parent().parent().addClass("selected");				    
+			    showPage($zonePage);	    
 			    var obj = {"id": target.data("id"), "name": target.data("name"), "dns1": target.data("dns1"), "dns2": target.data("dns2"), "internaldns1": target.data("internaldns1"), "internaldns2": target.data("internaldns2"), "vlan": target.data("vlan"), "guestcidraddress": target.data("guestcidraddress")};
 				//zoneObjectToRightPanel(obj);				    		   			    
 			    break;
@@ -220,6 +234,7 @@ function afterLoadResourceJSP() {
 			case "pod_name" :			   
 				$zoneetree1.find(".selected").removeClass("selected");
 				target.parent().parent().parent().addClass("selected");
+				showPage($podPage);
 			    //var obj = {"id": target.data("id"), "zoneid": target.data("zoneid"), "name": target.data("name"), "cidr": target.data("cidr"), "startip": target.data("startip"), "endip": target.data("endip"), "ipRange": target.data("ipRange"), "gateway": target.data("gateway")};
 				//podObjectToRightPanel(obj);				
 				break;
@@ -238,6 +253,7 @@ function afterLoadResourceJSP() {
 			case "cluster_name" :			   
 				$zoneetree1.find(".selected").removeClass("selected");
 			    target.parent().parent().parent().addClass("selected");
+			    showPage($clusterPage);
 			    //var obj = {"id": target.data("id"), "zoneid": target.data("zoneid"), "name": target.data("name"), "cidr": target.data("cidr"), "startip": target.data("startip"), "endip": target.data("endip"), "ipRange": target.data("ipRange"), "gateway": target.data("gateway")};
 				//clusterObjectToRightPanel(obj);				
 				break;	
@@ -256,6 +272,7 @@ function afterLoadResourceJSP() {
 			case "host_name" :			   
 				$zoneetree1.find(".selected").removeClass("selected");
 			    target.parent().parent().parent().addClass("selected");
+			    showPage($hostPage);
 				//var obj = {"id": target.data("id"), "zoneid": target.data("zoneid"), "name": target.data("name"), "cidr": target.data("cidr"), "startip": target.data("startip"), "endip": target.data("endip"), "ipRange": target.data("ipRange"), "gateway": target.data("gateway")};
 				//hostObjectToRightPanel(obj);				
 				break;	
@@ -274,6 +291,7 @@ function afterLoadResourceJSP() {
 			case "primarystorage_name" :			   
 				$zoneetree1.find(".selected").removeClass("selected");
 			    target.parent().parent().parent().addClass("selected");
+			    showPage($primarystoragePage);
 				//var obj = {"id": target.data("id"), "zoneid": target.data("zoneid"), "name": target.data("name"), "cidr": target.data("cidr"), "startip": target.data("startip"), "endip": target.data("endip"), "ipRange": target.data("ipRange"), "gateway": target.data("gateway")};
 				//primarystorageObjectToRightPanel(obj);				
 				break;
@@ -281,7 +299,8 @@ function afterLoadResourceJSP() {
 						
 			case "systemvm_name" :			   
 				$zoneetree1.find(".selected").removeClass("selected");			    		    
-			    target.parent().parent().parent().addClass("selected");			    
+			    target.parent().parent().parent().addClass("selected");		
+			    showPage($systemvmPage);
 				//var obj = {"id": target.data("id"), "zoneid": target.data("zoneid"), "name": target.data("name"), "cidr": target.data("cidr"), "startip": target.data("startip"), "endip": target.data("endip"), "ipRange": target.data("ipRange"), "gateway": target.data("gateway")};
 				//systemvmObjectToRightPanel(obj);				
 				break;
