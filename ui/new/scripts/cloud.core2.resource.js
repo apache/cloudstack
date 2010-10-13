@@ -187,106 +187,97 @@ function afterLoadResourceJSP() {
 		
 		switch (action) {
 			case "zone_expand" :			   
-				if (target.hasClass("zonetree_closedarrows")) {
-					$("#zone_"+id).find("#zone_content").show();					
-					target.removeClass().addClass("zonetree_openarrows");
-				} else {
-					$("#zone_"+id).find("#zone_content").hide();
-					target.removeClass().addClass("zonetree_closedarrows");
+				if (target.hasClass("zonetree_closedarrows")) {						
+					target.removeClass().addClass("zonetree_openarrows");					
+					target.parent().parent().parent().find("#zone_content").show();	
+				} else {					
+					target.removeClass().addClass("zonetree_closedarrows");					
+					target.parent().parent().parent().find("#zone_content").hide();									
 				}
-				break;					
-			case "zone_icon":
-			case "zone_label":
+				break;	
 			case "zone_name":	
 			    $zoneetree1.find(".selected").removeClass("selected");
-			    template.find("#zone_node").addClass("selected");	
+			    target.parent().parent().parent().addClass("selected");	
 			    var obj = {"id": target.data("id"), "name": target.data("name"), "dns1": target.data("dns1"), "dns2": target.data("dns2"), "internaldns1": target.data("internaldns1"), "internaldns2": target.data("internaldns2"), "vlan": target.data("vlan"), "guestcidraddress": target.data("guestcidraddress")};
 				//zoneObjectToRightPanel(obj);				    		   			    
 			    break;
 			
 			
-			case "pod_expand" :			   
-				if (target.hasClass("zonetree_closedarrows")) {
-					$("#zone_"+id).find("#pod_content").show();					
+			case "pod_expand" :				    	   
+				if (target.hasClass("zonetree_closedarrows")) {									
 					target.removeClass().addClass("zonetree_openarrows");
-				} else {
-					$("#zone_"+id).find("#pod_content").hide();
+					target.parent().parent().siblings("#pod_content").show();	
+				} else {					
 					target.removeClass().addClass("zonetree_closedarrows");
+					target.parent().parent().siblings("#pod_content").hide();
 				}
-				break;			
-			case "pod_icon":
-			case "pod_label":	
+				break;	
 			case "pod_name" :			   
 				$zoneetree1.find(".selected").removeClass("selected");
-			    template.find("#pod_node").addClass("selected");
-				var obj = {"id": target.data("id"), "zoneid": target.data("zoneid"), "name": target.data("name"), "cidr": target.data("cidr"), "startip": target.data("startip"), "endip": target.data("endip"), "ipRange": target.data("ipRange"), "gateway": target.data("gateway")};
+				target.parent().parent().parent().addClass("selected");
+			    //var obj = {"id": target.data("id"), "zoneid": target.data("zoneid"), "name": target.data("name"), "cidr": target.data("cidr"), "startip": target.data("startip"), "endip": target.data("endip"), "ipRange": target.data("ipRange"), "gateway": target.data("gateway")};
 				//podObjectToRightPanel(obj);				
 				break;
 				
 			
 			case "cluster_expand" :			   
 				if (target.hasClass("zonetree_closedarrows")) {
-					$("#zone_"+id).find("#cluster_content").show();					
-					target.removeClass().addClass("zonetree_openarrows");
+				    target.removeClass().addClass("zonetree_openarrows");
+					target.parent().parent().siblings("#cluster_content").show();					
+					
 				} else {
-					$("#zone_"+id).find("#cluster_content").hide();
-					target.removeClass().addClass("zonetree_closedarrows");
+				    target.removeClass().addClass("zonetree_closedarrows");
+					target.parent().parent().siblings("#cluster_content").hide();					
 				}
-				break;			
-			case "cluster_icon":
-			case "cluster_label":	
+				break;		
 			case "cluster_name" :			   
 				$zoneetree1.find(".selected").removeClass("selected");
-			    template.find("#cluster_node").addClass("selected");
-				var obj = {"id": target.data("id"), "zoneid": target.data("zoneid"), "name": target.data("name"), "cidr": target.data("cidr"), "startip": target.data("startip"), "endip": target.data("endip"), "ipRange": target.data("ipRange"), "gateway": target.data("gateway")};
+			    target.parent().parent().parent().addClass("selected");
+			    //var obj = {"id": target.data("id"), "zoneid": target.data("zoneid"), "name": target.data("name"), "cidr": target.data("cidr"), "startip": target.data("startip"), "endip": target.data("endip"), "ipRange": target.data("ipRange"), "gateway": target.data("gateway")};
 				//clusterObjectToRightPanel(obj);				
 				break;	
 				
 				
 			case "host_expand" :			   
 				if (target.hasClass("zonetree_closedarrows")) {
-					$("#zone_"+id).find("#host_content").show();					
-					target.removeClass().addClass("zonetree_openarrows");
+				    target.removeClass().addClass("zonetree_openarrows");
+					target.parent().parent().siblings("#host_content").show();					
+					
 				} else {
-					$("#zone_"+id).find("#host_content").hide();
-					target.removeClass().addClass("zonetree_closedarrows");
+				    target.removeClass().addClass("zonetree_closedarrows");
+					target.parent().parent().siblings("#host_content").hide();					
 				}
-				break;			
-			case "host_icon":
-			case "host_label":	
+				break;	
 			case "host_name" :			   
 				$zoneetree1.find(".selected").removeClass("selected");
-			    template.find("#host_node").addClass("selected");
-				var obj = {"id": target.data("id"), "zoneid": target.data("zoneid"), "name": target.data("name"), "cidr": target.data("cidr"), "startip": target.data("startip"), "endip": target.data("endip"), "ipRange": target.data("ipRange"), "gateway": target.data("gateway")};
+			    target.parent().parent().parent().addClass("selected");
+				//var obj = {"id": target.data("id"), "zoneid": target.data("zoneid"), "name": target.data("name"), "cidr": target.data("cidr"), "startip": target.data("startip"), "endip": target.data("endip"), "ipRange": target.data("ipRange"), "gateway": target.data("gateway")};
 				//hostObjectToRightPanel(obj);				
 				break;	
 			
 			
 			case "primarystorage_expand" :			   
 				if (target.hasClass("zonetree_closedarrows")) {
-					$("#zone_"+id).find("#primarystorage_content").show();					
-					target.removeClass().addClass("zonetree_openarrows");
+				    target.removeClass().addClass("zonetree_openarrows");
+					target.parent().parent().siblings("#primarystorage_content").show();					
+					
 				} else {
-					$("#zone_"+id).find("#primarystorage_content").hide();
-					target.removeClass().addClass("zonetree_closedarrows");
+				    target.removeClass().addClass("zonetree_closedarrows");
+					target.parent().parent().siblings("#primarystorage_content").hide();					
 				}
-				break;			
-			case "primarystorage_icon":
-			case "primarystorage_label":	
+				break;	
 			case "primarystorage_name" :			   
 				$zoneetree1.find(".selected").removeClass("selected");
-			    template.find("#primarystorage_node").addClass("selected");
-				var obj = {"id": target.data("id"), "zoneid": target.data("zoneid"), "name": target.data("name"), "cidr": target.data("cidr"), "startip": target.data("startip"), "endip": target.data("endip"), "ipRange": target.data("ipRange"), "gateway": target.data("gateway")};
+			    target.parent().parent().parent().addClass("selected");
+				//var obj = {"id": target.data("id"), "zoneid": target.data("zoneid"), "name": target.data("name"), "cidr": target.data("cidr"), "startip": target.data("startip"), "endip": target.data("endip"), "ipRange": target.data("ipRange"), "gateway": target.data("gateway")};
 				//primarystorageObjectToRightPanel(obj);				
 				break;
 						
-			
-			case "systemvm_icon":
-			case "systemvm_label":	
+						
 			case "systemvm_name" :			   
-				$zoneetree1.find(".selected").removeClass("selected");
-			    template.find("#systemvm_node").addClass("selected");
-				var obj = {"id": target.data("id"), "zoneid": target.data("zoneid"), "name": target.data("name"), "cidr": target.data("cidr"), "startip": target.data("startip"), "endip": target.data("endip"), "ipRange": target.data("ipRange"), "gateway": target.data("gateway")};
+				$zoneetree1.find(".selected").removeClass("selected");			    		    
+			    target.parent().parent().parent().addClass("selected");			    
+				//var obj = {"id": target.data("id"), "zoneid": target.data("zoneid"), "name": target.data("name"), "cidr": target.data("cidr"), "startip": target.data("startip"), "endip": target.data("endip"), "ipRange": target.data("ipRange"), "gateway": target.data("gateway")};
 				//systemvmObjectToRightPanel(obj);				
 				break;
 			

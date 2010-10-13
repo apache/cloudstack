@@ -295,7 +295,10 @@
                 </div>
                 <div class="leftmenu_list_icons">
                     <img src="images/zone_zoneicon.png" id="zone_icon" alt="Zone" /></div>
-                <span id="zone_label">Zone:</span> <strong><span id="zone_name">Zone 1</span></strong>
+                <span id="zone_label">Zone:</span> 
+                <strong>
+                    <span id="zone_name">Zone 1</span>
+                </strong>
             </div>
         </div>
         <div id="zone_content" style="display: none">
@@ -323,7 +326,10 @@
                 </div>
                 <div class="leftmenu_list_icons">
                     <img src="images/zone_podicon.png" id="pod_icon" alt="Pod" /></div>
-                <span id="pod_label">Pod:</span> <strong><span id="pod_name">Name of the Pod</span></strong>
+                <span id="pod_label">Pod:</span> 
+                <strong>
+                    <span id="pod_name">Name of the Pod</span>
+                </strong>
             </div>
         </div>
         <div id="pod_content" style="display: none">           
@@ -350,7 +356,9 @@
                 <div class="leftmenu_list_icons">
                     <img src="images/zone_clustericon.png" id="cluster_icon" alt="Cluster" /></div>
                 <span id="cluster_label"">Cluster:</span> 
-                <strong><span id="cluster_name">(Name of the Cluster)</span></strong>
+                <strong>
+                    <span id="cluster_name">(Name of the Cluster)</span>
+                </strong>
             </div>
         </div>
         <div id="cluster_content">
@@ -377,7 +385,9 @@
                 <div class="leftmenu_list_icons">
                     <img src="images/zone_hosticon.png" id="host_icon" alt="Host" /></div>
                 <span id="host_label">Host:</span> 
-                <strong><span id="host_name">(Name of the Host)</span></strong>
+                <strong>
+                    <span id="host_name">(Name of the Host)</span>
+                </strong>
             </div>
         </div>
     </div>
@@ -398,7 +408,9 @@
                 <div class="leftmenu_list_icons">
                     <img src="images/zone_primarystorageicon.png" id="primarystorage_icon" alt="PrimaryStorage" /></div>
                 <span id="primarystorage_label">Storage:</span> 
-                <strong><span id="primarystorage_name">(Name of the Primary Storage)</span></strong>
+                <strong>
+                    <span id="primarystorage_name">(Name of the Primary Storage)</span>
+                </strong>
             </div>
         </div>
     </div>
@@ -412,7 +424,9 @@
                 <div class="leftmenu_list_icons">
                     <img src="images/zone_systemvmicon.png" id="systemvm_icon" alt="System VM" /></div>
                 <span id="systemvm_label">System VM:</span> 
-                <strong><span id="systemvm_name">(System VM name)</span></strong>
+                <strong>
+                    <span id="systemvm_name">(System VM name)</span>
+                </strong>
             </div>
         </div>
     </div>
