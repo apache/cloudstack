@@ -231,8 +231,8 @@ function afterLoadResourceJSP() {
 				$zoneetree1.find(".selected").removeClass("selected");
 				target.parent().parent().parent().addClass("selected");
 				showPage($podPage);
-			    //var obj = {"id": target.data("id"), "zoneid": target.data("zoneid"), "name": target.data("name"), "cidr": target.data("cidr"), "startip": target.data("startip"), "endip": target.data("endip"), "ipRange": target.data("ipRange"), "gateway": target.data("gateway")};
-				//podObjectToRightPanel(obj);				
+			    var obj = {"id": target.data("id"), "zoneid": target.data("zoneid"), "name": target.data("name"), "cidr": target.data("cidr"), "startip": target.data("startip"), "endip": target.data("endip"), "ipRange": target.data("ipRange"), "gateway": target.data("gateway")};
+				podJsonToDetailsTab(obj);				
 				break;
 				
 			
@@ -314,7 +314,7 @@ function afterLoadResourceJSP() {
 			ipRange = startip;
 		}
 		if (endip != null && endip.length > 0) {
-			ipRange = ipRange + "-" + endip;
+			ipRange = ipRange + " - " + endip;
 		}		
 		return ipRange;
 	}		
@@ -339,5 +339,20 @@ function afterLoadResourceJSP() {
         $detailsTab.find("#guestcidraddress").text(fromdb(jsonObj.guestcidraddress));     
 	}	  
     //***** zone page (end) *******************************************************************************************************
+    
+    //***** pod page (begin) ******************************************************************************************************
+    	function podJsonToDetailsTab(jsonObj) {	    
+	    var $detailsTab = $podPage.find("#tab_content_details");   
+        $detailsTab.data("jsonObj", jsonObj);           
+        $detailsTab.find("#id").text(fromdb(jsonObj.id));
+        $detailsTab.find("#name").text(fromdb(jsonObj.name));
+        $detailsTab.find("#cidr").text(fromdb(jsonObj.cidr));        
+        $detailsTab.find("#ipRange").text(fromdb(jsonObj.ipRange));
+        $detailsTab.find("#gateway").text(fromdb(jsonObj.gateway));  
+        
+        //if (getDirectAttachUntaggedEnabled() == "true") 
+		//	$("#submenu_content_zones #action_add_directip_vlan").data("type", "pod").data("id", obj.id).data("name", obj.name).data("zoneid", obj.zoneid).show();		
+	}	
+	//***** pod page (end) ********************************************************************************************************
 }
 
