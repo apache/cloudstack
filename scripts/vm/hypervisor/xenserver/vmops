@@ -1109,13 +1109,6 @@ def backupSnapshot(session, args):
     backupVHD = getVHD(baseCopyUuid, False)
     backupFile = os.path.join(backupsDir, backupVHD)
     copyfile(baseCopyPath, backupFile, isISCSI)
-    
-    # Now set the availability of the snapshotPath and the baseCopyPath to false
-    makeUnavailable(snapshotUuid, primarySRPath, isISCSI)
-    manageAvailability(baseCopyPath, '-an')
-    if prevSnapshotUuid:
-        makeUnavailable(prevSnapshotUuid, primarySRPath, isISCSI)
-        makeUnavailable(prevBaseCopyUuid, primarySRPath, isISCSI)
 
     if isFirstSnapshotOfRootVolume:
         # First snapshot of the root volume.
@@ -1123,6 +1116,13 @@ def backupSnapshot(session, args):
         # Create a dummy empty vhd and set the parent of backupVHD to it.
         # This will prevent deleteSnapshotBackup and createVolumeFromSnapshot from breaking
         prevBackupUuid = createDummyVHD(baseCopyPath, backupsDir)
+    
+    # Now set the availability of the snapshotPath and the baseCopyPath to false
+    makeUnavailable(snapshotUuid, primarySRPath, isISCSI)
+    manageAvailability(baseCopyPath, '-an')
+    if prevSnapshotUuid:
+        makeUnavailable(prevSnapshotUuid, primarySRPath, isISCSI)
+        makeUnavailable(prevBaseCopyUuid, primarySRPath, isISCSI)
 
     # Because the primary storage is always scanned, the parent of this base copy is always the first base copy.
     # We don't want that, we want a chain of VHDs each of which is a delta from the previous.
