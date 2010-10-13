@@ -290,6 +290,7 @@ public abstract class BaseCmd {
         END_VLAN("endvlan", BaseCmd.TYPE_LONG, "endvlan"),
         SIZE("size", BaseCmd.TYPE_LONG, "size"),
         VOL_SIZE("volsize", BaseCmd.TYPE_INT, "volsize"),
+        VOL_SIZE_STRING("volsizestr", BaseCmd.TYPE_INT, "volsizestr"),
         STATE("state", BaseCmd.TYPE_STRING, "state"),
         STORAGE("storage", BaseCmd.TYPE_LONG, "storage"),
         SUCCESS("success", BaseCmd.TYPE_BOOLEAN, "success"),
