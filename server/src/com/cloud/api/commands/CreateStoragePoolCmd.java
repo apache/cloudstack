@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.ServerApiException;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -108,28 +109,32 @@ public class CreateStoragePoolCmd extends BaseCmd {
     public StoragePoolResponse getResponse() {
         StoragePoolVO pool = (StoragePoolVO)getResponseObject();
 
-        StoragePoolResponse response = new StoragePoolResponse();
-        response.setClusterId(pool.getClusterId());
-        response.setClusterName(ApiDBUtils.findClusterById(pool.getClusterId()).getName());
-        response.setPodName(ApiDBUtils.findPodById(pool.getPodId()).getName());
-        response.setCreated(pool.getCreated());
-        response.setId(pool.getId());
-        response.setIpAddress(pool.getHostAddress());
-        response.setName(pool.getName());
-        response.setPath(pool.getPath());
-        response.setPodId(pool.getPodId());
-        response.setType(pool.getPoolType().toString());
-        response.setTags(ApiDBUtils.getStoragePoolTags(pool.getId()));
+        if (pool != null) {
+            StoragePoolResponse response = new StoragePoolResponse();
+            response.setClusterId(pool.getClusterId());
+            response.setClusterName(ApiDBUtils.findClusterById(pool.getClusterId()).getName());
+            response.setPodName(ApiDBUtils.findPodById(pool.getPodId()).getName());
+            response.setCreated(pool.getCreated());
+            response.setId(pool.getId());
+            response.setIpAddress(pool.getHostAddress());
+            response.setName(pool.getName());
+            response.setPath(pool.getPath());
+            response.setPodId(pool.getPodId());
+            response.setType(pool.getPoolType().toString());
+            response.setTags(ApiDBUtils.getStoragePoolTags(pool.getId()));
 
-        StorageStats stats = ApiDBUtils.getStoragePoolStatistics(pool.getId());
-        long used = pool.getCapacityBytes() - pool.getAvailableBytes();
-        if (stats != null) {
-            used = stats.getByteUsed();
+            StorageStats stats = ApiDBUtils.getStoragePoolStatistics(pool.getId());
+            long used = pool.getCapacityBytes() - pool.getAvailableBytes();
+            if (stats != null) {
+                used = stats.getByteUsed();
+            }
+            response.setDiskSizeTotal(pool.getCapacityBytes());
+            response.setDiskSizeAllocated(used);
+
+            response.setResponseName(getName());
+            return response;
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add host");
         }
-        response.setDiskSizeTotal(pool.getCapacityBytes());
-        response.setDiskSizeAllocated(used);
-
-        response.setResponseName(getName());
-        return response;
     }
 }
