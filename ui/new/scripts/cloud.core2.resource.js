@@ -1,10 +1,11 @@
 function afterLoadResourceJSP() {
-    var $zonePage = $("#zone_page");
-    var $podPage = $("#pod_page");
-    var $clusterPage = $("#cluster_page");
-    var $hostPage = $("#host_page");
-    var $primarystoragePage = $("#primarystorage_page");
-    var $systemvmPage = $("#systemvm_page");
+    var $rightPanelConent = $("#right_panel_content");
+    var $zonePage = $rightPanelConent.find("#zone_page");
+    var $podPage = $rightPanelConent.find("#pod_page");
+    var $clusterPage = $rightPanelConent.find("#cluster_page");
+    var $hostPage = $rightPanelConent.find("#host_page");
+    var $primarystoragePage = $rightPanelConent.find("#primarystorage_page");
+    var $systemvmPage = $rightPanelConent.find("#systemvm_page");
     
     var pageArray = [$zonePage, $podPage, $clusterPage, $hostPage, $primarystoragePage, $systemvmPage];
     
@@ -16,13 +17,8 @@ function afterLoadResourceJSP() {
                 pageArray[i].hide();
         }            
     }
-
-    //***** switch between different tabs in zone page (begin) ********************************************************************
-    var tabArray = [$zonePage.find("#tab_details"), $zonePage.find("#tab_network"), $zonePage.find("#tab_secondary_storage")];
-    var tabContentArray = [$zonePage.find("#tab_content_details"), $zonePage.find("#tab_content_network"), $zonePage.find("#tab_content_secondary_storage")];
-    switchBetweenDifferentTabs(tabArray, tabContentArray);       
-    //***** switch between different tabs in zone page (end) **********************************************************************
-  
+   
+    //***** build zone tree (begin) ***********************************************************************************************
     var forceLogout = true;  // We force a logout only if the user has first added a POD for the very first time 
     var $zoneetree1 = $("#zonetree").clone().attr("id", "zonetree1");  
     $("#midmenu_container").append($zoneetree1.show());
@@ -218,7 +214,7 @@ function afterLoadResourceJSP() {
 			    target.parent().parent().parent().addClass("selected");				    
 			    showPage($zonePage);	    
 			    var obj = {"id": target.data("id"), "name": target.data("name"), "dns1": target.data("dns1"), "dns2": target.data("dns2"), "internaldns1": target.data("internaldns1"), "internaldns2": target.data("internaldns2"), "vlan": target.data("vlan"), "guestcidraddress": target.data("guestcidraddress")};
-				//zoneObjectToRightPanel(obj);				    		   			    
+				zoneJsonToDetailsTab(obj);							    		   			    
 			    break;
 			
 			
@@ -311,7 +307,6 @@ function afterLoadResourceJSP() {
 		}
 		return false;
 	});
-
     
     function getIpRange(startip, endip) {
 	    var ipRange = "";
@@ -322,6 +317,27 @@ function afterLoadResourceJSP() {
 			ipRange = ipRange + "-" + endip;
 		}		
 		return ipRange;
-	}	
+	}		
+	//***** build zone tree (end) *************************************************************************************************
+	
+	//***** zone page (begin) *****************************************************************************************************
+	//switch between different tabs in zone page 
+    var tabArray = [$zonePage.find("#tab_details"), $zonePage.find("#tab_network"), $zonePage.find("#tab_secondary_storage")];
+    var tabContentArray = [$zonePage.find("#tab_content_details"), $zonePage.find("#tab_content_network"), $zonePage.find("#tab_content_secondary_storage")];
+    switchBetweenDifferentTabs(tabArray, tabContentArray);       
+  
+    function zoneJsonToDetailsTab(jsonObj) {	    
+	    var $detailsTab = $zonePage.find("#tab_content_details");   
+        $detailsTab.data("jsonObj", jsonObj);           
+        $detailsTab.find("#id").text(fromdb(jsonObj.id));
+        $detailsTab.find("#name").text(fromdb(jsonObj.name));
+        $detailsTab.find("#dns1").text(fromdb(jsonObj.dns1));
+        $detailsTab.find("#dns2").text(fromdb(jsonObj.dns2));
+        $detailsTab.find("#internaldns1").text(fromdb(jsonObj.internaldns1));
+        $detailsTab.find("#internaldns2").text(fromdb(jsonObj.internaldns2));	
+        $detailsTab.find("#vlan").text(fromdb(jsonObj.vlan));
+        $detailsTab.find("#guestcidraddress").text(fromdb(jsonObj.guestcidraddress));     
+	}	  
+    //***** zone page (end) *******************************************************************************************************
 }
 

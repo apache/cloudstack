@@ -46,43 +46,73 @@
                 <div class="grid_rows even">
                     <div class="grid_row_cell" style="width: 20%;">
                         <div class="row_celltitles">
-                            <%=t.t("Name")%>:</div>
+                            <%=t.t("name")%>:</div>
                     </div>
                     <div class="grid_row_cell" style="width: 79%;">
                         <div class="row_celltitles" id="name">
                         </div>
                     </div>
                 </div>
-                <div class="grid_rows odd">
+                <div class="grid_rows even">
                     <div class="grid_row_cell" style="width: 20%;">
                         <div class="row_celltitles">
-                            <%=t.t("Accounts")%>:</div>
+                            <%=t.t("dns1")%>:</div>
                     </div>
                     <div class="grid_row_cell" style="width: 79%;">
-                        <div class="row_celltitles" id="redirect_to_account_page">
+                        <div class="row_celltitles" id="dns1">
                         </div>
                     </div>
                 </div>
                 <div class="grid_rows even">
                     <div class="grid_row_cell" style="width: 20%;">
                         <div class="row_celltitles">
-                            <%=t.t("Instances")%>:</div>
+                            <%=t.t("dns2")%>:</div>
                     </div>
                     <div class="grid_row_cell" style="width: 79%;">
-                        <div class="row_celltitles" id="redirect_to_instance_page">
+                        <div class="row_celltitles" id="dns2">
                         </div>
                     </div>
                 </div>
-                <div class="grid_rows odd">
+                <div class="grid_rows even">
                     <div class="grid_row_cell" style="width: 20%;">
                         <div class="row_celltitles">
-                            <%=t.t("Volume")%>:</div>
+                            <%=t.t("internaldns1")%>:</div>
                     </div>
                     <div class="grid_row_cell" style="width: 79%;">
-                        <div class="row_celltitles" id="redirect_to_volume_page">
+                        <div class="row_celltitles" id="internaldns1">
                         </div>
                     </div>
                 </div>
+                <div class="grid_rows even">
+                    <div class="grid_row_cell" style="width: 20%;">
+                        <div class="row_celltitles">
+                            <%=t.t("internaldns2")%>:</div>
+                    </div>
+                    <div class="grid_row_cell" style="width: 79%;">
+                        <div class="row_celltitles" id="internaldns2">
+                        </div>
+                    </div>
+                </div>
+                <div class="grid_rows even">
+                    <div class="grid_row_cell" style="width: 20%;">
+                        <div class="row_celltitles">
+                            <%=t.t("vlan")%>:</div>
+                    </div>
+                    <div class="grid_row_cell" style="width: 79%;">
+                        <div class="row_celltitles" id="vlan">
+                        </div>
+                    </div>
+                </div>
+                <div class="grid_rows even">
+                    <div class="grid_row_cell" style="width: 20%;">
+                        <div class="row_celltitles">
+                            <%=t.t("guestcidraddress")%>:</div>
+                    </div>
+                    <div class="grid_row_cell" style="width: 79%;">
+                        <div class="row_celltitles" id="guestcidraddress">
+                        </div>
+                    </div>
+                </div>                
             </div>
         </div>
         <!-- Details tab (end)-->
