@@ -1976,7 +1976,7 @@ a:hover.search_button {
 	float:left;
 	text-align:left;
 	font-weight:normal;
-	font-size:11px;
+	font-size:10px;
 	margin:3px 0 0 0;
 	padding:0;
 }
@@ -2468,6 +2468,17 @@ a:hover.search_button {
 	height:auto;
 	float:right;
 	margin:0;
+	padding:0;
+}
+
+.grid_header_formbox .label {
+	width:auto;
+	height:auto;
+	float:left;
+	color:#333;
+	font-size:10px;
+	font-weight:normal;
+	margin:4px 7px 0 0;
 	padding:0;
 }
 

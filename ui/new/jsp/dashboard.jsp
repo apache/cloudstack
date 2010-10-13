@@ -25,9 +25,11 @@
                 </div>
                 <div class="grid_header_cell" style="width: 40%; border: none;">
                     <div class="grid_header_formbox">
-                        <select id="capacity_zone_select" class="select" style="width: 70px;">
+                    	<label for="zone" class="label">Zone:</label> 
+                        <select id="capacity_zone_select" class="select" style="width: 110px;">
                         </select>
-                        <select id="capacity_pod_select" class="select" style="width: 70px;">
+                        <label for="pod" class="label">Pod:</label> 
+                        <select id="capacity_pod_select" class="select" style="width: 110px;">
                         </select>
                     </div>
                 </div>
