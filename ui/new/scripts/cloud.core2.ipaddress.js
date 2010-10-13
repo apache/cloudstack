@@ -1,8 +1,8 @@
 //***** baseline (begin) *******************************************************************************************************************
 function afterLoadIpJSP() {
     //***** switch between different tabs (begin) ********************************************************************
-    var tabArray = ["tab_details", "tab_port_forwarding", "tab_load_balancer"];
-    var tabContentArray = ["tab_content_details", "tab_content_port_forwarding", "tab_content_load_balancer"];
+    var tabArray = [$("#tab_details"), $("#tab_port_forwarding"), $("#tab_load_balancer")];
+    var tabContentArray = [$("#tab_content_details"), $("#tab_content_port_forwarding"), $("#tab_content_load_balancer")];
     switchBetweenDifferentTabs(tabArray, tabContentArray);       
     //***** switch between different tabs (end) **********************************************************************
         

@@ -1,9 +1,11 @@
 function afterLoadResourceJSP() {
-    //***** switch between different tabs (begin) ********************************************************************
-    var tabArray = ["tab_details", "tab_network", "tab_secondary_storage"];
-    var tabContentArray = ["tab_content_details", "tab_content_network", "tab_content_secondary_storage"];
+    var $zonePage = $("#zone_page");
+
+    //***** switch between different tabs in zone page (begin) ********************************************************************
+    var tabArray = [$zonePage.find("#tab_details"), $zonePage.find("#tab_network"), $zonePage.find("#tab_secondary_storage")];
+    var tabContentArray = [$zonePage.find("#tab_content_details"), $zonePage.find("#tab_content_network"), $zonePage.find("#tab_content_secondary_storage")];
     switchBetweenDifferentTabs(tabArray, tabContentArray);       
-    //***** switch between different tabs (end) **********************************************************************
+    //***** switch between different tabs in zone page (end) **********************************************************************
   
     var forceLogout = true;  // We force a logout only if the user has first added a POD for the very first time 
     var $zoneetree1 = $("#zonetree").clone().attr("id", "zonetree1");  
@@ -198,6 +200,9 @@ function afterLoadResourceJSP() {
 			case "zone_name":	
 			    $zoneetree1.find(".selected").removeClass("selected");
 			    target.parent().parent().parent().addClass("selected");	
+			    
+			    //???
+			    
 			    var obj = {"id": target.data("id"), "name": target.data("name"), "dns1": target.data("dns1"), "dns2": target.data("dns2"), "internaldns1": target.data("internaldns1"), "internaldns2": target.data("internaldns2"), "vlan": target.data("vlan"), "guestcidraddress": target.data("guestcidraddress")};
 				//zoneObjectToRightPanel(obj);				    		   			    
 			    break;
