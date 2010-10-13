@@ -8,6 +8,6 @@
     postrotate
         [ ! -f /var/run/dnsmasq.pid ] || kill -USR2 `cat /var/run/dnsmasq.pid`
     endscript
-    create 0640 dnsmasq dnsmasq
+    create 0640 nobody root
 }
 
