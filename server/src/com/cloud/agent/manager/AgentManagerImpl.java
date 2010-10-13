@@ -709,6 +709,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         }
     }
     
+    @Override
     public boolean deleteHost(DeleteHostCmd cmd) throws InvalidParameterValueException{
     	Long id = cmd.getId();
     	

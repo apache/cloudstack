@@ -295,7 +295,7 @@ public class Request {
             throw new UnsupportedVersionException("This version is no longer supported: " + version.toString(), UnsupportedVersionException.IncompatibleVersion);
         }
         final byte reserved = buff.get(); // tossed away for now.
-        final Short flags = buff.getShort();
+        final short flags = buff.getShort();
         final boolean isRequest = (flags & FLAG_REQUEST) > 0;
 
         final long seq = buff.getLong();

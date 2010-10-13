@@ -18,6 +18,7 @@
 package com.cloud.agent.manager.allocator.impl;
 
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -36,7 +37,9 @@ import com.cloud.dc.dao.HostPodDao;
 import com.cloud.host.Host;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.StoragePoolDao;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Inject;
 import com.cloud.vm.VirtualMachine;
@@ -50,6 +53,7 @@ public class RecreateHostAllocator extends FirstFitRoutingAllocator {
     @Inject StoragePoolDao _poolDao;
     @Inject ClusterDao _clusterDao;
     @Inject AgentManager _agentMgr;
+    @Inject VolumeDao _volsDao;
     
     @Override
     public Host allocateTo(VirtualMachineProfile vm, ServiceOffering offering, Host.Type type, DataCenterVO dc, HostPodVO pod,
@@ -67,6 +71,20 @@ public class RecreateHostAllocator extends FirstFitRoutingAllocator {
         }
         
         List<PodCluster> pcs = _agentMgr.listByDataCenter(dc.getId());
+        if (vmType == VirtualMachine.Type.DomainRouter) {
+            s_logger.debug("VM is a domain router so we can only allow the host to be allocated in the same pod due to problems with the DHCP only domR");
+            List<VolumeVO> vols = _volsDao.findByInstance(vm.getId());
+            VolumeVO vol = vols.get(0);
+            long podId = vol.getPodId();
+            s_logger.debug("Pod id determined from volume " + vol.getId() + " is " + podId);
+            Iterator<PodCluster> it = pcs.iterator();
+            while (it.hasNext()) {
+                PodCluster pc = it.next();
+                if (pc.getPod().getId() != podId) {
+                    it.remove();
+                }
+            }
+        }
         Set<Pair<Long, Long>> avoidPcs = new HashSet<Pair<Long, Long>>();
         for (Host h : avoid) {
             avoidPcs.add(new Pair<Long, Long>(h.getPodId(), h.getClusterId()));

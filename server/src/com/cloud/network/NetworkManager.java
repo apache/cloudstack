@@ -72,18 +72,6 @@ public interface NetworkManager extends Manager {
     public static final int DEFAULT_ROUTER_VM_RAMSIZE = 128;            // 128M
     public static final boolean USE_POD_VLAN = false;
     /**
-     * Assigns a router to the user.
-     * 
-     * @param userId user id.
-     * @param dcId data center id.
-     * @param podId pod id.
-     * @param domain domain to use
-     * @return DomainRouter if one is assigned.
-     * @throws InsufficientCapacityException if assigning causes any capacity issues.
-     */
-    DomainRouterVO assignRouter(long userId, long accountId, long dcId, long podId, String domain, String instance) throws InsufficientCapacityException;
-    
-    /**
      * create the router.
      * 
      * @param accountId account Id the router belongs to.

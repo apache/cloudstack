@@ -35,16 +35,17 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.router.DomainRouterManager;
 
 
 
 public class SshKeysDistriMonitor implements Listener {
 	  private static final Logger s_logger = Logger.getLogger(SshKeysDistriMonitor.class);
-		private final NetworkManager _networkMgr;
+		private final DomainRouterManager _routerMgr;
 		private final HostDao _hostDao;
 		private ConfigurationDao _configDao;
-	    public SshKeysDistriMonitor(NetworkManager mgr, HostDao host, ConfigurationDao config) {
-	    	this._networkMgr = mgr;
+	    public SshKeysDistriMonitor(DomainRouterManager mgr, HostDao host, ConfigurationDao config) {
+	    	this._routerMgr = mgr;
 	    	_hostDao = host;
 	    	_configDao = config;
 	    }
@@ -79,7 +80,7 @@ public class SshKeysDistriMonitor implements Listener {
 	    			Map<String, String> configs = _configDao.getConfiguration("management-server", new HashMap<String, Object>());
 	    			String pubKey = configs.get("ssh.publickey");
 	    			String prvKey = configs.get("ssh.privatekey");
-	    			if (!_networkMgr.sendSshKeysToHost(host.getId(), pubKey, prvKey)) {
+	    			if (!_routerMgr.sendSshKeysToHost(host.getId(), pubKey, prvKey)) {
 	    				s_logger.debug("Failed to send keys to agent: " + host.getId());
 	    				return false;
 	    			}

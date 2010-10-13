@@ -20,36 +20,23 @@ package com.cloud.network.router;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.agent.api.to.NicTO;
 import com.cloud.async.executor.AssignToLoadBalancerExecutor;
 import com.cloud.async.executor.LoadBalancerParam;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.VlanVO;
-import com.cloud.deploy.DeployDestination;
-import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.FirewallRuleVO;
 import com.cloud.network.IPAddressVO;
-import com.cloud.network.NetworkConfiguration;
-import com.cloud.network.NetworkConfigurationVO;
-import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.user.AccountVO;
-import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.DomainRouter;
 import com.cloud.vm.DomainRouterVO;
-import com.cloud.vm.NicProfile;
-import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmVO;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachineProfile;
 
 /**
  * NetworkManager manages the network for the different end users.
@@ -120,6 +107,9 @@ public interface DomainRouterManager extends Manager {
     
     boolean getRouterStatistics(long vmId, Map<String, long[]> netStats, Map<String, long[]> diskStats);
 
+    DomainRouterVO findByPublicIpAddress(String publicIpAddress);
+    DomainRouterVO findByAccountAndDataCenter(long accountId, long dataCenterId);
+    
     boolean rebootRouter(long routerId, long eventId);
     /**
      * @param hostId get all of the virtual machine routers on a host.
@@ -225,19 +215,5 @@ public interface DomainRouterManager extends Manager {
      */
     List<IPAddressVO> listPublicIpAddressesInVirtualNetwork(long accountId, long dcId, Boolean sourceNat);
     
-    NetworkConfigurationVO setupNetworkConfiguration(AccountVO owner, NetworkOfferingVO offering, DeploymentPlan plan);
-    NetworkConfigurationVO setupNetworkConfiguration(AccountVO owner, NetworkOfferingVO offering, NetworkConfiguration predefined, DeploymentPlan plan);
-    List<NetworkConfigurationVO> setupNetworkConfigurations(AccountVO owner, List<NetworkOfferingVO> offerings, DeploymentPlan plan);
-    
-    List<NetworkOfferingVO> getSystemAccountNetworkOfferings(String... offeringNames);
-    
-    List<NicProfile> allocate(VirtualMachineProfile vm, List<Pair<NetworkConfigurationVO, NicProfile>> networks) throws InsufficientCapacityException;
-
-    NicTO[] prepare(VirtualMachineProfile profile, DeployDestination dest) throws InsufficientAddressCapacityException, InsufficientVirtualNetworkCapcityException;
-    void release(VirtualMachineProfile vmProfile);
-    
-    <K extends VMInstanceVO> void create(K vm);
-    
-    <K extends VMInstanceVO> List<NicVO> getNics(K vm);
 	boolean upgradeRouter(long routerId, long serviceOfferingId);
 }

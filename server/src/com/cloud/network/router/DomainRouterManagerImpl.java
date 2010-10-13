@@ -18,7 +18,6 @@
 package com.cloud.network.router;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -57,7 +56,6 @@ import com.cloud.agent.api.routing.LoadBalancerCfgCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.SetFirewallRuleCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
-import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.async.AsyncJobExecutor;
@@ -78,8 +76,6 @@ import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
-import com.cloud.deploy.DeployDestination;
-import com.cloud.deploy.DeploymentPlan;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.EventState;
@@ -88,9 +84,7 @@ import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
@@ -105,8 +99,6 @@ import com.cloud.network.IPAddressVO;
 import com.cloud.network.LoadBalancerConfigurator;
 import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.Network.TrafficType;
-import com.cloud.network.NetworkConfiguration;
-import com.cloud.network.NetworkConfigurationVO;
 import com.cloud.network.SecurityGroupVMMapVO;
 import com.cloud.network.SshKeysDistriMonitor;
 import com.cloud.network.configuration.NetworkGuru;
@@ -120,8 +112,6 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
-import com.cloud.resource.Resource;
-import com.cloud.resource.Resource.ReservationStrategy;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.GuestOSVO;
@@ -160,16 +150,12 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DomainRouter;
 import com.cloud.vm.DomainRouter.Role;
 import com.cloud.vm.DomainRouterVO;
-import com.cloud.vm.NicProfile;
-import com.cloud.vm.NicVO;
 import com.cloud.vm.State;
 import com.cloud.vm.UserVmVO;
-import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
-import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
@@ -1890,7 +1876,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
             throw new ConfigurationException("Unable to get " + UserStatisticsDao.class.getName());
         }
 
-        _agentMgr.registerForHostEvents(new SshKeysDistriMonitor(null, _hostDao, _configDao), true, false, false);
+        _agentMgr.registerForHostEvents(new SshKeysDistriMonitor(this, _hostDao, _configDao), true, false, false);
         _haMgr.registerHandler(VirtualMachine.Type.DomainRouter, this);
 
         boolean useLocalStorage = Boolean.parseBoolean(configs.get(Config.SystemVMUseLocalStorage.key()));
@@ -2040,6 +2026,17 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
         
         return stopped;
     }
+    
+    @Override
+    public DomainRouterVO findByPublicIpAddress(String publicIpAddress) {
+        return _routerDao.findByPublicIpAddress(publicIpAddress);
+    }
+    
+    @Override
+    public DomainRouterVO findByAccountAndDataCenter(long accountId, long dataCenterId) {
+        return _routerDao.findBy(accountId, dataCenterId);
+    }
+    
 
     @Override
     @DB
@@ -2406,274 +2403,6 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
     	ipAddressSC.setJoinParameters("virtualNetworkVlanSB", "vlanType", VlanType.VirtualNetwork);
 		
 		return _ipAddressDao.search(ipAddressSC, null);
-    }
-    
-    @Override
-    public NetworkConfigurationVO setupNetworkConfiguration(AccountVO owner, NetworkOfferingVO offering, DeploymentPlan plan) {
-        return setupNetworkConfiguration(owner, offering, null, plan);
-    }
-    
-    @Override
-    public NetworkConfigurationVO setupNetworkConfiguration(AccountVO owner, NetworkOfferingVO offering, NetworkConfiguration predefined, DeploymentPlan plan) {
-        List<NetworkConfigurationVO> configs = _networkProfileDao.listBy(owner.getId(), offering.getId(), plan.getDataCenterId());
-        if (configs.size() > 0) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Found existing network configuration for offering " + offering + ": " + configs.get(0));
-            }
-            return configs.get(0);
-        }
-        
-        for (NetworkGuru guru : _networkGurus) {
-            NetworkConfiguration config = guru.design(offering, plan, predefined, owner);
-            if (config == null) {
-                continue;
-            }
-            
-            if (config.getId() != null) {
-                if (config instanceof NetworkConfigurationVO) {
-                    return (NetworkConfigurationVO)config;
-                } else {
-                    return _networkProfileDao.findById(config.getId());
-                }
-            } 
-            
-            NetworkConfigurationVO vo = new NetworkConfigurationVO(config, offering.getId(), plan.getDataCenterId(), guru.getName());
-            return _networkProfileDao.persist(vo, owner.getId());
-        }
-
-        throw new CloudRuntimeException("Unable to convert network offering to network profile: " + offering.getId());
-    }
-
-    @Override
-    public List<NetworkConfigurationVO> setupNetworkConfigurations(AccountVO owner, List<NetworkOfferingVO> offerings, DeploymentPlan plan) {
-        List<NetworkConfigurationVO> profiles = new ArrayList<NetworkConfigurationVO>(offerings.size());
-        for (NetworkOfferingVO offering : offerings) {
-            profiles.add(setupNetworkConfiguration(owner, offering, plan));
-        }
-        return profiles;
-    }
-    
-    @Override
-    public List<NetworkOfferingVO> getSystemAccountNetworkOfferings(String... offeringNames) {
-        List<NetworkOfferingVO> offerings = new ArrayList<NetworkOfferingVO>(offeringNames.length);
-        for (String offeringName : offeringNames) {
-            NetworkOfferingVO network = _systemNetworks.get(offeringName);
-            if (network == null) {
-                throw new CloudRuntimeException("Unable to find system network profile for " + offeringName);
-            }
-            offerings.add(network);
-        }
-        return offerings;
-    }
-    
-    public NetworkConfigurationVO createNetworkConfiguration(NetworkOfferingVO offering, DeploymentPlan plan, AccountVO owner) {
-        return null;
-    }
-
-
-    @Override @DB
-    public List<NicProfile> allocate(VirtualMachineProfile vm, List<Pair<NetworkConfigurationVO, NicProfile>> networks) throws InsufficientCapacityException {
-        List<NicProfile> nicProfiles = new ArrayList<NicProfile>(networks.size());
-        
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        
-        int deviceId = 0;
-        
-        boolean[] deviceIds = new boolean[networks.size()];
-        Arrays.fill(deviceIds, false);
-        
-        List<NicVO> nics = new ArrayList<NicVO>(networks.size());
-        NicVO defaultNic = null;
-        
-        for (Pair<NetworkConfigurationVO, NicProfile> network : networks) {
-            NetworkConfigurationVO config = network.first();
-            NetworkGuru concierge = _networkGurus.get(config.getGuruName());
-            NicProfile requested = network.second();
-            NicProfile profile = concierge.allocate(config, requested, vm);
-            if (profile == null) {
-                continue;
-            }
-            NicVO vo = new NicVO(concierge.getName(), vm.getId(), config.getId());
-            vo.setMode(network.first().getMode());
-            
-            while (deviceIds[deviceId] && deviceId < deviceIds.length) {
-                deviceId++;
-            }
-            
-            deviceId = applyProfileToNic(vo, profile, deviceId);
-            
-            vo = _nicDao.persist(vo);
-            
-            if (vo.isDefaultNic()) {
-                if (defaultNic != null) {
-                    throw new IllegalArgumentException("You cannot specify two nics as default nics: nic 1 = " + defaultNic + "; nic 2 = " + vo);
-                }
-                defaultNic = vo;
-            }
-            
-            int devId = vo.getDeviceId();
-            if (devId > deviceIds.length) {
-                throw new IllegalArgumentException("Device id for nic is too large: " + vo);
-            }
-            if (deviceIds[devId]) {
-                throw new IllegalArgumentException("Conflicting device id for two different nics: " + devId);
-            }
-            
-            deviceIds[devId] = true;
-            nics.add(vo);
-            nicProfiles.add(new NicProfile(vo, network.first(), vo.getBroadcastUri(), vo.getIsolationUri()));
-        }
-        
-        if (defaultNic == null && nics.size() > 2) {
-            throw new IllegalArgumentException("Default Nic was not set.");
-        } else if (nics.size() == 1) {
-            nics.get(0).setDefaultNic(true);
-        }
-        
-        txn.commit();
-        
-        return nicProfiles;
-    }
-    
-    protected Integer applyProfileToNic(NicVO vo, NicProfile profile, Integer deviceId) {
-        if (profile.getDeviceId() != null) {
-            vo.setDeviceId(profile.getDeviceId());
-        } else if (deviceId != null ) {
-            vo.setDeviceId(deviceId++);
-        }
-        
-        vo.setDefaultNic(profile.isDefaultNic());
-        
-        if (profile.getIp4Address() != null) {
-            vo.setIp4Address(profile.getIp4Address());
-            vo.setState(NicVO.State.Reserved);
-        }
-        
-        if (profile.getMacAddress() != null) {
-            vo.setMacAddress(profile.getMacAddress());
-        }
-        
-        vo.setMode(profile.getMode());
-        vo.setNetmask(profile.getNetmask());
-        vo.setGateway(profile.getGateway());
-        
-        return deviceId;
-    }
-    
-    protected NicTO toNicTO(NicVO nic, NicProfile profile, NetworkConfigurationVO config) {
-        NicTO to = new NicTO();
-        to.setDeviceId(nic.getDeviceId());
-        to.setBroadcastType(config.getBroadcastDomainType());
-        to.setType(config.getTrafficType());
-        to.setIp(nic.getIp4Address());
-        to.setNetmask(nic.getNetmask());
-        to.setMac(nic.getMacAddress());
-        if (config.getDns() != null) {
-            String[] tokens = config.getDns().split(",");
-            to.setDns1(tokens[0]);
-            if (tokens.length > 2) {
-                to.setDns2(tokens[1]);
-            }
-        }
-        if (nic.getGateway() != null) {
-            to.setGateway(nic.getGateway());
-        } else {
-            to.setGateway(config.getGateway());
-        }
-        to.setDefaultNic(nic.isDefaultNic());
-        to.setBroadcastUri(nic.getBroadcastUri());
-        to.setIsolationuri(nic.getIsolationUri());
-        if (profile != null) {
-            to.setDns1(profile.getDns1());
-            to.setDns2(profile.getDns2());
-        }
-        
-        return to;
-    }
-    
-    @Override
-    public NicTO[] prepare(VirtualMachineProfile vmProfile, DeployDestination dest) throws InsufficientAddressCapacityException, InsufficientVirtualNetworkCapcityException {
-        List<NicVO> nics = _nicDao.listBy(vmProfile.getId());
-        NicTO[] nicTos = new NicTO[nics.size()];
-        int i = 0;
-        for (NicVO nic : nics) {
-            NetworkConfigurationVO config = _networkProfileDao.findById(nic.getNetworkConfigurationId());
-            NicProfile profile = null;
-            if (nic.getReservationStrategy() == ReservationStrategy.Start) {
-                NetworkGuru concierge = _networkGurus.get(config.getGuruName());
-                nic.setState(Resource.State.Reserving);
-                _nicDao.update(nic.getId(), nic);
-                profile = toNicProfile(nic);
-                String reservationId = concierge.reserve(profile, config, vmProfile, dest);
-                nic.setIp4Address(profile.getIp4Address());
-                nic.setIp6Address(profile.getIp6Address());
-                nic.setMacAddress(profile.getMacAddress());
-                nic.setIsolationUri(profile.getIsolationUri());
-                nic.setBroadcastUri(profile.getBroadCastUri());
-                nic.setReservationId(reservationId);
-                nic.setReserver(concierge.getName());
-                nic.setState(Resource.State.Reserved);
-                nic.setNetmask(profile.getNetmask());
-                nic.setGateway(profile.getGateway());
-                nic.setAddressFormat(profile.getFormat());
-                _nicDao.update(nic.getId(), nic);
-                for (NetworkElement element : _networkElements) {
-                    if (!element.prepare(config, profile, vmProfile, null)) {
-                        s_logger.warn("Unable to prepare " + nic + " for element " + element.getName());
-                        return null;
-                    }
-                }
-            }
-            
-            nicTos[i++] = toNicTO(nic, profile, config);
-            
-        }
-        return nicTos;
-    }
-    
-    @Override
-    public void release(VirtualMachineProfile vmProfile) {
-        List<NicVO> nics = _nicDao.listBy(vmProfile.getId());
-        for (NicVO nic : nics) {
-            NetworkConfigurationVO config = _networkProfileDao.findById(nic.getNetworkConfigurationId());
-            if (nic.getReservationStrategy() == ReservationStrategy.Start) {
-                NetworkGuru concierge = _networkGurus.get(config.getGuruName());
-                nic.setState(Resource.State.Releasing);
-                _nicDao.update(nic.getId(), nic);
-                concierge.release(nic.getReservationId());
-            }
-        }
-    }
-    
-    NicProfile toNicProfile(NicVO nic) {
-        NetworkConfiguration config = _networkProfileDao.findById(nic.getNetworkConfigurationId());
-        NicProfile profile = new NicProfile(nic, config, nic.getBroadcastUri(), nic.getIsolationUri());
-        return profile;
-    }
-    
-    public void release(long vmId) {
-        List<NicVO> nics = _nicDao.listBy(vmId);
-        
-        for (NicVO nic : nics) {
-            nic.setState(Resource.State.Releasing);
-            _nicDao.update(nic.getId(), nic);
-            NetworkGuru concierge = _networkGurus.get(nic.getReserver());
-            if (!concierge.release(nic.getReservationId())) {
-                s_logger.warn("Unable to release " + nic + " using " + concierge.getName());
-            }
-            nic.setState(Resource.State.Allocated);
-            _nicDao.update(nic.getId(), nic);
-        }
-    }
-    
-    @Override
-    public <K extends VMInstanceVO> void create(K vm) {
-    }
-    
-    @Override
-    public <K extends VMInstanceVO> List<NicVO> getNics(K vm) {
-        return _nicDao.listBy(vm.getId());
     }
     
     protected class NetworkUsageTask implements Runnable {

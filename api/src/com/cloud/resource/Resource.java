@@ -36,9 +36,7 @@ public interface Resource {
         
         @Override
         public StateMachine<State, Event> getStateMachine() {
-            
-            // TODO Auto-generated method stub
-            return null;
+            return s_fsm;
         }
 
         @Override
