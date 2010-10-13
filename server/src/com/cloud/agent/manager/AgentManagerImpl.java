@@ -1048,7 +1048,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
                 if (!monitor.second().processConnect(host, cmd[i])) {
                     s_logger.info("Monitor " + monitor.second().getClass().getSimpleName() + " says not to continue the connect process for " + hostId);
                     handleDisconnect(attache, Event.AgentDisconnected, false);
-                    return null;
+                    return attache;
                 }
             }
         }
@@ -1179,12 +1179,14 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
             resource.disconnected();
             return null;
         }
-
-        StartupAnswer[] answers = new StartupAnswer[cmds.length];
-        for (int i = 0; i < answers.length; i++) {
-            answers[i] = new StartupAnswer(cmds[i], attache.getId(), _pingInterval);
+        if( attache.isReady()) {
+            StartupAnswer[] answers = new StartupAnswer[cmds.length];
+            for (int i = 0; i < answers.length; i++) {
+                answers[i] = new StartupAnswer(cmds[i], attache.getId(), _pingInterval);
+            }
+            
+            attache.process(answers);
         }
-        attache.process(answers);
         return attache;
     }
 
