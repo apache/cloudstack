@@ -625,5 +625,5 @@ if buildpremium:
 	bld.process_after(tgen)
 
 	bld.install_files("${PYTHONDIR}//cloudtool", 'cloudstack-proprietary/cloud-cli/cloudtool/*')
-	bld.install_files("${PYTHONDIR}/cloudapis", 'cloudstack-proprietary/cloud-cli/cloudapis/*')
+	bld.install_as("${PYTHONDIR}/cloudapis.py", 'cloudstack-proprietary/cloud-cli/cloudapis/cloud.py')
 

@@ -714,9 +714,8 @@ fi
 %{_bindir}/%{name}voladm
 %{_sysconfdir}/%{name}/cli/commands.xml
 %dir %{_prefix}/lib*/python*/site-packages/%{name}tool
-%dir %{_prefix}/lib*/python*/site-packages/%{name}apis
 %{_prefix}/lib*/python*/site-packages/%{name}tool/*
-%{_prefix}/lib*/python*/site-packages/%{name}apis/*
+%{_prefix}/lib*/python*/site-packages/%{name}apis.py
 %doc README
 %doc HACKING
 %doc debian/copyright
