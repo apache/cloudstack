@@ -130,16 +130,13 @@ public class ListPublicIpAddressesCmd extends BaseCmd {
         	c.addCriteria(Criteria.ISALLOCATED, allocatedOnly.booleanValue());
         }
 
-        if (keyword != null) {
-        	c.addCriteria(Criteria.KEYWORD, keyword);
-        } else {
-            if (isAdmin) {
-                c.addCriteria(Criteria.DOMAINID, domainId);
-                c.addCriteria(Criteria.VLAN, vlanDbId);
-            }
-            c.addCriteria(Criteria.FOR_VIRTUAL_NETWORK, forVirtualNetwork);
-        	c.addCriteria(Criteria.DATACENTERID, zoneId);
-            c.addCriteria(Criteria.IPADDRESS, ip);
+        c.addCriteria(Criteria.KEYWORD, keyword);
+        c.addCriteria(Criteria.FOR_VIRTUAL_NETWORK, forVirtualNetwork);
+        c.addCriteria(Criteria.DATACENTERID, zoneId);
+        c.addCriteria(Criteria.IPADDRESS, ip);
+        if (isAdmin) {
+            c.addCriteria(Criteria.DOMAINID, domainId);
+            c.addCriteria(Criteria.VLAN, vlanDbId);
         }
 
         List<IPAddressVO> result = getManagementServer().searchForIPAddresses(c);

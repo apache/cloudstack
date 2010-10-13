@@ -113,16 +113,13 @@ public class ListRoutersCmd extends BaseCmd {
 
         Criteria c = new Criteria("id", Boolean.TRUE, startIndex, Long.valueOf(pageSizeNum));
         c.addCriteria(Criteria.ACCOUNTID, accountIds);
-        if (keyword != null) {
-        	c.addCriteria(Criteria.KEYWORD, keyword);
-        } else {
-            c.addCriteria(Criteria.DOMAINID, domainId);
-            c.addCriteria(Criteria.DATACENTERID, zoneId);
-            c.addCriteria(Criteria.PODID, podId);
-            c.addCriteria(Criteria.HOSTID, hostId);
-            c.addCriteria(Criteria.NAME, name);
-            c.addCriteria(Criteria.STATE, state);
-        }
+        c.addCriteria(Criteria.KEYWORD, keyword);
+        c.addCriteria(Criteria.DOMAINID, domainId);
+        c.addCriteria(Criteria.DATACENTERID, zoneId);
+        c.addCriteria(Criteria.PODID, podId);
+        c.addCriteria(Criteria.HOSTID, hostId);
+        c.addCriteria(Criteria.NAME, name);
+        c.addCriteria(Criteria.STATE, state);
 
         List<DomainRouterVO> routers = getManagementServer().searchForRouters(c);
 

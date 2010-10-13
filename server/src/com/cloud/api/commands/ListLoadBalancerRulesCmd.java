@@ -124,16 +124,13 @@ public class ListLoadBalancerRulesCmd extends BaseCmd {
 
         Criteria c = new Criteria("ipAddress", Boolean.TRUE, startIndex, Long.valueOf(pageSizeNum));
         c.addCriteria(Criteria.ACCOUNTID, accountId);
-        if (keyword == null) {
-        	c.addCriteria(Criteria.ID, id);
-        	c.addCriteria(Criteria.NAME, name);
-        	c.addCriteria(Criteria.INSTANCEID, vmId);
-        	c.addCriteria(Criteria.IPADDRESS, publicIp);
-        	if (isAdmin) {
-                c.addCriteria(Criteria.DOMAINID, domainId);
-        	}
-        } else {
-        	c.addCriteria(Criteria.KEYWORD, keyword);
+        c.addCriteria(Criteria.ID, id);
+        c.addCriteria(Criteria.NAME, name);
+        c.addCriteria(Criteria.INSTANCEID, vmId);
+        c.addCriteria(Criteria.IPADDRESS, publicIp);
+        c.addCriteria(Criteria.KEYWORD, keyword);
+        if (isAdmin) {
+            c.addCriteria(Criteria.DOMAINID, domainId);
         }
 
         // FIXME: this should be constrained by domain to search for all load balancers in a domain if an admin is searching

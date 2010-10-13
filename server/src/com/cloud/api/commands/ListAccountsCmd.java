@@ -109,15 +109,12 @@ public class ListAccountsCmd extends BaseCmd{
         Criteria c = new Criteria("id", Boolean.TRUE, startIndex, Long.valueOf(pageSizeNum));
 		if (isAdmin == true) {
 			c.addCriteria(Criteria.ID, id);
-			if (keyword == null) {
-				c.addCriteria(Criteria.ACCOUNTNAME, accountName);
-				c.addCriteria(Criteria.DOMAINID, domainId);
-				c.addCriteria(Criteria.TYPE, type);
-				c.addCriteria(Criteria.STATE, state);
-				c.addCriteria(Criteria.ISCLEANUPREQUIRED, needCleanup);
-			} else {
-				c.addCriteria(Criteria.KEYWORD, keyword);
-			}
+			c.addCriteria(Criteria.ACCOUNTNAME, accountName);
+			c.addCriteria(Criteria.DOMAINID, domainId);
+			c.addCriteria(Criteria.TYPE, type);
+			c.addCriteria(Criteria.STATE, state);
+			c.addCriteria(Criteria.ISCLEANUPREQUIRED, needCleanup);
+			c.addCriteria(Criteria.KEYWORD, keyword);
 		} else {
 			c.addCriteria(Criteria.ID, accountId);
 		}

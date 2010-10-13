@@ -123,19 +123,16 @@ public class ListVolumesCmd extends BaseCmd{
         Criteria c = new Criteria("created", Boolean.FALSE, startIndex, Long.valueOf(pageSizeNum));
 
         c.addCriteria(Criteria.ACCOUNTID, accountIds);
-        if (keyword != null) {
-            c.addCriteria(Criteria.KEYWORD, keyword);
-        } else {
-            c.addCriteria(Criteria.ID, id);
-            c.addCriteria(Criteria.INSTANCEID, vmId);
-            c.addCriteria(Criteria.NAME, name);
-            if (isAdmin) {
-                c.addCriteria(Criteria.VTYPE, type);
-                c.addCriteria(Criteria.DATACENTERID, zoneId);
-                c.addCriteria(Criteria.PODID, podId);
-                c.addCriteria(Criteria.HOSTID, hostId);
-                c.addCriteria(Criteria.DOMAINID, domainId);
-            }
+        c.addCriteria(Criteria.KEYWORD, keyword);
+        c.addCriteria(Criteria.ID, id);
+        c.addCriteria(Criteria.INSTANCEID, vmId);
+        c.addCriteria(Criteria.NAME, name);
+        if (isAdmin) {
+            c.addCriteria(Criteria.VTYPE, type);
+            c.addCriteria(Criteria.DATACENTERID, zoneId);
+            c.addCriteria(Criteria.PODID, podId);
+            c.addCriteria(Criteria.HOSTID, hostId);
+            c.addCriteria(Criteria.DOMAINID, domainId);
         }
 
         List<VolumeVO> volumes = getManagementServer().searchForVolumes(c);

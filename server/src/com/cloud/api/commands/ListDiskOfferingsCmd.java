@@ -76,13 +76,10 @@ public class ListDiskOfferingsCmd extends BaseCmd {
         }
 
         Criteria c = new Criteria("id", Boolean.TRUE, startIndex, Long.valueOf(pageSizeNum));
-        if (keyword != null) {
-        	c.addCriteria(Criteria.KEYWORD, keyword);
-        }else {
-        	c.addCriteria(Criteria.ID, id);
-            c.addCriteria(Criteria.NAME, name);
-            c.addCriteria(Criteria.DOMAINID, domainId);
-        }
+        c.addCriteria(Criteria.KEYWORD, keyword);
+        c.addCriteria(Criteria.ID, id);
+        c.addCriteria(Criteria.NAME, name);
+        c.addCriteria(Criteria.DOMAINID, domainId);
 
         List<DiskOfferingVO> offerings = getManagementServer().searchForDiskOfferings(c);
 

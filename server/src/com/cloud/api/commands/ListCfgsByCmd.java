@@ -72,12 +72,9 @@ public class ListCfgsByCmd extends BaseCmd {
         }
         
         Criteria c = new Criteria ("name", Boolean.TRUE, startIndex, Long.valueOf(pageSizeNum));
-        if (keyword != null) {
-        	c.addCriteria(Criteria.KEYWORD, keyword);
-        } else {
-        	c.addCriteria(Criteria.NAME, name);
-    		c.addCriteria(Criteria.CATEGORY, category);
-        }
+        c.addCriteria(Criteria.KEYWORD, keyword);
+        c.addCriteria(Criteria.NAME, name);
+        c.addCriteria(Criteria.CATEGORY, category);
 		
     	List<ConfigurationVO> configs = getManagementServer().searchForConfigurations(c, false);
         
