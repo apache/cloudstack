@@ -47,8 +47,8 @@ function clickInstanceGroupHeader($arrowIcon) {
         initDialog("dialog_create_template", 400);  
 	
         //***** switch between different tabs (begin) ********************************************************************
-        var tabArray = ["tab_details", "tab_volume", "tab_statistics", "tab_router"];
-        var tabContentArray = ["tab_content_details", "tab_content_volume", "tab_content_statistics", "tab_content_router"];
+        var tabArray = [$("#tab_details"), $("#tab_volume"), $("#tab_statistics"), $("#tab_router")];
+        var tabContentArray = [$("#tab_content_details"), $("#tab_content_volume"), $("#tab_content_statistics"), $("#tab_content_router")];
         switchBetweenDifferentTabs(tabArray, tabContentArray);       
         //***** switch between different tabs (end) **********************************************************************
         

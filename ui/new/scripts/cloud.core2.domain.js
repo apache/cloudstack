@@ -238,8 +238,8 @@ function afterLoadDomainJSP() {
 	refreshWholeTree(defaultRootDomainId, defaultRootLevel);
 		
 	//***** switch between different tabs (begin) ********************************************************************
-    var tabArray = ["tab_details", "tab_resource_limits", "tab_admin_account"];
-    var tabContentArray = ["tab_content_details", "tab_content_resource_limits", "tab_content_admin_account"];
+    var tabArray = [$("#tab_details"), $("#tab_resource_limits"), $("#tab_admin_account")];
+    var tabContentArray = [$("#tab_content_details"), $("#tab_content_resource_limits"), $("#tab_content_admin_account")];
     switchBetweenDifferentTabs(tabArray, tabContentArray);       
     //***** switch between different tabs (end) **********************************************************************
 	    

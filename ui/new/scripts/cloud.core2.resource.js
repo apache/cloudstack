@@ -1,10 +1,24 @@
 function afterLoadResourceJSP() {
-    //***** switch between different tabs (begin) ********************************************************************
-    var tabArray = ["tab_details", "tab_network", "tab_secondary_storage"];
-    var tabContentArray = ["tab_content_details", "tab_content_network", "tab_content_secondary_storage"];
-    switchBetweenDifferentTabs(tabArray, tabContentArray);       
-    //***** switch between different tabs (end) **********************************************************************
-  
+    var $rightPanelConent = $("#right_panel_content");
+    var $zonePage = $rightPanelConent.find("#zone_page");
+    var $podPage = $rightPanelConent.find("#pod_page");
+    var $clusterPage = $rightPanelConent.find("#cluster_page");
+    var $hostPage = $rightPanelConent.find("#host_page");
+    var $primarystoragePage = $rightPanelConent.find("#primarystorage_page");
+    var $systemvmPage = $rightPanelConent.find("#systemvm_page");
+    
+    var pageArray = [$zonePage, $podPage, $clusterPage, $hostPage, $primarystoragePage, $systemvmPage];
+    
+    function showPage($pageToShow) {        
+        for(var i=0; i<pageArray.length; i++) {
+            if(pageArray[i].attr("id") == $pageToShow.attr("id"))
+                pageArray[i].show();
+            else
+                pageArray[i].hide();
+        }            
+    }
+   
+    //***** build zone tree (begin) ***********************************************************************************************
     var forceLogout = true;  // We force a logout only if the user has first added a POD for the very first time 
     var $zoneetree1 = $("#zonetree").clone().attr("id", "zonetree1");  
     $("#midmenu_container").append($zoneetree1.show());
@@ -27,6 +41,7 @@ function afterLoadResourceJSP() {
 
     function zoneJSONToTemplate(json, template) {
         var zoneid = json.id;
+        template.attr("id", "zone_" + zoneid);  
 	    template.data("id", zoneid).data("name", fromdb(json.name));
 	    template.find("#zone_name")
 		    .text(fromdb(json.name))
@@ -76,12 +91,15 @@ function afterLoadResourceJSP() {
 	    });
     }
     
-    function podJSONToTemplate(json, template) {		    
+    function podJSONToTemplate(json, template) {	
+        var podid = json.id;
+        template.attr("id", "pod_" + podid);  
+    	    
 		var ipRange = getIpRange(json.startip, json.endip);			
-		template.data("id", json.id).data("name", json.name);
+		template.data("id", podid).data("name", json.name);
 		
 		var podName = template.find("#pod_name").text(json.name);
-		podName.data("id", json.id);
+		podName.data("id", podid);
 		podName.data("zoneid", json.zoneid);
 		podName.data("name", json.name);
 		podName.data("cidr", json.cidr);
@@ -91,7 +109,7 @@ function afterLoadResourceJSP() {
 		podName.data("gateway", json.gateway);		
 		
 	    $.ajax({
-            data: createURL("command=listClusters&podid="+json.id+maxPageSize),
+            data: createURL("command=listClusters&podid="+podid+maxPageSize),
 	        dataType: "json",
 	        success: function(json) {
 		        var items = json.listclustersresponse.cluster;
@@ -108,8 +126,9 @@ function afterLoadResourceJSP() {
 	}
 		
 	function systemvmJSONToTemplate(json, template) {	
-	    template.data("id", json.id).data("name", json.name);
-	     
+	    var systemvmid = json.id;	
+	    template.attr("id", "systemvm_"+systemvmid);
+	    template.data("id", systemvmid).data("name", json.name);	     
 	    var systeymvmName = template.find("#systemvm_name").text(json.name);
 		systeymvmName.data("systemvmtype", json.systemvmtype);
 		systeymvmName.data("name", json.name);	
@@ -152,7 +171,7 @@ function afterLoadResourceJSP() {
 		        var container = template.find("#primarystorages_container").empty();
 		        if (items != null && items.length > 0) {					    
 			        for (var i = 0; i < items.length; i++) {
-				        var primaryStorageTemplate = $("#primary_storage_template").clone(true).attr("id", "primary_storage_"+items[i].id);
+				        var primaryStorageTemplate = $("#primarystorage_template").clone(true).attr("id", "primary_storage_"+items[i].id);
 				        primaryStorageJSONToTemplate(items[i], primaryStorageTemplate);
 				        container.append(primaryStorageTemplate.show());
 			        }
@@ -170,7 +189,7 @@ function afterLoadResourceJSP() {
 	function primaryStorageJSONToTemplate(json, template) {
 	    template.data("id", json.id).data("name", fromdb(json.name));
 	    
-	    var primaryStorageName = template.find("#primary_storage_name").text(fromdb(json.name));
+	    var primaryStorageName = template.find("#primarystorage_name").text(fromdb(json.name));
 	}
 	
 	$("#zone_template").bind("click", function(event) {
@@ -181,41 +200,113 @@ function afterLoadResourceJSP() {
 		var name = template.data("name");
 		
 		switch (action) {
-			case "zone_expand" :
-				if (target.hasClass("zonetree_closedarrows")) {
-					$("#zone_"+id).find("#zone_content").show();					
-					target.removeClass().addClass("zonetree_openarrows");
-				} else {
-					$("#zone_"+id).find("#zone_content").hide();
-					target.removeClass().addClass("zonetree_closedarrows");
+			case "zone_expand" :			   
+				if (target.hasClass("zonetree_closedarrows")) {						
+					target.removeClass().addClass("zonetree_openarrows");					
+					target.parent().parent().parent().find("#zone_content").show();	
+				} else {					
+					target.removeClass().addClass("zonetree_closedarrows");					
+					target.parent().parent().parent().find("#zone_content").hide();									
 				}
+				break;	
+			case "zone_name":	
+			    $zoneetree1.find(".selected").removeClass("selected");
+			    target.parent().parent().parent().addClass("selected");				    
+			    showPage($zonePage);	    
+			    var obj = {"id": target.data("id"), "name": target.data("name"), "dns1": target.data("dns1"), "dns2": target.data("dns2"), "internaldns1": target.data("internaldns1"), "internaldns2": target.data("internaldns2"), "vlan": target.data("vlan"), "guestcidraddress": target.data("guestcidraddress")};
+				zoneJsonToDetailsTab(obj);							    		   			    
+			    break;
+			
+			
+			case "pod_expand" :				    	   
+				if (target.hasClass("zonetree_closedarrows")) {									
+					target.removeClass().addClass("zonetree_openarrows");
+					target.parent().parent().siblings("#pod_content").show();	
+				} else {					
+					target.removeClass().addClass("zonetree_closedarrows");
+					target.parent().parent().siblings("#pod_content").hide();
+				}
+				break;	
+			case "pod_name" :			   
+				$zoneetree1.find(".selected").removeClass("selected");
+				target.parent().parent().parent().addClass("selected");
+				showPage($podPage);
+			    var obj = {"id": target.data("id"), "zoneid": target.data("zoneid"), "name": target.data("name"), "cidr": target.data("cidr"), "startip": target.data("startip"), "endip": target.data("endip"), "ipRange": target.data("ipRange"), "gateway": target.data("gateway")};
+				podJsonToDetailsTab(obj);				
 				break;
-			case "zone_name" :
-				$(".zonetree_firstlevel_selected").removeClass().addClass("zonetree_firstlevel");
-				$(".zonetree_secondlevel_selected").removeClass().addClass("zonetree_secondlevel");
-				template.find(".zonetree_firstlevel").removeClass().addClass("zonetree_firstlevel_selected");
-									
-				var obj = {"id": target.data("id"), "name": target.data("name"), "dns1": target.data("dns1"), "dns2": target.data("dns2"), "internaldns1": target.data("internaldns1"), "internaldns2": target.data("internaldns2"), "vlan": target.data("vlan"), "guestcidraddress": target.data("guestcidraddress")};
-				//zoneObjectToRightPanel(obj);					
 				
+			
+			case "cluster_expand" :			   
+				if (target.hasClass("zonetree_closedarrows")) {
+				    target.removeClass().addClass("zonetree_openarrows");
+					target.parent().parent().siblings("#cluster_content").show();					
+					
+				} else {
+				    target.removeClass().addClass("zonetree_closedarrows");
+					target.parent().parent().siblings("#cluster_content").hide();					
+				}
+				break;		
+			case "cluster_name" :			   
+				$zoneetree1.find(".selected").removeClass("selected");
+			    target.parent().parent().parent().addClass("selected");
+			    showPage($clusterPage);
+			    //var obj = {"id": target.data("id"), "zoneid": target.data("zoneid"), "name": target.data("name"), "cidr": target.data("cidr"), "startip": target.data("startip"), "endip": target.data("endip"), "ipRange": target.data("ipRange"), "gateway": target.data("gateway")};
+				//clusterObjectToRightPanel(obj);				
+				break;	
+				
+				
+			case "host_expand" :			   
+				if (target.hasClass("zonetree_closedarrows")) {
+				    target.removeClass().addClass("zonetree_openarrows");
+					target.parent().parent().siblings("#host_content").show();					
+					
+				} else {
+				    target.removeClass().addClass("zonetree_closedarrows");
+					target.parent().parent().siblings("#host_content").hide();					
+				}
+				break;	
+			case "host_name" :			   
+				$zoneetree1.find(".selected").removeClass("selected");
+			    target.parent().parent().parent().addClass("selected");
+			    showPage($hostPage);
+				//var obj = {"id": target.data("id"), "zoneid": target.data("zoneid"), "name": target.data("name"), "cidr": target.data("cidr"), "startip": target.data("startip"), "endip": target.data("endip"), "ipRange": target.data("ipRange"), "gateway": target.data("gateway")};
+				//hostObjectToRightPanel(obj);				
+				break;	
+			
+			
+			case "primarystorage_expand" :			   
+				if (target.hasClass("zonetree_closedarrows")) {
+				    target.removeClass().addClass("zonetree_openarrows");
+					target.parent().parent().siblings("#primarystorage_content").show();					
+					
+				} else {
+				    target.removeClass().addClass("zonetree_closedarrows");
+					target.parent().parent().siblings("#primarystorage_content").hide();					
+				}
+				break;	
+			case "primarystorage_name" :			   
+				$zoneetree1.find(".selected").removeClass("selected");
+			    target.parent().parent().parent().addClass("selected");
+			    showPage($primarystoragePage);
+				//var obj = {"id": target.data("id"), "zoneid": target.data("zoneid"), "name": target.data("name"), "cidr": target.data("cidr"), "startip": target.data("startip"), "endip": target.data("endip"), "ipRange": target.data("ipRange"), "gateway": target.data("gateway")};
+				//primarystorageObjectToRightPanel(obj);				
 				break;
-				
-			case "pod_name" :
-				$(".zonetree_firstlevel_selected").removeClass().addClass("zonetree_firstlevel");
-				$(".zonetree_secondlevel_selected").removeClass().addClass("zonetree_secondlevel");
-				target.parent(".zonetree_secondlevel").removeClass().addClass("zonetree_secondlevel_selected");
-									
-				var obj = {"id": target.data("id"), "zoneid": target.data("zoneid"), "name": target.data("name"), "cidr": target.data("cidr"), "startip": target.data("startip"), "endip": target.data("endip"), "ipRange": target.data("ipRange"), "gateway": target.data("gateway")};
-				//podObjectToRightPanel(obj);
-				
+						
+						
+			case "systemvm_name" :			   
+				$zoneetree1.find(".selected").removeClass("selected");			    		    
+			    target.parent().parent().parent().addClass("selected");		
+			    showPage($systemvmPage);
+				//var obj = {"id": target.data("id"), "zoneid": target.data("zoneid"), "name": target.data("name"), "cidr": target.data("cidr"), "startip": target.data("startip"), "endip": target.data("endip"), "ipRange": target.data("ipRange"), "gateway": target.data("gateway")};
+				//systemvmObjectToRightPanel(obj);				
 				break;
+			
 			
 			default:
 				break;
 		}
 		return false;
 	});
-
     
     function getIpRange(startip, endip) {
 	    var ipRange = "";
@@ -223,9 +314,45 @@ function afterLoadResourceJSP() {
 			ipRange = startip;
 		}
 		if (endip != null && endip.length > 0) {
-			ipRange = ipRange + "-" + endip;
+			ipRange = ipRange + " - " + endip;
 		}		
 		return ipRange;
+	}		
+	//***** build zone tree (end) *************************************************************************************************
+	
+	//***** zone page (begin) *****************************************************************************************************
+	//switch between different tabs in zone page 
+    var tabArray = [$zonePage.find("#tab_details"), $zonePage.find("#tab_network"), $zonePage.find("#tab_secondary_storage")];
+    var tabContentArray = [$zonePage.find("#tab_content_details"), $zonePage.find("#tab_content_network"), $zonePage.find("#tab_content_secondary_storage")];
+    switchBetweenDifferentTabs(tabArray, tabContentArray);       
+  
+    function zoneJsonToDetailsTab(jsonObj) {	    
+	    var $detailsTab = $zonePage.find("#tab_content_details");   
+        $detailsTab.data("jsonObj", jsonObj);           
+        $detailsTab.find("#id").text(fromdb(jsonObj.id));
+        $detailsTab.find("#name").text(fromdb(jsonObj.name));
+        $detailsTab.find("#dns1").text(fromdb(jsonObj.dns1));
+        $detailsTab.find("#dns2").text(fromdb(jsonObj.dns2));
+        $detailsTab.find("#internaldns1").text(fromdb(jsonObj.internaldns1));
+        $detailsTab.find("#internaldns2").text(fromdb(jsonObj.internaldns2));	
+        $detailsTab.find("#vlan").text(fromdb(jsonObj.vlan));
+        $detailsTab.find("#guestcidraddress").text(fromdb(jsonObj.guestcidraddress));     
+	}	  
+    //***** zone page (end) *******************************************************************************************************
+    
+    //***** pod page (begin) ******************************************************************************************************
+    	function podJsonToDetailsTab(jsonObj) {	    
+	    var $detailsTab = $podPage.find("#tab_content_details");   
+        $detailsTab.data("jsonObj", jsonObj);           
+        $detailsTab.find("#id").text(fromdb(jsonObj.id));
+        $detailsTab.find("#name").text(fromdb(jsonObj.name));
+        $detailsTab.find("#cidr").text(fromdb(jsonObj.cidr));        
+        $detailsTab.find("#ipRange").text(fromdb(jsonObj.ipRange));
+        $detailsTab.find("#gateway").text(fromdb(jsonObj.gateway));  
+        
+        //if (getDirectAttachUntaggedEnabled() == "true") 
+		//	$("#submenu_content_zones #action_add_directip_vlan").data("type", "pod").data("id", obj.id).data("name", obj.name).data("zoneid", obj.zoneid).show();		
 	}	
+	//***** pod page (end) ********************************************************************************************************
 }
 

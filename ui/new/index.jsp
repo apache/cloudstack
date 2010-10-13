@@ -176,7 +176,7 @@ long milliseconds = new Date().getTime();
                                 </ul>
                             </div>
                         </div>
-                        <div class="actionpanel_button_wrapper" id="midmenu_add_link" style="display: none">
+                        <div class="actionpanel_button_wrapper" id="midmenu_add_link" style="display: none;">
                             <div class="actionpanel_button">
                                 <div class="actionpanel_button_icons">
                                     <img src="images/addvm_actionicon.png" alt="Add" /></div>
@@ -185,6 +185,41 @@ long milliseconds = new Date().getTime();
                             </div>
                         </div>
                         
+                        <div class="actionpanel_button_wrapper" id="midmenu_add_link" style="display: none;">
+                            <div class="actionpanel_button">
+                                <div class="actionpanel_button_icons">
+                                    <img src="images/startvm_actionicon.png" alt="Start" /></div>
+                                <div class="actionpanel_button_links">
+                                    Start</div>
+                            </div>
+                        </div>
+                        
+                        <div class="actionpanel_button_wrapper" id="midmenu_add_link" style="display: none;">
+                            <div class="actionpanel_button">
+                                <div class="actionpanel_button_icons">
+                                    <img src="images/stopvm_actionicon.png" alt="Stop" /></div>
+                                <div class="actionpanel_button_links">
+                                    Stop</div>
+                            </div>
+                        </div>
+                        
+                        <div class="actionpanel_button_wrapper" id="midmenu_add_link" style="display: none;">
+                            <div class="actionpanel_button">
+                                <div class="actionpanel_button_icons">
+                                    <img src="images/rebootvm_actionicon.png" alt="Reboot" /></div>
+                                <div class="actionpanel_button_links">
+                                    Reboot</div>
+                            </div>
+                        </div>
+                        
+                         <div class="actionpanel_button_wrapper" id="midmenu_add_link" style="display: none;">
+                            <div class="actionpanel_button">
+                                <div class="actionpanel_button_icons">
+                                    <img src="images/destroyvm_actionicon.png" alt="Destroy" /></div>
+                                <div class="actionpanel_button_links">
+                                    Destroy</div>
+                            </div>
+                        </div>
                         <div class="actionpanel_button_wrapper" id="add_link" style="display: block; float:right; background:none; ">
                             <div class="actionpanel_button">
                                 <div class="actionpanel_button_icons">
@@ -219,9 +254,9 @@ long milliseconds = new Date().getTime();
         <div class="leftmenu_panel">
             <div class="leftmenu_box" id="accordion_menu" style="display: none">
                 <div class="leftmenu_list">
-                    <div class="leftmenu_content">
+                    <div class="leftmenu_content" id="leftmenu_dashboard">
                         <div class="leftmenu_firstindent">
-                            <div class="leftmenu_arrows close" id="arrowIcon">
+                            <div class="leftmenu_arrows nonexpanded_close" id="arrowIcon">
                             </div>
                             <div class="leftmenu_list_icons">
                                 <img src="images/leftmenu_dashboardicon.png" alt="Dashboard" /></div>
@@ -229,17 +264,9 @@ long milliseconds = new Date().getTime();
                         </div>
                     </div>
                 </div>
+                
                 <div class="leftmenu_list">
-                    <div class="leftmenu_content" id="leftmenu_dashboard">
-                        <div class="leftmenu_secondindent">
-                            <div class="leftmenu_list_icons">
-                                <img src="images/leftmenu_dashboardicon.png" alt="Dashboard" /></div>
-                            <%=t.t("dashboard")%>
-                        </div>
-                    </div>
-                </div>
-                <div class="leftmenu_list">
-                    <div class="leftmenu_content">
+                    <div class="leftmenu_content highlighted">
                         <div class="leftmenu_firstindent">
                             <div class="leftmenu_arrows close" id="arrowIcon">
                             </div>
@@ -248,29 +275,36 @@ long milliseconds = new Date().getTime();
                             <%=t.t("instance")%>
                         </div>
                     </div>
-                </div>
-                <div class="leftmenu_list">
-                    <div id="leftmenu_instance_group">
-                        <div class="leftmenu_content" id="leftmenu_instance_group_header">
-                            <div class="leftmenu_secondindent">
-                                <div class="leftmenu_arrows close" id="arrow_icon">
+                    <div class="leftmenu_expandedbox">
+                    	<div id="leftmenu_instance_group">
+                        	<div class="leftmenu_expandedlist">
+                                <div class="leftmenu_content" id="leftmenu_instance_group_header">
+                                    <div class="leftmenu_secondindent">
+                                        <div class="leftmenu_arrows expanded_close" id="arrow_icon">
+                                        </div>
+                                        <div class="leftmenu_list_icons">
+                                            <img src="images/instance_leftmenuicon.png" alt="Instance" /></div>
+                                        <%=t.t("instance")%>
+                                    </div>
                                 </div>
-                                <div class="leftmenu_list_icons">
-                                    <img src="images/instance_leftmenuicon.png" alt="Instance" /></div>
-                                <%=t.t("instance")%>
+                               </div>
+                            <div id="leftmenu_instance_group_container">
                             </div>
                         </div>
-                        <div id="leftmenu_instance_group_container">
-                        </div>
+                        <div class="leftmenu_expandedlist">
+                            <div class="leftmenu_content" id="leftmenu_router">
+                                <div class="leftmenu_secondindent">
+                                	 <div class="leftmenu_arrows white_nonexpanded_close" id="arrow_icon">
+                                     </div>                          
+                                    <div class="leftmenu_list_icons">
+                                        <img src="images/routers_leftmenuicon.png" alt="Router" /></div>
+                                    <%=t.t("router")%>
+                                </div>
+                            </div>
+                    	</div>
                     </div>
-                    <div class="leftmenu_content" id="leftmenu_router">
-                        <div class="leftmenu_secondindent">                           
-                            <div class="leftmenu_list_icons">
-                                <img src="images/routers_leftmenuicon.png" alt="Router" /></div>
-                            <%=t.t("router")%>
-                        </div>
-                    </div>                   
-                </div>               
+                </div>
+                               
                 <div class="leftmenu_list">
                     <div class="leftmenu_content">
                         <div class="leftmenu_firstindent">
@@ -281,25 +315,35 @@ long milliseconds = new Date().getTime();
                             <%=t.t("storage")%>
                         </div>
                     </div>
-                </div>
-                <div class="leftmenu_list">                   
-                    <div class="leftmenu_content" id="leftmenu_volume">
-                        <div class="leftmenu_secondindent">
-                            <div class="leftmenu_list_icons">
-                                <img src="images/leftmenu_volumeicon.png" alt="Volume" /></div>
-                            <%=t.t("volume")%>
+                    <div class="leftmenu_expandedbox">
+                    	<div class="leftmenu_expandedlist">
+                    		<div class="leftmenu_content" id="leftmenu_volume">
+                                <div class="leftmenu_secondindent">
+                                	<div class="leftmenu_arrows white_nonexpanded_close" id="arrow_icon">
+                                     </div>
+                                    <div class="leftmenu_list_icons">
+                                        <img src="images/leftmenu_volumeicon.png" alt="Volume" /></div>
+                                    <%=t.t("volume")%>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="leftmenu_expandedlist">
+                        	<div class="leftmenu_content" id="leftmenu_snapshot">
+                                <div class="leftmenu_secondindent">
+                                	<div class="leftmenu_arrows white_nonexpanded_close" id="arrow_icon">
+                                     </div>
+                                    <div class="leftmenu_list_icons">
+                                        <img src="images/leftmenu_snapshotsicon.png" alt="Snapshot" /></div>
+                                    <%=t.t("snapshot")%>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="leftmenu_content" id="leftmenu_snapshot">
-                        <div class="leftmenu_secondindent">
-                            <div class="leftmenu_list_icons">
-                                <img src="images/leftmenu_snapshotsicon.png" alt="Snapshot" /></div>
-                            <%=t.t("snapshot")%>
-                        </div>
-                    </div>
+                    
                 </div>
+                
                 <div class="leftmenu_list">
-                    <div class="leftmenu_content">
+                    <div class="leftmenu_content" id="leftmenu_ip">
                         <div class="leftmenu_firstindent">
                             <div class="leftmenu_arrows close" id="arrowIcon">
                             </div>
@@ -309,15 +353,7 @@ long milliseconds = new Date().getTime();
                         </div>
                     </div>
                 </div>
-                <div class="leftmenu_list">
-                    <div class="leftmenu_content" id="leftmenu_ip">
-                        <div class="leftmenu_secondindent">
-                            <div class="leftmenu_list_icons">
-                                <img src="images/leftmenu_ipaddressicon.png" alt="IP Address" /></div>
-                            <%=t.t("ip.address")%>
-                        </div>
-                    </div>                    
-                </div>
+                
                 <div class="leftmenu_list">
                     <div class="leftmenu_content">
                         <div class="leftmenu_firstindent">
@@ -330,117 +366,152 @@ long milliseconds = new Date().getTime();
                     </div>
                 </div>
                 <div class="leftmenu_list">
-                    <div id="leftmenu_itemplate_filter">    
-                        <div class="leftmenu_content" id="leftmenu_template_filter_header">
-                            <div class="leftmenu_secondindent">                                
-                                <div class="leftmenu_list_icons">
-                                    <img src="images/templates_leftmenuicon.png" alt="Template" /></div>
-                                 <%=t.t("template")%>
+                  <div class="leftmenu_expandedbox">    
+                        <div id="leftmenu_itemplate_filter">    
+                            <div class="leftmenu_content" id="leftmenu_template_filter_header">
+                                <div class="leftmenu_secondindent"> 
+                                	<div class="leftmenu_arrows expanded_open" id="arrowIcon">
+                            		</div>                               
+                                    <div class="leftmenu_list_icons">
+                                        <img src="images/templates_leftmenuicon.png" alt="Template" /></div>
+                                     <%=t.t("template")%>
+                                </div>
                             </div>
-                        </div>
-                        <div id="leftmenu_template_filter_container">                        
-                            <div class="leftmenu_content" id="leftmenu_submenu_my_template">
-						        <div class="leftmenu_thirdindent">
-						            <div class="leftmenu_list_icons">
-						                <img src="images/templates_leftmenuicon.png" alt="My Template" /></div>
-						            <div>
-						                 <%=t.t("my.template")%></div>
-						        </div>
-						    </div>                        
-                            <div class="leftmenu_content" id="leftmenu_submenu_featured_template">
-						        <div class="leftmenu_thirdindent">
-						            <div class="leftmenu_list_icons">
-						                <img src="images/templates_leftmenuicon.png" alt="Featured Template" /></div>
-						            <div>
-						                 <%=t.t("featured.template")%></div>
-						        </div>
-						    </div>                        
-                            <div class="leftmenu_content" id="leftmenu_submenu_community_template">
-						        <div class="leftmenu_thirdindent">
-						            <div class="leftmenu_list_icons">
-						                <img src="images/templates_leftmenuicon.png" alt="Community Template" /></div>
-						            <div>
-						                 <%=t.t("community.template")%></div>
-						        </div>
-						    </div>                        
-                        </div>
-                    </div>
-                    <div id="leftmenu_iso_filter">    
-                        <div class="leftmenu_content" id="leftmenu_iso_filter_header">
-                            <div class="leftmenu_secondindent">                                
-                                <div class="leftmenu_list_icons">
-                                    <img src="images/templates_leftmenuicon.png" alt="Templates" /></div>
-                                 <%=t.t("iso")%>
+                            
+                                <div id="leftmenu_template_filter_container">
+                                    <div class="leftmenu_expandedlist">                        
+                                        <div class="leftmenu_content" id="leftmenu_submenu_my_template">
+                                            <div class="leftmenu_thirdindent">
+                                            	<div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
+                            					</div>
+                                                <div class="leftmenu_list_icons">
+                                                    <img src="images/templates_leftmenuicon.png" alt="My Template" /></div>
+                                                <div>
+                                                     <%=t.t("my.template")%></div>
+                                            </div>
+                                        </div> 
+                                     </div>
+                                     <div class="leftmenu_expandedlist">                       
+                                        <div class="leftmenu_content" id="leftmenu_submenu_featured_template">
+                                            <div class="leftmenu_thirdindent">
+                                            	<div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
+                            					</div>
+                                                <div class="leftmenu_list_icons">
+                                                    <img src="images/templates_leftmenuicon.png" alt="Featured Template" /></div>
+                                                <div>
+                                                     <%=t.t("featured.template")%></div>
+                                            </div>
+                                        </div> 
+                                     </div>  
+                                     <div class="leftmenu_expandedlist">                     
+                                        <div class="leftmenu_content" id="leftmenu_submenu_community_template">
+                                            <div class="leftmenu_thirdindent">
+                                            	<div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
+                            					</div>
+                                                <div class="leftmenu_list_icons">
+                                                    <img src="images/templates_leftmenuicon.png" alt="Community Template" /></div>
+                                                <div>
+                                                     <%=t.t("community.template")%></div>
+                                            </div>
+                                        </div>
+                                     </div>                        
+                                 </div>
                             </div>
-                        </div>
-                        <div id="leftmenu_iso_filter_container">
-                             <div class="leftmenu_content" id="leftmenu_submenu_my_iso">
-						        <div class="leftmenu_thirdindent">
-						            <div class="leftmenu_list_icons">
-						                <img src="images/templates_leftmenuicon.png" /></div>
-						            <div>
-						                 <%=t.t("my.iso")%></div>
-						        </div>
-						    </div>                        
-                            <div class="leftmenu_content" id="leftmenu_submenu_featured_iso">
-						        <div class="leftmenu_thirdindent">
-						            <div class="leftmenu_list_icons">
-						                <img src="images/templates_leftmenuicon.png" /></div>
-						            <div>
-						                 <%=t.t("featured.iso")%></div>
-						        </div>
-						    </div>                        
-                            <div class="leftmenu_content" id="leftmenu_submenu_community_iso">
-						        <div class="leftmenu_thirdindent">
-						            <div class="leftmenu_list_icons">
-						                <img src="images/templates_leftmenuicon.png" /></div>
-						            <div>
-						                 <%=t.t("community.iso")%></div>
-						        </div>
-						    </div>                                         
-                        </div>
-                    </div>
-                </div>
-                <div class="leftmenu_list">
-                    <div class="leftmenu_content">
-                        <div class="leftmenu_firstindent">
-                            <div class="leftmenu_arrows close" id="arrowIcon">
+                           	
+                            
+                            <div id="leftmenu_iso_filter">    
+                                    <div class="leftmenu_content" id="leftmenu_iso_filter_header">
+                                        <div class="leftmenu_secondindent"> 
+                                            <div class="leftmenu_arrows expanded_open" id="arrowIcon">
+                                            </div>                               
+                                            <div class="leftmenu_list_icons">
+                                                <img src="images/templates_leftmenuicon.png" alt="Templates" /></div>
+                                             <%=t.t("iso")%>
+                                        </div>
+                                    </div>
+                                <div id="leftmenu_iso_filter_container">
+                                	 <div class="leftmenu_expandedlist">  
+                                         <div class="leftmenu_content" id="leftmenu_submenu_my_iso">
+                                            <div class="leftmenu_thirdindent">
+                                                <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
+                                                </div>
+                                                <div class="leftmenu_list_icons">
+                                                    <img src="images/templates_leftmenuicon.png" /></div>
+                                                <div>
+                                                     <%=t.t("my.iso")%></div>
+                                            </div>
+                                        </div>
+                                      </div> 
+                                       <div class="leftmenu_expandedlist">                         
+                                            <div class="leftmenu_content" id="leftmenu_submenu_featured_iso">
+                                                <div class="leftmenu_thirdindent">
+                                                    <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
+                                                    </div>
+                                                    <div class="leftmenu_list_icons">
+                                                        <img src="images/templates_leftmenuicon.png" /></div>
+                                                    <div>
+                                                         <%=t.t("featured.iso")%></div>
+                                                </div>
+                                            </div>
+                                      	</div>
+                                        
+                                         <div class="leftmenu_expandedlist">                          
+                                            <div class="leftmenu_content" id="leftmenu_submenu_community_iso">
+                                                <div class="leftmenu_thirdindent">
+                                                    <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
+                                                    </div>
+                                                    <div class="leftmenu_list_icons">
+                                                        <img src="images/templates_leftmenuicon.png" /></div>
+                                                    <div>
+                                                         <%=t.t("community.iso")%></div>
+                                                </div>
+                                            </div>
+                                         </div>                                         
+                                </div>
                             </div>
-                            <div class="leftmenu_list_icons">
-                                <img src="images/accounts_leftmenuicon.png" alt="Account" /></div>
-                             <%=t.t("account")%>
-                        </div>
+                        
                     </div>
+                    
                 </div>
                 <div class="leftmenu_list">
                     <div class="leftmenu_content" id="leftmenu_account">
-                        <div class="leftmenu_secondindent">
+                        <div class="leftmenu_firstindent">
+                            <div class="leftmenu_arrows nonexpanded_close" id="arrowIcon">
+                            </div>
                             <div class="leftmenu_list_icons">
                                 <img src="images/accounts_leftmenuicon.png" alt="Account" /></div>
                              <%=t.t("account")%>
                         </div>
                     </div>
                 </div>
-                <div class="leftmenu_list">
-                    <div class="leftmenu_content">
-                        <div class="leftmenu_firstindent">
-                            <div class="leftmenu_arrows close" id="arrowIcon">
-                            </div>
-                            <div class="leftmenu_list_icons">
-                                <img src="images/domain_leftmenuicon.png" alt="Domain" /></div>
-                             <%=t.t("domain")%>
-                        </div>
-                    </div>
-                </div>
+                
                 <div class="leftmenu_list">
                     <div class="leftmenu_content" id="leftmenu_domain">
-                        <div class="leftmenu_secondindent">
+                        <div class="leftmenu_firstindent">
+                            <div class="leftmenu_arrows close" id="arrowIcon">
+                            </div>
                             <div class="leftmenu_list_icons">
                                 <img src="images/domain_leftmenuicon.png" alt="Domain" /></div>
                              <%=t.t("domain")%>
                         </div>
                     </div>
+                    <div class="leftmenu_expandedbox">
+                    	<div class="leftmenu_expandedlist">  
+                            <div class="leftmenu_content">
+                                 <div class="leftmenu_domainindent" style="margin-left:30px;">
+                                    <div id="domain_title_container" class="tree_levels">
+                                        <div class="leftmenu_arrows expanded_close" id="arrowIcon">
+                                        </div>
+                                       	Domain Name
+                                    </div>
+                                    <div id="domain_children_container" style="display:none">
+                                    </div>   
+                                </div>
+                             </div>
+                         </div>
+                    </div>
                 </div>
+                
                 <div class="leftmenu_list">
                     <div class="leftmenu_content">
                         <div class="leftmenu_firstindent">
@@ -451,63 +522,144 @@ long milliseconds = new Date().getTime();
                              <%=t.t("event")%>
                         </div>
                     </div>
-                </div>
-                <div class="leftmenu_list">
-                    <div class="leftmenu_content" id="leftmenu_event">
-                        <div class="leftmenu_secondindent">
-                            <div class="leftmenu_list_icons">
-                                <img src="images/events_leftmenuicon.png" alt="Event" /></div>
-                             <%=t.t("event")%>
+                    <div class="leftmenu_expandedbox">
+                    	<div class="leftmenu_expandedlist">
+                        	<div class="leftmenu_content" id="leftmenu_event">
+                                <div class="leftmenu_secondindent">
+                                	<div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon"></div>
+                                    <div class="leftmenu_list_icons">
+                                        <img src="images/events_leftmenuicon.png" alt="Event" /></div>
+                                     <%=t.t("event")%>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="leftmenu_expandedlist">
+                        	<div class="leftmenu_content" id="leftmenu_alert">
+                                <div class="leftmenu_secondindent">
+                                	<div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon"></div>
+                                    <div class="leftmenu_list_icons">
+                                        <img src="images/alert_leftmenuicon.png" alt="Alert" /></div>
+                                     <%=t.t("alert")%>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="leftmenu_content" id="leftmenu_alert">
-                        <div class="leftmenu_secondindent">
-                            <div class="leftmenu_list_icons">
-                                <img src="images/events_leftmenuicon.png" alt="Alert" /></div>
-                             <%=t.t("alert")%>
-                        </div>
-                    </div>
                 </div>
+               
                 <div class="leftmenu_list">
-                    <div class="leftmenu_content">
+                    <div class="leftmenu_content highlighted">
                         <div class="leftmenu_firstindent">
-                            <div class="leftmenu_arrows close" id="arrowIcon">
+                            <div class="leftmenu_arrows open" id="arrowIcon">
                             </div>
                             <div class="leftmenu_list_icons">
                                 <img src="images/configuration_leftmenuicon.png" alt="System" /></div>
                             <%=t.t("system")%>
                         </div>
                     </div>
+                    <div class="leftmenu_expandedbox">
+                    	<div class="leftmenu_expandedlist">
+                            <div class="leftmenu_content" id="leftmenu_resource">
+                                <div class="leftmenu_secondindent">
+                                    <div class="leftmenu_arrows expanded_close" id="arrowIcon"></div>
+                                    <div class="leftmenu_list_icons">
+                                        <img src="images/configuration_leftmenuicon.png" alt="Resources" /></div>
+                                    <%=t.t("resources")%>
+                                </div>  
+                            </div>
+                        </div>
+                        <div class="leftmenu_expandedlist">
+                            <div class="leftmenu_content" id="leftmenu_resource">
+                                <div class="leftmenu_thirdindent">
+                                    <div class="leftmenu_arrows expanded_close" id="arrowIcon"></div>
+                                    <div class="leftmenu_list_icons">
+                                        <img src="images/zone_zoneicon.png" alt="Zone" /></div>
+                                    Zone: <strong><span id="zone_name">Zone 1</span></strong>
+                                </div>  
+                            </div>
+                        </div>
+                        
+                        <div class="leftmenu_expandedlist">
+                            <div class="leftmenu_content" id="leftmenu_resource">
+                                <div class="leftmenu_fourthindent">
+                                    <div class="leftmenu_arrows expanded_close" id="arrowIcon"></div>
+                                    <div class="leftmenu_list_icons">
+                                        <img src="images/zone_podicon.png" alt="Pod" /></div>
+                                    Pod: <strong><span id="pod_name">Name of the Pod</span></strong>
+                                </div>  
+                            </div>
+                        </div>
+                        
+                        <div class="leftmenu_expandedlist">
+                            <div class="leftmenu_content" id="leftmenu_resource">
+                                <div class="leftmenu_fifthindent">
+                                    <div class="leftmenu_arrows expanded_close" id="arrowIcon"></div>
+                                    <div class="leftmenu_list_icons">
+                                        <img src="images/zone_clustericon.png" alt="Cluster" /></div>
+                                  Cluster: <strong><span id="cluster_name">(Name of the Cluster)</span></strong>
+                                </div>  
+                            </div>
+                        </div>
+                        
+                        <div class="leftmenu_expandedlist">
+                            <div class="leftmenu_content" id="leftmenu_resource">
+                                <div class="leftmenu_sixthindent">
+                                    <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon"></div>
+                                    <div class="leftmenu_list_icons">
+                                        <img src="images/zone_hosticon.png" alt="Host" /></div>
+                                  Host: <strong><span id="host_name">(Name of the Host)</span></strong>
+                                </div>  
+                            </div>
+                        </div>
+                        
+                        <div class="leftmenu_expandedlist">
+                            <div class="leftmenu_content" id="leftmenu_resource">
+                                <div class="leftmenu_sixthindent">
+                                    <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon"></div>
+                                    <div class="leftmenu_list_icons">
+                                        <img src="images/zone_primarystorageicon.png" alt="PrimaryStorage" /></div>
+                                 Primary: <strong><span id="primary_storage_name">(Name of the Primary Storage)</span></strong>
+                                </div>  
+                            </div>
+                        </div>
+                        
+                        <div class="leftmenu_expandedlist">
+                            <div class="leftmenu_content" style="border-bottom:1px dashed b4c8d6;" id="leftmenu_service_offering">
+                                <div class="leftmenu_secondindent">
+                                    <div class="leftmenu_arrows expanded_close" id="arrowIcon"></div>
+                                    <div class="leftmenu_list_icons">
+                                        <img src="images/configuration_leftmenuicon.png" alt="Service Offerings" /></div>
+                                    <%=t.t("service.offerings")%>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="leftmenu_expandedlist">
+                            <div class="leftmenu_content" id="leftmenu_disk_offering">
+                                <div class="leftmenu_secondindent">
+                                    <div class="leftmenu_arrows expanded_close" id="arrowIcon"></div>
+                                    <div class="leftmenu_list_icons">
+                                        <img src="images/configuration_leftmenuicon.png" alt="Disk Offerings" /></div>
+                                    <%=t.t("disk.offerings")%>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="leftmenu_expandedlist">
+                            <div class="leftmenu_content" id="leftmenu_global_setting">
+                                <div class="leftmenu_secondindent">
+                                    <div class="leftmenu_arrows expanded_close" id="arrowIcon"></div>
+                                    <div class="leftmenu_list_icons">
+                                        <img src="images/configuration_leftmenuicon.png" alt="Global Settings" /></div>
+                                    <%=t.t("global.settings")%>
+                                </div>
+                            </div>
+                        </div>
+               		 </div>
                 </div>
-                <div class="leftmenu_list">                    
-                    <div class="leftmenu_content" id="leftmenu_resource">
-                        <div class="leftmenu_secondindent">
-                            <div class="leftmenu_list_icons">
-                                <img src="images/configuration_leftmenuicon.png" alt="Resources" /></div>
-                            <%=t.t("resources")%>
-                        </div>
-                    </div>
-                    <div class="leftmenu_content" id="leftmenu_service_offering">
-                        <div class="leftmenu_secondindent">
-                            <div class="leftmenu_list_icons">
-                                <img src="images/configuration_leftmenuicon.png" alt="Service Offerings" /></div>
-                            <%=t.t("service.offerings")%>
-                        </div>
-                    </div>
-                    <div class="leftmenu_content" id="leftmenu_disk_offering">
-                        <div class="leftmenu_secondindent">
-                            <div class="leftmenu_list_icons">
-                                <img src="images/configuration_leftmenuicon.png" alt="Disk Offerings" /></div>
-                            <%=t.t("disk.offerings")%>
-                        </div>
-                    </div>
-                    <div class="leftmenu_content" id="leftmenu_global_setting">
-                        <div class="leftmenu_secondindent">
-                            <div class="leftmenu_list_icons">
-                                <img src="images/configuration_leftmenuicon.png" alt="Global Settings" /></div>
-                            <%=t.t("global.settings")%>
-                        </div>
-                    </div>
+                
+              
+                
+                
                 </div>
             </div>
         </div>

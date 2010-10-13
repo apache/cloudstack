@@ -1,19 +1,5 @@
 $(document).ready(function() {     
-    $("#accordion_menu").accordion({
-        autoHeight: false, 
-        collapsible: true,
-        active: false,
-        change: function(event, ui) {   
-            if(ui.newContent.length==0)  //collapse
-                ui.oldHeader.find("#arrow_icon").removeClass("open").addClass("close");            
-            else  //expand
-                ui.newHeader.find("#arrow_icon").removeClass("close").addClass("open"); 
-                
-            //collapse submenu instanceGroup under menu instance
-            $("#leftmenu_instance_group_header").find("#arrow_icon").removeClass("open").addClass("close");            
-            $("#leftmenu_instance_group_container").empty();     
-        }
-    });
+
     $("#accordion_menu").show();
        
     var $midmenuItem = $("#midmenu_item");

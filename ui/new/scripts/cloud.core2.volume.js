@@ -364,8 +364,8 @@ function afterLoadVolumeJSP() {
 	// *** recurring snapshot dialog - event binding (end) ******************************	    
          
     //***** switch between different tabs (begin) ********************************************************************
-    var tabArray = ["tab_details", "tab_snapshot"];
-    var tabContentArray = ["tab_content_details", "tab_content_snapshot"];
+    var tabArray = [$("#tab_details"), $("#tab_snapshot")];
+    var tabContentArray = [$("#tab_content_details"), $("#tab_content_snapshot")];
     switchBetweenDifferentTabs(tabArray, tabContentArray);       
     //***** switch between different tabs (end) **********************************************************************    
 }

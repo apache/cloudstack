@@ -173,7 +173,8 @@
     </div>
     <!--Details tab (end)-->
     <!--Volume tab (start)-->
-    <div style="display: none;" id="tab_content_volume">        
+    <div style="display: none;" id="tab_content_volume">    
+        Volume    
     </div>
     <!--Volume tab (end)-->
     <!--Statistics tab (start)-->
