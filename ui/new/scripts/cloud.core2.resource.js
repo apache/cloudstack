@@ -1,4 +1,6 @@
 function afterLoadResourceJSP() {
+    var $rightPanelHeaderLabel = $("#right_panel_header").find("#label");
+
     var $rightPanelConent = $("#right_panel_content");
     var $zonePage = $rightPanelConent.find("#zone_page");
     var $podPage = $rightPanelConent.find("#pod_page");
@@ -8,13 +10,17 @@ function afterLoadResourceJSP() {
     var $systemvmPage = $rightPanelConent.find("#systemvm_page");
     
     var pageArray = [$zonePage, $podPage, $clusterPage, $hostPage, $primarystoragePage, $systemvmPage];
+    var pageLabelArray = ["Zone", "Pod", "Cluster", "Host", "Primary Storage", "System VM"];
     
     function showPage($pageToShow) {        
         for(var i=0; i<pageArray.length; i++) {
-            if(pageArray[i].attr("id") == $pageToShow.attr("id"))
+            if(pageArray[i].attr("id") == $pageToShow.attr("id")) {
+                $rightPanelHeaderLabel.text(pageLabelArray[i]);
                 pageArray[i].show();
-            else
+            }
+            else {
                 pageArray[i].hide();
+            }
         }            
     }
    
@@ -32,30 +38,29 @@ function afterLoadResourceJSP() {
 			if (items != null && items.length > 0) {					    
 				for (var i = 0; i < items.length; i++) {
 					var template = $("#zone_template").clone(true).attr("id", "zone_"+items[i].id);
-					zoneJSONToTemplate(items[i], template);
+					zoneJSONToTreeNode(items[i], template);
 					container.append(template.show());
 				}
 			}
 		}
 	});  
 
-    function zoneJSONToTemplate(json, template) {
+    function zoneJSONToTreeNode(json, template) {
         var zoneid = json.id;
         template.attr("id", "zone_" + zoneid);  
 	    template.data("id", zoneid).data("name", fromdb(json.name));
-	    template.find("#zone_name")
-		    .text(fromdb(json.name))
-		    .data("id", zoneid)
-		    .data("name", fromdb(json.name))
-		    .data("dns1", json.dns1)
-		    .data("internaldns1", json.internaldns1)
-		    .data("guestcidraddress", json.guestcidraddress);		
+	    var zoneName = template.find("#zone_name").text(fromdb(json.name));
+	    zoneName.data("id", zoneid);	
+		zoneName.data("name", fromdb(json.name));
+		zoneName.data("dns1", json.dns1)
+		zoneName.data("internaldns1", json.internaldns1)
+		zoneName.data("guestcidraddress", json.guestcidraddress);		
 	    if (json.dns2 != null) 
-		    template.find("#zone_name").data("dns2", json.dns2);	
+		    zoneName.data("dns2", json.dns2);	
 	    if (json.internaldns2 != null) 
-		    template.find("#zone_name").data("internaldns2", json.internaldns2);	
+		    zoneName.data("internaldns2", json.internaldns2);	
 	    if (json.vlan != null) 
-		    template.find("#zone_name").data("vlan", json.vlan);		
+		    zoneName.data("vlan", json.vlan);		
     	
 	    $.ajax({
 	        data: createURL("command=listPods&zoneid="+zoneid+maxPageSize),
@@ -66,7 +71,7 @@ function afterLoadResourceJSP() {
 			    if (items != null && items.length > 0) {					    
 				    for (var i = 0; i < items.length; i++) {
 					    var podTemplate = $("#pod_template").clone(true).attr("id", "pod_"+items[i].id);
-					    podJSONToTemplate(items[i], podTemplate);
+					    podJSONToTreeNode(items[i], podTemplate);
 					    container.append(podTemplate.show());
 					    forceLogout = false;  // We don't force a logout if pod(s) exit.
 				    }
@@ -83,7 +88,7 @@ function afterLoadResourceJSP() {
 			    if (items != null && items.length > 0) {					    
 				    for (var i = 0; i < items.length; i++) {
 					    var systemvmTemplate = $("#systemvm_template").clone(true).attr("id", "systemvm_"+items[i].id);
-					    systemvmJSONToTemplate(items[i], systemvmTemplate);
+					    systemvmJSONToTreeNode(items[i], systemvmTemplate);
 					    container.append(systemvmTemplate.show());
 				    }
 			    }
@@ -91,7 +96,7 @@ function afterLoadResourceJSP() {
 	    });
     }
     
-    function podJSONToTemplate(json, template) {	
+    function podJSONToTreeNode(json, template) {	
         var podid = json.id;
         template.attr("id", "pod_" + podid);  
     	    
@@ -117,7 +122,7 @@ function afterLoadResourceJSP() {
 		        if (items != null && items.length > 0) {					    
 			        for (var i = 0; i < items.length; i++) {
 				        var clusterTemplate = $("#cluster_template").clone(true).attr("id", "cluster_"+items[i].id);
-				        clusterJSONToTemplate(items[i], clusterTemplate);
+				        clusterJSONToTreeNode(items[i], clusterTemplate);
 				        container.append(clusterTemplate.show());
 			        }
 		        }
@@ -125,24 +130,25 @@ function afterLoadResourceJSP() {
         });		
 	}
 		
-	function systemvmJSONToTemplate(json, template) {	
+	function systemvmJSONToTreeNode(json, template) {	
 	    var systemvmid = json.id;	
 	    template.attr("id", "systemvm_"+systemvmid);
 	    template.data("id", systemvmid).data("name", json.name);	     
 	    var systeymvmName = template.find("#systemvm_name").text(json.name);
+		systeymvmName.data("state", json.state);	
 		systeymvmName.data("systemvmtype", json.systemvmtype);
-		systeymvmName.data("name", json.name);	
-		systeymvmName.data("zonename", json.zonename);
+		systeymvmName.data("zonename", fromdb(json.zonename));
+		systeymvmName.data("id", json.id);		
+		systeymvmName.data("name", fromdb(json.name));	
 		systeymvmName.data("activeviewersessions", json.activeviewersessions);	
 		systeymvmName.data("publicip", json.publicip);
-		systeymvmName.data("privateip", json.privateip);	
-		systeymvmName.data("hostname", json.hostname);
+		systeymvmName.data("privateip", json.privateip);
+		systeymvmName.data("hostname", fromdb(json.hostname));
 		systeymvmName.data("gateway", json.gateway);	
-		systeymvmName.data("created", json.created);
-		systeymvmName.data("state", json.state);	
+		systeymvmName.data("created", json.created);		
 	}
 			
-	function clusterJSONToTemplate(json, template) {
+	function clusterJSONToTreeNode(json, template) {
 	    template.data("id", json.id).data("name", fromdb(json.name));
 	    
 	    var systeymvmName = template.find("#cluster_name").text(fromdb(json.name));
@@ -156,7 +162,7 @@ function afterLoadResourceJSP() {
 		        if (items != null && items.length > 0) {					    
 			        for (var i = 0; i < items.length; i++) {
 				        var hostTemplate = $("#host_template").clone(true).attr("id", "host_"+items[i].id);
-				        hostJSONToTemplate(items[i], hostTemplate);
+				        hostJSONToTreeNode(items[i], hostTemplate);
 				        container.append(hostTemplate.show());
 			        }
 		        }
@@ -172,7 +178,7 @@ function afterLoadResourceJSP() {
 		        if (items != null && items.length > 0) {					    
 			        for (var i = 0; i < items.length; i++) {
 				        var primaryStorageTemplate = $("#primarystorage_template").clone(true).attr("id", "primary_storage_"+items[i].id);
-				        primaryStorageJSONToTemplate(items[i], primaryStorageTemplate);
+				        primaryStorageJSONToTreeNode(items[i], primaryStorageTemplate);
 				        container.append(primaryStorageTemplate.show());
 			        }
 		        }
@@ -180,13 +186,13 @@ function afterLoadResourceJSP() {
         });		    
 	}
 	
-	function hostJSONToTemplate(json, template) {
+	function hostJSONToTreeNode(json, template) {
 	    template.data("id", json.id).data("name", fromdb(json.name));
 	    
 	    var hostName = template.find("#host_name").text(fromdb(json.name));
 	}
 	
-	function primaryStorageJSONToTemplate(json, template) {
+	function primaryStorageJSONToTreeNode(json, template) {
 	    template.data("id", json.id).data("name", fromdb(json.name));
 	    
 	    var primaryStorageName = template.find("#primarystorage_name").text(fromdb(json.name));
@@ -297,8 +303,20 @@ function afterLoadResourceJSP() {
 				$zoneetree1.find(".selected").removeClass("selected");			    		    
 			    target.parent().parent().parent().addClass("selected");		
 			    showPage($systemvmPage);
-				//var obj = {"id": target.data("id"), "zoneid": target.data("zoneid"), "name": target.data("name"), "cidr": target.data("cidr"), "startip": target.data("startip"), "endip": target.data("endip"), "ipRange": target.data("ipRange"), "gateway": target.data("gateway")};
-				//systemvmObjectToRightPanel(obj);				
+				var obj = {
+	                "id": target.data("id"),
+	                "name": target.data("name"),
+	                "systemvmtype": target.data("systemvmtype"),
+	                "zonename": target.data("zonename"),
+	                "activeviewersessions": target.data("activeviewersessions"),
+	                "publicip": target.data("publicip"),
+	                "privateip": target.data("privateip"),
+	                "hostname": target.data("hostname"),
+	                "gateway": target.data("gateway"),
+	                "created": target.data("created"),
+	                "state": target.data("state")
+	            };				
+				systemvmJsonToDetailsTab(obj);			
 				break;
 			
 			
@@ -341,7 +359,7 @@ function afterLoadResourceJSP() {
     //***** zone page (end) *******************************************************************************************************
     
     //***** pod page (begin) ******************************************************************************************************
-    	function podJsonToDetailsTab(jsonObj) {	    
+    function podJsonToDetailsTab(jsonObj) {	    
 	    var $detailsTab = $podPage.find("#tab_content_details");   
         $detailsTab.data("jsonObj", jsonObj);           
         $detailsTab.find("#id").text(fromdb(jsonObj.id));
@@ -354,5 +372,33 @@ function afterLoadResourceJSP() {
 		//	$("#submenu_content_zones #action_add_directip_vlan").data("type", "pod").data("id", obj.id).data("name", obj.name).data("zoneid", obj.zoneid).show();		
 	}	
 	//***** pod page (end) ********************************************************************************************************
+	
+	//***** systemVM page (begin) *************************************************************************************************
+    function systemvmJsonToDetailsTab(jsonObj) {	   
+	    var $detailsTab = $systemvmPage.find("#tab_content_details");   
+        $detailsTab.data("jsonObj", jsonObj);   
+        
+        $detailsTab.find("#state").text(fromdb(jsonObj.state));     
+        $detailsTab.find("#systemvmtype").text(toSystemVMTypeText(jsonObj.systemvmtype));    
+        $detailsTab.find("#zonename").text(fromdb(jsonObj.zonename)); 
+        $detailsTab.find("#id").text(fromdb(jsonObj.id));  
+        $detailsTab.find("#name").text(fromdb(jsonObj.name));   
+        $detailsTab.find("#activeviewersessions").text(fromdb(jsonObj.activeviewersessions)); 
+        $detailsTab.find("#publicip").text(fromdb(jsonObj.publicip)); 
+        $detailsTab.find("#privateip").text(fromdb(jsonObj.privateip)); 
+        $detailsTab.find("#hostname").text(fromdb(jsonObj.hostname));
+        $detailsTab.find("#gateway").text(fromdb(jsonObj.gateway)); 
+        $detailsTab.find("#created").text(fromdb(jsonObj.created));             
+	}
+	
+	function toSystemVMTypeText(value) {
+	    var text = "";
+        if(value == "consoleproxy")
+            text = "Console Proxy VM";
+        else if(value == "secondarystoragevm")
+            text = "Secondary Storage VM";
+        return text;        
+    }
+	//***** systemVM page (end) ***************************************************************************************************
 }
 
