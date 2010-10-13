@@ -2380,10 +2380,17 @@ public class ManagementServerImpl implements ManagementServer {
             }
             
             if (started == null) {
+            	
                 List<Pair<VolumeVO, StoragePoolVO>> disks = new ArrayList<Pair<VolumeVO, StoragePoolVO>>();
                 // NOTE: We now destroy a VM if the deploy process fails at any step. We now
                 // have a lazy delete so there is still some time to figure out what's wrong.
             	disks = _storageMgr.isStoredOn(created);
+
+            	// make sure we cleanup last host id
+            	UserVmVO vmTmp = _vmDao.createForUpdate(created.getId());
+            	vmTmp.setLastHostId(null);
+            	_vmDao.update(created.getId(), vmTmp);
+            	
             	_vmMgr.destroyVirtualMachine(userId, created.getId());
 
                 boolean retryCreate = true;
