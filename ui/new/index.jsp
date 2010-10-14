@@ -244,19 +244,32 @@ long milliseconds = new Date().getTime();
         </div>
         <!-- Left Menu starts here-->
         <div class="leftmenu_panel">
-            <div class="leftmenu_box" id="leftmenu_container" style="display: none">
+            <div class="leftmenu_box" id="leftmenu_container" style="display: none">     
                 <div class="leftmenu_list">
-                    <div class="leftmenu_content" id="leftmenu_dashboard">
+                    <div class="leftmenu_content" id="expandable_first_level">
                         <div class="leftmenu_firstindent">
-                            <div class="leftmenu_arrows nonexpanded_close" id="arrowIcon">
+                            <div class="leftmenu_arrows close" id="expandable_first_level_arrow">
                             </div>
                             <div class="leftmenu_list_icons">
                                 <img src="images/leftmenu_dashboardicon.png" alt="Dashboard" /></div>
                             <%=t.t("dashboard")%>
                         </div>
                     </div>
+                    <div class="leftmenu_expandedbox" style="display: none">
+                        <div class="leftmenu_expandedlist">
+                            <div class="leftmenu_content" id="leftmenu_dashboard">
+                                <div class="leftmenu_secondindent">
+                                    <div class="leftmenu_arrows white_nonexpanded_close" id="arrow_icon">
+                                    </div>
+                                    <div class="leftmenu_list_icons">
+                                        <img src="images/leftmenu_dashboardicon.png" alt="Dashboard" /></div>
+                                    <%=t.t("dashboard")%>
+                                </div>
+                            </div>
+                        </div>                        
+                    </div>
                 </div>
-                <div class="leftmenu_list" id="expandable_first_level">
+                <div class="leftmenu_list">
                     <div class="leftmenu_content" id="expandable_first_level">
                         <div class="leftmenu_firstindent">
                             <div class="leftmenu_arrows close" id="expandable_first_level_arrow">
@@ -329,18 +342,31 @@ long milliseconds = new Date().getTime();
                             </div>
                         </div>
                     </div>
-                </div>
+                </div> 
                 <div class="leftmenu_list">
-                    <div class="leftmenu_content" id="leftmenu_ip">
+                    <div class="leftmenu_content" id="expandable_first_level">
                         <div class="leftmenu_firstindent">
-                            <div class="leftmenu_arrows nonexpanded_close" id="arrowIcon">
+                            <div class="leftmenu_arrows close" id="expandable_first_level_arrow">
                             </div>
                             <div class="leftmenu_list_icons">
-                                <img src="images/leftmenu_ipaddressicon.png" alt="IP Address" /></div>
-                            <%=t.t("ip.address")%>
+                                <img src="images/network_leftmenuicon.png" alt="Network" /></div>
+                            <%=t.t("Network")%>
                         </div>
                     </div>
-                </div>
+                    <div class="leftmenu_expandedbox" style="display: none">
+                        <div class="leftmenu_expandedlist">
+                            <div class="leftmenu_content" id="leftmenu_ip">
+                                <div class="leftmenu_secondindent">
+                                    <div class="leftmenu_arrows white_nonexpanded_close" id="arrow_icon">
+                                    </div>
+                                    <div class="leftmenu_list_icons">
+                                        <img src="images/leftmenu_ipaddressicon.png" alt="IP Adress" /></div>
+                                    <%=t.t("ip.address")%>
+                                </div>
+                            </div>
+                        </div>                        
+                    </div>
+                </div>  
                 <div class="leftmenu_list">
                     <div class="leftmenu_content" id="expandable_first_level">
                         <div class="leftmenu_firstindent">
@@ -451,18 +477,31 @@ long milliseconds = new Date().getTime();
                             </div>
                         </div>
                     </div>
-                </div>
+                </div>  
                 <div class="leftmenu_list">
-                    <div class="leftmenu_content" id="leftmenu_account">
+                    <div class="leftmenu_content" id="expandable_first_level">
                         <div class="leftmenu_firstindent">
-                            <div class="leftmenu_arrows nonexpanded_close" id="arrowIcon">
+                            <div class="leftmenu_arrows close" id="expandable_first_level_arrow">
                             </div>
                             <div class="leftmenu_list_icons">
                                 <img src="images/accounts_leftmenuicon.png" alt="Account" /></div>
                             <%=t.t("account")%>
                         </div>
                     </div>
-                </div>
+                    <div class="leftmenu_expandedbox" style="display: none">
+                        <div class="leftmenu_expandedlist">
+                            <div class="leftmenu_content" id="leftmenu_account">
+                                <div class="leftmenu_secondindent">
+                                    <div class="leftmenu_arrows white_nonexpanded_close" id="arrow_icon">
+                                    </div>
+                                    <div class="leftmenu_list_icons">
+                                        <img src="images/accounts_leftmenuicon.png" alt="Account" /></div>
+                                    <%=t.t("account")%>
+                                </div>
+                            </div>
+                        </div>                        
+                    </div>
+                </div>                
                 <div class="leftmenu_list">
                     <div class="leftmenu_content" id="expandable_first_level">
                         <div class="leftmenu_firstindent">
