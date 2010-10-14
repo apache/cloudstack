@@ -256,10 +256,10 @@ long milliseconds = new Date().getTime();
                         </div>
                     </div>
                 </div>
-                <div class="leftmenu_list">
-                    <div class="leftmenu_content highlighted">
+                <div class="leftmenu_list" id="expandable_first_level">
+                    <div class="leftmenu_content" id="expandable_first_level">
                         <div class="leftmenu_firstindent">
-                            <div class="leftmenu_arrows close" id="expanded_arrow_icon">
+                            <div class="leftmenu_arrows close" id="expandable_first_level_arrow">
                             </div>
                             <div class="leftmenu_list_icons">
                                 <img src="images/instance_leftmenuicon.png" alt="Instance" /></div>
@@ -296,9 +296,9 @@ long milliseconds = new Date().getTime();
                     </div>
                 </div>
                 <div class="leftmenu_list">
-                    <div class="leftmenu_content">
+                    <div class="leftmenu_content" id="expandable_first_level">
                         <div class="leftmenu_firstindent">
-                            <div class="leftmenu_arrows close" id="expanded_arrow_icon">
+                            <div class="leftmenu_arrows close" id="expandable_first_level_arrow">
                             </div>
                             <div class="leftmenu_list_icons">
                                 <img src="images/storage_leftmenuicon.png" alt="Storage" /></div>
@@ -342,9 +342,9 @@ long milliseconds = new Date().getTime();
                     </div>
                 </div>
                 <div class="leftmenu_list">
-                    <div class="leftmenu_content">
+                    <div class="leftmenu_content" id="expandable_first_level">
                         <div class="leftmenu_firstindent">
-                            <div class="leftmenu_arrows close" id="expanded_arrow_icon">
+                            <div class="leftmenu_arrows close" id="expandable_first_level_arrow">
                             </div>
                             <div class="leftmenu_list_icons">
                                 <img src="images/templates_leftmenuicon.png" alt="Template" /></div>
@@ -464,9 +464,9 @@ long milliseconds = new Date().getTime();
                     </div>
                 </div>
                 <div class="leftmenu_list">
-                    <div class="leftmenu_content" id="leftmenu_domain">
+                    <div class="leftmenu_content" id="expandable_first_level">
                         <div class="leftmenu_firstindent">
-                            <div class="leftmenu_arrows close" id="expanded_arrow_icon">
+                            <div class="leftmenu_arrows close" id="expandable_first_level_arrow">
                             </div>
                             <div class="leftmenu_list_icons">
                                 <img src="images/domain_leftmenuicon.png" alt="Domain" /></div>
@@ -490,9 +490,9 @@ long milliseconds = new Date().getTime();
                     </div>
                 </div>
                 <div class="leftmenu_list">
-                    <div class="leftmenu_content">
+                    <div class="leftmenu_content" id="expandable_first_level">
                         <div class="leftmenu_firstindent">
-                            <div class="leftmenu_arrows close" id="expanded_arrow_icon">
+                            <div class="leftmenu_arrows close" id="expandable_first_level_arrow">
                             </div>
                             <div class="leftmenu_list_icons">
                                 <img src="images/events_leftmenuicon.png" alt="Event" /></div>
@@ -525,9 +525,9 @@ long milliseconds = new Date().getTime();
                     </div>
                 </div>
                 <div class="leftmenu_list">
-                    <div class="leftmenu_content highlighted">
+                    <div class="leftmenu_content" id="expandable_first_level">
                         <div class="leftmenu_firstindent">
-                            <div class="leftmenu_arrows open" id="expanded_arrow_icon">
+                            <div class="leftmenu_arrows open" id="expandable_first_level_arrow">
                             </div>
                             <div class="leftmenu_list_icons">
                                 <img src="images/configuration_leftmenuicon.png" alt="System" /></div>
