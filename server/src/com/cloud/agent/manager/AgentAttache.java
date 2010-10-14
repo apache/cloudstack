@@ -124,6 +124,10 @@ public abstract class AgentAttache {
         _status = Status.Up;
     }
     
+    public boolean isReady() {
+        return _status == Status.Up;
+    }
+    
     public boolean isConnecting() {
         return _status == Status.Connecting;
     }

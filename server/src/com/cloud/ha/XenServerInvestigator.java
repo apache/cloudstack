@@ -52,7 +52,7 @@ public class XenServerInvestigator extends AdapterBase implements Investigator {
         }
         
         CheckOnHostCommand cmd = new CheckOnHostCommand(agent);
-        List<HostVO> neighbors = _hostDao.listByHostPod(agent.getPodId());
+        List<HostVO> neighbors = _hostDao.listByCluster(agent.getClusterId());
         for (HostVO neighbor : neighbors) {
             if (neighbor.getId() == agent.getId() || neighbor.getHypervisorType() != Hypervisor.Type.XenServer) {
                 continue;

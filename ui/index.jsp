@@ -11,13 +11,12 @@ long milliseconds = new Date().getTime();
 	<meta http-equiv='cache-control' content='no-cache'>  
 	<meta http-equiv='expires' content='0'>  
 	<meta http-equiv='pragma' content='no-cache'>
-	<meta name="version" content="1.9.1.13" />
 
 	<title>cloud.com - User Console</title>
 	
 	<!--  Style Sheet -->
 	<link rel= "stylesheet" href="css/main.css" type="text/css" />
-	<link rel= "stylesheet" href="css/jquery-ui-1.8.2.custom.css" type="text/css" />
+	<link rel= "stylesheet" href="css/jquery-ui.custom.css" type="text/css" />
 	<link rel= "stylesheet" href="css/logger.css" type="text/css" />
 	
 	<!-- 
@@ -35,8 +34,8 @@ long milliseconds = new Date().getTime();
 	-->
 	<!-- <script type="text/javascript" src="scripts/cloud.core.min.js"></script> -->
 
-	<script type="text/javascript" src="scripts/jquery-1.4.2.min.js"></script>
-	<script type="text/javascript" src="scripts/jquery-ui-1.8.2.custom.min.js"></script>
+	<script type="text/javascript" src="scripts/jquery.min.js"></script>
+	<script type="text/javascript" src="scripts/jquery-ui.custom.min.js"></script>
 	<script type="text/javascript" src="scripts/date.js"></script>
 	<script type="text/javascript" src="scripts/jquery.cookies.js"></script>
 	<script type="text/javascript" src="scripts/jquery.timers.js"></script>
@@ -74,7 +73,7 @@ long milliseconds = new Date().getTime();
 				<form id="loginForm" name="loginForm" method="post" action="#">
 					<ol>
 						<li><label for="user_name">Username</label>
-							<input class="text" type="text" name="account_username" id="account_username" />
+							<input class="text" type="text" name="account_username" id="account_username" AUTOCOMPLETE="off"/>
 						</li>
 						<li><label for="password">Password</label>
 							<input class="text" type="password" name="account_password" id="account_password" AUTOCOMPLETE="off" />

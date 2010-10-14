@@ -96,6 +96,7 @@ import com.cloud.agent.api.ModifyStoragePoolAnswer;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
 import com.cloud.agent.api.NetworkIngressRuleAnswer;
 import com.cloud.agent.api.NetworkIngressRulesCmd;
+import com.cloud.agent.api.NetworkRulesSystemVmCommand;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
@@ -317,9 +318,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             }
 
             try {
-                if (isRefNull(record.affinity) || !record.affinity.getUuid(conn).equals(_host.uuid)) {
-                    continue;
-                }
                 vmentry.getKey().destroy(conn);
             } catch (Exception e) {
                 String msg = "VM destroy failed for " + record.nameLabel + " due to " + e.getMessage();
@@ -648,6 +646,8 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             return execute((ModifySshKeysCommand) cmd);
         } else if (cmd instanceof NetworkIngressRulesCmd) {
             return execute((NetworkIngressRulesCmd) cmd);
+        } else if (cmd instanceof NetworkRulesSystemVmCommand) {
+            return execute((NetworkRulesSystemVmCommand) cmd);
         } else if (cmd instanceof PoolEjectCommand) {
             return execute((PoolEjectCommand) cmd);
         } else {
@@ -2487,6 +2487,11 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 vm.setActionsAfterCrash(conn, Types.OnCrashBehaviour.DESTROY);
 
                 vm.start(conn, false, true);
+                
+                if(!vm.getResidentOn(conn).getUuid(conn).equals(_host.uuid)){
+                    startvmfailhandle(vm, null);
+                    throw new Exception("can not start VM " + cmd.getVmName() + " On host " + _host.ip);
+                }
 
                 if (_canBridgeFirewall) {
                     String result = callHostPlugin("default_network_rules",
@@ -2687,6 +2692,10 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                                     disableVlanNetwork(network);
                                 }
                             }
+                        } else {
+                            String msg = "VM " + vmName + " shutdown succeed, but this vm is not in halted state, it is in " + vm.getPowerState(conn) + " state";
+                            s_logger.warn(msg);
+                            return new StopAnswer(cmd, msg);
                         }
                     } catch (XenAPIException e) {
                         String msg = "VM destroy failed in Stop " + vmName + " Command due to " + e.toString();
@@ -3126,18 +3135,18 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace("callHostPlugin executing for command " + cmd + " with " + getArgsString(args));
             }
-            if( _host.host == null ) {
-                _host.host = Host.getByUuid(conn, _host.uuid);
-            }
-            String result = _host.host.callPlugin(conn, plugin, cmd, args);
+            Host host = Host.getByUuid(conn, _host.uuid);
+            String result = host.callPlugin(conn, plugin, cmd, args);
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace("callHostPlugin Result: " + result);
             }
             return result.replace("\n", "");
+        } catch ( Types.HandleInvalid e) {
+            s_logger.warn("callHostPlugin failed for cmd: " + cmd + " with args " + getArgsString(args) + " due to HandleInvalid clazz:" + e.clazz + ", handle:" + e.handle);
         } catch (XenAPIException e) {
-            s_logger.warn("callHostPlugin failed for cmd: " + cmd + " with args " + getArgsString(args) + " due to " + e.toString());
+            s_logger.warn("callHostPlugin failed for cmd: " + cmd + " with args " + getArgsString(args) + " due to " + e.toString(), e);
         } catch (XmlRpcException e) {
-            s_logger.debug("callHostPlugin failed for cmd: " + cmd + " with args " + getArgsString(args) + " due to " + e.getMessage());
+            s_logger.warn("callHostPlugin failed for cmd: " + cmd + " with args " + getArgsString(args) + " due to " + e.getMessage(), e);
         }
         return null;
     }
@@ -3334,7 +3343,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                     PIF.Record pifr = pif.getRecord(conn);
                     if(pifr.host.equals(nPifr.host)) {
                         if (pifr.device.equals(nPifr.device) ) {
-                            pif.plug(conn);
                             return vlanNetwork;
                         } else {
                             throw new CloudRuntimeException("Creating VLAN " + tag + " on " + nPifr.device + " failed due to this VLAN is already created on " + pifr.device);                	
@@ -3348,10 +3356,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 s_logger.debug("Creating VLAN " + tag + " on host " + _host.ip);
             }
             VLAN vlan = VLAN.create(conn, nPif, tag, vlanNetwork);
-            PIF untaggedPif = vlan.getUntaggedPIF(conn);
-            if (!untaggedPif.getCurrentlyAttached(conn)) {
-                untaggedPif.plug(conn);
-            }
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Created VLAN " + tag + " on host " + _host.ip);
             }
@@ -3566,6 +3570,8 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                     s_logger.warn("Unable to get private network " + name);
                     return false;
                 }
+            } else {
+                _privateNetworkName = name;
             }
             name = privateNic.nr.nameLabel;
             
@@ -3923,12 +3929,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             } finally {
                 sshConnection.close();
             }
-            try {
-                // wait 2 seconds before call plugin
-                Thread.sleep(2000);
-            } catch (final InterruptedException ex) {
 
-            }
             if (!setIptables()) {
                 s_logger.warn("set xenserver Iptable failed");
             }
@@ -4247,7 +4248,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         } catch (NumberFormatException e) {
             throw new ConfigurationException("Unable to get the zone " + params.get("zone"));
         }
-        _host.host = null;
         _name = _host.uuid;
         _host.ip = (String) params.get("url");
         _host.pool = (String) params.get("pool");
@@ -5094,7 +5094,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
 
     protected String getVhdParent(String primaryStorageSRUuid, String snapshotUuid, Boolean isISCSI) {
-        String parentUuid = callHostPlugin("vmopsSnapshot", "getVhdParent", "primaryStorageSRUuid", primaryStorageSRUuid,
+        String parentUuid = callHostPlugin("getVhdParent", "primaryStorageSRUuid", primaryStorageSRUuid,
                 "snapshotUuid", snapshotUuid, "isISCSI", isISCSI.toString());
 
         if (parentUuid == null || parentUuid.isEmpty()) {
@@ -5156,12 +5156,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                     }
 
                 }                
-                
-                VDI.Record vdir = snapshot.getRecord(conn);
-                snapshotUUID = vdir.uuid;
-
-                success = true;
-                details = null;
             } else if (cmd.getCommandSwitch().equals(ManageSnapshotCommand.DESTROY_SNAPSHOT)) {
                 // Look up the snapshot
                 snapshotUUID = cmd.getSnapshotPath();
@@ -5169,9 +5163,9 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
                 snapshot.destroy(conn);
                 snapshotUUID = null;
-                success = true;
-                details = null;
             }
+            success = true;
+            details = null;
         } catch (XenAPIException e) {
             details += ", reason: " + e.toString();
             s_logger.warn(details, e);
@@ -6062,6 +6056,23 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         }
     }
     
+    private Answer execute(NetworkRulesSystemVmCommand cmd) {
+    	boolean success = false;
+    	if (_canBridgeFirewall) {
+            String result = callHostPlugin("default_network_rules_systemvm", "vmName", cmd.getVmName());
+            if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
+                s_logger.warn("Failed to program default system vm network rules for " + cmd.getVmName());
+                success = false;
+            } else {
+                s_logger.info("Programmed default system vm network rules for " + cmd.getVmName());
+                success = true;
+            }
+        } else {
+        	s_logger.warn("Cannot program ingress rules for system vm -- bridge firewalling not supported on host");
+        }
+    	return new Answer(cmd, success, "");
+    }
+    
     private Answer execute(PoolEjectCommand cmd) {
         Connection conn = getConnection();
         String hostuuid = cmd.getHostuuid();
@@ -6079,15 +6090,20 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 return new Answer(cmd);
             }
             Host host = Host.getByUuid(conn, hostuuid);
-            Pool.eject(conn, host);
+            try {
+            	Pool.eject(conn, host);
+            } catch (XenAPIException e) {
+                String msg = "Unable to eject host " + _host.uuid + " due to " + e.toString();
+                s_logger.warn(msg);   
+                host.destroy(conn);
+            }
             return new Answer(cmd);
         } catch (XenAPIException e) {
-            String msg = "Unable to eject host " + _host.uuid + " due to " + e.toString();
+            String msg = "XenAPIException Unable to destroy host " + _host.uuid + " in xenserver database due to " + e.toString();
             s_logger.warn(msg, e);
             return new Answer(cmd, false, msg);
         } catch (Exception e) {
-            s_logger.warn("Unable to eject host " + _host.uuid, e);
-            String msg = "Unable to eject host " + _host.uuid + " due to " + e.getMessage();
+            String msg = "Exception Unable to destroy host " + _host.uuid + " in xenserver database due to " + e.getMessage();
             s_logger.warn(msg, e);
             return new Answer(cmd, false, msg);
         }
@@ -6114,7 +6130,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     protected class XenServerHost {
         public String uuid;
         public String ip;
-        public Host host;
         public String publicNetwork;
         public String privateNetwork;
         public String linkLocalNetwork;
@@ -6129,7 +6144,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         public String pool;
     }
 
-    private class VHDInfo {
+    class VHDInfo {
         private final String uuid;
         private final Long virtualSize;
 

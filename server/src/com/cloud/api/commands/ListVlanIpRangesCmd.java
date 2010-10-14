@@ -97,19 +97,16 @@ public class ListVlanIpRangesCmd extends BaseCmd {
     			accountId = account.getId();
     		}
     	} 
-    	
+
     	Criteria c = new Criteria("id", Boolean.TRUE, startIndex, Long.valueOf(pageSizeNum));
-    	
-    	if (keyword != null) {
-    		c.addCriteria(Criteria.KEYWORD, keyword);
-    	} else {
-    		c.addCriteria(Criteria.ID, id);
-        	c.addCriteria(Criteria.VLAN, vlanId);
-        	c.addCriteria(Criteria.DATACENTERID, zoneId);
-        	c.addCriteria(Criteria.ACCOUNTID, accountId);
-        	c.addCriteria(Criteria.PODID, podId);        	
-    	}
-    	
+
+    	c.addCriteria(Criteria.KEYWORD, keyword);
+    	c.addCriteria(Criteria.ID, id);
+    	c.addCriteria(Criteria.VLAN, vlanId);
+    	c.addCriteria(Criteria.DATACENTERID, zoneId);
+    	c.addCriteria(Criteria.ACCOUNTID, accountId);
+    	c.addCriteria(Criteria.PODID, podId);        	
+
     	List<? extends VlanVO> vlans = getManagementServer().searchForVlans(c);
 
     	if (vlans == null) {

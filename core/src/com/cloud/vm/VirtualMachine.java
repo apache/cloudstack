@@ -107,7 +107,7 @@ public interface VirtualMachine {
     /**
      * @return pod id.
      */
-    public long getPodId();
+    public Long getPodId();
     
     /**
      * @return data center id.

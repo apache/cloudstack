@@ -421,7 +421,7 @@ public class StorageManagerImpl implements StorageManager {
             _asyncMgr.updateAsyncJobStatus(job.getId(), BaseCmd.PROGRESS_INSTANCE_CREATED, volumeId);
         }
         
-        final HashSet<StoragePool> poolsToAvoid = new HashSet<StoragePool>();
+
         StoragePoolVO pool = null;
         boolean success = false;
         Set<Long> podsToAvoid = new HashSet<Long>();
@@ -436,6 +436,7 @@ public class StorageManagerImpl implements StorageManager {
         while ((pod = _agentMgr.findPod(null, null, dc, account.getId(), podsToAvoid)) != null) {
             podsToAvoid.add(pod.first().getId());
             // Determine what storage pool to store the volume in
+            HashSet<StoragePool> poolsToAvoid = new HashSet<StoragePool>();
             while ((pool = findStoragePool(dskCh, dc, pod.first(), null, null, null, null, poolsToAvoid)) != null) {
                 poolsToAvoid.add(pool);
                 volumeFolder = pool.getPath();
@@ -531,11 +532,9 @@ public class StorageManagerImpl implements StorageManager {
         String templatePath = null;
         VMTemplateVO template = null;
         if(originalVolume.getVolumeType().equals(Volume.VolumeType.ROOT)){
-            if(originalVolume.getTemplateId() == null){
-                details = "Null Template Id for Root Volume Id: " + origVolumeId + ". Cannot create volume from snapshot of root disk.";
-                s_logger.error(details);
-            }
-            else {
+
+            ImageFormat format =  _snapshotMgr.getImageFormat(origVolumeId);
+            if (format != null && format != ImageFormat.ISO) {           	
                 Long templateId = originalVolume.getTemplateId();
                 template = _templateDao.findById(templateId);
                 if(template == null) {
@@ -555,43 +554,40 @@ public class StorageManagerImpl implements StorageManager {
                         (templatePath = templateHostVO.getInstallPath()) == null)
                     {
                         details = "Template id: " + templateId + " is not present on secondaryStorageHost Id: " + secondaryStorageHost.getId() + ". Can't create volume from ROOT DISK";
+                        s_logger.warn(details);
+                        throw new CloudRuntimeException(details);
                     }
                 }
             }
-        }
-        if (details == null) {
-            // everything went well till now
-            DataCenterVO dc = _dcDao.findById(originalVolume.getDataCenterId());
-            DiskOfferingVO diskOffering = null;
+		}
+		// everything went well till now
+		DataCenterVO dc = _dcDao.findById(originalVolume.getDataCenterId());
+		DiskOfferingVO diskOffering = null;
 
-            if (originalVolume.getVolumeType() == VolumeType.DATADISK || originalVolume.getVolumeType() == VolumeType.ROOT) {
-                Long diskOfferingId = originalVolume.getDiskOfferingId();
-                if (diskOfferingId != null) {
-                    diskOffering = _diskOfferingDao.findById(diskOfferingId);
-                }
-            }
-//            else if (originalVolume.getVolumeType() == VolumeType.ROOT) {
-//                // Create a temporary disk offering with the same size as the ROOT DISK
-//                Long rootDiskSize = originalVolume.getSize();
-//                Long rootDiskSizeInMB = rootDiskSize/(1024*1024);
-//                Long sizeInGB = rootDiskSizeInMB/1024;
-//                String name = "Root Disk Offering";
-//                String displayText = "Temporary Disk Offering for Snapshot from Root Disk: " + originalVolume.getId() + "[" + sizeInGB + "GB Disk]";
-//                diskOffering = new DiskOfferingVO(originalVolume.getDomainId(), name, displayText, rootDiskSizeInMB, false, null);
-//            }
-            else {
-                // The code never reaches here.
-                s_logger.error("Original volume must have been a ROOT DISK or a DATA DISK");
-                return null;
-            }
-            Pair<VolumeVO, String> volumeDetails = createVolumeFromSnapshot(userId, accountId, volumeName, dc, diskOffering, snapshot, templatePath, originalVolume.getSize(), template);
-            createdVolume = volumeDetails.first();
-            if (createdVolume != null) {
-                volumeId = createdVolume.getId();
-            }
-            details = volumeDetails.second();
-        }
-        
+		if (originalVolume.getVolumeType() == VolumeType.DATADISK
+				|| originalVolume.getVolumeType() == VolumeType.ROOT) {
+			Long diskOfferingId = originalVolume.getDiskOfferingId();
+			if (diskOfferingId != null) {
+				diskOffering = _diskOfferingDao.findById(diskOfferingId);
+			}
+		} else {
+			// The code never reaches here.
+			s_logger
+					.error("Original volume must have been a ROOT DISK or a DATA DISK");
+			return null;
+		}
+		Pair<VolumeVO, String> volumeDetails = createVolumeFromSnapshot(userId,
+				accountId, volumeName, dc, diskOffering, snapshot,
+				templatePath, originalVolume.getSize(), template);
+		createdVolume = volumeDetails.first();
+		if (createdVolume != null) {
+			volumeId = createdVolume.getId();
+		} else {
+			details = "Creating volume failed due to " + volumeDetails.second();
+			s_logger.warn(details);
+			throw new CloudRuntimeException(details);
+		}
+
         Transaction txn = Transaction.currentTxn();
         txn.start();
         // Create an event
@@ -973,7 +969,7 @@ public class StorageManagerImpl implements StorageManager {
         _storagePoolAcquisitionWaitSeconds = NumbersUtil.parseInt(configs.get("pool.acquisition.wait.seconds"), 1800);
         s_logger.info("pool.acquisition.wait.seconds is configured as " + _storagePoolAcquisitionWaitSeconds + " seconds");
 
-        _totalRetries = NumbersUtil.parseInt(configDao.getValue("total.retries"), 4);
+        _totalRetries = NumbersUtil.parseInt(configDao.getValue("total.retries"), 2);
         _pauseInterval = 2*NumbersUtil.parseInt(configDao.getValue("ping.interval"), 60);
         
         _hypervisorType = configDao.getValue("hypervisor.type");
@@ -1148,7 +1144,9 @@ public class StorageManagerImpl implements StorageManager {
         
         Hypervisor.Type hypervisorType = null;
         List<HostVO> hosts = null;
-        if (podId != null) {
+        if (clusterId != null) {
+            hosts = _hostDao.listByCluster(clusterId);
+        } else  if (podId != null) {
             hosts = _hostDao.listByHostPod(podId);
         } else {
             hosts = _hostDao.listByDataCenter(zoneId);
@@ -1515,11 +1513,10 @@ public class StorageManagerImpl implements StorageManager {
         VolumeVO createdVolume = null;
 
         while ((pod = _agentMgr.findPod(null, null, dc, account.getId(), podsToAvoid)) != null) {
+            podsToAvoid.add(pod.first().getId());
             if ((createdVolume = createVolume(volume, null, null, dc, pod.first(), null, null, diskOffering, poolsToAvoid)) != null) {
             	break;
-            } else {
-                podsToAvoid.add(pod.first().getId());
-            }
+            } 
         }
 
         // Create an event
@@ -1682,13 +1679,13 @@ public class StorageManagerImpl implements StorageManager {
         }
         while ((storagePoolHost = chooseHostForStoragePool(storagePool, hostsToAvoid)) != null && tryCount++ < totalRetries) {
             String errMsg = basicErrMsg + " on host: " + hostId + " try: " + tryCount + ", reason: ";
+            hostsToAvoid.add(hostId);
             try {
                 hostId = storagePoolHost.getHostId();
                 HostVO hostVO = _hostDao.findById(hostId);
                 if (shouldBeSnapshotCapable) {
                     if (hostVO == null || hostVO.getHypervisorType() != Hypervisor.Type.XenServer) {
                         // Only XenServer hosts are snapshot capable.
-                        hostsToAvoid.add(hostId);
                         continue;
                     }
                 }

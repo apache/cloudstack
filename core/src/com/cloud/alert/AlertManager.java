@@ -41,6 +41,7 @@ public interface AlertManager extends Manager {
     public static final short ALERT_TYPE_USERVM_MIGRATE = 16;
     public static final short ALERT_TYPE_VLAN = 17;
     public static final short ALERT_TYPE_SSVM = 18;
+    public static final short ALERT_TYPE_USAGE_SERVER_RESULT = 19; // Usage job result
 
     void clearAlert(short alertType, long dataCenterId, long podId);
     void sendAlert(short alertType, long dataCenterId, Long podId, String subject, String body);

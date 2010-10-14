@@ -29,6 +29,7 @@ import tempfile
 
 VHD_UTIL = '/usr/sbin/vhd-util'
 VHD_PREFIX = 'VHD-'
+CLOUD_DIR = '/var/run/cloud_mount'
 
 def echo(fn):
     def wrapped(*v, **k):
@@ -76,7 +77,7 @@ def create_secondary_storage_folder(session, args):
         try:
             # Mount the remote resource folder locally
             remote_mount_path = args["remoteMountPath"]
-            local_mount_path = os.path.join(SR.MOUNT_BASE, "mount" + str(int(random.random() * 1000000)))
+            local_mount_path = os.path.join(CLOUD_DIR, "mount" + str(int(random.random() * 1000000)))
             mount(remote_mount_path, local_mount_path)
 
             # Create the new folder
@@ -112,7 +113,7 @@ def delete_secondary_storage_folder(session, args):
         try:
             # Mount the remote resource folder locally
             remote_mount_path = args["remoteMountPath"]
-            local_mount_path = os.path.join(SR.MOUNT_BASE, "mount" + str(int(random.random() * 1000000)))
+            local_mount_path = os.path.join(CLOUD_DIR, "mount" + str(int(random.random() * 1000000)))
             mount(remote_mount_path, local_mount_path)
 
             # Delete the specified folder
@@ -148,7 +149,7 @@ def post_create_private_template(session, args):
         try:
             # Mount the remote templates folder locally
             remote_mount_path = args["remoteTemplateMountPath"]
-            local_mount_path = os.path.join(SR.MOUNT_BASE, "template" + str(int(random.random() * 10000)))
+            local_mount_path = os.path.join(CLOUD_DIR, "template" + str(int(random.random() * 10000)))
             mount(remote_mount_path, local_mount_path)
             util.SMlog("Mounted secondary storage template folder")
 
@@ -757,7 +758,7 @@ def mountTemplatesDir(secondaryStorageMountPath, templatePath):
     absoluteTemplateDir = os.path.dirname(absoluteTemplatePath)
 
     randomUUID = util.gen_uuid()
-    localTemplateDir = os.path.join(SR.MOUNT_BASE, randomUUID)
+    localTemplateDir = os.path.join(CLOUD_DIR, randomUUID)
     # create the temp dir
     makedirs(localTemplateDir)
     # mount
@@ -777,7 +778,7 @@ def mountSnapshotsDir(secondaryStorageMountPath, relativeDir, dcId, accountId, i
     snapshotsDir = os.path.join(secondaryStorageMountPath, relativeDir)
 
     # Mkdir local mount point dir, if it doesn't exist.
-    localMountPointPath = os.path.join(SR.MOUNT_BASE, dcId)
+    localMountPointPath = os.path.join(CLOUD_DIR, dcId)
     localMountPointPath = os.path.join(localMountPointPath, relativeDir)
 
     makedirs(localMountPointPath)
@@ -800,7 +801,7 @@ def mountSnapshotsDir(secondaryStorageMountPath, relativeDir, dcId, accountId, i
 @echo
 def unmountSnapshotsDir(session, args):
     dcId = args['dcId']
-    localMountPointPath = os.path.join(SR.MOUNT_BASE, dcId)
+    localMountPointPath = os.path.join(CLOUD_DIR, dcId)
     localMountPointPath = os.path.join(localMountPointPath, "snapshots")
     try:
         umount(localMountPointPath)
@@ -845,12 +846,12 @@ def manageAvailability(path, value):
         util.pread2(cmd)
     except: #CommandException, (rc, cmdListStr, stderr):
         #errMsg = "CommandException thrown while executing: " + cmdListStr + " with return code: " + str(rc) + " and stderr: " + stderr
-        errMsg = "Unexpected exception thrown by lvchange"
-        util.SMlog(errMsg)
         if value == "-ay":
             # Raise an error only if we are trying to make it available.
             # Just warn if we are trying to make it unavailable after the 
             # snapshot operation is done.
+            errMsg = "Unexpected exception thrown by lvchange"
+            util.SMlog(errMsg)
             raise xs_errors.XenError(errMsg)
     return
 
@@ -1108,13 +1109,6 @@ def backupSnapshot(session, args):
     backupVHD = getVHD(baseCopyUuid, False)
     backupFile = os.path.join(backupsDir, backupVHD)
     copyfile(baseCopyPath, backupFile, isISCSI)
-    
-    # Now set the availability of the snapshotPath and the baseCopyPath to false
-    makeUnavailable(snapshotUuid, primarySRPath, isISCSI)
-    manageAvailability(baseCopyPath, '-an')
-    if prevSnapshotUuid:
-        makeUnavailable(prevSnapshotUuid, primarySRPath, isISCSI)
-        makeUnavailable(prevBaseCopyUuid, primarySRPath, isISCSI)
 
     if isFirstSnapshotOfRootVolume:
         # First snapshot of the root volume.
@@ -1122,6 +1116,13 @@ def backupSnapshot(session, args):
         # Create a dummy empty vhd and set the parent of backupVHD to it.
         # This will prevent deleteSnapshotBackup and createVolumeFromSnapshot from breaking
         prevBackupUuid = createDummyVHD(baseCopyPath, backupsDir)
+    
+    # Now set the availability of the snapshotPath and the baseCopyPath to false
+    makeUnavailable(snapshotUuid, primarySRPath, isISCSI)
+    manageAvailability(baseCopyPath, '-an')
+    if prevSnapshotUuid:
+        makeUnavailable(prevSnapshotUuid, primarySRPath, isISCSI)
+        makeUnavailable(prevBaseCopyUuid, primarySRPath, isISCSI)
 
     # Because the primary storage is always scanned, the parent of this base copy is always the first base copy.
     # We don't want that, we want a chain of VHDs each of which is a delta from the previous.
@@ -1221,7 +1222,7 @@ def createVolumeFromSnapshot(session, args):
     if templateDownloadFolder:
         # Copy all the vhds to the final destination templates dir
         # It is some random directory on the primary created for templates.
-        destDirParent = os.path.join(SR.MOUNT_BASE, "mount" + str(int(random.random() * 1000000)))
+        destDirParent = os.path.join(CLOUD_DIR, "mount" + str(int(random.random() * 1000000)))
         destDir = os.path.join(destDirParent, templateDownloadFolder)
         # create the this directory, if it isn't there
         makedirs(destDir)
@@ -1673,6 +1674,13 @@ def default_network_rules(session, args):
         return 'false'
     
     vif = "vif" + domid + ".0"
+    tap = "tap" + domid + ".0"
+    vifs = [vif]
+    try:
+        util.pread2(['ifconfig', tap])
+    	vifs.append(tap)
+    except:
+    	pass
 
     delete_rules_for_vm_in_bridge_firewall_chain(vm_name)
 
@@ -1694,19 +1702,22 @@ def default_network_rules(session, args):
         util.pread2(['iptables', '-F', vmchain])
 
     try:
-        util.pread2(['iptables', '-A', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', vif, '-j', vmchain])
-        util.pread2(['iptables', '-A', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', vif, '-j', vmchain])
+        for v in vifs:
+            util.pread2(['iptables', '-A', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', v, '-j', vmchain])
+            util.pread2(['iptables', '-A', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '-j', vmchain])
         util.pread2(['iptables', '-A', vmchain, '-m', 'state', '--state', 'RELATED,ESTABLISHED', '-j', 'ACCEPT'])
         #allow dhcp
         util.pread2(['iptables', '-A', vmchain, '-p', 'udp', '--dport', '67:68', '--sport', '67:68',  '-j', 'ACCEPT'])
         #don't let vm spoof its ip address
-        util.pread2(['iptables', '-A', vmchain, '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', vif, '--source', vm_ip, '-j', 'RETURN'])
+        for v in vifs:
+            util.pread2(['iptables', '-A', vmchain, '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '--source', vm_ip, '-j', 'RETURN'])
         util.pread2(['iptables', '-A', vmchain, '-j', 'DROP'])
     except:
         util.SMlog("Failed to program default rules for vm " + vm_name)
         return 'false'
     
-    default_ebtables_rules(vm_name, vif, vm_ip, vm_mac)
+    for v in vifs:
+    	default_ebtables_rules(vm_name, v, vm_ip, vm_mac)
     
     if write_rule_log_for_vm(vmName, vm_id, vm_ip, domid, '_initial_', '-1') == False:
         util.SMlog("Failed to log default network rules, ignoring")
@@ -1781,16 +1792,27 @@ def network_rules_for_rebooted_vm(session, vmName):
         return True
     
     vif = "vif" + curr_domid + ".0"
+    tap = "tap" + curr_domid + ".0"
+    vifs = [vif]
+    try:
+        util.pread2(['ifconfig', tap])
+        vifs.append(tap)
+    except:
+        pass
     vmchain = '-'.join(vm_name.split('-')[:-1])
 
-    util.pread2(['iptables', '-A', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', vif, '-j', vmchain])
-    util.pread2(['iptables', '-A', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', vif, '-j', vmchain])
+    for v in vifs:
+        util.pread2(['iptables', '-A', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', v, '-j', vmchain])
+        util.pread2(['iptables', '-A', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '-j', vmchain])
+
     #change antispoof rule in vmchain
     try:
         delcmd = "iptables -S " +  vmchain + " | grep  physdev-in | sed 's/-A/-D/'"
-        inscmd = "iptables -S " +  vmchain + " | grep  physdev-in  | sed -r 's/vif[0-9]+.0/" + vif + "/' | sed 's/-A/-I/'"
+        inscmd = "iptables -S " +  vmchain + " | grep  physdev-in | grep vif | sed -r 's/vif[0-9]+.0/" + vif + "/' | sed 's/-A/-I/'"
+        inscmd2 = "iptables -S " +  vmchain + " | grep  physdev-in | grep tap | sed -r 's/tap[0-9]+.0/" + tap + "/' | sed 's/-A/-I/'"
+        
         ipts = []
-        for cmd in [delcmd, inscmd]:
+        for cmd in [delcmd, inscmd, inscmd2]:
             cmds = util.pread2(['/bin/bash', '-c', cmd]).split('\n')
             cmds.pop()
             for c in cmds:
@@ -2009,6 +2031,13 @@ def network_rules(session, args):
         return 'false'
    
     vif = "vif" + domid + ".0"
+    tap = "tap" + domid + ".0"
+    vifs = [vif]
+    try:
+        util.pread2(['ifconfig', tap])
+    	vifs.append(tap)
+    except:
+    	pass
     vm_name =  '-'.join(vm_name.split('-')[:-1])
     vmchain = vm_name
     
@@ -2077,7 +2106,8 @@ def network_rules(session, args):
             
 
     util.pread2(['iptables', '-A', vmchain, '-p', 'udp', '--dport', '67:68', '--sport', '67:68',  '-j', 'ACCEPT'])
-    util.pread2(['iptables', '-I', vmchain, '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', vif, '--source', vm_ip, '-j', 'RETURN'])
+    for v in vifs:
+        util.pread2(['iptables', '-I', vmchain, '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '--source', vm_ip, '-j', 'RETURN'])
     util.pread2(['iptables', '-A', vmchain, '-j', 'DROP'])
 
     if write_rule_log_for_vm(vmName, vm_id, vm_ip, domid, signature, seqno) == False:

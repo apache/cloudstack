@@ -16,8 +16,6 @@
  * 
  */
 
-// Version: @VERSION@
-
 function showDomainsTab() {
     var defaultRootDomainId = g_domainid;
     var defaultRootLevel = 0;	 

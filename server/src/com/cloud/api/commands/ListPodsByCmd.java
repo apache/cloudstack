@@ -60,13 +60,10 @@ public class ListPodsByCmd extends BaseCmd {
     	
     	Criteria c = new Criteria();
     	
-    	if (keyword != null) {
-    		c.addCriteria(Criteria.KEYWORD, keyword);
-     	} else {
-     		c.addCriteria(Criteria.ID, id);
-            c.addCriteria(Criteria.NAME, name);
-            c.addCriteria(Criteria.DATACENTERID, zoneId);
-     	}
+    	c.addCriteria(Criteria.KEYWORD, keyword);
+    	c.addCriteria(Criteria.ID, id);
+    	c.addCriteria(Criteria.NAME, name);
+    	c.addCriteria(Criteria.DATACENTERID, zoneId);
         
     	List<HostPodVO> pods = getManagementServer().searchForPods(c);
         

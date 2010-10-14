@@ -107,14 +107,11 @@ public class ListPortForwardingServicesCmd extends BaseCmd {
         Criteria c = new Criteria("id", Boolean.TRUE, startIndex, Long.valueOf(pageSizeNum));
 
         c.addCriteria(Criteria.ACCOUNTID, accountId);
-        if (keyword != null) {
-        	c.addCriteria(Criteria.KEYWORD, keyword);
-        } else {
-            if (isAdmin) {
-                c.addCriteria(Criteria.DOMAINID, domainId);
-            }
-            c.addCriteria(Criteria.ID, id);
-            c.addCriteria(Criteria.NAME, name);
+        c.addCriteria(Criteria.KEYWORD, keyword);
+        c.addCriteria(Criteria.ID, id);
+        c.addCriteria(Criteria.NAME, name);
+        if (isAdmin) {
+            c.addCriteria(Criteria.DOMAINID, domainId);
         }
 
         List<SecurityGroupVO> groups = getManagementServer().searchForSecurityGroups(c);

@@ -91,18 +91,16 @@ public class ListUsersCmd extends BaseCmd {
                 startIndex = Long.valueOf(pageSizeNum * (pageNum-1));
             }
         }
+
         Criteria c = new Criteria("id", Boolean.TRUE, startIndex, Long.valueOf(pageSizeNum));
-        if (keyword != null) {
-        	c.addCriteria(Criteria.KEYWORD, keyword);
-        }
-        else {
-        	c.addCriteria(Criteria.ID, id);
-            c.addCriteria(Criteria.ACCOUNTNAME, accountName);
-            c.addCriteria(Criteria.DOMAINID, domainId);
-            c.addCriteria(Criteria.USERNAME, userName);
-            c.addCriteria(Criteria.TYPE, type);
-            c.addCriteria(Criteria.STATE, state);
-        }
+        c.addCriteria(Criteria.KEYWORD, keyword);
+        c.addCriteria(Criteria.ID, id);
+        c.addCriteria(Criteria.ACCOUNTNAME, accountName);
+        c.addCriteria(Criteria.DOMAINID, domainId);
+        c.addCriteria(Criteria.USERNAME, userName);
+        c.addCriteria(Criteria.TYPE, type);
+        c.addCriteria(Criteria.STATE, state);
+
         List<UserAccountVO> users = getManagementServer().searchForUsers(c);
         
         List<Pair<String, Object>> userTags = new ArrayList<Pair<String, Object>>();

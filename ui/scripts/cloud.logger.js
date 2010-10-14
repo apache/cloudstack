@@ -16,8 +16,6 @@
  * 
  */
 
-// Version: 1.9.1.152
-
 //
 // Javascript logger utility
 // Author

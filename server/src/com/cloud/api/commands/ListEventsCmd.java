@@ -122,16 +122,13 @@ public class ListEventsCmd extends BaseCmd {
         }
         Criteria c = new Criteria("createDate", Boolean.FALSE, startIndex, Long.valueOf(pageSizeNum));
         c.addCriteria(Criteria.ACCOUNTID, accountIds);
-        if (keyword != null) {
-        	c.addCriteria(Criteria.KEYWORD, keyword);
-        } else {
-            if (isAdmin) {
-                c.addCriteria(Criteria.DOMAINID, domainId);
-            }
-        	c.addCriteria(Criteria.TYPE, eventType);
-    		c.addCriteria(Criteria.LEVEL, eventLevel);
-    		c.addCriteria(Criteria.STARTDATE, startDate);
-    		c.addCriteria(Criteria.ENDDATE, endDate);
+        c.addCriteria(Criteria.KEYWORD, keyword);
+        c.addCriteria(Criteria.TYPE, eventType);
+        c.addCriteria(Criteria.LEVEL, eventLevel);
+        c.addCriteria(Criteria.STARTDATE, startDate);
+        c.addCriteria(Criteria.ENDDATE, endDate);
+        if (isAdmin) {
+            c.addCriteria(Criteria.DOMAINID, domainId);
         }
 
         List<EventVO> events;

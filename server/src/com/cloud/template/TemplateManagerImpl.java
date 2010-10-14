@@ -633,6 +633,9 @@ public class TemplateManagerImpl implements TemplateManager {
 		
 		// Check if there are any snapshots for the template in the template host ref's zone
 		List<VolumeVO> volumes = _volumeDao.findByTemplateAndZone(templateId, zoneId);
+		if( volumes.size() > 0 ) {
+		    return false;
+		}
 		for (VolumeVO volume : volumes) {
 			List<SnapshotVO> snapshots = _snapshotDao.listByVolumeId(volume.getId());
 			if (!snapshots.isEmpty()) {

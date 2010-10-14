@@ -78,12 +78,9 @@ public class ListServiceOfferingsCmd extends BaseCmd {
             }
         }
         Criteria c = new Criteria("created", Boolean.FALSE, startIndex, Long.valueOf(pageSizeNum));
-        if (keyword != null) {
-        	c.addCriteria(Criteria.KEYWORD, keyword);
-        } else {
-        	c.addCriteria(Criteria.ID, id);
-            c.addCriteria(Criteria.NAME, name);
-        }
+        c.addCriteria(Criteria.KEYWORD, keyword);
+        c.addCriteria(Criteria.ID, id);
+        c.addCriteria(Criteria.NAME, name);
         
         //If vmId is present in the list of parameters, verify it
         if (vmId != null) {

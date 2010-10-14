@@ -74,6 +74,26 @@ DROP TABLE IF EXISTS `cloud`.`storage_pool_details`;
 DROP TABLE IF EXISTS `cloud`.`ext_lun_details`;
 DROP TABLE IF EXISTS `cloud`.`cluster`;
 
+/*DO NOT DELETE*/
+/*
+DROP TABLE IF EXISTS `cloud`.`netapp_storage_pool`;
+
+CREATE TABLE `cloud`.`netapp_storage_pool` (
+  `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
+  `ip_address` varchar(15) NOT NULL COMMENT 'ip address of the pool/volume',
+  `pool_name` varchar(255) NOT NULL COMMENT 'name for the pool/volume',
+  `aggregate_name` varchar(255) NOT NULL COMMENT 'name for the aggregate',
+  `volume_name` varchar(255) NOT NULL COMMENT 'name for the volume',
+  `volume_size` varchar(255) NOT NULL COMMENT 'volume size',
+  `snapshot_policy` varchar(255) NOT NULL COMMENT 'snapshot policy',
+  `snapshot_reservation` int NOT NULL COMMENT 'snapshot reservation',  
+  `username` varchar(255) NOT NULL COMMENT 'username',  
+  `password` varchar(200) COMMENT 'password',
+  `round_robin_marker` int COMMENT 'This marks the volume to be picked up for lun creation, RR fashion',
+  PRIMARY KEY (`ip_address`,`aggregate_name`,`volume_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+*/
+
 CREATE TABLE `cloud`.`cluster` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
   `name` varchar(255) NOT NULL COMMENT 'name for the cluster',
@@ -478,7 +498,7 @@ CREATE TABLE  `cloud`.`vm_instance` (
   `private_mac_address` varchar(17),
   `private_ip_address` varchar(15),
   `private_netmask` varchar(15),
-  `pod_id` bigint unsigned NOT NULL,
+  `pod_id` bigint unsigned,
   `storage_ip` varchar(15),
   `data_center_id` bigint unsigned NOT NULL COMMENT 'Data Center the instance belongs to',
   `host_id` bigint unsigned,

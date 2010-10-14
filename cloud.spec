@@ -296,6 +296,14 @@ Group:     System Environment/Libraries
 The Cloud.com usage monitor provides usage accounting across the entire cloud for
 cloud operators to charge based on usage parameters.
 
+%package cli
+Summary:   Cloud.com command line tools
+Requires: python
+Group:     System Environment/Libraries
+%description cli
+The Cloud.com command line tools contain a few Python modules that can call cloudStack APIs.
+
+
 %endif
 
 %prep
@@ -516,6 +524,7 @@ fi
 %{_javadir}/%{name}-xenserver-5.5.0-1.jar
 %{_javadir}/%{name}-xmlrpc-common-3.*.jar
 %{_javadir}/%{name}-xmlrpc-client-3.*.jar
+%{_javadir}/%{name}-manageontap.jar
 %doc README
 %doc HACKING
 %doc debian/copyright
@@ -538,7 +547,9 @@ fi
 
 %files python
 %defattr(0644,root,root,0755)
-%{_prefix}/lib*/python*/site-packages/%{name}*
+%{_prefix}/lib*/python*/site-packages/%{name}_PrettyPrint.*
+%{_prefix}/lib*/python*/site-packages/%{name}_sxp.*
+%{_prefix}/lib*/python*/site-packages/%{name}_utils.*
 %doc README
 %doc HACKING
 %doc debian/copyright
@@ -546,6 +557,7 @@ fi
 %files setup
 %attr(0755,root,root) %{_bindir}/%{name}-setup-databases
 %attr(0755,root,root) %{_bindir}/%{name}-migrate-databases
+%attr(0755,root,root) %{_bindir}/%{name}-migrate-snapshot
 %dir %{_datadir}/%{name}/setup
 %{_datadir}/%{name}/setup/create-database.sql
 %{_datadir}/%{name}/setup/create-index-fk.sql
@@ -560,6 +572,7 @@ fi
 %{_datadir}/%{name}/setup/index-212to213.sql
 %{_datadir}/%{name}/setup/postprocess-20to21.sql
 %{_datadir}/%{name}/setup/schema-20to21.sql
+%{_datadir}/%{name}/setup/schema-213to214.sql
 %{_datadir}/%{name}/setup/schema-level.sql
 %doc README
 %doc HACKING
@@ -692,6 +705,17 @@ fi
 %{_sysconfdir}/%{name}/usage/usage-components.xml
 %config(noreplace) %{_sysconfdir}/%{name}/usage/log4j-%{name}_usage.xml
 %config(noreplace) %attr(640,root,%{name}) %{_sysconfdir}/%{name}/usage/db.properties
+%doc README
+%doc HACKING
+%doc debian/copyright
+
+%files cli
+%{_bindir}/%{name}-tool
+%{_bindir}/%{name}voladm
+%{_sysconfdir}/%{name}/cli/commands.xml
+%dir %{_prefix}/lib*/python*/site-packages/%{name}tool
+%{_prefix}/lib*/python*/site-packages/%{name}tool/*
+%{_prefix}/lib*/python*/site-packages/%{name}apis.py
 %doc README
 %doc HACKING
 %doc debian/copyright

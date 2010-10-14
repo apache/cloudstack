@@ -292,6 +292,6 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     public List<DomainRouterVO> listByVlanDbId(Long vlanDbId) {
         SearchCriteria sc = VlanDbIdSearch.create();
         sc.setParameters("vlanDbId", vlanDbId);
-        return listBy(sc);
+        return listActiveBy(sc);
     }
 }

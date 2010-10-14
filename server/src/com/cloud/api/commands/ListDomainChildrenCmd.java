@@ -95,16 +95,11 @@ public class ListDomainChildrenCmd extends BaseCmd {
             c = new Criteria("id", Boolean.TRUE, startIndex, Long.valueOf(pageSizeNum));
         else
         	c = new Criteria("id", Boolean.TRUE, null, null);
-        
-        
-        if (keyword != null) {
-        	c.addCriteria(Criteria.KEYWORD, keyword);
-        }
-        else {
-        	c.addCriteria(Criteria.ID, domainId);
-            c.addCriteria(Criteria.NAME, domainName);
-            c.addCriteria(Criteria.ISRECURSIVE, isRecursive);
-        }
+
+        c.addCriteria(Criteria.KEYWORD, keyword);
+        c.addCriteria(Criteria.ID, domainId);
+        c.addCriteria(Criteria.NAME, domainName);
+        c.addCriteria(Criteria.ISRECURSIVE, isRecursive);
         
         // TODO : Recursive listing is not supported yet 
         List<DomainVO> domains = getManagementServer().searchForDomainChildren(c);

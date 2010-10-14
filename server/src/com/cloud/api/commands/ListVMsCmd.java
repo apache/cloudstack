@@ -130,24 +130,20 @@ public class ListVMsCmd extends BaseCmd {
         }
         Criteria c = new Criteria("id", Boolean.TRUE, startIndex, Long.valueOf(pageSizeNum));
         
-        if (keyword != null) {
-        	c.addCriteria(Criteria.KEYWORD, keyword);
-        } else {
-        	c.addCriteria(Criteria.ID, id);
-            c.addCriteria(Criteria.NAME, name);
-            c.addCriteria(Criteria.STATE, state);
-            c.addCriteria(Criteria.DATACENTERID, zoneId);
-
-            // ignore these search requests if it's not an admin
-            if (isAdmin == true) {
-    	        c.addCriteria(Criteria.DOMAINID, domainId);
-    	        c.addCriteria(Criteria.PODID, podId);
-    	        c.addCriteria(Criteria.HOSTID, hostId);
-            } 
-        }
-
         c.addCriteria(Criteria.ACCOUNTID, accountIds);
         c.addCriteria(Criteria.ISADMIN, isAdmin); 
+        c.addCriteria(Criteria.KEYWORD, keyword);
+        c.addCriteria(Criteria.ID, id);
+        c.addCriteria(Criteria.NAME, name);
+        c.addCriteria(Criteria.STATE, state);
+        c.addCriteria(Criteria.DATACENTERID, zoneId);
+
+        // ignore these search requests if it's not an admin
+        if (isAdmin == true) {
+            c.addCriteria(Criteria.DOMAINID, domainId);
+            c.addCriteria(Criteria.PODID, podId);
+            c.addCriteria(Criteria.HOSTID, hostId);
+        } 
 
         List<? extends UserVm> virtualMachines = getManagementServer().searchForUserVMs(c);
 

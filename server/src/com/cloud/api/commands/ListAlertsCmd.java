@@ -73,9 +73,7 @@ public class ListAlertsCmd extends BaseCmd{
 	        
 	        Criteria c = new Criteria ("lastSent", Boolean.FALSE, startIndex, Long.valueOf(pageSizeNum));
 	        c.addCriteria(Criteria.KEYWORD, keyword);
-	        
-	        if (keyword == null)
-	        	c.addCriteria(Criteria.TYPE, alertType);
+	        c.addCriteria(Criteria.TYPE, alertType);
 	        
 	        List<AlertVO> alerts = getManagementServer().searchForAlerts(c);
 	        

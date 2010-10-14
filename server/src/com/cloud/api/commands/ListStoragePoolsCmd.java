@@ -84,15 +84,12 @@ public class ListStoragePoolsCmd extends BaseCmd{
             }
         }
         Criteria c = new Criteria("id", Boolean.TRUE, startIndex, Long.valueOf(pageSizeNum));
-        if (keyword != null) {
-            c.addCriteria(Criteria.KEYWORD, keyword);
-        } else {
-            c.addCriteria(Criteria.NAME, name);
-            c.addCriteria(Criteria.DATACENTERID, zoneId);
-            c.addCriteria(Criteria.PODID, podId);
-            c.addCriteria(Criteria.ADDRESS, ipAddress);
-            c.addCriteria(Criteria.PATH, path);
-        }
+        c.addCriteria(Criteria.KEYWORD, keyword);
+        c.addCriteria(Criteria.NAME, name);
+        c.addCriteria(Criteria.DATACENTERID, zoneId);
+        c.addCriteria(Criteria.PODID, podId);
+        c.addCriteria(Criteria.ADDRESS, ipAddress);
+        c.addCriteria(Criteria.PATH, path);
 
         List<? extends StoragePoolVO> pools = getManagementServer().searchForStoragePools(c);
 

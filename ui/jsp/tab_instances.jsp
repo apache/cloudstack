@@ -238,12 +238,12 @@ long milliseconds = new Date().getTime();
         </div>
         <div id="instance_loading_overlay" class="vmrow_loading" style="display: none;">
         </div>
-        <div class="loadingmessage_container" style="display: none;">
-            <div class="loadingmessage_top">
+        <div class="loadingmessage_container_vm" style="display: none;">
+            <div class="loadingmessage_top_vm">
                 <p>
                 </p>
             </div>
-            <div class="loadingmessage_bottom">
+            <div class="loadingmessage_bottom_vm">
                 <a id="vm_action_continue" class="continue_button" href="#"></a>
             </div>
         </div>

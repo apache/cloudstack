@@ -95,11 +95,8 @@ public class ListPortForwardingServicesByVmCmd extends BaseCmd {
         Criteria c = new Criteria("id", Boolean.TRUE, null, null);
         
         c.addCriteria(Criteria.INSTANCEID, vmId);
-        if (keyword != null) {
-        	c.addCriteria(Criteria.KEYWORD, keyword);
-        } else {
-        	c.addCriteria(Criteria.ADDRESS, ipAddress);
-        }
+        c.addCriteria(Criteria.KEYWORD, keyword);
+        c.addCriteria(Criteria.ADDRESS, ipAddress);
 
         Map<String, List<SecurityGroupVO>> groups = getManagementServer().searchForSecurityGroupsByVM(c);
 

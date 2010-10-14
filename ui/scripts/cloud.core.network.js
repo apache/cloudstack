@@ -16,8 +16,6 @@
  * 
  */
 
-// Version: @VERSION@
-
 function showNetworkingTab(p_domainId, p_account) {   	
     //*** Network (begin) ****************************************************************************
     activateDialog($("#dialog_acquire_public_ip").dialog({ 
@@ -386,8 +384,10 @@ function showNetworkingTab(p_domainId, p_account) {
 			    var vmSelect = createPortForwardingRow.find("#vm").empty();							
 			    if (instances != null && instances.length > 0) {
 				    for (var i = 0; i < instances.length; i++) {								
-				        var html = $("<option value='" + instances[i].id + "'>" +  getVmName(instances[i].name, instances[i].displayname) + "</option>");							        
-			            vmSelect.append(html); 								
+				        if (instances[i].state != 'Destroyed' && instances[i].state != 'Error' && instances[i].state != 'Creating') {
+							var html = $("<option value='" + instances[i].id + "'>" +  getVmName(instances[i].name, instances[i].displayname) + "</option>");							        
+							vmSelect.append(html); 	
+						}							
 				    }
 			    } 
 		    }
@@ -420,9 +420,11 @@ function showNetworkingTab(p_domainId, p_account) {
 			    var instances = json.listvirtualmachinesresponse.virtualmachine;
 			    var vmSelect = template.find("#row_container_edit #vm").empty();							
 			    if (instances != null && instances.length > 0) {
-				    for (var i = 0; i < instances.length; i++) {								
-				        var html = $("<option value='" + instances[i].id + "'>" +  getVmName(instances[i].name, instances[i].displayname) + "</option>");							        
-			            vmSelect.append(html); 								
+				    for (var i = 0; i < instances.length; i++) {	
+						if (instances[i].state != 'Destroyed' && instances[i].state != 'Error' && instances[i].state != 'Creating') {
+							var html = $("<option value='" + instances[i].id + "'>" +  getVmName(instances[i].name, instances[i].displayname) + "</option>");							        
+							vmSelect.append(html); 	
+						}
 				    }
 				    vmSelect.val(virtualMachineId);
 			    } 

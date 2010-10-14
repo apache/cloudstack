@@ -93,13 +93,10 @@ public class ListDomainsCmd extends BaseCmd {
         else
         	c = new Criteria("id", Boolean.TRUE, null, null);
         
-        if (keyword != null) {
-        	c.addCriteria(Criteria.KEYWORD, keyword);
-        } else {
-        	c.addCriteria(Criteria.ID, domainId);
-            c.addCriteria(Criteria.NAME, domainName);
-            c.addCriteria(Criteria.LEVEL, level);
-        }
+        c.addCriteria(Criteria.KEYWORD, keyword);
+        c.addCriteria(Criteria.ID, domainId);
+        c.addCriteria(Criteria.NAME, domainName);
+        c.addCriteria(Criteria.LEVEL, level);
         
         List<DomainVO> domains = getManagementServer().searchForDomains(c);
         

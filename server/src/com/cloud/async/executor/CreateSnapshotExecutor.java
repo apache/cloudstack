@@ -68,17 +68,21 @@ public class CreateSnapshotExecutor extends BaseAsyncJobExecutor {
             
 	    	try {
 	    	    SnapshotVO snapshot = snapshotManager.createSnapshot(userId, param.getVolumeId(), param.getPolicyIds());
-
-		    	if (snapshot != null && snapshot.getStatus() == Snapshot.Status.CreatedOnPrimary) {
+	    	    Snapshot.Status status = snapshot.getStatus();
+		    	if (snapshot != null && ( status == Snapshot.Status.CreatedOnPrimary 
+		    	        || status == Snapshot.Status.BackedUp) ) {
 				    snapshotId = snapshot.getId();
-				    asyncMgr.updateAsyncJobStatus(jobId, BaseCmd.PROGRESS_INSTANCE_CREATED, snapshotId);
-				    backedUp = snapshotManager.backupSnapshotToSecondaryStorage(userId, snapshot);
+				    if( status == Snapshot.Status.CreatedOnPrimary ) {
+    				    asyncMgr.updateAsyncJobStatus(jobId, BaseCmd.PROGRESS_INSTANCE_CREATED, snapshotId);
+    				    backedUp = snapshotManager.backupSnapshotToSecondaryStorage(userId, snapshot);
+				    } else {
+				        backedUp = true;
+				    }
 				    if (backedUp) {
 				        result = AsyncJobResult.STATUS_SUCCEEDED;
 				        errorCode = 0; // Success
 				        resultObject = composeResultObject(snapshot);
-				    }
-				    else {
+				    } else {
 				        // More specific error
 				        resultObject = "Created snapshot: " + snapshotId + " on primary but failed to backup on secondary";
 				    }

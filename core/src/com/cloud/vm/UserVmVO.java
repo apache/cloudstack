@@ -144,7 +144,7 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
                     String externalMacAddress,
                     Long vlanDbId,
                     Long routerId,
-                    long podId,
+                    Long podId,
                     long dcId,
                     boolean haEnabled,
                     String displayName,
