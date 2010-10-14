@@ -17,12 +17,19 @@
  */
 package com.cloud.server;
 
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
+import java.rmi.ServerException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+
+import netapp.manage.NaAPIFailedException;
+import netapp.manage.NaAuthenticationException;
+import netapp.manage.NaException;
+import netapp.manage.NaProtocolException;
 
 import com.cloud.alert.AlertVO;
 import com.cloud.async.AsyncJobResult;
@@ -88,6 +95,7 @@ import com.cloud.user.UserAccount;
 import com.cloud.user.UserAccountVO;
 import com.cloud.user.UserStatisticsVO;
 import com.cloud.utils.Pair;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouter;
@@ -2169,4 +2177,5 @@ public interface ManagementServer {
 	public List<PreallocatedLunVO> getPreAllocatedLuns(Criteria c);
 	
 	public String getNetworkGroupsNamesForVm(long vmId);
+
 }
