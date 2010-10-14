@@ -1,6 +1,17 @@
-$(document).ready(function() {     
-
-    $("#accordion_menu").show();
+$(document).ready(function() {   
+    $("#leftmenu_container").find("#expanded_arrow_icon").bind("click", function(event) {       
+        var $submenu = $(this).parent().parent().siblings(".leftmenu_expandedbox");
+        if($submenu.css("display") == "none") {
+            $(this).removeClass("close").addClass("open");
+            $submenu.show();
+        }
+        else {
+            $(this).removeClass("open").addClass("close");
+            $submenu.hide();  
+        }          
+        return false;
+    });
+    $("#leftmenu_container").show();
        
     var $midmenuItem = $("#midmenu_item");
     function listMidMenuItems(leftmenuId, commandString, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSPFn, toMidmenuFn, toRightPanelFn, getMidmenuIdFn) { 
