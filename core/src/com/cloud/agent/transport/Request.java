@@ -158,11 +158,11 @@ public class Request {
     }
     
     private final void setRevertOnError(boolean revertOnError) {
-        _flags |= (revertOnError ? 1 : 0) << FLAG_REVERT_ON_ERROR;
+    	_flags |= (revertOnError ? FLAG_REVERT_ON_ERROR : 0);
     }
     
-    private final void setFromServer(boolean fromServer) {
-        _flags |= (fromServer ? 1 : 0) << FLAG_FROM_SERVER;
+    private final void setFromServer(boolean fromServer) {  
+        _flags |= (fromServer ? FLAG_FROM_SERVER : 0);
     }
     
     public long getManagementServerId() {
