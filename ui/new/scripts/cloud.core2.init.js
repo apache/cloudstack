@@ -159,13 +159,13 @@ $(document).ready(function() {
         $zoneTree.append($zoneNode.show());
         
         var $podNode = $("#leftmenu_pod_node_template").clone();
-        $zoneTree.append($podNode.show());
+        $zoneNode.find("#zone_container").append($podNode.show());
         
         var $clusterNode = $("#leftmenu_cluster_node_template").clone();
-        $zoneTree.append($clusterNode.show());
+        $podNode.find("#pod_container").append($clusterNode.show());
         
         var $systemvmNode = $("#leftmenu_systemvm_node_template").clone();
-        $zoneTree.append($systemvmNode.show());
+        $zoneNode.find("#zone_container").append($systemvmNode.show());
     }
     
            

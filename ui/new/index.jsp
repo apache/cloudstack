@@ -691,7 +691,7 @@ long milliseconds = new Date().getTime();
         <%=t.t("no.available.actions")%></li>
      
      <div class="leftmenu_expandedlist" id="leftmenu_zone_node_template" style="display:none">
-        <div class="leftmenu_content selected">  
+        <div class="leftmenu_content selected" id="header">  
             <div class="leftmenu_thirdindent">
                 <div class="leftmenu_arrows expanded_close" id="arrowIcon">
                 </div>
@@ -700,9 +700,10 @@ long milliseconds = new Date().getTime();
                 Zone: <strong><span id="zone_name"></span></strong>
             </div>  
         </div>
+        <div id="zone_container"></div>
     </div>
     <div class="leftmenu_expandedlist" id="leftmenu_pod_node_template" style="display:none">
-        <div class="leftmenu_content selected">
+        <div class="leftmenu_content selected" id="header">
             <div class="leftmenu_fourthindent">
                 <div class="leftmenu_arrows expanded_close" id="arrowIcon">
                 </div>
@@ -711,10 +712,11 @@ long milliseconds = new Date().getTime();
                 Pod: <strong><span id="pod_name"></span></strong>
             </div>
         </div>
+        <div id="pod_container"></div>
     </div>
     
     <div class="leftmenu_expandedlist" id="leftmenu_cluster_node_template" style="display:none">
-        <div class="leftmenu_content selected">
+        <div class="leftmenu_content selected" id="header">
             <div class="leftmenu_fifthindent">
                 <div class="leftmenu_arrows expanded_close" id="arrowIcon">
                 </div>
@@ -723,10 +725,11 @@ long milliseconds = new Date().getTime();
                 Cluster: <strong><span id="cluster_name"></span></strong>
             </div>
         </div>
+        <div id="cluster_container"></div>
     </div> 
     
     <div class="leftmenu_expandedlist" id="leftmenu_systemvm_node_template" style="display:none">
-        <div class="leftmenu_content selected ">
+        <div class="leftmenu_content selected" id="header">
             <div class="leftmenu_fourthindent">
                 <div class="leftmenu_arrows expanded_close" id="arrowIcon">
                 </div>
@@ -735,6 +738,7 @@ long milliseconds = new Date().getTime();
                 System VM: <strong><span id="systemvm_name"></span></strong>
             </div>
         </div>
+        <div id="systemvm_container"></div>
     </div> 
     <!-- templates ends here-->
 </body>
