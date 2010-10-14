@@ -1845,9 +1845,43 @@ a:hover.search_button {
 	min-height:1000px;
 	height:auto;
 	float:left;
+	position:relative;
 	background:#f0f0f0 repeat top left;
 	border-right:1px solid #aeb9c5;
 	margin:27px 0 0 -100%;
+	display:inline;
+	padding:0;
+}
+
+.midmenu_mainloaderbox {
+	width:auto;
+	height:auto;
+	position:absolute;
+	top:100px;
+	left:40px;
+	background:#FFF;
+	border:1px solid #CCC;
+	margin:0;
+	padding:0;
+}
+
+.midmenu_mainloaderbox p{
+	width:auto;
+	height:auto;
+	float:left;
+	color:#333;
+	font-size:16px;
+	font-weight:normal;
+	margin:15px 10px 0 10px;
+	display:inline;
+	padding:0;
+}
+.midmenu_mainloader_animatedicon {
+	width:40px;
+	height:40px;
+	float:left;
+	background:url(../images/big_loading.gif) no-repeat top left;
+	margin:3px 0 0 5px;
 	display:inline;
 	padding:0;
 }
@@ -2548,7 +2582,7 @@ a:hover.search_button {
 	width:67px;
 	height:16px;
 	float:right;
-	background:url(../images/grid_actions.png) no-repeat top left;
+	background:url(../images/grid_actions.gif) no-repeat top left;
 	margin:1px 0x 0 0;
 	padding:0;
 	cursor:pointer;
@@ -2556,7 +2590,7 @@ a:hover.search_button {
 }
 
 .grid_actionbox:hover {
-	background:url(../images/grid_actions_hover.png) no-repeat top left;
+	background:url(../images/grid_actions_hover.gif) no-repeat top left;
 }
 
 .gridheader_loaderbox {
