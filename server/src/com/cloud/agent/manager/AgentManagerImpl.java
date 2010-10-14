@@ -1160,10 +1160,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
     @Override
     public Answer easySend(final Long hostId, final Command cmd, int timeout) {
         try {
-            Host h = _hostDao.findById(hostId);
-            if( !h.getStatus().equals(Status.Up) ) {
-                return null;
-            }     
             final Answer answer = send(hostId, cmd, timeout);
             if (answer == null) {
                 s_logger.warn("send returns null answer");
