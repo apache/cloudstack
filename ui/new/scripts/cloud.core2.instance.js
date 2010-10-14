@@ -1,8 +1,8 @@
 function clickInstanceGroupHeader($arrowIcon) { 
     $("#midmenu_add_link").show(); 
     
-	if($arrowIcon.hasClass("close") == true) {
-        $arrowIcon.removeClass("close").addClass("open");            
+	if($arrowIcon.hasClass("expanded_close") == true) {
+        $arrowIcon.removeClass("expanded_close").addClass("expanded_open");            
         appendInstanceGroup(-1, noGroupName);
         
         $.ajax({
@@ -25,8 +25,8 @@ function clickInstanceGroupHeader($arrowIcon) {
 	        }
         });  
     }
-    else if($arrowIcon.hasClass("open") == true) {
-        $arrowIcon.removeClass("open").addClass("close");            
+    else if($arrowIcon.hasClass("expanded_open") == true) {
+        $arrowIcon.removeClass("expanded_open").addClass("expanded_close");            
         $("#leftmenu_instance_group_container").empty();   
     }	  
            
@@ -1420,10 +1420,7 @@ function appendInstanceGroup(groupId, groupName) {
     $leftmenuSubmenuTemplate.find("#icon").attr("src", "images/instance_leftmenuicon.png").show();
      		                			                
     $leftmenuSubmenuTemplate.bind("click", function(event) { 
-        if(selected_leftmenu_id != null && selected_leftmenu_id.length > 0)
-            $("#"+selected_leftmenu_id).removeClass("selected");                            
-        selected_leftmenu_id = $(this).attr("id");
-        $(this).addClass("selected");		                    
+        selectLeftMenu($(this));                           
                     
         $("#midmenu_container").empty();
         selectedItemsInMidMenu = {};

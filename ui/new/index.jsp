@@ -294,18 +294,7 @@ long milliseconds = new Date().getTime();
                             </div>
                             <div id="leftmenu_instance_group_container">
                             </div>
-                        </div>
-                        <div class="leftmenu_expandedlist">
-                            <div class="leftmenu_content" id="leftmenu_router">
-                                <div class="leftmenu_secondindent">
-                                    <div class="leftmenu_arrows white_nonexpanded_close" id="arrow_icon">
-                                    </div>
-                                    <div class="leftmenu_list_icons">
-                                        <img src="images/routers_leftmenuicon.png" alt="Router" /></div>
-                                    <%=t.t("router")%>
-                                </div>
-                            </div>
-                        </div>
+                        </div>                        
                     </div>
                 </div>
                 <div class="leftmenu_list">
