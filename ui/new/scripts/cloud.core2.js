@@ -495,7 +495,16 @@ function clearRightPanel() {
     $("#right_panel_content #after_action_info_container").hide(); 
 }
     
-var selected_leftmenu_id = null; 
+
+var $selectedLeftMenu;
+function selectLeftMenu($menuToSelect) {
+    if($selectedLeftMenu != null && $selectedLeftMenu.length > 0)
+        $selectedLeftMenu.removeClass("selected");  
+    $menuToSelect.addClass("selected");
+    $selectedLeftMenu = $menuToSelect; 
+}
+
+
 var selected_midmenu_id = null;
  
 function hideMiddleMenu() {

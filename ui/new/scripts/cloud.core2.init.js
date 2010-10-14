@@ -19,10 +19,7 @@ $(document).ready(function() {
     var $midmenuItem = $("#midmenu_item");
     function listMidMenuItems(leftmenuId, commandString, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSPFn, toMidmenuFn, toRightPanelFn, getMidmenuIdFn) { 
         $("#"+leftmenuId).bind("click", function(event) {
-            if(selected_leftmenu_id != null && selected_leftmenu_id.length > 0)
-                $("#"+selected_leftmenu_id).removeClass("selected");
-            selected_leftmenu_id = leftmenuId;
-            $(this).addClass("selected");
+            selectLeftMenu($(this));
             
             showMiddleMenu();
             disableMultipleSelectionInMidMenu();
@@ -102,10 +99,7 @@ $(document).ready(function() {
     });
     
     $("#leftmenu_dashboard").bind("click", function(event) {  
-        if(selected_leftmenu_id != null && selected_leftmenu_id.length > 0)
-            $("#"+selected_leftmenu_id).removeClass("selected");
-        selected_leftmenu_id = "leftmenu_dashboard";
-        $(this).addClass("selected");
+        selectLeftMenu($(this));
             
         hideMiddleMenu();
         $("#right_panel").load("jsp/dashboard.jsp", function(){
@@ -115,10 +109,7 @@ $(document).ready(function() {
     });
     
     $("#leftmenu_domain").bind("click", function(event) {  
-        if(selected_leftmenu_id != null && selected_leftmenu_id.length > 0)
-            $("#"+selected_leftmenu_id).removeClass("selected");
-        selected_leftmenu_id = "leftmenu_domain";
-        $(this).addClass("selected");
+        selectLeftMenu($(this));
         
         showMiddleMenuWithoutSearch();
         disableMultipleSelectionInMidMenu();
@@ -133,10 +124,7 @@ $(document).ready(function() {
     });
     
     $("#leftmenu_resource").bind("click", function(event) {  
-        if(selected_leftmenu_id != null && selected_leftmenu_id.length > 0)
-            $("#"+selected_leftmenu_id).removeClass("selected");
-        selected_leftmenu_id = "leftmenu_resource";
-        $(this).addClass("selected");
+        selectLeftMenu($(this));
         
         showMiddleMenuWithoutSearch();
         disableMultipleSelectionInMidMenu();
