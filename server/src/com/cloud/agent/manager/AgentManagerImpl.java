@@ -1319,7 +1319,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
     public Answer easySend(final Long hostId, final Command cmd, int timeout) { 
         try {
             Host h = _hostDao.findById(hostId);
-            if( !h.getStatus().equals(Status.Up) ) {
+            Status status = h.getStatus();
+            if( status.equals(Status.Up) || status.equals(Status.Connecting) ){
                 return null;
             } 
             final Answer answer = send(hostId, cmd, timeout);
