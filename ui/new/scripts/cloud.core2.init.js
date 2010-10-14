@@ -1,16 +1,28 @@
-$(document).ready(function() {   
+$(document).ready(function() {  
+    function expandFirstLevelMenu($firstLevelMenu, $secondLevelMenu) {
+        $firstLevelMenu.find("#expandable_first_level_arrow").removeClass("close").addClass("open");
+        $firstLevelMenu.addClass("highlighted");
+        $expandedFirstLevelMenu = $firstLevelMenu;
+        $secondLevelMenu.show();
+        $expandedSecondLevelMenu = $secondLevelMenu;
+    }
+    
+    function collapseFirstLevelMenu($firstLevelMenu, $secondLevelMenu) {
+        $firstLevelMenu.find("#expandable_first_level_arrow").removeClass("open").addClass("close");
+        $firstLevelMenu.removeClass("highlighted");
+        $secondLevelMenu.hide();  
+    }
+ 
     $("#leftmenu_container").find("#expandable_first_level").bind("click", function(event) {       
         var $firstLevelMenu = $(this);
         var $secondLevelMenu = $firstLevelMenu.siblings(".leftmenu_expandedbox");
         if($secondLevelMenu.css("display") == "none") {
-            $firstLevelMenu.find("#expandable_first_level_arrow").removeClass("close").addClass("open");
-            $firstLevelMenu.addClass("highlighted");
-            $secondLevelMenu.show();
+            if($expandedFirstLevelMenu != null && $expandedSecondLevelMenu != null)  //collapse other expanded menu if there is.
+                collapseFirstLevelMenu($expandedFirstLevelMenu, $expandedSecondLevelMenu);  
+            expandFirstLevelMenu($firstLevelMenu, $secondLevelMenu);  
         }
         else {
-            $firstLevelMenu.find("#expandable_first_level_arrow").removeClass("open").addClass("close");
-            $firstLevelMenu.removeClass("highlighted");
-            $secondLevelMenu.hide();  
+            collapseFirstLevelMenu($firstLevelMenu, $secondLevelMenu);           
         }          
         return false;
     });

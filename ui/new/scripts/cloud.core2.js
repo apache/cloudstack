@@ -504,9 +504,9 @@ function selectLeftMenu($menuToSelect) {
     $selectedLeftMenu = $menuToSelect; 
 }
 
+var $expandedFirstLevelMenu, $expandedSecondLevelMenu;
 
-var selected_midmenu_id = null;
- 
+var selected_midmenu_id = null; 
 function hideMiddleMenu() {
     $("#middle_menu, #search_panel, #middle_menu_pagination").hide();
     $("#right_panel").removeClass("main_contentarea").addClass("main_contentarea_dashboard");
