@@ -20,14 +20,18 @@ package com.cloud.agent.manager.allocator.impl;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.ejb.Local;
+import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.manager.allocator.HostAllocator;
+import com.cloud.configuration.Config;
+import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
@@ -42,6 +46,7 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.Pair;
+import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VmCharacteristics;
@@ -55,6 +60,7 @@ public class RecreateHostAllocator extends FirstFitRoutingAllocator {
     @Inject ClusterDao _clusterDao;
     @Inject AgentManager _agentMgr;
     @Inject VolumeDao _volsDao;
+    boolean _isDirect;
     
     @Override
     public Host allocateTo(VmCharacteristics vm, ServiceOffering offering, Host.Type type, DataCenterVO dc, HostPodVO pod,
@@ -72,8 +78,8 @@ public class RecreateHostAllocator extends FirstFitRoutingAllocator {
         }
         
         List<PodCluster> pcs = _agentMgr.listByDataCenter(dc.getId());
-        if (vmType == VirtualMachine.Type.DomainRouter) {
-            s_logger.debug("VM is a domain router so we can only allow the host to be allocated in the same pod due to problems with the DHCP only domR");
+        if (_isDirect) {
+            s_logger.debug("Direct Networking mode so we can only allow the host to be allocated in the same pod due to public ip address cannot change");
             long podId = sp.getPodId();
             s_logger.debug("Pod id determined is " + podId);
             Iterator<PodCluster> it = pcs.iterator();
@@ -106,6 +112,18 @@ public class RecreateHostAllocator extends FirstFitRoutingAllocator {
 
         s_logger.debug("Unable to find any available pods at all!");
         return null;
+    }
+    
+    @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        super.configure(name, params);
+        
+        ComponentLocator locator = ComponentLocator.getCurrentLocator();
+        ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
+        Map<String, String> dbParams = configDao.getConfiguration(params);
+        
+        _isDirect = Boolean.parseBoolean(dbParams.get(Config.DirectAttachUntaggedVlanEnabled.key()));
+        return true;
     }
     
     protected RecreateHostAllocator() {

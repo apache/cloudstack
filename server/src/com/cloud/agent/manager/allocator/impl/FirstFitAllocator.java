@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.ejb.Local;
+import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
@@ -336,7 +337,7 @@ public class FirstFitAllocator implements HostAllocator {
     }
     
     @Override
-    public boolean configure(String name, Map<String, Object> params) {
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _name = name;
         ComponentLocator locator = ComponentLocator.getCurrentLocator();
         _hostDao = locator.getDao(HostDao.class);
