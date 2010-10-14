@@ -101,7 +101,12 @@ $(document).ready(function() {
         return false;
     });
     
-    $("#leftmenu_dashboard").bind("click", function(event) {      
+    $("#leftmenu_dashboard").bind("click", function(event) {  
+        if(selected_leftmenu_id != null && selected_leftmenu_id.length > 0)
+            $("#"+selected_leftmenu_id).removeClass("selected");
+        selected_leftmenu_id = "leftmenu_dashboard";
+        $(this).addClass("selected");
+            
         hideMiddleMenu();
         $("#right_panel").load("jsp/dashboard.jsp", function(){
             afterLoadDashboardJSP();        

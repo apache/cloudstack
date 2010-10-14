@@ -527,7 +527,7 @@ long milliseconds = new Date().getTime();
                 <div class="leftmenu_list">
                     <div class="leftmenu_content" id="expandable_first_level">
                         <div class="leftmenu_firstindent">
-                            <div class="leftmenu_arrows open" id="expandable_first_level_arrow">
+                            <div class="leftmenu_arrows close" id="expandable_first_level_arrow">
                             </div>
                             <div class="leftmenu_list_icons">
                                 <img src="images/configuration_leftmenuicon.png" alt="System" /></div>
