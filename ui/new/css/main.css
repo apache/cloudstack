@@ -2545,11 +2545,11 @@ a:hover.search_button {
 
 
 .grid_actionbox {
-	width:35px;
-	height:17px;
+	width:67px;
+	height:16px;
 	float:right;
 	background:url(../images/grid_actions.png) no-repeat top left;
-	margin:2px 5px 0 0;
+	margin:1px 0x 0 0;
 	padding:0;
 	cursor:pointer;
 	cursor:hand;
