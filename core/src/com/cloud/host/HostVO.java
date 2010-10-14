@@ -622,7 +622,7 @@ public class HostVO implements Host {
 
     @Override
     public String toString() {
-    	return new StringBuilder(type.toString()).append("-").append(Long.toString(id)).append("-").append(name).toString();
+    	return new StringBuilder(type.toString()).append("-").append(Long.toString(id)).append("-").append(name).append("-").append(privateIpAddress).toString();
     }
 
 	public void setHypervisorType(Hypervisor.Type hypervisorType) {
