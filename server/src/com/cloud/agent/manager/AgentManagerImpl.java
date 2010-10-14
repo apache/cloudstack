@@ -1320,7 +1320,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         try {
             Host h = _hostDao.findById(hostId);
             Status status = h.getStatus();
-            if( status.equals(Status.Up) || status.equals(Status.Connecting) ){
+            if( !status.equals(Status.Up) && !status.equals(Status.Connecting) ){
                 return null;
             } 
             final Answer answer = send(hostId, cmd, timeout);
