@@ -474,8 +474,8 @@ function setBooleanField(value, $field) {
  
 function clearLeftMenu() {
     var $arrowIcon = $("#leftmenu_instance_group_header #arrow_icon");
-    if($arrowIcon.hasClass("open") == true) {
-        $arrowIcon.removeClass("open").addClass("close");            
+    if($arrowIcon.hasClass("expanded_open") == true) {
+        $arrowIcon.removeClass("expanded_open").addClass("expanded_close");            
         $("#leftmenu_instance_group_container").empty();   
     }	
 } 

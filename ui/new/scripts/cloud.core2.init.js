@@ -136,6 +136,7 @@ $(document).ready(function() {
     });
     
     $("#leftmenu_resource").bind("click", function(event) {  
+        buildZoneTree();
         selectLeftMenu($(this));
         
         showMiddleMenuWithoutSearch();
@@ -150,6 +151,22 @@ $(document).ready(function() {
                 
         return false;
     });
+    
+    function buildZoneTree() {        
+        $zoneTree = $("#leftmenu_zone_tree").empty();
+        
+        var $zoneNode = $("#leftmenu_zone_node_template").clone();
+        $zoneTree.append($zoneNode.show());
+        
+        var $podNode = $("#leftmenu_pod_node_template").clone();
+        $zoneTree.append($podNode.show());
+        
+        var $clusterNode = $("#leftmenu_cluster_node_template").clone();
+        $zoneTree.append($clusterNode.show());
+        
+        var $systemvmNode = $("#leftmenu_systemvm_node_template").clone();
+        $zoneTree.append($systemvmNode.show());
+    }
     
            
     $("#midmenu_action_link").bind("mouseover", function(event) {

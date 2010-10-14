@@ -575,60 +575,9 @@ long milliseconds = new Date().getTime();
                             </div>
                         </div>
                         <div class="leftmenu_expandedlist">
-                            <div class="leftmenu_content" id="leftmenu_resource">
-                                <div class="leftmenu_thirdindent">
-                                    <div class="leftmenu_arrows expanded_close" id="arrowIcon">
-                                    </div>
-                                    <div class="leftmenu_list_icons">
-                                        <img src="images/zone_zoneicon.png" alt="Zone" /></div>
-                                    Zone: <strong><span id="zone_name">Zone 1</span></strong>
-                                </div>
+                            <div class="leftmenu_content" id="leftmenu_zone_tree">
                             </div>
-                        </div>
-                        <div class="leftmenu_expandedlist">
-                            <div class="leftmenu_content" id="leftmenu_resource">
-                                <div class="leftmenu_fourthindent">
-                                    <div class="leftmenu_arrows expanded_close" id="arrowIcon">
-                                    </div>
-                                    <div class="leftmenu_list_icons">
-                                        <img src="images/zone_podicon.png" alt="Pod" /></div>
-                                    Pod: <strong><span id="pod_name">Name of the Pod</span></strong>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="leftmenu_expandedlist">
-                            <div class="leftmenu_content" id="leftmenu_resource">
-                                <div class="leftmenu_fifthindent">
-                                    <div class="leftmenu_arrows expanded_close" id="arrowIcon">
-                                    </div>
-                                    <div class="leftmenu_list_icons">
-                                        <img src="images/zone_clustericon.png" alt="Cluster" /></div>
-                                    Cluster: <strong><span id="cluster_name">(Name of the Cluster)</span></strong>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="leftmenu_expandedlist">
-                            <div class="leftmenu_content" id="leftmenu_resource">
-                                <div class="leftmenu_sixthindent">
-                                    <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
-                                    </div>
-                                    <div class="leftmenu_list_icons">
-                                        <img src="images/zone_hosticon.png" alt="Host" /></div>
-                                    Host: <strong><span id="host_name">(Name of the Host)</span></strong>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="leftmenu_expandedlist">
-                            <div class="leftmenu_content" id="leftmenu_resource">
-                                <div class="leftmenu_sixthindent">
-                                    <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
-                                    </div>
-                                    <div class="leftmenu_list_icons">
-                                        <img src="images/zone_primarystorageicon.png" alt="PrimaryStorage" /></div>
-                                    Primary: <strong><span id="primary_storage_name">(Name of the Primary Storage)</span></strong>
-                                </div>
-                            </div>
-                        </div>
+                        </div>                                             
                         <div class="leftmenu_expandedlist">
                             <div class="leftmenu_content" style="border-bottom: 1px dashed b4c8d6;" id="leftmenu_service_offering">
                                 <div class="leftmenu_secondindent">
@@ -740,6 +689,50 @@ long milliseconds = new Date().getTime();
     <li id="action_list_item" style="display: none;"><a id="link" href="#">(action)</a></li>
     <li id="no_available_actions" style="display: none">
         <%=t.t("no.available.actions")%></li>
+        
+    <div class="leftmenu_thirdindent" id="leftmenu_zone_node_template" style="display:none">
+        <div class="leftmenu_arrows expanded_close" id="arrowIcon">
+        </div>
+        <div class="leftmenu_list_icons">
+            <img src="images/zone_zoneicon.png" alt="Zone" /></div>
+        Zone: <strong><span id="zone_name"></span></strong>
+    </div>  
+    
+    <div class="leftmenu_expandedlist" id="leftmenu_pod_node_template" style="display:none">
+        <div class="leftmenu_content">
+            <div class="leftmenu_fourthindent">
+                <div class="leftmenu_arrows expanded_close" id="arrowIcon">
+                </div>
+                <div class="leftmenu_list_icons">
+                    <img src="images/zone_podicon.png" alt="Pod" /></div>
+                Pod: <strong><span id="pod_name"></span></strong>
+            </div>
+        </div>
+    </div>
+    
+    <div class="leftmenu_expandedlist" id="leftmenu_cluster_node_template" style="display:none">
+        <div class="leftmenu_content">
+            <div class="leftmenu_fifthindent">
+                <div class="leftmenu_arrows expanded_close" id="arrowIcon">
+                </div>
+                <div class="leftmenu_list_icons">
+                    <img src="images/zone_clustericon.png" alt="Cluster" /></div>
+                Cluster: <strong><span id="cluster_name"></span></strong>
+            </div>
+        </div>
+    </div> 
+    
+    <div class="leftmenu_expandedlist" id="leftmenu_systemvm_node_template" style="display:none">
+        <div class="leftmenu_content">
+            <div class="leftmenu_fourthindent">
+                <div class="leftmenu_arrows expanded_close" id="arrowIcon">
+                </div>
+                <div class="leftmenu_list_icons">
+                    <img src="images/zone_systemvmicon.png" alt="System VM" /></div>
+                System VM: <strong><span id="systemvm_name"></span></strong>
+            </div>
+        </div>
+    </div> 
     <!-- templates ends here-->
 </body>
 </html>
