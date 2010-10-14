@@ -689,17 +689,20 @@ long milliseconds = new Date().getTime();
     <li id="action_list_item" style="display: none;"><a id="link" href="#">(action)</a></li>
     <li id="no_available_actions" style="display: none">
         <%=t.t("no.available.actions")%></li>
-        
-    <div class="leftmenu_thirdindent" id="leftmenu_zone_node_template" style="display:none">
-        <div class="leftmenu_arrows expanded_close" id="arrowIcon">
+     
+     <div class="leftmenu_expandedlist" id="leftmenu_zone_node_template" style="display:none">
+        <div class="leftmenu_content selected">  
+            <div class="leftmenu_thirdindent">
+                <div class="leftmenu_arrows expanded_close" id="arrowIcon">
+                </div>
+                <div class="leftmenu_list_icons">
+                    <img src="images/zone_zoneicon.png" alt="Zone" /></div>
+                Zone: <strong><span id="zone_name"></span></strong>
+            </div>  
         </div>
-        <div class="leftmenu_list_icons">
-            <img src="images/zone_zoneicon.png" alt="Zone" /></div>
-        Zone: <strong><span id="zone_name"></span></strong>
-    </div>  
-    
+    </div>
     <div class="leftmenu_expandedlist" id="leftmenu_pod_node_template" style="display:none">
-        <div class="leftmenu_content">
+        <div class="leftmenu_content selected">
             <div class="leftmenu_fourthindent">
                 <div class="leftmenu_arrows expanded_close" id="arrowIcon">
                 </div>
@@ -711,7 +714,7 @@ long milliseconds = new Date().getTime();
     </div>
     
     <div class="leftmenu_expandedlist" id="leftmenu_cluster_node_template" style="display:none">
-        <div class="leftmenu_content">
+        <div class="leftmenu_content selected">
             <div class="leftmenu_fifthindent">
                 <div class="leftmenu_arrows expanded_close" id="arrowIcon">
                 </div>
@@ -723,7 +726,7 @@ long milliseconds = new Date().getTime();
     </div> 
     
     <div class="leftmenu_expandedlist" id="leftmenu_systemvm_node_template" style="display:none">
-        <div class="leftmenu_content">
+        <div class="leftmenu_content selected ">
             <div class="leftmenu_fourthindent">
                 <div class="leftmenu_arrows expanded_close" id="arrowIcon">
                 </div>
