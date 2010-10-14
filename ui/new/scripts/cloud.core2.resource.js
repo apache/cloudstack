@@ -49,18 +49,8 @@ function afterLoadResourceJSP() {
         var zoneid = json.id;
         template.attr("id", "zone_" + zoneid);  
 	    template.data("id", zoneid).data("name", fromdb(json.name));
-	    var zoneName = template.find("#zone_name").text(fromdb(json.name));
-	    zoneName.data("id", zoneid);	
-		zoneName.data("name", fromdb(json.name));
-		zoneName.data("dns1", json.dns1)
-		zoneName.data("internaldns1", json.internaldns1)
-		zoneName.data("guestcidraddress", json.guestcidraddress);		
-	    if (json.dns2 != null) 
-		    zoneName.data("dns2", json.dns2);	
-	    if (json.internaldns2 != null) 
-		    zoneName.data("internaldns2", json.internaldns2);	
-	    if (json.vlan != null) 
-		    zoneName.data("vlan", json.vlan);		
+	    var zoneName = template.find("#zone_name").text(fromdb(json.name));	    
+	    zoneName.data("jsonObj", json);	    
     	
 	    $.ajax({
 	        data: createURL("command=listPods&zoneid="+zoneid+maxPageSize),
@@ -104,15 +94,8 @@ function afterLoadResourceJSP() {
 		template.data("id", podid).data("name", json.name);
 		
 		var podName = template.find("#pod_name").text(json.name);
-		podName.data("id", podid);
-		podName.data("zoneid", json.zoneid);
-		podName.data("name", json.name);
-		podName.data("cidr", json.cidr);
-		podName.data("startip", json.startip);
-		podName.data("endip", json.endip);
-		podName.data("ipRange", ipRange);		
-		podName.data("gateway", json.gateway);		
-		
+		podName.data("jsonObj", json);	    
+			
 	    $.ajax({
             data: createURL("command=listClusters&podid="+podid+maxPageSize),
 	        dataType: "json",
@@ -134,24 +117,14 @@ function afterLoadResourceJSP() {
 	    var systemvmid = json.id;	
 	    template.attr("id", "systemvm_"+systemvmid);
 	    template.data("id", systemvmid).data("name", json.name);	     
-	    var systeymvmName = template.find("#systemvm_name").text(json.name);
-		systeymvmName.data("state", json.state);	
-		systeymvmName.data("systemvmtype", json.systemvmtype);
-		systeymvmName.data("zonename", fromdb(json.zonename));
-		systeymvmName.data("id", json.id);		
-		systeymvmName.data("name", fromdb(json.name));	
-		systeymvmName.data("activeviewersessions", json.activeviewersessions);	
-		systeymvmName.data("publicip", json.publicip);
-		systeymvmName.data("privateip", json.privateip);
-		systeymvmName.data("hostname", fromdb(json.hostname));
-		systeymvmName.data("gateway", json.gateway);	
-		systeymvmName.data("created", json.created);		
+	    var systeymvmName = template.find("#systemvm_name").text(json.name);	    
+	    systeymvmName.data("jsonObj", json);	    		
 	}
 			
 	function clusterJSONToTreeNode(json, template) {
-	    template.data("id", json.id).data("name", fromdb(json.name));
-	    
-	    var systeymvmName = template.find("#cluster_name").text(fromdb(json.name));
+	    template.data("id", json.id).data("name", fromdb(json.name));	    
+	    var clusterName = template.find("#cluster_name").text(fromdb(json.name));
+	    clusterName.data("jsonObj", json);	   
 	    	   
 	    $.ajax({
             data: createURL("command=listHosts&clusterid="+json.id+maxPageSize),
@@ -187,15 +160,15 @@ function afterLoadResourceJSP() {
 	}
 	
 	function hostJSONToTreeNode(json, template) {
-	    template.data("id", json.id).data("name", fromdb(json.name));
-	    
+	    template.data("id", json.id).data("name", fromdb(json.name));	    
 	    var hostName = template.find("#host_name").text(fromdb(json.name));
+	    hostName.data("jsonObj", json);
 	}
 	
 	function primaryStorageJSONToTreeNode(json, template) {
-	    template.data("id", json.id).data("name", fromdb(json.name));
-	    
+	    template.data("id", json.id).data("name", fromdb(json.name));	    
 	    var primaryStorageName = template.find("#primarystorage_name").text(fromdb(json.name));
+	    primaryStorageName.data("jsonObj", json);
 	}
 	
 	$("#zone_template").bind("click", function(event) {
@@ -218,9 +191,9 @@ function afterLoadResourceJSP() {
 			case "zone_name":	
 			    $zoneetree1.find(".selected").removeClass("selected");
 			    target.parent().parent().parent().addClass("selected");				    
-			    showPage($zonePage);	    
-			    var obj = {"id": target.data("id"), "name": target.data("name"), "dns1": target.data("dns1"), "dns2": target.data("dns2"), "internaldns1": target.data("internaldns1"), "internaldns2": target.data("internaldns2"), "vlan": target.data("vlan"), "guestcidraddress": target.data("guestcidraddress")};
-				zoneJsonToDetailsTab(obj);							    		   			    
+			    showPage($zonePage);				    
+			    var jsonObj = target.data("jsonObj");    
+			    zoneJsonToDetailsTab(jsonObj);							    		   			    
 			    break;
 			
 			
@@ -236,9 +209,9 @@ function afterLoadResourceJSP() {
 			case "pod_name" :			   
 				$zoneetree1.find(".selected").removeClass("selected");
 				target.parent().parent().parent().addClass("selected");
-				showPage($podPage);
-			    var obj = {"id": target.data("id"), "zoneid": target.data("zoneid"), "name": target.data("name"), "cidr": target.data("cidr"), "startip": target.data("startip"), "endip": target.data("endip"), "ipRange": target.data("ipRange"), "gateway": target.data("gateway")};
-				podJsonToDetailsTab(obj);				
+				showPage($podPage);			    
+			    var jsonObj = target.data("jsonObj");
+			    podJsonToDetailsTab(jsonObj);				
 				break;
 				
 			
@@ -256,8 +229,8 @@ function afterLoadResourceJSP() {
 				$zoneetree1.find(".selected").removeClass("selected");
 			    target.parent().parent().parent().addClass("selected");
 			    showPage($clusterPage);
-			    //var obj = {"id": target.data("id"), "zoneid": target.data("zoneid"), "name": target.data("name"), "cidr": target.data("cidr"), "startip": target.data("startip"), "endip": target.data("endip"), "ipRange": target.data("ipRange"), "gateway": target.data("gateway")};
-				//clusterObjectToRightPanel(obj);				
+			    var jsonObj = target.data("jsonObj");
+			    //clusterObjectToRightPanel(jsonObj);				
 				break;	
 				
 				
@@ -275,8 +248,8 @@ function afterLoadResourceJSP() {
 				$zoneetree1.find(".selected").removeClass("selected");
 			    target.parent().parent().parent().addClass("selected");
 			    showPage($hostPage);
-				//var obj = {"id": target.data("id"), "zoneid": target.data("zoneid"), "name": target.data("name"), "cidr": target.data("cidr"), "startip": target.data("startip"), "endip": target.data("endip"), "ipRange": target.data("ipRange"), "gateway": target.data("gateway")};
-				//hostObjectToRightPanel(obj);				
+				var jsonObj = target.data("jsonObj");
+				//hostObjectToRightPanel(jsonObj);				
 				break;	
 			
 			
@@ -294,8 +267,8 @@ function afterLoadResourceJSP() {
 				$zoneetree1.find(".selected").removeClass("selected");
 			    target.parent().parent().parent().addClass("selected");
 			    showPage($primarystoragePage);
-				//var obj = {"id": target.data("id"), "zoneid": target.data("zoneid"), "name": target.data("name"), "cidr": target.data("cidr"), "startip": target.data("startip"), "endip": target.data("endip"), "ipRange": target.data("ipRange"), "gateway": target.data("gateway")};
-				//primarystorageObjectToRightPanel(obj);				
+			    var jsonObj = target.data("jsonObj");
+				//primarystorageObjectToRightPanel(jsonObj);				
 				break;
 						
 						
@@ -303,20 +276,8 @@ function afterLoadResourceJSP() {
 				$zoneetree1.find(".selected").removeClass("selected");			    		    
 			    target.parent().parent().parent().addClass("selected");		
 			    showPage($systemvmPage);
-				var obj = {
-	                "id": target.data("id"),
-	                "name": target.data("name"),
-	                "systemvmtype": target.data("systemvmtype"),
-	                "zonename": target.data("zonename"),
-	                "activeviewersessions": target.data("activeviewersessions"),
-	                "publicip": target.data("publicip"),
-	                "privateip": target.data("privateip"),
-	                "hostname": target.data("hostname"),
-	                "gateway": target.data("gateway"),
-	                "created": target.data("created"),
-	                "state": target.data("state")
-	            };				
-				systemvmJsonToDetailsTab(obj);			
+			    var jsonObj = target.data("jsonObj");						
+				systemvmJsonToDetailsTab(jsonObj);			
 				break;
 			
 			
