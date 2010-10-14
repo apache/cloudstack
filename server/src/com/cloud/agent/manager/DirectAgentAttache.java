@@ -125,11 +125,11 @@ public class DirectAgentAttache extends AgentAttache {
 	        try {
 	            ServerResource resource = _resource;
 	            
-	            if (resource.IsRemoteAgent()) {
-	            	return;
-	            }
-	            
-	            if (resource != null) {
+                if (resource != null) {
+                    if (resource.IsRemoteAgent()) {
+                        return;
+                    }
+
         	        PingCommand cmd = resource.getCurrentStatus(_id);
         	        if (cmd == null) {
         	            s_logger.warn("Unable to get current status on " + _id);
