@@ -35,6 +35,7 @@ import com.cloud.dc.HostPodVO;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
+import com.cloud.host.Status;
 import com.cloud.host.Host.Type;
 import com.cloud.host.dao.DetailsDao;
 import com.cloud.host.dao.HostDao;
@@ -97,7 +98,10 @@ public class FirstFitAllocator implements HostAllocator {
         List<StoragePoolHostVO> poolhosts = _storagePoolHostDao.listByPoolId(sp.getId());
         List<HostVO> hosts = new ArrayList<HostVO>();
         for( StoragePoolHostVO poolhost : poolhosts ){
-            hosts.add(_hostDao.findById(poolhost.getHostId()));
+            HostVO h = _hostDao.findById(poolhost.getHostId());
+            if( h != null && h.getType().equals(Type.Routing) && h.getStatus().equals(Status.Up)) {
+                 hosts.add(h);
+            }
         }
         
         long podId = pod.getId();
