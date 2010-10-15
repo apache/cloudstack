@@ -64,6 +64,7 @@ public class SecondaryStorageDiscoverer extends DiscovererBase implements Discov
     long _timeout = 2 * 60 * 1000; // 2 minutes
     String _mountParent;
     boolean _useServiceVM = false;
+    
     Random _random = new Random(System.currentTimeMillis());
     @Inject
     protected HostDao _hostDao = null;
@@ -261,8 +262,6 @@ public class SecondaryStorageDiscoverer extends DiscovererBase implements Discov
     		VMTemplateHostVO vmTemplateHost = new VMTemplateHostVO(hostId, TemplateConstants.DEFAULT_SYSTEM_VM_DB_ID, new Date(), 100, VMTemplateStorageResourceAssoc.Status.DOWNLOADED, null, null, null, TemplateConstants.DEFAULT_SYSTEM_VM_TEMPLATE_PATH, null);
     		_vmTemplateHostDao.persist(vmTemplateHost);
     	}
-    	
-    	
     }
     
     private void associateTemplatesToZone(long hostId, long dcId){
@@ -274,7 +273,7 @@ public class SecondaryStorageDiscoverer extends DiscovererBase implements Discov
 
     	List<VMTemplateVO> allTemplates = _vmTemplateDao.listAll();
     	for (VMTemplateVO vt: allTemplates){
-    		if (vt.isCrossZones()){
+    		if (vt.isCrossZones()) {
     			tmpltZone = _vmTemplateZoneDao.findByZoneTemplate(dcId, vt.getId());
     			if (tmpltZone == null) {
     				VMTemplateZoneVO vmTemplateZone = new VMTemplateZoneVO(dcId, vt.getId(), new Date());
