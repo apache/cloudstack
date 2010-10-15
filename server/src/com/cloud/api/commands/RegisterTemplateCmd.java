@@ -151,7 +151,7 @@ public class RegisterTemplateCmd extends BaseCmd {
         List<TemplateResponse> responses = new ArrayList<TemplateResponse>();
         List<DataCenterVO> zones = null;
 
-        if (zoneId != null) {
+        if ((zoneId != null) && (zoneId != -1)) {
             zones = new ArrayList<DataCenterVO>();
             zones.add(ApiDBUtils.findZoneById(zoneId));
         } else {
