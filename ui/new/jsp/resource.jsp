@@ -255,7 +255,56 @@
         <!-- Details tab (end)-->
     </div>
     <div id="cluster_page" style="display:none">
-        Cluster Page
+        <div class="tabbox" style="margin-top: 15px;">
+            <div class="content_tabs on" id="tab_details">
+                <%=t.t("details")%></div>           
+        </div>
+        <!-- Details tab (start)-->
+        <div id="tab_content_details">
+            <div class="grid_container">
+                <div class="grid_rows odd">
+                    <div class="grid_row_cell" style="width: 20%;">
+                        <div class="row_celltitles">
+                            <%=t.t("ID")%>:</div>
+                    </div>
+                    <div class="grid_row_cell" style="width: 79%;">
+                        <div class="row_celltitles" id="id">
+                        </div>
+                    </div>
+                </div>
+                <div class="grid_rows even">
+                    <div class="grid_row_cell" style="width: 20%;">
+                        <div class="row_celltitles">
+                            <%=t.t("name")%>:</div>
+                    </div>
+                    <div class="grid_row_cell" style="width: 79%;">
+                        <div class="row_celltitles" id="name">
+                        </div>
+                    </div>
+                </div>
+                <div class="grid_rows odd">
+                    <div class="grid_row_cell" style="width: 20%;">
+                        <div class="row_celltitles">
+                            <%=t.t("zone")%>:</div>
+                    </div>
+                    <div class="grid_row_cell" style="width: 79%;">
+                        <div class="row_celltitles" id="zonename">
+                        </div>
+                    </div>
+                </div>
+                <div class="grid_rows even">
+                    <div class="grid_row_cell" style="width: 20%;">
+                        <div class="row_celltitles">
+                            <%=t.t("pod")%>:</div>
+                    </div>
+                    <div class="grid_row_cell" style="width: 79%;">
+                        <div class="row_celltitles" id="podname">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Details tab (end)-->
     </div>
     <div id="host_page" style="display:none">
         Host page

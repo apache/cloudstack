@@ -230,7 +230,7 @@ function afterLoadResourceJSP() {
 			    target.parent().parent().parent().addClass("selected");
 			    showPage($clusterPage);
 			    var jsonObj = target.data("jsonObj");
-			    //clusterObjectToRightPanel(jsonObj);				
+			    clusterJsonToDetailsTab(jsonObj);					
 				break;	
 				
 				
@@ -333,6 +333,17 @@ function afterLoadResourceJSP() {
 		//	$("#submenu_content_zones #action_add_directip_vlan").data("type", "pod").data("id", obj.id).data("name", obj.name).data("zoneid", obj.zoneid).show();		
 	}	
 	//***** pod page (end) ********************************************************************************************************
+	
+	//***** cluster page (bgein) **************************************************************************************************
+	function clusterJsonToDetailsTab(jsonObj) {	    
+	    var $detailsTab = $clusterPage.find("#tab_content_details");   
+        $detailsTab.data("jsonObj", jsonObj);           
+        $detailsTab.find("#id").text(fromdb(jsonObj.id));
+        $detailsTab.find("#name").text(fromdb(jsonObj.name));
+        $detailsTab.find("#zonename").text(fromdb(jsonObj.zonename));        
+        $detailsTab.find("#podname").text(fromdb(jsonObj.podname));            
+    }
+    //***** cluster page (end) ****************************************************************************************************
 	
 	//***** systemVM page (begin) *************************************************************************************************
     function systemvmJsonToDetailsTab(jsonObj) {	   
