@@ -205,9 +205,7 @@ function afterLoadResourceJSP() {
     
     function podJSONToTreeNode(json, template) {	
         var podid = json.id;
-        template.attr("id", "pod_" + podid);  
-    	    
-		var ipRange = getIpRange(json.startip, json.endip);			
+        template.attr("id", "pod_" + podid);      	
 		template.data("id", podid).data("name", fromdb(json.name));
 		
 		var podName = template.find("#pod_name").text(fromdb(json.name));
@@ -483,7 +481,7 @@ function afterLoadResourceJSP() {
         $detailsTab.find("#id").text(fromdb(jsonObj.id));
         $detailsTab.find("#name").text(fromdb(jsonObj.name));
         $detailsTab.find("#cidr").text(fromdb(jsonObj.cidr));        
-        $detailsTab.find("#ipRange").text(fromdb(jsonObj.ipRange));
+        $detailsTab.find("#ipRange").text(getIpRange(jsonObj.startip, jsonObj.endip));
         $detailsTab.find("#gateway").text(fromdb(jsonObj.gateway));  
         
         //if (getDirectAttachUntaggedEnabled() == "true") 
