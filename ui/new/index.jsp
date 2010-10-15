@@ -663,7 +663,7 @@ long milliseconds = new Date().getTime();
             <%=t.t("please.select.at.least.one.item.in.middle.menu")%>
         </p>
     </div>
-    <!-- templates starts here-->
+    <!-- ***** templates (begin) *************************************************************************************************-->
     <div class="leftmenu_content" id="leftmenu_submenu_template" style="display: none">
         <div class="leftmenu_thirdindent">
             <div class="leftmenu_list_icons">
@@ -697,73 +697,95 @@ long milliseconds = new Date().getTime();
     <li id="action_list_item" style="display: none;"><a id="link" href="#">(action)</a></li>
     <li id="no_available_actions" style="display: none">
         <%=t.t("no.available.actions")%></li>
-     
-     <div class="leftmenu_expandedlist" id="leftmenu_zone_node_template" style="display:none">
-     	<div class="leftmenu_loadingbox" style="display:none;">
+    
+    <!-- Zonetree Template (begin) --> 
+    <div class="leftmenu_expandedlist" id="leftmenu_zone_node_template" style="display:none">
+     	<div class="leftmenu_loadingbox" style="display:none;" id="loading_container">
         	<div class="leftmenu_loader"></div>
             <p> Adding Zone &hellip; </p>
         </div>
-        <div class="leftmenu_content selected" id="header">  
-            <div class="leftmenu_thirdindent">
-                <div class="leftmenu_arrows expanded_close" id="arrowIcon">
-                </div>
-                <div class="leftmenu_list_icons">
-                    <img src="images/zone_zoneicon.png" alt="Zone" /></div>
-                Zone: <strong><span id="zone_name"></span></strong>
-            </div>  
-        </div>
-		<div id="zone_container"></div>
+        <div id="row_container">
+	        <div class="leftmenu_content" id="header">  
+	            <div class="leftmenu_thirdindent">
+	                <div class="leftmenu_arrows expanded_close" id="arrowIcon">
+	                </div>
+	                <div class="leftmenu_list_icons">
+	                    <img src="images/zone_zoneicon.png" alt="Zone" /></div>
+	                Zone: <strong><span id="zone_name"></span></strong>
+	            </div>  
+	        </div>			
+            <div id="zone_content" style="display: none">
+	            <div id="pods_container">
+	            </div>
+	            <div id="systemvms_container">
+	            </div>
+	        </div>
+		</div>
     </div>
+    <!-- Zone Template (end) -->
+	<!-- Pod Template (begin) -->    
     <div class="leftmenu_expandedlist" id="leftmenu_pod_node_template" style="display:none">
-    	<div class="leftmenu_loadingbox" style="display:none;">
+    	<div class="leftmenu_loadingbox" style="display:none;"  id="loading_container">
         	<div class="leftmenu_loader"></div>
             <p> Adding Pod &hellip; </p>
         </div>
-        <div class="leftmenu_content selected" id="header">
-            <div class="leftmenu_fourthindent">
-                <div class="leftmenu_arrows expanded_close" id="arrowIcon">
-                </div>
-                <div class="leftmenu_list_icons">
-                    <img src="images/zone_podicon.png" alt="Pod" /></div>
-                Pod: <strong><span id="pod_name"></span></strong>
-            </div>
-        </div>
-        <div id="pod_container"></div>
+        <div id="row_container">
+	        <div class="leftmenu_content" id="header">
+	            <div class="leftmenu_fourthindent">
+	                <div class="leftmenu_arrows expanded_close" id="arrowIcon">
+	                </div>
+	                <div class="leftmenu_list_icons">
+	                    <img src="images/zone_podicon.png" alt="Pod" /></div>
+	                Pod: <strong><span id="pod_name"></span></strong>
+	            </div>
+	        </div>	
+            <div id="pod_content" style="display: none">
+	            <div id="clusters_container">
+	            </div>
+	        </div>
+	    </div>
     </div>
-    
+    <!-- Pod Template (end) -->
+	<!-- Cluster Template (begin) -->    
     <div class="leftmenu_expandedlist" id="leftmenu_cluster_node_template" style="display:none">
-    	<div class="leftmenu_loadingbox" style="display:none;">
+    	<div class="leftmenu_loadingbox" style="display:none;" id="loading_container">
         	<div class="leftmenu_loader"></div>
             <p> Adding Cluster &hellip; </p>
         </div>
-        <div class="leftmenu_content selected" id="header">
-            <div class="leftmenu_fifthindent">
-                <div class="leftmenu_arrows expanded_close" id="arrowIcon">
-                </div>
-                <div class="leftmenu_list_icons">
-                    <img src="images/zone_clustericon.png" alt="Cluster" /></div>
-                Cluster: <strong><span id="cluster_name"></span></strong>
-            </div>
-        </div>
-        <div id="cluster_container"></div>
+        <div id="row_container">
+	        <div class="leftmenu_content" id="header">
+	            <div class="leftmenu_fifthindent">
+	                <div class="leftmenu_arrows expanded_close" id="arrowIcon">
+	                </div>
+	                <div class="leftmenu_list_icons">
+	                    <img src="images/zone_clustericon.png" alt="Cluster" /></div>
+	                Cluster: <strong><span id="cluster_name"></span></strong>
+	            </div>
+	        </div>	
+			<div id="cluster_content">
+	            <div id="hosts_container">
+	            </div>
+	            <div id="primarystorages_container">
+	            </div>
+	        </div>
+	    </div>
     </div> 
-    
+    <!-- Cluster Template (end) -->
+    <!-- SystemVM Template (begin) -->
     <div class="leftmenu_expandedlist" id="leftmenu_systemvm_node_template" style="display:none">
-    	<div class="leftmenu_loadingbox" style="display:none;">
-        	<div class="leftmenu_loader"></div>
-            <p> Adding Sytem VM &hellip; </p>
+    	<div id="row_container">
+	        <div class="leftmenu_content" id="header">
+	            <div class="leftmenu_fourthindent">
+	                <div class="leftmenu_arrows expanded_close" id="arrowIcon">
+	                </div>
+	                <div class="leftmenu_list_icons">
+	                    <img src="images/zone_systemvmicon.png" alt="System VM" /></div>
+	                System VM: <strong><span id="systemvm_name"></span></strong>
+	            </div>
+	        </div>
         </div>
-        <div class="leftmenu_content selected" id="header">
-            <div class="leftmenu_fourthindent">
-                <div class="leftmenu_arrows expanded_close" id="arrowIcon">
-                </div>
-                <div class="leftmenu_list_icons">
-                    <img src="images/zone_systemvmicon.png" alt="System VM" /></div>
-                System VM: <strong><span id="systemvm_name"></span></strong>
-            </div>
-        </div>
-        <div id="systemvm_container"></div>
     </div> 
-    <!-- templates ends here-->
+    <!-- SystemVM Template (end) -->
+    <!-- ***** templates (end) *************************************************************************************************-->
 </body>
 </html>
