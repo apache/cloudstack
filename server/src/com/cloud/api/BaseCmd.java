@@ -396,7 +396,8 @@ public abstract class BaseCmd {
         CLUSTER_ID("clusterid", BaseCmd.TYPE_LONG, "clusterid"),
         CLUSTER_NAME("clustername", BaseCmd.TYPE_STRING, "clustername"),
         SCOPE("scope", BaseCmd.TYPE_STRING, "scope"),
-        SUM_ACROSS_ZONE("sumacrosszone", BaseCmd.TYPE_BOOLEAN, "sumAcrossZone");
+        SUM_ACROSS_ZONE("sumacrosszone", BaseCmd.TYPE_BOOLEAN, "sumAcrossZone"),
+        EXCEPTION("exception", BaseCmd.TYPE_STRING, "excetpion");
 
         private final String _name;
         private final short _dataType;
