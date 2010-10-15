@@ -1,7 +1,7 @@
 #!/bin/bash
 #set -x
 Usage() {
-  echo "migrate snapshots created from CloudStack 2.1.3 to 2.1.4 and later:"
+  echo "Migrate snapshots to CloudStack 2.1.4 and later format:"
   echo "$0 -m {secondary-storage mount point} "
   exit 1
 }
@@ -40,7 +40,7 @@ fi
 mountPath=$mountPath/snapshots
 if [ ! -d $mountPath ]
 then
-  echo "No snapshots exit, nothing to do"
+  echo "No snapshots exist, nothing to do"
   exit 0
 fi
 
