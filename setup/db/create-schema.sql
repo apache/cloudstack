@@ -101,6 +101,14 @@ CREATE TABLE `cloud`.`pool` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `cloud`.`lun` (
+  `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
+  `path` varchar(255) NOT NULL COMMENT 'lun path',
+  `iqn` varchar(255) NOT NULL COMMENT 'lun iqn',
+  `volume_id` bigint unsigned NOT NULL COMMENT 'parent volume id',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 */
 
 CREATE TABLE `cloud`.`cluster` (
