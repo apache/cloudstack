@@ -82,8 +82,9 @@ DROP TABLE IF EXISTS `cloud`.`lun`;
 
 CREATE TABLE `cloud`.`netapp_volume` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
-  `ip_address` varchar(15) NOT NULL COMMENT 'ip address of the pool/volume',
-  `pool_name` varchar(255) NOT NULL COMMENT 'name for the pool/volume',
+  `ip_address` varchar(255) NOT NULL COMMENT 'ip address/fqdn of the volume',
+  `pool_id` bigint unsigned NOT NULL COMMENT 'id for the pool',
+  `pool_name` varchar(255) NOT NULL COMMENT 'name for the pool',
   `aggregate_name` varchar(255) NOT NULL COMMENT 'name for the aggregate',
   `volume_name` varchar(255) NOT NULL COMMENT 'name for the volume',
   `volume_size` varchar(255) NOT NULL COMMENT 'volume size',
