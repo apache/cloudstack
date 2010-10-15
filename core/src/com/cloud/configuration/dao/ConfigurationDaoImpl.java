@@ -38,6 +38,7 @@ import com.cloud.utils.db.Transaction;
 public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String> implements ConfigurationDao {
     private static final Logger s_logger = Logger.getLogger(ConfigurationDaoImpl.class);
     private Map<String, String> _configs = null;
+    private boolean _premium;
 
     final SearchBuilder<ConfigurationVO> InstanceSearch;
     final SearchBuilder<ConfigurationVO> NameSearch;
@@ -51,6 +52,11 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
         
         NameSearch = createSearchBuilder();
         NameSearch.and("name", NameSearch.entity().getName(), SearchCriteria.Op.EQ);
+    }
+
+    @Override
+    public boolean isPremium() {
+        return _premium;
     }
 
     @Override
@@ -99,14 +105,17 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
             dbParams.put(param.getKey(), (String)param.getValue());
         }
     }
-    
+
     @Override
 	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
     	super.configure(name, params);
-    	
+
+    	Object premium = params.get("premium");
+        _premium = (premium != null) && ((String) premium).equals("true");
+
         return true;
     }
-    
+
     @Override
     public boolean update(String name, String value) {
     	Transaction txn = Transaction.currentTxn();

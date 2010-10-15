@@ -125,12 +125,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 	@Inject AccountDao _accountDao;
 	@Inject EventDao _eventDao;
 	@Inject UserDao _userDao;
-	@Inject DataCenterDao _dcDao;
-	@Inject HostPodDao _hostPodDao;
-	@Inject AccountManager _accountMgr;
-	@Inject NetworkManager _networkMgr;
 	@Inject ConsoleProxyDao _consoleDao;
 	@Inject SecondaryStorageVmDao _secStorageDao;
+    @Inject AccountManager _accountMgr;
+    @Inject NetworkManager _networkMgr;
 	public boolean _premium;
 
 	private int _maxVolumeSizeInGb;
@@ -457,13 +455,13 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
         }
     	
     	//verify parameters
-    	HostPodVO pod = _hostPodDao.findById(id);;
+    	HostPodVO pod = _podDao.findById(id);;
     	if (pod == null) {
     		throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find pod by id " + id);
     	}
     	
     	long zoneId = pod.getDataCenterId();
-    	DataCenterVO zone = _dcDao.findById(zoneId);
+    	DataCenterVO zone = _zoneDao.findById(zoneId);
     	if (zone == null) {
     		throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find zone by id " + zoneId);
     	}

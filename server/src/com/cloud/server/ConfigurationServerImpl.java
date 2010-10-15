@@ -41,16 +41,21 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Config;
-import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.HostPodVO;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.HostPodDao;
 import com.cloud.domain.DomainVO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.hypervisor.Hypervisor;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.offering.NetworkOffering;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.SnapshotPolicyVO;
+import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.user.User;
 import com.cloud.utils.PasswordGenerator;
@@ -65,14 +70,20 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 	public static final Logger s_logger = Logger.getLogger(ConfigurationServerImpl.class.getName());
 	
 	private final ConfigurationDao _configDao;
-	private final ConfigurationManager _configMgr;
 	private final SnapshotPolicyDao _snapPolicyDao;
+	private final DataCenterDao _zoneDao;
+    private final HostPodDao _podDao;
+    private final DiskOfferingDao _diskOfferingDao;
+    private final ServiceOfferingDao _serviceOfferingDao;
 	
 	public ConfigurationServerImpl() {
 		ComponentLocator locator = ComponentLocator.getLocator(Name);
 		_configDao = locator.getDao(ConfigurationDao.class);
-		_configMgr = locator.getManager(ConfigurationManager.class);
 		_snapPolicyDao = locator.getDao(SnapshotPolicyDao.class);
+        _zoneDao = locator.getDao(DataCenterDao.class);
+        _podDao = locator.getDao(HostPodDao.class);
+        _diskOfferingDao = locator.getDao(DiskOfferingDao.class);
+        _serviceOfferingDao = locator.getDao(ServiceOfferingDao.class);
 	}
 
 	public void persistDefaultValues() throws InvalidParameterValueException, InternalErrorException {
@@ -90,7 +101,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 			List<String> categories = Config.getCategories();
 			for (String category : categories) {
 				// If this is not a premium environment, don't insert premium configuration values
-				if (!_configMgr.isPremium() && category.equals("Premium")) {
+				if (!_configDao.isPremium() && category.equals("Premium")) {
 					continue;
 				}
 				
@@ -113,7 +124,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 			}
 			
 			// If this is a premium environment, set the network type to be "vlan"
-			if (_configMgr.isPremium()) {
+			if (_configDao.isPremium()) {
 				_configDao.update("network.type", "vlan");
 				s_logger.debug("ConfigurationServer changed the network type to \"vlan\".");
 				
@@ -134,15 +145,15 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 			}
 			
 			// Save Direct Networking service offerings
-			_configMgr.createServiceOffering(User.UID_SYSTEM, "Small Instance, Direct Networking", 1, 512, 500, "Small Instance, Direct Networking, $0.05 per hour", false, false, false, null);			
-			_configMgr.createServiceOffering(User.UID_SYSTEM, "Medium Instance, Direct Networking", 1, 1024, 1000, "Medium Instance, Direct Networking, $0.10 per hour", false, false, false, null);
+			createServiceOffering(User.UID_SYSTEM, "Small Instance, Direct Networking", 1, 512, 500, "Small Instance, Direct Networking, $0.05 per hour", false, false, false, null);			
+			createServiceOffering(User.UID_SYSTEM, "Medium Instance, Direct Networking", 1, 1024, 1000, "Medium Instance, Direct Networking, $0.10 per hour", false, false, false, null);
 			 // Save Virtual Networking service offerings
-			_configMgr.createServiceOffering(User.UID_SYSTEM, "Small Instance, Virtual Networking", 1, 512, 500, "Small Instance, Virtual Networking, $0.05 per hour", false, false, true, null);
-			_configMgr.createServiceOffering(User.UID_SYSTEM, "Medium Instance, Virtual Networking", 1, 1024, 1000, "Medium Instance, Virtual Networking, $0.10 per hour", false, false, true, null);
+			createServiceOffering(User.UID_SYSTEM, "Small Instance, Virtual Networking", 1, 512, 500, "Small Instance, Virtual Networking, $0.05 per hour", false, false, true, null);
+			createServiceOffering(User.UID_SYSTEM, "Medium Instance, Virtual Networking", 1, 1024, 1000, "Medium Instance, Virtual Networking, $0.10 per hour", false, false, true, null);
 			// Save default disk offerings
-			_configMgr.createDiskOffering(DomainVO.ROOT_DOMAIN, "Small", "Small Disk, 5 GB", 5, null);
-			_configMgr.createDiskOffering(DomainVO.ROOT_DOMAIN, "Medium", "Medium Disk, 20 GB", 20, null);
-			_configMgr.createDiskOffering(DomainVO.ROOT_DOMAIN, "Large", "Large Disk, 100 GB", 100, null);
+			createDiskOffering(DomainVO.ROOT_DOMAIN, "Small", "Small Disk, 5 GB", 5, null);
+			createDiskOffering(DomainVO.ROOT_DOMAIN, "Medium", "Medium Disk, 20 GB", 20, null);
+			createDiskOffering(DomainVO.ROOT_DOMAIN, "Large", "Large Disk, 100 GB", 100, null);
 			//_configMgr.createDiskOffering(User.UID_SYSTEM, DomainVO.ROOT_DOMAIN, "Private", "Private Disk", 0, null);
 			
 			   //Add default manual snapshot policy
@@ -152,7 +163,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 			// Save the mount parent to the configuration table
 			String mountParent = getMountParent();
 			if (mountParent != null) {
-				_configMgr.updateConfiguration(User.UID_SYSTEM, "mount.parent", mountParent);
+			    _configDao.update("mount.parent", mountParent);
+//				_configMgr.updateConfiguration(User.UID_SYSTEM, "mount.parent", mountParent);
 				s_logger.debug("ConfigurationServer saved \"" + mountParent + "\" as mount.parent.");
 			} else {
 				s_logger.debug("ConfigurationServer could not detect mount.parent.");
@@ -160,7 +172,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 
 			String hostIpAdr = getHost();
 			if (hostIpAdr != null) {
-				_configMgr.updateConfiguration(User.UID_SYSTEM, "host", hostIpAdr);
+			    _configDao.update("host", hostIpAdr);
+//				_configMgr.updateConfiguration(User.UID_SYSTEM, "host", hostIpAdr);
 				s_logger.debug("ConfigurationServer saved \"" + hostIpAdr + "\" as host.");
 			}
 
@@ -177,14 +190,14 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 				if (dns == null) {
 					dns = "4.2.2.2";
 				}
-				DataCenterVO zone = _configMgr.createZone(User.UID_SYSTEM, "Default", dns, null, dns, null, "1000-2000","10.1.1.0/24");
+				DataCenterVO zone = createZone(User.UID_SYSTEM, "Default", dns, null, dns, null, "1000-2000","10.1.1.0/24");
 
 				// Create a default pod
 				String networkType = _configDao.getValue("network.type");
 				if (networkType != null && networkType.equals("vnet")) {
-					_configMgr.createPod(User.UID_SYSTEM, "Default", zone.getId(), "169.254.1.1", "169.254.1.0/24", "169.254.1.2", "169.254.1.254");
+					createPod(User.UID_SYSTEM, "Default", zone.getId(), "169.254.1.1", "169.254.1.0/24", "169.254.1.2", "169.254.1.254");
 				} else {
-					_configMgr.createPod(User.UID_SYSTEM, "Default", zone.getId(), gateway, gateway + "/" + cidrSize, null, null);
+					createPod(User.UID_SYSTEM, "Default", zone.getId(), gateway, gateway + "/" + cidrSize, null, null);
 				}
 
 				s_logger.debug("ConfigurationServer saved a default pod and zone, with gateway: " + gateway + " and netmask: " + netmask);
@@ -513,4 +526,144 @@ public class ConfigurationServerImpl implements ConfigurationServer {
             s_logger.error("error generating sso key", ex);
         }
 	}
+
+    private DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String vnetRange, String guestCidr) throws InvalidParameterValueException, InternalErrorException {
+        int vnetStart, vnetEnd;
+        if (vnetRange != null) {
+            String[] tokens = vnetRange.split("-");
+            
+            try {
+                vnetStart = Integer.parseInt(tokens[0]);
+                if (tokens.length == 1) {
+                    vnetEnd = vnetStart;
+                } else {
+                    vnetEnd = Integer.parseInt(tokens[1]);
+                }
+            } catch (NumberFormatException e) {
+                throw new InvalidParameterValueException("Please specify valid integers for the vlan range.");
+            }
+        } else {
+            String networkType = _configDao.getValue("network.type");
+            if (networkType != null && networkType.equals("vnet")) {
+                vnetStart = 1000;
+                vnetEnd = 2000;
+            } else {
+                throw new InvalidParameterValueException("Please specify a vlan range.");
+            }
+        }
+
+        //checking the following params outside checkzoneparams method as we do not use these params for updatezone
+        //hence the method below is generic to check for common params
+        if ((guestCidr != null) && !NetUtils.isValidCIDR(guestCidr)) {
+            throw new InvalidParameterValueException("Please enter a valid guest cidr");
+        }
+
+        // Create the new zone in the database
+        DataCenterVO zone = new DataCenterVO(zoneName, null, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr);
+        zone = _zoneDao.persist(zone);
+
+        // Add vnet entries for the new zone
+        _zoneDao.addVnet(zone.getId(), vnetStart, vnetEnd);
+
+        return zone;
+    }
+
+    @DB
+    protected HostPodVO createPod(long userId, String podName, long zoneId, String gateway, String cidr, String startIp, String endIp) throws InvalidParameterValueException, InternalErrorException {
+        String[] cidrPair = cidr.split("\\/");
+        String cidrAddress = cidrPair[0];
+        int cidrSize = Integer.parseInt(cidrPair[1]);
+        
+        if (startIp != null) {
+            if (endIp == null) {
+                endIp = NetUtils.getIpRangeEndIpFromCidr(cidrAddress, cidrSize);
+            }
+        }
+        
+        // Create the new pod in the database
+        String ipRange;
+        if (startIp != null) {
+            ipRange = startIp + "-";
+            if (endIp != null) {
+                ipRange += endIp;
+            }
+        } else {
+            ipRange = "";
+        }
+        
+        HostPodVO pod = new HostPodVO(podName, zoneId, gateway, cidrAddress, cidrSize, ipRange);
+        Transaction txn = Transaction.currentTxn();
+        try {
+            txn.start();
+            
+            if (_podDao.persist(pod) == null) {
+                txn.rollback();
+                throw new InternalErrorException("Failed to create new pod. Please contact Cloud Support.");
+            }
+            
+            if (startIp != null) {
+                _zoneDao.addPrivateIpAddress(zoneId, pod.getId(), startIp, endIp);
+            }
+
+            String ipNums = _configDao.getValue("linkLocalIp.nums");
+            int nums = Integer.parseInt(ipNums);
+            if (nums > 16 || nums <= 0) {
+                throw new InvalidParameterValueException("The linkLocalIp.nums: " + nums + "is wrong, should be 1~16");
+            }
+            /*local link ip address starts from 169.254.0.2 - 169.254.(nums)*/
+            String[] linkLocalIpRanges = NetUtils.getLinkLocalIPRange(nums);
+            if (linkLocalIpRanges == null) {
+                throw new InvalidParameterValueException("The linkLocalIp.nums: " + nums + "may be wrong, should be 1~16");
+            } else {
+                _zoneDao.addLinkLocalPrivateIpAddress(zoneId, pod.getId(), linkLocalIpRanges[0], linkLocalIpRanges[1]);
+            }
+
+            txn.commit();
+
+        } catch(Exception e) {
+            txn.rollback();
+            s_logger.error("Unable to create new pod due to " + e.getMessage(), e);
+            throw new InternalErrorException("Failed to create new pod. Please contact Cloud Support.");
+        }
+        
+        return pod;
+    }
+
+    private DiskOfferingVO createDiskOffering(long domainId, String name, String description, int numGibibytes, String tags) throws InvalidParameterValueException {
+        long diskSize = numGibibytes * 1024;
+        tags = cleanupTags(tags);
+
+        DiskOfferingVO newDiskOffering = new DiskOfferingVO(domainId, name, description, diskSize,tags);
+        return _diskOfferingDao.persist(newDiskOffering);
+    }
+
+    private ServiceOfferingVO createServiceOffering(long userId, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired, boolean offerHA, boolean useVirtualNetwork, String tags) {
+        String networkRateStr = _configDao.getValue("network.throttling.rate");
+        String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
+        int networkRate = ((networkRateStr == null) ? 200 : Integer.parseInt(networkRateStr));
+        int multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));
+        NetworkOffering.GuestIpType guestIpType = useVirtualNetwork ? NetworkOffering.GuestIpType.Virtualized : NetworkOffering.GuestIpType.DirectSingle;        
+        tags = cleanupTags(tags);
+        ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, networkRate, multicastRate, offerHA, displayText, guestIpType, localStorageRequired, false, tags);
+        
+        if ((offering = _serviceOfferingDao.persist(offering)) != null) {
+            return offering;
+        } else {
+            return null;
+        }
+    }
+
+    private String cleanupTags(String tags) {
+        if (tags != null) {
+            String[] tokens = tags.split(",");
+            StringBuilder t = new StringBuilder();
+            for (int i = 0; i < tokens.length; i++) {
+                t.append(tokens[i].trim()).append(",");
+            }
+            t.delete(t.length() - 1, t.length());
+            tags = t.toString();
+        }
+        
+        return tags;
+    }
 }

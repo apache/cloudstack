@@ -58,6 +58,10 @@ public interface ConfigurationDao extends GenericDao<ConfigurationVO, String> {
      * @return value
      */
     public String getValue(String name);
-    
-    
+
+    /**
+     * returns whether or not this is a premium configuration
+     * @return true if premium configuration, false otherwise
+     */
+    boolean isPremium();
 }

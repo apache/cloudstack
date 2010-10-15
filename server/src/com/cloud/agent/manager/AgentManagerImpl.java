@@ -121,6 +121,7 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.ServerResource;
+import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.Storage;
@@ -344,9 +345,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         }
 
         _connection = new NioServer("AgentManager", _port, workers + 10, this);
-       
-        s_logger.info("Listening on " + _port + " with " + workers + " workers");
 
+        s_logger.info("Listening on " + _port + " with " + workers + " workers");
         return true;
     }
 
@@ -680,7 +680,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
             _hostDao.remove(hostId);
             
             //delete the associated primary storage from db
-            ComponentLocator locator = ComponentLocator.getLocator("management-server");
+            ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
             _storagePoolHostDao = locator.getDao(StoragePoolHostDao.class);
             if (_storagePoolHostDao == null) {
                 throw new ConfigurationException("Unable to get storage pool host dao: " + StoragePoolHostDao.class);
@@ -1074,7 +1074,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         if (_monitor != null) {
             _monitor.start();
         }
-        _connection.start();
+        if (_connection != null) {
+            _connection.start();
+        }
 
         return true;
     }
