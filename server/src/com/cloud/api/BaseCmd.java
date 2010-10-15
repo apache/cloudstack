@@ -390,6 +390,7 @@ public abstract class BaseCmd {
         TAKEN("taken", BaseCmd.TYPE_DATE, "taken"),
         LUN("lun", BaseCmd.TYPE_INT, "lun"),
         LUN_SIZE("lunsize", BaseCmd.TYPE_LONG, "lunsize"),
+        LUN_ID("lunid", BaseCmd.TYPE_STRING, "lunid"),
         LUN_SIZE_USED("lunsizeused", BaseCmd.TYPE_LONG, "lunsizeused"),
         DETAILS("details", BaseCmd.TYPE_OBJECT_MAP, "details"),
         CLUSTER_ID("clusterid", BaseCmd.TYPE_LONG, "clusterid"),
