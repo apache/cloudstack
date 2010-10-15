@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.ejb.Local;
+import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
@@ -42,12 +43,9 @@ import com.cloud.offering.ServiceOffering;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSVO;
-import com.cloud.storage.StoragePoolHostVO;
-import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
-import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ComponentLocator;
@@ -325,7 +323,7 @@ public class FirstFitAllocator implements HostAllocator {
     }
     
     @Override
-    public boolean configure(String name, Map<String, Object> params) {
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _name = name;
         ComponentLocator locator = ComponentLocator.getCurrentLocator();
     	if (_configDao != null) {

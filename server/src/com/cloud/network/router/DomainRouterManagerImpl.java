@@ -18,7 +18,6 @@
 package com.cloud.network.router;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -52,9 +51,7 @@ import com.cloud.agent.api.StartRouterCommand;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.routing.DhcpEntryCommand;
 import com.cloud.agent.api.routing.IPAssocCommand;
-import com.cloud.agent.api.routing.LoadBalancerCfgCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
-import com.cloud.agent.api.routing.SetFirewallRuleCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
@@ -94,23 +91,18 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.FirewallRuleVO;
-import com.cloud.network.HAProxyConfigurator;
 import com.cloud.network.IPAddressVO;
-import com.cloud.network.LoadBalancerConfigurator;
 import com.cloud.network.LoadBalancerVO;
-import com.cloud.network.Network.TrafficType;
+import com.cloud.network.NetworkConfiguration;
+import com.cloud.network.NetworkManager;
 import com.cloud.network.SecurityGroupVMMapVO;
 import com.cloud.network.SshKeysDistriMonitor;
-import com.cloud.network.configuration.NetworkGuru;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkConfigurationDao;
 import com.cloud.network.dao.SecurityGroupVMMapDao;
-import com.cloud.network.element.NetworkElement;
 import com.cloud.offering.NetworkOffering;
-import com.cloud.offering.NetworkOffering.GuestIpType;
-import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -135,7 +127,6 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -204,13 +195,8 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
     @Inject NetworkConfigurationDao _networkProfileDao = null;
     @Inject NicDao _nicDao;
     @Inject GuestOSDao _guestOSDao = null;
-    @Inject DomainRouterManager _routerMgr;
+    @Inject NetworkManager _networkMgr;
     
-    @Inject(adapter=NetworkGuru.class)
-    Adapters<NetworkGuru> _networkGurus;
-    @Inject(adapter=NetworkElement.class)
-    Adapters<NetworkElement> _networkElements;
-
     long _routerTemplateId = -1;
     int _routerRamSize;
     // String _privateNetmask;
@@ -222,7 +208,6 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
     private ServiceOfferingVO _offering;
     private int _networkRate;
     private int _multicastRate;
-    private HashMap<String, NetworkOfferingVO> _systemNetworks = new HashMap<String, NetworkOfferingVO>(5);
     
     private VMTemplateVO _template;
     
@@ -1160,7 +1145,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
 			for (final IPAddressVO ipVO : ipAddrs) {
 				fwRules.addAll(_rulesDao.listIPForwarding(ipVO.getAddress()));
 			}
-			final List<FirewallRuleVO> result = updateFirewallRules(router
+			final List<FirewallRuleVO> result = _networkMgr.updateFirewallRules(router
 					.getPublicIpAddress(), fwRules, router);
 			if (result.size() != fwRules.size()) {
 				return false;
@@ -1443,211 +1428,6 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
         return true;
     }
 
-    @Override
-    public boolean updateFirewallRule(final FirewallRuleVO rule, String oldPrivateIP, String oldPrivatePort) {
-
-        final IPAddressVO ipVO = _ipAddressDao.findById(rule.getPublicIpAddress());
-        if (ipVO == null || ipVO.getAllocated() == null) {
-            return false;
-        }
-
-        final DomainRouterVO router = _routerDao.findBy(ipVO.getAccountId(), ipVO.getDataCenterId());
-        Long hostId = router.getHostId();
-        if (router == null || router.getHostId() == null) {
-        	return true;
-        }
-        
-        if (rule.isForwarding()) {
-            return updatePortForwardingRule(rule, router, hostId, oldPrivateIP, oldPrivatePort);
-        } else {
-            final List<FirewallRuleVO> fwRules = _rulesDao.listIPForwarding(ipVO.getAccountId(), ipVO.getDataCenterId());
- 
-            return updateLoadBalancerRules(fwRules, router, hostId);
-        }
-    }
-
-    @Override
-    public List<FirewallRuleVO> updateFirewallRules(final String publicIpAddress, final List<FirewallRuleVO> fwRules, final DomainRouterVO router) {
-        final List<FirewallRuleVO> result = new ArrayList<FirewallRuleVO>();
-        if (fwRules.size() == 0) {
-            return result;
-        }
-
-        if (router == null || router.getHostId() == null) {
-            return fwRules;
-        } else {
-            final HostVO host = _hostDao.findById(router.getHostId());
-            return updateFirewallRules(host, router.getInstanceName(), router.getPrivateIpAddress(), fwRules);
-        }
-    }
-
-    public List<FirewallRuleVO> updateFirewallRules(final HostVO host, final String routerName, final String routerIp, final List<FirewallRuleVO> fwRules) {
-        final List<FirewallRuleVO> result = new ArrayList<FirewallRuleVO>();
-        if (fwRules.size() == 0) {
-            s_logger.debug("There are no firewall rules");
-            return result;
-        }
-
-        Commands cmds = new Commands(OnError.Continue);
-        final List<FirewallRuleVO> lbRules = new ArrayList<FirewallRuleVO>();
-        final List<FirewallRuleVO> fwdRules = new ArrayList<FirewallRuleVO>();
-        
-        int i=0;
-        for (FirewallRuleVO rule : fwRules) {
-        	// Determine the VLAN ID and netmask of the rule's public IP address
-        	IPAddressVO ip = _ipAddressDao.findById(rule.getPublicIpAddress());
-        	VlanVO vlan = _vlanDao.findById(new Long(ip.getVlanDbId()));
-        	String vlanNetmask = vlan.getVlanNetmask();
-        	rule.setVlanNetmask(vlanNetmask);
-
-            if (rule.isForwarding()) {
-                fwdRules.add(rule);
-                final SetFirewallRuleCommand cmd = new SetFirewallRuleCommand(routerName, routerIp, rule);
-                cmds.addCommand(cmd);
-            } else {
-                lbRules.add(rule);
-            }
-            
-        }
-        if (lbRules.size() > 0) { //at least one load balancer rule
-            final LoadBalancerConfigurator cfgrtr = new HAProxyConfigurator();
-            final String [] cfg = cfgrtr.generateConfiguration(fwRules);
-            final String [][] addRemoveRules = cfgrtr.generateFwRules(fwRules);
-            final LoadBalancerCfgCommand cmd = new LoadBalancerCfgCommand(cfg, addRemoveRules, routerName, routerIp);
-            cmds.addCommand(cmd);
-        }
-        Answer [] answers = null;
-        try {
-            answers = _agentMgr.send(host.getId(), cmds);
-        } catch (final AgentUnavailableException e) {
-            s_logger.warn("agent unavailable", e);
-        } catch (final OperationTimedoutException e) {
-            s_logger.warn("Timed Out", e);
-        }
-        if (answers == null ){
-            return result;
-        }
-        i=0;
-        for (final FirewallRuleVO rule:fwdRules){
-            final Answer ans = answers[i++];
-            if (ans != null) {
-                if (ans.getResult()) {
-                    result.add(rule);
-                } else {
-                    s_logger.warn("Unable to update firewall rule: " + rule.toString());
-                }
-            }
-        }
-        if (i == (answers.length-1)) {
-            final Answer lbAnswer = answers[i];
-            if (lbAnswer.getResult()) {
-                result.addAll(lbRules);
-            } else {
-                s_logger.warn("Unable to update lb rules.");
-            }
-        }
-        return result;
-    }
-
-    private boolean updatePortForwardingRule(final FirewallRuleVO rule, final DomainRouterVO router, Long hostId, String oldPrivateIP, String oldPrivatePort) {
-    	IPAddressVO ip = _ipAddressDao.findById(rule.getPublicIpAddress());
-    	VlanVO vlan = _vlanDao.findById(new Long(ip.getVlanDbId()));
-    	rule.setVlanNetmask(vlan.getVlanNetmask());
-    	
-        final SetFirewallRuleCommand cmd = new SetFirewallRuleCommand(router.getInstanceName(), router.getPrivateIpAddress(), rule, oldPrivateIP, oldPrivatePort);
-        final Answer ans = _agentMgr.easySend(hostId, cmd);
-        if (ans == null) {
-            return false;
-        } else {
-            return ans.getResult();
-        }
-    }
-
-    @Override
-    public List<FirewallRuleVO>  updatePortForwardingRules(final List<FirewallRuleVO> fwRules, final DomainRouterVO router, Long hostId ){
-        final List<FirewallRuleVO> fwdRules = new ArrayList<FirewallRuleVO>();
-        final List<FirewallRuleVO> result = new ArrayList<FirewallRuleVO>();
-
-        if (fwRules.size() == 0) {
-            return result;
-        }
-
-        Commands cmds = new Commands(OnError.Continue);
-        int i=0;
-        for (final FirewallRuleVO rule: fwRules) {
-        	IPAddressVO ip = _ipAddressDao.findById(rule.getPublicIpAddress());
-        	VlanVO vlan = _vlanDao.findById(new Long(ip.getVlanDbId()));
-        	String vlanNetmask = vlan.getVlanNetmask();
-        	rule.setVlanNetmask(vlanNetmask);
-            if (rule.isForwarding()) {
-                fwdRules.add(rule);
-                final SetFirewallRuleCommand cmd = new SetFirewallRuleCommand(router.getInstanceName(), router.getPrivateIpAddress(), rule);
-                cmds.addCommand(cmd);
-            }
-        }
-        try {
-            _agentMgr.send(hostId, cmds);
-        } catch (final AgentUnavailableException e) {
-            s_logger.warn("agent unavailable", e);
-        } catch (final OperationTimedoutException e) {
-            s_logger.warn("Timed Out", e);
-        }
-        Answer[] answers = cmds.getAnswers();
-        if (answers == null ){
-            return result;
-        }
-        i=0;
-        for (final FirewallRuleVO rule:fwdRules){
-            final Answer ans = answers[i++];
-            if (ans != null) {
-                if (ans.getResult()) {
-                    result.add(rule);
-                }
-            }
-        }
-        return result;
-    }
-
-    /*
-    @Override
-    public boolean executeAssignToLoadBalancer(AssignToLoadBalancerExecutor executor, LoadBalancerParam param) {
-        try {
-            executor.getAsyncJobMgr().getExecutorContext().getManagementServer().assignToLoadBalancer(param.getUserId(), param.getLoadBalancerId(), param.getInstanceIdList());
-            executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(), AsyncJobResult.STATUS_SUCCEEDED, 0, "success");
-        } catch (InvalidParameterValueException e) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Unable to assign vms " + StringUtils.join(param.getInstanceIdList(), ",") + " to load balancer " + param.getLoadBalancerId() + ": " + e.getMessage());
-            }
-
-            executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(), AsyncJobResult.STATUS_FAILED, BaseCmd.PARAM_ERROR, "Unable to assign vms " + StringUtils.join(param.getInstanceIdList(), ",") + " to load balancer " + param.getLoadBalancerId());
-        } catch (NetworkRuleConflictException e) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Unable to assign vms " + StringUtils.join(param.getInstanceIdList(), ",") + " to load balancer " + param.getLoadBalancerId() + ": " + e.getMessage());
-            }
-
-            executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(), AsyncJobResult.STATUS_FAILED, BaseCmd.NET_CONFLICT_LB_RULE_ERROR, e.getMessage());
-        } catch (InternalErrorException e) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Unable to assign vms " + StringUtils.join(param.getInstanceIdList(), ",") + " to load balancer " + param.getLoadBalancerId() + ": " + e.getMessage());
-            }
-
-            executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(), AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR, e.getMessage());
-        } catch (PermissionDeniedException e) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Unable to assign vms " + StringUtils.join(param.getInstanceIdList(), ",") + " to load balancer " + param.getLoadBalancerId() + ": " + e.getMessage());
-            }
-            
-            executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
-                AsyncJobResult.STATUS_FAILED, BaseCmd.ACCOUNT_ERROR, e.getMessage());
-        } catch(Exception e) {
-            s_logger.warn("Unable to assign vms " + StringUtils.join(param.getInstanceIdList(), ",") + " to load balancer " + param.getLoadBalancerId() + ": " + e.getMessage(), e);
-            executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
-                    AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR, e.getMessage());
-        }
-        return true;
-    }
-    */
-
     @Override @DB
     public boolean releasePublicIpAddress(long userId, final String ipAddress) {
         IPAddressVO ip = null;
@@ -1696,7 +1476,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
             }
 
             // Now send the updates  down to the domR (note: we still hold locks on address and firewall)
-            updateFirewallRules(ipAddress, firewallRules, router);
+            _networkMgr.updateFirewallRules(ipAddress, firewallRules, router);
 
             for (final FirewallRuleVO rule: firewallRules) {
                 _rulesDao.remove(rule.getId());
@@ -1797,6 +1577,182 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
         	}
         }
     }
+    
+    /**
+     * Start a router for this network configuration.
+     * @param config
+     * @param account
+     */
+    public void start(NetworkConfiguration config, NetworkOffering offering, Account account) {
+    //    DomainRouterVO vo = new DomainRouterVO(f));
+//        if (s_logger.isDebugEnabled()) {
+//            s_logger.debug("Creating a router for account=" + accountId + "; publicIpAddress=" + publicIpAddress + "; dc=" + dataCenterId + "domain=" + domain);
+//        }
+//        
+//        final AccountVO account = _accountDao.acquire(accountId);
+//        if (account == null) {
+//            throw new ConcurrentOperationException("Unable to acquire account " + accountId);
+//        }
+//        
+//        if(s_logger.isDebugEnabled())
+//            s_logger.debug("lock on account " + accountId + " for createRouter is acquired");
+//
+//        final Transaction txn = Transaction.currentTxn();
+//        DomainRouterVO router = null;
+//        boolean success = false;
+//        try {
+//            router = _routerDao.findBy(accountId, dataCenterId);
+//            if (router != null && router.getState() != State.Creating) {
+//                if (s_logger.isDebugEnabled()) {
+//                    s_logger.debug("Router " + router.toString() + " found for account " + accountId + " in data center " + dataCenterId);
+//                }
+//                success = true;
+//                return router;
+//            }
+//            EventVO event = new EventVO();
+//            event.setUserId(1L);
+//            event.setAccountId(accountId);
+//            event.setType(EventTypes.EVENT_ROUTER_CREATE);
+//            event.setState(EventState.Started);
+//            event.setStartId(startEventId);
+//            event.setDescription("Creating Router for account with Id: "+accountId);
+//            event = _eventDao.persist(event);
+//
+//            final DataCenterVO dc = _dcDao.findById(dataCenterId);
+//            final VMTemplateVO template = _templateDao.findRoutingTemplate();
+//
+//            String[] macAddresses = getMacAddressPair(dataCenterId);
+//            String privateMacAddress = macAddresses[0];
+//            String publicMacAddress = macAddresses[1];
+//
+//            final long id = _routerDao.getNextInSequence(Long.class, "id");
+//
+//            if (domain == null) {
+//                domain = "v" + Long.toHexString(accountId) + "." + _domain;
+//            }
+//
+//            final String name = VirtualMachineName.getRouterName(id, _instance).intern();
+//            long routerMacAddress = NetUtils.mac2Long(dc.getRouterMacAddress()) | ((dc.getId() & 0xff) << 32);
+//
+//            //set the guestNetworkCidr from the dc obj
+//            String guestNetworkCidr = dc.getGuestNetworkCidr();
+//            String[] cidrTuple = guestNetworkCidr.split("\\/");
+//            String guestIpAddress = NetUtils.getIpRangeStartIpFromCidr(cidrTuple[0], Long.parseLong(cidrTuple[1]));
+//            String guestNetmask = NetUtils.getCidrNetmask(Long.parseLong(cidrTuple[1]));
+//
+////            String path = null;
+////            final int numVolumes = offering.isMirroredVolumes()?2:1;
+////            long routerId = 0;
+//
+//            // Find the VLAN ID, VLAN gateway, and VLAN netmask for publicIpAddress
+//            IPAddressVO ipVO = _ipAddressDao.findById(publicIpAddress);
+//            VlanVO vlan = _vlanDao.findById(ipVO.getVlanDbId());
+//            String vlanId = vlan.getVlanId();
+//            String vlanGateway = vlan.getVlanGateway();
+//            String vlanNetmask = vlan.getVlanNetmask();
+//
+//            Pair<HostPodVO, Long> pod = null;
+//            Set<Long> avoids = new HashSet<Long>();
+//            boolean found = false;
+//            while ((pod = _agentMgr.findPod(template, offering, dc, accountId, avoids)) != null) {
+//                
+//                if (s_logger.isDebugEnabled()) {
+//                    s_logger.debug("Attempting to create in pod " + pod.first().getName());
+//                }
+//
+//                router = new DomainRouterVO(id,
+//                            _offering.getId(),
+//                            name,
+//                            privateMacAddress,
+//                            null,
+//                            null,
+//                            _routerTemplateId,
+//                            template.getGuestOSId(),
+//                            NetUtils.long2Mac(routerMacAddress),
+//                            guestIpAddress,
+//                            guestNetmask,
+//                            accountId,
+//                            account.getDomainId(),
+//                            publicMacAddress,
+//                            publicIpAddress,
+//                            vlanNetmask,
+//                            vlan.getId(),
+//                            vlanId,
+//                            pod.first().getId(),
+//                            dataCenterId,
+//                            _routerRamSize,
+//                            vlanGateway,
+//                            domain,
+//                            dc.getDns1(),
+//                            dc.getDns2());
+//                router.setMirroredVols(offering.isMirrored());
+//
+//                router.setLastHostId(pod.second());
+//                router = _routerDao.persist(router);
+//
+//                List<VolumeVO> vols = _storageMgr.create(account, router, template, dc, pod.first(), _offering, null,0);
+//                if(vols != null) {
+//                    found = true;
+//                    break;
+//                }
+//
+//                _routerDao.expunge(router.getId());
+//                if (s_logger.isDebugEnabled()) {
+//                    s_logger.debug("Unable to find storage host or pool in pod " + pod.first().getName() + " (id:" + pod.first().getId() + "), checking other pods");
+//                }
+//                avoids.add(pod.first().getId());
+//            }
+//            
+//            if (!found) {
+//                event.setDescription("failed to create Domain Router : " + name);
+//                event.setLevel(EventVO.LEVEL_ERROR);
+//                _eventDao.persist(event);
+//                throw new ExecutionException("Unable to create DomainRouter");
+//            }
+//            _routerDao.updateIf(router, Event.OperationSucceeded, null);
+//
+//            s_logger.debug("Router created: id=" + router.getId() + "; name=" + router.getName());
+//            
+//            event = new EventVO();
+//            event.setUserId(1L); // system user performed the action
+//            event.setAccountId(accountId);
+//            event.setType(EventTypes.EVENT_ROUTER_CREATE);
+//            event.setStartId(startEventId);
+//            event.setDescription("successfully created Domain Router : " + router.getName() + " with ip : " + publicIpAddress);
+//            _eventDao.persist(event);
+//            success = true;
+//            return router;
+//        } catch (final Throwable th) {
+//            if (th instanceof ExecutionException) {
+//                s_logger.error("Error while starting router due to " + th.getMessage());
+//            } else {
+//                s_logger.error("Unable to create router", th);
+//            }
+//            txn.rollback();
+//
+//            if (router != null && router.getState() == State.Creating) {
+//                _routerDao.expunge(router.getId());
+//            }
+//            return null;
+//        } finally {
+//            if (account != null) {
+//                if(s_logger.isDebugEnabled())
+//                    s_logger.debug("Releasing lock on account " + account.getId() + " for createRouter");
+//                _accountDao.release(account.getId());
+//            }
+//            if(!success){
+//                EventVO event = new EventVO();
+//                event.setUserId(1L); // system user performed the action
+//                event.setAccountId(accountId);
+//                event.setType(EventTypes.EVENT_ROUTER_CREATE);
+//                event.setStartId(startEventId);
+//                event.setLevel(EventVO.LEVEL_ERROR);
+//                event.setDescription("Failed to create router for account " + accountId + " in data center " + dataCenterId);
+//                _eventDao.persist(event);                
+//            }
+//        }
+
+    }
 
     @Override
     public DomainRouterVO getRouter(final long routerId) {
@@ -1806,30 +1762,6 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
     @Override
     public List<? extends DomainRouter> getRouters(final long hostId) {
         return _routerDao.listByHostId(hostId);
-    }
-
-    @Override
-    public boolean updateLoadBalancerRules(final List<FirewallRuleVO> fwRules, final DomainRouterVO router, Long hostId) {
-    	
-    	for (FirewallRuleVO rule : fwRules) {
-    		// Determine the the VLAN ID and netmask of the rule's public IP address
-        	IPAddressVO ip = _ipAddressDao.findById(rule.getPublicIpAddress());
-        	VlanVO vlan = _vlanDao.findById(new Long(ip.getVlanDbId()));
-        	String vlanNetmask = vlan.getVlanNetmask();
-
-        	rule.setVlanNetmask(vlanNetmask);
-    	}
-    	
-        final LoadBalancerConfigurator cfgrtr = new HAProxyConfigurator();
-        final String [] cfg = cfgrtr.generateConfiguration(fwRules);
-        final String [][] addRemoveRules = cfgrtr.generateFwRules(fwRules);
-        final LoadBalancerCfgCommand cmd = new LoadBalancerCfgCommand(cfg, addRemoveRules, router.getInstanceName(), router.getPrivateIpAddress());
-        final Answer ans = _agentMgr.easySend(hostId, cmd);
-        if (ans == null) {
-            return false;
-        } else {
-            return ans.getResult();
-        }
     }
 
     @Override
@@ -1893,22 +1825,6 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
         } else {
         	_routerTemplateId = _template.getId();
         }
-        
-        NetworkOfferingVO publicNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmPublicNetwork, TrafficType.Public, null);
-        publicNetworkOffering = _networkOfferingDao.persistSystemNetworkOffering(publicNetworkOffering);
-        _systemNetworks.put(NetworkOfferingVO.SystemVmPublicNetwork, publicNetworkOffering);
-        NetworkOfferingVO managementNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmManagementNetwork, TrafficType.Management, null);
-        managementNetworkOffering = _networkOfferingDao.persistSystemNetworkOffering(managementNetworkOffering);
-        _systemNetworks.put(NetworkOfferingVO.SystemVmManagementNetwork, managementNetworkOffering);
-        NetworkOfferingVO controlNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmControlNetwork, TrafficType.Control, null);
-        controlNetworkOffering = _networkOfferingDao.persistSystemNetworkOffering(controlNetworkOffering);
-        _systemNetworks.put(NetworkOfferingVO.SystemVmControlNetwork, controlNetworkOffering);
-        NetworkOfferingVO guestNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmGuestNetwork, TrafficType.Guest, GuestIpType.Virtualized);
-        guestNetworkOffering = _networkOfferingDao.persistSystemNetworkOffering(guestNetworkOffering);
-        _systemNetworks.put(NetworkOfferingVO.SystemVmGuestNetwork, guestNetworkOffering);
-        NetworkOfferingVO storageNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmStorageNetwork, TrafficType.Storage, null);
-        storageNetworkOffering = _networkOfferingDao.persistSystemNetworkOffering(storageNetworkOffering);
-        _systemNetworks.put(NetworkOfferingVO.SystemVmGuestNetwork, storageNetworkOffering);
         
         s_logger.info("Network Manager is configured.");
 

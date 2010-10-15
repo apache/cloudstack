@@ -162,6 +162,18 @@ public class DomainRouterVO extends VMInstanceVO implements DomainRouter {
                           String dns2) {
         this(id, serviceOfferingId, name, name, privateMacAddress, privateIpAddress, privateNetmask, templateId, guestOSId, guestMacAddress, guestIpAddress, guestNetmask, null, accountId, domainId, publicMacAddress, publicIpAddress, publicNetMask, vlanDbId, vlanId, podId, dataCenterId, ramSize, gateway, domain, null, dns1, dns2);
     }
+    
+    public DomainRouterVO(long id,
+            long serviceOfferingId,
+            String name,
+            long templateId,
+            long guestOSId,
+            long domainId,
+            long accountId,
+            long networkConfigurationId,
+            boolean haEnabled) {
+        super(id, serviceOfferingId, name, name, Type.DomainRouter, templateId, guestOSId, domainId, accountId, haEnabled);
+    }
 
     public void setGateway(String gateway) {
         this.gateway = gateway;

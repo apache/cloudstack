@@ -137,11 +137,11 @@ public class Request {
     }
     
     private final void setStopOnError(boolean stopOnError) {
-        _flags |= (stopOnError ? 1 : 0) << FLAG_STOP_ON_ERROR;
+        _flags |= (stopOnError ? FLAG_STOP_ON_ERROR : 0);
     }
     
     private final void setInSequence(boolean inSequence) {
-        _flags |= (inSequence ? 1 : 0) << FLAG_IN_SEQUENCE;
+        _flags |= (inSequence ? FLAG_IN_SEQUENCE : 0);
     }
     
     
@@ -150,7 +150,7 @@ public class Request {
     }
     
     public void setControl(boolean control) {
-        _flags |= (control ? 1 : 0) << FLAG_CONTROL;
+        _flags |= (control ? FLAG_CONTROL : 0);
     }
     
     public boolean revertOnError() {
@@ -158,10 +158,10 @@ public class Request {
     }
     
     private final void setRevertOnError(boolean revertOnError) {
-    	_flags |= (revertOnError ? FLAG_REVERT_ON_ERROR : 0);
+        _flags |= (revertOnError ? FLAG_REVERT_ON_ERROR : 0);
     }
     
-    private final void setFromServer(boolean fromServer) {  
+    private final void setFromServer(boolean fromServer) {
         _flags |= (fromServer ? FLAG_FROM_SERVER : 0);
     }
     

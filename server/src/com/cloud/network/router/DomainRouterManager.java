@@ -20,8 +20,6 @@ package com.cloud.network.router;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.async.executor.AssignToLoadBalancerExecutor;
-import com.cloud.async.executor.LoadBalancerParam;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.VlanVO;
@@ -29,7 +27,6 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.FirewallRuleVO;
 import com.cloud.network.IPAddressVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.user.AccountVO;
@@ -145,28 +142,6 @@ public interface DomainRouterManager extends Manager {
     public String assignSourceNatIpAddress(AccountVO account, DataCenterVO dc, String domain, ServiceOfferingVO so, long startEventId, HypervisorType hyperType) throws ResourceAllocationException;
     
     /**
-     * @param fwRules list of rules to be updated
-     * @param router  router where the rules have to be updated
-     * @return list of rules successfully updated
-     */
-    public List<FirewallRuleVO> updatePortForwardingRules(List<FirewallRuleVO> fwRules, DomainRouterVO router, Long hostId);
-
-    /**
-     * @param fwRules list of rules to be updated
-     * @param router  router where the rules have to be updated
-     * @return success
-     */
-    public boolean updateLoadBalancerRules(List<FirewallRuleVO> fwRules, DomainRouterVO router, Long hostId);
-    
-    /**
-     * @param publicIpAddress public ip address associated with the fwRules
-     * @param fwRules list of rules to be updated
-     * @param router router where the rules have to be updated
-     * @return list of rules successfully updated
-     */
-    public List<FirewallRuleVO> updateFirewallRules(String publicIpAddress, List<FirewallRuleVO> fwRules, DomainRouterVO router);
-    
-    /**
      * Associates or disassociates a list of public IP address for a router.
      * @param router router object to send the association to
      * @param ipAddrList list of public IP addresses
@@ -175,9 +150,6 @@ public interface DomainRouterManager extends Manager {
      * @return
      */
     boolean associateIP(DomainRouterVO router, List<String> ipAddrList, boolean add, long vmId) throws ResourceAllocationException;
-    
-    boolean updateFirewallRule(FirewallRuleVO fwRule, String oldPrivateIP, String oldPrivatePort);
-//    boolean executeAssignToLoadBalancer(AssignToLoadBalancerExecutor executor, LoadBalancerParam param);
     
     /**
      * Add a DHCP entry on the domr dhcp server
