@@ -20,16 +20,17 @@ package com.cloud.network.router;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.api.commands.RebootRouterCmd;
+import com.cloud.api.commands.StartRouterCmd;
+import com.cloud.api.commands.StopRouterCmd;
+import com.cloud.api.commands.UpgradeRouterCmd;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.VlanVO;
 import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.IPAddressVO;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.service.ServiceOfferingVO;
-import com.cloud.user.AccountVO;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.DomainRouter;
 import com.cloud.vm.DomainRouterVO;
@@ -42,18 +43,6 @@ import com.cloud.vm.UserVmVO;
 public interface DomainRouterManager extends Manager {
     public static final int DEFAULT_ROUTER_VM_RAMSIZE = 128;            // 128M
     public static final boolean USE_POD_VLAN = false;
-    /**
-     * Assigns a router to the user.
-     * 
-     * @param userId user id.
-     * @param dcId data center id.
-     * @param podId pod id.
-     * @param domain domain to use
-     * @return DomainRouter if one is assigned.
-     * @throws InsufficientCapacityException if assigning causes any capacity issues.
-     */
-    DomainRouterVO assignRouter(long userId, long accountId, long dcId, long podId, String domain, String instance) throws InsufficientCapacityException;
-    
     /**
      * create the router.
      * 
@@ -96,18 +85,39 @@ public interface DomainRouterManager extends Manager {
     
     DomainRouterVO startRouter(long routerId, long eventId);
     
+    /**
+     * Starts domain router
+     * @param cmd the command specifying router's id
+     * @return DomainRouter object
+     * @throws InvalidParameterValueException, PermissionDeniedException
+     */
+    DomainRouterVO startRouter(StartRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+    
     boolean releaseRouter(long routerId);
     
     boolean destroyRouter(long routerId);
     
     boolean stopRouter(long routerId, long eventId);
     
+    /**
+     * Stops domain router
+     * @param cmd the command specifying router's id
+     * @return router if successful, null otherwise
+     * @throws InvalidParameterValueException, PermissionDeniedException
+     */
+    DomainRouterVO stopRouter(StopRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+    
     boolean getRouterStatistics(long vmId, Map<String, long[]> netStats, Map<String, long[]> diskStats);
 
-    DomainRouterVO findByPublicIpAddress(String publicIpAddress);
-    DomainRouterVO findByAccountAndDataCenter(long accountId, long dataCenterId);
-    
     boolean rebootRouter(long routerId, long eventId);
+    
+    /**
+     * Reboots domain router
+     * @param cmd the command specifying router's id
+     * @return success or failure
+     * @throws InvalidParameterValueException, PermissionDeniedException
+     */
+    boolean rebootRouter(RebootRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
     /**
      * @param hostId get all of the virtual machine routers on a host.
      * @return collection of VirtualMachineRouter
@@ -119,37 +129,6 @@ public interface DomainRouterManager extends Manager {
      * @return VirtualMachineRouter
      */
     DomainRouterVO getRouter(long routerId);
-    
-    /**
-     * Do all of the work of releasing public ip addresses.  Note that
-     * if this method fails, there can be side effects.
-     * @param userId
-     * @param ipAddress
-     * @return true if it did; false if it didn't
-     */
-    public boolean releasePublicIpAddress(long userId, String ipAddress);
-    
-    /**
-     * Find or create the source nat ip address a user uses within the
-     * data center.
-     * 
-     * @param account account
-     * @param dc data center
-     * @param domain domain used for user's network.
-     * @param so service offering associated with this request
-     * @return public ip address.
-     */
-    public String assignSourceNatIpAddress(AccountVO account, DataCenterVO dc, String domain, ServiceOfferingVO so, long startEventId, HypervisorType hyperType) throws ResourceAllocationException;
-    
-    /**
-     * Associates or disassociates a list of public IP address for a router.
-     * @param router router object to send the association to
-     * @param ipAddrList list of public IP addresses
-     * @param add true if associate, false if disassociate
-     * @param vmId
-     * @return
-     */
-    boolean associateIP(DomainRouterVO router, List<String> ipAddrList, boolean add, long vmId) throws ResourceAllocationException;
     
     /**
      * Add a DHCP entry on the domr dhcp server
@@ -178,14 +157,8 @@ public interface DomainRouterManager extends Manager {
 
     String createZoneVlan(DomainRouterVO router);
     
-    /**
-     * Lists IP addresses that belong to VirtualNetwork VLANs
-     * @param accountId - account that the IP address should belong to
-     * @param dcId - zone that the IP address should belong to
-     * @param sourceNat - (optional) true if the IP address should be a source NAT address
-     * @return - list of IP addresses
-     */
-    List<IPAddressVO> listPublicIpAddressesInVirtualNetwork(long accountId, long dcId, Boolean sourceNat);
-    
-	boolean upgradeRouter(long routerId, long serviceOfferingId);
+	boolean upgradeRouter(UpgradeRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+	
+	DomainRouterVO getRouter(long accountId, long zoneId);
+	DomainRouterVO getRouter(String publicIpAddress);
 }

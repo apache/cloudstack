@@ -230,7 +230,7 @@ public interface NetworkManager extends Manager {
      * @param vmId
      * @return
      */
-    boolean associateIP(DomainRouterVO router, List<String> ipAddrList, boolean add, long vmId) throws ResourceAllocationException;
+    boolean associateIP(DomainRouterVO router, List<String> ipAddrList, boolean add, long vmId);
     
     /**
      * Associates a public IP address for a router.
