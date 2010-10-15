@@ -268,7 +268,7 @@ function afterLoadResourceJSP() {
 			    target.parent().parent().parent().addClass("selected");
 			    showPage($primarystoragePage);
 			    var jsonObj = target.data("jsonObj");
-				//primarystorageObjectToRightPanel(jsonObj);				
+				primarystorageJsonToDetailsTab(jsonObj);					
 				break;
 						
 						
@@ -361,6 +361,24 @@ function afterLoadResourceJSP() {
         $detailsTab.find("#disconnected").text(fromdb(jsonObj.disconnected));        
     }
 	//***** host page (end) *******************************************************************************************************
+	
+	//***** primary storage page (bgein) ******************************************************************************************
+	function primarystorageJsonToDetailsTab(jsonObj) {	    
+	    var $detailsTab = $primarystoragePage.find("#tab_content_details");   
+        $detailsTab.data("jsonObj", jsonObj);           
+        $detailsTab.find("#id").text(fromdb(jsonObj.id));
+        $detailsTab.find("#name").text(fromdb(jsonObj.name));
+        $detailsTab.find("#zonename").text(fromdb(jsonObj.zonename));
+        $detailsTab.find("#podname").text(fromdb(jsonObj.podname));
+        $detailsTab.find("#clustername").text(fromdb(jsonObj.clustername));
+        $detailsTab.find("#type").text(fromdb(jsonObj.type));
+        $detailsTab.find("#ipaddress").text(fromdb(jsonObj.ipaddress));
+        $detailsTab.find("#path").text(fromdb(jsonObj.path));                
+		$detailsTab.find("#disksizetotal").text(convertBytes(jsonObj.disksizetotal));
+		$detailsTab.find("#disksizeallocated").text(convertBytes(jsonObj.disksizeallocated));
+		$detailsTab.find("#tags").text(fromdb(jsonObj.tags));         
+    }
+	//***** primary storage page (end) *********************************************************************************************
 	
 	//***** systemVM page (begin) *************************************************************************************************
     function systemvmJsonToDetailsTab(jsonObj) {	   
