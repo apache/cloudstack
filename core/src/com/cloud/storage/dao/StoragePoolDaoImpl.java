@@ -199,7 +199,7 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
         sc.setParameters("hostAddress", host);
         sc.setParameters("path", path);
         
-        return listBy(sc);
+        return listActiveBy(sc);
 	}
 	
 	public StoragePoolVO listById(Integer id)
