@@ -243,3 +243,10 @@ ALTER TABLE `cloud`.`network_group_vm_map` ADD CONSTRAINT `fk_network_group_vm_m
 
 ALTER TABLE `cloud`.`op_nwgrp_work` ADD INDEX `i_op_nwgrp_work__instance_id`(`instance_id`);
 ALTER TABLE `cloud`.`op_nwgrp_work` ADD INDEX `i_op_nwgrp_work__mgmt_server_id`(`mgmt_server_id`);
+
+ALTER TABLE `cloud`.`netapp_volume` ADD CONSTRAINT `fk_netapp_volume__pool_id` FOREIGN KEY `fk_netapp_volume__pool_id` (`pool_id`) REFERENCES `netapp_pool` (`id`) ON DELETE CASCADE;
+ALTER TABLE `cloud`.`netapp_volume` ADD INDEX `i_netapp_volume__pool_id`(`pool_id`);
+
+ALTER TABLE `cloud`.`netapp_lun` ADD CONSTRAINT `fk_netapp_lun__volume_id` FOREIGN KEY `fk_netapp_lun__volume_id` (`volume_id`) REFERENCES `netapp_volume` (`id`) ON DELETE CASCADE;
+ALTER TABLE `cloud`.`netapp_lun` ADD INDEX `i_netapp_lun__volume_id`(`volume_id`);
+ALTER TABLE `cloud`.`netapp_lun` ADD INDEX `i_netapp_lun__lun_name`(`lun_name`);
