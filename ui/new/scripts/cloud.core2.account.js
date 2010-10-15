@@ -32,6 +32,7 @@ function accountToRigntPanel($midmenuItem) {
 function accountJsonToDetailsTab(jsonObj) {      
     var $detailsTab = $("#right_panel_content #tab_content_details");   
     $detailsTab.data("jsonObj", jsonObj);  
+    $detailsTab.find("#grid_header_title").text(fromdb(jsonObj.name));
     $detailsTab.find("#id").text(jsonObj.id);
     $detailsTab.find("#role").text(toRole(jsonObj.accounttype));
     $detailsTab.find("#account").text(fromdb(jsonObj.name));

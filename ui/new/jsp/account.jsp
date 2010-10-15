@@ -35,8 +35,8 @@
         </div>
         <div class="grid_container">
         	<div class="grid_header">
-            	<div id="title" class="grid_header_title">TItle Name</div>
-                <div id="action_link" class="grid_actionbox" id="volume_action_link">
+            	<div id="grid_header_title" class="grid_header_title">(title)</div>
+                <div id="action_link" class="grid_actionbox" id="account_action_link">
                     <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
                         <ul class="actionsdropdown_boxlist" id="action_list">
                         	<li><%=t.t("no.available.actions")%></li>
