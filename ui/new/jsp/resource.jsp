@@ -674,22 +674,40 @@
 	</div>
 </div>
 <!-- END Add Zone Dialog -->
-
-
-<!-- treenode template (begin) -->
-<div id="treenode_template" class="tree_levelspanel" style="display: none">
-    <div class="tree_levelsbox" style="margin-left: 20px;">
-        <div id="domain_title_container" class="tree_levels">
-            <div id="domain_expand_icon" class="zonetree_closedarrows">
-            </div>
-            <div id="domain_name" class="tree_links">
-                Domain Name</div>
-        </div>
-        <div id="domain_children_container" style="display: none">
-        </div>
-    </div>
+<!-- Add Pod Dialog -->
+<div id="dialog_add_pod" title="Add Pod" style="display:none">
+	<p>Add a new pod for zone: <b><span id="add_pod_zone_name"></span></b></p>
+	<div class="dialog_formcontent">
+		<form action="#" method="post" id="form_acquire">
+			<ol>
+				<li>
+					<label for="user_name" style="width:115px;">Name:</label>
+					<input class="text" type="text" name="add_pod_name" id="add_pod_name"/>
+					<div id="add_pod_name_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+				</li>
+				<li>
+					<label for="add_pod_gateway" style="width:115px;">Gateway:</label>
+					<input class="text" type="text" id="add_pod_gateway"/>
+					<div id="add_pod_gateway_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+				</li>
+				<li>
+					<label for="user_name" style="width:115px;">CIDR:</label>
+					<input class="text" type="text" name="add_pod_cidr" id="add_pod_cidr"/>
+					<div id="add_pod_cidr_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+				</li>
+				<li>
+					<label for="user_name" style="width:115px;">Private IP Range:</label>
+					<input class="text" style="width:67px" type="text" name="add_pod_startip" id="add_pod_startip"/><span>-</span>
+                    <input class="text" style="width:67px" type="text" name="add_pod_endip" id="add_pod_endip"/>
+					<div id="add_pod_startip_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+					<div id="add_pod_endip_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+				</li>				
+			</ol>
+		</form>
+	</div>
 </div>
-<!-- treenode template (end) -->
+<!-- END Add Pod Dialog -->
+
 <!-- Zonetree Template (begin) -->
 <div class="zonetree_contentbox" id="zonetree" style="display: none">
     <div id="zones_container">

@@ -220,11 +220,11 @@ long milliseconds = new Date().getTime();
                                     Destroy VM</div>
                             </div>
                         </div>
-                        <div class="actionpanel_button_wrapper" id="add_link" style="display: block; float: right;
+                        <div class="actionpanel_button_wrapper" id="help_link" style="display: block; float: right;
                             background: none;">
                             <div class="actionpanel_button">
                                 <div class="actionpanel_button_icons">
-                                    <img src="images/help_actionicon.png" alt="Add" /></div>
+                                    <img src="images/help_actionicon.png" alt="Help" /></div>
                                 <div class="actionpanel_button_links">
                                     <%=t.t("help")%></div>
                             </div>

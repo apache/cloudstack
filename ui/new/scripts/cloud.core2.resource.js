@@ -12,7 +12,7 @@ function afterLoadResourceJSP() {
     var pageArray = [$zonePage, $podPage, $clusterPage, $hostPage, $primarystoragePage, $systemvmPage];
     var pageLabelArray = ["Zone", "Pod", "Cluster", "Host", "Primary Storage", "System VM"];
     
-    function showPage($pageToShow) {        
+    function showPage($pageToShow, jsonObj) {        
         for(var i=0; i<pageArray.length; i++) {
             if(pageArray[i].attr("id") == $pageToShow.attr("id")) {
                 $rightPanelHeaderLabel.text(pageLabelArray[i]);
@@ -21,7 +21,124 @@ function afterLoadResourceJSP() {
             else {
                 pageArray[i].hide();
             }
-        }            
+            $pageToShow.data("jsonObj", jsonObj);
+        }   
+        
+        if($pageToShow.attr("id") == "zone_page") {
+            //***** Add Pod (begin) *****
+            $("#midmenu_add_link").find("#label").text("Add Pod");  
+            $("#midmenu_add_link").data("jsonObj", jsonObj).show();   
+            $("#midmenu_add_link").unbind("click").bind("click", function(event) {    
+                var zoneObj = $(this).data("jsonObj");		
+		        $("#dialog_add_pod").find("#add_pod_zone_name").text(fromdb(zoneObj.name));
+		        $("#dialog_add_pod #add_pod_name, #dialog_add_pod #add_pod_cidr, #dialog_add_pod #add_pod_startip, #dialog_add_pod #add_pod_endip, #add_pod_gateway").val("");
+        		
+		        $("#dialog_add_pod")
+		        .dialog('option', 'buttons', { 				
+			        "Add": function() {		
+			            var thisDialog = $(this);
+        						
+				        // validate values
+				        var isValid = true;					
+				        isValid &= validateString("Name", thisDialog.find("#add_pod_name"), thisDialog.find("#add_pod_name_errormsg"));
+				        isValid &= validateCIDR("CIDR", thisDialog.find("#add_pod_cidr"), thisDialog.find("#add_pod_cidr_errormsg"));	
+				        isValid &= validateIp("Start IP Range", thisDialog.find("#add_pod_startip"), thisDialog.find("#add_pod_startip_errormsg"));  //required
+				        isValid &= validateIp("End IP Range", thisDialog.find("#add_pod_endip"), thisDialog.find("#add_pod_endip_errormsg"), true);  //optional
+				        isValid &= validateIp("Gateway", thisDialog.find("#add_pod_gateway"), thisDialog.find("#add_pod_gateway_errormsg"));  //required when creating
+				        if (!isValid) 
+				            return;			
+                        
+                        thisDialog.dialog("close"); 
+                          
+                        var name = trim(thisDialog.find("#add_pod_name").val());
+				        var cidr = trim(thisDialog.find("#add_pod_cidr").val());
+				        var startip = trim(thisDialog.find("#add_pod_startip").val());
+				        var endip = trim(thisDialog.find("#add_pod_endip").val());	    //optional
+				        var gateway = trim(thisDialog.find("#add_pod_gateway").val());			
+
+                        var array1 = [];
+                        array1.push("&zoneId="+zoneObj.id);
+                        array1.push("&name="+todb(name));
+                        array1.push("&cidr="+encodeURIComponent(cidr));
+                        array1.push("&startIp="+encodeURIComponent(startip));
+                        if (endip != null && endip.length > 0)
+                            array1.push("&endIp="+encodeURIComponent(endip));
+                        array1.push("&gateway="+encodeURIComponent(gateway));			
+        								    
+				        var template = $("#pod_template").clone(true);
+				        var loadingImg = template.find(".adding_loading");										
+				        var row_container = template.find("#row_container");        				
+				        $("#zone_" + zoneObj.id + " #zone_content").show();	
+				        $("#zone_" + zoneObj.id + " #pods_container").prepend(template.show());						
+				        $("#zone_" + zoneObj.id + " #zone_expand").removeClass().addClass("zonetree_openarrows");									            
+	                    loadingImg.show();  
+                        row_container.hide();             
+		                template.fadeIn("slow");
+        				
+				        $.ajax({
+				          data: createURL("command=createPod&response=json"+array1.join("")),
+					        dataType: "json",
+					        success: function(json) {
+						        var item = json.createpodresponse; 	
+					            podJSONToTreeNode(item, template);	
+						        loadingImg.hide(); 								                            
+                                row_container.show();
+                                
+                                forceLogout = false;  // We don't force a logout if pod(s) exit.
+						        if (forceLogout) {
+							        $("#dialog_confirmation")
+								        .html("<p>You have successfully added your first Zone and Pod.  After clicking 'OK', this UI will automatically refresh to give you access to the rest of cloud features.</p>")
+								        .dialog('option', 'buttons', { 
+									        "OK": function() { 											
+										        $(this).dialog("close");
+										        window.location.reload();
+									        } 
+								        }).dialog("open");
+						        }
+					        },
+				            error: function(XMLHttpResponse) {	
+				                handleError(XMLHttpResponse);			    
+					            template.slideUp("slow", function() {
+							        $(this).remove();
+						        });
+				            }
+				        });					
+			        }, 
+			        "Cancel": function() { 
+				        $(this).dialog("close"); 
+			        } 
+		        }).dialog("open");        
+                return false;
+            });            
+            //***** Add Pod (end) *****
+            
+            $("#midmenu_add2_link").unbind("click").hide();   
+        }
+        else if($pageToShow.attr("id") == "pod_page") {
+            //***** Add Host (begin) *****
+            $("#midmenu_add_link").find("#label").text("Add Host");  
+            $("#midmenu_add_link").data("jsonObj", jsonObj).show(); 
+            $("#midmenu_add_link").unbind("click").bind("click", function(event) {
+            
+                return false;
+            });
+            
+            //***** Add Host (end) *****
+             
+            //***** Add Primary Storage (begin) *****          
+            $("#midmenu_add2_link").find("#label").text("Add Primary Storage"); 
+            $("#midmenu_add2_link").data("jsonObj", jsonObj).show();   
+            $("#midmenu_add2_link").unbind("click").bind("click", function(event) {
+            
+                return false;
+            });     
+            
+            //***** Add Primary Storage (end) *****           
+        }      
+        else {
+            $("#midmenu_add_link").unbind("click").hide();              
+            $("#midmenu_add2_link").unbind("click").hide();   
+        }
     }
    
     //***** build zone tree (begin) ***********************************************************************************************
@@ -91,9 +208,9 @@ function afterLoadResourceJSP() {
         template.attr("id", "pod_" + podid);  
     	    
 		var ipRange = getIpRange(json.startip, json.endip);			
-		template.data("id", podid).data("name", json.name);
+		template.data("id", podid).data("name", fromdb(json.name));
 		
-		var podName = template.find("#pod_name").text(json.name);
+		var podName = template.find("#pod_name").text(fromdb(json.name));
 		podName.data("jsonObj", json);	    
 			
 	    $.ajax({
@@ -194,8 +311,8 @@ function afterLoadResourceJSP() {
 			case "zone_name":	
 			    $zoneetree1.find(".selected").removeClass("selected");
 			    target.parent().parent().parent().addClass("selected");				    
-			    showPage($zonePage);				    
-			    var jsonObj = target.data("jsonObj");    
+			    var jsonObj = target.data("jsonObj");  
+			    showPage($zonePage, jsonObj);
 			    zoneJsonToDetailsTab(jsonObj);
 			    zoneJsonToNetworkTab(jsonObj);							    		   			    
 			    break;
@@ -213,8 +330,8 @@ function afterLoadResourceJSP() {
 			case "pod_name" :			   
 				$zoneetree1.find(".selected").removeClass("selected");
 				target.parent().parent().parent().addClass("selected");
-				showPage($podPage);			    
 			    var jsonObj = target.data("jsonObj");
+			    showPage($podPage, jsonObj);		
 			    podJsonToDetailsTab(jsonObj);				
 				break;
 				
@@ -231,9 +348,9 @@ function afterLoadResourceJSP() {
 				break;		
 			case "cluster_name" :			   
 				$zoneetree1.find(".selected").removeClass("selected");
-			    target.parent().parent().parent().addClass("selected");
-			    showPage($clusterPage);
+			    target.parent().parent().parent().addClass("selected");			    
 			    var jsonObj = target.data("jsonObj");
+			    showPage($clusterPage, jsonObj);
 			    clusterJsonToDetailsTab(jsonObj);					
 				break;	
 				
@@ -250,9 +367,9 @@ function afterLoadResourceJSP() {
 				break;	
 			case "host_name" :			   
 				$zoneetree1.find(".selected").removeClass("selected");
-			    target.parent().parent().parent().addClass("selected");
-			    showPage($hostPage);
+			    target.parent().parent().parent().addClass("selected");			    
 				var jsonObj = target.data("jsonObj");
+				showPage($hostPage, jsonObj);
 				hostJsonToDetailsTab(jsonObj);				
 				break;	
 			
@@ -269,18 +386,18 @@ function afterLoadResourceJSP() {
 				break;	
 			case "primarystorage_name" :			   
 				$zoneetree1.find(".selected").removeClass("selected");
-			    target.parent().parent().parent().addClass("selected");
-			    showPage($primarystoragePage);
+			    target.parent().parent().parent().addClass("selected");			    
 			    var jsonObj = target.data("jsonObj");
+			    showPage($primarystoragePage, jsonObj);
 				primarystorageJsonToDetailsTab(jsonObj);					
 				break;
 						
 						
 			case "systemvm_name" :			   
 				$zoneetree1.find(".selected").removeClass("selected");			    		    
-			    target.parent().parent().parent().addClass("selected");		
-			    showPage($systemvmPage);
-			    var jsonObj = target.data("jsonObj");						
+			    target.parent().parent().parent().addClass("selected");	
+			    var jsonObj = target.data("jsonObj");	
+			    showPage($systemvmPage, jsonObj);					
 				systemvmJsonToDetailsTab(jsonObj);			
 				break;
 			
@@ -450,6 +567,7 @@ function afterLoadResourceJSP() {
 	
 	//dialogs	
 	initDialog("dialog_add_zone");
+	initDialog("dialog_add_pod", 320);
 	
 	//add button ***
 	$("#midmenu_add_link").find("#label").text("Add Zone");     
