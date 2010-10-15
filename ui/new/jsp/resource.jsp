@@ -625,6 +625,57 @@
     </div>    
 </div>
 <!-- domain detail panel (end) -->
+
+<!-- Add Zone Dialog -->
+<div id="dialog_add_zone" title="Add Zone" style="display:none">
+	<p>Please enter the following info to add a new zone:</p>
+	<div class="dialog_formcontent">
+		<form action="#" method="post" id="form_acquire">
+			<ol>
+				<li>
+					<label>Name:</label>
+					<input class="text" type="text" name="add_zone_name" id="add_zone_name"/>
+					<div id="add_zone_name_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+				</li>
+				<li>
+					<label>DNS 1:</label>
+					<input class="text" type="text" name="add_zone_dns1" id="add_zone_dns1"/>
+					<div id="add_zone_dns1_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+				</li>
+				<li>
+					<label>DNS 2:</label>
+					<input class="text" type="text" name="add_zone_dns2" id="add_zone_dns2"/>
+					<div id="add_zone_dns2_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+				</li>
+				<li>
+					<label>Internal DNS 1:</label>
+					<input class="text" type="text" id="add_zone_internaldns1"/>
+					<div id="add_zone_internaldns1_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+				</li>
+				<li>
+					<label>Internal DNS 2:</label>
+					<input class="text" type="text" id="add_zone_internaldns2"/>
+					<div id="add_zone_internaldns2_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+				</li>
+				<li id="add_zone_container">
+					<label>Zone VLAN Range:</label>
+					<input class="text" style="width:67px" type="text" name="add_zone_startvlan" id="add_zone_startvlan"/><span>-</span>
+                    <input class="text" style="width:67px" type="text" name="add_zone_endvlan" id="add_zone_endvlan"/>
+					<div id="add_zone_startvlan_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+					<div id="add_zone_endvlan_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+				</li>
+				<li>
+					<label for="add_zone_guestcidraddress">Guest CIDR:</label>
+					<input class="text" type="text" id="add_zone_guestcidraddress" value="10.1.1.0/24"/>
+					<div id="add_zone_guestcidraddress_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+				</li>
+			</ol>
+		</form>
+	</div>
+</div>
+<!-- END Add Zone Dialog -->
+
+
 <!-- treenode template (begin) -->
 <div id="treenode_template" class="tree_levelspanel" style="display: none">
     <div class="tree_levelsbox" style="margin-left: 20px;">
@@ -639,104 +690,6 @@
     </div>
 </div>
 <!-- treenode template (end) -->
-<!-- admin account tab template (begin) -->
-<div class="grid_container" id="admin_account_tab_template" style="display: none">
-    <div class="grid_header">
-        <div class="grid_header_title" id="title">
-        </div>
-    </div>
-    <div class="grid_rows even">
-        <div class="grid_row_cell" style="width: 20%;">
-            <div class="row_celltitles">
-                <%=t.t("ID")%>:</div>
-        </div>
-        <div class="grid_row_cell" style="width: 79%;">
-            <div class="row_celltitles" id="id">
-            </div>
-        </div>
-    </div>
-    <div class="grid_rows odd">
-        <div class="grid_row_cell" style="width: 20%;">
-            <div class="row_celltitles">
-                <%=t.t("Role")%>:</div>
-        </div>
-        <div class="grid_row_cell" style="width: 79%;">
-            <div class="row_celltitles" id="role">
-            </div>
-        </div>
-    </div>
-    <div class="grid_rows even">
-        <div class="grid_row_cell" style="width: 20%;">
-            <div class="row_celltitles">
-                <%=t.t("Account")%>:</div>
-        </div>
-        <div class="grid_row_cell" style="width: 79%;">
-            <div class="row_celltitles" id="account">
-            </div>
-        </div>
-    </div>
-    <div class="grid_rows odd">
-        <div class="grid_row_cell" style="width: 20%;">
-            <div class="row_celltitles">
-                <%=t.t("Domain")%>:</div>
-        </div>
-        <div class="grid_row_cell" style="width: 79%;">
-            <div class="row_celltitles" id="domain">
-            </div>
-        </div>
-    </div>
-    <div class="grid_rows even">
-        <div class="grid_row_cell" style="width: 20%;">
-            <div class="row_celltitles">
-                <%=t.t("VMs")%>:</div>
-        </div>
-        <div class="grid_row_cell" style="width: 79%;">
-            <div class="row_celltitles" id="vm_total">
-            </div>
-        </div>
-    </div>
-    <div class="grid_rows odd">
-        <div class="grid_row_cell" style="width: 20%;">
-            <div class="row_celltitles">
-                <%=t.t("IPs")%>:</div>
-        </div>
-        <div class="grid_row_cell" style="width: 79%;">
-            <div class="row_celltitles" id="ip_total">
-            </div>
-        </div>
-    </div>
-    <div class="grid_rows even">
-        <div class="grid_row_cell" style="width: 20%;">
-            <div class="row_celltitles">
-                <%=t.t("Bytes.Received")%>:</div>
-        </div>
-        <div class="grid_row_cell" style="width: 79%;">
-            <div class="row_celltitles" id="bytes_received">
-            </div>
-        </div>
-    </div>
-    <div class="grid_rows odd">
-        <div class="grid_row_cell" style="width: 20%;">
-            <div class="row_celltitles">
-                <%=t.t("Bytes.Sent")%>:</div>
-        </div>
-        <div class="grid_row_cell" style="width: 79%;">
-            <div class="row_celltitles" id="bytes_sent">
-            </div>
-        </div>
-    </div>
-    <div class="grid_rows even">
-        <div class="grid_row_cell" style="width: 20%;">
-            <div class="row_celltitles">
-                <%=t.t("State")%>:</div>
-        </div>
-        <div class="grid_row_cell" style="width: 79%;">
-            <div class="row_celltitles" id="state">
-            </div>
-        </div>
-    </div>
-</div>
-<!-- admin account tab template (end) -->
 <!-- Zonetree Template (begin) -->
 <div class="zonetree_contentbox" id="zonetree" style="display: none">
     <div id="zones_container">

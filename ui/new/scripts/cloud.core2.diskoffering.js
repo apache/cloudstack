@@ -10,6 +10,7 @@ function afterLoadDiskOfferingJSP() {
     initDialog("dialog_add_disk");
     
     //add button ***
+    $("#midmenu_add_link").find("#label").text("Add Disk Offering"); 
     $("#midmenu_add_link").show();     
     $("#midmenu_add_link").unbind("click").bind("click", function(event) {    
 		var dialogAddDisk = $("#dialog_add_disk");

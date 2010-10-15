@@ -5,6 +5,7 @@ function afterLoadIsoJSP() {
     var $detailsTab = $("#right_panel_content #tab_content_details");   
     
     //add button ***
+    $("#midmenu_add_link").find("#label").text("Add ISO"); 
     $("#midmenu_add_link").show();     
     $("#midmenu_add_link").unbind("click").bind("click", function(event) {     
         $("#dialog_add_iso")

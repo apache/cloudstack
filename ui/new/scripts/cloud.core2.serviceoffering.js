@@ -10,6 +10,7 @@ function afterLoadServiceOfferingJSP() {
     initDialog("dialog_add_service");
      
     //add button ***
+    $("#midmenu_add_link").find("#label").text("Add Service Offering"); 
     $("#midmenu_add_link").show();     
     $("#midmenu_add_link").unbind("click").bind("click", function(event) {      
         var dialogAddService = $("#dialog_add_service");

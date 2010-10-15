@@ -176,40 +176,48 @@ long milliseconds = new Date().getTime();
                             <div class="actionpanel_button">
                                 <div class="actionpanel_button_icons">
                                     <img src="images/addvm_actionicon.png" alt="Add" /></div>
-                                <div class="actionpanel_button_links">
+                                <div class="actionpanel_button_links" id="label">
                                     <%=t.t("add")%></div>
                             </div>
                         </div>
-                        <div class="actionpanel_button_wrapper" id="midmenu_add_link" style="display: none;">
+                        <div class="actionpanel_button_wrapper" id="midmenu_add2_link" style="display: none;">
                             <div class="actionpanel_button">
                                 <div class="actionpanel_button_icons">
-                                    <img src="images/startvm_actionicon.png" alt="Start" /></div>
-                                <div class="actionpanel_button_links">
-                                    Start</div>
+                                    <img src="images/addvm_actionicon.png" alt="Add" /></div>
+                                <div class="actionpanel_button_links" id="label">
+                                    <%=t.t("add")%></div>
                             </div>
                         </div>
-                        <div class="actionpanel_button_wrapper" id="midmenu_add_link" style="display: none;">
+                        <div class="actionpanel_button_wrapper" id="midmenu_startvm_link" style="display: none;">
                             <div class="actionpanel_button">
                                 <div class="actionpanel_button_icons">
-                                    <img src="images/stopvm_actionicon.png" alt="Stop" /></div>
+                                    <img src="images/startvm_actionicon.png" alt="Start VM" /></div>
                                 <div class="actionpanel_button_links">
-                                    Stop</div>
+                                    Start VM</div>
                             </div>
                         </div>
-                        <div class="actionpanel_button_wrapper" id="midmenu_add_link" style="display: none;">
+                        <div class="actionpanel_button_wrapper" id="midmenu_stopvm_link" style="display: none;">
                             <div class="actionpanel_button">
                                 <div class="actionpanel_button_icons">
-                                    <img src="images/rebootvm_actionicon.png" alt="Reboot" /></div>
+                                    <img src="images/stopvm_actionicon.png" alt="Stop VM" /></div>
                                 <div class="actionpanel_button_links">
-                                    Reboot</div>
+                                    Stop VM</div>
                             </div>
                         </div>
-                        <div class="actionpanel_button_wrapper" id="midmenu_add_link" style="display: none;">
+                        <div class="actionpanel_button_wrapper" id="midmenu_rebootvm_link" style="display: none;">
                             <div class="actionpanel_button">
                                 <div class="actionpanel_button_icons">
-                                    <img src="images/destroyvm_actionicon.png" alt="Destroy" /></div>
+                                    <img src="images/rebootvm_actionicon.png" alt="Reboot VM" /></div>
                                 <div class="actionpanel_button_links">
-                                    Destroy</div>
+                                    Reboot VM</div>
+                            </div>
+                        </div>
+                        <div class="actionpanel_button_wrapper" id="midmenu_destoryvm_link" style="display: none;">
+                            <div class="actionpanel_button">
+                                <div class="actionpanel_button_icons">
+                                    <img src="images/destroyvm_actionicon.png" alt="Destroy VM" /></div>
+                                <div class="actionpanel_button_links">
+                                    Destroy VM</div>
                             </div>
                         </div>
                         <div class="actionpanel_button_wrapper" id="add_link" style="display: block; float: right;

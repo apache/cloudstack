@@ -84,6 +84,7 @@ function afterLoadVolumeJSP() {
     });	   
       
     //add button ***
+    $("#midmenu_add_link").find("#label").text("Add Volume"); 
     $("#midmenu_add_link").show();     
     $("#midmenu_add_link").unbind("click").bind("click", function(event) {   
         $("#dialog_add_volume")

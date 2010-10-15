@@ -37,7 +37,7 @@ function afterLoadResourceJSP() {
 			var container = $("#zonetree1").find("#zones_container").empty();
 			if (items != null && items.length > 0) {					    
 				for (var i = 0; i < items.length; i++) {
-					var template = $("#zone_template").clone(true).attr("id", "zone_"+items[i].id);
+					var template = $("#zone_template").clone(true);
 					zoneJSONToTreeNode(items[i], template);
 					container.append(template.show());
 				}
@@ -60,7 +60,7 @@ function afterLoadResourceJSP() {
 			    var container = template.find("#pods_container").empty();
 			    if (items != null && items.length > 0) {					    
 				    for (var i = 0; i < items.length; i++) {
-					    var podTemplate = $("#pod_template").clone(true).attr("id", "pod_"+items[i].id);
+					    var podTemplate = $("#pod_template").clone(true);
 					    podJSONToTreeNode(items[i], podTemplate);
 					    container.append(podTemplate.show());
 					    forceLogout = false;  // We don't force a logout if pod(s) exit.
@@ -77,7 +77,7 @@ function afterLoadResourceJSP() {
 			    var container = template.find("#systemvms_container").empty();
 			    if (items != null && items.length > 0) {					    
 				    for (var i = 0; i < items.length; i++) {
-					    var systemvmTemplate = $("#systemvm_template").clone(true).attr("id", "systemvm_"+items[i].id);
+					    var systemvmTemplate = $("#systemvm_template").clone(true);
 					    systemvmJSONToTreeNode(items[i], systemvmTemplate);
 					    container.append(systemvmTemplate.show());
 				    }
@@ -104,7 +104,7 @@ function afterLoadResourceJSP() {
 		        var container = template.find("#clusters_container").empty();
 		        if (items != null && items.length > 0) {					    
 			        for (var i = 0; i < items.length; i++) {
-				        var clusterTemplate = $("#cluster_template").clone(true).attr("id", "cluster_"+items[i].id);
+				        var clusterTemplate = $("#cluster_template").clone(true);
 				        clusterJSONToTreeNode(items[i], clusterTemplate);
 				        container.append(clusterTemplate.show());
 			        }
@@ -122,6 +122,7 @@ function afterLoadResourceJSP() {
 	}
 			
 	function clusterJSONToTreeNode(json, template) {
+	    template.attr("id", "cluster_"+json.id);
 	    template.data("id", json.id).data("name", fromdb(json.name));	    
 	    var clusterName = template.find("#cluster_name").text(fromdb(json.name));
 	    clusterName.data("jsonObj", json);	   
@@ -134,7 +135,7 @@ function afterLoadResourceJSP() {
 		        var container = template.find("#hosts_container").empty();
 		        if (items != null && items.length > 0) {					    
 			        for (var i = 0; i < items.length; i++) {
-				        var hostTemplate = $("#host_template").clone(true).attr("id", "host_"+items[i].id);
+				        var hostTemplate = $("#host_template").clone(true);
 				        hostJSONToTreeNode(items[i], hostTemplate);
 				        container.append(hostTemplate.show());
 			        }
@@ -150,7 +151,7 @@ function afterLoadResourceJSP() {
 		        var container = template.find("#primarystorages_container").empty();
 		        if (items != null && items.length > 0) {					    
 			        for (var i = 0; i < items.length; i++) {
-				        var primaryStorageTemplate = $("#primarystorage_template").clone(true).attr("id", "primary_storage_"+items[i].id);
+				        var primaryStorageTemplate = $("#primarystorage_template").clone(true);
 				        primaryStorageJSONToTreeNode(items[i], primaryStorageTemplate);
 				        container.append(primaryStorageTemplate.show());
 			        }
@@ -160,12 +161,14 @@ function afterLoadResourceJSP() {
 	}
 	
 	function hostJSONToTreeNode(json, template) {
+	    template.attr("id", "host_"+json.id);
 	    template.data("id", json.id).data("name", fromdb(json.name));	    
 	    var hostName = template.find("#host_name").text(fromdb(json.name));
 	    hostName.data("jsonObj", json);
 	}
 	
 	function primaryStorageJSONToTreeNode(json, template) {
+	    template.attr("id", "primary_storage_"+json.id);
 	    template.data("id", json.id).data("name", fromdb(json.name));	    
 	    var primaryStorageName = template.find("#primarystorage_name").text(fromdb(json.name));
 	    primaryStorageName.data("jsonObj", json);
@@ -321,7 +324,7 @@ function afterLoadResourceJSP() {
 	
 	function zoneJsonToNetworkTab(jsonObj) {	    
 	    var $networkTab = $zonePage.find("#tab_content_network");  
-	    $networkTab.find("#zone_cloud").find("#zone_name").text(jsonObj.name);	 
+	    $networkTab.find("#zone_cloud").find("#zone_name").text(fromdb(jsonObj.name));	 
 	    $networkTab.find("#zone_vlan").text(jsonObj.vlan);   
                       
         $.ajax({
@@ -444,5 +447,105 @@ function afterLoadResourceJSP() {
         return text;        
     }
 	//***** systemVM page (end) ***************************************************************************************************
+	
+	//dialogs	
+	initDialog("dialog_add_zone");
+	
+	//add button ***
+	$("#midmenu_add_link").find("#label").text("Add Zone");     
+    $("#midmenu_add_link").show();     
+    $("#midmenu_add_link").unbind("click").bind("click", function(event) {  
+        $("#dialog_add_zone")
+		.dialog('option', 'buttons', { 				
+			"Add": function() { 
+			    var thisDialog = $(this);
+								
+				// validate values
+				var isValid = true;					
+				isValid &= validateString("Name", thisDialog.find("#add_zone_name"), thisDialog.find("#add_zone_name_errormsg"));
+				isValid &= validateIp("DNS 1", thisDialog.find("#add_zone_dns1"), thisDialog.find("#add_zone_dns1_errormsg"), false); //required
+				isValid &= validateIp("DNS 2", thisDialog.find("#add_zone_dns2"), thisDialog.find("#add_zone_dns2_errormsg"), true);  //optional	
+				isValid &= validateIp("Internal DNS 1", thisDialog.find("#add_zone_internaldns1"), thisDialog.find("#add_zone_internaldns1_errormsg"), false); //required
+				isValid &= validateIp("Internal DNS 2", thisDialog.find("#add_zone_internaldns2"), thisDialog.find("#add_zone_internaldns2_errormsg"), true);  //optional	
+				if (getNetworkType() != "vnet") {
+					isValid &= validateString("Zone - Start VLAN Range", thisDialog.find("#add_zone_startvlan"), thisDialog.find("#add_zone_startvlan_errormsg"), false); //required
+					isValid &= validateString("Zone - End VLAN Range", thisDialog.find("#add_zone_endvlan"), thisDialog.find("#add_zone_endvlan_errormsg"), true);        //optional
+				}
+				isValid &= validateCIDR("Guest CIDR", thisDialog.find("#add_zone_guestcidraddress"), thisDialog.find("#add_zone_guestcidraddress_errormsg"), false); //required
+				if (!isValid) 
+				    return;							
+				
+				thisDialog.dialog("close"); 
+				
+				var moreCriteria = [];	
+				
+				var name = trim(thisDialog.find("#add_zone_name").val());
+				moreCriteria.push("&name="+todb(name));
+				
+				var dns1 = trim(thisDialog.find("#add_zone_dns1").val());
+				moreCriteria.push("&dns1="+encodeURIComponent(dns1));
+				
+				var dns2 = trim(thisDialog.find("#add_zone_dns2").val());
+				if (dns2 != null && dns2.length > 0) 
+				    moreCriteria.push("&dns2="+encodeURIComponent(dns2));						
+									
+				var internaldns1 = trim(thisDialog.find("#add_zone_internaldns1").val());
+				moreCriteria.push("&internaldns1="+encodeURIComponent(internaldns1));
+				
+				var internaldns2 = trim(thisDialog.find("#add_zone_internaldns2").val());
+				if (internaldns2 != null && internaldns2.length > 0) 
+				    moreCriteria.push("&internaldns2="+encodeURIComponent(internaldns2));						
+				 											
+				if (getNetworkType() != "vnet") {
+					var vlanStart = trim(thisDialog.find("#add_zone_startvlan").val());	
+					var vlanEnd = trim(thisDialog.find("#add_zone_endvlan").val());						
+					if (vlanEnd != null && vlanEnd.length > 0) 
+					    moreCriteria.push("&vlan=" + encodeURIComponent(vlanStart + "-" + vlanEnd));									
+					else 							
+						moreCriteria.push("&vlan=" + encodeURIComponent(vlanStart));		
+				}					
+				
+				var guestcidraddress = trim(thisDialog.find("#add_zone_guestcidraddress").val());
+				moreCriteria.push("&guestcidraddress="+encodeURIComponent(guestcidraddress));	
+						
+				
+				var template = $("#zone_template").clone(true);
+			    var loadingImg = template.find(".adding_loading");										
+			    var row_container = template.find("#row_container");    			
+			    $("#zonetree1").find("#zones_container").prepend(template);			    			            
+                loadingImg.show();  
+                row_container.hide();             
+	            template.fadeIn("slow");
+                $.ajax({
+			        data: createURL("command=createZone"+moreCriteria.join("")),
+				    dataType: "json",
+				    success: function(json) {
+					    var item = json.createzoneresponse;					    
+					    zoneJSONToTreeNode(item, template);	
+					    loadingImg.hide();	
+					    row_container.show();		        
+				    },
+			        error: function(XMLHttpResponse) {
+			            handleError(XMLHttpResponse);
+			            template.slideUp("slow", function() {
+						    $(this).remove();
+					    });
+			        }
+			    });
+			}, 
+			"Cancel": function() { 
+			    var thisDialog = $(this);
+				thisDialog.dialog("close"); 
+				cleanErrMsg(thisDialog.find("#add_zone_name"), thisDialog.find("#add_zone_name_errormsg"));
+				cleanErrMsg(thisDialog.find("#add_zone_dns1"), thisDialog.find("#add_zone_dns1_errormsg"));
+				cleanErrMsg(thisDialog.find("#add_zone_dns2"), thisDialog.find("#add_zone_dns2_errormsg"));
+				cleanErrMsg(thisDialog.find("#add_zone_internaldns1"), thisDialog.find("#add_zone_internaldns1_errormsg"));
+				cleanErrMsg(thisDialog.find("#add_zone_internaldns2"), thisDialog.find("#add_zone_internaldns2_errormsg"));
+				cleanErrMsg(thisDialog.find("#add_zone_startvlan"), thisDialog.find("#add_zone_startvlan_errormsg"));
+				cleanErrMsg(thisDialog.find("#add_zone_guestcidraddress"), thisDialog.find("#add_zone_guestcidraddress_errormsg"));
+			} 
+		}).dialog("open");        
+        return false;
+    });  
 }
 

@@ -1,4 +1,5 @@
 function clickInstanceGroupHeader($arrowIcon) { 
+    $("#midmenu_add_link").find("#label").text("Add VM"); 
     $("#midmenu_add_link").show(); 
     
 	if($arrowIcon.hasClass("expanded_close") == true) {
