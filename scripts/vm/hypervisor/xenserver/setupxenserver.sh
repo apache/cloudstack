@@ -26,7 +26,7 @@ sed -i 's/127\.0\.0\.1/0\.0\.0\.0/' /opt/xensource/libexec/qemu-dm-wrapper 2>&1
 # disable the default link local on xenserver
 sed -i /NOZEROCONF/d /etc/sysconfig/network
 echo "NOZEROCONF=yes" >> /etc/sysconfig/network
-rm /opt/xensource/bin/heartbeat
+>/opt/xensource/bin/heartbeat
 
 echo "success"
 
