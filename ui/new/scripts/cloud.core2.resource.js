@@ -249,7 +249,7 @@ function afterLoadResourceJSP() {
 			    target.parent().parent().parent().addClass("selected");
 			    showPage($hostPage);
 				var jsonObj = target.data("jsonObj");
-				//hostObjectToRightPanel(jsonObj);				
+				hostJsonToDetailsTab(jsonObj);				
 				break;	
 			
 			
@@ -344,6 +344,23 @@ function afterLoadResourceJSP() {
         $detailsTab.find("#podname").text(fromdb(jsonObj.podname));            
     }
     //***** cluster page (end) ****************************************************************************************************
+	
+	//***** host page (bgein) *****************************************************************************************************
+	function hostJsonToDetailsTab(jsonObj) {	    
+	    var $detailsTab = $hostPage.find("#tab_content_details");   
+        $detailsTab.data("jsonObj", jsonObj);           
+        $detailsTab.find("#id").text(fromdb(jsonObj.id));
+        $detailsTab.find("#name").text(fromdb(jsonObj.name));
+        $detailsTab.find("#state").text(fromdb(jsonObj.state));        
+        $detailsTab.find("#zonename").text(fromdb(jsonObj.zonename)); 
+        $detailsTab.find("#podname").text(fromdb(jsonObj.podname));   
+        $detailsTab.find("#clustername").text(fromdb(jsonObj.clustername));        
+        $detailsTab.find("#ipaddress").text(fromdb(jsonObj.ipaddress)); 
+        $detailsTab.find("#version").text(fromdb(jsonObj.version));  
+        $detailsTab.find("#oscategoryname").text(fromdb(jsonObj.oscategoryname));        
+        $detailsTab.find("#disconnected").text(fromdb(jsonObj.disconnected));        
+    }
+	//***** host page (end) *******************************************************************************************************
 	
 	//***** systemVM page (begin) *************************************************************************************************
     function systemvmJsonToDetailsTab(jsonObj) {	   
