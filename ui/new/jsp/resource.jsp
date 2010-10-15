@@ -896,8 +896,8 @@
             </div>
             <div class="networkswitch_vlan_detailsbox_textbox">
                 <div class="networkswitch_vlan_detailsbox_textbox_label">
-                    IP:</div>
-                <span id="ipaddress">n.n.n.n</span>
+                    <%=t.t("ip.address.range")%>:</div>
+                <span id="ip_range">n.n.n.n - m.m.m.m</span>
             </div>
         </div>
         <div class="networkswitch_typeicon direct">
@@ -918,8 +918,8 @@
             </div>
             <div class="networkswitch_vlan_detailsbox_textbox">
                 <div class="networkswitch_vlan_detailsbox_textbox_label">
-                    IP:</div>
-                <span id="ipaddress">n.n.n.n</span>
+                     <%=t.t("ip.address.range")%>:</div>
+                <span id="ip_range">n.n.n.n - m.m.m.m</span>
             </div>
         </div>
         <div class="networkswitch_typeicon virtual">

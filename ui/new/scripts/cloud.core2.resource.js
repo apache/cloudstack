@@ -351,7 +351,7 @@ function afterLoadResourceJSP() {
 	function vlanjsontotemplate(jsonObj, $template1) {
 	    $template1.data("jsonObj", jsonObj);
 	    $template1.find("#vlan_id").text(jsonObj.vlan);
-	    $template1.find("#ipaddress").text(jsonObj.description);
+	    $template1.find("#ip_range").text(jsonObj.description);
 	} 	
 	
     //***** zone page (end) *******************************************************************************************************
