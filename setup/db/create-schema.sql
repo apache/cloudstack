@@ -106,6 +106,7 @@ CREATE TABLE `cloud`.`pool` (
 CREATE TABLE `cloud`.`lun` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
   `lun_name` varchar(255) NOT NULL COMMENT 'lun name',
+  `target_iqn` varchar(255) NOT NULL COMMENT 'target iqn',
   `path` varchar(255) NOT NULL COMMENT 'lun path',
   `size` bigint NOT NULL COMMENT 'lun size',
   `volume_id` bigint unsigned NOT NULL COMMENT 'parent volume id',
