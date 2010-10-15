@@ -79,7 +79,7 @@ long milliseconds = new Date().getTime();
     <div id="overlay_black" style="display: none">
     </div>
     <div id="main">
-        <div id="header">
+        <div id="main_header">
             <div class="header_left">
                 <div class="logo">
                 </div>
@@ -582,10 +582,10 @@ long milliseconds = new Date().getTime();
                                 </div>
                             </div>
                         </div>
-                        <div class="leftmenu_expandedlist">
-                            <div class="leftmenu_content" id="leftmenu_zone_tree">
-                            </div>
-                        </div>                                             
+                        
+                        <div id="leftmenu_zone_tree">
+                        </div>
+                                                                    
                         <div class="leftmenu_expandedlist">
                             <div class="leftmenu_content" style="border-bottom: 1px dashed b4c8d6;" id="leftmenu_service_offering">
                                 <div class="leftmenu_secondindent">
@@ -699,6 +699,10 @@ long milliseconds = new Date().getTime();
         <%=t.t("no.available.actions")%></li>
      
      <div class="leftmenu_expandedlist" id="leftmenu_zone_node_template" style="display:none">
+     	<div class="leftmenu_loadingbox" style="display:none;">
+        	<div class="leftmenu_loader"></div>
+            <p> Adding Zone &hellip; </p>
+        </div>
         <div class="leftmenu_content selected" id="header">  
             <div class="leftmenu_thirdindent">
                 <div class="leftmenu_arrows expanded_close" id="arrowIcon">
@@ -708,9 +712,13 @@ long milliseconds = new Date().getTime();
                 Zone: <strong><span id="zone_name"></span></strong>
             </div>  
         </div>
-        <div id="zone_container"></div>
+		<div id="zone_container"></div>
     </div>
     <div class="leftmenu_expandedlist" id="leftmenu_pod_node_template" style="display:none">
+    	<div class="leftmenu_loadingbox" style="display:none;">
+        	<div class="leftmenu_loader"></div>
+            <p> Adding Pod &hellip; </p>
+        </div>
         <div class="leftmenu_content selected" id="header">
             <div class="leftmenu_fourthindent">
                 <div class="leftmenu_arrows expanded_close" id="arrowIcon">
@@ -724,6 +732,10 @@ long milliseconds = new Date().getTime();
     </div>
     
     <div class="leftmenu_expandedlist" id="leftmenu_cluster_node_template" style="display:none">
+    	<div class="leftmenu_loadingbox" style="display:none;">
+        	<div class="leftmenu_loader"></div>
+            <p> Adding Cluster &hellip; </p>
+        </div>
         <div class="leftmenu_content selected" id="header">
             <div class="leftmenu_fifthindent">
                 <div class="leftmenu_arrows expanded_close" id="arrowIcon">
@@ -737,6 +749,10 @@ long milliseconds = new Date().getTime();
     </div> 
     
     <div class="leftmenu_expandedlist" id="leftmenu_systemvm_node_template" style="display:none">
+    	<div class="leftmenu_loadingbox" style="display:none;">
+        	<div class="leftmenu_loader"></div>
+            <p> Adding Sytem VM &hellip; </p>
+        </div>
         <div class="leftmenu_content selected" id="header">
             <div class="leftmenu_fourthindent">
                 <div class="leftmenu_arrows expanded_close" id="arrowIcon">
