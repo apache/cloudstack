@@ -75,9 +75,10 @@ DROP TABLE IF EXISTS `cloud`.`ext_lun_details`;
 DROP TABLE IF EXISTS `cloud`.`cluster`;
 
 /*DO NOT DELETE*/
-/*
+
 DROP TABLE IF EXISTS `cloud`.`netapp_volume`;
 DROP TABLE IF EXISTS `cloud`.`pool`;
+DROP TABLE IF EXISTS `cloud`.`lun`;
 
 CREATE TABLE `cloud`.`netapp_volume` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
@@ -108,8 +109,6 @@ CREATE TABLE `cloud`.`lun` (
   `volume_id` bigint unsigned NOT NULL COMMENT 'parent volume id',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-*/
 
 CREATE TABLE `cloud`.`cluster` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
