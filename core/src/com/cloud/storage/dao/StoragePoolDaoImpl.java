@@ -225,7 +225,7 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
         sc.setParameters("hostAddress", host);
         sc.setParameters("path", path);
         
-        return listIncludingRemovedBy(sc);
+        return listBy(sc);
 	}
 	
 	public StoragePoolVO listById(Integer id)

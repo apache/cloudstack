@@ -1469,6 +1469,8 @@ public class StorageManagerImpl implements StorageManager {
 
         // if not records exist, delete the given pool (base case)
         if (hostPoolRecords.size() == 0) {
+            sPool.setUuid(null);
+            _storagePoolDao.update(id, sPool);
             _storagePoolDao.remove(id);
             return true;
         } else {
@@ -1514,7 +1516,8 @@ public class StorageManagerImpl implements StorageManager {
                     for (StoragePoolHostVO host : hostPoolRecords) {
                         _storagePoolHostDao.deleteStoragePoolHostDetails(host.getHostId(),host.getPoolId());
                     }
-
+                    sPool.setUuid(null);
+                    _storagePoolDao.update(id, sPool);
                     _storagePoolDao.remove(id);
                     return true;
                 }
