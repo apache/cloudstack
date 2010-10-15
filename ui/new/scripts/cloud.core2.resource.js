@@ -193,7 +193,8 @@ function afterLoadResourceJSP() {
 			    target.parent().parent().parent().addClass("selected");				    
 			    showPage($zonePage);				    
 			    var jsonObj = target.data("jsonObj");    
-			    zoneJsonToDetailsTab(jsonObj);							    		   			    
+			    zoneJsonToDetailsTab(jsonObj);
+			    zoneJsonToNetworkTab(jsonObj);							    		   			    
 			    break;
 			
 			
@@ -317,6 +318,42 @@ function afterLoadResourceJSP() {
         $detailsTab.find("#vlan").text(fromdb(jsonObj.vlan));
         $detailsTab.find("#guestcidraddress").text(fromdb(jsonObj.guestcidraddress));     
 	}	  
+	
+	function zoneJsonToNetworkTab(jsonObj) {	    
+	    var $networkTab = $zonePage.find("#tab_content_network");  
+	    $networkTab.find("#zone_cloud").find("#zone_name").text(jsonObj.name);	 
+	    $networkTab.find("#zone_vlan").text(jsonObj.vlan);   
+                      
+        $.ajax({
+		  data: createURL("command=listVlanIpRanges&zoneId="+jsonObj.id),
+			dataType: "json",
+			success: function(json) {
+				var items = json.listvlaniprangesresponse.vlaniprange;		
+				var $vlanContainer = $networkTab.find("#vlan_container").empty();   					
+				if (items != null && items.length > 0) {					    
+					for (var i = 0; i < items.length; i++) {	
+					    var item = items[i];
+					    					   
+					    var $template1;
+					    if(item.forvirtualnetwork == "false") 
+					        $template1 = $("#direct_vlan_template").clone(); 
+					    else
+					    	$template1 = $("#virtual_vlan_template").clone();  					    
+					    
+					    vlanjsontotemplate(item, $template1);
+					    $vlanContainer.append($template1.show());											
+					}
+				}
+			}
+		});
+	}	 
+	
+	function vlanjsontotemplate(jsonObj, $template1) {
+	    $template1.data("jsonObj", jsonObj);
+	    $template1.find("#vlan_id").text(jsonObj.vlan);
+	    $template1.find("#ipaddress").text(jsonObj.description);
+	} 	
+	
     //***** zone page (end) *******************************************************************************************************
     
     //***** pod page (begin) ******************************************************************************************************
