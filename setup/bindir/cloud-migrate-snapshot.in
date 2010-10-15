@@ -31,14 +31,14 @@ then
   exit 2
 fi
 
-if [ ! -f $mountPath ]
+if [ ! -d $mountPath ]
 then
   echo "$mountPath does not exist, please specify a valid path"
   exit 2
 fi
 
 mountPath=$mountPath/snapshots
-if [ ! -f $mountPath ]
+if [ ! -d $mountPath ]
 then
   echo "No snapshots exit, nothing to do"
   exit 0
