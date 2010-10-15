@@ -88,9 +88,10 @@ public class ConsoleProxyServlet extends HttpServlet {
 					return;
             	}
             } else {
-                userId = (String)session.getAttribute("userid");
-                account = (String)session.getAttribute("account");
+            	// adjust to latest API refactoring changes
+                userId = ((Long)session.getAttribute("userid")).toString();
                 accountObj = (Account)session.getAttribute("accountobj");
+                account = "" + accountObj.getId();
             }
 
             // Do a sanity check here to make sure the user hasn't already been deleted
