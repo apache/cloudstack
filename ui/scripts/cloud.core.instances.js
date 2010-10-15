@@ -1740,6 +1740,7 @@ function showInstancesTab(p_domainId, p_account) {
 				error: function(XMLHttpResponse) {					    
 					vmInstance.slideUp("slow", function() {
 						$(this).remove();
+						$("#refresh").click();
 					});					    
 				    handleError(XMLHttpResponse);
 				}					
