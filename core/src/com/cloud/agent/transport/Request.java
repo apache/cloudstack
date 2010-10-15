@@ -214,7 +214,11 @@ public class Request {
         String content = _content;
         if (content == null) {
             final Gson gson = s_gBuilder.create();
-            content = gson.toJson(_cmds);
+            try {
+            	content = gson.toJson(_cmds);
+            } catch(Throwable e) {
+            	s_logger.error("Gson serialization error on Request.toString() " + getClass().getCanonicalName(), e);
+            }
         }
         final StringBuilder buffer = new StringBuilder();
         buffer.append("{ ").append(getType());

@@ -2259,6 +2259,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
                                 s_logger.info("Host " + attache.getId() + " is now ready to processing commands.");
                                 _hostDao.updateStatus(host, Event.Ready, _nodeId);
                             }
+                            answer = new Answer(cmd);
                         } else {
                             answer = new Answer(cmd);
                         }

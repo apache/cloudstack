@@ -264,6 +264,7 @@
         <include name="commons-logging-1.1.1.jar" />
         <include name="commons-dbcp-1.2.2.jar" />
         <include name="commons-pool-1.4.jar" />
+        <include name="commons-discovery.jar" />
         <include name="backport-util-concurrent-3.0.jar" />
         <include name="httpcore-4.0.jar" />
         <include name="commons-httpclient-3.1.jar" />

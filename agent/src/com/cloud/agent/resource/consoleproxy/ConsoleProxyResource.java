@@ -91,6 +91,7 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
         } else if(cmd instanceof WatchConsoleProxyLoadCommand) {
             return execute((WatchConsoleProxyLoadCommand)cmd);
         } else if (cmd instanceof ReadyCommand) {
+        	s_logger.info("Receive ReadyCommand, response with ReadyAnswer");
             return new ReadyAnswer((ReadyCommand)cmd);
         } else if(cmd instanceof CheckHealthCommand) {
         	return new CheckHealthAnswer((CheckHealthCommand)cmd, true);

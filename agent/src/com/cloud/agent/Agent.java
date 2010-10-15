@@ -407,6 +407,9 @@ public class Agent implements HandlerFactory, IAgentControl {
             s_logger.warn("Threw away a startup answer because we're reconnecting.");
         	return;
         }
+        
+        s_logger.info("Proccess agent startup answer, agent id = " + startup.getHostId());
+        
         setId(startup.getHostId());
         _pingInterval = startup.getPingInterval() * 1000; // change to ms.
 

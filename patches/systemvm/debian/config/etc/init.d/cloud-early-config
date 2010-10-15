@@ -42,6 +42,8 @@ patch() {
     cp -f $EXTRA_MOUNT/authorized_keys /var/cache/cloud/authorized_keys
     privkey=/var/cache/cloud/authorized_keys
   	umount $EXTRA_MOUNT
+  elif [ -e /dev/cdrom1 ]; then
+    	vmware-guestd --cmd 'machine.id.get' > /var/cache/cloud/cmdline 
   else
     	cat /proc/cmdline > /var/cache/cloud/cmdline
   fi
@@ -51,6 +53,9 @@ patch() {
   elif [ -e /dev/cdrom ]; then
 	# For KVM
 	cdrom_dev=/dev/cdrom
+  elif [ -e /dev/cdrom1 ]; then
+    # for VmWare
+    cdrom_dev=/dev/cdrom1
   fi
 
   if [ -n "$cdrom_dev" ]; then
