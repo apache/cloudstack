@@ -74,10 +74,10 @@ public class ListIsosCmd extends BaseListCmd {
     private Boolean ready;
 
     @Parameter(name="isofilter", type=CommandType.STRING, description="possible values are \"featured\", \"self\", \"self-executable\",\"executable\", and \"community\". " +
-    														"* featured—ISOs that are featured and are publicself—ISOs that have been registered/created by the owner. " +
-    														"* selfexecutable— ISOs that have been registered/created by the owner that can be used to deploy a new VM. " +
-    														"* executable— all ISOs that can be used to deploy a new VM " +
-    														"* community—ISOs that are public.")
+    														"* featured-ISOs that are featured and are publicself-ISOs that have been registered/created by the owner. " +
+    														"* selfexecutable-ISOs that have been registered/created by the owner that can be used to deploy a new VM. " +
+    														"* executable-all ISOs that can be used to deploy a new VM " +
+    														"* community-ISOs that are public.")
     private String isoFilter = TemplateFilter.selfexecutable.toString();
 
     @Parameter(name="name", type=CommandType.STRING, description="list all isos by name")

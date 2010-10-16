@@ -67,10 +67,10 @@ public class ListTemplatesCmd extends BaseListCmd {
     private String templateName;
 
     @Parameter(name="templatefilter", type=CommandType.STRING, required=true, description="possible values are \"featured\", \"self\", \"self-executable\", \"executable\", and \"community\"." +
-    																					"* featured—templates that are featured and are public" +
-    																					"* self—templates that have been registered/created by the owner" +
-    																					"* selfexecutable— templates that have been registered/created by the owner that can be used to deploy a new VM" +
-    																					"* executable— all templates that can be used to deploy a new VM* community—templates that are public.")
+    																					"* featured-templates that are featured and are public" +
+    																					"* self-templates that have been registered/created by the owner" +
+    																					"* selfexecutable-templates that have been registered/created by the owner that can be used to deploy a new VM" +
+    																					"* executable-all templates that can be used to deploy a new VM* community-templates that are public.")
     private String templateFilter;
 
     @Parameter(name="zoneid", type=CommandType.LONG, description="list templates by zoneId")

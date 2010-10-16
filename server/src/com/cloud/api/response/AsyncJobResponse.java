@@ -36,7 +36,7 @@ public class AsyncJobResponse extends BaseResponse {
     @SerializedName("cmd") @Param(description="the async command executed")
     private String cmd;
 
-    @SerializedName("jobstatus") @Param(description="the current job status—should be 0 for PENDING")
+    @SerializedName("jobstatus") @Param(description="the current job status-should be 0 for PENDING")
     private Integer jobStatus;
 
     @SerializedName("jobprocstatus") @Param(description="the progress information of the PENDING job")
