@@ -146,6 +146,13 @@
     </fileset>
   </path>
 
+  <path id="deps.classpath">
+    <!--filelist files="${deps.classpath}" /-->
+    <fileset dir="${deps.dir}" erroronmissingdir="false">
+      <include name="*.jar" />
+    </fileset>
+  </path>
+
   <path id="dist.classpath">
     <fileset dir="${target.dir}">
       <include name="**/*.jar" />
@@ -162,7 +169,7 @@
   <property name="utils.dir" location="${base.dir}/utils" />
   <property name="utils.test.dir" location="${utils.dir}/test/" />
   <path id="utils.classpath">
-    <path refid="thirdparty.classpath" />
+    <path refid="deps.classpath" />
   </path>
   <target name="compile-utils" depends="-init" description="Compile the utilities jar that is shared.">
     <compile-java jar.name="${utils.jar}" top.dir="${utils.dir}" classpath="utils.classpath" />
@@ -171,7 +178,7 @@
   <property name="api.dir" location="${base.dir}/api" />
   <property name="api.test.dir" location="${api.dir}/test/" />
   <path id="api.classpath">
-    <path refid="thirdparty.classpath" />
+    <path refid="deps.classpath" />
     <path refid="dist.classpath"/>
   </path>
   <target name="compile-api" depends="-init, compile-utils" description="Compile the utilities jar that is shared.">
@@ -179,7 +186,7 @@
   </target>
 
   <path id="core.classpath">
-    <path refid="thirdparty.classpath" />
+    <path refid="deps.classpath" />
     <path refid="dist.classpath" />
   </path>
   <target name="compile-core" depends="-init, compile-utils, compile-api" description="Compile the core business logic.">
@@ -187,7 +194,7 @@
   </target>
 
   <path id="server.classpath">
-    <path refid="thirdparty.classpath" />
+    <path refid="deps.classpath" />
     <path refid="dist.classpath" />
   </path>
   <target name="compile-server" depends="-init, compile-utils, compile-core" description="Compile the management server.">
@@ -195,7 +202,7 @@
   </target>
 
   <path id="client.classpath">
-    <path refid="thirdparty.classpath" />
+    <path refid="deps.classpath" />
     <path refid="dist.classpath" />
   </path>
 
@@ -254,7 +261,7 @@
     <mkdir dir="${server.dist.dir}/conf" />
 
     <copy todir="${server.dist.dir}/lib">
-      <fileset dir="${thirdparty.dir}">
+      <fileset dir="${deps.dir}">
         <include name="mysql-connector-java-5.1.7-bin.jar" />
         <include name="cglib-nodep-2.2.jar" />
         <include name="gson-1.3.jar" />
@@ -314,7 +321,7 @@
   </target>
 
   <path id="console-common.classpath">
-    <path refid="thirdparty.classpath" />
+    <path refid="deps.classpath" />
     <path refid="dist.classpath" />
   </path>
   <target name="compile-console-common" depends="-init" description="Compile the console-common jar that is shared.">
@@ -322,7 +329,7 @@
   </target>
 
   <path id="console-proxy.classpath">
-    <path refid="thirdparty.classpath" />
+    <path refid="deps.classpath" />
     <path refid="dist.classpath" />
   </path>
   <target name="compile-console-proxy" depends="-init, compile-console-common" description="Compile the console proxy.">
@@ -341,7 +348,7 @@
     <mkdir dir="${copyto.dir}/css" />
 
     <copy todir="${copyto.dir}">
-      <fileset dir="${thirdparty.dir}">
+      <fileset dir="${deps.dir}">
         <include name="log4j-1.2.15.jar" />
         <include name="apache-log4j-extras-1.0.jar" />
         <include name="gson-1.3.jar" />
@@ -402,7 +409,7 @@
   </target>
 
   <path id="console-viewer.classpath">
-    <path refid="thirdparty.classpath" />
+    <path refid="deps.classpath" />
     <path refid="dist.classpath" />
   </path>
   <target name="build-console-viewer" depends="-init" description="Compile console viewer applet">
@@ -432,7 +439,7 @@
   </target>
 
   <path id="agent.classpath">
-    <path refid="thirdparty.classpath" />
+    <path refid="deps.classpath" />
     <fileset dir="${target.dir}">
       <include name="**/${core.jar}" />
       <include name="**/${utils.jar}" />
