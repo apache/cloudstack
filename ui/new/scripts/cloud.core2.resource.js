@@ -1,3 +1,297 @@
+function buildZoneTree() {  
+    /*      
+    $zoneTree = $("#leftmenu_zone_tree").empty();
+    
+    var $zoneNode = $("#leftmenu_zone_node_template").clone();
+    $zoneTree.append($zoneNode.show());
+    
+    var $podNode = $("#leftmenu_pod_node_template").clone();
+    $zoneNode.find("#zone_container").append($podNode.show());
+    
+    var $clusterNode = $("#leftmenu_cluster_node_template").clone();
+    $podNode.find("#pod_container").append($clusterNode.show());
+    
+    var $systemvmNode = $("#leftmenu_systemvm_node_template").clone();
+    $zoneNode.find("#zone_container").append($systemvmNode.show());
+    */
+    
+    
+    //***** build zone tree (begin) ***********************************************************************************************
+    var forceLogout = true;  // We force a logout only if the user has first added a POD for the very first time 
+    var $zoneTree = $("#leftmenu_zone_tree");
+    //var $zoneetree1 = $("#zonetree").clone().attr("id", "zonetree1");  
+    //$("#midmenu_container").append($zoneetree1.show());
+    
+    $.ajax({
+	    data: createURL("command=listZones&available=true"+maxPageSize),
+		dataType: "json",
+		success: function(json) {
+			var items = json.listzonesresponse.zone;
+			var container = $zoneTree.empty();
+			if (items != null && items.length > 0) {					    
+				for (var i = 0; i < items.length; i++) {
+					var $zoneNode = $("#leftmenu_zone_node_template").clone(true);
+					zoneJSONToTreeNode(items[i],$zoneNode);
+					container.append($zoneNode.show());
+				}
+			}	
+		}
+	});  
+
+    function zoneJSONToTreeNode(json, $zoneNode) {
+        var zoneid = json.id;
+        $zoneNode.attr("id", "zone_" + zoneid);  
+	    $zoneNode.data("id", zoneid).data("name", fromdb(json.name));
+	    var zoneName = $zoneNode.find("#zone_name").text(fromdb(json.name));	    
+	    zoneName.data("jsonObj", json);	    
+    	
+	    $.ajax({
+	        data: createURL("command=listPods&zoneid="+zoneid+maxPageSize),
+		    dataType: "json",
+		    success: function(json) {
+			    var items = json.listpodsresponse.pod;
+			    //var container = template.find("#pods_container").empty();
+			    var container = $zoneNode.find("#zone_container");
+			    if (items != null && items.length > 0) {					    
+				    for (var i = 0; i < items.length; i++) {
+					    var $podNode = $("#leftmenu_pod_node_template").clone(true);
+					    podJSONToTreeNode(items[i], $podNode);
+					    container.append($podNode.show());
+					    forceLogout = false;  // We don't force a logout if pod(s) exit.
+				    }
+			    }
+		    }
+	    });
+	    	    
+	    $.ajax({
+	        data: createURL("command=listSystemVms&zoneid="+zoneid+maxPageSize),
+		    dataType: "json",
+		    success: function(json) {
+			    var items = json.listsystemvmsresponse.systemvm;
+			    var container = $zoneNode.find("#systemvms_container").empty();
+			    if (items != null && items.length > 0) {					    
+				    for (var i = 0; i < items.length; i++) {
+					    var $systemvmNode = $("#leftmenu_systemvm_node_template").clone(true);
+					    systemvmJSONToTreeNode(items[i], $systemvmNode);
+					    container.append($systemvmNode.show());
+				    }
+			    }
+		    }
+	    });
+    }
+    
+    function podJSONToTreeNode(json, $podNode) {	
+        var podid = json.id;
+        $podNode.attr("id", "pod_" + podid);      	
+		$podNode.data("id", podid).data("name", fromdb(json.name));
+		
+		var podName = $podNode.find("#pod_name").text(fromdb(json.name));
+		podName.data("jsonObj", json);	    
+			
+	    $.ajax({
+            data: createURL("command=listClusters&podid="+podid+maxPageSize),
+	        dataType: "json",
+	        success: function(json) {
+		        var items = json.listclustersresponse.cluster;
+		        var container = $podNode.find("#clusters_container").empty();
+		        if (items != null && items.length > 0) {					    
+			        for (var i = 0; i < items.length; i++) {
+				        var clusterTemplate = $("#leftmenu_cluster_node_template").clone(true); 
+				        clusterJSONToTreeNode(items[i], clusterTemplate);
+				        container.append(clusterTemplate.show());
+			        }
+		        }
+	        }
+        });		
+	}
+		
+	function systemvmJSONToTreeNode(json, $systemvmNode) {	
+	    var systemvmid = json.id;	
+	    $systemvmNode.attr("id", "systemvm_"+systemvmid);
+	    $systemvmNode.data("id", systemvmid).data("name", json.name);	     
+	    var systeymvmName = $systemvmNode.find("#systemvm_name").text(json.name);	    
+	    systeymvmName.data("jsonObj", json);	    		
+	}
+			
+	function clusterJSONToTreeNode(json, $clusterNode) {
+	    $clusterNode.attr("id", "cluster_"+json.id);
+	    $clusterNode.data("id", json.id).data("name", fromdb(json.name));	    
+	    var clusterName = $clusterNode.find("#cluster_name").text(fromdb(json.name));
+	    clusterName.data("jsonObj", json);	   
+	    	
+	    /*	   
+	    $.ajax({
+            data: createURL("command=listHosts&clusterid="+json.id+maxPageSize),
+	        dataType: "json",
+	        success: function(json) {
+		        var items = json.listhostsresponse.host;
+		        var container = template.find("#hosts_container").empty();
+		        if (items != null && items.length > 0) {					    
+			        for (var i = 0; i < items.length; i++) {
+				        var hostTemplate = $("#host_template").clone(true);
+				        hostJSONToTreeNode(items[i], hostTemplate);
+				        container.append(hostTemplate.show());
+			        }
+		        }
+	        }
+        });		
+        
+        $.ajax({
+            data: createURL("command=listStoragePools&clusterid="+json.id+maxPageSize),
+	        dataType: "json",
+	        success: function(json) {
+		        var items = json.liststoragepoolsresponse.storagepool;
+		        var container = template.find("#primarystorages_container").empty();
+		        if (items != null && items.length > 0) {					    
+			        for (var i = 0; i < items.length; i++) {
+				        var primaryStorageTemplate = $("#primarystorage_template").clone(true);
+				        primaryStorageJSONToTreeNode(items[i], primaryStorageTemplate);
+				        container.append(primaryStorageTemplate.show());
+			        }
+		        }
+	        }
+        });	
+        */	    
+	}
+	
+	/*
+	function hostJSONToTreeNode(json, template) {
+	    template.attr("id", "host_"+json.id);
+	    template.data("id", json.id).data("name", fromdb(json.name));	    
+	    var hostName = template.find("#host_name").text(fromdb(json.name));
+	    hostName.data("jsonObj", json);
+	}
+	*/	
+	
+	/*
+	function primaryStorageJSONToTreeNode(json, template) {
+	    template.attr("id", "primary_storage_"+json.id);
+	    template.data("id", json.id).data("name", fromdb(json.name));	    
+	    var primaryStorageName = template.find("#primarystorage_name").text(fromdb(json.name));
+	    primaryStorageName.data("jsonObj", json);
+	}
+	*/
+	
+	//$("#zone_template").bind("click", function(event) {
+	$("#leftmenu_zone_node_template").bind("click", function(event) {
+		var template = $(this);
+		var target = $(event.target);
+		var action = target.attr("id");
+		var id = template.data("id");
+		var name = template.data("name");
+		
+		switch (action) {
+			case "zone_expand" :			   
+				if (target.hasClass("zonetree_closedarrows")) {						
+					target.removeClass().addClass("zonetree_openarrows");					
+					target.parent().parent().parent().find("#zone_content").show();	
+				} else {					
+					target.removeClass().addClass("zonetree_closedarrows");					
+					target.parent().parent().parent().find("#zone_content").hide();									
+				}
+				break;	
+			case "zone_name":	
+			    $zoneetree1.find(".selected").removeClass("selected");
+			    target.parent().parent().parent().addClass("selected");				    
+			    var jsonObj = target.data("jsonObj");  
+			    showPage($zonePage, jsonObj);
+			    zoneJsonToDetailsTab(jsonObj);
+			    zoneJsonToNetworkTab(jsonObj);							    		   			    
+			    break;
+			
+			
+			case "pod_expand" :				    	   
+				if (target.hasClass("zonetree_closedarrows")) {									
+					target.removeClass().addClass("zonetree_openarrows");
+					target.parent().parent().siblings("#pod_content").show();	
+				} else {					
+					target.removeClass().addClass("zonetree_closedarrows");
+					target.parent().parent().siblings("#pod_content").hide();
+				}
+				break;	
+			case "pod_name" :			   
+				$zoneetree1.find(".selected").removeClass("selected");
+				target.parent().parent().parent().addClass("selected");
+			    var jsonObj = target.data("jsonObj");
+			    showPage($podPage, jsonObj);		
+			    podJsonToDetailsTab(jsonObj);				
+				break;
+				
+			
+			case "cluster_expand" :			   
+				if (target.hasClass("zonetree_closedarrows")) {
+				    target.removeClass().addClass("zonetree_openarrows");
+					target.parent().parent().siblings("#cluster_content").show();					
+					
+				} else {
+				    target.removeClass().addClass("zonetree_closedarrows");
+					target.parent().parent().siblings("#cluster_content").hide();					
+				}
+				break;		
+			case "cluster_name" :			   
+				$zoneetree1.find(".selected").removeClass("selected");
+			    target.parent().parent().parent().addClass("selected");			    
+			    var jsonObj = target.data("jsonObj");
+			    showPage($clusterPage, jsonObj);
+			    clusterJsonToDetailsTab(jsonObj);					
+				break;	
+				
+				
+			case "host_expand" :			   
+				if (target.hasClass("zonetree_closedarrows")) {
+				    target.removeClass().addClass("zonetree_openarrows");
+					target.parent().parent().siblings("#host_content").show();					
+					
+				} else {
+				    target.removeClass().addClass("zonetree_closedarrows");
+					target.parent().parent().siblings("#host_content").hide();					
+				}
+				break;	
+			case "host_name" :			   
+				$zoneetree1.find(".selected").removeClass("selected");
+			    target.parent().parent().parent().addClass("selected");			    
+				var jsonObj = target.data("jsonObj");
+				showPage($hostPage, jsonObj);
+				hostJsonToDetailsTab(jsonObj);				
+				break;	
+			
+			
+			case "primarystorage_expand" :			   
+				if (target.hasClass("zonetree_closedarrows")) {
+				    target.removeClass().addClass("zonetree_openarrows");
+					target.parent().parent().siblings("#primarystorage_content").show();					
+					
+				} else {
+				    target.removeClass().addClass("zonetree_closedarrows");
+					target.parent().parent().siblings("#primarystorage_content").hide();					
+				}
+				break;	
+			case "primarystorage_name" :			   
+				$zoneetree1.find(".selected").removeClass("selected");
+			    target.parent().parent().parent().addClass("selected");			    
+			    var jsonObj = target.data("jsonObj");
+			    showPage($primarystoragePage, jsonObj);
+				primarystorageJsonToDetailsTab(jsonObj);					
+				break;
+						
+						
+			case "systemvm_name" :			   
+				$zoneetree1.find(".selected").removeClass("selected");			    		    
+			    target.parent().parent().parent().addClass("selected");	
+			    var jsonObj = target.data("jsonObj");	
+			    showPage($systemvmPage, jsonObj);					
+				systemvmJsonToDetailsTab(jsonObj);			
+				break;
+			
+			
+			default:
+				break;
+		}
+		return false;
+	});    	
+	//***** build zone tree (end) *************************************************************************************************       
+}    
+
 function afterLoadResourceJSP() {
     var $rightPanelHeaderLabel = $("#right_panel_header").find("#label");
 
@@ -404,18 +698,7 @@ function afterLoadResourceJSP() {
 				break;
 		}
 		return false;
-	});
-    
-    function getIpRange(startip, endip) {
-	    var ipRange = "";
-		if (startip != null && startip.length > 0) {
-			ipRange = startip;
-		}
-		if (endip != null && endip.length > 0) {
-			ipRange = ipRange + " - " + endip;
-		}		
-		return ipRange;
-	}		
+	});    
 	//***** build zone tree (end) *************************************************************************************************
 	
 	//***** zone page (begin) *****************************************************************************************************
@@ -487,6 +770,18 @@ function afterLoadResourceJSP() {
         //if (getDirectAttachUntaggedEnabled() == "true") 
 		//	$("#submenu_content_zones #action_add_directip_vlan").data("type", "pod").data("id", obj.id).data("name", obj.name).data("zoneid", obj.zoneid).show();		
 	}	
+		
+    function getIpRange(startip, endip) {
+	    var ipRange = "";
+		if (startip != null && startip.length > 0) {
+			ipRange = startip;
+		}
+		if (endip != null && endip.length > 0) {
+			ipRange = ipRange + " - " + endip;
+		}		
+		return ipRange;
+	}	
+	
 	//***** pod page (end) ********************************************************************************************************
 	
 	//***** cluster page (bgein) **************************************************************************************************

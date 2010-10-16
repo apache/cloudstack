@@ -278,7 +278,9 @@ public class Merovingian {
     		
     		Ternary<Savepoint, Integer, Long> lock = _locks.get(key);
     		if (lock != null) {
-        		if (lock.second() > 1) {
+    			validLock = true;
+
+    			if (lock.second() > 1) {
         			lock.second(lock.second() - 1);
         			if (s_logger.isTraceEnabled()) {
         				s_logger.trace("Lock: Releasing " + key + " but not in DB " + lock.second());
@@ -286,14 +288,6 @@ public class Merovingian {
         			return false;
         		}
         		
-        		//
-        		// set this to true only if we are really done with the DB lock. Which means, the lock count has been
-        		// reached to zero
-        		//
-        		// While we are holding the DB lock, we also need to hold the memory lock as well, to lock the first gate
-        		// and prevent others to come in and test with DB lock unnecessarily
-        		//
-    			validLock = true;
         		
                 if (s_logger.isDebugEnabled() && !_locks.keySet().iterator().next().equals(key)) {
                     s_logger.trace("Lock: Releasing out of order for " + key);

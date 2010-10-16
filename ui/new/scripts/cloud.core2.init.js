@@ -135,40 +135,29 @@ $(document).ready(function() {
         return false;
     });
     
-    $("#leftmenu_resource").bind("click", function(event) {  
-        buildZoneTree();
-        selectLeftMenu($(this));
-        
-        showMiddleMenuWithoutSearch();
-        disableMultipleSelectionInMidMenu();
-        
-        clearLeftMenu();
-        clearMiddleMenu();
+    $("#leftmenu_resource").bind("click", function(event) {         
+        //showMiddleMenuWithoutSearch();
+        //disableMultipleSelectionInMidMenu();        
+        //clearLeftMenu();
+        //clearMiddleMenu();
+       
+        $arrowIcon = $(this).find("#arrowIcon");
+        if($arrowIcon.hasClass("expanded_close") == true) {
+            $arrowIcon.removeClass("expanded_close").addClass("expanded_open");
+            buildZoneTree();
+        }
+        else {
+            $arrowIcon.removeClass("expanded_open").addClass("expanded_close");
+            $("#leftmenu_zone_tree").empty();
+        }
                 
-        $("#right_panel").load("jsp/resource.jsp", function(){ 
+        $("#right_panel").load("jsp/resource.jsp", function(){             
             afterLoadResourceJSP();       
         });     
                 
         return false;
     });
-    
-    function buildZoneTree() {        
-        $zoneTree = $("#leftmenu_zone_tree").empty();
-        
-        var $zoneNode = $("#leftmenu_zone_node_template").clone();
-        $zoneTree.append($zoneNode.show());
-        
-        var $podNode = $("#leftmenu_pod_node_template").clone();
-        $zoneNode.find("#zone_container").append($podNode.show());
-        
-        var $clusterNode = $("#leftmenu_cluster_node_template").clone();
-        $podNode.find("#pod_container").append($clusterNode.show());
-        
-        var $systemvmNode = $("#leftmenu_systemvm_node_template").clone();
-        $zoneNode.find("#zone_container").append($systemvmNode.show());
-    }
-    
-           
+               
     $("#midmenu_action_link").bind("mouseover", function(event) {
         $(this).find("#action_menu").show();    
         return false;
