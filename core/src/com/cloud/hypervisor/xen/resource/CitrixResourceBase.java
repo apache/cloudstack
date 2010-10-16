@@ -408,7 +408,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     protected boolean currentlyAttached(SR sr, SR.Record rec, PBD pbd, PBD.Record pbdr) {
         String status = null;
         if (SRType.NFS.equals(rec.type)) {
-            status = callHostPlugin("checkMount", "mount", rec.uuid);
+            //status = callHostPlugin("checkMount", "mount", rec.uuid);
         } else if (SRType.LVMOISCSI.equals(rec.type) ) {
             String scsiid = pbdr.deviceConfig.get("SCSIid");
             if (scsiid.isEmpty()) {
