@@ -469,6 +469,7 @@ $(document).ready(function() {
 		dataType: "json",
 		async: false,
 		success: function(json) {
+			$("#main_username").text(g_username);
 			$("#main").show();
 		},
 		error: function(xmlHTTP) {
