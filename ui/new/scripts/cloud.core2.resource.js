@@ -75,8 +75,8 @@ function buildZoneTree() {
 			    clusterJsonToDetailsTab(jsonObj);
 			    var clusterId = jsonObj.id;
 			    $("#midmenu_container").empty();
-			    listItemsInMidmenu(("listHosts&clusterid="+clusterId), "listhostsresponse", "host", hostToMidmenu, hostToRigntPanel, getMidmenuId); 					
-				listItemsInMidmenu(("listStoragePools&clusterid="+clusterId), "liststoragepoolsresponse", "storagepool", primarystorageToMidmenu, primarystorageToRigntPanel, getMidmenuId); 					
+			    listItemsInMidmenu(("listHosts&clusterid="+clusterId), "listhostsresponse", "host", hostToMidmenu, hostToRigntPanel, getMidmenuId, false); 					
+				listItemsInMidmenu(("listStoragePools&clusterid="+clusterId), "liststoragepoolsresponse", "storagepool", primarystorageToMidmenu, primarystorageToRigntPanel, getMidmenuId, false); 					
 	    		break;								
 						
 			case "systemvm_name" :		

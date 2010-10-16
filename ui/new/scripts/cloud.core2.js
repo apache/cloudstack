@@ -739,7 +739,7 @@ function getMidmenuId(jsonObj) {
     return "midmenuItem_" + jsonObj.id; 
 }
 
-function listItemsInMidmenu(commandString, jsonResponse1, jsonResponse2, toMidmenuFn, toRightPanelFn, getMidmenuIdFn) {                
+function listItemsInMidmenu(commandString, jsonResponse1, jsonResponse2, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, clickFirstItem) {                
     $.ajax({
         cache: false,
         data: createURL("command="+commandString+"&pagesize="+midmenuItemCount),
@@ -754,7 +754,7 @@ function listItemsInMidmenu(commandString, jsonResponse1, jsonResponse2, toMidme
                     toMidmenuFn(items[i], $midmenuItem1);    
                     bindClickToMidMenu($midmenuItem1, toRightPanelFn, getMidmenuIdFn);             
                     $("#midmenu_container").append($midmenuItem1.show());   
-                    if(i == 0)  //click the 1st item in middle menu as default 
+                    if(clickFirstItem == true && i == 0)  //click the 1st item in middle menu as default 
                         $midmenuItem1.click();                        
                 }  
             }  
@@ -784,7 +784,7 @@ function listMidMenuItems(leftmenuId, commandString, jsonResponse1, jsonResponse
             });	   
                           
             afterLoadRightPanelJSPFn();                
-            listItemsInMidmenu(commandString, jsonResponse1, jsonResponse2, toMidmenuFn, toRightPanelFn, getMidmenuIdFn);            
+            listItemsInMidmenu(commandString, jsonResponse1, jsonResponse2, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, true);            
         });     
         return false;
     });
