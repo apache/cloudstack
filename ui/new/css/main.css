@@ -1264,6 +1264,7 @@ a:visited {
 	width:220px;
 	height:auto;
 	float:left;
+	position:relative;
 	background:#7f9bae url(../images/leftmenu_expanded.gif) repeat-x top left;
 	border-bottom:1px solid #FFF;
 	margin:0;
@@ -1282,7 +1283,18 @@ a:visited {
 	padding:0;
 }
 
-.leftmenu_content{
+.leftmenu_bigloading {
+	width:40px;
+	height:40px;
+	position:absolute;
+	background:url(../images/leftmenu_bigloading.gif) no-repeat top left;
+	top:25px;
+	left:90px;
+	margin:0;
+	padding:0;
+}
+
+.leftmenu_content_flevel{
 	width:220px;
 	height:auto;
 	float:left;
@@ -1298,22 +1310,34 @@ a:visited {
 
 				
 
-.leftmenu_content.selected{
+.leftmenu_content_flevel.selected{
 	color:#FFF;
-	background:#626262 url(../images/leftmenu_hover.gif) repeat-x top left;
+	background:#626262 url(../images/leftmenu_selected.gif) repeat-x top left;
 }
 
-.leftmenu_content.highlighted{
-	background:#a9b8c3 url(../images/leftmenu_highlighted.gif) repeat-x top left;
+.leftmenu_content_flevel.highlighted{
+	background:#ced7dd url(../images/leftmenu_highlighted.gif) repeat-x top left;
+	font-weight:bold;
 }
 
-/*
-.leftmenu_content:hover{
-	background:#626262 url(../images/leftmenu_hover.gif) repeat-x top left;
-	color:#FFF;
-}
-*/
 
+.leftmenu_content_flevel:hover{
+	background:#ebf2f6 url(../images/leftmenu_hover.gif) repeat-x top left;
+}
+
+.leftmenu_content{
+	width:220px;
+	height:auto;
+	float:left;
+	color:#333;
+	text-align:left;
+	font-weight:normal;
+	font-size:11px;
+	cursor:pointer;
+	cursor:hand;
+	margin:0;
+	padding:0 0 3px 0;
+}
 
 .leftmenu_loadingbox {
 	width:100%;
@@ -1450,7 +1474,14 @@ a:visited {
 	padding:0;
 }
 
-
+.leftmenu_arrows_firstlevel_open {
+	width:9px;
+	height:9px;
+	float:right;
+	margin:2px 4px 0 0;
+	background:url(../images/leftmenu_openarrow.png) no-repeat top left;
+	padding:0;
+}
 
 .leftmenu_arrows {
 	width:9px;
@@ -1483,6 +1514,8 @@ a:visited {
 .leftmenu_arrows.expanded_open {
 	background:url(../images/leftmenu_white_openedarrow.png) no-repeat top left;
 }
+
+
 
 .right_panel {
 	width:auto;
@@ -2001,7 +2034,7 @@ a:hover.search_button {
 }
 
 .midmenu_content.selected{
-	background:#626262 url(../images/leftmenu_hover.gif) repeat-x top left;7497ae url(../images/mid_addingbg.gif) repeat-x top left;
+	background:#626262 url(../images/leftmenu_selected.gif) repeat-x top left;7497ae url(../images/mid_addingbg.gif) repeat-x top left;
 	color:#FFF;
 }
 
