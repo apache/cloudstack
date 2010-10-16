@@ -1478,7 +1478,7 @@ def ipset(ipsetname, proto, start, end, ips):
         util.SMlog("ipset chain already exists" + ipsetname)
 
     result = True
-    ipsettmp = ipsetname + str(int(time.time())%3600)
+    ipsettmp = ''.join(''.join(ipsetname.split('-')).split('_')) + str(int(time.time()) % 1000)
 
     try: 
         util.pread2(['ipset', '-N', ipsettmp, 'iptreemap']) 
