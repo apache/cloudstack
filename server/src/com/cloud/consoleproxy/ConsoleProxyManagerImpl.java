@@ -604,6 +604,11 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
             DataCenterVO dc = _dcDao.findById(proxy.getDataCenterId());
             HostPodVO pod = _podDao.findById(proxy.getPodId());
             List<StoragePoolVO> sps = _storageMgr.getStoragePoolsForVm(proxy.getId());
+            if(sps.size() < 1) {
+            	s_logger.info("Storage pool is not ready for console proxy: " + proxy.getId());
+            	return null;
+            }
+            
             StoragePoolVO sp = sps.get(0); // FIXME
 
             HashSet<Host> avoid = new HashSet<Host>();
