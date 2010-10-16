@@ -21,10 +21,7 @@ function buildZoneTree() {
     var forceLogout = true;  // We force a logout only if the user has first added a POD for the very first time     
     var $loading = $("#leftmenu_zone_tree").find("#loading_container").show();
     var $zoneTree = $("#leftmenu_zone_tree").find("#tree_container").hide();
-    
-    //var $zoneetree1 = $("#zonetree").clone().attr("id", "zonetree1");  
-    //$("#midmenu_container").append($zoneetree1.show());
-    
+  
     $.ajax({
 	    data: createURL("command=listZones&available=true"+maxPageSize),
 		dataType: "json",		
@@ -189,7 +186,7 @@ function buildZoneTree() {
 		var name = template.data("name");
 		
 		switch (action) {
-			case "zone_arrow" :			    	   
+			case "zone_arrow" :				  	   
 				if(target.hasClass("expanded_close")) {						
 					target.removeClass("expanded_close").addClass("expanded_open");					
 					target.parent().parent().siblings("#zone_content").show();	
@@ -198,7 +195,20 @@ function buildZoneTree() {
 					target.removeClass("expanded_open").addClass("expanded_close");					
 					target.parent().parent().siblings("#zone_content").hide();									
 				}
+				break;
+											    
+			case "pod_arrow" :		    	   
+				if(target.hasClass("expanded_close")) {						
+					target.removeClass("expanded_close").addClass("expanded_open");					
+					target.parent().parent().siblings("#pod_content").show();	
+				} 
+				else if(target.hasClass("expanded_open")) {					
+					target.removeClass("expanded_open").addClass("expanded_close");					
+					target.parent().parent().siblings("#pod_content").hide();									
+				}
 				break;	
+				
+				
 			case "zone_name":	
 			    $zoneetree1.find(".selected").removeClass("selected");
 			    target.parent().parent().parent().addClass("selected");				    
@@ -206,35 +216,23 @@ function buildZoneTree() {
 			    showPage($zonePage, jsonObj);
 			    zoneJsonToDetailsTab(jsonObj);
 			    zoneJsonToNetworkTab(jsonObj);							    		   			    
-			    break;
-			
-			
-			case "pod_arrow" :				    	   
-				if (target.hasClass("zonetree_closedarrows")) {									
-					target.removeClass().addClass("zonetree_openarrows");
-					target.parent().parent().siblings("#pod_content").show();	
-				} else {					
-					target.removeClass().addClass("zonetree_closedarrows");
-					target.parent().parent().siblings("#pod_content").hide();
-				}
-				break;	
+			    break;		
+			    	
 			case "pod_name" :			   
 				$zoneetree1.find(".selected").removeClass("selected");
 				target.parent().parent().parent().addClass("selected");
 			    var jsonObj = target.data("jsonObj");
 			    showPage($podPage, jsonObj);		
 			    podJsonToDetailsTab(jsonObj);				
-				break;
-								
-		
+				break;		
+				    
 			case "cluster_name" :			   
 				$zoneetree1.find(".selected").removeClass("selected");
 			    target.parent().parent().parent().addClass("selected");			    
 			    var jsonObj = target.data("jsonObj");
 			    showPage($clusterPage, jsonObj);
 			    clusterJsonToDetailsTab(jsonObj);					
-				break;			
-						
+				break;								
 						
 			case "systemvm_name" :			   
 				$zoneetree1.find(".selected").removeClass("selected");			    		    
@@ -242,8 +240,7 @@ function buildZoneTree() {
 			    var jsonObj = target.data("jsonObj");	
 			    showPage($systemvmPage, jsonObj);					
 				systemvmJsonToDetailsTab(jsonObj);			
-				break;
-			
+				break;			
 			
 			default:
 				break;

@@ -763,7 +763,7 @@ long milliseconds = new Date().getTime();
         <div id="row_container">
 	        <div class="leftmenu_content" id="header">
 	            <div class="leftmenu_fifthindent">
-	                <div class="leftmenu_arrows expanded_close" id="cluster_arrow">
+	                <div class="leftmenu_arrows white_nonexpanded_close" id="cluster_arrow">
 	                </div>
 	                
 	                Cluster: <strong><span id="cluster_name"></span></strong>
@@ -783,7 +783,7 @@ long milliseconds = new Date().getTime();
     	<div id="row_container">
 	        <div class="leftmenu_content" id="header">
 	            <div class="leftmenu_fourthindent">
-	                <div class="leftmenu_arrows expanded_close" id="systemvm_arrow">
+	                <div class="leftmenu_arrows white_nonexpanded_close" id="systemvm_arrow">
 	                </div>
 	             
 	                System VM: <strong><span id="systemvm_name"></span></strong>
