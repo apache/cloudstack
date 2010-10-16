@@ -21,144 +21,7 @@ function buildZoneTree() {
             $zoneTree.show();
 		}
 	});  
-
-    function zoneJSONToTreeNode(json, $zoneNode) {
-        var zoneid = json.id;
-        $zoneNode.attr("id", "zone_" + zoneid);  
-	    $zoneNode.data("id", zoneid).data("name", fromdb(json.name));
-	    var zoneName = $zoneNode.find("#zone_name").text(fromdb(json.name));	    
-	    zoneName.data("jsonObj", json);	    
-    	
-	    $.ajax({
-	        data: createURL("command=listPods&zoneid="+zoneid+maxPageSize),
-		    dataType: "json",
-		    async: false,
-		    success: function(json) {
-			    var items = json.listpodsresponse.pod;			    
-			    var container = $zoneNode.find("#pods_container");
-			    if (items != null && items.length > 0) {					    
-				    for (var i = 0; i < items.length; i++) {
-					    var $podNode = $("#leftmenu_pod_node_template").clone(true);
-					    podJSONToTreeNode(items[i], $podNode);
-					    container.append($podNode.show());
-					    forceLogout = false;  // We don't force a logout if pod(s) exit.
-				    }
-			    }
-		    }
-	    });
-	    	    
-	    $.ajax({
-	        data: createURL("command=listSystemVms&zoneid="+zoneid+maxPageSize),
-		    dataType: "json",
-		    async: false,
-		    success: function(json) {
-			    var items = json.listsystemvmsresponse.systemvm;
-			    var container = $zoneNode.find("#systemvms_container").empty();
-			    if (items != null && items.length > 0) {					    
-				    for (var i = 0; i < items.length; i++) {
-					    var $systemvmNode = $("#leftmenu_systemvm_node_template").clone(true);
-					    systemvmJSONToTreeNode(items[i], $systemvmNode);
-					    container.append($systemvmNode.show());
-				    }
-			    }
-		    }
-	    });
-    }
     
-    function podJSONToTreeNode(json, $podNode) {	
-        var podid = json.id;
-        $podNode.attr("id", "pod_" + podid);      	
-		$podNode.data("id", podid).data("name", fromdb(json.name));
-		
-		var podName = $podNode.find("#pod_name").text(fromdb(json.name));
-		podName.data("jsonObj", json);	    
-			
-	    $.ajax({
-            data: createURL("command=listClusters&podid="+podid+maxPageSize),
-	        dataType: "json",
-	        async: false,
-	        success: function(json) {
-		        var items = json.listclustersresponse.cluster;
-		        var container = $podNode.find("#clusters_container").empty();
-		        if (items != null && items.length > 0) {					    
-			        for (var i = 0; i < items.length; i++) {
-				        var clusterTemplate = $("#leftmenu_cluster_node_template").clone(true); 
-				        clusterJSONToTreeNode(items[i], clusterTemplate);
-				        container.append(clusterTemplate.show());
-			        }
-		        }
-	        }
-        });		
-	}
-		
-	function systemvmJSONToTreeNode(json, $systemvmNode) {	
-	    var systemvmid = json.id;	
-	    $systemvmNode.attr("id", "systemvm_"+systemvmid);
-	    $systemvmNode.data("id", systemvmid).data("name", json.name);	     
-	    var systeymvmName = $systemvmNode.find("#systemvm_name").text(json.name);	    
-	    systeymvmName.data("jsonObj", json);	    		
-	}
-			
-	function clusterJSONToTreeNode(json, $clusterNode) {
-	    $clusterNode.attr("id", "cluster_"+json.id);
-	    $clusterNode.data("id", json.id).data("name", fromdb(json.name));	    
-	    var clusterName = $clusterNode.find("#cluster_name").text(fromdb(json.name));
-	    clusterName.data("jsonObj", json);	   
-	    	
-	    /*	   
-	    $.ajax({
-            data: createURL("command=listHosts&clusterid="+json.id+maxPageSize),
-	        dataType: "json",
-	        success: function(json) {
-		        var items = json.listhostsresponse.host;
-		        var container = template.find("#hosts_container").empty();
-		        if (items != null && items.length > 0) {					    
-			        for (var i = 0; i < items.length; i++) {
-				        var hostTemplate = $("#host_template").clone(true);
-				        hostJSONToTreeNode(items[i], hostTemplate);
-				        container.append(hostTemplate.show());
-			        }
-		        }
-	        }
-        });		
-        
-        $.ajax({
-            data: createURL("command=listStoragePools&clusterid="+json.id+maxPageSize),
-	        dataType: "json",
-	        success: function(json) {
-		        var items = json.liststoragepoolsresponse.storagepool;
-		        var container = template.find("#primarystorages_container").empty();
-		        if (items != null && items.length > 0) {					    
-			        for (var i = 0; i < items.length; i++) {
-				        var primaryStorageTemplate = $("#primarystorage_template").clone(true);
-				        primaryStorageJSONToTreeNode(items[i], primaryStorageTemplate);
-				        container.append(primaryStorageTemplate.show());
-			        }
-		        }
-	        }
-        });	
-        */	    
-	}
-	
-	/*
-	function hostJSONToTreeNode(json, template) {
-	    template.attr("id", "host_"+json.id);
-	    template.data("id", json.id).data("name", fromdb(json.name));	    
-	    var hostName = template.find("#host_name").text(fromdb(json.name));
-	    hostName.data("jsonObj", json);
-	}
-	*/	
-	
-	/*
-	function primaryStorageJSONToTreeNode(json, template) {
-	    template.attr("id", "primary_storage_"+json.id);
-	    template.data("id", json.id).data("name", fromdb(json.name));	    
-	    var primaryStorageName = template.find("#primarystorage_name").text(fromdb(json.name));
-	    primaryStorageName.data("jsonObj", json);
-	}
-	*/
-	
-	//$("#zone_template").bind("click", function(event) {
 	$("#leftmenu_zone_node_template").bind("click", function(event) {
 		var template = $(this);
 		var target = $(event.target);
@@ -231,6 +94,90 @@ function buildZoneTree() {
 	//***** build zone tree (end) *************************************************************************************************       
 }    
 
+function zoneJSONToTreeNode(json, $zoneNode) {
+    var zoneid = json.id;
+    $zoneNode.attr("id", "zone_" + zoneid);  
+    $zoneNode.data("id", zoneid).data("name", fromdb(json.name));
+    var zoneName = $zoneNode.find("#zone_name").text(fromdb(json.name));	    
+    zoneName.data("jsonObj", json);	    
+	
+    $.ajax({
+        data: createURL("command=listPods&zoneid="+zoneid+maxPageSize),
+	    dataType: "json",
+	    async: false,
+	    success: function(json) {
+		    var items = json.listpodsresponse.pod;			    
+		    var container = $zoneNode.find("#pods_container");
+		    if (items != null && items.length > 0) {					    
+			    for (var i = 0; i < items.length; i++) {
+				    var $podNode = $("#leftmenu_pod_node_template").clone(true);
+				    podJSONToTreeNode(items[i], $podNode);
+				    container.append($podNode.show());
+				    forceLogout = false;  // We don't force a logout if pod(s) exit.
+			    }
+		    }
+	    }
+    });
+    	    
+    $.ajax({
+        data: createURL("command=listSystemVms&zoneid="+zoneid+maxPageSize),
+	    dataType: "json",
+	    async: false,
+	    success: function(json) {
+		    var items = json.listsystemvmsresponse.systemvm;
+		    var container = $zoneNode.find("#systemvms_container").empty();
+		    if (items != null && items.length > 0) {					    
+			    for (var i = 0; i < items.length; i++) {
+				    var $systemvmNode = $("#leftmenu_systemvm_node_template").clone(true);
+				    systemvmJSONToTreeNode(items[i], $systemvmNode);
+				    container.append($systemvmNode.show());
+			    }
+		    }
+	    }
+    });
+}
+
+function podJSONToTreeNode(json, $podNode) {	
+    var podid = json.id;
+    $podNode.attr("id", "pod_" + podid);      	
+	$podNode.data("id", podid).data("name", fromdb(json.name));
+	
+	var podName = $podNode.find("#pod_name").text(fromdb(json.name));
+	podName.data("jsonObj", json);	    
+		
+    $.ajax({
+        data: createURL("command=listClusters&podid="+podid+maxPageSize),
+        dataType: "json",
+        async: false,
+        success: function(json) {
+	        var items = json.listclustersresponse.cluster;
+	        var container = $podNode.find("#clusters_container").empty();
+	        if (items != null && items.length > 0) {					    
+		        for (var i = 0; i < items.length; i++) {
+			        var clusterTemplate = $("#leftmenu_cluster_node_template").clone(true); 
+			        clusterJSONToTreeNode(items[i], clusterTemplate);
+			        container.append(clusterTemplate.show());
+		        }
+	        }
+        }
+    });		
+}
+	
+function systemvmJSONToTreeNode(json, $systemvmNode) {	
+    var systemvmid = json.id;	
+    $systemvmNode.attr("id", "systemvm_"+systemvmid);
+    $systemvmNode.data("id", systemvmid).data("name", json.name);	     
+    var systeymvmName = $systemvmNode.find("#systemvm_name").text(json.name);	    
+    systeymvmName.data("jsonObj", json);	    		
+}
+		
+function clusterJSONToTreeNode(json, $clusterNode) {
+    $clusterNode.attr("id", "cluster_"+json.id);
+    $clusterNode.data("id", json.id).data("name", fromdb(json.name));	    
+    var clusterName = $clusterNode.find("#cluster_name").text(fromdb(json.name));
+    clusterName.data("jsonObj", json);	   
+}			
+
 function showPage($pageToShow, jsonObj) {   
     var pageArray = [$("#zone_page"), $("#pod_page"), $("#cluster_page"), $("#host_page"), $("#primarystorage_page"), $("#systemvm_page")];
     var pageLabelArray = ["Zone", "Pod", "Cluster", "Host", "Primary Storage", "System VM"];       
@@ -287,7 +234,7 @@ function showPage($pageToShow, jsonObj) {
                         array1.push("&endIp="+encodeURIComponent(endip));
                     array1.push("&gateway="+encodeURIComponent(gateway));			
     								    
-			        var template = $("#pod_template").clone(true);
+			        var template = $("#leftmenu_pod_node_template").clone(true);
 			        var loadingImg = template.find(".adding_loading");										
 			        var row_container = template.find("#row_container");        				
 			        $("#zone_" + zoneObj.id + " #zone_content").show();	
@@ -298,7 +245,7 @@ function showPage($pageToShow, jsonObj) {
 	                template.fadeIn("slow");
     				
 			        $.ajax({
-			          data: createURL("command=createPod&response=json"+array1.join("")),
+			          data: createURL("command=createPod"+array1.join("")), 
 				        dataType: "json",
 				        success: function(json) {
 					        var item = json.createpodresponse; 	
@@ -340,8 +287,109 @@ function showPage($pageToShow, jsonObj) {
         //***** Add Host (begin) *****
         $("#midmenu_add_link").find("#label").text("Add Host");  
         $("#midmenu_add_link").data("jsonObj", jsonObj).show(); 
-        $("#midmenu_add_link").unbind("click").bind("click", function(event) {
-        
+        $("#midmenu_add_link").unbind("click").bind("click", function(event) {     
+            dialogAddHost = $("#dialog_add_host");  
+            var podObj = $(this).data("jsonObj");	
+            dialogAddHost.find("#zone_name").text(fromdb(podObj.zonename));  
+            dialogAddHost.find("#pod_name").text(fromdb(podObj.name)); 
+            dialogAddHost.find("#new_cluster_name").val("");
+                              
+	        $.ajax({
+		       data: createURL("command=listClusters&podid="+podObj.id+maxPageSize),
+	            dataType: "json",
+	            success: function(json) {			            
+	                var items = json.listclustersresponse.cluster;
+	                var clusterSelect = dialogAddHost.find("#cluster_select").empty();		
+	                if(items != null && items.length > 0) {			                
+	                    for(var i=0; i<items.length; i++) 			                    
+	                        clusterSelect.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");		      
+                        dialogAddHost.find("input[value=existing_cluster_radio]").attr("checked", true);
+	                }
+	                else {
+					    clusterSelect.append("<option value='-1'>None Available</option>");
+	                    dialogAddHost.find("input[value=new_cluster_radio]").attr("checked", true);
+	                }
+	            }
+	        });           
+		        	    
+	        dialogAddHost
+	        .dialog('option', 'buttons', { 				
+		        "Add": function() { 
+		            var dialogBox = $(this);				   
+			        var clusterRadio = dialogBox.find("input[name=cluster]:checked").val();				
+    			
+			        // validate values
+			        var isValid = true;									
+			        isValid &= validateString("Host name", dialogBox.find("#host_hostname"), dialogBox.find("#host_hostname_errormsg"));
+			        isValid &= validateString("User name", dialogBox.find("#host_username"), dialogBox.find("#host_username_errormsg"));
+			        isValid &= validateString("Password", dialogBox.find("#host_password"), dialogBox.find("#host_password_errormsg"));						
+			        if (!isValid) 
+			            return;
+			            
+    				dialogBox.dialog("close");    				
+    				
+			        var array1 = [];    
+			        array1.push("&zoneId="+podObj.zoneid);
+			        array1.push("&podId="+podObj.id);
+    						      
+			        var username = trim(dialogBox.find("#host_username").val());
+			        array1.push("&username="+encodeURIComponent(username));
+    				
+			        var password = trim(dialogBox.find("#host_password").val());
+			        array1.push("&password="+encodeURIComponent(password));
+    											
+				    if(clusterRadio == "new_cluster_radio") {
+			            var newClusterName = trim(dialogBox.find("#new_cluster_name").val());
+			            array1.push("&clustername="+todb(newClusterName));				    
+			        }
+			        else if(clusterRadio == "existing_cluster_radio") {			            
+			            var clusterId = dialogBox.find("#cluster_select").val();
+					    // We will default to no cluster if someone selects Join Cluster with no cluster available.
+					    if (clusterId != '-1') {
+						    array1.push("&clusterid="+clusterId);
+					    }
+			        }				
+    				
+			        var hostname = trim(dialogBox.find("#host_hostname").val());
+			        var url;					
+			        if(hostname.indexOf("http://")==-1)
+			            url = "http://" + todb(hostname);
+			        else
+			            url = hostname;
+			        array1.push("&url="+encodeURIComponent(url));
+    									
+			        var $midmenuItem1 = beforeAddingMidMenuItem() ;    				
+			        
+			        $.ajax({
+				       data: createURL("command=addHost" + array1.join("")),
+				        dataType: "json",
+				        success: function(json) {	
+				            var items = json.addhostresponse.host;				            			      										   
+						    hostToMidmenu(items[0], $midmenuItem1);
+		                    bindClickToMidMenu($midmenuItem1, hostToRigntPanel, getMidmenuId);  
+		                    afterAddingMidMenuItem($midmenuItem1, true);
+                                                            
+                            if(items.length > 1) { 
+                                for(var i=1; i<items.length; i++) {                                    
+                                    var $midmenuItem2 = $("#midmenu_item").clone();
+                                    hostToMidmenu(items[i], $midmenuItem2);
+                                    bindClickToMidMenu($midmenuItem2, hostToRigntPanel, getMidmenuId); 
+                                    $("#midmenu_container").append($midmenuItem2.show());                                   
+                                }	
+                            }                                
+                            
+                            if(clusterRadio == "new_cluster_radio")
+                                dialogBox.find("#new_cluster_name").val("");
+				        },			
+                        error: function(XMLHttpResponse) {		                   
+                            handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1);					    
+                        }				
+			        });
+		        }, 
+		        "Cancel": function() { 
+			        $(this).dialog("close"); 
+		        } 
+	        }).dialog("open");            
             return false;
         });
         
@@ -554,7 +602,8 @@ function afterLoadResourceJSP() {
 	//dialogs	
 	initDialog("dialog_add_zone");
 	initDialog("dialog_add_pod", 320);
-	
+	initDialog("dialog_add_host");
+		
 	//Add Zone button ***
 	$("#midmenu_add_link").find("#label").text("Add Zone");     
     $("#midmenu_add_link").show();     
@@ -613,10 +662,11 @@ function afterLoadResourceJSP() {
 				moreCriteria.push("&guestcidraddress="+encodeURIComponent(guestcidraddress));	
 						
 				
-				var template = $("#zone_template").clone(true);
+				var template = $("#leftmenu_zone_node_template").clone(true); 
 			    var loadingImg = template.find(".adding_loading");										
-			    var row_container = template.find("#row_container");    			
-			    $("#zonetree1").find("#zones_container").prepend(template);			    			            
+			    var row_container = template.find("#row_container");  			   
+			    var $zoneTree = $("#leftmenu_zone_tree").find("#tree_container");		     			
+			    $zoneTree.prepend(template);						            
                 loadingImg.show();  
                 row_container.hide();             
 	            template.fadeIn("slow");

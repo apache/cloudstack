@@ -676,7 +676,7 @@
 <!-- END Add Zone Dialog -->
 <!-- Add Pod Dialog -->
 <div id="dialog_add_pod" title="Add Pod" style="display:none">
-	<p>Add a new pod for zone: <b><span id="add_pod_zone_name"></span></b></p>
+	<p>Add a new pod for zone <b><span id="add_pod_zone_name"></span></b> </p>
 	<div class="dialog_formcontent">
 		<form action="#" method="post" id="form_acquire">
 			<ol>
@@ -707,6 +707,49 @@
 	</div>
 </div>
 <!-- END Add Pod Dialog -->
+
+<!-- Add Computing Host Dialog -->
+<div id="dialog_add_host" title="Add Host" style="display:none">
+	<p>Add a host for zone <b><span id="zone_name"></span></b>, pod <b><span id="pod_name"></span></b></p>
+	<div class="dialog_formcontent">
+		<form action="#" method="post" id="form_acquire">
+			<ol>				
+				<li>
+					<label for="host_hostname">Host name:</label>
+					<input class="text" type="text" name="host_hostname" id="host_hostname"/>
+					<div id="host_hostname_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+				</li>
+				<li>
+					<label for="user_name">User name:</label>
+					<input class="text" type="text" name="host_username" id="host_username"/>
+					<div id="host_username_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+				</li>
+				<li>
+					<label for="user_name">Password:</label>
+					<input class="text" type="password" name="host_password" id="host_password" AUTOCOMPLETE="off" />
+					<div id="host_password_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+				</li>
+				<li id="cluster_options_container">
+				    <label>&nbsp;</label><span><u>Cluster Options</u></span>
+				</li>
+				<li id="new_cluster_radio_container">
+				    <label><input type="radio" name="cluster" value="new_cluster_radio" checked />&nbsp;New cluster:</label>
+				    <input class="text" type="text" id="new_cluster_name"/>
+					<div id="new_cluster_name_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+				</li>
+				<li id="existing_cluster_radio_container">
+				    <label><input type="radio" name="cluster" value="existing_cluster_radio" />&nbsp;Join cluster:</label>
+				    <select class="select" id="cluster_select"></select>
+				</li>
+				<li id="no_cluster_radio_container">
+				    <label><input type="radio" name="cluster" value="no_cluster_radio" />&nbsp;Standalone</label>
+				    <span style="padding-left:20px"></span>
+				</li>
+			</ol>
+		</form>
+	</div>
+</div>
+
 
 <!-- Zonetree Template (begin) -->
 <div class="zonetree_contentbox" id="zonetree" style="display: none">
