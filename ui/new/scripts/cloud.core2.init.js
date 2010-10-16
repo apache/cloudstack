@@ -230,21 +230,21 @@ $(document).ready(function() {
 	
 	// LOGIN/LOGOUT
 	// 'Enter' Key in any login form element = Submit click
-	$("#logoutpage #loginForm").keypress(function(event) {
+	$("#login_wrapper #loginForm").keypress(function(event) {
 		var formId = $(event.target).attr("id");
 		if(event.keyCode == keycode_Enter && formId != "loginbutton") {
 			login();
 		}
 	});
 	
-	$("#logoutpage .loginbutton").bind("click", function(event) {
+	$("#login_wrapper #loginbutton").bind("click", function(event) {
 		login();
 		return false;
 	});
 	
-	$("#logoutaccount_link").bind("click", function(event) {
+	$("#main_logout").bind("click", function(event) {
 		$.ajax({
-		        data: createURL("command=logout&response=json"),
+		    data: createURL("command=logout&response=json"),
 			dataType: "json",
 			success: function(json) {
 				logout(true);
@@ -284,14 +284,13 @@ $(document).ready(function() {
 		// default is to redisplay the login page
 		if (onLogoutCallback()) {
 			if (refresh) {
-				location.replace('/client');
+				location.replace('/client/new');
 				return false;
 			}
 			$("#account_password").val("");
-			$(".loginbutton_box p").hide();
-			$("#logoutpage").show();
-			$("body").css("background", "#4e4e4e url(images/logout_bg.gif) repeat-x top left");			
-			$("#mainmaster").hide();
+			$("#login_wrapper #login_error").hide();
+			$("#login_wrapper").show();
+			$("#main").hide();
 			$("#overlay_black").hide();
 			
 			var menuOnClass = "menutab_on";
@@ -331,9 +330,15 @@ $(document).ready(function() {
 		var password = $.md5(encodeURIComponent($("#account_password").val()));
 		array1.push("&password="+password);
 		
-		var domain = encodeURIComponent($("#account_domain").val());
-		if(domain != null && domain.length > 0)
-		    array1.push("&domain="+domain);
+		var domain = $("#account_domain").val();
+		if(domain != null && domain.length > 0) {
+			if (domain.charAt(0) != "/") {
+				domain = "/" + domain;
+			}
+		    array1.push("&domain="+encodeURIComponent(domain));
+		} else {
+			array1.push("&domain="+encodeURIComponent("/"));
+		}
 		
 		$.ajax({
 			type: "POST",
@@ -373,29 +378,13 @@ $(document).ready(function() {
 				$.cookie('directattacheduntaggedenabled', g_directAttachedUntaggedEnabled, { expires: 1}); 
 				$.cookie('systemvmuselocalstorage', g_systemVmUseLocalStorage, { expires: 1}); 
 				
-				// Set Role
-				if (isUser()) {
-					$(".loginbutton_box p").text("").hide();			
-					$("#menutab_role_user #menutab_dashboard_user").click();
-				} else if (isAdmin()) {
-					$(".loginbutton_box p").text("").hide();			
-					$("#menutab_role_root #menutab_dashboard_root").click();
-				} else if (isDomainAdmin()) {
-					$(".loginbutton_box p").text("").hide();			
-					$("#menutab_role_domain #menutab_dashboard_domain").click();
-				} else {
-				    $(".loginbutton_box p").text("Account type of '" + username + "' is neither user nor admin.").show();
-				    return;
-				}				
-				
-				$("#logoutpage").hide();
-				$("body").css("background", "#FFF repeat top left");
-				$("#mainmaster").show();	
+				$("#main_username").text(g_username);
+				$("#login_wrapper").hide();
+				$("#main").show();	
 			},
 			error: function() {
 				$("#account_password").val("");
-				$("#logoutpage").show();				
-				$(".loginbutton_box p").text("Your username/password does not match our records.").show();
+				$("#login_wrapper #login_error").show();
 				$("#account_username").focus();
 			},
 			beforeSend: function(XMLHttpRequest) {
@@ -491,16 +480,7 @@ $(document).ready(function() {
 		dataType: "json",
 		async: false,
 		success: function(json) {
-			// session is valid, continue
-			if (isUser()) {
-				$("#menutab_role_user #menutab_dashboard_user").click();
-			} else if (isAdmin()) {
-				$("#menutab_role_root #menutab_dashboard_root").click();
-			} else if (isDomainAdmin()) {
-				$("#menutab_role_domain #menutab_dashboard_domain").click();
-			} else {
-				logout(false);
-			}
+			$("#main").show();
 		},
 		error: function(xmlHTTP) {
 			logout(false);

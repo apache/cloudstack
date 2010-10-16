@@ -36,10 +36,12 @@ long milliseconds = new Date().getTime();
     <!-- cloud.com scripts -->
 
     <script type="text/javascript" src="scripts/cloud.logger.js?t=<%=milliseconds%>"></script>
+	
+	<script type="text/javascript" src="scripts/cloud.core2.callbacks.js?t=<%=milliseconds%>"></script>
 
     <script type="text/javascript" src="scripts/cloud.core2.js?t=<%=milliseconds%>"></script>
 
-    <script type="text/javascript" src="scripts/cloud.core2.init.js?t=<%=milliseconds%>"></script>
+	<script type="text/javascript" src="scripts/cloud.core2.init.js?t=<%=milliseconds%>"></script>
 
     <script type="text/javascript" src="scripts/cloud.core2.instance.js?t=<%=milliseconds%>"></script>
 
@@ -76,9 +78,65 @@ long milliseconds = new Date().getTime();
     <title>Cloud.com CloudStack</title>
 </head>
 <body>
+	<!-- Main Login Dialog (begin)-->
+	<div id="login_wrapper" style="display:none">
+    	<div class="login_main">
+        	<div class="login_logopanel">
+            	<div class="login_logobox"></div>
+            </div>
+            <div class="main_loginbox">
+            	<div class="main_loginbox_top"></div>
+                <div class="main_loginbox_mid">
+                	<div class="login_contentbox">
+                    	<div class="login_contentbox_title">
+                        	<h1>Welcome to Management Console &hellip;</h1>
+                        </div>
+                        
+                        <div class="login_formbox">
+                        	<form id="loginForm" action="#" method="post" name="loginForm">
+                            	<ol>
+                                	<li>
+                                    	<label for="user_name">Username: </label>
+                                        <div class="login_formbox_textbg">
+                                        	<input id="account_username" class="text" type="text" name="account_username" AUTOCOMPLETE="off"/>
+                                        </div>
+                                    </li>
+                                    
+                                    <li>
+                                    	<label for="user_name">Password: </label>
+                                        <div class="login_formbox_textbg">
+                                        	<input id="account_password" class="text" type="password" name="account_password" AUTOCOMPLETE="off"/>
+                                        </div>
+                                    </li>
+                                    
+                                    <li>
+                                    	<label for="user_name">Domain: </label>
+                                        <div class="login_formbox_textbg">
+                                        	<input id="account_domain" class="text" type="text" name="account_domain" />
+                                        </div>
+                                    </li>
+                                </ol>
+                                <div class="loginbutton_box">
+                                	<div class="login_button" id="loginbutton" >Login</div>
+                                </div>
+                            </form>
+                            
+                            <div class="error_box" id="login_error" style="display:none;">
+                            	<p>Your username/password does not match our records.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="main_loginbox_bot"></div>
+            </div>
+        </div>
+    </div>
+	<!-- Main Login Dialog (end)-->
+
+	<!-- Main Console -->
     <div id="overlay_black" style="display: none">
     </div>
-    <div id="main">
+    <div id="main" style="display: none">
         <div id="main_header">
             <div class="header_left">
                 <div class="logo">
@@ -89,7 +147,7 @@ long milliseconds = new Date().getTime();
             <div class="header_right">
                 <div class="userlinks">
                     <p>
-                        Welcome <span>John</span>, <a href="#">Logout</a>
+                        Welcome <span id="main_username">Anonymous</span>, <a href="#" id="main_logout">Logout</a>
                     </p>
                 </div>
             </div>
