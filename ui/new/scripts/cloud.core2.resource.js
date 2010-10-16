@@ -213,7 +213,8 @@ function buildZoneTree() {
 			    var clusterId = jsonObj.id;
 			    $("#midmenu_container").empty();
 			    listItemsInMidmenu(("listHosts&clusterid="+clusterId), "listhostsresponse", "host", hostToMidmenu, hostToRigntPanel, getMidmenuId); 					
-				break;								
+				listItemsInMidmenu(("listStoragePools&clusterid="+clusterId), "liststoragepoolsresponse", "storagepool", primarystorageToMidmenu, primarystorageToRigntPanel, getMidmenuId); 					
+	    		break;								
 						
 			case "systemvm_name" :		
 			    selectLeftMenu(target.parent().parent().parent());		
@@ -456,14 +457,14 @@ function hostToMidmenu(jsonObj, $midmenuItem1) {
     $midmenuItem1.attr("id", getMidmenuId(jsonObj));  
     $midmenuItem1.data("jsonObj", jsonObj);      
     //$iconContainer.find("#icon").attr("src", "images/midmenuicon_host.png");      
-    $midmenuItem1.find("#first_row").text(jsonObj.name.substring(0,25)); 
-    $midmenuItem1.find("#second_row").text(jsonObj.ipaddress.substring(0,25));  
-    updateStateInMidMenu(jsonObj, $midmenuItem1);           
+    $midmenuItem1.find("#first_row").text(fromdb(jsonObj.name).substring(0,25)); 
+    $midmenuItem1.find("#second_row").text(jsonObj.ipaddress.substring(0,25)); 
 }
 
-function hostToRigntPanel($midmenuItem) {      
-    var jsonObj = $midmenuItem.data("jsonObj");
+function hostToRigntPanel($midmenuItem1) {      
+    var jsonObj = $midmenuItem1.data("jsonObj");
     hostJsonToDetailsTab(jsonObj);   
+    showPage($("#host_page"));
 }
 
 function hostJsonToDetailsTab(jsonObj) {	    
@@ -483,6 +484,20 @@ function hostJsonToDetailsTab(jsonObj) {
 //***** host page (end) *******************************************************************************************************
 
 //***** primary storage page (bgein) ******************************************************************************************
+function primarystorageToMidmenu(jsonObj, $midmenuItem1) {    
+    $midmenuItem1.attr("id", getMidmenuId(jsonObj));  
+    $midmenuItem1.data("jsonObj", jsonObj);      
+    //$iconContainer.find("#icon").attr("src", "images/midmenuicon_primarystorage.png");      
+    $midmenuItem1.find("#first_row").text(fromdb(jsonObj.name).substring(0,25)); 
+    $midmenuItem1.find("#second_row").text(jsonObj.ipaddress.substring(0,25));          
+}
+
+function primarystorageToRigntPanel($midmenuItem1) {      
+    var jsonObj = $midmenuItem1.data("jsonObj");
+    primarystorageJsonToDetailsTab(jsonObj);   
+    showPage($("#primarystorage_page"));
+}
+
 function primarystorageJsonToDetailsTab(jsonObj) {	    
     var $detailsTab = $("#primarystorage_page").find("#tab_content_details");   
     $detailsTab.data("jsonObj", jsonObj);           
