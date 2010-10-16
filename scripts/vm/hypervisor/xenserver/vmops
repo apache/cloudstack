@@ -718,7 +718,8 @@ def mount(remoteDir, localDir):
     makedirs(localDir)
     
     try: 
-        cmd = ['mount', remoteDir, localDir]
+        options = "soft,timeo=133,retrans=10,tcp,noac"
+        cmd = ['mount', remoteDir, localDir, "-o", options]
         txt = util.pread2(cmd)
     except:
         txt = ''
