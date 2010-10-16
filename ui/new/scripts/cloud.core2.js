@@ -739,7 +739,56 @@ function getMidmenuId(jsonObj) {
     return "midmenuItem_" + jsonObj.id; 
 }
 
+function listItemsInMidmenu(commandString, jsonResponse1, jsonResponse2, toMidmenuFn, toRightPanelFn, getMidmenuIdFn) {                
+    $.ajax({
+        cache: false,
+        data: createURL("command="+commandString+"&pagesize="+midmenuItemCount),
+        dataType: "json",
+        success: function(json) {		                    
+            selectedItemsInMidMenu = {};    	                
+            var items = json[jsonResponse1][jsonResponse2];
+            if(items != null && items.length > 0) {
+                for(var i=0; i<items.length;i++) { 
+                    var $midmenuItem1 = $("#midmenu_item").clone();  
+                    $midmenuItem1.data("toRightPanelFn", toRightPanelFn);                             
+                    toMidmenuFn(items[i], $midmenuItem1);    
+                    bindClickToMidMenu($midmenuItem1, toRightPanelFn, getMidmenuIdFn);             
+                    $("#midmenu_container").append($midmenuItem1.show());   
+                    if(i == 0)  //click the 1st item in middle menu as default 
+                        $midmenuItem1.click();                        
+                }  
+            }  
+        }
+    });	 
+}
 
+function listMidMenuItems(leftmenuId, commandString, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSPFn, toMidmenuFn, toRightPanelFn, getMidmenuIdFn) { 
+    $("#"+leftmenuId).bind("click", function(event) {
+        selectLeftMenu($(this));
+        
+        showMiddleMenu();
+        disableMultipleSelectionInMidMenu();
+        
+        clearLeftMenu();
+        clearMiddleMenu();
+        
+        $("#right_panel").load(rightPanelJSP, function(){     
+            var $actionLink = $("#right_panel_content #tab_content_details #action_link");
+            $actionLink.bind("mouseover", function(event) {	    
+                $(this).find("#action_menu").show();    
+                return false;
+            });
+            $actionLink.bind("mouseout", function(event) {       
+                $(this).find("#action_menu").hide();    
+                return false;
+            });	   
+                          
+            afterLoadRightPanelJSPFn();                
+            listItemsInMidmenu(commandString, jsonResponse1, jsonResponse2, toMidmenuFn, toRightPanelFn, getMidmenuIdFn);            
+        });     
+        return false;
+    });
+}
 
 
 

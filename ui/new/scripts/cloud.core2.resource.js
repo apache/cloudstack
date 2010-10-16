@@ -209,7 +209,10 @@ function buildZoneTree() {
 			    selectLeftMenu(target.parent().parent().parent());			    
 			    var jsonObj = target.data("jsonObj");
 			    showPage($("#cluster_page"), jsonObj);
-			    clusterJsonToDetailsTab(jsonObj);					
+			    clusterJsonToDetailsTab(jsonObj);
+			    var clusterId = jsonObj.id;
+			    $("#midmenu_container").empty();
+			    listItemsInMidmenu(("listHosts&clusterid="+clusterId), "listhostsresponse", "host", hostToMidmenu, hostToRigntPanel, getMidmenuId); 					
 				break;								
 						
 			case "systemvm_name" :		
@@ -449,6 +452,20 @@ function clusterJsonToDetailsTab(jsonObj) {
 //***** cluster page (end) ****************************************************************************************************
 
 //***** host page (bgein) *****************************************************************************************************
+function hostToMidmenu(jsonObj, $midmenuItem1) {    
+    $midmenuItem1.attr("id", getMidmenuId(jsonObj));  
+    $midmenuItem1.data("jsonObj", jsonObj);      
+    //$iconContainer.find("#icon").attr("src", "images/midmenuicon_host.png");      
+    $midmenuItem1.find("#first_row").text(jsonObj.name.substring(0,25)); 
+    $midmenuItem1.find("#second_row").text(jsonObj.ipaddress.substring(0,25));  
+    updateStateInMidMenu(jsonObj, $midmenuItem1);           
+}
+
+function hostToRigntPanel($midmenuItem) {      
+    var jsonObj = $midmenuItem.data("jsonObj");
+    hostJsonToDetailsTab(jsonObj);   
+}
+
 function hostJsonToDetailsTab(jsonObj) {	    
     var $detailsTab = $("#host_page").find("#tab_content_details");   
     $detailsTab.data("jsonObj", jsonObj);           
