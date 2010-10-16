@@ -136,19 +136,19 @@ $(document).ready(function() {
     });
     
     $("#leftmenu_resource").bind("click", function(event) {         
-        //showMiddleMenuWithoutSearch();
-        //disableMultipleSelectionInMidMenu();        
-        //clearLeftMenu();
-        //clearMiddleMenu();
+        showMiddleMenu();
+        disableMultipleSelectionInMidMenu();        
+        clearLeftMenu();
+        clearMiddleMenu();
        
-        $arrowIcon = $(this).find("#arrowIcon");
+        $arrowIcon = $(this).find("#resource_arrow");
         if($arrowIcon.hasClass("expanded_close") == true) {
             $arrowIcon.removeClass("expanded_close").addClass("expanded_open");
             buildZoneTree();
         }
         else {
             $arrowIcon.removeClass("expanded_open").addClass("expanded_close");
-            $("#leftmenu_zone_tree").empty();
+            $("#leftmenu_zone_tree").find("#tree_container").empty();
         }
                 
         $("#right_panel").load("jsp/resource.jsp", function(){             

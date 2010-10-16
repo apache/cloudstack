@@ -16,15 +16,18 @@ function buildZoneTree() {
     */
     
     
+    
     //***** build zone tree (begin) ***********************************************************************************************
-    var forceLogout = true;  // We force a logout only if the user has first added a POD for the very first time 
-    var $zoneTree = $("#leftmenu_zone_tree");
+    var forceLogout = true;  // We force a logout only if the user has first added a POD for the very first time     
+    var $loading = $("#leftmenu_zone_tree").find("#loading_container").show();
+    var $zoneTree = $("#leftmenu_zone_tree").find("#tree_container").hide();
+    
     //var $zoneetree1 = $("#zonetree").clone().attr("id", "zonetree1");  
     //$("#midmenu_container").append($zoneetree1.show());
     
     $.ajax({
 	    data: createURL("command=listZones&available=true"+maxPageSize),
-		dataType: "json",
+		dataType: "json",		
 		success: function(json) {
 			var items = json.listzonesresponse.zone;
 			var container = $zoneTree.empty();
@@ -35,6 +38,8 @@ function buildZoneTree() {
 					container.append($zoneNode.show());
 				}
 			}	
+			$loading.hide();
+            $zoneTree.show();
 		}
 	});  
 
@@ -48,10 +53,11 @@ function buildZoneTree() {
 	    $.ajax({
 	        data: createURL("command=listPods&zoneid="+zoneid+maxPageSize),
 		    dataType: "json",
+		    async: false,
 		    success: function(json) {
 			    var items = json.listpodsresponse.pod;
 			    //var container = template.find("#pods_container").empty();
-			    var container = $zoneNode.find("#zone_container");
+			    var container = $zoneNode.find("#pods_container");
 			    if (items != null && items.length > 0) {					    
 				    for (var i = 0; i < items.length; i++) {
 					    var $podNode = $("#leftmenu_pod_node_template").clone(true);
@@ -66,6 +72,7 @@ function buildZoneTree() {
 	    $.ajax({
 	        data: createURL("command=listSystemVms&zoneid="+zoneid+maxPageSize),
 		    dataType: "json",
+		    async: false,
 		    success: function(json) {
 			    var items = json.listsystemvmsresponse.systemvm;
 			    var container = $zoneNode.find("#systemvms_container").empty();
@@ -91,6 +98,7 @@ function buildZoneTree() {
 	    $.ajax({
             data: createURL("command=listClusters&podid="+podid+maxPageSize),
 	        dataType: "json",
+	        async: false,
 	        success: function(json) {
 		        var items = json.listclustersresponse.cluster;
 		        var container = $podNode.find("#clusters_container").empty();
@@ -181,13 +189,14 @@ function buildZoneTree() {
 		var name = template.data("name");
 		
 		switch (action) {
-			case "zone_expand" :			   
-				if (target.hasClass("zonetree_closedarrows")) {						
-					target.removeClass().addClass("zonetree_openarrows");					
-					target.parent().parent().parent().find("#zone_content").show();	
-				} else {					
-					target.removeClass().addClass("zonetree_closedarrows");					
-					target.parent().parent().parent().find("#zone_content").hide();									
+			case "zone_arrow" :			    	   
+				if(target.hasClass("expanded_close")) {						
+					target.removeClass("expanded_close").addClass("expanded_open");					
+					target.parent().parent().siblings("#zone_content").show();	
+				} 
+				else if(target.hasClass("expanded_open")) {					
+					target.removeClass("expanded_open").addClass("expanded_close");					
+					target.parent().parent().siblings("#zone_content").hide();									
 				}
 				break;	
 			case "zone_name":	
@@ -200,7 +209,7 @@ function buildZoneTree() {
 			    break;
 			
 			
-			case "pod_expand" :				    	   
+			case "pod_arrow" :				    	   
 				if (target.hasClass("zonetree_closedarrows")) {									
 					target.removeClass().addClass("zonetree_openarrows");
 					target.parent().parent().siblings("#pod_content").show();	
@@ -216,63 +225,15 @@ function buildZoneTree() {
 			    showPage($podPage, jsonObj);		
 			    podJsonToDetailsTab(jsonObj);				
 				break;
-				
-			
-			case "cluster_expand" :			   
-				if (target.hasClass("zonetree_closedarrows")) {
-				    target.removeClass().addClass("zonetree_openarrows");
-					target.parent().parent().siblings("#cluster_content").show();					
-					
-				} else {
-				    target.removeClass().addClass("zonetree_closedarrows");
-					target.parent().parent().siblings("#cluster_content").hide();					
-				}
-				break;		
+								
+		
 			case "cluster_name" :			   
 				$zoneetree1.find(".selected").removeClass("selected");
 			    target.parent().parent().parent().addClass("selected");			    
 			    var jsonObj = target.data("jsonObj");
 			    showPage($clusterPage, jsonObj);
 			    clusterJsonToDetailsTab(jsonObj);					
-				break;	
-				
-				
-			case "host_expand" :			   
-				if (target.hasClass("zonetree_closedarrows")) {
-				    target.removeClass().addClass("zonetree_openarrows");
-					target.parent().parent().siblings("#host_content").show();					
-					
-				} else {
-				    target.removeClass().addClass("zonetree_closedarrows");
-					target.parent().parent().siblings("#host_content").hide();					
-				}
-				break;	
-			case "host_name" :			   
-				$zoneetree1.find(".selected").removeClass("selected");
-			    target.parent().parent().parent().addClass("selected");			    
-				var jsonObj = target.data("jsonObj");
-				showPage($hostPage, jsonObj);
-				hostJsonToDetailsTab(jsonObj);				
-				break;	
-			
-			
-			case "primarystorage_expand" :			   
-				if (target.hasClass("zonetree_closedarrows")) {
-				    target.removeClass().addClass("zonetree_openarrows");
-					target.parent().parent().siblings("#primarystorage_content").show();					
-					
-				} else {
-				    target.removeClass().addClass("zonetree_closedarrows");
-					target.parent().parent().siblings("#primarystorage_content").hide();					
-				}
-				break;	
-			case "primarystorage_name" :			   
-				$zoneetree1.find(".selected").removeClass("selected");
-			    target.parent().parent().parent().addClass("selected");			    
-			    var jsonObj = target.data("jsonObj");
-			    showPage($primarystoragePage, jsonObj);
-				primarystorageJsonToDetailsTab(jsonObj);					
-				break;
+				break;			
 						
 						
 			case "systemvm_name" :			   

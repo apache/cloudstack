@@ -586,7 +586,7 @@ long milliseconds = new Date().getTime();
                         <div class="leftmenu_expandedlist">
                             <div class="leftmenu_content" id="leftmenu_resource">
                                 <div class="leftmenu_secondindent">
-                                    <div class="leftmenu_arrows expanded_close" id="arrowIcon">
+                                    <div class="leftmenu_arrows expanded_close" id="resource_arrow">
                                     </div>
                                    
                                     <%=t.t("resources")%>
@@ -717,7 +717,7 @@ long milliseconds = new Date().getTime();
         <div id="row_container">
 	        <div class="leftmenu_content" id="header">  
 	            <div class="leftmenu_thirdindent">
-	                <div class="leftmenu_arrows expanded_close" id="arrowIcon">
+	                <div class="leftmenu_arrows expanded_close" id="zone_arrow">
 	                </div>
 	                
 	                Zone: <strong><span id="zone_name"></span></strong>
@@ -741,7 +741,7 @@ long milliseconds = new Date().getTime();
         <div id="row_container">
 	        <div class="leftmenu_content" id="header">
 	            <div class="leftmenu_fourthindent">
-	                <div class="leftmenu_arrows expanded_close" id="arrowIcon">
+	                <div class="leftmenu_arrows expanded_close" id="pod_arrow">
 	                </div>
 	               
 	                Pod: <strong><span id="pod_name"></span></strong>
@@ -763,7 +763,7 @@ long milliseconds = new Date().getTime();
         <div id="row_container">
 	        <div class="leftmenu_content" id="header">
 	            <div class="leftmenu_fifthindent">
-	                <div class="leftmenu_arrows expanded_close" id="arrowIcon">
+	                <div class="leftmenu_arrows expanded_close" id="cluster_arrow">
 	                </div>
 	                
 	                Cluster: <strong><span id="cluster_name"></span></strong>
@@ -783,7 +783,7 @@ long milliseconds = new Date().getTime();
     	<div id="row_container">
 	        <div class="leftmenu_content" id="header">
 	            <div class="leftmenu_fourthindent">
-	                <div class="leftmenu_arrows expanded_close" id="arrowIcon">
+	                <div class="leftmenu_arrows expanded_close" id="systemvm_arrow">
 	                </div>
 	             
 	                System VM: <strong><span id="systemvm_name"></span></strong>
