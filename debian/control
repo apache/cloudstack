@@ -139,6 +139,12 @@ Description: Cloud.com Python library
  The Cloud.com Python library contains a few Python modules that the
  CloudStack uses.
 
+Package: cloud-cli
+Architecture: any
+Depends: python
+Description: Cloud.com Volume Manager Tools
+ The Cloud.com cli tool set let you to access CloudStack Management API through CLI and Manage Volumes
+
 Package: cloud-agent
 Provides: vmops-agent
 Conflicts: vmops-agent

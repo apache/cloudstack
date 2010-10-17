@@ -1,0 +1,5 @@
+/usr/lib/python*/dist-packages/cloudtool*
+/usr/lib/python*/dist-packages/cloudapis.py
+/etc/cloud/cli/commands.xml
+/usr/bin/cloud-tool
+/usr/bin/cloudvoladm

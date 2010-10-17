@@ -1,1 +1,3 @@
-/usr/lib/python*/dist-packages/cloud*
+/usr/lib/python*/dist-packages/cloud_PrettyPrint.*
+/usr/lib/python*/dist-packages/cloud_sxp.*
+/usr/lib/python*/dist-packages/cloud_utils.*
