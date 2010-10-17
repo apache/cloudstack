@@ -195,12 +195,12 @@ function showPage($pageToShow, jsonObj) {
     }   
     
     if($pageToShow.attr("id") == "zone_page") {        
-        initAddPodButton($("#midmenu_add_link"), jsonObj);  
+        initAddPodButton($("#midmenu_add_link"));  
         $("#tab_details").click();      
     }
     else if($pageToShow.attr("id") == "pod_page") {
-        initAddHostButton($("#midmenu_add_link"), jsonObj);  
-        initAddPrimaryStorageButton($("#midmenu_add2_link"), jsonObj);                
+        initAddHostButton($("#midmenu_add_link"));  
+        initAddPrimaryStorageButton($("#midmenu_add2_link"));                
     }      
     else {
         $("#midmenu_add_link").unbind("click").hide();              
@@ -409,16 +409,80 @@ function toSystemVMTypeText(value) {
 }
 //***** systemVM page (end) ***************************************************************************************************
 
-function afterSwitchToDetailsTab() {
-    $("#midmenu_add2_link").hide();  
+function afterSwitchToDetailsTab() {    
+    $("#midmenu_add2_link").unbind("click").hide(); 
 }
 function afterSwitchToNetworkTab() {
-    $("#midmenu_add2_link").find("#label").text("Add VLAN IP Range");  
-    $("#midmenu_add2_link").show();
+    initAddVLANButton($("#midmenu_add2_link"));
 }
 function afterSwitchToSecondaryStorageTab() {
-    $("#midmenu_add2_link").find("#label").text("Add Secondary Storage").show();  
-    $("#midmenu_add2_link").show();
+    initAddecondaryStorageButton($("#midmenu_add2_link"));
+}
+
+function initAddVLANButton($midmenuAdd2Link) {
+    $("#midmenu_add2_link").find("#label").text("Add VLAN IP Range");      
+    $("#midmenu_add2_link").show();   
+    $midmenuAdd2Link.unbind("click").bind("click", function(event) {        
+        var zoneObj = $("#zone_page").find("#tab_content_details").data("jsonObj");       
+        $("#dialog_add_vlan").find("#zone_name").text(fromdb(zoneObj.name));  //???  
+        
+        return false;
+    });
+}
+
+function initAddecondaryStorageButton($midmenuAdd2Link) {
+    $midmenuAdd2Link.find("#label").text("Add Secondary Storage");
+    $midmenuAdd2Link.show();      
+    $midmenuAdd2Link.unbind("click").bind("click", function(event) {
+        var zoneObj = $("#zone_page").find("#tab_content_details").data("jsonObj");       
+        $("#dialog_add_secondarystorage").find("#zone_name").text(fromdb(zoneObj.name));   
+   
+        $("#dialog_add_secondarystorage")
+	    .dialog('option', 'buttons', { 				    
+		    "Add": function() { 
+		        var thisDialog = $(this);
+		    
+			    // validate values					
+			    var isValid = true;							    
+			    isValid &= validateString("NFS Server", thisDialog.find("#nfs_server"), thisDialog.find("#nfs_server_errormsg"));	
+			    isValid &= validatePath("Path", thisDialog.find("#path"), thisDialog.find("#path_errormsg"));					
+			    if (!isValid) 
+			        return;
+			        
+				thisDialog.dialog("close");	
+								
+				var $subgridItem = $("#secondary_storage_tab_template").clone(true);	
+	            var $spinningWheel = $subgridItem.find("#spinning_wheel");
+                $spinningWheel.find("#description").text("Adding Secondary Storage....");  
+                $spinningWheel.show();  
+                $subgridItem.find("#after_action_info_container").removeClass("error").addClass("success").hide();  
+                $("#zone_page").find("#tab_content_secondary_storage").append($subgridItem.show());    
+				     					  								            				
+			    var zoneId = zoneObj.id;		
+			    var nfs_server = trim(thisDialog.find("#nfs_server").val());		
+			    var path = trim(thisDialog.find("#path").val());	    					    				    					   					
+				var url = nfsURL(nfs_server, path);  
+			    				  
+			    $.ajax({
+				    data: createURL("command=addSecondaryStorage&zoneId="+zoneId+"&url="+encodeURIComponent(url)+"&response=json"),
+				    dataType: "json",
+				    success: function(json) {						        
+				        secondaryStorageJSONToTemplate(json.addsecondarystorageresponse.secondarystorage[0], $subgridItem);
+				        $spinningWheel.hide();   
+	                    $subgridItem.find("#after_action_info").text("Secondary storage was added successfully.");
+                        $subgridItem.find("#after_action_info_container").removeClass("error").addClass("success").show();  
+				    },			
+                    error: function(XMLHttpResponse) {	
+                        handleErrorInSubgridItem(XMLHttpResponse, $subgridItem, "Add Secondary Storage");    
+                    }					    			    
+			    });
+		    }, 
+		    "Cancel": function() { 
+			    $(this).dialog("close"); 
+		    } 
+	    }).dialog("open");                
+        return false;
+    });
 }
 
 function afterLoadResourceJSP() {	
@@ -572,11 +636,11 @@ function initAddZoneButton($midmenuAddLink1) {
     });     
 }
 
-function initAddPodButton($midmenuAddLink1, jsonObj) {
-    $midmenuAddLink1.find("#label").text("Add Pod");  
-    $midmenuAddLink1.data("jsonObj", jsonObj).show();   
-    $midmenuAddLink1.unbind("click").bind("click", function(event) {    
-        var zoneObj = $(this).data("jsonObj");		
+function initAddPodButton($midmenuAddLink1) {
+    $midmenuAddLink1.find("#label").text("Add Pod"); 
+    $midmenuAddLink1.show();     
+    $midmenuAddLink1.unbind("click").bind("click", function(event) {   
+        var zoneObj = $("#zone_page").find("#tab_content_details").data("jsonObj");   	
         $("#dialog_add_pod").find("#add_pod_zone_name").text(fromdb(zoneObj.name));
         $("#dialog_add_pod #add_pod_name, #dialog_add_pod #add_pod_cidr, #dialog_add_pod #add_pod_startip, #dialog_add_pod #add_pod_endip, #add_pod_gateway").val("");
 		
@@ -659,12 +723,12 @@ function initAddPodButton($midmenuAddLink1, jsonObj) {
     });            
 }
 
-function initAddHostButton($midmenuAddLink1, jsonObj) {
-    $midmenuAddLink1.find("#label").text("Add Host");  
-    $midmenuAddLink1.data("jsonObj", jsonObj).show(); 
+function initAddHostButton($midmenuAddLink1) {
+    $midmenuAddLink1.find("#label").text("Add Host"); 
+    $midmenuAddLink1.show();
     $midmenuAddLink1.unbind("click").bind("click", function(event) {     
-        dialogAddHost = $("#dialog_add_host");  
-        var podObj = $(this).data("jsonObj");	
+        dialogAddHost = $("#dialog_add_host");          
+        var podObj = $("#pod_page").find("#tab_content_details").data("jsonObj");   
         dialogAddHost.find("#zone_name").text(fromdb(podObj.zonename));  
         dialogAddHost.find("#pod_name").text(fromdb(podObj.name)); 
         dialogAddHost.find("#new_cluster_name").val("");
@@ -769,12 +833,12 @@ function initAddHostButton($midmenuAddLink1, jsonObj) {
     });        
 }
 
-function initAddPrimaryStorageButton($midmenuAddLink2, jsonObj) {
+function initAddPrimaryStorageButton($midmenuAddLink2) {
     $midmenuAddLink2.find("#label").text("Add Primary Storage"); 
-    $midmenuAddLink2.data("jsonObj", jsonObj).show();   
-    $midmenuAddLink2.unbind("click").bind("click", function(event) {                 
+    $midmenuAddLink2.show();   
+    $midmenuAddLink2.unbind("click").bind("click", function(event) {   
+        var podObj = $("#pod_page").find("#tab_content_details").data("jsonObj");
         dialogAddPool = $("#dialog_add_pool");  
-        var podObj = $(this).data("jsonObj");	
         dialogAddPool.find("#zone_name").text(fromdb(podObj.zonename));  
         dialogAddPool.find("#pod_name").text(fromdb(podObj.name)); 
                                 
@@ -873,8 +937,8 @@ function initAddPrimaryStorageButton($midmenuAddLink2, jsonObj) {
 function secondaryStorageJSONToTemplate(json, template) {
     template.attr("id", "secondaryStorage_"+json.id).data("secondaryStorageId", json.id);   	
    	template.find("#id").text(json.id);
-   	template.find("#name").text(json.name);
-   	template.find("#zonename").text(json.zonename);	
+   	template.find("#name").text(fromdb(json.name));
+   	template.find("#zonename").text(fromdb(json.zonename));	
 	template.find("#type").text(json.type);	
     template.find("#ipaddress").text(json.ipaddress);
     template.find("#state").text(json.state);
