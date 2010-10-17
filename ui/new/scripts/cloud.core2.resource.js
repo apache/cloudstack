@@ -58,7 +58,8 @@ function buildZoneTree() {
 			    var jsonObj = target.data("jsonObj");  
 			    showPage($("#zone_page"), jsonObj);
 			    zoneJsonToDetailsTab(jsonObj);
-			    zoneJsonToNetworkTab(jsonObj);							    		   			    
+			    zoneJsonToNetworkTab(jsonObj);	
+			    zoneJsonToSecondaryStorageTab(jsonObj);						    		   			    
 			    break;		
 			    	
 			case "pod_name" :	
@@ -195,7 +196,7 @@ function showPage($pageToShow, jsonObj) {
     
     if($pageToShow.attr("id") == "zone_page") {        
         initAddPodButton($("#midmenu_add_link"), jsonObj);  
-        $("#midmenu_add2_link").unbind("click").hide();   
+        $("#tab_details").click();      
     }
     else if($pageToShow.attr("id") == "pod_page") {
         initAddHostButton($("#midmenu_add_link"), jsonObj);  
@@ -222,7 +223,7 @@ function zoneJsonToDetailsTab(jsonObj) {
 }	  
 
 function zoneJsonToNetworkTab(jsonObj) {	    
-    var $networkTab = $("#zone_page").find("#tab_content_network");  
+    var $networkTab = $("#zone_page").find("#tab_content_network");      
     $networkTab.find("#zone_cloud").find("#zone_name").text(fromdb(jsonObj.name));	 
     $networkTab.find("#zone_vlan").text(jsonObj.vlan);   
                   
@@ -249,6 +250,27 @@ function zoneJsonToNetworkTab(jsonObj) {
 		}
 	});
 }	 
+
+function zoneJsonToSecondaryStorageTab(jsonObj) {   
+    var zoneObj =  $("#zone_page").find("#tab_content_details").data("jsonObj");  
+    $.ajax({
+		cache: false,
+		data: createURL("command=listHosts&type=SecondaryStorage&zoneid="+zoneObj.id+maxPageSize),
+		dataType: "json",
+		success: function(json) {			   			    
+			var items = json.listhostsresponse.host;	
+			var container = $("#zone_page").find("#tab_content_secondary_storage").empty();																					
+			if (items != null && items.length > 0) {			    
+				var template = $("#secondary_storage_tab_template");				
+				for (var i = 0; i < items.length; i++) {
+					var newTemplate = template.clone(true);	               
+	                secondaryStorageJSONToTemplate(items[i], newTemplate); 
+	                container.append(newTemplate.show());	
+				}			
+			}			
+		}
+	});     
+}
 
 function vlanJsonToTemplate(jsonObj, $template1) {
     $template1.data("jsonObj", jsonObj);
@@ -412,6 +434,7 @@ function afterLoadResourceJSP() {
 	initDialog("dialog_add_pod", 320);
 	initDialog("dialog_add_host");
 	initDialog("dialog_add_pool");
+	initDialog("dialog_add_secondarystorage");
 	
 	// if hypervisor is KVM, limit the server option to NFS for now
 	if (getHypervisorType() == 'kvm') {
@@ -846,3 +869,15 @@ function initAddPrimaryStorageButton($midmenuAddLink2, jsonObj) {
         return false;
     });             
 }
+
+function secondaryStorageJSONToTemplate(json, template) {
+    template.attr("id", "secondaryStorage_"+json.id).data("secondaryStorageId", json.id);   	
+   	template.find("#id").text(json.id);
+   	template.find("#name").text(json.name);
+   	template.find("#zonename").text(json.zonename);	
+	template.find("#type").text(json.type);	
+    template.find("#ipaddress").text(json.ipaddress);
+    template.find("#state").text(json.state);
+    template.find("#version").text(json.version); 
+    setDateField(json.disconnected, template.find("#disconnected"));
+}   

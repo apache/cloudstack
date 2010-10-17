@@ -816,153 +816,33 @@
     </div>
 </div>
 
+<!-- Add Secondary Storage Dialog (begin) -->
+<div id="dialog_add_secondarystorage" title="Add Secondary Storage" style="display: none">
+    <p>Add a new storage for zone <b><span id="zone_name"></span></b></p>
+    <div class="dialog_formcontent">
+        <form action="#" method="post" id="form1">
+        <ol>            
+            <li>
+                <label>
+                    NFS Server:</label>
+                <input class="text" type="text" name="nfs_server" id="nfs_server" />
+                <div id="nfs_server_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li>
+                <label for="path">
+                    Path:</label>
+                <input class="text" type="text" name="path" id="path" />
+                <div id="path_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+        </ol>
+        </form>
+    </div>
+</div>
+<!-- Add Secondary Storage Dialog (end) -->
 
-<!-- Zonetree Template (begin) -->
-<div class="zonetree_contentbox" id="zonetree" style="display: none">
-    <div id="zones_container">
-    </div>
-</div>
-<!-- Zonetree Template (end) -->
-<!-- Zone Template (begin) -->
-<div id="zone_template" style="display: none">
-    <div class="adding_loading" style="height: 25px; display: none" id="loading_container">
-        <div class="adding_animation">
-        </div>
-        <div class="adding_text">
-            Adding a zone &hellip;
-        </div>
-    </div>
-    <div id="row_container">
-        <div class="leftmenu_content" id="zone_node">
-            <div class="leftmenu_firstindent">
-                <div class="zonetree_closedarrows" id="zone_expand">
-                </div>
-                <div class="leftmenu_list_icons">
-                    <img src="images/zone_zoneicon.png" id="zone_icon" alt="Zone" /></div>
-                <span id="zone_label">Zone:</span> <strong><span id="zone_name">Zone 1</span> </strong>
-            </div>
-        </div>
-        <div id="zone_content" style="display: none">
-            <div id="pods_container">
-            </div>
-            <div id="systemvms_container">
-            </div>
-        </div>
-    </div>
-</div>
-<!-- Zone Template (end) -->
-<!-- Pod Template (begin) -->
-<div id="pod_template" style="display: none">
-    <div class="adding_loading" style="height: 25px; display: none" id="loading_container">
-        <div class="adding_animation">
-        </div>
-        <div class="adding_text">
-            Adding a pod &hellip;
-        </div>
-    </div>
-    <div id="row_container">
-        <div class="leftmenu_content" id="pod_node">
-            <div class="leftmenu_secondindent">
-                <div class="zonetree_closedarrows" id="pod_expand">
-                </div>
-                <div class="leftmenu_list_icons">
-                    <img src="images/zone_podicon.png" id="pod_icon" alt="Pod" /></div>
-                <span id="pod_label">Pod:</span> <strong><span id="pod_name">Name of the Pod</span>
-                </strong>
-            </div>
-        </div>
-        <div id="pod_content" style="display: none">
-            <div id="clusters_container">
-            </div>
-        </div>
-    </div>
-</div>
-<!-- Pod Template (end) -->
-<!-- Cluster Template (begin) -->
-<div id="cluster_template" style="display: none">
-    <div class="adding_loading" style="height: 25px; display: none" id="loading_container">
-        <div class="adding_animation">
-        </div>
-        <div class="adding_text">
-            Adding a cluster &hellip;
-        </div>
-    </div>
-    <div id="row_container">
-        <div class="leftmenu_content" id="cluster_node">
-            <div class="leftmenu_thirdindent">
-                <div class="zonetree_openarrows" id="cluster_expand">
-                </div>
-                <div class="leftmenu_list_icons">
-                    <img src="images/zone_clustericon.png" id="cluster_icon" alt="Cluster" /></div>
-                <span id="cluster_label"">Cluster:</span> <strong><span id="cluster_name">(Name of the
-                    Cluster)</span> </strong>
-            </div>
-        </div>
-        <div id="cluster_content">
-            <div id="hosts_container">
-            </div>
-            <div id="primarystorages_container">
-            </div>
-        </div>
-    </div>
-</div>
-<!-- Cluster Template (end) -->
-<!-- Host Template (begin) -->
-<div id="host_template" style="display: none">
-    <div class="adding_loading" style="height: 25px; display: none" id="loading_container">
-        <div class="adding_animation">
-        </div>
-        <div class="adding_text">
-            Adding a host &hellip;
-        </div>
-    </div>
-    <div id="row_container">
-        <div class="leftmenu_content" id="host_node">
-            <div class="leftmenu_fourthindent">
-                <div class="leftmenu_list_icons">
-                    <img src="images/zone_hosticon.png" id="host_icon" alt="Host" /></div>
-                <span id="host_label">Host:</span> <strong><span id="host_name">(Name of the Host)</span>
-                </strong>
-            </div>
-        </div>
-    </div>
-</div>
-<!-- Host Template (end) -->
-<!-- Primary Storage Template (begin) -->
-<div id="primarystorage_template" style="display: none">
-    <div class="adding_loading" style="height: 25px; display: none" id="loading_container">
-        <div class="adding_animation">
-        </div>
-        <div class="adding_text">
-            Adding a primary storage &hellip;
-        </div>
-    </div>
-    <div id="row_container">
-        <div class="leftmenu_content" id="primarystorage_node">
-            <div class="leftmenu_fourthindent">
-                <div class="leftmenu_list_icons">
-                    <img src="images/zone_primarystorageicon.png" id="primarystorage_icon" alt="PrimaryStorage" /></div>
-                <span id="primarystorage_label">Storage:</span> <strong><span id="primarystorage_name">
-                    (Name of the Primary Storage)</span> </strong>
-            </div>
-        </div>
-    </div>
-</div>
-<!-- Primary Storage Template (end) -->
-<!-- SystemVM Template (begin) -->
-<div id="systemvm_template" style="display: none">
-    <div id="row_container">
-        <div class="leftmenu_content" id="systemvm_node">
-            <div class="leftmenu_secondindent">
-                <div class="leftmenu_list_icons">
-                    <img src="images/zone_systemvmicon.png" id="systemvm_icon" alt="System VM" /></div>
-                <span id="systemvm_label">System VM:</span> <strong><span id="systemvm_name">(System
-                    VM name)</span> </strong>
-            </div>
-        </div>
-    </div>
-</div>
-<!-- SystemVM Template (end) -->
+
 <!-- Direct VLAN Template (begin) -->
 <div class="networkswitch_vlanpanel" id="direct_vlan_template" style="display: none">
     <div class="networkswitch_vlanconnect">
@@ -1007,3 +887,114 @@
     </div>
 </div>
 <!-- Public VLAN Template (begin) -->
+
+
+<!--  secondary storage tab template (begin) -->
+<div class="grid_container" id="secondary_storage_tab_template" style="display: none">
+    <div class="grid_header">
+        <div class="grid_header_title" id="title">
+        </div>
+        <div class="grid_actionbox" id="snapshot_action_link">
+            <div class="grid_actionsdropdown_box" id="snapshot_action_menu" style="display: none;">
+                <ul class="actionsdropdown_boxlist" id="action_list">
+                </ul>
+            </div>
+        </div>
+        <div class="gridheader_loaderbox" id="spinning_wheel" style="display: none; height: 18px;">
+            <div class="gridheader_loader" id="icon">
+            </div>
+            <p id="description">
+                Waiting &hellip;
+            </p>
+        </div>       
+    </div>
+    
+    <div class="grid_rows" id="after_action_info_container" style="display:none">
+        <div class="grid_row_cell" style="width: 90%; border: none;">
+            <div class="row_celltitles">
+                <strong id="after_action_info">Message will appear here</strong></div>
+        </div>
+    </div>
+        
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                ID:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="id">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows odd">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                Name:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="name">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <%=t.t("zone")%>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="zonename">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows odd">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <%=t.t("type")%>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="type">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <%=t.t("ip.address")%>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="ipaddress">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows odd">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <%=t.t("state")%>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="state">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <%=t.t("version")%>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="version">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows odd">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <%=t.t("last.disconnected")%>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="disconnected">
+            </div>
+        </div>
+    </div>    
+</div>
+<!--  secondary storage tab template (end) -->
