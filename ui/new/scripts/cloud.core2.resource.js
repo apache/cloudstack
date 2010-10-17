@@ -398,11 +398,102 @@ function showPage($pageToShow, jsonObj) {
         //***** Add Primary Storage (begin) *****          
         $("#midmenu_add2_link").find("#label").text("Add Primary Storage"); 
         $("#midmenu_add2_link").data("jsonObj", jsonObj).show();   
-        $("#midmenu_add2_link").unbind("click").bind("click", function(event) {
-        
+        $("#midmenu_add2_link").unbind("click").bind("click", function(event) {                 
+            dialogAddPool = $("#dialog_add_pool");  
+            var podObj = $(this).data("jsonObj");	
+            dialogAddPool.find("#zone_name").text(fromdb(podObj.zonename));  
+            dialogAddPool.find("#pod_name").text(fromdb(podObj.name)); 
+                                    
+	        var clusterSelect = $("#dialog_add_pool").find("#pool_cluster").empty();			            
+		    $.ajax({
+			    data: createURL("command=listClusters&podid=" + podObj.id),
+		        dataType: "json",
+		        success: function(json) {				                        
+		            var items = json.listclustersresponse.cluster;
+		            if(items != null && items.length > 0) {				                		                
+		                for(var i=0; i<items.length; i++) 			                    
+		                    clusterSelect.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");		                
+		            }			            
+		        }
+		    });		   
+            
+            $("#dialog_add_pool")
+		    .dialog('option', 'buttons', { 				    
+			    "Add": function() { 	
+			    	var thisDialog = $(this);
+			    	
+				    // validate values
+					var protocol = thisDialog.find("#add_pool_protocol").val();
+					
+				    var isValid = true;						    
+				    isValid &= validateDropDownBox("Cluster", thisDialog.find("#pool_cluster"), thisDialog.find("#pool_cluster_errormsg"), false);  //required, reset error text					    				
+				    isValid &= validateString("Name", thisDialog.find("#add_pool_name"), thisDialog.find("#add_pool_name_errormsg"));
+				    isValid &= validateString("Server", thisDialog.find("#add_pool_nfs_server"), thisDialog.find("#add_pool_nfs_server_errormsg"));	
+					if (protocol == "nfs") {
+						isValid &= validateString("Path", thisDialog.find("#add_pool_path"), thisDialog.find("#add_pool_path_errormsg"));	
+					} else {
+						isValid &= validateString("Target IQN", thisDialog.find("#add_pool_iqn"), thisDialog.find("#add_pool_iqn_errormsg"));	
+						isValid &= validateString("LUN #", thisDialog.find("#add_pool_lun"), thisDialog.find("#add_pool_lun_errormsg"));	
+					}
+					isValid &= validateString("Tags", thisDialog.find("#add_pool_tags"), thisDialog.find("#add_pool_tags_errormsg"), true);	//optional
+				    if (!isValid) 
+				        return;
+				        
+				    thisDialog.dialog("close");    
+					
+					var $midmenuItem1 = beforeAddingMidMenuItem() ;    	
+					
+					var array1 = [];
+					array1.push("&zoneId="+podObj.zoneid);
+			        array1.push("&podId="+podObj.id);
+					
+					var clusterId = thisDialog.find("#pool_cluster").val();
+				    array1.push("&clusterid="+clusterId);	
+					
+				    var name = trim(thisDialog.find("#add_pool_name").val());
+				    array1.push("&name="+todb(name));
+				    
+				    var server = trim(thisDialog.find("#add_pool_nfs_server").val());						
+					
+					var url = null;
+					if (protocol == "nfs") {
+						var path = trim(thisDialog.find("#add_pool_path").val());
+						if(path.substring(0,1)!="/")
+							path = "/" + path; 
+						url = nfsURL(server, path);
+					} else {
+						var iqn = trim(thisDialog.find("#add_pool_iqn").val());
+						if(iqn.substring(0,1)!="/")
+							iqn = "/" + iqn; 
+						var lun = trim(thisDialog.find("#add_pool_lun").val());
+						url = iscsiURL(server, iqn, lun);
+					}
+					array1.push("&url="+encodeURIComponent(url));
+					
+				    var tags = trim(thisDialog.find("#add_pool_tags").val());
+					if(tags != null && tags.length > 0)
+					    array1.push("&tags="+todb(tags));				    
+				    
+				    $.ajax({
+					    data: createURL("command=createStoragePool&response=json" + array1.join("")),
+					    dataType: "json",
+					    success: function(json) {					        
+					        var item = json.createstoragepoolresponse;				            			      										   
+						    primarystorageToMidmenu(item, $midmenuItem1);
+		                    bindClickToMidMenu($midmenuItem1, primarystorageToRigntPanel, getMidmenuId);  
+		                    afterAddingMidMenuItem($midmenuItem1, true);
+					    },			
+                        error: function(XMLHttpResponse) {	
+                            handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1);			                        					    
+                        }							    
+				    });
+			    }, 
+			    "Cancel": function() { 
+				    $(this).dialog("close"); 
+			    } 
+		    }).dialog("open");            
             return false;
-        });     
-        
+        });             
         //***** Add Primary Storage (end) *****           
     }      
     else {
@@ -603,6 +694,22 @@ function afterLoadResourceJSP() {
 	initDialog("dialog_add_zone");
 	initDialog("dialog_add_pod", 320);
 	initDialog("dialog_add_host");
+	initDialog("dialog_add_pool");
+	
+	// if hypervisor is KVM, limit the server option to NFS for now
+	if (getHypervisorType() == 'kvm') {
+		$("#dialog_add_pool").find("#add_pool_protocol").empty().html('<option value="nfs">NFS</option>');
+	}
+	
+    $("#dialog_add_pool").find("#add_pool_protocol").change(function(event) {
+		if ($(this).val() == "iscsi") {
+			$("#dialog_add_pool #add_pool_path_container").hide();
+			$("#dialog_add_pool #add_pool_iqn_container, #dialog_add_pool #add_pool_lun_container").show();
+		} else {
+			$("#dialog_add_pool #add_pool_path_container").show();
+			$("#dialog_add_pool #add_pool_iqn_container, #dialog_add_pool #add_pool_lun_container").hide();
+		}
+	});
 		
 	//Add Zone button ***
 	$("#midmenu_add_link").find("#label").text("Add Zone");     
@@ -701,5 +808,23 @@ function afterLoadResourceJSP() {
 		}).dialog("open");        
         return false;
     });  
+}
+
+function nfsURL(server, path) {
+    var url;
+    if(server.indexOf("://")==-1)
+	    url = "nfs://" + server + path;
+	else
+	    url = server + path;
+	return url;
+}
+
+function iscsiURL(server, iqn, lun) {
+    var url;
+    if(server.indexOf("://")==-1)
+	    url = "iscsi://" + server + iqn + "/" + lun;
+	else
+	    url = server + iqn + "/" + lun;
+	return url;
 }
 
