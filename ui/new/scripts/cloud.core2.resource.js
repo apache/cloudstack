@@ -387,13 +387,25 @@ function toSystemVMTypeText(value) {
 }
 //***** systemVM page (end) ***************************************************************************************************
 
+function afterSwitchToDetailsTab() {
+    $("#midmenu_add2_link").hide();  
+}
+function afterSwitchToNetworkTab() {
+    $("#midmenu_add2_link").find("#label").text("Add VLAN IP Range");  
+    $("#midmenu_add2_link").show();
+}
+function afterSwitchToSecondaryStorageTab() {
+    $("#midmenu_add2_link").find("#label").text("Add Secondary Storage").show();  
+    $("#midmenu_add2_link").show();
+}
 
 function afterLoadResourceJSP() {	
 	//switch between different tabs in zone page 
 	var $zonePage = $("#zone_page");
     var tabArray = [$zonePage.find("#tab_details"), $zonePage.find("#tab_network"), $zonePage.find("#tab_secondary_storage")];
     var tabContentArray = [$zonePage.find("#tab_content_details"), $zonePage.find("#tab_content_network"), $zonePage.find("#tab_content_secondary_storage")];
-    switchBetweenDifferentTabs(tabArray, tabContentArray);     
+    var afterSwitchFnArray = [afterSwitchToDetailsTab, afterSwitchToNetworkTab, afterSwitchToSecondaryStorageTab];
+    switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray);     
       
 	//dialogs	
 	initDialog("dialog_add_zone");

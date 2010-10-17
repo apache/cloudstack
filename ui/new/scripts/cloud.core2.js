@@ -587,13 +587,13 @@ function initializeEditFunction($readonlyFields, $editFields, doUpdateFn) {
     });    
 }
 
-function switchBetweenDifferentTabs(tabArray, tabContentArray) {        
+function switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray) {        
     for(var tabIndex=0; tabIndex<tabArray.length; tabIndex++) {  
-        switchToTab(tabIndex, tabArray, tabContentArray);
+        switchToTab(tabIndex, tabArray, tabContentArray, afterSwitchFnArray);
     }
 }
 
-function switchToTab(tabIndex, tabArray, tabContentArray) {
+function switchToTab(tabIndex, tabArray, tabContentArray, afterSwitchFnArray) {
   tabArray[tabIndex].bind("click", function(event){               
         tabArray[tabIndex].removeClass("off").addClass("on"); //current tab turns on
         for(var k=0; k<tabArray.length; k++) { 
@@ -606,6 +606,9 @@ function switchToTab(tabIndex, tabArray, tabContentArray) {
             if(k != tabIndex)
                 tabContentArray[k].hide();   //other tab content hide
         }   
+        
+        if(afterSwitchFnArray != null)
+            afterSwitchFnArray[tabIndex]();           
         return false;
     });   
 }
