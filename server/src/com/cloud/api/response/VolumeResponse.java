@@ -50,13 +50,13 @@ public class VolumeResponse extends BaseResponse {
     @SerializedName("virtualmachineid") @Param(description="id of the virtual machine")
     private Long virtualMachineId;
 
-    @SerializedName("virtualmachinename") @Param(description="name of the virtual machine")
+    @SerializedName("vmname") @Param(description="name of the virtual machine")
     private String virtualMachineName;
 
-    @SerializedName("virtualmachinedisplayname") @Param(description="display name of the virtual machine")
+    @SerializedName("vmdisplayname") @Param(description="display name of the virtual machine")
     private String virtualMachineDisplayName;
 
-    @SerializedName("virtualmachinestate") @Param(description="state of the virtual machine")
+    @SerializedName("vmstate") @Param(description="state of the virtual machine")
     private String virtualMachineState;
 
     @SerializedName("size") @Param(description="size of the disk volume")
