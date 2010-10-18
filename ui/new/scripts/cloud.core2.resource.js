@@ -42,7 +42,7 @@ function buildZoneTree() {
 		}
 	});  
     
-	$("#leftmenu_zone_node_template").bind("click", function(event) {
+	$("#leftmenu_zone_node_template").unbind("click").bind("click", function(event) {
 		var template = $(this);
 		var target = $(event.target);
 		var action = target.attr("id");
