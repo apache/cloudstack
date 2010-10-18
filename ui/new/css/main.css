@@ -2694,11 +2694,11 @@ a:hover.search_button {
 }
 
 .gridheader_morebutt {
-	width:41px;
-	height:17px;
+	width:46px;
+	height:20px;
 	float:left;
-	background:url(../images/more_button.png) no-repeat top left;
-	margin:1px 10px 0 0;
+	background:url(../images/more_button.gif) no-repeat top left;
+	margin:0;
 	cursor:pointer;
 	cursor:hand;
 	display:inline;
@@ -2706,7 +2706,7 @@ a:hover.search_button {
 }
 
 .gridheader_morebutt:hover {
-	background:url(../images/more_button_hover.png) no-repeat top left;
+	background:url(../images/more_button_hover.gif) no-repeat top left;
 }
 
 .gridheader_message {
