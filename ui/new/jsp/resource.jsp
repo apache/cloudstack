@@ -1089,3 +1089,9 @@
         <%=t.t("enabling.maintenance.mode.will.cause.a.live.migration.of.all.running.instances.on.this.host.to.any.available.host")%>
     </p>
 </div>
+
+<div id="dialog_confirmation_cancel_maintenance" title="Confirmation" style="display: none">
+    <p>                
+        <%=t.t("please.confirm.you.want.to.cancel.maintenance.for.the.host")%>
+    </p>
+</div>

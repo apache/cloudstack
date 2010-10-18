@@ -400,6 +400,12 @@ function hostJsonToDetailsTab(jsonObj) {
 	    //build action Remove Host	   
 	}	
 	else if(jsonObj.state == "Alert") {
+	    //temporary for testing (begin) *****
+	    buildActionLinkForDetailsTab("Enable Maintenance Mode", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  //when right panel has more than 1 details tab, we need to specify which one it is building action to. 
+	    buildActionLinkForDetailsTab("Cancel Maintenance Mode", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  //when right panel has more than 1 details tab, we need to specify which one it is building action to. 
+	    //temporary for testing (begin) *****
+	    
+	    
 	    //build action Update OS Preference	    
 	}	
 	else if (jsonObj.state == "ErrorInMaintenance") {
@@ -705,6 +711,7 @@ function afterLoadResourceJSP() {
 	initDialog("dialog_add_secondarystorage");
 	initDialog("dialog_add_vlan_for_zone");
 	initDialog("dialog_confirmation_enable_maintenance");
+	initDialog("dialog_confirmation_cancel_maintenance");
 	
 	// if hypervisor is KVM, limit the server option to NFS for now
 	if (getHypervisorType() == 'kvm') 
@@ -1231,18 +1238,20 @@ var hostActionMap = {
         dialogBeforeActionFn : doEnableMaintenanceMode,
         inProcessText: "Enabling Maintenance Mode....",
         afterActionSeccessFn: function(json, id, midmenuItemId) {
-            // Host status is likely to change at this point. So, refresh the row now.
-			$.ajax({
-			    data: createURL("command=listHosts&id="+hostId),
-                dataType: "json",
-                success: function(json) {                            				   
-				    hostJsonToDetailsTab(json.listhostsresponse.host[0], $("#right_panel_content #host_page #tab_content_details"));                            				    
-                }
-            });	
-            
+            hostJsonToDetailsTab(json.queryasyncjobresultresponse.host[0], $("#right_panel_content #host_page #tab_content_details"));    
             $("#right_panel_content #after_action_info").text("We are actively enabling maintenance on your host. Please refresh periodically for an updated status."); 
         }
-    }     
+    },
+    "Cancel Maintenance Mode": {              
+        isAsyncJob: true,
+        asyncJobResponse: "cancelhostmaintenanceresponse",
+        dialogBeforeActionFn : doCancelMaintenanceMode,
+        inProcessText: "Cancelling Maintenance Mode....",
+        afterActionSeccessFn: function(json, id, midmenuItemId) {            
+            hostJsonToDetailsTab(json.queryasyncjobresultresponse.host[0], $("#right_panel_content #host_page #tab_content_details"));     
+            $("#right_panel_content #after_action_info").text("We are actively cancelling your scheduled maintenance.  Please refresh periodically for an updated status."); 
+        }
+    }       
 } 
 
 function doEnableMaintenanceMode($actionLink, $detailsTab, midmenuItemId){ 
@@ -1254,6 +1263,23 @@ function doEnableMaintenanceMode($actionLink, $detailsTab, midmenuItemId){
          $(this).dialog("close");      
          var id = jsonObj.id;
          var apiCommand = "command=prepareHostForMaintenance&id="+id;
+    	 doActionToDetailsTab(id, $actionLink, apiCommand, midmenuItemId);		
+     },
+     "Cancel": function() {	                         
+         $(this).dialog("close");
+     }
+    }).dialog("open");     
+} 
+
+function doCancelMaintenanceMode($actionLink, $detailsTab, midmenuItemId){ 
+    var jsonObj = $detailsTab.data("jsonObj");
+       
+    $("#dialog_confirmation_cancel_maintenance")
+    .dialog("option", "buttons", {	                    
+     "OK": function() {
+         $(this).dialog("close");      
+         var id = jsonObj.id;
+         var apiCommand = "command=cancelHostMaintenance&id="+id;
     	 doActionToDetailsTab(id, $actionLink, apiCommand, midmenuItemId);		
      },
      "Cancel": function() {	                         
