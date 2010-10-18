@@ -42,7 +42,7 @@ public class PodResponse extends BaseResponse {
     @SerializedName("startip") @Param(description="the starting IP for the Pod")
     private String startIp;
 
-    @SerializedName("endIp") @Param(description="the ending IP for the Pod")
+    @SerializedName("endip") @Param(description="the ending IP for the Pod")
     private String endIp;
 
     public Long getId() {
