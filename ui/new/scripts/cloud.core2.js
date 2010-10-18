@@ -16,6 +16,8 @@
  * 
  */
 
+// Version: @VERSION@
+
 //***** actions for details tab in right panel (begin) ************************************************************************
 function buildActionLinkForDetailsTab(label, actionMap, $actionMenu, midmenuItemId) { 
     var apiInfo = actionMap[label];

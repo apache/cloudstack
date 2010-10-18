@@ -917,12 +917,12 @@
         <div class="networkswitch_vlan_infoicon">
         </div>
         <div class="networkswitch_vlan_detailsbox">
-            <div class="networkswitch_vlan_detailsbox_textbox" id="vlan_container">
+            <div class="networkswitch_vlan_detailsbox_textbox">
                 <div class="networkswitch_vlan_detailsbox_textbox_label">
                     VLAN:</div>
                 <span id="vlan_id">n</span>
             </div>
-            <div class="networkswitch_vlan_detailsbox_textbox" id="ipaddress_container">
+            <div class="networkswitch_vlan_detailsbox_textbox">
                 <div class="networkswitch_vlan_detailsbox_textbox_label">
                     <%=t.t("ip.address.range")%>:</div>
                 <span id="ip_range">n.n.n.n - m.m.m.m</span>
