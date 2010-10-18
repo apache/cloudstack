@@ -242,6 +242,7 @@ function zoneJsonToDetailsTab(jsonObj) {
     $detailsTab.find("#guestcidraddress").text(fromdb(jsonObj.guestcidraddress));     
 }	  
 
+var $vlanContainer;
 function zoneJsonToNetworkTab(jsonObj) {	    
     var $networkTab = $("#zone_page").find("#tab_content_network");      
     $networkTab.find("#zone_cloud").find("#zone_name").text(fromdb(jsonObj.name));	 
@@ -252,7 +253,7 @@ function zoneJsonToNetworkTab(jsonObj) {
 		dataType: "json",
 		success: function(json) {
 			var items = json.listvlaniprangesresponse.vlaniprange;		
-			var $vlanContainer = $networkTab.find("#vlan_container").empty();   					
+			$vlanContainer = $networkTab.find("#vlan_container").empty();   					
 			if (items != null && items.length > 0) {					    
 				for (var i = 0; i < items.length; i++) {	
 				    var item = items[i];
@@ -535,26 +536,27 @@ function initAddVLANButton($midmenuAdd2Link) {
 				var netmask = trim(thisDialog.find("#add_publicip_vlan_netmask").val());
 				var startip = trim(thisDialog.find("#add_publicip_vlan_startip").val());
 				var endip = trim(thisDialog.find("#add_publicip_vlan_endip").val());					
-				
-				//comment it out until css is fixed.
-				/*								
-				var $template2;
+																		
+				var $template1;
 			    if(type == "false") //direct
-			        $template2 = $("#direct_vlan_template").clone(); 
+			        $template1 = $("#direct_vlan_template").clone(); 
 			    else  //public
-			    	$template2 = $("#virtual_vlan_template").clone(); 				
-				$("#zone_page").find("#tab_content_network").find("#vlan_container").prepend($template2.show());	
-				*/
-												
+			    	$template1 = $("#virtual_vlan_template").clone(); 	
+				
+				if($vlanContainer != null)
+				    $vlanContainer.prepend($template1.show());	
+																
 				$.ajax({
 				    data: createURL("command=createVlanIpRange&forVirtualNetwork="+type+"&zoneId="+zoneObj.id+vlan+scopeParams+"&gateway="+encodeURIComponent(gateway)+"&netmask="+encodeURIComponent(netmask)+"&startip="+encodeURIComponent(startip)+"&endip="+encodeURIComponent(endip)),
 					dataType: "json",
 					success: function(json) {											    			    			
-						//vlanJsonToTemplate(json.createvlaniprangeresponse, $template2);	 //comment it out until css is fixed.							
-						zoneJsonToNetworkTab(zoneObj); //temporary solution until css is fixed.				
+						vlanJsonToTemplate(json.createvlaniprangeresponse, $template1);	 	
 					},
 				    error: function(XMLHttpResponse) {
-				        handleError(XMLHttpResponse);			        
+				        handleError(XMLHttpResponse);	
+				        $template1.slideUp(function(){
+				            $(this).remove();
+				        });		        
 				    }
 				});
 				
