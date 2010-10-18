@@ -58,7 +58,7 @@ function buildZoneTree() {
 			    var jsonObj = target.data("jsonObj");  
 			    showPage($("#zone_page"), jsonObj);
 			    zoneJsonToDetailsTab(jsonObj);
-			    zoneJsonToNetworkTab(jsonObj);	
+			    zoneJsonToNetworkTab(jsonObj);				    
 			    zoneJsonToSecondaryStorageTab(jsonObj);						    		   			    
 			    break;		
 			    	
@@ -420,12 +420,129 @@ function afterSwitchToSecondaryStorageTab() {
 }
 
 function initAddVLANButton($midmenuAdd2Link) {
-    $("#midmenu_add2_link").find("#label").text("Add VLAN IP Range");      
-    $("#midmenu_add2_link").show();   
+    $midmenuAdd2Link.find("#label").text("Add VLAN IP Range");      
+    $midmenuAdd2Link.show();   
     $midmenuAdd2Link.unbind("click").bind("click", function(event) {        
         var zoneObj = $("#zone_page").find("#tab_content_details").data("jsonObj");       
-        $("#dialog_add_vlan").find("#zone_name").text(fromdb(zoneObj.name));  //???  
-        
+        var dialogAddVlanForZone = $("#dialog_add_vlan_for_zone");       
+        dialogAddVlanForZone.find("#zone_name").text(fromdb(zoneObj.name));         
+		dialogAddVlanForZone.find("#add_publicip_vlan_vlan_container, #add_publicip_vlan_domain_container, #add_publicip_vlan_account_container").hide();
+		dialogAddVlanForZone.find("#add_publicip_vlan_tagged, #add_publicip_vlan_vlan, #add_publicip_vlan_gateway, #add_publicip_vlan_netmask, #add_publicip_vlan_startip, #add_publicip_vlan_endip, #add_publicip_vlan_account").val("");
+		
+				
+		if (getNetworkType() == 'vnet') {
+			dialogAddVlanForZone.find("#add_publicip_vlan_type_container").hide();
+		} else {	
+			dialogAddVlanForZone.find("#add_publicip_vlan_pod_container").show();	
+			dialogAddVlanForZone.find("#add_publicip_vlan_type").change();
+			dialogAddVlanForZone.find("#add_publicip_vlan_type_container").show();
+			var podSelect = dialogAddVlanForZone.find("#add_publicip_vlan_pod").empty();		
+			$.ajax({
+			    data: createURL("command=listPods&zoneId="+zoneObj.id+maxPageSize),
+				dataType: "json",
+				async: false,
+				success: function(json) {
+					var pods = json.listpodsresponse.pod;						
+					if (pods != null && pods.length > 0) {
+						for (var i = 0; i < pods.length; i++) {
+							podSelect.append("<option value='" + pods[i].id + "'>" + fromdb(pods[i].name) + "</option>"); 
+						}
+					} else {
+						podSelect.append("<option value=''>No available pods</option>"); 
+					}
+				}
+			});
+			
+			var domainSelect = dialogAddVlanForZone.find("#add_publicip_vlan_domain").empty();	
+			$.ajax({
+			    data: createURL("command=listDomains"+maxPageSize),
+				dataType: "json",
+				async: false,
+				success: function(json) {
+					var domains = json.listdomainsresponse.domain;						
+					if (domains != null && domains.length > 0) {
+						for (var i = 0; i < domains.length; i++) {
+							domainSelect.append("<option value='" + domains[i].id + "'>" + fromdb(domains[i].name) + "</option>"); 
+						}
+					} 
+				}
+			});
+		}
+
+		dialogAddVlanForZone
+		.dialog('option', 'buttons', { 	
+			"Add": function() { 	
+			    var thisDialog = $(this);							
+				// validate values
+				var isValid = true;					
+				var isTagged = false;
+				var isDirect = false;
+				if (getNetworkType() == "vlan") {
+					isDirect = thisDialog.find("#add_publicip_vlan_type").val() == "false";
+					isTagged = thisDialog.find("#add_publicip_vlan_tagged").val() == "tagged";
+				}
+				
+				isValid &= validateString("Account", thisDialog.find("#add_publicip_vlan_account"), thisDialog.find("#add_publicip_vlan_account_errormsg"), true); //optional
+				
+				if (isTagged) {
+					isValid &= validateNumber("VLAN", thisDialog.find("#add_publicip_vlan_vlan"), thisDialog.find("#add_publicip_vlan_vlan_errormsg"), 2, 4095);
+				}
+				isValid &= validateIp("Gateway", thisDialog.find("#add_publicip_vlan_gateway"), thisDialog.find("#add_publicip_vlan_gateway_errormsg"));
+				isValid &= validateIp("Netmask", thisDialog.find("#add_publicip_vlan_netmask"), thisDialog.find("#add_publicip_vlan_netmask_errormsg"));
+				isValid &= validateIp("Start IP Range", thisDialog.find("#add_publicip_vlan_startip"), thisDialog.find("#add_publicip_vlan_startip_errormsg"));   //required
+				isValid &= validateIp("End IP Range", thisDialog.find("#add_publicip_vlan_endip"), thisDialog.find("#add_publicip_vlan_endip_errormsg"), true);  //optional
+				if (!isValid) 
+				    return;		
+				    
+				thisDialog.dialog("close"); 					
+				
+				var vlan = trim(thisDialog.find("#add_publicip_vlan_vlan").val());
+				if (isTagged) {
+					vlan = "&vlan="+vlan;
+				} else {
+					vlan = "&vlan=untagged";
+				}
+								
+				var scopeParams = "";
+				if(dialogAddVlanForZone.find("#add_publicip_vlan_scope").val()=="account-specific")
+				    scopeParams = "&domainId="+trim(thisDialog.find("#add_publicip_vlan_domain").val())+"&account="+trim(thisDialog.find("#add_publicip_vlan_account").val());    
+								
+				var type = "true";
+				if (getNetworkType() == "vlan") 
+				    type = trim(thisDialog.find("#add_publicip_vlan_type").val());
+				    
+				var gateway = trim(thisDialog.find("#add_publicip_vlan_gateway").val());
+				var netmask = trim(thisDialog.find("#add_publicip_vlan_netmask").val());
+				var startip = trim(thisDialog.find("#add_publicip_vlan_startip").val());
+				var endip = trim(thisDialog.find("#add_publicip_vlan_endip").val());					
+				
+				//comment it out until css is fixed.
+				/*								
+				var $template2;
+			    if(type == "false") //direct
+			        $template2 = $("#direct_vlan_template").clone(); 
+			    else  //public
+			    	$template2 = $("#virtual_vlan_template").clone(); 				
+				$("#zone_page").find("#tab_content_network").find("#vlan_container").prepend($template2.show());	
+				*/
+												
+				$.ajax({
+				    data: createURL("command=createVlanIpRange&forVirtualNetwork="+type+"&zoneId="+zoneObj.id+vlan+scopeParams+"&gateway="+encodeURIComponent(gateway)+"&netmask="+encodeURIComponent(netmask)+"&startip="+encodeURIComponent(startip)+"&endip="+encodeURIComponent(endip)),
+					dataType: "json",
+					success: function(json) {											    			    			
+						//vlanJsonToTemplate(json.createvlaniprangeresponse, $template2);	 //comment it out until css is fixed.							
+						zoneJsonToNetworkTab(zoneObj); //temporary solution until css is fixed.				
+					},
+				    error: function(XMLHttpResponse) {
+				        handleError(XMLHttpResponse);			        
+				    }
+				});
+				
+			}, 
+			"Cancel": function() { 
+				$(this).dialog("close"); 
+			} 
+		}).dialog("open");           
         return false;
     });
 }
@@ -464,7 +581,7 @@ function initAddecondaryStorageButton($midmenuAdd2Link) {
 				var url = nfsURL(nfs_server, path);  
 			    				  
 			    $.ajax({
-				    data: createURL("command=addSecondaryStorage&zoneId="+zoneId+"&url="+encodeURIComponent(url)+"&response=json"),
+				    data: createURL("command=addSecondaryStorage&zoneId="+zoneId+"&url="+encodeURIComponent(url)),
 				    dataType: "json",
 				    success: function(json) {						        
 				        secondaryStorageJSONToTemplate(json.addsecondarystorageresponse.secondarystorage[0], $subgridItem);
@@ -499,22 +616,18 @@ function afterLoadResourceJSP() {
 	initDialog("dialog_add_host");
 	initDialog("dialog_add_pool");
 	initDialog("dialog_add_secondarystorage");
+	initDialog("dialog_add_vlan_for_zone");
 	
 	// if hypervisor is KVM, limit the server option to NFS for now
-	if (getHypervisorType() == 'kvm') {
-		$("#dialog_add_pool").find("#add_pool_protocol").empty().html('<option value="nfs">NFS</option>');
-	}
+	if (getHypervisorType() == 'kvm') 
+		$("#dialog_add_pool").find("#add_pool_protocol").empty().html('<option value="nfs">NFS</option>');	
+	bindEventHandlerToDialogAddPool();	
 	
-    $("#dialog_add_pool").find("#add_pool_protocol").change(function(event) {
-		if ($(this).val() == "iscsi") {
-			$("#dialog_add_pool #add_pool_path_container").hide();
-			$("#dialog_add_pool #add_pool_iqn_container, #dialog_add_pool #add_pool_lun_container").show();
-		} else {
-			$("#dialog_add_pool #add_pool_path_container").show();
-			$("#dialog_add_pool #add_pool_iqn_container, #dialog_add_pool #add_pool_lun_container").hide();
-		}
-	});
-		
+	// If the network type is vnet, don't show any vlan stuff.
+	if (getNetworkType() == "vnet") 		
+		$("#dialog_add_vlan_for_zone").attr("title", "Add Public IP Range");		
+	bindEventHandlerToDialogAddVlanForZone();	
+	
 	//initialize Add Zone button 
     initAddZoneButton($("#midmenu_add_link"));	
 }
@@ -913,7 +1026,7 @@ function initAddPrimaryStorageButton($midmenuAddLink2) {
 				    array1.push("&tags="+todb(tags));				    
 			    
 			    $.ajax({
-				    data: createURL("command=createStoragePool&response=json" + array1.join("")),
+				    data: createURL("command=createStoragePool" + array1.join("")),
 				    dataType: "json",
 				    success: function(json) {					        
 				        var item = json.createstoragepoolresponse;				            			      										   
@@ -945,3 +1058,80 @@ function secondaryStorageJSONToTemplate(json, template) {
     template.find("#version").text(json.version); 
     setDateField(json.disconnected, template.find("#disconnected"));
 }   
+
+function bindEventHandlerToDialogAddPool() {    
+    $("#dialog_add_pool").find("#add_pool_protocol").change(function(event) {
+		if ($(this).val() == "iscsi") {
+			$("#dialog_add_pool #add_pool_path_container").hide();
+			$("#dialog_add_pool #add_pool_iqn_container, #dialog_add_pool #add_pool_lun_container").show();
+		} else {
+			$("#dialog_add_pool #add_pool_path_container").show();
+			$("#dialog_add_pool #add_pool_iqn_container, #dialog_add_pool #add_pool_lun_container").hide();
+		}
+	});		
+}
+
+function bindEventHandlerToDialogAddVlanForZone() {
+    //direct VLAN shows only "tagged" option while public VLAN shows both "tagged" and "untagged" option. 		
+	var dialogAddVlanForZone = $("#dialog_add_vlan_for_zone");
+			
+	dialogAddVlanForZone.find("#add_publicip_vlan_type").change(function(event) {
+	    var addPublicipVlanTagged = dialogAddVlanForZone.find("#add_publicip_vlan_tagged").empty();
+	   	
+		// default value of "#add_publicip_vlan_scope" is "zone-wide". Calling change() will hide "#add_publicip_vlan_domain_container", "#add_publicip_vlan_account_container". 
+		dialogAddVlanForZone.find("#add_publicip_vlan_scope").change(); 
+		
+		if ($(this).val() == "false") { //direct VLAN (only tagged option)		
+			addPublicipVlanTagged.append('<option value="tagged">tagged</option>');
+							
+			dialogAddVlanForZone.find("#add_publicip_vlan_vlan_container").show();			
+			dialogAddVlanForZone.find("#add_publicip_vlan_pod_container").hide();
+			
+		} else { //public VLAN	
+			addPublicipVlanTagged.append('<option value="untagged">untagged</option>').append('<option value="tagged">tagged</option>');	
+			
+			if (dialogAddVlanForZone.find("#add_publicip_vlan_tagged") == "tagged") {
+				dialogAddVlanForZone.find("#add_publicip_vlan_vlan_container").show();
+				dialogAddVlanForZone.find("#add_publicip_vlan_pod_container").hide();
+			} else {
+				dialogAddVlanForZone.find("#add_publicip_vlan_vlan_container").hide();
+				dialogAddVlanForZone.find("#add_publicip_vlan_pod_container").hide();
+			}
+		} 
+		return false;
+	});
+			
+	if (getNetworkType() != "vnet") {
+		dialogAddVlanForZone.find("#add_publicip_vlan_tagged").change(function(event) {			
+			// default value of "#add_publicip_vlan_scope" is "zone-wide". Calling change() will hide "#add_publicip_vlan_domain_container", "#add_publicip_vlan_account_container". 
+			dialogAddVlanForZone.find("#add_publicip_vlan_scope").change(); 	
+			
+			if (dialogAddVlanForZone.find("#add_publicip_vlan_type").val() == "false") { //direct VLAN (only tagged option)						
+				dialogAddVlanForZone.find("#add_publicip_vlan_vlan_container").show();				
+				dialogAddVlanForZone.find("#add_publicip_vlan_pod_container").hide();	
+			} else { //public VLAN		
+				if ($(this).val() == "tagged") {
+					dialogAddVlanForZone.find("#add_publicip_vlan_vlan_container").show();
+					dialogAddVlanForZone.find("#add_publicip_vlan_pod_container").hide();
+				} else {
+					dialogAddVlanForZone.find("#add_publicip_vlan_vlan_container").hide();
+					dialogAddVlanForZone.find("#add_publicip_vlan_pod_container").hide();
+				}
+			}
+			return false;
+		});
+	} else {
+		dialogAddVlanForZone.find("#add_publicip_vlan_container").hide();
+	}
+	
+	dialogAddVlanForZone.find("#add_publicip_vlan_scope").change(function(event) {	   
+	    if($(this).val() == "zone-wide") {
+	        dialogAddVlanForZone.find("#add_publicip_vlan_domain_container").hide();
+			dialogAddVlanForZone.find("#add_publicip_vlan_account_container").hide();    
+	    } else { // account-specific
+	        dialogAddVlanForZone.find("#add_publicip_vlan_domain_container").show();
+			dialogAddVlanForZone.find("#add_publicip_vlan_account_container").show();    
+	    }		    
+	    return false;
+	});
+}

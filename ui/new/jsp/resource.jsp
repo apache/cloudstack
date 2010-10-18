@@ -842,6 +842,74 @@
 </div>
 <!-- Add Secondary Storage Dialog (end) -->
 
+<!-- Add VLAN IP Range Dialog for zone (begin) -->
+<div id="dialog_add_vlan_for_zone" title="Add VLAN IP Range" style="display:none">
+	<p>Add a new IP range for zone: <b><span id="zone_name"></span></b></p>
+	<div class="dialog_formcontent">
+		<form action="#" method="post" id="form_acquire">
+			<ol>
+				<li style="display:none" id="add_publicip_vlan_type_container">
+					<label for="add_publicip_vlan_type">Type:</label>
+					<select class="select" name="add_publicip_vlan_type" id="add_publicip_vlan_type">
+					    <option value="false">direct</option>
+						<option value="true">public</option>						
+					</select>
+				</li>
+				<li id="add_publicip_vlan_container">
+					<label for="add_publicip_vlan_tagged">VLAN:</label>
+					<select class="select" name="add_publicip_vlan_tagged" id="add_publicip_vlan_tagged">
+					</select>
+				</li>
+				<li style="display:none" id="add_publicip_vlan_vlan_container">
+					<label for="user_name">VLAN ID:</label>
+					<input class="text" type="text" name="add_publicip_vlan_vlan" id="add_publicip_vlan_vlan"/>
+					<div id="add_publicip_vlan_vlan_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+				</li>
+				<li id="add_publicip_vlan_scope_container">
+					<label for="add_publicip_vlan_scope">Scope:</label>
+					<select class="select" name="add_publicip_vlan_scope" id="add_publicip_vlan_scope">
+					    <option value="zone-wide">zone-wide</option>
+						<option value="account-specific">account-specific</option>						
+					</select>
+				</li>
+				<li style="display:none" id="add_publicip_vlan_pod_container">
+					<label for="user_name">Pod:</label>
+					<select class="select" name="add_publicip_vlan_pod" id="add_publicip_vlan_pod">					
+					</select>
+				</li>
+				<li style="display:none" id="add_publicip_vlan_domain_container">
+					<label for="user_name">Domain:</label>
+					<select class="select" name="add_publicip_vlan_domain" id="add_publicip_vlan_domain">					
+					</select>
+				</li>
+				<li style="display:none" id="add_publicip_vlan_account_container">
+					<label for="user_name">Account:</label>
+					<input class="text" type="text" name="add_publicip_vlan_account" id="add_publicip_vlan_account"/>
+					<div id="add_publicip_vlan_account_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+				</li>
+				<li>
+					<label for="user_name">Gateway:</label>
+					<input class="text" type="text" name="add_publicip_vlan_gateway" id="add_publicip_vlan_gateway"/>
+					<div id="add_publicip_vlan_gateway_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+				</li>
+				<li>
+					<label for="user_name">Netmask:</label>
+					<input class="text" type="text" name="add_publicip_vlan_netmask" id="add_publicip_vlan_netmask"/>
+					<div id="add_publicip_vlan_netmask_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+				</li>
+				<li>
+					<label for="user_name">IP Range:</label>
+					<input class="text" style="width:67px" type="text" name="add_publicip_vlan_startip" id="add_publicip_vlan_startip"/><span>-</span>
+                    <input class="text" style="width:67px" type="text" name="add_publicip_vlan_endip" id="add_publicip_vlan_endip"/>
+					<div id="add_publicip_vlan_startip_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+					<div id="add_publicip_vlan_endip_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+				</li>
+			</ol>
+		</form>
+	</div>
+</div>
+<!-- Add VLAN IP Range Dialog for zone (end) -->
+
 
 <!-- Direct VLAN Template (begin) -->
 <div class="networkswitch_vlanpanel" id="direct_vlan_template" style="display: none">
@@ -849,12 +917,12 @@
         <div class="networkswitch_vlan_infoicon">
         </div>
         <div class="networkswitch_vlan_detailsbox">
-            <div class="networkswitch_vlan_detailsbox_textbox">
+            <div class="networkswitch_vlan_detailsbox_textbox" id="vlan_container">
                 <div class="networkswitch_vlan_detailsbox_textbox_label">
                     VLAN:</div>
                 <span id="vlan_id">n</span>
             </div>
-            <div class="networkswitch_vlan_detailsbox_textbox">
+            <div class="networkswitch_vlan_detailsbox_textbox" id="ipaddress_container">
                 <div class="networkswitch_vlan_detailsbox_textbox_label">
                     <%=t.t("ip.address.range")%>:</div>
                 <span id="ip_range">n.n.n.n - m.m.m.m</span>
