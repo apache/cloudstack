@@ -173,7 +173,7 @@ public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> 
      * @return true if stopped; false if problems.
      */
     boolean stopVirtualMachine(long userId, long vmId, long eventId);
-    boolean stopVirtualMachine(StopVMCmd cmd) throws ServerApiException;
+    UserVmVO stopVirtualMachine(StopVMCmd cmd) throws ServerApiException;
     OperationResponse executeStopVM(StopVMExecutor executor, VMOperationParam param);
     void completeStopCommand(long userId, UserVmVO vm, Event e, long startEventId);
     

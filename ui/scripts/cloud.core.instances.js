@@ -192,6 +192,7 @@ function showInstancesTab(p_domainId, p_account) {
 												if (result.jobstatus == 0) {
 													return; //Job has not completed
 												} else {
+                                                                                                        var virtualmachine = result.jobresult.startvirtualmachineresponse;
 													if (vmInstance != null) {
 														$("body").stopTime(timerKey);
 														vmInstance.find("#vm_loading_container").hide();
@@ -201,11 +202,11 @@ function showInstancesTab(p_domainId, p_account) {
 															vmInstance.find(".loadingmessage_container").fadeIn("slow");
 															vmInstance.find("#vm_state_bar").removeClass("admin_vmgrey_arrow admin_vmred_arrow").addClass("admin_vmgreen_arrow");
 															
-															vmInstance.find("#vm_state").text(result.virtualmachine[0].state).removeClass("grid_celltitles grid_stoppedtitles").addClass("grid_runningtitles");
-															vmInstance.data("state", result.virtualmachine[0].state);
+															vmInstance.find("#vm_state").text(virtualmachine.state).removeClass("grid_celltitles grid_stoppedtitles").addClass("grid_runningtitles");
+															vmInstance.data("state", virtualmachine.state);
 																																										
-															if (result.virtualmachine[0].hostname != undefined) {
-				                                                vmInstance.find("#vm_host").html("<strong>Host:</strong> " + fromdb(result.virtualmachine[0].hostname));
+															if (virtualmachine.hostname != undefined) {
+				                                                vmInstance.find("#vm_host").html("<strong>Host:</strong> " + fromdb(virtualmachine.hostname));
 			                                                } else {
 			                                                    vmInstance.find("#vm_host").html("<strong>Host:</strong> ");
 			                                                }	
@@ -215,8 +216,8 @@ function showInstancesTab(p_domainId, p_account) {
 															
 															
 															// Console Proxy UI
-															vmInstance.find("#vm_action_view_console").data("imgUrl", "console?cmd=thumbnail&vm=" + result.virtualmachine[0].id + "&w=144&h=110");
-															vmInstance.find("#vm_action_view_console").data("proxyUrl", "console?cmd=access&vm=" + result.virtualmachine[0].id).data("vmId",result.virtualmachine[0].id).click(function(event) {
+															vmInstance.find("#vm_action_view_console").data("imgUrl", "console?cmd=thumbnail&vm=" + virtualmachine.id + "&w=144&h=110");
+															vmInstance.find("#vm_action_view_console").data("proxyUrl", "console?cmd=access&vm=" + virtualmachine.id).data("vmId",virtualmachine.id).click(function(event) {
 																event.preventDefault();
 																var viewer = window.open($(this).data("proxyUrl"),$(this).data("vmId"),"width=820,height=640,resizable=yes,menubar=no,status=no,scrollbars=no,toolbar=no,location=no");
 																viewer.focus();
@@ -282,6 +283,7 @@ function showInstancesTab(p_domainId, p_account) {
 												if (result.jobstatus == 0) {
 													return; //Job has not completed
 												} else {
+                                                                                                        var virtualmachine = result.jobresult.stopvirtualmachineresponse;
 													if (vmInstance != null) {
 														$("body").stopTime(timerKey);
 														vmInstance.find("#vm_loading_container").hide();
@@ -291,11 +293,11 @@ function showInstancesTab(p_domainId, p_account) {
 															vmInstance.find(".loadingmessage_container").fadeIn("slow");
 															vmInstance.find("#vm_state_bar").removeClass("admin_vmgrey_arrow admin_vmgreen_arrow").addClass("admin_vmred_arrow");
 															
-															vmInstance.find("#vm_state").text(result.virtualmachine[0].state).removeClass("grid_celltitles grid_runningtitles").addClass("grid_stoppedtitles");
-															vmInstance.data("state", result.virtualmachine[0].state);
+															vmInstance.find("#vm_state").text(virtualmachine.state).removeClass("grid_celltitles grid_runningtitles").addClass("grid_stoppedtitles");
+															vmInstance.data("state", virtualmachine.state);
 																															
-															if (result.virtualmachine[0].hostname != undefined) {
-				                                                vmInstance.find("#vm_host").html("<strong>Host:</strong> " + fromdb(result.virtualmachine[0].hostname));
+															if (virtualmachine.hostname != undefined) {
+				                                                vmInstance.find("#vm_host").html("<strong>Host:</strong> " + fromdb(virtualmachine.hostname));
 			                                                } else {
 			                                                    vmInstance.find("#vm_host").html("<strong>Host:</strong> ");
 			                                                }																	

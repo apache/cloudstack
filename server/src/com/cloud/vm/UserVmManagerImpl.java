@@ -3457,7 +3457,7 @@ public class UserVmManagerImpl implements UserVmManager {
     }
 
 	@Override
-	public boolean stopVirtualMachine(StopVMCmd cmd) throws ServerApiException{
+	public UserVmVO stopVirtualMachine(StopVMCmd cmd) throws ServerApiException{
 		
 		//Input validation
 		Account account = (Account)UserContext.current().getAccountObject();
@@ -3468,7 +3468,7 @@ public class UserVmManagerImpl implements UserVmManager {
         if(account!=null && account.getRemoved() != null)
         	throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "The account " + account.getId()+" is removed");
         		
-        UserVmVO vmInstance = _vmDao.findById(id.longValue());
+        UserVmVO vmInstance = _vmDao.findById(id);
         if (vmInstance == null) {
         	throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + id);
         }
@@ -3477,7 +3477,12 @@ public class UserVmManagerImpl implements UserVmManager {
         
         userId = accountAndUserValidation(id, account, userId, vmInstance);
    
-        return stopVirtualMachine(userId, id, eventId);
+        boolean success = stopVirtualMachine(userId, id, eventId);
+        if (!success) {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to stop virtual machine with id " + id + ", internal error.");
+        }
+
+        return _vmDao.findById(id);
 	}
 
 	@Override
