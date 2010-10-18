@@ -1316,7 +1316,7 @@ a:visited {
 }
 
 .leftmenu_content_flevel.highlighted{
-	background:#ced7dd url(../images/leftmenu_highlighted.gif) repeat-x top left;
+	background:#d4dce1 url(../images/leftmenu_highlighted.gif) repeat-x top left;
 	font-weight:bold;
 }
 
@@ -2645,8 +2645,8 @@ a:hover.search_button {
 
 
 .grid_actionbox {
-	width:67px;
-	height:16px;
+	width:76px;
+	height:20px;
 	float:right;
 	background:url(../images/grid_actions.gif) no-repeat top left;
 	margin:1px 0x 0 0;
@@ -2837,8 +2837,8 @@ a:hover.search_button {
 	position:absolute;
 	background:#FFF repeat top left;
 	border:1px solid #CCC;
-	top:17px;
-	right:6px;
+	top:18px;
+	right:1px;
 	margin:0;
 	padding:0;
 	z-index:1002;
