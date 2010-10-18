@@ -403,6 +403,7 @@ function hostJsonToDetailsTab(jsonObj) {
 	    //temporary for testing (begin) *****
 	    buildActionLinkForDetailsTab("Enable Maintenance Mode", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  //when right panel has more than 1 details tab, we need to specify which one it is building action to. 
 	    buildActionLinkForDetailsTab("Cancel Maintenance Mode", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  //when right panel has more than 1 details tab, we need to specify which one it is building action to. 
+	    buildActionLinkForDetailsTab("Force Reconnect", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  //when right panel has more than 1 details tab, we need to specify which one it is building action to. 
 	    //temporary for testing (begin) *****
 	    
 	    
@@ -712,6 +713,7 @@ function afterLoadResourceJSP() {
 	initDialog("dialog_add_vlan_for_zone");
 	initDialog("dialog_confirmation_enable_maintenance");
 	initDialog("dialog_confirmation_cancel_maintenance");
+	initDialog("dialog_confirmation_force_reconnect");
 	
 	// if hypervisor is KVM, limit the server option to NFS for now
 	if (getHypervisorType() == 'kvm') 
@@ -1251,6 +1253,16 @@ var hostActionMap = {
             hostJsonToDetailsTab(json.queryasyncjobresultresponse.host[0], $("#right_panel_content #host_page #tab_content_details"));     
             $("#right_panel_content #after_action_info").text("We are actively cancelling your scheduled maintenance.  Please refresh periodically for an updated status."); 
         }
+    },
+    "Force Reconnect": {              
+        isAsyncJob: true,
+        asyncJobResponse: "reconnecthostresponse",
+        dialogBeforeActionFn : doForceReconnect,
+        inProcessText: "Reconnecting....",
+        afterActionSeccessFn: function(json, id, midmenuItemId) {
+            hostJsonToDetailsTab(json.queryasyncjobresultresponse.host[0], $("#right_panel_content #host_page #tab_content_details"));    
+            $("#right_panel_content #after_action_info").text("We are actively reconnecting your host.  Please refresh periodically for an updated status."); 
+        }
     }       
 } 
 
@@ -1280,6 +1292,23 @@ function doCancelMaintenanceMode($actionLink, $detailsTab, midmenuItemId){
          $(this).dialog("close");      
          var id = jsonObj.id;
          var apiCommand = "command=cancelHostMaintenance&id="+id;
+    	 doActionToDetailsTab(id, $actionLink, apiCommand, midmenuItemId);		
+     },
+     "Cancel": function() {	                         
+         $(this).dialog("close");
+     }
+    }).dialog("open");     
+} 
+
+function doForceReconnect($actionLink, $detailsTab, midmenuItemId){ 
+    var jsonObj = $detailsTab.data("jsonObj");
+       
+    $("#dialog_confirmation_force_reconnect")
+    .dialog("option", "buttons", {	                    
+     "OK": function() {
+         $(this).dialog("close");      
+         var id = jsonObj.id;
+         var apiCommand = "command=reconnectHost&id="+id;
     	 doActionToDetailsTab(id, $actionLink, apiCommand, midmenuItemId);		
      },
      "Cancel": function() {	                         

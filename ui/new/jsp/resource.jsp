@@ -1095,3 +1095,9 @@
         <%=t.t("please.confirm.you.want.to.cancel.maintenance.for.the.host")%>
     </p>
 </div>
+
+<div id="dialog_confirmation_force_reconnect" title="Confirmation" style="display: none">
+    <p>                 
+        <%=t.t("please.confirm.you.want.to.force.a.reconnection.for.the.host")%>
+    </p>
+</div>
