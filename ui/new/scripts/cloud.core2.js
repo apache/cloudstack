@@ -470,10 +470,34 @@ function setBooleanField(value, $field) {
         $field.hide();
 }
  
+
+function expandFirstLevelMenu($firstLevelMenu, $secondLevelMenu) {
+    $firstLevelMenu.find("#expandable_first_level_arrow").removeClass("close").addClass("open");
+    $firstLevelMenu.addClass("highlighted");
+    $expandedFirstLevelMenu = $firstLevelMenu;
+    $secondLevelMenu.show();
+    $expandedSecondLevelMenu = $secondLevelMenu;
+}
+
+function collapseFirstLevelMenu($firstLevelMenu, $secondLevelMenu) {
+    $firstLevelMenu.find("#expandable_first_level_arrow").removeClass("open").addClass("close");
+    $firstLevelMenu.removeClass("highlighted");
+    $secondLevelMenu.hide();  
+} 
+ 
 function clearLeftMenu() {
-    var $arrowIcon = $("#leftmenu_instance_group_header #arrow_icon");
-    if($arrowIcon.hasClass("expanded_open") == true) {
-        $arrowIcon.removeClass("expanded_open").addClass("expanded_close");            
+    if($expandedFirstLevelMenu != null && $expandedSecondLevelMenu != null)  //collapse other expanded menu if there is.
+        collapseFirstLevelMenu($expandedFirstLevelMenu, $expandedSecondLevelMenu);      
+        
+    $resourceArrowIcon = $("#leftmenu_resource").find("#resource_arrow");
+    if($resourceArrowIcon.hasClass("expanded_open") == true) {
+        $resourceArrowIcon.removeClass("expanded_open").addClass("expanded_close");
+        $("#leftmenu_zone_tree").find("#tree_container").empty();
+    }        
+    
+    var $vmGroupArrowIcon = $("#leftmenu_instance_group_header #arrow_icon");
+    if($vmGroupArrowIcon.hasClass("expanded_open") == true) {
+        $vmGroupArrowIcon.removeClass("expanded_open").addClass("expanded_close");            
         $("#leftmenu_instance_group_container").empty();   
     }	
 } 

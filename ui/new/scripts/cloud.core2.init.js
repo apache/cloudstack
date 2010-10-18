@@ -18,21 +18,7 @@
 
 // Version: @VERSION@
 
-$(document).ready(function() {  
-    function expandFirstLevelMenu($firstLevelMenu, $secondLevelMenu) {
-        $firstLevelMenu.find("#expandable_first_level_arrow").removeClass("close").addClass("open");
-        $firstLevelMenu.addClass("highlighted");
-        $expandedFirstLevelMenu = $firstLevelMenu;
-        $secondLevelMenu.show();
-        $expandedSecondLevelMenu = $secondLevelMenu;
-    }
-    
-    function collapseFirstLevelMenu($firstLevelMenu, $secondLevelMenu) {
-        $firstLevelMenu.find("#expandable_first_level_arrow").removeClass("open").addClass("close");
-        $firstLevelMenu.removeClass("highlighted");
-        $secondLevelMenu.hide();  
-    }
- 
+$(document).ready(function() {      
     $("#leftmenu_container").find("#expandable_first_level").bind("click", function(event) {       
         var $firstLevelMenu = $(this);
         var $secondLevelMenu = $firstLevelMenu.siblings(".leftmenu_expandedbox");
@@ -93,9 +79,7 @@ $(document).ready(function() {
         selectLeftMenu($(this));
         
         showMiddleMenuWithoutSearch();
-        disableMultipleSelectionInMidMenu();
-        
-        clearLeftMenu();
+        disableMultipleSelectionInMidMenu();                
         clearMiddleMenu();
         
         $("#right_panel").load("jsp/domain.jsp", function(){ 
@@ -106,8 +90,7 @@ $(document).ready(function() {
     
     $("#leftmenu_resource").bind("click", function(event) {         
         showMiddleMenu();
-        disableMultipleSelectionInMidMenu();        
-        clearLeftMenu();
+        disableMultipleSelectionInMidMenu();  
         clearMiddleMenu();
        
         $arrowIcon = $(this).find("#resource_arrow");
