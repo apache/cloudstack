@@ -385,8 +385,49 @@ function hostJsonToDetailsTab(jsonObj) {
     });	  
     var $actionMenu = $detailsTab.find("#action_link #action_menu");
     $actionMenu.find("#action_list").empty();
+    var noAvailableActions = true;
+    
     var midmenuItemId = hostGetMidmenuId(jsonObj);
-    buildActionLinkForDetailsTab("Enable Maintenance Mode", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  //when right panel has more than 1 details tab, we need to specify which one it is building action to. 
+    
+    if (jsonObj.state == 'Up' || jsonObj.state == "Connecting") {
+		buildActionLinkForDetailsTab("Enable Maintenance Mode", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  //when right panel has more than 1 details tab, we need to specify which one it is building action to. 
+	    //build action Force Reconnect
+	    //build action Update OS Preference	
+	} 
+	else if(jsonObj.state == 'Down') {
+	    buildActionLinkForDetailsTab("Enable Maintenance Mode", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  //when right panel has more than 1 details tab, we need to specify which one it is building action to. 
+	    //build action Update OS Preference
+	    //build action Remove Host	   
+	}	
+	else if(jsonObj.state == "Alert") {
+	    //build action Update OS Preference	    
+	}	
+	else if (jsonObj.state == "ErrorInMaintenance") {
+	    buildActionLinkForDetailsTab("Enable Maintenance Mode", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  //when right panel has more than 1 details tab, we need to specify which one it is building action to. 
+        //build action Cancel Maintenance Mode
+        //build action Update OS Preference
+	}
+	else if (jsonObj.state == "PrepareForMaintenance") {
+	    //build action Cancel Maintenance Mode
+	    //build action Update OS Preference	    
+	}
+	else if (jsonObj.state == "Maintenance") {
+	    //build action Cancel Maintenance Mode
+	    //build action Update OS Preference
+	    //build action Remove Host	   
+	}
+	else if (jsonObj.state == "Disconnected"){
+	    //build action Update OS Preference
+	    //build action Remove Host
+	}
+	else {
+	    alert("Unsupported Host State: " + jsonObj.state);
+	} 
+    
+    // no available actions 
+	if(noAvailableActions == true) {
+	    $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());
+	}	       
 }
 //***** host page (end) *******************************************************************************************************
 
