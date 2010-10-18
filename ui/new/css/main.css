@@ -1339,6 +1339,16 @@ a:visited {
 	padding:0 0 3px 0;
 }
 
+.leftmenu_content:hover{
+	color:#1d3544;
+	background:#a1aab1 repeat top left;
+}
+
+.leftmenu_content.selected{
+	color:#FFF;
+	background:#345265 repeat-x top left;
+}
+
 .leftmenu_loadingbox {
 	width:100%;
 	height:auto;
