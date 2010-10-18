@@ -96,8 +96,8 @@ function buildZoneTree() {
 			    clusterJsonToDetailsTab(jsonObj);
 			    var clusterId = jsonObj.id;
 			    $("#midmenu_container").empty();
-			    listItemsInMidmenu(("listHosts&clusterid="+clusterId), "listhostsresponse", "host", hostToMidmenu, hostToRigntPanel, getMidmenuId, false); 					
-				listItemsInMidmenu(("listStoragePools&clusterid="+clusterId), "liststoragepoolsresponse", "storagepool", primarystorageToMidmenu, primarystorageToRigntPanel, getMidmenuId, false); 					
+			    listMidMenuItems2(("listHosts&clusterid="+clusterId), "listhostsresponse", "host", hostToMidmenu, hostToRigntPanel, hostGetMidmenuId, false); 					
+				listMidMenuItems2(("listStoragePools&clusterid="+clusterId), "liststoragepoolsresponse", "storagepool", primarystorageToMidmenu, primarystorageToRigntPanel, primarystorageGetMidmenuId, false); 					
 	    		break;								
 						
 			case "systemvm_name" :		
@@ -340,8 +340,13 @@ function clusterJsonToDetailsTab(jsonObj) {
 //***** cluster page (end) ****************************************************************************************************
 
 //***** host page (bgein) *****************************************************************************************************
+
+function hostGetMidmenuId(jsonObj) {
+    return "midmenuItem_host_" + jsonObj.id; 
+}
+
 function hostToMidmenu(jsonObj, $midmenuItem1) {    
-    $midmenuItem1.attr("id", getMidmenuId(jsonObj));  
+    $midmenuItem1.attr("id", hostGetMidmenuId(jsonObj));  
     $midmenuItem1.data("jsonObj", jsonObj);      
     //$iconContainer.find("#icon").attr("src", "images/midmenuicon_host.png");      
     $midmenuItem1.find("#first_row").text(fromdb(jsonObj.name).substring(0,25)); 
@@ -380,14 +385,18 @@ function hostJsonToDetailsTab(jsonObj) {
     });	  
     var $actionMenu = $detailsTab.find("#action_link #action_menu");
     $actionMenu.find("#action_list").empty();
-    var midmenuItemId = getMidmenuId(jsonObj);
+    var midmenuItemId = hostGetMidmenuId(jsonObj);
     buildActionLinkForDetailsTab("Enable Maintenance Mode", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  //when right panel has more than 1 details tab, we need to specify which one it is building action to. 
 }
 //***** host page (end) *******************************************************************************************************
 
 //***** primary storage page (bgein) ******************************************************************************************
+function primarystorageGetMidmenuId(jsonObj) {
+    return "midmenuItem_primarystorage_" + jsonObj.id; 
+}
+
 function primarystorageToMidmenu(jsonObj, $midmenuItem1) {    
-    $midmenuItem1.attr("id", getMidmenuId(jsonObj));  
+    $midmenuItem1.attr("id", primarystorageGetMidmenuId(jsonObj));  
     $midmenuItem1.data("jsonObj", jsonObj);      
     //$iconContainer.find("#icon").attr("src", "images/midmenuicon_primarystorage.png");      
     $midmenuItem1.find("#first_row").text(fromdb(jsonObj.name).substring(0,25)); 
@@ -955,14 +964,14 @@ function initAddHostButton($midmenuAddLink1) {
 			        success: function(json) {	
 			            var items = json.addhostresponse.host;				            			      										   
 					    hostToMidmenu(items[0], $midmenuItem1);
-	                    bindClickToMidMenu($midmenuItem1, hostToRigntPanel, getMidmenuId);  
+	                    bindClickToMidMenu($midmenuItem1, hostToRigntPanel, hostGetMidmenuId);  
 	                    afterAddingMidMenuItem($midmenuItem1, true);
                                                         
                         if(items.length > 1) { 
                             for(var i=1; i<items.length; i++) {                                    
                                 var $midmenuItem2 = $("#midmenu_item").clone();
                                 hostToMidmenu(items[i], $midmenuItem2);
-                                bindClickToMidMenu($midmenuItem2, hostToRigntPanel, getMidmenuId); 
+                                bindClickToMidMenu($midmenuItem2, hostToRigntPanel, hostGetMidmenuId); 
                                 $("#midmenu_container").append($midmenuItem2.show());                                   
                             }	
                         }                                
@@ -1068,7 +1077,7 @@ function initAddPrimaryStorageButton($midmenuAddLink2) {
 				    success: function(json) {					        
 				        var item = json.createstoragepoolresponse;				            			      										   
 					    primarystorageToMidmenu(item, $midmenuItem1);
-	                    bindClickToMidMenu($midmenuItem1, primarystorageToRigntPanel, getMidmenuId);  
+	                    bindClickToMidMenu($midmenuItem1, primarystorageToRigntPanel, primarystorageGetMidmenuId);  
 	                    afterAddingMidMenuItem($midmenuItem1, true);
 				    },			
                     error: function(XMLHttpResponse) {	

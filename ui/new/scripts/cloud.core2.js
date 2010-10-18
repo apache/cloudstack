@@ -745,7 +745,7 @@ function getMidmenuId(jsonObj) {
     return "midmenuItem_" + jsonObj.id; 
 }
 
-function listItemsInMidmenu(commandString, jsonResponse1, jsonResponse2, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, clickFirstItem) {                
+function listMidMenuItems2(commandString, jsonResponse1, jsonResponse2, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, clickFirstItem) {                
     $.ajax({
         cache: false,
         data: createURL("command="+commandString+"&pagesize="+midmenuItemCount),
@@ -790,7 +790,7 @@ function listMidMenuItems(leftmenuId, commandString, jsonResponse1, jsonResponse
             });	   
                           
             afterLoadRightPanelJSPFn();                
-            listItemsInMidmenu(commandString, jsonResponse1, jsonResponse2, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, true);            
+            listMidMenuItems2(commandString, jsonResponse1, jsonResponse2, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, true);            
         });     
         return false;
     });
