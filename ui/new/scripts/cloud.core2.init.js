@@ -78,6 +78,8 @@ $(document).ready(function() {
     });
     
     $("#leftmenu_dashboard").bind("click", function(event) {  
+        if($expandedFirstLevelMenu != null && $expandedSecondLevelMenu != null)  //collapse other expanded menu if there is.
+            collapseFirstLevelMenu($expandedFirstLevelMenu, $expandedSecondLevelMenu);          
         selectLeftMenu($(this));
             
         hideMiddleMenu();
