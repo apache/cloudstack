@@ -118,7 +118,7 @@ $(document).ready(function() {
             $("#leftmenu_zone_tree").find("#tree_container").empty();
         }
                 
-        $("#right_panel").load("jsp/resource.jsp", function(){             
+        $("#right_panel").load("jsp/resource.jsp", function(){               
             afterLoadResourceJSP();       
         });     
                 

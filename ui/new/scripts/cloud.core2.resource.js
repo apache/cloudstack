@@ -366,7 +366,22 @@ function hostJsonToDetailsTab(jsonObj) {
     $detailsTab.find("#ipaddress").text(fromdb(jsonObj.ipaddress)); 
     $detailsTab.find("#version").text(fromdb(jsonObj.version));  
     $detailsTab.find("#oscategoryname").text(fromdb(jsonObj.oscategoryname));        
-    $detailsTab.find("#disconnected").text(fromdb(jsonObj.disconnected));        
+    $detailsTab.find("#disconnected").text(fromdb(jsonObj.disconnected));  
+    
+    //actions ***   
+    var $actionLink = $detailsTab.find("#action_link"); 
+    $actionLink.bind("mouseover", function(event) {	    
+        $(this).find("#action_menu").show();    
+        return false;
+    });
+    $actionLink.bind("mouseout", function(event) {       
+        $(this).find("#action_menu").hide();    
+        return false;
+    });	  
+    var $actionMenu = $detailsTab.find("#action_link #action_menu");
+    $actionMenu.find("#action_list").empty();
+    var midmenuItemId = getMidmenuId(jsonObj);
+    buildActionLinkForDetailsTab("Enable Maintenance Mode", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  //when right panel has more than 1 details tab, we need to specify which one it is building action to. 
 }
 //***** host page (end) *******************************************************************************************************
 
@@ -1157,3 +1172,41 @@ function bindEventHandlerToDialogAddVlanForZone() {
 	    return false;
 	});
 }
+
+var hostActionMap = {  
+    "Enable Maintenance Mode": {              
+        isAsyncJob: true,
+        asyncJobResponse: "preparehostformaintenanceresponse",
+        dialogBeforeActionFn : doEnableMaintenanceMode,
+        inProcessText: "Enabling Maintenance Mode....",
+        afterActionSeccessFn: function(json, id, midmenuItemId) {
+            // Host status is likely to change at this point. So, refresh the row now.
+			$.ajax({
+			    data: createURL("command=listHosts&id="+hostId),
+                dataType: "json",
+                success: function(json) {                            				   
+				    hostJsonToDetailsTab(json.listhostsresponse.host[0], $("#right_panel_content #host_page #tab_content_details"));                            				    
+                }
+            });	
+            
+            $("#right_panel_content #after_action_info").text("We are actively enabling maintenance on your host. Please refresh periodically for an updated status."); 
+        }
+    }     
+} 
+
+function doEnableMaintenanceMode($actionLink, $detailsTab, midmenuItemId){ 
+    var jsonObj = $detailsTab.data("jsonObj");
+       
+    $("#dialog_confirmation_enable_maintenance")
+    .dialog("option", "buttons", {	                    
+     "Add": function() {
+         $(this).dialog("close");           
+         var id = jsonObj.id;
+         var apiCommand = "command=prepareHostForMaintenance&id="+id;
+    	 doActionToDetailsTab(id, $actionLink, apiCommand, midmenuItemId);		
+     },
+     "Cancel": function() {	                         
+         $(this).dialog("close");
+     }
+    }).dialog("open");     
+} 

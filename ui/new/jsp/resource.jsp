@@ -273,6 +273,22 @@
         </div>
         <!-- Details tab (start)-->
         <div id="tab_content_details">
+            <div class="grid_actionpanel">
+	            <div class="grid_actionbox" id="action_link">
+	                <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
+	                    <ul class="actionsdropdown_boxlist" id="action_list">
+	                       <li><%=t.t("no.available.actions")%></li>
+	                    </ul>
+	                </div>
+	            </div>            
+	            <div class="gridheader_loaderbox" id="spinning_wheel" style="border: 1px solid #999;
+	                display: none;">
+	                <div class="gridheader_loader" id="icon">
+	                </div>
+	                <p id="description">
+	                    Waiting &hellip;</p>
+	            </div>                  
+	        </div>        
             <div class="grid_container">
                 <div class="grid_rows odd">
                     <div class="grid_row_cell" style="width: 20%;">
@@ -1066,3 +1082,10 @@
     </div>    
 </div>
 <!--  secondary storage tab template (end) -->
+
+<!-- dialogs -->
+<div id="dialog_confirmation_enable_maintenance" title="Confirmation" style="display: none">
+    <p>        
+        <%=t.t("Please.confirm.you.want.to.enable.maintenance.for.the.host..Enabling.maintenance.mode.will.cause.a.live.migration.of.all.running.instances.on.this.host.to.any.available.host..An.alert.will.be.sent.to.the.admin.when.this.process.has.been.completed.")%>
+    </p>
+</div>

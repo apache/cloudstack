@@ -19,7 +19,7 @@
 // Version: @VERSION@
 
 //***** actions for details tab in right panel (begin) ************************************************************************
-function buildActionLinkForDetailsTab(label, actionMap, $actionMenu, midmenuItemId) { 
+function buildActionLinkForDetailsTab(label, actionMap, $actionMenu, midmenuItemId, $detailsTab) { 
     var apiInfo = actionMap[label];
     var $listItem = $("#action_list_item").clone();
     $actionMenu.find("#action_list").append($listItem.show());
@@ -32,7 +32,8 @@ function buildActionLinkForDetailsTab(label, actionMap, $actionMenu, midmenuItem
     $link.data("afterActionSeccessFn", apiInfo.afterActionSeccessFn);
     $link.data("dialogBeforeActionFn", apiInfo.dialogBeforeActionFn);     
     
-    var $detailsTab = $("#right_panel_content #tab_content_details");  
+    if($detailsTab == null) //when right panel has only 1 details tab
+        $detailsTab = $("#right_panel_content #tab_content_details");  
     var id = $detailsTab.data("jsonObj").id;
     
     $link.bind("click", function(event) {   
