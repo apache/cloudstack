@@ -593,48 +593,23 @@ function showInstancesTab(p_domainId, p_account) {
 						       data: createURL("command=changeServiceForVirtualMachine&id="+vmId+"&serviceOfferingId="+$("#dialog_change_service_offering #change_service_offerings").val()+"&response=json"),
 							dataType: "json",
 							success: function(json) {						
-								var jobId = json.changeserviceforvirtualmachineresponse.jobid;
-					            var timerKey = "changeServiceForVirtualMachineJob_" + jobId;
-					            $("body").everyTime(
-						            5000,
-						            timerKey,
-						            function() {
-							            $.ajax({
-									   data: createURL("command=queryAsyncJobResult&jobId=" + jobId + "&response=json"),
-								            dataType: "json",
-								            success: function(json) {
-									            var result = json.queryasyncjobresultresponse;
-									            if (result.jobstatus == 0) {
-										            return; //Job has not completed
-									            } else {
-										            $("body").stopTime(timerKey);
-										            if (result.jobstatus == 1) { // Succeeded												            												            
-											            vmInstance.find("#vm_loading_container").hide();
-								                        vmInstance.find(".row_loading").show();
-								                        vmInstance.find(".loadingmessage_container .loadingmessage_top p").html("Your virtual instance has been upgraded.  Please restart your virtual instance for the new service offering to take effect.");
-								                        vmInstance.find(".loadingmessage_container").fadeIn("slow");										                        
-								                        vmInstance.find("#vm_service").html("<strong>Service:</strong> " + fromdb(result.virtualmachine[0].serviceofferingname));		
-								                        if (result.virtualmachine[0].haenable =='true') {
-			                                                vmInstance.find("#vm_ha").html("<strong>HA:</strong> Enabled");
-			                                                vmInstance.find("#vm_action_ha").text("Disable HA");
+								var virtualmachine = json.changeserviceforvirtualmachineresponse;
+							        vmInstance.find("#vm_loading_container").hide();
+				                                vmInstance.find(".row_loading").show();
+				                                vmInstance.find(".loadingmessage_container .loadingmessage_top p").html("Your virtual instance has been upgraded.  Please restart your virtual instance for the new service offering to take effect.");
+				                                vmInstance.find(".loadingmessage_container").fadeIn("slow");
+				                                vmInstance.find("#vm_service").html("<strong>Service:</strong> " + fromdb(virtualmachine.serviceofferingname));
+				                                if (virtualmachine.haenable =='true') {
+                                                                    vmInstance.find("#vm_ha").html("<strong>HA:</strong> Enabled");
+			                                            vmInstance.find("#vm_action_ha").text("Disable HA");
 		                                                } else {
-			                                                vmInstance.find("#vm_ha").html("<strong>HA:</strong> Disabled");
-			                                                vmInstance.find("#vm_action_ha").text("Enable HA");
-		                                                }									                        
-										            } else if (result.jobstatus == 2) { // Failed
-											            $("#dialog_alert").html("<p>" + fromdb(result.jobresult) + "</p>").dialog("open");		
-										            }
-									            }
-								            },
-								            error: function(XMLHttpResponse) {										
-									            handleError(XMLHttpResponse);
-									            $("body").stopTime(timerKey);										            
-								            }
-							            });
-						            },
-						            0
-					            );									
-							}
+			                                            vmInstance.find("#vm_ha").html("<strong>HA:</strong> Disabled");
+			                                            vmInstance.find("#vm_action_ha").text("Enable HA");
+		                                                }
+							},
+					                error: function(XMLHttpResponse) {										
+							    handleError(XMLHttpResponse);
+		                                        }
 						});
 					}, 
 					"Cancel": function() { 
