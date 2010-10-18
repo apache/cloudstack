@@ -663,6 +663,7 @@ function afterLoadResourceJSP() {
 	initDialog("dialog_add_pool");
 	initDialog("dialog_add_secondarystorage");
 	initDialog("dialog_add_vlan_for_zone");
+	initDialog("dialog_confirmation_enable_maintenance");
 	
 	// if hypervisor is KVM, limit the server option to NFS for now
 	if (getHypervisorType() == 'kvm') 
@@ -1208,8 +1209,8 @@ function doEnableMaintenanceMode($actionLink, $detailsTab, midmenuItemId){
        
     $("#dialog_confirmation_enable_maintenance")
     .dialog("option", "buttons", {	                    
-     "Add": function() {
-         $(this).dialog("close");           
+     "OK": function() {
+         $(this).dialog("close");      
          var id = jsonObj.id;
          var apiCommand = "command=prepareHostForMaintenance&id="+id;
     	 doActionToDetailsTab(id, $actionLink, apiCommand, midmenuItemId);		

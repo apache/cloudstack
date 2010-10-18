@@ -1086,6 +1086,6 @@
 <!-- dialogs -->
 <div id="dialog_confirmation_enable_maintenance" title="Confirmation" style="display: none">
     <p>        
-        <%=t.t("Please.confirm.you.want.to.enable.maintenance.for.the.host..Enabling.maintenance.mode.will.cause.a.live.migration.of.all.running.instances.on.this.host.to.any.available.host..An.alert.will.be.sent.to.the.admin.when.this.process.has.been.completed.")%>
+        <%=t.t("enabling.maintenance.mode.will.cause.a.live.migration.of.all.running.instances.on.this.host.to.any.available.host")%>
     </p>
 </div>
