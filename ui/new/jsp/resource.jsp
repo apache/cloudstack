@@ -26,7 +26,7 @@
                 <%=t.t("details")%></div>
             <div class="content_tabs off" id="tab_network">
                 <%=t.t("network")%></div>
-            <div class="content_tabs off" id="tab_secondary_storage">
+            <div class="content_tabs off" id="tab_secondarystorage">
                 <%=t.t("secondary.storage")%></div>
         </div>
         <!-- Details tab (start)-->
@@ -146,7 +146,7 @@
         </div>
         <!-- Network tab (end)-->
         <!-- Secondary Storage tab (start)-->
-        <div id="tab_content_secondary_storage" style="display: none">
+        <div id="tab_content_secondarystorage" style="display: none">
             Secondary Storage
         </div>
         <!-- Secondary Storage tab (end)-->

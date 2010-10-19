@@ -284,7 +284,7 @@ function zoneJsonToSecondaryStorageTab(jsonObj) {
 		dataType: "json",
 		success: function(json) {			   			    
 			var items = json.listhostsresponse.host;	
-			var container = $("#zone_page").find("#tab_content_secondary_storage").empty();																					
+			var container = $("#zone_page").find("#tab_content_secondarystorage").empty();																					
 			if (items != null && items.length > 0) {			    
 				var template = $("#secondary_storage_tab_template");				
 				for (var i = 0; i < items.length; i++) {
@@ -742,7 +742,7 @@ function initAddecondaryStorageButton($midmenuAdd2Link) {
                 $spinningWheel.find("#description").text("Adding Secondary Storage....");  
                 $spinningWheel.show();  
                 $subgridItem.find("#after_action_info_container").removeClass("error").addClass("success").hide();  
-                $("#zone_page").find("#tab_content_secondary_storage").append($subgridItem.show());    
+                $("#zone_page").find("#tab_content_secondarystorage").append($subgridItem.show());    
 				     					  								            				
 			    var zoneId = zoneObj.id;		
 			    var nfs_server = trim(thisDialog.find("#nfs_server").val());		
@@ -774,8 +774,8 @@ function initAddecondaryStorageButton($midmenuAdd2Link) {
 function afterLoadResourceJSP() {	
 	//switch between different tabs in zone page 
 	var $zonePage = $("#zone_page");
-    var tabArray = [$zonePage.find("#tab_details"), $zonePage.find("#tab_network"), $zonePage.find("#tab_secondary_storage")];
-    var tabContentArray = [$zonePage.find("#tab_content_details"), $zonePage.find("#tab_content_network"), $zonePage.find("#tab_content_secondary_storage")];
+    var tabArray = [$zonePage.find("#tab_details"), $zonePage.find("#tab_network"), $zonePage.find("#tab_secondarystorage")];
+    var tabContentArray = [$zonePage.find("#tab_content_details"), $zonePage.find("#tab_content_network"), $zonePage.find("#tab_content_secondarystorage")];
     var afterSwitchFnArray = [afterSwitchToDetailsTab, afterSwitchToNetworkTab, afterSwitchToSecondaryStorageTab];
     switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray);     
       
