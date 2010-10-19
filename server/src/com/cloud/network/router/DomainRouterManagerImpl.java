@@ -227,6 +227,8 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
     int _retry = 2;
     String _domain;
     String _instance;
+	String _defaultHypervisorType;
+	
     int _routerCleanupInterval = 3600;
     int _routerStatsInterval = 300;
     private ServiceOfferingVO _offering;
@@ -895,7 +897,17 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
 	                    s_logger.debug("Trying to start router on host " + routingHost.getName());
 	                }
 	                
-	                String privateIpAddress = _dcDao.allocateLinkLocalPrivateIpAddress(router.getDataCenterId(), routingHost.getPodId(), router.getId());
+	                String privateIpAddress = null;
+	                String privateNetMask = null;
+	                
+	                if(_defaultHypervisorType == null || !_defaultHypervisorType.equalsIgnoreCase("VmWare")) {
+	                	privateIpAddress = _dcDao.allocateLinkLocalPrivateIpAddress(router.getDataCenterId(), routingHost.getPodId(), router.getId());
+	                	privateNetMask = NetUtils.getLinkLocalNetMask();
+	                } else {
+	                	privateIpAddress = _dcDao.allocatePrivateIpAddress(router.getDataCenterId(), routingHost.getPodId(), router.getId());
+	                	privateNetMask = NetUtils.getCidrNetmask(pod.getCidrSize());
+	                }
+	                
 	                if (privateIpAddress == null) {
 	                    s_logger.error("Unable to allocate a private ip address while creating router for pod " + routingHost.getPodId());
 	                    avoid.add(routingHost);
@@ -907,7 +919,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
 	                }
 
 	                router.setPrivateIpAddress(privateIpAddress);
-	                router.setPrivateNetmask(NetUtils.getLinkLocalNetMask());
+	                router.setPrivateNetmask(privateNetMask);
 	                router.setGuestMacAddress(routerMacAddress);
 	                router.setVnet(vnet);
 	                final String name = VirtualMachineName.attachVnet(router.getName(), vnet);
@@ -981,7 +993,11 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
 	                avoid.add(routingHost);
 	                
 	                router.setPrivateIpAddress(null);
-	                _dcDao.releaseLinkLocalPrivateIpAddress(privateIpAddress, router.getDataCenterId(), router.getId());
+	                
+	                if(_defaultHypervisorType == null || !_defaultHypervisorType.equalsIgnoreCase("VmWare"))
+	                	_dcDao.releaseLinkLocalPrivateIpAddress(privateIpAddress, router.getDataCenterId(), router.getId());
+	                else
+	                	_dcDao.releasePrivateIpAddress(privateIpAddress, router.getDataCenterId(), router.getId());
 	
 	                _storageMgr.unshare(router, vols, routingHost);
 	            } while (--retry > 0 && (routingHost = (HostVO)_agentMgr.findHost(Host.Type.Routing, dc, pod, sp,  offering, template, router, null, avoid)) != null);
@@ -1028,7 +1044,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
                 router.setPrivateIpAddress(null);
 
                 if (privateIpAddress != null) {
-                    _dcDao.releasePrivateIpAddress(privateIpAddress, router.getDataCenterId(), router.getId());
+                	_dcDao.releasePrivateIpAddress(privateIpAddress, router.getDataCenterId(), router.getId());
                 }
 
 
@@ -1391,6 +1407,8 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
         String value = configs.get("start.retry");
         _retry = NumbersUtil.parseInt(value, 2);
 
+		_defaultHypervisorType = (String)params.get(Config.HypervisorDefaultType.key());
+        
         value = configs.get("router.stats.interval");
         _routerStatsInterval = NumbersUtil.parseInt(value, 300);
 
@@ -1497,7 +1515,10 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
             String privateIpAddress = router.getPrivateIpAddress();
             
             if (privateIpAddress != null) {
-            	_dcDao.releaseLinkLocalPrivateIpAddress(privateIpAddress, router.getDataCenterId(), router.getId());
+            	if(_defaultHypervisorType == null || !_defaultHypervisorType.equalsIgnoreCase("VmWare"))
+            		_dcDao.releaseLinkLocalPrivateIpAddress(privateIpAddress, router.getDataCenterId(), router.getId());
+            	else
+            		_dcDao.releasePrivateIpAddress(privateIpAddress, router.getDataCenterId(), router.getId());
             }
             router.setPrivateIpAddress(null);
 
