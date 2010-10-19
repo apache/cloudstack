@@ -21,8 +21,6 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.TableGenerator;
@@ -42,7 +40,6 @@ import com.cloud.utils.net.NetUtils;
 public class NetworkConfigurationVO implements NetworkConfiguration {
     @Id
     @TableGenerator(name="network_configuration_sq", table="sequence", pkColumnName="name", valueColumnName="value", pkColumnValue="network_configuration_seq", allocationSize=1)
-    @GeneratedValue(strategy=GenerationType.SEQUENCE)
     @Column(name="id")
     long id;
     
@@ -148,6 +145,7 @@ public class NetworkConfigurationVO implements NetworkConfiguration {
         this.state = state;
     }
     
+    @Override
     public long getRelated() {
         return related;
     }

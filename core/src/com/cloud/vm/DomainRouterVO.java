@@ -83,6 +83,9 @@ public class DomainRouterVO extends VMInstanceVO implements DomainRouter {
     @Column(name="guest_dc_mac_address")
     private String guestZoneMacAddress;
     
+    @Column(name="network_configuration_id")
+    long networkConfigurationId;
+    
     @Column(name="role")
     @Enumerated(EnumType.STRING)
     private Role role = Role.DHCP_FIREWALL_LB_PASSWD_USERDATA;
@@ -138,8 +141,10 @@ public class DomainRouterVO extends VMInstanceVO implements DomainRouter {
             long guestOSId,
             long domainId,
             long accountId,
+            long networkConfigurationId,
             boolean haEnabled) {
         super(id, serviceOfferingId, name, name, Type.DomainRouter, templateId, guestOSId, domainId, accountId, haEnabled);
+        this.networkConfigurationId = networkConfigurationId;
     }
 
     public void setGateway(String gateway) {
@@ -160,6 +165,10 @@ public class DomainRouterVO extends VMInstanceVO implements DomainRouter {
 
     public void setGuestMacAddress(String routerMacAddress) {
         this.guestMacAddress = routerMacAddress;
+    }
+    
+    public long getNetworkConfigurationId() {
+        return networkConfigurationId;
     }
     
     @Override

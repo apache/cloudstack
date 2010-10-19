@@ -1062,9 +1062,9 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
         NicProfile defaultNic = new NicProfile();
         defaultNic.setDefaultNic(true);
         defaultNic.setDeviceId(2);
-        networks.add(new Pair<NetworkConfigurationVO, NicProfile>(_networkMgr.setupNetworkConfiguration(systemAcct, defaultOffering.get(0), plan), defaultNic));
+        networks.add(new Pair<NetworkConfigurationVO, NicProfile>(_networkMgr.setupNetworkConfiguration(systemAcct, defaultOffering.get(0), plan).get(0), defaultNic));
         for (NetworkOfferingVO offering : offerings) {
-            networks.add(new Pair<NetworkConfigurationVO, NicProfile>(_networkMgr.setupNetworkConfiguration(systemAcct, offering, plan), null));
+            networks.add(new Pair<NetworkConfigurationVO, NicProfile>(_networkMgr.setupNetworkConfiguration(systemAcct, offering, plan).get(0), null));
         }
         ConsoleProxyVO proxy = new ConsoleProxyVO(id, _serviceOffering.getId(), name, _template.getId(), _template.getGuestOSId(), dataCenterId, systemAcct.getDomainId(), systemAcct.getId(), 0);
         proxy = _consoleProxyDao.persist(proxy);
@@ -2375,7 +2375,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
     }
 
     @Override
-    public boolean finalizeDeployment(Commands cmds, VirtualMachineProfile profile, DeployDestination dest) {
+    public boolean finalizeDeployment(Commands cmds, ConsoleProxyVO proxy, VirtualMachineProfile profile, DeployDestination dest) {
         Start2Command cmd = cmds.getCommand(Start2Command.class);
         VirtualMachineTO vm = cmd.getVirtualMachine();
         
@@ -2428,7 +2428,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
     }
 
     @Override
-    public boolean checkDeploymentResult(Commands cmds, VirtualMachineProfile profile, DeployDestination dest) {
+    public boolean checkDeploymentResult(Commands cmds, ConsoleProxyVO proxy, VirtualMachineProfile profile, DeployDestination dest) {
         return true;
     }
 }

@@ -20,9 +20,9 @@ package com.cloud.vm.dao;
 import java.util.List;
 
 import com.cloud.utils.db.GenericDao;
+import com.cloud.vm.DomainRouter.Role;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.DomainRouter.Role;
 
 /**
  *
@@ -114,4 +114,6 @@ public interface DomainRouterDao extends GenericDao<DomainRouterVO, Long> {
 	public List<DomainRouterVO> listByVlanDbId(Long vlanId);
 
 	DomainRouterVO findBy(long accountId, long dcId, Role role);
+	
+	DomainRouterVO findByNetworkConfiguration(long networkConfigurationId);
 }

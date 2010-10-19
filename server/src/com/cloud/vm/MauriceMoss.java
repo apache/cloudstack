@@ -212,6 +212,17 @@ public class MauriceMoss implements VmManager {
 
     @Override
     public <T extends VMInstanceVO> T start(T vm, DeploymentPlan plan, Account acct, VirtualMachineGuru<T> guru) throws InsufficientCapacityException, ConcurrentOperationException {
+        State state = vm.getState();
+        if (state == State.Starting || state == State.Running) {
+            s_logger.debug("VM is already started: " + vm);
+            return vm;
+        }
+        
+        if (state != State.Stopped) {
+            s_logger.debug("VM " + vm + " is not in a state to be started: " + state);
+            return null;
+        }
+        
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Creating actual resources for VM " + vm);
         }
@@ -275,7 +286,7 @@ public class MauriceMoss implements VmManager {
             Commands cmds = new Commands(OnError.Revert);
             cmds.addCommand(new Start2Command(vmTO));
             if (guru != null) {
-                guru.finalizeDeployment(cmds, vmProfile, dest);
+                guru.finalizeDeployment(cmds, vm, vmProfile, dest);
             }
             try {
                 Answer[] answers = _agentMgr.send(dest.getHost().getId(), cmds);

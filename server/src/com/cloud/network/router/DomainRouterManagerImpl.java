@@ -1957,42 +1957,59 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
 	            (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
 	}
 	
+	@Override @DB
 	public DomainRouterVO deploy(NetworkConfiguration publicConfig, NetworkConfiguration virtualConfig, NetworkOffering offering, Account owner) throws InsufficientCapacityException, StorageUnavailableException, ConcurrentOperationException {
 	    long dcId = publicConfig.getDataCenterId();
 	    
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Creating a router for network configurations: public=" + publicConfig + "; virtual="  + virtualConfig);
+            s_logger.debug("Starting a router for network configurations: public=" + publicConfig + "; virtual="  + virtualConfig);
         }
 	    assert dcId == virtualConfig.getDataCenterId() : "Domain router cannot span networks in two data centers";
 	    assert publicConfig.getState() == NetworkConfiguration.State.Implemented : "Network is not yet fully implemented: " + publicConfig;
 	    assert virtualConfig.getState() == NetworkConfiguration.State.Implemented : "Network is not yet fully implemented: " + virtualConfig;
 	    
-	    DataCenterDeployment plan = new DataCenterDeployment(dcId, 1);
-        List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemVmControlNetwork);
+        DataCenterDeployment plan = new DataCenterDeployment(dcId, 1);
         
-        NetworkOfferingVO controlOffering = offerings.get(0);
-        NetworkConfigurationVO controlConfig = _networkMgr.setupNetworkConfiguration(_systemAcct, controlOffering, plan);
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
         
-        long id = _routerDao.getNextInSequence(Long.class, "id");
-	    DomainRouterVO router = new DomainRouterVO(id, _offering.getId(), VirtualMachineName.getRouterName(id, _instance), _template.getId(), _template.getGuestOSId(), owner.getDomainId(), owner.getId(), _offering.getOfferHA());
-	    _routerDao.persist(router);
-	    
-	    List<Pair<NetworkConfigurationVO, NicProfile>> networks = new ArrayList<Pair<NetworkConfigurationVO, NicProfile>>(3);
-        NicProfile defaultNic = new NicProfile();
-        defaultNic.setDefaultNic(true);
-        defaultNic.setDeviceId(2);
-        networks.add(new Pair<NetworkConfigurationVO, NicProfile>((NetworkConfigurationVO)publicConfig, defaultNic));
-        networks.add(new Pair<NetworkConfigurationVO, NicProfile>((NetworkConfigurationVO)virtualConfig, null));
-	    networks.add(new Pair<NetworkConfigurationVO, NicProfile>(controlConfig, null));
-	    
-	    _vmMgr.allocate(router, _template, _offering, networks, plan, owner);
-	    router = _vmMgr.start(router, plan, owner, this);
-	    
-	    return router;
+        virtualConfig = _networkProfileDao.lock(virtualConfig.getId(), true);
+        if (virtualConfig == null) {
+            throw new ConcurrentOperationException("Unable to get the lock on " + virtualConfig);
+        }
+        
+        DomainRouterVO router = _routerDao.findByNetworkConfiguration(virtualConfig.getId());
+        if (router == null) {
+            long id = _routerDao.getNextInSequence(Long.class, "id");
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Creating the router " + id);
+            }
+        
+            List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemVmControlNetwork);
+            
+            NetworkOfferingVO controlOffering = offerings.get(0);
+            NetworkConfigurationVO controlConfig = _networkMgr.setupNetworkConfiguration(_systemAcct, controlOffering, plan).get(0);
+            
+            router = new DomainRouterVO(id, _offering.getId(), VirtualMachineName.getRouterName(id, _instance), _template.getId(), _template.getGuestOSId(), owner.getDomainId(), owner.getId(), virtualConfig.getId(), _offering.getOfferHA());
+    	    _routerDao.persist(router);
+    	    
+    	    List<Pair<NetworkConfigurationVO, NicProfile>> networks = new ArrayList<Pair<NetworkConfigurationVO, NicProfile>>(3);
+            NicProfile defaultNic = new NicProfile();
+            defaultNic.setDefaultNic(true);
+            defaultNic.setDeviceId(2);
+            networks.add(new Pair<NetworkConfigurationVO, NicProfile>((NetworkConfigurationVO)publicConfig, defaultNic));
+            networks.add(new Pair<NetworkConfigurationVO, NicProfile>((NetworkConfigurationVO)virtualConfig, null));
+    	    networks.add(new Pair<NetworkConfigurationVO, NicProfile>(controlConfig, null));
+    	    
+    	    _vmMgr.allocate(router, _template, _offering, networks, plan, owner);
+        }
+        txn.commit();
+        
+        return _vmMgr.start(router, plan, owner, this);
 	}
 
     @Override
-    public boolean finalizeDeployment(Commands cmds, VirtualMachineProfile profile, DeployDestination dest) {
+    public boolean finalizeDeployment(Commands cmds, DomainRouterVO router, VirtualMachineProfile profile, DeployDestination dest) {
         Start2Command cmd = cmds.getCommand(Start2Command.class);
         VirtualMachineTO vm = cmd.getVirtualMachine();
         
@@ -2035,176 +2052,8 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
     }
 
     @Override
-    public boolean checkDeploymentResult(Commands cmds, VirtualMachineProfile profile, DeployDestination dest) {
+    public boolean checkDeploymentResult(Commands cmds, DomainRouterVO router, VirtualMachineProfile profile, DeployDestination dest) {
         return true;
     }
-	
-//    if (s_logger.isDebugEnabled()) {
-//        s_logger.debug("Creating a router for account=" + accountId + "; publicIpAddress=" + publicIpAddress + "; dc=" + dataCenterId + "domain=" + domain);
-//    }
-//    
-//    final AccountVO account = _accountDao.acquire(accountId);
-//    if (account == null) {
-//        throw new ConcurrentOperationException("Unable to acquire account " + accountId);
-//    }
-//    
-//    if(s_logger.isDebugEnabled())
-//        s_logger.debug("lock on account " + accountId + " for createRouter is acquired");
-//
-//    final Transaction txn = Transaction.currentTxn();
-//    DomainRouterVO router = null;
-//    boolean success = false;
-//    try {
-//        router = _routerDao.findBy(accountId, dataCenterId);
-//        if (router != null && router.getState() != State.Creating) {
-//            if (s_logger.isDebugEnabled()) {
-//                s_logger.debug("Router " + router.toString() + " found for account " + accountId + " in data center " + dataCenterId);
-//            }
-//            success = true;
-//            return router;
-//        }
-//        EventVO event = new EventVO();
-//        event.setUserId(1L);
-//        event.setAccountId(accountId);
-//        event.setType(EventTypes.EVENT_ROUTER_CREATE);
-//        event.setState(EventState.Started);
-//        event.setStartId(startEventId);
-//        event.setDescription("Creating Router for account with Id: "+accountId);
-//        event = _eventDao.persist(event);
-//
-//        final DataCenterVO dc = _dcDao.findById(dataCenterId);
-//        final VMTemplateVO template = _templateDao.findRoutingTemplate();
-//
-//        String[] macAddresses = getMacAddressPair(dataCenterId);
-//        String privateMacAddress = macAddresses[0];
-//        String publicMacAddress = macAddresses[1];
-//
-//        final long id = _routerDao.getNextInSequence(Long.class, "id");
-//
-//        if (domain == null) {
-//            domain = "v" + Long.toHexString(accountId) + "." + _domain;
-//        }
-//
-//        final String name = VirtualMachineName.getRouterName(id, _instance).intern();
-//        long routerMacAddress = NetUtils.mac2Long(dc.getRouterMacAddress()) | ((dc.getId() & 0xff) << 32);
-//
-//        //set the guestNetworkCidr from the dc obj
-//        String guestNetworkCidr = dc.getGuestNetworkCidr();
-//        String[] cidrTuple = guestNetworkCidr.split("\\/");
-//        String guestIpAddress = NetUtils.getIpRangeStartIpFromCidr(cidrTuple[0], Long.parseLong(cidrTuple[1]));
-//        String guestNetmask = NetUtils.getCidrNetmask(Long.parseLong(cidrTuple[1]));
-//
-////        String path = null;
-////        final int numVolumes = offering.isMirroredVolumes()?2:1;
-////        long routerId = 0;
-//
-//        // Find the VLAN ID, VLAN gateway, and VLAN netmask for publicIpAddress
-//        IPAddressVO ipVO = _ipAddressDao.findById(publicIpAddress);
-//        VlanVO vlan = _vlanDao.findById(ipVO.getVlanDbId());
-//        String vlanId = vlan.getVlanId();
-//        String vlanGateway = vlan.getVlanGateway();
-//        String vlanNetmask = vlan.getVlanNetmask();
-//
-//        Pair<HostPodVO, Long> pod = null;
-//        Set<Long> avoids = new HashSet<Long>();
-//        boolean found = false;
-//        while ((pod = _agentMgr.findPod(template, offering, dc, accountId, avoids)) != null) {
-//            
-//            if (s_logger.isDebugEnabled()) {
-//                s_logger.debug("Attempting to create in pod " + pod.first().getName());
-//            }
-//
-//            router = new DomainRouterVO(id,
-//                        _offering.getId(),
-//                        name,
-//                        privateMacAddress,
-//                        null,
-//                        null,
-//                        _routerTemplateId,
-//                        template.getGuestOSId(),
-//                        NetUtils.long2Mac(routerMacAddress),
-//                        guestIpAddress,
-//                        guestNetmask,
-//                        accountId,
-//                        account.getDomainId(),
-//                        publicMacAddress,
-//                        publicIpAddress,
-//                        vlanNetmask,
-//                        vlan.getId(),
-//                        vlanId,
-//                        pod.first().getId(),
-//                        dataCenterId,
-//                        _routerRamSize,
-//                        vlanGateway,
-//                        domain,
-//                        dc.getDns1(),
-//                        dc.getDns2());
-//            router.setMirroredVols(offering.isMirrored());
-//
-//            router.setLastHostId(pod.second());
-//            router = _routerDao.persist(router);
-//
-//            List<VolumeVO> vols = _storageMgr.create(account, router, template, dc, pod.first(), _offering, null,0);
-//            if(vols != null) {
-//                found = true;
-//                break;
-//            }
-//
-//            _routerDao.expunge(router.getId());
-//            if (s_logger.isDebugEnabled()) {
-//                s_logger.debug("Unable to find storage host or pool in pod " + pod.first().getName() + " (id:" + pod.first().getId() + "), checking other pods");
-//            }
-//            avoids.add(pod.first().getId());
-//        }
-//        
-//        if (!found) {
-//            event.setDescription("failed to create Domain Router : " + name);
-//            event.setLevel(EventVO.LEVEL_ERROR);
-//            _eventDao.persist(event);
-//            throw new ExecutionException("Unable to create DomainRouter");
-//        }
-//        _routerDao.updateIf(router, Event.OperationSucceeded, null);
-//
-//        s_logger.debug("Router created: id=" + router.getId() + "; name=" + router.getName());
-//        
-//        event = new EventVO();
-//        event.setUserId(1L); // system user performed the action
-//        event.setAccountId(accountId);
-//        event.setType(EventTypes.EVENT_ROUTER_CREATE);
-//        event.setStartId(startEventId);
-//        event.setDescription("successfully created Domain Router : " + router.getName() + " with ip : " + publicIpAddress);
-//        _eventDao.persist(event);
-//        success = true;
-//        return router;
-//    } catch (final Throwable th) {
-//        if (th instanceof ExecutionException) {
-//            s_logger.error("Error while starting router due to " + th.getMessage());
-//        } else {
-//            s_logger.error("Unable to create router", th);
-//        }
-//        txn.rollback();
-//
-//        if (router != null && router.getState() == State.Creating) {
-//            _routerDao.expunge(router.getId());
-//        }
-//        return null;
-//    } finally {
-//        if (account != null) {
-//            if(s_logger.isDebugEnabled())
-//                s_logger.debug("Releasing lock on account " + account.getId() + " for createRouter");
-//            _accountDao.release(account.getId());
-//        }
-//        if(!success){
-//            EventVO event = new EventVO();
-//            event.setUserId(1L); // system user performed the action
-//            event.setAccountId(accountId);
-//            event.setType(EventTypes.EVENT_ROUTER_CREATE);
-//            event.setStartId(startEventId);
-//            event.setLevel(EventVO.LEVEL_ERROR);
-//            event.setDescription("Failed to create router for account " + accountId + " in data center " + dataCenterId);
-//            _eventDao.persist(event);                
-//        }
-//    }
-	
 
 }

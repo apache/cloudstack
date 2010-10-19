@@ -41,6 +41,7 @@ public class NetworkConfigurationDaoImpl extends GenericDaoBase<NetworkConfigura
     final SearchBuilder<NetworkConfigurationVO> AccountSearch;
     final SearchBuilder<NetworkConfigurationVO> OfferingSearch;
     final SearchBuilder<NetworkConfigurationVO> RelatedConfigSearch;
+    final SearchBuilder<NetworkConfigurationVO> RelatedConfigsSearch;
     
     NetworkAccountDaoImpl _accountsDao = new NetworkAccountDaoImpl();
     
@@ -74,6 +75,10 @@ public class NetworkConfigurationDaoImpl extends GenericDaoBase<NetworkConfigura
         join2.and("account", join2.entity().getAccountId(), SearchCriteria.Op.EQ);
         RelatedConfigSearch.join("account", join2, join2.entity().getNetworkConfigurationId(), RelatedConfigSearch.entity().getId(), JoinType.INNER);
         RelatedConfigSearch.done();
+        
+        RelatedConfigsSearch = createSearchBuilder();
+        RelatedConfigsSearch.and("related", RelatedConfigsSearch.entity().getRelated(), SearchCriteria.Op.EQ);
+        RelatedConfigsSearch.done();
     }
     
     public List<NetworkConfigurationVO> findBy(TrafficType trafficType, Mode mode, BroadcastDomainType broadcastType, long networkOfferingId, long dataCenterId) {
@@ -136,6 +141,13 @@ public class NetworkConfigurationDaoImpl extends GenericDaoBase<NetworkConfigura
         sc.setParameters("offering", offeringId);
         sc.setParameters("dc", dataCenterId);
         sc.setJoinParameters("account", "account", accountId);
+        return search(sc, null);
+    }
+    
+    @Override
+    public List<NetworkConfigurationVO> getRelatedNetworkConfigurations(long related) {
+        SearchCriteria<NetworkConfigurationVO> sc = RelatedConfigsSearch.create();
+        sc.setParameters("related", related);
         return search(sc, null);
     }
 }

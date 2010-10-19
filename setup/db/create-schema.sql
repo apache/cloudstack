@@ -623,6 +623,7 @@ CREATE TABLE `cloud`.`domain_router` (
   `vlan_db_id` bigint unsigned COMMENT 'Foreign key into vlan id table',
   `vlan_id` varchar(255) COMMENT 'optional VLAN ID for DomainRouter that can be used in rundomr.sh',
   `dhcp_ip_address` bigint unsigned NOT NULL DEFAULT 2 COMMENT 'next ip address for dhcp for this domR',
+  `network_configuration_id` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'network configuration that this domain router belongs to',
   `role` varchar(64) NOT NULL COMMENT 'type of role played by this router',
   PRIMARY KEY (`id`)
 ) ENGINE = InnoDB DEFAULT CHARSET=utf8 COMMENT = 'information about the domR instance';

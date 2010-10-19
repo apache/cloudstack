@@ -90,4 +90,6 @@ public interface NetworkConfiguration extends OwnedBy, PartOf {
     long getNetworkOfferingId();
     
     State getState();
+    
+    long getRelated();
 }

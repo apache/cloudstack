@@ -60,6 +60,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     protected final SearchBuilder<DomainRouterVO> DomainIdSearch;
     protected final SearchBuilder<DomainRouterVO> VlanDbIdSearch;
     protected final SearchBuilder<DomainRouterVO> StateChangeSearch;
+    protected final SearchBuilder<DomainRouterVO> NetworkConfigSearch;
     protected final Attribute _updateTimeAttr;
 
     protected DomainRouterDaoImpl() {
@@ -114,6 +115,9 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         StateChangeSearch.and("host", StateChangeSearch.entity().getHostId(), SearchCriteria.Op.EQ);
         StateChangeSearch.and("update", StateChangeSearch.entity().getUpdated(), SearchCriteria.Op.EQ);
         StateChangeSearch.done();
+        
+        NetworkConfigSearch = createSearchBuilder();
+        NetworkConfigSearch.and("network", NetworkConfigSearch.entity().getNetworkConfigurationId(), SearchCriteria.Op.EQ);
 
         _updateTimeAttr = _allAttributes.get("updateTime");
         assert _updateTimeAttr != null : "Couldn't get this updateTime attribute";
@@ -295,5 +299,12 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         SearchCriteria<DomainRouterVO> sc = VlanDbIdSearch.create();
         sc.setParameters("vlanDbId", vlanDbId);
         return listBy(sc);
+    }
+    
+    @Override
+    public DomainRouterVO findByNetworkConfiguration(long networkConfigurationId) {
+        SearchCriteria<DomainRouterVO> sc = NetworkConfigSearch.create();
+        sc.setParameters("network", networkConfigurationId);
+        return findOneBy(sc);
     }
 }

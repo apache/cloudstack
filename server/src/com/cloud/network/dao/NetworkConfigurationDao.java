@@ -32,4 +32,5 @@ public interface NetworkConfigurationDao extends GenericDao<NetworkConfiguration
     void addAccountToNetworkConfiguration(long configId, long accountId);
     SearchBuilder<NetworkAccountVO> createSearchBuilderForAccount();
     List<NetworkConfigurationVO> getNetworkConfigurationsForOffering(long offeringId, long dataCenterId, long accountId);
+    List<NetworkConfigurationVO> getRelatedNetworkConfigurations(long related);
 }

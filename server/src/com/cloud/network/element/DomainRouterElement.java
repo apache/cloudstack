@@ -23,10 +23,13 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.network.Network.TrafficType;
 import com.cloud.network.NetworkConfiguration;
 import com.cloud.network.NetworkConfiguration.State;
 import com.cloud.network.NetworkConfigurationVO;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.dao.NetworkConfigurationDao;
+import com.cloud.network.router.DomainRouterManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.user.Account;
@@ -40,7 +43,9 @@ import com.cloud.vm.VirtualMachineProfile;
 public class DomainRouterElement extends AdapterBase implements NetworkElement {
     private static final Logger s_logger = Logger.getLogger(DomainRouterElement.class);
     
+    @Inject NetworkConfigurationDao _networkConfigDao;
     @Inject NetworkManager _networkMgr;
+    @Inject DomainRouterManager _routerMgr;
 
     @Override
     public Boolean implement(NetworkConfiguration config, NetworkOffering offering, Account user) {
@@ -49,14 +54,30 @@ public class DomainRouterElement extends AdapterBase implements NetworkElement {
             return null;
         }
         
-        List<NetworkConfigurationVO> configs = _networkMgr.getNetworkConfigurationsforOffering(offering.getId(), config.getDataCenterId(), user.getId());
+        List<NetworkConfigurationVO> configs = _networkConfigDao.getRelatedNetworkConfigurations(config.getRelated());
+        NetworkConfigurationVO publicConfig = null;
+        NetworkConfigurationVO guestConfig = null;
         for (NetworkConfigurationVO c : configs) {
             if (c.getState() != State.Implemented && c.getState() != State.Setup) {
                 s_logger.debug("Not all network is ready to be implemented yet.");
                 return true;
             }
+            if (c.getTrafficType() == TrafficType.Public) {
+                publicConfig = c;
+            } else if (c.getTrafficType() == TrafficType.Guest) {
+                guestConfig = c;
+            } else {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("The network configurations are different than what I expected: " + c);
+                }
+                return null;
+            }
         }
         
+        if (publicConfig == null || guestConfig == null) {
+            s_logger.debug("Expected to find the network configuration for " + (publicConfig == null ? "public" : "") + (guestConfig == null ? " guest" : ""));
+            return null;
+        }
         
         return true;
     }

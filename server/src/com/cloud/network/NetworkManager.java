@@ -298,9 +298,8 @@ public interface NetworkManager extends Manager {
     
     public boolean deleteIpForwardingRule(DeleteIPForwardingRuleCmd cmd) throws PermissionDeniedException, InvalidParameterValueException;
 
-    NetworkConfigurationVO setupNetworkConfiguration(Account owner, NetworkOfferingVO offering, DeploymentPlan plan);
-    NetworkConfigurationVO setupNetworkConfiguration(Account owner, NetworkOfferingVO offering, NetworkConfiguration predefined, DeploymentPlan plan);
-    List<NetworkConfigurationVO> setupNetworkConfigurations(Account owner, List<NetworkOfferingVO> offerings, DeploymentPlan plan);
+    List<NetworkConfigurationVO> setupNetworkConfiguration(Account owner, NetworkOfferingVO offering, DeploymentPlan plan);
+    List<NetworkConfigurationVO> setupNetworkConfiguration(Account owner, NetworkOfferingVO offering, NetworkConfiguration predefined, DeploymentPlan plan);
     
     List<NetworkOfferingVO> getSystemAccountNetworkOfferings(String... offeringNames);
     

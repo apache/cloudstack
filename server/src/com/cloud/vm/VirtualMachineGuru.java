@@ -32,7 +32,7 @@ public interface VirtualMachineGuru<T extends VMInstanceVO> {
      * @param dest destination to send the command.
      * @return true if everything checks out.  false if not and we should try again.
      */
-    boolean finalizeDeployment(Commands cmds, VirtualMachineProfile profile, DeployDestination dest);
+    boolean finalizeDeployment(Commands cmds, T vm, VirtualMachineProfile profile, DeployDestination dest);
     
     
     /**
@@ -42,5 +42,5 @@ public interface VirtualMachineGuru<T extends VMInstanceVO> {
      * @param dest destination it was sent to.
      * @return true if deployment was fine; false if it didn't go well.
      */
-    boolean checkDeploymentResult(Commands cmds, VirtualMachineProfile profile, DeployDestination dest);
+    boolean checkDeploymentResult(Commands cmds, T vm, VirtualMachineProfile profile, DeployDestination dest);
 }

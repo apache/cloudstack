@@ -1576,22 +1576,23 @@ public class NetworkManagerImpl implements NetworkManager {
     }
     
     @Override
-    public NetworkConfigurationVO setupNetworkConfiguration(Account owner, NetworkOfferingVO offering, DeploymentPlan plan) {
+    public List<NetworkConfigurationVO> setupNetworkConfiguration(Account owner, NetworkOfferingVO offering, DeploymentPlan plan) {
         return setupNetworkConfiguration(owner, offering, null, plan);
     }
     
     @Override
-    public NetworkConfigurationVO setupNetworkConfiguration(Account owner, NetworkOfferingVO offering, NetworkConfiguration predefined, DeploymentPlan plan) {
+    public List<NetworkConfigurationVO> setupNetworkConfiguration(Account owner, NetworkOfferingVO offering, NetworkConfiguration predefined, DeploymentPlan plan) {
         List<NetworkConfigurationVO> configs = _networkConfigDao.listBy(owner.getId(), offering.getId(), plan.getDataCenterId());
         if (configs.size() > 0) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Found existing network configuration for offering " + offering + ": " + configs.get(0));
             }
-            return configs.get(0);
+            return configs;
         }
         
-        long id = _networkConfigDao.getNextInSequence(Long.class, "id");
-        long related = id;
+        configs = new ArrayList<NetworkConfigurationVO>();
+        
+        long related = -1;
         
         for (NetworkGuru guru : _networkGurus) {
             NetworkConfiguration config = guru.design(offering, plan, predefined, owner);
@@ -1601,28 +1602,29 @@ public class NetworkManagerImpl implements NetworkManager {
             
             if (config.getId() != null) {
                 if (config instanceof NetworkConfigurationVO) {
-                    return (NetworkConfigurationVO)config;
+                    configs.add((NetworkConfigurationVO)config);
                 } else {
-                    return _networkConfigDao.findById(config.getId());
+                    configs.add(_networkConfigDao.findById(config.getId()));
                 }
+                continue;
+            }
+            
+            long id = _networkConfigDao.getNextInSequence(Long.class, "id");
+            if (related == -1) {
+                related = id;
             } 
             
             NetworkConfigurationVO vo = new NetworkConfigurationVO(id, config, offering.getId(), plan.getDataCenterId(), guru.getName(), owner.getDomainId(), owner.getId(), related);
-            return _networkConfigDao.persist(vo);
+            configs.add(_networkConfigDao.persist(vo));
         }
 
-        throw new CloudRuntimeException("Unable to convert network offering to network profile: " + offering.getId());
+        if (configs.size() < 1) {
+            throw new CloudRuntimeException("Unable to convert network offering to network profile: " + offering.getId());
+        }
+        
+        return configs;
     }
 
-    @Override
-    public List<NetworkConfigurationVO> setupNetworkConfigurations(Account owner, List<NetworkOfferingVO> offerings, DeploymentPlan plan) {
-        List<NetworkConfigurationVO> profiles = new ArrayList<NetworkConfigurationVO>(offerings.size());
-        for (NetworkOfferingVO offering : offerings) {
-            profiles.add(setupNetworkConfiguration(owner, offering, plan));
-        }
-        return profiles;
-    }
-    
     @Override
     public List<NetworkOfferingVO> getSystemAccountNetworkOfferings(String... offeringNames) {
         List<NetworkOfferingVO> offerings = new ArrayList<NetworkOfferingVO>(offeringNames.length);
@@ -1636,11 +1638,6 @@ public class NetworkManagerImpl implements NetworkManager {
         return offerings;
     }
     
-    public NetworkConfigurationVO createNetworkConfiguration(NetworkOfferingVO offering, DeploymentPlan plan, Account owner) {
-        return null;
-    }
-
-
     @Override @DB
     public List<NicProfile> allocate(VirtualMachineProfile vm, List<Pair<NetworkConfigurationVO, NicProfile>> networks) throws InsufficientCapacityException {
         List<NicProfile> nicProfiles = new ArrayList<NicProfile>(networks.size());
