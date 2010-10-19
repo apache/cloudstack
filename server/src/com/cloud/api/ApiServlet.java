@@ -209,7 +209,7 @@ public class ApiServlet extends HttpServlet {
                 }
             }
 
-            if (_apiServer.verifyRequest(params, userId.toString())) {
+            if (_apiServer.verifyRequest(params, userId)) {
                 /*
             	if (accountObj != null) {
             		Account userAccount = (Account)accountObj;

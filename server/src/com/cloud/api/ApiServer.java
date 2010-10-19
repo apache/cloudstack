@@ -436,7 +436,7 @@ public class ApiServer implements HttpRequestHandler {
         */
     }
     
-    public boolean verifyRequest(Map<String, Object[]> requestParameters, String userId) {
+    public boolean verifyRequest(Map<String, Object[]> requestParameters, Long userId) {
         try {
             String apiKey = null;
             String secretKey = null;
@@ -453,7 +453,7 @@ public class ApiServer implements HttpRequestHandler {
             
             //if userId not null, that mean that user is logged in
             if (userId != null) {
-            	Long accountId = ApiDBUtils.findUserById(Long.valueOf(userId)).getAccountId();
+            	Long accountId = ApiDBUtils.findUserById(userId).getAccountId();
             	Account userAccount = _ms.findAccountById(accountId);
             	short accountType = userAccount.getType();
             	
@@ -519,22 +519,7 @@ public class ApiServer implements HttpRequestHandler {
                 return false;
             }
 
-            if (account.getType() == Account.ACCOUNT_TYPE_NORMAL) {
-                UserContext.updateContext(user.getId(), account, account.getAccountName(), account.getId(), account.getDomainId(), null);
-
-                /*
-    			requestParameters.put(BaseCmd.Properties.USER_ID.getName(), new String[] { user.getId().toString() });
-                requestParameters.put(BaseCmd.Properties.ACCOUNT.getName(), new String[] { account.getAccountName() });
-                requestParameters.put(BaseCmd.Properties.DOMAIN_ID.getName(), new String[] { Long.toString(account.getDomainId()) });
-        		requestParameters.put(BaseCmd.Properties.ACCOUNT_OBJ.getName(), new Object[] { account });
-        		*/
-    		} else {
-                UserContext.updateContext(user.getId(), account, null, null, null, null);
-                /*
-    			requestParameters.put(BaseCmd.Properties.USER_ID.getName(), new String[] { user.getId().toString() });
-    			requestParameters.put(BaseCmd.Properties.ACCOUNT_OBJ.getName(), new Object[] { account });
-    			*/
-    		}
+            UserContext.updateContext(user.getId(), account, account.getAccountName(), account.getId(), account.getDomainId(), null);
 
             if (!isCommandAvailable(account.getType(), commandName)) {
         		return false;
