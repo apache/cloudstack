@@ -13,7 +13,7 @@ import javax.persistence.Table;
 @Table(name=("network_group"))
 @SecondaryTable(name="network_ingress_rule", join="left",
         pkJoinColumns={@PrimaryKeyJoinColumn(name="id", referencedColumnName="network_group_id")})
-public class SecurityGroupRulesVO {
+public class NetworkGroupRulesVO {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
@@ -58,9 +58,9 @@ public class SecurityGroupRulesVO {
     @Column(name="allowed_ip_cidr", table="network_ingress_rule", insertable=false, updatable=false, nullable=true)
     private String allowedSourceIpCidr = null;
 
-    public SecurityGroupRulesVO() { }
+    public NetworkGroupRulesVO() { }
 
-    public SecurityGroupRulesVO(Long id, String name, String description, Long domainId, Long accountId, String accountName, Long ruleId, int startPort, int endPort, String protocol, Long allowedNetworkId, String allowedNetworkGroup, String allowedNetGrpAcct, String allowedSourceIpCidr) {
+    public NetworkGroupRulesVO(Long id, String name, String description, Long domainId, Long accountId, String accountName, Long ruleId, int startPort, int endPort, String protocol, Long allowedNetworkId, String allowedNetworkGroup, String allowedNetGrpAcct, String allowedSourceIpCidr) {
     	this.id = id;
     	this.name = name;
     	this.description = description;

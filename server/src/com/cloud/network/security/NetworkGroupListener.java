@@ -34,22 +34,22 @@ import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
-import com.cloud.network.security.SecurityGroupWorkVO.Step;
+import com.cloud.network.security.NetworkGroupWorkVO.Step;
 import com.cloud.network.security.dao.NetworkGroupWorkDao;
 
 /**
  * Listens for answers to ingress rules modification commands
  *
  */
-public class SecurityGroupListener implements Listener {
-    public static final Logger s_logger = Logger.getLogger(SecurityGroupListener.class.getName());
+public class NetworkGroupListener implements Listener {
+    public static final Logger s_logger = Logger.getLogger(NetworkGroupListener.class.getName());
 
-	SecurityGroupManagerImpl _networkGroupManager;
+	NetworkGroupManagerImpl _networkGroupManager;
     AgentManager _agentMgr;
     NetworkGroupWorkDao _workDao;
     
 
-	public SecurityGroupListener(SecurityGroupManagerImpl networkGroupManager,
+	public NetworkGroupListener(NetworkGroupManagerImpl networkGroupManager,
 			AgentManager agentMgr, NetworkGroupWorkDao workDao) {
 		super();
 		_networkGroupManager = networkGroupManager;

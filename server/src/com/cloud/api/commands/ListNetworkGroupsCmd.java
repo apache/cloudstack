@@ -32,7 +32,7 @@ import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.NetworkGroupResponse;
 import com.cloud.async.executor.IngressRuleResultObject;
 import com.cloud.async.executor.NetworkGroupResultObject;
-import com.cloud.network.security.SecurityGroupRulesVO;
+import com.cloud.network.security.NetworkGroupRulesVO;
 
 @Implementation(method="searchForNetworkGroupRules", manager=Manager.NetworkGroupManager)
 public class ListNetworkGroupsCmd extends BaseListCmd {
@@ -87,7 +87,7 @@ public class ListNetworkGroupsCmd extends BaseListCmd {
 
     @Override @SuppressWarnings("unchecked")
     public ListResponse<NetworkGroupResponse> getResponse() {
-        List<SecurityGroupRulesVO> networkGroups = (List<SecurityGroupRulesVO>)getResponseObject();
+        List<NetworkGroupRulesVO> networkGroups = (List<NetworkGroupRulesVO>)getResponseObject();
         List<NetworkGroupResultObject> groupResultObjs = NetworkGroupResultObject.transposeNetworkGroups(networkGroups);
 
         ListResponse<NetworkGroupResponse> response = new ListResponse<NetworkGroupResponse>();

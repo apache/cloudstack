@@ -21,17 +21,17 @@ package com.cloud.network.security.dao;
 import java.util.Date;
 import java.util.List;
 
-import com.cloud.network.security.SecurityGroupWorkVO;
-import com.cloud.network.security.SecurityGroupWorkVO.Step;
+import com.cloud.network.security.NetworkGroupWorkVO;
+import com.cloud.network.security.NetworkGroupWorkVO.Step;
 import com.cloud.utils.db.GenericDao;
 
-public interface NetworkGroupWorkDao extends GenericDao<SecurityGroupWorkVO, Long> {
-    SecurityGroupWorkVO findByVmId(long vmId, boolean taken);
+public interface NetworkGroupWorkDao extends GenericDao<NetworkGroupWorkVO, Long> {
+    NetworkGroupWorkVO findByVmId(long vmId, boolean taken);
     
-    SecurityGroupWorkVO findByVmIdStep(long vmId, Step step);
+    NetworkGroupWorkVO findByVmIdStep(long vmId, Step step);
 
 
-	SecurityGroupWorkVO take(long serverId);
+	NetworkGroupWorkVO take(long serverId);
 
 	void updateStep(Long vmId, Long logSequenceNumber, Step done);
 	
@@ -39,7 +39,7 @@ public interface NetworkGroupWorkDao extends GenericDao<SecurityGroupWorkVO, Lon
 	
 	int deleteFinishedWork(Date timeBefore);
 	
-	List<SecurityGroupWorkVO> findUnfinishedWork(Date timeBefore);
+	List<NetworkGroupWorkVO> findUnfinishedWork(Date timeBefore);
 
     
 }

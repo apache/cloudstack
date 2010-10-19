@@ -3,7 +3,7 @@ package com.cloud.async.executor;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.cloud.network.security.SecurityGroupRulesVO;
+import com.cloud.network.security.NetworkGroupRulesVO;
 import com.cloud.serializer.Param;
 
 public class NetworkGroupResultObject {
@@ -96,7 +96,7 @@ public class NetworkGroupResultObject {
         this.ingressRules = ingressRules;
     }
 
-    public static List<NetworkGroupResultObject> transposeNetworkGroups(List<SecurityGroupRulesVO> groups) {
+    public static List<NetworkGroupResultObject> transposeNetworkGroups(List<NetworkGroupRulesVO> groups) {
         List<NetworkGroupResultObject> resultObjects = new ArrayList<NetworkGroupResultObject>();
 
         if ((groups != null) && !groups.isEmpty()) {
@@ -104,7 +104,7 @@ public class NetworkGroupResultObject {
             NetworkGroupResultObject currentGroup = null;
 
             List<Long> processedGroups = new ArrayList<Long>();
-            for (SecurityGroupRulesVO netGroupRule : groups) {
+            for (NetworkGroupRulesVO netGroupRule : groups) {
                 Long groupId = netGroupRule.getId();
                 if (!processedGroups.contains(groupId)) {
                     processedGroups.add(groupId);

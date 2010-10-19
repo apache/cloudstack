@@ -11,7 +11,7 @@ import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.async.BaseAsyncJobExecutor;
 import com.cloud.network.security.IngressRuleVO;
-import com.cloud.network.security.SecurityGroupRulesVO;
+import com.cloud.network.security.NetworkGroupRulesVO;
 import com.cloud.network.security.NetworkGroupVO;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ManagementServer;
@@ -67,9 +67,9 @@ public class AuthorizeNetworkGroupIngressExecutor extends BaseAsyncJobExecutor {
 
     private NetworkGroupResultObject composeResultObject(ManagementServer ms, Long accountId, String groupName, List<IngressRuleVO> addedRules) {
         NetworkGroupVO networkGroup = ms.findNetworkGroupByName(accountId, groupName);
-        List<SecurityGroupRulesVO> groupRules = new ArrayList<SecurityGroupRulesVO>();
+        List<NetworkGroupRulesVO> groupRules = new ArrayList<NetworkGroupRulesVO>();
         for (IngressRuleVO ingressRule : addedRules) {
-            SecurityGroupRulesVO groupRule = new SecurityGroupRulesVO(networkGroup.getId(), networkGroup.getName(), networkGroup.getDescription(), networkGroup.getDomainId(),
+            NetworkGroupRulesVO groupRule = new NetworkGroupRulesVO(networkGroup.getId(), networkGroup.getName(), networkGroup.getDescription(), networkGroup.getDomainId(),
                                                                     networkGroup.getAccountId(), networkGroup.getAccountName(), ingressRule.getId(), ingressRule.getStartPort(), ingressRule.getEndPort(),
                                                                     ingressRule.getProtocol(), ingressRule.getAllowedNetworkId(), ingressRule.getAllowedNetworkGroup(), ingressRule.getAllowedNetGrpAcct(),
                                                                     ingressRule.getAllowedSourceIpCidr());
