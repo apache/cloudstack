@@ -1505,14 +1505,23 @@ def destroy_network_rules_for_vm(session, args):
     delete_rules_for_vm_in_bridge_firewall_chain(vm_name)
     if vm_name.startswith('i-') or vm_name.startswith('r-'):
         vmchain =  '-'.join(vm_name.split('-')[:-1])
+        vmchain_default =  '-'.join(vm_name.split('-')[:-2]) + "-def"
 
     destroy_ebtables_rules(vmchain)
+    
+    try:
+        util.pread2(['iptables', '-F', vmchain_default])
+        util.pread2(['iptables', '-X', vmchain_default])
+    except:
+        util.SMlog("Ignoring failure to delete  chain " + vmchain_default)
     
     try:
         util.pread2(['iptables', '-F', vmchain])
         util.pread2(['iptables', '-X', vmchain])
     except:
         util.SMlog("Ignoring failure to delete  chain " + vmchain)
+        
+   
     
     remove_rule_log_for_vm(vm_name)
     
@@ -1688,31 +1697,35 @@ def default_network_rules(session, args):
      
     vm_name =  '-'.join(vm_name.split('-')[:-1])
     vmchain = vm_name
+    vmchain_default = '-'.join(vmchain.split('-')[:-1]) + "-def"
     
     destroy_ebtables_rules(vm_name)
     
-    try:
-        util.pread2(['iptables', '-F', vmchain])
-        util.pread2(['iptables', '-X', vmchain])
-    except:
-        util.SMlog('Ignoring failure to delete old rules')
 
     try:
         util.pread2(['iptables', '-N', vmchain])
     except:
         util.pread2(['iptables', '-F', vmchain])
+        
+    try:
+        util.pread2(['iptables', '-N', vmchain_default])
+    except:
+        util.pread2(['iptables', '-F', vmchain_default])        
 
     try:
         for v in vifs:
-            util.pread2(['iptables', '-A', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', v, '-j', vmchain])
-            util.pread2(['iptables', '-A', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '-j', vmchain])
-        util.pread2(['iptables', '-A', vmchain, '-m', 'state', '--state', 'RELATED,ESTABLISHED', '-j', 'ACCEPT'])
+            util.pread2(['iptables', '-A', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', v, '-j', vmchain_default])
+            util.pread2(['iptables', '-A', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '-j', vmchain_default])
+        util.pread2(['iptables', '-A', vmchain_default, '-m', 'state', '--state', 'RELATED,ESTABLISHED', '-j', 'ACCEPT'])
         #allow dhcp
-        util.pread2(['iptables', '-A', vmchain, '-p', 'udp', '--dport', '67:68', '--sport', '67:68',  '-j', 'ACCEPT'])
+        for v in vifs:
+            util.pread2(['iptables', '-A', vmchain_default, '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '-p', 'udp', '--dport', '67', '--sport', '68',  '-j', 'ACCEPT'])
+            util.pread2(['iptables', '-A', vmchain_default, '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', v, '-p', 'udp', '--dport', '68', '--sport', '67',  '-j', 'ACCEPT'])
+
         #don't let vm spoof its ip address
         for v in vifs:
-            util.pread2(['iptables', '-A', vmchain, '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '--source', vm_ip, '-j', 'RETURN'])
-        util.pread2(['iptables', '-A', vmchain, '-j', 'DROP'])
+            util.pread2(['iptables', '-A', vmchain_default, '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '--source', vm_ip, '-j', 'RETURN'])
+        util.pread2(['iptables', '-A', vmchain_default, '-j', vmchain])
     except:
         util.SMlog("Failed to program default rules for vm " + vm_name)
         return 'false'
@@ -1755,7 +1768,7 @@ def check_domid_changed(session, vmName):
 def delete_rules_for_vm_in_bridge_firewall_chain(vmName):
     vm_name = vmName
     if vm_name.startswith('i-') or vm_name.startswith('r-'):
-        vm_name =  '-'.join(vm_name.split('-')[:-1])
+        vm_name =  '-'.join(vm_name.split('-')[:-2])
     
     vmchain = vm_name
     
@@ -1801,16 +1814,17 @@ def network_rules_for_rebooted_vm(session, vmName):
     except:
         pass
     vmchain = '-'.join(vm_name.split('-')[:-1])
+    vmchain_default = '-'.join(vm_name.split('-')[:-2]) + "-def"
 
     for v in vifs:
-        util.pread2(['iptables', '-A', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', v, '-j', vmchain])
-        util.pread2(['iptables', '-A', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '-j', vmchain])
+        util.pread2(['iptables', '-A', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', v, '-j', vmchain_default])
+        util.pread2(['iptables', '-A', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '-j', vmchain_default])
 
     #change antispoof rule in vmchain
     try:
-        delcmd = "iptables -S " +  vmchain + " | grep  physdev-in | sed 's/-A/-D/'"
-        inscmd = "iptables -S " +  vmchain + " | grep  physdev-in | grep vif | sed -r 's/vif[0-9]+.0/" + vif + "/' | sed 's/-A/-I/'"
-        inscmd2 = "iptables -S " +  vmchain + " | grep  physdev-in | grep tap | sed -r 's/tap[0-9]+.0/" + tap + "/' | sed 's/-A/-I/'"
+        delcmd = "iptables -S " +  vmchain_default + " | grep  physdev-in | sed 's/-A/-D/'"
+        inscmd = "iptables -S " +  vmchain_default + " | grep  physdev-in | grep vif | sed -r 's/vif[0-9]+.0/" + vif + "/' | sed 's/-A/-I/'"
+        inscmd2 = "iptables -S " +  vmchain_default + " | grep  physdev-in | grep tap | sed -r 's/tap[0-9]+.0/" + tap + "/' | sed 's/-A/-I/'"
         
         ipts = []
         for cmd in [delcmd, inscmd, inscmd2]:
@@ -2105,10 +2119,6 @@ def network_rules(session, args):
             util.pread2(iptables)
             util.SMlog(iptables)
             
-
-    util.pread2(['iptables', '-A', vmchain, '-p', 'udp', '--dport', '67:68', '--sport', '67:68',  '-j', 'ACCEPT'])
-    for v in vifs:
-        util.pread2(['iptables', '-I', vmchain, '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '--source', vm_ip, '-j', 'RETURN'])
     util.pread2(['iptables', '-A', vmchain, '-j', 'DROP'])
 
     if write_rule_log_for_vm(vmName, vm_id, vm_ip, domid, signature, seqno) == False:
