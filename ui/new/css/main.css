@@ -2092,7 +2092,7 @@ a:hover.search_button {
 }
 
 
-.main_contentarea {
+.main_contentarea_with_midmenu {
 	width:auto;
 	min-height:1000px;
 	height:auto;
@@ -2100,7 +2100,7 @@ a:hover.search_button {
 	padding:0;
 }
 
-.main_contentarea_dashboard {
+.main_contentarea_without_midmenu {
 	width:auto;
 	min-height:1000px;
 	height:auto;

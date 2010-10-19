@@ -69,6 +69,8 @@ $(document).ready(function() {
         selectLeftMenu($(this));
             
         hideMiddleMenu();
+        
+        $("#right_panel").removeClass("main_contentarea").addClass("main_contentarea_dashboard");        
         $("#right_panel").load("jsp/dashboard.jsp", function(){
             afterLoadDashboardJSP();        
         });
@@ -78,7 +80,7 @@ $(document).ready(function() {
     $("#leftmenu_domain").bind("click", function(event) {  
         selectLeftMenu($(this));
         
-        showMiddleMenuWithoutSearch();
+        showMiddleMenu();
         disableMultipleSelectionInMidMenu();                
         clearMiddleMenu();
         

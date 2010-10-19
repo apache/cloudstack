@@ -540,17 +540,13 @@ var $expandedFirstLevelMenu, $expandedSecondLevelMenu;
 var selected_midmenu_id = null; 
 function hideMiddleMenu() {
     $("#middle_menu, #search_panel, #middle_menu_pagination").hide();
-    $("#right_panel").removeClass("main_contentarea").addClass("main_contentarea_dashboard");
+    $("#midmenu_container").empty();
+    $("#right_panel").removeClass("main_contentarea_with_midmenu").addClass("main_contentarea_without_midmenu");            
 }
 function showMiddleMenu() {
     $("#middle_menu, #search_panel, #middle_menu_pagination").show();
-    $("#right_panel").removeClass("main_contentarea_dashboard").addClass("main_contentarea");
+    $("#right_panel").removeClass("main_contentarea_without_midmenu").addClass("main_contentarea_with_midmenu");
 }    
-function showMiddleMenuWithoutSearch() {
-    $("#middle_menu").show();
-    $("#search_panel, #middle_menu_pagination").hide();
-    $("#right_panel").removeClass("main_contentarea_dashboard").addClass("main_contentarea");
-} 
 
 // adding middle menu item ***
 function beforeAddingMidMenuItem() {
