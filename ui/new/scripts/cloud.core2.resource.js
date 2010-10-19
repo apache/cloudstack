@@ -404,6 +404,7 @@ function hostJsonToDetailsTab(jsonObj) {
 	    buildActionLinkForDetailsTab("Enable Maintenance Mode", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  //when right panel has more than 1 details tab, we need to specify which one it is building action to. 
 	    buildActionLinkForDetailsTab("Cancel Maintenance Mode", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  //when right panel has more than 1 details tab, we need to specify which one it is building action to. 
 	    buildActionLinkForDetailsTab("Force Reconnect", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  //when right panel has more than 1 details tab, we need to specify which one it is building action to. 
+	    buildActionLinkForDetailsTab("Remove Host", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  //when right panel has more than 1 details tab, we need to specify which one it is building action to. 
 	    //temporary for testing (begin) *****
 	    
 	    
@@ -436,6 +437,30 @@ function hostJsonToDetailsTab(jsonObj) {
 	    $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());
 	}	       
 }
+
+
+function hostClearRightPanel() {
+    hostClearDetailsTab(); 
+}
+
+function hostClearDetailsTab() {
+    var $detailsTab = $("#right_panel_content #host_page #tab_content_details");  
+    $detailsTab.find("#id").text("");
+    $detailsTab.find("#name").text("");
+    $detailsTab.find("#state").text("");        
+    $detailsTab.find("#zonename").text(""); 
+    $detailsTab.find("#podname").text(""); 
+    $detailsTab.find("#clustername").text(""); 
+    $detailsTab.find("#ipaddress").text(""); 
+    $detailsTab.find("#version").text(""); 
+    $detailsTab.find("#oscategoryname").text("");       
+    $detailsTab.find("#disconnected").text(""); 
+    
+    var $actionMenu = $detailsTab.find("#action_link #action_menu");
+    $actionMenu.find("#action_list").empty();   
+	$actionMenu.find("#action_list").append($("#no_available_actions").clone().show());		    
+}
+
 //***** host page (end) *******************************************************************************************************
 
 //***** primary storage page (bgein) ******************************************************************************************
@@ -714,6 +739,7 @@ function afterLoadResourceJSP() {
 	initDialog("dialog_confirmation_enable_maintenance");
 	initDialog("dialog_confirmation_cancel_maintenance");
 	initDialog("dialog_confirmation_force_reconnect");
+	initDialog("dialog_confirmation_remove_host");
 	
 	// if hypervisor is KVM, limit the server option to NFS for now
 	if (getHypervisorType() == 'kvm') 
@@ -1263,7 +1289,18 @@ var hostActionMap = {
             hostJsonToDetailsTab(json.queryasyncjobresultresponse.host[0], $("#right_panel_content #host_page #tab_content_details"));    
             $("#right_panel_content #after_action_info").text("We are actively reconnecting your host.  Please refresh periodically for an updated status."); 
         }
-    }       
+    },
+    "Remove Host": {              
+        isAsyncJob: false,        
+        dialogBeforeActionFn : doRemoveHost,
+        inProcessText: "Removing Host....",
+        afterActionSeccessFn: function(json, id, midmenuItemId) {            
+            var $midmenuItem1 = $("#"+midmenuItemId); 
+            $midmenuItem1.remove();
+            clearRightPanel();
+            hostClearRightPanel();
+        }
+    },       
 } 
 
 function doEnableMaintenanceMode($actionLink, $detailsTab, midmenuItemId){ 
@@ -1309,6 +1346,23 @@ function doForceReconnect($actionLink, $detailsTab, midmenuItemId){
          $(this).dialog("close");      
          var id = jsonObj.id;
          var apiCommand = "command=reconnectHost&id="+id;
+    	 doActionToDetailsTab(id, $actionLink, apiCommand, midmenuItemId);		
+     },
+     "Cancel": function() {	                         
+         $(this).dialog("close");
+     }
+    }).dialog("open");     
+} 
+
+function doRemoveHost($actionLink, $detailsTab, midmenuItemId){ 
+    var jsonObj = $detailsTab.data("jsonObj");
+       
+    $("#dialog_confirmation_remove_host")
+    .dialog("option", "buttons", {	                    
+     "OK": function() {
+         $(this).dialog("close");      
+         var id = jsonObj.id;
+         var apiCommand = "command=deleteHost&id="+id;
     	 doActionToDetailsTab(id, $actionLink, apiCommand, midmenuItemId);		
      },
      "Cancel": function() {	                         

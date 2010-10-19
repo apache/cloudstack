@@ -1101,3 +1101,9 @@
         <%=t.t("please.confirm.you.want.to.force.a.reconnection.for.the.host")%>
     </p>
 </div>
+
+<div id="dialog_confirmation_remove_host" title="Confirmation" style="display: none">
+    <p>                         
+        <%=t.t("please.confirm.you.want.to.remove.the.host.from.the.management.server")%>
+    </p>
+</div>
