@@ -994,8 +994,8 @@
     <div class="grid_header">
         <div class="grid_header_title" id="title">
         </div>
-        <div class="grid_actionbox" id="snapshot_action_link">
-            <div class="grid_actionsdropdown_box" id="snapshot_action_menu" style="display: none;">
+        <div class="grid_actionbox" id="secondarystorage_action_link">
+            <div class="grid_actionsdropdown_box" id="secondarystorage_action_menu" style="display: none;">
                 <ul class="actionsdropdown_boxlist" id="action_list">
                 </ul>
             </div>
@@ -1145,6 +1145,12 @@
 
 <div id="dialog_confirmation_delete_primarystorage" title="Confirmation" style="display: none">
     <p>                         
-        <%=t.t("please.confirm.you.want.to.delete_the_primary_storage")%>
+        <%=t.t("please.confirm.you.want.to.delete.the.primary.storage")%>
+    </p>
+</div>
+
+<div id="dialog_confirmation_delete_secondarystorage" title="Confirmation" style="display: none">
+    <p>                         
+        <%=t.t("please.confirm.you.want.to.delete.the.secondary.storage")%>
     </p>
 </div>

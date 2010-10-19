@@ -792,6 +792,7 @@ function afterLoadResourceJSP() {
 	initDialog("dialog_confirmation_remove_host");
 	initDialog("dialog_update_os");
 	initDialog("dialog_confirmation_delete_primarystorage");
+	initDialog("dialog_confirmation_delete_secondarystorage");
 	
 	// if hypervisor is KVM, limit the server option to NFS for now
 	if (getHypervisorType() == 'kvm') 
@@ -1244,8 +1245,10 @@ function initAddPrimaryStorageButton($midmenuAddLink2) {
 }
 
 function secondaryStorageJSONToTemplate(json, template) {
+    template.data("jsonObj", json);
     template.attr("id", "secondaryStorage_"+json.id).data("secondaryStorageId", json.id);   	
    	template.find("#id").text(json.id);
+   	template.find("#title").text(fromdb(json.name));
    	template.find("#name").text(fromdb(json.name));
    	template.find("#zonename").text(fromdb(json.zonename));	
 	template.find("#type").text(json.type);	
@@ -1253,6 +1256,21 @@ function secondaryStorageJSONToTemplate(json, template) {
     template.find("#state").text(json.state);
     template.find("#version").text(json.version); 
     setDateField(json.disconnected, template.find("#disconnected"));
+    
+    var $actionLink = template.find("#secondarystorage_action_link");		
+	$actionLink.bind("mouseover", function(event) {
+        $(this).find("#secondarystorage_action_menu").show();    
+        return false;
+    });
+    $actionLink.bind("mouseout", function(event) {
+        $(this).find("#secondarystorage_action_menu").hide();    
+        return false;
+    });		
+	
+	var $actionMenu = $actionLink.find("#secondarystorage_action_menu");
+    $actionMenu.find("#action_list").empty();	
+    
+    buildActionLinkForSubgridItem("Delete Secondary Storage", secondarystorageActionMap, $actionMenu, template);	    
 }   
 
 function bindEventHandlerToDialogAddPool() {    
@@ -1515,3 +1533,40 @@ function doDeletePrimaryStorage($actionLink, $detailsTab, midmenuItemId){
          }
     }).dialog("open");     
 } 
+
+var secondarystorageActionMap = {
+    "Delete Secondary Storage": {   
+        isAsyncJob: false,   
+        dialogBeforeActionFn : doDeleteSecondaryStorage,       
+        inProcessText: "Deleting Secondary Storaget....",
+        afterActionSeccessFn: function(json, id, $subgridItem) {                        
+            $subgridItem.slideUp("slow", function() {
+                $(this).remove();
+            });
+        }
+    } 
+}
+
+function doDeleteSecondaryStorage($actionLink, $subgridItem) { 
+    var jsonObj = $subgridItem.data("jsonObj");
+       
+    $("#dialog_confirmation_delete_secondarystorage")	
+	.dialog('option', 'buttons', { 						
+		"Confirm": function() { 
+		    var thisDialog = $(this);	
+			thisDialog.dialog("close");       	                                             
+         
+            var name = thisDialog.find("#name").val();	                
+             
+            var id = jsonObj.id;
+            var apiCommand = "command=deleteHost&id="+id;    	
+    	    doActionToSubgridItem(id, $actionLink, apiCommand, $subgridItem);				
+		}, 
+		"Cancel": function() { 
+			$(this).dialog("close"); 
+		} 
+	}).dialog("open");
+}
+
+
+
