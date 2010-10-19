@@ -34,15 +34,17 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.net.NetUtils;
 
 /**
- * NetworkProfileVO contains information about a specific network.
+ * NetworkConfigurationVO contains information about a specific network.
  *
  */
 @Entity
 @Table(name="network_configurations")
 public class NetworkConfigurationVO implements NetworkConfiguration {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    Long id;
+    @TableGenerator(name="network_configuration_sq", table="sequence", pkColumnName="name", valueColumnName="value", pkColumnValue="network_configuration_seq", allocationSize=1)
+    @GeneratedValue(strategy=GenerationType.SEQUENCE)
+    @Column(name="id")
+    long id;
     
     @Column(name="mode")
     @Enumerated(value=EnumType.STRING)
@@ -71,6 +73,9 @@ public class NetworkConfigurationVO implements NetworkConfiguration {
     @Column(name="data_center_id")
     long dataCenterId;
     
+    @Column(name="related")
+    long related;
+    
     @Column(name="guru_name")
     String guruName;
     
@@ -81,6 +86,12 @@ public class NetworkConfigurationVO implements NetworkConfiguration {
     @Column(name="dns")
     String dns;
     
+    @Column(name="domain_id")
+    long domainId;
+    
+    @Column(name="account_id")
+    long accountId;
+    
     @Column(name="mac_address_seq", updatable=false, nullable=false)
     @TableGenerator(name="mac_address_seq", table="network_configuration", pkColumnName="id", valueColumnName="mac_address_seq", allocationSize=1)
     long macAddress = 1;
@@ -88,12 +99,14 @@ public class NetworkConfigurationVO implements NetworkConfiguration {
     public NetworkConfigurationVO() {
     }
     
-    public NetworkConfigurationVO(NetworkConfiguration that, long offeringId, long dataCenterId, String guruName) {
-        this(that.getTrafficType(), that.getMode(), that.getBroadcastDomainType(), offeringId, dataCenterId);
-        this.guruName = guruName;
-        this.state = that.getState();
-    }
-    
+    /**
+     * Constructor to be used for the adapters because it only initializes what's needed.
+     * @param trafficType
+     * @param mode
+     * @param broadcastDomainType
+     * @param networkOfferingId
+     * @param dataCenterId
+     */
     public NetworkConfigurationVO(TrafficType trafficType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId, long dataCenterId) {
         this.trafficType = trafficType;
         this.mode = mode;
@@ -101,6 +114,29 @@ public class NetworkConfigurationVO implements NetworkConfiguration {
         this.networkOfferingId = networkOfferingId;
         this.dataCenterId = dataCenterId;
         this.state = State.Allocated;
+    }
+    
+    public NetworkConfigurationVO(long id, NetworkConfiguration that, long offeringId, long dataCenterId, String guruName, long domainId, long accountId, long related) {
+        this(id, that.getTrafficType(), that.getMode(), that.getBroadcastDomainType(), offeringId, dataCenterId, domainId, accountId, related);
+        this.guruName = guruName;
+        this.state = that.getState();
+    }
+
+    /**
+     * Constructor for the actual DAO object.
+     * @param trafficType
+     * @param mode
+     * @param broadcastDomainType
+     * @param networkOfferingId
+     * @param dataCenterId
+     * @param domainId
+     * @param accountId
+     */
+    public NetworkConfigurationVO(long id, TrafficType trafficType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId, long dataCenterId, long domainId, long accountId, long related) {
+        this(trafficType, mode, broadcastDomainType, networkOfferingId, dataCenterId);
+        this.domainId = domainId;
+        this.accountId = accountId;
+        this.related = related;
     }
     
     @Override
@@ -111,6 +147,10 @@ public class NetworkConfigurationVO implements NetworkConfiguration {
     public void setState(State state) {
         this.state = state;
     }
+    
+    public long getRelated() {
+        return related;
+    }
 
     @Override
     public Long getId() {
@@ -120,6 +160,16 @@ public class NetworkConfigurationVO implements NetworkConfiguration {
     @Override
     public Mode getMode() {
         return mode;
+    }
+    
+    @Override
+    public long getAccountId() {
+        return accountId;
+    }
+    
+    @Override
+    public long getDomainId() {
+        return domainId;
     }
     
     @Override

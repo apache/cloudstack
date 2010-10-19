@@ -136,7 +136,6 @@ import com.cloud.storage.snapshot.SnapshotScheduler;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
-import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
@@ -253,14 +252,14 @@ public class StorageManagerImpl implements StorageManager {
     }
     
     @DB
-    public List<VolumeVO> allocate(DiskProfile rootDisk, List<DiskProfile> dataDisks, VMInstanceVO vm, DataCenterVO dc, AccountVO account) {
+    public List<VolumeVO> allocate(DiskProfile rootDisk, List<DiskProfile> dataDisks, VMInstanceVO vm, DataCenterVO dc, Account owner) {
         ArrayList<VolumeVO> vols = new ArrayList<VolumeVO>(dataDisks.size() + 1);
         VolumeVO dataVol = null;
         VolumeVO rootVol = null;
         long deviceId = 0;
         Transaction txn = Transaction.currentTxn();
         txn.start();
-        rootVol = new VolumeVO(VolumeType.ROOT, rootDisk.getName(), dc.getId(), account.getDomainId(), account.getId(), rootDisk.getDiskOfferingId(), rootDisk.getSize());
+        rootVol = new VolumeVO(VolumeType.ROOT, rootDisk.getName(), dc.getId(), owner.getDomainId(), owner.getId(), rootDisk.getDiskOfferingId(), rootDisk.getSize());
         if (rootDisk.getTemplateId() != null) {
             rootVol.setTemplateId(rootDisk.getTemplateId());
         }
@@ -269,7 +268,7 @@ public class StorageManagerImpl implements StorageManager {
         rootVol = _volsDao.persist(rootVol);
         vols.add(rootVol);
         for (DiskProfile dataDisk : dataDisks) {
-            dataVol = new VolumeVO(VolumeType.DATADISK, dataDisk.getName(), dc.getId(), account.getDomainId(), account.getId(), dataDisk.getDiskOfferingId(), dataDisk.getSize());
+            dataVol = new VolumeVO(VolumeType.DATADISK, dataDisk.getName(), dc.getId(), owner.getDomainId(), owner.getId(), dataDisk.getDiskOfferingId(), dataDisk.getSize());
             dataVol.setDeviceId(deviceId++);
             dataVol.setInstanceId(vm.getId());
             dataVol = _volsDao.persist(dataVol);
@@ -281,7 +280,7 @@ public class StorageManagerImpl implements StorageManager {
     }
     
     @Override
-    public VolumeVO allocateIsoInstalledVm(VMInstanceVO vm, VMTemplateVO template, DiskOfferingVO rootOffering, Long size, DataCenterVO dc, AccountVO account) {
+    public VolumeVO allocateIsoInstalledVm(VMInstanceVO vm, VMTemplateVO template, DiskOfferingVO rootOffering, Long size, DataCenterVO dc, Account account) {
         assert (template.getFormat() == ImageFormat.ISO) : "The template has to be ISO";
         
         long rootId = _volsDao.getNextInSequence(Long.class, "volume_seq");
@@ -1662,7 +1661,7 @@ public class StorageManagerImpl implements StorageManager {
 
         // check if the volume can be created for the user
         // Check that the resource limit for volumes won't be exceeded
-        if (_accountMgr.resourceLimitExceeded((AccountVO)targetAccount, ResourceType.volume)) {
+        if (_accountMgr.resourceLimitExceeded((Account)targetAccount, ResourceType.volume)) {
             ResourceAllocationException rae = new ResourceAllocationException("Maximum number of volumes for account: " + targetAccount.getAccountName() + " has been exceeded.");
             rae.setResourceType("volume");
             throw rae;
@@ -2509,7 +2508,7 @@ public class StorageManagerImpl implements StorageManager {
 	}
 	
     @Override
-    public <T extends VMInstanceVO> DiskProfile allocateRawVolume(VolumeType type, String name, DiskOfferingVO offering, Long size, T vm, AccountVO owner) {
+    public <T extends VMInstanceVO> DiskProfile allocateRawVolume(VolumeType type, String name, DiskOfferingVO offering, Long size, T vm, Account owner) {
         if (size == null) {
             size = offering.getDiskSizeInBytes();
         }
@@ -2524,7 +2523,7 @@ public class StorageManagerImpl implements StorageManager {
     }
     
     @Override 
-    public <T extends VMInstanceVO> DiskProfile allocateTemplatedVolume(VolumeType type, String name, DiskOfferingVO offering, VMTemplateVO template, T vm, AccountVO owner) {
+    public <T extends VMInstanceVO> DiskProfile allocateTemplatedVolume(VolumeType type, String name, DiskOfferingVO offering, VMTemplateVO template, T vm, Account owner) {
         assert (template.getFormat() != ImageFormat.ISO) : "ISO is not a template really....";
         
         SearchCriteria<VMTemplateHostVO> sc = HostTemplateStatesSearch.create();

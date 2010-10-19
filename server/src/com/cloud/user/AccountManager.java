@@ -85,7 +85,7 @@ public interface AccountManager extends Manager {
 	 * @param count the number of resources being allocated, count will be added to current allocation and compared against maximum allowed allocation
 	 * @return true if the limit has been exceeded
 	 */
-	public boolean resourceLimitExceeded(AccountVO account, ResourceCount.ResourceType type, long...count);
+	public boolean resourceLimitExceeded(Account account, ResourceCount.ResourceType type, long...count);
 	
 	/**
 	 * Gets the count of resources for a resource type and account

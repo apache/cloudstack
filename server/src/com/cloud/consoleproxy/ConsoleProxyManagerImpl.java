@@ -184,7 +184,7 @@ import com.google.gson.GsonBuilder;
 // because sooner or later, it will be driven into Running state
 //
 @Local(value = { ConsoleProxyManager.class })
-public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMachineManager<ConsoleProxyVO>, AgentHook, VirtualMachineGuru {
+public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMachineManager<ConsoleProxyVO>, AgentHook, VirtualMachineGuru<ConsoleProxyVO> {
     private static final Logger s_logger = Logger.getLogger(ConsoleProxyManagerImpl.class);
 
     private static final int DEFAULT_FIND_HOST_RETRY_COUNT = 2;
@@ -540,7 +540,8 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
     public ConsoleProxyVO start2(long proxyVmId, long startEventId) throws StorageUnavailableException, InsufficientCapacityException, ConcurrentOperationException {
         ConsoleProxyVO proxy = _consoleProxyDao.findById(proxyVmId);
         DeploymentPlan plan = new DataCenterDeployment(proxy.getDataCenterId(), 1);
-        return _vmMgr.start(proxy, plan, this);
+        AccountVO systemAcct = _accountMgr.getSystemAccount();
+        return _vmMgr.start(proxy, plan, systemAcct, this);
     }
 
     @Override

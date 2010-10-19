@@ -136,6 +136,7 @@ import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.JoinBuilder;
+import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
@@ -197,7 +198,7 @@ public class NetworkManagerImpl implements NetworkManager {
     @Inject AccountVlanMapDao _accountVlanMapDao;
     @Inject UserStatisticsDao _statsDao = null;
     @Inject NetworkOfferingDao _networkOfferingDao = null;
-    @Inject NetworkConfigurationDao _networkProfileDao = null;
+    @Inject NetworkConfigurationDao _networkConfigDao = null;
     @Inject NicDao _nicDao;
     @Inject GuestOSDao _guestOSDao = null;
     @Inject DomainRouterManager _routerMgr;
@@ -210,6 +211,8 @@ public class NetworkManagerImpl implements NetworkManager {
     private HashMap<String, NetworkOfferingVO> _systemNetworks = new HashMap<String, NetworkOfferingVO>(5);
     
     ScheduledExecutorService _executor;
+    
+    SearchBuilder<AccountVO> AccountsUsingNetworkConfigurationSearch;
 	
     @Override
     public boolean sendSshKeysToHost(Long hostId, String pubKey, String prvKey) {
@@ -217,7 +220,7 @@ public class NetworkManagerImpl implements NetworkManager {
     }
     
     @Override @DB
-    public String assignSourceNatIpAddress(AccountVO account, final DataCenterVO dc, final String domain, final ServiceOfferingVO serviceOffering, long startEventId, HypervisorType hyperType) throws ResourceAllocationException {
+    public String assignSourceNatIpAddress(Account account, final DataCenterVO dc, final String domain, final ServiceOfferingVO serviceOffering, long startEventId, HypervisorType hyperType) throws ResourceAllocationException {
     	if (serviceOffering.getGuestIpType() == NetworkOffering.GuestIpType.DirectDual || serviceOffering.getGuestIpType() == NetworkOffering.GuestIpType.DirectSingle) {
     		return null;
     	}
@@ -525,7 +528,7 @@ public class NetworkManagerImpl implements NetworkManager {
         
         
         Transaction txn = Transaction.currentTxn();
-        AccountVO accountToLock = null;
+        Account accountToLock = null;
         try {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Associate IP address called for user " + userId + " account " + accountId);
@@ -1496,6 +1499,13 @@ public class NetworkManagerImpl implements NetworkManager {
         storageNetworkOffering = _networkOfferingDao.persistSystemNetworkOffering(storageNetworkOffering);
         _systemNetworks.put(NetworkOfferingVO.SystemVmGuestNetwork, storageNetworkOffering);
         
+        AccountsUsingNetworkConfigurationSearch = _accountDao.createSearchBuilder();
+        SearchBuilder<NetworkAccountVO> networkAccountSearch = _networkConfigDao.createSearchBuilderForAccount();
+        AccountsUsingNetworkConfigurationSearch.join("nc", networkAccountSearch, AccountsUsingNetworkConfigurationSearch.entity().getId(), networkAccountSearch.entity().getAccountId(), JoinType.INNER);
+        networkAccountSearch.and("config", networkAccountSearch.entity().getNetworkConfigurationId(), SearchCriteria.Op.EQ);
+        networkAccountSearch.and("owner", networkAccountSearch.entity().isOwner(), SearchCriteria.Op.EQ);
+        AccountsUsingNetworkConfigurationSearch.done();
+        
         s_logger.info("Network Manager is configured.");
 
         return true;
@@ -1566,19 +1576,22 @@ public class NetworkManagerImpl implements NetworkManager {
     }
     
     @Override
-    public NetworkConfigurationVO setupNetworkConfiguration(AccountVO owner, NetworkOfferingVO offering, DeploymentPlan plan) {
+    public NetworkConfigurationVO setupNetworkConfiguration(Account owner, NetworkOfferingVO offering, DeploymentPlan plan) {
         return setupNetworkConfiguration(owner, offering, null, plan);
     }
     
     @Override
-    public NetworkConfigurationVO setupNetworkConfiguration(AccountVO owner, NetworkOfferingVO offering, NetworkConfiguration predefined, DeploymentPlan plan) {
-        List<NetworkConfigurationVO> configs = _networkProfileDao.listBy(owner.getId(), offering.getId(), plan.getDataCenterId());
+    public NetworkConfigurationVO setupNetworkConfiguration(Account owner, NetworkOfferingVO offering, NetworkConfiguration predefined, DeploymentPlan plan) {
+        List<NetworkConfigurationVO> configs = _networkConfigDao.listBy(owner.getId(), offering.getId(), plan.getDataCenterId());
         if (configs.size() > 0) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Found existing network configuration for offering " + offering + ": " + configs.get(0));
             }
             return configs.get(0);
         }
+        
+        long id = _networkConfigDao.getNextInSequence(Long.class, "id");
+        long related = id;
         
         for (NetworkGuru guru : _networkGurus) {
             NetworkConfiguration config = guru.design(offering, plan, predefined, owner);
@@ -1590,19 +1603,19 @@ public class NetworkManagerImpl implements NetworkManager {
                 if (config instanceof NetworkConfigurationVO) {
                     return (NetworkConfigurationVO)config;
                 } else {
-                    return _networkProfileDao.findById(config.getId());
+                    return _networkConfigDao.findById(config.getId());
                 }
             } 
             
-            NetworkConfigurationVO vo = new NetworkConfigurationVO(config, offering.getId(), plan.getDataCenterId(), guru.getName());
-            return _networkProfileDao.persist(vo, owner.getId());
+            NetworkConfigurationVO vo = new NetworkConfigurationVO(id, config, offering.getId(), plan.getDataCenterId(), guru.getName(), owner.getDomainId(), owner.getId(), related);
+            return _networkConfigDao.persist(vo);
         }
 
         throw new CloudRuntimeException("Unable to convert network offering to network profile: " + offering.getId());
     }
 
     @Override
-    public List<NetworkConfigurationVO> setupNetworkConfigurations(AccountVO owner, List<NetworkOfferingVO> offerings, DeploymentPlan plan) {
+    public List<NetworkConfigurationVO> setupNetworkConfigurations(Account owner, List<NetworkOfferingVO> offerings, DeploymentPlan plan) {
         List<NetworkConfigurationVO> profiles = new ArrayList<NetworkConfigurationVO>(offerings.size());
         for (NetworkOfferingVO offering : offerings) {
             profiles.add(setupNetworkConfiguration(owner, offering, plan));
@@ -1623,7 +1636,7 @@ public class NetworkManagerImpl implements NetworkManager {
         return offerings;
     }
     
-    public NetworkConfigurationVO createNetworkConfiguration(NetworkOfferingVO offering, DeploymentPlan plan, AccountVO owner) {
+    public NetworkConfigurationVO createNetworkConfiguration(NetworkOfferingVO offering, DeploymentPlan plan, Account owner) {
         return null;
     }
 
@@ -1750,12 +1763,12 @@ public class NetworkManagerImpl implements NetworkManager {
     }
     
     @Override
-    public NicTO[] prepare(VirtualMachineProfile vmProfile, DeployDestination dest) throws InsufficientAddressCapacityException, InsufficientVirtualNetworkCapcityException {
+    public NicTO[] prepare(VirtualMachineProfile vmProfile, DeployDestination dest, Account user) throws InsufficientAddressCapacityException, InsufficientVirtualNetworkCapcityException {
         List<NicVO> nics = _nicDao.listBy(vmProfile.getId());
         NicTO[] nicTos = new NicTO[nics.size()];
         int i = 0;
         for (NicVO nic : nics) {
-            NetworkConfigurationVO config = _networkProfileDao.findById(nic.getNetworkConfigurationId());
+            NetworkConfigurationVO config = _networkConfigDao.findById(nic.getNetworkConfigurationId());
             NicProfile profile = null;
             if (nic.getReservationStrategy() == ReservationStrategy.Start) {
                 NetworkGuru concierge = _networkGurus.get(config.getGuruName());
@@ -1776,7 +1789,7 @@ public class NetworkManagerImpl implements NetworkManager {
                 nic.setAddressFormat(profile.getFormat());
                 _nicDao.update(nic.getId(), nic);
                 for (NetworkElement element : _networkElements) {
-                    if (!element.prepare(config, profile, vmProfile, null)) {
+                    if (!element.prepare(config, profile, vmProfile, null, user)) {
                         s_logger.warn("Unable to prepare " + nic + " for element " + element.getName());
                         return null;
                     }
@@ -1793,7 +1806,7 @@ public class NetworkManagerImpl implements NetworkManager {
     public void release(VirtualMachineProfile vmProfile) {
         List<NicVO> nics = _nicDao.listBy(vmProfile.getId());
         for (NicVO nic : nics) {
-            NetworkConfigurationVO config = _networkProfileDao.findById(nic.getNetworkConfigurationId());
+            NetworkConfigurationVO config = _networkConfigDao.findById(nic.getNetworkConfigurationId());
             if (nic.getReservationStrategy() == ReservationStrategy.Start) {
                 NetworkGuru concierge = _networkGurus.get(config.getGuruName());
                 nic.setState(Resource.State.Releasing);
@@ -1804,7 +1817,7 @@ public class NetworkManagerImpl implements NetworkManager {
     }
     
     NicProfile toNicProfile(NicVO nic) {
-        NetworkConfiguration config = _networkProfileDao.findById(nic.getNetworkConfigurationId());
+        NetworkConfiguration config = _networkConfigDao.findById(nic.getNetworkConfigurationId());
         NicProfile profile = new NicProfile(nic, config, nic.getBroadcastUri(), nic.getIsolationUri());
         return profile;
     }
@@ -1822,10 +1835,6 @@ public class NetworkManagerImpl implements NetworkManager {
             nic.setState(Resource.State.Allocated);
             _nicDao.update(nic.getId(), nic);
         }
-    }
-    
-    @Override
-    public <K extends VMInstanceVO> void create(K vm) {
     }
     
     @Override
@@ -2275,14 +2284,14 @@ public class NetworkManagerImpl implements NetworkManager {
                 return true;
             }
 
-            AccountVO accountVO = _accountDao.findById(accountId);
-            if (accountVO == null) {
+            Account Account = _accountDao.findById(accountId);
+            if (Account == null) {
                 return false;
             }
           
             if ((ipVO.getAccountId() == null) || (ipVO.getAccountId().longValue() != accountId)) {
                 // FIXME: is the user visible in the admin account's domain????
-                if (!BaseCmd.isAdmin(accountVO.getType())) {
+                if (!BaseCmd.isAdmin(Account.getType())) {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("permission denied disassociating IP address " + ipAddress + "; acct: " + accountId + "; ip (acct / dc / dom / alloc): "
                                 + ipVO.getAccountId() + " / " + ipVO.getDataCenterId() + " / " + ipVO.getDomainId() + " / " + ipVO.getAllocated());
@@ -2433,5 +2442,25 @@ public class NetworkManagerImpl implements NetworkManager {
         }
         return success;
     }
-
+    
+    @Override
+    public List<AccountVO> getAccountsUsingNetworkConfiguration(long configurationId) {
+        SearchCriteria<AccountVO> sc = AccountsUsingNetworkConfigurationSearch.create();
+        sc.setJoinParameters("nc", "config", configurationId);
+        return _accountDao.search(sc, null);
+    }
+    
+    @Override
+    public AccountVO getNetworkConfigurationOwner(long configurationId) {
+        SearchCriteria<AccountVO> sc = AccountsUsingNetworkConfigurationSearch.create();
+        sc.setJoinParameters("nc", "config", configurationId);
+        sc.setJoinParameters("nc", "owner", true);
+        List<AccountVO> accounts = _accountDao.search(sc, null);
+        return accounts.size() != 0 ? accounts.get(0) : null;
+    }
+    
+    @Override
+    public List<NetworkConfigurationVO> getNetworkConfigurationsforOffering(long offeringId, long dataCenterId, long accountId) {
+        return _networkConfigDao.getNetworkConfigurationsForOffering(offeringId, dataCenterId, accountId);
+    }
 }

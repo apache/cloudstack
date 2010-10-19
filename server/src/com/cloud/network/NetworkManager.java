@@ -53,6 +53,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.service.ServiceOfferingVO;
+import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
@@ -177,7 +178,7 @@ public interface NetworkManager extends Manager {
      * @param so service offering associated with this request
      * @return public ip address.
      */
-    public String assignSourceNatIpAddress(AccountVO account, DataCenterVO dc, String domain, ServiceOfferingVO so, long startEventId, HypervisorType hyperType) throws ResourceAllocationException;
+    public String assignSourceNatIpAddress(Account account, DataCenterVO dc, String domain, ServiceOfferingVO so, long startEventId, HypervisorType hyperType) throws ResourceAllocationException;
     
     /**
      * @param fwRules list of rules to be updated
@@ -297,19 +298,22 @@ public interface NetworkManager extends Manager {
     
     public boolean deleteIpForwardingRule(DeleteIPForwardingRuleCmd cmd) throws PermissionDeniedException, InvalidParameterValueException;
 
-    NetworkConfigurationVO setupNetworkConfiguration(AccountVO owner, NetworkOfferingVO offering, DeploymentPlan plan);
-    NetworkConfigurationVO setupNetworkConfiguration(AccountVO owner, NetworkOfferingVO offering, NetworkConfiguration predefined, DeploymentPlan plan);
-    List<NetworkConfigurationVO> setupNetworkConfigurations(AccountVO owner, List<NetworkOfferingVO> offerings, DeploymentPlan plan);
+    NetworkConfigurationVO setupNetworkConfiguration(Account owner, NetworkOfferingVO offering, DeploymentPlan plan);
+    NetworkConfigurationVO setupNetworkConfiguration(Account owner, NetworkOfferingVO offering, NetworkConfiguration predefined, DeploymentPlan plan);
+    List<NetworkConfigurationVO> setupNetworkConfigurations(Account owner, List<NetworkOfferingVO> offerings, DeploymentPlan plan);
     
     List<NetworkOfferingVO> getSystemAccountNetworkOfferings(String... offeringNames);
     
     List<NicProfile> allocate(VirtualMachineProfile vm, List<Pair<NetworkConfigurationVO, NicProfile>> networks) throws InsufficientCapacityException;
 
-    NicTO[] prepare(VirtualMachineProfile profile, DeployDestination dest) throws InsufficientAddressCapacityException, InsufficientVirtualNetworkCapcityException;
+    NicTO[] prepare(VirtualMachineProfile profile, DeployDestination dest, Account user) throws InsufficientAddressCapacityException, InsufficientVirtualNetworkCapcityException;
     void release(VirtualMachineProfile vmProfile);
-    
-    <K extends VMInstanceVO> void create(K vm);
     
     <K extends VMInstanceVO> List<NicVO> getNics(K vm);
 	boolean upgradeRouter(UpgradeRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+	
+    List<AccountVO> getAccountsUsingNetworkConfiguration(long configurationId);    
+    AccountVO getNetworkConfigurationOwner(long configurationId);
+    
+    List<NetworkConfigurationVO> getNetworkConfigurationsforOffering(long offeringId, long dataCenterId, long accountId);
 }

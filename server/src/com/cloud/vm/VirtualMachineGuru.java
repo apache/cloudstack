@@ -24,7 +24,7 @@ import com.cloud.deploy.DeployDestination;
  * A VirtualMachineGuru knows how to process a certain type of virtual machine.
  *
  */
-public interface VirtualMachineGuru {
+public interface VirtualMachineGuru<T extends VMInstanceVO> {
     /**
      * finalize the virtual machine deployment.
      * @param cmds commands that were created.

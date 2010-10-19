@@ -17,38 +17,64 @@
  */
 package com.cloud.network.element;
 
+import java.util.List;
+
 import javax.ejb.Local;
 
+import org.apache.log4j.Logger;
+
 import com.cloud.network.NetworkConfiguration;
+import com.cloud.network.NetworkConfiguration.State;
+import com.cloud.network.NetworkConfigurationVO;
+import com.cloud.network.NetworkManager;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.offering.NetworkOffering.GuestIpType;
+import com.cloud.user.Account;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.component.Inject;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachineProfile;
 
 
 @Local(value=NetworkElement.class)
 public class DomainRouterElement extends AdapterBase implements NetworkElement {
+    private static final Logger s_logger = Logger.getLogger(DomainRouterElement.class);
+    
+    @Inject NetworkManager _networkMgr;
 
     @Override
-    public boolean implement(NetworkConfiguration config, NetworkOffering offering) {
+    public Boolean implement(NetworkConfiguration config, NetworkOffering offering, Account user) {
+        if (offering.getGuestIpType() != GuestIpType.Virtualized) {
+            s_logger.trace("Not handling guest ip type = " + offering.getGuestIpType());
+            return null;
+        }
+        
+        List<NetworkConfigurationVO> configs = _networkMgr.getNetworkConfigurationsforOffering(offering.getId(), config.getDataCenterId(), user.getId());
+        for (NetworkConfigurationVO c : configs) {
+            if (c.getState() != State.Implemented && c.getState() != State.Setup) {
+                s_logger.debug("Not all network is ready to be implemented yet.");
+                return true;
+            }
+        }
+        
+        
+        return true;
+    }
+
+    @Override
+    public Boolean prepare(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile vm, NetworkOffering offering, Account user) {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public boolean prepare(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile vm, NetworkOffering offering) {
+    public Boolean release(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile vm, NetworkOffering offering, Account user) {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public boolean release(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile vm, NetworkOffering offering) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public boolean shutdown(NetworkConfiguration config, NetworkOffering offering) {
+    public Boolean shutdown(NetworkConfiguration config, NetworkOffering offering, Account user) {
         // TODO Auto-generated method stub
         return false;
     }

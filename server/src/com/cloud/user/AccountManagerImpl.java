@@ -185,7 +185,7 @@ public class AccountManagerImpl implements AccountManager {
     }
 
     @Override
-    public boolean resourceLimitExceeded(AccountVO account, ResourceType type, long...count) {
+    public boolean resourceLimitExceeded(Account account, ResourceType type, long...count) {
     	long numResources = ((count.length == 0) ? 1 : count[0]);
 
     	// Don't place any limits on system or admin accounts

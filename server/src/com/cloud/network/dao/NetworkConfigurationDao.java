@@ -19,12 +19,17 @@ package com.cloud.network.dao;
 
 import java.util.List;
 
+import com.cloud.network.NetworkAccountVO;
 import com.cloud.network.NetworkConfigurationVO;
 import com.cloud.utils.db.GenericDao;
+import com.cloud.utils.db.SearchBuilder;
 
 public interface NetworkConfigurationDao extends GenericDao<NetworkConfigurationVO, Long> {
     List<NetworkConfigurationVO> listBy(long accountId);
     List<NetworkConfigurationVO> listBy(long accountId, long offeringId, long dataCenterId);
-    NetworkConfigurationVO persist(NetworkConfigurationVO config, long accountId);
+    @Override
+    NetworkConfigurationVO persist(NetworkConfigurationVO config);
     void addAccountToNetworkConfiguration(long configId, long accountId);
+    SearchBuilder<NetworkAccountVO> createSearchBuilderForAccount();
+    List<NetworkConfigurationVO> getNetworkConfigurationsForOffering(long offeringId, long dataCenterId, long accountId);
 }

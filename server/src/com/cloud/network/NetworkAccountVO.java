@@ -24,13 +24,17 @@ public class NetworkAccountVO implements OwnedBy {
     
     @Column(name="network_configuration_id")
     long networkConfigurationId;
+    
+    @Column(name="is_owner")
+    boolean owner;
 
     protected NetworkAccountVO() {
     }
     
-    public NetworkAccountVO(long networkConfigurationId, long accountId) {
+    public NetworkAccountVO(long networkConfigurationId, long accountId, boolean owner) {
         this.networkConfigurationId = networkConfigurationId;
         this.accountId = accountId;
+        this.owner = owner;
     }
     
     @Override
@@ -40,6 +44,10 @@ public class NetworkAccountVO implements OwnedBy {
     
     public long getNetworkConfigurationId() {
         return networkConfigurationId;
+    }
+    
+    public boolean isOwner() {
+        return owner;
     }
 
 }

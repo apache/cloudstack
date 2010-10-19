@@ -90,55 +90,6 @@ public class DomainRouterVO extends VMInstanceVO implements DomainRouter {
     public DomainRouterVO(long id,
                           long serviceOfferingId,
                           String name,
-                          String instanceName,
-                          String privateMacAddress,
-                          String privateIpAddress,
-                          String privateNetmask,
-                          long templateId,
-                          long guestOSId,
-                          String guestMacAddress,
-                          String guestIpAddress,
-                          String guestNetmask,
-                          String vnet,
-                          long accountId,
-                          long domainId,
-                          String publicMacAddress,
-                          String publicIpAddress,
-                          String publicNetMask,
-                          Long vlanDbId,
-                          String vlanId,
-                          long podId,
-                          long dataCenterId,
-                          int ramSize,
-                          String gateway,
-                          String domain,
-                          Long hostId,
-                          String dns1,
-                          String dns2) {
-        super(id, serviceOfferingId, name, instanceName, Type.DomainRouter, templateId, guestOSId, privateMacAddress, privateIpAddress, privateNetmask, dataCenterId, podId, domainId, accountId, true, hostId);
-        this.privateMacAddress = privateMacAddress;
-        this.guestMacAddress = guestMacAddress;
-        this.guestIpAddress = guestIpAddress;
-        this.publicIpAddress = publicIpAddress;
-        this.publicMacAddress = publicMacAddress;
-        this.publicNetmask = publicNetMask;
-        this.vlanDbId = vlanDbId;
-        this.vlanId = vlanId;
-        this.ramSize = ramSize;
-        this.gateway = gateway;
-        this.domain = domain;
-        this.dns1 = dns1;
-        this.dns2 = dns2;
-        this.dataCenterId = dataCenterId;
-        this.vnet = vnet;
-        this.accountId = accountId;
-        this.domainId = domainId;
-        this.guestNetmask = guestNetmask;
-    }
-    
-    public DomainRouterVO(long id,
-                          long serviceOfferingId,
-                          String name,
                           String privateMacAddress,
                           String privateIpAddress,
                           String privateNetmask,
@@ -160,7 +111,24 @@ public class DomainRouterVO extends VMInstanceVO implements DomainRouter {
                           String domain,
                           String dns1,
                           String dns2) {
-        this(id, serviceOfferingId, name, name, privateMacAddress, privateIpAddress, privateNetmask, templateId, guestOSId, guestMacAddress, guestIpAddress, guestNetmask, null, accountId, domainId, publicMacAddress, publicIpAddress, publicNetMask, vlanDbId, vlanId, podId, dataCenterId, ramSize, gateway, domain, null, dns1, dns2);
+        super(id, serviceOfferingId, name, name, Type.DomainRouter, templateId, guestOSId, privateMacAddress, privateIpAddress, privateNetmask, dataCenterId, podId, domainId, accountId, true, null);
+        this.privateMacAddress = privateMacAddress;
+        this.guestMacAddress = guestMacAddress;
+        this.guestIpAddress = guestIpAddress;
+        this.publicIpAddress = publicIpAddress;
+        this.publicMacAddress = publicMacAddress;
+        this.publicNetmask = publicNetMask;
+        this.vlanDbId = vlanDbId;
+        this.vlanId = vlanId;
+        this.ramSize = ramSize;
+        this.gateway = gateway;
+        this.domain = domain;
+        this.dns1 = dns1;
+        this.dns2 = dns2;
+        this.dataCenterId = dataCenterId;
+        this.accountId = accountId;
+        this.domainId = domainId;
+        this.guestNetmask = guestNetmask;
     }
     
     public DomainRouterVO(long id,
@@ -170,7 +138,6 @@ public class DomainRouterVO extends VMInstanceVO implements DomainRouter {
             long guestOSId,
             long domainId,
             long accountId,
-            long networkConfigurationId,
             boolean haEnabled) {
         super(id, serviceOfferingId, name, name, Type.DomainRouter, templateId, guestOSId, domainId, accountId, haEnabled);
     }

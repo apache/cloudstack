@@ -28,7 +28,7 @@ import com.cloud.network.NetworkConfigurationVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.user.AccountVO;
+import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 
@@ -44,7 +44,7 @@ public interface VmManager extends Manager {
             List<Pair<DiskOfferingVO, Long>> dataDiskOfferings,
             List<Pair<NetworkConfigurationVO, NicProfile>> networks, 
             DeploymentPlan plan,
-            AccountVO owner) throws InsufficientCapacityException, StorageUnavailableException;
+            Account owner) throws InsufficientCapacityException, StorageUnavailableException;
     
     <T extends VMInstanceVO> VirtualMachineProfile allocate(T vm,
             VMTemplateVO template,
@@ -53,16 +53,16 @@ public interface VmManager extends Manager {
             Pair<DiskOfferingVO, Long> dataDiskOffering,
             List<Pair<NetworkConfigurationVO, NicProfile>> networks,
             DeploymentPlan plan,
-            AccountVO owner) throws InsufficientCapacityException, StorageUnavailableException;
+            Account owner) throws InsufficientCapacityException, StorageUnavailableException;
     
     <T extends VMInstanceVO> VirtualMachineProfile allocate(T vm,
             VMTemplateVO template,
             ServiceOfferingVO serviceOffering,
             List<Pair<NetworkConfigurationVO, NicProfile>> networkProfiles,
             DeploymentPlan plan,
-            AccountVO owner) throws InsufficientCapacityException, StorageUnavailableException;
+            Account owner) throws InsufficientCapacityException, StorageUnavailableException;
     
-    <T extends VMInstanceVO> T start(T vm, DeploymentPlan plan, VirtualMachineGuru checker) throws InsufficientCapacityException, StorageUnavailableException, ConcurrentOperationException;
+    <T extends VMInstanceVO> T start(T vm, DeploymentPlan plan, Account user, VirtualMachineGuru<T> checker) throws InsufficientCapacityException, StorageUnavailableException, ConcurrentOperationException;
     
     <T extends VMInstanceVO> T stop(T vm) throws AgentUnavailableException, ConcurrentOperationException;
     

@@ -61,7 +61,7 @@ import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
-import com.cloud.user.AccountVO;
+import com.cloud.user.Account;
 import com.cloud.utils.Journal;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -100,7 +100,7 @@ public class MauriceMoss implements VmManager {
             List<Pair<DiskOfferingVO, Long>> dataDiskOfferings,
             List<Pair<NetworkConfigurationVO, NicProfile>> networks, 
             DeploymentPlan plan,
-            AccountVO owner) throws InsufficientCapacityException {
+            Account owner) throws InsufficientCapacityException {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Allocating entries for VM: " + vm);
         }
@@ -154,7 +154,7 @@ public class MauriceMoss implements VmManager {
             Pair<DiskOfferingVO, Long> dataDiskOffering,
             List<Pair<NetworkConfigurationVO, NicProfile>> networks,
             DeploymentPlan plan,
-            AccountVO owner) throws InsufficientCapacityException {
+            Account owner) throws InsufficientCapacityException {
         List<Pair<DiskOfferingVO, Long>> diskOfferings = new ArrayList<Pair<DiskOfferingVO, Long>>(1);
         if (dataDiskOffering != null) {
             diskOfferings.add(dataDiskOffering);
@@ -168,7 +168,7 @@ public class MauriceMoss implements VmManager {
             ServiceOfferingVO serviceOffering,
             List<Pair<NetworkConfigurationVO, NicProfile>> networks,
             DeploymentPlan plan, 
-            AccountVO owner) throws InsufficientCapacityException {
+            Account owner) throws InsufficientCapacityException {
         return allocate(vm, template, serviceOffering, new Pair<DiskOfferingVO, Long>(serviceOffering, null), null, networks, plan, owner);
     }
     
@@ -211,7 +211,7 @@ public class MauriceMoss implements VmManager {
     }
 
     @Override
-    public <T extends VMInstanceVO> T start(T vm, DeploymentPlan plan, VirtualMachineGuru guru) throws InsufficientCapacityException, ConcurrentOperationException {
+    public <T extends VMInstanceVO> T start(T vm, DeploymentPlan plan, Account acct, VirtualMachineGuru<T> guru) throws InsufficientCapacityException, ConcurrentOperationException {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Creating actual resources for VM " + vm);
         }
@@ -267,7 +267,7 @@ public class MauriceMoss implements VmManager {
                 s_logger.warn("Unable to contact storage.", e);
                 continue;
             }
-            NicTO[] nics = _networkMgr.prepare(vmProfile, dest);
+            NicTO[] nics = _networkMgr.prepare(vmProfile, dest, acct);
             
             vmTO.setNics(nics);
             vmTO.setDisks(volumes);

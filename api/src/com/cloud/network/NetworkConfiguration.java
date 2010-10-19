@@ -6,9 +6,11 @@ package com.cloud.network;
 import java.util.List;
 import java.util.Set;
 
+import com.cloud.domain.PartOf;
 import com.cloud.network.Network.BroadcastDomainType;
 import com.cloud.network.Network.Mode;
 import com.cloud.network.Network.TrafficType;
+import com.cloud.user.OwnedBy;
 import com.cloud.utils.fsm.FiniteState;
 import com.cloud.utils.fsm.StateMachine;
 
@@ -16,7 +18,7 @@ import com.cloud.utils.fsm.StateMachine;
  * A NetworkProfile defines the specifics of a network
  * owned by an account. 
  */
-public interface NetworkConfiguration {
+public interface NetworkConfiguration extends OwnedBy, PartOf {
     enum Event {
         ImplementNetwork,
         DestroyNetwork;
