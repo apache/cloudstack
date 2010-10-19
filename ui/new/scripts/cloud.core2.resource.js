@@ -390,50 +390,59 @@ function hostJsonToDetailsTab(jsonObj) {
     var noAvailableActions = true;
     
     var midmenuItemId = hostGetMidmenuId(jsonObj);
-    
+     
+    //when right panel has more than 1 details tab, we need to specify which details tab to build action link on by passing $detailsTab to buildActionLinkForDetailsTab(~, ~, ~, ~, $detailsTab) 
     if (jsonObj.state == 'Up' || jsonObj.state == "Connecting") {
-		buildActionLinkForDetailsTab("Enable Maintenance Mode", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  //when right panel has more than 1 details tab, we need to specify which one it is building action to. 
-	    //build action Force Reconnect
-	    //build action Update OS Preference	
+		buildActionLinkForDetailsTab("Enable Maintenance Mode", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  
+	    buildActionLinkForDetailsTab("Force Reconnect", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);   
+	    buildActionLinkForDetailsTab("Update OS Preference", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);   
+	    noAvailableActions = false;
 	} 
 	else if(jsonObj.state == 'Down') {
-	    buildActionLinkForDetailsTab("Enable Maintenance Mode", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  //when right panel has more than 1 details tab, we need to specify which one it is building action to. 
-	    //build action Update OS Preference
-	    //build action Remove Host	   
-	}	
+	    buildActionLinkForDetailsTab("Enable Maintenance Mode", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  
+	    buildActionLinkForDetailsTab("Update OS Preference", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  	    
+        buildActionLinkForDetailsTab("Remove Host", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  
+        noAvailableActions = false;
+    }	
 	else if(jsonObj.state == "Alert") {
-	    //temporary for testing (begin) *****
-	    buildActionLinkForDetailsTab("Enable Maintenance Mode", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  //when right panel has more than 1 details tab, we need to specify which one it is building action to. 
-	    buildActionLinkForDetailsTab("Cancel Maintenance Mode", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  //when right panel has more than 1 details tab, we need to specify which one it is building action to. 
-	    buildActionLinkForDetailsTab("Force Reconnect", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  //when right panel has more than 1 details tab, we need to specify which one it is building action to. 
-	    buildActionLinkForDetailsTab("Remove Host", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  //when right panel has more than 1 details tab, we need to specify which one it is building action to. 
-	    buildActionLinkForDetailsTab("Update OS Preference", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  //when right panel has more than 1 details tab, we need to specify which one it is building action to. 	    
-	    //temporary for testing (begin) *****
-	    
-	    
-	    //build action Update OS Preference	    
+	    buildActionLinkForDetailsTab("Update OS Preference", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  	
+	    noAvailableActions = false;   
+     
 	}	
 	else if (jsonObj.state == "ErrorInMaintenance") {
-	    buildActionLinkForDetailsTab("Enable Maintenance Mode", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  //when right panel has more than 1 details tab, we need to specify which one it is building action to. 
-        //build action Cancel Maintenance Mode
-        //build action Update OS Preference
-	}
+	    buildActionLinkForDetailsTab("Enable Maintenance Mode", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  
+        buildActionLinkForDetailsTab("Cancel Maintenance Mode", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  
+        buildActionLinkForDetailsTab("Update OS Preference", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  	 
+        noAvailableActions = false;   
+    }
 	else if (jsonObj.state == "PrepareForMaintenance") {
-	    //build action Cancel Maintenance Mode
-	    //build action Update OS Preference	    
-	}
+	    buildActionLinkForDetailsTab("Cancel Maintenance Mode", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  
+        buildActionLinkForDetailsTab("Update OS Preference", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  	
+        noAvailableActions = false;    
+    }
 	else if (jsonObj.state == "Maintenance") {
-	    //build action Cancel Maintenance Mode
-	    //build action Update OS Preference
-	    //build action Remove Host	   
-	}
+	    buildActionLinkForDetailsTab("Cancel Maintenance Mode", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  
+        buildActionLinkForDetailsTab("Update OS Preference", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  	    
+        buildActionLinkForDetailsTab("Remove Host", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  
+        noAvailableActions = false;
+    }
 	else if (jsonObj.state == "Disconnected"){
-	    //build action Update OS Preference
-	    //build action Remove Host
-	}
+	    buildActionLinkForDetailsTab("Update OS Preference", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  	    
+        buildActionLinkForDetailsTab("Remove Host", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  
+        noAvailableActions = false;
+    }
 	else {
 	    alert("Unsupported Host State: " + jsonObj.state);
 	} 
+    
+     //temporary for testing (begin) *****
+//    buildActionLinkForDetailsTab("Enable Maintenance Mode", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  
+//    buildActionLinkForDetailsTab("Cancel Maintenance Mode", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  
+//    buildActionLinkForDetailsTab("Force Reconnect", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  
+//    buildActionLinkForDetailsTab("Remove Host", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  
+//    buildActionLinkForDetailsTab("Update OS Preference", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);
+//    noAvailableActions = false; 	    
+    //temporary for testing (begin) *****
     
     // no available actions 
 	if(noAvailableActions == true) {
