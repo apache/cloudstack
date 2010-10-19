@@ -69,8 +69,7 @@ $(document).ready(function() {
         selectLeftMenu($(this));
             
         hideMiddleMenu();
-        
-        $("#right_panel").removeClass("main_contentarea").addClass("main_contentarea_dashboard");        
+                       
         $("#right_panel").load("jsp/dashboard.jsp", function(){
             afterLoadDashboardJSP();        
         });
@@ -324,6 +323,7 @@ $(document).ready(function() {
 				$("#main_username").text(g_username);
 				$("#login_wrapper").hide();
 				$("#main").show();	
+				$("#leftmenu_dashboard").click();
 			},
 			error: function() {
 				$("#account_password").val("");
