@@ -130,7 +130,18 @@ public class UserVmResponse extends BaseResponse {
 
     @SerializedName("jobstatus") @Param(description="shows the current pending asynchronous job status")
     private Integer jobStatus;
+    
+    @SerializedName("success") @Param(description="shows the status of the return call for the invoked uservmmanager command")
+    private Boolean success;
 
+    public void setSuccess(Boolean success){
+    	this.success = success;
+    }
+    
+    public Boolean getSuccess(){
+    	return this.success;
+    }
+    
     public Long getId() {
         return id;
     }

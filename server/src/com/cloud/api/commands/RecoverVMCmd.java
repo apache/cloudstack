@@ -20,11 +20,17 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.response.SuccessResponse;
+import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.response.UserVmResponse;
+import com.cloud.offering.ServiceOffering;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.user.Account;
+import com.cloud.uservm.UserVm;
+import com.cloud.vm.InstanceGroupVO;
 
 @Implementation(method="recoverVirtualMachine", manager=Manager.UserVmManager, description="Recovers a virtual machine.")
 public class RecoverVMCmd extends BaseCmd {
@@ -57,11 +63,100 @@ public class RecoverVMCmd extends BaseCmd {
     }
 
 	@Override @SuppressWarnings("unchecked")
-	public SuccessResponse getResponse() {
+	public UserVmResponse getResponse() {
         Boolean success = (Boolean)getResponseObject();
-        SuccessResponse response = new SuccessResponse();
-        response.setSuccess(success);
-        response.setResponseName(getName());
-        return response;
+//        SuccessResponse response = new SuccessResponse();
+//        response.setSuccess(success);
+//        response.setResponseName(getName());
+        
+        UserVmResponse recoverVmResponse = new UserVmResponse();
+        UserVm vm = ApiDBUtils.findUserVmById(id);        
+        recoverVmResponse.setSuccess(success);
+        recoverVmResponse.setResponseName(getName());
+        recoverVmResponse.setId(vm.getId());
+        recoverVmResponse.setName(vm.getName());
+        recoverVmResponse.setCreated(vm.getCreated());
+        recoverVmResponse.setZoneId(vm.getDataCenterId());
+        recoverVmResponse.setZoneName(ApiDBUtils.findZoneById(vm.getDataCenterId()).getName());
+        recoverVmResponse.setIpAddress(vm.getPrivateIpAddress());
+        recoverVmResponse.setServiceOfferingId(vm.getServiceOfferingId());
+        recoverVmResponse.setHaEnable(vm.isHaEnabled());
+        if (vm.getDisplayName() == null || vm.getDisplayName().length() == 0) {
+        	recoverVmResponse.setDisplayName(vm.getName());
+        } else {
+        	recoverVmResponse.setDisplayName(vm.getDisplayName());
+        }
+
+        InstanceGroupVO group = ApiDBUtils.findInstanceGroupForVM(vm.getId());
+        if (group != null) {
+        	recoverVmResponse.setGroup(group.getName());
+        	recoverVmResponse.setGroupId(group.getId());
+        }
+
+        if (vm.getState() != null) {
+        	recoverVmResponse.setState(vm.getState().toString());
+        }
+
+        Account acct = ApiDBUtils.findAccountById(vm.getAccountId());
+        if (acct != null) {
+        	recoverVmResponse.setAccountName(acct.getAccountName());
+        	recoverVmResponse.setDomainId(acct.getDomainId());
+        	recoverVmResponse.setDomainName(ApiDBUtils.findDomainById(acct.getDomainId()).getName());
+        }
+
+        if (BaseCmd.isAdmin(acct.getType()) && (vm.getHostId() != null)) {
+        	recoverVmResponse.setHostName(ApiDBUtils.findHostById(vm.getHostId()).getName());
+        	recoverVmResponse.setHostId(vm.getHostId());
+        }
+        
+        String templateName = "ISO Boot";
+        boolean templatePasswordEnabled = false;
+        String templateDisplayText = "ISO Boot";
+        
+        VMTemplateVO template = ApiDBUtils.findTemplateById(vm.getTemplateId());
+        if (template != null) {
+            templateName = template.getName();
+            templatePasswordEnabled = template.getEnablePassword();
+            templateDisplayText = template.getDisplayText();
+             if (templateDisplayText == null) {
+                templateDisplayText = templateName;
+             }
+        }
+
+        recoverVmResponse.setTemplateId(vm.getTemplateId());
+        recoverVmResponse.setTemplateName(templateName);
+        recoverVmResponse.setTemplateDisplayText(templateDisplayText);
+        recoverVmResponse.setPasswordEnabled(templatePasswordEnabled);
+        if (templatePasswordEnabled) {
+        	recoverVmResponse.setPassword(null); // FIXME:  Where should password come from?  In the old framework, password was always passed
+                                        //         in to composeResultObject() as null, so that behavior is preserved...
+        } else {
+        	recoverVmResponse.setPassword("");
+        }
+
+        String isoName = null;
+        if (vm.getIsoId() != null) {
+            VMTemplateVO iso = ApiDBUtils.findTemplateById(vm.getIsoId().longValue());
+            if (iso != null) {
+                isoName = iso.getName();
+            }
+        }
+
+        recoverVmResponse.setIsoId(vm.getIsoId());
+        recoverVmResponse.setIsoName(isoName);
+
+        ServiceOffering offering = ApiDBUtils.findServiceOfferingById(vm.getServiceOfferingId());
+        recoverVmResponse.setServiceOfferingId(vm.getServiceOfferingId());
+        recoverVmResponse.setServiceOfferingName(offering.getName());
+
+        recoverVmResponse.setCpuNumber(offering.getCpu());
+        recoverVmResponse.setCpuSpeed(offering.getSpeed());
+        recoverVmResponse.setMemory(offering.getRamSize());
+        
+        //Network groups
+        recoverVmResponse.setNetworkGroupList(ApiDBUtils.getNetworkGroupsNamesForVm(vm.getId()));
+
+        recoverVmResponse.setResponseName(getName());
+        return recoverVmResponse;
 	}
 }
