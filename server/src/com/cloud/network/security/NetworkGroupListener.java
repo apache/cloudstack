@@ -44,12 +44,12 @@ import com.cloud.network.security.dao.NetworkGroupWorkDao;
 public class NetworkGroupListener implements Listener {
     public static final Logger s_logger = Logger.getLogger(NetworkGroupListener.class.getName());
 
-	NetworkGroupManagerImpl _networkGroupManager;
+	SecurityGroupManagerImpl _networkGroupManager;
     AgentManager _agentMgr;
     NetworkGroupWorkDao _workDao;
     
 
-	public NetworkGroupListener(NetworkGroupManagerImpl networkGroupManager,
+	public NetworkGroupListener(SecurityGroupManagerImpl networkGroupManager,
 			AgentManager agentMgr, NetworkGroupWorkDao workDao) {
 		super();
 		_networkGroupManager = networkGroupManager;

@@ -21,7 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import com.cloud.api.commands.AuthorizeNetworkGroupIngressCmd;
-import com.cloud.api.commands.CreateNetworkGroupCmd;
+import com.cloud.api.commands.CreateSecurityGroupCmd;
 import com.cloud.api.commands.DeleteNetworkGroupCmd;
 import com.cloud.api.commands.ListNetworkGroupsCmd;
 import com.cloud.api.commands.RevokeNetworkGroupIngressCmd;
@@ -53,7 +53,7 @@ public interface NetworkGroupManager extends Manager {
 	 * @param command the command specifying the name and description
 	 * @return the created network group if successful, null otherwise
 	 */
-	public NetworkGroupVO createNetworkGroup(CreateNetworkGroupCmd command) throws PermissionDeniedException, InvalidParameterValueException;
+	public NetworkGroupVO createNetworkGroup(CreateSecurityGroupCmd command) throws PermissionDeniedException, InvalidParameterValueException;
 	
 	public NetworkGroupVO createDefaultNetworkGroup( Long accountId);
 	

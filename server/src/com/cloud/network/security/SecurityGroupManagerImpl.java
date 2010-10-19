@@ -46,7 +46,7 @@ import com.cloud.agent.manager.Commands;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.AuthorizeNetworkGroupIngressCmd;
-import com.cloud.api.commands.CreateNetworkGroupCmd;
+import com.cloud.api.commands.CreateSecurityGroupCmd;
 import com.cloud.api.commands.DeleteNetworkGroupCmd;
 import com.cloud.api.commands.ListNetworkGroupsCmd;
 import com.cloud.api.commands.RevokeNetworkGroupIngressCmd;
@@ -87,8 +87,8 @@ import com.cloud.vm.UserVmVO;
 import com.cloud.vm.dao.UserVmDao;
 
 @Local(value={NetworkGroupManager.class})
-public class NetworkGroupManagerImpl implements NetworkGroupManager {
-    public static final Logger s_logger = Logger.getLogger(NetworkGroupManagerImpl.class.getName());
+public class SecurityGroupManagerImpl implements NetworkGroupManager {
+    public static final Logger s_logger = Logger.getLogger(SecurityGroupManagerImpl.class.getName());
 
 	@Inject NetworkGroupDao _networkGroupDao;
 	@Inject IngressRuleDao  _ingressRuleDao;
@@ -846,7 +846,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
 	}
 
 	@Override
-    public NetworkGroupVO createNetworkGroup(CreateNetworkGroupCmd cmd) throws PermissionDeniedException, InvalidParameterValueException {
+    public NetworkGroupVO createNetworkGroup(CreateSecurityGroupCmd cmd) throws PermissionDeniedException, InvalidParameterValueException {
         if (!_enabled) {
             return null;
         }

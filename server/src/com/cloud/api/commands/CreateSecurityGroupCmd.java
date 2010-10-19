@@ -28,8 +28,8 @@ import com.cloud.api.response.NetworkGroupResponse;
 import com.cloud.network.security.NetworkGroupVO;
 
 @Implementation(method="createNetworkGroup", manager=Manager.NetworkGroupManager)
-public class CreateNetworkGroupCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateNetworkGroupCmd.class.getName());
+public class CreateSecurityGroupCmd extends BaseCmd {
+    public static final Logger s_logger = Logger.getLogger(CreateSecurityGroupCmd.class.getName());
 
     private static final String s_name = "createnetworkgroupresponse";
 
