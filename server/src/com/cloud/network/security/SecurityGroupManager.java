@@ -70,7 +70,7 @@ public interface SecurityGroupManager extends Manager {
      * The search terms are specified in the search criteria.
      * @return the list of network groups and associated ingress rules
      */
-    public List<NetworkGroupRulesVO> searchForNetworkGroupRules(ListNetworkGroupsCmd cmd) throws PermissionDeniedException, InvalidParameterValueException;
+    public List<SecurityGroupRulesVO> searchForNetworkGroupRules(ListNetworkGroupsCmd cmd) throws PermissionDeniedException, InvalidParameterValueException;
 
 	public void fullSync(long agentId, HashMap<String, Pair<Long, Long>> newGroupStates);
 	

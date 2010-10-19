@@ -57,7 +57,7 @@ import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceInUseException;
-import com.cloud.network.security.NetworkGroupWorkVO.Step;
+import com.cloud.network.security.SecurityGroupWorkVO.Step;
 import com.cloud.network.security.dao.IngressRuleDao;
 import com.cloud.network.security.dao.NetworkGroupDao;
 import com.cloud.network.security.dao.NetworkGroupRulesDao;
@@ -319,7 +319,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager {
 			Transaction txn = Transaction.currentTxn();
 			txn.start();
 			VmRulesetLogVO log = null;
-			NetworkGroupWorkVO work = null;
+			SecurityGroupWorkVO work = null;
 			UserVm vm = null;
 			try {
 				vm = _userVMDao.acquire(vmId);
@@ -339,7 +339,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager {
 				}
 				work = _workDao.findByVmIdStep(vmId, Step.Scheduled);
 				if (work == null) {
-					work = new NetworkGroupWorkVO(vmId,  null, null, NetworkGroupWorkVO.Step.Scheduled, null);
+					work = new SecurityGroupWorkVO(vmId,  null, null, SecurityGroupWorkVO.Step.Scheduled, null);
 					work = _workDao.persist(work);
 				}
 				
@@ -998,7 +998,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager {
 	    if (s_logger.isTraceEnabled()) {
 	        s_logger.trace("Checking the database");
 	    }
-		final NetworkGroupWorkVO work = _workDao.take(_serverId);
+		final SecurityGroupWorkVO work = _workDao.take(_serverId);
 		if (work == null) {
 			return;
 		}
@@ -1192,7 +1192,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager {
 	}
 
     @Override
-    public List<NetworkGroupRulesVO> searchForNetworkGroupRules(ListNetworkGroupsCmd cmd) throws PermissionDeniedException, InvalidParameterValueException {
+    public List<SecurityGroupRulesVO> searchForNetworkGroupRules(ListNetworkGroupsCmd cmd) throws PermissionDeniedException, InvalidParameterValueException {
         Account account = (Account)UserContext.current().getAccountObject();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
@@ -1250,10 +1250,10 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager {
             }
         }
 
-        Filter searchFilter = new Filter(NetworkGroupRulesVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        Filter searchFilter = new Filter(SecurityGroupRulesVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         Object keyword = cmd.getKeyword();
 
-        SearchBuilder<NetworkGroupRulesVO> sb = _networkGroupRulesDao.createSearchBuilder();
+        SearchBuilder<SecurityGroupRulesVO> sb = _networkGroupRulesDao.createSearchBuilder();
         sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
@@ -1265,13 +1265,13 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager {
             sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         }
 
-        SearchCriteria<NetworkGroupRulesVO> sc = sb.create();
+        SearchCriteria<SecurityGroupRulesVO> sc = sb.create();
         if (accountId != null) {
             sc.setParameters("accountId", accountId);
             if (networkGroup != null) {
                 sc.setParameters("name", networkGroup);
             } else if (keyword != null) {
-                SearchCriteria<NetworkGroupRulesVO> ssc = _networkGroupRulesDao.createSearchCriteria();
+                SearchCriteria<SecurityGroupRulesVO> ssc = _networkGroupRulesDao.createSearchCriteria();
                 ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
                 ssc.addOr("description", SearchCriteria.Op.LIKE, "%" + keyword + "%");
                 sc.addAnd("name", SearchCriteria.Op.SC, ssc);
@@ -1290,13 +1290,13 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager {
         return _networkGroupRulesDao.search(sc, searchFilter);
     }
 
-	private List<NetworkGroupRulesVO> listNetworkGroupRulesByVM(long vmId) {
-	    List<NetworkGroupRulesVO> results = new ArrayList<NetworkGroupRulesVO>();
+	private List<SecurityGroupRulesVO> listNetworkGroupRulesByVM(long vmId) {
+	    List<SecurityGroupRulesVO> results = new ArrayList<SecurityGroupRulesVO>();
 	    List<NetworkGroupVMMapVO> networkGroupMappings = _networkGroupVMMapDao.listByInstanceId(vmId);
 	    if (networkGroupMappings != null) {
 	        for (NetworkGroupVMMapVO networkGroupMapping : networkGroupMappings) {
 	            NetworkGroupVO group = _networkGroupDao.findById(networkGroupMapping.getNetworkGroupId());
-	            List<NetworkGroupRulesVO> rules = _networkGroupRulesDao.listNetworkGroupRules(group.getAccountId(), networkGroupMapping.getGroupName());
+	            List<SecurityGroupRulesVO> rules = _networkGroupRulesDao.listNetworkGroupRules(group.getAccountId(), networkGroupMapping.getGroupName());
 	            if (rules != null) {
 	                results.addAll(rules);
 	            }
@@ -1337,11 +1337,11 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager {
 
 	private void cleanupUnfinishedWork() {
 		Date before = new Date(System.currentTimeMillis() - 30*1000l);
-		List<NetworkGroupWorkVO> unfinished = _workDao.findUnfinishedWork(before);
+		List<SecurityGroupWorkVO> unfinished = _workDao.findUnfinishedWork(before);
 		if (unfinished.size() > 0) {
 			s_logger.info("Network Group Work cleanup found " + unfinished.size() + " unfinished work items older than " + before.toString());
 			Set<Long> affectedVms = new HashSet<Long>();
-			for (NetworkGroupWorkVO work: unfinished) {
+			for (SecurityGroupWorkVO work: unfinished) {
 				affectedVms.add(work.getInstanceId());
 			}
 			scheduleRulesetUpdateToHosts(affectedVms, false, null);

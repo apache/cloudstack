@@ -4,16 +4,16 @@ import java.util.List;
 
 import javax.ejb.Local;
 
-import com.cloud.network.security.NetworkGroupRulesVO;
+import com.cloud.network.security.SecurityGroupRulesVO;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Local(value={NetworkGroupRulesDao.class})
-public class NetworkGroupRulesDaoImpl extends GenericDaoBase<NetworkGroupRulesVO, Long> implements NetworkGroupRulesDao {
-    private SearchBuilder<NetworkGroupRulesVO> AccountGroupNameSearch;
-    private SearchBuilder<NetworkGroupRulesVO> AccountSearch;
+public class NetworkGroupRulesDaoImpl extends GenericDaoBase<SecurityGroupRulesVO, Long> implements NetworkGroupRulesDao {
+    private SearchBuilder<SecurityGroupRulesVO> AccountGroupNameSearch;
+    private SearchBuilder<SecurityGroupRulesVO> AccountSearch;
 
     protected NetworkGroupRulesDaoImpl() {
         AccountGroupNameSearch = createSearchBuilder();
@@ -27,16 +27,16 @@ public class NetworkGroupRulesDaoImpl extends GenericDaoBase<NetworkGroupRulesVO
     }
 
     @Override
-    public List<NetworkGroupRulesVO> listNetworkGroupRules() {
-        Filter searchFilter = new Filter(NetworkGroupRulesVO.class, "id", true, null, null);
+    public List<SecurityGroupRulesVO> listNetworkGroupRules() {
+        Filter searchFilter = new Filter(SecurityGroupRulesVO.class, "id", true, null, null);
         return listAll(searchFilter);
     }
 
     @Override
-    public List<NetworkGroupRulesVO> listNetworkGroupRules(long accountId, String groupName) {
-        Filter searchFilter = new Filter(NetworkGroupRulesVO.class, "id", true, null, null);
+    public List<SecurityGroupRulesVO> listNetworkGroupRules(long accountId, String groupName) {
+        Filter searchFilter = new Filter(SecurityGroupRulesVO.class, "id", true, null, null);
 
-        SearchCriteria<NetworkGroupRulesVO> sc = AccountGroupNameSearch.create();
+        SearchCriteria<SecurityGroupRulesVO> sc = AccountGroupNameSearch.create();
         sc.setParameters("accountId", accountId);
         sc.setParameters("name", groupName);
 
@@ -44,9 +44,9 @@ public class NetworkGroupRulesDaoImpl extends GenericDaoBase<NetworkGroupRulesVO
     }
 
     @Override
-    public List<NetworkGroupRulesVO> listNetworkGroupRules(long accountId) {
-        Filter searchFilter = new Filter(NetworkGroupRulesVO.class, "id", true, null, null);
-        SearchCriteria<NetworkGroupRulesVO> sc = AccountSearch.create();
+    public List<SecurityGroupRulesVO> listNetworkGroupRules(long accountId) {
+        Filter searchFilter = new Filter(SecurityGroupRulesVO.class, "id", true, null, null);
+        SearchCriteria<SecurityGroupRulesVO> sc = AccountSearch.create();
         sc.setParameters("accountId", accountId);
 
         return listBy(sc, searchFilter);

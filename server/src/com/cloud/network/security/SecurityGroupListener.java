@@ -34,7 +34,7 @@ import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
-import com.cloud.network.security.NetworkGroupWorkVO.Step;
+import com.cloud.network.security.SecurityGroupWorkVO.Step;
 import com.cloud.network.security.dao.NetworkGroupWorkDao;
 
 /**

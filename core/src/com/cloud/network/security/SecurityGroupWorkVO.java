@@ -34,7 +34,7 @@ import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="op_nwgrp_work")
-public class NetworkGroupWorkVO {
+public class SecurityGroupWorkVO {
 	public enum Step {
         Scheduled,
         Processing,
@@ -70,7 +70,7 @@ public class NetworkGroupWorkVO {
     private Long logsequenceNumber = null;
 
     
-    protected NetworkGroupWorkVO() {
+    protected SecurityGroupWorkVO() {
     }
     
     public Long getId() {
@@ -97,7 +97,7 @@ public class NetworkGroupWorkVO {
 
 
 
-	public NetworkGroupWorkVO(Long instanceId, Long serverId, Date created,
+	public SecurityGroupWorkVO(Long instanceId, Long serverId, Date created,
 			Step step, Date dateTaken) {
 		super();
 		this.instanceId = instanceId;
