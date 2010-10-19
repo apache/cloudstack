@@ -65,10 +65,6 @@ public class RecoverVMCmd extends BaseCmd {
 	@Override @SuppressWarnings("unchecked")
 	public UserVmResponse getResponse() {
         Boolean success = (Boolean)getResponseObject();
-//        SuccessResponse response = new SuccessResponse();
-//        response.setSuccess(success);
-//        response.setResponseName(getName());
-        
         UserVmResponse recoverVmResponse = new UserVmResponse();
         UserVm vm = ApiDBUtils.findUserVmById(id);        
         recoverVmResponse.setSuccess(success);
