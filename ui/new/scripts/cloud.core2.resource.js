@@ -78,9 +78,7 @@ function buildZoneTree() {
 			    var jsonObj = target.data("jsonObj");  
 			    showPage($("#zone_page"), jsonObj);
 			    hideMiddleMenu();
-			    zoneJsonToDetailsTab(jsonObj);
-			    zoneJsonToNetworkTab(jsonObj);				    
-			    zoneJsonToSecondaryStorageTab(jsonObj);						    		   			    
+			    zoneJsonToRightPanel(jsonObj);			   				    		   			    
 			    break;		
 			    	
 			case "pod_name" :	
@@ -233,18 +231,66 @@ function showPage($pageToShow, jsonObj) {
 }
 
 //***** zone page (begin) *****************************************************************************************************	
+function zoneGetLeftmenuId(jsonObj) {
+    return "zone_" + jsonObj.id;
+}
+
+function zoneJsonToRightPanel(jsonObj) {
+    zoneJsonToDetailsTab(jsonObj);
+    zoneJsonToNetworkTab(jsonObj);				    
+    zoneJsonToSecondaryStorageTab(jsonObj);
+}
+
+function zoneJsonClearRightPanel(jsonObj) {
+    zoneJsonClearDetailsTab(jsonObj);
+    zoneJsonClearNetworkTab(jsonObj);				    
+    zoneJsonClearSecondaryStorageTab(jsonObj);
+}
+
 function zoneJsonToDetailsTab(jsonObj) {	    
     var $detailsTab = $("#zone_page").find("#tab_content_details");   
     $detailsTab.data("jsonObj", jsonObj);           
-    $detailsTab.find("#id").text(fromdb(jsonObj.id));
+    $detailsTab.find("#id").text(jsonObj.id);
     $detailsTab.find("#name").text(fromdb(jsonObj.name));
     $detailsTab.find("#dns1").text(fromdb(jsonObj.dns1));
     $detailsTab.find("#dns2").text(fromdb(jsonObj.dns2));
     $detailsTab.find("#internaldns1").text(fromdb(jsonObj.internaldns1));
     $detailsTab.find("#internaldns2").text(fromdb(jsonObj.internaldns2));	
     $detailsTab.find("#vlan").text(fromdb(jsonObj.vlan));
-    $detailsTab.find("#guestcidraddress").text(fromdb(jsonObj.guestcidraddress));     
+    $detailsTab.find("#guestcidraddress").text(fromdb(jsonObj.guestcidraddress));   
+    
+    //actions ***   
+    var $actionLink = $detailsTab.find("#action_link"); 
+    $actionLink.bind("mouseover", function(event) {	    
+        $(this).find("#action_menu").show();    
+        return false;
+    });
+    $actionLink.bind("mouseout", function(event) {       
+        $(this).find("#action_menu").hide();    
+        return false;
+    });	  
+    var $actionMenu = $detailsTab.find("#action_link #action_menu");
+    $actionMenu.find("#action_list").empty();        
+    var midmenuItemId = zoneGetLeftmenuId(jsonObj);     
+    buildActionLinkForDetailsTab("Delete Zone", zoneActionMap, $actionMenu, midmenuItemId, $detailsTab);     
 }	  
+
+function zoneJsonClearDetailsTab(jsonObj) {	    
+    var $detailsTab = $("#zone_page").find("#tab_content_details");             
+    $detailsTab.find("#id").text("");
+    $detailsTab.find("#name").text("");
+    $detailsTab.find("#dns1").text("");
+    $detailsTab.find("#dns2").text("");
+    $detailsTab.find("#internaldns1").text("");
+    $detailsTab.find("#internaldns2").text("");	
+    $detailsTab.find("#vlan").text("");
+    $detailsTab.find("#guestcidraddress").text("");   
+    
+    //actions ***   
+    var $actionMenu = $detailsTab.find("#action_link #action_menu");
+    $actionMenu.find("#action_list").empty();   
+	$actionMenu.find("#action_list").append($("#no_available_actions").clone().show());		
+}	
 
 var $vlanContainer;
 function zoneJsonToNetworkTab(jsonObj) {	    
@@ -276,6 +322,13 @@ function zoneJsonToNetworkTab(jsonObj) {
 	});
 }	 
 
+function zoneJsonClearNetworkTab(jsonObj) {	    
+    var $networkTab = $("#zone_page").find("#tab_content_network");      
+    $networkTab.find("#zone_cloud").find("#zone_name").text("");	 
+    $networkTab.find("#zone_vlan").text("");   
+    $networkTab.find("#vlan_container").empty();    
+}	 
+
 function zoneJsonToSecondaryStorageTab(jsonObj) {   
     var zoneObj =  $("#zone_page").find("#tab_content_details").data("jsonObj");  
     $.ajax({
@@ -295,6 +348,10 @@ function zoneJsonToSecondaryStorageTab(jsonObj) {
 			}			
 		}
 	});     
+}
+
+function zoneJsonClearSecondaryStorageTab(jsonObj) {   
+    $("#zone_page").find("#tab_content_secondarystorage").empty();	
 }
 
 function vlanJsonToTemplate(jsonObj, $template1) {
@@ -439,13 +496,15 @@ function hostJsonToDetailsTab(jsonObj) {
 	    alert("Unsupported Host State: " + jsonObj.state);
 	} 
     
-     //temporary for testing (begin) *****
-//    buildActionLinkForDetailsTab("Enable Maintenance Mode", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  
-//    buildActionLinkForDetailsTab("Cancel Maintenance Mode", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  
-//    buildActionLinkForDetailsTab("Force Reconnect", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  
-//    buildActionLinkForDetailsTab("Remove Host", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  
-//    buildActionLinkForDetailsTab("Update OS Preference", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);
-//    noAvailableActions = false; 	    
+    //temporary for testing (begin) *****
+    /*
+    buildActionLinkForDetailsTab("Enable Maintenance Mode", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  
+    buildActionLinkForDetailsTab("Cancel Maintenance Mode", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  
+    buildActionLinkForDetailsTab("Force Reconnect", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  
+    buildActionLinkForDetailsTab("Remove Host", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  
+    buildActionLinkForDetailsTab("Update OS Preference", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);
+    noAvailableActions = false; 	  
+    */  
     //temporary for testing (begin) *****
     
     // no available actions 
@@ -1568,5 +1627,20 @@ function doDeleteSecondaryStorage($actionLink, $subgridItem) {
 	}).dialog("open");
 }
 
+var zoneActionMap = {
+    "Delete Zone": {  
+        api: "deleteZone",            
+        isAsyncJob: false,        
+        inProcessText: "Deleting Zone....",
+        afterActionSeccessFn: function(json, id, midmenuItemId) {            
+            var $midmenuItem1 = $("#"+midmenuItemId); //zone node in zone tree in left menu
+            $midmenuItem1.slideUp(function() {
+                $(this).remove();
+            });
+            clearRightPanel();
+            zoneJsonClearRightPanel();
+        }
+    }
+}
 
 
