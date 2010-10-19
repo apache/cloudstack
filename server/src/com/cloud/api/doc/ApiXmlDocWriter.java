@@ -129,7 +129,6 @@ public class ApiXmlDocWriter {
 //	            //Get fields from superclass
 	            Class<?> superClass = clas.getSuperclass();
 	            String superName = superClass.getName();
-//	            while (BaseCmd.class.isAssignableFrom(superClass) && !superClass.getName().equals(BaseCmd.class.getName())) {
 	            if (!superName.equals(BaseCmd.class.getName()) && !superName.equals(BaseAsyncCmd.class.getName()) && !superName.equals(BaseAsyncCreateCmd.class.getName())) {
 	            	Field[] superClassFields = superClass.getDeclaredFields();
 	                if (superClassFields != null) {
@@ -140,8 +139,6 @@ public class ApiXmlDocWriter {
 	                }
 	                superClass = superClass.getSuperclass();
 	            }
-
-//	            }
 	          
 				for (Field f : fields) {
 					Parameter parameterAnnotation = f.getAnnotation(Parameter.class);
