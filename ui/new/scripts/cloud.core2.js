@@ -482,17 +482,8 @@ function expandFirstLevelMenu($firstLevelMenu, $secondLevelMenu) {
 function collapseFirstLevelMenu($firstLevelMenu, $secondLevelMenu) {
     $firstLevelMenu.find("#expandable_first_level_arrow").removeClass("open").addClass("close");
     $firstLevelMenu.removeClass("highlighted");
-    $secondLevelMenu.hide();  
-} 
- 
-function clearLeftMenu($currentMenu) {    
-    //collapse other expanded menu if there is.
-    if($expandedFirstLevelMenu != null && $expandedSecondLevelMenu != null)  { 
-        //check if the expanded menu is parent/ancestor of $currentMenu. If not, collapse $expandedFirstLevelMenu.         
-        if($expandedSecondLevelMenu.find("#"+$currentMenu.attr("id")).length == 0)
-            collapseFirstLevelMenu($expandedFirstLevelMenu, $expandedSecondLevelMenu);   
-    }  
-        
+    $secondLevelMenu.hide(); 
+            
     $resourceArrowIcon = $("#leftmenu_resource").find("#resource_arrow");
     if($resourceArrowIcon.hasClass("expanded_open") == true) {
         $resourceArrowIcon.removeClass("expanded_open").addClass("expanded_close");
@@ -504,6 +495,15 @@ function clearLeftMenu($currentMenu) {
         $vmGroupArrowIcon.removeClass("expanded_open").addClass("expanded_close");            
         $("#leftmenu_instance_group_container").empty();   
     }	
+} 
+ 
+function clearLeftMenu($currentMenu) {    
+    //collapse other expanded menu if there is.
+    if($expandedFirstLevelMenu != null && $expandedSecondLevelMenu != null)  { 
+        //check if the expanded menu is parent/ancestor of $currentMenu. If not, collapse $expandedFirstLevelMenu.         
+        if($expandedSecondLevelMenu.find("#"+$currentMenu.attr("id")).length == 0)
+            collapseFirstLevelMenu($expandedFirstLevelMenu, $expandedSecondLevelMenu);   
+    }      
 } 
   
 function clearMiddleMenu() {
