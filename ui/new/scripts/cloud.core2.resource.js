@@ -363,6 +363,14 @@ function vlanJsonToTemplate(jsonObj, $template1) {
 //***** zone page (end) *******************************************************************************************************
 
 //***** pod page (begin) ******************************************************************************************************
+function podGetLeftmenuId(jsonObj) {
+    return "pod_" + jsonObj.id;
+}
+
+function podJsonToRightPanel(jsonObj) {	 
+    podJsonToDetailsTab(jsonObj);
+}
+
 function podJsonToDetailsTab(jsonObj) {	    
     var $detailsTab = $("#pod_page").find("#tab_content_details");   
     $detailsTab.data("jsonObj", jsonObj);           
@@ -372,9 +380,37 @@ function podJsonToDetailsTab(jsonObj) {
     $detailsTab.find("#ipRange").text(getIpRange(jsonObj.startip, jsonObj.endip));
     $detailsTab.find("#gateway").text(fromdb(jsonObj.gateway));  
     
+    //actions ***   
+    var $actionLink = $detailsTab.find("#action_link"); 
+    $actionLink.bind("mouseover", function(event) {	    
+        $(this).find("#action_menu").show();    
+        return false;
+    });
+    $actionLink.bind("mouseout", function(event) {       
+        $(this).find("#action_menu").hide();    
+        return false;
+    });	  
+    var $actionMenu = $detailsTab.find("#action_link #action_menu");
+    $actionMenu.find("#action_list").empty();        
+    var midmenuItemId = podGetLeftmenuId(jsonObj);     
+    buildActionLinkForDetailsTab("Delete Pod", podActionMap, $actionMenu, midmenuItemId, $detailsTab);  
+}	
+
+function podJsonClearRightPanel(jsonObj) {	 
+    podJsonClearDetailsTab(jsonObj);
+}
+
+function podJsonClearDetailsTab(jsonObj) {	    
+    var $detailsTab = $("#pod_page").find("#tab_content_details");       
+    $detailsTab.find("#id").text("");
+    $detailsTab.find("#name").text("");
+    $detailsTab.find("#cidr").text("");        
+    $detailsTab.find("#ipRange").text("");
+    $detailsTab.find("#gateway").text("");  
+    
     //if (getDirectAttachUntaggedEnabled() == "true") 
 	//	$("#submenu_content_zones #action_add_directip_vlan").data("type", "pod").data("id", obj.id).data("name", obj.name).data("zoneid", obj.zoneid).show();		
-}	
+}
 	
 function getIpRange(startip, endip) {
     var ipRange = "";
@@ -1643,4 +1679,19 @@ var zoneActionMap = {
     }
 }
 
+var podActionMap = {
+    "Delete Pod": {  
+        api: "deletePod",            
+        isAsyncJob: false,        
+        inProcessText: "Deleting Pod....",
+        afterActionSeccessFn: function(json, id, midmenuItemId) {            
+            var $midmenuItem1 = $("#"+midmenuItemId); //pod node in zone tree in left menu
+            $midmenuItem1.slideUp(function() {
+                $(this).remove();
+            });
+            clearRightPanel();
+            podJsonClearRightPanel();
+        }
+    }
+}
 
