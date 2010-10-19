@@ -1504,8 +1504,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 			eventMsg += ", end IP = " + endIP;
 		}
 		eventMsg += ".";
-		saveConfigurationEvent(userId, account.getId(), EventTypes.EVENT_VLAN_IP_RANGE_CREATE, eventMsg, "vlanType=" + vlanType, "dcId=" + zoneId,
-																												"accountId=" + account.getId(), "podId=" + podId,
+		Long accountId = ((account == null) ? Account.ACCOUNT_ID_SYSTEM : account.getId());
+		saveConfigurationEvent(userId, accountId, EventTypes.EVENT_VLAN_IP_RANGE_CREATE, eventMsg, "vlanType=" + vlanType, "dcId=" + zoneId,
+																												"accountId=" + accountId, "podId=" + podId,
 																												"vlanId=" + vlanId, "vlanGateway=" + vlanGateway,
 																												"vlanNetmask=" + vlanNetmask, "startIP=" + startIP,
 																												"endIP=" + endIP);
