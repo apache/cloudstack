@@ -373,6 +373,8 @@ function hostJsonToDetailsTab(jsonObj) {
     $detailsTab.find("#oscategoryname").text(fromdb(jsonObj.oscategoryname));        
     $detailsTab.find("#disconnected").text(fromdb(jsonObj.disconnected));  
     
+    populateForUpdateOSDialog(jsonObj.oscategoryid);
+    
     //actions ***   
     var $actionLink = $detailsTab.find("#action_link"); 
     $actionLink.bind("mouseover", function(event) {	    
@@ -405,6 +407,7 @@ function hostJsonToDetailsTab(jsonObj) {
 	    buildActionLinkForDetailsTab("Cancel Maintenance Mode", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  //when right panel has more than 1 details tab, we need to specify which one it is building action to. 
 	    buildActionLinkForDetailsTab("Force Reconnect", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  //when right panel has more than 1 details tab, we need to specify which one it is building action to. 
 	    buildActionLinkForDetailsTab("Remove Host", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  //when right panel has more than 1 details tab, we need to specify which one it is building action to. 
+	    buildActionLinkForDetailsTab("Update OS Preference", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  //when right panel has more than 1 details tab, we need to specify which one it is building action to. 	    
 	    //temporary for testing (begin) *****
 	    
 	    
@@ -740,6 +743,7 @@ function afterLoadResourceJSP() {
 	initDialog("dialog_confirmation_cancel_maintenance");
 	initDialog("dialog_confirmation_force_reconnect");
 	initDialog("dialog_confirmation_remove_host");
+	initDialog("dialog_update_os");
 	
 	// if hypervisor is KVM, limit the server option to NFS for now
 	if (getHypervisorType() == 'kvm') 
@@ -750,9 +754,30 @@ function afterLoadResourceJSP() {
 	if (getNetworkType() == "vnet") 		
 		$("#dialog_add_vlan_for_zone").attr("title", "Add Public IP Range");		
 	bindEventHandlerToDialogAddVlanForZone();	
-	
+		
 	//initialize Add Zone button 
     initAddZoneButton($("#midmenu_add_link"));	
+}
+
+function populateForUpdateOSDialog(oscategoryid) {	
+	$.ajax({
+	    data: createURL("command=listOsCategories"+maxPageSize),
+		dataType: "json",
+		success: function(json) {
+			var categories = json.listoscategoriesresponse.oscategory;
+			var select = $("#dialog_update_os #host_os");								
+			if (categories != null && categories.length > 0) {
+				for (var i = 0; i < categories.length; i++) {
+				    if(categories[i].id == oscategoryid) {				       
+				        select.append("<option value='" + categories[i].id + "' selected >" + categories[i].name + "</option>"); 	
+				    }    
+				    else {
+					    select.append("<option value='" + categories[i].id + "'>" + categories[i].name + "</option>"); 	
+					}
+		        }			    
+			}
+		}
+	});
 }
 
 function nfsURL(server, path) {
@@ -1300,7 +1325,24 @@ var hostActionMap = {
             clearRightPanel();
             hostClearRightPanel();
         }
-    },       
+    },    
+    "Update OS Preference": {              
+        isAsyncJob: false,        
+        dialogBeforeActionFn : doUpdateOSPreference,
+        inProcessText: "Updating OS Preference....",
+        afterActionSeccessFn: function(json, id, midmenuItemId) {     
+            //call listHosts API before bug 6650 ("updateHost API should return an embedded object like what listHosts API does") is fixed.
+            $.ajax({
+                data: createURL("command=listHosts&id="+id),
+                dataType: "json",
+                success: function(json) {         
+                    $midmenuItem1 = $("#"+midmenuItemId);
+                    hostToMidmenu(json.listhostsresponse.host[0], $midmenuItem1);      
+                    hostToRigntPanel($midmenuItem1)                     
+                }
+            });            
+        }
+    },          
 } 
 
 function doEnableMaintenanceMode($actionLink, $detailsTab, midmenuItemId){ 
@@ -1308,15 +1350,15 @@ function doEnableMaintenanceMode($actionLink, $detailsTab, midmenuItemId){
        
     $("#dialog_confirmation_enable_maintenance")
     .dialog("option", "buttons", {	                    
-     "OK": function() {
-         $(this).dialog("close");      
-         var id = jsonObj.id;
-         var apiCommand = "command=prepareHostForMaintenance&id="+id;
-    	 doActionToDetailsTab(id, $actionLink, apiCommand, midmenuItemId);		
-     },
-     "Cancel": function() {	                         
-         $(this).dialog("close");
-     }
+         "OK": function() {
+             $(this).dialog("close");      
+             var id = jsonObj.id;
+             var apiCommand = "command=prepareHostForMaintenance&id="+id;
+    	     doActionToDetailsTab(id, $actionLink, apiCommand, midmenuItemId);		
+         },
+         "Cancel": function() {	                         
+             $(this).dialog("close");
+         }
     }).dialog("open");     
 } 
 
@@ -1325,15 +1367,15 @@ function doCancelMaintenanceMode($actionLink, $detailsTab, midmenuItemId){
        
     $("#dialog_confirmation_cancel_maintenance")
     .dialog("option", "buttons", {	                    
-     "OK": function() {
-         $(this).dialog("close");      
-         var id = jsonObj.id;
-         var apiCommand = "command=cancelHostMaintenance&id="+id;
-    	 doActionToDetailsTab(id, $actionLink, apiCommand, midmenuItemId);		
-     },
-     "Cancel": function() {	                         
-         $(this).dialog("close");
-     }
+         "OK": function() {
+             $(this).dialog("close");      
+             var id = jsonObj.id;
+             var apiCommand = "command=cancelHostMaintenance&id="+id;
+    	     doActionToDetailsTab(id, $actionLink, apiCommand, midmenuItemId);		
+         },
+         "Cancel": function() {	                         
+             $(this).dialog("close");
+         }
     }).dialog("open");     
 } 
 
@@ -1342,15 +1384,15 @@ function doForceReconnect($actionLink, $detailsTab, midmenuItemId){
        
     $("#dialog_confirmation_force_reconnect")
     .dialog("option", "buttons", {	                    
-     "OK": function() {
-         $(this).dialog("close");      
-         var id = jsonObj.id;
-         var apiCommand = "command=reconnectHost&id="+id;
-    	 doActionToDetailsTab(id, $actionLink, apiCommand, midmenuItemId);		
-     },
-     "Cancel": function() {	                         
-         $(this).dialog("close");
-     }
+         "OK": function() {
+             $(this).dialog("close");      
+             var id = jsonObj.id;
+             var apiCommand = "command=reconnectHost&id="+id;
+    	     doActionToDetailsTab(id, $actionLink, apiCommand, midmenuItemId);		
+         },
+         "Cancel": function() {	                         
+             $(this).dialog("close");
+         }
     }).dialog("open");     
 } 
 
@@ -1359,14 +1401,38 @@ function doRemoveHost($actionLink, $detailsTab, midmenuItemId){
        
     $("#dialog_confirmation_remove_host")
     .dialog("option", "buttons", {	                    
-     "OK": function() {
-         $(this).dialog("close");      
-         var id = jsonObj.id;
-         var apiCommand = "command=deleteHost&id="+id;
-    	 doActionToDetailsTab(id, $actionLink, apiCommand, midmenuItemId);		
-     },
-     "Cancel": function() {	                         
-         $(this).dialog("close");
-     }
+         "OK": function() {
+             $(this).dialog("close");      
+             var id = jsonObj.id;
+             var apiCommand = "command=deleteHost&id="+id;
+    	     doActionToDetailsTab(id, $actionLink, apiCommand, midmenuItemId);		
+         },
+         "Cancel": function() {	                         
+             $(this).dialog("close");
+         }
+    }).dialog("open");     
+} 
+
+function doUpdateOSPreference($actionLink, $detailsTab, midmenuItemId){ 
+    var jsonObj = $detailsTab.data("jsonObj");
+       
+    $("#dialog_update_os")
+    .dialog("option", "buttons", {	                    
+        "Update": function() {
+            $(this).dialog("close");
+	        var osId = $("#dialog_update_os #host_os").val();
+	        var osName = $("#dialog_update_os #host_os option:selected").text();
+	        var category = "";
+	        if (osId.length > 0) {
+		        category = "&osCategoryId="+osId;
+	        }
+	        var id = jsonObj.id;
+    		    
+            var apiCommand = "command=updateHost&id="+id+category;
+    	    doActionToDetailsTab(id, $actionLink, apiCommand, midmenuItemId);		
+        },
+        "Cancel": function() {	                         
+            $(this).dialog("close");
+        }
     }).dialog("open");     
 } 

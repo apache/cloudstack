@@ -1107,3 +1107,22 @@
         <%=t.t("please.confirm.you.want.to.remove.the.host.from.the.management.server")%>
     </p>
 </div>
+
+<!-- Update OS Pref Dialog -->
+<div id="dialog_update_os" title="Update OS Preference" style="display:none">
+	<p>	    
+	    <%=t.t("Please.choose.a.OS.preference.for.this.host..Virtual.machines.will.always.be.allocated.to.hosts.with.an.OS.preference.that.matches.with.the.OS.type.of.the.template.chosen.for.the.virtual.machine.before.choosing.other.hosts.")%>
+	</p>
+	<div class="dialog_formcontent">
+		<form action="#" method="post" id="form_acquire">
+			<ol>
+				<li>
+					<label><%=t.t("OS.preference")%>:</label>
+					<select class="select" name="host_os" id="host_os">
+						<option value=""><%=t.t("none")%></option>
+					</select>
+				</li>
+			</ol>
+		</form>
+	</div>
+</div>
