@@ -485,9 +485,13 @@ function collapseFirstLevelMenu($firstLevelMenu, $secondLevelMenu) {
     $secondLevelMenu.hide();  
 } 
  
-function clearLeftMenu() {
-    if($expandedFirstLevelMenu != null && $expandedSecondLevelMenu != null)  //collapse other expanded menu if there is.
-        collapseFirstLevelMenu($expandedFirstLevelMenu, $expandedSecondLevelMenu);      
+function clearLeftMenu($currentMenu) {    
+    //collapse other expanded menu if there is.
+    if($expandedFirstLevelMenu != null && $expandedSecondLevelMenu != null)  { 
+        //check if the expanded menu is parent/ancestor of $currentMenu. If not, collapse $expandedFirstLevelMenu.         
+        if($expandedSecondLevelMenu.find("#"+$currentMenu.attr("id")).length == 0)
+            collapseFirstLevelMenu($expandedFirstLevelMenu, $expandedSecondLevelMenu);   
+    }  
         
     $resourceArrowIcon = $("#leftmenu_resource").find("#resource_arrow");
     if($resourceArrowIcon.hasClass("expanded_open") == true) {
@@ -799,7 +803,7 @@ function listMidMenuItems(leftmenuId, commandString, jsonResponse1, jsonResponse
         showMiddleMenu();
         disableMultipleSelectionInMidMenu();
         
-        clearLeftMenu();
+        clearLeftMenu($(this));
         clearMiddleMenu();
         
         $("#right_panel").load(rightPanelJSP, function(){     
