@@ -1969,9 +1969,9 @@ a:hover.search_button {
 	margin:0 0 0 0;
 	list-style:none;
 	padding:0;
-	overflow-x:scoll;
-	overflow-x:auto;
-	overflow-y:hidden;
+	overflow-y:scoll;
+	overflow-y:auto;
+	overflow-x:hidden;
 	padding:0;
 }
 
