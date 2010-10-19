@@ -215,7 +215,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
     @Inject AccountVlanMapDao _accountVlanMapDao;
     @Inject UserStatisticsDao _statsDao = null;
     @Inject NetworkOfferingDao _networkOfferingDao = null;
-    @Inject NetworkConfigurationDao _networkProfileDao = null;
+    @Inject NetworkConfigurationDao _networkConfigurationDao = null;
     @Inject NicDao _nicDao;
     @Inject GuestOSDao _guestOSDao = null;
     @Inject NetworkManager _networkMgr;
@@ -1973,7 +1973,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
         Transaction txn = Transaction.currentTxn();
         txn.start();
         
-        virtualConfig = _networkProfileDao.lock(virtualConfig.getId(), true);
+        virtualConfig = _networkConfigurationDao.lock(virtualConfig.getId(), true);
         if (virtualConfig == null) {
             throw new ConcurrentOperationException("Unable to get the lock on " + virtualConfig);
         }
