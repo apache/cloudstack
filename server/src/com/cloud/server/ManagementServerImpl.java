@@ -4259,7 +4259,7 @@ public class ManagementServerImpl implements ManagementServer {
         for(VolumeVO v:allVolumes)
         {
         	VMTemplateVO template = _templateDao.findById(v.getTemplateId());
-        	if(template!=null && template.getUniqueName().equalsIgnoreCase("routing"))
+        	if(template!=null && template.getUniqueName().startsWith("routing"))
         	{
         		//do nothing
         	}
