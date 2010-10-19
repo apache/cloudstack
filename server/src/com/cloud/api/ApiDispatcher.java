@@ -37,7 +37,7 @@ import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.NetworkManager;
-import com.cloud.network.security.NetworkGroupManager;
+import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.server.ManagementServer;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.snapshot.SnapshotManager;
@@ -59,7 +59,7 @@ public class ApiDispatcher {
     private ConfigurationManager _configMgr;
     private ConsoleProxyManager _consoleProxyMgr;
     private ManagementServer _mgmtServer;
-    private NetworkGroupManager _networkGroupMgr;
+    private SecurityGroupManager _networkGroupMgr;
     private NetworkManager _networkMgr;
     private SnapshotManager _snapshotMgr;
     private StorageManager _storageMgr;
@@ -80,7 +80,7 @@ public class ApiDispatcher {
         _agentMgr = locator.getManager(AgentManager.class);
         _configMgr = locator.getManager(ConfigurationManager.class);
         _consoleProxyMgr = locator.getManager(ConsoleProxyManager.class);
-        _networkGroupMgr = locator.getManager(NetworkGroupManager.class);
+        _networkGroupMgr = locator.getManager(SecurityGroupManager.class);
         _networkMgr = locator.getManager(NetworkManager.class);
         _snapshotMgr = locator.getManager(SnapshotManager.class);
         _storageMgr = locator.getManager(StorageManager.class);

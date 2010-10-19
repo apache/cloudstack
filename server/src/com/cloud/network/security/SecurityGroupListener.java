@@ -41,15 +41,15 @@ import com.cloud.network.security.dao.NetworkGroupWorkDao;
  * Listens for answers to ingress rules modification commands
  *
  */
-public class NetworkGroupListener implements Listener {
-    public static final Logger s_logger = Logger.getLogger(NetworkGroupListener.class.getName());
+public class SecurityGroupListener implements Listener {
+    public static final Logger s_logger = Logger.getLogger(SecurityGroupListener.class.getName());
 
 	SecurityGroupManagerImpl _networkGroupManager;
     AgentManager _agentMgr;
     NetworkGroupWorkDao _workDao;
     
 
-	public NetworkGroupListener(SecurityGroupManagerImpl networkGroupManager,
+	public SecurityGroupListener(SecurityGroupManagerImpl networkGroupManager,
 			AgentManager agentMgr, NetworkGroupWorkDao workDao) {
 		super();
 		_networkGroupManager = networkGroupManager;

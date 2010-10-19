@@ -47,7 +47,7 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.AuthorizeNetworkGroupIngressCmd;
 import com.cloud.api.commands.CreateSecurityGroupCmd;
-import com.cloud.api.commands.DeleteNetworkGroupCmd;
+import com.cloud.api.commands.DeleteSecurityGroupCmd;
 import com.cloud.api.commands.ListNetworkGroupsCmd;
 import com.cloud.api.commands.RevokeNetworkGroupIngressCmd;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -86,8 +86,8 @@ import com.cloud.vm.State;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.dao.UserVmDao;
 
-@Local(value={NetworkGroupManager.class})
-public class SecurityGroupManagerImpl implements NetworkGroupManager {
+@Local(value={SecurityGroupManager.class})
+public class SecurityGroupManagerImpl implements SecurityGroupManager {
     public static final Logger s_logger = Logger.getLogger(SecurityGroupManagerImpl.class.getName());
 
 	@Inject NetworkGroupDao _networkGroupDao;
@@ -110,7 +110,7 @@ public class SecurityGroupManagerImpl implements NetworkGroupManager {
 
 	
 	boolean _enabled = false;
-	NetworkGroupListener _answerListener;
+	SecurityGroupListener _answerListener;
     
 	
 	private final class NetworkGroupVOComparator implements
@@ -945,7 +945,7 @@ public class SecurityGroupManagerImpl implements NetworkGroupManager {
 		if (!_enabled) {
 			return false;
 		}
-		_answerListener = new NetworkGroupListener(this, _agentMgr, _workDao);
+		_answerListener = new SecurityGroupListener(this, _agentMgr, _workDao);
 		_agentMgr.registerForHostEvents(_answerListener, true, true, true);
 		
         _serverId = ((ManagementServer)ComponentLocator.getComponent(ManagementServer.Name)).getId();
@@ -983,11 +983,11 @@ public class SecurityGroupManagerImpl implements NetworkGroupManager {
 		if (!_enabled) {
 			return null;
 		}
-		NetworkGroupVO groupVO = _networkGroupDao.findByAccountAndName(accountId, NetworkGroupManager.DEFAULT_GROUP_NAME);
+		NetworkGroupVO groupVO = _networkGroupDao.findByAccountAndName(accountId, SecurityGroupManager.DEFAULT_GROUP_NAME);
 		if (groupVO == null ) {
 			Account accVO = _accountDao.findById(accountId);
 			if (accVO != null) {
-				return createNetworkGroup(NetworkGroupManager.DEFAULT_GROUP_NAME, NetworkGroupManager.DEFAULT_GROUP_DESCRIPTION, accVO.getDomainId(), accVO.getId(), accVO.getAccountName());
+				return createNetworkGroup(SecurityGroupManager.DEFAULT_GROUP_NAME, SecurityGroupManager.DEFAULT_GROUP_DESCRIPTION, accVO.getDomainId(), accVO.getId(), accVO.getAccountName());
 			}
 		}
 		return groupVO;
@@ -1111,7 +1111,7 @@ public class SecurityGroupManagerImpl implements NetworkGroupManager {
 
 	@DB
 	@Override
-	public void deleteNetworkGroup(DeleteNetworkGroupCmd cmd) throws ResourceInUseException, PermissionDeniedException, InvalidParameterValueException{
+	public void deleteNetworkGroup(DeleteSecurityGroupCmd cmd) throws ResourceInUseException, PermissionDeniedException, InvalidParameterValueException{
 		String name = cmd.getName();
 		String accountName = cmd.getAccountName();
 		Long domainId = cmd.getDomainId();
@@ -1171,7 +1171,7 @@ public class SecurityGroupManagerImpl implements NetworkGroupManager {
 			return;
 		}
 		
-		if (group.getName().equalsIgnoreCase(NetworkGroupManager.DEFAULT_GROUP_NAME)) {
+		if (group.getName().equalsIgnoreCase(SecurityGroupManager.DEFAULT_GROUP_NAME)) {
 			txn.rollback();
 			throw new PermissionDeniedException("The network group default is reserved");
 		}
