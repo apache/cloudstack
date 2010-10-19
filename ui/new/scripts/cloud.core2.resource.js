@@ -511,7 +511,41 @@ function primarystorageJsonToDetailsTab(jsonObj) {
     $detailsTab.find("#path").text(fromdb(jsonObj.path));                
 	$detailsTab.find("#disksizetotal").text(convertBytes(jsonObj.disksizetotal));
 	$detailsTab.find("#disksizeallocated").text(convertBytes(jsonObj.disksizeallocated));
-	$detailsTab.find("#tags").text(fromdb(jsonObj.tags));         
+	$detailsTab.find("#tags").text(fromdb(jsonObj.tags));   
+	
+	//actions ***   
+    var $actionLink = $detailsTab.find("#action_link"); 
+    $actionLink.bind("mouseover", function(event) {	    
+        $(this).find("#action_menu").show();    
+        return false;
+    });
+    $actionLink.bind("mouseout", function(event) {       
+        $(this).find("#action_menu").hide();    
+        return false;
+    });	  
+    var $actionMenu = $detailsTab.find("#action_link #action_menu");
+    $actionMenu.find("#action_list").empty();        
+    var midmenuItemId = primarystorageGetMidmenuId(jsonObj);     
+    buildActionLinkForDetailsTab("Delete Primary Storage", primarystorageActionMap, $actionMenu, midmenuItemId, $detailsTab);        
+}
+       
+function primarystorageClearRigntPanel() {  
+    primarystorageJsonClearDetailsTab(jsonObj);  
+}
+
+function primarystorageJsonClearDetailsTab() {	    
+    var $detailsTab = $("#primarystorage_page").find("#tab_content_details");   
+    $detailsTab.find("#id").text("");
+    $detailsTab.find("#name").text("");
+    $detailsTab.find("#zonename").text("");
+    $detailsTab.find("#podname").text("");
+    $detailsTab.find("#clustername").text("");
+    $detailsTab.find("#type").text("");
+    $detailsTab.find("#ipaddress").text("");
+    $detailsTab.find("#path").text("");                
+	$detailsTab.find("#disksizetotal").text("");
+	$detailsTab.find("#disksizeallocated").text("");
+	$detailsTab.find("#tags").text("");         
 }
 //***** primary storage page (end) *********************************************************************************************
 
@@ -757,6 +791,7 @@ function afterLoadResourceJSP() {
 	initDialog("dialog_confirmation_force_reconnect");
 	initDialog("dialog_confirmation_remove_host");
 	initDialog("dialog_update_os");
+	initDialog("dialog_confirmation_delete_primarystorage");
 	
 	// if hypervisor is KVM, limit the server option to NFS for now
 	if (getHypervisorType() == 'kvm') 
@@ -1447,5 +1482,36 @@ function doUpdateOSPreference($actionLink, $detailsTab, midmenuItemId){
         "Cancel": function() {	                         
             $(this).dialog("close");
         }
+    }).dialog("open");     
+} 
+
+var primarystorageActionMap = {
+    "Delete Primary Storage": {              
+        isAsyncJob: false,        
+        dialogBeforeActionFn : doDeletePrimaryStorage,
+        inProcessText: "Deleting Primary Storage....",
+        afterActionSeccessFn: function(json, id, midmenuItemId) {            
+            var $midmenuItem1 = $("#"+midmenuItemId); 
+            $midmenuItem1.remove();
+            clearRightPanel();
+            primarystorageClearRightPanel();
+        }
+    }
+}
+
+function doDeletePrimaryStorage($actionLink, $detailsTab, midmenuItemId){ 
+    var jsonObj = $detailsTab.data("jsonObj");
+       
+    $("#dialog_confirmation_delete_primarystorage")
+    .dialog("option", "buttons", {	                    
+         "OK": function() {
+             $(this).dialog("close");      
+             var id = jsonObj.id;
+             var apiCommand = "command=deleteStoragePool&id="+id;
+    	     doActionToDetailsTab(id, $actionLink, apiCommand, midmenuItemId);		
+         },
+         "Cancel": function() {	                         
+             $(this).dialog("close");
+         }
     }).dialog("open");     
 } 
