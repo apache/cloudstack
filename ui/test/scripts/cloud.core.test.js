@@ -552,7 +552,7 @@ $(document).ready(function() {
 							dataType: "json",
 							async: false,
 							success: function(json) {	   															       
-								domainJSONToTemplate(json.createdomainresponse.domain[0], template);	
+								domainJSONToTemplate(json.createdomainresponse, template);	
 								loadingImg.hide();  
                                 rowContainer.show();    				
 							},			

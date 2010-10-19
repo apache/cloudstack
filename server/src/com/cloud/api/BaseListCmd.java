@@ -38,7 +38,11 @@ public abstract class BaseListCmd extends BaseCmd {
         Long pageSize = DEFAULT_PAGE_SIZE;
         Integer pageSizeInt = getPageSize();
         if (pageSizeInt != null) {
-            pageSize = pageSizeInt.longValue();
+            if (pageSizeInt.longValue() == -1) {
+                pageSize = null;
+            } else {
+                pageSize = pageSizeInt.longValue();
+            }
         }
         return pageSize;
     }
@@ -46,6 +50,10 @@ public abstract class BaseListCmd extends BaseCmd {
     public Long getStartIndex() {
         Long startIndex = Long.valueOf(0);
         Long pageSizeVal = getPageSizeVal();
+        if (pageSizeVal == null) {
+            return null; // there's no limit, so start index is irrelevant
+        }
+
         if (page != null) {
             int pageNum = page.intValue();
             if (pageNum > 0) {

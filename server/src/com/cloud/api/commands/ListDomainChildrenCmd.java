@@ -85,6 +85,7 @@ public class ListDomainChildrenCmd extends BaseListCmd {
             domainResponse.setDomainName(domain.getName());
             domainResponse.setId(domain.getId());
             domainResponse.setLevel(domain.getLevel());
+            domainResponse.setHasChild(domain.getChildCount() > 0);
             domainResponse.setParentDomainId(domain.getParent());
             if (domain.getParent() != null) {
                 domainResponse.setParentDomainName(ApiDBUtils.findDomainById(domain.getParent()).getName());
