@@ -96,7 +96,7 @@ function buildZoneTree() {
 			    clusterJsonToDetailsTab(jsonObj);
 			    var clusterId = jsonObj.id;
 			    $("#midmenu_container").empty();
-			    listMidMenuItems2(("listHosts&clusterid="+clusterId), "listhostsresponse", "host", hostToMidmenu, hostToRigntPanel, hostGetMidmenuId, false); 					
+			    listMidMenuItems2(("listHosts&clusterid="+clusterId), "listhostsresponse", "host", hostToMidmenu, hostToRigntPanel, hostGetMidmenuId, true); 					
 				listMidMenuItems2(("listStoragePools&clusterid="+clusterId), "liststoragepoolsresponse", "storagepool", primarystorageToMidmenu, primarystorageToRigntPanel, primarystorageGetMidmenuId, false); 					
 	    		break;								
 						
