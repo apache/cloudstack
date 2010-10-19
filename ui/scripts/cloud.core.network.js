@@ -571,8 +571,8 @@ function showNetworkingTab(p_domainId, p_account) {
 	   data: createURL("command=createPortForwardingRule&response=json"+array1.join("")),
 	        dataType: "json",
 	        success: function(json) {			            
-	            var items = json.createportforwardingruleresponse.portforwardingrule;	            	
-	            portForwardingJsonToTemplate(items[0],template);
+	            var items = json.createportforwardingruleresponse;	            	
+	            portForwardingJsonToTemplate(items,template);
 	            loadingImg.hide(); 	   
 	            rowContainer.show();	
 	            refreshCreatePortForwardingRow();			   						
