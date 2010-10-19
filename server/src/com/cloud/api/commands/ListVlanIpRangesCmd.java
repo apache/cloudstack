@@ -49,7 +49,7 @@ public class ListVlanIpRangesCmd extends BaseListCmd {
     @Parameter(name="domainid", type=CommandType.LONG, description="the domain ID with which the VLAN IP range is associated.  If used with the account parameter, returns all VLAN IP ranges for that account in the specified domain.")
     private Long domainId;
 
-    @Parameter(name="id", type=CommandType.LONG, required=true, description="the ID of the VLAN IP range")
+    @Parameter(name="id", type=CommandType.LONG, required=false, description="the ID of the VLAN IP range")
     private Long id;
 
     @Parameter(name="podid", type=CommandType.LONG, description="the Pod ID of the VLAN IP range")

@@ -447,7 +447,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	String endIp = cmd.getEndIp();
     	String gateway = cmd.getGateway();
     	Long id = cmd.getId();
-    	String name = cmd.getName();
+    	String name = cmd.getPodName();
     	Long userId = UserContext.current().getUserId();
 
     	if (userId == null) {
