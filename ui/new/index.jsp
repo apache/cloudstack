@@ -17,9 +17,9 @@ long milliseconds = new Date().getTime();
     <meta http-equiv='expires' content='0'>
     <meta http-equiv='pragma' content='no-cache'>
     <meta name="version" content="1.9.1.2010-08-25T16:16:56Z" />
-    <link rel="stylesheet" href="css/main.css" type="text/css" />
     <link rel="stylesheet" href="css/jquery-ui-1.8.2.custom.css" type="text/css" />
     <link rel="stylesheet" href="css/logger.css" type="text/css" />
+    <link rel="stylesheet" href="css/main.css" type="text/css" />
 
     <script type="text/javascript" src="scripts/jquery-1.4.2.min.js"></script>
 

@@ -3684,5 +3684,20 @@ a:hover.search_button {
 	cursor:pointer;
 	cursor:hand;
 }
-/* zonetree (begin) */
+/* dialog css */
+.ui-widget-header { 
+	border: 1px solid #c0bfbf; 
+	background: #41546d url(../images/dialog_popupheaderbg.gif) repeat-x top left; 
+	color: #FFF; 
+	font-weight: bold; 
+	
+}
+
+.ui-state-default, .ui-widget-content .ui-state-default { height:25px; border: 1px solid #c0bfbf; background: #809617 url(../images/dialog_popupbuttonbg.gif) repeat-x top left; font-weight: normal; color: #FFF; outline: none; padding-top:-0.2em; }
+
+.ui-state-hover, .ui-widget-content .ui-state-hover, .ui-state-focus, .ui-widget-content .ui-state-focus { border: 1px solid #c0bfbf; background: #809617 url(../images/dialog_popupbuttonbg_hover.gif) repeat-x top left; font-weight: normal; color: #FFF; outline: none; padding-top:-0.2em;}
+
+
+.ui-dialog .ui-dialog-buttonpane { text-align: left; border-width: 1px 0 0 0; background-image: none; margin: .5em 0 0 0; padding: -0.2em 1em .5em .4em; }
+.ui-dialog .ui-dialog-buttonpane button { float: right; margin: .5em .4em .5em 0; cursor: pointer; padding: -0.2em .6em .3em .6em; line-height: 1.4em; width:auto; overflow:visible; }
 
