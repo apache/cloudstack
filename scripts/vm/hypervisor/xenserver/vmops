@@ -551,7 +551,7 @@ def checkIscsi(session, args):
             rdevpath = rdevpath.replace(".", "")
             rdevpath = rdevpath.replace("/", "")
             rdevpath = "/block/" + rdevpath
-            cmd = ["scsi_id", "-g", "-s", rdevpath ]
+            cmd = ["scsi_id", "-g", "-u", "-s", rdevpath ]
             txt = util.pread2(cmd)
             txt = txt.replace("\n", "")
             if scsiid == txt:
