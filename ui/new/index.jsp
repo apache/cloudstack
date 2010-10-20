@@ -785,14 +785,14 @@ long milliseconds = new Date().getTime();
     <div id="domain_tree_node_template" style="display:none">    	
                 
             <div id="domain_title_container" class="leftmenu_content">
-	            <div class="leftmenu_domainindent">   
+	            <div class="leftmenu_domainindent" id="domain_indent">   
 	                <div class="leftmenu_arrows expanded_close" id="domain_expand_icon">
 	                </div>
 	                <span id="domain_name">
 	                    Domain Name</span>
 	          	</div>
             </div>                        
-            <div id="domain_children_container" style="display: none; margin-left:30px;">
+            <div id="domain_children_container" style="display: none">
             </div>
    
     </div>
