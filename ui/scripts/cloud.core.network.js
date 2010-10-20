@@ -945,7 +945,7 @@ function showNetworkingTab(p_domainId, p_account) {
 				    for (var i = 0; i < instances.length; i++) {
 				        var vmName = getVmName(instances[i].name, instances[i].displayname);
 					    html = $("<option value='" + instances[i].id + "'>" + vmName + "</option>")
-					    html.data("vmPrivateIp", instances[i].privateip).data("vmName", vmName);
+					    html.data("vmPrivateIp", instances[i].ipaddress).data("vmName", vmName);
 					    vmSelect.append(html); 
 				    }
 			    } else {
@@ -989,8 +989,8 @@ function showNetworkingTab(p_domainId, p_account) {
 	   data: createURL("command=createLoadBalancerRule&response=json"+array1.join("")),
 			dataType: "json",
 			success: function(json) {					    	    
-				var items = json.createloadbalancerruleresponse.loadbalancerrule;						
-	            loadBalancerJsonToTemplate(items[0],template);
+				var items = json.createloadbalancerruleresponse;					
+	            loadBalancerJsonToTemplate(items,template);
 	            loadingImg.hide(); 	   
 	            rowContainer.show();	
 	            refreshCreateLoadBalancerRow();	            	
