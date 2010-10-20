@@ -518,7 +518,7 @@ function selectLeftMenu($menuToSelect, expandable) {
 
 var $selectedSubMenu;
 function selectLeftSubMenu($menuToSelect) {
-	if ($menuToSelect != $selectedSubMenu) {
+	if ($selectedSubMenu == null || ($menuToSelect.attr("id") != $selectedSubMenu.attr("id"))) {
 		if($selectedSubMenu != null)
 			$selectedSubMenu.removeClass("selected");  
 		$menuToSelect.addClass("selected");
