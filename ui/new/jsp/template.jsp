@@ -24,16 +24,13 @@
             <%=t.t("Details")%></div>
     </div>    
     <div id="tab_content_details">
-        <div class="grid_actionpanel">
-            
-            <div class="grid_editbox" id="edit_button">
-            </div>
+        <div class="grid_actionpanel">            
             <div class="gridheader_loaderbox" id="spinning_wheel" style="border: 1px solid #999;
                 display: none;">
                 <div class="gridheader_loader" id="Div1">
                 </div>
                 <p id="description">
-                    Detaching Disk &hellip;</p>
+                    Waiting &hellip;</p>
             </div>               
         </div>
     
