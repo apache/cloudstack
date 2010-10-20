@@ -18,6 +18,8 @@
 
 // Version: @VERSION@
 
+var $selectedDomainTreeNode;
+
 function afterLoadDomainJSP() {   
     //testing code
     /* 	
@@ -139,17 +141,22 @@ function afterLoadDomainJSP() {
 	}
 	
 	$treenodeTemplate.bind("click", function(event) {			     
-		var template = $(this);
+		var $thisNode = $(this);
 		var target = $(event.target);
 		var action = target.attr("id");
-		var id = template.attr("id");
-		var jsonObj = template.data("jsonObj");	
+		var id = $thisNode.attr("id");
+		var jsonObj = $thisNode.data("jsonObj");	
 		var domainId = jsonObj.id;	
 		var domainName = jsonObj.name;										
 		if (action.indexOf("domain_expand_icon")!=-1) {		
 		    clickExpandIcon(domainId);					
 		}
 		else if(action.indexOf("domain_name")!=-1) {
+            if($selectedDomainTreeNode != null)
+                $selectedDomainTreeNode.find("#domain_title_container_"+$selectedDomainTreeNode.data("jsonObj").id).removeClass("selected");      
+            $thisNode.find("#domain_title_container_"+domainId).addClass("selected");
+            $selectedDomainTreeNode = $thisNode;
+            
             $detailsTab.data("jsonObj", jsonObj);  
             $detailsTab.find("#id").text(domainId);
             $detailsTab.find("#name").text(domainName);		   
