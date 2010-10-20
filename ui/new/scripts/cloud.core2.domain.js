@@ -124,9 +124,9 @@ function afterLoadDomainJSP() {
 		    data: createURL("command=listAccounts&domainid="+domainId+"&accounttype="+accountType+maxPageSize),
 			dataType: "json",
 			success: function(json) {
-				var items = json.listaccountsresponse.account;					
-				if (items != null && items.length > 0) {	
-				    var $container = $("#right_panel_content #tab_content_admin_account").empty();
+				var items = json.listaccountsresponse.account;		
+				var $container = $("#right_panel_content #tab_content_admin_account").empty();			
+				if (items != null && items.length > 0) {					    
 					var $template = $("#admin_account_tab_template");				
 					for (var i = 0; i < items.length; i++) {
 						var $newTemplate = $template.clone(true);
