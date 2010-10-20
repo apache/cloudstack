@@ -204,7 +204,7 @@ import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.dao.NetworkRuleConfigDao;
 import com.cloud.network.dao.SecurityGroupDao;
 import com.cloud.network.dao.SecurityGroupVMMapDao;
-import com.cloud.network.security.SecurityGroupManager;
+import com.cloud.network.security.NetworkGroupManager;
 import com.cloud.network.security.NetworkGroupVO;
 import com.cloud.network.security.dao.NetworkGroupDao;
 import com.cloud.offering.NetworkOffering;
@@ -368,7 +368,7 @@ public class ManagementServerImpl implements ManagementServer {
     private final AsyncJobManager _asyncMgr;
     private final TemplateManager _tmpltMgr;
     private final SnapshotManager _snapMgr;
-    private final SecurityGroupManager _networkGroupMgr;
+    private final NetworkGroupManager _networkGroupMgr;
     private final int _purgeDelay;
     private final boolean _directAttachNetworkExternalIpAllocator;
     private final PreallocatedLunDao _lunDao;
@@ -463,7 +463,7 @@ public class ManagementServerImpl implements ManagementServer {
         _asyncMgr = locator.getManager(AsyncJobManager.class);
         _tmpltMgr = locator.getManager(TemplateManager.class);
         _snapMgr = locator.getManager(SnapshotManager.class);
-        _networkGroupMgr = locator.getManager(SecurityGroupManager.class);
+        _networkGroupMgr = locator.getManager(NetworkGroupManager.class);
         _uploadMonitor = locator.getManager(UploadMonitor.class);                
         
         _userAuthenticators = locator.getAdapters(UserAuthenticator.class);
@@ -1874,7 +1874,7 @@ public class ManagementServerImpl implements ManagementServer {
         	}
         	Set<String> nameSet = new HashSet<String>(); //handle duplicate names -- allowed
         	nameSet.addAll(Arrays.asList(networkGroups));
-        	nameSet.add(SecurityGroupManager.DEFAULT_GROUP_NAME);
+        	nameSet.add(NetworkGroupManager.DEFAULT_GROUP_NAME);
         	networkGroups = nameSet.toArray(new String[nameSet.size()]);
         	List<NetworkGroupVO> networkGroupVOs = _networkSecurityGroupDao.findByAccountAndNames(accountId, networkGroups);
         	if (networkGroupVOs.size() != nameSet.size()) {
@@ -1882,7 +1882,7 @@ public class ManagementServerImpl implements ManagementServer {
         	}
         } else { //create a default group if necessary
         	if (offering.getGuestIpType() != NetworkOffering.GuestIpType.Virtualized && _networkGroupsEnabled) {
-        		networkGroups = new String[]{SecurityGroupManager.DEFAULT_GROUP_NAME};
+        		networkGroups = new String[]{NetworkGroupManager.DEFAULT_GROUP_NAME};
         	}
         }
 

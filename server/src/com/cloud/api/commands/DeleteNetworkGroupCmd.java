@@ -9,8 +9,8 @@ import com.cloud.api.Parameter;
 import com.cloud.api.response.SuccessResponse;
 
 @Implementation(method="deleteNetworkGroup", manager=Manager.NetworkGroupManager)
-public class DeleteSecurityGroupCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(DeleteSecurityGroupCmd.class.getName());
+public class DeleteNetworkGroupCmd extends BaseCmd {
+    public static final Logger s_logger = Logger.getLogger(DeleteNetworkGroupCmd.class.getName());
     private static final String s_name = "deletenetworkgroupresponse";
 
     /////////////////////////////////////////////////////

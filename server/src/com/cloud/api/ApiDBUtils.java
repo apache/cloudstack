@@ -32,7 +32,7 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkRuleConfigDao;
 import com.cloud.network.dao.SecurityGroupDao;
-import com.cloud.network.security.SecurityGroupManager;
+import com.cloud.network.security.NetworkGroupManager;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.server.Criteria;
 import com.cloud.server.ManagementServer;
@@ -84,7 +84,7 @@ public class ApiDBUtils {
     private static AccountManager _accountMgr;
     private static AgentManager _agentMgr;
     private static AsyncJobManager _asyncMgr;
-    private static SecurityGroupManager _networkGroupMgr;
+    private static NetworkGroupManager _networkGroupMgr;
     private static SnapshotManager _snapMgr;
     private static StorageManager _storageMgr;
     private static UserVmManager _userVmMgr;
@@ -123,7 +123,7 @@ public class ApiDBUtils {
         _accountMgr = locator.getManager(AccountManager.class);
         _agentMgr = locator.getManager(AgentManager.class);
         _asyncMgr = locator.getManager(AsyncJobManager.class);
-        _networkGroupMgr = locator.getManager(SecurityGroupManager.class);
+        _networkGroupMgr = locator.getManager(NetworkGroupManager.class);
         _snapMgr = locator.getManager(SnapshotManager.class);
         _storageMgr = locator.getManager(StorageManager.class);
         _userVmMgr = locator.getManager(UserVmManager.class);

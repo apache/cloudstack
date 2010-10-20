@@ -2235,11 +2235,11 @@ a:hover.search_button {
 
 .grid_row_cell .text {
 	width:92%;
-	height:13px;
+	height:16px;
 	float:left;
 	margin:0 0 0 10px;
 	display:inline;
-	padding:0;
+	padding:0 0 0 2px;
 	border:1px solid #999;
 	background:#FFF;
 	color:#333;
@@ -2248,7 +2248,7 @@ a:hover.search_button {
 
 .grid_row_cell .select {
 	width:92%;
-	height:15px;
+	height:18px;
 	float:left;
 	margin:0 0 0 10px;
 	display:inline;

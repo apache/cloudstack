@@ -36,7 +36,7 @@ public class FirewallRuleResponse extends BaseResponse {
     @SerializedName("virtualmachineid") @Param(description="the VM ID for the port forwarding rule")
     private Long virtualMachineId;
 
-    @SerializedName("virtualmachinename") @Param(description="the VM name for the port forwarding rule")
+    @SerializedName("vmname") @Param(description="the VM name for the port forwarding rule")
     private String virtualMachineName;
 
     public Long getId() {
