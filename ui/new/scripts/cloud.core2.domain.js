@@ -74,7 +74,7 @@ function afterLoadDomainJSP() {
 			    if (domains != null && domains.length > 0) {					    
 				    for (var i = 0; i < domains.length; i++) {						    
 					    drawNode(domains[i], level, container);	
-					    if(domains[i].haschild=="true")
+					    if(domains[i].haschild == true)
 			                drawTree(domains[i].id, (level+1), $("#domain_children_container_"+domains[i].id));				   
 				    }
 			    }				
