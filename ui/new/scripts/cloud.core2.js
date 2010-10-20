@@ -783,8 +783,7 @@ function listMidMenuItems2(commandString, jsonResponse1, jsonResponse2, toMidmen
 
 function listMidMenuItems(commandString, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSPFn, toMidmenuFn, toRightPanelFn, getMidmenuIdFn) { 
 	showMiddleMenu();
-	disableMultipleSelectionInMidMenu();
-	
+	disableMultipleSelectionInMidMenu();	
 	clearMiddleMenu();
 	
 	$("#right_panel").load(rightPanelJSP, function(){     

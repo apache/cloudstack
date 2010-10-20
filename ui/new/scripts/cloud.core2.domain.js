@@ -18,14 +18,31 @@
 
 // Version: @VERSION@
 
-function afterLoadDomainJSP() {
+function afterLoadDomainJSP() {   
+    //testing code
+    /* 	
+	$("#leftmenu_domain_tree").empty();		
+	var $newNode01 = $("#domain_tree_node_template").clone();
+	$newNode01.find("#domain_name").text("01")
+	var $newNode02 = $("#domain_tree_node_template").clone();
+	$newNode02.find("#domain_name").text("02")
+	var $newNode03 = $("#domain_tree_node_template").clone();		
+	$newNode03.find("#domain_name").text("03");
+	$("#leftmenu_domain_tree").append($newNode01.show());		
+	$newNode01.find("#domain_children_container").append($newNode02.show());
+	$newNode01.find("#domain_children_container").show();		
+	$newNode02.find("#domain_children_container").append($newNode03.show());
+	$newNode02.find("#domain_children_container").show();
+	*/			
+
+
     var defaultRootDomainId = g_domainid;
     var defaultRootLevel = 0;	   
     var childParentMap = {};  //map childDomainId to parentDomainId
     var domainIdNameMap = {}; //map domainId to domainName
     
-    var $treeContentBox = $("#midmenu_container");      
-    var $treenodeTemplate = $("#treenode_template");	 
+    var $treeContentBox = $("#leftmenu_domain_tree");      
+    var $treenodeTemplate = $("#domain_tree_node_template");	 
 	var $detailsTab = $("#right_panel_content #tab_content_details");   
 	var $resourceLimitsTab = $("#right_panel_content #tab_content_resource_limits");
 	  			    
@@ -66,12 +83,13 @@ function afterLoadDomainJSP() {
 	function clickExpandIcon(domainId) {
 	    var template = $("#domain_"+domainId);
 	    var expandIcon = template.find("#domain_expand_icon_"+domainId);
-	    if (expandIcon.hasClass("zonetree_closedarrows")) {													
+	    if (expandIcon.hasClass("expanded_close")) {													
 			template.find("#domain_children_container_"+domainId).show();							
-			expandIcon.removeClass().addClass("zonetree_openarrows");
-		} else {																	
+			expandIcon.removeClass("expanded_close").addClass("expanded_open");
+		} 
+		else if (expandIcon.hasClass("expanded_open")) {																	
 		    template.find("#domain_children_container_"+domainId).hide();						
-			expandIcon.removeClass().addClass("zonetree_closedarrows");
+			expandIcon.removeClass("expanded_open").addClass("expanded_close");
 		}			
 	}					
 	
