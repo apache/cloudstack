@@ -324,7 +324,7 @@ long milliseconds = new Date().getTime();
                 <div class="leftmenu_list">
                     <div class="leftmenu_content_flevel" id="leftmenu_instances">
                         <div class="leftmenu_firstindent">
-                            <div class="leftmenu_arrows_firstlevel_open" id="expandable_first_level_arrow" style="display:none;"></div>
+                            <div class="leftmenu_arrows_firstlevel_open" id="expandable_first_level_arrow" style="display:block;"></div>
                             <div class="leftmenu_list_icons">
                                 <img src="images/instance_leftmenuicon.png" alt="Instance" /></div>
                             <%=t.t("instance")%>
@@ -350,7 +350,7 @@ long milliseconds = new Date().getTime();
                 <div class="leftmenu_list">
                     <div class="leftmenu_content_flevel" id="leftmenu_storage">
                         <div class="leftmenu_firstindent">
-                            <div class="leftmenu_arrows_firstlevel_open" id="expandable_first_level_arrow" style="display:none;"></div>
+                            <div class="leftmenu_arrows_firstlevel_open" id="expandable_first_level_arrow" style="display:block;"></div>
                             <div class="leftmenu_list_icons">
                                 <img src="images/storage_leftmenuicon.png" alt="Storage" /></div>
                             <%=t.t("storage")%>
@@ -384,7 +384,7 @@ long milliseconds = new Date().getTime();
                 <div class="leftmenu_list">
                     <div class="leftmenu_content_flevel" id="leftmenu_network">
                         <div class="leftmenu_firstindent">
-                            <div class="leftmenu_arrows_firstlevel_open" id="expandable_first_level_arrow" style="display:none;"></div>
+                            <div class="leftmenu_arrows_firstlevel_open" id="expandable_first_level_arrow" style="display:block;"></div>
                             <div class="leftmenu_list_icons">
                                 <img src="images/network_leftmenuicon.png" alt="Network" /></div>
                             <%=t.t("Network")%>
@@ -406,7 +406,7 @@ long milliseconds = new Date().getTime();
                 <div class="leftmenu_list">
                     <div class="leftmenu_content_flevel" id="leftmenu_templates">
                         <div class="leftmenu_firstindent">
-                            <div class="leftmenu_arrows_firstlevel_open" id="expandable_first_level_arrow" style="display:none;"></div>
+                            <div class="leftmenu_arrows_firstlevel_open" id="expandable_first_level_arrow" style="display:block;"></div>
                             <div class="leftmenu_list_icons">
                                 <img src="images/templates_leftmenuicon.png" alt="Template" /></div>
                             <%=t.t("template")%>
@@ -519,7 +519,7 @@ long milliseconds = new Date().getTime();
                 <div class="leftmenu_list">
                     <div class="leftmenu_content_flevel" id="leftmenu_domain">
                         <div class="leftmenu_firstindent">
-                            <div class="leftmenu_arrows_firstlevel_open" id="expandable_first_level_arrow" style="display:none;"></div>
+                            <div class="leftmenu_arrows_firstlevel_open" id="expandable_first_level_arrow" style="display:block;"></div>
                             <div class="leftmenu_list_icons">
                                 <img src="images/domain_leftmenuicon.png" alt="Domain" /></div>
                             <%=t.t("domain")%>
@@ -544,7 +544,7 @@ long milliseconds = new Date().getTime();
                 <div class="leftmenu_list">
                     <div class="leftmenu_content_flevel" id="leftmenu_events">
                         <div class="leftmenu_firstindent">
-                             <div class="leftmenu_arrows_firstlevel_open" id="expandable_first_level_arrow" style="display:none;"></div>
+                             <div class="leftmenu_arrows_firstlevel_open" id="expandable_first_level_arrow" style="display:block;"></div>
                             <div class="leftmenu_list_icons">
                                 <img src="images/events_leftmenuicon.png" alt="Event" /></div>
                             <%=t.t("event")%>
@@ -576,7 +576,7 @@ long milliseconds = new Date().getTime();
                 <div class="leftmenu_list">
                     <div class="leftmenu_content_flevel" id="leftmenu_system">
                         <div class="leftmenu_firstindent">
-                            <div class="leftmenu_arrows_firstlevel_open" id="expandable_first_level_arrow" style="display:none;"></div>
+                            <div class="leftmenu_arrows_firstlevel_open" id="expandable_first_level_arrow" style="display:block;"></div>
                             <div class="leftmenu_list_icons">
                                 <img src="images/configuration_leftmenuicon.png" alt="System" /></div>
                             <%=t.t("system")%>

@@ -492,21 +492,27 @@ function clearRightPanel() {
 var $selectedLeftMenu;
 var $expandedLeftMenu;
 function selectLeftMenu($menuToSelect, expandable) {
-	if ($menuToSelect != $selectedLeftMenu) {
+	if ($selectedLeftMenu == null || ($menuToSelect.attr("id") != $selectedLeftMenu.attr("id"))) {
 		if($selectedLeftMenu != null)
 			$selectedLeftMenu.removeClass("selected");  
 		$menuToSelect.addClass("selected");
 		$selectedLeftMenu = $menuToSelect; 
 		
 		// collapse any current expanded menu
-		if ($expandedLeftMenu != null) {
-			$expandedLeftMenu.hide();
-			$expandedLeftMenu = null;
+		var $menuToExpand;
+		if (expandable != undefined && expandable) {
+			$menuToExpand = $selectedLeftMenu.siblings(".leftmenu_expandedbox");
 		}
 		
-		if (expandable != undefined && expandable) {
-			$expandedLeftMenu = $selectedLeftMenu.siblings(".leftmenu_expandedbox").show();
+		if ($expandedLeftMenu != null) {
+			$expandedLeftMenu.hide(0, function() {
+				if ($menuToExpand != null) $menuToExpand.slideDown();
+			});
+			$expandedLeftMenu = null;
+		} else if ($menuToExpand != null) {
+			$menuToExpand.slideDown();
 		}
+		$expandedLeftMenu = $menuToExpand;
 	}
 }
 
