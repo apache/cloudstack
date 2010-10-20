@@ -85,7 +85,7 @@ function buildZoneTree() {
 			    selectTreeNodeInLeftMenu(target.parent().parent().parent());
 			    var jsonObj = target.data("jsonObj");
 			    showPage($("#pod_page"), jsonObj);	
-			    hideMiddleMenu();	
+			    showMiddleMenu();	
 			    podJsonToDetailsTab(jsonObj);				
 				break;		
 				    
