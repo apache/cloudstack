@@ -49,6 +49,20 @@ $(document).ready(function() {
 	});
 	$("#leftmenu_domain").bind("click", function(event) {
 		selectLeftMenu($(this), true);
+			
+		$("#leftmenu_domain_tree").empty();		
+		var $newNode01 = $("#domain_tree_node_template").clone();
+		$newNode01.find("#domain_name").text("01")
+		var $newNode02 = $("#domain_tree_node_template").clone();
+		$newNode02.find("#domain_name").text("02")
+		var $newNode03 = $("#domain_tree_node_template").clone();		
+		$newNode03.find("#domain_name").text("03");
+		$("#leftmenu_domain_tree").append($newNode01.show());		
+		$newNode01.find("#domain_children_container").append($newNode02.show());
+		$newNode01.find("#domain_children_container").show();		
+		$newNode02.find("#domain_children_container").append($newNode03.show());
+		$newNode02.find("#domain_children_container").show();
+							
 		/*
 		showMiddleMenu();
 		disableMultipleSelectionInMidMenu();                

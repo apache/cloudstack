@@ -526,18 +526,7 @@ long milliseconds = new Date().getTime();
                         </div>
                     </div>
                     <div class="leftmenu_expandedbox" style="display: none">
-                        <div class="leftmenu_expandedlist">
-                            <div class="leftmenu_content">
-                                <div class="leftmenu_domainindent" style="margin-left: 30px;">
-                                    <div id="domain_title_container" class="tree_levels">
-                                        <div class="leftmenu_arrows expanded_close" id="arrowIcon">
-                                        </div>
-                                        Domain Name
-                                    </div>
-                                    <div id="domain_children_container" style="display: none">
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="leftmenu_expandedlist" id="leftmenu_domain_tree">                            
                         </div>
                     </div>
                 </div>
@@ -791,7 +780,21 @@ long milliseconds = new Date().getTime();
 	        </div>
         </div>
     </div> 
-    <!-- SystemVM Template (end) -->
+    <!-- SystemVM Template (end) -->    
+    <!-- domain tree node template (begin) -->
+    <div id="domain_tree_node_template" class="leftmenu_content" style="display:none">
+        <div class="leftmenu_domainindent" style="margin-left: 30px;">
+            <div id="domain_title_container" class="tree_levels">
+                <div class="leftmenu_arrows expanded_close" id="arrowIcon">
+                </div>
+                <div id="domain_name" class="tree_links">
+                    Domain Name</div>
+            </div>
+            <div id="domain_children_container" style="display: none">
+            </div>
+        </div>
+    </div>
+    <!-- domain tree node template (end) -->    
     <!-- ***** templates (end) *************************************************************************************************-->
 </body>
 </html>
