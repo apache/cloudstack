@@ -41,7 +41,7 @@ function afterLoadDomainJSP() {
     var childParentMap = {};  //map childDomainId to parentDomainId
     var domainIdNameMap = {}; //map domainId to domainName
     
-    var $treeContentBox = $("#leftmenu_domain_tree");      
+    var $leftmenuDomainTree = $("#leftmenu_domain_tree");      
     var $treenodeTemplate = $("#domain_tree_node_template");	 
 	var $detailsTab = $("#right_panel_content #tab_content_details");   
 	var $resourceLimitsTab = $("#right_panel_content #tab_content_resource_limits");
@@ -248,7 +248,7 @@ function afterLoadDomainJSP() {
 		
 	//draw root node
 	function drawRootNode(rootDomainId) {
-	    $treeContentBox.empty();
+	    $leftmenuDomainTree.empty();
 	    $.ajax({
 	        data: createURL("command=listDomains&id="+rootDomainId+"&pageSize=-1"), //pageSize=-1 will return all items (no limitation)
 	        dataType: "json",
@@ -256,7 +256,7 @@ function afterLoadDomainJSP() {
 	        success: function(json) {					        
 	            var domains = json.listdomainsresponse.domain;				        	    
 		        if (domains != null && domains.length > 0) {				   					    
-				    var node = drawNode(domains[0], defaultRootLevel, $treeContentBox); 
+				    var node = drawNode(domains[0], defaultRootLevel, $leftmenuDomainTree); 
 				    
 				    var treeLevelsbox = node.find(".tree_levelsbox");	//root node shouldn't have margin-left:20px				   
 				    if(treeLevelsbox!=null && treeLevelsbox.length >0)
