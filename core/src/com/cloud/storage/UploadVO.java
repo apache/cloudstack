@@ -65,6 +65,10 @@ public class UploadVO implements Upload {
 	@Enumerated(EnumType.STRING)
 	private Type type;
 	
+	@Column (name="mode")
+    @Enumerated(EnumType.STRING)
+    private Mode mode = Mode.FTP_UPLOAD;
+	
 	@Column (name="upload_state")
 	@Enumerated(EnumType.STRING)
 	private Status uploadState;
@@ -122,6 +126,19 @@ public class UploadVO implements Upload {
 		this.jobId = jobId;
 		this.uploadUrl = uploadUrl;
 	}
+	
+	public UploadVO(long hostId, long typeId, Date lastUpdated,
+            Status uploadState, int uploadPercent, Type type,
+            Mode mode) {
+        super();
+        this.hostId = hostId;
+        this.typeId = typeId;
+        this.lastUpdated = lastUpdated;
+        this.uploadState = uploadState;
+        this.uploadPercent = uploadPercent;
+        this.type = type;
+        this.mode = mode;
+    }
 
 	protected UploadVO() {		
 	}
@@ -200,7 +217,15 @@ public class UploadVO implements Upload {
 		this.type = type;
 	}
 
-	public String getUploadUrl() {
+	public Mode getMode() {
+        return mode;
+    }
+
+    public void setMode(Mode mode) {
+        this.mode = mode;
+    }
+
+    public String getUploadUrl() {
 		return uploadUrl;
 	}
 

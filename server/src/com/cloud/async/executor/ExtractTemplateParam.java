@@ -1,5 +1,7 @@
 package com.cloud.async.executor;
 
+import com.cloud.storage.Upload;
+
 public class ExtractTemplateParam {
 	
 	private long userId;
@@ -7,16 +9,27 @@ public class ExtractTemplateParam {
 	private Long zoneId;
 	private long eventId;
 	private String url;
+	private Upload.Mode extractMode;
 
 	public ExtractTemplateParam() {
 	}
-
-	public ExtractTemplateParam(long userId, long templateId, Long zoneId, long eventId, String url) {
+	
+    public ExtractTemplateParam(long userId, long templateId, Long zoneId, long eventId, String url) {
+        this.userId = userId;
+        this.templateId = templateId;
+        this.zoneId = zoneId;
+        this.eventId = eventId;
+        this.url = url;
+        this.extractMode = Upload.Mode.FTP_UPLOAD;
+    }
+	
+	public ExtractTemplateParam(long userId, long templateId, Long zoneId, long eventId, String url, Upload.Mode mode) {
 		this.userId = userId;
 		this.templateId = templateId;
 		this.zoneId = zoneId;
 		this.eventId = eventId;
 		this.url = url;
+		this.extractMode = mode;
 	}
 	
 	public String getUrl() {
@@ -45,6 +58,14 @@ public class ExtractTemplateParam {
 
     public long getEventId() {
         return eventId;
+    }
+
+    public Upload.Mode getExtractMode() {
+        return extractMode;
+    }
+
+    public void setExtractMode(Upload.Mode extractMode) {
+        this.extractMode = extractMode;
     }
 
 }

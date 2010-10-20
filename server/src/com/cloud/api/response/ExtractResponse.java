@@ -24,21 +24,22 @@ import com.google.gson.annotations.SerializedName;
 
 public class ExtractResponse extends BaseResponse {
     @SerializedName("id") @Param(description="the id of extracted object")
-    private long id;
+    private Long id;
     
     @SerializedName("name") @Param(description="the name of the extracted object")
     private String name;
     
-    //FIXME - add description
-    @SerializedName("uploadpercentage")
-    private int uploadPercent;
+    @SerializedName("uploadId") @Param(description="the upload id of extracted object")
+    private Long uploadId;
     
-    //FIXME - add description
-    @SerializedName("uploadstatus")
-    private String uploadStatus;
+    @SerializedName("uploadpercentage") @Param(description="the percentage of the entity uploaded to the specified location")
+    private Integer uploadPercent;
+        
+    @SerializedName("status") @Param(description="the status of the ")
+    private String status;
     
     @SerializedName("accountid") @Param(description="the account id to which the extracted object belongs")
-    private long accountId;    
+    private Long accountId;    
  
     @SerializedName("resultstring") @Param(description="")
     private String resultString;    
@@ -63,7 +64,13 @@ public class ExtractResponse extends BaseResponse {
     @SerializedName("zonename") @Param(description="zone name the object was extracted from")
     private String zoneName;
 
-    public long getId() {
+    @SerializedName("extractMode") @Param(description="the mode of extraction - upload or download")
+    private String mode;
+    
+    @SerializedName("url") @Param(description="if mode = upload then url of the uploaded entity. if mode = download the url from which the entity can be downloaded")
+    private String url;
+    
+    public Long getId() {
         return id;
     }
 
@@ -79,7 +86,15 @@ public class ExtractResponse extends BaseResponse {
         this.name = name;
     }
 
-    public int getUploadPercent() {
+    public Long getUploadId() {
+        return uploadId;
+    }
+
+    public void setUploadId(Long uploadId) {
+        this.uploadId = uploadId;
+    }
+
+    public Integer getUploadPercent() {
         return uploadPercent;
     }
 
@@ -88,14 +103,14 @@ public class ExtractResponse extends BaseResponse {
     }
 
     public String getUploadStatus() {
-        return uploadStatus;
+        return status;
     }
 
-    public void setUploadStatus(String uploadStatus) {
-        this.uploadStatus = uploadStatus;
+    public void setUploadStatus(String Status) {
+        this.status = status;
     }
 
-    public long getAccountId() {
+    public Long getAccountId() {
         return accountId;
     }
 
@@ -157,5 +172,21 @@ public class ExtractResponse extends BaseResponse {
 
     public void setZoneName(String zoneName) {
         this.zoneName = zoneName;
+    }
+
+    public String getMode() {
+        return mode;
+    }
+
+    public void setMode(String mode) {
+        this.mode = mode;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
     }
 }

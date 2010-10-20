@@ -9,14 +9,22 @@ import com.cloud.storage.upload.UploadState;
 
 public class ExtractJobResultObject {
 	
-	public ExtractJobResultObject(Long accountId, String typeName, String currState, int i, Long uploadId){
+	public ExtractJobResultObject(Long accountId, String typeName, String currState, int uploadPercent, Long uploadId){
 		this.accountId = accountId;
 		this.name = typeName;
 		this.state = currState;
 		this.id = uploadId;
-		this.uploadPercent = i;
+		this.uploadPercent = uploadPercent;
 	}
 
+    public ExtractJobResultObject(Long accountId, String typeName, String currState, Long uploadId, String url){
+        this.accountId = accountId;
+        this.name = typeName;
+        this.state = currState;
+        this.id = uploadId;
+        this.url = url;
+    }	
+    
 	public ExtractJobResultObject(){		
 	}
 	
@@ -38,30 +46,6 @@ public class ExtractJobResultObject {
     @Param(name="result_string")
     String result_string;    
 
-    public int getUploadPercent() {
-		return uploadPercent;
-	}
-
-	public void setUploadPercent(int i) {
-		this.uploadPercent = i;
-	}
-
-	public String getUploadStatus() {
-		return uploadStatus;
-	}
-
-	public void setUploadStatus(String uploadStatus) {
-		this.uploadStatus = uploadStatus;
-	}
-
-	public String getResult_string() {
-		return result_string;
-	}
-
-	public void setResult_string(String resultString) {
-		result_string = resultString;
-	}
-
     @Param(name="created")
     private Date createdDate;
 
@@ -77,6 +61,45 @@ public class ExtractJobResultObject {
     @Param(name="zoneid")
     private Long zoneId;
 
+    @Param(name="zonename")
+    private String zoneName;
+
+    @Param(name="url")
+    private String url;
+    
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public int getUploadPercent() {
+        return uploadPercent;
+    }
+
+    public void setUploadPercent(int i) {
+        this.uploadPercent = i;
+    }
+
+    public String getUploadStatus() {
+        return uploadStatus;
+    }
+
+    public void setUploadStatus(String uploadStatus) {
+        this.uploadStatus = uploadStatus;
+    }
+
+    public String getResult_string() {
+        return result_string;
+    }
+
+    public void setResult_string(String resultString) {
+        result_string = resultString;
+    }
+
+    
     public Long getZoneId() {
 		return zoneId;
 	}
@@ -92,11 +115,6 @@ public class ExtractJobResultObject {
 	public void setZoneName(String zoneName) {
 		this.zoneName = zoneName;
 	}
-
-	@Param(name="zonename")
-    private String zoneName;
-
-	private long size;
 
 	public String getStorage() {
 		return storage;
@@ -120,10 +138,6 @@ public class ExtractJobResultObject {
 	
 	public String getName() {
 		return name;
-	}
-
-	public void setSize(long size) {
-		this.size = size;
 	}
           
     public void setCreatedDate(Date createdDate) {

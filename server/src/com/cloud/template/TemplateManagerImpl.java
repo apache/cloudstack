@@ -49,7 +49,9 @@ import com.cloud.api.commands.ExtractTemplateCmd;
 import com.cloud.api.commands.RegisterIsoCmd;
 import com.cloud.api.commands.RegisterTemplateCmd;
 import com.cloud.async.AsyncJobManager;
+import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
+import com.cloud.async.executor.ExtractJobResultObject;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
@@ -76,6 +78,8 @@ import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolVO;
+import com.cloud.storage.Upload;
+import com.cloud.storage.UploadVO;
 import com.cloud.storage.Upload.Type;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
@@ -87,6 +91,7 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
+import com.cloud.storage.dao.UploadDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
@@ -146,6 +151,7 @@ public class TemplateManagerImpl implements TemplateManager {
     @Inject VolumeDao _volumeDao;
     @Inject SnapshotDao _snapshotDao;
     @Inject DomainDao _domainDao;
+    @Inject UploadDao _uploadDao;
     long _routerTemplateId = -1;
     @Inject StorageManager _storageMgr;
     @Inject UserVmManager _vmMgr;
@@ -405,26 +411,30 @@ public class TemplateManagerImpl implements TemplateManager {
     }
 
     @Override
-    public void extract(ExtractIsoCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+    public Long extract(ExtractIsoCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, InternalErrorException {
         Account account = (Account)UserContext.current().getAccountObject();
         Long templateId = cmd.getId();
         Long zoneId = cmd.getZoneId();
         String url = cmd.getUrl();
-
-        extract(account, templateId, url, zoneId, true, cmd.getJob(), cmd.getAsyncJobManager());
+        String mode = cmd.getMode();
+        Long eventId = cmd.getStartEventId();
+        
+        return extract(account, templateId, url, zoneId, mode, eventId, true, cmd.getJob(), cmd.getAsyncJobManager());
     }
 
     @Override
-    public void extract(ExtractTemplateCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+    public Long extract(ExtractTemplateCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, InternalErrorException {
         Account account = (Account)UserContext.current().getAccountObject();
         Long templateId = cmd.getId();
         Long zoneId = cmd.getZoneId();
         String url = cmd.getUrl();
+        String mode = cmd.getMode();
+        Long eventId = cmd.getStartEventId();
 
-        extract(account, templateId, url, zoneId, true, cmd.getJob(), cmd.getAsyncJobManager());
+        return extract(account, templateId, url, zoneId, mode, eventId, false, cmd.getJob(), cmd.getAsyncJobManager());
     }
 
-    private void extract(Account account, Long templateId, String url, Long zoneId, boolean isISO, AsyncJobVO job, AsyncJobManager mgr) throws InvalidParameterValueException, PermissionDeniedException {
+    private Long extract(Account account, Long templateId, String url, Long zoneId, String mode, Long eventId, boolean isISO, AsyncJobVO job, AsyncJobManager mgr) throws InvalidParameterValueException, PermissionDeniedException, InternalErrorException {
         String desc = "template";
         if (isISO) {
             desc = "ISO";
@@ -432,10 +442,10 @@ public class TemplateManagerImpl implements TemplateManager {
 
         VMTemplateVO template = _tmpltDao.findById(templateId);
         if (template == null) {
-            throw new InvalidParameterValueException("Unable to find template with id " + templateId);
+            throw new InvalidParameterValueException("Unable to find " +desc+ " with id " + templateId);
         }
         if (template.getName().startsWith("xs-tools") ){
-            throw new InvalidParameterValueException("Unable to extract the " + desc + " " + template.getName() + " It is not allowed");
+            throw new InvalidParameterValueException("Unable to extract the ISO " + template.getName() + " It is not allowed");
         }
         if (isISO) {
             if (template.getFormat() != ImageFormat.ISO ){
@@ -451,33 +461,6 @@ public class TemplateManagerImpl implements TemplateManager {
             throw new IllegalArgumentException("Please specify a valid zone.");
         }
 
-        if (url.toLowerCase().contains("file://")){
-            throw new InvalidParameterValueException("file:// type urls are currently unsupported");
-        }
-
-        URI uri = null;
-        try {
-            uri = new URI(url);
-            if ((uri.getScheme() == null) || (!uri.getScheme().equalsIgnoreCase("ftp") )) {
-               throw new InvalidParameterValueException("Unsupported scheme for url: " + url);
-            }
-        } catch (URISyntaxException ex) {
-            throw new InvalidParameterValueException("Invalid url given: " + url);
-        }
-
-        String host = uri.getHost();
-        try {
-            InetAddress hostAddr = InetAddress.getByName(host);
-            if (hostAddr.isAnyLocalAddress() || hostAddr.isLinkLocalAddress() || hostAddr.isLoopbackAddress() || hostAddr.isMulticastAddress() ) {
-                throw new InvalidParameterValueException("Illegal host specified in url");
-            }
-            if (hostAddr instanceof Inet6Address) {
-                throw new InvalidParameterValueException("IPV6 addresses not supported (" + hostAddr.getHostAddress() + ")");
-            }
-        } catch (UnknownHostException uhe) {
-            throw new InvalidParameterValueException("Unable to resolve " + host);
-        }
-                
         if (account != null) {                  
             if(!isAdmin(account.getType())){
                 if (template.getAccountId() != account.getId()){
@@ -486,7 +469,7 @@ public class TemplateManagerImpl implements TemplateManager {
             } else {
                 Account userAccount = _accountDao.findById(template.getAccountId());
                 if((userAccount == null) || !_domainDao.isChildDomain(account.getDomainId(), userAccount.getDomainId())) {
-                    throw new PermissionDeniedException("Unable to extract " + desc + " " + templateId + " to " + url + ", permission denied.");
+                    throw new PermissionDeniedException("Unable to extract " + desc + "=" + templateId + " - permission denied.");
                 }
             }
         }
@@ -499,21 +482,68 @@ public class TemplateManagerImpl implements TemplateManager {
                 throw new InvalidParameterValueException("The " + desc + " has not been downloaded ");
             }
         }
-
-        if ( _uploadMonitor.isTypeUploadInProgress(templateId, isISO ? Type.ISO : Type.TEMPLATE) ){
-            throw new IllegalArgumentException(template.getName() + " upload is in progress. Please wait for some time to schedule another upload for the same"); 
+        
+        Upload.Mode extractMode;
+        if( mode == null || (!mode.equals(Upload.Mode.FTP_UPLOAD.toString()) && !mode.equals(Upload.Mode.HTTP_DOWNLOAD.toString())) ){
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please specify a valid extract Mode ");
+        }else{
+            extractMode = mode.equals(Upload.Mode.FTP_UPLOAD.toString()) ? Upload.Mode.FTP_UPLOAD : Upload.Mode.HTTP_DOWNLOAD;
         }
-
+        
         long userId = UserContext.current().getUserId();
         long accountId = template.getAccountId();
-        String event = isISO ? EventTypes.EVENT_ISO_UPLOAD : EventTypes.EVENT_TEMPLATE_UPLOAD;
-        long eventId = EventUtils.saveScheduledEvent(userId, accountId, event, "Extraction job");
-  
-// FIXME:  scheduled event should've already been saved, we should be saving this started event here...
-//        String event = template.getFormat() == ImageFormat.ISO ? EventTypes.EVENT_ISO_UPLOAD : EventTypes.EVENT_TEMPLATE_UPLOAD;
-//        EventUtils.saveStartedEvent(template.getAccountId(), template.getAccountId(), event, "Starting upload of " +template.getName()+ " to " +url, cmd.getStartEventId());
-
-        extract(template, url, tmpltHostRef, zoneId, eventId, job.getId(), mgr);
+        String event = isISO ? EventTypes.EVENT_ISO_EXTRACT : EventTypes.EVENT_TEMPLATE_EXTRACT;
+        if (extractMode == Upload.Mode.FTP_UPLOAD){
+            URI uri = null;
+            try {
+                uri = new URI(url);
+                if ((uri.getScheme() == null) || (!uri.getScheme().equalsIgnoreCase("ftp") )) {
+                   throw new InvalidParameterValueException("Unsupported scheme for url: " + url);
+                }
+            } catch (URISyntaxException ex) {
+                throw new InvalidParameterValueException("Invalid url given: " + url);
+            }
+    
+            String host = uri.getHost();
+            try {
+                InetAddress hostAddr = InetAddress.getByName(host);
+                if (hostAddr.isAnyLocalAddress() || hostAddr.isLinkLocalAddress() || hostAddr.isLoopbackAddress() || hostAddr.isMulticastAddress() ) {
+                    throw new InvalidParameterValueException("Illegal host specified in url");
+                }
+                if (hostAddr instanceof Inet6Address) {
+                    throw new InvalidParameterValueException("IPV6 addresses not supported (" + hostAddr.getHostAddress() + ")");
+                }
+            } catch (UnknownHostException uhe) {
+                throw new InvalidParameterValueException("Unable to resolve " + host);
+            }
+                    
+            if ( _uploadMonitor.isTypeUploadInProgress(templateId, isISO ? Type.ISO : Type.TEMPLATE) ){
+                throw new IllegalArgumentException(template.getName() + " upload is in progress. Please wait for some time to schedule another upload for the same"); 
+            }
+        
+            //long eventId = EventUtils.saveScheduledEvent(userId, accountId, event, "Extraction job");
+      
+    // FIXME:  scheduled event should've already been saved, we should be saving this started event here...
+    //        String event = template.getFormat() == ImageFormat.ISO ? EventTypes.EVENT_ISO_UPLOAD : EventTypes.EVENT_TEMPLATE_UPLOAD;
+    //        EventUtils.saveStartedEvent(template.getAccountId(), template.getAccountId(), event, "Starting upload of " +template.getName()+ " to " +url, cmd.getStartEventId());
+           
+            EventUtils.saveStartedEvent(userId, accountId, event, "Starting extraction of " +template.getName()+ " mode= " +extractMode.toString(), eventId);
+            extract(template, url, tmpltHostRef, zoneId, eventId, job.getId(), mgr);
+            return 1L; //FIX ME
+        }
+        
+        EventUtils.saveStartedEvent(userId, accountId, event, "Starting extraction of " +template.getName()+ " in mode:" +extractMode.toString(), eventId);
+        UploadVO vo = _uploadMonitor.createEntityDownloadURL(template, tmpltHostRef, zoneId, eventId);
+        if (vo!=null){
+            ExtractJobResultObject resultObject = new ExtractJobResultObject(template.getAccountId(), template.getName(), Upload.Status.DOWNLOAD_URL_CREATED.toString(), vo.getId(), url);
+            mgr.completeAsyncJob(job.getId(), AsyncJobResult.STATUS_SUCCEEDED, 1, resultObject);            
+            EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_INFO, event, "Completed extraction of "+template.getName()+ " in mode:" +extractMode.toString(), null, eventId);
+            return vo.getId();
+        }else{
+            EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_ERROR, event, "Failed extraction of "+template.getName()+ " in mode:" +extractMode.toString(), null, eventId);
+            mgr.completeAsyncJob(job.getId(), AsyncJobResult.STATUS_FAILED, 2, null);
+            return null;
+        }
     }
 
     @Override

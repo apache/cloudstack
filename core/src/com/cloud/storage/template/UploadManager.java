@@ -1,5 +1,9 @@
 package com.cloud.storage.template;
 
+import com.cloud.agent.api.storage.CreateEntityDownloadURLAnswer;
+import com.cloud.agent.api.storage.CreateEntityDownloadURLCommand;
+import com.cloud.agent.api.storage.DeleteEntityDownloadURLAnswer;
+import com.cloud.agent.api.storage.DeleteEntityDownloadURLCommand;
 import com.cloud.agent.api.storage.UploadAnswer;
 import com.cloud.agent.api.storage.UploadCommand;
 import com.cloud.storage.StorageResource;
@@ -60,5 +64,10 @@ public interface UploadManager extends Manager {
 			ImageFormat format, Long accountId, String descr,
 			String cksum, String installPathPrefix, String user,
 			String password, long maxTemplateSizeInBytes);
+	
+
+    CreateEntityDownloadURLAnswer handleCreateEntityURLCommand(CreateEntityDownloadURLCommand cmd);
+    
+    DeleteEntityDownloadURLAnswer handleDeleteEntityDownloadURLCommand(DeleteEntityDownloadURLCommand cmd);
 	
 }

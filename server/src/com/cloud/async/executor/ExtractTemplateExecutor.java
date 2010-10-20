@@ -25,8 +25,7 @@ public class ExtractTemplateExecutor extends BaseAsyncJobExecutor {
  
     	/*
 		try {		
-				managementServer.extractTemplate(param.getUrl(), param.getTemplateId(), param.getZoneId(), param.getEventId(), getJob().getId());						
-		
+				managementServer.extractTemplate(param.getUrl(), param.getTemplateId(), param.getZoneId(), param.getEventId(), getJob().getId(), param.getExtractMode());		
 		} catch (Exception e) {
 			s_logger.warn("Unable to extract template: " + e.getMessage(), e);
     		asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR, e.getMessage());

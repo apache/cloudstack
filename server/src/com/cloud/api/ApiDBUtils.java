@@ -47,6 +47,7 @@ import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
+import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
@@ -55,6 +56,7 @@ import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.StoragePoolDao;
+import com.cloud.storage.dao.UploadDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -109,6 +111,7 @@ public class ApiDBUtils {
     private static StoragePoolDao _storagePoolDao;
     private static VMTemplateDao _templateDao;
     private static VMTemplateHostDao _templateHostDao;
+    private static UploadDao _uploadDao;
     private static UserDao _userDao;
     private static UserStatisticsDao _userStatsDao;
     private static UserVmDao _userVmDao;
@@ -147,6 +150,7 @@ public class ApiDBUtils {
         _storagePoolDao = locator.getDao(StoragePoolDao.class);
         _templateDao = locator.getDao(VMTemplateDao.class);
         _templateHostDao = locator.getDao(VMTemplateHostDao.class);
+        _uploadDao = locator.getDao(UploadDao.class);
         _userDao = locator.getDao(UserDao.class);
         _userStatsDao = locator.getDao(UserStatisticsDao.class);
         _userVmDao = locator.getDao(UserVmDao.class);
@@ -368,7 +372,11 @@ public class ApiDBUtils {
             return _templateHostDao.findByHostTemplate(secondaryStorageHost.getId(), templateId);
         }
     }
-
+    
+    public static UploadVO findUploadById(Long id){
+        return _uploadDao.findById(id);
+    }
+    
     public static User findUserById(Long userId) {
         return _userDao.findById(userId);
     }

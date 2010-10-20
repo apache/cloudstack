@@ -192,6 +192,6 @@ public interface TemplateManager extends Manager {
     boolean deleteIso(DeleteIsoCmd cmd) throws InvalidParameterValueException, InternalErrorException, PermissionDeniedException;
 
 	void extract(VMTemplateVO template, String url, VMTemplateHostVO tmpltHostRef, Long zoneId, long eventId, long asyncJobId, AsyncJobManager asyncMgr);
-    void extract(ExtractIsoCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
-    void extract(ExtractTemplateCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+    Long extract(ExtractIsoCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, InternalErrorException;
+    Long extract(ExtractTemplateCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, InternalErrorException;
 }

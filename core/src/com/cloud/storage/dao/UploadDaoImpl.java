@@ -6,6 +6,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.storage.UploadVO;
 import com.cloud.storage.Upload.Status;
+import com.cloud.storage.Upload.Mode;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -15,6 +16,7 @@ public class UploadDaoImpl extends GenericDaoBase<UploadVO, Long> implements Upl
 	public static final Logger s_logger = Logger.getLogger(UploadDaoImpl.class.getName());
 	protected final SearchBuilder<UploadVO> typeUploadStatusSearch;
 	protected final SearchBuilder<UploadVO> typeHostAndUploadStatusSearch;
+	protected final SearchBuilder<UploadVO> typeModeAndStatusSearch;
 	
 	protected static final String UPDATE_UPLOAD_INFO =
 		"UPDATE upload SET upload_state = ?, upload_pct= ?, last_updated = ? "
@@ -37,6 +39,12 @@ public class UploadDaoImpl extends GenericDaoBase<UploadVO, Long> implements Upl
 		typeHostAndUploadStatusSearch.and("host_id", typeHostAndUploadStatusSearch.entity().getHostId(), SearchCriteria.Op.EQ);
 		typeHostAndUploadStatusSearch.and("upload_state", typeHostAndUploadStatusSearch.entity().getUploadState(), SearchCriteria.Op.EQ);
 		typeHostAndUploadStatusSearch.done();
+		
+		typeModeAndStatusSearch = createSearchBuilder();
+		typeModeAndStatusSearch.and("mode", typeModeAndStatusSearch.entity().getMode(), SearchCriteria.Op.EQ);
+		typeModeAndStatusSearch.and("upload_state", typeModeAndStatusSearch.entity().getUploadState(), SearchCriteria.Op.EQ);
+		typeModeAndStatusSearch.done();
+		
 	}
 	
 	@Override
@@ -54,5 +62,13 @@ public class UploadDaoImpl extends GenericDaoBase<UploadVO, Long> implements Upl
         sc.setParameters("host_id", sserverId);
         sc.setParameters("upload_state", uploadState.toString());
         return listBy(sc);
+	}
+	
+	@Override
+	public List<UploadVO> listByModeAndStatus(Mode mode, Status uploadState){
+	    SearchCriteria<UploadVO> sc = typeModeAndStatusSearch.create();
+	    sc.setParameters("mode", mode.toString());
+	    sc.setParameters("upload_state", uploadState.toString());
+	    return listBy(sc);
 	}
 }

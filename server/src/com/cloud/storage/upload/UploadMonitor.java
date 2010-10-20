@@ -21,6 +21,7 @@ package com.cloud.storage.upload;
 import java.util.Map;
 
 import com.cloud.async.AsyncJobManager;
+import com.cloud.exception.InternalErrorException;
 import com.cloud.host.HostVO;
 import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateHostVO;
@@ -54,5 +55,8 @@ public interface UploadMonitor extends Manager{
     void extractVolume(UploadVO uploadVolumeObj, HostVO sserver, VolumeVO volume, String url,
             Long dataCenterId, String installPath, long eventId,
             long asyncJobId, AsyncJobManager asyncMgr);
+
+    UploadVO createEntityDownloadURL(VMTemplateVO template,
+            VMTemplateHostVO vmTemplateHost, Long dataCenterId, long eventId) throws InternalErrorException;
 
 }

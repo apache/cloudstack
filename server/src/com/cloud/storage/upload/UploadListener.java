@@ -372,9 +372,9 @@ public class UploadListener implements Listener {
 			asyncMgr.updateAsyncJobAttachment(asyncJobId, type.toString(), 1L);
 			asyncMgr.updateAsyncJobStatus(asyncJobId, AsyncJobResult.STATUS_IN_PROGRESS, resultObj);
 		}else if(answer.getUploadStatus() == Status.UPLOADED){
-			asyncMgr.completeAsyncJob(asyncJobId, AsyncJobResult.STATUS_SUCCEEDED, 0, resultObj);
+			asyncMgr.completeAsyncJob(asyncJobId, AsyncJobResult.STATUS_SUCCEEDED, 1, resultObj);
 		}else{
-			asyncMgr.completeAsyncJob(asyncJobId, AsyncJobResult.STATUS_FAILED, 0, resultObj);
+			asyncMgr.completeAsyncJob(asyncJobId, AsyncJobResult.STATUS_FAILED, 2, resultObj);
 		}
         UploadVO updateBuilder = uploadDao.createForUpdate();
 		updateBuilder.setUploadPercent(answer.getUploadPct());

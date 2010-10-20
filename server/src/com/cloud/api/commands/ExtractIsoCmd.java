@@ -18,6 +18,7 @@
 package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
+import org.junit.runners.Parameterized.Parameters;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
@@ -26,6 +27,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.ExtractResponse;
 import com.cloud.event.EventTypes;
+import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
 
@@ -42,12 +44,14 @@ public class ExtractIsoCmd extends BaseAsyncCmd {
     @Parameter(name="id", type=CommandType.LONG, required=true, description="the ID of the ISO file")
     private Long id;
 
-    //FIXME - add description
-    @Parameter(name="url", type=CommandType.STRING, required=true)
+    @Parameter(name="url", type=CommandType.STRING, required=false, description="the url to which the ISO would be extracted")
     private String url;
 
     @Parameter(name="zoneid", type=CommandType.LONG, required=true, description="the ID of the zone where the ISO is originally located")
     private Long zoneId;
+    
+    @Parameter(name="mode", type=CommandType.STRING, required=true, description="the mode of extraction - HTTP_DOWNLOAD or FTP_UPLOAD")
+    private String mode;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -65,6 +69,9 @@ public class ExtractIsoCmd extends BaseAsyncCmd {
         return zoneId;
     }
 
+    public String getMode() {
+        return mode;
+    }
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -83,7 +90,7 @@ public class ExtractIsoCmd extends BaseAsyncCmd {
     public long getAccountId() {
         VMTemplateVO iso = ApiDBUtils.findTemplateById(getId());
         if (iso != null) {
-            return iso.getId();
+            return iso.getAccountId();
         }
 
         // invalid id, parent this command to SYSTEM so ERROR events are tracked
@@ -97,8 +104,21 @@ public class ExtractIsoCmd extends BaseAsyncCmd {
 
     @Override @SuppressWarnings("unchecked")
     public ExtractResponse getResponse() {
-        ExtractResponse response = (ExtractResponse)getResponseObject();
+        Long uploadId = (Long)getResponseObject();
+        UploadVO uploadInfo = ApiDBUtils.findUploadById(uploadId);
+        
+        ExtractResponse response = new ExtractResponse();
         response.setResponseName(getName());
+        response.setId(id);
+        response.setName(ApiDBUtils.findTemplateById(id).getName());        
+        response.setZoneId(zoneId);
+        response.setZoneName(ApiDBUtils.findZoneById(zoneId).getName());
+        response.setMode(mode);
+        response.setUploadId(uploadId);
+        response.setState(uploadInfo.getUploadState().toString());
+        response.setAccountId(getAccountId());        
+        //FIX ME - Need to set the url once the gson jar is upgraded since it is throwing an error right now due to a bug.
+        //response.setUrl(uploadInfo.getUploadUrl());         
         return response;
     }
 

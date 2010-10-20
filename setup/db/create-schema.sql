@@ -633,6 +633,7 @@ CREATE TABLE  `cloud`.`upload` (
   `host_id` bigint unsigned NOT NULL,
   `type_id` bigint unsigned NOT NULL,
   `type` varchar(255),
+  `mode` varchar(255),
   `created` DATETIME NOT NULL,
   `last_updated` DATETIME,
   `job_id` varchar(255),

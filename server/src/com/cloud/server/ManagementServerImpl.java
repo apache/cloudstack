@@ -219,6 +219,8 @@ import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.storage.Snapshot;
+import com.cloud.storage.Upload;
+import com.cloud.storage.Volume;
 import com.cloud.storage.Snapshot.SnapshotType;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotVO;
@@ -231,7 +233,6 @@ import com.cloud.storage.StorageStats;
 import com.cloud.storage.Upload.Type;
 import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.VolumeStats;
 import com.cloud.storage.VolumeVO;
@@ -248,6 +249,7 @@ import com.cloud.storage.dao.UploadDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateDao.TemplateFilter;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.download.DownloadMonitor;
 import com.cloud.storage.preallocatedlun.PreallocatedLunVO;
 import com.cloud.storage.preallocatedlun.dao.PreallocatedLunDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
@@ -464,7 +466,7 @@ public class ManagementServerImpl implements ManagementServer {
         _tmpltMgr = locator.getManager(TemplateManager.class);
         _snapMgr = locator.getManager(SnapshotManager.class);
         _networkGroupMgr = locator.getManager(NetworkGroupManager.class);
-        _uploadMonitor = locator.getManager(UploadMonitor.class);                
+        _uploadMonitor = locator.getManager(UploadMonitor.class);        
         
         _userAuthenticators = locator.getAdapters(UserAuthenticator.class);
         if (_userAuthenticators == null || !_userAuthenticators.isSet()) {
@@ -3536,6 +3538,7 @@ public class ManagementServerImpl implements ManagementServer {
             } else {
                 domainId = ((account == null) ? DomainVO.ROOT_DOMAIN : account.getDomainId());
             }
+
         } else {
             accountName = account.getAccountName();
             accountId = account.getId();

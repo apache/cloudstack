@@ -45,6 +45,9 @@ import com.cloud.agent.api.SecStorageSetupCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.SecStorageFirewallCfgCommand.PortConfig;
+import com.cloud.agent.api.storage.CreateEntityDownloadURLAnswer;
+import com.cloud.agent.api.storage.CreateEntityDownloadURLCommand;
+import com.cloud.agent.api.storage.DeleteEntityDownloadURLCommand;
 import com.cloud.agent.api.storage.DeleteTemplateCommand;
 import com.cloud.agent.api.storage.DownloadCommand;
 import com.cloud.agent.api.storage.DownloadProgressCommand;
@@ -117,7 +120,11 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return _dlMgr.handleDownloadCommand((DownloadCommand)cmd);
         }else if (cmd instanceof UploadCommand) {        	
             return _upldMgr.handleUploadCommand((UploadCommand)cmd);
-        } else if (cmd instanceof GetStorageStatsCommand) {
+        }else if (cmd instanceof CreateEntityDownloadURLCommand){
+            return _upldMgr.handleCreateEntityURLCommand((CreateEntityDownloadURLCommand)cmd);
+        }else if(cmd instanceof DeleteEntityDownloadURLCommand){
+            return _upldMgr.handleDeleteEntityDownloadURLCommand((DeleteEntityDownloadURLCommand)cmd);
+        }else if (cmd instanceof GetStorageStatsCommand) {
         	return execute((GetStorageStatsCommand)cmd);
         } else if (cmd instanceof CheckHealthCommand) {
             return new CheckHealthAnswer((CheckHealthCommand)cmd, true);

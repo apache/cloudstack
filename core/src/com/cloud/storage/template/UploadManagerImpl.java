@@ -1,7 +1,6 @@
 package com.cloud.storage.template;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
@@ -12,20 +11,22 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.api.storage.CreateEntityDownloadURLAnswer;
+import com.cloud.agent.api.storage.CreateEntityDownloadURLCommand;
+import com.cloud.agent.api.storage.DeleteEntityDownloadURLAnswer;
+import com.cloud.agent.api.storage.DeleteEntityDownloadURLCommand;
 import com.cloud.agent.api.storage.UploadAnswer;
 import com.cloud.agent.api.storage.UploadProgressCommand;
-import com.cloud.agent.api.storage.UploadCommand;
-import com.cloud.agent.api.storage.UploadAnswer;
 import com.cloud.agent.api.storage.UploadCommand;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.StorageResource;
 import com.cloud.storage.UploadVO;
-import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.template.TemplateUploader.UploadCompleteCallback;
 import com.cloud.storage.template.TemplateUploader.Status;
@@ -33,6 +34,7 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.UUID;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
@@ -152,18 +154,19 @@ public class UploadManagerImpl implements UploadManager {
            return templatesize;
        }
    }
-   public static final Logger s_logger = Logger.getLogger(UploadManagerImpl.class);
-   private ExecutorService threadPool;
-   private final Map<String, UploadJob> jobs = new ConcurrentHashMap<String, UploadJob>();
-	private String parentDir;
-	private Adapters<Processor> _processors;
-	private String publicTemplateRepo;
-	private StorageLayer _storage;
-	private int installTimeoutPerGig;
-	private boolean _sslCopy;
-	private String _name;
-	private boolean hvm;
-   
+       public static final Logger s_logger = Logger.getLogger(UploadManagerImpl.class);
+       private ExecutorService threadPool;
+       private final Map<String, UploadJob> jobs = new ConcurrentHashMap<String, UploadJob>();
+       private String parentDir;
+       private Adapters<Processor> _processors;
+       private String publicTemplateRepo;
+       private StorageLayer _storage;
+       private int installTimeoutPerGig;
+       private boolean _sslCopy;
+       private String _name;
+       private boolean hvm;
+     	   
+	
 	@Override
 	public String uploadPublicTemplate(long id, String url, String name,
 			ImageFormat format, Long accountId, String descr,
@@ -320,6 +323,52 @@ public class UploadManagerImpl implements UploadManager {
         return new UploadAnswer(jobId, getUploadPct(jobId), getUploadError(jobId), getUploadStatus2(jobId), getUploadLocalPath(jobId), getInstallPath(jobId),
                 getUploadTemplateSize(jobId));
     }
+    
+    @Override
+    public CreateEntityDownloadURLAnswer handleCreateEntityURLCommand(CreateEntityDownloadURLCommand cmd){
+        
+        // Create the directory structure so that its visible under apache server root
+        Script command = new Script("mkdir", s_logger);
+        command.add("-p");
+        command.add("/var/www/html/");
+        String result = command.execute();
+        if (result != null) {
+            String errorString = "Error in creating directory =" + result;
+            s_logger.warn(errorString);
+            return new CreateEntityDownloadURLAnswer(errorString, CreateEntityDownloadURLAnswer.RESULT_FAILURE);
+        }
+        
+        // Create a symbolic link from the actual directory to the template location
+        cmd.getInstallPath();
+        command = new Script("/bin/bash", s_logger);
+        command.add("-c");
+        command.add("ln -sf " + publicTemplateRepo + cmd.getInstallPath() + " /var/www/html/");
+        result = command.execute();
+        if (result != null) {
+            String errorString = "Error in linking  err=" + result; 
+            s_logger.warn(errorString);
+            return new CreateEntityDownloadURLAnswer(errorString, CreateEntityDownloadURLAnswer.RESULT_FAILURE);
+        }
+        
+        return new CreateEntityDownloadURLAnswer("", CreateEntityDownloadURLAnswer.RESULT_SUCCESS);
+        
+    }
+    
+    @Override
+    public DeleteEntityDownloadURLAnswer handleDeleteEntityDownloadURLCommand(DeleteEntityDownloadURLCommand cmd){
+
+        s_logger.debug("handleDeleteEntityDownloadURLCommand "+cmd.getPath());
+        Script command = new Script("/bin/bash", s_logger);
+        command.add("-c");
+        command.add("unlink /var/www/html/"+cmd.getPath());
+        String result = command.execute();
+        if (result != null) {
+            String errorString = "Error in deleting =" + result;
+            s_logger.warn(errorString);
+            return new DeleteEntityDownloadURLAnswer(errorString, CreateEntityDownloadURLAnswer.RESULT_FAILURE);
+        }
+        return new DeleteEntityDownloadURLAnswer("", CreateEntityDownloadURLAnswer.RESULT_SUCCESS);
+    }
 
 	private String getInstallPath(String jobId) {
 		// TODO Auto-generated method stub
@@ -375,9 +424,9 @@ public class UploadManagerImpl implements UploadManager {
         configureFolders(name, params);
         String inSystemVM = (String)params.get("secondary.storage.vm");
         if (inSystemVM != null && "true".equalsIgnoreCase(inSystemVM)) {
-        	s_logger.info("UploadManager: starting additional services since we are inside system vm");
-        	startAdditionalServices();
-        	blockOutgoingOnPrivate();
+        	//s_logger.info("UploadManager: starting additional services since we are inside system vm");
+        	//startAdditionalServices();
+        	//blockOutgoingOnPrivate();
         }
 
         value = (String) params.get("install.timeout.pergig");
@@ -407,6 +456,7 @@ public class UploadManagerImpl implements UploadManager {
         processors.add(processor);
         // Add more processors here.
         threadPool = Executors.newFixedThreadPool(numInstallThreads);
+
         return true;
 	}
 	
