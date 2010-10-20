@@ -280,7 +280,6 @@ function templateJsonToDetailsTab(jsonObj) {
     
     // action Edit, Copy, Create VM 			
 	if ((isUser() && jsonObj.ispublic == "true" && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) || jsonObj.id==DomRTemplateId || jsonObj.isready == "false") {
-		//template.find("#template_edit_container, #template_copy_container, #template_create_vm_container").hide(); 
 		//$("#edit_button").hide();		
     }
     else {

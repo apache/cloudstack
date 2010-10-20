@@ -84,11 +84,6 @@ function afterLoadIsoJSP() {
         return false;
     });
     
-    //edit button ***
-    var $readonlyFields  = $detailsTab.find("#name, #displaytext");
-    var $editFields = $detailsTab.find("#name_edit, #displaytext_edit"); 
-    initializeEditFunction($readonlyFields, $editFields, doUpdateIso); 
-       
     //populate dropdown ***
     var addIsoZoneField = $("#dialog_add_iso #add_iso_zone");    	
 	if (isAdmin())  
@@ -219,10 +214,11 @@ function isoJsonToDetailsTab(jsonObj) {
     
     // "Edit", "Copy", "Create VM" 
 	if ((isUser() && jsonObj.ispublic == "true" && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) || jsonObj.isready == "false") {		
-		$("#edit_button").hide();
+		//$("#edit_button").hide();
     }
     else {        
-        $("#edit_button").show();
+        buildActionLinkForDetailsTab("Edit ISO", isoActionMap, $actionMenu, midmenuId);		
+        //$("#edit_button").show();
         buildActionLinkForDetailsTab("Copy ISO", isoActionMap, $actionMenu, midmenuId);		
         noAvailableActions = false;
     }
@@ -274,6 +270,9 @@ function isoClearDetailsTab() {
 }
 
 var isoActionMap = {  
+    "Edit ISO": {
+        dialogBeforeActionFn : doEditISO  
+    },
     "Delete ISO": {                  
         isAsyncJob: true,
         asyncJobResponse: "deleteisosresponse",
@@ -303,7 +302,31 @@ var isoActionMap = {
     }  
 }   
 
-function doUpdateIso() { 
+function doEditISO() {   
+    var $detailsTab = $("#right_panel_content #tab_content_details");  
+    var $readonlyFields  = $detailsTab.find("#name, #displaytext");
+    var $editFields = $detailsTab.find("#name_edit, #displaytext_edit"); 
+           
+    $readonlyFields.hide();
+    $editFields.show();  
+    $detailsTab.find("#cancel_button, #save_button").show();
+    
+    $detailsTab.find("#cancel_button").unbind("click").bind("click", function(event){    
+        $editFields.hide();
+        $readonlyFields.show();   
+        $("#save_button, #cancel_button").hide();       
+        return false;
+    });
+    $detailsTab.find("#save_button").unbind("click").bind("click", function(event){        
+        doEditISO2($detailsTab);     
+        $editFields.hide();      
+        $readonlyFields.show();       
+        $("#save_button, #cancel_button").hide();       
+        return false;
+    });   
+}
+
+function doEditISO2($detailsTab) { 
     var $detailsTab = $("#right_panel_content #tab_content_details");      
     
     // validate values
