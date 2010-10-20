@@ -77,6 +77,8 @@ public class ListSnapshotsCmd extends BaseCmd {
         Integer page = (Integer)params.get(BaseCmd.Properties.PAGE.getName());
         Integer pageSize = (Integer)params.get(BaseCmd.Properties.PAGESIZE.getName());
 
+        boolean isAdmin = false;
+
         //Verify parameters
         if(volumeId != null){
         	VolumeVO volume = getManagementServer().findAnyVolumeById(volumeId);
@@ -95,6 +97,11 @@ public class ListSnapshotsCmd extends BaseCmd {
         
         if( account != null && !isAdmin(account.getType())) {
             accountId = account.getId();
+        } else {
+            isAdmin = true;
+            if (account != null) {
+                domainId = account.getDomainId();
+            }
         }
             
         Long startIndex = Long.valueOf(0);
@@ -116,6 +123,9 @@ public class ListSnapshotsCmd extends BaseCmd {
         c.addCriteria(Criteria.ID, id);
         c.addCriteria(Criteria.KEYWORD, keyword);
         c.addCriteria(Criteria.ACCOUNTID, accountId);
+        if (isAdmin) {
+            c.addCriteria(Criteria.DOMAINID, domainId);
+        }
 
         List<SnapshotVO> snapshots = null;
 		try {

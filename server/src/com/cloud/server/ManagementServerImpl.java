@@ -17,7 +17,6 @@
  */
 package com.cloud.server;
 
-import java.io.IOException;
 import java.math.BigInteger;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -25,7 +24,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.net.UnknownHostException;
-import java.rmi.ServerException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.DecimalFormat;
@@ -50,11 +48,6 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
-
-import netapp.manage.NaAPIFailedException;
-import netapp.manage.NaAuthenticationException;
-import netapp.manage.NaException;
-import netapp.manage.NaProtocolException;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
@@ -107,15 +100,15 @@ import com.cloud.async.executor.SecurityGroupParam;
 import com.cloud.async.executor.UpdateLoadBalancerParam;
 import com.cloud.async.executor.UpgradeVMParam;
 import com.cloud.async.executor.VMOperationParam;
-import com.cloud.async.executor.VolumeOperationParam;
 import com.cloud.async.executor.VMOperationParam.VmOp;
+import com.cloud.async.executor.VolumeOperationParam;
 import com.cloud.async.executor.VolumeOperationParam.VolumeOp;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ConfigurationVO;
-import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.configuration.ResourceCount.ResourceType;
+import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.consoleproxy.ConsoleProxyManager;
@@ -125,8 +118,8 @@ import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.PodVlanMapVO;
-import com.cloud.dc.VlanVO;
 import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
@@ -183,8 +176,8 @@ import com.cloud.pricing.dao.PricingDao;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.auth.UserAuthenticator;
 import com.cloud.service.ServiceOffering;
-import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.ServiceOffering.GuestIpType;
+import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.DiskTemplateVO;
@@ -194,22 +187,22 @@ import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.InsufficientStorageCapacityException;
 import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.storage.Snapshot;
+import com.cloud.storage.Snapshot.SnapshotType;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotScheduleVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
+import com.cloud.storage.Storage.FileSystem;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.VolumeStats;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.Snapshot.SnapshotType;
-import com.cloud.storage.Storage.FileSystem;
-import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.DiskTemplateDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
@@ -219,9 +212,9 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplateDao.TemplateFilter;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.dao.VMTemplateDao.TemplateFilter;
 import com.cloud.storage.preallocatedlun.PreallocatedLunVO;
 import com.cloud.storage.preallocatedlun.dao.PreallocatedLunDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
@@ -242,12 +235,12 @@ import com.cloud.user.dao.UserAccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.utils.DateUtil;
+import com.cloud.utils.DateUtil.IntervalType;
 import com.cloud.utils.EnumUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.StringUtils;
-import com.cloud.utils.DateUtil.IntervalType;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -271,9 +264,9 @@ import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VmStats;
-import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
@@ -6367,7 +6360,7 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public List<SnapshotVO> listSnapshots(Criteria c, String interval) throws InvalidParameterValueException {
         Filter searchFilter = new Filter(SnapshotVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
-        SearchCriteria sc = _snapshotDao.createSearchCriteria();
+        SearchBuilder<SnapshotVO> sb = _snapshotDao.createSearchBuilder();
 
         Object volumeId = c.getCriteria(Criteria.VOLUMEID);
         Object name = c.getCriteria(Criteria.NAME);
@@ -6375,44 +6368,9 @@ public class ManagementServerImpl implements ManagementServer {
         Object keyword = c.getCriteria(Criteria.KEYWORD);
         Object accountId = c.getCriteria(Criteria.ACCOUNTID);
         Object snapshotTypeStr = c.getCriteria(Criteria.TYPE);
-        
-        sc.addAnd("status", SearchCriteria.Op.EQ, Snapshot.Status.BackedUp);
-        
-        if(volumeId != null){
-            sc.addAnd("volumeId", SearchCriteria.Op.EQ, volumeId);
-        }
-        
-        if (name != null) {
-            sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + name + "%");
-        }
+        Object domainId = c.getCriteria(Criteria.DOMAINID);
 
-        if (id != null) {
-            sc.addAnd("id", SearchCriteria.Op.EQ, id);
-        }
-
-        if (keyword != null) {
-            SearchCriteria ssc = _snapshotDao.createSearchCriteria();
-            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            
-            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
-        }
-        
-        if (accountId != null) {
-            sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
-        }
-
-        if (snapshotTypeStr != null) {
-            SnapshotType snapshotType = SnapshotVO.getSnapshotType((String)snapshotTypeStr);
-            if (snapshotType == null) {
-                throw new InvalidParameterValueException("Unsupported snapshot type " + snapshotTypeStr);
-            }
-            sc.addAnd("snapshotType", SearchCriteria.Op.EQ, snapshotType.ordinal());
-        }
-        else {
-            // Show only MANUAL and RECURRING snapshot types
-            sc.addAnd("snapshotType", SearchCriteria.Op.NEQ, Snapshot.SnapshotType.TEMPLATE.ordinal());
-        }
-        if(interval != null && volumeId != null) {
+        if (interval != null && volumeId != null) {
             IntervalType intervalType =  DateUtil.IntervalType.getIntervalType(interval);
             if(intervalType == null) {
                 throw new InvalidParameterValueException("Unsupported interval type " + intervalType);
@@ -6425,6 +6383,64 @@ public class ManagementServerImpl implements ManagementServer {
             return _snapMgr.listSnapsforPolicy(snapPolicy.getId(), searchFilter);
         }
         
+        if ((accountId == null) && (domainId != null)) {
+            // if accountId isn't specified, we can do a domain match for the admin case
+            SearchBuilder<AccountVO> accountSearch = _accountDao.createSearchBuilder();
+            sb.join("accountSearch", accountSearch, sb.entity().getAccountId(), accountSearch.entity().getId());
+
+            SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
+            domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
+            accountSearch.join("domainSearch", domainSearch, accountSearch.entity().getDomainId(), domainSearch.entity().getId());
+        }
+
+        sb.and("status", sb.entity().getStatus(), SearchCriteria.Op.EQ);
+        sb.and("volumeId", sb.entity().getVolumeId(), SearchCriteria.Op.EQ);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
+        sb.and("snapshotTypeEQ", sb.entity().getSnapshotType(), SearchCriteria.Op.EQ);
+        sb.and("snapshotTypeNEQ", sb.entity().getSnapshotType(), SearchCriteria.Op.NEQ);
+
+        SearchCriteria sc = sb.create();
+        sc.setParameters("status", Snapshot.Status.BackedUp);
+
+        if (volumeId != null) {
+            sc.setParameters("volumeId", volumeId);
+        }
+
+        if (name != null) {
+            sc.setParameters("name", "%" + name + "%");
+        }
+
+        if (id != null) {
+            sc.setParameters("id", id);
+        }
+
+        if (keyword != null) {
+            SearchCriteria ssc = _snapshotDao.createSearchCriteria();
+            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            
+            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
+        }
+
+        if (accountId != null) {
+            sc.setParameters("accountId", accountId);
+        } else if (domainId != null) {
+            DomainVO domain = _domainDao.findById((Long)domainId);
+            SearchCriteria joinSearch = sc.getJoin("accountSearch");
+            joinSearch.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
+        }
+
+        if (snapshotTypeStr != null) {
+            SnapshotType snapshotType = SnapshotVO.getSnapshotType((String)snapshotTypeStr);
+            if (snapshotType == null) {
+                throw new InvalidParameterValueException("Unsupported snapshot type " + snapshotTypeStr);
+            }
+            sc.setParameters("snapshotTypeEQ", snapshotType.ordinal());
+        } else {
+            // Show only MANUAL and RECURRING snapshot types
+            sc.setParameters("snapshotTypeNEQ", Snapshot.SnapshotType.TEMPLATE.ordinal());
+        }
         return _snapshotDao.search(sc, searchFilter);
     }
 
