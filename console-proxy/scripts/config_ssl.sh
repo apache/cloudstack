@@ -20,8 +20,11 @@ config_apache2_conf() {
   local srvr=$2
   cp -f /etc/apache2/sites-available/default.orig /etc/apache2/sites-available/default
   cp -f /etc/apache2/sites-available/default-ssl.orig /etc/apache2/sites-available/default-ssl
-  sed -i -e "s/VirtualHost.*:80$/VirtualHost $ip:80/" /etc/httpd/conf/httpd.conf
-  sed -i  's/_default_/$ip/' /etc/apache2/sites-available/default-ssl
+  sed -i -e "s/<VirtualHost.*>/<VirtualHost $ip:80>/" /etc/apache2/sites-available/default
+  sed -i -e "s/<VirtualHost.*>/<VirtualHost $ip:443>/" /etc/apache2/sites-available/default-ssl
+  sed -i -e "s/Listen .*:80/Listen $ip:80/g" /etc/apache2/ports.conf
+  sed -i -e "s/Listen .*:443/Listen $ip:443/g" /etc/apache2/ports.conf
+  sed -i -e "s/NameVirtualHost .*:80/NameVirtualHost $ip:80/g" /etc/apache2/ports.conf
   sed -i  's/ssl-cert-snakeoil.key/realhostip.key/' /etc/apache2/sites-available/default-ssl
   sed -i  's/ssl-cert-snakeoil.pem/realhostip.crt/' /etc/apache2/sites-available/default-ssl
 }
