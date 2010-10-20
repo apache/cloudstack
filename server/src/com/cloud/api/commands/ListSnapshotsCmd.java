@@ -90,18 +90,11 @@ public class ListSnapshotsCmd extends BaseCmd {
         if (account == null) {
             if (domainId != null && accountName != null) {
                 account = getManagementServer().findAccountByName(accountName, domainId);
-                if( account == null ) {
-                    throw new ServerApiException (BaseCmd.SNAPSHOT_INVALID_PARAM_ERROR, "can not find Account by accountName " + accountName + " domainId " + domainId);
-                }
             }
         }
         
-        if( !isAdmin(account.getType())) {
+        if( account != null && !isAdmin(account.getType())) {
             accountId = account.getId();
-        }
-
-        if( domainId == null ) {
-            domainId = account.getDomainId();
         }
             
         Long startIndex = Long.valueOf(0);
@@ -143,19 +136,13 @@ public class ListSnapshotsCmd extends BaseCmd {
             snapshotData.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), snapshot.getId().toString()));
 
             Account acct = getManagementServer().findAccountById(Long.valueOf(snapshot.getAccountId()));
-            if (acct == null || acct.getDomainId() != domainId ){
-                continue;
+            if (acct != null) {
+                snapshotData.add(new Pair<String, Object>(BaseCmd.Properties.ACCOUNT.getName(), acct.getAccountName()));
+                snapshotData.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN_ID.getName(), acct.getDomainId().toString()));
+                snapshotData.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN.getName(), getManagementServer().findDomainIdById(acct.getDomainId()).getName()));
             }
             volumeId = snapshot.getVolumeId();
             VolumeVO volume = getManagementServer().findAnyVolumeById(volumeId);
-            if ( volume == null ){
-                continue;
-            }
-            snapshotData.add(new Pair<String, Object>(BaseCmd.Properties.ACCOUNT.getName(), acct.getAccountName()));
-            snapshotData.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN_ID.getName(), acct.getDomainId().toString()));
-            snapshotData.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN.getName(), getManagementServer()
-                    .findDomainIdById(acct.getDomainId()).getName()));
-
             String snapshotTypeStr = SnapshotType.values()[snapshot.getSnapshotType()].name();
             snapshotData.add(new Pair<String, Object>(BaseCmd.Properties.SNAPSHOT_TYPE.getName(), snapshotTypeStr));
             snapshotData.add(new Pair<String, Object>(BaseCmd.Properties.VOLUME_ID.getName(), volumeId));
