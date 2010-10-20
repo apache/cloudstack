@@ -87,7 +87,12 @@ function buildZoneTree() {
 			    showPage($("#pod_page"), jsonObj);	
 			    showMiddleMenu();	
 			    podJsonToDetailsTab(jsonObj);				
-				break;		
+								
+				var podId = jsonObj.id;
+			    $("#midmenu_container").empty();
+			    listMidMenuItems2(("listHosts&type=Routing&podid="+podId), "listhostsresponse", "host", hostToMidmenu, hostToRigntPanel, hostGetMidmenuId, true); 					
+				listMidMenuItems2(("listStoragePools&podid="+podId), "liststoragepoolsresponse", "storagepool", primarystorageToMidmenu, primarystorageToRigntPanel, primarystorageGetMidmenuId, false); 					
+	    		break;		
 				    
 			case "cluster_name" :	
 			    selectTreeNodeInLeftMenu(target.parent().parent().parent());			    
@@ -95,9 +100,10 @@ function buildZoneTree() {
 			    showPage($("#cluster_page"), jsonObj);
 			    showMiddleMenu();
 			    clusterJsonToDetailsTab(jsonObj);
+			    
 			    var clusterId = jsonObj.id;
 			    $("#midmenu_container").empty();
-			    listMidMenuItems2(("listHosts&clusterid="+clusterId), "listhostsresponse", "host", hostToMidmenu, hostToRigntPanel, hostGetMidmenuId, true); 					
+			    listMidMenuItems2(("listHosts&type=Routing&clusterid="+clusterId), "listhostsresponse", "host", hostToMidmenu, hostToRigntPanel, hostGetMidmenuId, true); 					
 				listMidMenuItems2(("listStoragePools&clusterid="+clusterId), "liststoragepoolsresponse", "storagepool", primarystorageToMidmenu, primarystorageToRigntPanel, primarystorageGetMidmenuId, false); 					
 	    		break;								
 						
