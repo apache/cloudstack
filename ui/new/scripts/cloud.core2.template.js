@@ -119,11 +119,6 @@ function afterLoadTemplateJSP() {
         return false;
     });
     
-    //edit button ***
-    var $readonlyFields  = $detailsTab.find("#name, #displaytext, #passwordenabled, #ispublic, #isfeatured, #ostypename");
-    var $editFields = $detailsTab.find("#name_edit, #displaytext_edit, #passwordenabled_edit, #ispublic_edit, #isfeatured_edit, #ostypename_edit");     
-    initializeEditFunction($readonlyFields, $editFields, doUpdateTemplate);      
-    
     //populate dropdown ***   			
 	var addTemplateZoneField = $("#dialog_add_template #add_template_zone");    	
 	if (isAdmin())  
@@ -286,10 +281,11 @@ function templateJsonToDetailsTab(jsonObj) {
     // action Edit, Copy, Create VM 			
 	if ((isUser() && jsonObj.ispublic == "true" && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) || jsonObj.id==DomRTemplateId || jsonObj.isready == "false") {
 		//template.find("#template_edit_container, #template_copy_container, #template_create_vm_container").hide(); 
-		$("#edit_button").hide();		
+		//$("#edit_button").hide();		
     }
     else {
-        $("#edit_button").show();
+        buildActionLinkForDetailsTab("Edit Template", templateActionMap, $actionMenu, midmenuItemId);      
+        //$("#edit_button").show();
         buildActionLinkForDetailsTab("Copy Template", templateActionMap, $actionMenu, midmenuItemId);			
         buildActionLinkForDetailsTab("Create VM", templateActionMap, $actionMenu, midmenuItemId);	
         noAvailableActions = false;		
@@ -360,6 +356,9 @@ function templateClearDetailsTab() {
 }
 
 var templateActionMap = {  
+    "Edit Template": {
+        dialogBeforeActionFn : doEditTemplate  
+    },
     "Delete Template": {              
         isAsyncJob: true,
         asyncJobResponse: "deletetemplateresponse",
@@ -392,9 +391,31 @@ var templateActionMap = {
 var DomRTemplateId = 1;
 
 
-function doUpdateTemplate() {    
+function doEditTemplate() {   
     var $detailsTab = $("#right_panel_content #tab_content_details");  
-            
+    var $readonlyFields  = $detailsTab.find("#name, #displaytext, #passwordenabled, #ispublic, #isfeatured, #ostypename");
+    var $editFields = $detailsTab.find("#name_edit, #displaytext_edit, #passwordenabled_edit, #ispublic_edit, #isfeatured_edit, #ostypename_edit");    
+        
+    $readonlyFields.hide();
+    $editFields.show();  
+    $detailsTab.find("#cancel_button, #save_button").show();
+    
+    $detailsTab.find("#cancel_button").unbind("click").bind("click", function(event){    
+        $editFields.hide();
+        $readonlyFields.show();   
+        $("#save_button, #cancel_button").hide();       
+        return false;
+    });
+    $detailsTab.find("#save_button").unbind("click").bind("click", function(event){        
+        doEditTemplate2($detailsTab);     
+        $editFields.hide();      
+        $readonlyFields.show();       
+        $("#save_button, #cancel_button").hide();       
+        return false;
+    });   
+}
+
+function doEditTemplate2($detailsTab) {               
     // validate values
     var isValid = true;					
     isValid &= validateString("Name", $detailsTab.find("#name_edit"), $detailsTab.find("#name_edit_errormsg"));
