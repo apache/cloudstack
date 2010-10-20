@@ -32,13 +32,7 @@
         <!-- Details tab (start)-->
         <div id="tab_content_details">        
             <div class="grid_actionpanel">
-	            <div class="grid_actionbox" id="action_link">
-	                <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
-	                    <ul class="actionsdropdown_boxlist" id="action_list">
-	                       <li><%=t.t("no.available.actions")%></li>
-	                    </ul>
-	                </div>
-	            </div>            
+	                        
 	            <div class="gridheader_loaderbox" id="spinning_wheel" style="border: 1px solid #999;
 	                display: none;">
 	                <div class="gridheader_loader" id="icon">
@@ -48,6 +42,16 @@
 	            </div>                  
 	        </div>              
             <div class="grid_container">
+            	<div class="grid_header">
+                    <div class="grid_header_title">Title</div>
+                    <div class="grid_actionbox" id="action_link">
+	                <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
+	                    <ul class="actionsdropdown_boxlist" id="action_list">
+	                       <li><%=t.t("no.available.actions")%></li>
+	                    </ul>
+	                </div>
+	            </div>
+                </div>
                 <div class="grid_rows odd">
                     <div class="grid_row_cell" style="width: 20%;">
                         <div class="row_celltitles">
@@ -147,7 +151,7 @@
                         <div class="networkswitchpanel">
                             <div class="networkswitch_titlebox">
                                 <p>
-                                    Guest VLAN <span id="zone_vlan"></span></p>
+                                   <strong> Guest VLAN:  <span id="zone_vlan"></span></strong></p>
                             </div>
                             <div class="networkswitch_top">
                             </div>
@@ -976,10 +980,19 @@
 
 
 <!-- Direct VLAN Template (begin) -->
-<div class="networkswitch_vlanpanel" id="direct_vlan_template" style="display: none">
+<div class="networkswitch_vlanpanel" id="direct_vlan_template" style="display: none;">
     <div class="networkswitch_vlanconnect">
         <div class="networkswitch_vlan_infoicon">
+        	
         </div>
+        <div class="networkswitch_infodropdown" style="display:none;">
+        	<ul class="networkswitch_infodropdown_textbox">
+            	<li><div class="networkswitch_infodropdown_textbox_label">Zone</div>: NC </li>
+                <li><div class="networkswitch_infodropdown_textbox_label">Network Type</div>: Root</li>
+                <li><div class="networkswitch_infodropdown_textbox_label">Account</div>: Admin</li>
+            </ul>
+        </div>
+        
         <div class="networkswitch_vlan_detailsbox">
             <div class="networkswitch_vlan_detailsbox_textbox">
                 <div class="networkswitch_vlan_detailsbox_textbox_label">
@@ -994,6 +1007,8 @@
         </div>
         <div class="networkswitch_typeicon direct">
         </div>
+        
+       
     </div>
 </div>
 <!-- Direct VLAN Template (end) -->

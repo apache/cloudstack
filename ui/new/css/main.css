@@ -3198,7 +3198,7 @@ a:hover.search_button {
 }
 
 .network_dgbox {
-	width:440px;
+	width:500px;
 	height:auto;
 	float:left;
 	margin:20px 0 0 10px;
@@ -3207,7 +3207,7 @@ a:hover.search_button {
 }
 
 .networkdg_zonepanel {
-	width:440px;
+	width:500px;
 	height:75px;
 	float:left;
 	margin:0;
@@ -3219,7 +3219,7 @@ a:hover.search_button {
 	height:71px;
 	float:left;
 	background:url(../images/network_zonecloud.gif) no-repeat top left;
-	margin:0 0 0 109px;
+	margin:0 0 0 169px;
 	display:inline;
 	padding:0;
 }
@@ -3246,7 +3246,7 @@ a:hover.search_button {
 }
 
 .networkswitchpanel {
-	width:440px;
+	width:500px;
 	height:auto;
 	float:left;
 	margin:0;
@@ -3254,7 +3254,7 @@ a:hover.search_button {
 }
 
 .networkswitch_titlebox {
-	width:370px;
+	width:430px;
 	height:19px;
 	float:left;
 	background:#fefbdc repeat top left;
@@ -3287,7 +3287,7 @@ a:hover.search_button {
 }
 
 .networkswitch_midpanel {
-	width:420px;
+	width:480px;
 	height:auto;
 	float:left;
 	background:url(../images/vlan_barbg.gif) repeat-y top left;
@@ -3299,7 +3299,7 @@ a:hover.search_button {
 
 
 .networkswitch_vlanpanel {
-	width:404px;
+	width:464px;
 	height:auto;
 	float:left;
 	margin:35px 0 0 16px;
@@ -3308,11 +3308,55 @@ a:hover.search_button {
 }
 
 .networkswitch_vlanconnect {
-	width:404px;
+	width:464px;
 	height:12px;
 	float:left;
+	position:relative;
 	background:url(../images/vlan_connect.gif) no-repeat top left;
 	margin:26px 0 0 0;
+	padding:0;
+}
+
+.networkswitch_infodropdown {
+	width:200px;
+	height:auto;
+	background:#FFF;
+	border:1px solid #999;
+	position:absolute;
+	top:5px;
+	left:8px;
+	margin:0;
+	padding:0 0 10px 0;
+}
+
+.networkswitch_infodropdown_textbox {
+	width:180px;
+	height:auto;
+	float:left;
+	margin:0 0 0 10px;
+	display:inline;
+	padding:0;
+}
+
+.networkswitch_infodropdown_textbox li{
+	width:180px;
+	height:auto;
+	float:left;
+	margin:10px 0 0 0;
+	color:#333;
+	font-size:11px;
+	font-weight:bold;
+	list-style:none;
+	display:inline;
+	padding:0;
+}
+
+.networkswitch_infodropdown_textbox_label {
+	width:60px;
+	height:auto;
+	float:left;
+	font-weight:normal;
+	margin:1px 0 0 0;
 	padding:0;
 }
 
@@ -3333,7 +3377,7 @@ a:hover.search_button {
 }
 
 .networkswitch_vlan_detailsbox {
-	width:167px;
+	width:230px;
 	height:auto;
 	float:left;
 	background:#e9e9e9 url(../images/networkswitch_detailsbox.gif) repeat-x top left;
@@ -3341,16 +3385,16 @@ a:hover.search_button {
 	border-right:2px solid #d1d1d1;
 	border-left:1px solid #dedede;
 	border-bottom:1px solid #dedede;
-	margin:-20px 0 0 30px;
+	margin:-20px 0 0 20px;
 	display:inline;
 	padding:0 0 8px 0;
 }
 
 .networkswitch_vlan_detailsbox_textbox {
-	width:150px;
+	width:225px;
 	height:auto;
 	float:left;
-	margin:6px 0 0 8px;
+	margin:6px 0 0 5px;
 	padding:0;
 }
 
@@ -3377,7 +3421,7 @@ a:hover.search_button {
 	font-size:11px;
 	font-weight:bold;
 	text-align:left;
-	margin:0;
+	margin:-1px 0 0 0;
 	padding:0;
 }
 
@@ -3397,6 +3441,21 @@ a:hover.search_button {
 
 .networkswitch_typeicon.virtual {
 	background:url(../images/networkswitch_virtualicon.gif) no-repeat top left;
+}
+
+.networkswitch_closeicon{
+	width:12px;
+	height:12px;
+	float:left;
+	background:url(../images/search_closeicon.gif) no-repeat top left;
+	margin:-22px 0 0 10px;
+	padding:0;
+	cursor:hand;
+	cursor:pointer;
+}
+
+.networkswitch_closeicon{
+	background:url(../images/search_closeicon_hover.gif) no-repeat top left;
 }
 
 
