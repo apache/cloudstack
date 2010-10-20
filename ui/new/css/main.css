@@ -1479,11 +1479,11 @@ a:hover {
 }
 
 .leftmenu_arrows_firstlevel_open {
-	width:9px;
-	height:9px;
+	width:14px;
+	height:12px;
 	float:right;
-	margin:2px 4px 0 0;
-	background:url(../images/leftmenu_openarrow.png) no-repeat top left;
+	margin:0 4px 0 0;
+	background:url(../images/leftmenu_maindownarrow.png) no-repeat top left;
 	padding:0;
 }
 
