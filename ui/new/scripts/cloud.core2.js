@@ -16,8 +16,6 @@
  * 
  */
 
-// Version: @VERSION@
-
 //***** actions for details tab in right panel (begin) ************************************************************************
 function buildActionLinkForDetailsTab(label, actionMap, $actionMenu, midmenuItemId, $detailsTab) { 
     var apiInfo = actionMap[label];
@@ -469,43 +467,7 @@ function setBooleanField(value, $field) {
     else
         $field.hide();
 }
- 
 
-function expandFirstLevelMenu($firstLevelMenu, $secondLevelMenu) {
-    $firstLevelMenu.find("#expandable_first_level_arrow").removeClass("close").addClass("open");
-    $firstLevelMenu.addClass("highlighted");
-    $expandedFirstLevelMenu = $firstLevelMenu;
-    $secondLevelMenu.show();
-    $expandedSecondLevelMenu = $secondLevelMenu;
-}
-
-function collapseFirstLevelMenu($firstLevelMenu, $secondLevelMenu) {
-    $firstLevelMenu.find("#expandable_first_level_arrow").removeClass("open").addClass("close");
-    $firstLevelMenu.removeClass("highlighted");
-    $secondLevelMenu.hide(); 
-            
-    $resourceArrowIcon = $("#leftmenu_resource").find("#resource_arrow");
-    if($resourceArrowIcon.hasClass("expanded_open") == true) {
-        $resourceArrowIcon.removeClass("expanded_open").addClass("expanded_close");
-        $("#leftmenu_zone_tree").find("#tree_container").empty();
-    }        
-    
-    var $vmGroupArrowIcon = $("#leftmenu_instance_group_header #arrow_icon");
-    if($vmGroupArrowIcon.hasClass("expanded_open") == true) {
-        $vmGroupArrowIcon.removeClass("expanded_open").addClass("expanded_close");            
-        $("#leftmenu_instance_group_container").empty();   
-    }	
-} 
- 
-function clearLeftMenu($currentMenu) {    
-    //collapse other expanded menu if there is.
-    if($expandedFirstLevelMenu != null && $expandedSecondLevelMenu != null)  { 
-        //check if the expanded menu is parent/ancestor of $currentMenu. If not, collapse $expandedFirstLevelMenu.         
-        if($expandedSecondLevelMenu.find("#"+$currentMenu.attr("id")).length == 0)
-            collapseFirstLevelMenu($expandedFirstLevelMenu, $expandedSecondLevelMenu);   
-    }      
-} 
-  
 function clearMiddleMenu() {
     $("#midmenu_container").empty();
     $("#midmenu_action_link").hide();
@@ -546,11 +508,17 @@ function selectLeftMenu($menuToSelect, expandable) {
 			$expandedLeftMenu = $selectedLeftMenu.siblings(".leftmenu_expandedbox").show();
 		}
 	}
-	
-	
 }
 
-var $expandedFirstLevelMenu, $expandedSecondLevelMenu;
+var $selectedSubMenu;
+function selectLeftSubMenu($menuToSelect) {
+	if ($menuToSelect != $selectedSubMenu) {
+		if($selectedSubMenu != null)
+			$selectedSubMenu.removeClass("selected");  
+		$menuToSelect.addClass("selected");
+		$selectedSubMenu = $menuToSelect; 
+	}
+}
 
 var selected_midmenu_id = null; 
 function hideMiddleMenu() {
@@ -811,7 +779,6 @@ function listMidMenuItems(commandString, jsonResponse1, jsonResponse2, rightPane
 	showMiddleMenu();
 	disableMultipleSelectionInMidMenu();
 	
-	clearLeftMenu($(this));
 	clearMiddleMenu();
 	
 	$("#right_panel").load(rightPanelJSP, function(){     
@@ -833,6 +800,7 @@ function listMidMenuItems(commandString, jsonResponse1, jsonResponse2, rightPane
 
 function bindAndListMidMenuItems(leftmenuId, commandString, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSPFn, toMidmenuFn, toRightPanelFn, getMidmenuIdFn) {
 	$("#"+leftmenuId).bind("click", function(event) {
+		selectLeftSubMenu($(this));
         listMidMenuItems(commandString, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSPFn, toMidmenuFn, toRightPanelFn, getMidmenuIdFn);
         return false;
     });
