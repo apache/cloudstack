@@ -1441,8 +1441,6 @@ function appendInstanceGroup(groupId, groupName) {
     $leftmenuSubmenuTemplate.find("#icon").attr("src", "images/instance_leftmenuicon.png").show();
      		                			                
     $leftmenuSubmenuTemplate.bind("click", function(event) { 
-        selectLeftMenu($(this));                           
-                    
         $("#midmenu_container").empty();
         selectedItemsInMidMenu = {};
                                     

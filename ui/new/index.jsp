@@ -310,7 +310,7 @@ long milliseconds = new Date().getTime();
         </div>
         <!-- Left Menu starts here-->
         <div class="leftmenu_panel">
-            <div class="leftmenu_box" id="leftmenu_container" style="display: none">     
+            <div class="leftmenu_box" id="leftmenu_container">     
                 <div class="leftmenu_list">
                     <div class="leftmenu_content_flevel" id="leftmenu_dashboard">
                         <div class="leftmenu_firstindent">
@@ -322,7 +322,7 @@ long milliseconds = new Date().getTime();
                     
                 </div>
                 <div class="leftmenu_list">
-                    <div class="leftmenu_content_flevel" id="expandable_first_level">
+                    <div class="leftmenu_content_flevel" id="leftmenu_instances">
                         <div class="leftmenu_firstindent">
                             <div class="leftmenu_arrows_firstlevel_open" id="expandable_first_level_arrow" style="display:none;"></div>
                             <div class="leftmenu_list_icons">
@@ -348,7 +348,7 @@ long milliseconds = new Date().getTime();
                     </div>
                 </div>
                 <div class="leftmenu_list">
-                    <div class="leftmenu_content_flevel" id="expandable_first_level">
+                    <div class="leftmenu_content_flevel" id="leftmenu_storage">
                         <div class="leftmenu_firstindent">
                             <div class="leftmenu_arrows_firstlevel_open" id="expandable_first_level_arrow" style="display:none;"></div>
                             <div class="leftmenu_list_icons">
@@ -382,7 +382,7 @@ long milliseconds = new Date().getTime();
                     </div>
                 </div> 
                 <div class="leftmenu_list">
-                    <div class="leftmenu_content_flevel" id="expandable_first_level">
+                    <div class="leftmenu_content_flevel" id="leftmenu_network">
                         <div class="leftmenu_firstindent">
                             <div class="leftmenu_arrows_firstlevel_open" id="expandable_first_level_arrow" style="display:none;"></div>
                             <div class="leftmenu_list_icons">
@@ -404,7 +404,7 @@ long milliseconds = new Date().getTime();
                     </div>
                 </div>  
                 <div class="leftmenu_list">
-                    <div class="leftmenu_content_flevel" id="expandable_first_level">
+                    <div class="leftmenu_content_flevel" id="leftmenu_templates">
                         <div class="leftmenu_firstindent">
                             <div class="leftmenu_arrows_firstlevel_open" id="expandable_first_level_arrow" style="display:none;"></div>
                             <div class="leftmenu_list_icons">
@@ -517,7 +517,7 @@ long milliseconds = new Date().getTime();
                     
                 </div>                
                 <div class="leftmenu_list">
-                    <div class="leftmenu_content_flevel" id="expandable_first_level">
+                    <div class="leftmenu_content_flevel" id="leftmenu_domain">
                         <div class="leftmenu_firstindent">
                             <div class="leftmenu_arrows_firstlevel_open" id="expandable_first_level_arrow" style="display:none;"></div>
                             <div class="leftmenu_list_icons">
@@ -542,7 +542,7 @@ long milliseconds = new Date().getTime();
                     </div>
                 </div>
                 <div class="leftmenu_list">
-                    <div class="leftmenu_content_flevel" id="expandable_first_level">
+                    <div class="leftmenu_content_flevel" id="leftmenu_events">
                         <div class="leftmenu_firstindent">
                              <div class="leftmenu_arrows_firstlevel_open" id="expandable_first_level_arrow" style="display:none;"></div>
                             <div class="leftmenu_list_icons">
@@ -574,7 +574,7 @@ long milliseconds = new Date().getTime();
                     </div>
                 </div>
                 <div class="leftmenu_list">
-                    <div class="leftmenu_content_flevel" id="expandable_first_level">
+                    <div class="leftmenu_content_flevel" id="leftmenu_system">
                         <div class="leftmenu_firstindent">
                             <div class="leftmenu_arrows_firstlevel_open" id="expandable_first_level_arrow" style="display:none;"></div>
                             <div class="leftmenu_list_icons">

@@ -528,11 +528,26 @@ function clearRightPanel() {
     
 
 var $selectedLeftMenu;
-function selectLeftMenu($menuToSelect) {
-    if($selectedLeftMenu != null && $selectedLeftMenu.length > 0)
-        $selectedLeftMenu.removeClass("selected");  
-    $menuToSelect.addClass("selected");
-    $selectedLeftMenu = $menuToSelect; 
+var $expandedLeftMenu;
+function selectLeftMenu($menuToSelect, expandable) {
+	if ($menuToSelect != $selectedLeftMenu) {
+		if($selectedLeftMenu != null)
+			$selectedLeftMenu.removeClass("selected");  
+		$menuToSelect.addClass("selected");
+		$selectedLeftMenu = $menuToSelect; 
+		
+		// collapse any current expanded menu
+		if ($expandedLeftMenu != null) {
+			$expandedLeftMenu.hide();
+			$expandedLeftMenu = null;
+		}
+		
+		if (expandable != undefined && expandable) {
+			$expandedLeftMenu = $selectedLeftMenu.siblings(".leftmenu_expandedbox").show();
+		}
+	}
+	
+	
 }
 
 var $expandedFirstLevelMenu, $expandedSecondLevelMenu;
@@ -792,30 +807,33 @@ function listMidMenuItems2(commandString, jsonResponse1, jsonResponse2, toMidmen
     });	 
 }
 
-function listMidMenuItems(leftmenuId, commandString, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSPFn, toMidmenuFn, toRightPanelFn, getMidmenuIdFn) { 
-    $("#"+leftmenuId).bind("click", function(event) {
-        selectLeftMenu($(this));
-        
-        showMiddleMenu();
-        disableMultipleSelectionInMidMenu();
-        
-        clearLeftMenu($(this));
-        clearMiddleMenu();
-        
-        $("#right_panel").load(rightPanelJSP, function(){     
-            var $actionLink = $("#right_panel_content #tab_content_details #action_link");
-            $actionLink.bind("mouseover", function(event) {	    
-                $(this).find("#action_menu").show();    
-                return false;
-            });
-            $actionLink.bind("mouseout", function(event) {       
-                $(this).find("#action_menu").hide();    
-                return false;
-            });	   
-                          
-            afterLoadRightPanelJSPFn();                
-            listMidMenuItems2(commandString, jsonResponse1, jsonResponse2, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, true);            
-        });     
+function listMidMenuItems(commandString, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSPFn, toMidmenuFn, toRightPanelFn, getMidmenuIdFn) { 
+	showMiddleMenu();
+	disableMultipleSelectionInMidMenu();
+	
+	clearLeftMenu($(this));
+	clearMiddleMenu();
+	
+	$("#right_panel").load(rightPanelJSP, function(){     
+		var $actionLink = $("#right_panel_content #tab_content_details #action_link");
+		$actionLink.bind("mouseover", function(event) {	    
+			$(this).find("#action_menu").show();    
+			return false;
+		});
+		$actionLink.bind("mouseout", function(event) {       
+			$(this).find("#action_menu").hide();    
+			return false;
+		});	   
+					  
+		afterLoadRightPanelJSPFn();                
+		listMidMenuItems2(commandString, jsonResponse1, jsonResponse2, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, true);            
+	});     
+	return false;
+}
+
+function bindAndListMidMenuItems(leftmenuId, commandString, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSPFn, toMidmenuFn, toRightPanelFn, getMidmenuIdFn) {
+	$("#"+leftmenuId).bind("click", function(event) {
+        listMidMenuItems(commandString, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSPFn, toMidmenuFn, toRightPanelFn, getMidmenuIdFn);
         return false;
     });
 }

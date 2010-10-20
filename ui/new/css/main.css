@@ -1311,15 +1311,9 @@ a:visited {
 				
 
 .leftmenu_content_flevel.selected{
-	color:#FFF;
-	background:#626262 url(../images/leftmenu_selected.gif) repeat-x top left;
-}
-
-.leftmenu_content_flevel.highlighted{
 	background:#d4dce1 url(../images/leftmenu_highlighted.gif) repeat-x top left;
 	font-weight:bold;
 }
-
 
 .leftmenu_content_flevel:hover{
 	background:#ebf2f6 url(../images/leftmenu_hover.gif) repeat-x top left;
