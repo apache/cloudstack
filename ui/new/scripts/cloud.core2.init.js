@@ -17,6 +17,17 @@
  */
 
 $(document).ready(function() { 
+	$(".leftmenu_content_flevel").hover(
+		function() {
+			$(this).find(".leftmenu_arrows_firstlevel_open").show();
+		},
+		function() {
+			if ($selectedLeftMenu.attr("id") != $(this).attr("id")) {
+				$(this).find(".leftmenu_arrows_firstlevel_open").hide();
+			}
+		}
+	);
+
 	// Setup first level navigation
 	$("#leftmenu_dashboard").bind("click", function(event) {
 		selectLeftMenu($(this));

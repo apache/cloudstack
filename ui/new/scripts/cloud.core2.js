@@ -493,9 +493,12 @@ var $selectedLeftMenu;
 var $expandedLeftMenu;
 function selectLeftMenu($menuToSelect, expandable) {
 	if ($selectedLeftMenu == null || ($menuToSelect.attr("id") != $selectedLeftMenu.attr("id"))) {
-		if($selectedLeftMenu != null)
+		if($selectedLeftMenu != null) {
 			$selectedLeftMenu.removeClass("selected");  
+			$selectedLeftMenu.find(".leftmenu_arrows_firstlevel_open").hide();
+		}
 		$menuToSelect.addClass("selected");
+		$menuToSelect.find(".leftmenu_arrows_firstlevel_open").show();
 		$selectedLeftMenu = $menuToSelect; 
 		
 		// collapse any current expanded menu
