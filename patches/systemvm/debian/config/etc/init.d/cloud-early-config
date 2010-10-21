@@ -83,6 +83,9 @@ patch() {
       reboot
     fi
   fi
+  if [ -f /mnt/cmdline ]; then
+    cat /mnt/cmdline > /var/cache/cloud/cmdline
+  fi
   return 0
 }
 
@@ -118,8 +121,10 @@ setup_interface() {
 }
 
 enable_fwding() {
+  log_action_begin_msg "cloud: enable_fwding = $1"
   logger -t cloud "enable_fwding = $1"
   echo "$1" > /proc/sys/net/ipv4/ip_forward
+  [ -f /etc/iptables/iptables.conf ] && sed  -i "s/ENABLE_ROUTING=.*$/ENABLE_ROUTING=$enabled/" /etc/iptables/iptables.conf && return
 }
 
 enable_svc() {
@@ -128,7 +133,7 @@ enable_svc() {
 
   logger -t cloud "Enable service ${svc} = $enabled"
   local cfg=/etc/default/${svc}
-  sed  -i "s/ENABLED=.*$/ENABLED=$enabled/" $cfg 
+  [ -f $cfg ] && sed  -i "s/ENABLED=.*$/ENABLED=$enabled/" $cfg && return
 }
 
 disable_hvc() {
@@ -168,6 +173,7 @@ setup_common() {
 }
 
 setup_dnsmasq() {
+  log_action_begin_msg "Setting up dnsmasq"
   [ -z $DHCP_RANGE ] && DHCP_RANGE=$ETH0_IP
   [ -z $DOMAIN ] && DOMAIN="cloudnine.internal"
   if [ -n "$DOMAIN" ]
@@ -190,17 +196,20 @@ setup_sshd(){
 }
 
 setup_apache2() {
-  [ -f /etc/apache2/sites-available/default ] && sed -i -e "s/<VirtualHost.*>/<VirtualHost $ETH0_IP:80>/" /etc/apache2/sites-available/default
-  [ -f /etc/apache2/sites-available/default-ssl ] && sed -i -e "s/<VirtualHost.*>/<VirtualHost $ETH0_IP:443>/" /etc/apache2/sites-available/default-ssl
-  [ -f /etc/apache2/ports.conf ] && sed -i -e "s/Listen .*:80/Listen $ETH0_IP:80/g" /etc/apache2/ports.conf
-  [ -f /etc/apache2/ports.conf ] && sed -i -e "s/Listen .*:443/Listen $ETH0_IP:443/g" /etc/apache2/ports.conf
-  [ -f /etc/apache2/ports.conf ] && sed -i -e "s/NameVirtualHost .*:80/NameVirtualHost $ETH0_IP:80/g" /etc/apache2/ports.conf
+  log_action_begin_msg "Setting up apache web server"
+  local ip=$1
+  [ -f /etc/apache2/sites-available/default ] && sed -i -e "s/<VirtualHost.*>/<VirtualHost $ip:80>/" /etc/apache2/sites-available/default
+  [ -f /etc/apache2/sites-available/default-ssl ] && sed -i -e "s/<VirtualHost.*>/<VirtualHost $ip:443>/" /etc/apache2/sites-available/default-ssl
+  [ -f /etc/apache2/ports.conf ] && sed -i -e "s/Listen .*:80/Listen $ip:80/g" /etc/apache2/ports.conf
+  [ -f /etc/apache2/ports.conf ] && sed -i -e "s/Listen .*:443/Listen $ip:443/g" /etc/apache2/ports.conf
+  [ -f /etc/apache2/ports.conf ] && sed -i -e "s/NameVirtualHost .*:80/NameVirtualHost $ip:80/g" /etc/apache2/ports.conf
 }
 
 setup_router() {
+  log_action_begin_msg "Setting up virtual router system vm"
   setup_common eth0 eth1 eth2
   setup_dnsmasq
-  setup_apache2
+  setup_apache2 $ETH0_IP
 
   sed -i  /gateway/d /etc/hosts
   echo "$ETH0_IP $NAME" >> /etc/hosts
@@ -216,9 +225,10 @@ setup_router() {
 }
 
 setup_dhcpsrvr() {
+  log_action_begin_msg "Setting up dhcp server system vm"
   setup_common eth0 eth1
   setup_dnsmasq
-  setup_apache2
+  setup_apache2 $ETH0_IP
 
   sed -i -e "/^[#]*dhcp-option=option:router.*$/d" /etc/dnsmasq.conf
   echo "dhcp-option=option:router,$GW" >> /etc/dnsmasq.conf
@@ -240,6 +250,7 @@ setup_dhcpsrvr() {
 }
 
 setup_secstorage() {
+  log_action_begin_msg "Setting up secondary storage system vm"
   setup_common eth0 eth1 eth2
   sed -i  /gateway/d /etc/hosts
   public_ip=$ETH2_IP
@@ -248,6 +259,7 @@ setup_secstorage() {
 
   cp /etc/iptables/iptables-secstorage /etc/iptables/rules
   setup_sshd $ETH0_IP
+  setup_apache2 $ETH2_IP
 
   enable_fwding 0
   enable_svc haproxy 0
@@ -258,6 +270,7 @@ setup_secstorage() {
 
 
 setup_console_proxy() {
+  log_action_begin_msg "Setting up console proxy system vm"
   setup_common eth0 eth1 eth2
   public_ip=$ETH2_IP
   [ "$ETH2_IP" == "0.0.0.0" ] && public_ip=$ETH1_IP
