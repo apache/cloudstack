@@ -42,7 +42,7 @@ a:link, a:visited {
 	
 }
 
-a:visited {
+a:hover {
 	text-decoration:underline;
 }
 
@@ -1479,11 +1479,11 @@ a:visited {
 }
 
 .leftmenu_arrows_firstlevel_open {
-	width:9px;
-	height:9px;
+	width:14px;
+	height:12px;
 	float:right;
-	margin:2px 4px 0 0;
-	background:url(../images/leftmenu_openarrow.png) no-repeat top left;
+	margin:0 4px 0 0;
+	background:url(../images/leftmenu_maindownarrow.png) no-repeat top left;
 	padding:0;
 }
 
@@ -3324,7 +3324,7 @@ a:hover.search_button {
 	border:1px solid #999;
 	position:absolute;
 	top:5px;
-	left:8px;
+	left:20px;
 	margin:0;
 	padding:0 0 10px 0;
 }
@@ -3338,6 +3338,34 @@ a:hover.search_button {
 	padding:0;
 }
 
+.networkswitch_infodropdown_actionbox {
+	width:192px;
+	height:auto;
+	float:left;
+	margin:5px 0 0 0;
+	display:inline;
+	padding:0;
+}
+
+.networkswitch_infodropdown_actionbox a {
+	float:right;
+	color:#2c8bbc;
+	font-size:10px;
+	font-weight:normal;
+	text-align:left;
+	margin:0 7px 0 0;
+	padding:0;
+	text-decoration:none;
+}
+
+.networkswitch_infodropdown_actionbox a:link, .networkswitch_infodropdown_actionbox a:visited {
+	text-decoration:none;
+	
+}
+
+.networkswitch_infodropdown_actionbox a:hover {
+	text-decoration:underline;
+}
 .networkswitch_infodropdown_textbox li{
 	width:180px;
 	height:auto;
@@ -3365,7 +3393,7 @@ a:hover.search_button {
 	height:15px;
 	float:left;
 	background:url(../images/networkswitch_infoicon.gif) no-repeat top left;
-	margin:-12px 0 0 20px;
+	margin:-12px 0 0 10px;
 	display:inline;
 	padding:0;
 	cursor:pointer;
@@ -3431,7 +3459,7 @@ a:hover.search_button {
 	width:45px;
 	height:21px;
 	float:left;
-	margin:-22px 0 0 38px;
+	margin:-22px 0 0 29px;
 	padding:0;
 }
 
@@ -3447,15 +3475,15 @@ a:hover.search_button {
 	width:12px;
 	height:12px;
 	float:left;
-	background:url(../images/search_closeicon.gif) no-repeat top left;
-	margin:-22px 0 0 10px;
+	background:url(../images/search_closeicon_hover.gif) no-repeat top left;
+	margin:0 0 0 0;
 	padding:0;
 	cursor:hand;
 	cursor:pointer;
 }
 
-.networkswitch_closeicon{
-	background:url(../images/search_closeicon_hover.gif) no-repeat top left;
+.networkswitch_closeicon:hover{
+	background:url(../images/search_closeicon.gif) no-repeat top left;
 }
 
 

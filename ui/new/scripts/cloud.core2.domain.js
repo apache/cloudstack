@@ -20,24 +20,7 @@
 
 var $selectedDomainTreeNode;
 
-function afterLoadDomainJSP() {   
-    //testing code
-    /* 	
-	$("#leftmenu_domain_tree").empty();		
-	var $newNode01 = $("#domain_tree_node_template").clone();
-	$newNode01.find("#domain_name").text("01")
-	var $newNode02 = $("#domain_tree_node_template").clone();
-	$newNode02.find("#domain_name").text("02")
-	var $newNode03 = $("#domain_tree_node_template").clone();		
-	$newNode03.find("#domain_name").text("03");
-	$("#leftmenu_domain_tree").append($newNode01.show());		
-	$newNode01.find("#domain_children_container").append($newNode02.show());
-	$newNode01.find("#domain_children_container").show();		
-	$newNode02.find("#domain_children_container").append($newNode03.show());
-	$newNode02.find("#domain_children_container").show();
-	*/			
-
-
+function afterLoadDomainJSP() { 
     var defaultRootDomainId = g_domainid;
     var defaultRootLevel = 0;	   
     var childParentMap = {};  //map childDomainId to parentDomainId
@@ -53,7 +36,8 @@ function afterLoadDomainJSP() {
             childParentMap[json.id] = json.parentdomainid;	//map childDomainId to parentDomainId   
         domainIdNameMap[json.id] = json.name;               //map domainId to domainName
     
-        var template = $treenodeTemplate.clone(true);	            
+        var template = $treenodeTemplate.clone(true);	  
+        template.find("#domain_indent").css("marginLeft", (30*(level+1)));           
         template.attr("id", "domain_"+json.id);	         
         template.data("jsonObj", json).data("domainLevel", level); 	      
         template.find("#domain_title_container").attr("id", "domain_title_container_"+json.id); 	        
@@ -74,7 +58,7 @@ function afterLoadDomainJSP() {
 			    if (domains != null && domains.length > 0) {					    
 				    for (var i = 0; i < domains.length; i++) {						    
 					    drawNode(domains[i], level, container);	
-					    if(domains[i].haschild=="true")
+					    if(domains[i].haschild == true)
 			                drawTree(domains[i].id, (level+1), $("#domain_children_container_"+domains[i].id));				   
 				    }
 			    }				

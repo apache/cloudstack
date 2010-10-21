@@ -982,10 +982,14 @@
 <!-- Direct VLAN Template (begin) -->
 <div class="networkswitch_vlanpanel" id="direct_vlan_template" style="display: none;">
     <div class="networkswitch_vlanconnect">
+    	<div class="networkswitch_closeicon"></div>
         <div class="networkswitch_vlan_infoicon">
         	
         </div>
         <div class="networkswitch_infodropdown" style="display:none;">
+        	<div class="networkswitch_infodropdown_actionbox">
+            	<a href="#">Close</a>
+            </div>
         	<ul class="networkswitch_infodropdown_textbox">
             	<li><div class="networkswitch_infodropdown_textbox_label">Zone</div>: NC </li>
                 <li><div class="networkswitch_infodropdown_textbox_label">Network Type</div>: Root</li>

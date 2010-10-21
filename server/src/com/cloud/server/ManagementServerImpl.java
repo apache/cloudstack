@@ -5115,27 +5115,46 @@ public class ManagementServerImpl implements ManagementServer {
             accountId = account.getId();
         }
 
-        Filter searchFilter = new Filter(SnapshotVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
-        SearchCriteria<SnapshotVO> sc = _snapshotDao.createSearchCriteria();
-
         Object name = cmd.getSnapshotName();
         Object id = cmd.getId();
         Object keyword = cmd.getKeyword();
         Object snapshotTypeStr = cmd.getSnapshotType();
         String interval = cmd.getIntervalType();
 
-        sc.addAnd("status", SearchCriteria.Op.EQ, Snapshot.Status.BackedUp);
+        Filter searchFilter = new Filter(SnapshotVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
+        SearchBuilder<SnapshotVO> sb = _snapshotDao.createSearchBuilder();
+        sb.and("status", sb.entity().getStatus(), SearchCriteria.Op.EQ);
+        sb.and("volumeId", sb.entity().getVolumeId(), SearchCriteria.Op.EQ);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
+        sb.and("snapshotTypeEQ", sb.entity().getSnapshotType(), SearchCriteria.Op.EQ);
+        sb.and("snapshotTypeNEQ", sb.entity().getSnapshotType(), SearchCriteria.Op.NEQ);
+
+        if ((accountId == null) && (domainId != null)) {
+            // if accountId isn't specified, we can do a domain match for the admin case
+            SearchBuilder<AccountVO> accountSearch = _accountDao.createSearchBuilder();
+            sb.join("accountSearch", accountSearch, sb.entity().getAccountId(), accountSearch.entity().getId(), JoinType.INNER);
+
+            SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
+            domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
+            accountSearch.join("domainSearch", domainSearch, accountSearch.entity().getDomainId(), domainSearch.entity().getId(), JoinType.INNER);
+        }
+
+        SearchCriteria<SnapshotVO> sc = sb.create();
+
+        sc.setParameters("status", Snapshot.Status.BackedUp);
 
         if (volumeId != null) {
-            sc.addAnd("volumeId", SearchCriteria.Op.EQ, volumeId);
+            sc.setParameters("volumeId", volumeId);
         }
-        
+
         if (name != null) {
-            sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + name + "%");
+            sc.setParameters("name", "%" + name + "%");
         }
 
         if (id != null) {
-            sc.addAnd("id", SearchCriteria.Op.EQ, id);
+            sc.setParameters("id", SearchCriteria.Op.EQ, id);
         }
 
         if (keyword != null) {
@@ -5144,9 +5163,13 @@ public class ManagementServerImpl implements ManagementServer {
             
             sc.addAnd("name", SearchCriteria.Op.SC, ssc);
         }
-        
+
         if (accountId != null) {
-            sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
+            sc.setParameters("accountId", accountId);
+        } else if (domainId != null) {
+            DomainVO domain = _domainDao.findById((Long)domainId);
+            SearchCriteria joinSearch = sc.getJoin("accountSearch");
+            joinSearch.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
         }
 
         if (snapshotTypeStr != null) {
@@ -5154,10 +5177,10 @@ public class ManagementServerImpl implements ManagementServer {
             if (snapshotType == null) {
                 throw new InvalidParameterValueException("Unsupported snapshot type " + snapshotTypeStr);
             }
-            sc.addAnd("snapshotType", SearchCriteria.Op.EQ, snapshotType.ordinal());
+            sc.setParameters("snapshotTypeEQ", snapshotType.ordinal());
         } else {
             // Show only MANUAL and RECURRING snapshot types
-            sc.addAnd("snapshotType", SearchCriteria.Op.NEQ, Snapshot.SnapshotType.TEMPLATE.ordinal());
+            sc.setParameters("snapshotTypeNEQ", Snapshot.SnapshotType.TEMPLATE.ordinal());
         }
         
         return _snapshotDao.search(sc, searchFilter);

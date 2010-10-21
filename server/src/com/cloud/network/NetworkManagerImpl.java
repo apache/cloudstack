@@ -961,6 +961,7 @@ public class NetworkManagerImpl implements NetworkManager {
             instanceIds.add(instanceIdParam);
         }
 
+        // FIXME:  We should probably lock the load balancer here to prevent multiple updates...
         LoadBalancerVO loadBalancer = _loadBalancerDao.findById(loadBalancerId);
         if (loadBalancer == null) {
         	throw new InvalidParameterValueException("Failed to assign to load balancer " + loadBalancerId + ", the load balancer was not found.");
@@ -995,9 +996,12 @@ public class NetworkManagerImpl implements NetworkManager {
                 }
             }
 
+            List<Long> finalInstanceIds = new ArrayList<Long>();
             for (Long instanceId : instanceIds) {
                 if (mappedInstanceIds.contains(instanceId)) {
                     continue;
+                } else {
+                    finalInstanceIds.add(instanceId);
                 }
 
                 UserVmVO userVm = _vmDao.findById(instanceId);
@@ -1125,6 +1129,14 @@ public class NetworkManagerImpl implements NetworkManager {
                 }
                 if ((updatedRules != null) && (updatedRules.size() == firewallRulesToApply.size())) {
                     // flag the instances as mapped to the load balancer
+                    for (Long addedInstanceId : finalInstanceIds) {
+                        LoadBalancerVMMapVO mappedVM = new LoadBalancerVMMapVO(loadBalancerId, addedInstanceId);
+                        _loadBalancerVMMapDao.persist(mappedVM);
+                    }
+
+                    /* We used to add these instances as pending when the API command is received on the server, and once they were applied,
+                     * the pending status was removed.  In the 2.2 API framework, this is no longer done and instead the new mappings just
+                     * need to be persisted
                     List<LoadBalancerVMMapVO> pendingMappedVMs = _loadBalancerVMMapDao.listByLoadBalancerId(loadBalancerId, true);
                     for (LoadBalancerVMMapVO pendingMappedVM : pendingMappedVMs) {
                         if (instanceIds.contains(pendingMappedVM.getInstanceId())) {
@@ -1133,6 +1145,7 @@ public class NetworkManagerImpl implements NetworkManager {
                             _loadBalancerVMMapDao.update(pendingMappedVM.getId(), pendingMappedVMForUpdate);
                         }
                     }
+                     */
 
                     for (FirewallRuleVO updatedRule : updatedRules) {
                         if (updatedRule.getId() == null) {
