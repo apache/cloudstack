@@ -202,7 +202,9 @@ public class ListVolumesCmd extends BaseListCmd {
             String poolName = (poolId == null) ? "none" : ApiDBUtils.findStoragePoolById(poolId).getName();
             volResponse.setStoragePoolName(poolName);
             volResponse.setSourceId(volume.getSourceId());
-            volResponse.setSourceType(volume.getSourceType().toString());
+            if (volume.getSourceType() != null) {
+                volResponse.setSourceType(volume.getSourceType().toString());
+            }
             volResponse.setHypervisor(ApiDBUtils.getVolumeHyperType(volume.getId()).toString());
 
             volResponse.setResponseName("volume");

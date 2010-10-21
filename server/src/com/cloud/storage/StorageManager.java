@@ -214,7 +214,7 @@ public interface StorageManager extends Manager {
 	 * @throws InvalidParameterValueException
 	 * @throws PermissionDeniedException
 	 */
-	VolumeVO createVolumeDB(CreateVolumeCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, ResourceAllocationException;
+	VolumeVO allocVolume(CreateVolumeCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, ResourceAllocationException;
 
 	/**
      * Creates the volume based on the given criteria

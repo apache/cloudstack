@@ -32,8 +32,8 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(createMethod="createVolumeDB", method="createVolume", manager=Manager.StorageManager, description="Creates a disk volume from a disk offering. " +
-																													"This disk volume must still be attached to a virtual machine to make use of it.")
+@Implementation(createMethod="allocVolume", method="createVolume", manager=Manager.StorageManager, description="Creates a disk volume from a disk offering. " +
+																				  "This disk volume must still be attached to a virtual machine to make use of it.")
 public class CreateVolumeCmd extends BaseAsyncCreateCmd {
 	public static final Logger s_logger = Logger.getLogger(CreateVolumeCmd.class.getName());
     private static final String s_name = "createvolumeresponse";
@@ -109,7 +109,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     public static String getResultObjectName() {
     	return "volume";
     }
-    
+
     @Override
     public long getAccountId() {
         Account account = (Account)UserContext.current().getAccount();

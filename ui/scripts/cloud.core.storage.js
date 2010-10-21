@@ -166,7 +166,7 @@ function showStorageTab(domainId, targetTab) {
 										    $("body").stopTime(timerKey);
 										    if (result.jobstatus == 1) {
 											    // Succeeded	
-											    volumeJSONToTemplate(result.volume[0], template);												    
+											    volumeJSONToTemplate(result.jobresult.createvolumeresponse, template);												    
 											    changeGridRowsTotal(submenuContent.find("#grid_rows_total"), 1);  											
 											                                                                                              
                                                 loadingImg.hide(); 	                                                                                    
@@ -1103,15 +1103,16 @@ function showStorageTab(domainId, targetTab) {
 													$("body").stopTime(timerKey);
 													if (result.jobstatus == 1) {
 														// Succeeded
-														if (result.virtualmachine[0].vmstate == "Stopped") {
+                                                                                                                var virtualmachine = result.jobresult.attachvolumeresponse;
+														if (virtualmachine.vmstate == "Stopped") {
 															template.find("#volume_action_attach_span, #volume_action_delete_span").hide();	
 															template.find("#volume_action_detach_span, #volume_action_create_template_span").show();
 														} else {
 															template.find("#volume_action_attach_span, #volume_action_delete_span, #volume_action_create_template_span").hide();
 															template.find("#volume_action_detach_span").show();
 														}
-														template.find("#volume_vmname").text(getVmName(result.virtualmachine[0].vmname, result.virtualmachine[0].vmdisplayname) + " (" + result.virtualmachine[0].vmstate + ")");
-														template.data("vmid", virtualMachineId).data("vmname", getVmName(result.virtualmachine[0].vmname, result.virtualmachine[0].vmdisplayname));
+														template.find("#volume_vmname").text(getVmName(virtualmachine.vmname, virtualmachine.vmdisplayname) + " (" + virtualmachine.vmstate + ")");
+														template.data("vmid", virtualMachineId).data("vmname", getVmName(virtualmachine.vmname, virtualmachine.vmdisplayname));
 														loadingImg.hide(); 								                            								                           							                            
 														rowContainer.show(); 					                                           
 													} else if (result.jobstatus == 2) {
