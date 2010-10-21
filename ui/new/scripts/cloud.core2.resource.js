@@ -670,7 +670,7 @@ function systemvmJsonToDetailsTab(jsonObj) {
     var $detailsTab = $("#systemvm_page").find("#tab_content_details");   
     $detailsTab.data("jsonObj", jsonObj);   
      
-    //resetViewConsoleAction(jsonObj, $detailsTab);         
+    resetViewConsoleAction(jsonObj, $detailsTab);         
     setVmStateInRightPanel(jsonObj.state, $detailsTab.find("#state"));		
     $detailsTab.find("#ipAddress").text(jsonObj.publicip);
         

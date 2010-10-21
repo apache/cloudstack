@@ -1156,6 +1156,15 @@
 </div>
 <!--  secondary storage tab template (end) -->
 
+<!-- view console template (begin)  -->
+<div id="view_console_template" style="display:none">
+    <div class="vm_consolebox" id="box0">
+    </div>
+    <div class="vm_consolebox" id="box1" style="display: none">
+    </div>
+</div>
+<!-- view console template (end)  -->
+
 <!-- dialogs -->
 <div id="dialog_confirmation_enable_maintenance" title="Confirmation" style="display: none">
     <p>        
@@ -1181,7 +1190,7 @@
     </p>
 </div>
 
-<!-- Update OS Pref Dialog -->
+<!-- Update OS Preference Dialog -->
 <div id="dialog_update_os" title="Update OS Preference" style="display:none">
 	<p>	    
 	    <%=t.t("Please.choose.a.OS.preference.for.this.host..Virtual.machines.will.always.be.allocated.to.hosts.with.an.OS.preference.that.matches.with.the.OS.type.of.the.template.chosen.for.the.virtual.machine.before.choosing.other.hosts.")%>
