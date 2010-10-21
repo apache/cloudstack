@@ -57,19 +57,7 @@ $(document).ready(function() {
 		selectLeftMenu($(this));
 		listMidMenuItems("listAccounts", "listaccountsresponse", "account", "jsp/account.jsp", afterLoadAccountJSP, accountToMidmenu, accountToRigntPanel, getMidmenuId);
 		return false;
-	});
-	$("#leftmenu_domain").bind("click", function(event) {
-		selectLeftMenu($(this), true);
-		hideMiddleMenu();		
-		disableMultipleSelectionInMidMenu();      
-		clearMiddleMenu();
-		
-		$("#right_panel").load("jsp/domain.jsp", function(){ 
-			afterLoadDomainJSP();       
-		});     
-		
-		return false;
-	});
+	});	
 	$("#leftmenu_events").bind("click", function(event) {
 		selectLeftMenu($(this), true);
 		return false;
@@ -99,6 +87,19 @@ $(document).ready(function() {
     bindAndListMidMenuItems("leftmenu_service_offering", "listServiceOfferings", "listserviceofferingsresponse", "serviceoffering", "jsp/serviceoffering.jsp", afterLoadServiceOfferingJSP, serviceOfferingToMidmenu, serviceOfferingToRigntPanel, getMidmenuId); 
     bindAndListMidMenuItems("leftmenu_disk_offering", "listDiskOfferings", "listdiskofferingsresponse", "diskoffering", "jsp/diskoffering.jsp", afterLoadDiskOfferingJSP, diskOfferingToMidmenu, diskOfferingToRigntPanel, getMidmenuId); 
     bindAndListMidMenuItems("leftmenu_global_setting", "listConfigurations", "listconfigurationsresponse", "configuration", "jsp/globalsetting.jsp", afterLoadGlobalSettingJSP, globalSettingToMidmenu, globalSettingToRigntPanel, globalSettingGetMidmenuId, getMidmenuId); 
+    
+    $("#leftmenu_domain").bind("click", function(event) {
+		selectLeftMenu($(this), true);
+		hideMiddleMenu();		
+		disableMultipleSelectionInMidMenu();      
+		clearMiddleMenu();
+		
+		$("#right_panel").load("jsp/domain.jsp", function(){ 
+			afterLoadDomainJSP();       
+		});     
+		
+		return false;
+	});  
         
 	$("#leftmenu_resource").bind("click", function(event) {
 		showMiddleMenu();
