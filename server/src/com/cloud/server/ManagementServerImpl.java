@@ -1774,6 +1774,11 @@ public class ManagementServerImpl implements ManagementServer {
         Long sizeObj = cmd.getSize();
         long size = (sizeObj == null) ? 0 : sizeObj;
 
+        DataCenterVO dc = _dcDao.findById(dataCenterId);
+        if (dc == null) {
+            throw new InvalidParameterValueException("Unable to find zone: " + dataCenterId);
+        }
+                
         if ((ctxAccount == null) || isAdmin(ctxAccount.getType())) {
             if (domainId != null) {
                 if ((ctxAccount != null) && !_domainDao.isChildDomain(ctxAccount.getDomainId(), domainId)) {
@@ -1797,6 +1802,19 @@ public class ManagementServerImpl implements ManagementServer {
             throw new InvalidParameterValueException("No valid account specified for deploying a virtual machine.");
         }
 
+        if(domainId == null){
+        	domainId = dc.getDomainId(); //get the domain id from zone (private zone case)
+        	
+        	if(domainId == null){
+        		//do nothing (public zone case)
+        	}
+        	else{
+        		if(!_domainDao.isChildDomain(ctxAccount.getDomainId(), domainId)){
+        			throw new PermissionDeniedException("Failed to deploy VM, invalid domain id (" + domainId + ") given.");
+        		}
+        	}
+        }
+
         List<String> netGrpList = cmd.getNetworkGroupList();
         if ((netGrpList != null) && !netGrpList.isEmpty()) {
             networkGroups = netGrpList.toArray(new String[netGrpList.size()]);
@@ -1805,11 +1823,6 @@ public class ManagementServerImpl implements ManagementServer {
     	AccountVO account = _accountDao.findById(accountId);
         if (account == null) {
             throw new InvalidParameterValueException("Unable to find account: " + accountId);
-        }
-
-        DataCenterVO dc = _dcDao.findById(dataCenterId);
-        if (dc == null) {
-            throw new InvalidParameterValueException("Unable to find zone: " + dataCenterId);
         }
 
         ServiceOfferingVO offering = _offeringsDao.findById(serviceOfferingId);
