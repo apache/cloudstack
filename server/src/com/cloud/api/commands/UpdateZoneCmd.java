@@ -21,6 +21,7 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -28,7 +29,7 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.ZoneResponse;
 import com.cloud.dc.DataCenterVO;
 
-@Implementation(method="updateZone", manager=Manager.ConfigManager, description="Updates a Zone.")
+@Implementation(method="editZone", manager=Manager.ConfigManager, description="Updates a Zone.")
 public class UpdateZoneCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateZoneCmd.class.getName());
 
@@ -65,6 +66,8 @@ public class UpdateZoneCmd extends BaseCmd {
     @Parameter(name="domain", type=CommandType.STRING, description="Domain name for the Vms in the zone")
     private String domain;
 
+    @Parameter(name="domainid", type=CommandType.LONG, description="the ID of the containing domain, null for public zones")
+    private Long domainId; 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -105,6 +108,13 @@ public class UpdateZoneCmd extends BaseCmd {
         return domain;
     }
 
+	public Long getDomainId() {
+		return domainId;
+	}
+
+	public void setDomainId(Long domainId) {
+		this.domainId = domainId;
+	}
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////

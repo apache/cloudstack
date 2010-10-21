@@ -351,6 +351,7 @@ CREATE TABLE  `cloud`.`data_center` (
   `mac_address` bigint unsigned NOT NULL DEFAULT '1' COMMENT 'Next available mac address for the ethernet card interacting with public internet',
   `guest_network_cidr` varchar(18),
   `domain` varchar(100) COMMENT 'Network domain name of the Vms of the zone',
+  `domain_id` bigint unsigned COMMENT 'domain id for the parent domain to this zone (null signifies public zone)',
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

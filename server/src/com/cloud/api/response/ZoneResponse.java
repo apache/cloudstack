@@ -59,6 +59,9 @@ public class ZoneResponse extends BaseResponse {
     @SerializedName("domain") @Param(description="Domain name for the Vms in the zone")
     private String domain;
 
+    @SerializedName("domainid") @Param(description="the ID of the containing domain, null for public zones")
+    private Long domainId;
+    
     public Long getId() {
         return id;
     }
@@ -154,4 +157,13 @@ public class ZoneResponse extends BaseResponse {
     public void setDomain(String domain) {
         this.domain = domain;
     }
+    
+    public Long getDomainId() {
+		return domainId;
+	}
+
+	public void setDomainId(Long domainId) {
+		this.domainId = domainId;
+	}
+
 }
