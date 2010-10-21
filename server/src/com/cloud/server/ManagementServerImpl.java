@@ -1803,7 +1803,7 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         if(domainId == null){
-        	domainId = dc.getDomainId(); //get the domain id from zone (private zone case)
+        	domainId = dc.getDomainId(); //get the domain id from zone
         	
         	if(domainId == null){
         		//do nothing (public zone case)
