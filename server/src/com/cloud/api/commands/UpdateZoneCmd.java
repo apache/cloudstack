@@ -29,7 +29,7 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.ZoneResponse;
 import com.cloud.dc.DataCenterVO;
 
-@Implementation(method="updateZone", manager=Manager.ConfigManager, description="Updates a Zone.")
+@Implementation(method="editZone", manager=Manager.ConfigManager, description="Updates a Zone.")
 public class UpdateZoneCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateZoneCmd.class.getName());
 
