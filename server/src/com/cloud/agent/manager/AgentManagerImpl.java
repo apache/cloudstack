@@ -644,7 +644,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
             if (host.getType() == Type.Routing && host.getHypervisorType() == HypervisorType.XenServer ) {
                 if (host.getClusterId() != null) {
                     List<HostVO> hosts = _hostDao.listBy(Type.Routing, host.getClusterId(), host.getPodId(), host.getDataCenterId());
-                    boolean success = false;
+                    boolean success = true;
                     for( HostVO thost: hosts ) {
                         long thostId = thost.getId();
                         if( thostId == hostId ) continue;
@@ -656,7 +656,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
                             success = true;
                             break;
                         } else {
-                            s_logger.debug("Eject Host: " + hostId + " from " + thostId + " failed due to " + answer.getDetails());
+                            success = false;
+                            s_logger.debug("Eject Host: " + hostId + " from " + thostId + " failed due to " + (answer != null ? answer.getDetails() : "no answer"));
                         }
                     }
                     if( !success ){
