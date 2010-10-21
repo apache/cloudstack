@@ -8,10 +8,10 @@
 %>
 
 <div class="main_title" id="right_panel_header">
-    <!--  
+    
     <div class="main_titleicon">
-        <img src="images/title_isoicon.gif" alt="ISO" /></div>
-    -->
+        <img src="images/title_serviceofferingicon.gif" alt="Service Offering" /></div>
+    
     <h1>
         Service Offering
     </h1>

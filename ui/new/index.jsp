@@ -574,7 +574,10 @@ long milliseconds = new Date().getTime();
                         </div>
                         
                         <div id="leftmenu_zone_tree">
-                        	<div class="leftmenu_bigloading" id="loading_container" style="display:none;" ></div>
+                        	<div class="leftmenu_loadingbox" style="display:none;" id="loading_container">
+                                <div class="leftmenu_loader"></div>
+                                <p> Loading &hellip; </p>
+                            </div>
 						    <div id="tree_container"></div>
                         </div>
                                                                     
