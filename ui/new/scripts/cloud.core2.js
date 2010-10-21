@@ -505,12 +505,13 @@ function selectLeftMenu($menuToSelect, expandable) {
 		}
 		
 		if ($expandedLeftMenu != null) {
-			$expandedLeftMenu.hide(0, function() {
-				if ($menuToExpand != null) $menuToExpand.slideDown();
+			$expandedLeftMenu.slideUp(500, function() {
+				//if ($menuToExpand != null) $menuToExpand.slideDown(200);
 			});
+			if ($menuToExpand != null) $menuToExpand.slideDown(500);
 			$expandedLeftMenu = null;
 		} else if ($menuToExpand != null) {
-			$menuToExpand.slideDown();
+			$menuToExpand.slideDown(500);
 		}
 		$expandedLeftMenu = $menuToExpand;
 	}

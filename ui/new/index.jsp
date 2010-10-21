@@ -21,61 +21,40 @@ long milliseconds = new Date().getTime();
     <link rel="stylesheet" href="css/logger.css" type="text/css" />
     <link rel="stylesheet" href="css/main.css" type="text/css" />
 
+	<!-- Common libraries -->
     <script type="text/javascript" src="scripts/jquery-1.4.2.min.js"></script>
-
     <script type="text/javascript" src="scripts/jquery-ui-1.8.2.custom.min.js"></script>
-
     <script type="text/javascript" src="scripts/date.js"></script>
-
     <script type="text/javascript" src="scripts/jquery.cookies.js"></script>
-
     <script type="text/javascript" src="scripts/jquery.timers.js"></script>
-
     <script type="text/javascript" src="scripts/jquery.md5.js"></script>
 
     <!-- cloud.com scripts -->
-
     <script type="text/javascript" src="scripts/cloud.logger.js?t=<%=milliseconds%>"></script>
-	
 	<script type="text/javascript" src="scripts/cloud.core2.callbacks.js?t=<%=milliseconds%>"></script>
-
     <script type="text/javascript" src="scripts/cloud.core2.js?t=<%=milliseconds%>"></script>
-
 	<script type="text/javascript" src="scripts/cloud.core2.init.js?t=<%=milliseconds%>"></script>
-
     <script type="text/javascript" src="scripts/cloud.core2.instance.js?t=<%=milliseconds%>"></script>
-
     <script type="text/javascript" src="scripts/cloud.core2.event.js?t=<%=milliseconds%>"></script>
-
     <script type="text/javascript" src="scripts/cloud.core2.alert.js?t=<%=milliseconds%>"></script>
-
     <script type="text/javascript" src="scripts/cloud.core2.account.js?t=<%=milliseconds%>"></script>
-
     <script type="text/javascript" src="scripts/cloud.core2.volume.js?t=<%=milliseconds%>"></script>
-
     <script type="text/javascript" src="scripts/cloud.core2.snapshot.js?t=<%=milliseconds%>"></script>
-
     <script type="text/javascript" src="scripts/cloud.core2.ipaddress.js?t=<%=milliseconds%>"></script>
-
     <script type="text/javascript" src="scripts/cloud.core2.template.js?t=<%=milliseconds%>"></script>
-
     <script type="text/javascript" src="scripts/cloud.core2.iso.js?t=<%=milliseconds%>"></script>
-
     <script type="text/javascript" src="scripts/cloud.core2.router.js?t=<%=milliseconds%>"></script>
-
     <script type="text/javascript" src="scripts/cloud.core2.dashboard.js?t=<%=milliseconds%>"></script>
-
     <script type="text/javascript" src="scripts/cloud.core2.domain.js?t=<%=milliseconds%>"></script>
-
     <script type="text/javascript" src="scripts/cloud.core2.resource.js?t=<%=milliseconds%>"></script>
-
     <script type="text/javascript" src="scripts/cloud.core2.serviceoffering.js?t=<%=milliseconds%>"></script>
-
     <script type="text/javascript" src="scripts/cloud.core2.diskoffering.js?t=<%=milliseconds%>"></script>
-
     <script type="text/javascript" src="scripts/cloud.core2.globalsetting.js?t=<%=milliseconds%>"></script>
+	
+	<!-- Favicon -->
+	<link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
 
-    <title>Cloud.com CloudStack</title>
+    <title>Cloud.com CloudStack Management Console</title>
 </head>
 <body>
 	<!-- Main Login Dialog (begin)-->
