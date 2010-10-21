@@ -707,9 +707,9 @@ long milliseconds = new Date().getTime();
 	        <div class="leftmenu_content" id="header">  
 	            <div class="leftmenu_thirdindent">
 	                <div class="leftmenu_arrows expanded_close" id="zone_arrow">
-	                </div>
-	                
-	                Zone: <strong><span id="zone_name"></span></strong>
+	                </div>	                
+	                <span id="zone_name_label">Zone: </span>
+	                <span id="zone_name"></span>
 	            </div>  
 	        </div>			
             <div id="zone_content" style="display: none">
@@ -731,9 +731,9 @@ long milliseconds = new Date().getTime();
 	        <div class="leftmenu_content" id="header">
 	            <div class="leftmenu_fourthindent">
 	                <div class="leftmenu_arrows expanded_close" id="pod_arrow">
-	                </div>
-	               
-	                Pod: <strong><span id="pod_name"></span></strong>
+	                </div>	               
+	                <span id="pod_name_label">Pod: </span>
+	                <span id="pod_name"></span>
 	            </div>
 	        </div>	
             <div id="pod_content" style="display: none">
@@ -753,9 +753,9 @@ long milliseconds = new Date().getTime();
 	        <div class="leftmenu_content" id="header">
 	            <div class="leftmenu_fifthindent">
 	                <div class="leftmenu_arrows white_nonexpanded_close" id="cluster_arrow">
-	                </div>
-	                
-	                Cluster: <strong><span id="cluster_name"></span></strong>
+	                </div>	                
+	                <span id="cluster_name_label">Cluster: </span>	                
+                    <span id="cluster_name"></span>
 	            </div>
 	        </div>	
 			<div id="cluster_content">
@@ -773,9 +773,9 @@ long milliseconds = new Date().getTime();
 	        <div class="leftmenu_content" id="header">
 	            <div class="leftmenu_fourthindent">
 	                <div class="leftmenu_arrows white_nonexpanded_close" id="systemvm_arrow">
-	                </div>
-	             
-	                System VM: <strong><span id="systemvm_name"></span></strong>
+	                </div>	             
+	                <span id="systemvm_name_label">System VM: </span>
+	                <span id="systemvm_name"></span>
 	            </div>
 	        </div>
         </div>

@@ -72,18 +72,20 @@ function buildZoneTree() {
 				}
 				break;	
 				
-				
+			
+			case "zone_name_label":	
 			case "zone_name":	
 			    selectTreeNodeInLeftMenu(target.parent().parent().parent());						    
-			    var jsonObj = target.data("jsonObj");  
+			    var jsonObj = target.parent().parent().parent().parent().data("jsonObj");  
 			    showPage($("#zone_page"), jsonObj);
 			    hideMiddleMenu();
 			    zoneJsonToRightPanel(jsonObj);			   				    		   			    
 			    break;		
 			    	
+			case "pod_name_label" :	
 			case "pod_name" :	
 			    selectTreeNodeInLeftMenu(target.parent().parent().parent());
-			    var jsonObj = target.data("jsonObj");
+			    var jsonObj = target.parent().parent().parent().parent().data("jsonObj");  
 			    showPage($("#pod_page"), jsonObj);	
 			    showMiddleMenu();	
 			    podJsonToDetailsTab(jsonObj);				
@@ -94,9 +96,10 @@ function buildZoneTree() {
 				listMidMenuItems2(("listStoragePools&podid="+podId), "liststoragepoolsresponse", "storagepool", primarystorageToMidmenu, primarystorageToRigntPanel, primarystorageGetMidmenuId, false); 					
 	    		break;		
 				    
+			case "cluster_name_label" :	
 			case "cluster_name" :	
 			    selectTreeNodeInLeftMenu(target.parent().parent().parent());			    
-			    var jsonObj = target.data("jsonObj");
+			    var jsonObj = target.parent().parent().parent().parent().data("jsonObj");  
 			    showPage($("#cluster_page"), jsonObj);
 			    showMiddleMenu();
 			    clusterJsonToDetailsTab(jsonObj);
@@ -107,9 +110,10 @@ function buildZoneTree() {
 				listMidMenuItems2(("listStoragePools&clusterid="+clusterId), "liststoragepoolsresponse", "storagepool", primarystorageToMidmenu, primarystorageToRigntPanel, primarystorageGetMidmenuId, false); 					
 	    		break;								
 						
+			case "systemvm_name_label" :
 			case "systemvm_name" :		
 			    selectTreeNodeInLeftMenu(target.parent().parent().parent());		
-			    var jsonObj = target.data("jsonObj");	
+			    var jsonObj = target.parent().parent().parent().parent().data("jsonObj");  
 			    showPage($("#systemvm_page"), jsonObj);		
 			    hideMiddleMenu();			
 				systemvmJsonToDetailsTab(jsonObj);			
@@ -133,6 +137,7 @@ function selectTreeNodeInLeftMenu($menuToSelect, expandable) {
 function zoneJSONToTreeNode(json, $zoneNode) {
     var zoneid = json.id;
     $zoneNode.attr("id", "zone_" + zoneid);  
+    $zoneNode.data("jsonObj", json);	 
     $zoneNode.data("id", zoneid).data("name", fromdb(json.name));
     var zoneName = $zoneNode.find("#zone_name").text(fromdb(json.name));	    
     zoneName.data("jsonObj", json);	    
@@ -175,7 +180,8 @@ function zoneJSONToTreeNode(json, $zoneNode) {
 
 function podJSONToTreeNode(json, $podNode) {	
     var podid = json.id;
-    $podNode.attr("id", "pod_" + podid);      	
+    $podNode.attr("id", "pod_" + podid); 
+    $podNode.data("jsonObj", json);     	
 	$podNode.data("id", podid).data("name", fromdb(json.name));
 	
 	var podName = $podNode.find("#pod_name").text(fromdb(json.name));
@@ -202,6 +208,7 @@ function podJSONToTreeNode(json, $podNode) {
 function systemvmJSONToTreeNode(json, $systemvmNode) {	
     var systemvmid = json.id;	
     $systemvmNode.attr("id", "systemvm_"+systemvmid);
+    $systemvmNode.data("jsonObj", json);	    
     $systemvmNode.data("id", systemvmid).data("name", json.name);	     
     var systeymvmName = $systemvmNode.find("#systemvm_name").text(json.name);	    
     systeymvmName.data("jsonObj", json);	    		
@@ -209,6 +216,7 @@ function systemvmJSONToTreeNode(json, $systemvmNode) {
 		
 function clusterJSONToTreeNode(json, $clusterNode) {
     $clusterNode.attr("id", "cluster_"+json.id);
+    $clusterNode.data("jsonObj", json);	  
     $clusterNode.data("id", json.id).data("name", fromdb(json.name));	    
     var clusterName = $clusterNode.find("#cluster_name").text(fromdb(json.name));
     clusterName.data("jsonObj", json);	   
