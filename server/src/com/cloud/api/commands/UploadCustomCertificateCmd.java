@@ -26,7 +26,7 @@ import com.cloud.api.response.StatusResponse;
 
 @Implementation(method="uploadCertificate")
 public class UploadCustomCertificateCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(AddConfigCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(UploadCustomCertificateCmd.class.getName());
 
     private static final String s_name = "uploadcustomcertificateresponse";
 

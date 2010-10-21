@@ -28,11 +28,6 @@ import javax.persistence.Table;
 @Table(name="certificate")
 public class CertificateVO {
 
-	public CertificateVO(String cert)
-	{
-		this.certificate = cert;
-	}
-	
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")

@@ -19,6 +19,10 @@ public class CertificateDaoImpl extends GenericDaoBase<CertificateVO, Long>  imp
 	
     private static final Logger s_logger = Logger.getLogger(CertificateDaoImpl.class);
     
+    public CertificateDaoImpl(){
+    	
+    }
+    
 	@Override
 	public boolean persistCustomCertToDb(String certPath){
 		
@@ -43,7 +47,8 @@ public class CertificateDaoImpl extends GenericDaoBase<CertificateVO, Long>  imp
 	    }
 	    certStr = new String(buffer);
 
-	    CertificateVO certRec = new CertificateVO(certStr);
+	    CertificateVO certRec = new CertificateVO();
+	    certRec.setCertificate(certStr);
 	    this.persist(certRec);
 	    
 		return true;
