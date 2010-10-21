@@ -19,8 +19,6 @@ package com.cloud.agent.api;
 
 public class StopAnswer extends RebootAnswer {
     Integer vncPort;
-    Long bytesSent;
-    Long bytesReceived;
     
     protected StopAnswer() {
     }
@@ -40,11 +38,4 @@ public class StopAnswer extends RebootAnswer {
         return vncPort;
     }
     
-    public Long getBytesReceived() {
-        return bytesReceived;
-    }
-    
-    public Long getBytesSent() {
-        return bytesSent;
-    }
 }
