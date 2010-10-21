@@ -20,6 +20,8 @@
         <p id="after_action_info">
         </p>
     </div>
+    <div id="resource_page" style="display: none">        
+    </div>
     <div id="zone_page" style="display:none">
         <div class="tabbox" style="margin-top: 15px;">
             <div class="content_tabs on" id="tab_details">

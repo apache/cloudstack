@@ -113,10 +113,8 @@ $(document).ready(function() {
 			$arrowIcon.removeClass("expanded_open").addClass("expanded_close");
 			$("#leftmenu_zone_tree").find("#tree_container").empty();
 		}
-				
-		$("#right_panel").load("jsp/resource.jsp", function(){               
-			afterLoadResourceJSP();       
-		});
+		
+		showPage($("#resource_page"), null);			
 		return false;
 	});
 	

@@ -77,46 +77,28 @@ function buildZoneTree() {
 			case "zone_name":	
 			    selectTreeNodeInLeftMenu(target.parent().parent().parent());						    
 			    var jsonObj = target.parent().parent().parent().parent().data("jsonObj");  
-			    showPage($("#zone_page"), jsonObj);
-			    hideMiddleMenu();
-			    zoneJsonToRightPanel(jsonObj);			   				    		   			    
+			    showPage($("#zone_page"), jsonObj);			    		   				    		   			    
 			    break;		
 			    	
 			case "pod_name_label" :	
 			case "pod_name" :	
 			    selectTreeNodeInLeftMenu(target.parent().parent().parent());
 			    var jsonObj = target.parent().parent().parent().parent().data("jsonObj");  
-			    showPage($("#pod_page"), jsonObj);	
-			    showMiddleMenu();	
-			    podJsonToDetailsTab(jsonObj);				
-								
-				var podId = jsonObj.id;
-			    $("#midmenu_container").empty();
-			    listMidMenuItems2(("listHosts&type=Routing&podid="+podId), "listhostsresponse", "host", hostToMidmenu, hostToRigntPanel, hostGetMidmenuId, true); 					
-				listMidMenuItems2(("listStoragePools&podid="+podId), "liststoragepoolsresponse", "storagepool", primarystorageToMidmenu, primarystorageToRigntPanel, primarystorageGetMidmenuId, false); 					
-	    		break;		
+			    showPage($("#pod_page"), jsonObj);				   			
+				break;		
 				    
 			case "cluster_name_label" :	
 			case "cluster_name" :	
 			    selectTreeNodeInLeftMenu(target.parent().parent().parent());			    
 			    var jsonObj = target.parent().parent().parent().parent().data("jsonObj");  
 			    showPage($("#cluster_page"), jsonObj);
-			    showMiddleMenu();
-			    clusterJsonToDetailsTab(jsonObj);
-			    
-			    var clusterId = jsonObj.id;
-			    $("#midmenu_container").empty();
-			    listMidMenuItems2(("listHosts&type=Routing&clusterid="+clusterId), "listhostsresponse", "host", hostToMidmenu, hostToRigntPanel, hostGetMidmenuId, true); 					
-				listMidMenuItems2(("listStoragePools&clusterid="+clusterId), "liststoragepoolsresponse", "storagepool", primarystorageToMidmenu, primarystorageToRigntPanel, primarystorageGetMidmenuId, false); 					
-	    		break;								
+			    break;								
 						
 			case "systemvm_name_label" :
 			case "systemvm_name" :		
 			    selectTreeNodeInLeftMenu(target.parent().parent().parent());		
 			    var jsonObj = target.parent().parent().parent().parent().data("jsonObj");  
-			    showPage($("#systemvm_page"), jsonObj);		
-			    hideMiddleMenu();			
-				systemvmJsonToDetailsTab(jsonObj);			
+			    showPage($("#systemvm_page"), jsonObj);
 				break;			
 			
 			default:
@@ -222,9 +204,20 @@ function clusterJSONToTreeNode(json, $clusterNode) {
     clusterName.data("jsonObj", json);	   
 }			
 
-function showPage($pageToShow, jsonObj) {   
-    var pageArray = [$("#zone_page"), $("#pod_page"), $("#cluster_page"), $("#host_page"), $("#primarystorage_page"), $("#systemvm_page")];
-    var pageLabelArray = ["Zone", "Pod", "Cluster", "Host", "Primary Storage", "System VM"];       
+function showPage($pageToShow, jsonObj) {  
+    if($pageToShow.length == 0) { //resource.jsp is not loaded in right panel        
+        $("#right_panel").load("jsp/resource.jsp", function(){                 
+			showPage2($($pageToShow.selector), jsonObj); //$pageToShow is still empty (i.e. $pageToShow.length == 0), So, select the element again.
+		});        
+    }
+    else {        
+        showPage2($pageToShow, jsonObj); 
+    }
+}
+
+function showPage2($pageToShow, jsonObj) {   
+    var pageArray = [$("#resource_page"), $("#zone_page"), $("#pod_page"), $("#cluster_page"), $("#host_page"), $("#primarystorage_page"), $("#systemvm_page")];
+    var pageLabelArray = ["Resource", "Zone", "Pod", "Cluster", "Host", "Primary Storage", "System VM"];       
    
     for(var i=0; i<pageArray.length; i++) {
         if(pageArray[i].attr("id") == $pageToShow.attr("id")) {
@@ -237,14 +230,77 @@ function showPage($pageToShow, jsonObj) {
         $pageToShow.data("jsonObj", jsonObj);
     }   
     
-    if($pageToShow.attr("id") == "zone_page") {        
+    if($pageToShow.attr("id") == "resource_page") { 
+        initDialog("dialog_add_zone"); 
+        initAddZoneButton($("#midmenu_add_link"));	      
+    }
+    else if($pageToShow.attr("id") == "zone_page") {  
+        initDialog("dialog_add_pod", 320);      
         initAddPodButton($("#midmenu_add_link"));  
-        $("#tab_details").click();      
+        
+        initDialog("dialog_add_vlan_for_zone");
+        // If the network type is vnet, don't show any vlan stuff.
+	    if (getNetworkType() == "vnet") 		
+		    $("#dialog_add_vlan_for_zone").attr("title", "Add Public IP Range");		
+	    bindEventHandlerToDialogAddVlanForZone();	
+        
+        initDialog("dialog_add_secondarystorage"); 
+        initDialog("dialog_confirmation_delete_secondarystorage"); 
+                
+        //switch between different tabs in zone page 
+	    var $zonePage = $pageToShow;
+        var tabArray = [$zonePage.find("#tab_details"), $zonePage.find("#tab_network"), $zonePage.find("#tab_secondarystorage")];
+        var tabContentArray = [$zonePage.find("#tab_content_details"), $zonePage.find("#tab_content_network"), $zonePage.find("#tab_content_secondarystorage")];
+        var afterSwitchFnArray = [afterSwitchToDetailsTab, afterSwitchToNetworkTab, afterSwitchToSecondaryStorageTab];
+        switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray);    
+        $zonePage.find("#tab_details").click();   
+        
+        hideMiddleMenu();
+		zoneJsonToRightPanel(jsonObj);		  
     }
     else if($pageToShow.attr("id") == "pod_page") {
+        initDialog("dialog_add_host");	
         initAddHostButton($("#midmenu_add_link"));  
-        initAddPrimaryStorageButton($("#midmenu_add2_link"));                
-    }      
+        
+        initDialog("dialog_add_pool");
+        initAddPrimaryStorageButton($("#midmenu_add2_link"));    
+        
+        // if hypervisor is KVM, limit the server option to NFS for now
+	    if (getHypervisorType() == 'kvm') 
+		    $("#dialog_add_pool").find("#add_pool_protocol").empty().html('<option value="nfs">NFS</option>');	
+	    bindEventHandlerToDialogAddPool();	 
+	    
+	    showMiddleMenu();	
+		podJsonToDetailsTab(jsonObj);     
+		
+		var podId = jsonObj.id;
+	    $("#midmenu_container").empty();
+	    listMidMenuItems2(("listHosts&type=Routing&podid="+podId), "listhostsresponse", "host", hostToMidmenu, hostToRigntPanel, hostGetMidmenuId, false); 					
+		listMidMenuItems2(("listStoragePools&podid="+podId), "liststoragepoolsresponse", "storagepool", primarystorageToMidmenu, primarystorageToRigntPanel, primarystorageGetMidmenuId, false); 	
+    }  
+    else if($pageToShow.attr("id") == "cluster_page") {
+        showMiddleMenu();
+		clusterJsonToDetailsTab(jsonObj);
+		
+	    var clusterId = jsonObj.id;
+	    $("#midmenu_container").empty();
+	    listMidMenuItems2(("listHosts&type=Routing&clusterid="+clusterId), "listhostsresponse", "host", hostToMidmenu, hostToRigntPanel, hostGetMidmenuId, true); 					
+		listMidMenuItems2(("listStoragePools&clusterid="+clusterId), "liststoragepoolsresponse", "storagepool", primarystorageToMidmenu, primarystorageToRigntPanel, primarystorageGetMidmenuId, false); 			
+    }
+    else if($pageToShow.attr("id") == "host_page") {
+        initDialog("dialog_confirmation_enable_maintenance");
+	    initDialog("dialog_confirmation_cancel_maintenance");
+	    initDialog("dialog_confirmation_force_reconnect");
+	    initDialog("dialog_confirmation_remove_host");
+	    initDialog("dialog_update_os");
+    }  
+    else if($pageToShow.attr("id") == "primarystorage_page") {
+        initDialog("dialog_confirmation_delete_primarystorage");
+    }  
+    else if($pageToShow.attr("id") == "systemvm_page") {
+        hideMiddleMenu();			
+	    systemvmJsonToDetailsTab(jsonObj);		
+    }
     else {
         $("#midmenu_add_link").unbind("click").hide();              
         $("#midmenu_add2_link").unbind("click").hide();   
@@ -474,7 +530,7 @@ function hostToMidmenu(jsonObj, $midmenuItem1) {
 function hostToRigntPanel($midmenuItem1) {      
     var jsonObj = $midmenuItem1.data("jsonObj");
     hostJsonToDetailsTab(jsonObj);   
-    showPage($("#host_page"));
+    showPage($("#host_page"), jsonObj);
 }
 
 function hostJsonToDetailsTab(jsonObj) {	    
@@ -611,7 +667,7 @@ function primarystorageToMidmenu(jsonObj, $midmenuItem1) {
 function primarystorageToRigntPanel($midmenuItem1) {      
     var jsonObj = $midmenuItem1.data("jsonObj");
     primarystorageJsonToDetailsTab(jsonObj);   
-    showPage($("#primarystorage_page"));
+    showPage($("#primarystorage_page"), jsonObj);
 }
 
 function primarystorageJsonToDetailsTab(jsonObj) {	    
@@ -700,11 +756,11 @@ function toSystemVMTypeText(value) {
 function afterSwitchToDetailsTab() {    
     $("#midmenu_add2_link").unbind("click").hide(); 
 }
-function afterSwitchToNetworkTab() {
+function afterSwitchToNetworkTab() {    
     initAddVLANButton($("#midmenu_add2_link"));
 }
-function afterSwitchToSecondaryStorageTab() {
-    initAddecondaryStorageButton($("#midmenu_add2_link"));
+function afterSwitchToSecondaryStorageTab() {    
+    initAddSecondaryStorageButton($("#midmenu_add2_link"));
 }
 
 function initAddVLANButton($midmenuAdd2Link) {
@@ -836,7 +892,7 @@ function initAddVLANButton($midmenuAdd2Link) {
     });
 }
 
-function initAddecondaryStorageButton($midmenuAdd2Link) {
+function initAddSecondaryStorageButton($midmenuAdd2Link) {
     $midmenuAdd2Link.find("#label").text("Add Secondary Storage");
     $midmenuAdd2Link.show();      
     $midmenuAdd2Link.unbind("click").bind("click", function(event) {
@@ -891,6 +947,7 @@ function initAddecondaryStorageButton($midmenuAdd2Link) {
     });
 }
 
+/*
 function afterLoadResourceJSP() {	
 	//switch between different tabs in zone page 
 	var $zonePage = $("#zone_page");
@@ -927,6 +984,7 @@ function afterLoadResourceJSP() {
 	//initialize Add Zone button 
     initAddZoneButton($("#midmenu_add_link"));	
 }
+*/
 
 function populateForUpdateOSDialog(oscategoryid) {	
 	$.ajax({
