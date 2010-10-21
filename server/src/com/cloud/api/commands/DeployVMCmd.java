@@ -195,6 +195,7 @@ public class DeployVMCmd extends BaseAsyncCmd {
         UserVm userVm = (UserVm)getResponseObject();
 
         UserVmResponse response = new UserVmResponse();
+        response.setResponseName(getResultObjectName());
         response.setId(userVm.getId());
         response.setName(userVm.getName());
         response.setCreated(userVm.getCreated());
@@ -292,7 +293,6 @@ public class DeployVMCmd extends BaseAsyncCmd {
         
         response.setNetworkGroupList(ApiDBUtils.getNetworkGroupsNamesForVm(userVm.getId()));
 
-        response.setResponseName(getName());
         return response;
     }
 }
