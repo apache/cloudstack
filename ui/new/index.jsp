@@ -279,12 +279,23 @@ long milliseconds = new Date().getTime();
                             </div>
                         </div>
                         <div class="actionpanel_button_wrapper" id="help_link" style="display: block; float: right;
-                            background: none;">
+                            background: none; position: relative;">
                             <div class="actionpanel_button">
                                 <div class="actionpanel_button_icons">
                                     <img src="images/help_actionicon.png" alt="Help" /></div>
                                 <div class="actionpanel_button_links">
                                     <%=t.t("help")%></div>
+                            </div>
+                            
+                            <div class="help_dropdown_box" style="display:none;">
+                            	<div class="help_dropdown_box_titlebox">
+                                	<h2> Instance Help</h2>
+                                    <a href="#"> Close</a>
+                                </div>
+                                
+                                <div class="help_dropdown_box_textbox">
+                                	<p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. </p><p>It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</p>
+                                </div>
                             </div>
                         </div>
                     </div>

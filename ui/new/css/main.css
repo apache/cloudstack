@@ -1795,7 +1795,6 @@ a:hover.search_button {
 	margin:0;
 	padding:0;
 	background:url(../images/actionpanel_border.gif) no-repeat top left;
-	
 }
 
 .actionpanel_button{
@@ -1857,7 +1856,83 @@ a:hover.search_button {
 	margin:0;
 	padding:0;
 	z-index:1005;
+}
+
+.help_dropdown_box {
+	width:209px;
+	height:200px;
+	float:left;
+	position:absolute;
+	background:#FFF repeat top left;
+	border:1px solid #999;
+	top:20px;
+	right:7px;
+	margin:0;
+	padding:0;
+	z-index:1005;
+}
+
+.help_dropdown_box_titlebox {
+	width:190px;
+	height:auto;
+	float:left;
+	margin:8px 0 0 10px;
+	padding:0;
+}
+
+.help_dropdown_box_titlebox h2 {
+	width:auto;
+	height:auto;
+	float:left;
+	color:#999;
+	text-align:left;
+	font-size:14px;
+	margin:0;
+	padding:0;
+}
+
+.help_dropdown_box_titlebox a {
+	float:right;
+	color:#2c8bbc;
+	font-size:10px;
+	font-weight:normal;
+	text-align:left;
+	margin:0;
+	padding:0;
+	text-decoration:none;
+}
+
+.help_dropdown_box_titlebox a:link, .help_dropdown_box_titlebox a:visited {
+	text-decoration:none;
 	
+}
+
+.help_dropdown_box_titlebox a:hover {
+	text-decoration:underline;
+}
+	
+.help_dropdown_box_textbox {
+	width:190px;
+	height:140px;
+	float:left;
+	margin:0 0 0 10px;
+	padding:0;
+	overflow-y:auto;
+	overflow-y:scroll;
+	overflow-x:hidden;
+	
+}
+	
+.help_dropdown_box_textbox p{
+	width:190px;
+	height:auto;
+	float:left;
+	color:#333;
+	font-size:11px;
+	font-weight:normal;
+	text-align:left;
+	margin:12px 0 0 0;
+	padding:0;
 }
 
 .actionsdropdown_boxlist {
