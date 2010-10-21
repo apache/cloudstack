@@ -235,6 +235,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
     private ServiceOfferingVO _offering;
     private int _networkRate;
     private int _multicastRate;
+    String _networkDomain;
     
     private VMTemplateVO _template;
     
@@ -925,7 +926,19 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
 	                router.setVnet(vnet);
 	                final String name = VirtualMachineName.attachVnet(router.getName(), vnet);
 	                router.setInstanceName(name);
-	                
+	                long accountId = router.getAccountId();
+	                // Use account level network domain if available
+	                String networkDomain = _accountDao.findById(accountId).getNetworkDomain();
+	                if(networkDomain == null){
+	                    // Use zone level network domain, if account level domain is not available
+	                    networkDomain = dc.getDomain();
+	                    if(networkDomain == null){
+	                        // Use system wide default network domain, if zone wide network domain is also not available
+	                        networkDomain = _networkDomain;
+	                    }
+	                    
+	                }
+	                router.setDomain(networkDomain);
 	                _routerDao.updateIf(router, Event.OperationRetry, routingHost.getId());
 
 	                List<VolumeVO> vols = _storageMgr.prepare(router, routingHost);
@@ -1425,6 +1438,8 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
         if (_instance == null) {
             _instance = "DEFAULT";
         }
+        
+        _networkDomain = configs.get("domain.suffix");
 
         s_logger.info("Router configurations: " + "ramsize=" + _routerRamSize + "; templateId=" + _routerTemplateId);
 

@@ -61,17 +61,20 @@ public class DataCenterVO implements DataCenter {
     
     @Column(name="guest_network_cidr")
     private String guestNetworkCidr = null;
+    
+    @Column(name="domain")
+    private String domain = null;
 
     @Column(name="mac_address", updatable = false, nullable=false)
     @TableGenerator(name="mac_address_sq", table="data_center", pkColumnName="id", valueColumnName="mac_address", allocationSize=1)
     private long macAddress = 1;
     
-    public DataCenterVO(long id, String name, String description, String dns1, String dns2, String dns3, String dns4, String vnet, String guestCidr) {
-        this(name, description, dns1, dns2, dns3, dns4, vnet, guestCidr);
+    public DataCenterVO(long id, String name, String description, String dns1, String dns2, String dns3, String dns4, String vnet, String guestCidr, String domain) {
+        this(name, description, dns1, dns2, dns3, dns4, vnet, guestCidr, domain);
         this.id = id;
 	}
 
-    public DataCenterVO(String name, String description, String dns1, String dns2, String dns3, String dns4, String vnet, String guestCidr) {
+    public DataCenterVO(String name, String description, String dns1, String dns2, String dns3, String dns4, String vnet, String guestCidr, String domain) {
         this.name = name;
         this.description = description;
         this.dns1 = dns1;
@@ -80,6 +83,7 @@ public class DataCenterVO implements DataCenter {
         this.internalDns2 = dns4;
         this.vnet = vnet;
         this.guestNetworkCidr = guestCidr;
+        this.domain = domain;
     }
     
     public String getDescription() {
@@ -158,6 +162,14 @@ public class DataCenterVO implements DataCenter {
     public void setGuestNetworkCidr(String guestNetworkCidr)
     {
     	this.guestNetworkCidr = guestNetworkCidr;
+    }
+
+    public String getDomain() {
+        return domain;
+    }
+
+    public void setDomain(String domain) {
+        this.domain = domain;
     }
     
 }

@@ -219,7 +219,7 @@ public interface ConfigurationManager extends Manager {
      * @throws InvalidParameterValueException
      * @throws InternalErrorException
      */
-    DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String vnetRange, String guestCidr) throws InvalidParameterValueException, InternalErrorException;
+    DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String vnetRange, String guestCidr, String domain) throws InvalidParameterValueException, InternalErrorException;
     
     /**
      * Edits a zone in the database. Will not allow you to edit DNS values if there are VMs in the specified zone.

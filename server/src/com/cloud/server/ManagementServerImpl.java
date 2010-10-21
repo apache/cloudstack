@@ -576,6 +576,7 @@ public class ManagementServerImpl implements ManagementServer {
         String timezone = cmd.getTimezone();
         String accountName = cmd.getAccountName();
         short userType = cmd.getAccountType().shortValue();
+        String networkDomain = cmd.getNetworkdomain();
         try {
             if (accountName == null) {
                 accountName = username;
@@ -616,6 +617,7 @@ public class ManagementServerImpl implements ManagementServer {
                 newAccount.setDomainId(domainId);
                 newAccount.setType(userType);
                 newAccount.setState("enabled");
+                newAccount.setNetworkDomain(networkDomain);
                 newAccount = _accountDao.persist(newAccount);
                 accountId = newAccount.getId();
             }

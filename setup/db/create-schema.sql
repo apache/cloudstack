@@ -350,6 +350,7 @@ CREATE TABLE  `cloud`.`data_center` (
   `router_mac_address` varchar(17) NOT NULL DEFAULT '02:00:00:00:00:01' COMMENT 'mac address for the router within the domain',
   `mac_address` bigint unsigned NOT NULL DEFAULT '1' COMMENT 'Next available mac address for the ethernet card interacting with public internet',
   `guest_network_cidr` varchar(18),
+  `domain` varchar(100) COMMENT 'Network domain name of the Vms of the zone',
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -738,6 +739,7 @@ CREATE TABLE  `cloud`.`account` (
   `state` varchar(10) NOT NULL default 'enabled',
   `removed` datetime COMMENT 'date removed',
   `cleanup_needed` tinyint(1) NOT NULL default '0',
+  `network_domain` varchar(100) COMMENT 'Network domain name of the Vms of the account',
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

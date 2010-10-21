@@ -55,4 +55,6 @@ public interface Account extends PartOf {
     public void setState(String state);
     public long getDomainId();
     public Date getRemoved();
+    public String getNetworkDomain();
+    public void setNetworkDomain(String networkDomain);
 }

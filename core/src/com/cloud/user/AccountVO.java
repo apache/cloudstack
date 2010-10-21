@@ -54,6 +54,10 @@ public class AccountVO implements Account {
     
     @Column(name="cleanup_needed")
     private boolean needsCleanup = false;
+    
+    @Column(name="network_domain")
+    private String networkDomain = null;
+
 
     public AccountVO() {}
     public AccountVO(long id) {
@@ -103,5 +107,11 @@ public class AccountVO implements Account {
 
     public Date getRemoved() {
         return removed;
+    }
+    public String getNetworkDomain() {
+        return networkDomain;
+    }
+    public void setNetworkDomain(String networkDomain) {
+        this.networkDomain = networkDomain;
     }
 }

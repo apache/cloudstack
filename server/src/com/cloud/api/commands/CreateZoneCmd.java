@@ -58,6 +58,9 @@ public class CreateZoneCmd extends BaseCmd {
     //FIXME - this parameter is called "vnet" in updateZone. Have to figure out which one is right
     @Parameter(name="vlan", type=CommandType.STRING, description="the VNET for the Zone")
     private String vlan;
+    
+    @Parameter(name="domain", type=CommandType.STRING, description="Domain name for the Vms in the zone")
+    private String domain;
 
 
     /////////////////////////////////////////////////////
@@ -91,6 +94,10 @@ public class CreateZoneCmd extends BaseCmd {
     public String getVlan() {
         return vlan;
     }
+    
+    public String getDomain() {
+        return domain;
+    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -114,7 +121,7 @@ public class CreateZoneCmd extends BaseCmd {
         response.setInternalDns2(zone.getInternalDns2());
         response.setVlan(zone.getVnet());
         response.setGuestCidrAddress(zone.getGuestNetworkCidr());
-
+        response.setDomain(zone.getDomain());
         response.setResponseName(getName());
         return response;
     }

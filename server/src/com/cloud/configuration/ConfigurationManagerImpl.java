@@ -811,6 +811,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	String internalDns2 = cmd.getInternalDns2();
     	String vnetRange = cmd.getVnet();
     	String guestCidr = cmd.getGuestCidrAddress();
+    	String domain = cmd.getDomain();
     	Long userId = UserContext.current().getUserId();
     
     	if (userId == null) {
@@ -862,6 +863,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	if(guestCidr == null)
     		guestCidr = zone.getGuestNetworkCidr();    	
     	
+    	if(domain == null)
+    	    domain = zone.getDomain();
+    	
     	boolean checkForDuplicates = !zoneName.equals(oldZoneName);
     	checkZoneParameters(zoneName, dns1, dns2, internalDns1, internalDns2, checkForDuplicates);
 
@@ -871,6 +875,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	zone.setInternalDns1(internalDns1);
     	zone.setInternalDns2(internalDns2);
     	zone.setGuestNetworkCidr(guestCidr);
+    	zone.setDomain(domain);
     	
     	if (vnetRange != null) {
     		zone.setVnet(vnetRange);
@@ -937,7 +942,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     }
 
     @Override @DB
-    public DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String vnetRange, String guestCidr) throws InvalidParameterValueException, InternalErrorException {
+    public DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String vnetRange, String guestCidr, String domain) throws InvalidParameterValueException, InternalErrorException {
         int vnetStart, vnetEnd;
         if (vnetRange != null) {
             String[] tokens = vnetRange.split("-");
@@ -971,7 +976,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
         checkZoneParameters(zoneName, dns1, dns2, internalDns1, internalDns2, true);
 
         // Create the new zone in the database
-        DataCenterVO zone = new DataCenterVO(zoneName, null, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr);
+        DataCenterVO zone = new DataCenterVO(zoneName, null, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr, domain);
         zone = _zoneDao.persist(zone);
 
         // Add vnet entries for the new zone
@@ -993,12 +998,13 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
         String internalDns2 = cmd.getInternalDns2();
         String vnetRange = cmd.getVlan();
         String guestCidr = cmd.getGuestCidrAddress();
+        String domain = cmd.getDomain();
 
         if (userId == null) {
             userId = User.UID_SYSTEM;
         }
 
-        return createZone(userId, zoneName, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr);
+        return createZone(userId, zoneName, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr, domain);
     }
 
     @Override

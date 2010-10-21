@@ -86,6 +86,9 @@ public class StartRouterCommand extends AbstractStartCommand {
 		} else if (router.getRole() == Role.DHCP_USERDATA) {
 			basic = basic + " type=dhcpsrvr";
 		}
+		if(router.getDomain() != null){
+		    basic += " domain="+router.getDomain();
+		}
 		return basic;
 	}
 

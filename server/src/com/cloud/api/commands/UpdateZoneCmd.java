@@ -21,6 +21,7 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -61,6 +62,9 @@ public class UpdateZoneCmd extends BaseCmd {
 
     @Parameter(name="vnet", type=CommandType.STRING, description="the VNET for the Zone")
     private String vnet;
+    
+    @Parameter(name="domain", type=CommandType.STRING, description="Domain name for the Vms in the zone")
+    private String domain;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -97,6 +101,10 @@ public class UpdateZoneCmd extends BaseCmd {
     public String getVnet() {
         return vnet;
     }
+    
+    public String getDomain() {
+        return domain;
+    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -123,6 +131,7 @@ public class UpdateZoneCmd extends BaseCmd {
             response.setInternalDns2(responseObject.getInternalDns2());
             response.setName(responseObject.getName());
             response.setVlan(responseObject.getVnet());
+            response.setDomain(responseObject.getDomain());
         } else {
         	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update zone; internal error.");
         }

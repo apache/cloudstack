@@ -190,7 +190,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 				if (dns == null) {
 					dns = "4.2.2.2";
 				}
-				DataCenterVO zone = createZone(User.UID_SYSTEM, "Default", dns, null, dns, null, "1000-2000","10.1.1.0/24");
+				DataCenterVO zone = createZone(User.UID_SYSTEM, "Default", dns, null, dns, null, "1000-2000","10.1.1.0/24", null);
 
 				// Create a default pod
 				String networkType = _configDao.getValue("network.type");
@@ -527,7 +527,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         }
 	}
 
-    private DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String vnetRange, String guestCidr) throws InvalidParameterValueException, InternalErrorException {
+    private DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String vnetRange, String guestCidr, String domain) throws InvalidParameterValueException, InternalErrorException {
         int vnetStart, vnetEnd;
         if (vnetRange != null) {
             String[] tokens = vnetRange.split("-");
@@ -559,7 +559,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         }
 
         // Create the new zone in the database
-        DataCenterVO zone = new DataCenterVO(zoneName, null, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr);
+        DataCenterVO zone = new DataCenterVO(zoneName, null, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr, domain);
         zone = _zoneDao.persist(zone);
 
         // Add vnet entries for the new zone

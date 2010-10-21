@@ -63,6 +63,9 @@ public class CreateUserCmd extends BaseCmd {
 
     @Parameter(name="username", type=CommandType.STRING, required=true, description="Unique username.")
     private String username;
+    
+    @Parameter(name="networkdomain", type=CommandType.STRING, description="Network domain name of the Vms that belong to the domain")
+    private String networkdomain;
 
 
     /////////////////////////////////////////////////////
@@ -105,7 +108,9 @@ public class CreateUserCmd extends BaseCmd {
         return username;
     }
 
-
+    public String getNetworkdomain() {
+        return networkdomain;
+    }
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
