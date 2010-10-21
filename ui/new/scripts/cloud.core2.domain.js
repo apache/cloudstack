@@ -37,7 +37,7 @@ function afterLoadDomainJSP() {
         domainIdNameMap[json.id] = json.name;               //map domainId to domainName
     
         var template = $treenodeTemplate.clone(true);	  
-        template.find("#domain_indent").css("marginLeft", (30*level));           
+        template.find("#domain_indent").css("marginLeft", (30*(level+1)));           
         template.attr("id", "domain_"+json.id);	         
         template.data("jsonObj", json).data("domainLevel", level); 	      
         template.find("#domain_title_container").attr("id", "domain_title_container_"+json.id); 	        
