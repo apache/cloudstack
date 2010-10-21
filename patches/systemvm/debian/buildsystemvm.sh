@@ -5,14 +5,12 @@ set -x
 IMAGENAME=systemvm
 LOCATION=/var/lib/images/systemvm
 PASSWORD=password
+#APT_PROXY=192.168.1.115:3142/
 APT_PROXY=
 HOSTNAME=systemvm
 SIZE=2000
 DEBIAN_MIRROR=ftp.us.debian.org/debian
 MINIMIZE=true
-MOUNTPOINT=/mnt/$IMAGENAME/
-IMAGELOC=$LOCATION/$IMAGENAME.img
-scriptdir=$(dirname $PWD/$0)
 
 baseimage() {
   mkdir -p $LOCATION
@@ -21,7 +19,7 @@ baseimage() {
   loopdev=$(losetup -f)
   losetup $loopdev $IMAGELOC
   parted $loopdev -s 'mklabel msdos'
-  parted $loopdev -s 'mkpart primary ext3 512B 2097151000B'
+  parted $loopdev -s 'mkpart primary ext3 512B -1'
   sleep 2 
   losetup -d $loopdev
   loopdev=$(losetup --show -o 512 -f $IMAGELOC )
@@ -328,18 +326,41 @@ EOF
 
 }
 
+xenstore_utils() {
+  chroot . apt-get --no-install-recommends -q -y --force-yes install libxenstore
+  for f in $(find ${scriptdir}/xe/usr/bin -name xen*)
+  do
+    cp $f ./usr/bin
+  done
+  for f in $(find ${scriptdir}/xe/ -name xe-*)
+  do
+    cp $f ./usr/sbin/
+    chmod a+x /usr/sbin/xe-*
+  done
+}
+
 packages() {
   DEBIAN_FRONTEND=noninteractive
   DEBIAN_PRIORITY=critical
   DEBCONF_DB_OVERRIDE=’File{/root/config.dat}’
   export DEBIAN_FRONTEND DEBIAN_PRIORITY DEBCONF_DB_OVERRIDE
 
-  chroot .  apt-get --no-install-recommends -q -y --force-yes install rsyslog chkconfig insserv net-tools ifupdown vim-tiny netbase iptables openssh-server grub e2fsprogs dhcp3-client dnsmasq tcpdump socat wget apache2 ssl-cert python bzip2 sed gawk diff grep gzip less tar telnet xl2tpd traceroute openswan psmisc inetutils-ping iputils-arping httping dnsutils zip unzip ethtool uuid file
-
-  chroot . apt-get --no-install-recommends -q -y --force-yes install haproxy nfs-common
-
-  echo "***** getting additional modules *********"
-  chroot .  apt-get --no-install-recommends -q -y --force-yes  install iproute acpid iptables-persistent
+  #basic stuff
+  chroot .  apt-get --no-install-recommends -q -y --force-yes install rsyslog logrotate cron chkconfig insserv net-tools ifupdown vim-tiny netbase iptables openssh-server grub e2fsprogs dhcp3-client dnsmasq tcpdump socat wget  python bzip2 sed gawk diff grep gzip less tar telnet traceroute psmisc procps monit inetutils-ping iputils-arping httping dnsutils zip unzip ethtool uuid file iproute acpid iptables-persistent sysstat
+  #apache
+  chroot .  apt-get --no-install-recommends -q -y --force-yes install apache2 ssl-cert 
+  #haproxy
+  chroot . apt-get --no-install-recommends -q -y --force-yes install haproxy 
+  #dnsmasq
+  chroot . apt-get --no-install-recommends -q -y --force-yes install dnsmasq 
+  #nfs client
+  chroot . apt-get --no-install-recommends -q -y --force-yes install nfs-common
+  #vpn stuff
+  chroot .  apt-get --no-install-recommends -q -y --force-yes install xl2tpd openswan bcrelay ppp ipsec-tools
+  #vmware tools
+  chroot . apt-get --no-install-recommends -q -y --force-yes install open-vm-tools
+  #xenstore utils
+  xenstore_utils
 
   echo "***** getting sun jre 6*********"
   DEBIAN_FRONTEND=readline
@@ -348,6 +369,7 @@ packages() {
   chroot .  apt-get --no-install-recommends -q -y install  sun-java6-jre 
 
 }
+
 
 password() {
   chroot . echo "root:$PASSWORD" | chroot . chpasswd
@@ -376,6 +398,7 @@ services() {
   chroot . chkconfig cloud-passwd-srvr off
   chroot . chkconfig --add cloud
   chroot . chkconfig cloud off
+  chroot . chkconfig monit off
 }
 
 cleanup() {
@@ -391,7 +414,7 @@ cleanup() {
     rm -rf usr/share/locale/[f-z]*
     rm -rf usr/share/doc/*
     size=$(df   $MOUNTPOINT | awk '{print $4}' | grep -v Available)
-    dd if=/dev/zero of=$MOUNTPOINT/zeros.img bs=1M count=$((((size-200000)) / 1000))
+    dd if=/dev/zero of=$MOUNTPOINT/zeros.img bs=1M count=$((((size-150000)) / 1000))
     rm -f $MOUNTPOINT/zeros.img
   fi
 }
@@ -403,6 +426,9 @@ signature() {
 
 mkdir -p $IMAGENAME
 mkdir -p $LOCATION
+MOUNTPOINT=/mnt/$IMAGENAME/
+IMAGELOC=$LOCATION/$IMAGENAME.img
+scriptdir=$(dirname $PWD/$0)
 
 rm -f $IMAGELOC
 begin=$(date +%s)
