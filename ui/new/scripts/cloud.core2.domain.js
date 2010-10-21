@@ -124,7 +124,7 @@ function afterLoadDomainJSP() {
 		});		
 	}
 	
-	$treenodeTemplate.bind("click", function(event) {			     
+	$treenodeTemplate.unbind("click").bind("click", function(event) {			     
 		var $thisNode = $(this);
 		var target = $(event.target);
 		var action = target.attr("id");
