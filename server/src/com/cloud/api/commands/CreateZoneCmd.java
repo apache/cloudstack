@@ -21,6 +21,7 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -36,7 +37,6 @@ public class CreateZoneCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-
     @Parameter(name="dns1", type=CommandType.STRING, required=true, description="the first DNS for the Zone")
     private String dns1;
 
@@ -62,7 +62,8 @@ public class CreateZoneCmd extends BaseCmd {
     @Parameter(name="domain", type=CommandType.STRING, description="Domain name for the Vms in the zone")
     private String domain;
 
-
+    @Parameter(name="domainid", type=CommandType.LONG, description="the ID of the containing domain, null for public zones")
+    private Long domainId; 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -99,6 +100,10 @@ public class CreateZoneCmd extends BaseCmd {
         return domain;
     }
 
+    public Long getDomainId(){
+    	return domainId;
+    }
+    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -123,6 +128,7 @@ public class CreateZoneCmd extends BaseCmd {
         response.setGuestCidrAddress(zone.getGuestNetworkCidr());
         response.setDomain(zone.getDomain());
         response.setResponseName(getName());
+        response.setDomainId(zone.getDomainId());
         return response;
     }
 }
