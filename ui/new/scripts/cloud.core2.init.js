@@ -93,11 +93,10 @@ $(document).ready(function() {
 		hideMiddleMenu();		
 		disableMultipleSelectionInMidMenu();      
 		clearMiddleMenu();
-		
-		$("#right_panel").load("jsp/domain.jsp", function(){ 
-			afterLoadDomainJSP();       
-		});     
-		
+				
+		bindEventHandlerToDomainTreeNode();		
+		refreshWholeTree(g_domainid, defaultRootLevel); 
+				
 		return false;
 	});  
         

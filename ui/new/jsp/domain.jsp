@@ -31,7 +31,7 @@
     </div>  
     <!-- Details tab (start)-->
     <div id="tab_content_details">
-        <div class="grid_container">
+        <div class="grid_container" id="domain_grid_container">
             <div class="grid_rows odd">
                 <div class="grid_row_cell" style="width: 20%;">
                     <div class="row_celltitles">
