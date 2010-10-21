@@ -68,15 +68,16 @@ public class CreateSnapshotExecutor extends BaseAsyncJobExecutor {
             
 	    	try {
 	    	    SnapshotVO snapshot = snapshotManager.createSnapshot(userId, param.getVolumeId(), param.getPolicyIds());
-	    	    Snapshot.Status status = snapshot.getStatus();
-		    	if (snapshot != null && ( status == Snapshot.Status.CreatedOnPrimary 
-		    	        || status == Snapshot.Status.BackedUp) ) {
+		    	if (snapshot != null) {
+                    Snapshot.Status status = snapshot.getStatus();
 				    snapshotId = snapshot.getId();
 				    if( status == Snapshot.Status.CreatedOnPrimary ) {
     				    asyncMgr.updateAsyncJobStatus(jobId, BaseCmd.PROGRESS_INSTANCE_CREATED, snapshotId);
     				    backedUp = snapshotManager.backupSnapshotToSecondaryStorage(userId, snapshot);
-				    } else {
+				    } else if ( status == Snapshot.Status.BackedUp ){
 				        backedUp = true;
+				    } else {
+                        resultObject = "Snapshot: " + snapshotId + " creation failed, the status is " + status.toString();
 				    }
 				    if (backedUp) {
 				        result = AsyncJobResult.STATUS_SUCCEEDED;

@@ -709,6 +709,9 @@ def makedirs(path):
         try:
             os.makedirs(path)
         except OSError, (errno, strerror):
+            umount(path)
+            if os.path.isdir(path):
+                return
             errMsg = "OSError while creating " + path + " with errno: " + str(errno) + " and strerr: " + strerror
             util.SMlog(errMsg)
             raise xs_errors.XenError(errMsg)
