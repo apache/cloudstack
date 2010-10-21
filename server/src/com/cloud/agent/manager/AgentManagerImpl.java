@@ -531,7 +531,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
             if (host.getType() == Type.Routing && host.getHypervisorType() == Hypervisor.Type.XenServer ) {
                 if (host.getClusterId() != null) {
                     List<HostVO> hosts = _hostDao.listBy(Type.Routing, host.getClusterId(), host.getPodId(), host.getDataCenterId());
-                    boolean success = false;
+                    boolean success = true;
                     for( HostVO thost: hosts ) {
                         long thostId = thost.getId();
                         if( thostId == hostId ) continue;
@@ -544,9 +544,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
                             break;
 
                         } else {
+                            success = false;
                             s_logger.debug("Eject Host: " + hostId + " from " + thostId + " failed due to " + (answer != null ? answer.getDetails() : "no answer"));
                         }
-
                     }
                     if( !success ){
                         throw new CloudRuntimeException("Unable to delete host " + hostId + " due to unable to eject it from pool");	
