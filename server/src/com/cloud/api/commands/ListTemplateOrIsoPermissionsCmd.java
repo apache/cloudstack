@@ -76,7 +76,7 @@ public class ListTemplateOrIsoPermissionsCmd extends BaseListCmd {
     @Override @SuppressWarnings("unchecked")
     public TemplatePermissionsResponse getResponse() {
         List<String> accountNames = (List<String>)getResponseObject();
-        Account account = (Account)UserContext.current().getAccountObject();
+        Account account = (Account)UserContext.current().getAccount();
         boolean isAdmin = ((account == null) || isAdmin(account.getType()));
         Long templateOwnerDomain = null;
         VMTemplateVO template = ApiDBUtils.findTemplateById(id);

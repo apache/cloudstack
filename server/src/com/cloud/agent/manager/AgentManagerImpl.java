@@ -97,7 +97,6 @@ import com.cloud.dc.dao.VlanDao;
 import com.cloud.event.dao.EventDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.DiscoveryException;
-import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.UnsupportedVersionException;
@@ -1246,8 +1245,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
     }
 
     @Override
-    public HostStats getHostStatistics(long hostId) throws InternalErrorException
-    {
+    public HostStats getHostStatistics(long hostId) {
     	Answer answer = easySend(hostId, new GetHostStatsCommand(_hostDao.findById(hostId).getGuid(), _hostDao.findById(hostId).getName(),hostId));
     	
         if (answer != null && (answer instanceof UnsupportedAnswer)) {

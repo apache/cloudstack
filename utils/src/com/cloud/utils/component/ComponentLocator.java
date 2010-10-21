@@ -72,6 +72,8 @@ import com.cloud.utils.mgmt.ManagementBean;
 @SuppressWarnings("unchecked")
 public class ComponentLocator extends Thread implements ComponentLocatorMBean {
     protected static final Logger                      s_logger     = Logger.getLogger(ComponentLocator.class);
+    
+    protected static HashMap<String, Object> s_singletons = new HashMap<String, Object>(111);
 
     protected HashMap<String, Adapters<? extends Adapter>> _adapterMap;
     protected HashMap<String, Info<Manager>>           _managerMap;
@@ -103,11 +105,11 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
 	public synchronized void run() {
         Iterator<Adapters<? extends Adapter>> itAdapters = _adapterMap.values().iterator();
         while (itAdapters.hasNext()) {
-            Adapters adapters = itAdapters.next();
+            Adapters<? extends Adapter> adapters = itAdapters.next();
             itAdapters.remove();
-            Enumeration it = adapters.enumeration();
+            Enumeration<? extends Adapter> it = adapters.enumeration();
             while (it.hasMoreElements()) {
-                Adapter adapter = (Adapter)it.nextElement();
+                Adapter adapter = it.nextElement();
                 adapter.stop();
             }
         }
@@ -182,7 +184,7 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
             Info<GenericDao<?, ?>> info = entry.getValue();
             s_logger.info("Starting DAO: " + info.name);
             try {
-                info.instance = (GenericDao<?, ?>)createInstance(info.clazz, true);
+                info.instance = (GenericDao<?, ?>)createInstance(info.clazz, true, info.singleton);
                 inject(info.clazz, info.instance);
                 if (!info.instance.configure(info.name, info.params)) {
                     s_logger.error("Unable to configure DAO: " + info.name);
@@ -201,9 +203,17 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
         }
     }
     
-    private static Object createInstance(Class<?> clazz, boolean inject, Object... args) {
+    private static Object createInstance(Class<?> clazz, boolean inject, boolean singleton, Object... args) {
         Factory factory = null;
+        Object entity = null;
         synchronized(s_factories) {
+            if (singleton) {
+                entity = s_singletons.get(clazz.toString());
+                if (entity != null) {
+                    s_logger.debug("Found singleton instantiation for " + clazz.toString());
+                    return entity;
+                }
+            }
             InjectInfo info = s_factories.get(clazz);
             if (info == null) {
                 Enhancer enhancer = new Enhancer();
@@ -219,11 +229,10 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
         }
         
         
-        Class[] argTypes = null;
-        Object entity;
+        Class<?>[] argTypes = null;
         if (args != null && args.length > 0) {
             Constructor<?>[] constructors = clazz.getConstructors();
-            for (Constructor constructor : constructors) {
+            for (Constructor<?> constructor : constructors) {
                 Class<?>[] paramTypes = constructor.getParameterTypes();
                 if (paramTypes.length == args.length) {
                     boolean found = true;
@@ -253,6 +262,12 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
             inject(clazz, entity);
         }
         
+        if (singleton) {
+            synchronized(s_factories) {
+                s_singletons.put(clazz.toString(), entity);
+            }
+        }
+        
         return entity;
     }
     
@@ -275,13 +290,13 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
         return info;
     }
 
-    private static synchronized Object getComponent(Class clazz) {
+    private static synchronized Object getComponent(Class<?> clazz) {
         String name = clazz.getName();
         try {
             Object component = _componentMap.get(name);
             if (component == null) {
                 Class<?> impl = Class.forName(name);
-                component = createInstance(impl, true);
+                component = createInstance(impl, true, true);
                 _componentMap.put(name, component);
             }
             return component;
@@ -300,7 +315,7 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
         String implementationClass = _implementationClassMap.get(componentName);
         if (implementationClass != null) {
             try {
-                Class clazz = Class.forName(implementationClass);
+                Class<?> clazz = Class.forName(implementationClass);
                 return getComponent(clazz);
             } catch (Exception ex) {
                 s_logger.error("Failed to get component " + componentName + ", caused by exception " + ex, ex);
@@ -322,7 +337,7 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
             Info<Manager> info = entry.getValue();
             if (info.instance == null) {
                 s_logger.info("Instantiating Manager: " + info.name);
-                info.instance = (Manager)createInstance(info.clazz, false);
+                info.instance = (Manager)createInstance(info.clazz, false, info.singleton);
             }
         }
     }
@@ -434,7 +449,7 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
             return null;
         }
         if (info.instance == null) {
-            info.instance = (Manager)createInstance(info.clazz, false);
+            info.instance = (Manager)createInstance(info.clazz, false, info.singleton);
         }
         return (T)info.instance;
     }
@@ -446,7 +461,7 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
             List<Adapter> lst = new ArrayList<Adapter>();
             for (Info<Adapter> info : entry.getValue()) {
                 s_logger.info("Instantiating Adapter: " + info.name);
-                info.instance = (Adapter)createInstance(info.clazz, true);
+                info.instance = (Adapter)createInstance(info.clazz, true, info.singleton);
                 try {
                     if (!info.instance.configure(info.name, info.params)) {
                         s_logger.error("Unable to configure adapter: " + info.name);
@@ -496,11 +511,11 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
     }
     
     public static <T> T inject(Class<T> clazz) {
-        return (T)createInstance(clazz, true);
+        return (T)createInstance(clazz, true, false);
     }
     
     public static <T> T inject(Class<T> clazz, Object... args) {
-        return (T)createInstance(clazz, true, args);
+        return (T)createInstance(clazz, true, false, args);
     }
     
     @Override
@@ -621,8 +636,9 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
         Class<?>                clazz;
         HashMap<String, Object> params = new HashMap<String, Object>();
         String                  name;
-        String                  key;
+        List<String>            keys = new ArrayList<String>();
         T                       instance;
+        boolean                 singleton = true;
     }
 
     /**
@@ -634,7 +650,6 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
         public HashMap<String, Info<Manager>>          managers;
         public LinkedHashMap<String, Info<GenericDao<?, ?>>> daos;
         public String                                  parent;
-        public
 
         List<Info<Adapter>>                            lst;
         String                                         paramName;
@@ -680,13 +695,14 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
             Class<?>[] classes = local.value();
             for (int i = 0; i < classes.length; i++) {
             	if (findInterfaceInHierarchy(classes[i].getInterfaces(), interphace)) {
-                    info.key = classes[i].getName();
+                    info.keys.add(classes[i].getName());
                     s_logger.info("Found component: " + interphace.getName() + " - " + clazzName + " - " + info.name);
-                    return;
                 }
             }
-
-            throw new CloudRuntimeException("Class " + clazzName + " does not implement " + interphace.getName());
+            
+            if (info.keys.size() != classes.length) {
+                throw new CloudRuntimeException("Class " + clazzName + " does not implement " + interphace.getName());
+            }
         }
         
         protected boolean findInterfaceInHierarchy(Class<?>[] interphaces, Class<?> interphace) {
@@ -732,7 +748,9 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
                 Info<Manager> info = new Info<Manager>();
                 fillInfo(atts, Manager.class, info);
                 s_logger.info("Adding Manager: " + info.name);
-                managers.put(info.key, info);
+                for (String key : info.keys) {
+                    managers.put(key, info);
+                }
                 currentInfo = info;
             } else if (qName.equals("param")) {
                 paramName = getAttribute(atts, "name");
@@ -740,7 +758,9 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
             } else if (qName.equals("dao")) {
                 Info<GenericDao<?, ?>> info = new Info<GenericDao<?, ?>>();
                 fillInfo(atts, GenericDao.class, info);
-                daos.put(info.key, info);
+                for (String key : info.keys) {
+                    daos.put(key, info);
+                }
                 currentInfo = info;
             } else {
                 // ignore

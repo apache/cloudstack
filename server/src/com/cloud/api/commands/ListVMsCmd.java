@@ -164,7 +164,7 @@ public class ListVMsCmd extends BaseListCmd {
             userVmResponse.setZoneId(userVm.getDataCenterId());
             userVmResponse.setZoneName(ApiDBUtils.findZoneById(userVm.getDataCenterId()).getName());
 
-            Account account = (Account)UserContext.current().getAccountObject();
+            Account account = (Account)UserContext.current().getAccount();
             //if user is an admin, display host id
             if (((account == null) || isAdmin(account.getType())) && (userVm.getHostId() != null)) {
                 userVmResponse.setHostId(userVm.getHostId());

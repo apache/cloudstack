@@ -106,7 +106,7 @@ public class AssociateIPAddrCmd extends BaseCmd {
         ipResponse.setForVirtualNetwork(forVirtualNetworks);
 
         //show this info to admin only
-        Account account = (Account)UserContext.current().getAccountObject();
+        Account account = (Account)UserContext.current().getAccount();
         if ((account == null)  || isAdmin(account.getType())) {
             ipResponse.setVlanId(ipAddress.getVlanDbId());
             ipResponse.setVlanName(ApiDBUtils.findVlanById(ipAddress.getVlanDbId()).getVlanId());

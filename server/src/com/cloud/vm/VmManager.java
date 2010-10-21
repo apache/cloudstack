@@ -23,6 +23,7 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.network.NetworkConfigurationVO;
 import com.cloud.service.ServiceOfferingVO;
@@ -62,7 +63,7 @@ public interface VmManager extends Manager {
             DeploymentPlan plan,
             Account owner) throws InsufficientCapacityException, StorageUnavailableException;
     
-    <T extends VMInstanceVO> T start(T vm, DeploymentPlan plan, Account user, VirtualMachineGuru<T> checker) throws InsufficientCapacityException, StorageUnavailableException, ConcurrentOperationException;
+    <T extends VMInstanceVO> T start(T vm, DeploymentPlan plan, Account user, VirtualMachineGuru<T> checker) throws InsufficientCapacityException, StorageUnavailableException, ConcurrentOperationException, ResourceUnavailableException;
     
     <T extends VMInstanceVO> T stop(T vm) throws AgentUnavailableException, ConcurrentOperationException;
     

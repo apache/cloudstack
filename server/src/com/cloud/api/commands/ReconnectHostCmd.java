@@ -80,7 +80,7 @@ public class ReconnectHostCmd extends BaseAsyncCmd {
 
     @Override
     public long getAccountId() {
-        Account account = (Account)UserContext.current().getAccountObject();
+        Account account = (Account)UserContext.current().getAccount();
         if (account != null) {
             return account.getId();
         }

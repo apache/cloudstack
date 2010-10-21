@@ -32,7 +32,8 @@ public class UserContext {
     private Long accountId;
     private Long domainId;
     private String sessionId;
-    private Object accountObject;
+    private Account accountObject;
+    private Long eventId;
 
     private boolean apiServer;
 
@@ -41,13 +42,14 @@ public class UserContext {
     public UserContext() {
     }
 
-    public UserContext(Long userId, Object accountObject, String accountName, Long accountId, Long domainId, String sessionId, boolean apiServer) {
+    public UserContext(Long userId, Account accountObject, String accountName, Long accountId, Long domainId, String sessionId, boolean apiServer) {
         this.userId = userId;
         this.accountObject = accountObject;
         this.accountId = accountId;
         this.domainId = domainId;
         this.sessionId = sessionId;
         this.apiServer = apiServer;
+        this.eventId = null;
     }
 
     public Long getUserId() {
@@ -60,6 +62,14 @@ public class UserContext {
         }
 
         return null;
+    }
+    
+    public void setEventId(long eventId) {
+        this.eventId = eventId;
+    }
+    
+    public Long getEventId() {
+        return eventId;
     }
 
     public void setUserId(Long userId) {
@@ -102,11 +112,11 @@ public class UserContext {
         return sessionId;
     }
 
-    public Object getAccountObject() {
+    public Account getAccount() {
         return accountObject;
     }
 
-    public void setAccountObject(Object accountObject) {
+    public void setAccount(Account accountObject) {
         this.accountObject = accountObject;
     }
 
@@ -130,19 +140,19 @@ public class UserContext {
         return context;
     }
 
-	public static void updateContext(Long userId, Object accountObject, String accountName, Long accountId, Long domainId, String sessionId) {
+	public static void updateContext(Long userId, Account accountObject, String accountName, Long accountId, Long domainId, String sessionId) {
 	    UserContext context = current();
 	    assert(context != null) : "Context should be already setup before you can call this one";
 
 	    context.setUserId(userId);
-	    context.setAccountObject(accountObject);
+	    context.setAccount(accountObject);
 	    context.setAccountName(accountName);
 	    context.setAccountId(accountId);
 	    context.setDomainId(domainId);
 	    context.setSessionKey(sessionId);
 	}
 
-	public static void registerContext(Long userId, Object accountObject, String accountName, Long accountId, Long domainId, String sessionId, boolean apiServer) {
+	public static void registerContext(Long userId, Account accountObject, String accountName, Long accountId, Long domainId, String sessionId, boolean apiServer) {
 	    s_currentContext.set(new UserContext(userId, accountObject, accountName, accountId, domainId, sessionId, apiServer));
 	}
 

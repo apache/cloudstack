@@ -93,6 +93,7 @@ import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.OperationTimedoutException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.Host;
@@ -537,7 +538,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
         }
     }
 
-    public ConsoleProxyVO start2(long proxyVmId, long startEventId) throws StorageUnavailableException, InsufficientCapacityException, ConcurrentOperationException {
+    public ConsoleProxyVO start2(long proxyVmId, long startEventId) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException {
         ConsoleProxyVO proxy = _consoleProxyDao.findById(proxyVmId);
         DeploymentPlan plan = new DataCenterDeployment(proxy.getDataCenterId(), 1);
         AccountVO systemAcct = _accountMgr.getSystemAccount();

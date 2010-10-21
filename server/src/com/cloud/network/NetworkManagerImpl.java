@@ -90,6 +90,7 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -156,8 +157,8 @@ import com.cloud.vm.dao.UserVmDao;
 /**
  * NetworkManagerImpl implements NetworkManager.
  */
-@Local(value={NetworkManager.class})
-public class NetworkManagerImpl implements NetworkManager {
+@Local(value={NetworkManager.class, DomainRouterService.class})
+public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
     private static final Logger s_logger = Logger.getLogger(NetworkManagerImpl.class);
 
     String _name;
@@ -493,7 +494,7 @@ public class NetworkManagerImpl implements NetworkManager {
     	String accountName = cmd.getAccountName();
     	Long domainId = cmd.getDomainId();
     	Long zoneId = cmd.getZoneId();
-    	Account account = (Account)UserContext.current().getAccountObject();
+    	Account account = UserContext.current().getAccount();
     	Long userId = UserContext.current().getUserId();
     	Long accountId = null;
     	
@@ -823,7 +824,7 @@ public class NetworkManagerImpl implements NetworkManager {
         }
 
         // if an admin account was passed in, or no account was passed in, make sure we honor the accountName/domainId parameters
-        Account account = (Account)UserContext.current().getAccountObject();
+        Account account = UserContext.current().getAccount();
         if (account != null) {
             if ((account.getType() == Account.ACCOUNT_TYPE_ADMIN) || (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)) {
                 if (!_domainDao.isChildDomain(account.getDomainId(), userVM.getDomainId())) {
@@ -916,7 +917,7 @@ public class NetworkManagerImpl implements NetworkManager {
     @Override
     public List<FirewallRuleVO> listPortForwardingRules(ListPortForwardingRulesCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
         String ipAddress = cmd.getIpAddress();
-        Account account = (Account)UserContext.current().getAccountObject();
+        Account account = UserContext.current().getAccount();
 
         IPAddressVO ipAddressVO = _ipAddressDao.findById(ipAddress);
         if (ipAddressVO == null) {
@@ -971,7 +972,7 @@ public class NetworkManagerImpl implements NetworkManager {
         cmd.synchronizeCommand("Router", syncObject.getId());
 
         // Permission check...
-        Account account = (Account)UserContext.current().getAccountObject();
+        Account account = UserContext.current().getAccount();
         if (account != null) {
         	if ((account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) || (account.getType() == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN)) {
         		if (!_domainDao.isChildDomain(account.getDomainId(), loadBalancer.getDomainId())) {
@@ -1213,7 +1214,7 @@ public class NetworkManagerImpl implements NetworkManager {
             throw new InvalidParameterValueException("Unable to create load balancer rule, cannot find account owner for ip " + publicIp);
         }
 
-        Account account = (Account)UserContext.current().getAccountObject();
+        Account account = UserContext.current().getAccount();
         if (account != null) {
             if ((account.getType() == Account.ACCOUNT_TYPE_ADMIN) || (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)) {
                 if (!_domainDao.isChildDomain(account.getDomainId(), ipAddr.getDomainId())) {
@@ -1773,7 +1774,7 @@ public class NetworkManagerImpl implements NetworkManager {
     }
     
     @Override
-    public NicTO[] prepare(VirtualMachineProfile vmProfile, DeployDestination dest, Account user) throws InsufficientAddressCapacityException, InsufficientVirtualNetworkCapcityException {
+    public NicTO[] prepare(VirtualMachineProfile vmProfile, DeployDestination dest, Account user) throws InsufficientAddressCapacityException, InsufficientVirtualNetworkCapcityException, ConcurrentOperationException, ResourceUnavailableException {
         List<NicVO> nics = _nicDao.listBy(vmProfile.getId());
         NicTO[] nicTos = new NicTO[nics.size()];
         int i = 0;
@@ -1856,7 +1857,7 @@ public class NetworkManagerImpl implements NetworkManager {
 	public boolean removeFromLoadBalancer(RemoveFromLoadBalancerRuleCmd cmd) throws InvalidParameterValueException {
 		
         Long userId = UserContext.current().getUserId();
-        Account account = (Account)UserContext.current().getAccountObject();
+        Account account = UserContext.current().getAccount();
         Long loadBalancerId = cmd.getId();
         Long vmInstanceId = cmd.getVirtualMachineId();
         List<Long> instanceIds = cmd.getVirtualMachineIds();
@@ -1968,7 +1969,7 @@ public class NetworkManagerImpl implements NetworkManager {
     public boolean deleteLoadBalancerRule(DeleteLoadBalancerRuleCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
     	Long loadBalancerId = cmd.getId();
     	Long userId = UserContext.current().getUserId();
-    	Account account = (Account)UserContext.current().getAccountObject();
+    	Account account = UserContext.current().getAccount();
     	
     	///verify input parameters
     	LoadBalancerVO loadBalancer = _loadBalancerDao.findById(loadBalancerId);
@@ -2084,7 +2085,7 @@ public class NetworkManagerImpl implements NetworkManager {
     	String algorithm = cmd.getAlgorithm();
     	String name = cmd.getName();
     	String description = cmd.getDescription();
-    	Account account = (Account)UserContext.current().getAccountObject();
+    	Account account = UserContext.current().getAccount();
     	
     	//Verify input parameters
         LoadBalancerVO loadBalancer = _loadBalancerDao.findById(loadBalancerId);
@@ -2172,7 +2173,7 @@ public class NetworkManagerImpl implements NetworkManager {
 	public boolean deleteNetworkRuleConfig(DeletePortForwardingServiceRuleCmd cmd) throws PermissionDeniedException {
         Long userId = UserContext.current().getUserId();
         Long netRuleId = cmd.getId();
-        Account account = (Account)UserContext.current().getAccountObject();
+        Account account = UserContext.current().getAccount();
 
         //If command is executed via 8096 port, set userId to the id of System account (1)
         if (userId == null) {
@@ -2259,7 +2260,7 @@ public class NetworkManagerImpl implements NetworkManager {
         Transaction txn = Transaction.currentTxn();
         
         Long userId = UserContext.current().getUserId();
-        Account account = (Account)UserContext.current().getAccountObject();
+        Account account = UserContext.current().getAccount();
         String ipAddress = cmd.getIpAddress();
 
         // Verify input parameters
@@ -2349,7 +2350,7 @@ public class NetworkManagerImpl implements NetworkManager {
     public boolean deleteIpForwardingRule(DeleteIPForwardingRuleCmd cmd) throws PermissionDeniedException, InvalidParameterValueException {
     	Long ruleId = cmd.getId();
     	Long userId = UserContext.current().getUserId();
-    	Account account = (Account)UserContext.current().getAccountObject();
+    	Account account = UserContext.current().getAccount();
     	
     	//verify input parameters here
     	FirewallRuleVO rule = _firewallRulesDao.findById(ruleId);

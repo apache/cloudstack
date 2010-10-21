@@ -18,18 +18,14 @@
 
 package com.cloud.storage.upload;
 
-import java.util.Map;
-
 import com.cloud.async.AsyncJobManager;
-import com.cloud.exception.InternalErrorException;
 import com.cloud.host.HostVO;
+import com.cloud.storage.Upload.Status;
+import com.cloud.storage.Upload.Type;
 import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.Upload.Status;
-import com.cloud.storage.Upload.Type;
-import com.cloud.storage.template.TemplateInfo;
 import com.cloud.utils.component.Manager;
 
 /**
@@ -57,6 +53,6 @@ public interface UploadMonitor extends Manager{
             long asyncJobId, AsyncJobManager asyncMgr);
 
     UploadVO createEntityDownloadURL(VMTemplateVO template,
-            VMTemplateHostVO vmTemplateHost, Long dataCenterId, long eventId) throws InternalErrorException;
+            VMTemplateHostVO vmTemplateHost, Long dataCenterId, long eventId);
 
 }

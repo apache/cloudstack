@@ -50,6 +50,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.service.ServiceOfferingVO;
@@ -305,7 +306,7 @@ public interface NetworkManager extends Manager {
     
     List<NicProfile> allocate(VirtualMachineProfile vm, List<Pair<NetworkConfigurationVO, NicProfile>> networks) throws InsufficientCapacityException;
 
-    NicTO[] prepare(VirtualMachineProfile profile, DeployDestination dest, Account user) throws InsufficientAddressCapacityException, InsufficientVirtualNetworkCapcityException;
+    NicTO[] prepare(VirtualMachineProfile profile, DeployDestination dest, Account user) throws InsufficientAddressCapacityException, InsufficientVirtualNetworkCapcityException, ConcurrentOperationException, ResourceUnavailableException;
     void release(VirtualMachineProfile vmProfile);
     
     <K extends VMInstanceVO> List<NicVO> getNics(K vm);

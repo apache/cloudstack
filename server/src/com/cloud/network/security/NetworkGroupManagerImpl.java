@@ -428,7 +428,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
 		Integer icmpCode = cmd.getIcmpCode();
 		List<String> cidrList = cmd.getCidrList();
 		Map groupList = cmd.getUserNetworkGroupList();
-        Account account = (Account)UserContext.current().getAccountObject();
+        Account account = (Account)UserContext.current().getAccount();
         String accountName = cmd.getAccountName();
         Long domainId = cmd.getDomainId();
 		Integer startPortOrType = null;
@@ -638,7 +638,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
 	public boolean revokeNetworkGroupIngress(RevokeNetworkGroupIngressCmd cmd) {
 		
 		//input validation
-		Account account = (Account)UserContext.current().getAccountObject();
+		Account account = (Account)UserContext.current().getAccount();
 		Long userId  = UserContext.current().getUserId();
         Long domainId = cmd.getDomainId();
         Integer startPort = cmd.getStartPort();
@@ -855,7 +855,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
 	    Long domainId = cmd.getDomainId();
 	    Long accountId = null;
 
-	    Account account = (Account)UserContext.current().getAccountObject();
+	    Account account = (Account)UserContext.current().getAccount();
         if (account != null) {
             if ((account.getType() == Account.ACCOUNT_TYPE_ADMIN) || (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)) {
                 if ((domainId != null) && (accountName != null)) {
@@ -1115,7 +1115,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
 		String name = cmd.getName();
 		String accountName = cmd.getAccountName();
 		Long domainId = cmd.getDomainId();
-		Account account = (Account)UserContext.current().getAccountObject();
+		Account account = (Account)UserContext.current().getAccount();
 		
 		if (!_enabled) {
 			return ;
@@ -1193,7 +1193,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
 
     @Override
     public List<NetworkGroupRulesVO> searchForNetworkGroupRules(ListNetworkGroupsCmd cmd) throws PermissionDeniedException, InvalidParameterValueException {
-        Account account = (Account)UserContext.current().getAccountObject();
+        Account account = (Account)UserContext.current().getAccount();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         Long accountId = null;

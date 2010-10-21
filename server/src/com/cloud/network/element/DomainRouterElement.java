@@ -23,6 +23,9 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network.TrafficType;
 import com.cloud.network.NetworkConfiguration;
 import com.cloud.network.NetworkConfiguration.State;
@@ -35,8 +38,14 @@ import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.user.Account;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
+import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
+import com.cloud.vm.UserVmManager;
+import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.dao.DomainRouterDao;
+import com.cloud.vm.dao.UserVmDao;
 
 
 @Local(value=NetworkElement.class)
@@ -46,9 +55,12 @@ public class DomainRouterElement extends AdapterBase implements NetworkElement {
     @Inject NetworkConfigurationDao _networkConfigDao;
     @Inject NetworkManager _networkMgr;
     @Inject DomainRouterManager _routerMgr;
+    @Inject UserVmManager _userVmMgr;
+    @Inject UserVmDao _userVmDao;
+    @Inject DomainRouterDao _routerDao;
 
     @Override
-    public Boolean implement(NetworkConfiguration config, NetworkOffering offering, Account user) {
+    public Boolean implement(NetworkConfiguration config, NetworkOffering offering, Account user) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException {
         if (offering.getGuestIpType() != GuestIpType.Virtualized) {
             s_logger.trace("Not handling guest ip type = " + offering.getGuestIpType());
             return null;
@@ -79,25 +91,50 @@ public class DomainRouterElement extends AdapterBase implements NetworkElement {
             return null;
         }
         
+        DomainRouterVO router;
+        router = _routerMgr.deploy(publicConfig, guestConfig, offering, user);
+        if (router == null) {
+            s_logger.debug("Unable to deploy the router for " + guestConfig);
+            return false;
+        }
+        
         return true;
     }
 
     @Override
-    public Boolean prepare(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile vm, NetworkOffering offering, Account user) {
-        // TODO Auto-generated method stub
-        return false;
+    public Boolean prepare(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile vm, NetworkOffering offering, Account user) throws ConcurrentOperationException {
+        if (config.getTrafficType() != TrafficType.Guest || vm.getType() != Type.User) {
+            s_logger.trace("Domain Router only cares about guest network and User VMs");
+            return null;  
+        }
+        
+        UserVmVO userVm = _userVmDao.findById(vm.getId());
+        
+        return _routerMgr.addVirtualMachineToGuestNetwork(userVm, vm.getPassword(), 1) != null; 
     }
 
     @Override
     public Boolean release(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile vm, NetworkOffering offering, Account user) {
-        // TODO Auto-generated method stub
-        return false;
+        if (config.getTrafficType() != TrafficType.Guest || vm.getType() != Type.User) {
+            s_logger.trace("Domain Router only cares about guest network and User VMs");
+            return null;  
+        }
+        
+        
+        return true;
     }
 
     @Override
-    public Boolean shutdown(NetworkConfiguration config, NetworkOffering offering, Account user) {
-        // TODO Auto-generated method stub
-        return false;
+    public Boolean shutdown(NetworkConfiguration config, NetworkOffering offering, Account user) throws ConcurrentOperationException {
+        if (config.getTrafficType() != TrafficType.Guest) {
+            s_logger.trace("Domain Router only cares about guet network.");
+            return null;
+        }
+        DomainRouterVO router = _routerDao.findByNetworkConfiguration(config.getId());
+        if (router == null) {
+            return true;
+        }
+        return _routerMgr.stopRouter(router.getId(), 1);
     }
 
     protected DomainRouterElement() {

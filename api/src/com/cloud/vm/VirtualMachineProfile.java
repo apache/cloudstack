@@ -35,9 +35,14 @@ public class VirtualMachineProfile {
     List<DiskProfile> _disks;
     List<NicProfile> _nics;
     String _os;
+    String _password;
     
     public VirtualMachineProfile(VirtualMachine.Type type) {
         this._type = type;
+    }
+    
+    public String getPassword() {
+        return _password;
     }
     
     public String getName() {

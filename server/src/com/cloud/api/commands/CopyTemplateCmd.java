@@ -142,7 +142,7 @@ public class CopyTemplateCmd extends BaseAsyncCmd {
             }
             
             //set status 
-            Account account = (Account)UserContext.current().getAccountObject();
+            Account account = (Account)UserContext.current().getAccount();
             boolean isAdmin = false;
             if ((account == null) || (account.getType() == Account.ACCOUNT_TYPE_ADMIN) || (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)) {
                 isAdmin = true;

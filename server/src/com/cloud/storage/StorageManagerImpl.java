@@ -1635,7 +1635,7 @@ public class StorageManagerImpl implements StorageManager {
     @Override
     public VolumeVO createVolumeDB(CreateVolumeCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, ResourceAllocationException {
         // FIXME:  some of the scheduled event stuff might be missing here...
-        Account account = (Account)UserContext.current().getAccountObject();
+        Account account = (Account)UserContext.current().getAccount();
         String accountName = cmd.getAccountName();
         Long domainId = cmd.getDomainId();
         Account targetAccount = null;
@@ -2438,7 +2438,7 @@ public class StorageManagerImpl implements StorageManager {
 	
 	@Override
 	public boolean deleteVolume(DeleteVolumeCmd cmd) throws InvalidParameterValueException {
-    	Account account = (Account) UserContext.current().getAccountObject();
+    	Account account = (Account) UserContext.current().getAccount();
     	Long volumeId = cmd.getId();
     	
     	boolean isAdmin;

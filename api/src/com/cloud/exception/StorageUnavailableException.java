@@ -26,7 +26,7 @@ import com.cloud.utils.SerialVersionUID;
  * problem with.
  * 
  */
-public class StorageUnavailableException extends Exception {
+public class StorageUnavailableException extends ResourceUnavailableException {
     Object _obj;
 
     private static final long serialVersionUID = SerialVersionUID.StorageUnavailableException;

@@ -17,7 +17,6 @@
  */
 package com.cloud.agent;
 
-import java.net.URI;
 import java.util.List;
 import java.util.Set;
 
@@ -156,7 +155,7 @@ public interface AgentManager extends Manager {
      * @return HostStats
      * @throws InternalErrorException
      */
-	HostStats getHostStatistics(long hostId) throws InternalErrorException;
+	HostStats getHostStatistics(long hostId);
 	
 	Long getGuestOSCategoryId(long hostId);
 	

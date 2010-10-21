@@ -215,7 +215,7 @@ public class ListAccountsCmd extends BaseListCmd {
             acctResponse.setVmRunning(vmRunning);
 
             //show this info to admins only
-            Account ctxAccount = (Account)UserContext.current().getAccountObject();
+            Account ctxAccount = (Account)UserContext.current().getAccount();
             if ((ctxAccount == null) || isAdmin(ctxAccount.getType())) {
                 acctResponse.setState(account.getState());
                 acctResponse.setCleanupRequired(account.getNeedsCleanup());

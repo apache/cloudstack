@@ -26,6 +26,7 @@ import com.cloud.api.commands.AttachVolumeCmd;
 import com.cloud.api.commands.CreateTemplateCmd;
 import com.cloud.api.commands.CreateVMGroupCmd;
 import com.cloud.api.commands.DeleteVMGroupCmd;
+import com.cloud.api.commands.DeployVmCmd;
 import com.cloud.api.commands.DestroyVMCmd;
 import com.cloud.api.commands.DetachVolumeCmd;
 import com.cloud.api.commands.RebootVMCmd;
@@ -48,6 +49,7 @@ import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.network.security.NetworkGroupVO;
 import com.cloud.offerings.NetworkOfferingVO;
@@ -250,4 +252,8 @@ public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> 
     void removeInstanceFromGroup(long vmId);
 
 	void updateVirtualMachine(UpdateVMCmd cmd);
+	
+	UserVm createVirtualMachine(DeployVmCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException;
+	
+	UserVm startVirtualMachine(DeployVmCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException;
 }

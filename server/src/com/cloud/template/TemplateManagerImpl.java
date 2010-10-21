@@ -79,8 +79,8 @@ import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.Upload;
-import com.cloud.storage.UploadVO;
 import com.cloud.storage.Upload.Type;
+import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
@@ -160,7 +160,7 @@ public class TemplateManagerImpl implements TemplateManager {
     
     @Override
     public VMTemplateVO registerIso(RegisterIsoCmd cmd) throws InvalidParameterValueException, IllegalArgumentException, ResourceAllocationException{
-        Account account = (Account)UserContext.current().getAccountObject();
+        Account account = UserContext.current().getAccount();
         Long userId = UserContext.current().getUserId();
         String name = cmd.getName();
         String displayText = cmd.getDisplayText();
@@ -231,7 +231,7 @@ public class TemplateManagerImpl implements TemplateManager {
     @Override
     public VMTemplateVO registerTemplate(RegisterTemplateCmd cmd) throws InvalidParameterValueException, URISyntaxException, ResourceAllocationException{
     	
-        Account account = (Account)UserContext.current().getAccountObject();
+        Account account = UserContext.current().getAccount();
         Long userId = UserContext.current().getUserId();
         String name = cmd.getName();
         String displayText = cmd.getDisplayText(); 
@@ -411,8 +411,8 @@ public class TemplateManagerImpl implements TemplateManager {
     }
 
     @Override
-    public Long extract(ExtractIsoCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, InternalErrorException {
-        Account account = (Account)UserContext.current().getAccountObject();
+    public Long extract(ExtractIsoCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+        Account account = UserContext.current().getAccount();
         Long templateId = cmd.getId();
         Long zoneId = cmd.getZoneId();
         String url = cmd.getUrl();
@@ -423,8 +423,8 @@ public class TemplateManagerImpl implements TemplateManager {
     }
 
     @Override
-    public Long extract(ExtractTemplateCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, InternalErrorException {
-        Account account = (Account)UserContext.current().getAccountObject();
+    public Long extract(ExtractTemplateCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+        Account account = UserContext.current().getAccount();
         Long templateId = cmd.getId();
         Long zoneId = cmd.getZoneId();
         String url = cmd.getUrl();
@@ -434,7 +434,7 @@ public class TemplateManagerImpl implements TemplateManager {
         return extract(account, templateId, url, zoneId, mode, eventId, false, cmd.getJob(), cmd.getAsyncJobManager());
     }
 
-    private Long extract(Account account, Long templateId, String url, Long zoneId, String mode, Long eventId, boolean isISO, AsyncJobVO job, AsyncJobManager mgr) throws InvalidParameterValueException, PermissionDeniedException, InternalErrorException {
+    private Long extract(Account account, Long templateId, String url, Long zoneId, String mode, Long eventId, boolean isISO, AsyncJobVO job, AsyncJobManager mgr) throws InvalidParameterValueException, PermissionDeniedException {
         String desc = "template";
         if (isISO) {
             desc = "ISO";
@@ -779,7 +779,7 @@ public class TemplateManagerImpl implements TemplateManager {
     	Long userId = UserContext.current().getUserId();
     	Long sourceZoneId = cmd.getSourceZoneId();
     	Long destZoneId = cmd.getDestinationZoneId();
-    	Account account = (Account)UserContext.current().getAccountObject();
+    	Account account = UserContext.current().getAccount();
     	
         //Verify parameters
         VMTemplateVO iso = _tmpltDao.findById(isoId);
@@ -813,7 +813,7 @@ public class TemplateManagerImpl implements TemplateManager {
     	Long userId = UserContext.current().getUserId();
     	Long sourceZoneId = cmd.getSourceZoneId();
     	Long destZoneId = cmd.getDestinationZoneId();
-    	Account account = (Account)UserContext.current().getAccountObject();
+    	Account account = UserContext.current().getAccount();
         
         //Verify parameters
         VMTemplateVO template = _tmpltDao.findById(templateId);
@@ -1132,7 +1132,7 @@ public class TemplateManagerImpl implements TemplateManager {
 
 	@Override
 	public boolean detachIso(DetachIsoCmd cmd) throws InternalErrorException, InvalidParameterValueException, PermissionDeniedException {
-        Account account = (Account) UserContext.current().getAccountObject();
+        Account account = UserContext.current().getAccount();
         Long userId = UserContext.current().getUserId();
         Long vmId = cmd.getVirtualMachineId();
         
@@ -1166,7 +1166,7 @@ public class TemplateManagerImpl implements TemplateManager {
 	
 	@Override
 	public boolean attachIso(AttachIsoCmd cmd) throws InternalErrorException, InvalidParameterValueException, PermissionDeniedException {
-        Account account = (Account) UserContext.current().getAccountObject();
+        Account account = UserContext.current().getAccount();
         Long userId = UserContext.current().getUserId();
         Long vmId = cmd.getVirtualMachineId();
         Long isoId = cmd.getId();
@@ -1272,7 +1272,7 @@ public class TemplateManagerImpl implements TemplateManager {
     public boolean deleteTemplate(DeleteTemplateCmd cmd) throws InvalidParameterValueException, InternalErrorException, PermissionDeniedException {
         Long templateId = cmd.getId();
         Long userId = UserContext.current().getUserId();
-        Account account = (Account)UserContext.current().getAccountObject();
+        Account account = UserContext.current().getAccount();
         Long zoneId = cmd.getZoneId();
         
         VMTemplateVO template = _tmpltDao.findById(templateId.longValue());
@@ -1305,7 +1305,7 @@ public class TemplateManagerImpl implements TemplateManager {
     public boolean deleteIso(DeleteIsoCmd cmd) throws InvalidParameterValueException, InternalErrorException, PermissionDeniedException {
         Long templateId = cmd.getId();
         Long userId = UserContext.current().getUserId();
-        Account account = (Account)UserContext.current().getAccountObject();
+        Account account = UserContext.current().getAccount();
         Long zoneId = cmd.getZoneId();
         
         VMTemplateVO template = _tmpltDao.findById(templateId.longValue());

@@ -363,7 +363,7 @@ public class ApiServer implements HttpRequestHandler {
 
             UserContext ctx = UserContext.current();
             Long userId = ctx.getUserId();
-            Account account = (Account)ctx.getAccountObject();
+            Account account = (Account)ctx.getAccount();
             if (userId != null) {
                 params.put("ctxUserId", userId.toString());
             }

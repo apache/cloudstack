@@ -342,7 +342,7 @@ public class AccountManagerImpl implements AccountManager {
         String accountName = cmd.getAccountName();
         Long domainId = cmd.getDomainId();
         Long accountId = null;
-        Account account = (Account)UserContext.current().getAccountObject();
+        Account account = (Account)UserContext.current().getAccount();
 
         if ((account == null) ||
             (account.getType() == Account.ACCOUNT_TYPE_ADMIN) ||
@@ -409,7 +409,7 @@ public class AccountManagerImpl implements AccountManager {
     @Override
     public ResourceLimitVO updateResourceLimit(UpdateResourceLimitCmd cmd) throws InvalidParameterValueException  {
 
-    	Account account = (Account)UserContext.current().getAccountObject();
+    	Account account = (Account)UserContext.current().getAccount();
     	Long domainId = cmd.getDomainId();
     	Long max = cmd.getMax();
     	Integer type = cmd.getResourceType();

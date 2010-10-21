@@ -45,6 +45,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.OperationTimedoutException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.network.NetworkConfigurationVO;
 import com.cloud.network.NetworkManager;
@@ -211,7 +212,7 @@ public class MauriceMoss implements VmManager {
     }
 
     @Override
-    public <T extends VMInstanceVO> T start(T vm, DeploymentPlan plan, Account acct, VirtualMachineGuru<T> guru) throws InsufficientCapacityException, ConcurrentOperationException {
+    public <T extends VMInstanceVO> T start(T vm, DeploymentPlan plan, Account acct, VirtualMachineGuru<T> guru) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
         State state = vm.getState();
         if (state == State.Starting || state == State.Running) {
             s_logger.debug("VM is already started: " + vm);

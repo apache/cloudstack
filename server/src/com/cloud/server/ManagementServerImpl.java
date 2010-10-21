@@ -998,7 +998,7 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public boolean enableUser(EnableUserCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
     	Long userId = cmd.getId();
-    	Account adminAccount = (Account)UserContext.current().getAccountObject();
+    	Account adminAccount = UserContext.current().getAccount();
         boolean success = false;
         
         //Check if user exists in the system
@@ -1028,7 +1028,7 @@ public class ManagementServerImpl implements ManagementServer {
     public boolean lockUser(LockUserCmd cmd) {
         boolean success = false;
         
-        Account adminAccount = (Account)UserContext.current().getAccountObject();
+        Account adminAccount = UserContext.current().getAccount();
         Long id = cmd.getId();
 
         // Check if user with id exists in the system
@@ -1088,7 +1088,7 @@ public class ManagementServerImpl implements ManagementServer {
         String accountName = cmd.getAccountName();
         Long domainId = cmd.getDomainId();
 
-        Account adminAccount = (Account)UserContext.current().getAccountObject();
+        Account adminAccount = UserContext.current().getAccount();
         if ((adminAccount != null) && !_domainDao.isChildDomain(adminAccount.getDomainId(), domainId)) {
             throw new PermissionDeniedException("Failed to disable account " + accountName + " in domain " + domainId + ", permission denied.");
         }
@@ -1148,7 +1148,7 @@ public class ManagementServerImpl implements ManagementServer {
     	}
         
         //Check if user performing the action is allowed to modify this account
-        Account adminAccount = (Account)UserContext.current().getAccountObject();
+        Account adminAccount = UserContext.current().getAccount();
         if ((adminAccount != null) && isChildDomain(adminAccount.getDomainId(), account.getDomainId())) {
           throw new PermissionDeniedException("Invalid account " + accountName + " in domain " + domainId + " given, permission denied");
         }
@@ -1211,7 +1211,7 @@ public class ManagementServerImpl implements ManagementServer {
     	}
         
         //Check if user performing the action is allowed to modify this account
-        Account adminAccount = (Account)UserContext.current().getAccountObject();
+        Account adminAccount = UserContext.current().getAccount();
         if ((adminAccount != null) && isChildDomain(adminAccount.getDomainId(), account.getDomainId())) {
           throw new PermissionDeniedException("Invalid account " + accountName + " in domain " + domainId + " given, permission denied");
         }
@@ -1265,7 +1265,7 @@ public class ManagementServerImpl implements ManagementServer {
         }
         
         // If the account is an admin type, return an error.  We do not allow this
-        Account account = (Account)UserContext.current().getAccountObject();
+        Account account = UserContext.current().getAccount();
         
         if (account != null && (account.getId() == Account.ACCOUNT_ID_SYSTEM)) {
         	throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "user id : " + id + " is system account, update is not allowed");
@@ -1756,7 +1756,7 @@ public class ManagementServerImpl implements ManagementServer {
     public UserVm deployVirtualMachine(DeployVMCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, ResourceAllocationException,
                                                                InternalErrorException, InsufficientStorageCapacityException, ExecutionException,
                                                                StorageUnavailableException, ConcurrentOperationException {
-        Account ctxAccount = (Account)UserContext.current().getAccountObject();
+        Account ctxAccount = UserContext.current().getAccount();
         Long userId = UserContext.current().getUserId();
         String accountName = cmd.getAccountName();
         Long domainId = cmd.getDomainId();
@@ -1962,7 +1962,7 @@ public class ManagementServerImpl implements ManagementServer {
     public List<DataCenterVO> listDataCenters(ListZonesByCmd cmd) {
         List<DataCenterVO> dcs = _dcDao.listAll();
 
-        Account account = (Account)UserContext.current().getAccountObject();
+        Account account = UserContext.current().getAccount();
         Boolean available = cmd.isAvailable();
         if (account != null) {
             if ((available != null) && Boolean.FALSE.equals(available)) {
@@ -2019,7 +2019,7 @@ public class ManagementServerImpl implements ManagementServer {
     public void assignSecurityGroup(AssignPortForwardingServiceCmd cmd) throws PermissionDeniedException,
             NetworkRuleConflictException, InvalidParameterValueException, InternalErrorException {
     	Long userId = UserContext.current().getUserId();
-    	Account account = (Account)UserContext.current().getAccountObject();
+    	Account account = UserContext.current().getAccount();
     	Long securityGroupId = cmd.getId();
     	List<Long> sgIdList = cmd.getIds();
     	String publicIp = cmd.getPublicIp();
@@ -2305,7 +2305,7 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public void removeSecurityGroup(RemovePortForwardingServiceCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
     	
-    	Account account = (Account)UserContext.current().getAccountObject();
+    	Account account = UserContext.current().getAccount();
         Long userId = UserContext.current().getUserId();
         Long securityGroupId = cmd.getId();
         String publicIp = cmd.getPublicIp();
@@ -2659,7 +2659,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public List<UserAccountVO> searchForUsers(ListUsersCmd cmd) throws PermissionDeniedException {
-        Account account = (Account)UserContext.current().getAccountObject();
+        Account account = UserContext.current().getAccount();
         Long domainId = cmd.getDomainId();
         if (domainId != null) {
             if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
@@ -2754,7 +2754,7 @@ public class ManagementServerImpl implements ManagementServer {
 
             sc.addAnd("name", SearchCriteria.Op.SC, ssc);
         } else if (vmId != null) {
-            Account account = (Account)UserContext.current().getAccountObject();
+            Account account = UserContext.current().getAccount();
 
             UserVmVO vmInstance = _userVmDao.findById(vmId);
             if ((vmInstance == null) || (vmInstance.getRemoved() != null)) {
@@ -3106,7 +3106,7 @@ public class ManagementServerImpl implements ManagementServer {
     public List<VMTemplateVO> listIsos(ListIsosCmd cmd) throws IllegalArgumentException, InvalidParameterValueException {
         TemplateFilter isoFilter = TemplateFilter.valueOf(cmd.getIsoFilter());
         Long accountId = null;
-        Account account = (Account)UserContext.current().getAccountObject();
+        Account account = UserContext.current().getAccount();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         if ((account == null) || (account.getType() == Account.ACCOUNT_TYPE_ADMIN)) {
@@ -3137,7 +3137,7 @@ public class ManagementServerImpl implements ManagementServer {
     public List<VMTemplateVO> listTemplates(ListTemplatesCmd cmd) throws IllegalArgumentException, InvalidParameterValueException {
         TemplateFilter templateFilter = TemplateFilter.valueOf(cmd.getTemplateFilter());
         Long accountId = null;
-        Account account = (Account)UserContext.current().getAccountObject();
+        Account account = UserContext.current().getAccount();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         if ((account == null) || (account.getType() == Account.ACCOUNT_TYPE_ADMIN)) {
@@ -3254,7 +3254,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public List<AccountVO> searchForAccounts(ListAccountsCmd cmd) {
-        Account account = (Account)UserContext.current().getAccountObject();
+        Account account = UserContext.current().getAccount();
         Long domainId = cmd.getDomainId();
         Long accountId = cmd.getId();
         String accountName = null;
@@ -3436,7 +3436,7 @@ public class ManagementServerImpl implements ManagementServer {
     	Long guestOSId = cmd.getOsTypeId();
     	Boolean passwordEnabled = cmd.isPasswordEnabled();
     	Boolean bootable = cmd.isBootable();
-    	Account account= (Account)UserContext.current().getAccountObject();
+    	Account account= UserContext.current().getAccount();
     	
     	//verify that template exists
     	VMTemplateVO template = findTemplateById(id);
@@ -3531,7 +3531,7 @@ public class ManagementServerImpl implements ManagementServer {
     
     @Override
     public List<UserVmVO> searchForUserVMs(ListVMsCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
-        Account account = (Account)UserContext.current().getAccountObject();
+        Account account = UserContext.current().getAccount();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         Long accountId = null;
@@ -3734,7 +3734,7 @@ public class ManagementServerImpl implements ManagementServer {
     	String protocol = cmd.getProtocol();
     	Long vmId = cmd.getVirtualMachineId();
     	Long userId = UserContext.current().getUserId();
-    	Account account = (Account)UserContext.current().getAccountObject();
+    	Account account = UserContext.current().getAccount();
     	UserVmVO userVM = null;
     	
         if (userId == null) {
@@ -3820,7 +3820,7 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public List<NetworkRuleConfigVO> searchForNetworkRules(ListPortForwardingServiceRulesCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
         Long accountId = null;
-        Account account = (Account)UserContext.current().getAccountObject();
+        Account account = UserContext.current().getAccount();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         Long groupId = cmd.getPortForwardingServiceId();
@@ -3894,7 +3894,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public List<EventVO> searchForEvents(ListEventsCmd cmd) throws PermissionDeniedException, InvalidParameterValueException {
-        Account account = (Account)UserContext.current().getAccountObject();
+        Account account = UserContext.current().getAccount();
         Long accountId = null;
         boolean isAdmin = false;
         String accountName = cmd.getAccountName();
@@ -4018,7 +4018,7 @@ public class ManagementServerImpl implements ManagementServer {
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         Long accountId = null;
-        Account account = (Account)UserContext.current().getAccountObject();
+        Account account = UserContext.current().getAccount();
 
         // validate domainId before proceeding
         if (domainId != null) {
@@ -4147,7 +4147,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public List<VolumeVO> searchForVolumes(ListVolumesCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
-        Account account = (Account)UserContext.current().getAccountObject();
+        Account account = UserContext.current().getAccount();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         Long accountId = null;
@@ -4312,7 +4312,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public List<IPAddressVO> searchForIPAddresses(ListPublicIpAddressesCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
-        Account account = (Account)UserContext.current().getAccountObject();
+        Account account = UserContext.current().getAccount();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         Long accountId = null;
@@ -4560,7 +4560,7 @@ public class ManagementServerImpl implements ManagementServer {
             }
 
             // validate permissions
-            Account account = (Account)UserContext.current().getAccountObject();
+            Account account = UserContext.current().getAccount();
             if (account != null) {
                 if (isAdmin(account.getType())) {
                     if (!_domainDao.isChildDomain(account.getDomainId(), sg.getDomainId())) {
@@ -4738,7 +4738,7 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public List<DomainVO> searchForDomains(ListDomainsCmd cmd) throws PermissionDeniedException {
         Long domainId = cmd.getId();
-        Account account = (Account)UserContext.current().getAccountObject();
+        Account account = UserContext.current().getAccount();
         if (account != null) {
             if (domainId != null) {
                 if (!_domainDao.isChildDomain(account.getDomainId(), domainId)) {
@@ -4793,7 +4793,7 @@ public class ManagementServerImpl implements ManagementServer {
         String domainName = cmd.getDomainName();
         Object keyword = cmd.getKeyword();
 
-        Account account = (Account)UserContext.current().getAccountObject();
+        Account account = UserContext.current().getAccount();
         if (account != null) {
             if (domainId != null) {
                 if (!_domainDao.isChildDomain(account.getDomainId(), domainId)) {
@@ -4829,7 +4829,7 @@ public class ManagementServerImpl implements ManagementServer {
         String name = cmd.getDomainName();
         Long parentId = cmd.getParentDomainId();
         Long ownerId = UserContext.current().getAccountId();
-        Account account = (Account)UserContext.current().getAccountObject();
+        Account account = UserContext.current().getAccount();
 
         if (ownerId == null) {
             ownerId = Long.valueOf(1);
@@ -4873,7 +4873,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public boolean deleteDomain(DeleteDomainCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
-        Account account = (Account)UserContext.current().getAccountObject();
+        Account account = UserContext.current().getAccount();
         Long domainId = cmd.getId();
         Boolean cleanup = cmd.getCleanup();
 
@@ -4967,7 +4967,7 @@ public class ManagementServerImpl implements ManagementServer {
     	}
 
     	// check permissions
-    	Account account = (Account)UserContext.current().getAccountObject();
+    	Account account = UserContext.current().getAccount();
     	if ((account != null) && !isChildDomain(account.getDomainId(), domain.getId())) {
             throw new PermissionDeniedException("Unable to update domain " + domainId + ", permission denied");
     	}
@@ -5107,7 +5107,7 @@ public class ManagementServerImpl implements ManagementServer {
             checkAccountPermissions(volume.getAccountId(), volume.getDomainId(), "volume", volumeId);
         }
 
-        Account account = (Account)UserContext.current().getAccountObject();
+        Account account = UserContext.current().getAccount();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         Long accountId = null;
@@ -5229,7 +5229,7 @@ public class ManagementServerImpl implements ManagementServer {
         
         //Input validation
         Long id = cmd.getId();
-        Account account = (Account) UserContext.current().getAccountObject();
+        Account account = UserContext.current().getAccount();
         List<String> accountNames = cmd.getAccountNames();
         Long userId = UserContext.current().getUserId();
         Boolean isFeatured = cmd.isFeatured();
@@ -5374,7 +5374,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public List<String> listTemplatePermissions(ListTemplateOrIsoPermissionsCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
-        Account account = (Account)UserContext.current().getAccountObject();
+        Account account = UserContext.current().getAccount();
         Long domainId = cmd.getDomainId();
         String acctName = cmd.getAccountName();
         Long id = cmd.getId();
@@ -5510,7 +5510,7 @@ public class ManagementServerImpl implements ManagementServer {
                 s_logger.debug("Mismatched account id in job and user context, perform further securty check. job id: "
                 	+ jobId + ", job owner account: " + job.getAccountId() + ", accound id in current context: " + UserContext.current().getAccountId());
         	
-        	Account account = (Account)UserContext.current().getAccountObject();
+        	Account account = UserContext.current().getAccount();
         	if (account != null) {
         	    if (isAdmin(account.getType())) {
         	        Account jobAccount = _accountDao.findById(job.getAccountId());
@@ -5550,7 +5550,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public SecurityGroupVO createPortForwardingService(CreatePortForwardingServiceCmd cmd) throws InvalidParameterValueException {
-        Account account = (Account)UserContext.current().getAccountObject();
+        Account account = UserContext.current().getAccount();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         Long accountId = null;
@@ -5596,7 +5596,7 @@ public class ManagementServerImpl implements ManagementServer {
     public boolean deleteSecurityGroup(DeletePortForwardingServiceCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
     	Long securityGroupId = cmd.getId();
     	Long userId = UserContext.current().getUserId();
-    	Account account = (Account)UserContext.current().getAccountObject();
+    	Account account = UserContext.current().getAccount();
     	
         //Verify input parameters
         if (userId == null) {
@@ -5666,7 +5666,7 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public List<SecurityGroupVO> searchForSecurityGroups(ListPortForwardingServicesCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
         // if an admin account was passed in, or no account was passed in, make sure we honor the accountName/domainId parameters
-        Account account = (Account)UserContext.current().getAccountObject();
+        Account account = UserContext.current().getAccount();
         Long accountId = null;
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
@@ -5730,7 +5730,7 @@ public class ManagementServerImpl implements ManagementServer {
         if (accountId != null) {
             sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
         } else if (domainId != null) {
-            DomainVO domain = _domainDao.findById((Long)domainId);
+            DomainVO domain = _domainDao.findById(domainId);
             sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
         }
 
@@ -5739,7 +5739,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public Map<String, List<SecurityGroupVO>> searchForSecurityGroupsByVM(ListPortForwardingServicesByVmCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
-        Account account = (Account)UserContext.current().getAccountObject();
+        Account account = UserContext.current().getAccount();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         Long accountId = null;
@@ -5846,7 +5846,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public List<UserVmVO> listLoadBalancerInstances(ListLoadBalancerRuleInstancesCmd cmd) throws PermissionDeniedException {
-        Account account = (Account)UserContext.current().getAccountObject();
+        Account account = UserContext.current().getAccount();
         Long loadBalancerId = cmd.getId();
         Boolean applied = cmd.isApplied();
 
@@ -5915,7 +5915,7 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public List<LoadBalancerVO> searchForLoadBalancers(ListLoadBalancerRulesCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
         // do some parameter validation
-        Account account = (Account)UserContext.current().getAccountObject();
+        Account account = UserContext.current().getAccount();
         String accountName = cmd.getAccountName();
         Long domainId = cmd.getDomainId();
         Long accountId = null;
@@ -6010,7 +6010,7 @@ public class ManagementServerImpl implements ManagementServer {
         if (accountId != null) {
             sc.setParameters("accountId", accountId);
         } else if (domainId != null) {
-            DomainVO domain = _domainDao.findById((Long)domainId);
+            DomainVO domain = _domainDao.findById(domainId);
             sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
         }
 
@@ -6189,7 +6189,7 @@ public class ManagementServerImpl implements ManagementServer {
 
         Object accountId = null;
         Long domainId = cmd.getDomainId();
-        Account account = (Account)UserContext.current().getAccountObject();
+        Account account = UserContext.current().getAccount();
         if ((account == null) || isAdmin(account.getType())) {
             String accountName = cmd.getAccountName();
 
@@ -6337,7 +6337,7 @@ public class ManagementServerImpl implements ManagementServer {
             systemVMs.addAll(searchForConsoleProxy(c));
         }
 
-        return (List<? extends VMInstanceVO>)systemVMs;
+        return systemVMs;
 	}
 
 	@Override
@@ -6432,6 +6432,7 @@ public class ManagementServerImpl implements ManagementServer {
 		return null;
 	}
 
+    @Override
     public ArrayList<String> getCloudIdentifierResponse(GetCloudIdentifierCmd cmd) throws InvalidParameterValueException{
     	Long userId = cmd.getUserId();
     	
@@ -6544,7 +6545,7 @@ public class ManagementServerImpl implements ManagementServer {
 
 	@Override
 	public boolean lockAccount(LockAccountCmd cmd) {
-        Account adminAccount = (Account)UserContext.current().getAccountObject();
+        Account adminAccount = UserContext.current().getAccount();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
 
@@ -6744,7 +6745,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public InstanceGroupVO updateVmGroup(UpdateVMGroupCmd cmd) {
-        Account account = (Account)UserContext.current().getAccountObject();
+        Account account = UserContext.current().getAccount();
         Long groupId = cmd.getId();
         String groupName = cmd.getGroupName();
 
@@ -6779,7 +6780,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public List<InstanceGroupVO> searchForVmGroups(ListVMGroupsCmd cmd) {
-        Account account = (Account)UserContext.current().getAccountObject();
+        Account account = UserContext.current().getAccount();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         Long accountId = null;
@@ -6840,7 +6841,7 @@ public class ManagementServerImpl implements ManagementServer {
         if (accountId != null) {
             sc.setParameters("accountId", accountId);
         } else if (domainId != null) {
-            DomainVO domain = _domainDao.findById((Long)domainId);
+            DomainVO domain = _domainDao.findById(domainId);
             if (domain != null){
             	sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
             }   
@@ -6902,7 +6903,7 @@ public class ManagementServerImpl implements ManagementServer {
 	private Long checkAccountPermissions(long targetAccountId, long targetDomainId, String targetDesc, long targetId) throws ServerApiException {
         Long accountId = null;
 
-        Account account = (Account)UserContext.current().getAccountObject();
+        Account account = UserContext.current().getAccount();
         if (account != null) {
             if (!isAdmin(account.getType())) {
                 if (account.getId() != targetAccountId) {

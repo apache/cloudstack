@@ -64,7 +64,7 @@ public class ListZonesByCmd extends BaseListCmd {
     @Override @SuppressWarnings("unchecked")
     public ListResponse<ZoneResponse> getResponse() {
         List<DataCenterVO> dataCenters = (List<DataCenterVO>)getResponseObject();
-        Account account = (Account)UserContext.current().getAccountObject();
+        Account account = (Account)UserContext.current().getAccount();
 
         ListResponse<ZoneResponse> response = new ListResponse<ZoneResponse>();
         List<ZoneResponse> zoneResponses = new ArrayList<ZoneResponse>();

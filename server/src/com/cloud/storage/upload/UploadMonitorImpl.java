@@ -29,19 +29,18 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
-import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Upload;
+import com.cloud.storage.Upload.Mode;
+import com.cloud.storage.Upload.Status;
+import com.cloud.storage.Upload.Type;
 import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.Upload.Mode;
-import com.cloud.storage.Upload.Status;
-import com.cloud.storage.Upload.Type;
 import com.cloud.storage.dao.UploadDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
@@ -49,6 +48,7 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.State;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
@@ -176,11 +176,11 @@ public class UploadMonitorImpl implements UploadMonitor {
 	}
 	
 	@Override
-	public UploadVO createEntityDownloadURL(VMTemplateVO template, VMTemplateHostVO vmTemplateHost, Long dataCenterId, long eventId) throws InternalErrorException{
+	public UploadVO createEntityDownloadURL(VMTemplateVO template, VMTemplateHostVO vmTemplateHost, Long dataCenterId, long eventId) {
 	    
 	    List<HostVO> storageServers = _serverDao.listByTypeDataCenter(Host.Type.SecondaryStorage, dataCenterId);
 	    if(storageServers == null ) 
-	        throw new InternalErrorException("No Storage Server found at the datacenter - " +dataCenterId);
+	        throw new CloudRuntimeException("No Storage Server found at the datacenter - " +dataCenterId);
 	    
 	    Type type = (template.getFormat() == ImageFormat.ISO) ? Type.ISO : Type.TEMPLATE ;
 	    
@@ -201,7 +201,7 @@ public class UploadMonitorImpl implements UploadMonitor {
 	    long result = send(sserver.getId(), cmd, null);
 	    if (result == -1){
 	        s_logger.warn("Unable to create a link for the template/iso ");
-	        throw new InternalErrorException("Unable to create a link at the SSVM");
+	        throw new CloudRuntimeException("Unable to create a link at the SSVM");
 	    }
 	    
 	    //Construct actual URL locally now that the symlink exists at SSVM
@@ -210,7 +210,7 @@ public class UploadMonitorImpl implements UploadMonitor {
             SecondaryStorageVmVO ssVm = ssVms.get(0);
             if (ssVm.getPublicIpAddress() == null) {
                 s_logger.warn("A running secondary storage vm has a null public ip?");
-                throw new InternalErrorException("SSVM has null public IP - couldnt create the URL");
+                throw new CloudRuntimeException("SSVM has null public IP - couldnt create the URL");
             }
             String extractURL = generateCopyUrl(ssVm.getPublicIpAddress(), vmTemplateHost.getInstallPath());
             UploadVO vo = _uploadDao.createForUpdate();
@@ -225,7 +225,7 @@ public class UploadMonitorImpl implements UploadMonitor {
             _uploadDao.update(uploadTemplateObj.getId(), vo);
             return _uploadDao.findById(uploadTemplateObj.getId(), true);
         }
-        throw new InternalErrorException("Couldnt find a running SSVM in the zone" + dataCenterId+ ".couldnt create the extraction URL.");
+        throw new CloudRuntimeException("Couldnt find a running SSVM in the zone" + dataCenterId+ ".couldnt create the extraction URL.");
 	    
 	}
 	

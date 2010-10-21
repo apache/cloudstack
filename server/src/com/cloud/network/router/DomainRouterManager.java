@@ -31,7 +31,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.exception.StorageUnavailableException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.NetworkConfiguration;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.service.ServiceOfferingVO;
@@ -167,5 +167,5 @@ public interface DomainRouterManager extends Manager {
 	DomainRouterVO getRouter(long accountId, long zoneId);
 	DomainRouterVO getRouter(String publicIpAddress);
 	
-	DomainRouterVO deploy(NetworkConfiguration publicConfig, NetworkConfiguration virtualConfig, NetworkOffering offering, Account owner) throws InsufficientCapacityException, StorageUnavailableException, ConcurrentOperationException;
+	DomainRouterVO deploy(NetworkConfiguration publicConfig, NetworkConfiguration virtualConfig, NetworkOffering offering, Account owner) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException;
 }

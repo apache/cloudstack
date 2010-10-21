@@ -1031,15 +1031,15 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
         str.insert(fromIndex, onClause);
         str.append(" (").append(join.getT().getWhereClause()).append(") AND ");
         fromIndex+=onClause.length();
-    }
+      }
     
-    for (JoinBuilder<SearchCriteria<?>> join : joins) {
-        if (join.getT().getJoins() != null) {
-            addJoins(str, join.getT().getJoins());
+      str.delete(str.length() - 4, str.length());
+        for (JoinBuilder<SearchCriteria<?>> join : joins) {
+            if (join.getT().getJoins() != null) {
+                addJoins(str, join.getT().getJoins());
+            }
         }
-    }
 
-        str.delete(str.length() - 4, str.length());
     }
 
     @Override @DB(txn=false)

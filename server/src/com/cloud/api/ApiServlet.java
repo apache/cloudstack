@@ -52,7 +52,8 @@ public class ApiServlet extends HttpServlet {
         }
     }
 
-	protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
+	@Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
 		try {            
 			processRequest(req, resp);
 		} finally {
@@ -60,6 +61,7 @@ public class ApiServlet extends HttpServlet {
 		}
     }
 
+    @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) {
 		try {
 			processRequest(req, resp);
@@ -198,7 +200,7 @@ public class ApiServlet extends HttpServlet {
                         resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "no command specified");
                         return;
                     }
-                    UserContext.updateContext(userId, accountObj, account, ((Account)accountObj).getId(), domainId, session.getId());
+                    UserContext.updateContext(userId, (Account)accountObj, account, ((Account)accountObj).getId(), domainId, session.getId());
                 } else {
                     // Invalidate the session to ensure we won't allow a request across management server restarts if the userId was serialized to the
                     // stored session

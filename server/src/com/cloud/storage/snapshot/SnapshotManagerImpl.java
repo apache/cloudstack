@@ -653,7 +653,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
     private Long checkAccountPermissions(long targetAccountId, long targetDomainId, String targetDesc, long targetId) throws ServerApiException {
     	Long accountId = null;
 
-    	Account account = (Account)UserContext.current().getAccountObject();
+    	Account account = (Account)UserContext.current().getAccount();
     	if (account != null) {
     		if (!isAdmin(account.getType())) {
     			if (account.getId() != targetAccountId) {
@@ -1073,7 +1073,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
     public List<SnapshotScheduleVO> findRecurringSnapshotSchedule(ListRecurringSnapshotScheduleCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
         Long volumeId = cmd.getVolumeId();
         Long policyId = cmd.getSnapshotPolicyId();
-        Account account = (Account)UserContext.current().getAccountObject();
+        Account account = (Account)UserContext.current().getAccount();
 
         //Verify parameters
         VolumeVO volume = _volsDao.findById(volumeId);

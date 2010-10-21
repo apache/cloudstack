@@ -58,4 +58,5 @@ public interface SerialVersionUID {
     public static final long ConflictingNetworkSettingException = Base | 0x1c;
     public static final long CloudAuthenticationException = Base | 0x1d;
     public static final long AsyncCommandQueued = Base | 0x1e;
+    public static final long ResourceUnavailableException = Base | 0x1f;
 }

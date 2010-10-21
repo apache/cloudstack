@@ -95,6 +95,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.Host;
@@ -657,7 +658,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
     public boolean upgradeRouter(UpgradeRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
         Long routerId = cmd.getId();
         Long serviceOfferingId = cmd.getServiceOfferingId();
-        Account account = (Account)UserContext.current().getAccountObject();
+        Account account = UserContext.current().getAccount();
 
         DomainRouterVO router = _routerDao.findById(routerId);
         if (router == null) {
@@ -747,7 +748,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
     @Override
     public DomainRouterVO startRouter(StartRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
     	Long routerId = cmd.getId();
-    	Account account = (Account)UserContext.current().getAccountObject();
+    	Account account = UserContext.current().getAccount();
     	
 	    //verify parameters
         DomainRouterVO router = _routerDao.findById(routerId);
@@ -1226,7 +1227,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
     @Override
     public DomainRouterVO stopRouter(StopRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
 	    Long routerId = cmd.getId();
-        Account account = (Account)UserContext.current().getAccountObject();
+        Account account = UserContext.current().getAccount();
 
 	    // verify parameters
         DomainRouterVO router = _routerDao.findById(routerId);
@@ -1374,7 +1375,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
     @Override
     public boolean rebootRouter(RebootRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
     	Long routerId = cmd.getId();
-    	Account account = (Account)UserContext.current().getAccountObject();
+    	Account account = UserContext.current().getAccount();
     	
         //verify parameters
         DomainRouterVO router = _routerDao.findById(routerId);
@@ -1995,7 +1996,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
 	}
 	
 	@Override @DB
-	public DomainRouterVO deploy(NetworkConfiguration publicConfig, NetworkConfiguration virtualConfig, NetworkOffering offering, Account owner) throws InsufficientCapacityException, StorageUnavailableException, ConcurrentOperationException {
+	public DomainRouterVO deploy(NetworkConfiguration publicConfig, NetworkConfiguration virtualConfig, NetworkOffering offering, Account owner) throws InsufficientCapacityException, StorageUnavailableException, ConcurrentOperationException, ResourceUnavailableException {
 	    long dcId = publicConfig.getDataCenterId();
 	    
         if (s_logger.isDebugEnabled()) {

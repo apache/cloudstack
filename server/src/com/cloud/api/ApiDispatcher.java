@@ -36,6 +36,7 @@ import com.cloud.configuration.ConfigurationManager;
 import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.network.DomainRouterService;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.security.NetworkGroupManager;
 import com.cloud.server.ManagementServer;
@@ -65,6 +66,7 @@ public class ApiDispatcher {
     private StorageManager _storageMgr;
     private TemplateManager _templateMgr;
     private UserVmManager _userVmMgr;
+    private DomainRouterService _domainRouterService;
 
     // singleton class
     private static ApiDispatcher s_instance = new ApiDispatcher();
@@ -86,6 +88,7 @@ public class ApiDispatcher {
         _storageMgr = locator.getManager(StorageManager.class);
         _templateMgr = locator.getManager(TemplateManager.class);
         _userVmMgr = locator.getManager(UserVmManager.class);
+        _domainRouterService = locator.getManager(DomainRouterService.class);
     }
 
     public Long dispatchCreateCmd(BaseAsyncCreateCmd cmd, Map<String, String> params) {
@@ -128,6 +131,9 @@ public class ApiDispatcher {
             break;
         case UserVmManager:
             mgr = _userVmMgr;
+            break;
+        case DomainRouterService:
+            mgr = _domainRouterService;
             break;
         }
 
@@ -200,6 +206,9 @@ public class ApiDispatcher {
             break;
         case UserVmManager:
             mgr = _userVmMgr;
+            break;
+        case DomainRouterService:
+            mgr = _domainRouterService;
             break;
         }
 
