@@ -164,7 +164,7 @@ public class DeployVmCmd extends BaseAsyncCmd {
     
     @Override
     public long getAccountId() {
-        Account account = (Account)UserContext.current().getAccount();
+        Account account = UserContext.current().getAccount();
         if ((account == null) || isAdmin(account.getType())) {
             if ((domainId != null) && (accountName != null)) {
                 Account userAccount = ApiDBUtils.findAccountByNameDomain(accountName, domainId);

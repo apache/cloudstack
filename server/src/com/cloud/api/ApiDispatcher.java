@@ -47,7 +47,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.UserVmManager;
+import com.cloud.vm.UserVmService;
 
 /**
  * A class that dispatches API commands to the appropriate manager for execution.
@@ -65,7 +65,7 @@ public class ApiDispatcher {
     private SnapshotManager _snapshotMgr;
     private StorageManager _storageMgr;
     private TemplateManager _templateMgr;
-    private UserVmManager _userVmMgr;
+    private UserVmService _userVmMgr;
     private DomainRouterService _domainRouterService;
 
     // singleton class
@@ -87,7 +87,7 @@ public class ApiDispatcher {
         _snapshotMgr = locator.getManager(SnapshotManager.class);
         _storageMgr = locator.getManager(StorageManager.class);
         _templateMgr = locator.getManager(TemplateManager.class);
-        _userVmMgr = locator.getManager(UserVmManager.class);
+        _userVmMgr = locator.getManager(UserVmService.class);
         _domainRouterService = locator.getManager(DomainRouterService.class);
     }
 

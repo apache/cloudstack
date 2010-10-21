@@ -17,11 +17,13 @@
  */
 package com.cloud.exception;
 
+import com.cloud.utils.exception.CloudRuntimeException;
+
 /**
  * @author chiradeep
  *
  */
-public class PermissionDeniedException extends ManagementServerException {
+public class PermissionDeniedException extends CloudRuntimeException {
 
 	private static final long serialVersionUID = -4631412831814398074L;
 

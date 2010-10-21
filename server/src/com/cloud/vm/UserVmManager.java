@@ -21,23 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import com.cloud.agent.api.VmStatsEntry;
-import com.cloud.api.ServerApiException;
-import com.cloud.api.commands.AttachVolumeCmd;
-import com.cloud.api.commands.CreateTemplateCmd;
-import com.cloud.api.commands.CreateVMGroupCmd;
-import com.cloud.api.commands.DeleteVMGroupCmd;
-import com.cloud.api.commands.DeployVmCmd;
-import com.cloud.api.commands.DestroyVMCmd;
-import com.cloud.api.commands.DetachVolumeCmd;
-import com.cloud.api.commands.RebootVMCmd;
-import com.cloud.api.commands.RecoverVMCmd;
-import com.cloud.api.commands.ResetVMPasswordCmd;
-import com.cloud.api.commands.StartVMCmd;
-import com.cloud.api.commands.StopVMCmd;
-import com.cloud.api.commands.UpdateVMCmd;
-import com.cloud.api.commands.UpgradeVMCmd;
 import com.cloud.async.executor.OperationResponse;
-import com.cloud.async.executor.RebootVMExecutor;
 import com.cloud.async.executor.StartVMExecutor;
 import com.cloud.async.executor.StopVMExecutor;
 import com.cloud.async.executor.VMOperationParam;
@@ -46,10 +30,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientStorageCapacityException;
 import com.cloud.exception.InternalErrorException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.network.security.NetworkGroupVO;
 import com.cloud.offerings.NetworkOfferingVO;
@@ -101,37 +82,9 @@ public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> 
 
 	UserVmVO createDirectlyAttachedVMExternal(Long vmId, long userId, AccountVO account, DataCenterVO dc, ServiceOfferingVO offering, VMTemplateVO template, DiskOfferingVO diskOffering, String displayName, String userData, List<StoragePoolVO> a, List<NetworkGroupVO> networkGroupVO, long startEventId, long size) throws InternalErrorException, ResourceAllocationException;
 
-    /**
-     * Destroys one virtual machine
-     * @param userId the id of the user performing the action
-     * @param vmId the id of the virtual machine.
-     */
-	boolean destroyVm(DestroyVMCmd cmd);
     boolean destroyVirtualMachine(long userId, long vmId);
 //    OperationResponse executeDestroyVM(DestroyVMExecutor executor, VMOperationParam param);
     
-    
-    /**
-     * Resets the password of a virtual machine.
-     * @param cmd - the command specifying vmId, password
-     * @return the VM if reset worked successfully, null otherwise
-     */
-    UserVm resetVMPassword(ResetVMPasswordCmd cmd);
-    
-    /**
-     * Attaches the specified volume to the specified VM
-     * @param cmd - the command specifying volumeId and vmId
-     * @throws InternalErrorException, InvalidParameterValueException, PermissionDeniedException
-     */
-    void attachVolumeToVM(AttachVolumeCmd cmd) throws InternalErrorException, InvalidParameterValueException, PermissionDeniedException;
-    
-    /**
-     * Detaches the specified volume from the VM it is currently attached to.
-     * @param cmd - the command specifying volumeId
-     * @throws InternalErrorException
-     * @throws InvalidParameterValueException 
-     */
-    void detachVolumeFromVM(DetachVolumeCmd cmmd) throws InternalErrorException, InvalidParameterValueException;
     
     /**
      * Attaches an ISO to the virtual CDROM device of the specified VM. Will eject any existing virtual CDROM if isoPath is null.
@@ -165,7 +118,6 @@ public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> 
      * @throws ConcurrentOperationException 
      */
     UserVmVO startVirtualMachine(long userId, long vmId, String password, String isoPath, long startEventId) throws ExecutionException, StorageUnavailableException, ConcurrentOperationException;
-    UserVmVO startVirtualMachine(StartVMCmd cmd) throws StorageUnavailableException, ExecutionException, ConcurrentOperationException;
     
     /**
      * Stops the virtual machine
@@ -175,19 +127,9 @@ public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> 
      * @return true if stopped; false if problems.
      */
     boolean stopVirtualMachine(long userId, long vmId, long eventId);
-    UserVmVO stopVirtualMachine(StopVMCmd cmd) throws ServerApiException;
-    OperationResponse executeStopVM(StopVMExecutor executor, VMOperationParam param);
     void completeStopCommand(long userId, UserVmVO vm, Event e, long startEventId);
     
 
-    /**
-     * upgrade the service offering of the virtual machine
-     * @param cmd - the command specifying vmId and new serviceOfferingId
-     * @return the vm
-     * @throws InvalidParameterValueException 
-     */
-    UserVm upgradeVirtualMachine(UpgradeVMCmd cmd) throws ServerApiException, InvalidParameterValueException;
-    
     /**
      * Obtains statistics for a list of host or VMs; CPU and network utilization
      * @param host ID
@@ -198,28 +140,6 @@ public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> 
      */
     HashMap<Long, VmStatsEntry> getVirtualMachineStatistics(long hostId, String hostName, List<Long> vmIds) throws InternalErrorException;
     
-    boolean rebootVirtualMachine(RebootVMCmd cmd);
-    OperationResponse executeRebootVM(RebootVMExecutor executor, VMOperationParam param);
-    
-    boolean recoverVirtualMachine(RecoverVMCmd cmd) throws ResourceAllocationException, InternalErrorException;
-
-    /**
-     * Create a template database record in preparation for creating a private template.
-     * @param cmd the command object that defines the name, display text, snapshot/volume, bits, public/private, etc.
-     * for the private template
-     * @return the vm template object if successful, null otherwise
-     * @throws InvalidParameterValueException, PermissionDeniedException
-     */
-    VMTemplateVO createPrivateTemplateRecord(CreateTemplateCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
-    
-    /**
-     * Creates a private template from a snapshot of a VM
-     * @param cmd - the command specifying snapshotId, name, description
-     * @return a template if successfully created, null otherwise
-     * @throws InvalidParameterValueException
-     */
-    VMTemplateVO createPrivateTemplate(CreateTemplateCmd cmd) throws InternalErrorException;
-
     boolean destroyTemplateSnapshot(Long userId, long snapshotId);
 
     /**
@@ -235,14 +155,6 @@ public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> 
      */
     void releaseGuestIpAddress(UserVmVO userVm);
 
-    /**
-     * Creates a vm group.
-     * @param name - name of the group
-     * @param accountId - accountId
-     */
-    InstanceGroupVO createVmGroup(CreateVMGroupCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
-
-    boolean deleteVmGroup(DeleteVMGroupCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
     boolean deleteVmGroup(long groupId);
 
     boolean addInstanceToGroup(long userVmId, String group);
@@ -250,10 +162,8 @@ public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> 
     InstanceGroupVO getGroupForVm(long vmId);
     
     void removeInstanceFromGroup(long vmId);
+    
+    @Deprecated
+    OperationResponse executeStopVM(StopVMExecutor executor, VMOperationParam param);
 
-	void updateVirtualMachine(UpdateVMCmd cmd);
-	
-	UserVm createVirtualMachine(DeployVmCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException;
-	
-	UserVm startVirtualMachine(DeployVmCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException;
 }

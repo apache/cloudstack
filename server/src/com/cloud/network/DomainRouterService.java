@@ -39,5 +39,5 @@ public interface DomainRouterService extends Manager {
      * @return router if successful, null otherwise
      * @throws InvalidParameterValueException, PermissionDeniedException
      */
-    DomainRouterVO stopRouter(StopRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+    DomainRouterVO stopRouter(StopRouterCmd cmd);
 }

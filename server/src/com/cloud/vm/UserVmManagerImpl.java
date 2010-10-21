@@ -202,8 +202,8 @@ import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.InstanceGroupVMMapDao;
 import com.cloud.vm.dao.UserVmDao;
 
-@Local(value={UserVmManager.class})
-public class UserVmManagerImpl implements UserVmManager {
+@Local(value={UserVmManager.class, UserVmService.class})
+public class UserVmManagerImpl implements UserVmManager, UserVmService {
     private static final Logger s_logger = Logger.getLogger(UserVmManagerImpl.class);
 	private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 3; 	// 3 seconds
 
