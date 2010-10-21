@@ -100,6 +100,7 @@ import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.FirewallRuleVO;
 import com.cloud.network.IPAddressVO;
@@ -900,7 +901,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
 	                String privateIpAddress = null;
 	                String privateNetMask = null;
 	                
-	                if(_defaultHypervisorType == null || !_defaultHypervisorType.equalsIgnoreCase("VmWare")) {
+	                if(_defaultHypervisorType == null || !_defaultHypervisorType.equalsIgnoreCase(Hypervisor.HypervisorType.VmWare.toString())) {
 	                	privateIpAddress = _dcDao.allocateLinkLocalPrivateIpAddress(router.getDataCenterId(), routingHost.getPodId(), router.getId());
 	                	privateNetMask = NetUtils.getLinkLocalNetMask();
 	                } else {
@@ -994,7 +995,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
 	                
 	                router.setPrivateIpAddress(null);
 	                
-	                if(_defaultHypervisorType == null || !_defaultHypervisorType.equalsIgnoreCase("VmWare"))
+	                if(_defaultHypervisorType == null || !_defaultHypervisorType.equalsIgnoreCase(Hypervisor.HypervisorType.VmWare.toString()))
 	                	_dcDao.releaseLinkLocalPrivateIpAddress(privateIpAddress, router.getDataCenterId(), router.getId());
 	                else
 	                	_dcDao.releasePrivateIpAddress(privateIpAddress, router.getDataCenterId(), router.getId());
@@ -1407,7 +1408,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
         String value = configs.get("start.retry");
         _retry = NumbersUtil.parseInt(value, 2);
 
-		_defaultHypervisorType = (String)params.get(Config.HypervisorDefaultType.key());
+		_defaultHypervisorType = _configDao.getValue(Config.HypervisorDefaultType.key());
         
         value = configs.get("router.stats.interval");
         _routerStatsInterval = NumbersUtil.parseInt(value, 300);
@@ -1515,7 +1516,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
             String privateIpAddress = router.getPrivateIpAddress();
             
             if (privateIpAddress != null) {
-            	if(_defaultHypervisorType == null || !_defaultHypervisorType.equalsIgnoreCase("VmWare"))
+            	if(_defaultHypervisorType == null || !_defaultHypervisorType.equalsIgnoreCase(Hypervisor.HypervisorType.VmWare.toString()))
             		_dcDao.releaseLinkLocalPrivateIpAddress(privateIpAddress, router.getDataCenterId(), router.getId());
             	else
             		_dcDao.releasePrivateIpAddress(privateIpAddress, router.getDataCenterId(), router.getId());
