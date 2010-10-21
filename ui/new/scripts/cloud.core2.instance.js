@@ -1227,9 +1227,10 @@ function vmJsonToDetailsTab(jsonObj, $midmenuItem){
     var $detailsTab = $("#right_panel_content #tab_content_details");  
     $detailsTab.data("jsonObj", jsonObj);  
 
-    //details tab         
+    resetViewConsoleAction(jsonObj, $detailsTab);      
     setVmStateInRightPanel(jsonObj.state, $detailsTab.find("#state"));		
     $detailsTab.find("#ipAddress").text(jsonObj.ipaddress);
+    
     $detailsTab.find("#zoneName").text(fromdb(jsonObj.zonename));
            
     var vmName = getVmName(jsonObj.name, jsonObj.displayname);        
@@ -1245,9 +1246,7 @@ function vmJsonToDetailsTab(jsonObj, $midmenuItem){
     $detailsTab.find("#group").text(fromdb(jsonObj.group));	
     
     setBooleanField(jsonObj.haenable, $detailsTab.find("#haenable"));	
-    setBooleanField((jsonObj.isoid != null && jsonObj.isoid.length > 0), $detailsTab.find("#iso"));	   
-     
-    resetViewConsoleAction(jsonObj, $detailsTab);   
+    setBooleanField((jsonObj.isoid != null && jsonObj.isoid.length > 0), $detailsTab.find("#iso"));	
 }
 
 function vmJsonToVolumeTab(jsonObj) {
@@ -1383,9 +1382,12 @@ function vmVolumeJSONToTemplate(json, $template) {
 	
 function vmRouterJSONToTemplate(jsonObj, $template) {	
     $template.data("jsonObj", jsonObj);            
-    $template.find("#title").text(fromdb(jsonObj.name));     
+    $template.find("#title").text(fromdb(jsonObj.name));    
+     
+    resetViewConsoleAction(jsonObj, $template);   
     setVmStateInRightPanel(jsonObj.state, $template.find("#state"));
     $template.find("#ipAddress").text(jsonObj.publicip);
+    
     $template.find("#zonename").text(fromdb(jsonObj.zonename));
     $template.find("#name").text(fromdb(jsonObj.name));
     $template.find("#publicip").text(fromdb(jsonObj.publicip));
@@ -1394,8 +1396,7 @@ function vmRouterJSONToTemplate(jsonObj, $template) {
     $template.find("#hostname").text(fromdb(jsonObj.hostname));
     $template.find("#networkdomain").text(fromdb(jsonObj.networkdomain));
     $template.find("#account").text(fromdb(jsonObj.account));  
-    setDateField(jsonObj.created, $template.find("#created"));	         
-    resetViewConsoleAction(jsonObj, $template);  
+    setDateField(jsonObj.created, $template.find("#created"));	
     
     //***** actions (begin) *****
 	var $actionLink = $template.find("#router_action_link");	

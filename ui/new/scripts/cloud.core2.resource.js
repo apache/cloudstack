@@ -669,8 +669,12 @@ function primarystorageJsonClearDetailsTab() {
 function systemvmJsonToDetailsTab(jsonObj) {	   
     var $detailsTab = $("#systemvm_page").find("#tab_content_details");   
     $detailsTab.data("jsonObj", jsonObj);   
-    
-    $detailsTab.find("#state").text(fromdb(jsonObj.state));     
+     
+    //resetViewConsoleAction(jsonObj, $detailsTab);         
+    setVmStateInRightPanel(jsonObj.state, $detailsTab.find("#state"));		
+    $detailsTab.find("#ipAddress").text(jsonObj.publicip);
+        
+    $detailsTab.find("#state").text(jsonObj.state);     
     $detailsTab.find("#systemvmtype").text(toSystemVMTypeText(jsonObj.systemvmtype));    
     $detailsTab.find("#zonename").text(fromdb(jsonObj.zonename)); 
     $detailsTab.find("#id").text(fromdb(jsonObj.id));  
