@@ -62,6 +62,10 @@ public class StopVMCmd extends BaseAsyncCmd {
     public String getName() {
         return s_name;
     }
+    
+    public static String getResultObjectName() {
+        return "virtualmachine";
+    }
 
     @Override
     public long getAccountId() {
@@ -171,7 +175,7 @@ public class StopVMCmd extends BaseAsyncCmd {
         //Network groups
         response.setNetworkGroupList(ApiDBUtils.getNetworkGroupsNamesForVm(vm.getId()));
 
-        response.setResponseName(getName());
+        response.setResponseName(getResultObjectName());
         return response;
 	}
 }
