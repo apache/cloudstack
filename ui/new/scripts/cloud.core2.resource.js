@@ -231,13 +231,16 @@ function showPage2($pageToShow, jsonObj) {
     }   
     
     if($pageToShow.attr("id") == "resource_page") { 
-        initDialog("dialog_add_zone"); 
-        initAddZoneButton($("#midmenu_add_link"));	      
+        initAddZoneButton($("#midmenu_add_link"));	                   
+        $("#midmenu_add2_link").unbind("click").hide();   
+    
+        initDialog("dialog_add_zone");         
     }
     else if($pageToShow.attr("id") == "zone_page") {  
         initDialog("dialog_add_pod", 320);      
-        initAddPodButton($("#midmenu_add_link"));  
-        
+        initAddPodButton($("#midmenu_add_link"));                  
+        //$("#midmenu_add2_link").unbind("click").hide();   //afterSwitchFnArray[] in switchBetweenDifferentTabs() has taken care of this line. So, this line is commented out.
+                
         initDialog("dialog_add_vlan_for_zone");
         // If the network type is vnet, don't show any vlan stuff.
 	    if (getNetworkType() == "vnet") 		
@@ -279,6 +282,9 @@ function showPage2($pageToShow, jsonObj) {
 		listMidMenuItems2(("listStoragePools&podid="+podId), "liststoragepoolsresponse", "storagepool", primarystorageToMidmenu, primarystorageToRigntPanel, primarystorageGetMidmenuId, false); 	
     }  
     else if($pageToShow.attr("id") == "cluster_page") {
+        $("#midmenu_add_link").unbind("click").hide();              
+        $("#midmenu_add2_link").unbind("click").hide();   
+    
         showMiddleMenu();
 		clusterJsonToDetailsTab(jsonObj);
 		
@@ -288,6 +294,9 @@ function showPage2($pageToShow, jsonObj) {
 		listMidMenuItems2(("listStoragePools&clusterid="+clusterId), "liststoragepoolsresponse", "storagepool", primarystorageToMidmenu, primarystorageToRigntPanel, primarystorageGetMidmenuId, false); 			
     }
     else if($pageToShow.attr("id") == "host_page") {
+        $("#midmenu_add_link").unbind("click").hide();              
+        $("#midmenu_add2_link").unbind("click").hide();   
+    
         initDialog("dialog_confirmation_enable_maintenance");
 	    initDialog("dialog_confirmation_cancel_maintenance");
 	    initDialog("dialog_confirmation_force_reconnect");
@@ -295,16 +304,18 @@ function showPage2($pageToShow, jsonObj) {
 	    initDialog("dialog_update_os");
     }  
     else if($pageToShow.attr("id") == "primarystorage_page") {
+        $("#midmenu_add_link").unbind("click").hide();              
+        $("#midmenu_add2_link").unbind("click").hide();   
+        
         initDialog("dialog_confirmation_delete_primarystorage");
     }  
     else if($pageToShow.attr("id") == "systemvm_page") {
-        hideMiddleMenu();			
-	    systemvmJsonToDetailsTab(jsonObj);		
-    }
-    else {
         $("#midmenu_add_link").unbind("click").hide();              
         $("#midmenu_add2_link").unbind("click").hide();   
-    }
+        
+        hideMiddleMenu();			
+	    systemvmJsonToDetailsTab(jsonObj);		
+    }    
 }
 
 //***** zone page (begin) *****************************************************************************************************	
@@ -946,45 +957,6 @@ function initAddSecondaryStorageButton($midmenuAdd2Link) {
         return false;
     });
 }
-
-/*
-function afterLoadResourceJSP() {	
-	//switch between different tabs in zone page 
-	var $zonePage = $("#zone_page");
-    var tabArray = [$zonePage.find("#tab_details"), $zonePage.find("#tab_network"), $zonePage.find("#tab_secondarystorage")];
-    var tabContentArray = [$zonePage.find("#tab_content_details"), $zonePage.find("#tab_content_network"), $zonePage.find("#tab_content_secondarystorage")];
-    var afterSwitchFnArray = [afterSwitchToDetailsTab, afterSwitchToNetworkTab, afterSwitchToSecondaryStorageTab];
-    switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray);     
-      
-	//dialogs	
-	initDialog("dialog_add_zone");
-	initDialog("dialog_add_pod", 320);
-	initDialog("dialog_add_host");
-	initDialog("dialog_add_pool");
-	initDialog("dialog_add_secondarystorage");
-	initDialog("dialog_add_vlan_for_zone");
-	initDialog("dialog_confirmation_enable_maintenance");
-	initDialog("dialog_confirmation_cancel_maintenance");
-	initDialog("dialog_confirmation_force_reconnect");
-	initDialog("dialog_confirmation_remove_host");
-	initDialog("dialog_update_os");
-	initDialog("dialog_confirmation_delete_primarystorage");
-	initDialog("dialog_confirmation_delete_secondarystorage");
-	
-	// if hypervisor is KVM, limit the server option to NFS for now
-	if (getHypervisorType() == 'kvm') 
-		$("#dialog_add_pool").find("#add_pool_protocol").empty().html('<option value="nfs">NFS</option>');	
-	bindEventHandlerToDialogAddPool();	
-	
-	// If the network type is vnet, don't show any vlan stuff.
-	if (getNetworkType() == "vnet") 		
-		$("#dialog_add_vlan_for_zone").attr("title", "Add Public IP Range");		
-	bindEventHandlerToDialogAddVlanForZone();	
-		
-	//initialize Add Zone button 
-    initAddZoneButton($("#midmenu_add_link"));	
-}
-*/
 
 function populateForUpdateOSDialog(oscategoryid) {	
 	$.ajax({
