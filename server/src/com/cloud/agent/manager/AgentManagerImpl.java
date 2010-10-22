@@ -512,6 +512,10 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         String url = cmd.getUrl();
         String username = cmd.getUsername();
         String password = cmd.getPassword();
+        // this is for standalone option
+        if( clusterName == null && clusterId == null ) {
+            clusterName = "Standalone-" + url;
+        }
         return discoverHosts(dcId, podId, clusterId, clusterName, url, username, password);
     }
 
@@ -561,10 +565,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
             if (_clusterDao.findById(clusterId) == null) {
                 throw new InvalidParameterValueException("Can't find cluster by id " + clusterId);
             }
-        }
-        
-        if( clusterName == null && clusterId == null ) {
-            clusterName = "Standalone" + url;
         }
         
         if (clusterName != null) {      
