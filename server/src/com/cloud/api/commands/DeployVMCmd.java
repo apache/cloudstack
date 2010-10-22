@@ -25,6 +25,7 @@ import org.apache.log4j.Logger;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.UserVmResponse;
@@ -37,8 +38,8 @@ import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.InstanceGroupVO;
 
-@Implementation(method="deployVirtualMachine", description="Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.")
-public class DeployVMCmd extends BaseAsyncCmd {
+@Implementation(createMethod="createVirtualMachine", method="startVirtualMachine", manager=Manager.UserVmManager, description="Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.")
+public class DeployVmCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeployVMCmd.class.getName());
     
     private static final String s_name = "deployvirtualmachineresponse";
@@ -158,12 +159,12 @@ public class DeployVMCmd extends BaseAsyncCmd {
     }
     
     public static String getResultObjectName() {
-    	return "virtualmachine";
+        return "virtualmachine";
     }
     
     @Override
     public long getAccountId() {
-        Account account = (Account)UserContext.current().getAccount();
+        Account account = UserContext.current().getAccount();
         if ((account == null) || isAdmin(account.getType())) {
             if ((domainId != null) && (accountName != null)) {
                 Account userAccount = ApiDBUtils.findAccountByNameDomain(accountName, domainId);
@@ -195,7 +196,6 @@ public class DeployVMCmd extends BaseAsyncCmd {
         UserVm userVm = (UserVm)getResponseObject();
 
         UserVmResponse response = new UserVmResponse();
-        response.setResponseName(getResultObjectName());
         response.setId(userVm.getId());
         response.setName(userVm.getName());
         response.setCreated(userVm.getCreated());
@@ -293,6 +293,7 @@ public class DeployVMCmd extends BaseAsyncCmd {
         
         response.setNetworkGroupList(ApiDBUtils.getNetworkGroupsNamesForVm(userVm.getId()));
 
+        response.setResponseName(getName());
         return response;
     }
 }
