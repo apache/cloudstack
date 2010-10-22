@@ -43,9 +43,9 @@ patch() {
     privkey=/var/cache/cloud/authorized_keys
   	umount $EXTRA_MOUNT
   elif [ -e /dev/cdrom1 ]; then
-    	vmware-guestd --cmd 'machine.id.get' > /var/cache/cloud/cmdline 
+    vmware-guestd --cmd 'machine.id.get' > /var/cache/cloud/cmdline 
   else
-    	cat /proc/cmdline > /var/cache/cloud/cmdline
+    cat /proc/cmdline > /var/cache/cloud/cmdline
   fi
 
   if [ -e /dev/xvdd ]; then
@@ -258,16 +258,19 @@ setup_secstorage() {
   echo "$public_ip $NAME" >> /etc/hosts
 
   cp /etc/iptables/iptables-secstorage /etc/iptables/rules
-  setup_sshd $ETH0_IP
+  if [ -e /dev/cdrom1 ]; then
+    setup_sshd $ETH1_IP
+  else
+    setup_sshd $ETH0_IP
+  fi
   setup_apache2 $ETH2_IP
-
+  
   enable_fwding 0
   enable_svc haproxy 0
   enable_svc dnsmasq 0
   enable_svc cloud-passwd-srvr 0
   enable_svc cloud 1
 }
-
 
 setup_console_proxy() {
   log_action_begin_msg "Setting up console proxy system vm"
@@ -277,7 +280,11 @@ setup_console_proxy() {
   sed -i  /gateway/d /etc/hosts
   echo "$public_ip $NAME" >> /etc/hosts
   cp /etc/iptables/iptables-consoleproxy /etc/iptables/rules
-  setup_sshd $ETH0_IP
+  if [ -e /dev/cdrom1 ]; then
+    setup_sshd $ETH1_IP
+  else
+    setup_sshd $ETH0_IP
+  fi
 
   enable_fwding 0
   enable_svc haproxy 0
@@ -345,6 +352,9 @@ for i in $CMDLINE
           ;;
       eth2ip)
           ETH2_IP=$VALUE
+          ;;
+      host)
+          MGMT_HOST=$VALUE
           ;;
       gateway)
           GW=$VALUE

@@ -8,8 +8,6 @@ def vm_data(args):
     router_ip = args.pop('routerIP')
     vm_ip = args.pop('vmIP')
 
-    util.SMlog("    adding vmdata for VM with IP: " + vm_ip + " to router with IP: " + router_ip)
-
     for pair in args:
         pairList = pair.split(',')
         vmDataFolder = pairList[0]
@@ -41,7 +39,6 @@ def vm_data(args):
             txt = util.pread2(cmd)
             txt = 'success'
         except:
-            util.SMlog("    vmdata failed with folder: " + vmDataFolder + " and file: " + vmDataFile)
             txt = ''
 
         if (fd != None):

@@ -230,6 +230,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
     String _domain;
     String _instance;
 	String _defaultHypervisorType;
+	String _mgmt_host;
 	
     int _routerCleanupInterval = 3600;
     int _routerStatsInterval = 300;
@@ -970,7 +971,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
 	                    }
 	                    
 	                    final StartRouterCommand cmdStartRouter = new StartRouterCommand(router, _networkRate,
-	                            _multicastRate, name, storageIps, vols, mirroredVols, guestOSDescription);
+	                            _multicastRate, name, storageIps, vols, mirroredVols, guestOSDescription, _mgmt_host);
 	                    answer = _agentMgr.send(routingHost.getId(), cmdStartRouter);
 	                    if (answer != null && answer.getResult()) {
 	                        if (answer instanceof StartRouterAnswer){
@@ -1411,6 +1412,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
         
         final Map<String, String> configs = _configDao.getConfiguration("AgentManager", params);
 
+        _mgmt_host = configs.get("host");
         _routerRamSize = NumbersUtil.parseInt(configs.get("router.ram.size"), 128);
 
 //        String value = configs.get("guest.ip.network");

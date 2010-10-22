@@ -31,6 +31,7 @@ public class StartRouterCommand extends AbstractStartCommand {
     int networkRateMbps;
     int networkRateMulticastMbps;
     private String guestOSDescription;
+    private String mgmt_host;
 
     protected StartRouterCommand() {
     	super();
@@ -43,12 +44,13 @@ public class StartRouterCommand extends AbstractStartCommand {
     
     public StartRouterCommand(DomainRouterVO router, int networkRateMbps, int networkRateMulticastMbps, 
             String routerName, String[] storageIps, List<VolumeVO> vols, boolean mirroredVols, 
-            String guestOSDescription ) {
+            String guestOSDescription, String mgmtHost) {
         super(routerName, storageIps, vols, mirroredVols);
         this.router = router;
         this.networkRateMbps = networkRateMbps;
         this.networkRateMulticastMbps = networkRateMulticastMbps;
         this.guestOSDescription = guestOSDescription;
+        this.mgmt_host = mgmtHost;
 	}
 
 	public DomainRouter getRouter() {
@@ -66,12 +68,17 @@ public class StartRouterCommand extends AbstractStartCommand {
     public int getNetworkRateMulticastMbps() {
         return networkRateMulticastMbps;
     }
+    
+	public String getManagementHost() {
+		return mgmt_host;
+	}
+	
 
     public String getBootArgs() {
 		String eth2Ip = router.getPublicIpAddress()==null?"0.0.0.0":router.getPublicIpAddress();
 		String basic = " eth0ip=" + router.getGuestIpAddress() + " eth0mask=" + router.getGuestNetmask() + " eth1ip="
         + router.getPrivateIpAddress() + " eth1mask=" + router.getPrivateNetmask() + " gateway=" + router.getGateway()
-		+ " dns1=" + router.getDns1() +  " name=" + router.getName();
+		+ " dns1=" + router.getDns1() +  " name=" + router.getName() + " mgmtcidr=" + mgmt_host;
 		if (!router.getPublicMacAddress().equalsIgnoreCase("FE:FF:FF:FF:FF:FF")) {
 		    basic = basic + " eth2ip=" + eth2Ip + " eth2mask=" + router.getPublicNetmask();
 		}
