@@ -346,7 +346,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                     cleanSR(sr.getKey(), rec);
                     continue;
                 }
-
                 for (PBD pbd : rec.PBDs) {
 
                     if (isRefNull(pbd)) {
@@ -364,15 +363,10 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                     if (pbdr == null) {
                         continue;
                     }
-
                     try {
                         if (pbdr.host.getUuid(conn).equals(_host.uuid)) {
-                            if (!currentlyAttached(sr.getKey(), rec, pbd, pbdr)) {
-                                pbd.unplug(conn);
-                                pbd.destroy(conn);
-                                cleanSR(sr.getKey(), rec);
-                            } else if (!pbdr.currentlyAttached) {
-                                pbd.plug(conn);
+                            if(!pbdr.currentlyAttached) {
+                                pbdPlug(conn, pbd);
                             }
                         }
 
@@ -4005,6 +3999,19 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         }
     }
 
+    private void pbdPlug(Connection conn, PBD pbd) {
+        String pbdUuid = "";
+        String hostAddr = "";
+        try {
+            pbdUuid = pbd.getUuid(conn);
+            hostAddr = pbd.getHost(conn).getAddress(conn);
+            pbd.plug(conn);
+        } catch (Exception e) {
+            String msg = "PBD " + pbdUuid + " is not attached! and PBD plug failed due to "
+            + e.toString() + ". Please check this PBD in host : " + hostAddr;
+            s_logger.warn(msg, e);
+        }
+    }
     protected boolean checkSR(SR sr) {
 
         try {
@@ -4025,15 +4032,8 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                     for (PBD pbd : pbds) {
                         if (host.equals(pbd.getHost(conn))) {
                             PBD.Record pbdr = pbd.getRecord(conn);
-                            if (currentlyAttached(sr, srr, pbd, pbdr)) {
-                                if (!pbdr.currentlyAttached) {
-                                    pbd.plug(conn);
-                                }
-                            } else {
-                                if (pbdr.currentlyAttached) {
-                                    pbd.unplug(conn);
-                                }
-                                pbd.plug(conn);
+                            if (!pbdr.currentlyAttached) {
+                                pbdPlug(conn, pbd); 
                             }
                             pbds.remove(pbd);
                             found = true;
@@ -4045,20 +4045,20 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                         pbdr.host = host;
                         pbdr.uuid = "";
                         PBD pbd = PBD.create(conn, pbdr);
-                        pbd.plug(conn);
+                        pbdPlug(conn, pbd); 
                     }
                 }
             } else {
                 for (PBD pbd : pbds) {
                     PBD.Record pbdr = pbd.getRecord(conn);
                     if (!pbdr.currentlyAttached) {
-                        pbd.plug(conn);
+                        pbdPlug(conn, pbd); 
                     }
                 }
             }
 
         } catch (Exception e) {
-            String msg = "checkSR failed host:" + _host.uuid;
+            String msg = "checkSR failed host:" + _host.uuid + " due to " + e.toString();
             s_logger.warn(msg);
             return false;
         }
