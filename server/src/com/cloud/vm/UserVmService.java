@@ -22,7 +22,7 @@ import com.cloud.api.commands.AttachVolumeCmd;
 import com.cloud.api.commands.CreateTemplateCmd;
 import com.cloud.api.commands.CreateVMGroupCmd;
 import com.cloud.api.commands.DeleteVMGroupCmd;
-import com.cloud.api.commands.DeployVmCmd;
+import com.cloud.api.commands.DeployVm2Cmd;
 import com.cloud.api.commands.DestroyVMCmd;
 import com.cloud.api.commands.DetachVolumeCmd;
 import com.cloud.api.commands.RebootVMCmd;
@@ -46,6 +46,7 @@ import com.cloud.exception.StorageUnavailableException;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
 
 public interface UserVmService extends Manager {
@@ -106,9 +107,9 @@ public interface UserVmService extends Manager {
 
     void updateVirtualMachine(UpdateVMCmd cmd);
     
-    UserVm createVirtualMachine(DeployVmCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException;
+    UserVm createVirtualMachine(DeployVm2Cmd cmd) throws InvalidParameterValueException, PermissionDeniedException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, CloudRuntimeException;
     
-    UserVm startVirtualMachine(DeployVmCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException;
+    UserVm startVirtualMachine(DeployVm2Cmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, CloudRuntimeException;
     /**
      * Creates a vm group.
      * @param name - name of the group
