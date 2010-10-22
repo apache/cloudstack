@@ -3512,7 +3512,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService {
 	}
 
 	@Override
-	public boolean rebootVirtualMachine(RebootVMCmd cmd) {
+	public UserVm rebootVirtualMachine(RebootVMCmd cmd) {
         Account account = UserContext.current().getAccount();
         Long userId = UserContext.current().getUserId();
         Long vmId = cmd.getId();
@@ -3529,15 +3529,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService {
         
         boolean status = rebootVirtualMachine(userId, vmId);
         
-        if(status)
-        {
+        if (status) {
         	EventUtils.saveEvent(userId, vmInstance.getAccountId(), EventTypes.EVENT_VM_REBOOT, "Successfully rebooted vm with id:"+vmId);
-        	return status;
-        }
-        else
-        {
+        	return _vmDao.findById(vmId);
+        } else {
         	EventUtils.saveEvent(userId, vmInstance.getAccountId(), EventTypes.EVENT_VM_REBOOT, "Failed to reboot vm with id:"+vmId);
-        	return status;
+        	throw new CloudRuntimeException("Failed to reboot vm with id: " + vmId);
         }
 	}
 
