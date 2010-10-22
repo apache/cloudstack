@@ -33,7 +33,7 @@
     <div class="grid_container" style="display: block;" id="tab_content_details">
         <div class="grid_rows odd">
             <div class="vm_statusbox">
-                <div id="view_console_container">  
+                <div id="view_console_container" style="float:left;">  
                 	<div id="view_console_template" style="display:block">
     					<div class="vm_consolebox" id="box0">
     					</div>
