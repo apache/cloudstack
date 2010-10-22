@@ -73,7 +73,6 @@ import com.cloud.api.commands.PreparePrimaryStorageForMaintenanceCmd;
 import com.cloud.api.commands.UpdateStoragePoolCmd;
 import com.cloud.async.AsyncInstanceCreateStatus;
 import com.cloud.async.AsyncJobManager;
-import com.cloud.async.executor.VolumeOperationParam.VolumeOp;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Config;
@@ -507,7 +506,7 @@ public class StorageManagerImpl implements StorageManager {
     @DB
     protected Pair<VolumeVO, String> createVolumeFromSnapshot(VolumeVO volume, SnapshotVO snapshot, VMTemplateVO template, long virtualsize) {
         VolumeVO createdVolume = null;
-        Long volumeId = null;
+        Long volumeId = volume.getId();
         
         String volumeFolder = null;
         
@@ -524,7 +523,7 @@ public class StorageManagerImpl implements StorageManager {
 
         DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
         DataCenterVO dc = _dcDao.findById(volume.getDataCenterId());
-        DiskProfile dskCh = createDiskCharacteristics(volume, template, dc, diskOffering);
+        DiskProfile dskCh = new DiskProfile(volume, diskOffering, template.getHypervisorType());
 
         int retry = 0;
         // Determine what pod to store the volume in
@@ -624,7 +623,7 @@ public class StorageManagerImpl implements StorageManager {
         VolumeVO originalVolume = _volsDao.findById(origVolumeId); // NOTE: Original volume could be destroyed and removed.
         VMTemplateVO template = null;
         if (originalVolume != null) {
-            template = _templateDao.findById(originalVolume.getTemplateId());    
+            template = _templateDao.findById(originalVolume.getTemplateId());
         }
 
         // everything went well till now
@@ -1669,15 +1668,18 @@ public class StorageManagerImpl implements StorageManager {
             throw rae;
         }
 
+        Long zoneId = null;
+        Long diskOfferingId = null;
+        Long size = null;
         // validate input parameters before creating the volume
         if (cmd.getSnapshotId() == null) {
-            Long zoneId = cmd.getZoneId();
+            zoneId = cmd.getZoneId();
             if ((zoneId == null)) {
                 throw new InvalidParameterValueException("Missing parameter, zoneid must be specified.");
             }
 
-            Long diskOfferingId = cmd.getDiskOfferingId();
-            Long size = cmd.getSize();
+            diskOfferingId = cmd.getDiskOfferingId();
+            size = cmd.getSize();
             if ((diskOfferingId == null) && (size == null)) {
                 throw new InvalidParameterValueException("Missing parameter(s),either a positive volume size or a valid disk offering id must be specified.");
             } else if ((diskOfferingId == null) && (size != null)) {
@@ -1696,6 +1698,7 @@ public class StorageManagerImpl implements StorageManager {
                 if ((diskOffering == null) || !DiskOfferingVO.Type.Disk.equals(diskOffering.getType())) {
                     throw new InvalidParameterValueException("Please specify a valid disk offering.");
                 }
+                size = diskOffering.getDiskSize();
             }
         } else {
             Long snapshotId = cmd.getSnapshotId();
@@ -1703,7 +1706,12 @@ public class StorageManagerImpl implements StorageManager {
             if (snapshotCheck == null) {
                 throw new ServerApiException (BaseCmd.SNAPSHOT_INVALID_PARAM_ERROR, "unable to find a snapshot with id " + snapshotId);
             }
-            
+
+            VolumeVO vol = _volsDao.findById(snapshotCheck.getVolumeId());
+            zoneId = vol.getDataCenterId();
+            diskOfferingId = vol.getDiskOfferingId();
+            size = vol.getSize();
+
             if (account != null) {
                 if (isAdmin(account.getType())) {
                     Account snapshotOwner = _accountDao.findById(snapshotCheck.getAccountId());
@@ -1714,13 +1722,6 @@ public class StorageManagerImpl implements StorageManager {
                     throw new ServerApiException(BaseCmd.SNAPSHOT_INVALID_PARAM_ERROR, "unable to find a snapshot with id " + snapshotId + " for this account");
                 }
             }
-        }
-
-        Long zoneId = cmd.getZoneId();
-        // Check that the zone is valid
-        DataCenterVO zone = _dcDao.findById(zoneId);
-        if (zone == null) {
-            throw new InvalidParameterValueException("Please specify a valid zone.");
         }
         
         // Check that there is a shared primary storage pool in the specified zone
@@ -1754,7 +1755,8 @@ public class StorageManagerImpl implements StorageManager {
         volume.setAccountId(targetAccount.getId());
         volume.setDomainId(((account == null) ? Domain.ROOT_DOMAIN : account.getDomainId()));
         volume.setMirrorState(MirrorState.NOT_MIRRORED);
-        volume.setDiskOfferingId(cmd.getDiskOfferingId());
+        volume.setDiskOfferingId(diskOfferingId);
+        volume.setSize(size);
         volume.setStorageResourceType(StorageResourceType.STORAGE_POOL);
         volume.setInstanceId(null);
         volume.setUpdated(new Date());

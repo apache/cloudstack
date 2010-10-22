@@ -1859,8 +1859,8 @@ a:hover.search_button {
 }
 
 .help_dropdown_box {
-	width:209px;
-	height:200px;
+	width:400px;
+	height:400px;
 	float:left;
 	position:absolute;
 	background:#FFF repeat top left;
@@ -1873,7 +1873,7 @@ a:hover.search_button {
 }
 
 .help_dropdown_box_titlebox {
-	width:190px;
+	width:380px;
 	height:auto;
 	float:left;
 	margin:8px 0 0 10px;
@@ -1912,26 +1912,78 @@ a:hover.search_button {
 }
 	
 .help_dropdown_box_textbox {
-	width:190px;
-	height:140px;
+	width:380px;
+	height:340px;
 	float:left;
 	margin:0 0 0 10px;
 	padding:0;
-	overflow-y:auto;
 	overflow-y:scroll;
+	overflow-y:auto;
 	overflow-x:hidden;
+}
+
+
+.help_dropdown_box_textbox a {
+	color:#2c8bbc;
+	font-size:11px;
+	font-weight:normal;
+	text-align:left;
+	margin:0;
+	padding:0;
+	text-decoration:underline;
+}
+
+.help_dropdown_box_textbox a:link, .help_dropdown_box_textbox a:visited {
+	text-decoration:underline;
 	
+}
+
+.help_dropdown_box_textbox a:hover {
+	text-decoration:underline;
+	color:#333;
+}
+
+
+
+.help_dropdown_box_textbox ul {
+	width:350px;
+	height:auto;
+	float:left;
+	margin:12px 0 0 0;
+	padding:0;
+}
+
+.help_dropdown_box_textbox li {
+	width:350px;
+	height:auto;
+	float:left;
+	background:url(../images/arrow.png) no-repeat top left;
+	margin:5px 0 0 0;
+	padding:0 0 0 16px;
+	font-size:11px;
+}
+
+.help_dropdown_box_textbox h3{
+	width:360px;
+	height:auto;
+	float:left;
+	color:#0D4861;
+	font-size:12px;
+	font-weight:normal;
+	text-align:left;
+	margin:12px 0 0 0;
+	padding:0;
 }
 	
 .help_dropdown_box_textbox p{
-	width:190px;
+	width:360px;
 	height:auto;
 	float:left;
 	color:#333;
 	font-size:11px;
 	font-weight:normal;
 	text-align:left;
-	margin:12px 0 0 0;
+	margin:8px 0 0 0;
 	padding:0;
 }
 

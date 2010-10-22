@@ -101,6 +101,9 @@ public class VolumeResponse extends BaseResponse {
     @SerializedName("storage") @Param(description="name of the primary storage hosting the disk volume")
     private String storagePoolName;
 
+    @SerializedName("snapshotid") @Param(description="ID of the snapshot from which this volume was created")
+    private Long snapshotId;
+
     public Long getId() {
         return id;
     }
@@ -307,5 +310,13 @@ public class VolumeResponse extends BaseResponse {
 
     public void setStoragePoolName(String storagePoolName) {
         this.storagePoolName = storagePoolName;
+    }
+
+    public Long getSnapshotId() {
+        return snapshotId;
+    }
+
+    public void setSnapshotId(Long snapshotId) {
+        this.snapshotId = snapshotId;
     }
 }

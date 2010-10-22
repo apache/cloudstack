@@ -26,7 +26,7 @@
             <%=t.t("Volume")%></div>
         <div class="content_tabs off" id="tab_statistics">
             <%=t.t("Statistics")%></div>
-        <div class="content_tabs off" id="tab_router">
+        <div class="content_tabs off" id="tab_router" style="display:none">
             <%=t.t("Routers")%></div>
     </div>
     <!--Details tab (start)-->
@@ -183,7 +183,7 @@
     </div>
     <!--Statistics tab (start)-->
     <!--Routers tab (start)-->
-    <div style="display: none;" id="tab_content_router">
+    <div style="display: none;" id="tab_content_router" style="display:none">
         Routers
     </div>
     <!--Routers tab (start)-->
