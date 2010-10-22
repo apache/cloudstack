@@ -563,6 +563,10 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
             }
         }
         
+        if( clusterName == null && clusterId == null ) {
+            clusterName = "Standalone" + url;
+        }
+        
         if (clusterName != null) {      
             ClusterVO cluster = new ClusterVO(dcId, podId, clusterName);
             try {
