@@ -29,7 +29,9 @@ import com.cloud.api.Parameter;
 import com.cloud.api.response.UserVmResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VolumeVO;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.InstanceGroupVO;
@@ -172,7 +174,16 @@ public class StartVMCmd extends BaseAsyncCmd {
         response.setCpuNumber(offering.getCpu());
         response.setCpuSpeed(offering.getSpeed());
         response.setMemory(offering.getRamSize());
-        
+
+        VolumeVO rootVolume = ApiDBUtils.findRootVolume(vm.getId());
+        if (rootVolume != null) {
+            response.setRootDeviceId(rootVolume.getDeviceId());
+            StoragePoolVO storagePool = ApiDBUtils.findStoragePoolById(rootVolume.getPoolId());
+            response.setRootDeviceType(storagePool.getPoolType().toString());
+        }
+
+        response.setGuestOsId(vm.getGuestOSId());
+
         //Network groups
         response.setNetworkGroupList(ApiDBUtils.getNetworkGroupsNamesForVm(vm.getId()));
 

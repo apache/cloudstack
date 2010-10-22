@@ -31,7 +31,9 @@ import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.UserVmResponse;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VolumeVO;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.vm.InstanceGroupVO;
@@ -201,7 +203,14 @@ public class ListVMsCmd extends BaseListCmd {
             userVmResponse.setCpuNumber(offering.getCpu());
             userVmResponse.setCpuSpeed(offering.getSpeed());
             userVmResponse.setMemory(offering.getRamSize());
-            
+
+            VolumeVO rootVolume = ApiDBUtils.findRootVolume(userVm.getId());
+            if (rootVolume != null) {
+                userVmResponse.setRootDeviceId(rootVolume.getDeviceId());
+                StoragePoolVO storagePool = ApiDBUtils.findStoragePoolById(rootVolume.getPoolId());
+                userVmResponse.setRootDeviceType(storagePool.getPoolType().toString());
+            }
+
             //stats calculation
             DecimalFormat decimalFormat = new DecimalFormat("#.##");
             String cpuUsed = null;
@@ -218,7 +227,7 @@ public class ListVMsCmd extends BaseListCmd {
                 userVmResponse.setNetworkKbsWrite(networkKbWrite);
             }
             
-            userVmResponse.setOsTypeId(userVm.getGuestOSId());
+            userVmResponse.setGuestOsId(userVm.getGuestOSId());
 
             //network groups
             userVmResponse.setNetworkGroupList(ApiDBUtils.getNetworkGroupsNamesForVm(userVm.getId()));

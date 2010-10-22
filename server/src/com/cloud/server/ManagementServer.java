@@ -336,13 +336,6 @@ public interface ManagementServer {
     Long getPodIdForVlan(long vlanDbId);
 
     /**
-     * Finds the root volume of the VM
-     * @param vmId
-     * @return Volume
-     */
-    VolumeVO findRootVolume(long vmId);
-
-    /**
      * Return a list of IP addresses
      * @param accountId
      * @param allocatedOnly - if true, will only list IPs that are allocated to the specified account

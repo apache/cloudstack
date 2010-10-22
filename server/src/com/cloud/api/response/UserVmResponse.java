@@ -116,8 +116,14 @@ public class UserVmResponse extends BaseResponse {
     @SerializedName("networkkbswrite") @Param(description="the outgoing network traffic on the host")
     private Long networkKbsWrite;
 
-    @SerializedName("ostypeid") @Param(description="Os type ID of the virtual machine")
-    private Long osTypeId;
+    @SerializedName("guestosid") @Param(description="Os type ID of the virtual machine")
+    private Long guestOsId;
+
+    @SerializedName("rootdeviceid") @Param(description="device ID of the root volume")
+    private Long rootDeviceId;
+
+    @SerializedName("rootdevicetype") @Param(description="device type of the root volume")
+    private String rootDeviceType;
 
     @SerializedName("networkgrouplist") @Param(description="list of network groups associated with the virtual machine")
     private String networkGroupList;
@@ -390,12 +396,28 @@ public class UserVmResponse extends BaseResponse {
         this.networkKbsWrite = networkKbsWrite;
     }
 
-    public Long getOsTypeId() {
-        return osTypeId;
+    public Long getGuestOsId() {
+        return guestOsId;
     }
 
-    public void setOsTypeId(Long osTypeId) {
-        this.osTypeId = osTypeId;
+    public void setGuestOsId(Long guestOsId) {
+        this.guestOsId = guestOsId;
+    }
+
+    public Long getRootDeviceId() {
+        return rootDeviceId;
+    }
+
+    public void setRootDeviceId(Long rootDeviceId) {
+        this.rootDeviceId = rootDeviceId;
+    }
+
+    public String getRootDeviceType() {
+        return rootDeviceType;
+    }
+
+    public void setRootDeviceType(String rootDeviceType) {
+        this.rootDeviceType = rootDeviceType;
     }
 
     public String getNetworkGroupList() {

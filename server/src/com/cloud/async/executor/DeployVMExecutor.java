@@ -239,13 +239,13 @@ public class DeployVMExecutor extends VMOperationExecutor {
         resultObject.setMemory(String.valueOf(offering.getRamSize()));
         
         //root device related
-        VolumeVO rootVolume = managementServer.findRootVolume(vm.getId());
-        if(rootVolume!=null)
-        {
-        	resultObject.setRootDeviceId(rootVolume.getDeviceId());
-        	StoragePoolVO storagePool = managementServer.findPoolById(rootVolume.getPoolId());
-        	resultObject.setRootDeviceType(storagePool.getPoolType().toString());
-        }
+//        VolumeVO rootVolume = managementServer.findRootVolume(vm.getId());
+//        if(rootVolume!=null)
+//        {
+//        	resultObject.setRootDeviceId(rootVolume.getDeviceId());
+//        	StoragePoolVO storagePool = managementServer.findPoolById(rootVolume.getPoolId());
+//        	resultObject.setRootDeviceType(storagePool.getPoolType().toString());
+//        }
         
 //        resultObject.setNetworkGroupList(managementServer.getNetworkGroupsNamesForVm(vm.getId()));
 		return resultObject;

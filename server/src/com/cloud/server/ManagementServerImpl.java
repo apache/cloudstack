@@ -1427,15 +1427,6 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public VolumeVO findRootVolume(long vmId) {
-        List<VolumeVO> volumes = _volumeDao.findByInstanceAndType(vmId, VolumeType.ROOT);
-        if (volumes != null && volumes.size() == 1)
-            return volumes.get(0);
-        else
-            return null;
-    }
-
-    @Override
     public List<IPAddressVO> listPublicIpAddressesBy(Long accountId, boolean allocatedOnly, Long zoneId, Long vlanDbId) {
         SearchCriteria<IPAddressVO> sc = _publicIpAddressDao.createSearchCriteria();
 

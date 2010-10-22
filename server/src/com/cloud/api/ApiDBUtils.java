@@ -51,6 +51,7 @@ import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
@@ -340,6 +341,15 @@ public class ApiDBUtils {
 
     public static SecurityGroupVO findPortForwardingServiceById(Long securityGroupId) {
         return _securityGroupDao.findById(securityGroupId);
+    }
+
+    public static VolumeVO findRootVolume(long vmId) {
+        List<VolumeVO> volumes = _volumeDao.findByInstanceAndType(vmId, VolumeType.ROOT);
+        if (volumes != null && volumes.size() == 1) {
+            return volumes.get(0);
+        } else {
+            return null;
+        }
     }
 
     public static ServiceOffering findServiceOfferingById(Long serviceOfferingId) {
