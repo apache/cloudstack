@@ -166,6 +166,17 @@ $(document).ready(function() {
 		return;
 	}
 	
+	// Initialize help drop down dialog
+	$("#help_link").bind("click", function(event) {
+		$("#help_dropdown_dialog").show();
+		return false;
+	});
+	
+	$("#help_dropdown_close").bind("click", function(event) {
+		$("#help_dropdown_dialog").hide();
+		return false;
+	});
+	
 	/*
 	initializeTestTool();
 	*/

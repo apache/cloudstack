@@ -266,13 +266,13 @@ long milliseconds = new Date().getTime();
                                     <%=t.t("help")%></div>
                             </div>
                             
-                            <div class="help_dropdown_box" style="display:none;">
+                            <div class="help_dropdown_box" id="help_dropdown_dialog" style="display:none;">
                             	<div class="help_dropdown_box_titlebox">
                                 	<h2> Instance Help</h2>
-                                    <a href="#"> Close</a>
+                                    <a id="help_dropdown_close" href="#"> Close</a>
                                 </div>
                                 
-                                <div class="help_dropdown_box_textbox">
+                                <div class="help_dropdown_box_textbox" id="help_dropdown_body">
                                 	<p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. </p><p>It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</p>
                                 </div>
                             </div>
