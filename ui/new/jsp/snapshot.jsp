@@ -25,13 +25,7 @@
     </div>    
     <div id="tab_content_details">
         <div class="grid_actionpanel">
-            <div class="grid_actionbox" id="action_link">
-                <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
-                    <ul class="actionsdropdown_boxlist" id="action_list">
-                       <li><%=t.t("no.available.actions")%></li>
-                    </ul>
-                </div>
-            </div>            
+                        
             <div class="gridheader_loaderbox" id="spinning_wheel" style="border: 1px solid #999;
                 display: none;">
                 <div class="gridheader_loader" id="icon">
@@ -41,6 +35,16 @@
             </div>                  
         </div>
         <div class="grid_container">
+        	<div class="grid_header">
+            	<div class="grid_header_title">Title</div>
+                    <div class="grid_actionbox" id="action_link">
+                    <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
+                        <ul class="actionsdropdown_boxlist" id="action_list">
+                            <li><%=t.t("no.available.actions")%></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
             <div class="grid_rows odd">
                 <div class="grid_row_cell" style="width: 20%;">
                     <div class="row_celltitles">
