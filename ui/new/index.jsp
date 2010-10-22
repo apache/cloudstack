@@ -273,6 +273,21 @@ long milliseconds = new Date().getTime();
                                 </div>
                                 
                                 <div class="help_dropdown_box_textbox" id="help_dropdown_body">
+                                	<ul>
+                                    	<li><a href="#topic1">Start VM</a></li>
+                                        <li><a href="#topic2">Stop VM</a></li>
+                                        <li><a href="#topic3">Destroy VM</a></li>
+                                    </ul>
+                                    
+                                    
+                                    <h3>Start VM<a name="topic1"></a></h3>
+                                	<p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. </p>
+                                    
+                                   
+                                    <h3>Stop VM <a name="topic2"></a></h3>
+                                	<p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. </p><p>It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</p>
+                                    
+                                    <h3>Destroy VM<a name="topic3"></a></h3>
                                 	<p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. </p><p>It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</p>
                                 </div>
                             </div>
