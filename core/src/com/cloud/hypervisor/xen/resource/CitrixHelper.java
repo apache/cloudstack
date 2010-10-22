@@ -155,6 +155,7 @@ public class CitrixHelper {
     	_xenServerGuestOsMap.put("Windows Vista (32-bit)", "Windows Vista (32-bit)");
     	_xenServerGuestOsMap.put("Windows XP SP2 (32-bit)", "Windows XP SP2 (32-bit)");
     	_xenServerGuestOsMap.put("Windows XP SP3 (32-bit)", "Windows XP SP3 (32-bit)");
+    	_xenServerGuestOsMap.put("Other install media", "Other install media");
     }
     
     public static String getXcpGuestOsType(String stdType) {
