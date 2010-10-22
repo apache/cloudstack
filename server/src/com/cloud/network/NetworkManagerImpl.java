@@ -133,6 +133,7 @@ import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
@@ -852,21 +853,36 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
 
         // check for ip address/port conflicts by checking existing forwarding and load balancing rules
         List<FirewallRuleVO> existingRulesOnPubIp = _rulesDao.listIPForwarding(ipAddress.getAddress());
-        Map<String, Pair<String, String>> mappedPublicPorts = new HashMap<String, Pair<String, String>>();
+
+        // FIXME:  The mapped ports should be String, String, List<String> since more than one proto can be mapped...
+        Map<String, Ternary<String, String, List<String>>> mappedPublicPorts = new HashMap<String, Ternary<String, String, List<String>>>();
 
         if (existingRulesOnPubIp != null) {
             for (FirewallRuleVO fwRule : existingRulesOnPubIp) {
-                mappedPublicPorts.put(fwRule.getPublicPort(), new Pair<String, String>(fwRule.getPrivateIpAddress(), fwRule.getPrivatePort()));
+                Ternary<String, String, List<String>> portMappings = mappedPublicPorts.get(fwRule.getPublicPort());
+                List<String> protocolList = null;
+                if (portMappings == null) {
+                    protocolList = new ArrayList<String>();
+                } else {
+                    protocolList = portMappings.third();
+                }
+                protocolList.add(fwRule.getProtocol());
+                mappedPublicPorts.put(fwRule.getPublicPort(), new Ternary<String, String, List<String>>(fwRule.getPrivateIpAddress(), fwRule.getPrivatePort(), protocolList));
             }
         }
 
-        Pair<String, String> privateIpPort = mappedPublicPorts.get(publicPort);
+        Ternary<String, String, List<String>> privateIpPort = mappedPublicPorts.get(publicPort);
         if (privateIpPort != null) {
             if (privateIpPort.first().equals(userVM.getGuestIpAddress()) && privateIpPort.second().equals(privatePort)) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("skipping the creating of firewall rule " + ipAddress + ":" + publicPort + " to " + userVM.getGuestIpAddress() + ":" + privatePort + "; rule already exists.");
+                List<String> protocolList = privateIpPort.third();
+                for (String mappedProtocol : protocolList) {
+                    if (mappedProtocol.equalsIgnoreCase(protocol)) {
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("skipping the creating of firewall rule " + ipAddress + ":" + publicPort + " to " + userVM.getGuestIpAddress() + ":" + privatePort + "; rule already exists.");
+                        }
+                        return null; // already mapped
+                    }
                 }
-                return null; // already mapped
             } else {
                 // FIXME:  Will we need to refactor this for both assign port forwarding service and create port forwarding rule?
 //                throw new NetworkRuleConflictException("An existing port forwarding service rule for " + ipAddress + ":" + publicPort

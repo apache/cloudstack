@@ -25,6 +25,7 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ServerApiException;
 import com.cloud.api.response.FirewallRuleResponse;
 import com.cloud.network.FirewallRuleVO;
 import com.cloud.uservm.UserVm;
@@ -92,18 +93,21 @@ public class CreateIPForwardingRuleCmd extends BaseCmd {
     @Override @SuppressWarnings("unchecked")
     public FirewallRuleResponse getResponse() {
         FirewallRuleVO fwRule = (FirewallRuleVO)getResponseObject();
+        if (fwRule != null) {
+            FirewallRuleResponse fwResponse = new FirewallRuleResponse();
+            fwResponse.setId(fwRule.getId());
+            fwResponse.setPrivatePort(fwRule.getPrivatePort());
+            fwResponse.setProtocol(fwRule.getProtocol());
+            fwResponse.setPublicPort(fwRule.getPublicPort());
 
-        FirewallRuleResponse fwResponse = new FirewallRuleResponse();
-        fwResponse.setId(fwRule.getId());
-        fwResponse.setPrivatePort(fwRule.getPrivatePort());
-        fwResponse.setProtocol(fwRule.getProtocol());
-        fwResponse.setPublicPort(fwRule.getPublicPort());
+            UserVm vm = ApiDBUtils.findUserVmById(virtualMachineId);
+            fwResponse.setVirtualMachineId(vm.getId());
+            fwResponse.setVirtualMachineName(vm.getName());
 
-        UserVm vm = ApiDBUtils.findUserVmById(virtualMachineId);
-        fwResponse.setVirtualMachineId(vm.getId());
-        fwResponse.setVirtualMachineName(vm.getName());
+            fwResponse.setResponseName(getName());
+            return fwResponse;
+        }
 
-        fwResponse.setResponseName(getName());
-        return fwResponse;
+        throw new ServerApiException(NET_CREATE_IPFW_RULE_ERROR, "An existing rule for ipAddress / port / protocol of " + ipAddress + " / " + publicPort + " / " + protocol + " exits.");
     }
 }
