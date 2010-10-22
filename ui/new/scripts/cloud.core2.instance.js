@@ -53,6 +53,9 @@ function clickInstanceGroupHeader($arrowIcon) {
            
     //***** VM Detail (end) ********************************************************************************    
     $("#right_panel").load("jsp/instance.jsp", function() {	           
+	    if (isAdmin() || isDomainAdmin())
+	        $("#right_panel_content").find("#tab_router,#tab_router").show();
+	    
 	    var $noDiskOfferingTemplate = $("#vm_popup_disk_offering_template_no");
         var $customDiskOfferingTemplate = $("#vm_popup_disk_offering_template_custom");
         var $existingDiskOfferingTemplate = $("#vm_popup_disk_offering_template_existing");
@@ -1220,7 +1223,9 @@ function vmToRightPanel($midmenuItem) {
     
     vmJsonToDetailsTab(jsonObj, $midmenuItem);   
     vmJsonToVolumeTab(jsonObj);
-    vmJsonToRouterTab(jsonObj);
+    
+    if (isAdmin() || isDomainAdmin())
+        vmJsonToRouterTab(jsonObj);
 }
  
 function vmJsonToDetailsTab(jsonObj, $midmenuItem){
