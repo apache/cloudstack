@@ -163,6 +163,9 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
         if (volume.getPoolId() != null) {
             response.setStoragePoolName(ApiDBUtils.findStoragePoolById(volume.getPoolId()).getName());
         }
+
+        // if the volume was created from a snapshot, snapshotId will be set so we pass it back in the response
+        response.setSnapshotId(getSnapshotId());
         response.setZoneId(volume.getDataCenterId());
         response.setZoneName(ApiDBUtils.findZoneById(volume.getDataCenterId()).getName());
 
