@@ -47,7 +47,7 @@
                     </div>
                 </div>
                 <div class="dbrow_cell" style="width: 58%; border: none;">
-                    <div class="db_barbox low" id="bar_chart" style="width: 18%;">
+                    <div class="db_barbox low" id="bar_chart">
                     </div>
                 </div>
                 <div class="dbrow_cell" style="width: 12%; border: none;">
@@ -68,7 +68,7 @@
                     </div>
                 </div>
                 <div class="dbrow_cell" style="width: 58%; border: none;">
-                    <div class="db_barbox low" id="bar_chart" style="width: 20%;">
+                    <div class="db_barbox low" id="bar_chart">
                     </div>
                 </div>
                 <div class="dbrow_cell" style="width: 12%; border: none;">
@@ -89,7 +89,7 @@
                     </div>
                 </div>
                 <div class="dbrow_cell" style="width: 58%; border: none;">
-                    <div class="db_barbox mid" id="bar_chart" style="width: 66%;">
+                    <div class="db_barbox mid" id="bar_chart" >
                     </div>
                 </div>
                 <div class="dbrow_cell" style="width: 12%; border: none;">
@@ -110,7 +110,7 @@
                     </div>
                 </div>
                 <div class="dbrow_cell" style="width: 58%; border: none;">
-                    <div class="db_barbox high" id="bar_chart" style="width: 83%;">
+                    <div class="db_barbox high" id="bar_chart">
                     </div>
                 </div>
                 <div class="dbrow_cell" style="width: 12%; border: none;">
@@ -131,7 +131,7 @@
                     </div>
                 </div>
                 <div class="dbrow_cell" style="width: 58%; border: none;">
-                    <div class="db_barbox low" id="bar_chart" style="width: 15%;">
+                    <div class="db_barbox low" id="bar_chart">
                     </div>
                 </div>
                 <div class="dbrow_cell" style="width: 12%; border: none;">
@@ -152,7 +152,7 @@
                     </div>
                 </div>
                 <div class="dbrow_cell" style="width: 58%; border: none;">
-                    <div class="db_barbox low" id="bar_chart" style="width: 40%;">
+                    <div class="db_barbox low" id="bar_chart">
                     </div>
                 </div>
                 <div class="dbrow_cell" style="width: 12%; border: none;">
@@ -173,7 +173,7 @@
                     </div>
                 </div>
                 <div class="dbrow_cell" style="width: 58%; border: none;">
-                    <div class="db_barbox low" id="bar_chart" style="width: 20%;">
+                    <div class="db_barbox low" id="bar_chart">
                     </div>
                 </div>
                 <div class="dbrow_cell" style="width: 12%; border: none;">

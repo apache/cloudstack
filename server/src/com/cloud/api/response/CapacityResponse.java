@@ -39,7 +39,7 @@ public class CapacityResponse extends BaseResponse {
     @SerializedName("capacityused") @Param(description="the capacity currently in use")
     private Long capacityUsed;
 
-    @SerializedName("capacityTotal") @Param(description="the total capacity available")
+    @SerializedName("capacitytotal") @Param(description="the total capacity available")
     private Long capacityTotal;
 
     @SerializedName("percentused") @Param(description="the percentage of capacity currently in use")
