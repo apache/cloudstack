@@ -224,12 +224,12 @@ public class ApiDispatcher {
             if (cause instanceof AsyncCommandQueued) {
                 throw (AsyncCommandQueued)cause;
             }
-            s_logger.warn("Exception executing method " + methodName + " for command " + cmd.getClass().getSimpleName(), ite);
             if (cause instanceof InvalidParameterValueException) {
                 throw new ServerApiException(BaseCmd.PARAM_ERROR, cause.getMessage());
             } else if (cause instanceof PermissionDeniedException) {
                 throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, cause.getMessage());
             }
+            s_logger.warn("Exception executing method " + methodName + " for command " + cmd.getClass().getSimpleName(), ite);
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to execute method " + methodName + " for command " + cmd.getClass().getSimpleName() + ", internal error in the implementation.");
         } catch (IllegalAccessException iae) {
             s_logger.warn("Exception executing method " + methodName + " for command " + cmd.getClass().getSimpleName(), iae);
