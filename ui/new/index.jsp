@@ -259,39 +259,39 @@ long milliseconds = new Date().getTime();
                         </div>
                         <div class="actionpanel_button_wrapper" id="help_link" style="display: block; float: right;
                             background: none; position: relative;">
-                            <div class="actionpanel_button">
+                            <div class="actionpanel_button" id="help_button">
                                 <div class="actionpanel_button_icons">
                                     <img src="images/help_actionicon.png" alt="Help" /></div>
                                 <div class="actionpanel_button_links">
                                     <%=t.t("help")%></div>
                             </div>
-                            
-                            <div class="help_dropdown_box" id="help_dropdown_dialog" style="display:none;">
+                        </div>
+						<div class="help_dropdown_box" id="help_dropdown_dialog" style="display:none;">
                             	<div class="help_dropdown_box_titlebox">
-                                	<h2> Instance Help</h2>
+                                	<h2>Help</h2>
                                     <a id="help_dropdown_close" href="#"> Close</a>
                                 </div>
                                 
                                 <div class="help_dropdown_box_textbox" id="help_dropdown_body">
+									<a id="help_top" name="help_top"></a>
                                 	<ul>
-                                    	<li><a href="#topic1">Start VM</a></li>
-                                        <li><a href="#topic2">Stop VM</a></li>
-                                        <li><a href="#topic3">Destroy VM</a></li>
+                                    	<li><a href="#topic1">Topic 1</a></li>
+                                        <li><a href="#topic2">Topic 2</a></li>
+                                        <li><a href="#topic3">Topic 3</a></li>
                                     </ul>
                                     
                                     
-                                    <h3>Start VM<a name="topic1"></a></h3>
+                                    <h3>Topic 1<a id="topic1" name="topic1"></a>&nbsp;<a href="#help_top">Top</a></h3>
                                 	<p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. </p>
                                     
                                    
-                                    <h3>Stop VM <a name="topic2"></a></h3>
+                                    <h3>Topic 2 <a id="topic2" name="topic2"></a></h3>
                                 	<p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. </p><p>It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</p>
                                     
-                                    <h3>Destroy VM<a name="topic3"></a></h3>
+                                    <h3>Topic 3<a id="topic3" name="topic3"></a></h3>
                                 	<p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. </p><p>It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</p>
                                 </div>
                             </div>
-                        </div>
                     </div>
                     <!-- Action Panel ends here-->
                     <!-- Right Panel starts here-->

@@ -517,6 +517,10 @@ function selectLeftMenu($menuToSelect, expandable) {
 			$menuToExpand.slideDown(500);
 		}
 		$expandedLeftMenu = $menuToExpand;
+		
+		// Close the help link if it's opened
+		$("#help_dropdown_dialog").hide();
+		$("#help_button").removeClass("selected");
 	}
 }
 
