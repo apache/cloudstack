@@ -668,15 +668,7 @@ long milliseconds = new Date().getTime();
             </div>
         </div>
     </div>
-    
-    <div class="leftmenu_content" id="leftmenu_submenu_template" style="display: none">
-        <div class="leftmenu_thirdindent">
-            <div class="leftmenu_list_icons">
-                <img id="icon" style="display: none" /></div>
-            <div id="submenu_name">
-                (submenu)</div>
-        </div>
-    </div>
+        
     <div class="midmenu_list" id="midmenu_item" style="display: none;">
         <div class="midmenu_content" id="content">
             <div class="midmenu_icons" id="icon_container" style="display: none">
