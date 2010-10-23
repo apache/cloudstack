@@ -104,6 +104,9 @@ public class VolumeResponse extends BaseResponse {
     @SerializedName("snapshotid") @Param(description="ID of the snapshot from which this volume was created")
     private Long snapshotId;
 
+    @SerializedName("attached") @Param(description="the date the volume was attached to a VM instance")
+    private Date attached;
+
     public Long getId() {
         return id;
     }
@@ -318,5 +321,13 @@ public class VolumeResponse extends BaseResponse {
 
     public void setSnapshotId(Long snapshotId) {
         this.snapshotId = snapshotId;
+    }
+
+    public Date getAttached() {
+        return attached;
+    }
+
+    public void setAttached(Date attached) {
+        this.attached = attached;
     }
 }

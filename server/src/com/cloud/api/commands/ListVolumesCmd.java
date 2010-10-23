@@ -206,6 +206,7 @@ public class ListVolumesCmd extends BaseListCmd {
                 volResponse.setSourceType(volume.getSourceType().toString());
             }
             volResponse.setHypervisor(ApiDBUtils.getVolumeHyperType(volume.getId()).toString());
+            volResponse.setAttached(volume.getAttached());
 
             volResponse.setResponseName("volume");
             volResponses.add(volResponse);
