@@ -409,7 +409,7 @@ long milliseconds = new Date().getTime();
                         <div id="leftmenu_itemplate_filter">
                             <div class="leftmenu_content" id="leftmenu_template_filter_header">
                                 <div class="leftmenu_secondindent">
-                                    <div class="leftmenu_arrows expanded_open" id="arrowIcon">
+                                    <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
                                     </div>
                                     
                                     <%=t.t("template")%>
@@ -454,7 +454,7 @@ long milliseconds = new Date().getTime();
                         <div id="leftmenu_iso_filter">
                             <div class="leftmenu_content" id="leftmenu_iso_filter_header">
                                 <div class="leftmenu_secondindent">
-                                    <div class="leftmenu_arrows expanded_open" id="arrowIcon">
+                                    <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
                                     </div>
                                     
                                     <%=t.t("iso")%>
