@@ -1248,6 +1248,7 @@ function vmJsonToDetailsTab(jsonObj, $midmenuItem){
     $detailsTab.find("#zoneName").text(fromdb(jsonObj.zonename));
            
     var vmName = getVmName(jsonObj.name, jsonObj.displayname);        
+    $detailsTab.find("#title").text(vmName);
     $detailsTab.find("#vmname").text(vmName);
     $detailsTab.find("#ipaddress").text(fromdb(jsonObj.ipaddress));
     
