@@ -16,7 +16,6 @@
  * 
  */
 
-
 function instanceBuildSubMenu() {    
     var $subMenuContainer = $("#leftmenu_instance_expandedbox").empty();
     
