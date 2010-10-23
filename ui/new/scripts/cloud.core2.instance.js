@@ -26,6 +26,21 @@ function instanceBuildSubMenu() {
     instanceBuildSubMenu2("Running Instances", "listVirtualMachines&state=Running");
     instanceBuildSubMenu2("Stopped Instances", "listVirtualMachines&state=Stopped");
     instanceBuildSubMenu2("Destoryed Instances", "listVirtualMachines&state=Destroyed");
+    
+    
+    $.ajax({
+        cache: false,
+        data: createURL("command=listInstanceGroups"),	       
+        dataType: "json",
+        success: function(json) {	            
+            var instancegroups = json.listinstancegroupsresponse.instancegroup;	        	
+        	if(instancegroups!=null && instancegroups.length>0) {           
+	            for(var i=0; i < instancegroups.length; i++) {		                
+	                instanceBuildSubMenu2(instancegroups[i].name, ("listVirtualMachines&groupid="+instancegroups[i].id));   
+	            }
+	        }
+        }
+    });  
 }
 
 function instanceBuildSubMenu2(label, commandString) {   
@@ -634,7 +649,7 @@ function afterLoadInstanceJSP() {
 
 
 
-
+/*
 function clickInstanceGroupHeader($arrowIcon) {     
 	if($arrowIcon.hasClass("expanded_close") == true) {
         $arrowIcon.removeClass("expanded_close").addClass("expanded_open");            
@@ -659,7 +674,7 @@ function clickInstanceGroupHeader($arrowIcon) {
         $("#leftmenu_instance_group_container").empty();   
     }	
 }  
-
+*/
 
 //***** VM Detail (begin) ******************************************************************************
 var noGroupName = "default";             
