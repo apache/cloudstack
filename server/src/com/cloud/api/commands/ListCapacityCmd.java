@@ -44,7 +44,7 @@ import com.cloud.storage.StoragePoolVO;
 public class ListCapacityCmd extends BaseListCmd {
 
     public static final Logger s_logger = Logger.getLogger(ListCapacityCmd.class.getName());
-    private static final DecimalFormat s_percentFormat = new DecimalFormat("####.##");
+    private static final DecimalFormat s_percentFormat = new DecimalFormat("##.##");
 
     private static final String s_name = "listcapacityresponse";
 
@@ -120,12 +120,15 @@ public class ListCapacityCmd extends BaseListCmd {
                 capacityResponse.setPodId(summedCapacity.getPodId());
                 if (summedCapacity.getPodId() > 0) {
                     capacityResponse.setPodName(ApiDBUtils.findPodById(summedCapacity.getPodId()).getName());
+                } else {
+                	capacityResponse.setPodName("All");
                 }
             }
             capacityResponse.setZoneId(summedCapacity.getDataCenterId());
             capacityResponse.setZoneName(ApiDBUtils.findZoneById(summedCapacity.getDataCenterId()).getName());
             if (summedCapacity.getTotalCapacity() != 0) {
-                capacityResponse.setPercentUsed(s_percentFormat.format(summedCapacity.getUsedCapacity() / summedCapacity.getTotalCapacity()));
+            	float computed = ((float)summedCapacity.getUsedCapacity() / (float)summedCapacity.getTotalCapacity() * 100f);
+                capacityResponse.setPercentUsed(s_percentFormat.format((float)summedCapacity.getUsedCapacity() / (float)summedCapacity.getTotalCapacity() * 100f));
             } else {
                 capacityResponse.setPercentUsed(s_percentFormat.format(0L));
             }

@@ -16,8 +16,6 @@
  * 
  */
 
-// Version: @VERSION@
-
 var g_zoneIds = []; 
 var g_zoneNames = [];	
 

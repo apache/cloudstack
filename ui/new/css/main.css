@@ -1810,7 +1810,10 @@ a:hover.search_button {
 
 .actionpanel_button:hover{
 	background:url(../images/actionpanel_hover.gif) repeat-x top right;
-	
+}
+
+.actionpanel_button.selected{
+	background:url(../images/actionpanel_hover.gif) repeat-x top right;
 }
 
 .action_ddarrow {
@@ -1865,7 +1868,7 @@ a:hover.search_button {
 	position:absolute;
 	background:#FFF repeat top left;
 	border:1px solid #999;
-	top:20px;
+	top:65px;
 	right:7px;
 	margin:0;
 	padding:0;
@@ -3909,3 +3912,78 @@ a:hover.search_button {
 .ui-dialog .ui-dialog-buttonpane { text-align: left; border-width: 1px 0 0 0; background-image: none; margin: .5em 0 0 0; padding: -0.2em 1em .5em .4em; }
 .ui-dialog .ui-dialog-buttonpane button { float: right; margin: .5em .4em .5em 0; cursor: pointer; padding: -0.2em .6em .3em .6em; line-height: 1.4em; width:auto; overflow:visible; }
 
+
+
+.ui_dialog_loaderbox{
+	width:250px;
+	height:auto;
+	float:left;
+	background:#FFF repeat top left;
+	border:1px solid #CCC;
+	margin:10px 0 0 0;
+	padding:0 10px 5px 0;
+}
+
+.ui_dialog_loader {
+	width:16px;
+	height:16px;
+	float:left;
+	background:url(../images/mid_default.gif) no-repeat top left;
+	margin:5px 0 0 7px;
+	display:inline;
+	padding:0;
+}
+
+.ui_dialog_loaderbox p{
+	width:auto;
+	height:auto;
+	float:left;
+	color:#333;
+	font-size:12px;
+	font-weight:normal;
+	margin:7px 0 0 10px;
+	padding:0;
+}
+
+.ui_dialog_messagebox{
+	width:250px;
+	height:auto;
+	float:left;
+	background:#fff7e3 repeat top left;
+	border:1px solid #CCC;
+	margin:10px 0 0 0;
+	padding:0 10px 5px 0;
+}
+
+.ui_dialog_messagebox.error{
+	background:#ffe5e5 repeat top left;
+}
+
+.ui_dialog_msgicon {
+	width:18px;
+	height:20px;
+	float:left;
+	background:url(../images/tick_review.png) no-repeat top left;
+	margin:5px 0 0 7px;
+	display:inline;
+	padding:0;
+}
+
+.ui_dialog_msgicon.error {
+	background:url(../images/cross_review.png) no-repeat top left;
+}
+.ui_dialog_messagebox_text{
+	width:auto;
+	height:auto;
+	float:left;
+	color:#333;
+	font-size:11px;
+	font-weight:normal;
+	margin:10px 0 0 10px;
+	padding:0;
+}
+
+.ui_dialog_messagebox_text.error{
+
+	color:#ae0000;
+}

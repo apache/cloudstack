@@ -705,6 +705,7 @@
 <!-- Add Zone Dialog -->
 <div id="dialog_add_zone" title="Add Zone" style="display:none">
 	<p>Please enter the following info to add a new zone:</p>
+
 	<div class="dialog_formcontent">
 		<form action="#" method="post" id="form_acquire">
 			<ol>
@@ -748,6 +749,18 @@
 			</ol>
 		</form>
 	</div>
+    <!--Loading box-->
+    <div class="ui_dialog_loaderbox" style="display:none;">
+    	<div class="ui_dialog_loader"></div>
+        <p>Loading</p>
+    </div>
+    
+    <!--Confirmation msg box-->
+    <!--Note: for error msg, just have to add error besides everything for eg. add error(class) next to ui_dialog_messagebox error, ui_dialog_msgicon error, ui_dialog_messagebox_text error.  -->
+	<div class="ui_dialog_messagebox error" style="display:none;">
+    	<div class="ui_dialog_msgicon error"></div>
+        <div class="ui_dialog_messagebox_text error">Confirmation message will appear here</div>
+    </div>
 </div>
 <!-- END Add Zone Dialog -->
 <!-- Add Pod Dialog -->

@@ -16,8 +16,6 @@
  * 
  */
 
-// Version: @VERSION@
-
 function afterLoadSnapshotJSP() {
     //initialize dialog
     activateDialog($("#dialog_add_volume_from_snapshot").dialog({ 

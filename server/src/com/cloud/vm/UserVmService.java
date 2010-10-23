@@ -81,7 +81,7 @@ public interface UserVmService extends Manager {
     
     UserVmVO startVirtualMachine(StartVMCmd cmd) throws StorageUnavailableException, ExecutionException, ConcurrentOperationException;
     UserVmVO stopVirtualMachine(StopVMCmd cmd) throws ServerApiException;
-    boolean rebootVirtualMachine(RebootVMCmd cmd);
+    UserVm rebootVirtualMachine(RebootVMCmd cmd);
     
     @Deprecated
     OperationResponse executeRebootVM(RebootVMExecutor executor, VMOperationParam param);
