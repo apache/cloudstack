@@ -731,10 +731,10 @@ function initDialogWithOK(elementId, width1) {
     }
 } 
 
-function disableMultipleSelectionInMidMenu() {
+function disableMultipleSelectionInMidMenu() {    
     $("#midmenu_container").selectable("destroy"); //Most pages don't need multiple selection in middle menu.
 }
-function enableMultipleSelectionInMiddleMenu() {
+function enableMultipleSelectionInMidMenu() {    
     $("#midmenu_container").selectable({
         selecting: function(event, ui) {	 	                               
             if(ui.selecting.id.indexOf("midmenuItem") != -1) {                     
@@ -766,7 +766,7 @@ function getMidmenuId(jsonObj) {
     return "midmenuItem_" + jsonObj.id; 
 }
 
-function listMidMenuItems2(commandString, jsonResponse1, jsonResponse2, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, clickFirstItem) {                
+function listMidMenuItems2(commandString, jsonResponse1, jsonResponse2, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, clickFirstItem, isMultipleSelectionInMidMenu) {                
     $.ajax({
         cache: false,
         data: createURL("command="+commandString+"&pagesize="+midmenuItemCount),
@@ -781,17 +781,21 @@ function listMidMenuItems2(commandString, jsonResponse1, jsonResponse2, toMidmen
                     toMidmenuFn(items[i], $midmenuItem1);    
                     bindClickToMidMenu($midmenuItem1, toRightPanelFn, getMidmenuIdFn);             
                     $("#midmenu_container").append($midmenuItem1.show());   
-                    if(clickFirstItem == true && i == 0)  //click the 1st item in middle menu as default 
-                        $midmenuItem1.click();                        
+                    if(clickFirstItem == true && i == 0)  { //click the 1st item in middle menu as default 
+                        $midmenuItem1.click();       
+                        if(isMultipleSelectionInMidMenu == true) {                           
+                            $midmenuItem1.addClass("ui-selected");  //because instance page is using JQuery selectable widget to do multiple-selection
+                            selectedItemsInMidMenu[items[i].id] = $midmenuItem1; //because instance page is using JQuery selectable widget to do multiple-selection                        
+                        }                        
+                    }                 
                 }  
             }  
         }
     });	 
 }
 
-function listMidMenuItems(commandString, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSPFn, toMidmenuFn, toRightPanelFn, getMidmenuIdFn) { 
-	showMiddleMenu();
-	disableMultipleSelectionInMidMenu();	
+function listMidMenuItems(commandString, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSPFn, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu) { 
+	showMiddleMenu();	
 	clearMiddleMenu();
 	
 	$("#right_panel").load(rightPanelJSP, function(){     
@@ -806,15 +810,20 @@ function listMidMenuItems(commandString, jsonResponse1, jsonResponse2, rightPane
 		});	   
 					  
 		afterLoadRightPanelJSPFn();                
-		listMidMenuItems2(commandString, jsonResponse1, jsonResponse2, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, true);            
+		listMidMenuItems2(commandString, jsonResponse1, jsonResponse2, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, true, isMultipleSelectionInMidMenu);            
 	});     
 	return false;
 }
 
-function bindAndListMidMenuItems(leftmenuId, commandString, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSPFn, toMidmenuFn, toRightPanelFn, getMidmenuIdFn) {
-	$("#"+leftmenuId).bind("click", function(event) {
+function bindAndListMidMenuItems($leftmenu, commandString, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSPFn, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu) {	
+	if(isMultipleSelectionInMidMenu == true)
+	    enableMultipleSelectionInMidMenu();
+	else
+	    disableMultipleSelectionInMidMenu();
+	
+	$leftmenu.bind("click", function(event) {
 		selectLeftSubMenu($(this));
-        listMidMenuItems(commandString, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSPFn, toMidmenuFn, toRightPanelFn, getMidmenuIdFn);
+        listMidMenuItems(commandString, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSPFn, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu);
         return false;
     });
 }
