@@ -335,22 +335,10 @@ long milliseconds = new Date().getTime();
                             <%=t.t("instance")%>
                         </div>
                     </div>
-                    <div class="leftmenu_expandedbox" style="display: none">
-                        <div id="leftmenu_instance_group">
-                            <div class="leftmenu_expandedlist">
-                                <div class="leftmenu_content" id="leftmenu_instance_group_header">
-                                    <div class="leftmenu_secondindent">
-                                        <div class="leftmenu_arrows expanded_close" id="arrow_icon">
-                                        </div>
-                                        
-                                        <%=t.t("instance")%>
-                                    </div>
-                                </div>
-                            </div>
-                            <div id="leftmenu_instance_group_container">
-                            </div>
-                        </div>                        
+                    
+                    <div id="leftmenu_instance_expandedbox" class="leftmenu_expandedbox" style="display: none">
                     </div>
+
                 </div>
                 <div class="leftmenu_list">
                     <div class="leftmenu_content_flevel" id="leftmenu_storage">
@@ -671,6 +659,16 @@ long milliseconds = new Date().getTime();
         </p>
     </div>
     <!-- ***** templates (begin) *************************************************************************************************-->
+    <div id="leftmenu_secondindent_template" class="leftmenu_expandedlist">
+        <div class="leftmenu_content">
+            <div class="leftmenu_secondindent">
+                <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
+                </div>
+                <span id="label"></span>
+            </div>
+        </div>
+    </div>
+    
     <div class="leftmenu_content" id="leftmenu_submenu_template" style="display: none">
         <div class="leftmenu_thirdindent">
             <div class="leftmenu_list_icons">
