@@ -16,13 +16,19 @@
  * 
  */
 
+var $instanceSubMenuContainer;
 function instanceBuildSubMenu() {    
-    var $subMenuContainer = $("#leftmenu_instance_expandedbox").empty();
-    
+    $instanceSubMenuContainer = $("#leftmenu_instance_expandedbox").empty();    
+  
+    instanceBuildSubMenu2("My Instances", ("listVirtualMachines&domainid="+g_domainid+"&account="+g_account));
+    instanceBuildSubMenu2("All Instances", "listVirtualMachines");   
+}
+
+function instanceBuildSubMenu2(label, commandString) {   
     var $newSubMenu = $("#leftmenu_secondindent_template").clone();
-    $newSubMenu.find("#label").text("All Instances");    
-    bindAndListMidMenuItems($newSubMenu, "listVirtualMachines", "listvirtualmachinesresponse", "virtualmachine", "jsp/instance.jsp", afterLoadInstanceJSP, vmToMidmenu, vmToRightPanel, getMidmenuId, true);
-    $subMenuContainer.append($newSubMenu.show());
+    $newSubMenu.find("#label").text(label);    
+    bindAndListMidMenuItems($newSubMenu, commandString, "listvirtualmachinesresponse", "virtualmachine", "jsp/instance.jsp", afterLoadInstanceJSP, vmToMidmenu, vmToRightPanel, getMidmenuId, true);
+    $instanceSubMenuContainer.append($newSubMenu.show());
 }
 
 function afterLoadInstanceJSP() {
