@@ -51,7 +51,7 @@ $(document).ready(function() {
 	});
 	$("#leftmenu_account").bind("click", function(event) {
 		selectLeftMenu($(this));
-		listMidMenuItems("listAccounts", "listaccountsresponse", "account", "jsp/account.jsp", afterLoadAccountJSP, accountToMidmenu, accountToRigntPanel, getMidmenuId);
+		listMidMenuItems("listAccounts", "listaccountsresponse", "account", "jsp/account.jsp", afterLoadAccountJSP, accountToMidmenu, accountToRigntPanel, getMidmenuId, false);
 		return false;
 	});	
 	$("#leftmenu_events").bind("click", function(event) {
@@ -82,13 +82,14 @@ $(document).ready(function() {
     
     bindAndListMidMenuItems($("#leftmenu_service_offering"), "listServiceOfferings", "listserviceofferingsresponse", "serviceoffering", "jsp/serviceoffering.jsp", afterLoadServiceOfferingJSP, serviceOfferingToMidmenu, serviceOfferingToRigntPanel, getMidmenuId, false); 
     bindAndListMidMenuItems($("#leftmenu_disk_offering"), "listDiskOfferings", "listdiskofferingsresponse", "diskoffering", "jsp/diskoffering.jsp", afterLoadDiskOfferingJSP, diskOfferingToMidmenu, diskOfferingToRigntPanel, getMidmenuId, false); 
-    bindAndListMidMenuItems($("#leftmenu_global_setting"), "listConfigurations", "listconfigurationsresponse", "configuration", "jsp/globalsetting.jsp", afterLoadGlobalSettingJSP, globalSettingToMidmenu, globalSettingToRigntPanel, globalSettingGetMidmenuId, getMidmenuId, false); 
+    bindAndListMidMenuItems($("#leftmenu_global_setting"), "listConfigurations", "listconfigurationsresponse", "configuration", "jsp/globalsetting.jsp", afterLoadGlobalSettingJSP, globalSettingToMidmenu, globalSettingToRigntPanel, globalSettingGetMidmenuId, false); 
     
     $("#leftmenu_instances").bind("click", function(event) {
 		selectLeftMenu($(this), true);		
 		instanceBuildSubMenu();
 		return false;
 	});	
+    /*
     $("#leftmenu_instance_group_header").bind("click", function(event) {  
         showMiddleMenu();
         clearMiddleMenu();          
@@ -97,6 +98,7 @@ $(document).ready(function() {
         clickInstanceGroupHeader($arrowIcon);
         return false;
     });
+    */
     
     $("#leftmenu_domain").bind("click", function(event) {
 		selectLeftMenu($(this), true);

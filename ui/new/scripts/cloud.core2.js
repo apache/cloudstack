@@ -766,7 +766,12 @@ function getMidmenuId(jsonObj) {
     return "midmenuItem_" + jsonObj.id; 
 }
 
-function listMidMenuItems2(commandString, jsonResponse1, jsonResponse2, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, clickFirstItem, isMultipleSelectionInMidMenu) {                
+function listMidMenuItems2(commandString, jsonResponse1, jsonResponse2, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu, clickFirstItem) {                
+	if(isMultipleSelectionInMidMenu == true)
+        enableMultipleSelectionInMidMenu();
+    else
+        disableMultipleSelectionInMidMenu();
+    
     $.ajax({
         cache: false,
         data: createURL("command="+commandString+"&pagesize="+midmenuItemCount),
@@ -810,19 +815,14 @@ function listMidMenuItems(commandString, jsonResponse1, jsonResponse2, rightPane
 		});	   
 					  
 		afterLoadRightPanelJSPFn();                
-		listMidMenuItems2(commandString, jsonResponse1, jsonResponse2, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, true, isMultipleSelectionInMidMenu);            
+		listMidMenuItems2(commandString, jsonResponse1, jsonResponse2, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu, true);            
 	});     
 	return false;
 }
 
 function bindAndListMidMenuItems($leftmenu, commandString, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSPFn, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu) {	
-	if(isMultipleSelectionInMidMenu == true)
-	    enableMultipleSelectionInMidMenu();
-	else
-	    disableMultipleSelectionInMidMenu();
-	
 	$leftmenu.bind("click", function(event) {
-		selectLeftSubMenu($(this));
+		selectLeftSubMenu($(this));		
         listMidMenuItems(commandString, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSPFn, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu);
         return false;
     });

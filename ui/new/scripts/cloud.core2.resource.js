@@ -276,8 +276,8 @@ function showPage2($pageToShow, jsonObj) {
 		
 		var podId = jsonObj.id;
 	    $("#midmenu_container").empty();
-	    listMidMenuItems2(("listHosts&type=Routing&podid="+podId), "listhostsresponse", "host", hostToMidmenu, hostToRigntPanel, hostGetMidmenuId, false); 					
-		listMidMenuItems2(("listStoragePools&podid="+podId), "liststoragepoolsresponse", "storagepool", primarystorageToMidmenu, primarystorageToRigntPanel, primarystorageGetMidmenuId, false); 	
+	    listMidMenuItems2(("listHosts&type=Routing&podid="+podId), "listhostsresponse", "host", hostToMidmenu, hostToRigntPanel, hostGetMidmenuId, false, false); 					
+		listMidMenuItems2(("listStoragePools&podid="+podId), "liststoragepoolsresponse", "storagepool", primarystorageToMidmenu, primarystorageToRigntPanel, primarystorageGetMidmenuId, false, false); 	
     }  
     else if($pageToShow.attr("id") == "cluster_page") {
         $("#midmenu_add_link").unbind("click").hide();              
@@ -288,8 +288,8 @@ function showPage2($pageToShow, jsonObj) {
 		
 	    var clusterId = jsonObj.id;
 	    $("#midmenu_container").empty();
-	    listMidMenuItems2(("listHosts&type=Routing&clusterid="+clusterId), "listhostsresponse", "host", hostToMidmenu, hostToRigntPanel, hostGetMidmenuId, true); 					
-		listMidMenuItems2(("listStoragePools&clusterid="+clusterId), "liststoragepoolsresponse", "storagepool", primarystorageToMidmenu, primarystorageToRigntPanel, primarystorageGetMidmenuId, false); 			
+	    listMidMenuItems2(("listHosts&type=Routing&clusterid="+clusterId), "listhostsresponse", "host", hostToMidmenu, hostToRigntPanel, hostGetMidmenuId, false, true); 					
+		listMidMenuItems2(("listStoragePools&clusterid="+clusterId), "liststoragepoolsresponse", "storagepool", primarystorageToMidmenu, primarystorageToRigntPanel, primarystorageGetMidmenuId, false, false); 			
     }
     else if($pageToShow.attr("id") == "host_page") {
         $("#midmenu_add_link").unbind("click").hide();              
