@@ -89,17 +89,7 @@ $(document).ready(function() {
 		instanceBuildSubMenu();
 		return false;
 	});	
-    /*
-    $("#leftmenu_instance_group_header").bind("click", function(event) {  
-        showMiddleMenu();
-        clearMiddleMenu();          
-        enableMultipleSelectionInMidMenu();  //multiple-selection is needeed for actions like start VM, stop VM, reboot VM.
-        var $arrowIcon = $(this).find("#arrow_icon");        
-        clickInstanceGroupHeader($arrowIcon);
-        return false;
-    });
-    */
-    
+        
     $("#leftmenu_domain").bind("click", function(event) {
 		selectLeftMenu($(this), true);
 		hideMiddleMenu();		
