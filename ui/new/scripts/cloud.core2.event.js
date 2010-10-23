@@ -16,8 +16,6 @@
  * 
  */
 
-// Version: @VERSION@
-
 function afterLoadEventJSP() {
 
 }

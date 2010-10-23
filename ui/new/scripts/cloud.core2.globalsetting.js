@@ -16,8 +16,6 @@
  * 
  */
 
-// Version: @VERSION@
-
 function afterLoadGlobalSettingJSP() {
     var $detailsTab = $("#right_panel_content #tab_content_details"); 
 

@@ -16,8 +16,6 @@
  * 
  */
 
-// Version: @VERSION@
-
 /*
 This file is meant to help with implementing single signon integration.  If you are using the
 cloud.com default UI, there is no need to touch this file.

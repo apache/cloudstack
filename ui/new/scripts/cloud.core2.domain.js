@@ -16,8 +16,6 @@
  * 
  */
 
-// Version: @VERSION@
-
 var $selectedDomainTreeNode;
 var defaultRootLevel = 0;	   
 var childParentMap = {};  //map childDomainId to parentDomainId

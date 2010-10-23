@@ -16,8 +16,6 @@
  * 
  */
 
-// Version: @VERSION@
-
 function buildZoneTree() {      
     //***** build zone tree (begin) ***********************************************************************************************
     var forceLogout = true;  // We force a logout only if the user has first added a POD for the very first time     

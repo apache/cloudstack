@@ -16,8 +16,6 @@
  * 
  */
 
-// Version: @VERSION@
-
 function afterLoadVolumeJSP() {
     activateDialog($("#dialog_create_template").dialog({
         width: 400,

@@ -16,8 +16,6 @@
  * 
  */
 
-// Version: @VERSION@
-
 function afterLoadDashboardJSP() {
     var $alertTemplate = $("#alert_template");
     

@@ -16,8 +16,6 @@
  * 
  */
 
-// Version: @VERSION@
-
 var systemAccountId = 1;
 var adminAccountId = 2;
 
