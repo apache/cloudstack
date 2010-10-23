@@ -62,8 +62,8 @@ function afterLoadInstanceJSP() {
     //action menu	        
     $("#midmenu_action_link").show();
     $("#action_menu #action_list").empty();		        
-    for(var label in vmActionMap) 				            
-        buildActionLinkForMidMenu(label, vmActionMap, $("#action_menu"));	
+    for(var label in vmActionMapForMidMenu) 				            
+        buildActionLinkForMidMenu(label, vmActionMapForMidMenu, $("#action_menu"));	
     
     if (isAdmin() || isDomainAdmin())
         $("#right_panel_content").find("#tab_router,#tab_router").show();
@@ -648,9 +648,8 @@ function afterLoadInstanceJSP() {
 }
 
 //***** VM Detail (begin) ******************************************************************************
-var noGroupName = "default";             
-       
-var vmActionMap = {        
+      
+var vmActionMapForMidMenu = {        
     "Stop Instance": {
         api: "stopVirtualMachine",            
         isAsyncJob: true,
