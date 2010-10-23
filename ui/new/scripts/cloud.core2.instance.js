@@ -22,6 +22,10 @@ function instanceBuildSubMenu() {
   
     instanceBuildSubMenu2("My Instances", ("listVirtualMachines&domainid="+g_domainid+"&account="+g_account));
     instanceBuildSubMenu2("All Instances", "listVirtualMachines");   
+    
+    instanceBuildSubMenu2("Running Instances", "listVirtualMachines&state=Running");
+    instanceBuildSubMenu2("Stopped Instances", "listVirtualMachines&state=Stopped");
+    instanceBuildSubMenu2("Destoryed Instances", "listVirtualMachines&state=Destroyed");
 }
 
 function instanceBuildSubMenu2(label, commandString) {   
