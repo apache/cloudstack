@@ -656,6 +656,7 @@ var vmActionMap = {
         api: "stopVirtualMachine",            
         isAsyncJob: true,
         asyncJobResponse: "stopvirtualmachineresponse",
+        inProcessText: "Stopping Instance....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) { 
             //call listVirtualMachine to get embedded object until bug 6486 ("StopVirtualMachine API should return an embedded object on success") is fixed.
             var jsonObj;
@@ -676,8 +677,9 @@ var vmActionMap = {
         api: "startVirtualMachine",            
         isAsyncJob: true,
         asyncJobResponse: "startvirtualmachineresponse",
+        inProcessText: "Starting Instance....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) { 
-            var jsonObj = json.queryasyncjobresultresponse.virtualmachine[0];      
+            var jsonObj = json.queryasyncjobresultresponse.jobresult.startvirtualmachineresponse;      
             vmToMidmenu(jsonObj, $midmenuItem1);
             vmToRightPanel($midmenuItem1);
         }
@@ -686,6 +688,7 @@ var vmActionMap = {
         api: "rebootVirtualMachine",           
         isAsyncJob: true,
         asyncJobResponse: "rebootvirtualmachineresponse",
+        inProcessText: "Rebooting Instance....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) { 
             var jsonObj = json.queryasyncjobresultresponse.virtualmachine[0];      
             vmToMidmenu(jsonObj, $midmenuItem1);
@@ -696,6 +699,7 @@ var vmActionMap = {
         api: "destroyVirtualMachine",           
         isAsyncJob: true,
         asyncJobResponse: "destroyvirtualmachineresponse",
+        inProcessText: "Destroying Instance....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) { 
             //call listVirtualMachine to get embedded object until bug 6041 ("DestroyVirtualMachine API should return an embedded object on success") is fixed.
             var id = $midmenuItem1.data("jsonObj").id; 
@@ -716,6 +720,7 @@ var vmActionMap = {
     "Restore Instance": {
         api: "recoverVirtualMachine",           
         isAsyncJob: false,
+        inProcessText: "Restoring Instance....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) { 
             //call listVirtualMachine to get embedded object until bug 6037 ("RecoverVirtualMachine API should return an embedded object on success") is fixed.
             var id = $midmenuItem1.data("jsonObj").id; 
@@ -735,7 +740,8 @@ var vmActionMap = {
     },
     "Attach ISO": {
         isAsyncJob: true,
-        asyncJobResponse: "attachisoresponse",            
+        asyncJobResponse: "attachisoresponse",    
+        inProcessText: "Attaching ISO....",        
         dialogBeforeActionFn : doAttachISO,
         afterActionSeccessFn: function(json, $midmenuItem1, id) { 
             //call listVirtualMachine to get embedded object until bug 6487 ("AttachISO API should return an embedded object on success") is fixed.
@@ -756,7 +762,8 @@ var vmActionMap = {
     },
     "Detach ISO": {
         isAsyncJob: true,
-        asyncJobResponse: "detachisoresponse",            
+        asyncJobResponse: "detachisoresponse",     
+        inProcessText: "Detaching ISO....",       
         dialogBeforeActionFn : doDetachISO,
         afterActionSeccessFn: function(json, $midmenuItem1, id) { 
              //call listVirtualMachine to get embedded object until bug 6488 ("Detach ISO API should return an embedded object on success") is fixed.
@@ -779,7 +786,8 @@ var vmActionMap = {
         dialogBeforeActionFn : doResetPassword
     },
     "Change Name": {
-        isAsyncJob: false,            
+        isAsyncJob: false,     
+        inProcessText: "Changing Name....",       
         dialogBeforeActionFn : doChangeName,
         afterActionSeccessFn: function(json, $midmenuItem1, id) { 
             //call listVirtualMachine to get embedded object until bug 6489 ("updateVirtualMachine API should return an embedded object on success") is fixed.
@@ -799,7 +807,8 @@ var vmActionMap = {
         }
     },    
     "Change Group": {
-        isAsyncJob: false,            
+        isAsyncJob: false,      
+        inProcessText: "Changing Group....",      
         dialogBeforeActionFn : doChangeGroup,
         afterActionSeccessFn: function(json, $midmenuItem1, id) { 
             //call listVirtualMachine to get embedded object until bug 6489 ("updateVirtualMachine API should return an embedded object on success") is fixed.
@@ -821,6 +830,7 @@ var vmActionMap = {
     "Change Service": {
         isAsyncJob: true,
         asyncJobResponse: "changeserviceforvirtualmachineresponse",
+        inProcessText: "Changing Service....",
         dialogBeforeActionFn : doChangeService,
         afterActionSeccessFn: function(json, $midmenuItem1, id) { 
             var jsonObj = json.queryasyncjobresultresponse.virtualmachine[0];
@@ -829,7 +839,8 @@ var vmActionMap = {
         }
     },
     "Enable HA": {
-        isAsyncJob: false,            
+        isAsyncJob: false,     
+        inProcessText: "Enabling HA....",       
         dialogBeforeActionFn : doEnableHA,
         afterActionSeccessFn: function(json, $midmenuItem1, id) { 
             //call listVirtualMachine to get embedded object until bug 6489 ("updateVirtualMachine API should return an embedded object on success") is fixed.
@@ -849,7 +860,8 @@ var vmActionMap = {
         }
     },
     "Disable HA": {
-        isAsyncJob: false,            
+        isAsyncJob: false,   
+        inProcessText: "Disabling HA....",         
         dialogBeforeActionFn : doDisableHA,
         afterActionSeccessFn: function(json, $midmenuItem1, id) { 
             //call listVirtualMachine to get embedded object until bug 6489 ("updateVirtualMachine API should return an embedded object on success") is fixed.
@@ -985,9 +997,10 @@ function doResetPassword2(id, $midmenuItem1) {
                                 $midmenuItem1.find("#content").removeClass("inaction");
                                 $midmenuItem1.find("#spinning_wheel").hide();			                       
                                 if (result.jobstatus == 1) { // Succeeded  
-                                    $midmenuItem1.find("#info_icon").removeClass("error").show();			                                		                                    
-                                    $midmenuItem1.find("#second_row").text("New password: " + result.virtualmachine[0].password);  			                                   
-									var afterActionInfo = "Your password has been successfully resetted.  Your new password is : " + result.virtualmachine[0].password;
+                                    $midmenuItem1.find("#info_icon").removeClass("error").show();	
+                                    var item = result.jobresult.resetpasswordforvirtualmachineresponse;		                                		                                    
+                                    $midmenuItem1.find("#second_row").text("New password: " + item.password);  			                                   
+									var afterActionInfo = "Your password has been successfully resetted.  Your new password is : " + item.password;
 									$midmenuItem1.data("afterActionInfo", afterActionInfo); 
                                 } else if (result.jobstatus == 2) { // Failed	
                                     $midmenuItem1.find("#info_icon").addClass("error").show();
@@ -1174,6 +1187,8 @@ function vmToRightPanel($midmenuItem1) {
     var vmName = getVmName(jsonObj.name, jsonObj.displayname);        
     $("right_panel_header").find("#vm_name").text(vmName);	
     
+    //Comment the following code which is for middle menu action, not details tab action.
+    /*
     var $rightPanelContent = $("#right_panel_content");        
     if($midmenuItem1.find("#info_icon").css("display") != "none") {                
         $rightPanelContent.find("#after_action_info").text($midmenuItem1.data("afterActionInfo"));
@@ -1187,6 +1202,7 @@ function vmToRightPanel($midmenuItem1) {
         $rightPanelContent.find("#after_action_info").text("");
         $rightPanelContent.find("#after_action_info_container").hide();                
     }
+    */
     
     vmJsonToDetailsTab($midmenuItem1);   
     vmJsonToVolumeTab(jsonObj);

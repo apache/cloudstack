@@ -16,8 +16,9 @@
     </h1>
 </div>
 <div class="contentbox" id="right_panel_content">
-    <div class="info_detailbox errorbox" id="after_action_info_container" style="display:none">
-        <p id="after_action_info"></p>
+    <div class="info_detailbox errorbox" id="after_action_info_container_on_top" style="display: none">
+        <p id="after_action_info">
+        </p>
     </div>
     <div class="tabbox" style="margin-top:15px;">
         <div class="content_tabs on">

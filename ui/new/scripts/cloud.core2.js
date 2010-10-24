@@ -58,7 +58,9 @@ function doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detai
     var $spinningWheel = $detailsTab.find("#spinning_wheel");
     $spinningWheel.find("#description").text(inProcessText);  
     $spinningWheel.show();  
-    $("#right_panel_content #after_action_info_container").removeClass("errorbox").hide();       
+    
+    var $afterActionInfoContainer = $("#right_panel_content #after_action_info_container_on_top");   
+    $afterActionInfoContainer.removeClass("errorbox").hide();       
     
 	//Async job (begin) *****
 	if(isAsyncJob == true) {	                     
@@ -81,20 +83,20 @@ function doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detai
 			                        return; //Job has not completed
 		                        } else {											                    
 			                        $("body").stopTime(timerKey);				                        
-			                        $spinningWheel.hide();      		                       
+			                        $spinningWheel.hide();   			                                             
 			                        if (result.jobstatus == 1) { // Succeeded 	
-			                            $("#right_panel_content #after_action_info").text(label + " action succeeded.");
-                                        $("#right_panel_content #after_action_info_container").removeClass("errorbox").show();                                         
+			                            $afterActionInfoContainer.find("#after_action_info").text(label + " action succeeded.");
+                                        $afterActionInfoContainer.removeClass("errorbox").show();                                         
                                         afterActionSeccessFn(json, $midmenuItem1, id);     
 			                        } else if (result.jobstatus == 2) { // Failed		
-			                            $("#right_panel_content #after_action_info").text(label + " action failed. Reason: " + fromdb(result.jobresult));
-                                        $("#right_panel_content #after_action_info_container").addClass("errorbox").show();
+			                            $afterActionInfoContainer.find("#after_action_info").text(label + " action failed. Reason: " + fromdb(result.jobresult));
+                                        $afterActionInfoContainer.addClass("errorbox").show();
 			                        }											                    
 		                        }
 	                        },
 	                        error: function(XMLHttpResponse) {	                            
 		                        $("body").stopTime(timerKey);		                       		                        
-		                        handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label); 		                        
+		                        handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label, $afterActionInfoContainer); 		                        
 	                        }
                         });
                     },
@@ -102,7 +104,7 @@ function doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detai
                 );
             },
             error: function(XMLHttpResponse) {	                 
-		        handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label);    
+		        handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label, $afterActionInfoContainer);    
             }
         });     
     }     
@@ -116,19 +118,19 @@ function doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detai
 	        async: false,
 	        success: function(json) {	 	                  
 	            $spinningWheel.hide(); 	        
-	            $("#right_panel_content #after_action_info").text(label + " action succeeded.");
-                $("#right_panel_content #after_action_info_container").removeClass("errorbox").show();  				
+	            $afterActionInfoContainer.find("#after_action_info").text(label + " action succeeded.");
+                $afterActionInfoContainer.removeClass("errorbox").show();  				
 				afterActionSeccessFn(json, $midmenuItem1, id);				
 	        },
             error: function(XMLHttpResponse) {	                
-		        handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label);    
+		        handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label, $afterActionInfoContainer);    
             }        
         });
     }
     //Sync job (end) *****
 }
 
-function handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label) { 
+function handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label, $afterActionInfoContainer) { 
     $detailsTab.find("#spinning_wheel").hide();      
 		                        
     var errorMsg = "";
@@ -136,12 +138,13 @@ function handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label) {
         var start = XMLHttpResponse.responseText.indexOf("h1") + 3;
         var end = XMLHttpResponse.responseText.indexOf("</h1");
         errorMsg = XMLHttpResponse.responseText.substring(start, end);		
-    }
+    }        
+   
     if(errorMsg.length > 0) 
-        $("#right_panel_content #after_action_info").text(label + " action failed. Reason: " + fromdb(errorMsg));
+        $afterActionInfoContainer.find("#after_action_info").text(label + " action failed. Reason: " + fromdb(errorMsg));
     else
-        $("#right_panel_content #after_action_info").text(label + " action failed.");        
-    $("#right_panel_content #after_action_info_container").addClass("errorbox").show();
+        $afterActionInfoContainer.find("#after_action_info").text(label + " action failed.");        
+    $afterActionInfoContainer.addClass("errorbox").show();
 }    	                
 //***** actions for details tab in right panel (end) **************************************************************************
 

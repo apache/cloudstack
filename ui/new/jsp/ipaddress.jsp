@@ -15,7 +15,7 @@
     </h1>
 </div>
 <div class="contentbox" id="right_panel_content">
-    <div class="info_detailbox errorbox" id="after_action_info_container" style="display: none">
+    <div class="info_detailbox errorbox" id="after_action_info_container_on_top" style="display: none">
         <p id="after_action_info">
         </p>
     </div>
