@@ -267,12 +267,12 @@ function isoClearDetailsTab() {
 
 var isoActionMap = {  
     "Edit ISO": {
-        dialogBeforeActionFn : doEditISO  
+        dialogBeforeActionFn: doEditISO  
     },
     "Delete ISO": {                  
         isAsyncJob: true,
         asyncJobResponse: "deleteisosresponse",
-        dialogBeforeActionFn : doDeleteIso,
+        dialogBeforeActionFn: doDeleteIso,
         inProcessText: "Deleting ISO....",
         afterActionSeccessFn: function(json, $midmenuItem1, id){    
             $midmenuItem1.remove();
@@ -283,7 +283,7 @@ var isoActionMap = {
     "Copy ISO": {
         isAsyncJob: true,
         asyncJobResponse: "copyisoresponse",            
-        dialogBeforeActionFn : doCopyIso,
+        dialogBeforeActionFn: doCopyIso,
         inProcessText: "Copying ISO....",
         afterActionSeccessFn: function(json, $midmenuItem1, id){}   
     }  
@@ -291,7 +291,7 @@ var isoActionMap = {
     "Create VM": {
         isAsyncJob: true,
         asyncJobResponse: "deployvirtualmachineresponse",            
-        dialogBeforeActionFn : doCreateVMFromIso,
+        dialogBeforeActionFn: doCreateVMFromIso,
         inProcessText: "Creating VM....",
         afterActionSeccessFn: function(json, $midmenuItem1, id){}   
     }  

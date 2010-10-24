@@ -1516,7 +1516,7 @@ var hostActionMap = {
     "Enable Maintenance Mode": {              
         isAsyncJob: true,
         asyncJobResponse: "preparehostformaintenanceresponse",
-        dialogBeforeActionFn : doEnableMaintenanceMode,
+        dialogBeforeActionFn: doEnableMaintenanceMode,
         inProcessText: "Enabling Maintenance Mode....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {            
             hostToMidmenu(json.queryasyncjobresultresponse.host[0], $midmenuItem1);
@@ -1527,7 +1527,7 @@ var hostActionMap = {
     "Cancel Maintenance Mode": {              
         isAsyncJob: true,
         asyncJobResponse: "cancelhostmaintenanceresponse",
-        dialogBeforeActionFn : doCancelMaintenanceMode,
+        dialogBeforeActionFn: doCancelMaintenanceMode,
         inProcessText: "Cancelling Maintenance Mode....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {            
             hostToMidmenu(json.queryasyncjobresultresponse.host[0], $midmenuItem1);
@@ -1538,7 +1538,7 @@ var hostActionMap = {
     "Force Reconnect": {              
         isAsyncJob: true,
         asyncJobResponse: "reconnecthostresponse",
-        dialogBeforeActionFn : doForceReconnect,
+        dialogBeforeActionFn: doForceReconnect,
         inProcessText: "Reconnecting....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {
             hostToMidmenu(json.queryasyncjobresultresponse.host[0], $midmenuItem1);
@@ -1548,7 +1548,7 @@ var hostActionMap = {
     },
     "Remove Host": {              
         isAsyncJob: false,        
-        dialogBeforeActionFn : doRemoveHost,
+        dialogBeforeActionFn: doRemoveHost,
         inProcessText: "Removing Host....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {    
             $midmenuItem1.remove();
@@ -1558,7 +1558,7 @@ var hostActionMap = {
     },    
     "Update OS Preference": {              
         isAsyncJob: false,        
-        dialogBeforeActionFn : doUpdateOSPreference,
+        dialogBeforeActionFn: doUpdateOSPreference,
         inProcessText: "Updating OS Preference....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {     
             //call listHosts API before bug 6650 ("updateHost API should return an embedded object like what listHosts API does") is fixed.
@@ -1669,7 +1669,7 @@ function doUpdateOSPreference($actionLink, $detailsTab, $midmenuItem1){
 var primarystorageActionMap = {
     "Delete Primary Storage": {              
         isAsyncJob: false,        
-        dialogBeforeActionFn : doDeletePrimaryStorage,
+        dialogBeforeActionFn: doDeletePrimaryStorage,
         inProcessText: "Deleting Primary Storage....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {   
             $midmenuItem1.remove();
@@ -1699,7 +1699,7 @@ function doDeletePrimaryStorage($actionLink, $detailsTab, $midmenuItem1){
 var secondarystorageActionMap = {
     "Delete Secondary Storage": {   
         isAsyncJob: false,   
-        dialogBeforeActionFn : doDeleteSecondaryStorage,       
+        dialogBeforeActionFn: doDeleteSecondaryStorage,       
         inProcessText: "Deleting Secondary Storaget....",
         afterActionSeccessFn: function(json, id, $subgridItem) {                        
             $subgridItem.slideUp("slow", function() {

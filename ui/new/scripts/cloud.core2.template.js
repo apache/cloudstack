@@ -402,7 +402,7 @@ function doEditTemplate($actionLink, $detailsTab, $midmenuItem1) {
         return false;
     });
     $detailsTab.find("#save_button").unbind("click").bind("click", function(event){        
-        doEditTemplate2($detailsTab);     
+        doEditTemplate2($actionLink, $detailsTab, $midmenuItem1);     
         $editFields.hide();      
         $readonlyFields.show();       
         $("#save_button, #cancel_button").hide();       
