@@ -542,7 +542,7 @@ var volumeActionMap = {
                     jsonObj = json.listvolumesresponse.volume[0];
                 }            
             });           
-            volumeToMidmenu(jsonObj,  $midmenuItem1);
+            volumeToMidmenu(jsonObj, $midmenuItem1);
             volumeJsonToDetailsTab($midmenuItem1);   
         }
     },
@@ -572,14 +572,14 @@ var volumeActionMap = {
         asyncJobResponse: "createtemplateresponse",            
         dialogBeforeActionFn : doCreateTemplateFromVolume,
         inProcessText: "Creating template....",
-        afterActionSeccessFn: function(json, $midmenuItem1, id){}   
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {}   
     },
     "Delete Volume": {
         api: "deleteVolume",            
         isAsyncJob: false,        
         inProcessText: "Deleting volume....",
-        afterActionSeccessFn: function(json, $midmenuItem1, id){                 
-            $("#"+midmenuItemId).remove();
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {                 
+            $midmenuItem1.remove();
             clearRightPanel();
             volumeClearRightPanel();
         }
@@ -589,7 +589,7 @@ var volumeActionMap = {
         asyncJobResponse: "createsnapshotresponse",            
         dialogBeforeActionFn : doTakeSnapshot,
         inProcessText: "Taking Snapshot....",
-        afterActionSeccessFn: function(json, $midmenuItem1, id) { }   
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {}   
     },
     "Recurring Snapshot": {                 
         dialogBeforeActionFn : doRecurringSnapshot 

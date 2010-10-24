@@ -1518,8 +1518,9 @@ var hostActionMap = {
         asyncJobResponse: "preparehostformaintenanceresponse",
         dialogBeforeActionFn : doEnableMaintenanceMode,
         inProcessText: "Enabling Maintenance Mode....",
-        afterActionSeccessFn: function(json, $midmenuItem1, id) {
-            hostJsonToDetailsTab(json.queryasyncjobresultresponse.host[0], $("#right_panel_content #host_page #tab_content_details"));    
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {            
+            hostToMidmenu(json.queryasyncjobresultresponse.host[0], $midmenuItem1);
+            hostToRightPanel($midmenuItem1);            
             $("#right_panel_content #after_action_info").text("We are actively enabling maintenance on your host. Please refresh periodically for an updated status."); 
         }
     },
@@ -1529,7 +1530,8 @@ var hostActionMap = {
         dialogBeforeActionFn : doCancelMaintenanceMode,
         inProcessText: "Cancelling Maintenance Mode....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {            
-            hostJsonToDetailsTab(json.queryasyncjobresultresponse.host[0], $("#right_panel_content #host_page #tab_content_details"));     
+            hostToMidmenu(json.queryasyncjobresultresponse.host[0], $midmenuItem1);
+            hostToRightPanel($midmenuItem1);            
             $("#right_panel_content #after_action_info").text("We are actively cancelling your scheduled maintenance.  Please refresh periodically for an updated status."); 
         }
     },
@@ -1539,7 +1541,8 @@ var hostActionMap = {
         dialogBeforeActionFn : doForceReconnect,
         inProcessText: "Reconnecting....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {
-            hostJsonToDetailsTab(json.queryasyncjobresultresponse.host[0], $("#right_panel_content #host_page #tab_content_details"));    
+            hostToMidmenu(json.queryasyncjobresultresponse.host[0], $midmenuItem1);
+            hostToRightPanel($midmenuItem1);            
             $("#right_panel_content #after_action_info").text("We are actively reconnecting your host.  Please refresh periodically for an updated status."); 
         }
     },
@@ -1564,7 +1567,7 @@ var hostActionMap = {
                 dataType: "json",
                 success: function(json) {  
                     hostToMidmenu(json.listhostsresponse.host[0], $midmenuItem1);      
-                    hostToRightPanel($midmenuItem1)                     
+                    hostToRightPanel($midmenuItem1);                     
                 }
             });            
         }
@@ -1732,8 +1735,7 @@ var zoneActionMap = {
         api: "deleteZone",            
         isAsyncJob: false,        
         inProcessText: "Deleting Zone....",
-        afterActionSeccessFn: function(json, id, midmenuItemId) {            
-            var $midmenuItem1 = $("#"+midmenuItemId); //zone node in zone tree in left menu
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {   
             $midmenuItem1.slideUp(function() {
                 $(this).remove();
             });
@@ -1748,8 +1750,7 @@ var podActionMap = {
         api: "deletePod",            
         isAsyncJob: false,        
         inProcessText: "Deleting Pod....",
-        afterActionSeccessFn: function(json, id, midmenuItemId) {            
-            var $midmenuItem1 = $("#"+midmenuItemId); //pod node in zone tree in left menu
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {       
             $midmenuItem1.slideUp(function() {
                 $(this).remove();
             });
