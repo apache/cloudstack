@@ -29,9 +29,7 @@ function buildActionLinkForDetailsTab(label, actionMap, $actionMenu, $midmenuIte
     $link.data("asyncJobResponse", apiInfo.asyncJobResponse);		     
     $link.data("afterActionSeccessFn", apiInfo.afterActionSeccessFn);
     $link.data("dialogBeforeActionFn", apiInfo.dialogBeforeActionFn);     
-    
-    if($detailsTab == null) //when right panel has only 1 details tab
-        $detailsTab = $("#right_panel_content #tab_content_details");  
+     
     var id = $detailsTab.data("jsonObj").id;
     
     $link.bind("click", function(event) {   
@@ -41,7 +39,7 @@ function buildActionLinkForDetailsTab(label, actionMap, $actionMenu, $midmenuIte
         var dialogBeforeActionFn = $actionLink.data("dialogBeforeActionFn"); 
         if(dialogBeforeActionFn == null) {	 
             var apiCommand = "command="+$actionLink.data("api")+"&id="+id;                      
-            doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1); 
+            doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab); 
         }
         else {
             dialogBeforeActionFn($actionLink, $detailsTab, $midmenuItem1);	
@@ -50,14 +48,13 @@ function buildActionLinkForDetailsTab(label, actionMap, $actionMenu, $midmenuIte
     });  
 } 
 
-function doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1) {  
+function doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab) {  
     var label = $actionLink.data("label");	
     var inProcessText = $actionLink.data("inProcessText");		           
     var isAsyncJob = $actionLink.data("isAsyncJob");
     var asyncJobResponse = $actionLink.data("asyncJobResponse");	
     var afterActionSeccessFn = $actionLink.data("afterActionSeccessFn");	    
-     
-    var $detailsTab = $("#right_panel_content #tab_content_details");     
+            
     var $spinningWheel = $detailsTab.find("#spinning_wheel");
     $spinningWheel.find("#description").text(inProcessText);  
     $spinningWheel.show();  

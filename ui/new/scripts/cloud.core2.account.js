@@ -68,17 +68,17 @@ function accountJsonToDetailsTab($midmenuItem1) {
         
     if(jsonObj.id != systemAccountId && jsonObj.id != adminAccountId) {
         if (jsonObj.accounttype == roleTypeUser || jsonObj.accounttype == roleTypeDomainAdmin) {
-            buildActionLinkForDetailsTab("Resource limits", accountActionMap, $actionMenu, $midmenuItem1);	
+            buildActionLinkForDetailsTab("Resource limits", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);	
             noAvailableActions = false;	
         }
         
         if(jsonObj.state == "enabled") {
-            buildActionLinkForDetailsTab("Disable account", accountActionMap, $actionMenu, $midmenuItem1);  
-            buildActionLinkForDetailsTab("Lock account", accountActionMap, $actionMenu, $midmenuItem1);
+            buildActionLinkForDetailsTab("Disable account", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);  
+            buildActionLinkForDetailsTab("Lock account", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);
             noAvailableActions = false;	
         }          	        
         else if(jsonObj.state == "disabled" || jsonObj.state == "locked") {
-            buildActionLinkForDetailsTab("Enable account", accountActionMap, $actionMenu, $midmenuItem1);   
+            buildActionLinkForDetailsTab("Enable account", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);   
             noAvailableActions = false;	
         }           
     }  
@@ -259,7 +259,7 @@ function doDisableAccount($actionLink, $detailsTab, $midmenuItem1) {
         "Yes": function() { 		                    
             $(this).dialog("close");	
 			var apiCommand = "command=disableAccount&account="+jsonObj.name+"&domainId="+jsonObj.domainid;	    	
-	    	doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1) ;         		                    	     
+	    	doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab) ;         		                    	     
         },
         "Cancel": function() {
             $(this).dialog("close");		     
@@ -275,7 +275,7 @@ function doLockAccount($actionLink, $detailsTab, $midmenuItem1) {
         "Yes": function() { 		                    
             $(this).dialog("close");			
 			var apiCommand = "command=lockAccount&account="+jsonObj.name+"&domainId="+jsonObj.domainid;
-	    	doActionToDetailsTab(jsonObj.id, $actionLink, apiCommand, $midmenuItem1);	         		                    	     
+	    	doActionToDetailsTab(jsonObj.id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	         		                    	     
         },
         "Cancel": function() {
             $(this).dialog("close");		     
@@ -291,7 +291,7 @@ function doEnableAccount($actionLink, $detailsTab, $midmenuItem1) {
         "Yes": function() { 		                    
             $(this).dialog("close");	
 			var apiCommand = "command=enableAccount&account="+jsonObj.name+"&domainId="+jsonObj.domainid;
-	    	doActionToDetailsTab(jsonObj.id, $actionLink, apiCommand, $midmenuItem1);	         		                    	     
+	    	doActionToDetailsTab(jsonObj.id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	         		                    	     
         },
         "Cancel": function() {
             $(this).dialog("close");		     

@@ -259,7 +259,7 @@ function ipJsonToDetailsTab($midmenuItem1) {
     var noAvailableActions = true;
       
     if(isIpManageable(ipObj.domainid, ipObj.account) == true && ipObj.issourcenat != "true") {     
-        buildActionLinkForDetailsTab("Release IP", ipActionMap, $actionMenu, $midmenuItem1);		
+        buildActionLinkForDetailsTab("Release IP", ipActionMap, $actionMenu, $midmenuItem1, $detailsTab);		
         noAvailableActions = false;
     }
         
@@ -328,7 +328,7 @@ function doReleaseIp($actionLink, $detailsTab, $midmenuItem1) {
 		"Confirm": function() { 
 		    $(this).dialog("close");			
 			var apiCommand = "command=disassociateIpAddress&ipaddress="+ipaddress;
-            doActionToDetailsTab(ipaddress, $actionLink, apiCommand, $midmenuItem1);	
+            doActionToDetailsTab(ipaddress, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	
 		}, 
 		"Cancel": function() { 
 			$(this).dialog("close"); 

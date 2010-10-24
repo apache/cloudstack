@@ -432,27 +432,27 @@ function volumeJsonToDetailsTab($midmenuItem1){
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty();
         
-    buildActionLinkForDetailsTab("Take Snapshot", volumeActionMap, $actionMenu, $midmenuItem1);	//show take snapshot
-    buildActionLinkForDetailsTab("Recurring Snapshot", volumeActionMap, $actionMenu, $midmenuItem1);	//show Recurring Snapshot
+    buildActionLinkForDetailsTab("Take Snapshot", volumeActionMap, $actionMenu, $midmenuItem1, $detailsTab);	//show take snapshot
+    buildActionLinkForDetailsTab("Recurring Snapshot", volumeActionMap, $actionMenu, $midmenuItem1, $detailsTab);	//show Recurring Snapshot
     
     if(jsonObj.state != "Creating" && jsonObj.state != "Corrupted" && jsonObj.name != "attaching") {
         if(jsonObj.type=="ROOT") {
             if (jsonObj.vmstate == "Stopped") { 
-                //buildActionLinkForDetailsTab("Create Template", volumeActionMap, $actionMenu, $midmenuItem1);	//backend of CreateTemplateFromVolume is not working. Hide the option from UI until backend is fixed.
+                //buildActionLinkForDetailsTab("Create Template", volumeActionMap, $actionMenu, $midmenuItem1, $detailsTab);	//backend of CreateTemplateFromVolume is not working. Hide the option from UI until backend is fixed.
             }
         } 
         else { 
 	        if (jsonObj.virtualmachineid != null) {
 		        if (jsonObj.storagetype == "shared" && (jsonObj.vmstate == "Running" || jsonObj.vmstate == "Stopped")) {
-			        buildActionLinkForDetailsTab("Detach Disk", volumeActionMap, $actionMenu, $midmenuItem1); //show detach disk
+			        buildActionLinkForDetailsTab("Detach Disk", volumeActionMap, $actionMenu, $midmenuItem1, $detailsTab); //show detach disk
 		        }
 	        } else {
 		        // Disk not attached
 		        if (jsonObj.storagetype == "shared") {
-			        buildActionLinkForDetailsTab("Attach Disk", volumeActionMap, $actionMenu, $midmenuItem1);   //show attach disk
+			        buildActionLinkForDetailsTab("Attach Disk", volumeActionMap, $actionMenu, $midmenuItem1, $detailsTab);   //show attach disk
     			    			  		    
 			        if(jsonObj.vmname == null || jsonObj.vmname == "none")
-			            buildActionLinkForDetailsTab("Delete Volume", volumeActionMap, $actionMenu, $midmenuItem1); //show delete volume
+			            buildActionLinkForDetailsTab("Delete Volume", volumeActionMap, $actionMenu, $midmenuItem1, $detailsTab); //show delete volume
 		        }
 	        }
         }
@@ -620,7 +620,7 @@ function doCreateTemplateFromVolume($actionLink, $detailsTab, $midmenuItem1) {
 			
 			var id = $detailsTab.data("jsonObj").id;			
 			var apiCommand = "command=createTemplate&volumeId="+id+"&name="+todb(name)+"&displayText="+todb(desc)+"&osTypeId="+osType+"&isPublic="+isPublic+"&passwordEnabled="+password;
-	    	doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1);					
+	    	doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);					
 		}, 
 		"Cancel": function() { 
 			$(this).dialog("close"); 
@@ -636,7 +636,7 @@ function doTakeSnapshot($actionLink, $detailsTab, $midmenuItem1) {
 	    	
             var id = $detailsTab.data("jsonObj").id;	
 			var apiCommand = "command=createSnapshot&volumeid="+id;
-	    	doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1);	
+	    	doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	
 	    },
 	    "Cancel": function() { 					        
 		    $(this).dialog("close"); 
@@ -860,7 +860,7 @@ function doAttachDisk($actionLink, $detailsTab, $midmenuItem1) {
 	        	    	
 	    	var id = jsonObj.id;			
 			var apiCommand = "command=attachVolume&id="+id+'&virtualMachineId='+virtualMachineId;
-	    	doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1);		
+	    	doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);		
 	    }, 
 	    "Cancel": function() { 					        
 		    $(this).dialog("close"); 

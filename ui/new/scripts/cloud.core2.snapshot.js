@@ -77,9 +77,9 @@ function snapshotJsonToDetailsTab($midmenuItem1) {
     //actions ***
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty();  
-    buildActionLinkForDetailsTab("Create Volume"  , snapshotActionMap, $actionMenu, $midmenuItem1);		
-    buildActionLinkForDetailsTab("Delete Snapshot", snapshotActionMap, $actionMenu, $midmenuItem1);	
-    buildActionLinkForDetailsTab("Create Template", snapshotActionMap, $actionMenu, $midmenuItem1);					
+    buildActionLinkForDetailsTab("Create Volume"  , snapshotActionMap, $actionMenu, $midmenuItem1, $detailsTab);		
+    buildActionLinkForDetailsTab("Delete Snapshot", snapshotActionMap, $actionMenu, $midmenuItem1, $detailsTab);	
+    buildActionLinkForDetailsTab("Create Template", snapshotActionMap, $actionMenu, $midmenuItem1, $detailsTab);					
 }
 
 function snapshotClearRightPanel() {
@@ -141,7 +141,7 @@ function doCreateVolumeFromSnapshotInSnapshotPage($actionLink, $detailsTab, $mid
          
          var id = jsonObj.id;
          var apiCommand = "command=createVolume&snapshotid="+id+"&name="+name;
-    	 doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1);		
+    	 doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);		
      },
      "Cancel": function() {	                         
          $(this).dialog("close");
@@ -170,7 +170,7 @@ function doCreateTemplateFromSnapshotInSnapshotPage($actionLink, $detailsTab, $m
        
          var id = jsonObj.id;
          var apiCommand = "command=createTemplate&snapshotid="+id+"&name="+name+"&displaytext="+displayText+"&ostypeid="+osTypeId+"&passwordEnabled="+password;
-    	 doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1);		
+    	 doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);		
      },
      "Cancel": function() {	                         
          $(this).dialog("close");

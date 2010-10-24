@@ -585,7 +585,6 @@ function hostJsonToDetailsTab($midmenuItem1) {
     $actionMenu.find("#action_list").empty();
     var noAvailableActions = true;
     
-    //when right panel has more than 1 details tab, we need to specify which details tab to build action link on by passing $detailsTab to buildActionLinkForDetailsTab(~, ~, ~, ~, $detailsTab) 
     if (jsonObj.state == 'Up' || jsonObj.state == "Connecting") {
 		buildActionLinkForDetailsTab("Enable Maintenance Mode", hostActionMap, $actionMenu, $midmenuItem1, $detailsTab);  
 	    buildActionLinkForDetailsTab("Force Reconnect", hostActionMap, $actionMenu, $midmenuItem1, $detailsTab);   
@@ -1581,7 +1580,7 @@ function doEnableMaintenanceMode($actionLink, $detailsTab, $midmenuItem1){
              $(this).dialog("close");      
              var id = jsonObj.id;
              var apiCommand = "command=prepareHostForMaintenance&id="+id;
-    	     doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1);		
+    	     doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);		
          },
          "Cancel": function() {	                         
              $(this).dialog("close");
@@ -1598,7 +1597,7 @@ function doCancelMaintenanceMode($actionLink, $detailsTab, $midmenuItem1){
              $(this).dialog("close");      
              var id = jsonObj.id;
              var apiCommand = "command=cancelHostMaintenance&id="+id;
-    	     doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1);		
+    	     doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);		
          },
          "Cancel": function() {	                         
              $(this).dialog("close");
@@ -1615,7 +1614,7 @@ function doForceReconnect($actionLink, $detailsTab, $midmenuItem1){
              $(this).dialog("close");      
              var id = jsonObj.id;
              var apiCommand = "command=reconnectHost&id="+id;
-    	     doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1);		
+    	     doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);		
          },
          "Cancel": function() {	                         
              $(this).dialog("close");
@@ -1632,7 +1631,7 @@ function doRemoveHost($actionLink, $detailsTab, $midmenuItem1){
              $(this).dialog("close");      
              var id = jsonObj.id;
              var apiCommand = "command=deleteHost&id="+id;
-    	     doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1);		
+    	     doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);		
          },
          "Cancel": function() {	                         
              $(this).dialog("close");
@@ -1656,7 +1655,7 @@ function doUpdateOSPreference($actionLink, $detailsTab, $midmenuItem1){
 	        var id = jsonObj.id;
     		    
             var apiCommand = "command=updateHost&id="+id+category;
-    	    doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1);		
+    	    doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);		
         },
         "Cancel": function() {	                         
             $(this).dialog("close");
@@ -1686,7 +1685,7 @@ function doDeletePrimaryStorage($actionLink, $detailsTab, $midmenuItem1){
              $(this).dialog("close");      
              var id = jsonObj.id;
              var apiCommand = "command=deleteStoragePool&id="+id;
-    	     doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1);		
+    	     doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);		
          },
          "Cancel": function() {	                         
              $(this).dialog("close");

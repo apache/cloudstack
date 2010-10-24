@@ -274,17 +274,16 @@ function templateJsonToDetailsTab($midmenuItem1) {
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty();
     var noAvailableActions = true;
-    var midmenuItemId = templateGetMidmenuId(jsonObj); 
-    
+        
     // action Edit, Copy, Create VM 			
 	if ((isUser() && jsonObj.ispublic == "true" && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) || jsonObj.id==DomRTemplateId || jsonObj.isready == "false") {
 		//$("#edit_button").hide();		
     }
     else {
-        buildActionLinkForDetailsTab("Edit Template", templateActionMap, $actionMenu, midmenuItemId);      
+        buildActionLinkForDetailsTab("Edit Template", templateActionMap, $actionMenu, $midmenuItem1, $detailsTab);      
         //$("#edit_button").show();
-        buildActionLinkForDetailsTab("Copy Template", templateActionMap, $actionMenu, midmenuItemId);			
-        buildActionLinkForDetailsTab("Create VM", templateActionMap, $actionMenu, midmenuItemId);	
+        buildActionLinkForDetailsTab("Copy Template", templateActionMap, $actionMenu, $midmenuItem1, $detailsTab);			
+        buildActionLinkForDetailsTab("Create VM", templateActionMap, $actionMenu, $midmenuItem1, $detailsTab);	
         noAvailableActions = false;		
     }
 	
@@ -293,7 +292,7 @@ function templateJsonToDetailsTab($midmenuItem1) {
 		//template.find("#template_delete_container").hide();
     }
     else {
-        buildActionLinkForDetailsTab("Delete Template", templateActionMap, $actionMenu, midmenuItemId);
+        buildActionLinkForDetailsTab("Delete Template", templateActionMap, $actionMenu, $midmenuItem1, $detailsTab);
         noAvailableActions = false;	
     }
     
@@ -513,7 +512,7 @@ function doDeleteTemplate($actionLink, $detailsTab, $midmenuItem1) {
 		"Confirm": function() { 			
 			$(this).dialog("close");			
 			var apiCommand = "command=deleteTemplate&id="+id+moreCriteria.join("");
-            doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1);	
+            doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	
 		}, 
 		"Cancel": function() { 
 			$(this).dialog("close"); 
@@ -558,7 +557,7 @@ function doCopyTemplate($actionLink, $detailsTab, $midmenuItem1) {
 	        
             var id = $detailsTab.data("jsonObj").id;			
 	        var apiCommand = "command=copyTemplate&id="+id+"&sourcezoneid="+sourceZoneId+"&destzoneid="+destZoneId;
-	        doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1);	
+	        doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	
 	    }, 
 	    "Cancel": function() {				        
 		    $(this).dialog("close");
@@ -602,7 +601,7 @@ function doCreateVMFromTemplate($actionLink, $detailsTab, $midmenuItem1) {
 	            array1.push("&diskOfferingId="+diskOfferingId);	 		    	        
 	        
 		    var apiCommand = "command=deployVirtualMachine&zoneId="+zoneId+"&templateId="+id+array1.join("");
-    	    doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1);		
+    	    doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);		
 	    }, 
 	    "Cancel": function() {
 	        $(this).dialog("close");

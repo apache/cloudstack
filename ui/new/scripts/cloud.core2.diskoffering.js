@@ -163,7 +163,7 @@ function diskOfferingJsonToDetailsTab($midmenuItem1) {
     //actions ***
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty();    
-    buildActionLinkForDetailsTab("Delete Disk Offering", diskOfferingActionMap, $actionMenu, $midmenuItem1);	    
+    buildActionLinkForDetailsTab("Delete Disk Offering", diskOfferingActionMap, $actionMenu, $midmenuItem1, $detailsTab);	    
 }
 
 function diskOfferingClearRightPanel() {

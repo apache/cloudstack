@@ -187,7 +187,7 @@ function serviceOfferingJsonToDetailsTab($midmenuItem1) {
     //actions ***
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty();      
-    buildActionLinkForDetailsTab("Delete Service Offering", serviceOfferingActionMap, $actionMenu, $midmenuItem1);	
+    buildActionLinkForDetailsTab("Delete Service Offering", serviceOfferingActionMap, $actionMenu, $midmenuItem1, $detailsTab);	
 }
 
 function serviceOfferingClearRightPanel() {
