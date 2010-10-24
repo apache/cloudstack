@@ -27,12 +27,12 @@ function alertToMidmenu(jsonObj, $midmenuItem1) {
     $midmenuItem1.find("#second_row").text(jsonObj.type.substring(0,25)); 
 }
 
-function alertToRigntPanel($midmenuItem) {      
-    var jsonObj = $midmenuItem.data("jsonObj");
-    alertJsonToDetailsTab(jsonObj);   
+function alertToRigntPanel($midmenuItem1) {   
+    alertJsonToDetailsTab($midmenuItem1);   
 }
 
-function alertJsonToDetailsTab(jsonObj) {   
+function alertJsonToDetailsTab($midmenuItem1) {   
+    var jsonObj = $midmenuItem1.data("jsonObj");
     var $detailsTab = $("#right_panel_content #tab_content_details");   
     $detailsTab.data("jsonObj", jsonObj);  
         

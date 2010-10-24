@@ -29,18 +29,18 @@ function routerToMidmenu(jsonObj, $midmenuItem1) {
     updateStateInMidMenu(jsonObj, $midmenuItem1);       
 }
 
-function routerAfterDetailsTabAction(json, id, midmenuItemId) {        
+function routerAfterDetailsTabAction(json, $midmenuItem1, id) {        
     var jsonObj = json.queryasyncjobresultresponse.router[0];    
-    routerToMidmenu(jsonObj, $("#"+midmenuItemId));  
-    routerJsonToDetailsTab(jsonObj);   
+    routerToMidmenu(jsonObj, $midmenuItem1);  
+    routerJsonToDetailsTab($midmenuItem1);   
 }
 
-function routerToRigntPanel($midmenuItem) {      
-    var jsonObj = $midmenuItem.data("jsonObj");
-    routerJsonToDetailsTab(jsonObj);   
+function routerToRightPanel($midmenuItem1) {  
+    routerJsonToDetailsTab($midmenuItem1);   
 }
 
-function routerJsonToDetailsTab(jsonObj) {    
+function routerJsonToDetailsTab($midmenuItem1) {   
+    var jsonObj = $midmenuItem1.data("jsonObj"); 
     var $detailsTab = $("#right_panel_content #tab_content_details");    
     $detailsTab.data("jsonObj", jsonObj);         
     setVmStateInRightPanel(jsonObj.state, $detailsTab.find("#state"));  
@@ -61,15 +61,14 @@ function routerJsonToDetailsTab(jsonObj) {
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty();
     var noAvailableActions = true;
-    var midmenuId = getMidmenuId(jsonObj);
-    
+   
     if (jsonObj.state == 'Running') {   
-        buildActionLinkForDetailsTab("Stop Router", routerActionMap, $actionMenu, midmenuId);	
-        buildActionLinkForDetailsTab("Reboot Router", routerActionMap, $actionMenu, midmenuId);	  
+        buildActionLinkForDetailsTab("Stop Router", routerActionMap, $actionMenu, $midmenuItem1);	
+        buildActionLinkForDetailsTab("Reboot Router", routerActionMap, $actionMenu, $midmenuItem1);	  
         noAvailableActions = false;      
     }
     else if (jsonObj.state == 'Stopped') {        
-        buildActionLinkForDetailsTab("Start Router", routerActionMap, $actionMenu, midmenuId);	
+        buildActionLinkForDetailsTab("Start Router", routerActionMap, $actionMenu, $midmenuItem1);	
         noAvailableActions = false;
     }  
     

@@ -141,11 +141,11 @@ function diskOfferingToMidmenu(jsonObj, $midmenuItem1) {
 }
 
 function diskOfferingToRigntPanel($midmenuItem1) {
-    var jsonObj = $midmenuItem1.data("jsonObj");
-    diskOfferingJsonToDetailsTab(jsonObj);   
+    diskOfferingJsonToDetailsTab($midmenuItem1);   
 }
 
-function diskOfferingJsonToDetailsTab(jsonObj) { 
+function diskOfferingJsonToDetailsTab($midmenuItem1) { 
+    var jsonObj = $midmenuItem1.data("jsonObj");
     var $detailsTab = $("#right_panel_content #tab_content_details");   
     $detailsTab.data("jsonObj", jsonObj);      
     $detailsTab.find("#id").text(jsonObj.id);
@@ -162,9 +162,8 @@ function diskOfferingJsonToDetailsTab(jsonObj) {
     
     //actions ***
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
-    $actionMenu.find("#action_list").empty();
-    var midmenuItemId = getMidmenuId(jsonObj);    
-    buildActionLinkForDetailsTab("Delete Disk Offering", diskOfferingActionMap, $actionMenu, midmenuItemId);	    
+    $actionMenu.find("#action_list").empty();    
+    buildActionLinkForDetailsTab("Delete Disk Offering", diskOfferingActionMap, $actionMenu, $midmenuItem1);	    
 }
 
 function diskOfferingClearRightPanel() {
@@ -192,8 +191,8 @@ var diskOfferingActionMap = {
         api: "deleteDiskOffering",     
         isAsyncJob: false,           
         inProcessText: "Deleting disk offering....",
-        afterActionSeccessFn: function(json, id, midmenuItemId) {            
-            $("#"+midmenuItemId).remove();
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {        
+            $midmenuItem1.remove();
             clearRightPanel();
             diskOfferingClearRightPanel();
         }

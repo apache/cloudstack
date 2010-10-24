@@ -36,12 +36,12 @@ function eventToMidmenu(jsonObj, $midmenuItem1) {
     $midmenuItem1.find("#second_row").text(jsonObj.type.substring(0,25));  
 }
 
-function eventToRigntPanel($midmenuItem) {      
-    var jsonObj = $midmenuItem.data("jsonObj");
-    eventJsonToDetailsTab(jsonObj);   
+function eventToRigntPanel($midmenuItem1) {  
+    eventJsonToDetailsTab($midmenuItem1);   
 }
 
-function eventJsonToDetailsTab(jsonObj) {   
+function eventJsonToDetailsTab($midmenuItem1) {   
+    var jsonObj = $midmenuItem1.data("jsonObj");
     var $detailsTab = $("#right_panel_content #tab_content_details");   
     $detailsTab.data("jsonObj", jsonObj);  
       

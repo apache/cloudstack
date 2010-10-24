@@ -97,7 +97,7 @@ function afterLoadServiceOfferingJSP() {
 					success: function(json) {					    				
 						var item = json.createserviceofferingresponse;							
 						serviceOfferingToMidmenu(item, $midmenuItem1);	
-						bindClickToMidMenu($midmenuItem1, serviceOfferingToRigntPanel, getMidmenuId);  
+						bindClickToMidMenu($midmenuItem1, serviceOfferingToRightPanel, getMidmenuId);  
 						afterAddingMidMenuItem($midmenuItem1, true);						
 						
 					},			
@@ -141,7 +141,7 @@ function doUpdateServiceOffering() {
 		    var jsonObj = json.updateserviceofferingresponse;
 		    var $midmenuItem1 = $("#"+getMidmenuId(jsonObj));		  
 		    serviceOfferingToMidmenu(jsonObj, $midmenuItem1);
-		    serviceOfferingToRigntPanel($midmenuItem1);		  
+		    serviceOfferingToRightPanel($midmenuItem1);		  
 		}
 	});
 }
@@ -157,12 +157,12 @@ function serviceOfferingToMidmenu(jsonObj, $midmenuItem1) {
     $midmenuItem1.find("#second_row").text(jsonObj.cpunumber + " x " + convertHz(jsonObj.cpuspeed));  
 }
 
-function serviceOfferingToRigntPanel($midmenuItem1) {
-    var jsonObj = $midmenuItem1.data("jsonObj");
-    serviceOfferingJsonToDetailsTab(jsonObj);   
+function serviceOfferingToRightPanel($midmenuItem1) {
+    serviceOfferingJsonToDetailsTab($midmenuItem1);   
 }
 
-function serviceOfferingJsonToDetailsTab(jsonObj) { 
+function serviceOfferingJsonToDetailsTab($midmenuItem1) { 
+    var jsonObj = $midmenuItem1.data("jsonObj");
     var $detailsTab = $("#right_panel_content #tab_content_details");   
     $detailsTab.data("jsonObj", jsonObj);      
     $detailsTab.find("#id").text(jsonObj.id);
@@ -186,9 +186,8 @@ function serviceOfferingJsonToDetailsTab(jsonObj) {
     
     //actions ***
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
-    $actionMenu.find("#action_list").empty();
-    var midmenuItemId = getMidmenuId(jsonObj);    
-    buildActionLinkForDetailsTab("Delete Service Offering", serviceOfferingActionMap, $actionMenu, midmenuItemId);	
+    $actionMenu.find("#action_list").empty();      
+    buildActionLinkForDetailsTab("Delete Service Offering", serviceOfferingActionMap, $actionMenu, $midmenuItem1);	
 }
 
 function serviceOfferingClearRightPanel() {
@@ -221,8 +220,8 @@ var serviceOfferingActionMap = {
         api: "deleteServiceOffering",     
         isAsyncJob: false,           
         inProcessText: "Deleting service offering....",
-        afterActionSeccessFn: function(json, id, midmenuItemId) {            
-            $("#"+midmenuItemId).remove();
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {              
+            $midmenuItem1.remove();
             clearRightPanel();
             serviceOfferingClearRightPanel();
         }

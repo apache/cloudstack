@@ -59,9 +59,9 @@ function afterLoadIpJSP() {
 				    data: createURL("command=associateIpAddress&zoneid="+zoneid),
 					dataType: "json",
 					success: function(json) {						   
-					    var items = json.associateipaddressresponse.publicipaddress;	
+					    var item = json.associateipaddressresponse;	
 					    //$("#dialog_info").html("<p>The IP address <b>"+items[0].ipaddress+"</b> has been assigned to your account</p>").dialog("open");	
-					    ipToMidmenu(items[0], $midmenuItem1);
+					    ipToMidmenu(item, $midmenuItem1);
 						bindClickToMidMenu($midmenuItem1, ipToRigntPanel, ipGetMidmenuId);  
 						afterAddingMidMenuItem($midmenuItem1, true);	
 	            				
@@ -213,7 +213,7 @@ function ipToRigntPanel($midmenuItem1) {
     var ipObj = $midmenuItem1.data("jsonObj");
     
     //Details tab
-    ipJsonToDetailsTab(ipObj);       
+    ipJsonToDetailsTab($midmenuItem1);       
     
     //Port Forwarding tab, Load Balancer tab
     if(isIpManageable(ipObj.domainid, ipObj.account) == true) {     
@@ -238,7 +238,8 @@ function ipClearRightPanel() {
 }
 
 //***** Details tab (begin) ****************************************************************************************************************
-function ipJsonToDetailsTab(ipObj) {   
+function ipJsonToDetailsTab($midmenuItem1) {  
+    var ipObj = $midmenuItem1.data("jsonObj"); 
     var $detailsTab = $("#right_panel_content #tab_content_details");   
     $detailsTab.data("jsonObj", ipObj);      
     
@@ -256,10 +257,9 @@ function ipJsonToDetailsTab(ipObj) {
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty();
     var noAvailableActions = true;
-    var midmenuItemId = ipGetMidmenuId(ipObj);
-    
+      
     if(isIpManageable(ipObj.domainid, ipObj.account) == true && ipObj.issourcenat != "true") {     
-        buildActionLinkForDetailsTab("Release IP", ipActionMap, $actionMenu, midmenuItemId);		
+        buildActionLinkForDetailsTab("Release IP", ipActionMap, $actionMenu, $midmenuItem1);		
         noAvailableActions = false;
     }
         
@@ -310,8 +310,7 @@ var ipActionMap = {
         isAsyncJob: false,        
         dialogBeforeActionFn : doReleaseIp,
         inProcessText: "Releasing IP....",
-        afterActionSeccessFn: function(ipaddress) {                 
-            var $midmenuItem1 = $("#"+ipGetMidmenuId2(ipaddress));             
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {       
             $midmenuItem1.remove();
             clearRightPanel();
             ipClearRightPanel();
@@ -319,7 +318,7 @@ var ipActionMap = {
     }
 }   
 
-function doReleaseIp($actionLink, $detailsTab, midmenuItemId) {  
+function doReleaseIp($actionLink, $detailsTab, $midmenuItem1) {  
     var $detailsTab = $("#right_panel_content #tab_content_details"); 
     var jsonObj = $detailsTab.data("jsonObj");
     var ipaddress = jsonObj.ipaddress;
@@ -329,7 +328,7 @@ function doReleaseIp($actionLink, $detailsTab, midmenuItemId) {
 		"Confirm": function() { 
 		    $(this).dialog("close");			
 			var apiCommand = "command=disassociateIpAddress&ipaddress="+ipaddress;
-            doActionToDetailsTab(ipaddress, $actionLink, apiCommand, midmenuItemId);	
+            doActionToDetailsTab(ipaddress, $actionLink, apiCommand, $midmenuItem1);	
 		}, 
 		"Cancel": function() { 
 			$(this).dialog("close"); 

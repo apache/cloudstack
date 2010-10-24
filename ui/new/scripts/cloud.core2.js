@@ -17,7 +17,7 @@
  */
 
 //***** actions for details tab in right panel (begin) ************************************************************************
-function buildActionLinkForDetailsTab(label, actionMap, $actionMenu, midmenuItemId, $detailsTab) { 
+function buildActionLinkForDetailsTab(label, actionMap, $actionMenu, $midmenuItem1, $detailsTab) { 
     var apiInfo = actionMap[label];
     var $listItem = $("#action_list_item").clone();
     $actionMenu.find("#action_list").append($listItem.show());
@@ -41,16 +41,16 @@ function buildActionLinkForDetailsTab(label, actionMap, $actionMenu, midmenuItem
         var dialogBeforeActionFn = $actionLink.data("dialogBeforeActionFn"); 
         if(dialogBeforeActionFn == null) {	 
             var apiCommand = "command="+$actionLink.data("api")+"&id="+id;                      
-            doActionToDetailsTab(id, $actionLink, apiCommand, midmenuItemId); 
+            doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1); 
         }
         else {
-            dialogBeforeActionFn($actionLink, $detailsTab, midmenuItemId);	
+            dialogBeforeActionFn($actionLink, $detailsTab, $midmenuItem1);	
         }               
         return false;
     });  
 } 
 
-function doActionToDetailsTab(id, $actionLink, apiCommand, midmenuItemId) {  
+function doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1) {  
     var label = $actionLink.data("label");	
     var inProcessText = $actionLink.data("inProcessText");		           
     var isAsyncJob = $actionLink.data("isAsyncJob");
@@ -88,7 +88,7 @@ function doActionToDetailsTab(id, $actionLink, apiCommand, midmenuItemId) {
 			                        if (result.jobstatus == 1) { // Succeeded 	
 			                            $("#right_panel_content #after_action_info").text(label + " action succeeded.");
                                         $("#right_panel_content #after_action_info_container").removeClass("errorbox").show();                                         
-                                        afterActionSeccessFn(json, id, midmenuItemId);     
+                                        afterActionSeccessFn(json, $midmenuItem1, id);     
 			                        } else if (result.jobstatus == 2) { // Failed		
 			                            $("#right_panel_content #after_action_info").text(label + " action failed. Reason: " + fromdb(result.jobresult));
                                         $("#right_panel_content #after_action_info_container").addClass("errorbox").show();
@@ -121,7 +121,7 @@ function doActionToDetailsTab(id, $actionLink, apiCommand, midmenuItemId) {
 	            $spinningWheel.hide(); 	        
 	            $("#right_panel_content #after_action_info").text(label + " action succeeded.");
                 $("#right_panel_content #after_action_info_container").removeClass("errorbox").show();  				
-				afterActionSeccessFn(json, id, midmenuItemId);				
+				afterActionSeccessFn(json, $midmenuItem1, id);				
 	        },
             error: function(XMLHttpResponse) {	                
 		        handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label);    

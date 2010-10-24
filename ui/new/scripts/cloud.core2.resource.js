@@ -73,30 +73,30 @@ function buildZoneTree() {
 			
 			case "zone_name_label":	
 			case "zone_name":	
-			    selectTreeNodeInLeftMenu(target.parent().parent().parent());						    
-			    var jsonObj = target.parent().parent().parent().parent().data("jsonObj");  
-			    showPage($("#zone_page"), jsonObj);			    		   				    		   			    
+			    selectTreeNodeInLeftMenu(target.parent().parent().parent());	
+			    var $leftmenuItem1 = target.parent().parent().parent().parent();	
+			    showPage($("#zone_page"), $leftmenuItem1);			    		   				    		   			    
 			    break;		
 			    	
 			case "pod_name_label" :	
 			case "pod_name" :	
 			    selectTreeNodeInLeftMenu(target.parent().parent().parent());
-			    var jsonObj = target.parent().parent().parent().parent().data("jsonObj");  
-			    showPage($("#pod_page"), jsonObj);				   			
+			    var $leftmenuItem1 = target.parent().parent().parent().parent();
+			    showPage($("#pod_page"), $leftmenuItem1);				   			
 				break;		
 				    
 			case "cluster_name_label" :	
 			case "cluster_name" :	
-			    selectTreeNodeInLeftMenu(target.parent().parent().parent());			    
-			    var jsonObj = target.parent().parent().parent().parent().data("jsonObj");  
-			    showPage($("#cluster_page"), jsonObj);
+			    selectTreeNodeInLeftMenu(target.parent().parent().parent());
+			    var $leftmenuItem1 = target.parent().parent().parent().parent();	
+			    showPage($("#cluster_page"), $leftmenuItem1);
 			    break;								
 						
 			case "systemvm_name_label" :
 			case "systemvm_name" :		
-			    selectTreeNodeInLeftMenu(target.parent().parent().parent());		
-			    var jsonObj = target.parent().parent().parent().parent().data("jsonObj");  
-			    showPage($("#systemvm_page"), jsonObj);
+			    selectTreeNodeInLeftMenu(target.parent().parent().parent());	
+			    var $leftmenuItem1 = target.parent().parent().parent().parent();	
+			    showPage($("#systemvm_page"), $leftmenuItem1);
 				break;			
 			
 			default:
@@ -202,18 +202,24 @@ function clusterJSONToTreeNode(json, $clusterNode) {
     clusterName.data("jsonObj", json);	   
 }			
 
-function showPage($pageToShow, jsonObj) {  
-    if($pageToShow.length == 0) { //resource.jsp is not loaded in right panel        
-        $("#right_panel").load("jsp/resource.jsp", function(){                 
-			showPage2($($pageToShow.selector), jsonObj); //$pageToShow is still empty (i.e. $pageToShow.length == 0), So, select the element again.
+//$menuItem1 is either $leftmenuItem1 or $midmenuItem1
+function showPage($pageToShow, $menuItem1) {      
+    if($pageToShow.length == 0) { //resource.jsp is not loaded in right panel      
+        $("#right_panel").load("jsp/resource.jsp", function(){  
+			showPage2($($pageToShow.selector), $menuItem1); //$pageToShow is still empty (i.e. $pageToShow.length == 0), So, select the element again.
 		});        
     }
     else {        
-        showPage2($pageToShow, jsonObj); 
+        showPage2($pageToShow, $menuItem1); 
     }
 }
 
-function showPage2($pageToShow, jsonObj) {   
+//$menuItem1 is either $leftmenuItem1 or $midmenuItem1
+function showPage2($pageToShow, $menuItem1) {   
+    var jsonObj;
+    if($menuItem1 != null)
+        jsonObj = $menuItem1.data("jsonObj");  
+        
     var pageArray = [$("#resource_page"), $("#zone_page"), $("#pod_page"), $("#cluster_page"), $("#host_page"), $("#primarystorage_page"), $("#systemvm_page")];
     var pageLabelArray = ["Resource", "Zone", "Pod", "Cluster", "Host", "Primary Storage", "System VM"];       
    
@@ -257,7 +263,7 @@ function showPage2($pageToShow, jsonObj) {
         $zonePage.find("#tab_details").click();   
         
         hideMiddleMenu();
-		zoneJsonToRightPanel(jsonObj);		  
+		zoneJsonToRightPanel($menuItem1);		  
     }
     else if($pageToShow.attr("id") == "pod_page") {
         initDialog("dialog_add_host");	
@@ -272,24 +278,24 @@ function showPage2($pageToShow, jsonObj) {
 	    bindEventHandlerToDialogAddPool();	 
 	    
 	    showMiddleMenu();	
-		podJsonToDetailsTab(jsonObj);     
+		podJsonToRightPanel($menuItem1);     
 		
 		var podId = jsonObj.id;
 	    $("#midmenu_container").empty();
-	    listMidMenuItems2(("listHosts&type=Routing&podid="+podId), "listhostsresponse", "host", hostToMidmenu, hostToRigntPanel, hostGetMidmenuId, false, false); 					
-		listMidMenuItems2(("listStoragePools&podid="+podId), "liststoragepoolsresponse", "storagepool", primarystorageToMidmenu, primarystorageToRigntPanel, primarystorageGetMidmenuId, false, false); 	
+	    listMidMenuItems2(("listHosts&type=Routing&podid="+podId), "listhostsresponse", "host", hostToMidmenu, hostToRightPanel, hostGetMidmenuId, false, false); 					
+		listMidMenuItems2(("listStoragePools&podid="+podId), "liststoragepoolsresponse", "storagepool", primarystorageToMidmenu, primarystorageToRightPanel, primarystorageGetMidmenuId, false, false); 	
     }  
     else if($pageToShow.attr("id") == "cluster_page") {
         $("#midmenu_add_link").unbind("click").hide();              
         $("#midmenu_add2_link").unbind("click").hide();   
     
         showMiddleMenu();
-		clusterJsonToDetailsTab(jsonObj);
+		clusterJsonToRightPanel($menuItem1);
 		
 	    var clusterId = jsonObj.id;
 	    $("#midmenu_container").empty();
-	    listMidMenuItems2(("listHosts&type=Routing&clusterid="+clusterId), "listhostsresponse", "host", hostToMidmenu, hostToRigntPanel, hostGetMidmenuId, false, true); 					
-		listMidMenuItems2(("listStoragePools&clusterid="+clusterId), "liststoragepoolsresponse", "storagepool", primarystorageToMidmenu, primarystorageToRigntPanel, primarystorageGetMidmenuId, false, false); 			
+	    listMidMenuItems2(("listHosts&type=Routing&clusterid="+clusterId), "listhostsresponse", "host", hostToMidmenu, hostToRightPanel, hostGetMidmenuId, false, true); 					
+		listMidMenuItems2(("listStoragePools&clusterid="+clusterId), "liststoragepoolsresponse", "storagepool", primarystorageToMidmenu, primarystorageToRightPanel, primarystorageGetMidmenuId, false, false); 			
     }
     else if($pageToShow.attr("id") == "host_page") {
         $("#midmenu_add_link").unbind("click").hide();              
@@ -312,7 +318,7 @@ function showPage2($pageToShow, jsonObj) {
         $("#midmenu_add2_link").unbind("click").hide();   
         
         hideMiddleMenu();			
-	    systemvmJsonToDetailsTab(jsonObj);		
+	    systemvmJsonToRightPanel($menuItem1);		
     }    
 }
 
@@ -321,19 +327,22 @@ function zoneGetLeftmenuId(jsonObj) {
     return "zone_" + jsonObj.id;
 }
 
-function zoneJsonToRightPanel(jsonObj) {
-    zoneJsonToDetailsTab(jsonObj);
+function zoneJsonToRightPanel($leftmenuItem1) {
+    zoneJsonToDetailsTab($leftmenuItem1);
+    var jsonObj = $leftmenuItem1.data("jsonObj");  
     zoneJsonToNetworkTab(jsonObj);				    
     zoneJsonToSecondaryStorageTab(jsonObj);
 }
 
-function zoneJsonClearRightPanel(jsonObj) {
-    zoneJsonClearDetailsTab(jsonObj);
+function zoneJsonClearRightPanel($leftmenuItem1) {
+    zoneJsonClearDetailsTab($leftmenuItem1);
+    var jsonObj = $leftmenuItem1.data("jsonObj");  
     zoneJsonClearNetworkTab(jsonObj);				    
     zoneJsonClearSecondaryStorageTab(jsonObj);
 }
 
-function zoneJsonToDetailsTab(jsonObj) {	    
+function zoneJsonToDetailsTab($leftmenuItem1) {	 
+    var jsonObj = $leftmenuItem1.data("jsonObj");     
     var $detailsTab = $("#zone_page").find("#tab_content_details");   
     $detailsTab.data("jsonObj", jsonObj);           
     $detailsTab.find("#id").text(jsonObj.id);
@@ -357,8 +366,7 @@ function zoneJsonToDetailsTab(jsonObj) {
     });	  
     var $actionMenu = $detailsTab.find("#action_link #action_menu");
     $actionMenu.find("#action_list").empty();        
-    var midmenuItemId = zoneGetLeftmenuId(jsonObj);     
-    buildActionLinkForDetailsTab("Delete Zone", zoneActionMap, $actionMenu, midmenuItemId, $detailsTab);     
+    buildActionLinkForDetailsTab("Delete Zone", zoneActionMap, $actionMenu, $leftmenuItem1, $detailsTab);     
 }	  
 
 function zoneJsonClearDetailsTab(jsonObj) {	    
@@ -453,11 +461,12 @@ function podGetLeftmenuId(jsonObj) {
     return "pod_" + jsonObj.id;
 }
 
-function podJsonToRightPanel(jsonObj) {	 
-    podJsonToDetailsTab(jsonObj);
+function podJsonToRightPanel($leftmenuItem1) {	 
+    podJsonToDetailsTab($leftmenuItem1);
 }
 
-function podJsonToDetailsTab(jsonObj) {	    
+function podJsonToDetailsTab($leftmenuItem1) {	
+    var jsonObj = $leftmenuItem1.data("jsonObj");     
     var $detailsTab = $("#pod_page").find("#tab_content_details");   
     $detailsTab.data("jsonObj", jsonObj);           
     $detailsTab.find("#id").text(fromdb(jsonObj.id));
@@ -477,9 +486,8 @@ function podJsonToDetailsTab(jsonObj) {
         return false;
     });	  
     var $actionMenu = $detailsTab.find("#action_link #action_menu");
-    $actionMenu.find("#action_list").empty();        
-    var midmenuItemId = podGetLeftmenuId(jsonObj);     
-    buildActionLinkForDetailsTab("Delete Pod", podActionMap, $actionMenu, midmenuItemId, $detailsTab);  
+    $actionMenu.find("#action_list").empty();   
+    buildActionLinkForDetailsTab("Delete Pod", podActionMap, $actionMenu, $leftmenuItem1, $detailsTab);  
 }	
 
 function podJsonClearRightPanel(jsonObj) {	 
@@ -512,7 +520,12 @@ function getIpRange(startip, endip) {
 //***** pod page (end) ********************************************************************************************************
 
 //***** cluster page (bgein) **************************************************************************************************
-function clusterJsonToDetailsTab(jsonObj) {	    
+function clusterJsonToRightPanel($leftmenuItem1) {
+    clusterJsonToDetailsTab($leftmenuItem1);
+}
+
+function clusterJsonToDetailsTab($leftmenuItem1) {	 
+    var jsonObj = $leftmenuItem1.data("jsonObj");    
     var $detailsTab = $("#cluster_page").find("#tab_content_details");   
     $detailsTab.data("jsonObj", jsonObj);           
     $detailsTab.find("#id").text(fromdb(jsonObj.id));
@@ -536,13 +549,13 @@ function hostToMidmenu(jsonObj, $midmenuItem1) {
     $midmenuItem1.find("#second_row").text(jsonObj.ipaddress.substring(0,25)); 
 }
 
-function hostToRigntPanel($midmenuItem1) {      
-    var jsonObj = $midmenuItem1.data("jsonObj");
-    hostJsonToDetailsTab(jsonObj);   
-    showPage($("#host_page"), jsonObj);
+function hostToRightPanel($midmenuItem1) { 
+    hostJsonToDetailsTab($midmenuItem1);       
+    showPage($("#host_page"), $midmenuItem1);
 }
 
-function hostJsonToDetailsTab(jsonObj) {	    
+function hostJsonToDetailsTab($midmenuItem1) {
+    var jsonObj = $midmenuItem1.data("jsonObj");	    
     var $detailsTab = $("#host_page").find("#tab_content_details");   
     $detailsTab.data("jsonObj", jsonObj);           
     $detailsTab.find("#id").text(fromdb(jsonObj.id));
@@ -572,46 +585,44 @@ function hostJsonToDetailsTab(jsonObj) {
     $actionMenu.find("#action_list").empty();
     var noAvailableActions = true;
     
-    var midmenuItemId = hostGetMidmenuId(jsonObj);
-     
     //when right panel has more than 1 details tab, we need to specify which details tab to build action link on by passing $detailsTab to buildActionLinkForDetailsTab(~, ~, ~, ~, $detailsTab) 
     if (jsonObj.state == 'Up' || jsonObj.state == "Connecting") {
-		buildActionLinkForDetailsTab("Enable Maintenance Mode", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  
-	    buildActionLinkForDetailsTab("Force Reconnect", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);   
-	    buildActionLinkForDetailsTab("Update OS Preference", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);   
+		buildActionLinkForDetailsTab("Enable Maintenance Mode", hostActionMap, $actionMenu, $midmenuItem1, $detailsTab);  
+	    buildActionLinkForDetailsTab("Force Reconnect", hostActionMap, $actionMenu, $midmenuItem1, $detailsTab);   
+	    buildActionLinkForDetailsTab("Update OS Preference", hostActionMap, $actionMenu, $midmenuItem1, $detailsTab);   
 	    noAvailableActions = false;
 	} 
 	else if(jsonObj.state == 'Down') {
-	    buildActionLinkForDetailsTab("Enable Maintenance Mode", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  
-	    buildActionLinkForDetailsTab("Update OS Preference", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  	    
-        buildActionLinkForDetailsTab("Remove Host", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  
+	    buildActionLinkForDetailsTab("Enable Maintenance Mode", hostActionMap, $actionMenu, $midmenuItem1, $detailsTab);  
+	    buildActionLinkForDetailsTab("Update OS Preference", hostActionMap, $actionMenu, $midmenuItem1, $detailsTab);  	    
+        buildActionLinkForDetailsTab("Remove Host", hostActionMap, $actionMenu, $midmenuItem1, $detailsTab);  
         noAvailableActions = false;
     }	
 	else if(jsonObj.state == "Alert") {
-	    buildActionLinkForDetailsTab("Update OS Preference", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  	
+	    buildActionLinkForDetailsTab("Update OS Preference", hostActionMap, $actionMenu, $midmenuItem1, $detailsTab);  	
 	    noAvailableActions = false;   
      
 	}	
 	else if (jsonObj.state == "ErrorInMaintenance") {
-	    buildActionLinkForDetailsTab("Enable Maintenance Mode", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  
-        buildActionLinkForDetailsTab("Cancel Maintenance Mode", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  
-        buildActionLinkForDetailsTab("Update OS Preference", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  	 
+	    buildActionLinkForDetailsTab("Enable Maintenance Mode", hostActionMap, $actionMenu, $midmenuItem1, $detailsTab);  
+        buildActionLinkForDetailsTab("Cancel Maintenance Mode", hostActionMap, $actionMenu, $midmenuItem1, $detailsTab);  
+        buildActionLinkForDetailsTab("Update OS Preference", hostActionMap, $actionMenu, $midmenuItem1, $detailsTab);  	 
         noAvailableActions = false;   
     }
 	else if (jsonObj.state == "PrepareForMaintenance") {
-	    buildActionLinkForDetailsTab("Cancel Maintenance Mode", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  
-        buildActionLinkForDetailsTab("Update OS Preference", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  	
+	    buildActionLinkForDetailsTab("Cancel Maintenance Mode", hostActionMap, $actionMenu, $midmenuItem1, $detailsTab);  
+        buildActionLinkForDetailsTab("Update OS Preference", hostActionMap, $actionMenu, $midmenuItem1, $detailsTab);  	
         noAvailableActions = false;    
     }
 	else if (jsonObj.state == "Maintenance") {
-	    buildActionLinkForDetailsTab("Cancel Maintenance Mode", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  
-        buildActionLinkForDetailsTab("Update OS Preference", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  	    
-        buildActionLinkForDetailsTab("Remove Host", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  
+	    buildActionLinkForDetailsTab("Cancel Maintenance Mode", hostActionMap, $actionMenu, $midmenuItem1, $detailsTab);  
+        buildActionLinkForDetailsTab("Update OS Preference", hostActionMap, $actionMenu, $midmenuItem1, $detailsTab);  	    
+        buildActionLinkForDetailsTab("Remove Host", hostActionMap, $actionMenu, $midmenuItem1, $detailsTab);  
         noAvailableActions = false;
     }
 	else if (jsonObj.state == "Disconnected"){
-	    buildActionLinkForDetailsTab("Update OS Preference", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  	    
-        buildActionLinkForDetailsTab("Remove Host", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  
+	    buildActionLinkForDetailsTab("Update OS Preference", hostActionMap, $actionMenu, $midmenuItem1, $detailsTab);  	    
+        buildActionLinkForDetailsTab("Remove Host", hostActionMap, $actionMenu, $midmenuItem1, $detailsTab);  
         noAvailableActions = false;
     }
 	else {
@@ -620,11 +631,11 @@ function hostJsonToDetailsTab(jsonObj) {
     
     //temporary for testing (begin) *****
     /*
-    buildActionLinkForDetailsTab("Enable Maintenance Mode", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  
-    buildActionLinkForDetailsTab("Cancel Maintenance Mode", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  
-    buildActionLinkForDetailsTab("Force Reconnect", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  
-    buildActionLinkForDetailsTab("Remove Host", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);  
-    buildActionLinkForDetailsTab("Update OS Preference", hostActionMap, $actionMenu, midmenuItemId, $detailsTab);
+    buildActionLinkForDetailsTab("Enable Maintenance Mode", hostActionMap, $actionMenu, $midmenuItem1, $detailsTab);  
+    buildActionLinkForDetailsTab("Cancel Maintenance Mode", hostActionMap, $actionMenu, $midmenuItem1, $detailsTab);  
+    buildActionLinkForDetailsTab("Force Reconnect", hostActionMap, $actionMenu, $midmenuItem1, $detailsTab);  
+    buildActionLinkForDetailsTab("Remove Host", hostActionMap, $actionMenu, $midmenuItem1, $detailsTab);  
+    buildActionLinkForDetailsTab("Update OS Preference", hostActionMap, $actionMenu, $midmenuItem1, $detailsTab);
     noAvailableActions = false; 	  
     */  
     //temporary for testing (begin) *****
@@ -673,13 +684,13 @@ function primarystorageToMidmenu(jsonObj, $midmenuItem1) {
     $midmenuItem1.find("#second_row").text(jsonObj.ipaddress.substring(0,25));          
 }
 
-function primarystorageToRigntPanel($midmenuItem1) {      
-    var jsonObj = $midmenuItem1.data("jsonObj");
-    primarystorageJsonToDetailsTab(jsonObj);   
-    showPage($("#primarystorage_page"), jsonObj);
+function primarystorageToRightPanel($midmenuItem1) {  
+    primarystorageJsonToDetailsTab($midmenuItem1);      
+    showPage($("#primarystorage_page"), $midmenuItem1);
 }
 
-function primarystorageJsonToDetailsTab(jsonObj) {	    
+function primarystorageJsonToDetailsTab($midmenuItem1) {	
+    var jsonObj = $midmenuItem1.data("jsonObj");    
     var $detailsTab = $("#primarystorage_page").find("#tab_content_details");   
     $detailsTab.data("jsonObj", jsonObj);           
     $detailsTab.find("#id").text(fromdb(jsonObj.id));
@@ -705,9 +716,8 @@ function primarystorageJsonToDetailsTab(jsonObj) {
         return false;
     });	  
     var $actionMenu = $detailsTab.find("#action_link #action_menu");
-    $actionMenu.find("#action_list").empty();        
-    var midmenuItemId = primarystorageGetMidmenuId(jsonObj);     
-    buildActionLinkForDetailsTab("Delete Primary Storage", primarystorageActionMap, $actionMenu, midmenuItemId, $detailsTab);        
+    $actionMenu.find("#action_list").empty(); 
+    buildActionLinkForDetailsTab("Delete Primary Storage", primarystorageActionMap, $actionMenu, $midmenuItem1, $detailsTab);        
 }
        
 function primarystorageClearRigntPanel() {  
@@ -731,7 +741,12 @@ function primarystorageJsonClearDetailsTab() {
 //***** primary storage page (end) *********************************************************************************************
 
 //***** systemVM page (begin) *************************************************************************************************
-function systemvmJsonToDetailsTab(jsonObj) {	   
+function systemvmJsonToRightPanel($leftmenuItem1) {
+    systemvmJsonToDetailsTab($leftmenuItem1);
+}
+
+function systemvmJsonToDetailsTab($leftmenuItem1) {	   
+    var jsonObj = $leftmenuItem1.data("jsonObj"); 
     var $detailsTab = $("#systemvm_page").find("#tab_content_details");   
     $detailsTab.data("jsonObj", jsonObj);   
      
@@ -1263,14 +1278,14 @@ function initAddHostButton($midmenuAddLink1) {
 			        success: function(json) {	
 			            var items = json.addhostresponse.host;				            			      										   
 					    hostToMidmenu(items[0], $midmenuItem1);
-	                    bindClickToMidMenu($midmenuItem1, hostToRigntPanel, hostGetMidmenuId);  
+	                    bindClickToMidMenu($midmenuItem1, hostToRightPanel, hostGetMidmenuId);  
 	                    afterAddingMidMenuItem($midmenuItem1, true);
                                                         
                         if(items.length > 1) { 
                             for(var i=1; i<items.length; i++) {                                    
                                 var $midmenuItem2 = $("#midmenu_item").clone();
                                 hostToMidmenu(items[i], $midmenuItem2);
-                                bindClickToMidMenu($midmenuItem2, hostToRigntPanel, hostGetMidmenuId); 
+                                bindClickToMidMenu($midmenuItem2, hostToRightPanel, hostGetMidmenuId); 
                                 $("#midmenu_container").append($midmenuItem2.show());                                   
                             }	
                         }                                
@@ -1376,7 +1391,7 @@ function initAddPrimaryStorageButton($midmenuAddLink2) {
 				    success: function(json) {					        
 				        var item = json.createstoragepoolresponse;				            			      										   
 					    primarystorageToMidmenu(item, $midmenuItem1);
-	                    bindClickToMidMenu($midmenuItem1, primarystorageToRigntPanel, primarystorageGetMidmenuId);  
+	                    bindClickToMidMenu($midmenuItem1, primarystorageToRightPanel, primarystorageGetMidmenuId);  
 	                    afterAddingMidMenuItem($midmenuItem1, true);
 				    },			
                     error: function(XMLHttpResponse) {	
@@ -1504,7 +1519,7 @@ var hostActionMap = {
         asyncJobResponse: "preparehostformaintenanceresponse",
         dialogBeforeActionFn : doEnableMaintenanceMode,
         inProcessText: "Enabling Maintenance Mode....",
-        afterActionSeccessFn: function(json, id, midmenuItemId) {
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {
             hostJsonToDetailsTab(json.queryasyncjobresultresponse.host[0], $("#right_panel_content #host_page #tab_content_details"));    
             $("#right_panel_content #after_action_info").text("We are actively enabling maintenance on your host. Please refresh periodically for an updated status."); 
         }
@@ -1514,7 +1529,7 @@ var hostActionMap = {
         asyncJobResponse: "cancelhostmaintenanceresponse",
         dialogBeforeActionFn : doCancelMaintenanceMode,
         inProcessText: "Cancelling Maintenance Mode....",
-        afterActionSeccessFn: function(json, id, midmenuItemId) {            
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {            
             hostJsonToDetailsTab(json.queryasyncjobresultresponse.host[0], $("#right_panel_content #host_page #tab_content_details"));     
             $("#right_panel_content #after_action_info").text("We are actively cancelling your scheduled maintenance.  Please refresh periodically for an updated status."); 
         }
@@ -1524,7 +1539,7 @@ var hostActionMap = {
         asyncJobResponse: "reconnecthostresponse",
         dialogBeforeActionFn : doForceReconnect,
         inProcessText: "Reconnecting....",
-        afterActionSeccessFn: function(json, id, midmenuItemId) {
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {
             hostJsonToDetailsTab(json.queryasyncjobresultresponse.host[0], $("#right_panel_content #host_page #tab_content_details"));    
             $("#right_panel_content #after_action_info").text("We are actively reconnecting your host.  Please refresh periodically for an updated status."); 
         }
@@ -1533,8 +1548,7 @@ var hostActionMap = {
         isAsyncJob: false,        
         dialogBeforeActionFn : doRemoveHost,
         inProcessText: "Removing Host....",
-        afterActionSeccessFn: function(json, id, midmenuItemId) {            
-            var $midmenuItem1 = $("#"+midmenuItemId); 
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {    
             $midmenuItem1.remove();
             clearRightPanel();
             hostClearRightPanel();
@@ -1544,22 +1558,21 @@ var hostActionMap = {
         isAsyncJob: false,        
         dialogBeforeActionFn : doUpdateOSPreference,
         inProcessText: "Updating OS Preference....",
-        afterActionSeccessFn: function(json, id, midmenuItemId) {     
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {     
             //call listHosts API before bug 6650 ("updateHost API should return an embedded object like what listHosts API does") is fixed.
             $.ajax({
                 data: createURL("command=listHosts&id="+id),
                 dataType: "json",
-                success: function(json) {         
-                    $midmenuItem1 = $("#"+midmenuItemId);
+                success: function(json) {  
                     hostToMidmenu(json.listhostsresponse.host[0], $midmenuItem1);      
-                    hostToRigntPanel($midmenuItem1)                     
+                    hostToRightPanel($midmenuItem1)                     
                 }
             });            
         }
     },          
 } 
 
-function doEnableMaintenanceMode($actionLink, $detailsTab, midmenuItemId){ 
+function doEnableMaintenanceMode($actionLink, $detailsTab, $midmenuItem1){ 
     var jsonObj = $detailsTab.data("jsonObj");
        
     $("#dialog_confirmation_enable_maintenance")
@@ -1568,7 +1581,7 @@ function doEnableMaintenanceMode($actionLink, $detailsTab, midmenuItemId){
              $(this).dialog("close");      
              var id = jsonObj.id;
              var apiCommand = "command=prepareHostForMaintenance&id="+id;
-    	     doActionToDetailsTab(id, $actionLink, apiCommand, midmenuItemId);		
+    	     doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1);		
          },
          "Cancel": function() {	                         
              $(this).dialog("close");
@@ -1576,7 +1589,7 @@ function doEnableMaintenanceMode($actionLink, $detailsTab, midmenuItemId){
     }).dialog("open");     
 } 
 
-function doCancelMaintenanceMode($actionLink, $detailsTab, midmenuItemId){ 
+function doCancelMaintenanceMode($actionLink, $detailsTab, $midmenuItem1){ 
     var jsonObj = $detailsTab.data("jsonObj");
        
     $("#dialog_confirmation_cancel_maintenance")
@@ -1585,7 +1598,7 @@ function doCancelMaintenanceMode($actionLink, $detailsTab, midmenuItemId){
              $(this).dialog("close");      
              var id = jsonObj.id;
              var apiCommand = "command=cancelHostMaintenance&id="+id;
-    	     doActionToDetailsTab(id, $actionLink, apiCommand, midmenuItemId);		
+    	     doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1);		
          },
          "Cancel": function() {	                         
              $(this).dialog("close");
@@ -1593,7 +1606,7 @@ function doCancelMaintenanceMode($actionLink, $detailsTab, midmenuItemId){
     }).dialog("open");     
 } 
 
-function doForceReconnect($actionLink, $detailsTab, midmenuItemId){ 
+function doForceReconnect($actionLink, $detailsTab, $midmenuItem1){ 
     var jsonObj = $detailsTab.data("jsonObj");
        
     $("#dialog_confirmation_force_reconnect")
@@ -1602,7 +1615,7 @@ function doForceReconnect($actionLink, $detailsTab, midmenuItemId){
              $(this).dialog("close");      
              var id = jsonObj.id;
              var apiCommand = "command=reconnectHost&id="+id;
-    	     doActionToDetailsTab(id, $actionLink, apiCommand, midmenuItemId);		
+    	     doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1);		
          },
          "Cancel": function() {	                         
              $(this).dialog("close");
@@ -1610,7 +1623,7 @@ function doForceReconnect($actionLink, $detailsTab, midmenuItemId){
     }).dialog("open");     
 } 
 
-function doRemoveHost($actionLink, $detailsTab, midmenuItemId){ 
+function doRemoveHost($actionLink, $detailsTab, $midmenuItem1){ 
     var jsonObj = $detailsTab.data("jsonObj");
        
     $("#dialog_confirmation_remove_host")
@@ -1619,7 +1632,7 @@ function doRemoveHost($actionLink, $detailsTab, midmenuItemId){
              $(this).dialog("close");      
              var id = jsonObj.id;
              var apiCommand = "command=deleteHost&id="+id;
-    	     doActionToDetailsTab(id, $actionLink, apiCommand, midmenuItemId);		
+    	     doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1);		
          },
          "Cancel": function() {	                         
              $(this).dialog("close");
@@ -1627,7 +1640,7 @@ function doRemoveHost($actionLink, $detailsTab, midmenuItemId){
     }).dialog("open");     
 } 
 
-function doUpdateOSPreference($actionLink, $detailsTab, midmenuItemId){ 
+function doUpdateOSPreference($actionLink, $detailsTab, $midmenuItem1){ 
     var jsonObj = $detailsTab.data("jsonObj");
        
     $("#dialog_update_os")
@@ -1643,7 +1656,7 @@ function doUpdateOSPreference($actionLink, $detailsTab, midmenuItemId){
 	        var id = jsonObj.id;
     		    
             var apiCommand = "command=updateHost&id="+id+category;
-    	    doActionToDetailsTab(id, $actionLink, apiCommand, midmenuItemId);		
+    	    doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1);		
         },
         "Cancel": function() {	                         
             $(this).dialog("close");
@@ -1656,8 +1669,7 @@ var primarystorageActionMap = {
         isAsyncJob: false,        
         dialogBeforeActionFn : doDeletePrimaryStorage,
         inProcessText: "Deleting Primary Storage....",
-        afterActionSeccessFn: function(json, id, midmenuItemId) {            
-            var $midmenuItem1 = $("#"+midmenuItemId); 
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {   
             $midmenuItem1.remove();
             clearRightPanel();
             primarystorageClearRightPanel();
@@ -1665,7 +1677,7 @@ var primarystorageActionMap = {
     }
 }
 
-function doDeletePrimaryStorage($actionLink, $detailsTab, midmenuItemId){ 
+function doDeletePrimaryStorage($actionLink, $detailsTab, $midmenuItem1){ 
     var jsonObj = $detailsTab.data("jsonObj");
        
     $("#dialog_confirmation_delete_primarystorage")
@@ -1674,7 +1686,7 @@ function doDeletePrimaryStorage($actionLink, $detailsTab, midmenuItemId){
              $(this).dialog("close");      
              var id = jsonObj.id;
              var apiCommand = "command=deleteStoragePool&id="+id;
-    	     doActionToDetailsTab(id, $actionLink, apiCommand, midmenuItemId);		
+    	     doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1);		
          },
          "Cancel": function() {	                         
              $(this).dialog("close");

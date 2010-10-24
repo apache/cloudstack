@@ -58,12 +58,12 @@ function snapshotToMidmenu(jsonObj, $midmenuItem1) {
     $midmenuItem1.find("#second_row").text(fromdb(jsonObj.volumename).substring(0,25));    
 }
 
-function snapshotToRigntPanel($midmenuItem) {
-    var jsonObj = $midmenuItem.data("jsonObj");
-    snapshotJsonToDetailsTab(jsonObj);   
+function snapshotToRigntPanel($midmenuItem1) {    
+    snapshotJsonToDetailsTab($midmenuItem1);   
 }
 
-function snapshotJsonToDetailsTab(jsonObj) {   
+function snapshotJsonToDetailsTab($midmenuItem1) { 
+    var jsonObj = $midmenuItem1.data("jsonObj");
     var $detailsTab = $("#right_panel_content #tab_content_details");   
     $detailsTab.data("jsonObj", jsonObj);  
     $detailsTab.find("#id").text(jsonObj.id);
@@ -76,11 +76,10 @@ function snapshotJsonToDetailsTab(jsonObj) {
     
     //actions ***
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
-    $actionMenu.find("#action_list").empty();
-    var midmenuItemId = getMidmenuId(jsonObj);
-    buildActionLinkForDetailsTab("Create Volume", snapshotActionMap, $actionMenu, midmenuItemId);		
-    buildActionLinkForDetailsTab("Delete Snapshot", snapshotActionMap, $actionMenu, midmenuItemId);	
-    buildActionLinkForDetailsTab("Create Template", snapshotActionMap, $actionMenu, midmenuItemId);					
+    $actionMenu.find("#action_list").empty();  
+    buildActionLinkForDetailsTab("Create Volume"  , snapshotActionMap, $actionMenu, $midmenuItem1);		
+    buildActionLinkForDetailsTab("Delete Snapshot", snapshotActionMap, $actionMenu, $midmenuItem1);	
+    buildActionLinkForDetailsTab("Create Template", snapshotActionMap, $actionMenu, $midmenuItem1);					
 }
 
 function snapshotClearRightPanel() {
@@ -100,7 +99,7 @@ var snapshotActionMap = {
         asyncJobResponse: "createvolumeresponse",
         dialogBeforeActionFn : doCreateVolumeFromSnapshotInSnapshotPage,
         inProcessText: "Creating Volume....",
-        afterActionSeccessFn: function(json, id, midmenuItemId) {}
+        afterActionSeccessFn: function(json, $midmenuItem1, id){}
     }   
     , 
     "Delete Snapshot": {              
@@ -108,8 +107,8 @@ var snapshotActionMap = {
         isAsyncJob: true,
         asyncJobResponse: "deletesnapshotresponse",        
         inProcessText: "Deleting snapshot....",
-        afterActionSeccessFn: function(json, id, midmenuItemId) {            
-            $("#"+midmenuItemId).remove();
+        afterActionSeccessFn: function(json, $midmenuItem1, id){            
+            $midmenuItem1.remove();
             clearRightPanel();
             snapshotClearRightPanel();
         }
@@ -120,11 +119,11 @@ var snapshotActionMap = {
         asyncJobResponse: "createtemplateresponse",
         dialogBeforeActionFn : doCreateTemplateFromSnapshotInSnapshotPage,
         inProcessText: "Creating Template....",
-        afterActionSeccessFn: function(json, id, midmenuItemId) {}
+        afterActionSeccessFn: function(json, $midmenuItem1, id){}
     }
 }   
 
-function doCreateVolumeFromSnapshotInSnapshotPage($actionLink, $detailsTab, midmenuItemId){ 
+function doCreateVolumeFromSnapshotInSnapshotPage($actionLink, $detailsTab, $midmenuItem1){ 
     var jsonObj = $detailsTab.data("jsonObj");
        
     $("#dialog_add_volume_from_snapshot")
@@ -142,7 +141,7 @@ function doCreateVolumeFromSnapshotInSnapshotPage($actionLink, $detailsTab, midm
          
          var id = jsonObj.id;
          var apiCommand = "command=createVolume&snapshotid="+id+"&name="+name;
-    	 doActionToDetailsTab(id, $actionLink, apiCommand, midmenuItemId);		
+    	 doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1);		
      },
      "Cancel": function() {	                         
          $(this).dialog("close");
@@ -150,7 +149,7 @@ function doCreateVolumeFromSnapshotInSnapshotPage($actionLink, $detailsTab, midm
     }).dialog("open");     
 }
 
-function doCreateTemplateFromSnapshotInSnapshotPage($actionLink, $detailsTab, midmenuItemId){ 
+function doCreateTemplateFromSnapshotInSnapshotPage($actionLink, $detailsTab, $midmenuItem1){ 
     var jsonObj = $detailsTab.data("jsonObj");
        
     $("#dialog_create_template_from_snapshot")
@@ -171,7 +170,7 @@ function doCreateTemplateFromSnapshotInSnapshotPage($actionLink, $detailsTab, mi
        
          var id = jsonObj.id;
          var apiCommand = "command=createTemplate&snapshotid="+id+"&name="+name+"&displaytext="+displayText+"&ostypeid="+osTypeId+"&passwordEnabled="+password;
-    	 doActionToDetailsTab(id, $actionLink, apiCommand, midmenuItemId);		
+    	 doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1);		
      },
      "Cancel": function() {	                         
          $(this).dialog("close");

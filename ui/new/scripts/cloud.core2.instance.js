@@ -1209,16 +1209,16 @@ function vmToMidmenu(jsonObj, $midmenuItem1) {
     $midmenuItem1.data("toRightPanelFn", vmToRightPanel);   
 }
 
-function vmToRightPanel($midmenuItem) {
-    var jsonObj = $midmenuItem.data("jsonObj");          
+function vmToRightPanel($midmenuItem1) {
+    var jsonObj = $midmenuItem1.data("jsonObj");          
     
     var vmName = getVmName(jsonObj.name, jsonObj.displayname);        
     $("right_panel_header").find("#vm_name").text(vmName);	
     
     var $rightPanelContent = $("#right_panel_content");        
-    if($midmenuItem.find("#info_icon").css("display") != "none") {                
-        $rightPanelContent.find("#after_action_info").text($midmenuItem.data("afterActionInfo"));
-        if($midmenuItem.find("#info_icon").hasClass("error"))
+    if($midmenuItem1.find("#info_icon").css("display") != "none") {                
+        $rightPanelContent.find("#after_action_info").text($midmenuItem1.data("afterActionInfo"));
+        if($midmenuItem1.find("#info_icon").hasClass("error"))
             $rightPanelContent.find("#after_action_info_container").addClass("errorbox");
          else
             $rightPanelContent.find("#after_action_info_container").removeClass("errorbox");                                        
@@ -1229,14 +1229,15 @@ function vmToRightPanel($midmenuItem) {
         $rightPanelContent.find("#after_action_info_container").hide();                
     }
     
-    vmJsonToDetailsTab(jsonObj, $midmenuItem);   
+    vmJsonToDetailsTab($midmenuItem1);   
     vmJsonToVolumeTab(jsonObj);
     
     if (isAdmin() || isDomainAdmin())
         vmJsonToRouterTab(jsonObj);
 }
  
-function vmJsonToDetailsTab(jsonObj, $midmenuItem){
+function vmJsonToDetailsTab($midmenuItem1){
+    var jsonObj = $midmenuItem1.data("jsonObj");
     var $detailsTab = $("#right_panel_content #tab_content_details");  
     $detailsTab.data("jsonObj", jsonObj);  
 

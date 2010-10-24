@@ -42,12 +42,12 @@ function accountToMidmenu(jsonObj, $midmenuItem1) {
     $midmenuItem1.find("#second_row").text(fromdb(jsonObj.domain).substring(0,25));   
 }
 
-function accountToRigntPanel($midmenuItem) {      
-    var jsonObj = $midmenuItem.data("jsonObj");
-    accountJsonToDetailsTab(jsonObj);   
+function accountToRightPanel($midmenuItem1) {  
+    accountJsonToDetailsTab($midmenuItem1);   
 }
 
-function accountJsonToDetailsTab(jsonObj) {      
+function accountJsonToDetailsTab($midmenuItem1) {  
+    var jsonObj = $midmenuItem1.data("jsonObj");    
     var $detailsTab = $("#right_panel_content #tab_content_details");   
     $detailsTab.data("jsonObj", jsonObj);  
     $detailsTab.find("#grid_header_title").text(fromdb(jsonObj.name));
@@ -65,21 +65,20 @@ function accountJsonToDetailsTab(jsonObj) {
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty(); 
     var noAvailableActions = true;
-     
-    var midmenuItemId = getMidmenuId(jsonObj); 
+        
     if(jsonObj.id != systemAccountId && jsonObj.id != adminAccountId) {
         if (jsonObj.accounttype == roleTypeUser || jsonObj.accounttype == roleTypeDomainAdmin) {
-            buildActionLinkForDetailsTab("Resource limits", accountActionMap, $actionMenu, midmenuItemId);	
+            buildActionLinkForDetailsTab("Resource limits", accountActionMap, $actionMenu, $midmenuItem1);	
             noAvailableActions = false;	
         }
         
         if(jsonObj.state == "enabled") {
-            buildActionLinkForDetailsTab("Disable account", accountActionMap, $actionMenu, midmenuItemId);  
-            buildActionLinkForDetailsTab("Lock account", accountActionMap, $actionMenu, midmenuItemId);
+            buildActionLinkForDetailsTab("Disable account", accountActionMap, $actionMenu, $midmenuItem1);  
+            buildActionLinkForDetailsTab("Lock account", accountActionMap, $actionMenu, $midmenuItem1);
             noAvailableActions = false;	
         }          	        
         else if(jsonObj.state == "disabled" || jsonObj.state == "locked") {
-            buildActionLinkForDetailsTab("Enable account", accountActionMap, $actionMenu, midmenuItemId);   
+            buildActionLinkForDetailsTab("Enable account", accountActionMap, $actionMenu, $midmenuItem1);   
             noAvailableActions = false;	
         }           
     }  
@@ -100,7 +99,7 @@ var accountActionMap = {
         asyncJobResponse: "disableaccountresponse",
         dialogBeforeActionFn : doDisableAccount,
         inProcessText: "Disabling account....",
-        afterActionSeccessFn: function(json, id, midmenuItemId) { 
+        afterActionSeccessFn: function(json, $midmenuItem1, id) { 
             //Get embedded object from listVolume API until bug 6482("enableAccount, disableAccount, lockAccount should return an embedded object") is fixed.
             var jsonObj;           
             $.ajax({
@@ -112,8 +111,8 @@ var accountActionMap = {
                 }            
             });           
                 
-            accountToMidmenu(jsonObj, $("#"+midmenuItemId));           
-            accountJsonToDetailsTab(jsonObj);
+            accountToMidmenu(jsonObj, $midmenuItem1);           
+            accountJsonToDetailsTab($midmenuItem1);
         }
     }    
     ,
@@ -121,7 +120,7 @@ var accountActionMap = {
         isAsyncJob: false,       
         dialogBeforeActionFn : doLockAccount,
         inProcessText: "Locking account....",
-        afterActionSeccessFn: function(json, id, midmenuItemId) {  
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {  
             //Get embedded object from listVolume API until bug 6482("enableAccount, disableAccount, lockAccount should return an embedded object") is fixed.
             var jsonObj;           
             $.ajax({
@@ -133,8 +132,8 @@ var accountActionMap = {
                 }            
             });       
                   
-            accountToMidmenu(jsonObj, $("#"+midmenuItemId));           
-            accountJsonToDetailsTab(jsonObj);
+            accountToMidmenu(jsonObj, $midmenuItem1);           
+            accountJsonToDetailsTab($midmenuItem1);
         }
     }    
     ,
@@ -142,7 +141,7 @@ var accountActionMap = {
         isAsyncJob: false,       
         dialogBeforeActionFn : doEnableAccount,
         inProcessText: "Enabling account....",
-        afterActionSeccessFn: function(json, id, midmenuItemId) {   
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {   
             //Get embedded object from listVolume API until bug 6482("enableAccount, disableAccount, lockAccount should return an embedded object") is fixed.
             var jsonObj;           
             $.ajax({
@@ -154,8 +153,8 @@ var accountActionMap = {
                 }            
             });       
                 
-            accountToMidmenu(jsonObj, $("#"+midmenuItemId));           
-            accountJsonToDetailsTab(jsonObj);
+            accountToMidmenu(jsonObj, $midmenuItem1);           
+            accountJsonToDetailsTab($midmenuItem1);
         }
     }    
 }; 
@@ -169,7 +168,7 @@ function updateResourceLimit(domainId, account, type, max) {
 	});
 }
 
-function doResourceLimits () {
+function doResourceLimits($actionLink, $detailsTab, $midmenuItem1) {
     var $detailsTab = $("#right_panel_content #tab_content_details");  
 	var jsonObj = $detailsTab.data("jsonObj");
 	var domainId = jsonObj.domainid;
@@ -251,7 +250,7 @@ function doResourceLimits () {
 	});	
 }
 
-function doDisableAccount($actionLink, $detailsTab, midmenuItemId) {       
+function doDisableAccount($actionLink, $detailsTab, $midmenuItem1) {       
     var jsonObj = $detailsTab.data("jsonObj");    
     var id = jsonObj.id;
     
@@ -260,7 +259,7 @@ function doDisableAccount($actionLink, $detailsTab, midmenuItemId) {
         "Yes": function() { 		                    
             $(this).dialog("close");	
 			var apiCommand = "command=disableAccount&account="+jsonObj.name+"&domainId="+jsonObj.domainid;	    	
-	    	doActionToDetailsTab(id, $actionLink, apiCommand, midmenuItemId) ;         		                    	     
+	    	doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1) ;         		                    	     
         },
         "Cancel": function() {
             $(this).dialog("close");		     
@@ -268,7 +267,7 @@ function doDisableAccount($actionLink, $detailsTab, midmenuItemId) {
     }).dialog("open");  
 }
 
-function doLockAccount($actionLink, $detailsTab, midmenuItemId) {       
+function doLockAccount($actionLink, $detailsTab, $midmenuItem1) {       
     var jsonObj = $detailsTab.data("jsonObj");    
     
     $("#dialog_lock_account")    
@@ -276,7 +275,7 @@ function doLockAccount($actionLink, $detailsTab, midmenuItemId) {
         "Yes": function() { 		                    
             $(this).dialog("close");			
 			var apiCommand = "command=lockAccount&account="+jsonObj.name+"&domainId="+jsonObj.domainid;
-	    	doActionToDetailsTab(jsonObj.id, $actionLink, apiCommand, midmenuItemId);	         		                    	     
+	    	doActionToDetailsTab(jsonObj.id, $actionLink, apiCommand, $midmenuItem1);	         		                    	     
         },
         "Cancel": function() {
             $(this).dialog("close");		     
@@ -284,7 +283,7 @@ function doLockAccount($actionLink, $detailsTab, midmenuItemId) {
     }).dialog("open");  
 }
 
-function doEnableAccount($actionLink, $detailsTab, midmenuItemId) {       
+function doEnableAccount($actionLink, $detailsTab, $midmenuItem1) {       
     var jsonObj = $detailsTab.data("jsonObj");    
     
     $("#dialog_enable_account")    
@@ -292,7 +291,7 @@ function doEnableAccount($actionLink, $detailsTab, midmenuItemId) {
         "Yes": function() { 		                    
             $(this).dialog("close");	
 			var apiCommand = "command=enableAccount&account="+jsonObj.name+"&domainId="+jsonObj.domainid;
-	    	doActionToDetailsTab(jsonObj.id, $actionLink, apiCommand, midmenuItemId);	         		                    	     
+	    	doActionToDetailsTab(jsonObj.id, $actionLink, apiCommand, $midmenuItem1);	         		                    	     
         },
         "Cancel": function() {
             $(this).dialog("close");		     

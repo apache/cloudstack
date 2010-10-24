@@ -225,12 +225,12 @@ function templateToMidmenu(jsonObj, $midmenuItem1) {
     $midmenuItem1.find("#second_row").text(fromdb(jsonObj.zonename).substring(0,25));   
 }
 
-function templateToRigntPanel($midmenuItem) {       
-    var jsonObj = $midmenuItem.data("jsonObj");
-    templateJsonToDetailsTab(jsonObj);   
+function templateToRigntPanel($midmenuItem1) {   
+    templateJsonToDetailsTab($midmenuItem1);   
 }
 
-function templateJsonToDetailsTab(jsonObj) {   
+function templateJsonToDetailsTab($midmenuItem1) {   
+    var jsonObj = $midmenuItem1.data("jsonObj");
     var $detailsTab = $("#right_panel_content #tab_content_details");   
     $detailsTab.data("jsonObj", jsonObj);
     $detailsTab.find("#id").text(fromdb(jsonObj.id));
@@ -361,8 +361,7 @@ var templateActionMap = {
         asyncJobResponse: "deletetemplateresponse",
         dialogBeforeActionFn : doDeleteTemplate,
         inProcessText: "Deleting Template....",
-        afterActionSeccessFn: function(json, id, midmenuItemId){                    
-            var $midmenuItem1 = $("#"+midmenuItemId); 
+        afterActionSeccessFn: function(json, $midmenuItem1, id){    
             $midmenuItem1.remove();
             clearRightPanel();
             templateClearRightPanel();
@@ -373,7 +372,7 @@ var templateActionMap = {
         asyncJobResponse: "copytemplateresponse",            
         dialogBeforeActionFn : doCopyTemplate,
         inProcessText: "Copying Template....",
-        afterActionSeccessFn: function(json, id, midmenuItemId){}   
+        afterActionSeccessFn: function(json, $midmenuItem1, id){}   
     }  
     ,
     "Create VM": {
@@ -381,15 +380,15 @@ var templateActionMap = {
         asyncJobResponse: "deployvirtualmachineresponse",            
         dialogBeforeActionFn : doCreateVMFromTemplate,
         inProcessText: "Creating VM....",
-        afterActionSeccessFn: function(json, id, midmenuItemId){}   
+        afterActionSeccessFn: function(json, $midmenuItem1, id){}   
     }  
 }   
 
 var DomRTemplateId = 1;
 
 
-function doEditTemplate() {   
-    var $detailsTab = $("#right_panel_content #tab_content_details");  
+function doEditTemplate($actionLink, $detailsTab, $midmenuItem1) {   
+    //var $detailsTab = $("#right_panel_content #tab_content_details");  
     var $readonlyFields  = $detailsTab.find("#name, #displaytext, #passwordenabled, #ispublic, #isfeatured, #ostypename");
     var $editFields = $detailsTab.find("#name_edit, #displaytext_edit, #passwordenabled_edit, #ispublic_edit, #isfeatured_edit, #ostypename_edit");    
         
@@ -412,7 +411,7 @@ function doEditTemplate() {
     });   
 }
 
-function doEditTemplate2($detailsTab) {               
+function doEditTemplate2($actionLink, $detailsTab, $midmenuItem1) {               
     // validate values
     var isValid = true;					
     isValid &= validateString("Name", $detailsTab.find("#name_edit"), $detailsTab.find("#name_edit_errormsg"));
@@ -486,14 +485,14 @@ function doEditTemplate2($detailsTab) {
         dataType: "json",
         success: function(json) {            
             var jsonObj = json.listtemplatesresponse.template[0];           
-            templateToMidmenu(jsonObj, $("#"+midmenuId));
-            templateJsonToDetailsTab(jsonObj);              
+            templateToMidmenu(jsonObj, $midmenuItem1);
+            templateJsonToDetailsTab($midmenuItem1);              
         }
     });   
 }
 
-function doDeleteTemplate($actionLink, $detailsTab, midmenuItemId) {   
-    var $detailsTab = $("#right_panel_content #tab_content_details"); 
+function doDeleteTemplate($actionLink, $detailsTab, $midmenuItem1) {   
+    //var $detailsTab = $("#right_panel_content #tab_content_details"); 
     var jsonObj = $detailsTab.data("jsonObj");
 	var id = jsonObj.id;
 	var name = jsonObj.name;			
@@ -514,7 +513,7 @@ function doDeleteTemplate($actionLink, $detailsTab, midmenuItemId) {
 		"Confirm": function() { 			
 			$(this).dialog("close");			
 			var apiCommand = "command=deleteTemplate&id="+id+moreCriteria.join("");
-            doActionToDetailsTab(id, $actionLink, apiCommand, midmenuItemId);	
+            doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1);	
 		}, 
 		"Cancel": function() { 
 			$(this).dialog("close"); 
@@ -532,7 +531,7 @@ function populateZoneFieldExcludeSourceZone(zoneField, excludeZoneId) {
     }			    
 }
 
-function doCopyTemplate($actionLink, $detailsTab, midmenuItemId) { 
+function doCopyTemplate($actionLink, $detailsTab, $midmenuItem1) { 
 	var jsonObj = $detailsTab.data("jsonObj");
 	var id = jsonObj.id;
 	var name = jsonObj.name;						
@@ -559,7 +558,7 @@ function doCopyTemplate($actionLink, $detailsTab, midmenuItemId) {
 	        
             var id = $detailsTab.data("jsonObj").id;			
 	        var apiCommand = "command=copyTemplate&id="+id+"&sourcezoneid="+sourceZoneId+"&destzoneid="+destZoneId;
-	        doActionToDetailsTab(id, $actionLink, apiCommand, midmenuItemId);	
+	        doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1);	
 	    }, 
 	    "Cancel": function() {				        
 		    $(this).dialog("close");
@@ -567,7 +566,7 @@ function doCopyTemplate($actionLink, $detailsTab, midmenuItemId) {
 	}).dialog("open");			
 }
 
-function doCreateVMFromTemplate($actionLink, $detailsTab, midmenuItemId) { 
+function doCreateVMFromTemplate($actionLink, $detailsTab, $midmenuItem1) { 
     var jsonObj = $detailsTab.data("jsonObj");
 	var id = jsonObj.id;		
 	var name = jsonObj.name;				
@@ -603,7 +602,7 @@ function doCreateVMFromTemplate($actionLink, $detailsTab, midmenuItemId) {
 	            array1.push("&diskOfferingId="+diskOfferingId);	 		    	        
 	        
 		    var apiCommand = "command=deployVirtualMachine&zoneId="+zoneId+"&templateId="+id+array1.join("");
-    	    doActionToDetailsTab(id, $actionLink, apiCommand, midmenuItemId);		
+    	    doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1);		
 	    }, 
 	    "Cancel": function() {
 	        $(this).dialog("close");

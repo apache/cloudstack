@@ -81,12 +81,12 @@ function globalSettingToMidmenu(jsonObj, $midmenuItem1) {
     $midmenuItem1.find("#second_row").text(fromdb(jsonObj.value).substring(0,25));  
 }
 
-function globalSettingToRigntPanel($midmenuItem) {
-    var jsonObj = $midmenuItem.data("jsonObj");
-    globalSettingJsonToDetailsTab(jsonObj);   
+function globalSettingToRigntPanel($midmenuItem1) {
+    globalSettingJsonToDetailsTab($midmenuItem1);   
 }
 
-function globalSettingJsonToDetailsTab(jsonObj) { 
+function globalSettingJsonToDetailsTab($midmenuItem1) { 
+    var jsonObj = $midmenuItem1.data("jsonObj");
     var $detailsTab = $("#right_panel_content #tab_content_details");   
     $detailsTab.data("jsonObj", jsonObj);          
     $detailsTab.find("#name").text(fromdb(jsonObj.name));
