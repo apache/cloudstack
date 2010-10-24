@@ -1221,13 +1221,10 @@ function vmJsonToDetailsTab($midmenuItem1){
     
     setBooleanField(jsonObj.haenable, $detailsTab.find("#haenable"));	
     setBooleanField((jsonObj.isoid != null && jsonObj.isoid.length > 0), $detailsTab.find("#iso"));	
-    
-    //???
+      
     //actions ***
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
-    $actionMenu.find("#action_list").empty();
-           
-    
+    $actionMenu.find("#action_list").empty();              
 	           
     // Show State of the VM
 	if (jsonObj.state == 'Destroyed') {
@@ -1240,53 +1237,56 @@ function vmJsonToDetailsTab($midmenuItem1){
 		buildActionLinkForDetailsTab("Stop Instance", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
 		buildActionLinkForDetailsTab("Reboot Instance", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
 		buildActionLinkForDetailsTab("Destroy Instance", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
-		buildActionLinkForDetailsTab("Change Name", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
-		buildActionLinkForDetailsTab("Change Group", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
-				
+		
 		if (jsonObj.isoid != null && jsonObj.isoid.length > 0)			
 			buildActionLinkForDetailsTab("Detach ISO", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);		 
 		else 			
 			buildActionLinkForDetailsTab("Attach ISO", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);	
+		
+		buildActionLinkForDetailsTab("Change Name", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
+		buildActionLinkForDetailsTab("Change Group", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);						
 			
 	    if (jsonObj.haenable =='true') 	
             buildActionLinkForDetailsTab("Disable HA", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
 	    else 		
 		    buildActionLinkForDetailsTab("Enable HA", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);	
 	} 
-	else {
-	    if (jsonObj.haenable =='true') 	
-            buildActionLinkForDetailsTab("Disable HA", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
-	    else 		
-		    buildActionLinkForDetailsTab("Enable HA", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
-	
+	else {	    
 		if (jsonObj.state == 'Stopped') {
 			//instanceTemplate.find("#vm_action_stop, #vm_action_reboot").removeClass().addClass("vmaction_links_off");
 			buildActionLinkForDetailsTab("Start Instance", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);		    
 		    buildActionLinkForDetailsTab("Destroy Instance", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
-		    buildActionLinkForDetailsTab("Change Name", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
-		    buildActionLinkForDetailsTab("Change Group", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);			
-			
-			buildActionLinkForDetailsTab("Reset Password", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
-			buildActionLinkForDetailsTab("Change Service", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
-			
-			if (jsonObj.isoid != null && jsonObj.isoid.length > 0)			
+		    
+		    if (jsonObj.isoid != null && jsonObj.isoid.length > 0)			
 			    buildActionLinkForDetailsTab("Detach ISO", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);		 
 		    else 			
 			    buildActionLinkForDetailsTab("Attach ISO", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
-			
+		    
+		    buildActionLinkForDetailsTab("Reset Password", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
+		    buildActionLinkForDetailsTab("Change Name", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
+		    buildActionLinkForDetailsTab("Change Service", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);	
+		    buildActionLinkForDetailsTab("Change Group", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);	
+		    
+		    if (jsonObj.haenable =='true') 	
+                buildActionLinkForDetailsTab("Disable HA", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
+	        else 		
+		        buildActionLinkForDetailsTab("Enable HA", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);					
 		} 
-		else {			
-			//jsonObj.state == "Starting", etc.
+		else { //jsonObj.state == "Starting", "Creating", ~~~ 	
+			if(jsonObj.state != 'Creating')
+			    buildActionLinkForDetailsTab("Destroy Instance", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
+			    
 			//instanceTemplate.find("#vm_action_start, #vm_action_stop, #vm_action_reboot, #vm_action_attach_iso, #vm_action_detach_iso, #vm_action_reset_password, #vm_action_change_service").removeClass().addClass("vmaction_links_off");
 			buildActionLinkForDetailsTab("Change Name", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
 		    buildActionLinkForDetailsTab("Change Group", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
-						
-			if(jsonObj.state != 'Creating')
-			    buildActionLinkForDetailsTab("Destroy Instance", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
+									
+			if (jsonObj.haenable =='true') 	
+                buildActionLinkForDetailsTab("Disable HA", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
+	        else 		
+		        buildActionLinkForDetailsTab("Enable HA", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);	
 		}
 		//to hide view console in details tab....(to-do)
-	}    
-    //???    
+	}       
 }
 
 function vmJsonToVolumeTab(jsonObj) {
