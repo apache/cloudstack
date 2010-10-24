@@ -74,7 +74,7 @@ function afterLoadDiskOfferingJSP() {
 					success: function(json) {						    
 					    var item = json.creatediskofferingresponse;							
 						diskOfferingToMidmenu(item, $midmenuItem1);	
-						bindClickToMidMenu($midmenuItem1, diskOfferingToRigntPanel, getMidmenuId);  
+						bindClickToMidMenu($midmenuItem1, diskOfferingToRightPanel, getMidmenuId);  
 						afterAddingMidMenuItem($midmenuItem1, true);						
 					},			
                     error: function(XMLHttpResponse) {		                   
@@ -124,7 +124,7 @@ function doUpdateDiskOffering() {
 		    });		   
 		    var $midmenuItem1 = $("#"+getMidmenuId(jsonObj));		   
 		    diskOfferingToMidmenu(jsonObj, $midmenuItem1);
-		    diskOfferingToRigntPanel($midmenuItem1);		  
+		    diskOfferingToRightPanel($midmenuItem1);		  
 		}
 	});
 }
@@ -140,7 +140,7 @@ function diskOfferingToMidmenu(jsonObj, $midmenuItem1) {
     $midmenuItem1.find("#second_row").text(convertBytes(jsonObj.disksize));  
 }
 
-function diskOfferingToRigntPanel($midmenuItem1) {
+function diskOfferingToRightPanel($midmenuItem1) {
     diskOfferingJsonToDetailsTab($midmenuItem1);   
 }
 

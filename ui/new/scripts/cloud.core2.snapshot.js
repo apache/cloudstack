@@ -58,7 +58,7 @@ function snapshotToMidmenu(jsonObj, $midmenuItem1) {
     $midmenuItem1.find("#second_row").text(fromdb(jsonObj.volumename).substring(0,25));    
 }
 
-function snapshotToRigntPanel($midmenuItem1) {    
+function snapshotToRightPanel($midmenuItem1) {    
     snapshotJsonToDetailsTab($midmenuItem1);   
 }
 

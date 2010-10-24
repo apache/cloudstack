@@ -93,14 +93,14 @@ function afterLoadTemplateJSP() {
 					success: function(json) {	
 						var items = json.registertemplateresponse.template;				       
 				        templateToMidmenu(items[0], $midmenuItem1);
-						bindClickToMidMenu($midmenuItem1, templateToRigntPanel, templateGetMidmenuId);  
+						bindClickToMidMenu($midmenuItem1, templateToRightPanel, templateGetMidmenuId);  
 						afterAddingMidMenuItem($midmenuItem1, true);
 						                        
                         if(items.length > 1) {                               
                             for(var i=1; i<items.length; i++) {   
                                 var $midmenuItem2 = $("#midmenu_item").clone();
                                 templateToMidmenu(items[i], $midmenuItem2);
-                                bindClickToMidMenu($midmenuItem2, templateToRigntPanel, templateGetMidmenuId); 
+                                bindClickToMidMenu($midmenuItem2, templateToRightPanel, templateGetMidmenuId); 
                                 $("#midmenu_container").append($midmenuItem2.show());
                             }                                    
                         }  	                  			                  				
@@ -225,7 +225,7 @@ function templateToMidmenu(jsonObj, $midmenuItem1) {
     $midmenuItem1.find("#second_row").text(fromdb(jsonObj.zonename).substring(0,25));   
 }
 
-function templateToRigntPanel($midmenuItem1) {   
+function templateToRightPanel($midmenuItem1) {   
     templateJsonToDetailsTab($midmenuItem1);   
 }
 

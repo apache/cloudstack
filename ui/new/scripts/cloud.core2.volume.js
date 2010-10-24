@@ -143,7 +143,7 @@ function afterLoadVolumeJSP() {
 									    if (result.jobstatus == 1) {
 										    // Succeeded										   
 										    volumeToMidmenu(result.volume[0], $midmenuItem1);
-						                    bindClickToMidMenu($midmenuItem1, volumeToRigntPanel, getMidmenuId);  
+						                    bindClickToMidMenu($midmenuItem1, volumeToRightPanel, getMidmenuId);  
 						                    afterAddingMidMenuItem($midmenuItem1, true);	         
 									    } else if (result.jobstatus == 2) {
 									        handleAsyncJobFailInMidMenu(result.jobresult, $midmenuItem1);											   				    
@@ -400,7 +400,7 @@ function volumeToMidmenu(jsonObj, $midmenuItem1) {
     $midmenuItem1.find("#second_row").text(jsonObj.type.substring(0,25));  
 }
 
-function volumeToRigntPanel($midmenuItem1) {   
+function volumeToRightPanel($midmenuItem1) {   
     volumeJsonToDetailsTab($midmenuItem1);  
     var jsonObj = $midmenuItem1.data("jsonObj");  
     volumeJsonToSnapshotTab(jsonObj);
@@ -881,7 +881,7 @@ var volumeSnapshotActionMap = {
             var $midmenuItem1 = $("#midmenu_item").clone();
             $("#midmenu_container").append($midmenuItem1.show());
             volumeToMidmenu(jsonObj, $midmenuItem1);
-			bindClickToMidMenu($midmenuItem1, volumeToRigntPanel);  
+			bindClickToMidMenu($midmenuItem1, volumeToRightPanel);  
 			*/
         }
     }   

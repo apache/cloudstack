@@ -57,7 +57,7 @@ function doUpdateGlobalSetting() {
 		    });		   
 		    var $midmenuItem1 = $("#"+globalSettingGetMidmenuId(jsonObj));		   
 		    globalSettingToMidmenu(jsonObj, $midmenuItem1);
-		    globalSettingToRigntPanel($midmenuItem1);		        
+		    globalSettingToRightPanel($midmenuItem1);		        
 		    	    
 		    $("#dialog_alert_restart_management_server").dialog("open");
 	    }
@@ -81,7 +81,7 @@ function globalSettingToMidmenu(jsonObj, $midmenuItem1) {
     $midmenuItem1.find("#second_row").text(fromdb(jsonObj.value).substring(0,25));  
 }
 
-function globalSettingToRigntPanel($midmenuItem1) {
+function globalSettingToRightPanel($midmenuItem1) {
     globalSettingJsonToDetailsTab($midmenuItem1);   
 }
 

@@ -36,7 +36,7 @@ function eventToMidmenu(jsonObj, $midmenuItem1) {
     $midmenuItem1.find("#second_row").text(jsonObj.type.substring(0,25));  
 }
 
-function eventToRigntPanel($midmenuItem1) {  
+function eventToRightPanel($midmenuItem1) {  
     eventJsonToDetailsTab($midmenuItem1);   
 }
 

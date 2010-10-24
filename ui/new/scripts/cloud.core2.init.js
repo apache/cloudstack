@@ -65,24 +65,24 @@ $(document).ready(function() {
 	
 	// Setup 2nd level navigation
 	
-    bindAndListMidMenuItems($("#leftmenu_event"), "listEvents", "listeventsresponse", "event", "jsp/event.jsp", afterLoadEventJSP, eventToMidmenu, eventToRigntPanel, getMidmenuId, false);
-    bindAndListMidMenuItems($("#leftmenu_alert"), "listAlerts", "listalertsresponse", "alert", "jsp/alert.jsp", afterLoadAlertJSP, alertToMidmenu, alertToRigntPanel, getMidmenuId, false);
-    bindAndListMidMenuItems($("#leftmenu_volume"), "listVolumes", "listvolumesresponse", "volume", "jsp/volume.jsp", afterLoadVolumeJSP, volumeToMidmenu, volumeToRigntPanel, getMidmenuId, false);
-    bindAndListMidMenuItems($("#leftmenu_snapshot"), "listSnapshots", "listsnapshotsresponse", "snapshot", "jsp/snapshot.jsp", afterLoadSnapshotJSP, snapshotToMidmenu, snapshotToRigntPanel, getMidmenuId, false);
-    bindAndListMidMenuItems($("#leftmenu_ip"), "listPublicIpAddresses", "listpublicipaddressesresponse", "publicipaddress", "jsp/ipaddress.jsp", afterLoadIpJSP, ipToMidmenu, ipToRigntPanel, ipGetMidmenuId, false);
+    bindAndListMidMenuItems($("#leftmenu_event"), "listEvents", "listeventsresponse", "event", "jsp/event.jsp", afterLoadEventJSP, eventToMidmenu, eventToRightPanel, getMidmenuId, false);
+    bindAndListMidMenuItems($("#leftmenu_alert"), "listAlerts", "listalertsresponse", "alert", "jsp/alert.jsp", afterLoadAlertJSP, alertToMidmenu, alertToRightPanel, getMidmenuId, false);
+    bindAndListMidMenuItems($("#leftmenu_volume"), "listVolumes", "listvolumesresponse", "volume", "jsp/volume.jsp", afterLoadVolumeJSP, volumeToMidmenu, volumeToRightPanel, getMidmenuId, false);
+    bindAndListMidMenuItems($("#leftmenu_snapshot"), "listSnapshots", "listsnapshotsresponse", "snapshot", "jsp/snapshot.jsp", afterLoadSnapshotJSP, snapshotToMidmenu, snapshotToRightPanel, getMidmenuId, false);
+    bindAndListMidMenuItems($("#leftmenu_ip"), "listPublicIpAddresses", "listpublicipaddressesresponse", "publicipaddress", "jsp/ipaddress.jsp", afterLoadIpJSP, ipToMidmenu, ipToRightPanel, ipGetMidmenuId, false);
     //bindAndListMidMenuItems("leftmenu_router", "listRouters", "listroutersresponse", "router", "jsp/router.jsp", afterLoadRouterJSP, routerToMidmenu, routerToRightPanel, getMidmenuId, false);
       
-    bindAndListMidMenuItems($("#leftmenu_submenu_my_template"), "listTemplates&templatefilter=self", "listtemplatesresponse", "template", "jsp/template.jsp", afterLoadTemplateJSP, templateToMidmenu, templateToRigntPanel, templateGetMidmenuId, false);
-    bindAndListMidMenuItems($("#leftmenu_submenu_featured_template"), "listTemplates&templatefilter=featured", "listtemplatesresponse", "template", "jsp/template.jsp", afterLoadTemplateJSP, templateToMidmenu, templateToRigntPanel, templateGetMidmenuId, false);
-    bindAndListMidMenuItems($("#leftmenu_submenu_community_template"), "listTemplates&templatefilter=community", "listtemplatesresponse", "template", "jsp/template.jsp", afterLoadTemplateJSP, templateToMidmenu, templateToRigntPanel, templateGetMidmenuId, false);
+    bindAndListMidMenuItems($("#leftmenu_submenu_my_template"), "listTemplates&templatefilter=self", "listtemplatesresponse", "template", "jsp/template.jsp", afterLoadTemplateJSP, templateToMidmenu, templateToRightPanel, templateGetMidmenuId, false);
+    bindAndListMidMenuItems($("#leftmenu_submenu_featured_template"), "listTemplates&templatefilter=featured", "listtemplatesresponse", "template", "jsp/template.jsp", afterLoadTemplateJSP, templateToMidmenu, templateToRightPanel, templateGetMidmenuId, false);
+    bindAndListMidMenuItems($("#leftmenu_submenu_community_template"), "listTemplates&templatefilter=community", "listtemplatesresponse", "template", "jsp/template.jsp", afterLoadTemplateJSP, templateToMidmenu, templateToRightPanel, templateGetMidmenuId, false);
     
     bindAndListMidMenuItems($("#leftmenu_submenu_my_iso"), "listIsos&isofilter=self", "listisosresponse", "iso", "jsp/iso.jsp", afterLoadIsoJSP, isoToMidmenu, isoToRightPanel, isoGetMidmenuId, false);
     bindAndListMidMenuItems($("#leftmenu_submenu_featured_iso"), "listIsos&isofilter=featured", "listisosresponse", "iso", "jsp/iso.jsp", afterLoadIsoJSP, isoToMidmenu, isoToRightPanel, isoGetMidmenuId, false);
     bindAndListMidMenuItems($("#leftmenu_submenu_community_iso"), "listIsos&isofilter=community", "listisosresponse", "iso", "jsp/iso.jsp", afterLoadIsoJSP, isoToMidmenu, isoToRightPanel, isoGetMidmenuId, false);
     
     bindAndListMidMenuItems($("#leftmenu_service_offering"), "listServiceOfferings", "listserviceofferingsresponse", "serviceoffering", "jsp/serviceoffering.jsp", afterLoadServiceOfferingJSP, serviceOfferingToMidmenu, serviceOfferingToRightPanel, getMidmenuId, false); 
-    bindAndListMidMenuItems($("#leftmenu_disk_offering"), "listDiskOfferings", "listdiskofferingsresponse", "diskoffering", "jsp/diskoffering.jsp", afterLoadDiskOfferingJSP, diskOfferingToMidmenu, diskOfferingToRigntPanel, getMidmenuId, false); 
-    bindAndListMidMenuItems($("#leftmenu_global_setting"), "listConfigurations", "listconfigurationsresponse", "configuration", "jsp/globalsetting.jsp", afterLoadGlobalSettingJSP, globalSettingToMidmenu, globalSettingToRigntPanel, globalSettingGetMidmenuId, false); 
+    bindAndListMidMenuItems($("#leftmenu_disk_offering"), "listDiskOfferings", "listdiskofferingsresponse", "diskoffering", "jsp/diskoffering.jsp", afterLoadDiskOfferingJSP, diskOfferingToMidmenu, diskOfferingToRightPanel, getMidmenuId, false); 
+    bindAndListMidMenuItems($("#leftmenu_global_setting"), "listConfigurations", "listconfigurationsresponse", "configuration", "jsp/globalsetting.jsp", afterLoadGlobalSettingJSP, globalSettingToMidmenu, globalSettingToRightPanel, globalSettingGetMidmenuId, false); 
     
     $("#leftmenu_instances").bind("click", function(event) {
 		selectLeftMenu($(this), true);		

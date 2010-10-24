@@ -62,7 +62,7 @@ function afterLoadIpJSP() {
 					    var item = json.associateipaddressresponse;	
 					    //$("#dialog_info").html("<p>The IP address <b>"+items[0].ipaddress+"</b> has been assigned to your account</p>").dialog("open");	
 					    ipToMidmenu(item, $midmenuItem1);
-						bindClickToMidMenu($midmenuItem1, ipToRigntPanel, ipGetMidmenuId);  
+						bindClickToMidMenu($midmenuItem1, ipToRightPanel, ipGetMidmenuId);  
 						afterAddingMidMenuItem($midmenuItem1, true);	
 	            				
 					},
@@ -209,7 +209,7 @@ function isIpManageable(domainid, account) {
         return false;
 }    
 
-function ipToRigntPanel($midmenuItem1) {       
+function ipToRightPanel($midmenuItem1) {       
     var ipObj = $midmenuItem1.data("jsonObj");
     
     //Details tab

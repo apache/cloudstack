@@ -27,7 +27,7 @@ function alertToMidmenu(jsonObj, $midmenuItem1) {
     $midmenuItem1.find("#second_row").text(jsonObj.type.substring(0,25)); 
 }
 
-function alertToRigntPanel($midmenuItem1) {   
+function alertToRightPanel($midmenuItem1) {   
     alertJsonToDetailsTab($midmenuItem1);   
 }
 
