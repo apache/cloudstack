@@ -81,7 +81,7 @@ function afterLoadInstanceJSP() {
         }
         if(itemCounts == 0) {
             $("#dialog_info_please_select_one_item_in_middle_menu").dialog("open");		
-            return;
+            return false;
         }        
                         	                   
         for(var id in selectedItemsInMidMenu) {	
@@ -92,6 +92,45 @@ function afterLoadInstanceJSP() {
                 asyncJobResponse: "startvirtualmachineresponse",   
                 afterActionSeccessFn: function(json, $midmenuItem1, id) {                    
                     var jsonObj = json.queryasyncjobresultresponse.jobresult.startvirtualmachineresponse;      
+                    vmToMidmenu(jsonObj, $midmenuItem1);                                     
+                }
+            }                                     
+            doActionForMidMenu(id, apiInfo, apiCommand); 	
+        }   
+        
+        selectedItemsInMidMenu = {}; //clear selected items for action	                          
+        return false;        
+    }); 	
+
+    //Stop VM button 
+    $("#midmenu_stopvm_link").show();   
+    $("#midmenu_stopvm_link").bind("click", function(event) {            
+        var itemCounts = 0;
+        for(var id in selectedItemsInMidMenu) {
+            itemCounts ++;
+        }
+        if(itemCounts == 0) {
+            $("#dialog_info_please_select_one_item_in_middle_menu").dialog("open");		
+            return false;
+        }        
+                        	                   
+        for(var id in selectedItemsInMidMenu) {	
+            var apiCommand = "command=stopVirtualMachine&id="+id;  
+            var apiInfo = {
+                label: "Stop Instance",
+                isAsyncJob: true,
+                asyncJobResponse: "stopvirtualmachineresponse",   
+                afterActionSeccessFn: function(json, $midmenuItem1, id) {  
+                    //call listVirtualMachine to get embedded object until bug 6486 ("StopVirtualMachine API should return an embedded object on success") is fixed.
+                    var jsonObj;
+                    $.ajax({
+                        data: createURL("command=listVirtualMachines&id="+id),
+                        dataType: "json",
+                        async: false,
+                        success: function(json) {                    
+                            jsonObj = json.listvirtualmachinesresponse.virtualmachine[0];                    
+                        }
+                    });                      
                     vmToMidmenu(jsonObj, $midmenuItem1);                                     
                 }
             }                                     
