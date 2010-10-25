@@ -402,11 +402,11 @@ function zoneJsonToNetworkTab(jsonObj) {
 				for (var i = 0; i < items.length; i++) {	
 				    var item = items[i];
 				    					   
-				    var $template1;
-				    if(item.forvirtualnetwork == "false") 
-				        $template1 = $("#direct_vlan_template").clone(); 
-				    else
-				    	$template1 = $("#virtual_vlan_template").clone();  					    
+				    var $template1 = $("#vlan_template").clone(); 							   
+				    if(item.forvirtualnetwork == false)  //direct
+				        $template1.find("#vlan_type_icon").removeClass("virtual").addClass("direct");
+				    else  //virtual
+				    	$template1.find("#vlan_type_icon").removeClass("direct").addClass("virtual");				    
 				    
 				    vlanJsonToTemplate(item, $template1);
 				    $vlanContainer.append($template1.show());											
@@ -884,12 +884,12 @@ function initAddVLANButton($midmenuAdd2Link) {
 				var netmask = trim(thisDialog.find("#add_publicip_vlan_netmask").val());
 				var startip = trim(thisDialog.find("#add_publicip_vlan_startip").val());
 				var endip = trim(thisDialog.find("#add_publicip_vlan_endip").val());					
-																		
-				var $template1;
-			    if(type == "false") //direct
-			        $template1 = $("#direct_vlan_template").clone(); 
-			    else  //public
-			    	$template1 = $("#virtual_vlan_template").clone(); 	
+								
+				var $template1 = $("#vlan_template").clone(); 							   
+				if(type == "false") //direct  
+				    $template1.find("#vlan_type_icon").removeClass("virtual").addClass("direct");
+				else  //virtual
+				  	$template1.find("#vlan_type_icon").removeClass("direct").addClass("virtual");	
 				
 				if($vlanContainer != null)
 				    $vlanContainer.prepend($template1.show());	

@@ -1000,12 +1000,12 @@
 <!-- Add VLAN IP Range Dialog for zone (end) -->
 
 <!-- Add VLAN IP Range button -->
-	<div class="networkswitch_vlanadd">
-    	<div class="networkswitch_vlan_addbutton"></div>
-	</div>
+<div id="add_vlan_button" class="networkswitch_vlanadd" style="display:none">
+    <div class="networkswitch_vlan_addbutton"></div>
+</div>
 
-<!-- Direct VLAN Template (begin) -->
-<div class="networkswitch_vlanpanel" id="direct_vlan_template" style="display: block;">
+<!-- VLAN Template (begin) -->
+<div class="networkswitch_vlanpanel" id="vlan_template" style="display:none;">
 
     <div class="networkswitch_vlanconnect">
     	<div class="networkswitch_closeicon"></div>
@@ -1035,35 +1035,12 @@
                 <span id="ip_range">n.n.n.n - m.m.m.m</span>
             </div>
         </div>
-        <div class="networkswitch_typeicon direct">
-        </div>
-        
+        <div id="vlan_type_icon" class="networkswitch_typeicon">
+        </div>        
        
     </div>
 </div>
-<!-- Direct VLAN Template (end) -->
-<!-- Public VLAN Template (begin) -->
-<div class="networkswitch_vlanpanel" id="virtual_vlan_template" style="display: none">
-    <div class="networkswitch_vlanconnect">
-        <div class="networkswitch_vlan_infoicon">
-        </div>
-        <div class="networkswitch_vlan_detailsbox">
-            <div class="networkswitch_vlan_detailsbox_textbox">
-                <div class="networkswitch_vlan_detailsbox_textbox_label">
-                    VLAN:</div>
-                <span id="vlan_id">n</span>
-            </div>
-            <div class="networkswitch_vlan_detailsbox_textbox">
-                <div class="networkswitch_vlan_detailsbox_textbox_label">
-                     <%=t.t("ip.address.range")%>:</div>
-                <span id="ip_range">n.n.n.n - m.m.m.m</span>
-            </div>
-        </div>
-        <div class="networkswitch_typeicon virtual">
-        </div>
-    </div>
-</div>
-<!-- Public VLAN Template (begin) -->
+<!-- VLAN Template (end) -->
 
 
 <!--  secondary storage tab template (begin) -->
