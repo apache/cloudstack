@@ -2452,7 +2452,7 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
                         + rule.getPrivatePort() + "] " + rule.getProtocol();
             } else {
                 level = EventVO.LEVEL_ERROR;
-                description = "deleted " + ruleName + " rule [" + publicIp + ":" + rule.getPublicPort() + "]->[" + rule.getPrivateIpAddress() + ":"
+                description = "Error while deleting " + ruleName + " rule [" + publicIp + ":" + rule.getPublicPort() + "]->[" + rule.getPrivateIpAddress() + ":"
                         + rule.getPrivatePort() + "] " + rule.getProtocol();
             }
             EventUtils.saveEvent(userId, ipAddress.getAccountId(), level, type, description);
