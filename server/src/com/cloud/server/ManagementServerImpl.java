@@ -300,6 +300,7 @@ import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.InstanceGroupDao;
@@ -6869,14 +6870,26 @@ public class ManagementServerImpl implements ManagementServer {
 
     	if (uploadStatus) {
     		//certficate uploaded to db successfully
-    		//send the certificate to the dom0
     		
     		//get a list of all hosts from host table
     		List<HostVO> hosts = _hostDao.listAll();
     		
+    		List<VMInstanceVO> consoleProxyList = new ArrayList<VMInstanceVO>();
+    		
     		//find the console proxies, and send the command to them
     		for(HostVO host : hosts) {
+    			//find corresponding vms for this host
+    			List<VMInstanceVO> vmList = _vmInstanceDao.listByHostId(host.getId());
+    			
+    			for(VMInstanceVO vm : vmList){
+    				if(VirtualMachineName.isValidConsoleProxyName(vm.getInstanceName())){
+    					consoleProxyList.add(vm);
+    				}
+    			}
     		}
+    		    		
+    		//now restart each of these proxies
+    		//restart will 
     	}
     	
     	return false;
