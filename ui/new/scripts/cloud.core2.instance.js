@@ -1190,7 +1190,7 @@ function vmJsonToDetailsTab($midmenuItem1){
     $detailsTab.find("#group").text(fromdb(jsonObj.group));	
     
     setBooleanField(jsonObj.haenable, $detailsTab.find("#haenable"));	
-    setBooleanField((jsonObj.isoid != null && jsonObj.isoid.length > 0), $detailsTab.find("#iso"));	
+    setBooleanField((jsonObj.isoid != null), $detailsTab.find("#iso"));	
       
     //actions ***
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
