@@ -285,12 +285,17 @@ function buildActionLinkForMidMenu(label, actionMap, $actionMenu) {
     var $listItem = $("#action_list_item_middle_menu").clone();
     $actionMenu.find("#action_list").append($listItem.show());
     var $link = $listItem.find("#link").text(label);
+    $link.data("apiInfo", apiInfo);
+    
+    /*
     $link.data("label", label);	  
-    $link.data("api", apiInfo.api);				                 
+    $link.data("api",apiInfo .api);				                 
     $link.data("isAsyncJob", apiInfo.isAsyncJob);
     $link.data("asyncJobResponse", apiInfo.asyncJobResponse);		     
     $link.data("afterActionSeccessFn", apiInfo.afterActionSeccessFn);
     $link.data("dialogBeforeActionFn", apiInfo.dialogBeforeActionFn);
+    */
+    
     $link.bind("click", function(event) {	
         $actionMenu.hide();    	 
                 
@@ -308,11 +313,11 @@ function buildActionLinkForMidMenu(label, actionMap, $actionMenu) {
         if(dialogBeforeActionFn == null) {		                   
             for(var id in selectedItemsInMidMenu) {	
                 var apiCommand = "command="+$actionLink.data("api")+"&id="+id;                      
-                doActionForMidMenu(id, $actionLink, apiCommand); 	
+                doActionForMidMenu(id, apiInfo, apiCommand); 	
             }
         }
         else {
-            dialogBeforeActionFn($actionLink, selectedItemsInMidMenu);	
+            dialogBeforeActionFn(apiInfo, selectedItemsInMidMenu);	
             
         }        
         selectedItemsInMidMenu = {}; //clear selected items for action	                          
@@ -320,11 +325,11 @@ function buildActionLinkForMidMenu(label, actionMap, $actionMenu) {
     });  
 } 
 
-function doActionForMidMenu(id, $actionLink, apiCommand) {   
-    var label = $actionLink.data("label");			           
-    var isAsyncJob = $actionLink.data("isAsyncJob");
-    var asyncJobResponse = $actionLink.data("asyncJobResponse");	
-    var afterActionSeccessFn = $actionLink.data("afterActionSeccessFn");	   
+function doActionForMidMenu(id, apiInfo, apiCommand) {   
+    var label = apiInfo.label;			           
+    var isAsyncJob = apiInfo.isAsyncJob;
+    var asyncJobResponse = apiInfo.asyncJobResponse;	
+    var afterActionSeccessFn = apiInfo.afterActionSeccessFn;	   
         
     var $midmenuItem1 = $("#midmenuItem_"+id);	
     $midmenuItem1.find("#content").removeClass("selected").addClass("inaction");                          
@@ -357,7 +362,7 @@ function doActionForMidMenu(id, $actionLink, apiCommand) {
 			                        if (result.jobstatus == 1) { // Succeeded  
 			                            $midmenuItem1.find("#info_icon").removeClass("error").show();
 			                            $midmenuItem1.data("afterActionInfo", (label + " action succeeded.")); 			                            
-			                            afterActionSeccessFn(json, $midmenuItem1);  			                            
+			                            afterActionSeccessFn(json, $midmenuItem1, id);  			                            
 			                        } else if (result.jobstatus == 2) { // Failed	
 			                            $midmenuItem1.find("#info_icon").addClass("error").show();
 			                            $midmenuItem1.data("afterActionInfo", (label + " action failed. Reason: " + fromdb(result.jobresult)));    
@@ -391,7 +396,7 @@ function doActionForMidMenu(id, $actionLink, apiCommand) {
 				$midmenuItem1.find("#spinning_wheel").hide();				
 				$midmenuItem1.find("#info_icon").removeClass("error").show();
 			    $midmenuItem1.data("afterActionInfo", (label + " action succeeded.")); 			
-				afterActionSeccessFn(json, $midmenuItem1); 		
+				afterActionSeccessFn(json, $midmenuItem1, id); 		
 	        },
             error: function(XMLHttpResponse) {	                
 		        handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1);    

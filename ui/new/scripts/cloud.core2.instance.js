@@ -61,16 +61,58 @@ function afterLoadInstanceJSP() {
     $("#midmenu_add_link").find("#label").text("Add VM"); 
     $("#midmenu_add_link").show(); 
 		        
-    //action menu	        
+    //middle menu actions
+    /*        
     $("#midmenu_action_link").show();
     $("#action_menu #action_list").empty();		        
     for(var label in vmActionMapForMidMenu) 				            
         buildActionLinkForMidMenu(label, vmActionMapForMidMenu, $("#action_menu"));	
+    */
     
     if (isAdmin() || isDomainAdmin())
         $("#right_panel_content").find("#tab_router,#tab_router").show();
+     
+    //Start VM button 
+    $("#midmenu_startvm_link").show();   
+    $("#midmenu_startvm_link").bind("click", function(event) {            
+        var itemCounts = 0;
+        for(var id in selectedItemsInMidMenu) {
+            itemCounts ++;
+        }
+        if(itemCounts == 0) {
+            $("#dialog_info_please_select_one_item_in_middle_menu").dialog("open");		
+            return;
+        }        
+                        	                   
+        for(var id in selectedItemsInMidMenu) {	
+            var apiCommand = "command=startVirtualMachine&id="+id;  
+            var apiInfo = {
+                label: "Start Instance",
+                isAsyncJob: true,
+                asyncJobResponse: "startvirtualmachineresponse",   
+                afterActionSeccessFn: function(json, $midmenuItem1, id) {                    
+                    var jsonObj = json.queryasyncjobresultresponse.jobresult.startvirtualmachineresponse;      
+                    vmToMidmenu(jsonObj, $midmenuItem1);
+                    vmToRightPanel($midmenuItem1);
+                }
+            }                                     
+            doActionForMidMenu(id, apiInfo, apiCommand); 	
+        }   
         
-   	initDialog("dialog_detach_iso_from_vm");       	
+        selectedItemsInMidMenu = {}; //clear selected items for action	                          
+        return false;        
+    }); 	
+
+    // switch between different tabs 
+    var tabArray = [$("#tab_details"), $("#tab_volume"), $("#tab_statistics"), $("#tab_router")];
+    var tabContentArray = [$("#tab_content_details"), $("#tab_content_volume"), $("#tab_content_statistics"), $("#tab_content_router")];
+    switchBetweenDifferentTabs(tabArray, tabContentArray);       
+    
+    //initialize VM Wizard    
+    initVMWizard();       
+    
+    // dialogs
+    initDialog("dialog_detach_iso_from_vm");       	
    	initDialog("dialog_attach_iso");  
     initDialog("dialog_change_name"); 
     initDialog("dialog_change_group"); 
@@ -79,18 +121,7 @@ function afterLoadInstanceJSP() {
     initDialog("dialog_confirmation_enable_ha");  
     initDialog("dialog_confirmation_disable_ha");            
     initDialog("dialog_create_template", 400);  
-
-    //***** switch between different tabs (begin) ********************************************************************
-    var tabArray = [$("#tab_details"), $("#tab_volume"), $("#tab_statistics"), $("#tab_router")];
-    var tabContentArray = [$("#tab_content_details"), $("#tab_content_volume"), $("#tab_content_statistics"), $("#tab_content_router")];
-    switchBetweenDifferentTabs(tabArray, tabContentArray);       
-    //***** switch between different tabs (end) **********************************************************************
-    
-    //***** VM Wizard (begin) ******************************************************************************
-    initVMWizard();    
-    //***** VM Wizard (end) ********************************************************************************
-    
-    //***** Volume tab (begin) *****************************************************************************         
+         
     $.ajax({
         data: createURL("command=listOsTypes&response=json"),
 	    dataType: "json",
