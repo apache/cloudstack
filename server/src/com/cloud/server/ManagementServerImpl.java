@@ -6891,7 +6891,6 @@ public class ManagementServerImpl implements ManagementServer {
 	    		UpdateCertificateCommand certCmd = new UpdateCertificateCommand(_certDao.findById(certVOId).getCertificate());
 	    		try {
 					Answer updateCertAns = _agentMgr.send(consoleProxy.getId(), certCmd);
-					int a = 30;
 				} catch (AgentUnavailableException e) {
 					s_logger.warn("Unable to send command to the console proxy resource", e);
 				} catch (OperationTimedoutException e) {
