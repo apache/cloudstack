@@ -18,6 +18,7 @@
 package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
+import org.hamcrest.core.Is;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
@@ -26,10 +27,12 @@ import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.response.IsoVmResponse;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
+import com.cloud.vm.VMInstanceVO;
 
 @Implementation(method="attachIso", manager=Manager.TemplateManager, description="Attaches an ISO to a virtual machine.")
 public class AttachIsoCmd extends BaseAsyncCmd {
@@ -90,17 +93,27 @@ public class AttachIsoCmd extends BaseAsyncCmd {
     }
 
     @Override @SuppressWarnings("unchecked")
-    public SuccessResponse getResponse() {
-        SuccessResponse response = new SuccessResponse();
+    public IsoVmResponse getResponse() {
         Boolean responseObject = (Boolean)getResponseObject();
       
-        if (responseObject != null) {
-        	response.setSuccess(responseObject);
+        if (responseObject != null && responseObject != false) {
+            IsoVmResponse response = new IsoVmResponse();
+            VMTemplateVO iso = ApiDBUtils.findTemplateById(id);
+            VMInstanceVO vmInstance = ApiDBUtils.findVMInstanceById(virtualMachineId);
+            
+            response.setId(id);
+            response.setName(iso.getName());
+            response.setDisplayText(iso.getDisplayText());
+            response.setOsTypeId(iso.getGuestOSId());
+            response.setOsTypeName(ApiDBUtils.findGuestOSById(iso.getGuestOSId()).getName());
+            response.setVirtualMachineId(virtualMachineId);
+            response.setVirtualMachineName(vmInstance.getName());
+            response.setVirtualMachineState(vmInstance.getState().toString());            
+            response.setResponseName(getName());
+            return response;
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to attach iso");
         }
-
-        response.setResponseName(getName());
-        return response;
+        
     }
 }
