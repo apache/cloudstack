@@ -316,6 +316,7 @@ long milliseconds = new Date().getTime();
                 <!-- Mid Menu starts here-->
                 <div class="midmenu_panel" id="middle_menu">
                     <div class="midmenu_box" id="midmenu_container">
+                    	
                     </div>
                 </div>
                 <!-- Mid Menu ends here-->
@@ -676,7 +677,8 @@ long milliseconds = new Date().getTime();
             </div>
         </div>
     </div>
-        
+    
+    <div class="midmenu_itemheader" style="display:none;"><p>(type)</p></div>    
     <div class="midmenu_list" id="midmenu_item" style="display: none;">
         <div class="midmenu_content" id="content">
             <div class="midmenu_icons" id="icon_container" style="display: none">

@@ -2155,11 +2155,11 @@ a:hover.search_button {
 	padding:0;
 }
 
-.midmenu_titlebox {
+.midmenu_itemheader {
 	width:220px;
 	height:auto;
 	float:left;
-	background:#dadada url(../images/midmenu_titlebg.gif) repeat-x top left;
+	background:#989898 url(../images/midmenu_titlebg.gif) repeat-x top left;
 	margin:0;
 	padding:0 0 4px 0;
 }
