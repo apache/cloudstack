@@ -180,6 +180,45 @@ function afterLoadInstanceJSP() {
         return false;        
     }); 
 
+    //Destroy VM button 
+    $("#midmenu_destroyvm_link").show();   
+    $("#midmenu_destroyvm_link").bind("click", function(event) {            
+        var itemCounts = 0;
+        for(var id in selectedItemsInMidMenu) {
+            itemCounts ++;
+        }
+        if(itemCounts == 0) {
+            $("#dialog_info_please_select_one_item_in_middle_menu").dialog("open");		
+            return false;
+        }        
+                        	                   
+        for(var id in selectedItemsInMidMenu) {	
+            var apiCommand = "command=destroyVirtualMachine&id="+id;  
+            var apiInfo = {
+                label: "Destroy Instance",
+                isAsyncJob: true,
+                asyncJobResponse: "destroyvirtualmachineresponse",   
+                afterActionSeccessFn: function(json, $midmenuItem1, id) {  
+                    //call listVirtualMachine to get embedded object until bug 6041 ("DestroyVirtualMachine API should return an embedded object on success") is fixed.
+                    var jsonObj;
+                    $.ajax({
+                        data: createURL("command=listVirtualMachines&id="+id),
+                        dataType: "json",
+                        async: false,
+                        success: function(json) {                    
+                            jsonObj = json.listvirtualmachinesresponse.virtualmachine[0];                    
+                        }
+                    });                      
+                    vmToMidmenu(jsonObj, $midmenuItem1);                                     
+                }
+            }                                     
+            doActionForMidMenu(id, apiInfo, apiCommand); 	
+        }   
+        
+        selectedItemsInMidMenu = {}; //clear selected items for action	                          
+        return false;        
+    }); 	
+
     // switch between different tabs 
     var tabArray = [$("#tab_details"), $("#tab_volume"), $("#tab_statistics"), $("#tab_router")];
     var tabContentArray = [$("#tab_content_details"), $("#tab_content_volume"), $("#tab_content_statistics"), $("#tab_content_router")];

@@ -520,7 +520,7 @@ function clearMiddleMenu() {
     $("#midmenu_startvm_link").unbind("click").hide();     
     $("#midmenu_stopvm_link").unbind("click").hide(); 
     $("#midmenu_rebootvm_link").unbind("click").hide(); 
-    $("#midmenu_destoryvm_link").unbind("click").hide(); 
+    $("#midmenu_destroyvm_link").unbind("click").hide(); 
 }
 
 function clearRightPanel() {

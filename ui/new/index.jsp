@@ -249,7 +249,7 @@ long milliseconds = new Date().getTime();
                                     Reboot VM</div>
                             </div>
                         </div>
-                        <div class="actionpanel_button_wrapper" id="midmenu_destoryvm_link" style="display: none;">
+                        <div class="actionpanel_button_wrapper" id="midmenu_destroyvm_link" style="display: none;">
                             <div class="actionpanel_button">
                                 <div class="actionpanel_button_icons">
                                     <img src="images/destroyvm_actionicon.png" alt="Destroy VM" /></div>
