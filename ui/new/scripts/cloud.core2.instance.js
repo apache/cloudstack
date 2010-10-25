@@ -690,7 +690,17 @@ var vmActionMap = {
         asyncJobResponse: "rebootvirtualmachineresponse",
         inProcessText: "Rebooting Instance....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) { 
-            var jsonObj = json.queryasyncjobresultresponse.virtualmachine[0];      
+            //call listVirtualMachine to get embedded object until Bug 6751("rebootVirtualMachine API should return an embedded object") is fixed.
+            var jsonObj;
+            $.ajax({
+                data: createURL("command=listVirtualMachines&id="+id),
+                dataType: "json",
+                async: false,
+                success: function(json) {                    
+                    jsonObj = json.listvirtualmachinesresponse.virtualmachine[0];                    
+                }
+            });
+                          
             vmToMidmenu(jsonObj, $midmenuItem1);
             vmToRightPanel($midmenuItem1);
         }
