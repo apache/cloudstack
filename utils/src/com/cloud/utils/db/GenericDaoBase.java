@@ -343,15 +343,9 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
             }
 
             if (joins != null) {
-                for (JoinBuilder<SearchCriteria<?>> join : joins) {
-                    for (final Pair<Attribute, Object> value : join.getT().getValues()) {
-                        prepareAttribute(++i, pstmt, value.first(), value.second());
-                    }
-                }
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace("join search statement is " + pstmt.toString());
-                }
+                i = addJoinAttributes(i, pstmt, joins);
             }
+
             if (s_logger.isDebugEnabled() && lock != null) {
             	txn.registerLock(pstmt.toString());
             }
@@ -404,14 +398,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
             }
 
             if (joins != null) {
-                for (JoinBuilder<SearchCriteria<?>> join : joins) {
-                    for (final Pair<Attribute, Object> value : join.getT().getValues()) {
-                        prepareAttribute(++i, pstmt, value.first(), value.second());
-                    }
-                }
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace("join search statement is " + pstmt.toString());
-                }
+                i = addJoinAttributes(i, pstmt, joins);
             }
             
             ResultSet rs = pstmt.executeQuery();
@@ -636,19 +623,21 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
             return (M)rs.getObject(index);
         }
     }
-    
+
     @DB(txn=false)
-    protected int addJoinAttributes(int count, PreparedStatement pstmt, List<Ternary<SearchCriteria<?>, Attribute, Attribute>> joins) throws SQLException {
-        for (Ternary<SearchCriteria<?>, Attribute, Attribute> join : joins) {
-            for (final Pair<Attribute, Object> value : join.first().getValues()) {
+    protected int addJoinAttributes(int count, PreparedStatement pstmt, Collection<JoinBuilder<SearchCriteria<?>>> joins) throws SQLException {
+        for (JoinBuilder<SearchCriteria<?>> join : joins) {
+            for (final Pair<Attribute, Object> value : join.getT().getValues()) {
                 prepareAttribute(++count, pstmt, value.first(), value.second());
             }
         }
-        for (Ternary<SearchCriteria<?>, Attribute, Attribute> join : joins) {
-            if (join.first().getJoins() != null) {
-                count = addJoinAttributes(count, pstmt, joins);
+
+        for (JoinBuilder<SearchCriteria<?>> join : joins) {
+            if (join.getT().getJoins() != null) {
+                count = addJoinAttributes(count, pstmt, join.getT().getJoins());
             }
         }
+
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("join search statement is " + pstmt.toString());
         }
@@ -1015,31 +1004,38 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
         return sql;
     }
     
-    @DB(txn=false)
+
+    @DB(txn = false)
     protected void addJoins(StringBuilder str, Collection<JoinBuilder<SearchCriteria<?>>> joins) {
         int fromIndex = str.lastIndexOf("WHERE");
         if (fromIndex == -1) {
-        	fromIndex = str.length();
+            fromIndex = str.length();
             str.append(" WHERE ");
         } else {
             str.append(" AND ");
         }
 
-      for (JoinBuilder<SearchCriteria<?>> join : joins) {
-    	StringBuilder onClause =  new StringBuilder();
-    	onClause.append(" ").append(join.getType().getName()).append(" ").append(join.getSecondAttribute().table).append(" ON ").append(join.getFirstAttribute().table).append(".").append(join.getFirstAttribute().columnName).append("=").append(join.getSecondAttribute().table).append(".").append(join.getSecondAttribute().columnName).append(" ");
-        str.insert(fromIndex, onClause);
-        str.append(" (").append(join.getT().getWhereClause()).append(") AND ");
-        fromIndex+=onClause.length();
-      }
-    
-      str.delete(str.length() - 4, str.length());
+        for (JoinBuilder<SearchCriteria<?>> join : joins) {
+            StringBuilder onClause = new StringBuilder();
+            onClause.append(" ").append(join.getType().getName()).append(" ").append(join.getSecondAttribute().table)
+                    .append(" ON ").append(join.getFirstAttribute().table).append(".").append(join.getFirstAttribute().columnName)
+                    .append("=").append(join.getSecondAttribute().table).append(".").append(join.getSecondAttribute().columnName)
+                    .append(" ");
+            str.insert(fromIndex, onClause);
+            String whereClause = join.getT().getWhereClause();
+            if ((whereClause != null) && !"".equals(whereClause)) {
+                str.append(" (").append(whereClause).append(") AND");
+            }
+            fromIndex += onClause.length();
+        }
+
+        str.delete(str.length() - 4, str.length());
+
         for (JoinBuilder<SearchCriteria<?>> join : joins) {
             if (join.getT().getJoins() != null) {
                 addJoins(str, join.getT().getJoins());
             }
         }
-
     }
 
     @Override @DB(txn=false)

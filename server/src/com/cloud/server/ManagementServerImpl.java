@@ -128,7 +128,9 @@ import com.cloud.api.commands.StopSystemVmCmd;
 import com.cloud.api.commands.UpdateAccountCmd;
 import com.cloud.api.commands.UpdateDomainCmd;
 import com.cloud.api.commands.UpdateIPForwardingRuleCmd;
+import com.cloud.api.commands.UpdateIsoCmd;
 import com.cloud.api.commands.UpdateIsoPermissionsCmd;
+import com.cloud.api.commands.UpdateTemplateCmd;
 import com.cloud.api.commands.UpdateTemplateOrIsoCmd;
 import com.cloud.api.commands.UpdateTemplateOrIsoPermissionsCmd;
 import com.cloud.api.commands.UpdateTemplatePermissionsCmd;
@@ -222,8 +224,6 @@ import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.storage.Snapshot;
-import com.cloud.storage.Upload;
-import com.cloud.storage.Volume;
 import com.cloud.storage.Snapshot.SnapshotType;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotVO;
@@ -236,7 +236,7 @@ import com.cloud.storage.StorageStats;
 import com.cloud.storage.Upload.Type;
 import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.Volume.VolumeType;
+import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeStats;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
@@ -252,7 +252,6 @@ import com.cloud.storage.dao.UploadDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateDao.TemplateFilter;
 import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.download.DownloadMonitor;
 import com.cloud.storage.preallocatedlun.PreallocatedLunVO;
 import com.cloud.storage.preallocatedlun.dao.PreallocatedLunDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
@@ -3423,9 +3422,18 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public boolean updateTemplate(UpdateTemplateOrIsoCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+    public VMTemplateVO updateTemplate(UpdateIsoCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+        return updateTemplateOrIso(cmd);
+    }
+
+    @Override
+    public VMTemplateVO updateTemplate(UpdateTemplateCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+        return updateTemplateOrIso(cmd);
+    }
+
+    private VMTemplateVO updateTemplateOrIso(UpdateTemplateOrIsoCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
     	Long id = cmd.getId();
-    	String name = cmd.getName();
+    	String name = cmd.getTemplateName();
     	String displayText = cmd.getDisplayText();
     	String format = cmd.getFormat();
     	Long guestOSId = cmd.getOsTypeId();
@@ -3462,7 +3470,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     	boolean updateNeeded = !(name == null && displayText == null && format == null && guestOSId == null && passwordEnabled == null && bootable == null);
     	if (!updateNeeded) {
-    		return true;
+    		return template;
     	}
     	
     	template = _templateDao.createForUpdate(id);
@@ -3504,7 +3512,9 @@ public class ManagementServerImpl implements ManagementServer {
     		template.setBootable(bootable);
     	}
     	
-        return _templateDao.update(id, template);
+        _templateDao.update(id, template);
+
+        return _templateDao.findById(id);
     }
     
     @Override
@@ -5178,7 +5188,7 @@ public class ManagementServerImpl implements ManagementServer {
             sc.setParameters("accountId", accountId);
         } else if (domainId != null) {
             DomainVO domain = _domainDao.findById((Long)domainId);
-            SearchCriteria joinSearch = sc.getJoin("accountSearch");
+            SearchCriteria<?> joinSearch = sc.getJoin("accountSearch");
             joinSearch.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
         }
 
@@ -5216,9 +5226,20 @@ public class ManagementServerImpl implements ManagementServer {
 	            (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
 	}
 
-    @Override
+    @Override @DB
+    public boolean updateTemplatePermissions(UpdateTemplatePermissionsCmd cmd) throws InvalidParameterValueException,
+            PermissionDeniedException, InternalErrorException {
+        return updateTemplateOrIsoPermissions(cmd);
+    }
+
+    @Override @DB
+    public boolean updateTemplatePermissions(UpdateIsoPermissionsCmd cmd) throws InvalidParameterValueException,
+            PermissionDeniedException, InternalErrorException {
+        return updateTemplateOrIsoPermissions(cmd);
+    }
+
     @DB
-    public boolean updateTemplatePermissions(UpdateTemplateOrIsoPermissionsCmd cmd) throws InvalidParameterValueException,
+    protected boolean updateTemplateOrIsoPermissions(UpdateTemplateOrIsoPermissionsCmd cmd) throws InvalidParameterValueException,
             PermissionDeniedException, InternalErrorException {
         Transaction txn = Transaction.currentTxn();
         

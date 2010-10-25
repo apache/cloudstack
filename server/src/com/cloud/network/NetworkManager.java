@@ -144,10 +144,10 @@ public interface NetworkManager extends Manager {
     /**
      * Reboots domain router
      * @param cmd the command specifying router's id
-     * @return success or failure
+     * @return the rebooted router
      * @throws InvalidParameterValueException, PermissionDeniedException
      */
-    boolean rebootRouter(RebootRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+    DomainRouterVO rebootRouter(RebootRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
     /**
      * @param hostId get all of the virtual machine routers on a host.
      * @return collection of VirtualMachineRouter
