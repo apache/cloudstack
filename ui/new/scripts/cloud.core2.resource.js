@@ -785,22 +785,11 @@ function toSystemVMTypeText(value) {
 }
 //***** systemVM page (end) ***************************************************************************************************
 
-/*
-function afterSwitchToDetailsTab() {    
-    $("#midmenu_add2_link").unbind("click").hide(); 
-}
-function afterSwitchToNetworkTab() {    
-    initAddVLANButton($("#midmenu_add2_link"));
-}
-function afterSwitchToSecondaryStorageTab() {    
-    initAddSecondaryStorageButton($("#midmenu_add2_link"));
-}
-*/
-
 function initAddVLANButton($addButton) {
     $addButton.find("#label").text("Add VLAN");      
     $addButton.show();   
-    $addButton.unbind("click").bind("click", function(event) {        
+    $addButton.unbind("click").bind("click", function(event) {  
+        $("#zone_page").find("#tab_network").click();      
         var zoneObj = $("#zone_page").find("#tab_content_details").data("jsonObj");       
         var dialogAddVlanForZone = $("#dialog_add_vlan_for_zone");       
         dialogAddVlanForZone.find("#zone_name").text(fromdb(zoneObj.name));         
@@ -930,6 +919,7 @@ function initAddSecondaryStorageButton($addButton) {
     $addButton.find("#label").text("Add Secondary Storage");
     $addButton.show();      
     $addButton.unbind("click").bind("click", function(event) {
+        $("#zone_page").find("#tab_secondarystorage").click();    
         var zoneObj = $("#zone_page").find("#tab_content_details").data("jsonObj");       
         $("#dialog_add_secondarystorage").find("#zone_name").text(fromdb(zoneObj.name));   
    
