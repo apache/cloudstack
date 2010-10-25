@@ -162,7 +162,7 @@ public class TemplateManagerImpl implements TemplateManager {
     public VMTemplateVO registerIso(RegisterIsoCmd cmd) throws InvalidParameterValueException, IllegalArgumentException, ResourceAllocationException{
         Account account = UserContext.current().getAccount();
         Long userId = UserContext.current().getUserId();
-        String name = cmd.getName();
+        String name = cmd.getIsoName();
         String displayText = cmd.getDisplayText();
         String url = cmd.getUrl();
         Boolean isPublic = cmd.isPublic();
@@ -233,7 +233,7 @@ public class TemplateManagerImpl implements TemplateManager {
     	
         Account account = UserContext.current().getAccount();
         Long userId = UserContext.current().getUserId();
-        String name = cmd.getName();
+        String name = cmd.getTemplateName();
         String displayText = cmd.getDisplayText(); 
         Integer bits = cmd.getBits();
         Boolean passwordEnabled = cmd.isPasswordEnabled();

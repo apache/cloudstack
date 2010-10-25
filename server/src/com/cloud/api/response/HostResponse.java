@@ -113,7 +113,7 @@ public class HostResponse extends BaseResponse {
     @SerializedName("managementserverid") @Param(description="the management server ID of the host")
     private Long managementServerId;
 
-    @SerializedName("custerid") @Param(description="the cluster ID of the host")
+    @SerializedName("clusterid") @Param(description="the cluster ID of the host")
     private Long clusterId;
 
     @SerializedName("clustername") @Param(description="the cluster name of the host")
