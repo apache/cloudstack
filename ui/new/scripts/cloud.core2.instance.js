@@ -1208,7 +1208,7 @@ function vmJsonToDetailsTab($midmenuItem1){
 		buildActionLinkForDetailsTab("Reboot Instance", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
 		buildActionLinkForDetailsTab("Destroy Instance", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
 		
-		if (jsonObj.isoid != null && jsonObj.isoid.length > 0)			
+		if (jsonObj.isoid != null)			
 			buildActionLinkForDetailsTab("Detach ISO", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);		 
 		else 			
 			buildActionLinkForDetailsTab("Attach ISO", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);	
@@ -1227,7 +1227,7 @@ function vmJsonToDetailsTab($midmenuItem1){
 			buildActionLinkForDetailsTab("Start Instance", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);		    
 		    buildActionLinkForDetailsTab("Destroy Instance", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
 		    
-		    if (jsonObj.isoid != null && jsonObj.isoid.length > 0)			
+		    if (jsonObj.isoid != null)			
 			    buildActionLinkForDetailsTab("Detach ISO", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);		 
 		    else 			
 			    buildActionLinkForDetailsTab("Attach ISO", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
