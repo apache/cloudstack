@@ -69,6 +69,7 @@ public class UpdateCfgCmd extends BaseCmd {
       
         if (responseObject != null) {
         	response.setSuccess(responseObject);
+        	response.setDisplayText("Successfully updated configuration value.");
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update config");
         }
