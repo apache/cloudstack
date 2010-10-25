@@ -53,7 +53,7 @@ public class ExteralIpAddressAllocator implements IpAddrAllocator{
 	
 	@Override
 	public IpAddr getPrivateIpAddress(String macAddr, long dcId, long podId) {
-		if (this._externalIpAllocatorUrl.equalsIgnoreCase("")) {
+		if (this._externalIpAllocatorUrl == null || this._externalIpAllocatorUrl.equalsIgnoreCase("")) {
 			return new IpAddr();
 		}
 		String urlString = this._externalIpAllocatorUrl + "?command=getIpAddr&mac=" + macAddr + "&dc=" + dcId + "&pod=" + podId;

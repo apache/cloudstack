@@ -108,7 +108,7 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
         return domainRouterId;
     }
     
-    public void setDomainRouterId(long domainRouterId) {
+    public void setDomainRouterId(Long domainRouterId) {
         this.domainRouterId = domainRouterId;
     }
 
