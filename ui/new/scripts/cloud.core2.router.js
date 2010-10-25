@@ -35,7 +35,8 @@ function routerAfterDetailsTabAction(json, $midmenuItem1, id) {
     routerJsonToDetailsTab($midmenuItem1);   
 }
 
-function routerToRightPanel($midmenuItem1) {  
+function routerToRightPanel($midmenuItem1) { 
+    copyAfterActionInfoToRightPanel($midmenuItem1);
     routerJsonToDetailsTab($midmenuItem1);   
 }
 

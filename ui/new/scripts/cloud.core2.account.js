@@ -42,7 +42,8 @@ function accountToMidmenu(jsonObj, $midmenuItem1) {
     $midmenuItem1.find("#second_row").text(fromdb(jsonObj.domain).substring(0,25));   
 }
 
-function accountToRightPanel($midmenuItem1) {  
+function accountToRightPanel($midmenuItem1) { 
+    copyAfterActionInfoToRightPanel($midmenuItem1);  
     accountJsonToDetailsTab($midmenuItem1);   
 }
 

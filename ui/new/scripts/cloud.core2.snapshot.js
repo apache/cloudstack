@@ -59,6 +59,7 @@ function snapshotToMidmenu(jsonObj, $midmenuItem1) {
 }
 
 function snapshotToRightPanel($midmenuItem1) {    
+    copyAfterActionInfoToRightPanel($midmenuItem1);
     snapshotJsonToDetailsTab($midmenuItem1);   
 }
 

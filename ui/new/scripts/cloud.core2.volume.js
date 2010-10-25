@@ -400,8 +400,10 @@ function volumeToMidmenu(jsonObj, $midmenuItem1) {
     $midmenuItem1.find("#second_row").text(jsonObj.type.substring(0,25));  
 }
 
-function volumeToRightPanel($midmenuItem1) {   
+function volumeToRightPanel($midmenuItem1) {  
+    copyAfterActionInfoToRightPanel($midmenuItem1); 
     volumeJsonToDetailsTab($midmenuItem1);  
+    
     var jsonObj = $midmenuItem1.data("jsonObj");  
     volumeJsonToSnapshotTab(jsonObj);
 }

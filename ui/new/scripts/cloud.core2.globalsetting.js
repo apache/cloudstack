@@ -82,6 +82,7 @@ function globalSettingToMidmenu(jsonObj, $midmenuItem1) {
 }
 
 function globalSettingToRightPanel($midmenuItem1) {
+    copyAfterActionInfoToRightPanel($midmenuItem1);
     globalSettingJsonToDetailsTab($midmenuItem1);   
 }
 

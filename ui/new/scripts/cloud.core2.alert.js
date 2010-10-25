@@ -28,6 +28,7 @@ function alertToMidmenu(jsonObj, $midmenuItem1) {
 }
 
 function alertToRightPanel($midmenuItem1) {   
+    copyAfterActionInfoToRightPanel($midmenuItem1);
     alertJsonToDetailsTab($midmenuItem1);   
 }
 

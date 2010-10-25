@@ -225,7 +225,8 @@ function templateToMidmenu(jsonObj, $midmenuItem1) {
     $midmenuItem1.find("#second_row").text(fromdb(jsonObj.zonename).substring(0,25));   
 }
 
-function templateToRightPanel($midmenuItem1) {   
+function templateToRightPanel($midmenuItem1) {  
+    copyAfterActionInfoToRightPanel($midmenuItem1); 
     templateJsonToDetailsTab($midmenuItem1);   
 }
 

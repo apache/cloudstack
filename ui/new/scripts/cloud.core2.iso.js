@@ -169,7 +169,8 @@ function isoToMidmenu(jsonObj, $midmenuItem1) {
     $midmenuItem1.find("#second_row").text(fromdb(jsonObj.zonename).substring(0,25));  
 }
 
-function isoToRightPanel($midmenuItem1) {   
+function isoToRightPanel($midmenuItem1) {  
+    copyAfterActionInfoToRightPanel($midmenuItem1); 
     isoJsonToDetailsTab($midmenuItem1);   
 }
 
