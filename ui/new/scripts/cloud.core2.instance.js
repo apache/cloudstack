@@ -783,7 +783,16 @@ var vmActionMap = {
         }   
     },
     "Reset Password": {                
-        dialogBeforeActionFn : doResetPassword
+        isAsyncJob: true,  
+        asyncJobResponse: "resetpasswordforvirtualmachineresponse", 
+        inProcessText: "Resetting Password....",  
+        dialogBeforeActionFn : doResetPassword,
+        afterActionSeccessFn: function(json, $midmenuItem1, id) { 
+            var item = json.queryasyncjobresultresponse.jobresult.resetpasswordforvirtualmachineresponse;            
+            var $afterActionInfoContainer = $("#right_panel_content #after_action_info_container_on_top");
+		    $afterActionInfoContainer.find("#after_action_info").html("New password is <b>" + item.password + "</b>");  
+		    $afterActionInfoContainer.removeClass("errorbox").show();            
+        }
     },
     "Change Name": {
         isAsyncJob: false,     
@@ -949,78 +958,23 @@ function doResetPassword($actionLink, $detailsTab, $midmenuItem1) {
 	.dialog('option', 'buttons', { 						
 		"Yes": function() { 
 			$(this).dialog("close"); 
+						
+			var jsonObj = $midmenuItem1.data("jsonObj");				
+			if(jsonObj.passwordenabled != true) {
+			    var $afterActionInfoContainer = $("#right_panel_content #after_action_info_container_on_top");
+			    $afterActionInfoContainer.find("#after_action_info").text("Reset password failed. Reason: This instance is not using a template that has the password reset feature enabled.  If you have forgotten your root password, please contact support.");  
+			    $afterActionInfoContainer.addClass("errorbox").show();
+			    return;
+			}			
 			
-			var jsonObj = $midmenuItem1.data("jsonObj");
 			var id = jsonObj.id;
-			if(jsonObj.state != "Stopped") {				    
-		        $midmenuItem1.find("#info_icon").addClass("error").show();
-                $midmenuItem1.data("afterActionInfo", ($actionLink.data("label") + " action failed. Reason: This instance needs to be stopped before you can reset password"));  	            
-            }
-            if(jsonObj.passwordenabled != "true") {
-                $midmenuItem1.find("#info_icon").addClass("error").show();
-                $midmenuItem1.data("afterActionInfo", ($actionLink.data("label") + " action failed. Reason: This instance is not using a template that has the password reset feature enabled.  If you have forgotten your root password, please contact support."));  	            
-            }		            
-            doResetPassword2(id, $midmenuItem1);	
+			var apiCommand = "command=resetPasswordForVirtualMachine&id="+id;    
+            doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);				
 		}, 
 		"No": function() { 
 			$(this).dialog("close"); 			
 		} 
 	}).dialog("open");
-}
-
-function doResetPassword2(id, $midmenuItem1) {
-    var apiCommand = "command=resetPasswordForVirtualMachine&id="+id;    
-	               
-    $midmenuItem1.find("#content").removeClass("selected").addClass("inaction");                          
-    $midmenuItem1.find("#spinning_wheel").addClass("midmenu_addingloader").show();	
-    $midmenuItem1.find("#info_icon").hide();	
-    	            
-    $.ajax({
-        data: createURL(apiCommand),
-        dataType: "json",           
-        success: function(json) {	                	                        
-            var jobId = json.resetpasswordforvirtualmachineresponse.jobid;                  			                        
-            var timerKey = "asyncJob_" + jobId;					                       
-            $("body").everyTime(
-                10000,
-                timerKey,
-                function() {
-                    $.ajax({
-                        data: createURL("command=queryAsyncJobResult&jobId="+jobId),
-                        dataType: "json",									                    					                    
-                        success: function(json) {		                            							                       
-                            var result = json.queryasyncjobresultresponse;										                   
-                            if (result.jobstatus == 0) {
-                                return; //Job has not completed
-                            } else {											                    
-                                $("body").stopTime(timerKey);	
-                                $midmenuItem1.find("#content").removeClass("inaction");
-                                $midmenuItem1.find("#spinning_wheel").hide();			                       
-                                if (result.jobstatus == 1) { // Succeeded  
-                                    $midmenuItem1.find("#info_icon").removeClass("error").show();	
-                                    var item = result.jobresult.resetpasswordforvirtualmachineresponse;		                                		                                    
-                                    $midmenuItem1.find("#second_row").text("New password: " + item.password);  			                                   
-									var afterActionInfo = "Your password has been successfully resetted.  Your new password is : " + item.password;
-									$midmenuItem1.data("afterActionInfo", afterActionInfo); 
-                                } else if (result.jobstatus == 2) { // Failed	
-                                    $midmenuItem1.find("#info_icon").addClass("error").show();
-                                    $midmenuItem1.data("afterActionInfo", (label + " action failed. Reason: " + fromdb(result.jobresult)));    
-                                }											                    
-                            }
-                        },
-                        error: function(XMLHttpResponse) {
-                            $("body").stopTime(timerKey);		                       		                        
-                            handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1); 		                        
-                        }
-                    });
-                },
-                0
-            );
-        },
-        error: function(XMLHttpResponse) {	
-            handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1);    
-        }
-    });     
 }
 
 function doChangeName($actionLink, $detailsTab, $midmenuItem1) {  
