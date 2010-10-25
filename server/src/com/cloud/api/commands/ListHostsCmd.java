@@ -141,6 +141,7 @@ public class ListHostsCmd extends BaseListCmd {
             hostResponse.setState(host.getStatus());
             hostResponse.setIpAddress(host.getPrivateIpAddress());
             hostResponse.setVersion(host.getVersion());
+            hostResponse.setCreated(host.getCreated());
 
             GuestOSCategoryVO guestOSCategory = ApiDBUtils.getHostGuestOSCategory(host.getId());
             if (guestOSCategory != null) {

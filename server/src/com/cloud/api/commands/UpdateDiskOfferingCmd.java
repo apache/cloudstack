@@ -19,13 +19,12 @@
 package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
-import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.response.DiskOfferingResponse;
+import com.cloud.api.response.SuccessResponse;
 import com.cloud.storage.DiskOfferingVO;
 
 @Implementation(method="updateDiskOffering", manager=Manager.ConfigManager, description="Updates a disk offering.")
@@ -80,19 +79,11 @@ public class UpdateDiskOfferingCmd extends BaseCmd{
     }
     
     @SuppressWarnings("unchecked")
-    public DiskOfferingResponse getResponse() {
-        DiskOfferingResponse response = new DiskOfferingResponse();
+    public SuccessResponse getResponse() {
+        SuccessResponse response = new SuccessResponse();
         DiskOfferingVO responseObject = (DiskOfferingVO)getResponseObject();
         if (responseObject != null) {
-            response.setId(responseObject.getId());
-            response.setCreated(responseObject.getCreated());
-            response.setDiskSize(responseObject.getDiskSize());
-            response.setDisplayText(responseObject.getDisplayText());
-            response.setDomainId(responseObject.getDomainId());
-            response.setName(responseObject.getName());
-            response.setTags(responseObject.getTags());
-            response.setDomainId(ApiDBUtils.findDomainById(responseObject.getDomainId()).getId());
-            response.setDomain(ApiDBUtils.findDomainById(responseObject.getDomainId()).getName());
+            response.setSuccess(Boolean.TRUE);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update disk offering");
         }
