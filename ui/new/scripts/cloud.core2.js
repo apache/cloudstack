@@ -103,8 +103,7 @@ function doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detai
 	                        },
 	                        error: function(XMLHttpResponse) {	                            
 		                        $("body").stopTime(timerKey);		                       		                        
-		                        handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label, $afterActionInfoContainer); 	
-		                        handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1);    	                        
+		                        handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label, $afterActionInfoContainer, $midmenuItem1); 		                                             
 	                        }
                         });
                     },
@@ -112,8 +111,7 @@ function doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detai
                 );
             },
             error: function(XMLHttpResponse) {	                 
-		        handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label, $afterActionInfoContainer);  
-		        handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1);      
+		        handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label, $afterActionInfoContainer, $midmenuItem1);  		        
             }
         });     
     }     
@@ -136,15 +134,15 @@ function doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detai
 				afterActionSeccessFn(json, $midmenuItem1, id);				
 	        },
             error: function(XMLHttpResponse) {	                
-		        handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label, $afterActionInfoContainer); 
-		        handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1);       
+		        handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label, $afterActionInfoContainer, $midmenuItem1); 		       
             }        
         });
     }
     //Sync job (end) *****
 }
 
-function handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label, $afterActionInfoContainer) { 
+function handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label, $afterActionInfoContainer, $midmenuItem1) { 
+    //details tab
     $detailsTab.find("#spinning_wheel").hide();      
 		                        
     var errorMsg = "";
@@ -154,11 +152,18 @@ function handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label, $afterActi
         errorMsg = XMLHttpResponse.responseText.substring(start, end);		
     }        
    
+    var afterActionInfo;
     if(errorMsg.length > 0) 
-        $afterActionInfoContainer.find("#after_action_info").text(label + " action failed. Reason: " + fromdb(errorMsg));
+        afterActionInfo = label + " action failed. Reason: " + fromdb(errorMsg);
     else
-        $afterActionInfoContainer.find("#after_action_info").text(label + " action failed.");        
+        afterActionInfo = label + " action failed.";
+    
+    $afterActionInfoContainer.find("#after_action_info").text(afterActionInfo);         
     $afterActionInfoContainer.addClass("errorbox").show();
+    
+    //middle menu
+    $midmenuItem1.data("afterActionInfo", afterActionInfo); 	
+    $midmenuItem1.find("#info_icon").addClass("error").show();		
 }    	                
 //***** actions for details tab in right panel (end) **************************************************************************
 
