@@ -89,8 +89,10 @@ import com.cloud.api.commands.StopSystemVmCmd;
 import com.cloud.api.commands.UpdateAccountCmd;
 import com.cloud.api.commands.UpdateDomainCmd;
 import com.cloud.api.commands.UpdateIPForwardingRuleCmd;
-import com.cloud.api.commands.UpdateTemplateOrIsoCmd;
-import com.cloud.api.commands.UpdateTemplateOrIsoPermissionsCmd;
+import com.cloud.api.commands.UpdateIsoCmd;
+import com.cloud.api.commands.UpdateIsoPermissionsCmd;
+import com.cloud.api.commands.UpdateTemplateCmd;
+import com.cloud.api.commands.UpdateTemplatePermissionsCmd;
 import com.cloud.api.commands.UpdateUserCmd;
 import com.cloud.api.commands.UpdateVMGroupCmd;
 import com.cloud.api.commands.UploadCustomCertificateCmd;
@@ -595,10 +597,11 @@ public interface ManagementServer {
     /**
      * Creates a new template
      * @param cmd
-     * @return success/failure
+     * @return updated template
      * @throws InvalidParameterValueException, PermissionDeniedException
      */
-    boolean updateTemplate(UpdateTemplateOrIsoCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+    VMTemplateVO updateTemplate(UpdateIsoCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+    VMTemplateVO updateTemplate(UpdateTemplateCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
     
     /**
      * Copies a template from one secondary storage server to another
@@ -1173,7 +1176,8 @@ public interface ManagementServer {
 	boolean checkLocalStorageConfigVal(); 
 
 	boolean updateUser(UpdateUserCmd cmd) throws InvalidParameterValueException;
-	boolean updateTemplatePermissions(UpdateTemplateOrIsoPermissionsCmd cmd)throws InvalidParameterValueException, PermissionDeniedException,InternalErrorException;
+	boolean updateTemplatePermissions(UpdateTemplatePermissionsCmd cmd)throws InvalidParameterValueException, PermissionDeniedException,InternalErrorException;
+    boolean updateTemplatePermissions(UpdateIsoPermissionsCmd cmd)throws InvalidParameterValueException, PermissionDeniedException,InternalErrorException;
 	String[] createApiKeyAndSecretKey(RegisterCmd cmd);
 
 	VolumeVO findVolumeByInstanceAndDeviceId(long instanceId, long deviceId);
