@@ -7,6 +7,16 @@
     CloudResourceBundle t = CloudResourceBundle.getBundle("resources/resource", browserLocale);
 %>
 
+<!-- Loading -->
+<div style="display:none;">
+    <div class="ui-widget-overlay">
+    </div>
+    <div class="rightpanel_mainloaderbox" >
+       <div class="rightpanel_mainloader_animatedicon"></div>
+       <p>Loading &hellip; </p>
+    </div>    
+</div>
+
 <div class="main_title" id="right_panel_header">
    
     <div class="main_titleicon">
