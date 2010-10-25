@@ -92,8 +92,7 @@ function afterLoadInstanceJSP() {
                 asyncJobResponse: "startvirtualmachineresponse",   
                 afterActionSeccessFn: function(json, $midmenuItem1, id) {                    
                     var jsonObj = json.queryasyncjobresultresponse.jobresult.startvirtualmachineresponse;      
-                    vmToMidmenu(jsonObj, $midmenuItem1);
-                    vmToRightPanel($midmenuItem1);                    
+                    vmToMidmenu(jsonObj, $midmenuItem1);                                     
                 }
             }                                     
             doActionForMidMenu(id, apiInfo, apiCommand); 	

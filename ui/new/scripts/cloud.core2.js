@@ -86,17 +86,25 @@ function doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detai
 			                        $spinningWheel.hide();   			                                             
 			                        if (result.jobstatus == 1) { // Succeeded 	
 			                            $afterActionInfoContainer.find("#after_action_info").text(label + " action succeeded.");
-                                        $afterActionInfoContainer.removeClass("errorbox").show();                                         
+                                        $afterActionInfoContainer.removeClass("errorbox").show();  
+                                        
+                                        $midmenuItem1.data("afterActionInfo", (label + " action succeeded.")); 	
+                                        $midmenuItem1.find("#info_icon").removeClass("error").show();                                        
+                                                                               
                                         afterActionSeccessFn(json, $midmenuItem1, id);     
 			                        } else if (result.jobstatus == 2) { // Failed		
 			                            $afterActionInfoContainer.find("#after_action_info").text(label + " action failed. Reason: " + fromdb(result.jobresult));
-                                        $afterActionInfoContainer.addClass("errorbox").show();
+                                        $afterActionInfoContainer.addClass("errorbox").show();                                        
+                                        
+                                        $midmenuItem1.data("afterActionInfo", (label + " action failed. Reason: " + fromdb(result.jobresult))); 
+                                        $midmenuItem1.find("#info_icon").addClass("error").show();                                        
 			                        }											                    
 		                        }
 	                        },
 	                        error: function(XMLHttpResponse) {	                            
 		                        $("body").stopTime(timerKey);		                       		                        
-		                        handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label, $afterActionInfoContainer); 		                        
+		                        handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label, $afterActionInfoContainer); 	
+		                        handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1);    	                        
 	                        }
                         });
                     },
@@ -104,7 +112,8 @@ function doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detai
                 );
             },
             error: function(XMLHttpResponse) {	                 
-		        handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label, $afterActionInfoContainer);    
+		        handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label, $afterActionInfoContainer);  
+		        handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1);      
             }
         });     
     }     
@@ -119,11 +128,16 @@ function doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detai
 	        success: function(json) {	 	                  
 	            $spinningWheel.hide(); 	        
 	            $afterActionInfoContainer.find("#after_action_info").text(label + " action succeeded.");
-                $afterActionInfoContainer.removeClass("errorbox").show();  				
+                $afterActionInfoContainer.removeClass("errorbox").show(); 
+                
+                $midmenuItem1.data("afterActionInfo", (label + " action succeeded.")); 	
+                $midmenuItem1.find("#info_icon").removeClass("error").show();     
+                 				
 				afterActionSeccessFn(json, $midmenuItem1, id);				
 	        },
             error: function(XMLHttpResponse) {	                
-		        handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label, $afterActionInfoContainer);    
+		        handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label, $afterActionInfoContainer); 
+		        handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1);       
             }        
         });
     }
@@ -424,6 +438,7 @@ function handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1) {
         $midmenuItem1.find("#second_row").html("&nbsp;");     
 }  
 
+/*
 function handleAsyncJobFailInMidMenu(errorMsg, $midmenuItem1) { 
     $midmenuItem1.find("#content").removeClass("inaction");
 	$midmenuItem1.find("#spinning_wheel").hide();	
@@ -435,6 +450,8 @@ function handleAsyncJobFailInMidMenu(errorMsg, $midmenuItem1) {
     else
         $midmenuItem1.find("#second_row").html("&nbsp;");   
 }       
+*/
+
 
 /*
 If Cancel button in dialog is clicked, action won't preceed. 
@@ -457,13 +474,11 @@ function copyAfterActionInfoToRightPanel($midmenuItem1) {
          else
             $afterActionInfoContainer.removeClass("errorbox");                                        
         $afterActionInfoContainer.show();                                         
-    } 
-    /*
+    }  
     else {
         $afterActionInfoContainer.find("#after_action_info").text("");
         $afterActionInfoContainer.hide();                
-    }
-    */
+    }  
 }
                 
 //***** actions for middle menu (end) **************************************************************************
