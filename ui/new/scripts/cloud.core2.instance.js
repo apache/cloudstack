@@ -1208,15 +1208,15 @@ function vmJsonToDetailsTab($midmenuItem1){
 		buildActionLinkForDetailsTab("Reboot Instance", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
 		buildActionLinkForDetailsTab("Destroy Instance", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
 		
-		if (jsonObj.isoid != null)			
-			buildActionLinkForDetailsTab("Detach ISO", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);		 
-		else 			
-			buildActionLinkForDetailsTab("Attach ISO", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);	
+		if (jsonObj.isoid == null)	
+	        buildActionLinkForDetailsTab("Attach ISO", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
+	    else 		
+	       buildActionLinkForDetailsTab("Detach ISO", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);		
 		
 		buildActionLinkForDetailsTab("Change Name", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
 		buildActionLinkForDetailsTab("Change Group", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);						
 			
-	    if (jsonObj.haenable =='true') 	
+	    if (jsonObj.haenable == true) 	
             buildActionLinkForDetailsTab("Disable HA", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
 	    else 		
 		    buildActionLinkForDetailsTab("Enable HA", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);	
@@ -1227,17 +1227,17 @@ function vmJsonToDetailsTab($midmenuItem1){
 			buildActionLinkForDetailsTab("Start Instance", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);		    
 		    buildActionLinkForDetailsTab("Destroy Instance", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
 		    
-		    if (jsonObj.isoid != null)			
-			    buildActionLinkForDetailsTab("Detach ISO", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);		 
-		    else 			
-			    buildActionLinkForDetailsTab("Attach ISO", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
+		    if (jsonObj.isoid == null)	
+		        buildActionLinkForDetailsTab("Attach ISO", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
+		    else 		
+		       buildActionLinkForDetailsTab("Detach ISO", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);				    
 		    
 		    buildActionLinkForDetailsTab("Reset Password", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
 		    buildActionLinkForDetailsTab("Change Name", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
 		    buildActionLinkForDetailsTab("Change Service", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);	
 		    buildActionLinkForDetailsTab("Change Group", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);	
 		    
-		    if (jsonObj.haenable =='true') 	
+		    if (jsonObj.haenable == true) 	
                 buildActionLinkForDetailsTab("Disable HA", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
 	        else 		
 		        buildActionLinkForDetailsTab("Enable HA", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);					
@@ -1250,7 +1250,7 @@ function vmJsonToDetailsTab($midmenuItem1){
 			buildActionLinkForDetailsTab("Change Name", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
 		    buildActionLinkForDetailsTab("Change Group", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
 									
-			if (jsonObj.haenable =='true') 	
+			if (jsonObj.haenable == true ) 	
                 buildActionLinkForDetailsTab("Disable HA", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
 	        else 		
 		        buildActionLinkForDetailsTab("Enable HA", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);	
