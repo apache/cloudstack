@@ -117,6 +117,7 @@ public class AttachVolumeCmd extends BaseAsyncCmd {
 	    response.setStorageType("shared"); // NOTE: You can never attach a local disk volume but if that changes, we need to change this
 	    response.setId(volume.getId());
 	    response.setName(volume.getName());
+	    response.setVolumeType(volume.getVolumeType().toString());
 	    response.setResponseName(getName());
 
 		return response;
