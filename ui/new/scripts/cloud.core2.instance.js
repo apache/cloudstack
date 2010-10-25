@@ -69,11 +69,7 @@ function afterLoadInstanceJSP() {
     
     if (isAdmin() || isDomainAdmin())
         $("#right_panel_content").find("#tab_router,#tab_router").show();
-    
-    var $noDiskOfferingTemplate = $("#vm_popup_disk_offering_template_no");
-    var $customDiskOfferingTemplate = $("#vm_popup_disk_offering_template_custom");
-    var $existingDiskOfferingTemplate = $("#vm_popup_disk_offering_template_existing");
-   	   
+        
    	initDialog("dialog_detach_iso_from_vm");       	
    	initDialog("dialog_attach_iso");  
     initDialog("dialog_change_name"); 
@@ -91,8 +87,27 @@ function afterLoadInstanceJSP() {
     //***** switch between different tabs (end) **********************************************************************
     
     //***** VM Wizard (begin) ******************************************************************************
-    $vmPopup = $("#vm_popup");
-    var $serviceOfferingTemplate = $("#vm_popup_service_offering_template");
+    initVMWizard();    
+    //***** VM Wizard (end) ********************************************************************************
+    
+    //***** Volume tab (begin) *****************************************************************************         
+    $.ajax({
+        data: createURL("command=listOsTypes&response=json"),
+	    dataType: "json",
+	    success: function(json) {
+		    types = json.listostypesresponse.ostype;
+		    if (types != null && types.length > 0) {
+			    var select = $("#dialog_create_template #create_template_os_type").empty();
+			    for (var i = 0; i < types.length; i++) {
+				    select.append("<option value='" + types[i].id + "'>" + types[i].description + "</option>");
+			    }
+		    }	
+	    }
+    });        
+}
+
+function initVMWizard() {
+    $vmPopup = $("#vm_popup");  
     var currentPageInTemplateGridInVmPopup =1;
     var selectedTemplateTypeInVmPopup;  //selectedTemplateTypeInVmPopup will be set to "featured" when new VM dialog box opens
 	   	
@@ -123,7 +138,7 @@ function afterLoadInstanceJSP() {
 			    $container.empty();					    
 			    if (offerings != null && offerings.length > 0) {						    
 				    for (var i = 0; i < offerings.length; i++) {	
-					    var $t = $serviceOfferingTemplate.clone();  						  
+					    var $t = $("#vm_popup_service_offering_template").clone();  						  
 					    $t.find("input:radio[name=service_offering_radio]").val(offerings[i].id); 
 					    $t.find("#name").text(fromdb(offerings[i].name));
 					    $t.find("#description").text(fromdb(offerings[i].displaytext)); 						    
@@ -150,13 +165,13 @@ function afterLoadInstanceJSP() {
 		        
 		        //***** data disk offering: "no, thanks", "custom", existing disk offerings in database (begin) ****************************************************
 		        //"no, thanks" radio button (default radio button in data disk offering)		               
-	            var $t = $noDiskOfferingTemplate.clone(); 		            	     
+	            var $t = $("#vm_popup_disk_offering_template_no").clone(); 		            	     
 	            $t.find("input:radio").attr("name","data_disk_offering_radio");  
 	            $t.find("#name").text("no, thanks"); 		            
 	            $dataDiskOfferingContainer.append($t.show()); 
 		        
 		        //"custom" radio button			        
-		        var $t = $customDiskOfferingTemplate.clone();  			        
+		        var $t = $("#vm_popup_disk_offering_template_custom").clone();  			        
 		        $t.find("input:radio").attr("name","data_disk_offering_radio").removeAttr("checked");	
 		        $t.find("#name").text("custom:");	  			         
 		        $dataDiskOfferingContainer.append($t.show());	
@@ -164,7 +179,7 @@ function afterLoadInstanceJSP() {
 		        //existing disk offerings in database
 		        if (offerings != null && offerings.length > 0) {						    
 			        for (var i = 0; i < offerings.length; i++) {	
-				        var $t = $existingDiskOfferingTemplate.clone(); 
+				        var $t = $("#vm_popup_disk_offering_template_existing").clone(); 
 				        $t.find("input:radio").attr("name","data_disk_offering_radio").val(offerings[i].id).removeAttr("checked");	 	
 				        $t.find("#name").text(fromdb(offerings[i].name));
 				        $t.find("#description").text(fromdb(offerings[i].displaytext)); 	 
@@ -179,7 +194,7 @@ function afterLoadInstanceJSP() {
 		        		        	
 		        //***** root disk offering: "custom", existing disk offerings in database (begin) *******************************************************************
 		        //"custom" radio button			        
-		        var $t = $customDiskOfferingTemplate.clone();  			        
+		        var $t = $("#vm_popup_disk_offering_template_custom").clone();  			        
 		        $t.find("input:radio").attr("name","root_disk_offering_radio").val("custom");	
 		        if (offerings != null && offerings.length > 0) //default is the 1st existing disk offering. If there is no existing disk offering, default to "custom" radio button
 		            $t.find("input:radio").removeAttr("checked");	
@@ -189,7 +204,7 @@ function afterLoadInstanceJSP() {
 		        //existing disk offerings in database
 		        if (offerings != null && offerings.length > 0) {						    
 			        for (var i = 0; i < offerings.length; i++) {	
-				        var $t = $existingDiskOfferingTemplate.clone(); 
+				        var $t = $("#vm_popup_disk_offering_template_existing").clone(); 
 				        $t.find("input:radio").attr("name","root_disk_offering_radio").val(offerings[i].id);	 
 				        if(i > 0) //default is the 1st existing disk offering. If there is no existing disk offering, default to "custom" radio button
 				            $t.find("input:radio").removeAttr("checked");	 	
@@ -204,14 +219,12 @@ function afterLoadInstanceJSP() {
                 $rootDiskOfferingContainer.html(html_all);                         
 			    //***** root disk offering: "custom", existing disk offerings in database (end) *********************************************************************				    
 		    }
-	    });
-	 
+	    });	 
 	    
 	    $vmPopup.find("#wizard_service_offering").click();	      
         return false;
     });
-    
-    
+        
     function vmWizardCleanup() {
         currentStepInVmPopup = 1;			
 	    $vmPopup.find("#step1").show().nextAll().hide();		   
@@ -631,23 +644,8 @@ function afterLoadInstanceJSP() {
 	    currentStepInVmPopup--;
 	    return false; //event.preventDefault() + event.stopPropagation()
     });
-    //***** VM Wizard (end) ********************************************************************************
-    
-    //***** Volume tab (begin) *****************************************************************************         
-    $.ajax({
-        data: createURL("command=listOsTypes&response=json"),
-	    dataType: "json",
-	    success: function(json) {
-		    types = json.listostypesresponse.ostype;
-		    if (types != null && types.length > 0) {
-			    var select = $("#dialog_create_template #create_template_os_type").empty();
-			    for (var i = 0; i < types.length; i++) {
-				    select.append("<option value='" + types[i].id + "'>" + types[i].description + "</option>");
-			    }
-		    }	
-	    }
-    });        
 }
+
 
 //***** VM Detail (begin) ******************************************************************************
       
