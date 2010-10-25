@@ -105,6 +105,7 @@ import com.cloud.async.executor.VolumeOperationParam;
 import com.cloud.async.executor.VolumeOperationParam.VolumeOp;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
+import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.ResourceCount.ResourceType;
@@ -6341,6 +6342,22 @@ public class ManagementServerImpl implements ManagementServer {
     	return jobId;
     }
 
+
+    @Override
+    public SnapshotVO createTemplateSnapshot(Long userId, long volumeId) {
+    	return _vmMgr.createTemplateSnapshot(userId, volumeId);
+    }
+
+    @Override
+    public boolean destroyTemplateSnapshot(Long userId, long snapshotId) {
+    	return _vmMgr.destroyTemplateSnapshot(userId, snapshotId);
+    }
+    
+    @Override
+    public String getHyperType() {
+    	return _configDao.getValue(Config.HypervisorType.key());
+    }
+    
     @Override
     public long deleteSnapshotAsync(long userId, long snapshotId) {
     	Snapshot snapshot = findSnapshotById(snapshotId);

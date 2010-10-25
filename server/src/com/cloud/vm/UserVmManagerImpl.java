@@ -2029,6 +2029,87 @@ public class UserVmManagerImpl implements UserVmManager {
         }
     }
 
+    @Override
+    public boolean destroyTemplateSnapshot(Long userId, long snapshotId) {
+    	boolean success = false;
+    	SnapshotVO snapshot = _snapshotDao.findById(Long.valueOf(snapshotId));
+    	if (snapshot != null) {
+    		VolumeVO volume = _volsDao.findById(snapshot.getVolumeId());
+    		ManageSnapshotCommand cmd = new ManageSnapshotCommand(ManageSnapshotCommand.DESTROY_SNAPSHOT, snapshotId, snapshot.getPath(), null, snapshot.getName());
+
+    		Answer answer = null;
+    		String basicErrMsg = "Failed to destroy template snapshot: " + snapshot.getName();
+    		Long storagePoolId = volume.getPoolId();
+    		answer = _storageMgr.sendToHostsOnStoragePool(storagePoolId, cmd, basicErrMsg);
+
+    		if ((answer != null) && answer.getResult()) {
+    			// delete the snapshot from the database
+    			_snapshotDao.delete(snapshotId);
+    			success = true;
+    		}
+    		if (answer != null) {
+    			s_logger.error(answer.getDetails());
+    		}
+    	}
+
+    	return success;
+    }
+
+    
+    @Override @DB
+    public SnapshotVO createTemplateSnapshot(long userId, long volumeId) {
+    	SnapshotVO createdSnapshot = null;
+    	VolumeVO volume = _volsDao.findById(volumeId);
+
+    	Long id = null;
+
+    	// Determine the name for this snapshot
+    	String timeString = DateUtil.getDateDisplayString(DateUtil.GMT_TIMEZONE, new Date(), DateUtil.YYYYMMDD_FORMAT);
+    	String snapshotName = volume.getName() + "_" + timeString;
+    	// Create the Snapshot object and save it so we can return it to the user
+    	SnapshotType snapshotType = SnapshotType.TEMPLATE;
+    	SnapshotVO snapshot = new SnapshotVO(volume.getAccountId(), volume.getId(), null, snapshotName, (short)snapshotType.ordinal(), snapshotType.name());
+    	snapshot = _snapshotDao.persist(snapshot);
+    	id = snapshot.getId();
+
+    	// Send a ManageSnapshotCommand to the agent
+    	ManageSnapshotCommand cmd = new ManageSnapshotCommand(ManageSnapshotCommand.CREATE_SNAPSHOT, id, volume.getPath(), null, snapshotName);
+
+    	String basicErrMsg = "Failed to create snapshot for volume: " + volume.getId();
+    	// This can be sent to a KVM host too. We are only taking snapshots on primary storage, which doesn't require XenServer.
+    	// So shouldBeSnapshotCapable is set to false.
+    	ManageSnapshotAnswer answer = (ManageSnapshotAnswer) _storageMgr.sendToHostsOnStoragePool(volume.getPoolId(), cmd, basicErrMsg);
+
+    	// Update the snapshot in the database
+    	if ((answer != null) && answer.getResult()) {
+    		// The snapshot was successfully created
+
+    		Transaction txn = Transaction.currentTxn();
+    		txn.start();
+    		createdSnapshot = _snapshotDao.findById(id);
+    		createdSnapshot.setPath(answer.getSnapshotPath());
+    		createdSnapshot.setStatus(Snapshot.Status.CreatedOnPrimary);
+    		_snapshotDao.update(id, createdSnapshot);
+    		txn.commit();
+
+    		// Don't Create an event for Template Snapshots for now.
+    	} else {
+    		if (answer != null) {
+    			s_logger.error(answer.getDetails());
+    		}
+    		// The snapshot was not successfully created
+    		Transaction txn = Transaction.currentTxn();
+    		txn.start();
+    		createdSnapshot = _snapshotDao.findById(id);
+    		_snapshotDao.delete(id);
+    		txn.commit();
+
+    		createdSnapshot = null;
+    	}
+
+    	return createdSnapshot;
+    }
+
 
     @Override
     public void cleanNetworkRules(long userId, long instanceId) {

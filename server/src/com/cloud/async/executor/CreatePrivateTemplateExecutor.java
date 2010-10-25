@@ -116,11 +116,10 @@ public class CreatePrivateTemplateExecutor extends VolumeOperationExecutor {
                     	asyncMgr.updateAsyncJobStatus(job.getId(), BaseCmd.PROGRESS_INSTANCE_CREATED, template.getId());
                     	Snapshot snapshot = null;
         	    	        
-            	        if (snapshotId == null) {
+            	        if (snapshotId == null && managerServer.getHyperType().equalsIgnoreCase("KVM")) {
             	            // We are create private template from volume. Create a snapshot, copy the vhd chain of the disk to secondary storage. 
             	            // For template snapshot, we use a separate snapshot method.
-            	            //snapshot = vmMgr.createTemplateSnapshot(param.getUserId(), param.getVolumeId());
-            		        throw new CloudRuntimeException("Do not support create template from volume at this moment");
+            	            snapshot = vmMgr.createTemplateSnapshot(param.getUserId(), param.getVolumeId());           		       
             	        }
             	        else {
             	            // We are creating a private template from an already present snapshot. 

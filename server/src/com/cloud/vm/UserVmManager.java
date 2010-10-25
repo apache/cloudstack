@@ -209,5 +209,9 @@ public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> 
      */
     void releaseGuestIpAddress(UserVmVO userVm);
 
+	boolean destroyTemplateSnapshot(Long userId, long snapshotId);
+
+	SnapshotVO createTemplateSnapshot(long userId, long volumeId);
+
 
 }

@@ -2177,5 +2177,8 @@ public interface ManagementServer {
 	public List<PreallocatedLunVO> getPreAllocatedLuns(Criteria c);
 	
 	public String getNetworkGroupsNamesForVm(long vmId);
+	SnapshotVO createTemplateSnapshot(Long userId, long volumeId);
+	boolean destroyTemplateSnapshot(Long userId, long snapshotId);
+	String getHyperType();
 
 }
