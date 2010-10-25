@@ -446,7 +446,26 @@ function removeHighlightInMiddleMenu(selectedItemsInMidMenu) {
         var $midmenuItem1 = $("#midmenuItem_"+id);	
         $midmenuItem1.find("#content").removeClass("selected");
     }
-}	     	                
+}	     	
+
+function copyAfterActionInfoToRightPanel($midmenuItem1) {     
+    var $afterActionInfoContainer = $("#right_panel_content #after_action_info_container_on_top");       
+    if($midmenuItem1.find("#info_icon").css("display") != "none") {                
+        $afterActionInfoContainer.find("#after_action_info").text($midmenuItem1.data("afterActionInfo"));
+        if($midmenuItem1.find("#info_icon").hasClass("error"))
+            $afterActionInfoContainer.addClass("errorbox");
+         else
+            $afterActionInfoContainer.removeClass("errorbox");                                        
+        $afterActionInfoContainer.show();                                         
+    } 
+    /*
+    else {
+        $afterActionInfoContainer.find("#after_action_info").text("");
+        $afterActionInfoContainer.hide();                
+    }
+    */
+}
+                
 //***** actions for middle menu (end) **************************************************************************
 
 

@@ -93,7 +93,7 @@ function afterLoadInstanceJSP() {
                 afterActionSeccessFn: function(json, $midmenuItem1, id) {                    
                     var jsonObj = json.queryasyncjobresultresponse.jobresult.startvirtualmachineresponse;      
                     vmToMidmenu(jsonObj, $midmenuItem1);
-                    vmToRightPanel($midmenuItem1);
+                    vmToRightPanel($midmenuItem1);                    
                 }
             }                                     
             doActionForMidMenu(id, apiInfo, apiCommand); 	
@@ -1179,24 +1179,9 @@ function vmToRightPanel($midmenuItem1) {
     
     var vmName = getVmName(jsonObj.name, jsonObj.displayname);        
     $("right_panel_header").find("#vm_name").text(vmName);	
-    
-    //Comment the following code which is for middle menu action, not details tab action.
-    /*
-    var $rightPanelContent = $("#right_panel_content");        
-    if($midmenuItem1.find("#info_icon").css("display") != "none") {                
-        $rightPanelContent.find("#after_action_info").text($midmenuItem1.data("afterActionInfo"));
-        if($midmenuItem1.find("#info_icon").hasClass("error"))
-            $rightPanelContent.find("#after_action_info_container").addClass("errorbox");
-         else
-            $rightPanelContent.find("#after_action_info_container").removeClass("errorbox");                                        
-        $rightPanelContent.find("#after_action_info_container").show();                                         
-    } 
-    else {
-        $rightPanelContent.find("#after_action_info").text("");
-        $rightPanelContent.find("#after_action_info_container").hide();                
-    }
-    */
-    
+     
+    copyAfterActionInfoToRightPanel($midmenuItem1); 
+             
     vmJsonToDetailsTab($midmenuItem1);   
     vmJsonToVolumeTab(jsonObj);
     
