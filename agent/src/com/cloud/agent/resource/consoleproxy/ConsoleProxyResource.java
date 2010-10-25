@@ -49,6 +49,7 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupProxyCommand;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.ConsoleProxyLoadAnswer;
+import com.cloud.agent.api.proxy.UpdateCertificateCommand;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
 import com.cloud.exception.AgentControlChannelException;
 import com.cloud.host.Host;
@@ -83,6 +84,7 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
     String _eth1ip; 
     String _eth1mask;    
     String _pubIp;
+    String certificate;
     
     @Override
     public Answer executeRequest(final Command cmd) {
@@ -95,11 +97,27 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
             return new ReadyAnswer((ReadyCommand)cmd);
         } else if(cmd instanceof CheckHealthCommand) {
         	return new CheckHealthAnswer((CheckHealthCommand)cmd, true);
-        } else {
+        }  else if(cmd instanceof UpdateCertificateCommand) {
+        	return execute((UpdateCertificateCommand)cmd);
+        }  
+        else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
     }
-    
+
+    protected Answer execute(final UpdateCertificateCommand cmd) {
+    	boolean success = false;
+    	try{
+    		certificate = cmd.getCertificate();
+    		success = true;
+            return new Answer(cmd, success, "Cert string in the console proxy resource status:");
+    	}catch (Exception e)
+    	{
+    		s_logger.error("Unable to read the cert string in console proxy resource");
+    	}
+        return new Answer(cmd, success, "Cert string in the console proxy resource status:");
+    }
+
     protected Answer execute(final CheckConsoleProxyLoadCommand cmd) {
         return executeProxyLoadScan(cmd, cmd.getProxyVmId(), cmd.getProxyVmName(), cmd.getProxyManagementIp(), cmd.getProxyCmdPort());
     }

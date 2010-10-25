@@ -24,7 +24,7 @@ public class CertificateDaoImpl extends GenericDaoBase<CertificateVO, Long>  imp
     }
     
 	@Override
-	public boolean persistCustomCertToDb(String certPath){
+	public Long persistCustomCertToDb(String certPath){
 		
 		String certStr = null;
 	    byte[] buffer = new byte[(int) new File(certPath).length()];
@@ -35,10 +35,10 @@ public class CertificateDaoImpl extends GenericDaoBase<CertificateVO, Long>  imp
 	        f.read(buffer);
 	    } catch (FileNotFoundException e) {
 	    	s_logger.warn("Unable to read the certificate: "+e);
-	    	return false;
+	    	return new Long(0);
 		} catch (IOException e) {
 	    	s_logger.warn("Unable to read the certificate: "+e);
-	    	return false;		
+	    	return new Long(0);		
 	    } 
 	    finally 
 	    {
@@ -51,6 +51,6 @@ public class CertificateDaoImpl extends GenericDaoBase<CertificateVO, Long>  imp
 	    certRec.setCertificate(certStr);
 	    this.persist(certRec);
 	    
-		return true;
+		return certRec.getId();
 	}
 }
