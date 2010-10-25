@@ -52,7 +52,7 @@ public class ListResourceLimitsCmd extends BaseListCmd {
     @Parameter(name="id", type=CommandType.LONG, description="Lists resource limits by ID.")
     private Long id;
 
-    @Parameter(name="resourcetype", type=CommandType.INTEGER, required=true, description="Type of resource to update. Values are 0, 1, 2, 3, and 4. 0 - Instance. Number of instances a user can create. " +
+    @Parameter(name="resourcetype", type=CommandType.INTEGER, description="Type of resource to update. Values are 0, 1, 2, 3, and 4. 0 - Instance. Number of instances a user can create. " +
 																						"1 - IP. Number of public IP addresses a user can own. " +
 																						"2 - Volume. Number of disk volumes a user can create." +
 																						"3 - Snapshot. Number of snapshots a user can create." +
