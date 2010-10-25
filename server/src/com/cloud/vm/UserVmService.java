@@ -32,6 +32,7 @@ import com.cloud.api.commands.StartVMCmd;
 import com.cloud.api.commands.StopVMCmd;
 import com.cloud.api.commands.UpdateVMCmd;
 import com.cloud.api.commands.UpgradeVMCmd;
+import com.cloud.api.response.VolumeResponse;
 import com.cloud.async.executor.OperationResponse;
 import com.cloud.async.executor.RebootVMExecutor;
 import com.cloud.async.executor.VMOperationParam;
@@ -74,10 +75,11 @@ public interface UserVmService extends Manager {
     /**
      * Detaches the specified volume from the VM it is currently attached to.
      * @param cmd - the command specifying volumeId
+     * @return the VolumeResponse object if detach worked successfully.
      * @throws InternalErrorException
      * @throws InvalidParameterValueException 
      */
-    void detachVolumeFromVM(DetachVolumeCmd cmmd) throws InternalErrorException, InvalidParameterValueException;
+    VolumeResponse detachVolumeFromVM(DetachVolumeCmd cmmd) throws InternalErrorException, InvalidParameterValueException;
     
     UserVmVO startVirtualMachine(StartVMCmd cmd) throws StorageUnavailableException, ExecutionException, ConcurrentOperationException;
     UserVmVO stopVirtualMachine(StopVMCmd cmd) throws ServerApiException;

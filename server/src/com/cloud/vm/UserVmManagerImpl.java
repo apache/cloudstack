@@ -63,6 +63,7 @@ import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.AttachVolumeCmd;
@@ -79,6 +80,7 @@ import com.cloud.api.commands.StartVMCmd;
 import com.cloud.api.commands.StopVMCmd;
 import com.cloud.api.commands.UpdateVMCmd;
 import com.cloud.api.commands.UpgradeVMCmd;
+import com.cloud.api.response.VolumeResponse;
 import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobResult;
@@ -589,7 +591,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService {
     }
     
     @Override
-    public void detachVolumeFromVM(DetachVolumeCmd cmmd) throws InternalErrorException, InvalidParameterValueException {    	
+    public VolumeResponse detachVolumeFromVM(DetachVolumeCmd cmmd) throws InternalErrorException, InvalidParameterValueException {    	
     	Account account = UserContext.current().getAccount();
     	if ((cmmd.getId() == null && cmmd.getDeviceId() == null && cmmd.getVirtualMachineId() == null) ||
     	    (cmmd.getId() != null && (cmmd.getDeviceId() != null || cmmd.getVirtualMachineId() != null)) ||
@@ -703,6 +705,19 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService {
             	event.setDescription("Volume: " +volume.getName()+ " successfully detached from VM: "+vm.getName());
             event.setLevel(EventVO.LEVEL_INFO);
             _eventDao.persist(event);
+            
+            // Prepare the response object
+            VolumeResponse response = new VolumeResponse();            
+            response.setVirtualMachineName(vm.getName());
+            response.setVirtualMachineDisplayName(vm.getDisplayName());
+            response.setVirtualMachineId(vm.getId());
+            response.setVirtualMachineState(vm.getState().toString());
+            response.setStorageType("shared"); // NOTE: You can never attach a local disk volume but if that changes, we need to change this
+            response.setId(volume.getId());
+            response.setName(volume.getName());
+            response.setVolumeType(volume.getVolumeType().toString());
+            response.setResponseName(cmmd.getName());
+            return response;
     	} else {
     		
     		if (answer != null) {

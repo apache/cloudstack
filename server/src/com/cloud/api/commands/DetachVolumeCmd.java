@@ -25,6 +25,7 @@ import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.api.response.VolumeResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.storage.VolumeVO;
 import com.cloud.user.Account;
@@ -115,11 +116,8 @@ public class DetachVolumeCmd extends BaseAsyncCmd {
     }
 
 	@Override @SuppressWarnings("unchecked")
-	public SuccessResponse getResponse() {
-        Boolean success = (Boolean)getResponseObject();
-        SuccessResponse response = new SuccessResponse();
-        response.setSuccess(success);
-        response.setResponseName(getName());
+	public VolumeResponse getResponse() {
+        VolumeResponse response = (VolumeResponse)getResponseObject();     
         return response;
 	}
 }
