@@ -16,11 +16,29 @@
  * 
  */
 
-package com.cloud.certificate.dao;
+package com.cloud.agent.api.proxy;
 
-import com.cloud.certificate.CertificateVO;
-import com.cloud.utils.db.GenericDao;
 
-public interface CertificateDao extends GenericDao<CertificateVO, Long> {
-	public Long persistCustomCertToDb(String certPath);
+/**
+ * UpdateCertificateCommand implements one-shot updation of the certificate to be applied by the user
+ */
+public class UpdateCertificateCommand extends ProxyCommand {
+
+	private String certificate; //certificate to be applied
+	
+	public UpdateCertificateCommand() {
+	}
+	
+	public UpdateCertificateCommand(String certificate) {
+		this.certificate = certificate;
+	}
+		
+	public String getCertificate() {
+		return this.certificate;
+	}
+		
+    @Override
+    public boolean executeInSequence() {
+        return false;
+    }
 }

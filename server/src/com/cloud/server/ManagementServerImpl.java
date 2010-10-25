@@ -52,8 +52,10 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
+import com.cloud.agent.api.proxy.UpdateCertificateCommand;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.alert.AlertManager;
@@ -180,6 +182,7 @@ import com.cloud.exception.InsufficientStorageCapacityException;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
+import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
@@ -300,6 +303,7 @@ import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.InstanceGroupDao;
@@ -6865,17 +6869,33 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public boolean uploadCertificate(UploadCustomCertificateCmd cmd) {
         String certificatePath = cmd.getPath();
-    	boolean uploadStatus = _certDao.persistCustomCertToDb(certificatePath);
+    	Long certVOId = _certDao.persistCustomCertToDb(certificatePath);//0 implies failure
 
-    	if (uploadStatus) {
+    	if (certVOId!=null && certVOId!=0) {
     		//certficate uploaded to db successfully
-    		//send the certificate to the dom0
     		
     		//get a list of all hosts from host table
     		List<HostVO> hosts = _hostDao.listAll();
     		
+    		List<HostVO> consoleProxyList = new ArrayList<HostVO>();
+    		
     		//find the console proxies, and send the command to them
     		for(HostVO host : hosts) {
+    			if(host.getType().equals(com.cloud.host.Host.Type.ConsoleProxy)){
+    				consoleProxyList.add(host);
+    			}
+    		}
+    		    		
+    		for(HostVO consoleProxy : consoleProxyList){
+	    		//now send a command to each console proxy 
+	    		UpdateCertificateCommand certCmd = new UpdateCertificateCommand(_certDao.findById(certVOId).getCertificate());
+	    		try {
+					Answer updateCertAns = _agentMgr.send(consoleProxy.getId(), certCmd);
+				} catch (AgentUnavailableException e) {
+					s_logger.warn("Unable to send command to the console proxy resource", e);
+				} catch (OperationTimedoutException e) {
+					s_logger.warn("Unable to send command to the console proxy resource", e);
+				}
     		}
     	}
     	
