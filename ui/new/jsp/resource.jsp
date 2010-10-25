@@ -999,9 +999,14 @@
 </div>
 <!-- Add VLAN IP Range Dialog for zone (end) -->
 
+<!-- Add VLAN IP Range button -->
+	<div class="networkswitch_vlanadd">
+    	<div class="networkswitch_vlan_addbutton"></div>
+	</div>
 
 <!-- Direct VLAN Template (begin) -->
-<div class="networkswitch_vlanpanel" id="direct_vlan_template" style="display: none;">
+<div class="networkswitch_vlanpanel" id="direct_vlan_template" style="display: block;">
+
     <div class="networkswitch_vlanconnect">
     	<div class="networkswitch_closeicon"></div>
         <div class="networkswitch_vlan_infoicon">

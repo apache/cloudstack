@@ -3437,6 +3437,34 @@ a:hover.search_button {
 	padding:0;
 }
 
+.networkswitch_vlanadd {
+	width:446px;
+	height:12px;
+	float:left;
+	background:url(../images/vlan_add.gif) no-repeat top left;
+	margin:26px 0 0 218px;
+	display:inline;
+	padding:0;
+}
+
+
+
+.networkswitch_vlan_addbutton {
+	width:149px;
+	height:24px;
+	float:left;
+	background:url(../images/add_vlanbutton.png) no-repeat top left;
+	margin:-5px 0 0 30px;
+	display:inline;
+	padding:0;
+	cursor:pointer;
+	cursor:hand;
+}
+
+.networkswitch_vlan_addbutton:hover {
+	background:url(../images/add_vlanbutton_hover.png) no-repeat top left;
+}
+
 .networkswitch_vlanconnect {
 	width:464px;
 	height:12px;
