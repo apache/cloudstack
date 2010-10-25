@@ -237,40 +237,43 @@ function showPage2($pageToShow, $menuItem1) {
     if($pageToShow.attr("id") == "resource_page") { 
         initAddZoneButton($("#midmenu_add_link"));	                   
         $("#midmenu_add2_link").unbind("click").hide();   
+        $("#midmenu_add3_link").unbind("click").hide();  
     
         initDialog("dialog_add_zone");         
     }
-    else if($pageToShow.attr("id") == "zone_page") {  
-        initDialog("dialog_add_pod", 320);      
+    else if($pageToShow.attr("id") == "zone_page") {               
         initAddPodButton($("#midmenu_add_link"));                  
-        //$("#midmenu_add2_link").unbind("click").hide();   //afterSwitchFnArray[] in switchBetweenDifferentTabs() has taken care of this line. So, this line is commented out.
-                
+        initAddVLANButton($("#midmenu_add2_link"));
+        initAddSecondaryStorageButton($("#midmenu_add3_link"));
+       
+        initDialog("dialog_add_pod", 320); 
         initDialog("dialog_add_vlan_for_zone");
+        initDialog("dialog_add_secondarystorage"); 
+        initDialog("dialog_confirmation_delete_secondarystorage"); 
+        
         // If the network type is vnet, don't show any vlan stuff.
 	    if (getNetworkType() == "vnet") 		
 		    $("#dialog_add_vlan_for_zone").attr("title", "Add Public IP Range");		
-	    bindEventHandlerToDialogAddVlanForZone();	
-        
-        initDialog("dialog_add_secondarystorage"); 
-        initDialog("dialog_confirmation_delete_secondarystorage"); 
+	    bindEventHandlerToDialogAddVlanForZone();	        
                 
         //switch between different tabs in zone page 
 	    var $zonePage = $pageToShow;
         var tabArray = [$zonePage.find("#tab_details"), $zonePage.find("#tab_network"), $zonePage.find("#tab_secondarystorage")];
         var tabContentArray = [$zonePage.find("#tab_content_details"), $zonePage.find("#tab_content_network"), $zonePage.find("#tab_content_secondarystorage")];
-        var afterSwitchFnArray = [afterSwitchToDetailsTab, afterSwitchToNetworkTab, afterSwitchToSecondaryStorageTab];
-        switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray);    
+        //var afterSwitchFnArray = [afterSwitchToDetailsTab, afterSwitchToNetworkTab, afterSwitchToSecondaryStorageTab];
+        switchBetweenDifferentTabs(tabArray, tabContentArray);    
         $zonePage.find("#tab_details").click();   
         
         hideMiddleMenu();
 		zoneJsonToRightPanel($menuItem1);		  
     }
-    else if($pageToShow.attr("id") == "pod_page") {
-        initDialog("dialog_add_host");	
-        initAddHostButton($("#midmenu_add_link"));  
+    else if($pageToShow.attr("id") == "pod_page") {        	
+        initAddHostButton($("#midmenu_add_link")); 
+        initAddPrimaryStorageButton($("#midmenu_add2_link"));  
+        $("#midmenu_add3_link").unbind("click").hide();  
         
+        initDialog("dialog_add_host");
         initDialog("dialog_add_pool");
-        initAddPrimaryStorageButton($("#midmenu_add2_link"));    
         
         // if hypervisor is KVM, limit the server option to NFS for now
 	    if (getHypervisorType() == 'kvm') 
@@ -288,7 +291,8 @@ function showPage2($pageToShow, $menuItem1) {
     else if($pageToShow.attr("id") == "cluster_page") {
         $("#midmenu_add_link").unbind("click").hide();              
         $("#midmenu_add2_link").unbind("click").hide();   
-    
+        $("#midmenu_add3_link").unbind("click").hide();  
+        
         showMiddleMenu();
 		clusterJsonToRightPanel($menuItem1);
 		
@@ -298,8 +302,9 @@ function showPage2($pageToShow, $menuItem1) {
 		listMidMenuItems2(("listStoragePools&clusterid="+clusterId), "liststoragepoolsresponse", "storagepool", primarystorageToMidmenu, primarystorageToRightPanel, primarystorageGetMidmenuId, false, false); 			
     }
     else if($pageToShow.attr("id") == "host_page") {
-        $("#midmenu_add_link").unbind("click").hide();              
-        $("#midmenu_add2_link").unbind("click").hide();   
+        initAddHostButton($("#midmenu_add_link")); 
+        initAddPrimaryStorageButton($("#midmenu_add2_link"));  
+        $("#midmenu_add3_link").unbind("click").hide();  
     
         initDialog("dialog_confirmation_enable_maintenance");
 	    initDialog("dialog_confirmation_cancel_maintenance");
@@ -308,14 +313,16 @@ function showPage2($pageToShow, $menuItem1) {
 	    initDialog("dialog_update_os");
     }  
     else if($pageToShow.attr("id") == "primarystorage_page") {
-        $("#midmenu_add_link").unbind("click").hide();              
-        $("#midmenu_add2_link").unbind("click").hide();   
+        initAddHostButton($("#midmenu_add_link")); 
+        initAddPrimaryStorageButton($("#midmenu_add2_link"));  
+        $("#midmenu_add3_link").unbind("click").hide();  
         
         initDialog("dialog_confirmation_delete_primarystorage");
     }  
     else if($pageToShow.attr("id") == "systemvm_page") {
         $("#midmenu_add_link").unbind("click").hide();              
-        $("#midmenu_add2_link").unbind("click").hide();   
+        $("#midmenu_add2_link").unbind("click").hide(); 
+        $("#midmenu_add3_link").unbind("click").hide();    
         
         hideMiddleMenu();			
 	    systemvmJsonToRightPanel($menuItem1);		
@@ -778,6 +785,7 @@ function toSystemVMTypeText(value) {
 }
 //***** systemVM page (end) ***************************************************************************************************
 
+/*
 function afterSwitchToDetailsTab() {    
     $("#midmenu_add2_link").unbind("click").hide(); 
 }
@@ -787,11 +795,12 @@ function afterSwitchToNetworkTab() {
 function afterSwitchToSecondaryStorageTab() {    
     initAddSecondaryStorageButton($("#midmenu_add2_link"));
 }
+*/
 
-function initAddVLANButton($midmenuAdd2Link) {
-    $midmenuAdd2Link.find("#label").text("Add VLAN IP Range");      
-    $midmenuAdd2Link.show();   
-    $midmenuAdd2Link.unbind("click").bind("click", function(event) {        
+function initAddVLANButton($addButton) {
+    $addButton.find("#label").text("Add VLAN");      
+    $addButton.show();   
+    $addButton.unbind("click").bind("click", function(event) {        
         var zoneObj = $("#zone_page").find("#tab_content_details").data("jsonObj");       
         var dialogAddVlanForZone = $("#dialog_add_vlan_for_zone");       
         dialogAddVlanForZone.find("#zone_name").text(fromdb(zoneObj.name));         
@@ -917,10 +926,10 @@ function initAddVLANButton($midmenuAdd2Link) {
     });
 }
 
-function initAddSecondaryStorageButton($midmenuAdd2Link) {
-    $midmenuAdd2Link.find("#label").text("Add Secondary Storage");
-    $midmenuAdd2Link.show();      
-    $midmenuAdd2Link.unbind("click").bind("click", function(event) {
+function initAddSecondaryStorageButton($addButton) {
+    $addButton.find("#label").text("Add Secondary Storage");
+    $addButton.show();      
+    $addButton.unbind("click").bind("click", function(event) {
         var zoneObj = $("#zone_page").find("#tab_content_details").data("jsonObj");       
         $("#dialog_add_secondarystorage").find("#zone_name").text(fromdb(zoneObj.name));   
    

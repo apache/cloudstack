@@ -516,7 +516,8 @@ function clearMiddleMenu() {
     $("#midmenu_container").empty();
     $("#midmenu_action_link").hide();
     $("#midmenu_add_link").unbind("click").hide();    
-    $("#midmenu_add2_link").unbind("click").hide();           
+    $("#midmenu_add2_link").unbind("click").hide();     
+    $("#midmenu_add3_link").unbind("click").hide();          
     $("#midmenu_startvm_link").unbind("click").hide();     
     $("#midmenu_stopvm_link").unbind("click").hide(); 
     $("#midmenu_rebootvm_link").unbind("click").hide(); 
