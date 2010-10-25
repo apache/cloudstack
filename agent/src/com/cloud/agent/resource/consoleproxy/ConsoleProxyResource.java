@@ -19,6 +19,9 @@ package com.cloud.agent.resource.consoleproxy;
 
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -84,7 +87,6 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
     String _eth1ip; 
     String _eth1mask;    
     String _pubIp;
-    String certificate;
     
     @Override
     public Answer executeRequest(final Command cmd) {
@@ -108,7 +110,25 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
     protected Answer execute(final UpdateCertificateCommand cmd) {
     	boolean success = false;
     	try{
-    		certificate = cmd.getCertificate();
+    		String certificate = cmd.getCertificate();
+    		
+    		//write the cert to /etc/cloud/consoleproxy/cert/
+    	    String strDirectoy ="/etc/cloud/consoleproxy/cert/";
+    	    boolean dirCreated = (new File(strDirectoy)).mkdir();
+    	    if (dirCreated) {
+    	      s_logger.info("Directory: " + strDirectoy + " created");
+    	      
+    	      //copy cert to the dir
+    	      try {
+				FileWriter fstream = new FileWriter("/etc/cloud/consoleproxy/cert/customcert");
+				BufferedWriter out = new BufferedWriter(fstream);
+				out.write(certificate);
+				//Close the output stream
+				out.close();
+    	      }catch (Exception e){
+    	    	  s_logger.warn("Unable to write file to /etc/cloud/consoleproxy/cert/ on console proxy", e);
+    	      }
+    	    }    
     		success = true;
             return new Answer(cmd, success, "Cert string in the console proxy resource status:");
     	}catch (Exception e)
