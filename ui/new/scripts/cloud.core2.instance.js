@@ -25,7 +25,7 @@ function instanceBuildSubMenu() {
         instanceBuildSubMenu2("All Instances", "listVirtualMachines");           
         instanceBuildSubMenu2("Running Instances", "listVirtualMachines&state=Running");
         instanceBuildSubMenu2("Stopped Instances", "listVirtualMachines&state=Stopped");
-        instanceBuildSubMenu2("Destoryed Instances", "listVirtualMachines&state=Destroyed");
+        instanceBuildSubMenu2("Destroyed Instances", "listVirtualMachines&state=Destroyed");
     } 	
     else if(isUser()) {	        
         instanceBuildSubMenu2("All Instances", "listVirtualMachines");           
