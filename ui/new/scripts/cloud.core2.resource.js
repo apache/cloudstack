@@ -191,8 +191,7 @@ function clusterJSONToTreeNode(json, $clusterNode) {
 }			
 
 //$menuItem1 is either $leftmenuItem1 or $midmenuItem1
-function showPage($pageToShow, $menuItem1) { 
-    clearMiddleMenu();     
+function showPage($pageToShow, $menuItem1) {       
     if($pageToShow.length == 0) { //resource.jsp is not loaded in right panel      
         $("#right_panel").load("jsp/resource.jsp", function(){  
 			showPage2($($pageToShow.selector), $menuItem1); //$pageToShow is still empty (i.e. $pageToShow.length == 0), So, select the element again.
@@ -223,11 +222,16 @@ function showPage2($pageToShow, $menuItem1) {
         $pageToShow.data("jsonObj", jsonObj);
     }   
     
-    if($pageToShow.attr("id") == "resource_page") { 
+    if($pageToShow.attr("id") == "resource_page") {  
+        clearMiddleMenu();       
+        hideMiddleMenu();
+        
         initAddZoneButton($("#midmenu_add_link")); 
         initDialog("dialog_add_zone");         
     }
-    else if($pageToShow.attr("id") == "zone_page") {               
+    else if($pageToShow.attr("id") == "zone_page") {   
+        hideMiddleMenu();  
+                 
         initAddPodButton($("#midmenu_add_link"));                  
         initAddVLANButton($("#midmenu_add2_link"));
         initAddSecondaryStorageButton($("#midmenu_add3_link"));
@@ -249,11 +253,12 @@ function showPage2($pageToShow, $menuItem1) {
         //var afterSwitchFnArray = [afterSwitchToDetailsTab, afterSwitchToNetworkTab, afterSwitchToSecondaryStorageTab];
         switchBetweenDifferentTabs(tabArray, tabContentArray);    
         $zonePage.find("#tab_details").click();   
-        
-        hideMiddleMenu();
+                
 		zoneJsonToRightPanel($menuItem1);		  
     }
-    else if($pageToShow.attr("id") == "pod_page") {        	
+    else if($pageToShow.attr("id") == "pod_page") {  
+        hideMiddleMenu();	
+          	
         initAddHostButton($("#midmenu_add_link")); 
         initAddPrimaryStorageButton($("#midmenu_add2_link"));  
                
@@ -264,21 +269,22 @@ function showPage2($pageToShow, $menuItem1) {
 	    if (getHypervisorType() == 'kvm') 
 		    $("#dialog_add_pool").find("#add_pool_protocol").empty().html('<option value="nfs">NFS</option>');	
 	    bindEventHandlerToDialogAddPool();	 
-	    
-	    showMiddleMenu();	
+	    	    
 		podJsonToRightPanel($menuItem1);     
 		
-		var podId = jsonObj.id;
-	    $("#midmenu_container").empty();
-	    listMidMenuItems2(("listHosts&type=Routing&podid="+podId), "listhostsresponse", "host", hostToMidmenu, hostToRightPanel, hostGetMidmenuId, false, false); 					
-		listMidMenuItems2(("listStoragePools&podid="+podId), "liststoragepoolsresponse", "storagepool", primarystorageToMidmenu, primarystorageToRightPanel, primarystorageGetMidmenuId, false, false); 	
+		//var podId = jsonObj.id;
+	    //$("#midmenu_container").empty();
+	    //listMidMenuItems2(("listHosts&type=Routing&podid="+podId), "listhostsresponse", "host", hostToMidmenu, hostToRightPanel, hostGetMidmenuId, false, false); 					
+		//listMidMenuItems2(("listStoragePools&podid="+podId), "liststoragepoolsresponse", "storagepool", primarystorageToMidmenu, primarystorageToRightPanel, primarystorageGetMidmenuId, false, false); 	
     }  
     else if($pageToShow.attr("id") == "cluster_page") {
+        clearMiddleMenu(); 
+        showMiddleMenu();
+        
         $("#midmenu_add_link").unbind("click").hide();              
         $("#midmenu_add2_link").unbind("click").hide();   
-        $("#midmenu_add3_link").unbind("click").hide();  
+        $("#midmenu_add3_link").unbind("click").hide();          
         
-        showMiddleMenu();
 		clusterJsonToRightPanel($menuItem1);
 		
 	    var clusterId = jsonObj.id;
@@ -1304,6 +1310,7 @@ function initAddHostButton($midmenuAddLink1) {
 			            $thisDialog.find("#spinning_wheel").hide();
 			            $thisDialog.dialog("close");
 					
+					    showMiddleMenu();
 					    var $midmenuItem1 = $("#midmenu_item").clone();
                         $("#midmenu_container").append($midmenuItem1.fadeIn("slow"));
                         var items = json.addhostresponse.host;				            			      										   
