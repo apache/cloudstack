@@ -904,7 +904,7 @@ function initAddVLANButton($addButton) {
 				    return;		
 				    
 				//$thisDialog.dialog("close"); 		//only close dialog when this action succeeds		
-				$thisDialog.find("#spinning_wheel").fadeIn("slow");
+				$thisDialog.find("#spinning_wheel").show()
 				
 				var vlan = trim($thisDialog.find("#add_publicip_vlan_vlan").val());
 				if (isTagged) {
@@ -978,7 +978,7 @@ function initAddSecondaryStorageButton($addButton) {
 			    if (!isValid) 
 			        return;
 			    
-				$thisDialog.find("#spinning_wheel").fadeIn("slow");
+				$thisDialog.find("#spinning_wheel").show()
 								     					  								            				
 			    var zoneId = zoneObj.id;		
 			    var nfs_server = trim($thisDialog.find("#nfs_server").val());		
@@ -992,16 +992,11 @@ function initAddSecondaryStorageButton($addButton) {
 				        $thisDialog.find("#spinning_wheel").hide();				        
 				        $thisDialog.dialog("close");
 					
-					    var $subgridItem = $("#secondary_storage_tab_template").clone(true);	
-	                    var $spinningWheel = $subgridItem.find("#spinning_wheel");
-                        $spinningWheel.find("#description").text("Adding Secondary Storage....");  
-                        $spinningWheel.show();  
-                        $subgridItem.find("#after_action_info_container").removeClass("error").addClass("success").hide();  
-                        $("#zone_page").find("#tab_content_secondarystorage").append($subgridItem.show());  
-				    					        
-				        secondaryStorageJSONToTemplate(json.addsecondarystorageresponse.secondarystorage[0], $subgridItem);				        
+					    var $subgridItem = $("#secondary_storage_tab_template").clone(true);	                        
+				        secondaryStorageJSONToTemplate(json.addsecondarystorageresponse.secondarystorage[0], $subgridItem);	
 	                    $subgridItem.find("#after_action_info").text("Secondary storage was added successfully.");
                         $subgridItem.find("#after_action_info_container").removeClass("error").addClass("success").show();  
+                        $("#zone_page").find("#tab_content_secondarystorage").append($subgridItem.show());  
 				    },			
                     error: function(XMLHttpResponse) {	
                         handleErrorInDialog(XMLHttpResponse, $thisDialog);		 
@@ -1080,7 +1075,7 @@ function initAddZoneButton($midmenuAddLink1) {
 				if (!isValid) 
 				    return;							
 				
-				$thisDialog.find("#spinning_wheel").fadeIn("slow");
+				$thisDialog.find("#spinning_wheel").show()
 				
 				var moreCriteria = [];	
 				
@@ -1175,7 +1170,7 @@ function initAddPodButton($midmenuAddLink1) {
 		        if (!isValid) 
 		            return;			
                 
-                $thisDialog.find("#spinning_wheel").fadeIn("slow");
+                $thisDialog.find("#spinning_wheel").show()
                   
                 var name = trim($thisDialog.find("#add_pod_name").val());
 		        var cidr = trim($thisDialog.find("#add_pod_cidr").val());
@@ -1277,7 +1272,7 @@ function initAddHostButton($midmenuAddLink1) {
 		            return;
 		            
 				//$thisDialog.dialog("close");   //only close dialog when this action succeeds		
-				$thisDialog.find("#spinning_wheel").fadeIn("slow"); 				
+				$thisDialog.find("#spinning_wheel").show() 				
 				
 		        var array1 = [];    
 		        array1.push("&zoneId="+podObj.zoneid);
@@ -1394,7 +1389,7 @@ function initAddPrimaryStorageButton($midmenuAddLink2) {
 			    if (!isValid) 
 			        return;
 			        			    
-				$thisDialog.find("#spinning_wheel").fadeIn("slow");  
+				$thisDialog.find("#spinning_wheel").show()  
 							
 				var array1 = [];
 				array1.push("&zoneId="+podObj.zoneid);

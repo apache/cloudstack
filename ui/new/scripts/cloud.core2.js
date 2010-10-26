@@ -884,8 +884,8 @@ function handleErrorInDialog(XMLHttpResponse, $thisDialog) {
 	else 
 	    $infoContainer.find("#info").text("action failed");	
 	
-	$thisDialog.find("#spinning_wheel").fadeOut("slow");
-	$infoContainer.fadeIn("slow");
+	$thisDialog.find("#spinning_wheel").hide();
+	$infoContainer.show();
 }
 
 
