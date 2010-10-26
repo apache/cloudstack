@@ -1166,6 +1166,7 @@ function initAddPodButton($midmenuAddLink1) {
         .dialog('option', 'buttons', { 				
 	        "Add": function() {		
 	            var $thisDialog = $(this);
+				$thisDialog.find("#info_container").hide();
 						
 		        // validate values
 		        var isValid = true;					
@@ -1177,7 +1178,7 @@ function initAddPodButton($midmenuAddLink1) {
 		        if (!isValid) 
 		            return;			
                 
-                $thisDialog.dialog("close"); 
+                $thisDialog.find("#spinning_wheel").fadeIn("slow");
                   
                 var name = trim($thisDialog.find("#add_pod_name").val());
 		        var cidr = trim($thisDialog.find("#add_pod_cidr").val());
@@ -1193,26 +1194,21 @@ function initAddPodButton($midmenuAddLink1) {
                 if (endip != null && endip.length > 0)
                     array1.push("&endIp="+encodeURIComponent(endip));
                 array1.push("&gateway="+encodeURIComponent(gateway));			
-								    
-		        var template = $("#leftmenu_pod_node_template").clone(true);
-		        var loadingImg = template.find(".adding_loading");										
-		        var row_container = template.find("#row_container");        				
-		        $("#zone_" + zoneObj.id + " #zone_content").show();	
-		        $("#zone_" + zoneObj.id + " #pods_container").prepend(template.show());						
-		        $("#zone_" + zoneObj.id + " #zone_expand").removeClass().addClass("zonetree_openarrows");									            
-                loadingImg.show();  
-                row_container.hide();             
-                template.fadeIn("slow");
-				
+								
 		        $.ajax({
 		          data: createURL("command=createPod"+array1.join("")), 
 			        dataType: "json",
 			        success: function(json) {
-				        var item = json.createpodresponse; 	
-			            podJSONToTreeNode(item, template);	
-				        loadingImg.hide(); 								                            
-                        row_container.show();
-                        
+			            $thisDialog.dialog("close");
+			            
+			            var item = json.createpodresponse; 			            		            				    
+		                var template = $("#leftmenu_pod_node_template").clone(true);
+		                podJSONToTreeNode(item, template);			                   				
+		                $("#zone_" + zoneObj.id + " #zone_content").show();	
+		                $("#zone_" + zoneObj.id + " #pods_container").prepend(template.show());						
+		                $("#zone_" + zoneObj.id + " #zone_expand").removeClass().addClass("zonetree_openarrows");	
+                        template.fadeIn("slow");
+			                                    
                         forceLogout = false;  // We don't force a logout if pod(s) exit.
 				        if (forceLogout) {
 					        $("#dialog_confirmation")
@@ -1226,10 +1222,7 @@ function initAddPodButton($midmenuAddLink1) {
 				        }
 			        },
 		            error: function(XMLHttpResponse) {	
-		                handleError(XMLHttpResponse);			    
-			            template.slideUp("slow", function() {
-					        $(this).remove();
-				        });
+		                handleErrorInDialog(XMLHttpResponse, $thisDialog);			
 		            }
 		        });					
 	        }, 
