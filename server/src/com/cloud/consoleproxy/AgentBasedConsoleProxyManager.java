@@ -38,7 +38,6 @@ import com.cloud.agent.api.StartupProxyCommand;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.DestroyConsoleProxyCmd;
-import com.cloud.certificate.dao.CertificateDao;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
@@ -50,20 +49,18 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.info.ConsoleProxyInfo;
-import com.cloud.server.ManagementServer;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
+import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.sun.org.apache.xml.internal.security.keys.content.MgmtData;
 
 @Local(value = { ConsoleProxyManager.class })
 public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, VirtualMachineManager<ConsoleProxyVO>, AgentHook {
