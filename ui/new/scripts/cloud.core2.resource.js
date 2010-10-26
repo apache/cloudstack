@@ -839,31 +839,33 @@ function initAddVLANButton($addButton) {
 		dialogAddVlanForZone
 		.dialog('option', 'buttons', { 	
 			"Add": function() { 	
-			    var thisDialog = $(this);							
+			    var $thisDialog = $(this);		
+			    $thisDialog.find("#info_container").hide();
+			    					
 				// validate values
 				var isValid = true;					
 				var isTagged = false;
 				var isDirect = false;
 				if (getNetworkType() == "vlan") {
-					isDirect = thisDialog.find("#add_publicip_vlan_type").val() == "false";
-					isTagged = thisDialog.find("#add_publicip_vlan_tagged").val() == "tagged";
+					isDirect = $thisDialog.find("#add_publicip_vlan_type").val() == "false";
+					isTagged = $thisDialog.find("#add_publicip_vlan_tagged").val() == "tagged";
 				}
 				
-				isValid &= validateString("Account", thisDialog.find("#add_publicip_vlan_account"), thisDialog.find("#add_publicip_vlan_account_errormsg"), true); //optional
+				isValid &= validateString("Account", $thisDialog.find("#add_publicip_vlan_account"), $thisDialog.find("#add_publicip_vlan_account_errormsg"), true); //optional
 				
 				if (isTagged) {
-					isValid &= validateNumber("VLAN", thisDialog.find("#add_publicip_vlan_vlan"), thisDialog.find("#add_publicip_vlan_vlan_errormsg"), 2, 4095);
+					isValid &= validateNumber("VLAN", $thisDialog.find("#add_publicip_vlan_vlan"), $thisDialog.find("#add_publicip_vlan_vlan_errormsg"), 2, 4095);
 				}
-				isValid &= validateIp("Gateway", thisDialog.find("#add_publicip_vlan_gateway"), thisDialog.find("#add_publicip_vlan_gateway_errormsg"));
-				isValid &= validateIp("Netmask", thisDialog.find("#add_publicip_vlan_netmask"), thisDialog.find("#add_publicip_vlan_netmask_errormsg"));
-				isValid &= validateIp("Start IP Range", thisDialog.find("#add_publicip_vlan_startip"), thisDialog.find("#add_publicip_vlan_startip_errormsg"));   //required
-				isValid &= validateIp("End IP Range", thisDialog.find("#add_publicip_vlan_endip"), thisDialog.find("#add_publicip_vlan_endip_errormsg"), true);  //optional
+				isValid &= validateIp("Gateway", $thisDialog.find("#add_publicip_vlan_gateway"), $thisDialog.find("#add_publicip_vlan_gateway_errormsg"));
+				isValid &= validateIp("Netmask", $thisDialog.find("#add_publicip_vlan_netmask"), $thisDialog.find("#add_publicip_vlan_netmask_errormsg"));
+				isValid &= validateIp("Start IP Range", $thisDialog.find("#add_publicip_vlan_startip"), $thisDialog.find("#add_publicip_vlan_startip_errormsg"));   //required
+				isValid &= validateIp("End IP Range", $thisDialog.find("#add_publicip_vlan_endip"), $thisDialog.find("#add_publicip_vlan_endip_errormsg"), true);  //optional
 				if (!isValid) 
 				    return;		
 				    
-				thisDialog.dialog("close"); 					
+				//$thisDialog.dialog("close"); 		//only close dialog when this action succeeds		
 				
-				var vlan = trim(thisDialog.find("#add_publicip_vlan_vlan").val());
+				var vlan = trim($thisDialog.find("#add_publicip_vlan_vlan").val());
 				if (isTagged) {
 					vlan = "&vlan="+vlan;
 				} else {
@@ -872,37 +874,37 @@ function initAddVLANButton($addButton) {
 								
 				var scopeParams = "";
 				if(dialogAddVlanForZone.find("#add_publicip_vlan_scope").val()=="account-specific")
-				    scopeParams = "&domainId="+trim(thisDialog.find("#add_publicip_vlan_domain").val())+"&account="+trim(thisDialog.find("#add_publicip_vlan_account").val());    
+				    scopeParams = "&domainId="+trim($thisDialog.find("#add_publicip_vlan_domain").val())+"&account="+trim($thisDialog.find("#add_publicip_vlan_account").val());    
 								
 				var type = "true";
 				if (getNetworkType() == "vlan") 
-				    type = trim(thisDialog.find("#add_publicip_vlan_type").val());
+				    type = trim($thisDialog.find("#add_publicip_vlan_type").val());
 				    
-				var gateway = trim(thisDialog.find("#add_publicip_vlan_gateway").val());
-				var netmask = trim(thisDialog.find("#add_publicip_vlan_netmask").val());
-				var startip = trim(thisDialog.find("#add_publicip_vlan_startip").val());
-				var endip = trim(thisDialog.find("#add_publicip_vlan_endip").val());					
-								
-				var $template1 = $("#vlan_template").clone(); 							   
-				if(type == "false") //direct  
-				    $template1.find("#vlan_type_icon").removeClass("virtual").addClass("direct");
-				else  //virtual
-				  	$template1.find("#vlan_type_icon").removeClass("direct").addClass("virtual");	
-				
-				if($vlanContainer != null)
-				    $vlanContainer.prepend($template1.show());	
-																
+				var gateway = trim($thisDialog.find("#add_publicip_vlan_gateway").val());
+				var netmask = trim($thisDialog.find("#add_publicip_vlan_netmask").val());
+				var startip = trim($thisDialog.find("#add_publicip_vlan_startip").val());
+				var endip = trim($thisDialog.find("#add_publicip_vlan_endip").val());					
+									
+				$thisDialog.find("#spinning_wheel").fadeIn("slow");
+																				
 				$.ajax({
 				    data: createURL("command=createVlanIpRange&forVirtualNetwork="+type+"&zoneId="+zoneObj.id+vlan+scopeParams+"&gateway="+encodeURIComponent(gateway)+"&netmask="+encodeURIComponent(netmask)+"&startip="+encodeURIComponent(startip)+"&endip="+encodeURIComponent(endip)),
 					dataType: "json",
-					success: function(json) {											    			    			
-						vlanJsonToTemplate(json.createvlaniprangeresponse, $template1);	 	
+					success: function(json) {	
+					    $thisDialog.dialog("close");
+					
+					    var $template1 = $("#vlan_template").clone(); 							   
+				        if(type == "false") //direct  
+				            $template1.find("#vlan_type_icon").removeClass("virtual").addClass("direct");
+				        else  //virtual
+				  	        $template1.find("#vlan_type_icon").removeClass("direct").addClass("virtual");	
+        				
+        				vlanJsonToTemplate(json.createvlaniprangeresponse, $template1);	
+				        $vlanContainer.prepend($template1);	
+				        $template1.fadeIn("slow");
 					},
 				    error: function(XMLHttpResponse) {
-				        handleError(XMLHttpResponse);	
-				        $template1.slideUp(function(){
-				            $(this).remove();
-				        });		        
+				        handleErrorInDialog(XMLHttpResponse, $thisDialog);					         
 				    }
 				});
 				
