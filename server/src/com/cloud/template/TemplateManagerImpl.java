@@ -537,10 +537,10 @@ public class TemplateManagerImpl implements TemplateManager {
         if (vo!=null){
             ExtractJobResultObject resultObject = new ExtractJobResultObject(template.getAccountId(), template.getName(), Upload.Status.DOWNLOAD_URL_CREATED.toString(), vo.getId(), url);
             mgr.completeAsyncJob(job.getId(), AsyncJobResult.STATUS_SUCCEEDED, 1, resultObject);            
-            EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_INFO, event, "Completed extraction of "+template.getName()+ " in mode:" +extractMode.toString(), null, eventId);
+            EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_INFO, event, "Completed extraction of "+template.getName()+ " in mode:" +mode, null, eventId);
             return vo.getId();
         }else{
-            EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_ERROR, event, "Failed extraction of "+template.getName()+ " in mode:" +extractMode.toString(), null, eventId);
+            EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_ERROR, event, "Failed extraction of "+template.getName()+ " in mode:" +mode, null, eventId);
             mgr.completeAsyncJob(job.getId(), AsyncJobResult.STATUS_FAILED, 2, null);
             return null;
         }

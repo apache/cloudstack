@@ -29,13 +29,13 @@ public class ExtractResponse extends BaseResponse {
     @SerializedName("name") @Param(description="the name of the extracted object")
     private String name;
     
-    @SerializedName("uploadId") @Param(description="the upload id of extracted object")
+    @SerializedName("extractId") @Param(description="the upload id of extracted object")
     private Long uploadId;
     
     @SerializedName("uploadpercentage") @Param(description="the percentage of the entity uploaded to the specified location")
     private Integer uploadPercent;
         
-    @SerializedName("status") @Param(description="the status of the ")
+    @SerializedName("status") @Param(description="the status of the extraction")
     private String status;
     
     @SerializedName("accountid") @Param(description="the account id to which the extracted object belongs")
@@ -68,8 +68,20 @@ public class ExtractResponse extends BaseResponse {
     private String mode;
     
     @SerializedName("url") @Param(description="if mode = upload then url of the uploaded entity. if mode = download the url from which the entity can be downloaded")
-    private String url;
+    private String url;   
     
+    public ExtractResponse(){        
+    }
+    
+    public ExtractResponse(Long volumeId, String volName, long accountId,
+            String state, Long uploadId) {
+        this.id = volumeId;
+        this.name = volName;
+        this.accountId = accountId;
+        this.state = state;
+        this.uploadId = uploadId;        
+    }
+
     public Long getId() {
         return id;
     }

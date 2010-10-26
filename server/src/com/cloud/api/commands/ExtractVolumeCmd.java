@@ -23,8 +23,10 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.ExtractResponse;
 import com.cloud.event.EventTypes;
+import com.cloud.storage.UploadVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.user.Account;
 
@@ -39,16 +41,19 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     //FIXME - add description
-    @Parameter(name="id", type=CommandType.LONG, required=true)
+    @Parameter(name="id", type=CommandType.LONG, required=true, description="the ID of the volume")
     private Long id;
 
     //FIXME - add description
-    @Parameter(name="url", type=CommandType.STRING, required=true)
+    @Parameter(name="url", type=CommandType.STRING, required=false, description="the url to which the volume would be extracted")
     private String url;
 
     //FIXME - add description
-    @Parameter(name="zoneid", type=CommandType.LONG, required=true)
+    @Parameter(name="zoneid", type=CommandType.LONG, required=true, description="the ID of the zone where the volume is located")
     private Long zoneId;
+    
+    @Parameter(name="mode", type=CommandType.STRING, required=true, description="the mode of extraction - HTTP_DOWNLOAD or FTP_UPLOAD")
+    private String mode;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -65,12 +70,16 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
     public Long getZoneId() {
         return zoneId;
     }
+    
+    public String getMode() {
+        return mode;
+    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-	@Override
+    @Override
 	public String getName() {
 		return s_name;
 	}
@@ -79,7 +88,7 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
     public long getAccountId() {
         VolumeVO volume = ApiDBUtils.findVolumeById(getId());
         if (volume != null) {
-            return volume.getId();
+            return volume.getAccountId();
         }
 
         // invalid id, parent this command to SYSTEM so ERROR events are tracked
@@ -88,7 +97,7 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_VOLUME_UPLOAD;
+        return EventTypes.EVENT_VOLUME_EXTRACT;
     }
 
     @Override
@@ -98,9 +107,22 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
 
 	@Override @SuppressWarnings("unchecked")
 	public ExtractResponse getResponse() {
-	    ExtractResponse response = (ExtractResponse)getResponseObject();
-	    response.setResponseName(getName());
-	    return response;
+        Long uploadId = (Long)getResponseObject();
+        UploadVO uploadInfo = ApiDBUtils.findUploadById(uploadId);
+        
+        ExtractResponse response = new ExtractResponse();
+        response.setResponseName(getName());
+        response.setId(id);
+        response.setName(ApiDBUtils.findVolumeById(id).getName());        
+        response.setZoneId(zoneId);
+        response.setZoneName(ApiDBUtils.findZoneById(zoneId).getName());
+        response.setMode(mode);
+        response.setUploadId(uploadId);
+        response.setState(uploadInfo.getUploadState().toString());
+        response.setAccountId(getAccountId());        
+        //FIX ME - Need to set the url once the gson jar is upgraded since it is throwing an error right now.
+        //response.setUrl(uploadInfo.getUploadUrl());
+        return response;
 	}
 
 	public static String getStaticName() {

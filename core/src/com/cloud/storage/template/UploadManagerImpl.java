@@ -26,6 +26,7 @@ import com.cloud.agent.api.storage.UploadProgressCommand;
 import com.cloud.agent.api.storage.UploadCommand;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.StorageResource;
+import com.cloud.storage.Upload;
 import com.cloud.storage.UploadVO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.template.TemplateUploader.UploadCompleteCallback;
@@ -338,7 +339,7 @@ public class UploadManagerImpl implements UploadManager {
             return new CreateEntityDownloadURLAnswer(errorString, CreateEntityDownloadURLAnswer.RESULT_FAILURE);
         }
         
-        // Create a symbolic link from the actual directory to the template location
+        // Create a symbolic link from the actual directory to the template location. The entity would be directly visible under /var/www/html/ 
         cmd.getInstallPath();
         command = new Script("/bin/bash", s_logger);
         command.add("-c");
@@ -357,6 +358,7 @@ public class UploadManagerImpl implements UploadManager {
     @Override
     public DeleteEntityDownloadURLAnswer handleDeleteEntityDownloadURLCommand(DeleteEntityDownloadURLCommand cmd){
 
+        //Delete the soft link
         s_logger.debug("handleDeleteEntityDownloadURLCommand "+cmd.getPath());
         Script command = new Script("/bin/bash", s_logger);
         command.add("-c");
@@ -367,6 +369,20 @@ public class UploadManagerImpl implements UploadManager {
             s_logger.warn(errorString);
             return new DeleteEntityDownloadURLAnswer(errorString, CreateEntityDownloadURLAnswer.RESULT_FAILURE);
         }
+        
+        // If its a volume also delete the Hard link
+        if(cmd.getType() == Upload.Type.VOLUME){
+            command = new Script("/bin/bash", s_logger);
+            command.add("-c");
+            command.add("rm -f " + publicTemplateRepo + cmd.getPath());
+            result = command.execute();
+            if (result != null) {
+                String errorString = "Error in linking  err=" + result;
+                s_logger.warn(errorString);
+                return new DeleteEntityDownloadURLAnswer(errorString, CreateEntityDownloadURLAnswer.RESULT_FAILURE);
+            }
+        }
+        
         return new DeleteEntityDownloadURLAnswer("", CreateEntityDownloadURLAnswer.RESULT_SUCCESS);
     }
 
