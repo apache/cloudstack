@@ -5880,11 +5880,9 @@ public class ManagementServerImpl implements ManagementServer {
     		//certficate uploaded to db successfully	
     		//get a list of all Console proxies from the cp table
     		List<ConsoleProxyVO> cpList = _consoleProxyDao.listAll();
-    		
     		for(ConsoleProxyVO cp : cpList)
     		{
     			HostVO cpHost = _hostDao.findConsoleProxyHost(cp.getName(), com.cloud.host.Host.Type.ConsoleProxy);
-    			
 	    		//now send a command to each console proxy 
 	    		UpdateCertificateCommand certCmd = new UpdateCertificateCommand(_certDao.findById(certVOId).getCertificate());
 	    		try {
@@ -5900,10 +5898,8 @@ public class ManagementServerImpl implements ManagementServer {
 					s_logger.warn("Unable to send update certificate command to the console proxy resource", e);
 				} catch (OperationTimedoutException e) {
 					s_logger.warn("Unable to send update certificate command to the console proxy resource", e);
-				}
-	
+				}	
     		}
-    		
     		return true;
     	}
     	else

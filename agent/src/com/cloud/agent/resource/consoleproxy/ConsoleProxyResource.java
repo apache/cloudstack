@@ -109,14 +109,13 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
 
     protected Answer execute(final UpdateCertificateCommand cmd) {
     	boolean success = false;
-    	try{
+    	try
+    	{
     		String certificate = cmd.getCertificate();
-    		
     		//write the cert to /etc/cloud/consoleproxy/cert/
 			boolean dirCreated = false;
 			String strDirectoy = "/etc/cloud/consoleproxy/cert/";
 			dirCreated = (new File(strDirectoy)).mkdirs();
-			
     	    if (dirCreated) 
     	    {
     	    	if(s_logger.isDebugEnabled())
@@ -128,13 +127,13 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
 				//Close the output stream
 				out.close();
 	    		success = true;
-    	    }    
-            return new Answer(cmd, success, "Custom certificate update required status");
+    	    }
     	}catch (Exception e)
     	{
     		s_logger.error("Unable to read the cert string in console proxy resource",e);
     		success = false;
     	}
+    	
         return new Answer(cmd, success, "Custom certificate response from the updatecertificate flow");
     }
 
