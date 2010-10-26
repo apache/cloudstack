@@ -236,14 +236,11 @@ public class ApiXmlDocReader {
 				}	
 			}
 	        
-	        
-
 		    out.close();
 
 		    } catch (IOException e) {
 		      e.printStackTrace();
 		    } 
-
 
 	}
 }
