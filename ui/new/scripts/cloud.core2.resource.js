@@ -56,7 +56,7 @@ function buildZoneTree() {
 				else if(target.hasClass("expanded_open")) {					
 					target.removeClass("expanded_open").addClass("expanded_close");					
 					target.parent().parent().siblings("#zone_content").hide();									
-				}
+				}				
 				break;
 											    
 			case "pod_arrow" :		    	   
@@ -73,6 +73,7 @@ function buildZoneTree() {
 			
 			case "zone_name_label":	
 			case "zone_name":	
+			    target.siblings("#zone_arrow").click();
 			    selectTreeNodeInLeftMenu(target.parent().parent().parent());	
 			    var $leftmenuItem1 = target.parent().parent().parent().parent();	
 			    showPage($("#zone_page"), $leftmenuItem1);			    		   				    		   			    
@@ -80,6 +81,7 @@ function buildZoneTree() {
 			    	
 			case "pod_name_label" :	
 			case "pod_name" :	
+			    target.siblings("#pod_arrow").click();
 			    selectTreeNodeInLeftMenu(target.parent().parent().parent());
 			    var $leftmenuItem1 = target.parent().parent().parent().parent();
 			    showPage($("#pod_page"), $leftmenuItem1);				   			
