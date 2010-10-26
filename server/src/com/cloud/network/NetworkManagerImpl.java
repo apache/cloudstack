@@ -422,16 +422,16 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
     public boolean rebootRouter(final long routerId, long startEventId) {
         return _routerMgr.rebootRouter(routerId, startEventId);
     }
-    
+
     @Override
-    public boolean rebootRouter(RebootRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
-        return _routerMgr.rebootRouter(cmd);
+    public DomainRouterVO rebootRouter(RebootRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
+        _routerMgr.rebootRouter(cmd);
+        return _routerMgr.getRouter(cmd.getId());
     }
 
     @Override
     public boolean associateIP(final DomainRouterVO router, final List<String> ipAddrList, final boolean add, long vmId) {
         Commands cmds = new Commands(OnError.Continue);
-        int i=0;
         boolean sourceNat = false;
         for (final String ipAddress: ipAddrList) {
         	if (ipAddress.equalsIgnoreCase(router.getPublicIpAddress()))

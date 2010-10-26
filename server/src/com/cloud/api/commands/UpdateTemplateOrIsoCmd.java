@@ -43,7 +43,7 @@ public abstract class UpdateTemplateOrIsoCmd extends BaseCmd {
     private Long id;
 
     @Parameter(name="name", type=CommandType.STRING, description="the name of the image file")
-    private String isoName;
+    private String templateName;
 
     @Parameter(name="ostypeid", type=CommandType.LONG, description="the ID of the OS type that best represents the OS of this image.")
     private Long osTypeId;
@@ -70,8 +70,8 @@ public abstract class UpdateTemplateOrIsoCmd extends BaseCmd {
         return id;
     }
 
-    public String isoName() {
-        return isoName;
+    public String getTemplateName() {
+        return templateName;
     }
 
     public Long getOsTypeId() {
@@ -85,5 +85,4 @@ public abstract class UpdateTemplateOrIsoCmd extends BaseCmd {
     public String getFormat() {
         return format;
     }
-
 }

@@ -516,7 +516,8 @@ function clearMiddleMenu() {
     $("#midmenu_container").empty();
     $("#midmenu_action_link").hide();
     $("#midmenu_add_link").unbind("click").hide();    
-    $("#midmenu_add2_link").unbind("click").hide();           
+    $("#midmenu_add2_link").unbind("click").hide();     
+    $("#midmenu_add3_link").unbind("click").hide();          
     $("#midmenu_startvm_link").unbind("click").hide();     
     $("#midmenu_stopvm_link").unbind("click").hide(); 
     $("#midmenu_rebootvm_link").unbind("click").hide(); 
@@ -871,6 +872,25 @@ function bindAndListMidMenuItems($leftmenu, commandString, jsonResponse1, jsonRe
         return false;
     });
 }
+
+function handleErrorInDialog(XMLHttpResponse, $thisDialog) {
+    var start = XMLHttpResponse.responseText.indexOf("h1") + 3;
+	var end = XMLHttpResponse.responseText.indexOf("</h1");
+	var errorMsg = XMLHttpResponse.responseText.substring(start, end);
+	var $infoContainer = $thisDialog.find("#info_container");
+
+	if(errorMsg != null && errorMsg.length > 0) 	    
+	    $infoContainer.find("#info").text(fromdb(errorMsg));	
+	else 
+	    $infoContainer.find("#info").text("action failed");	
+	
+	$thisDialog.find("#spinning_wheel").fadeOut("slow");
+	$infoContainer.fadeIn("slow");
+}
+
+
+
+
 
 
 

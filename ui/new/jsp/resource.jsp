@@ -6,6 +6,17 @@
     Locale browserLocale = request.getLocale();
     CloudResourceBundle t = CloudResourceBundle.getBundle("resources/resource", browserLocale);
 %>
+
+<!-- Loading -->
+<div style="display:none;">
+    <div class="ui-widget-overlay">
+    </div>
+    <div class="rightpanel_mainloaderbox" >
+       <div class="rightpanel_mainloader_animatedicon"></div>
+       <p>Loading &hellip; </p>
+    </div>    
+</div>
+
 <!-- domain detail panel (begin) -->
 <div class="main_title" id="right_panel_header">
   
@@ -996,16 +1007,28 @@
 			</ol>
 		</form>
 	</div>
+	<!--Loading box-->
+    <div id="spinning_wheel" class="ui_dialog_loaderbox" style="display:none;">
+    	<div class="ui_dialog_loader"></div>
+        <p>Adding....</p>
+    </div>
+    
+    <!--Confirmation msg box-->
+    <!--Note: for error msg, just have to add error besides everything for eg. add error(class) next to ui_dialog_messagebox error, ui_dialog_msgicon error, ui_dialog_messagebox_text error.  -->
+	<div id="info_container" class="ui_dialog_messagebox error" style="display:none;">
+    	<div id="icon" class="ui_dialog_msgicon error"></div>
+        <div id="info" class="ui_dialog_messagebox_text error">(info)</div>
+    </div>
 </div>
 <!-- Add VLAN IP Range Dialog for zone (end) -->
 
 <!-- Add VLAN IP Range button -->
-	<div class="networkswitch_vlanadd">
-    	<div class="networkswitch_vlan_addbutton"></div>
-	</div>
+<div id="add_vlan_button" class="networkswitch_vlanadd" style="display:none">
+    <div class="networkswitch_vlan_addbutton"></div>
+</div>
 
-<!-- Direct VLAN Template (begin) -->
-<div class="networkswitch_vlanpanel" id="direct_vlan_template" style="display: block;">
+<!-- VLAN Template (begin) -->
+<div class="networkswitch_vlanpanel" id="vlan_template" style="display:none;">
 
     <div class="networkswitch_vlanconnect">
     	<div class="networkswitch_closeicon"></div>
@@ -1035,35 +1058,12 @@
                 <span id="ip_range">n.n.n.n - m.m.m.m</span>
             </div>
         </div>
-        <div class="networkswitch_typeicon direct">
-        </div>
-        
+        <div id="vlan_type_icon" class="networkswitch_typeicon">
+        </div>        
        
     </div>
 </div>
-<!-- Direct VLAN Template (end) -->
-<!-- Public VLAN Template (begin) -->
-<div class="networkswitch_vlanpanel" id="virtual_vlan_template" style="display: none">
-    <div class="networkswitch_vlanconnect">
-        <div class="networkswitch_vlan_infoicon">
-        </div>
-        <div class="networkswitch_vlan_detailsbox">
-            <div class="networkswitch_vlan_detailsbox_textbox">
-                <div class="networkswitch_vlan_detailsbox_textbox_label">
-                    VLAN:</div>
-                <span id="vlan_id">n</span>
-            </div>
-            <div class="networkswitch_vlan_detailsbox_textbox">
-                <div class="networkswitch_vlan_detailsbox_textbox_label">
-                     <%=t.t("ip.address.range")%>:</div>
-                <span id="ip_range">n.n.n.n - m.m.m.m</span>
-            </div>
-        </div>
-        <div class="networkswitch_typeicon virtual">
-        </div>
-    </div>
-</div>
-<!-- Public VLAN Template (begin) -->
+<!-- VLAN Template (end) -->
 
 
 <!--  secondary storage tab template (begin) -->

@@ -31,7 +31,7 @@ public class ResourceLimitResponse extends BaseResponse {
     private String domainName;
 
     @SerializedName("resourcetype") @Param(description="resource type. Values include 0, 1, 2, 3, 4. See the resourceType parameter for more information on these values.")
-    private Integer resourceType;
+    private String resourceType;
 
     @SerializedName("max") @Param(description="the maximum number of the resource. A -1 means the resource currently has no limit.")
     private Long max;
@@ -60,11 +60,11 @@ public class ResourceLimitResponse extends BaseResponse {
         this.domainName = domainName;
     }
 
-    public Integer getResourceType() {
+    public String getResourceType() {
         return resourceType;
     }
 
-    public void setResourceType(Integer resourceType) {
+    public void setResourceType(String resourceType) {
         this.resourceType = resourceType;
     }
 

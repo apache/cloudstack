@@ -110,7 +110,7 @@ public class ListResourceLimitsCmd extends BaseListCmd {
                 }
             }
 
-            resourceLimitResponse.setResourceType(limit.getType().ordinal());
+            resourceLimitResponse.setResourceType(Integer.valueOf(limit.getType().ordinal()).toString());
             resourceLimitResponse.setMax(limit.getMax());
 
             resourceLimitResponse.setResponseName("resourcelimit");

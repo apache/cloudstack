@@ -101,6 +101,7 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
         response.setDisplayText(offering.getDisplayText());
         response.setCpuNumber(offering.getCpu());
         response.setCpuSpeed(offering.getSpeed());
+        response.setMemory(offering.getRamSize());
         response.setCreated(offering.getCreated());
         String storageType = offering.getUseLocalStorage() ? "local" : "shared";
         response.setStorageType(storageType);

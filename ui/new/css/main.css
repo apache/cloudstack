@@ -9,7 +9,7 @@
 html,body{
 	font-family:Arial, Helvetica, sans-serif;
 	font-size:11px;
-	color:#717171;
+	color:#333;
 	height:auto;
 	font-weight:normal;
 	background:#00374e url(../images/login_bg.gif) repeat-x top left;
@@ -270,7 +270,7 @@ a:hover {
 	top: 0%;
 	left: 0%;
 	width: 100%;
-	min-height: 1070px;
+	min-height: 1000px;
 	height: 100%;
 	background-color: black;
 	z-index:1001;
@@ -279,6 +279,8 @@ a:hover {
 	filter: alpha(opacity=60);
 	overflow:hidden;
 }
+
+
 
 .vmpopup_container {
 	width:737px;
@@ -2153,6 +2155,27 @@ a:hover.search_button {
 	padding:0;
 }
 
+.midmenu_itemheader {
+	width:220px;
+	height:auto;
+	float:left;
+	background:#989898 url(../images/midmenu_titlebg.gif) repeat-x top left;
+	margin:0;
+	padding:0 0 4px 0;
+}
+
+.midmenu_titlebox p{
+	width:220px;
+	height:auto;
+	float:left;
+	color:#333;
+	text-align:left;
+	font-weight:bold;
+	font-size:11px;
+	margin:3px 0 0 10px;
+	padding:0;
+}
+
 .midmenu_content{
 	width:220px;
 	height:auto;
@@ -2167,9 +2190,10 @@ a:hover.search_button {
 	padding:0 0 4px 0;
 }
 
-.midmenu_content.selected{
-	background:#626262 url(../images/leftmenu_selected.gif) repeat-x top left;7497ae url(../images/mid_addingbg.gif) repeat-x top left;
-	color:#FFF;
+.midmenu_content.selected {
+	background:#626262 url(../images/leftmenu_selected.gif) repeat-x top left;
+	color:#FFF !important;
+
 }
 
 .midmenu_content.inaction{
@@ -2210,9 +2234,21 @@ a:hover.search_button {
 	float:left;
 	text-align:left;
 	font-weight:normal;
+	font-size:11px;
+	margin:3px 0 0 0;
+	padding:0;
+	
+}
+.midmenu_textbox span {
+	width:165px;
+	height:auto;
+	float:left;
+	text-align:left;
+	font-weight:normal;
 	font-size:10px;
 	margin:3px 0 0 0;
 	padding:0;
+	color:#999;
 }
 
 
@@ -2222,14 +2258,16 @@ a:hover.search_button {
 	height:auto;
 	margin:0 0 0 221px;
 	padding:0;
+	position:relative;
 }
 
 .main_contentarea_without_midmenu {
 	width:auto;
 	min-height:1000px;
 	height:auto;
-	margin:0 0 0 10px;
+	margin:0 0 0 0;
 	padding:0;
+	position:relative;
 }
 
 .main_title {
@@ -2308,6 +2346,41 @@ a:hover.search_button {
 	cursor:pointer;
 	cursor:hand;
 }
+
+.rightpanel_mainloaderbox {
+	width:auto;
+	height:auto;
+	position:absolute;
+	top:30%;
+	left:40%;
+	background:#FFF;
+	border:1px solid #CCC;
+	margin:0;
+	padding:0;
+	z-index:1008;
+}
+
+.rightpanel_mainloaderbox p{
+	width:auto;
+	height:auto;
+	float:left;
+	color:#333;
+	font-size:16px;
+	font-weight:normal;
+	margin:15px 10px 0 10px;
+	display:inline;
+	padding:0;
+}
+.rightpanel_mainloader_animatedicon {
+	width:40px;
+	height:40px;
+	float:left;
+	background:url(../images/big_loading.gif) no-repeat top left;
+	margin:3px 0 0 5px;
+	display:inline;
+	padding:0;
+}
+
 
 .text_container {
 	width:100%;

@@ -17,6 +17,8 @@
  */
 package com.cloud.api.commands;
 
+import java.text.DecimalFormat;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
@@ -25,7 +27,7 @@ import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.response.UpgradeVmResponse;
+import com.cloud.api.response.UserVmResponse;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.VMTemplateVO;
@@ -76,13 +78,14 @@ public class UpgradeVMCmd extends BaseCmd {
     }
     
     @Override @SuppressWarnings("unchecked")
-    public UpgradeVmResponse getResponse() {
+    public UserVmResponse getResponse() {
         UserVmVO userVm = (UserVmVO)getResponseObject();
 
-        UpgradeVmResponse response = new UpgradeVmResponse();
+        UserVmResponse response = new UserVmResponse();
         if (userVm != null) {
     		Account acct = ApiDBUtils.findAccountById(userVm.getAccountId());
-    		response.setAccount(acct.getAccountName());
+    		response.setId(userVm.getId());
+    		response.setAccountName(acct.getAccountName());
 
     		ServiceOffering offering = ApiDBUtils.findServiceOfferingById(userVm.getServiceOfferingId());
     		response.setCpuSpeed(offering.getSpeed());
@@ -94,17 +97,26 @@ public class UpgradeVMCmd extends BaseCmd {
     		}
 
     		response.setServiceOfferingId(userVm.getServiceOfferingId());
-    		
+
+            //stats calculation
+            DecimalFormat decimalFormat = new DecimalFormat("#.##");
+            String cpuUsed = null;
     		VmStats vmStats = ApiDBUtils.getVmStatistics(userVm.getId());
     		if (vmStats != null) {
-    		    response.setCpuUsed((long) vmStats.getCPUUtilization());
-    		    response.setNetworkKbsRead((long) vmStats.getNetworkReadKBs());
-    		    response.setNetworkKbsWrite((long) vmStats.getNetworkWriteKBs());
+                float cpuUtil = (float) vmStats.getCPUUtilization();
+                cpuUsed = decimalFormat.format(cpuUtil) + "%";
+                response.setCpuUsed(cpuUsed);
+
+                long networkKbRead = (long)vmStats.getNetworkReadKBs();
+                response.setNetworkKbsRead(networkKbRead);
+                
+                long networkKbWrite = (long)vmStats.getNetworkWriteKBs();
+                response.setNetworkKbsWrite(networkKbWrite);
     		}
     		
     		response.setCreated(userVm.getCreated());
     		response.setDisplayName(userVm.getDisplayName());
-    		response.setDomain(ApiDBUtils.findDomainById(acct.getDomainId()).getName());
+    		response.setDomainName(ApiDBUtils.findDomainById(acct.getDomainId()).getName());
     		response.setDomainId(acct.getDomainId());
     		response.setHaEnable(userVm.isHaEnabled());
 

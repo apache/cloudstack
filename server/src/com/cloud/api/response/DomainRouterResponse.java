@@ -84,7 +84,7 @@ public class DomainRouterResponse extends BaseResponse {
     @SerializedName("guestipaddress") @Param(description="the guest IP address for the router")
     private String guestIpAddress;
 
-    @SerializedName("guestmacaddress") @Param(description="the guest MAC address for the router")
+    @SerializedName("macaddress") @Param(description="the guest MAC address for the router")
     private String guestMacAddress;
 
     @SerializedName("guestnetmask") @Param(description="the guest netmask for the router")
