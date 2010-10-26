@@ -2258,7 +2258,7 @@ a:hover.search_button {
 	height:auto;
 	margin:0 0 0 221px;
 	padding:0;
-	position:relative;
+
 }
 
 .main_contentarea_without_midmenu {
@@ -2267,7 +2267,7 @@ a:hover.search_button {
 	height:auto;
 	margin:0 0 0 0;
 	padding:0;
-	position:relative;
+
 }
 
 .main_title {
@@ -2821,6 +2821,7 @@ a:hover.search_button {
 	position:relative;
 	margin:4px 0 0 0;
 	padding:0 0 0 0;
+	z-index:1009;
 }
 
 .grid_botactionpanel {
