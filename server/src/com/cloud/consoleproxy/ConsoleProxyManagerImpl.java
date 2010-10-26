@@ -56,9 +56,11 @@ import com.cloud.agent.api.Start2Command;
 import com.cloud.agent.api.StartConsoleProxyAnswer;
 import com.cloud.agent.api.StartConsoleProxyCommand;
 import com.cloud.agent.api.StartupCommand;
+import com.cloud.agent.api.StartupProxyCommand;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.proxy.ConsoleProxyLoadAnswer;
+import com.cloud.agent.api.proxy.UpdateCertificateCommand;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VirtualMachineTO.SshMonitor;
@@ -70,13 +72,15 @@ import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.async.BaseAsyncJobExecutor;
+import com.cloud.certificate.CertificateVO;
+import com.cloud.certificate.dao.CertificateDao;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
-import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
+import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
@@ -97,8 +101,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.Host;
-import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
+import com.cloud.host.Host.Type;
 import com.cloud.host.dao.HostDao;
 import com.cloud.info.ConsoleProxyConnectionInfo;
 import com.cloud.info.ConsoleProxyInfo;
@@ -109,10 +113,10 @@ import com.cloud.info.RunningHostInfoAgregator;
 import com.cloud.info.RunningHostInfoAgregator.ZoneHostInfo;
 import com.cloud.maid.StackMaid;
 import com.cloud.network.IpAddrAllocator;
-import com.cloud.network.IpAddrAllocator.networkInfo;
-import com.cloud.network.Network.TrafficType;
 import com.cloud.network.NetworkConfigurationVO;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.IpAddrAllocator.networkInfo;
+import com.cloud.network.Network.TrafficType;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
@@ -124,9 +128,9 @@ import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateHostVO;
-import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
@@ -155,12 +159,12 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.State;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachineGuru;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VmManager;
+import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.gson.Gson;
@@ -229,12 +233,12 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
     private HostDao _hostDao;
     @Inject
     private ConfigurationDao _configDao;
-
+    @Inject
+    private CertificateDao _certDao;
     @Inject
     private VMInstanceDao _instanceDao;
     @Inject
     private AccountDao _accountDao;
-
     @Inject private VMTemplateHostDao _vmTemplateHostDao;
     @Inject private AgentManager _agentMgr;
     @Inject private StorageManager _storageMgr;
@@ -2431,5 +2435,58 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
     @Override
     public boolean processDeploymentResult(Commands cmds, ConsoleProxyVO proxy, VirtualMachineProfile profile, DeployDestination dest) {
         return true;
+    }
+    
+    @Override
+    public boolean applyCustomCertToNewProxy(StartupProxyCommand cmd){
+        //this is the case for updating cust cert on each new starting proxy, if such cert exists
+		//get cert from db
+		List<CertificateVO> certList = _certDao.listAll();
+		
+		if(certList.size()>0){
+			CertificateVO cert = certList.get(0);//there will only be 1 cert in db for now
+			String certStr = cert.getCertificate(); 
+			long proxyVmId = ((StartupProxyCommand)cmd).getProxyVmId();
+			ConsoleProxyVO consoleProxy = _consoleProxyDao.findById(proxyVmId);
+			//find corresponding host
+			if(consoleProxy!=null){
+				HostVO consoleProxyHost = _hostDao.findConsoleProxyHost(consoleProxy.getName(), Type.ConsoleProxy);
+				//now send a command to console proxy 
+	    		UpdateCertificateCommand certCmd = new UpdateCertificateCommand(certStr);
+	    		try {
+						Answer updateCertAns = _agentMgr.send(consoleProxyHost.getId(), certCmd);
+						if(updateCertAns.getResult() == true)
+						{
+							//we have the cert copied over on cpvm
+							long eventId = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_REBOOT, "rebooting console proxy with Id: "+consoleProxy.getId());    				
+							rebootProxy(consoleProxy.getId(), eventId);
+							//when cp reboots, the context will be reinit with the new cert 
+							s_logger.info("Successfully rebooted console proxy resource after custom certificate application");
+							return true;
+						}
+				} catch (AgentUnavailableException e) {
+					s_logger.warn("Unable to send update certificate command to the console proxy resource", e);
+					return false;
+				} catch (OperationTimedoutException e) {
+					s_logger.warn("Unable to send update certificate command to the console proxy resource", e);
+					return false;
+				}
+			}
+		}else{
+			return false;//no cert
+		}
+		return false;
+    }
+    
+    private Long saveScheduledEvent(Long userId, Long accountId, String type, String description) 
+    {
+        EventVO event = new EventVO();
+        event.setUserId(userId);
+        event.setAccountId(accountId);
+        event.setType(type);
+        event.setState(EventState.Scheduled);
+        event.setDescription("Scheduled async job for "+description);
+        event = _eventDao.persist(event);
+        return event.getId();
     }
 }

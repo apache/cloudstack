@@ -113,29 +113,29 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
     		String certificate = cmd.getCertificate();
     		
     		//write the cert to /etc/cloud/consoleproxy/cert/
-    	    String strDirectoy ="/etc/cloud/consoleproxy/cert/";
-    	    boolean dirCreated = (new File(strDirectoy)).mkdir();
-    	    if (dirCreated) {
-    	      s_logger.info("Directory: " + strDirectoy + " created");
-    	      
-    	      //copy cert to the dir
-    	      try {
+			boolean dirCreated = false;
+			String strDirectoy = "/etc/cloud/consoleproxy/cert/";
+			dirCreated = (new File(strDirectoy)).mkdirs();
+			
+    	    if (dirCreated) 
+    	    {
+    	    	if(s_logger.isDebugEnabled())
+    	    		s_logger.info("Directory: " + strDirectoy + " created");    
+    	    	//copy cert to the dir
 				FileWriter fstream = new FileWriter("/etc/cloud/consoleproxy/cert/customcert");
 				BufferedWriter out = new BufferedWriter(fstream);
 				out.write(certificate);
 				//Close the output stream
 				out.close();
-    	      }catch (Exception e){
-    	    	  s_logger.warn("Unable to write file to /etc/cloud/consoleproxy/cert/ on console proxy", e);
-    	      }
+	    		success = true;
     	    }    
-    		success = true;
-            return new Answer(cmd, success, "Cert string in the console proxy resource status:");
+            return new Answer(cmd, success, "Custom certificate update required status");
     	}catch (Exception e)
     	{
-    		s_logger.error("Unable to read the cert string in console proxy resource");
+    		s_logger.error("Unable to read the cert string in console proxy resource",e);
+    		success = false;
     	}
-        return new Answer(cmd, success, "Cert string in the console proxy resource status:");
+        return new Answer(cmd, success, "Custom certificate response from the updatecertificate flow");
     }
 
     protected Answer execute(final CheckConsoleProxyLoadCommand cmd) {

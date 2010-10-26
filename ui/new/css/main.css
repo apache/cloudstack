@@ -2006,6 +2006,7 @@ a:hover.search_button {
 	height:auto;
 	float:left;
 	text-align:left;
+	background:#FFF url(../images/midmenu_hover.gif) repeat-x top left;
 	color:#CCC;
 	font-size:11px;
 	font-weight:normal;
@@ -2251,6 +2252,25 @@ a:hover.search_button {
 	color:#999;
 }
 
+.midmenu_emptymsgbox {
+	width:220px;
+	height:auto;
+	float:left;
+	background:#d4d4d4 url(../images/midmenu_emptymsg.gif) repeat-x top left;
+	margin:0 0 0 0;
+	padding:0;
+}
+
+.midmenu_emptymsgbox p{
+	width:200px;
+	height:auto;
+	float:left;
+	color:#666;
+	font-size:11px;
+	font-weight:normal;
+	margin:0 0 0 0;
+	padding:0;
+}
 
 .main_contentarea_with_midmenu {
 	width:auto;
@@ -2447,6 +2467,30 @@ a:hover.search_button {
 	background:#FFF;
 	color:#333;
 	font-size:11px;
+}
+.grid_row_cell .error_text {
+	width:92%;
+	height:16px;
+	float:left;
+	margin:0 0 0 10px;
+	display:inline;
+	padding:0 0 0 2px;
+	border:1px solid #999;
+	background:#ffe5e5;
+	color:#333;
+	font-size:11px;
+}
+
+.errormsg {
+	width:80%;
+	height:auto;
+	float:left;
+	margin:3px 0 0 10px;
+	display:inline;
+	padding:0 0 0 2px;
+	color:#a90000;
+	font-size:11px;
+	font-weight:normal;
 }
 
 .grid_row_cell .select {
@@ -3043,7 +3087,7 @@ a:hover.search_button {
 	height:auto;
 	float:left;
 	position:absolute;
-	background:#FFF url(../images/midmenu_hover.gif) repeat top left;
+	background:#FFF repeat top left;
 	border:1px solid #CCC;
 	top:18px;
 	right:1px;

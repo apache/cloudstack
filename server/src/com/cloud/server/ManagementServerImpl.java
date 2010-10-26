@@ -26,6 +26,7 @@ import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.cert.Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -148,6 +149,7 @@ import com.cloud.async.dao.AsyncJobDao;
 import com.cloud.async.executor.ExtractJobResultObject;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
+import com.cloud.certificate.CertificateVO;
 import com.cloud.certificate.dao.CertificateDao;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
@@ -174,6 +176,7 @@ import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.event.EventState;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
@@ -6931,41 +6934,64 @@ public class ManagementServerImpl implements ManagementServer {
         }
         return version;
     }
+    
+    private Long saveScheduledEvent(Long userId, Long accountId, String type, String description) 
+    {
+        EventVO event = new EventVO();
+        event.setUserId(userId);
+        event.setAccountId(accountId);
+        event.setType(type);
+        event.setState(EventState.Scheduled);
+        event.setDescription("Scheduled async job for "+description);
+        event = _eventDao.persist(event);
+        return event.getId();
+    }
 
     @Override
-    public boolean uploadCertificate(UploadCustomCertificateCmd cmd) {
+    public boolean uploadCertificate(UploadCustomCertificateCmd cmd) throws ResourceAllocationException {
+    	//limit no.of certs uploaded to 1
+    	if(_certDao.listAll().size()>0){
+    		throw new ResourceAllocationException("There is already a custom certificate in the db");
+    	}
+    	
         String certificatePath = cmd.getPath();
     	Long certVOId = _certDao.persistCustomCertToDb(certificatePath);//0 implies failure
 
-    	if (certVOId!=null && certVOId!=0) {
-    		//certficate uploaded to db successfully
+    	if (certVOId!=null && certVOId!=0) 
+    	{
+    		//certficate uploaded to db successfully	
+    		//get a list of all Console proxies from the cp table
+    		List<ConsoleProxyVO> cpList = _consoleProxyDao.listAll();
     		
-    		//get a list of all hosts from host table
-    		List<HostVO> hosts = _hostDao.listAll();
-    		
-    		List<HostVO> consoleProxyList = new ArrayList<HostVO>();
-    		
-    		//find the console proxies, and send the command to them
-    		for(HostVO host : hosts) {
-    			if(host.getType().equals(com.cloud.host.Host.Type.ConsoleProxy)){
-    				consoleProxyList.add(host);
-    			}
-    		}
-    		    		
-    		for(HostVO consoleProxy : consoleProxyList){
+    		for(ConsoleProxyVO cp : cpList)
+    		{
+    			HostVO cpHost = _hostDao.findConsoleProxyHost(cp.getName(), com.cloud.host.Host.Type.ConsoleProxy);
+    			
 	    		//now send a command to each console proxy 
 	    		UpdateCertificateCommand certCmd = new UpdateCertificateCommand(_certDao.findById(certVOId).getCertificate());
 	    		try {
-					Answer updateCertAns = _agentMgr.send(consoleProxy.getId(), certCmd);
+						Answer updateCertAns = _agentMgr.send(cpHost.getId(), certCmd);
+						if(updateCertAns.getResult() == true)
+						{
+							//we have the cert copied over on cpvm
+							long eventId = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_REBOOT, "rebooting console proxy with Id: "+cp.getId());    				
+							_consoleProxyMgr.rebootProxy(cp.getId(), eventId);
+							//when cp reboots, the context will be reinit with the new cert 
+						}
 				} catch (AgentUnavailableException e) {
-					s_logger.warn("Unable to send command to the console proxy resource", e);
+					s_logger.warn("Unable to send update certificate command to the console proxy resource", e);
 				} catch (OperationTimedoutException e) {
-					s_logger.warn("Unable to send command to the console proxy resource", e);
+					s_logger.warn("Unable to send update certificate command to the console proxy resource", e);
 				}
+	
     		}
+    		
+    		return true;
     	}
-    	
-    	return false;
+    	else
+    	{
+    		return false;
+    	}
     }
 
     @Override

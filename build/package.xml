@@ -207,6 +207,13 @@
     </zip>
   </target>
 
+  <target name="package-tools" depends="-init-package">
+    <delete file="${publish.dir}/cloudapitools.zip" />
+    <zip destfile="${publish.dir}/cloudapitools.zip" compress="false">
+      <zipfileset dir="${tools.dist.dir}" filemode="555" />
+    </zip>
+  </target>
+
   <target name="clean-packages">
     <delete>
       <fileset dir="${dist.dir}" includes="*.zip" />
