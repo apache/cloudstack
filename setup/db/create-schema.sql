@@ -118,7 +118,7 @@ CREATE TABLE `cloud`.`account_network_ref` (
 
 CREATE TABLE `cloud`.`certificate` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
-  `certificate` text NOT NULL UNIQUE COMMENT 'the actual custom certificate being stored in the db',
+  `certificate` text COMMENT 'the actual custom certificate being stored in the db',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

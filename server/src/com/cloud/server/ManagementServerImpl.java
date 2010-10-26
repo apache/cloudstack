@@ -26,6 +26,7 @@ import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.cert.Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -148,6 +149,7 @@ import com.cloud.async.dao.AsyncJobDao;
 import com.cloud.async.executor.ExtractJobResultObject;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
+import com.cloud.certificate.CertificateVO;
 import com.cloud.certificate.dao.CertificateDao;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
@@ -6946,7 +6948,12 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public boolean uploadCertificate(UploadCustomCertificateCmd cmd) {
+    public boolean uploadCertificate(UploadCustomCertificateCmd cmd) throws ResourceAllocationException {
+    	//limit no.of certs uploaded to 1
+    	if(_certDao.listAll().size()>0){
+    		throw new ResourceAllocationException("There is already a custom certificate in the db");
+    	}
+    	
         String certificatePath = cmd.getPath();
     	Long certVOId = _certDao.persistCustomCertToDb(certificatePath);//0 implies failure
 

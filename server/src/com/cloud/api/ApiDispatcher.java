@@ -36,6 +36,7 @@ import com.cloud.configuration.ConfigurationManager;
 import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.DomainRouterService;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.security.NetworkGroupManager;
@@ -154,6 +155,8 @@ public class ApiDispatcher {
                 throw new ServerApiException(BaseCmd.PARAM_ERROR, cause.getMessage());
             } else if (cause instanceof PermissionDeniedException) {
                 throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, cause.getMessage());
+            } else if (cause instanceof ResourceAllocationException){
+            	throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, cause.getMessage());
             }
             s_logger.warn("Exception executing method " + methodName + " for command " + cmd.getClass().getSimpleName(), ite);
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to execute method " + methodName + " for command " + cmd.getClass().getSimpleName() + ", internal error in the implementation.");

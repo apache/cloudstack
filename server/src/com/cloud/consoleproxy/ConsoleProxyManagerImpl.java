@@ -2448,25 +2448,27 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
 			long proxyVmId = ((StartupProxyCommand)cmd).getProxyVmId();
 			ConsoleProxyVO consoleProxy = _consoleProxyDao.findById(proxyVmId);
 			//find corresponding host
-			HostVO consoleProxyHost = _hostDao.findConsoleProxyHost(consoleProxy.getName(), Type.ConsoleProxy);
-			//now send a command to console proxy 
-    		UpdateCertificateCommand certCmd = new UpdateCertificateCommand(certStr);
-    		try {
-					Answer updateCertAns = _agentMgr.send(consoleProxyHost.getId(), certCmd);
-					if(updateCertAns.getResult() == true)
-					{
-						//we have the cert copied over on cpvm
-						long eventId = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_REBOOT, "rebooting console proxy with Id: "+consoleProxy.getId());    				
-						rebootProxy(consoleProxy.getId(), eventId);
-						//when cp reboots, the context will be reinit with the new cert 
-						s_logger.info("Successfully rebooted console proxy resource after custom certificate application");
-					}
-			} catch (AgentUnavailableException e) {
-				s_logger.warn("Unable to send update certificate command to the console proxy resource", e);
-				return false;
-			} catch (OperationTimedoutException e) {
-				s_logger.warn("Unable to send update certificate command to the console proxy resource", e);
-				return false;
+			if(consoleProxy!=null){
+				HostVO consoleProxyHost = _hostDao.findConsoleProxyHost(consoleProxy.getName(), Type.ConsoleProxy);
+				//now send a command to console proxy 
+	    		UpdateCertificateCommand certCmd = new UpdateCertificateCommand(certStr);
+	    		try {
+						Answer updateCertAns = _agentMgr.send(consoleProxyHost.getId(), certCmd);
+						if(updateCertAns.getResult() == true)
+						{
+							//we have the cert copied over on cpvm
+							long eventId = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_REBOOT, "rebooting console proxy with Id: "+consoleProxy.getId());    				
+							rebootProxy(consoleProxy.getId(), eventId);
+							//when cp reboots, the context will be reinit with the new cert 
+							s_logger.info("Successfully rebooted console proxy resource after custom certificate application");
+						}
+				} catch (AgentUnavailableException e) {
+					s_logger.warn("Unable to send update certificate command to the console proxy resource", e);
+					return false;
+				} catch (OperationTimedoutException e) {
+					s_logger.warn("Unable to send update certificate command to the console proxy resource", e);
+					return false;
+				}
 			}
 		}else{
 			return false;//no cert

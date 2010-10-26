@@ -1219,5 +1219,5 @@ public interface ManagementServer {
      */
     String[] getHypervisors(ListHypervisorsCmd cmd);
 
-    boolean uploadCertificate(UploadCustomCertificateCmd cmd);
+    boolean uploadCertificate(UploadCustomCertificateCmd cmd) throws ResourceAllocationException;
 }
