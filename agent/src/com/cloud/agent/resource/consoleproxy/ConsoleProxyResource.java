@@ -121,8 +121,8 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
 			
     	    if (dirCreated) 
     	    {
-    	    	s_logger.info("Directory: " + strDirectoy + " created");
-    	      
+    	    	if(s_logger.isDebugEnabled())
+    	    		s_logger.info("Directory: " + strDirectoy + " created");    
     	    	//copy cert to the dir
 				FileWriter fstream = new FileWriter("/etc/cloud/consoleproxy/cert/customcert");
 				BufferedWriter out = new BufferedWriter(fstream);
@@ -131,14 +131,13 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
 				out.close();
 	    		success = true;
     	    }    
-
-            return new Answer(cmd, success, "Cert string in the console proxy resource status:");
+            return new Answer(cmd, success, "Custom certificate update required status");
     	}catch (Exception e)
     	{
     		s_logger.error("Unable to read the cert string in console proxy resource",e);
     		success = false;
     	}
-        return new Answer(cmd, success, "Cert string in the console proxy resource status:");
+        return new Answer(cmd, success, "Custom certificate response from the updatecertificate flow");
     }
 
     protected Answer execute(final CheckConsoleProxyLoadCommand cmd) {

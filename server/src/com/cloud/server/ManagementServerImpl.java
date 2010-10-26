@@ -6950,9 +6950,9 @@ public class ManagementServerImpl implements ManagementServer {
         String certificatePath = cmd.getPath();
     	Long certVOId = _certDao.persistCustomCertToDb(certificatePath);//0 implies failure
 
-    	if (certVOId!=null && certVOId!=0) {
-    		//certficate uploaded to db successfully
-    		
+    	if (certVOId!=null && certVOId!=0) 
+    	{
+    		//certficate uploaded to db successfully	
     		//get a list of all Console proxies from the cp table
     		List<ConsoleProxyVO> cpList = _consoleProxyDao.listAll();
     		
@@ -6964,12 +6964,11 @@ public class ManagementServerImpl implements ManagementServer {
 	    		UpdateCertificateCommand certCmd = new UpdateCertificateCommand(_certDao.findById(certVOId).getCertificate());
 	    		try {
 						Answer updateCertAns = _agentMgr.send(cpHost.getId(), certCmd);
-					
 						if(updateCertAns.getResult() == true)
 						{
 							//we have the cert copied over on cpvm
-							long eventId = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_REBOOT, "stopping console proxy with Id: "+cp.getId());    				
-							boolean cpReboot = _consoleProxyMgr.rebootProxy(cp.getId(), eventId);
+							long eventId = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_REBOOT, "rebooting console proxy with Id: "+cp.getId());    				
+							_consoleProxyMgr.rebootProxy(cp.getId(), eventId);
 							//when cp reboots, the context will be reinit with the new cert 
 						}
 				} catch (AgentUnavailableException e) {
@@ -6979,10 +6978,13 @@ public class ManagementServerImpl implements ManagementServer {
 				}
 	
     		}
-    		 
+    		
+    		return true;
     	}
-    	
-    	return true;
+    	else
+    	{
+    		return false;
+    	}
     }
 
     @Override
