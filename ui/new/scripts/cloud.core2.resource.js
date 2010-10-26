@@ -1378,71 +1378,73 @@ function initAddPrimaryStorageButton($midmenuAddLink2) {
         $("#dialog_add_pool")
 	    .dialog('option', 'buttons', { 				    
 		    "Add": function() { 	
-		    	var thisDialog = $(this);
+		    	var $thisDialog = $(this);
+		    	$thisDialog.find("#info_container").hide();
 		    	
 			    // validate values
-				var protocol = thisDialog.find("#add_pool_protocol").val();
+				var protocol = $thisDialog.find("#add_pool_protocol").val();
 				
 			    var isValid = true;						    
-			    isValid &= validateDropDownBox("Cluster", thisDialog.find("#pool_cluster"), thisDialog.find("#pool_cluster_errormsg"), false);  //required, reset error text					    				
-			    isValid &= validateString("Name", thisDialog.find("#add_pool_name"), thisDialog.find("#add_pool_name_errormsg"));
-			    isValid &= validateString("Server", thisDialog.find("#add_pool_nfs_server"), thisDialog.find("#add_pool_nfs_server_errormsg"));	
+			    isValid &= validateDropDownBox("Cluster", $thisDialog.find("#pool_cluster"), $thisDialog.find("#pool_cluster_errormsg"), false);  //required, reset error text					    				
+			    isValid &= validateString("Name", $thisDialog.find("#add_pool_name"), $thisDialog.find("#add_pool_name_errormsg"));
+			    isValid &= validateString("Server", $thisDialog.find("#add_pool_nfs_server"), $thisDialog.find("#add_pool_nfs_server_errormsg"));	
 				if (protocol == "nfs") {
-					isValid &= validateString("Path", thisDialog.find("#add_pool_path"), thisDialog.find("#add_pool_path_errormsg"));	
+					isValid &= validateString("Path", $thisDialog.find("#add_pool_path"), $thisDialog.find("#add_pool_path_errormsg"));	
 				} else {
-					isValid &= validateString("Target IQN", thisDialog.find("#add_pool_iqn"), thisDialog.find("#add_pool_iqn_errormsg"));	
-					isValid &= validateString("LUN #", thisDialog.find("#add_pool_lun"), thisDialog.find("#add_pool_lun_errormsg"));	
+					isValid &= validateString("Target IQN", $thisDialog.find("#add_pool_iqn"), $thisDialog.find("#add_pool_iqn_errormsg"));	
+					isValid &= validateString("LUN #", $thisDialog.find("#add_pool_lun"), $thisDialog.find("#add_pool_lun_errormsg"));	
 				}
-				isValid &= validateString("Tags", thisDialog.find("#add_pool_tags"), thisDialog.find("#add_pool_tags_errormsg"), true);	//optional
+				isValid &= validateString("Tags", $thisDialog.find("#add_pool_tags"), $thisDialog.find("#add_pool_tags_errormsg"), true);	//optional
 			    if (!isValid) 
 			        return;
-			        
-			    thisDialog.dialog("close");    
-				
-				var $midmenuItem1 = beforeAddingMidMenuItem() ;    	
-				
+			        			    
+				$thisDialog.find("#spinning_wheel").fadeIn("slow");  
+							
 				var array1 = [];
 				array1.push("&zoneId="+podObj.zoneid);
 		        array1.push("&podId="+podObj.id);
 				
-				var clusterId = thisDialog.find("#pool_cluster").val();
+				var clusterId = $thisDialog.find("#pool_cluster").val();
 			    array1.push("&clusterid="+clusterId);	
 				
-			    var name = trim(thisDialog.find("#add_pool_name").val());
+			    var name = trim($thisDialog.find("#add_pool_name").val());
 			    array1.push("&name="+todb(name));
 			    
-			    var server = trim(thisDialog.find("#add_pool_nfs_server").val());						
+			    var server = trim($thisDialog.find("#add_pool_nfs_server").val());						
 				
 				var url = null;
 				if (protocol == "nfs") {
-					var path = trim(thisDialog.find("#add_pool_path").val());
+					var path = trim($thisDialog.find("#add_pool_path").val());
 					if(path.substring(0,1)!="/")
 						path = "/" + path; 
 					url = nfsURL(server, path);
 				} else {
-					var iqn = trim(thisDialog.find("#add_pool_iqn").val());
+					var iqn = trim($thisDialog.find("#add_pool_iqn").val());
 					if(iqn.substring(0,1)!="/")
 						iqn = "/" + iqn; 
-					var lun = trim(thisDialog.find("#add_pool_lun").val());
+					var lun = trim($thisDialog.find("#add_pool_lun").val());
 					url = iscsiURL(server, iqn, lun);
 				}
 				array1.push("&url="+encodeURIComponent(url));
 				
-			    var tags = trim(thisDialog.find("#add_pool_tags").val());
+			    var tags = trim($thisDialog.find("#add_pool_tags").val());
 				if(tags != null && tags.length > 0)
 				    array1.push("&tags="+todb(tags));				    
 			    
 			    $.ajax({
 				    data: createURL("command=createStoragePool" + array1.join("")),
 				    dataType: "json",
-				    success: function(json) {					        
+				    success: function(json) {					       
+				        $thisDialog.dialog("close");
+					
+					    var $midmenuItem1 = $("#midmenu_item").clone();
+                        $("#midmenu_container").append($midmenuItem1.fadeIn("slow"));
 				        var item = json.createstoragepoolresponse;				            			      										   
 					    primarystorageToMidmenu(item, $midmenuItem1);
-	                    bindClickToMidMenu($midmenuItem1, primarystorageToRightPanel, primarystorageGetMidmenuId);  
-	                    afterAddingMidMenuItem($midmenuItem1, true);
+	                    bindClickToMidMenu($midmenuItem1, primarystorageToRightPanel, primarystorageGetMidmenuId);  	                    
 				    },			
                     error: function(XMLHttpResponse) {	
-                        handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1);			                        					    
+                        handleErrorInDialog(XMLHttpResponse, $thisDialog);	                        					    
                     }							    
 			    });
 		    }, 
@@ -1763,10 +1765,10 @@ function doDeleteSecondaryStorage($actionLink, $subgridItem) {
     $("#dialog_confirmation_delete_secondarystorage")	
 	.dialog('option', 'buttons', { 						
 		"Confirm": function() { 
-		    var thisDialog = $(this);	
-			thisDialog.dialog("close");       	                                             
+		    var $thisDialog = $(this);	
+			$thisDialog.dialog("close");       	                                             
          
-            var name = thisDialog.find("#name").val();	                
+            var name = $thisDialog.find("#name").val();	                
              
             var id = jsonObj.id;
             var apiCommand = "command=deleteHost&id="+id;    	
