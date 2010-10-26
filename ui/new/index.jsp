@@ -684,12 +684,12 @@ long milliseconds = new Date().getTime();
             <div class="midmenu_icons" id="icon_container" style="display: none">
                 <img id="icon" /></div>
             <div class="midmenu_textbox">
-                <p style="font-size: 11px;">
+                <p>
                     <strong id="first_row">&nbsp;</strong>
                 </p>
-                <p id="second_row_container">
+                <span id="second_row_container">
                     <span id="second_row">&nbsp;</span>
-                </p>
+                </span>
             </div>
             <div class="midmenu_inactionloader" id="spinning_wheel" style="display: none;">
             </div>
