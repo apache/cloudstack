@@ -2441,9 +2441,10 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
     public boolean applyCustomCertToNewProxy(StartupProxyCommand cmd){
         //this is the case for updating cust cert on each new starting proxy, if such cert exists
 		//get cert from db
-		CertificateVO cert = _certDao.listAll().get(0);
+		List<CertificateVO> certList = _certDao.listAll();
 		
-		if(cert!=null){
+		if(certList.size()>0){
+			CertificateVO cert = certList.get(0);//there will only be 1 cert in db for now
 			String certStr = cert.getCertificate(); 
 			long proxyVmId = ((StartupProxyCommand)cmd).getProxyVmId();
 			ConsoleProxyVO consoleProxy = _consoleProxyDao.findById(proxyVmId);
@@ -2461,6 +2462,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
 							rebootProxy(consoleProxy.getId(), eventId);
 							//when cp reboots, the context will be reinit with the new cert 
 							s_logger.info("Successfully rebooted console proxy resource after custom certificate application");
+							return true;
 						}
 				} catch (AgentUnavailableException e) {
 					s_logger.warn("Unable to send update certificate command to the console proxy resource", e);
@@ -2473,7 +2475,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
 		}else{
 			return false;//no cert
 		}
-		return true;
+		return false;
     }
     
     private Long saveScheduledEvent(Long userId, Long accountId, String type, String description) 
