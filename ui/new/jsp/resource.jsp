@@ -1032,11 +1032,11 @@
 
     <div class="networkswitch_vlanconnect">
     	<div class="networkswitch_closeicon"></div>
-        <div class="networkswitch_vlan_infoicon">
+        <div id="info_icon" class="networkswitch_vlan_infoicon">
         	
         </div>
-        <div class="networkswitch_infodropdown" style="display:none;">
-        	<div class="networkswitch_infodropdown_actionbox">
+        <div id="info_dropdown" class="networkswitch_infodropdown" style="display:none;">
+        	<div id="close_icon" class="networkswitch_infodropdown_actionbox">
             	<a href="#">Close</a>
             </div>
         	<ul class="networkswitch_infodropdown_textbox">
