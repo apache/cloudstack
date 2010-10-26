@@ -59,7 +59,7 @@ function buildZoneTree() {
 				}				
 				break;
 											    
-			case "pod_arrow" :		    	   
+			case "pod_arrow" :					 	   
 				if(target.hasClass("expanded_close")) {						
 					target.removeClass("expanded_close").addClass("expanded_open");					
 					target.parent().parent().siblings("#pod_content").show();	
@@ -138,10 +138,8 @@ function zoneJSONToTreeNode(json, $zoneNode) {
 				    container.append($podNode.show());
 				    forceLogout = false;  // We don't force a logout if pod(s) exit.
 			    }
-		    }
-		    else {
-		        $zoneNode.find("#zone_arrow").removeClass("expanded_close").addClass("white_nonexpanded_close");
-		    }
+			    $zoneNode.find("#zone_arrow").removeClass("white_nonexpanded_close").addClass("expanded_close");
+		    }		    
 	    }
     });
     	    
@@ -1379,11 +1377,7 @@ function refreshClusterUnderPod($podNode, newClusterName) {
                 }                         
                 $podNode.find("#pod_arrow").removeClass("white_nonexpanded_close").addClass("expanded_open");
                 $podNode.find("#pod_content").show();    
-            }
-            else {                
-                $podNode.find("#pod_arrow").removeClass("expanded_close").addClass("white_nonexpanded_close");
-                $podNode.find("#pod_content").hide();
-            }
+            }            
         }
     });	
 }

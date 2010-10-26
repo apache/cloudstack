@@ -759,7 +759,7 @@ long milliseconds = new Date().getTime();
         <div id="row_container">
 	        <div class="leftmenu_content" id="header">  
 	            <div class="leftmenu_thirdindent">
-	                <div class="leftmenu_arrows expanded_close" id="zone_arrow">
+	                <div class="leftmenu_arrows white_nonexpanded_close" id="zone_arrow">
 	                </div>	                
 	                <span id="zone_name_label">Zone: </span>
 	                <span id="zone_name"></span>
@@ -783,7 +783,7 @@ long milliseconds = new Date().getTime();
         <div id="row_container">
 	        <div class="leftmenu_content" id="header">
 	            <div class="leftmenu_fourthindent">
-	                <div class="leftmenu_arrows expanded_close" id="pod_arrow">
+	                <div class="leftmenu_arrows white_nonexpanded_close" id="pod_arrow">
 	                </div>	               
 	                <span id="pod_name_label">Pod: </span>
 	                <span id="pod_name"></span>
