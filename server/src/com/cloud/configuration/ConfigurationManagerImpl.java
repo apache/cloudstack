@@ -1099,7 +1099,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     public ServiceOfferingVO updateServiceOffering(UpdateServiceOfferingCmd cmd) {
     	String displayText = cmd.getDisplayText();
     	Long id = cmd.getId();
-    	String name = cmd.getName();
+    	String name = cmd.getServiceOfferingName();
     	Boolean ha = cmd.getOfferHa();
     	String tags = cmd.getTags();
     	Boolean useVirtualNetwork = cmd.getUseVirtualNetwork();
