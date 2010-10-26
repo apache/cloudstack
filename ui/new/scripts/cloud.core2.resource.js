@@ -463,8 +463,44 @@ function vlanJsonToTemplate(jsonObj, $template1) {
         var $target = $(event.target);
         var targetId = $target.attr("id");
         switch(targetId) {
-            case "info_icon":                
-                $target.siblings("#info_dropdown").show();
+            case "info_icon":   
+                var vlanName = jsonObj.id;
+		        var vlanDisplayName = vlanName;
+		        if (jsonObj.description != null) {
+			        if (jsonObj.description.indexOf("-") == -1) {
+				        vlanName = jsonObj.description;
+				        vlanDisplayName = vlanName;
+			        } else {
+				        var ranges = jsonObj.description.split("-");
+				        vlanName = ranges[0] + " -" + ranges[1];
+				        vlanDisplayName = ranges[0] + " - " + ranges[1];
+			        }
+		        }
+                
+                
+                var $infoDropdown = $target.siblings("#info_dropdown");
+               
+                $infoDropdown.find("#vlan").text(fromdb(jsonObj.vlan));
+                $infoDropdown.find("#gateway").text(fromdb(jsonObj.gateway));
+                $infoDropdown.find("#netmask").text(fromdb(jsonObj.netmask));
+                $infoDropdown.find("#iprange").text(fromdb(vlanDisplayName));
+                if(jsonObj.domainid != null) {
+                    var $container = $infoDropdown.find("#domainid_container").show();
+                    $container.find("#domainid").text(fromdb(jsonObj.domainid));               
+                }                
+                if(jsonObj.domain != null) {
+                     var $container = $infoDropdown.find("#domain_container").show();
+                    $container.find("#domain").text(fromdb(jsonObj.domain));        
+                }
+                if(jsonObj.account != null) {
+                    var $container = $infoDropdown.find("#account_container").show();
+                    $container.find("#account").text(fromdb(jsonObj.account));
+                }
+                if(jsonObj.podname != null) {
+                    var $container = $infoDropdown.find("#podname_container").show();
+                    $container.find("#podname").text(fromdb(jsonObj.podname));
+                }     
+                $infoDropdown.show();
                 break;
         }
         

@@ -1040,9 +1040,14 @@
             	<a href="#">Close</a>
             </div>
         	<ul class="networkswitch_infodropdown_textbox">
-            	<li><div class="networkswitch_infodropdown_textbox_label">Zone</div>: NC </li>
-                <li><div class="networkswitch_infodropdown_textbox_label">Network Type</div>: Root</li>
-                <li><div class="networkswitch_infodropdown_textbox_label">Account</div>: Admin</li>
+            	<li id="vlan_container"><div class="networkswitch_infodropdown_textbox_label">VLAN ID:</div> <span id="vlan"></span></li>
+                <li id="gateway_container"><div class="networkswitch_infodropdown_textbox_label">Gateway:</div> <span id="gateway"></span></li>
+                <li id="netmask_container"><div class="networkswitch_infodropdown_textbox_label">Netmask:</div> <span id="netmask"></span></li>
+                <li id="iprange_container"><div class="networkswitch_infodropdown_textbox_label">IP Range:</div> <span id="iprange"></span></li>
+                <li id="domainid_container" style="display:none"><div class="networkswitch_infodropdown_textbox_label">Domain ID:</div> <span id="domainid"></span></li>
+                <li id="domain_container" style="display:none"><div class="networkswitch_infodropdown_textbox_label">Domain:</div> <span id="domain"></span></li>
+                <li id="account_container" style="display:none"><div class="networkswitch_infodropdown_textbox_label">Account:</div> <span id="account"></span></li>
+                <li id="podname_container" style="display:none"><div class="networkswitch_infodropdown_textbox_label">Pod:</div> <span id="podname"></span></li>
             </ul>
         </div>
         
