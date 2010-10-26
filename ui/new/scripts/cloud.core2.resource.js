@@ -1280,9 +1280,10 @@ function initAddHostButton($midmenuAddLink1) {
 				
 		        var password = trim($thisDialog.find("#host_password").val());
 		        array1.push("&password="+encodeURIComponent(password));
-											
+					
+				var newClusterName;							
 			    if(clusterRadio == "new_cluster_radio") {
-		            var newClusterName = trim($thisDialog.find("#new_cluster_name").val());
+		            newClusterName = trim($thisDialog.find("#new_cluster_name").val());
 		            array1.push("&clustername="+todb(newClusterName));				    
 		        }
 		        else if(clusterRadio == "existing_cluster_radio") {			            
@@ -1326,13 +1327,16 @@ function initAddHostButton($midmenuAddLink1) {
                             }	
                         }                                
                         
-                        if(clusterRadio == "new_cluster_radio")
-                            $thisDialog.find("#new_cluster_name").val("");
-                                                    
-                        refreshClusterUnderPod($("#pod_" + podObj.id));                               
+                        if(clusterRadio == "new_cluster_radio") {                              
+                            refreshClusterUnderPod($("#pod_" + podObj.id), newClusterName);                             
+                            $thisDialog.find("#new_cluster_name").val("");   
+                        }                           
 			        },			
                     error: function(XMLHttpResponse) {	
-                        refreshClusterUnderPod($("#pod_" + podObj.id));        	                   
+                        if(clusterRadio == "new_cluster_radio") {                              
+                            refreshClusterUnderPod($("#pod_" + podObj.id), newClusterName);                             
+                            $thisDialog.find("#new_cluster_name").val("");   //even AddHost fails, new cluster is still created. So, we clean up new cluster field to avoid the same one gets created twice.
+                        }                                                      
                         handleErrorInDialog(XMLHttpResponse, $thisDialog);					    
                     }				
 		        });
@@ -1345,7 +1349,7 @@ function initAddHostButton($midmenuAddLink1) {
     });        
 }
 
-function refreshClusterUnderPod($podNode) {  
+function refreshClusterUnderPod($podNode, newClusterName) {  
     var podId = $podNode.data("podId"); 
     $.ajax({
         data: createURL("command=listClusters&podid="+podId+maxPageSize),
@@ -1356,9 +1360,14 @@ function refreshClusterUnderPod($podNode) {
             var container = $podNode.find("#clusters_container").empty();
             if (items != null && items.length > 0) {					    
                 for (var i = 0; i < items.length; i++) {
-                    var clusterTemplate = $("#leftmenu_cluster_node_template").clone(true); 
-                    clusterJSONToTreeNode(items[i], clusterTemplate);
-                    container.append(clusterTemplate.show());                                   
+                    var $clusterNode = $("#leftmenu_cluster_node_template").clone(true); 
+                    var item = items[i];
+                    clusterJSONToTreeNode(item, $clusterNode);
+                    container.append($clusterNode.show());   
+                                        
+                    if(newClusterName != null && fromdb(item.name) == newClusterName) {   
+                        $clusterNode.find("#cluster_name").click();                
+                    }                            
                 }                         
                 $podNode.find("#pod_arrow").removeClass("white_nonexpanded_close").addClass("expanded_open");
                 $podNode.find("#pod_content").show();    
