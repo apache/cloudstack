@@ -270,12 +270,7 @@ function showPage2($pageToShow, $menuItem1) {
 		    $("#dialog_add_pool").find("#add_pool_protocol").empty().html('<option value="nfs">NFS</option>');	
 	    bindEventHandlerToDialogAddPool();	 
 	    	    
-		podJsonToRightPanel($menuItem1);     
-		
-		//var podId = jsonObj.id;
-	    //$("#midmenu_container").empty();
-	    //listMidMenuItems2(("listHosts&type=Routing&podid="+podId), "listhostsresponse", "host", hostToMidmenu, hostToRightPanel, hostGetMidmenuId, false, false); 					
-		//listMidMenuItems2(("listStoragePools&podid="+podId), "liststoragepoolsresponse", "storagepool", primarystorageToMidmenu, primarystorageToRightPanel, primarystorageGetMidmenuId, false, false); 	
+		podJsonToRightPanel($menuItem1);     		
     }  
     else if($pageToShow.attr("id") == "cluster_page") {
         clearMiddleMenu(); 
@@ -288,9 +283,20 @@ function showPage2($pageToShow, $menuItem1) {
 		clusterJsonToRightPanel($menuItem1);
 		
 	    var clusterId = jsonObj.id;
-	    $("#midmenu_container").empty();
-	    listMidMenuItems2(("listHosts&type=Routing&clusterid="+clusterId), "listhostsresponse", "host", hostToMidmenu, hostToRightPanel, hostGetMidmenuId, false, true); 					
-		listMidMenuItems2(("listStoragePools&clusterid="+clusterId), "liststoragepoolsresponse", "storagepool", primarystorageToMidmenu, primarystorageToRightPanel, primarystorageGetMidmenuId, false, false); 			
+	    var $midmenuContainer = $("#midmenu_container").empty();	    
+	    var $header1 = $("#midmenu_itemheader").clone();
+	    $header1.find("#name").text("Host");
+	    $midmenuContainer.append($header1);
+	    var count1 = listMidMenuItems2(("listHosts&type=Routing&clusterid="+clusterId), "listhostsresponse", "host", hostToMidmenu, hostToRightPanel, hostGetMidmenuId, false, true); 					
+	    if(count1 > 0)
+		    $header1.show();
+		    
+		var $header2 = $("#midmenu_itemheader").clone();
+	    $header2.find("#name").text("Primary Storage");
+	    $midmenuContainer.append($header2);
+		var count2 = listMidMenuItems2(("listStoragePools&clusterid="+clusterId), "liststoragepoolsresponse", "storagepool", primarystorageToMidmenu, primarystorageToRightPanel, primarystorageGetMidmenuId, false, false); 			
+        if(count2 > 0)
+		    $header2.show();
     }
     else if($pageToShow.attr("id") == "host_page") {
         initAddHostButton($("#midmenu_add_link")); 

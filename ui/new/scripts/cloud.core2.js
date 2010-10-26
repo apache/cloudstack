@@ -817,6 +817,7 @@ function listMidMenuItems2(commandString, jsonResponse1, jsonResponse2, toMidmen
     else
         disableMultipleSelectionInMidMenu();
     
+    var count = 0;    
     $.ajax({
         cache: false,
         data: createURL("command="+commandString+"&pagesize="+midmenuItemCount),
@@ -840,9 +841,12 @@ function listMidMenuItems2(commandString, jsonResponse1, jsonResponse2, toMidmen
                         }                        
                     }                 
                 }  
-            }  
+                count = items.length;
+            }             
         }
     });	 
+    
+    return count;
 }
 
 function listMidMenuItems(commandString, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSPFn, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu) { 
