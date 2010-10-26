@@ -203,7 +203,8 @@ function clusterJSONToTreeNode(json, $clusterNode) {
 }			
 
 //$menuItem1 is either $leftmenuItem1 or $midmenuItem1
-function showPage($pageToShow, $menuItem1) {      
+function showPage($pageToShow, $menuItem1) { 
+    clearMiddleMenu();     
     if($pageToShow.length == 0) { //resource.jsp is not loaded in right panel      
         $("#right_panel").load("jsp/resource.jsp", function(){  
 			showPage2($($pageToShow.selector), $menuItem1); //$pageToShow is still empty (i.e. $pageToShow.length == 0), So, select the element again.
@@ -235,10 +236,7 @@ function showPage2($pageToShow, $menuItem1) {
     }   
     
     if($pageToShow.attr("id") == "resource_page") { 
-        initAddZoneButton($("#midmenu_add_link"));	                   
-        $("#midmenu_add2_link").unbind("click").hide();   
-        $("#midmenu_add3_link").unbind("click").hide();  
-    
+        initAddZoneButton($("#midmenu_add_link")); 
         initDialog("dialog_add_zone");         
     }
     else if($pageToShow.attr("id") == "zone_page") {               
@@ -270,8 +268,7 @@ function showPage2($pageToShow, $menuItem1) {
     else if($pageToShow.attr("id") == "pod_page") {        	
         initAddHostButton($("#midmenu_add_link")); 
         initAddPrimaryStorageButton($("#midmenu_add2_link"));  
-        $("#midmenu_add3_link").unbind("click").hide();  
-        
+               
         initDialog("dialog_add_host");
         initDialog("dialog_add_pool");
         
@@ -303,8 +300,7 @@ function showPage2($pageToShow, $menuItem1) {
     }
     else if($pageToShow.attr("id") == "host_page") {
         initAddHostButton($("#midmenu_add_link")); 
-        initAddPrimaryStorageButton($("#midmenu_add2_link"));  
-        $("#midmenu_add3_link").unbind("click").hide();  
+        initAddPrimaryStorageButton($("#midmenu_add2_link"));          
     
         initDialog("dialog_confirmation_enable_maintenance");
 	    initDialog("dialog_confirmation_cancel_maintenance");
@@ -315,15 +311,10 @@ function showPage2($pageToShow, $menuItem1) {
     else if($pageToShow.attr("id") == "primarystorage_page") {
         initAddHostButton($("#midmenu_add_link")); 
         initAddPrimaryStorageButton($("#midmenu_add2_link"));  
-        $("#midmenu_add3_link").unbind("click").hide();  
         
         initDialog("dialog_confirmation_delete_primarystorage");
     }  
-    else if($pageToShow.attr("id") == "systemvm_page") {
-        $("#midmenu_add_link").unbind("click").hide();              
-        $("#midmenu_add2_link").unbind("click").hide(); 
-        $("#midmenu_add3_link").unbind("click").hide();    
-        
+    else if($pageToShow.attr("id") == "systemvm_page") {  
         hideMiddleMenu();			
 	    systemvmJsonToRightPanel($menuItem1);		
     }    
