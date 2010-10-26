@@ -111,9 +111,7 @@ public class NetworkGroupListener implements Listener {
 
 
 	@Override
-	public boolean processConnect(HostVO host, StartupCommand cmd) {
-		
-		return true;
+	public void processConnect(HostVO host, StartupCommand cmd) {
 	}
 
 

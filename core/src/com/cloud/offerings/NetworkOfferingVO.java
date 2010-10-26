@@ -30,6 +30,7 @@ import javax.persistence.Table;
 
 import com.cloud.network.Network.TrafficType;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.service.ServiceOfferingVO;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
@@ -71,6 +72,9 @@ public class NetworkOfferingVO implements NetworkOffering {
     
     @Column(name="system_only")
     boolean systemOnly;
+    
+    @Column(name="service_offering_id")
+    Long serviceOfferingId;
     
     @Column(name="tags")
     String tags;
@@ -128,6 +132,14 @@ public class NetworkOfferingVO implements NetworkOffering {
         return removed;
     }
     
+    public Long getServiceOfferingId() {
+        return serviceOfferingId;
+    }
+    
+    public void setServiceOfferingId(long serviceOfferingId) {
+        this.serviceOfferingId = serviceOfferingId;
+    }
+    
     @Override
     public Integer getConcurrentConnections() {
         return concurrentConnections;
@@ -144,6 +156,50 @@ public class NetworkOfferingVO implements NetworkOffering {
     public NetworkOfferingVO() {
     }
     
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setDisplayText(String displayText) {
+        this.displayText = displayText;
+    }
+
+    public void setRateMbps(Integer rateMbps) {
+        this.rateMbps = rateMbps;
+    }
+
+    public void setMulticastRateMbps(Integer multicastRateMbps) {
+        this.multicastRateMbps = multicastRateMbps;
+    }
+
+    public void setConcurrentConnections(Integer concurrentConnections) {
+        this.concurrentConnections = concurrentConnections;
+    }
+
+    public void setGuestIpType(GuestIpType guestIpType) {
+        this.guestIpType = guestIpType;
+    }
+
+    public void setTrafficType(TrafficType trafficType) {
+        this.trafficType = trafficType;
+    }
+
+    public void setSystemOnly(boolean systemOnly) {
+        this.systemOnly = systemOnly;
+    }
+
+    public void setServiceOfferingId(Long serviceOfferingId) {
+        this.serviceOfferingId = serviceOfferingId;
+    }
+
+    public void setRemoved(Date removed) {
+        this.removed = removed;
+    }
+
+    public void setCreated(Date created) {
+        this.created = created;
+    }
+
     public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, GuestIpType type, boolean systemOnly, Integer rateMbps, Integer multicastRateMbps, Integer concurrentConnections) {
         this.name = name;
         this.displayText = displayText;
@@ -153,6 +209,11 @@ public class NetworkOfferingVO implements NetworkOffering {
         this.concurrentConnections = concurrentConnections;
         this.trafficType = trafficType;
         this.systemOnly = systemOnly;
+    }
+    
+    public NetworkOfferingVO(ServiceOfferingVO offering) {
+        this("Network Offering for " + offering.getName(), "Network Offering for " + offering.getDisplayText(), TrafficType.Guest, offering.getGuestIpType(), false, offering.getRateMbps(), offering.getMulticastRateMbps(), null);
+        this.serviceOfferingId = offering.getId();
     }
     
     /**

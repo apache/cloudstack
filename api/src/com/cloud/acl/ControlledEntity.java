@@ -15,22 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-package com.cloud.exception;
+package com.cloud.acl;
 
-import com.cloud.utils.SerialVersionUID;
-import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.domain.PartOf;
+import com.cloud.user.OwnedBy;
 
 /**
- * @author chiradeep
+ * ControlledEntity defines an object for which the access from an
+ * account can be controlled.  Any object that must have limited
+ * access must inherit this interface.
  *
  */
-public class PermissionDeniedException extends CloudRuntimeException {
-
-	private static final long serialVersionUID = SerialVersionUID.PermissionDeniedException;
-
-	public PermissionDeniedException(String message) {
-		super(message);
-		// TODO Auto-generated constructor stub
-	}
-
+public interface ControlledEntity extends OwnedBy, PartOf {
 }

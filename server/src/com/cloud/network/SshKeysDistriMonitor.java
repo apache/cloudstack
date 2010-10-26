@@ -31,6 +31,7 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.exception.ConnectionException;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
@@ -71,10 +72,10 @@ public class SshKeysDistriMonitor implements Listener {
 	    }
 	    
 	    @Override
-	    public boolean processConnect(HostVO host, StartupCommand cmd) {
+	    public void processConnect(HostVO host, StartupCommand cmd) throws ConnectionException {
 	    	if (cmd instanceof StartupRoutingCommand) {
 	    		if (((StartupRoutingCommand) cmd).getHypervisorType() == HypervisorType.KVM ||
-	    		        ((StartupRoutingCommand) cmd).getHypervisorType() == HypervisorType.XenServer) {
+	    		    ((StartupRoutingCommand) cmd).getHypervisorType() == HypervisorType.XenServer) {
 	    			/*TODO: Get the private/public keys here*/
 	    			
 	    			Map<String, String> configs = _configDao.getConfiguration("management-server", new HashMap<String, Object>());
@@ -82,11 +83,10 @@ public class SshKeysDistriMonitor implements Listener {
 	    			String prvKey = configs.get("ssh.privatekey");
 	    			if (!_routerMgr.sendSshKeysToHost(host.getId(), pubKey, prvKey)) {
 	    				s_logger.debug("Failed to send keys to agent: " + host.getId());
-	    				return false;
+	    				throw new ConnectionException(true, "Unable to send keys to the agent");
 	    			}
 	    		}
 	    	}
-    		return true;
 	    }
 
 		@Override

@@ -22,6 +22,7 @@ import com.cloud.agent.api.AgentControlCommand;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
+import com.cloud.exception.ConnectionException;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 
@@ -73,8 +74,9 @@ public interface Listener {
      * been registered for host events.
      * @param agentId id of the agent
      * @param cmd command sent by the agent to the server on startup.
+     * @throws ConnectionException if host has problems and needs to put into maintenance state.
      */
-    boolean processConnect(HostVO host, StartupCommand cmd);
+    void processConnect(HostVO host, StartupCommand cmd) throws ConnectionException;
     
     /**
      * This method is called by AgentManager when an agent disconnects

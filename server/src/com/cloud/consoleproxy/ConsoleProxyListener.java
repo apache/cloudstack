@@ -64,9 +64,8 @@ public class ConsoleProxyListener implements Listener {
     }
 
     @Override
-    public boolean processConnect(HostVO host, StartupCommand cmd) {
+    public void processConnect(HostVO host, StartupCommand cmd) {
         _proxyMgr.onAgentConnect(host, cmd);
-        return true;
     }
 
     @Override

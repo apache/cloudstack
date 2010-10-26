@@ -39,6 +39,7 @@ import com.cloud.agent.api.storage.DownloadProgressCommand;
 import com.cloud.agent.api.storage.DownloadProgressCommand.RequestType;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
+import com.cloud.exception.ConnectionException;
 import com.cloud.host.HostVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateHostVO;
@@ -274,13 +275,13 @@ public class DownloadListener implements Listener {
 	}
 	
 	@Override
-	public boolean processConnect(HostVO agent, StartupCommand cmd) {
+	public void processConnect(HostVO agent, StartupCommand cmd) throws ConnectionException {
 	    if (!(cmd instanceof StartupStorageCommand)) {
-	        return true;
+	        return;
 	    }
 	    if (cmd.getGuid().startsWith("iso:")) {
 	        //FIXME: do not download template for ISO secondary
-	        return true;
+	        return;
 	    }
 	    
 	    long agentId = agent.getId();
@@ -294,8 +295,6 @@ public class DownloadListener implements Listener {
 	    	//downloadMonitor.handlePoolTemplateSync(storage.getPoolInfo(), storage.getTemplateInfo());
 	    	//no need to do anything. The storagepoolmonitor will initiate template sync.
 	    }
-	    
-	    return true;
 	}
 
 	public void setCommand(DownloadCommand _cmd) {

@@ -1999,12 +1999,11 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
 	
 	@Override @DB
 	public DomainRouterVO deploy(NetworkConfiguration publicConfig, NetworkConfiguration virtualConfig, NetworkOffering offering, Account owner) throws InsufficientCapacityException, StorageUnavailableException, ConcurrentOperationException, ResourceUnavailableException {
-	    long dcId = publicConfig.getDataCenterId();
+	    long dcId = virtualConfig.getDataCenterId();
 	    
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Starting a router for network configurations: public=" + publicConfig + "; virtual="  + virtualConfig);
         }
-	    assert dcId == virtualConfig.getDataCenterId() : "Domain router cannot span networks in two data centers";
 	    assert publicConfig.getState() == NetworkConfiguration.State.Implemented : "Network is not yet fully implemented: " + publicConfig;
 	    assert virtualConfig.getState() == NetworkConfiguration.State.Implemented : "Network is not yet fully implemented: " + virtualConfig;
 	    
@@ -2092,7 +2091,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
     }
 
     @Override
-    public boolean checkDeploymentResult(Commands cmds, DomainRouterVO router, VirtualMachineProfile profile, DeployDestination dest) {
+    public boolean processDeploymentResult(Commands cmds, DomainRouterVO router, VirtualMachineProfile profile, DeployDestination dest) {
         return true;
     }
 

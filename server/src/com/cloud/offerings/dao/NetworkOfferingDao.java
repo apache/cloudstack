@@ -4,6 +4,7 @@
 package com.cloud.offerings.dao;
 
 import com.cloud.offerings.NetworkOfferingVO;
+import com.cloud.service.ServiceOfferingVO;
 import com.cloud.utils.db.GenericDao;
 
 /**
@@ -28,4 +29,6 @@ public interface NetworkOfferingDao extends GenericDao<NetworkOfferingVO, Long> 
      * @return NetworkOfferingVO backed by a row in the database
      */
     NetworkOfferingVO persistSystemNetworkOffering(NetworkOfferingVO offering);
+    
+    NetworkOfferingVO findByServiceOffering(ServiceOfferingVO offering);
 }

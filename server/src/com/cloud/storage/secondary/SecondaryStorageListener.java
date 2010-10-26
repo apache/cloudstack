@@ -29,7 +29,6 @@ import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.storage.Storage;
-import com.cloud.storage.Storage.StorageResourceType;
 
 public class SecondaryStorageListener implements Listener {
     private final static Logger s_logger = Logger.getLogger(SecondaryStorageListener.class);
@@ -76,11 +75,10 @@ public class SecondaryStorageListener implements Listener {
     }
 
     @Override
-    public boolean processConnect(HostVO agent, StartupCommand cmd) {
-        if(s_logger.isInfoEnabled())
-            s_logger.info("Received a host startup notification");
-        
+    public void processConnect(HostVO agent, StartupCommand cmd) {
         if (cmd instanceof StartupStorageCommand) {
+            if(s_logger.isInfoEnabled())
+                s_logger.info("Received a host startup notification");
             
             StartupStorageCommand ss = (StartupStorageCommand)cmd;
             if (ss.getResourceType() == Storage.StorageResourceType.SECONDARY_STORAGE) {
@@ -89,8 +87,6 @@ public class SecondaryStorageListener implements Listener {
             	_ssVmMgr.generateSetupCommand(agent.getDataCenterId());
             }
         }
-
-        return true;
     }
     
     @Override

@@ -316,4 +316,6 @@ public interface NetworkManager extends Manager {
     AccountVO getNetworkConfigurationOwner(long configurationId);
     
     List<NetworkConfigurationVO> getNetworkConfigurationsforOffering(long offeringId, long dataCenterId, long accountId);
+
+    List<NetworkConfigurationVO> setupNetworkConfiguration(Account owner, ServiceOfferingVO offering, DeploymentPlan plan);
 }

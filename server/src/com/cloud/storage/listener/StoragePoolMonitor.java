@@ -66,7 +66,7 @@ public class StoragePoolMonitor implements Listener {
     }
     
     @Override
-    public boolean processConnect(HostVO host, StartupCommand cmd) {
+    public void processConnect(HostVO host, StartupCommand cmd) {
     	if (cmd instanceof StartupRoutingCommand) {
     		StartupRoutingCommand scCmd = (StartupRoutingCommand)cmd;
     		if (scCmd.getHypervisorType() == HypervisorType.XenServer || scCmd.getHypervisorType() ==  HypervisorType.KVM ||
@@ -81,7 +81,6 @@ public class StoragePoolMonitor implements Listener {
     			}
     		}
     	}
-    	return true;
     }
     
 

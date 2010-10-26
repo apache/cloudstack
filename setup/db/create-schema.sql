@@ -155,6 +155,7 @@ CREATE TABLE `cloud`.`network_offerings` (
   `traffic_type` varchar(32) NOT NULL COMMENT 'traffic type carried on this network',
   `tags` varchar(4096) COMMENT 'tags supported by this offering',
   `system_only` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Is this network offering for system use only',
+  `service_offering_id` bigint unsigned UNIQUE COMMENT 'service offering id that this network offering is tied to',
   `created` datetime NOT NULL COMMENT 'time the entry was created',
   `removed` datetime DEFAULT NULL COMMENT 'time the entry was removed',
   PRIMARY KEY (`id`)

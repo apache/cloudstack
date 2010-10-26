@@ -33,6 +33,8 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.manager.Commands;
 import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.ConnectionException;
+import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
@@ -119,9 +121,9 @@ public class VmSyncListener implements Listener {
     }
     
     @Override
-    public boolean processConnect(HostVO agent, StartupCommand cmd) {
+    public void processConnect(HostVO agent, StartupCommand cmd) throws ConnectionException {
         if (!(cmd instanceof StartupRoutingCommand)) {
-            return true;
+            return;
         }
         
         long agentId = agent.getId();
@@ -135,12 +137,13 @@ public class VmSyncListener implements Listener {
             Commands cmds = new Commands(OnError.Continue);
             cmds.addCommands(commands);
             try {
-                _agentMgr.send(agentId, cmds, this);
+                Answer[] answers = _agentMgr.send(agentId, cmds);
             } catch (final AgentUnavailableException e) {
                 s_logger.warn("Agent is unavailable now", e);
+                throw new ConnectionException(true, "Unable to sync", e);
+            } catch (final OperationTimedoutException e) {
+                throw new ConnectionException(true, "Unable to sync", e);
             }
         }
-        
-        return true;
     }
 }

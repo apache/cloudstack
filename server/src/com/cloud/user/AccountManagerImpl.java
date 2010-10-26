@@ -27,6 +27,8 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.acl.ControlledEntity;
+import com.cloud.acl.SecurityChecker;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.ListResourceLimitsCmd;
@@ -35,12 +37,14 @@ import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.configuration.dao.ResourceCountDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
+import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.server.Criteria;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
@@ -59,6 +63,8 @@ public class AccountManagerImpl implements AccountManager {
 	private final GlobalLock m_resourceCountLock = GlobalLock.getInternLock("resource.count");
 	
 	AccountVO _systemAccount;
+	@Inject(adapter=SecurityChecker.class)
+	Adapters<SecurityChecker> _securityCheckers;
 	
 	@Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
@@ -342,7 +348,7 @@ public class AccountManagerImpl implements AccountManager {
         String accountName = cmd.getAccountName();
         Long domainId = cmd.getDomainId();
         Long accountId = null;
-        Account account = (Account)UserContext.current().getAccount();
+        Account account = UserContext.current().getAccount();
 
         if ((account == null) ||
             (account.getType() == Account.ACCOUNT_TYPE_ADMIN) ||
@@ -409,7 +415,7 @@ public class AccountManagerImpl implements AccountManager {
     @Override
     public ResourceLimitVO updateResourceLimit(UpdateResourceLimitCmd cmd) throws InvalidParameterValueException  {
 
-    	Account account = (Account)UserContext.current().getAccount();
+        Account account = UserContext.current().getAccount();
     	String accountName = cmd.getAccountName();
     	Long domainId = cmd.getDomainId();
     	Long max = cmd.getMax();
@@ -559,5 +565,42 @@ public class AccountManagerImpl implements AccountManager {
     @Override
     public AccountVO getSystemAccount() {
         return _systemAccount;
+    }
+    
+    public static boolean isAdmin(short accountType) {
+        return ((accountType == Account.ACCOUNT_TYPE_ADMIN) ||
+                (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) ||
+                (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
+    }
+    
+    @Override
+    public void checkAccess(Account caller, Domain domain) throws PermissionDeniedException {
+        for (SecurityChecker checker : _securityCheckers) {
+            if (checker.checkAccess(caller, domain)) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Access granted to " + caller + " to " + domain + " by " + checker.getName());
+                }
+                return;
+            }
+        }
+        
+        assert false : "How can all of the security checkers pass on checking this caller?";
+        throw new PermissionDeniedException("There's no way to confirm " + caller + " has access to " + domain);
+    }
+    
+    @Override
+    public void checkAccess(Account caller, ControlledEntity... entities) {
+        for (ControlledEntity entity : entities) {
+            for (SecurityChecker checker : _securityCheckers) {
+                if (checker.checkAccess(caller, entity)) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Access to " + entity + " granted to " + caller + " by " + checker.getName());
+                    }
+                }
+            }
+        
+            assert false : "How can all of the security checkers pass on checking this check?";
+            throw new PermissionDeniedException("There's no way to confirm " + caller + " has access to " + entity);
+        }
     }
 }

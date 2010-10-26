@@ -19,14 +19,13 @@ package com.cloud.vm;
 
 import java.util.Date;
 
-import com.cloud.domain.PartOf;
-import com.cloud.user.OwnedBy;
+import com.cloud.acl.ControlledEntity;
 
 /**
  * VirtualMachine describes the properties held by a virtual machine 
  *
  */
-public interface VirtualMachine extends RunningOn, OwnedBy, PartOf {
+public interface VirtualMachine extends RunningOn, ControlledEntity {
     public enum Event {
     	CreateRequested,
     	StartRequested,

@@ -17,9 +17,9 @@
  */
 package com.cloud.template;
 
-import com.cloud.storage.Storage.FileSystem;
+import com.cloud.acl.ControlledEntity;
 
-public interface VirtualMachineTemplate  {
+public interface VirtualMachineTemplate extends ControlledEntity {
     
     public static enum BootloaderType { PyGrub, HVM, External, CD };
     

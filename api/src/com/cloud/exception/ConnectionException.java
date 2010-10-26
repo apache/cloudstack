@@ -18,19 +18,24 @@
 package com.cloud.exception;
 
 import com.cloud.utils.SerialVersionUID;
-import com.cloud.utils.exception.CloudRuntimeException;
 
-/**
- * @author chiradeep
- *
- */
-public class PermissionDeniedException extends CloudRuntimeException {
-
-	private static final long serialVersionUID = SerialVersionUID.PermissionDeniedException;
-
-	public PermissionDeniedException(String message) {
-		super(message);
-		// TODO Auto-generated constructor stub
-	}
+public class ConnectionException extends Exception {
+    
+    private static final long serialVersionUID = SerialVersionUID.ConnectionException;
+    boolean _error;
+    
+    public ConnectionException(boolean setupError, String msg) {
+        this(setupError, msg, null);
+    }
+    
+    public ConnectionException(boolean setupError, String msg, Throwable cause) {
+        super(msg, cause);
+        _error = setupError;
+        
+    }
+    
+    public boolean isSetupError() {
+        return _error;
+    }
 
 }

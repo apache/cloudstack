@@ -139,7 +139,6 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
         super(id, serviceOfferingId, displayName, instanceName, Type.User, templateId, guestOsId, domainId, accountId, haEnabled);
         this.userData = userData;
         this.displayName = displayName;
-        
     }
     
     public UserVmVO(long id,

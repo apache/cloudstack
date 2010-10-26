@@ -2429,7 +2429,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
     }
 
     @Override
-    public boolean checkDeploymentResult(Commands cmds, ConsoleProxyVO proxy, VirtualMachineProfile profile, DeployDestination dest) {
+    public boolean processDeploymentResult(Commands cmds, ConsoleProxyVO proxy, VirtualMachineProfile profile, DeployDestination dest) {
         return true;
     }
 }

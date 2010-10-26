@@ -21,14 +21,13 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
-import com.cloud.domain.PartOf;
+import com.cloud.acl.ControlledEntity;
 import com.cloud.template.BasedOn;
-import com.cloud.user.OwnedBy;
 import com.cloud.utils.fsm.FiniteState;
 import com.cloud.utils.fsm.StateMachine;
 
 
-public interface Volume extends PartOf, OwnedBy, BasedOn {
+public interface Volume extends ControlledEntity, BasedOn {
 	enum VolumeType {UNKNOWN, ROOT, SWAP, DATADISK, ISO};
 	
 	enum MirrorState {NOT_MIRRORED, ACTIVE, DEFUNCT};

@@ -27,9 +27,9 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.StoragePoolInfo;
+import com.cloud.exception.ConnectionException;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
-import com.cloud.storage.Storage.StorageResourceType;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.component.Inject;
@@ -65,20 +65,20 @@ public class LocalStoragePoolListener implements Listener {
     
     @Override
     @DB
-    public boolean processConnect(HostVO host, StartupCommand cmd) {
+    public void processConnect(HostVO host, StartupCommand cmd) throws ConnectionException {
         if (!(cmd instanceof StartupStorageCommand)) {
-            return true;
+            return;
         }
         
         StartupStorageCommand ssCmd = (StartupStorageCommand)cmd;
         
         if (ssCmd.getResourceType() != Storage.StorageResourceType.STORAGE_POOL) {
-            return true;
+            return;
         }
         
         StoragePoolInfo pInfo = ssCmd.getPoolInfo();
         if (pInfo == null) {
-            return true;
+            return;
         }
         
         try {
@@ -114,9 +114,8 @@ public class LocalStoragePoolListener implements Listener {
             }
         } catch (Exception e) {
             s_logger.warn("Unable to setup the local storage pool for " + host, e);
-            return false;
+            throw new ConnectionException(true, "Unable to setup the local storage pool for " + host, e);
         }
-        return true;
     }
     
    

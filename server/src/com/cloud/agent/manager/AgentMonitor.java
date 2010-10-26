@@ -195,9 +195,8 @@ public class AgentMonitor extends Thread implements Listener {
     }
 
     @Override
-    public boolean processConnect(HostVO host, StartupCommand cmd) {
+    public void processConnect(HostVO host, StartupCommand cmd) {
         s_logger.debug("Registering agent monitor for " + host.getId());
-        return true;
     }
 
     @Override

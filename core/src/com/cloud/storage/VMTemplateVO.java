@@ -23,23 +23,18 @@ import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+import javax.persistence.Transient;
 
-import com.cloud.async.AsyncInstanceCreateStatus;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.storage.Storage.FileSystem;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
-import com.cloud.utils.db.GenericDao;
-import com.google.gson.annotations.Expose;
-import com.cloud.storage.Storage;
 import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="vm_template")
@@ -248,7 +243,8 @@ public class VMTemplateVO implements VirtualMachineTemplate {
 		requiresHvm = value;
 	}
 
-	public long getAccountId() {
+	@Override
+    public long getAccountId() {
 		return accountId;
 	}
 
@@ -303,6 +299,11 @@ public class VMTemplateVO implements VirtualMachineTemplate {
 	public void setHypervisorType(HypervisorType hyperType) {
 		hypervisorType = hyperType.toString();
 	}
+	
+	@Override
+    public long getDomainId() {
+	    return -1;
+	}
 
 	@Override
 	public boolean equals(Object that) {
@@ -319,6 +320,16 @@ public class VMTemplateVO implements VirtualMachineTemplate {
 	@Override
 	public int hashCode() {
 		return uniqueName.hashCode();
+	}
+	
+	@Transient
+	String toString;
+	@Override
+    public String toString() {
+	    if (toString == null) {
+	        toString = new StringBuilder("Template:").append(id).append(":").append(format).append(":").append(uniqueName).toString();
+	    }
+	    return toString;
 	}
 	
 }

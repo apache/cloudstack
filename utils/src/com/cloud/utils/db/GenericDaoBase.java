@@ -781,6 +781,11 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     }
     
     @Override @DB(txn=false)
+    public T findByIdIncludingRemoved(ID id) {
+        return findById(id, true, null);
+    }
+    
+    @Override @DB(txn=false)
     public T findById(final ID id, boolean fresh) {
     	if(!fresh)
     		return findById(id);
@@ -793,14 +798,21 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     
     @Override
     public T lock(ID id, Boolean lock) {
-        String sql = _selectByIdSql;
+        return findById(id, false, lock);
+    }
+    
+    protected T findById(ID id, boolean removed, Boolean lock) {
+        StringBuilder sql = new StringBuilder(_selectByIdSql);
+        if (!removed && _removed != null) {
+            sql.append(" AND ").append(_removed.first());
+        }
         if (lock != null) {
-            sql += lock ? FOR_UPDATE_CLAUSE : SHARE_MODE_CLAUSE;
+            sql.append(lock ? FOR_UPDATE_CLAUSE : SHARE_MODE_CLAUSE);
         }
         Transaction txn = Transaction.currentTxn();
         PreparedStatement pstmt = s_initStmt;
         try {
-            pstmt = txn.prepareAutoCloseStatement(sql);
+            pstmt = txn.prepareAutoCloseStatement(sql.toString());
 
             if (_idField.getAnnotation(EmbeddedId.class) == null) {
                 pstmt.setObject(1, id);
@@ -810,9 +822,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
             return rs.next() ? toEntityBean(rs, true) : null;
         } catch (SQLException e) {
             throw new CloudRuntimeException("DB Exception on: " + pstmt.toString(), e);
-        } catch (Throwable e) {
-            throw new CloudRuntimeException("Caught: " + pstmt.toString(), e);
-        }
+        } 
     }
 
     @Override @DB(txn=false)

@@ -52,8 +52,7 @@ public class StorageSyncListener implements Listener {
     }
     
     @Override
-    public boolean processConnect(HostVO agent, StartupCommand cmd) {
-        return false;
+    public void processConnect(HostVO agent, StartupCommand cmd) {
     }
     
     @Override

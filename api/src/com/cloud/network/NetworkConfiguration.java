@@ -92,4 +92,8 @@ public interface NetworkConfiguration extends OwnedBy, PartOf {
     State getState();
     
     long getRelated();
+    
+    String getBroadcastUri();
+    
+    String getDns();
 }

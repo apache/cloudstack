@@ -1789,16 +1789,47 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
         return to;
     }
     
+    @DB
+    protected Pair<NetworkGuru, NetworkConfigurationVO> implementNetworkConfiguration(long configId, DeployDestination dest) throws ConcurrentOperationException {
+        Transaction txn = Transaction.currentTxn();
+        NetworkConfigurationVO config = _networkConfigDao.acquire(configId);
+        if (config == null) {
+            throw new ConcurrentOperationException("Unable to acquire network configuration: " + configId);
+        }
+        
+        try {
+            NetworkGuru guru = _networkGurus.get(config.getGuruName());
+            if (config.getState() == NetworkConfiguration.State.Implemented || config.getState() == NetworkConfiguration.State.Setup) {
+                return new Pair<NetworkGuru, NetworkConfigurationVO>(guru, config);
+            }
+            
+            
+            NetworkConfiguration result = guru.implement(config, _networkOfferingDao.findById(config.getNetworkOfferingId()), dest);
+            config.setCidr(result.getCidr());
+            config.setBroadcastUri(result.getBroadcastUri());
+            config.setGateway(result.getGateway());
+            config.setDns(result.getDns());
+            config.setMode(result.getMode());
+            config.setState(NetworkConfiguration.State.Implemented);
+            _networkConfigDao.update(configId, config);
+            
+            return new Pair<NetworkGuru, NetworkConfigurationVO>(guru, config);
+        } finally {
+            _networkConfigDao.release(configId);
+        }
+    }
+    
     @Override
     public NicTO[] prepare(VirtualMachineProfile vmProfile, DeployDestination dest, Account user) throws InsufficientAddressCapacityException, InsufficientVirtualNetworkCapcityException, ConcurrentOperationException, ResourceUnavailableException {
         List<NicVO> nics = _nicDao.listBy(vmProfile.getId());
         NicTO[] nicTos = new NicTO[nics.size()];
         int i = 0;
         for (NicVO nic : nics) {
-            NetworkConfigurationVO config = _networkConfigDao.findById(nic.getNetworkConfigurationId());
+            Pair<NetworkGuru, NetworkConfigurationVO> implemented = implementNetworkConfiguration(nic.getNetworkConfigurationId(), dest);
+            NetworkGuru concierge = implemented.first();
+            NetworkConfigurationVO config = implemented.second();
             NicProfile profile = null;
             if (nic.getReservationStrategy() == ReservationStrategy.Start) {
-                NetworkGuru concierge = _networkGurus.get(config.getGuruName());
                 nic.setState(Resource.State.Reserving);
                 _nicDao.update(nic.getId(), nic);
                 profile = toNicProfile(nic);
@@ -2490,4 +2521,11 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
     public List<NetworkConfigurationVO> getNetworkConfigurationsforOffering(long offeringId, long dataCenterId, long accountId) {
         return _networkConfigDao.getNetworkConfigurationsForOffering(offeringId, dataCenterId, accountId);
     }
+    
+    @Override
+    public List<NetworkConfigurationVO> setupNetworkConfiguration(Account owner, ServiceOfferingVO offering, DeploymentPlan plan) {
+        NetworkOfferingVO networkOffering = _networkOfferingDao.findByServiceOffering(offering);
+        return setupNetworkConfiguration(owner, networkOffering, plan);
+    }
+    
 }
