@@ -316,7 +316,7 @@ long milliseconds = new Date().getTime();
                 <!-- Mid Menu starts here-->
                 <div class="midmenu_panel" id="middle_menu">
                     <div class="midmenu_box" id="midmenu_container">
-                    	
+                    	<div class="midmenu_emptymsgbox"><p>No Items Available</p></div>
                     </div>
                 </div>
                 <!-- Mid Menu ends here-->
