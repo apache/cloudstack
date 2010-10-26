@@ -145,7 +145,7 @@ public class RegisterIsoCmd extends BaseCmd {
 	        templateResponse.setFeatured(template.isFeatured());
             templateResponse.setBootable(template.isBootable());
             templateResponse.setOsTypeId(template.getGuestOSId());
-            templateResponse.setOsTypeName(ApiDBUtils.findGuestOSById(template.getGuestOSId()).getName());
+            templateResponse.setOsTypeName(ApiDBUtils.findGuestOSById(template.getGuestOSId()).getDisplayName());
               
             Account owner = ApiDBUtils.findAccountById(template.getAccountId());
             if (owner != null) {
