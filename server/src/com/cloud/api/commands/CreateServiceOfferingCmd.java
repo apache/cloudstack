@@ -25,6 +25,7 @@ import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.ServiceOfferingResponse;
+import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.service.ServiceOfferingVO;
 
 @Implementation(method="createServiceOffering", manager=Manager.ConfigManager, description="Creates a service offering.")
@@ -127,6 +128,7 @@ public class CreateServiceOfferingCmd extends BaseCmd {
 	    response.setOfferHa(offering.getOfferHA());
 	    response.setStorageType(offering.getUseLocalStorage() ? "local" : "shared");
 	    response.setTags(offering.getTags());
+	    response.setUseVirtualNetwork(offering.getGuestIpType().equals(GuestIpType.Virtualized));
 
         response.setResponseName(getName());
         return response;
