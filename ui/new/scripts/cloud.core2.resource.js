@@ -165,27 +165,12 @@ function podJSONToTreeNode(json, $podNode) {
     var podid = json.id;
     $podNode.attr("id", "pod_" + podid); 
     $podNode.data("jsonObj", json);     	
-	$podNode.data("id", podid).data("name", fromdb(json.name));
+	$podNode.data("podId", podid).data("name", fromdb(json.name));
 	
 	var podName = $podNode.find("#pod_name").text(fromdb(json.name));
 	podName.data("jsonObj", json);	    
 		
-    $.ajax({
-        data: createURL("command=listClusters&podid="+podid+maxPageSize),
-        dataType: "json",
-        async: false,
-        success: function(json) {
-	        var items = json.listclustersresponse.cluster;
-	        var container = $podNode.find("#clusters_container").empty();
-	        if (items != null && items.length > 0) {					    
-		        for (var i = 0; i < items.length; i++) {
-			        var clusterTemplate = $("#leftmenu_cluster_node_template").clone(true); 
-			        clusterJSONToTreeNode(items[i], clusterTemplate);
-			        container.append(clusterTemplate.show());
-		        }
-	        }
-        }
-    });		
+    refreshClusterUnderPod($podNode);            
 }
 	
 function systemvmJSONToTreeNode(json, $systemvmNode) {	
@@ -835,6 +820,7 @@ function initAddVLANButton($addButton) {
         $("#zone_page").find("#tab_network").click();      
         var zoneObj = $("#zone_page").find("#tab_content_details").data("jsonObj");       
         var dialogAddVlanForZone = $("#dialog_add_vlan_for_zone");       
+        dialogAddVlanForZone.find("#info_container").hide();
         dialogAddVlanForZone.find("#zone_name").text(fromdb(zoneObj.name));         
 		dialogAddVlanForZone.find("#add_publicip_vlan_vlan_container, #add_publicip_vlan_domain_container, #add_publicip_vlan_account_container").hide();
 		dialogAddVlanForZone.find("#add_publicip_vlan_tagged, #add_publicip_vlan_vlan, #add_publicip_vlan_gateway, #add_publicip_vlan_netmask, #add_publicip_vlan_startip, #add_publicip_vlan_endip, #add_publicip_vlan_account").val("");
@@ -883,7 +869,6 @@ function initAddVLANButton($addButton) {
 		.dialog('option', 'buttons', { 	
 			"Add": function() { 	
 			    var $thisDialog = $(this);		
-			    $thisDialog.find("#info_container").hide();
 			    					
 				// validate values
 				var isValid = true;					
@@ -967,13 +952,13 @@ function initAddSecondaryStorageButton($addButton) {
         $("#zone_page").find("#tab_secondarystorage").click();    
         var zoneObj = $("#zone_page").find("#tab_content_details").data("jsonObj");       
         $("#dialog_add_secondarystorage").find("#zone_name").text(fromdb(zoneObj.name));   
+        $("#dialog_add_secondarystorage").find("#info_container").hide();		    
    
         $("#dialog_add_secondarystorage")
 	    .dialog('option', 'buttons', { 				    
 		    "Add": function() { 
 		        var $thisDialog = $(this);	
-	            $thisDialog.find("#info_container").hide();
-		    
+	            
 			    // validate values					
 			    var isValid = true;							    
 			    isValid &= validateString("NFS Server", $thisDialog.find("#nfs_server"), $thisDialog.find("#nfs_server_errormsg"));	
@@ -1057,11 +1042,12 @@ function initAddZoneButton($midmenuAddLink1) {
     $midmenuAddLink1.find("#label").text("Add Zone");     
     $midmenuAddLink1.show();     
     $midmenuAddLink1.unbind("click").bind("click", function(event) {  
+        $("#dialog_add_zone").find("#info_container").hide();				
+    
         $("#dialog_add_zone")
 		.dialog('option', 'buttons', { 				
 			"Add": function() { 
 			    var $thisDialog = $(this);
-				$thisDialog.find("#info_container").hide();
 								
 				// validate values
 				var isValid = true;					
@@ -1153,7 +1139,8 @@ function initAddPodButton($midmenuAddLink1) {
     $midmenuAddLink1.find("#label").text("Add Pod"); 
     $midmenuAddLink1.show();     
     $midmenuAddLink1.unbind("click").bind("click", function(event) {   
-        var zoneObj = $("#zone_page").find("#tab_content_details").data("jsonObj");   	
+        var zoneObj = $("#zone_page").find("#tab_content_details").data("jsonObj"); 
+        $("#dialog_add_pod").find("#info_container").hide();				  	
         $("#dialog_add_pod").find("#add_pod_zone_name").text(fromdb(zoneObj.name));
         $("#dialog_add_pod #add_pod_name, #dialog_add_pod #add_pod_cidr, #dialog_add_pod #add_pod_startip, #dialog_add_pod #add_pod_endip, #add_pod_gateway").val("");
 		
@@ -1161,7 +1148,6 @@ function initAddPodButton($midmenuAddLink1) {
         .dialog('option', 'buttons', { 				
 	        "Add": function() {		
 	            var $thisDialog = $(this);
-				$thisDialog.find("#info_container").hide();
 						
 		        // validate values
 		        var isValid = true;					
@@ -1199,10 +1185,11 @@ function initAddPodButton($midmenuAddLink1) {
 			            
 			            var item = json.createpodresponse; 			            		            				    
 		                var template = $("#leftmenu_pod_node_template").clone(true);
-		                podJSONToTreeNode(item, template);			                   				
-		                $("#zone_" + zoneObj.id).find("#zone_content").show();	
-		                $("#zone_" + zoneObj.id).find("#pods_container").prepend(template.show());						
-		                $("#zone_" + zoneObj.id).find("#zone_arrow").removeClass("white_nonexpanded_close").addClass("expanded_open");	
+		                podJSONToTreeNode(item, template);	
+		                var $zoneNode = $("#leftmenu_zone_tree").find("#tree_container").find("#zone_" + zoneObj.id);	                   				
+		                $zoneNode.find("#zone_content").show();	
+		                $zoneNode.find("#pods_container").prepend(template.show());						
+		                $zoneNode.find("#zone_arrow").removeClass("white_nonexpanded_close").addClass("expanded_open");	
                         template.fadeIn("slow");
 			                                    
                         forceLogout = false;  // We don't force a logout if pod(s) exit.
@@ -1234,7 +1221,8 @@ function initAddHostButton($midmenuAddLink1) {
     $midmenuAddLink1.find("#label").text("Add Host"); 
     $midmenuAddLink1.show();
     $midmenuAddLink1.unbind("click").bind("click", function(event) {     
-        dialogAddHost = $("#dialog_add_host");          
+        dialogAddHost = $("#dialog_add_host");      
+        dialogAddHost.find("#info_container").hide();    
         var podObj = $("#pod_page").find("#tab_content_details").data("jsonObj");   
         dialogAddHost.find("#zone_name").text(fromdb(podObj.zonename));  
         dialogAddHost.find("#pod_name").text(fromdb(podObj.name)); 
@@ -1261,8 +1249,7 @@ function initAddHostButton($midmenuAddLink1) {
         dialogAddHost
         .dialog('option', 'buttons', { 				
 	        "Add": function() { 
-	            var $thisDialog = $(this);	
-	            $thisDialog.find("#info_container").hide();
+	            var $thisDialog = $(this);		            
 	            			   
 		        var clusterRadio = $thisDialog.find("input[name=cluster]:checked").val();				
 			
@@ -1333,8 +1320,11 @@ function initAddHostButton($midmenuAddLink1) {
                         
                         if(clusterRadio == "new_cluster_radio")
                             $thisDialog.find("#new_cluster_name").val("");
+                                                    
+                        refreshClusterUnderPod($("#pod_" + podObj.id));                               
 			        },			
-                    error: function(XMLHttpResponse) {		                   
+                    error: function(XMLHttpResponse) {	
+                        refreshClusterUnderPod($("#pod_" + podObj.id));        	                   
                         handleErrorInDialog(XMLHttpResponse, $thisDialog);					    
                     }				
 		        });
@@ -1347,12 +1337,39 @@ function initAddHostButton($midmenuAddLink1) {
     });        
 }
 
+function refreshClusterUnderPod($podNode) {  
+    var podId = $podNode.data("podId"); 
+    $.ajax({
+        data: createURL("command=listClusters&podid="+podId+maxPageSize),
+        dataType: "json",
+        async: false,
+        success: function(json) {
+            var items = json.listclustersresponse.cluster;  
+            var container = $podNode.find("#clusters_container").empty();
+            if (items != null && items.length > 0) {					    
+                for (var i = 0; i < items.length; i++) {
+                    var clusterTemplate = $("#leftmenu_cluster_node_template").clone(true); 
+                    clusterJSONToTreeNode(items[i], clusterTemplate);
+                    container.append(clusterTemplate.show());                                   
+                }                         
+                $podNode.find("#pod_arrow").removeClass("white_nonexpanded_close").addClass("expanded_open");
+                $podNode.find("#pod_content").show();    
+            }
+            else {                
+                $podNode.find("#pod_arrow").removeClass("expanded_close").addClass("white_nonexpanded_close");
+                $podNode.find("#pod_content").hide();
+            }
+        }
+    });	
+}
+
 function initAddPrimaryStorageButton($midmenuAddLink2) {
     $midmenuAddLink2.find("#label").text("Add Primary Storage"); 
     $midmenuAddLink2.show();   
     $midmenuAddLink2.unbind("click").bind("click", function(event) {   
         var podObj = $("#pod_page").find("#tab_content_details").data("jsonObj");
         dialogAddPool = $("#dialog_add_pool");  
+        dialogAddPool.find("#info_container").hide();	
         dialogAddPool.find("#zone_name").text(fromdb(podObj.zonename));  
         dialogAddPool.find("#pod_name").text(fromdb(podObj.name)); 
                                 
@@ -1373,7 +1390,6 @@ function initAddPrimaryStorageButton($midmenuAddLink2) {
 	    .dialog('option', 'buttons', { 				    
 		    "Add": function() { 	
 		    	var $thisDialog = $(this);
-		    	$thisDialog.find("#info_container").hide();
 		    	
 			    // validate values
 				var protocol = $thisDialog.find("#add_pool_protocol").val();
@@ -1436,9 +1452,12 @@ function initAddPrimaryStorageButton($midmenuAddLink2) {
                         $("#midmenu_container").append($midmenuItem1.fadeIn("slow"));
 				        var item = json.createstoragepoolresponse;				            			      										   
 					    primarystorageToMidmenu(item, $midmenuItem1);
-	                    bindClickToMidMenu($midmenuItem1, primarystorageToRightPanel, primarystorageGetMidmenuId);  	                    
+	                    bindClickToMidMenu($midmenuItem1, primarystorageToRightPanel, primarystorageGetMidmenuId);  	
+	                    
+	                    refreshClusterUnderPod($("#pod_" + podObj.id));                                
 				    },			
                     error: function(XMLHttpResponse) {	
+                        refreshClusterUnderPod($("#pod_" + podObj.id));            
                         handleErrorInDialog(XMLHttpResponse, $thisDialog);	                        					    
                     }							    
 			    });
