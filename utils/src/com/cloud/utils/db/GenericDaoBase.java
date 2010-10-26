@@ -803,7 +803,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     
     protected T findById(ID id, boolean removed, Boolean lock) {
         StringBuilder sql = new StringBuilder(_selectByIdSql);
-        if (!removed) {
+        if (!removed && _removed != null) {
             sql.append(" AND ").append(_removed.first());
         }
         if (lock != null) {

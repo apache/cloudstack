@@ -32,12 +32,6 @@ public interface SerialVersionUID {
     public static final long CloudRuntimeException = Base | 0x2;
     public static final long CloudStartupServlet = Base | 0x3;
     public static final long CloudServiceImpl = Base | 0x4;
-    public static final long UserRemote = Base | 0x5;
-    public static final long ServiceOfferingRemote = Base | 0x6;
-    public static final long VMTemplateRemote = Base | 0x7;
-    public static final long VMInstanceRemote = Base | 0x8;
-    public static final long IPAddressRemote = Base | 0x9;
-    public static final long IPForwardingRemote = Base | 0xa;
     public static final long UnsupportedVersionException = Base | 0xb;
     public static final long DataCenterIpAddressPK = Base | 0xc;
     public static final long UnableToExecuteException = Base | 0xd;
@@ -59,4 +53,6 @@ public interface SerialVersionUID {
     public static final long CloudAuthenticationException = Base | 0x1d;
     public static final long AsyncCommandQueued = Base | 0x1e;
     public static final long ResourceUnavailableException = Base | 0x1f;
+    public static final long ConnectionException = Base | 0x20;
+    public static final long PermissionDeniedException = Base | 0x21;
 }

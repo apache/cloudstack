@@ -17,6 +17,7 @@
  */
 package com.cloud.exception;
 
+import com.cloud.utils.SerialVersionUID;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
@@ -25,7 +26,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
  */
 public class PermissionDeniedException extends CloudRuntimeException {
 
-	private static final long serialVersionUID = -4631412831814398074L;
+	private static final long serialVersionUID = SerialVersionUID.PermissionDeniedException;
 
 	public PermissionDeniedException(String message) {
 		super(message);

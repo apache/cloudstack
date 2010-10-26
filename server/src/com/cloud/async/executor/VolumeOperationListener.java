@@ -52,6 +52,7 @@ public class VolumeOperationListener implements Listener {
 		_cookie = cookie;
 	}
 	
+    @Override
     public boolean processAnswers(long agentId, long seq, Answer[] answers) {
     	Answer answer = null;
     	if(answers != null)
@@ -64,33 +65,39 @@ public class VolumeOperationListener implements Listener {
     	return true;
     }
     
+    @Override
     public boolean processCommands(long agentId, long seq, Command[] commands) {
     	return true;
     }
     
+    @Override
     public AgentControlAnswer processControlCommand(long agentId, AgentControlCommand cmd) {
     	return null;
     }
     
-    public boolean processConnect(HostVO agent, StartupCommand cmd) {
-    	return true;
+    @Override
+    public void processConnect(HostVO agent, StartupCommand cmd) {
     }
     
+    @Override
     public boolean processDisconnect(long agentId, Status state) {
     	if(_vm.getHostId() == agentId)
     		_executor.processDisconnect(this, agentId);
     	return true;
     }
     
+    @Override
     public boolean isRecurring() {
     	return false;
     }
     
+    @Override
     public int getTimeout() {
     	// TODO : no time out support for now as underlying support does not work as expected
     	return -1;
     }
     
+    @Override
     public boolean processTimeout(long agentId, long seq) {
     	if(s_logger.isDebugEnabled())
     		s_logger.debug("Process time out for " + agentId + "-" + seq);

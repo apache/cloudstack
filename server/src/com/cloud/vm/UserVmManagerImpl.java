@@ -63,7 +63,6 @@ import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
-import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.AttachVolumeCmd;
@@ -3804,18 +3803,18 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     public UserVm createVirtualMachine(DeployVm2Cmd cmd) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException {
         Account caller = UserContext.current().getAccount();
         
-        Domain domain = _domainDao.findById(cmd.getDomainId());
+        AccountVO owner = _accountDao.findById(cmd.getAccountId());
+        if (owner == null || owner.getRemoved() != null) {
+            throw new InvalidParameterValueException("Unable to find account: " + cmd.getAccountId());
+        }
+        
+        Domain domain = _domainDao.findById(owner.getDomainId());
         if (domain == null || domain.getRemoved() != null) {
             throw new InvalidParameterValueException("Unable to find domain: " + cmd.getDomainId());
         }
         
         _accountMgr.checkAccess(caller, domain);
         
-        AccountVO owner = _accountDao.findById(cmd.getAccountId());
-        if (owner == null || owner.getRemoved() != null) {
-            throw new InvalidParameterValueException("Unable to find account: " + cmd.getAccountId());
-        }
-
         DataCenterVO dc = _dcDao.findById(cmd.getZoneId());
         if (dc == null) {
             throw new InvalidParameterValueException("Unable to find zone: " + cmd.getZoneId());

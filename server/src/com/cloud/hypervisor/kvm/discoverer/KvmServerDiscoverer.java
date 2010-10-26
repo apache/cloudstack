@@ -71,9 +71,7 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 	}
 
 	@Override
-	public boolean processConnect(HostVO host, StartupCommand cmd) {
-		// TODO Auto-generated method stub
-		return false;
+	public void processConnect(HostVO host, StartupCommand cmd) {
 	}
 
 	@Override

@@ -96,6 +96,7 @@ import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.event.dao.EventDao;
 import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.ConnectionException;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
@@ -1050,11 +1051,18 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
                 s_logger.debug("Sending Connect to listener: " + monitor.second().getClass().getSimpleName());
             }
             for (int i = 0; i < cmd.length; i++) {
-                if (!monitor.second().processConnect(host, cmd[i])) {
-                    s_logger.info("Monitor " + monitor.second().getClass().getSimpleName() + " says not to continue the connect process for " + hostId);
-                    handleDisconnect(attache, Event.AgentDisconnected, false);
-                    return attache;
-                }
+                try {
+                    monitor.second().processConnect(host, cmd[i]);
+                } catch (ConnectionException e) {
+                    if (e.isSetupError()) {
+                        s_logger.warn("Monitor " + monitor.second().getClass().getSimpleName() + " says there is an error in the connect process for " + hostId + " due to " + e.getMessage());
+                        handleDisconnect(attache, Event.AgentDisconnected, false);
+                    } else {
+                        s_logger.info("Monitor " + monitor.second().getClass().getSimpleName() + " says not to continue the connect process for " + hostId + " due to " + e.getMessage());
+                        handleDisconnect(attache, Event.ShutdownRequested, false);
+                    }
+                    return null;
+                } 
             }
         }
         

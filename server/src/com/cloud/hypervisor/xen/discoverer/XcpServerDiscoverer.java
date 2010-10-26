@@ -45,6 +45,7 @@ import com.cloud.alert.AlertManager;
 import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
+import com.cloud.exception.ConnectionException;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.host.HostInfo;
 import com.cloud.host.HostVO;
@@ -521,12 +522,10 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
     }
 
     @Override
-    public boolean processConnect(HostVO agent, StartupCommand cmd) {
+    public void processConnect(HostVO agent, StartupCommand cmd) throws ConnectionException {
         if (cmd instanceof StartupStorageCommand) {
             createPVTemplate(agent.getId(), (StartupStorageCommand)cmd);
-            return true;
         }
-        return true;
     }
 
     @Override

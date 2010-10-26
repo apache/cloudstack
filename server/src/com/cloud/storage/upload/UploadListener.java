@@ -24,15 +24,13 @@ import com.cloud.agent.api.storage.UploadProgressCommand.RequestType;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobResult;
 import com.cloud.async.executor.ExtractJobResultObject;
-import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.host.HostVO;
 import com.cloud.storage.Storage;
-import com.cloud.storage.UploadVO;
-import com.cloud.storage.dao.UploadDao;
 import com.cloud.storage.Upload.Status;
 import com.cloud.storage.Upload.Type;
-import com.cloud.storage.upload.UploadMonitorImpl;
+import com.cloud.storage.UploadVO;
+import com.cloud.storage.dao.UploadDao;
 import com.cloud.storage.upload.UploadState.UploadEvent;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -210,9 +208,9 @@ public class UploadListener implements Listener {
 	}
 
 	@Override
-	public boolean processConnect(HostVO agent, StartupCommand cmd) {		
+	public void processConnect(HostVO agent, StartupCommand cmd) {		
 		if (!(cmd instanceof StartupStorageCommand)) {
-	        return true;
+	        return;
 	    }
 	   
 	    long agentId = agent.getId();
@@ -223,7 +221,6 @@ public class UploadListener implements Listener {
 	    {
 	    	uploadMonitor.handleUploadSync(agentId);
 	    }
-		return true;
 	}
 
 	@Override
