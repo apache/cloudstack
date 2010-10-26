@@ -461,7 +461,7 @@ function vlanJsonToTemplate(jsonObj, $template1) {
     $template1.find("#ip_range").text(jsonObj.description);
     $template1.unbind("click").bind("click", function(event) {        
         var $target = $(event.target);
-        var targetId = $target.attr("id");
+        var targetId = $target.attr("id");     
         switch(targetId) {
             case "info_icon":   
                 var vlanName = jsonObj.id;
@@ -476,10 +476,8 @@ function vlanJsonToTemplate(jsonObj, $template1) {
 				        vlanDisplayName = ranges[0] + " - " + ranges[1];
 			        }
 		        }
-                
-                
-                var $infoDropdown = $target.siblings("#info_dropdown");
-               
+                                
+                var $infoDropdown = $target.siblings("#info_dropdown");               
                 $infoDropdown.find("#vlan").text(fromdb(jsonObj.vlan));
                 $infoDropdown.find("#gateway").text(fromdb(jsonObj.gateway));
                 $infoDropdown.find("#netmask").text(fromdb(jsonObj.netmask));
@@ -501,6 +499,10 @@ function vlanJsonToTemplate(jsonObj, $template1) {
                     $container.find("#podname").text(fromdb(jsonObj.podname));
                 }     
                 $infoDropdown.show();
+                break;
+                
+            case "close_link":                
+                $target.parent().parent().hide();
                 break;
         }
         

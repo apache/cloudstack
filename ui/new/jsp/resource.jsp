@@ -1036,8 +1036,8 @@
         	
         </div>
         <div id="info_dropdown" class="networkswitch_infodropdown" style="display:none;">
-        	<div id="close_icon" class="networkswitch_infodropdown_actionbox">
-            	<a href="#">Close</a>
+        	<div class="networkswitch_infodropdown_actionbox">
+            	<a id="close_link" href="#">Close</a>
             </div>
         	<ul class="networkswitch_infodropdown_textbox">
             	<li id="vlan_container"><div class="networkswitch_infodropdown_textbox_label">VLAN ID:</div> <span id="vlan"></span></li>
