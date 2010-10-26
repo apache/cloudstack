@@ -459,6 +459,17 @@ function vlanJsonToTemplate(jsonObj, $template1) {
     $template1.data("jsonObj", jsonObj);
     $template1.find("#vlan_id").text(jsonObj.vlan);
     $template1.find("#ip_range").text(jsonObj.description);
+    $template1.unbind("click").bind("click", function(event) {        
+        var $target = $(event.target);
+        var targetId = $target.attr("id");
+        switch(targetId) {
+            case "info_icon":                
+                $target.siblings("#info_dropdown").show();
+                break;
+        }
+        
+        return false;
+    });
 } 	
 
 //***** zone page (end) *******************************************************************************************************
