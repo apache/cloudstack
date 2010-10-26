@@ -19,13 +19,15 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.StatusResponse;
+import com.cloud.event.EventTypes;
+import com.cloud.user.Account;
 
 @Implementation(method="uploadCertificate")
-public class UploadCustomCertificateCmd extends BaseCmd {
+public class UploadCustomCertificateCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UploadCustomCertificateCmd.class.getName());
 
     private static final String s_name = "uploadcustomcertificateresponse";
@@ -37,11 +39,7 @@ public class UploadCustomCertificateCmd extends BaseCmd {
         return path;
     }
 
-    @Override
-    public String getName() {
-        return s_name;
-    }
-    
+
     @Override @SuppressWarnings("unchecked")
     public StatusResponse getResponse() {
         Boolean status = (Boolean)getResponseObject();
@@ -51,4 +49,29 @@ public class UploadCustomCertificateCmd extends BaseCmd {
         response.setResponseName(getName());
         return response;
     }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_VOLUME_CREATE;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  ("Uploading custom certificate to the db, and applying it to the cpvm");
+    }
+    
+    @Override
+    public String getName() {
+        return s_name;
+    }
+    
+    public static String getResultObjectName() {
+    	return "volume";
+    }
+
+    @Override
+    public long getAccountId() {
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+    }
+
 }

@@ -166,15 +166,15 @@
             </div>
             <div class="grid_rows even" id="create_port_forwarding_row">
                 <div class="grid_row_cell" style="width: 15%;">
-                    <input id="public_port" class="text" style="width: 90%;" type="text" />
+                    <input id="public_port" class="text" style="width: 70%;" type="text" />
                     <div id="public_port_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
                 </div>
                 <div class="grid_row_cell" style="width: 15%;">
-                    <input id="private_port" class="text" style="width: 90%;" type="text" />
+                    <input id="private_port" class="text" style="width: 70%;" type="text" />
                     <div id="private_port_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
                 </div>
                 <div class="grid_row_cell" style="width: 15%;">  
-                   <select class="select" id="protocol">
+                   <select class="select" id="protocol" style="width:70%;">
                        <option value="TCP">TCP</option>
                        <option value="UDP">UDP</option>
                    </select>
@@ -220,19 +220,19 @@
             </div>
             <div class="grid_rows even" id="create_load_balancer_row">
                 <div class="grid_row_cell" style="width: 25%;">
-                    <input id="name" class="text" style="width: 90%;" type="text" />
+                    <input id="name" class="text" style="width: 70%;" type="text" />
                     <div id="name_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
                 </div>
                 <div class="grid_row_cell" style="width: 15%;">
-                    <input id="public_port" class="text" style="width: 90%;" type="text" />
+                    <input id="public_port" class="text" style="width: 70%;" type="text" />
                     <div id="public_port_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
                 </div>
                 <div class="grid_row_cell" style="width: 15%;">
-                    <input id="private_port" class="text" style="width: 90%;" type="text" />
+                    <input id="private_port" class="text" style="width: 70%;" type="text" />
                     <div id="private_port_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
                 </div>
                 <div class="grid_row_cell" style="width: 15%;">
-                    <select id="algorithm_select" class="select" style="width: 90%;">                       
+                    <select id="algorithm_select" class="select" style="width: 70%;">                       
 						<option value="roundrobin">roundrobin</option>
                         <option value="leastconn">leastconn</option>
                         <option value="source">source</option>

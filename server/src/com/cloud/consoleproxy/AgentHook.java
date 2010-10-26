@@ -7,6 +7,7 @@ import com.cloud.agent.api.AgentControlAnswer;
 import com.cloud.agent.api.ConsoleAccessAuthenticationCommand;
 import com.cloud.agent.api.ConsoleProxyLoadReportCommand;
 import com.cloud.agent.api.StartupCommand;
+import com.cloud.agent.api.StartupProxyCommand;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 
@@ -16,4 +17,5 @@ public interface AgentHook {
     void onAgentConnect(HostVO host, StartupCommand cmd);
     
     public void onAgentDisconnect(long agentId, Status state);
+	boolean applyCustomCertToNewProxy(StartupProxyCommand cmd);
 }

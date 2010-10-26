@@ -34,6 +34,7 @@ import com.cloud.agent.api.ConsoleProxyLoadReportCommand;
 import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.StartupCommand;
+import com.cloud.agent.api.StartupProxyCommand;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.DestroyConsoleProxyCmd;
@@ -54,9 +55,10 @@ import com.cloud.utils.component.Inject;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
+import com.cloud.vm.VirtualMachine.Type;
+import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
@@ -74,13 +76,13 @@ public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, Virtu
     @Inject
     private VMInstanceDao _instanceDao;
     private ConsoleProxyListener _listener;
-
     protected int _consoleProxyUrlPort = ConsoleProxyManager.DEFAULT_PROXY_URL_PORT;
     protected int _consoleProxyPort = ConsoleProxyManager.DEFAULT_PROXY_VNC_PORT;
     protected boolean _sslEnabled = false;
     @Inject
     AgentManager _agentMgr;
-
+    @Inject
+    protected ConsoleProxyDao _cpDao;
     public int getVncPort(VMInstanceVO vm) {
         if (vm.getHostId() == null) {
             return -1;
@@ -325,4 +327,10 @@ public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, Virtu
     public boolean destroyConsoleProxy(DestroyConsoleProxyCmd cmd) throws ServerApiException {
         return false;
     }
+
+	@Override
+	public boolean applyCustomCertToNewProxy(StartupProxyCommand cmd) {
+		// TODO Auto-generated method stub
+		return false;
+	}
 }
