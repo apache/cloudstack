@@ -904,6 +904,7 @@ function initAddVLANButton($addButton) {
 				    return;		
 				    
 				//$thisDialog.dialog("close"); 		//only close dialog when this action succeeds		
+				$thisDialog.find("#spinning_wheel").fadeIn("slow");
 				
 				var vlan = trim($thisDialog.find("#add_publicip_vlan_vlan").val());
 				if (isTagged) {
@@ -923,9 +924,7 @@ function initAddVLANButton($addButton) {
 				var gateway = trim($thisDialog.find("#add_publicip_vlan_gateway").val());
 				var netmask = trim($thisDialog.find("#add_publicip_vlan_netmask").val());
 				var startip = trim($thisDialog.find("#add_publicip_vlan_startip").val());
-				var endip = trim($thisDialog.find("#add_publicip_vlan_endip").val());					
-									
-				$thisDialog.find("#spinning_wheel").fadeIn("slow");
+				var endip = trim($thisDialog.find("#add_publicip_vlan_endip").val());													
 																				
 				$.ajax({
 				    data: createURL("command=createVlanIpRange&forVirtualNetwork="+type+"&zoneId="+zoneObj.id+vlan+scopeParams+"&gateway="+encodeURIComponent(gateway)+"&netmask="+encodeURIComponent(netmask)+"&startip="+encodeURIComponent(startip)+"&endip="+encodeURIComponent(endip)),
@@ -1269,42 +1268,45 @@ function initAddHostButton($midmenuAddLink1) {
         dialogAddHost
         .dialog('option', 'buttons', { 				
 	        "Add": function() { 
-	            var dialogBox = $(this);				   
-		        var clusterRadio = dialogBox.find("input[name=cluster]:checked").val();				
+	            var $thisDialog = $(this);	
+	            $thisDialog.find("#info_container").hide();
+	            			   
+		        var clusterRadio = $thisDialog.find("input[name=cluster]:checked").val();				
 			
 		        // validate values
 		        var isValid = true;									
-		        isValid &= validateString("Host name", dialogBox.find("#host_hostname"), dialogBox.find("#host_hostname_errormsg"));
-		        isValid &= validateString("User name", dialogBox.find("#host_username"), dialogBox.find("#host_username_errormsg"));
-		        isValid &= validateString("Password", dialogBox.find("#host_password"), dialogBox.find("#host_password_errormsg"));						
+		        isValid &= validateString("Host name", $thisDialog.find("#host_hostname"), $thisDialog.find("#host_hostname_errormsg"));
+		        isValid &= validateString("User name", $thisDialog.find("#host_username"), $thisDialog.find("#host_username_errormsg"));
+		        isValid &= validateString("Password", $thisDialog.find("#host_password"), $thisDialog.find("#host_password_errormsg"));						
 		        if (!isValid) 
 		            return;
 		            
-				dialogBox.dialog("close");    				
+				//$thisDialog.dialog("close");   //only close dialog when this action succeeds		
+				$thisDialog.find("#spinning_wheel").fadeIn("slow"); 				
 				
 		        var array1 = [];    
 		        array1.push("&zoneId="+podObj.zoneid);
 		        array1.push("&podId="+podObj.id);
 						      
-		        var username = trim(dialogBox.find("#host_username").val());
+		        var username = trim($thisDialog.find("#host_username").val());
 		        array1.push("&username="+encodeURIComponent(username));
 				
-		        var password = trim(dialogBox.find("#host_password").val());
+		        var password = trim($thisDialog.find("#host_password").val());
 		        array1.push("&password="+encodeURIComponent(password));
 											
 			    if(clusterRadio == "new_cluster_radio") {
-		            var newClusterName = trim(dialogBox.find("#new_cluster_name").val());
+		            var newClusterName = trim($thisDialog.find("#new_cluster_name").val());
 		            array1.push("&clustername="+todb(newClusterName));				    
 		        }
 		        else if(clusterRadio == "existing_cluster_radio") {			            
-		            var clusterId = dialogBox.find("#cluster_select").val();
+		            var clusterId = $thisDialog.find("#cluster_select").val();
 				    // We will default to no cluster if someone selects Join Cluster with no cluster available.
 				    if (clusterId != '-1') {
 					    array1.push("&clusterid="+clusterId);
 				    }
 		        }				
 				
-		        var hostname = trim(dialogBox.find("#host_hostname").val());
+		        var hostname = trim($thisDialog.find("#host_hostname").val());
 		        var url;					
 		        if(hostname.indexOf("http://")==-1)
 		            url = "http://" + todb(hostname);
@@ -1312,31 +1314,34 @@ function initAddHostButton($midmenuAddLink1) {
 		            url = hostname;
 		        array1.push("&url="+encodeURIComponent(url));
 									
-		        var $midmenuItem1 = beforeAddingMidMenuItem() ;    				
+		        //var $midmenuItem1 = beforeAddingMidMenuItem() ;    				
 		        
 		        $.ajax({
 			       data: createURL("command=addHost" + array1.join("")),
 			        dataType: "json",
-			        success: function(json) {	
-			            var items = json.addhostresponse.host;				            			      										   
+			        success: function(json) {
+			            $thisDialog.dialog("close");
+					
+					    var $midmenuItem1 = $("#midmenu_item").clone();
+                        $("#midmenu_container").append($midmenuItem1.fadeIn("slow"));
+                        var items = json.addhostresponse.host;				            			      										   
 					    hostToMidmenu(items[0], $midmenuItem1);
-	                    bindClickToMidMenu($midmenuItem1, hostToRightPanel, hostGetMidmenuId);  
-	                    afterAddingMidMenuItem($midmenuItem1, true);
-                                                        
+	                    bindClickToMidMenu($midmenuItem1, hostToRightPanel, hostGetMidmenuId); 
+			           
                         if(items.length > 1) { 
                             for(var i=1; i<items.length; i++) {                                    
                                 var $midmenuItem2 = $("#midmenu_item").clone();
                                 hostToMidmenu(items[i], $midmenuItem2);
                                 bindClickToMidMenu($midmenuItem2, hostToRightPanel, hostGetMidmenuId); 
-                                $("#midmenu_container").append($midmenuItem2.show());                                   
+                                $("#midmenu_container").append($midmenuItem2.fadeIn("slow"));                                   
                             }	
                         }                                
                         
                         if(clusterRadio == "new_cluster_radio")
-                            dialogBox.find("#new_cluster_name").val("");
+                            $thisDialog.find("#new_cluster_name").val("");
 			        },			
                     error: function(XMLHttpResponse) {		                   
-                        handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1);					    
+                        handleErrorInDialog(XMLHttpResponse, $thisDialog);					    
                     }				
 		        });
 	        }, 
