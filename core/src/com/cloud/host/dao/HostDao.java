@@ -137,5 +137,7 @@ public interface HostDao extends GenericDao<HostVO, Long> {
     
     void loadDetails(HostVO host);
 
+	HostVO findConsoleProxyHost(String name, Type type);
+
 
 }

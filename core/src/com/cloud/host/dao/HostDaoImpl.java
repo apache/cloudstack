@@ -79,6 +79,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected final SearchBuilder<HostVO> UnmanagedDirectConnectSearch;
     protected final SearchBuilder<HostVO> MaintenanceCountSearch;
     protected final SearchBuilder<HostVO> ClusterSearch;
+    protected final SearchBuilder<HostVO> ConsoleProxyHostSearch;
     
     protected final Attribute _statusAttr;
     protected final Attribute _msIdAttr;
@@ -154,6 +155,11 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         ClusterSearch = createSearchBuilder();
         ClusterSearch.and("cluster", ClusterSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
         ClusterSearch.done();
+
+        ConsoleProxyHostSearch = createSearchBuilder();
+        ConsoleProxyHostSearch.and("name", ConsoleProxyHostSearch.entity().getName(), SearchCriteria.Op.EQ);
+        ConsoleProxyHostSearch.and("type", ConsoleProxyHostSearch.entity().getType(), SearchCriteria.Op.EQ);
+        ConsoleProxyHostSearch.done();
         
         PodSearch = createSearchBuilder();
         PodSearch.and("pod", PodSearch.entity().getPodId(), SearchCriteria.Op.EQ);
@@ -443,6 +449,19 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         return listBy(sc);
     }
 
+    @Override
+    public HostVO findConsoleProxyHost(String name, Type type) {
+        SearchCriteria<HostVO> sc = ConsoleProxyHostSearch.create();
+        sc.setParameters("name", name);
+        sc.setParameters("type", type);
+        List<HostVO>hostList = listBy(sc);
+        
+        if(hostList==null || hostList.size() == 0)
+        	return null;
+        else
+        	return hostList.get(0);
+    }
+    
     public List<HostVO> listByHostPod(long podId) {
         SearchCriteria<HostVO> sc = PodSearch.create("pod", podId);
         return listBy(sc);
