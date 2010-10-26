@@ -967,40 +967,42 @@ function initAddSecondaryStorageButton($addButton) {
         $("#dialog_add_secondarystorage")
 	    .dialog('option', 'buttons', { 				    
 		    "Add": function() { 
-		        var thisDialog = $(this);
+		        var $thisDialog = $(this);	
+	            $thisDialog.find("#info_container").hide();
 		    
 			    // validate values					
 			    var isValid = true;							    
-			    isValid &= validateString("NFS Server", thisDialog.find("#nfs_server"), thisDialog.find("#nfs_server_errormsg"));	
-			    isValid &= validatePath("Path", thisDialog.find("#path"), thisDialog.find("#path_errormsg"));					
+			    isValid &= validateString("NFS Server", $thisDialog.find("#nfs_server"), $thisDialog.find("#nfs_server_errormsg"));	
+			    isValid &= validatePath("Path", $thisDialog.find("#path"), $thisDialog.find("#path_errormsg"));					
 			    if (!isValid) 
 			        return;
-			        
-				thisDialog.dialog("close");	
-								
-				var $subgridItem = $("#secondary_storage_tab_template").clone(true);	
-	            var $spinningWheel = $subgridItem.find("#spinning_wheel");
-                $spinningWheel.find("#description").text("Adding Secondary Storage....");  
-                $spinningWheel.show();  
-                $subgridItem.find("#after_action_info_container").removeClass("error").addClass("success").hide();  
-                $("#zone_page").find("#tab_content_secondarystorage").append($subgridItem.show());    
-				     					  								            				
+			    
+				$thisDialog.find("#spinning_wheel").fadeIn("slow");
+								     					  								            				
 			    var zoneId = zoneObj.id;		
-			    var nfs_server = trim(thisDialog.find("#nfs_server").val());		
-			    var path = trim(thisDialog.find("#path").val());	    					    				    					   					
+			    var nfs_server = trim($thisDialog.find("#nfs_server").val());		
+			    var path = trim($thisDialog.find("#path").val());	    					    				    					   					
 				var url = nfsURL(nfs_server, path);  
 			    				  
 			    $.ajax({
 				    data: createURL("command=addSecondaryStorage&zoneId="+zoneId+"&url="+encodeURIComponent(url)),
 				    dataType: "json",
-				    success: function(json) {						        
-				        secondaryStorageJSONToTemplate(json.addsecondarystorageresponse.secondarystorage[0], $subgridItem);
-				        $spinningWheel.hide();   
+				    success: function(json) {					        
+				        $thisDialog.dialog("close");
+					
+					    var $subgridItem = $("#secondary_storage_tab_template").clone(true);	
+	                    var $spinningWheel = $subgridItem.find("#spinning_wheel");
+                        $spinningWheel.find("#description").text("Adding Secondary Storage....");  
+                        $spinningWheel.show();  
+                        $subgridItem.find("#after_action_info_container").removeClass("error").addClass("success").hide();  
+                        $("#zone_page").find("#tab_content_secondarystorage").append($subgridItem.show());  
+				    					        
+				        secondaryStorageJSONToTemplate(json.addsecondarystorageresponse.secondarystorage[0], $subgridItem);				        
 	                    $subgridItem.find("#after_action_info").text("Secondary storage was added successfully.");
                         $subgridItem.find("#after_action_info_container").removeClass("error").addClass("success").show();  
 				    },			
                     error: function(XMLHttpResponse) {	
-                        handleErrorInSubgridItem(XMLHttpResponse, $subgridItem, "Add Secondary Storage");    
+                        handleErrorInDialog(XMLHttpResponse, $thisDialog);		 
                     }					    			    
 			    });
 		    }, 
@@ -1058,54 +1060,54 @@ function initAddZoneButton($midmenuAddLink1) {
         $("#dialog_add_zone")
 		.dialog('option', 'buttons', { 				
 			"Add": function() { 
-			    var thisDialog = $(this);
+			    var $thisDialog = $(this);
 								
 				// validate values
 				var isValid = true;					
-				isValid &= validateString("Name", thisDialog.find("#add_zone_name"), thisDialog.find("#add_zone_name_errormsg"));
-				isValid &= validateIp("DNS 1", thisDialog.find("#add_zone_dns1"), thisDialog.find("#add_zone_dns1_errormsg"), false); //required
-				isValid &= validateIp("DNS 2", thisDialog.find("#add_zone_dns2"), thisDialog.find("#add_zone_dns2_errormsg"), true);  //optional	
-				isValid &= validateIp("Internal DNS 1", thisDialog.find("#add_zone_internaldns1"), thisDialog.find("#add_zone_internaldns1_errormsg"), false); //required
-				isValid &= validateIp("Internal DNS 2", thisDialog.find("#add_zone_internaldns2"), thisDialog.find("#add_zone_internaldns2_errormsg"), true);  //optional	
+				isValid &= validateString("Name", $thisDialog.find("#add_zone_name"), $thisDialog.find("#add_zone_name_errormsg"));
+				isValid &= validateIp("DNS 1", $thisDialog.find("#add_zone_dns1"), $thisDialog.find("#add_zone_dns1_errormsg"), false); //required
+				isValid &= validateIp("DNS 2", $thisDialog.find("#add_zone_dns2"), $thisDialog.find("#add_zone_dns2_errormsg"), true);  //optional	
+				isValid &= validateIp("Internal DNS 1", $thisDialog.find("#add_zone_internaldns1"), $thisDialog.find("#add_zone_internaldns1_errormsg"), false); //required
+				isValid &= validateIp("Internal DNS 2", $thisDialog.find("#add_zone_internaldns2"), $thisDialog.find("#add_zone_internaldns2_errormsg"), true);  //optional	
 				if (getNetworkType() != "vnet") {
-					isValid &= validateString("Zone - Start VLAN Range", thisDialog.find("#add_zone_startvlan"), thisDialog.find("#add_zone_startvlan_errormsg"), false); //required
-					isValid &= validateString("Zone - End VLAN Range", thisDialog.find("#add_zone_endvlan"), thisDialog.find("#add_zone_endvlan_errormsg"), true);        //optional
+					isValid &= validateString("Zone - Start VLAN Range", $thisDialog.find("#add_zone_startvlan"), $thisDialog.find("#add_zone_startvlan_errormsg"), false); //required
+					isValid &= validateString("Zone - End VLAN Range", $thisDialog.find("#add_zone_endvlan"), $thisDialog.find("#add_zone_endvlan_errormsg"), true);        //optional
 				}
-				isValid &= validateCIDR("Guest CIDR", thisDialog.find("#add_zone_guestcidraddress"), thisDialog.find("#add_zone_guestcidraddress_errormsg"), false); //required
+				isValid &= validateCIDR("Guest CIDR", $thisDialog.find("#add_zone_guestcidraddress"), $thisDialog.find("#add_zone_guestcidraddress_errormsg"), false); //required
 				if (!isValid) 
 				    return;							
 				
-				thisDialog.dialog("close"); 
+				$thisDialog.dialog("close"); 
 				
 				var moreCriteria = [];	
 				
-				var name = trim(thisDialog.find("#add_zone_name").val());
+				var name = trim($thisDialog.find("#add_zone_name").val());
 				moreCriteria.push("&name="+todb(name));
 				
-				var dns1 = trim(thisDialog.find("#add_zone_dns1").val());
+				var dns1 = trim($thisDialog.find("#add_zone_dns1").val());
 				moreCriteria.push("&dns1="+encodeURIComponent(dns1));
 				
-				var dns2 = trim(thisDialog.find("#add_zone_dns2").val());
+				var dns2 = trim($thisDialog.find("#add_zone_dns2").val());
 				if (dns2 != null && dns2.length > 0) 
 				    moreCriteria.push("&dns2="+encodeURIComponent(dns2));						
 									
-				var internaldns1 = trim(thisDialog.find("#add_zone_internaldns1").val());
+				var internaldns1 = trim($thisDialog.find("#add_zone_internaldns1").val());
 				moreCriteria.push("&internaldns1="+encodeURIComponent(internaldns1));
 				
-				var internaldns2 = trim(thisDialog.find("#add_zone_internaldns2").val());
+				var internaldns2 = trim($thisDialog.find("#add_zone_internaldns2").val());
 				if (internaldns2 != null && internaldns2.length > 0) 
 				    moreCriteria.push("&internaldns2="+encodeURIComponent(internaldns2));						
 				 											
 				if (getNetworkType() != "vnet") {
-					var vlanStart = trim(thisDialog.find("#add_zone_startvlan").val());	
-					var vlanEnd = trim(thisDialog.find("#add_zone_endvlan").val());						
+					var vlanStart = trim($thisDialog.find("#add_zone_startvlan").val());	
+					var vlanEnd = trim($thisDialog.find("#add_zone_endvlan").val());						
 					if (vlanEnd != null && vlanEnd.length > 0) 
 					    moreCriteria.push("&vlan=" + encodeURIComponent(vlanStart + "-" + vlanEnd));									
 					else 							
 						moreCriteria.push("&vlan=" + encodeURIComponent(vlanStart));		
 				}					
 				
-				var guestcidraddress = trim(thisDialog.find("#add_zone_guestcidraddress").val());
+				var guestcidraddress = trim($thisDialog.find("#add_zone_guestcidraddress").val());
 				moreCriteria.push("&guestcidraddress="+encodeURIComponent(guestcidraddress));	
 						
 				
@@ -1135,15 +1137,17 @@ function initAddZoneButton($midmenuAddLink1) {
 			    });
 			}, 
 			"Cancel": function() { 
-			    var thisDialog = $(this);
-				thisDialog.dialog("close"); 
-				cleanErrMsg(thisDialog.find("#add_zone_name"), thisDialog.find("#add_zone_name_errormsg"));
-				cleanErrMsg(thisDialog.find("#add_zone_dns1"), thisDialog.find("#add_zone_dns1_errormsg"));
-				cleanErrMsg(thisDialog.find("#add_zone_dns2"), thisDialog.find("#add_zone_dns2_errormsg"));
-				cleanErrMsg(thisDialog.find("#add_zone_internaldns1"), thisDialog.find("#add_zone_internaldns1_errormsg"));
-				cleanErrMsg(thisDialog.find("#add_zone_internaldns2"), thisDialog.find("#add_zone_internaldns2_errormsg"));
-				cleanErrMsg(thisDialog.find("#add_zone_startvlan"), thisDialog.find("#add_zone_startvlan_errormsg"));
-				cleanErrMsg(thisDialog.find("#add_zone_guestcidraddress"), thisDialog.find("#add_zone_guestcidraddress_errormsg"));
+			    var $thisDialog = $(this);
+				$thisDialog.dialog("close"); 
+				/*
+				cleanErrMsg($thisDialog.find("#add_zone_name"), $thisDialog.find("#add_zone_name_errormsg"));
+				cleanErrMsg($thisDialog.find("#add_zone_dns1"), $thisDialog.find("#add_zone_dns1_errormsg"));
+				cleanErrMsg($thisDialog.find("#add_zone_dns2"), $thisDialog.find("#add_zone_dns2_errormsg"));
+				cleanErrMsg($thisDialog.find("#add_zone_internaldns1"), $thisDialog.find("#add_zone_internaldns1_errormsg"));
+				cleanErrMsg($thisDialog.find("#add_zone_internaldns2"), $thisDialog.find("#add_zone_internaldns2_errormsg"));
+				cleanErrMsg($thisDialog.find("#add_zone_startvlan"), $thisDialog.find("#add_zone_startvlan_errormsg"));
+				cleanErrMsg($thisDialog.find("#add_zone_guestcidraddress"), $thisDialog.find("#add_zone_guestcidraddress_errormsg"));
+				*/
 			} 
 		}).dialog("open");        
         return false;
@@ -1161,25 +1165,25 @@ function initAddPodButton($midmenuAddLink1) {
         $("#dialog_add_pod")
         .dialog('option', 'buttons', { 				
 	        "Add": function() {		
-	            var thisDialog = $(this);
+	            var $thisDialog = $(this);
 						
 		        // validate values
 		        var isValid = true;					
-		        isValid &= validateString("Name", thisDialog.find("#add_pod_name"), thisDialog.find("#add_pod_name_errormsg"));
-		        isValid &= validateCIDR("CIDR", thisDialog.find("#add_pod_cidr"), thisDialog.find("#add_pod_cidr_errormsg"));	
-		        isValid &= validateIp("Start IP Range", thisDialog.find("#add_pod_startip"), thisDialog.find("#add_pod_startip_errormsg"));  //required
-		        isValid &= validateIp("End IP Range", thisDialog.find("#add_pod_endip"), thisDialog.find("#add_pod_endip_errormsg"), true);  //optional
-		        isValid &= validateIp("Gateway", thisDialog.find("#add_pod_gateway"), thisDialog.find("#add_pod_gateway_errormsg"));  //required when creating
+		        isValid &= validateString("Name", $thisDialog.find("#add_pod_name"), $thisDialog.find("#add_pod_name_errormsg"));
+		        isValid &= validateCIDR("CIDR", $thisDialog.find("#add_pod_cidr"), $thisDialog.find("#add_pod_cidr_errormsg"));	
+		        isValid &= validateIp("Start IP Range", $thisDialog.find("#add_pod_startip"), $thisDialog.find("#add_pod_startip_errormsg"));  //required
+		        isValid &= validateIp("End IP Range", $thisDialog.find("#add_pod_endip"), $thisDialog.find("#add_pod_endip_errormsg"), true);  //optional
+		        isValid &= validateIp("Gateway", $thisDialog.find("#add_pod_gateway"), $thisDialog.find("#add_pod_gateway_errormsg"));  //required when creating
 		        if (!isValid) 
 		            return;			
                 
-                thisDialog.dialog("close"); 
+                $thisDialog.dialog("close"); 
                   
-                var name = trim(thisDialog.find("#add_pod_name").val());
-		        var cidr = trim(thisDialog.find("#add_pod_cidr").val());
-		        var startip = trim(thisDialog.find("#add_pod_startip").val());
-		        var endip = trim(thisDialog.find("#add_pod_endip").val());	    //optional
-		        var gateway = trim(thisDialog.find("#add_pod_gateway").val());			
+                var name = trim($thisDialog.find("#add_pod_name").val());
+		        var cidr = trim($thisDialog.find("#add_pod_cidr").val());
+		        var startip = trim($thisDialog.find("#add_pod_startip").val());
+		        var endip = trim($thisDialog.find("#add_pod_endip").val());	    //optional
+		        var gateway = trim($thisDialog.find("#add_pod_gateway").val());			
 
                 var array1 = [];
                 array1.push("&zoneId="+zoneObj.id);
