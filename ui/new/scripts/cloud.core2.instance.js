@@ -84,7 +84,12 @@ function afterLoadInstanceJSP() {
                 asyncJobResponse: "startvirtualmachineresponse",   
                 afterActionSeccessFn: function(json, $midmenuItem1, id) {                    
                     var jsonObj = json.queryasyncjobresultresponse.jobresult.startvirtualmachineresponse;      
-                    vmToMidmenu(jsonObj, $midmenuItem1);                                     
+                    
+                    vmToMidmenu(jsonObj, $midmenuItem1);                     
+                    if( ($("#right_panel_content #tab_content_details").length > 0)
+                      && ($("#right_panel_content #tab_content_details").data("jsonObj") != null )
+                      && (jsonObj.id == $("#right_panel_content #tab_content_details").data("jsonObj").id)) 
+                        vmToRightPanel($midmenuItem1);                              
                 }
             }                                     
             doActionForMidMenu(id, apiInfo, apiCommand); 	
@@ -123,7 +128,12 @@ function afterLoadInstanceJSP() {
                             jsonObj = json.listvirtualmachinesresponse.virtualmachine[0];                    
                         }
                     });                      
-                    vmToMidmenu(jsonObj, $midmenuItem1);                                     
+                    
+                    vmToMidmenu(jsonObj, $midmenuItem1);   
+                    if( ($("#right_panel_content #tab_content_details").length > 0)
+                      && ($("#right_panel_content #tab_content_details").data("jsonObj") != null )
+                      && (jsonObj.id == $("#right_panel_content #tab_content_details").data("jsonObj").id)) 
+                        vmToRightPanel($midmenuItem1);                                          
                 }
             }                                     
             doActionForMidMenu(id, apiInfo, apiCommand); 	
@@ -162,7 +172,12 @@ function afterLoadInstanceJSP() {
                             jsonObj = json.listvirtualmachinesresponse.virtualmachine[0];                    
                         }
                     });                      
-                    vmToMidmenu(jsonObj, $midmenuItem1);                                     
+                    
+                    vmToMidmenu(jsonObj, $midmenuItem1);    
+                    if( ($("#right_panel_content #tab_content_details").length > 0)
+                      && ($("#right_panel_content #tab_content_details").data("jsonObj") != null )
+                      && (jsonObj.id == $("#right_panel_content #tab_content_details").data("jsonObj").id)) 
+                        vmToRightPanel($midmenuItem1);                                         
                 }
             }                                     
             doActionForMidMenu(id, apiInfo, apiCommand); 	
@@ -201,7 +216,12 @@ function afterLoadInstanceJSP() {
                             jsonObj = json.listvirtualmachinesresponse.virtualmachine[0];                    
                         }
                     });                      
-                    vmToMidmenu(jsonObj, $midmenuItem1);                                     
+                    
+                    vmToMidmenu(jsonObj, $midmenuItem1);  
+                    if( ($("#right_panel_content #tab_content_details").length > 0)
+                      && ($("#right_panel_content #tab_content_details").data("jsonObj") != null )
+                      && (jsonObj.id == $("#right_panel_content #tab_content_details").data("jsonObj").id)) 
+                        vmToRightPanel($midmenuItem1);                                           
                 }
             }                                     
             doActionForMidMenu(id, apiInfo, apiCommand); 	
