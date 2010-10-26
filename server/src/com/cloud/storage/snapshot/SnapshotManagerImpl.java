@@ -280,8 +280,9 @@ public class SnapshotManagerImpl implements SnapshotManager {
         SnapshotVO preSnapshotVO = null;
         if( preId != 0) {
             preSnapshotVO = _snapshotDao.findById(preId);
-            preSnapshotPath = preSnapshotVO.getPath();
-
+            if (preSnapshotVO != null) {
+                preSnapshotPath = preSnapshotVO.getPath();
+            }
         }
 
         ManageSnapshotCommand cmd = new ManageSnapshotCommand(id, volume.getPath(), preSnapshotPath, snapshotName, vmName);
@@ -697,15 +698,24 @@ public class SnapshotManagerImpl implements SnapshotManager {
             userId = Long.valueOf(1);
         }
 
-        List<SnapshotPolicyVO> policies = listPoliciesforVolume(snapshotCheck.getVolumeId());
-        
         boolean status = true; 
-        for (SnapshotPolicyVO policy : policies) {
-            status = deleteSnapshotInternal(snapshotId, policy.getId(), userId);
-            
+        if (SnapshotType.MANUAL.ordinal() == (int)snapshotCheck.getSnapshotType()) {
+            status = deleteSnapshotInternal(snapshotId, Snapshot.MANUAL_POLICY_ID, userId);
+
             if (!status) {
-            	s_logger.warn("Failed to delete snapshot");
-            	throw new ServerApiException(BaseCmd.INTERNAL_ERROR,"Failed to delete snapshot:"+snapshotId);
+                s_logger.warn("Failed to delete snapshot");
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR,"Failed to delete snapshot:"+snapshotId);
+            }
+        } else {
+            List<SnapshotPolicyVO> policies = listPoliciesforVolume(snapshotCheck.getVolumeId());
+            
+            for (SnapshotPolicyVO policy : policies) {
+                status = deleteSnapshotInternal(snapshotId, policy.getId(), userId);
+                
+                if (!status) {
+                    s_logger.warn("Failed to delete snapshot");
+                    throw new ServerApiException(BaseCmd.INTERNAL_ERROR,"Failed to delete snapshot:"+snapshotId);
+                }
             }
         }
 
@@ -727,7 +737,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
                 break;
             lastId = lastSnapshot.getId();
         }
-        lastSnapshot = _snapshotDao.findById(lastId);
+        lastSnapshot = _snapshotDao.findByIdIncludingRemoved(lastId);
         while( lastSnapshot.getRemoved() != null ) {
             String BackupSnapshotId = lastSnapshot.getBackupSnapshotId();
             if( BackupSnapshotId != null ) {
@@ -757,7 +767,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
     public boolean destroySnapshotBackUp(long userId, long snapshotId, long policyId) {
         boolean success = false;
         String details = null;
-        SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
+        SnapshotVO snapshot = _snapshotDao.findByIdIncludingRemoved(snapshotId);
 
         VolumeVO volume = _volsDao.findById(snapshot.getVolumeId());
         String primaryStoragePoolNameLabel = _storageMgr.getPrimaryStorageNameLabel(volume);
@@ -812,7 +822,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
         Transaction txn = Transaction.currentTxn();
         txn.start();
         
-        SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
+        SnapshotVO snapshot = _snapshotDao.findByIdIncludingRemoved(snapshotId);
         _snapshotDao.expunge(snapshotId);
         // If this is a manual delete, decrement the count of snapshots for this account
         if (policyId == Snapshot.MANUAL_POLICY_ID) {
