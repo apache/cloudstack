@@ -2165,15 +2165,24 @@ a:hover.search_button {
 	padding:0 0 4px 0;
 }
 
-.midmenu_titlebox p{
-	width:220px;
+.midmenu_itemheader p{
+	width:auto;
 	height:auto;
 	float:left;
 	color:#333;
 	text-align:left;
 	font-weight:bold;
 	font-size:11px;
-	margin:3px 0 0 10px;
+	margin:4px 0 0 10px;
+	padding:0;
+}
+
+.midmenu_itemheader_arrow {
+	width:8px;
+	height:4px;
+	float:right;
+	background:url(../images/itemheader_arrow.png) no-repeat top left;
+	margin:9px 15px 0 0;
 	padding:0;
 }
 
@@ -2249,7 +2258,6 @@ a:hover.search_button {
 	font-size:10px;
 	margin:3px 0 0 0;
 	padding:0;
-	color:#999;
 }
 
 .midmenu_emptymsgbox {
