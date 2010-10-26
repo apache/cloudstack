@@ -131,16 +131,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 	@Inject SecondaryStorageVmDao _secStorageDao;
     @Inject AccountManager _accountMgr;
     @Inject NetworkManager _networkMgr;
-	public boolean _premium;
 
-	private int _maxVolumeSizeInGb;
+    private int _maxVolumeSizeInGb;
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
     	_name = name;
-        
-        Object premium = params.get("premium");
-        _premium = (premium != null) && ((String) premium).equals("true");
 
         String maxVolumeSizeInGbString = _configDao.getValue("max.volume.size.gb");
         int maxVolumeSizeGb = NumbersUtil.parseInt(maxVolumeSizeInGbString, 2000);
@@ -153,11 +149,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     @Override
     public String getName() {
         return _name;
-    }
-    
-    @Override
-    public boolean isPremium() {
-    	return _premium;
     }
     
     @Override

@@ -301,12 +301,6 @@ public interface ConfigurationManager extends Manager {
 	String listToCsvTags(List<String> tags);
 	
 	/**
-	 * Returns a flag that describes whether the manager is being used in a Premium context or not.
-	 * @return true for Premium, false for not
-	 */
-	boolean isPremium();
-
-	/**
 	 * Persists a config value via the API call
 	 * @param cmd - the command that wraps instance, component, category, name, value, description parameters
 	 * @throws InvalidParameterValueException, InternalErrorException
