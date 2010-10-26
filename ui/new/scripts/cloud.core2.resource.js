@@ -930,6 +930,7 @@ function initAddVLANButton($addButton) {
 				    data: createURL("command=createVlanIpRange&forVirtualNetwork="+type+"&zoneId="+zoneObj.id+vlan+scopeParams+"&gateway="+encodeURIComponent(gateway)+"&netmask="+encodeURIComponent(netmask)+"&startip="+encodeURIComponent(startip)+"&endip="+encodeURIComponent(endip)),
 					dataType: "json",
 					success: function(json) {	
+					    $thisDialog.find("#spinning_wheel").hide();
 					    $thisDialog.dialog("close");
 					
 					    var $template1 = $("#vlan_template").clone(); 							   
@@ -987,7 +988,8 @@ function initAddSecondaryStorageButton($addButton) {
 			    $.ajax({
 				    data: createURL("command=addSecondaryStorage&zoneId="+zoneId+"&url="+encodeURIComponent(url)),
 				    dataType: "json",
-				    success: function(json) {					        
+				    success: function(json) {	
+				        $thisDialog.find("#spinning_wheel").hide();				        
 				        $thisDialog.dialog("close");
 					
 					    var $subgridItem = $("#secondary_storage_tab_template").clone(true);	
@@ -1061,6 +1063,7 @@ function initAddZoneButton($midmenuAddLink1) {
 		.dialog('option', 'buttons', { 				
 			"Add": function() { 
 			    var $thisDialog = $(this);
+				$thisDialog.find("#info_container").hide();
 								
 				// validate values
 				var isValid = true;					
@@ -1077,7 +1080,7 @@ function initAddZoneButton($midmenuAddLink1) {
 				if (!isValid) 
 				    return;							
 				
-				$thisDialog.dialog("close"); 
+				$thisDialog.find("#spinning_wheel").fadeIn("slow");
 				
 				var moreCriteria = [];	
 				
@@ -1109,30 +1112,24 @@ function initAddZoneButton($midmenuAddLink1) {
 				
 				var guestcidraddress = trim($thisDialog.find("#add_zone_guestcidraddress").val());
 				moreCriteria.push("&guestcidraddress="+encodeURIComponent(guestcidraddress));	
-						
-				
-				var template = $("#leftmenu_zone_node_template").clone(true); 
-			    var loadingImg = template.find(".adding_loading");										
-			    var row_container = template.find("#row_container");  			   
-			    var $zoneTree = $("#leftmenu_zone_tree").find("#tree_container");		     			
-			    $zoneTree.prepend(template);						            
-                loadingImg.show();  
-                row_container.hide();             
-	            template.fadeIn("slow");
+										
                 $.ajax({
 			        data: createURL("command=createZone"+moreCriteria.join("")),
 				    dataType: "json",
-				    success: function(json) {
+				    success: function(json) {				       
+				        $thisDialog.find("#spinning_wheel").hide();
+				        $thisDialog.dialog("close");
+				        			        
+				        var template = $("#leftmenu_zone_node_template").clone(true); 			            			   
+			            var $zoneTree = $("#leftmenu_zone_tree").find("#tree_container");		     			
+			            $zoneTree.prepend(template);	
+	                    template.fadeIn("slow");				        
+				    
 					    var item = json.createzoneresponse;					    
-					    zoneJSONToTreeNode(item, template);	
-					    loadingImg.hide();	
-					    row_container.show();		        
+					    zoneJSONToTreeNode(item, template);						    	        
 				    },
 			        error: function(XMLHttpResponse) {
-			            handleError(XMLHttpResponse);
-			            template.slideUp("slow", function() {
-						    $(this).remove();
-					    });
+			            handleErrorInDialog(XMLHttpResponse, $thisDialog);			
 			        }
 			    });
 			}, 
@@ -1199,6 +1196,7 @@ function initAddPodButton($midmenuAddLink1) {
 		          data: createURL("command=createPod"+array1.join("")), 
 			        dataType: "json",
 			        success: function(json) {
+			            $thisDialog.find("#spinning_wheel").hide();
 			            $thisDialog.dialog("close");
 			            
 			            var item = json.createpodresponse; 			            		            				    
@@ -1317,6 +1315,7 @@ function initAddHostButton($midmenuAddLink1) {
 			       data: createURL("command=addHost" + array1.join("")),
 			        dataType: "json",
 			        success: function(json) {
+			            $thisDialog.find("#spinning_wheel").hide();
 			            $thisDialog.dialog("close");
 					
 					    var $midmenuItem1 = $("#midmenu_item").clone();
@@ -1431,7 +1430,8 @@ function initAddPrimaryStorageButton($midmenuAddLink2) {
 			    $.ajax({
 				    data: createURL("command=createStoragePool" + array1.join("")),
 				    dataType: "json",
-				    success: function(json) {					       
+				    success: function(json) {
+				        $thisDialog.find("#spinning_wheel").hide();					       
 				        $thisDialog.dialog("close");
 					
 					    var $midmenuItem1 = $("#midmenu_item").clone();

@@ -761,16 +761,16 @@
 		</form>
 	</div>
     <!--Loading box-->
-    <div class="ui_dialog_loaderbox" style="display:none;">
+    <div id="spinning_wheel" class="ui_dialog_loaderbox" style="display:none;">
     	<div class="ui_dialog_loader"></div>
-        <p>Loading</p>
+        <p>Adding....</p>
     </div>
     
     <!--Confirmation msg box-->
     <!--Note: for error msg, just have to add error besides everything for eg. add error(class) next to ui_dialog_messagebox error, ui_dialog_msgicon error, ui_dialog_messagebox_text error.  -->
-	<div class="ui_dialog_messagebox error" style="display:none;">
-    	<div class="ui_dialog_msgicon error"></div>
-        <div class="ui_dialog_messagebox_text error">Confirmation message will appear here</div>
+	<div id="info_container" class="ui_dialog_messagebox error" style="display:none;">
+    	<div id="icon" class="ui_dialog_msgicon error"></div>
+        <div id="info" class="ui_dialog_messagebox_text error">(info)</div>
     </div>
 </div>
 <!-- END Add Zone Dialog -->
