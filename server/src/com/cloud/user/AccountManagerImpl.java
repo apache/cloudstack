@@ -410,6 +410,7 @@ public class AccountManagerImpl implements AccountManager {
     public ResourceLimitVO updateResourceLimit(UpdateResourceLimitCmd cmd) throws InvalidParameterValueException  {
 
     	Account account = (Account)UserContext.current().getAccount();
+    	String accountName = cmd.getAccountName();
     	Long domainId = cmd.getDomainId();
     	Long max = cmd.getMax();
     	Integer type = cmd.getResourceType();
@@ -447,9 +448,9 @@ public class AccountManagerImpl implements AccountManager {
             }                 
             
             if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
-                if ((domainId != null) && (account.getAccountName() == null) && domainId.equals(account.getDomainId())) {
+                if ((domainId != null) && (accountName == null) && domainId.equals(account.getDomainId())) {
                     // if the admin is trying to update their own domain, disallow...
-                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to update resource limit for " + ((account.getAccountName() == null) ? "" : "account " + account.getAccountName() + " in ") + "domain " + domainId + ", permission denied");
+                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to update resource limit for domain " + domainId + ", permission denied");
                 }
 
             	// If there is an existing ROOT domain limit, make sure its max isn't being exceeded
@@ -471,15 +472,12 @@ public class AccountManagerImpl implements AccountManager {
 
         if (domainId == null) {
             throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to update resource limit, unable to determine domain in which to update limit.");
-        } else if (account != null) {
-            if (account.getAccountName() != null) {
-                Account userAccount = _accountDao.findActiveAccount(account.getAccountName(), domainId);
-                if (userAccount == null) {
-                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find account by name " + account.getAccountName() + " in domain with id " + domainId);
-                }
-                accountId = userAccount.getId();
-                domainId = userAccount.getDomainId();
+        } else if (accountName != null) {
+            Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
+            if (userAccount == null) {
+                throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find account by name " + account.getAccountName() + " in domain with id " + domainId);
             }
+            accountId = userAccount.getId();
         }               
 
         if (accountId != null) domainId = null;

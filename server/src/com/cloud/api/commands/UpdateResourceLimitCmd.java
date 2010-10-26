@@ -103,7 +103,7 @@ public class UpdateResourceLimitCmd extends BaseCmd {
                 response.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
             }
         }
-        response.setResourceType(limit.getType().ordinal());
+        response.setResourceType(Integer.valueOf(limit.getType().ordinal()).toString());
         response.setMax(limit.getMax());
 
         response.setResponseName(getName());
