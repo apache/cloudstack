@@ -46,6 +46,8 @@ public interface GenericDao<T, ID extends Serializable> {
      **/
     T findById(ID id);
     
+    T findByIdIncludingRemoved(ID id);
+    
     T findById(ID id, boolean fresh);
     
     /**

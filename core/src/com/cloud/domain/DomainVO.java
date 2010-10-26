@@ -71,14 +71,17 @@ public class DomainVO implements Domain {
         this.level = 0;
     }
 
+    @Override
     public long getId() {
         return id;
     }
 
+    @Override
     public Long getParent() {
         return parent;
     }
     
+    @Override
     public void setParent(Long parent) {
     	if(parent == null) {
     		this.parent = DomainVO.ROOT_DOMAIN;
@@ -90,30 +93,37 @@ public class DomainVO implements Domain {
     	}
     }
 
+    @Override
     public String getName() {
         return name;
     }
     
+    @Override
     public void setName(String name) {
         this.name = name;
     }
 
+    @Override
     public long getAccountId() {
         return accountId;
     }
     
+    @Override
     public Date getRemoved() {
         return removed;
     }
     
+    @Override
     public String getPath() {
     	return path;
     }
     
+    @Override
     public void setPath(String path) {
     	this.path = path;
     }
     
+    @Override
     public int getLevel() {
     	return level; 
     }
@@ -122,6 +132,7 @@ public class DomainVO implements Domain {
     	this.level = level;
     }
     
+    @Override
     public int getChildCount() {
     	return childCount; 
     }
@@ -130,12 +141,18 @@ public class DomainVO implements Domain {
     	childCount = count;
     }
     
+    @Override
     public long getNextChildSeq() {
     	return nextChildSeq;
     }
     
     public void setNextChildSeq(long seq) {
     	nextChildSeq = seq;
+    }
+    
+    @Override
+    public String toString() {
+        return new StringBuilder("Domain:").append(id).append(path).toString();
     }
 }
 

@@ -42,5 +42,5 @@ public interface VirtualMachineGuru<T extends VMInstanceVO> {
      * @param dest destination it was sent to.
      * @return true if deployment was fine; false if it didn't go well.
      */
-    boolean checkDeploymentResult(Commands cmds, T vm, VirtualMachineProfile profile, DeployDestination dest);
+    boolean processDeploymentResult(Commands cmds, T vm, VirtualMachineProfile profile, DeployDestination dest);
 }

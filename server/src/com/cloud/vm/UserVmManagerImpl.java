@@ -106,6 +106,9 @@ import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.deploy.DataCenterDeployment;
+import com.cloud.deploy.DeployDestination;
+import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.EventState;
 import com.cloud.event.EventTypes;
@@ -132,6 +135,7 @@ import com.cloud.network.FirewallRuleVO;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.IpAddrAllocator;
 import com.cloud.network.LoadBalancerVMMapVO;
+import com.cloud.network.NetworkConfigurationVO;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.SecurityGroupVMMapVO;
 import com.cloud.network.dao.FirewallRulesDao;
@@ -205,7 +209,7 @@ import com.cloud.vm.dao.InstanceGroupVMMapDao;
 import com.cloud.vm.dao.UserVmDao;
 
 @Local(value={UserVmManager.class, UserVmService.class})
-public class UserVmManagerImpl implements UserVmManager, UserVmService {
+public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualMachineGuru<UserVmVO> {
     private static final Logger s_logger = Logger.getLogger(UserVmManagerImpl.class);
 	private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 3; 	// 3 seconds
 
@@ -250,12 +254,14 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService {
     @Inject AccountVlanMapDao _accountVlanMapDao;
     @Inject StoragePoolDao _storagePoolDao;
     @Inject VMTemplateHostDao _vmTemplateHostDao;
-    @Inject NetworkGroupManager _networkGroupManager;
+    @Inject NetworkGroupManager _networkGroupMgr;
     @Inject ServiceOfferingDao _serviceOfferingDao;
     @Inject EventDao _eventDao = null;
     @Inject InstanceGroupDao _vmGroupDao;
     @Inject InstanceGroupVMMapDao _groupVMMapDao;
-
+    @Inject SecurityGroupDao _networkSecurityGroupDao;
+    @Inject VmManager _itMgr;
+    
     private IpAddrAllocator _IpAllocator;
     ScheduledExecutorService _executor = null;
     int _expungeInterval;
@@ -265,6 +271,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService {
     String _name;
     String _instance;
     String _zone;
+    String _defaultNetworkDomain;
 
     Random _rand = new Random(System.currentTimeMillis());
 
@@ -1112,7 +1119,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService {
             	event.setDescription("successfully started VM: " + vm.getName());
             
             _eventDao.persist(event);
-            _networkGroupManager.handleVmStateTransition(vm, State.Running);
+            _networkGroupMgr.handleVmStateTransition(vm, State.Running);
 
             return _vmDao.findById(vm.getId());
         } catch (Throwable th) {
@@ -2174,6 +2181,14 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService {
         }
 
         Map<String, String> configs = _configDao.getConfiguration("AgentManager", params);
+        
+        _defaultNetworkDomain = configs.get("domain");
+        if (_defaultNetworkDomain == null) {
+            _defaultNetworkDomain = ".myvm.com";
+        }
+        if (!_defaultNetworkDomain.startsWith(".")) {
+            _defaultNetworkDomain = "." + _defaultNetworkDomain;
+        }
 
         String value = configs.get("start.retry");
         _retry = NumbersUtil.parseInt(value, 2);
@@ -2244,7 +2259,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService {
     @Override
     public void completeStartCommand(UserVmVO vm) {
     	_vmDao.updateIf(vm, Event.AgentReportRunning, vm.getHostId());
-        _networkGroupManager.handleVmStateTransition(vm, State.Running);
+        _networkGroupMgr.handleVmStateTransition(vm, State.Running);
 
     }
     
@@ -2278,7 +2293,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService {
             }
             
             txn.commit();
-            _networkGroupManager.handleVmStateTransition(vm, State.Stopped);
+            _networkGroupMgr.handleVmStateTransition(vm, State.Stopped);
         } catch (Throwable th) {
             s_logger.error("Error during stop: ", th);
             throw new CloudRuntimeException("Error during stop: ", th);
@@ -2508,7 +2523,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService {
                 _storageMgr.destroy(vm, vols);
                 
                 _vmDao.remove(vm.getId());
-                _networkGroupManager.removeInstanceFromGroups(vm.getId());
+                _networkGroupMgr.removeInstanceFromGroups(vm.getId());
                 removeInstanceFromGroup(vm.getId());
                 
                 s_logger.debug("vm is destroyed");
@@ -3133,7 +3148,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService {
 	
 	            vm.setLastHostId(pod.second());
 	            vm = _vmDao.persist(vm);
-	            boolean addedToGroups = _networkGroupManager.addInstanceToGroups(vmId, networkGroups);
+	            boolean addedToGroups = _networkGroupMgr.addInstanceToGroups(vmId, networkGroups);
 	            if (!addedToGroups) {
 	            	s_logger.warn("Not all specified network groups can be found");
 	            	_vmDao.expunge(vm.getId());
@@ -3298,7 +3313,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService {
 	
 	            vm.setLastHostId(pod.second());
 	            _vmDao.persist(vm);
-	            _networkGroupManager.addInstanceToGroups(vmId, networkGroups);
+	            _networkGroupMgr.addInstanceToGroups(vmId, networkGroups);
 	            
 	            _accountMgr.incrementResourceCount(account.getId(), ResourceType.user_vm);
 	            _accountMgr.incrementResourceCount(account.getId(), ResourceType.volume, numVolumes);
@@ -3776,193 +3791,174 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService {
 		}
 	}
 	
-	@Override
+    private boolean validPassword(String password) {
+        for (int i = 0; i < password.length(); i++) {
+            if (password.charAt(i) == ' ') {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+	@Override @DB
     public UserVm createVirtualMachine(DeployVm2Cmd cmd) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException {
-//	    Account account = UserContext.current().getAccount();
-//        Account ctxAccount = UserContext.current().getAccount();
-//        Long userId = UserContext.current().getUserId();
-//        String accountName = cmd.getAccountName();
-//        Long domainId = cmd.getDomainId();
-//        Long accountId = null;
-//        long dataCenterId = cmd.getZoneId();
-//        long serviceOfferingId = cmd.getServiceOfferingId();
-//        long templateId = cmd.getTemplateId();
-//        Long diskOfferingId = cmd.getDiskOfferingId();
-//        String domain = null; // FIXME:  this was hardcoded to null in DeployVMCmd in the old framework, do we need it?
-//        String password = generateRandomPassword();
-//        String displayName = cmd.getDisplayName();
-//        String group = cmd.getGroup();
-//        String userData = cmd.getUserData();
-//        String[] networkGroups = null;
-//        Long sizeObj = cmd.getSize();
-//        long size = (sizeObj == null) ? 0 : sizeObj;
-//
-//        if ((ctxAccount == null) || isAdmin(ctxAccount.getType())) {
-//            if (domainId != null) {
-//                if ((ctxAccount != null) && !_domainDao.isChildDomain(ctxAccount.getDomainId(), domainId)) {
-//                    throw new PermissionDeniedException("Failed to deploy VM, invalid domain id (" + domainId + ") given.");
-//                }
-//                if (accountName != null) {
-//                    Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
-//                    if (userAccount == null) {
-//                        throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
-//                    }
-//                    accountId = userAccount.getId();
-//                }
-//            } else {
-//                accountId = ((ctxAccount != null) ? ctxAccount.getId() : null);
-//            }
-//        } else {
-//            accountId = ctxAccount.getId();
-//        }
-//
-//        if (accountId == null) {
-//            throw new InvalidParameterValueException("No valid account specified for deploying a virtual machine.");
-//        }
-//
-//        List<String> netGrpList = cmd.getNetworkGroupList();
-//        if ((netGrpList != null) && !netGrpList.isEmpty()) {
-//            networkGroups = netGrpList.toArray(new String[netGrpList.size()]);
-//        }
-//
-//        AccountVO account = _accountDao.findById(accountId);
-//        if (account == null) {
-//            throw new InvalidParameterValueException("Unable to find account: " + accountId);
-//        }
-//
-//        DataCenterVO dc = _dcDao.findById(dataCenterId);
-//        if (dc == null) {
-//            throw new InvalidParameterValueException("Unable to find zone: " + dataCenterId);
-//        }
-//
-//        ServiceOfferingVO offering = _offeringsDao.findById(serviceOfferingId);
-//        if (offering == null) {
-//            throw new InvalidParameterValueException("Unable to find service offering: " + serviceOfferingId);
-//        }
-//
-//        VMTemplateVO template = _templateDao.findById(templateId);
-//        // Make sure a valid template ID was specified
-//        if (template == null) {
-//            throw new InvalidParameterValueException("Please specify a valid template or ISO ID.");
-//        }
-//
-//        boolean isIso = Storage.ImageFormat.ISO.equals(template.getFormat());
-//        
-//        if (isIso && !template.isBootable()) {
-//            throw new InvalidParameterValueException("Please specify a bootable ISO.");
-//        }
-//
-//        // If the template represents an ISO, a disk offering must be passed in, and will be used to create the root disk
-//        // Else, a disk offering is optional, and if present will be used to create the data disk
-//        DiskOfferingVO diskOffering = null;
-//
-//        if (diskOfferingId != null) {
-//            diskOffering = _diskOfferingDao.findById(diskOfferingId);
-//        }
-//
-//        if (isIso && diskOffering == null) {
-//            throw new InvalidParameterValueException("Please specify a valid disk offering ID.");
-//        }
-//
-//        // validate that the template is usable by the account
-//        if (!template.isPublicTemplate()) {
-//            Long templateOwner = template.getAccountId();
-//            if (!BaseCmd.isAdmin(account.getType()) && ((templateOwner == null) || (templateOwner.longValue() != accountId))) {
-//                // since the current account is not the owner of the template, check the launch permissions table to see if the
-//                // account can launch a VM from this template
-//                LaunchPermissionVO permission = _launchPermissionDao.findByTemplateAndAccount(templateId, account.getId());
-//                if (permission == null) {
-//                    throw new PermissionDeniedException("Account " + account.getAccountName() + " does not have permission to launch instances from template " + template.getName());
-//                }
-//            }
-//        }
-//
-//        byte [] decodedUserData = null;
-//        if (userData != null) {
-//            if (userData.length() >= 2* UserVmManager.MAX_USER_DATA_LENGTH_BYTES) {
-//                throw new InvalidParameterValueException("User data is too long");
-//            }
-//            decodedUserData = org.apache.commons.codec.binary.Base64.decodeBase64(userData.getBytes());
-//            if (decodedUserData.length > UserVmManager.MAX_USER_DATA_LENGTH_BYTES){
-//                throw new InvalidParameterValueException("User data is too long");
-//            }
-//            if (decodedUserData.length < 1) {
-//                throw new InvalidParameterValueException("User data is too short");
-//            }
-//            
-//        }
-//        if (offering.getGuestIpType() != NetworkOffering.GuestIpType.Virtualized) {
-//            _networkGroupMgr.createDefaultNetworkGroup(accountId);
-//        }
-//        
-//        if (networkGroups != null) {
-//            if (offering.getGuestIpType() == NetworkOffering.GuestIpType.Virtualized) {
-//                throw new InvalidParameterValueException("Network groups are not compatible with service offering " + offering.getName());
-//            }
-//            Set<String> nameSet = new HashSet<String>(); //handle duplicate names -- allowed
-//            nameSet.addAll(Arrays.asList(networkGroups));
-//            nameSet.add(NetworkGroupManager.DEFAULT_GROUP_NAME);
-//            networkGroups = nameSet.toArray(new String[nameSet.size()]);
-//            List<NetworkGroupVO> networkGroupVOs = _networkSecurityGroupDao.findByAccountAndNames(accountId, networkGroups);
-//            if (networkGroupVOs.size() != nameSet.size()) {
-//                throw new InvalidParameterValueException("Some network group names do not exist");
-//            }
-//        } else { //create a default group if necessary
-//            if (offering.getGuestIpType() != NetworkOffering.GuestIpType.Virtualized && _networkGroupsEnabled) {
-//                networkGroups = new String[]{NetworkGroupManager.DEFAULT_GROUP_NAME};
-//            }
-//        }
-//
-//        Long eventId = cmd.getStartEventId();
-//        try {
-//            return deployVirtualMachineImpl(userId, accountId, dataCenterId, serviceOfferingId, templateId, diskOfferingId, domain, password, displayName, group, userData, networkGroups, eventId, size);
-//        } catch (ResourceAllocationException e) {
-//            if(s_logger.isDebugEnabled())
-//                s_logger.debug("Unable to deploy VM: " + e.getMessage());
-//            EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_CREATE, "Unable to deploy VM: VM_INSUFFICIENT_CAPACITY", null, eventId);
-//            throw e;
-//        } catch (ExecutionException e) {
-//            if(s_logger.isDebugEnabled())
-//                s_logger.debug("Unable to deploy VM: " + e.getMessage());
-//            EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_CREATE, "Unable to deploy VM: VM_HOST_LICENSE_EXPIRED", null, eventId);
-//            throw e;
-//        } catch (InvalidParameterValueException e) {
-//            if(s_logger.isDebugEnabled())
-//                s_logger.debug("Unable to deploy VM: " + e.getMessage());
-//            EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_CREATE, "Unable to deploy VM: VM_INVALID_PARAM_ERROR", null, eventId);
-//            throw e;
-//        } catch (InternalErrorException e) {
-//            if(s_logger.isDebugEnabled())
-//                s_logger.debug("Unable to deploy VM: " + e.getMessage());
-//            EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_CREATE, "Unable to deploy VM: INTERNAL_ERROR", null, eventId);
-//            throw e;
-//        } catch (InsufficientStorageCapacityException e) {
-//            if(s_logger.isDebugEnabled())
-//                s_logger.debug("Unable to deploy VM: " + e.getMessage());
-//            EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_CREATE, "Unable to deploy VM: VM_INSUFFICIENT_CAPACITY", null, eventId);
-//            throw e;
-//        } catch (PermissionDeniedException e) {
-//            if(s_logger.isDebugEnabled())
-//                s_logger.debug("Unable to deploy VM: " + e.getMessage());
-//            EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_CREATE, "Unable to deploy VM: ACCOUNT_ERROR", null, eventId);
-//            throw e;
-//        } catch (ConcurrentOperationException e) {
-//            if(s_logger.isDebugEnabled())
-//                s_logger.debug("Unable to deploy VM: " + e.getMessage());
-//            EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_CREATE, "Unable to deploy VM: INTERNAL_ERROR", null, eventId);
-//            throw e;
-//        } catch(Exception e) {
-//            s_logger.warn("Unable to deploy VM : " + e.getMessage(), e);
-//            EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_CREATE, "Unable to deploy VM: INTERNAL_ERROR", null, eventId);
-//            throw new CloudRuntimeException("Unable to deploy VM : " + e.getMessage());
-//        }
-	    return null;
+        Account caller = UserContext.current().getAccount();
+        
+        Domain domain = _domainDao.findById(cmd.getDomainId());
+        if (domain == null || domain.getRemoved() != null) {
+            throw new InvalidParameterValueException("Unable to find domain: " + cmd.getDomainId());
+        }
+        
+        _accountMgr.checkAccess(caller, domain);
+        
+        AccountVO owner = _accountDao.findById(cmd.getAccountId());
+        if (owner == null || owner.getRemoved() != null) {
+            throw new InvalidParameterValueException("Unable to find account: " + cmd.getAccountId());
+        }
+
+        DataCenterVO dc = _dcDao.findById(cmd.getZoneId());
+        if (dc == null) {
+            throw new InvalidParameterValueException("Unable to find zone: " + cmd.getZoneId());
+        }
+        
+        ServiceOfferingVO offering = _serviceOfferingDao.findById(cmd.getServiceOfferingId());
+        if (offering == null || offering.getRemoved() != null) {
+            throw new InvalidParameterValueException("Unable to find service offering: " + cmd.getServiceOfferingId());
+        }
+        
+        VMTemplateVO template = _templateDao.findById(cmd.getTemplateId());
+        // Make sure a valid template ID was specified
+        if (template == null || template.getRemoved() != null) {
+            throw new InvalidParameterValueException("Unable to use template " + cmd.getTemplateId());
+        }
+        boolean isIso = Storage.ImageFormat.ISO == template.getFormat();
+        if (isIso && !template.isBootable()) {
+            throw new InvalidParameterValueException("Installing from ISO requires an ISO that is bootable: " + template.getId());
+        }
+        
+        // If the template represents an ISO, a disk offering must be passed in, and will be used to create the root disk
+        // Else, a disk offering is optional, and if present will be used to create the data disk
+        Pair<DiskOfferingVO, Long> rootDiskOffering = new Pair<DiskOfferingVO, Long>(null, null);
+        List<Pair<DiskOfferingVO, Long>> dataDiskOfferings = new ArrayList<Pair<DiskOfferingVO, Long>>();
+        
+        if (isIso) {
+            if (cmd.getDiskOfferingId() == null) {
+                throw new InvalidParameterValueException("Installing from ISO requires a disk offering to be specified for the root disk.");
+            }
+            DiskOfferingVO diskOffering = _diskOfferingDao.findById(cmd.getDiskOfferingId());
+            if (diskOffering == null) {
+                throw new InvalidParameterValueException("Unable to find disk offering " + cmd.getDiskOfferingId());
+            }
+            Long size = null;
+            if (diskOffering.getDiskSize() == 0) {
+                size = cmd.getSize();
+                if (size == null) {
+                    throw new InvalidParameterValueException("Disk offering " + diskOffering + " requires size parameter.");
+                }
+            }
+            rootDiskOffering.first(diskOffering);
+            rootDiskOffering.second(size);
+        } else {
+            rootDiskOffering.first(offering);
+            if (cmd.getDiskOfferingId() != null) {
+                DiskOfferingVO diskOffering = _diskOfferingDao.findById(cmd.getDiskOfferingId());
+                if (diskOffering == null) {
+                    throw new InvalidParameterValueException("Unable to find disk offering " + cmd.getDiskOfferingId());
+                }
+                Long size = null;
+                if (diskOffering.getDiskSize() == 0) {
+                    size = cmd.getSize();
+                    if (size == null) {
+                        throw new InvalidParameterValueException("Disk offering " + diskOffering + " requires size parameter.");
+                    }
+                }
+                dataDiskOfferings.add(new Pair<DiskOfferingVO, Long>(diskOffering, size));
+            }
+        }
+
+        // Check that the password was passed in and is valid
+        String password = PasswordGenerator.generateRandomPassword();
+        if (!template.getEnablePassword()) {
+            password = "saved_password";
+        }
+        if (password == null || password.equals("") || (!validPassword(password))) {
+            throw new InvalidParameterValueException("A valid password for this virtual machine was not provided.");
+        }
+
+        String networkDomain = null;
+        if (networkDomain == null) {
+            networkDomain = "v" + Long.toHexString(owner.getId()) + _defaultNetworkDomain;
+        }
+
+        String userData = cmd.getUserData();
+        byte [] decodedUserData = null;
+        if (userData != null) {
+            if (userData.length() >= 2 * MAX_USER_DATA_LENGTH_BYTES) {
+                throw new InvalidParameterValueException("User data is too long");
+            }
+            decodedUserData = org.apache.commons.codec.binary.Base64.decodeBase64(userData.getBytes());
+            if (decodedUserData.length > MAX_USER_DATA_LENGTH_BYTES){
+                throw new InvalidParameterValueException("User data is too long");
+            }
+            if (decodedUserData.length < 1) {
+                throw new InvalidParameterValueException("User data is too short");
+            }
+        }
+        
+        _accountMgr.checkAccess(caller, template);
+        
+        DataCenterDeployment plan = new DataCenterDeployment(dc.getId(), 1);
+        
+        long id = _vmDao.getNextInSequence(Long.class, "id");
+        
+        UserVmVO vm = new UserVmVO(id, VirtualMachineName.getVmName(id, owner.getId(), _instance), cmd.getDisplayName(),
+                                   template.getId(), template.getGuestOSId(), offering.getOfferHA(), domain.getId(), owner.getId(), offering.getId(), userData);
+        
+        s_logger.debug("Allocating in the DB for vm");
+        
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        vm = _vmDao.persist(vm);
+        
+        List<NetworkConfigurationVO> configs = _networkMgr.setupNetworkConfiguration(owner, offering, plan);
+        List<Pair<NetworkConfigurationVO, NicProfile>> networks = new ArrayList<Pair<NetworkConfigurationVO, NicProfile>>(); 
+        for (NetworkConfigurationVO config : configs) {
+            networks.add(new Pair<NetworkConfigurationVO, NicProfile>(config, null));
+        }
+
+        if (_itMgr.allocate(vm, template, offering, rootDiskOffering, dataDiskOfferings, networks, plan, owner) == null) {
+            return null;
+        }
+        
+        txn.commit();
+        
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Successfully allocated DB entry for " + vm);
+        }
+        return vm;
 	}
 	
 	@Override
-	public UserVm startVirtualMachine(DeployVm2Cmd cmd) {
+	public UserVm startVirtualMachine(DeployVm2Cmd cmd) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException {
+	    long vmId = cmd.getId();
+	    UserVmVO vm = _vmDao.findById(vmId);
 	    
-	    return null;
+	    long dcId = cmd.getZoneId();
+	    DataCenterDeployment plan = new DataCenterDeployment(dcId, 1);
+	    
+	    AccountVO owner = _accountDao.findById(vm.getAccountId());
+	    
+	    return _itMgr.start(vm, plan, owner, this);
 	}
+
+    @Override
+    public boolean finalizeDeployment(Commands cmds, UserVmVO vm, VirtualMachineProfile profile, DeployDestination dest) {
+        return true;
+    }
+
+    @Override
+    public boolean processDeploymentResult(Commands cmds, UserVmVO vm, VirtualMachineProfile profile, DeployDestination dest) {
+        return true;
+    }
 	
 }

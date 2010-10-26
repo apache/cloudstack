@@ -23,8 +23,9 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
-import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -39,7 +40,7 @@ import com.cloud.uservm.UserVm;
 import com.cloud.vm.InstanceGroupVO;
 
 @Implementation(createMethod="createVirtualMachine", method="startVirtualMachine", manager=Manager.UserVmManager, description="Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.")
-public class DeployVm2Cmd extends BaseAsyncCmd {
+public class DeployVm2Cmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(DeployVMCmd.class.getName());
     
     private static final String s_name = "deployvirtualmachineresponse";

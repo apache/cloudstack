@@ -26,6 +26,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 
 import com.cloud.utils.db.GenericDao;
 
@@ -84,77 +85,111 @@ public class UserVO implements User {
         this.id = id;
     }
 
-	public Long getId() {
+	@Override
+    public Long getId() {
 		return id;
 	}
 	
+    @Override
     public Date getCreated() {
         return created;
     }
+    @Override
     public Date getRemoved() {
         return removed;
     }
     
-	public String getUsername() {
+	@Override
+    public String getUsername() {
 		return username;
 	}
-	public void setUsername(String username) {
+	@Override
+    public void setUsername(String username) {
 		this.username = username;
 	}
-	public String getPassword() {
+	@Override
+    public String getPassword() {
 		return password;
 	}
-	public void setPassword(String password) {
+	@Override
+    public void setPassword(String password) {
 		this.password = password;
 	}
-	public String getFirstname() {
+	@Override
+    public String getFirstname() {
 		return firstname;
 	}
-	public void setFirstname(String firstname) {
+	@Override
+    public void setFirstname(String firstname) {
 		this.firstname = firstname;
 	}
-	public String getLastname() {
+	@Override
+    public String getLastname() {
 		return lastname;
 	}
-	public void setLastname(String lastname) {
+	@Override
+    public void setLastname(String lastname) {
 		this.lastname = lastname;
 	}
-	public long getAccountId() {
+	@Override
+    public long getAccountId() {
 	    return accountId;
 	}
-	public void setAccountId(long accountId) {
+	@Override
+    public void setAccountId(long accountId) {
 	    this.accountId = accountId;
 	}
+    @Override
     public String getEmail() {
         return email;
     }
+    @Override
     public void setEmail(String email) {
         this.email = email;
     }
+    @Override
     public String getState() {
         return state;
     }
+    @Override
     public void setState(String state) {
         this.state = state;
     }
-	public String getApiKey() {
+	@Override
+    public String getApiKey() {
 	    return apiKey;
 	}
-	public void setApiKey(String apiKey) {
+	@Override
+    public void setApiKey(String apiKey) {
 	    this.apiKey = apiKey;
 	}
+    @Override
     public String getSecretKey() {
         return secretKey;
     }
+    @Override
     public void setSecretKey(String secretKey) {
         this.secretKey = secretKey;
     }
+    @Override
     public String getTimezone()
     {
     	return timezone;
     }
+    @Override
     public void setTimezone(String timezone)
     {
     	this.timezone = timezone;
+    }
+
+    @Transient
+    String toString = null;
+    
+    @Override
+    public String toString() {
+        if (toString == null) {
+            toString = new StringBuilder("User:").append(id).append(":").append(username).toString(); 
+        }
+        return toString;
     }
 }

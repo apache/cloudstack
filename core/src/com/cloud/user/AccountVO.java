@@ -77,12 +77,15 @@ public class AccountVO implements Account {
         return id;
     }
 
+    @Override
     public String getAccountName() {
         return accountName;
     }
+    @Override
     public void setAccountName(String accountName) {
         this.accountName = accountName;
     }
+    @Override
     public short getType() {
         return type;
     }
@@ -90,6 +93,7 @@ public class AccountVO implements Account {
         this.type = type;
     }
 
+    @Override
     public long getDomainId() {
         return domainId;
     }
@@ -98,20 +102,30 @@ public class AccountVO implements Account {
         this.domainId = domainId;
     }
 
+    @Override
     public String getState() {
         return state;
     }
+    @Override
     public void setState(String state) {
         this.state = state;
     }
 
+    @Override
     public Date getRemoved() {
         return removed;
     }
+    @Override
     public String getNetworkDomain() {
         return networkDomain;
     }
+    @Override
     public void setNetworkDomain(String networkDomain) {
         this.networkDomain = networkDomain;
+    }
+    
+    @Override
+    public String toString() {
+        return new StringBuilder("Acct:").append(id).append(":").append(accountName).toString();
     }
 }

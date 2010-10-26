@@ -20,11 +20,13 @@ package com.cloud.user;
 
 import java.util.List;
 
+import com.cloud.acl.ControlledEntity;
 import com.cloud.api.commands.ListResourceLimitsCmd;
 import com.cloud.api.commands.UpdateResourceLimitCmd;
 import com.cloud.configuration.ResourceCount;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.ResourceLimitVO;
+import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
@@ -113,6 +115,10 @@ public interface AccountManager extends Manager {
      * @throws InvalidParameterValueException
      */
 	ResourceLimitVO updateResourceLimit(UpdateResourceLimitCmd cmd) throws InvalidParameterValueException;
+	
+	void checkAccess(Account account, Domain domain) throws PermissionDeniedException;
+	
+	void checkAccess(Account account, ControlledEntity... entities) throws PermissionDeniedException;
 	
 	AccountVO getSystemAccount();
 }
