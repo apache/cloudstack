@@ -18,19 +18,11 @@
 
 var $instanceSubMenuContainer;
 function instanceBuildSubMenu() {    
-    $instanceSubMenuContainer = $("#leftmenu_instance_expandedbox").empty();    
-  
     if (isAdmin() || isDomainAdmin()) {
-        instanceBuildSubMenu2("My Instances", ("listVirtualMachines&domainid="+g_domainid+"&account="+g_account));
-        instanceBuildSubMenu2("All Instances", "listVirtualMachines");           
-        instanceBuildSubMenu2("Running Instances", "listVirtualMachines&state=Running");
-        instanceBuildSubMenu2("Stopped Instances", "listVirtualMachines&state=Stopped");
-        instanceBuildSubMenu2("Destroyed Instances", "listVirtualMachines&state=Destroyed");
+		$("#leftmenu_instance_expandedbox").find("#leftmenu_instances_my_instances_container, #leftmenu_instances_all_instances_container, #leftmenu_instances_running_instances_container, #leftmenu_instances_stopped_instances_container, #leftmenu_instances_destroyed_instances_container ").show();
     } 	
-    else if(isUser()) {	        
-        instanceBuildSubMenu2("All Instances", "listVirtualMachines");           
-        instanceBuildSubMenu2("Running Instances", "listVirtualMachines&state=Running");
-        instanceBuildSubMenu2("Stopped Instances", "listVirtualMachines&state=Stopped");        
+    else if(isUser()) {	 
+		$("#leftmenu_instance_expandedbox").find("#leftmenu_instances_all_instances_container, #leftmenu_instances_running_instances_container, #leftmenu_instances_stopped_instances_container").show();
         $.ajax({
             cache: false,
             data: createURL("command=listInstanceGroups"),	       
