@@ -120,7 +120,7 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
     	    if (dirCreated) 
     	    {
     	    	if(s_logger.isDebugEnabled())
-    	    		s_logger.info("Directory: " + strDirectoy + " created");    
+    	    		s_logger.debug("Directory: " + strDirectoy + " created");    
     	    	//copy cert to the dir
 				FileWriter fstream = new FileWriter("/etc/cloud/consoleproxy/cert/customcert");
 				BufferedWriter out = new BufferedWriter(fstream);

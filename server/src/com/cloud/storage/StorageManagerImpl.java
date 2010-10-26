@@ -2487,9 +2487,12 @@ public class StorageManagerImpl implements StorageManager {
 
 
         // Check that the volume is stored on shared storage
-        if (!volumeOnSharedStoragePool(volume)) {
-            throw new InvalidParameterValueException("Please specify a volume that has been created on a shared storage pool.");
-        }
+    	// NOTE:  We used to ensure the volume is on shared storage before deleting.  However, this seems like an unnecessary check since all we allow
+    	//        is deleting a detached volume.  Is there a technical reason why the volume has to be on shared storage?  If so, uncomment this...otherwise,
+    	//        just delete the detached volume regardless of storage pool.
+//        if (!volumeOnSharedStoragePool(volume)) {
+//            throw new InvalidParameterValueException("Please specify a volume that has been created on a shared storage pool.");
+//        }
 
         // Check that the volume is not currently attached to any VM
         if (volume.getInstanceId() != null) {

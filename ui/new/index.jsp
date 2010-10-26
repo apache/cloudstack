@@ -316,7 +316,7 @@ long milliseconds = new Date().getTime();
                 <!-- Mid Menu starts here-->
                 <div class="midmenu_panel" id="middle_menu">
                     <div class="midmenu_box" id="midmenu_container">
-                    	
+                    	<div class="midmenu_emptymsgbox"><p>No Items Available</p></div>
                     </div>
                 </div>
                 <!-- Mid Menu ends here-->
@@ -346,6 +346,51 @@ long milliseconds = new Date().getTime();
                     </div>
                     
                     <div id="leftmenu_instance_expandedbox" class="leftmenu_expandedbox" style="display: none">
+						<div class="leftmenu_expandedlist" id="leftmenu_instances_my_instances_container" style="display:none">
+							<div class="leftmenu_content" id="leftmenu_instances_my_instances">
+								<div class="leftmenu_secondindent">
+									<div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
+									</div>
+									<span id="label">My Instances</span>
+								</div>
+							</div>
+						</div>
+						<div class="leftmenu_expandedlist" id="leftmenu_instances_all_instances_container" style="display:none">
+							<div class="leftmenu_content" id="leftmenu_instances_all_instances">
+								<div class="leftmenu_secondindent">
+									<div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
+									</div>
+									<span id="label">All Instances</span>
+								</div>
+							</div>
+						</div>
+						<div class="leftmenu_expandedlist" id="leftmenu_instances_running_instances_container" style="display:none">
+							<div class="leftmenu_content" id="leftmenu_instances_running_instances">
+								<div class="leftmenu_secondindent">
+									<div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
+									</div>
+									<span id="label">Running Instances</span>
+								</div>
+							</div>
+						</div>
+						<div class="leftmenu_expandedlist" id="leftmenu_instances_stopped_instances_container" style="display:none">
+							<div class="leftmenu_content" id="leftmenu_instances_stopped_instances">
+								<div class="leftmenu_secondindent">
+									<div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
+									</div>
+									<span id="label">Stopped Instances</span>
+								</div>
+							</div>
+						</div>
+						<div class="leftmenu_expandedlist" id="leftmenu_instances_destroyed_instances_container" style="display:none">
+							<div class="leftmenu_content" id="leftmenu_instances_destroyed_instances">
+								<div class="leftmenu_secondindent">
+									<div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
+									</div>
+									<span id="label">Destroyed Instances</span>
+								</div>
+							</div>
+						</div>
                     </div>
 
                 </div>

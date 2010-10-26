@@ -959,7 +959,7 @@ function showStorageTab(domainId, targetTab) {
 		    switch (linkAction) {						
 			    case "volume_action_delete" : 	
                     //check if this volume is attached to a virtual machine. If yes, can't be deleted.						        		    		    		    			    
-			        if(vmname != null && (vmname != "" || vmname != "none")) {  
+			        if(vmname != null && vmname != "" && vmname != "none") {  
 				        $("#dialog_alert").html("<p>This volume is attached to virtual machine " + vmname + " and can't be deleted.</p>")
                         $("#dialog_alert").dialog("open");		        		        
 			            return;
