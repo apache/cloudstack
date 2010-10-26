@@ -821,6 +821,7 @@ function listMidMenuItems2(commandString, jsonResponse1, jsonResponse2, toMidmen
         cache: false,
         data: createURL("command="+commandString+"&pagesize="+midmenuItemCount),
         dataType: "json",
+        async: false,
         success: function(json) {		                    
             selectedItemsInMidMenu = {};    	                
             var items = json[jsonResponse1][jsonResponse2];

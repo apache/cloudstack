@@ -596,7 +596,8 @@ function hostJsonToDetailsTab($midmenuItem1) {
     $detailsTab.data("jsonObj", jsonObj);           
     $detailsTab.find("#id").text(fromdb(jsonObj.id));
     $detailsTab.find("#name").text(fromdb(jsonObj.name));
-    $detailsTab.find("#state").text(fromdb(jsonObj.state));        
+    $detailsTab.find("#state").text(fromdb(jsonObj.state));  
+    $detailsTab.find("#type").text(fromdb(jsonObj.type));      
     $detailsTab.find("#zonename").text(fromdb(jsonObj.zonename)); 
     $detailsTab.find("#podname").text(fromdb(jsonObj.podname));   
     $detailsTab.find("#clustername").text(fromdb(jsonObj.clustername));        
