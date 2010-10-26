@@ -27,6 +27,7 @@ import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
  * Monitor upload progress of all entities.
@@ -54,5 +55,8 @@ public interface UploadMonitor extends Manager{
 
     UploadVO createEntityDownloadURL(VMTemplateVO template,
             VMTemplateHostVO vmTemplateHost, Long dataCenterId, long eventId);
+
+    void createVolumeDownloadURL(Long entityId, String path, Type type,
+            Long dataCenterId, Long uploadId) throws CloudRuntimeException;
 
 }

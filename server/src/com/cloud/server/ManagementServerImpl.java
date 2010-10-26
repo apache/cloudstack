@@ -137,6 +137,7 @@ import com.cloud.api.commands.UpdateTemplatePermissionsCmd;
 import com.cloud.api.commands.UpdateUserCmd;
 import com.cloud.api.commands.UpdateVMGroupCmd;
 import com.cloud.api.commands.UploadCustomCertificateCmd;
+import com.cloud.api.response.ExtractResponse;
 import com.cloud.async.AsyncInstanceCreateStatus;
 import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
@@ -224,6 +225,7 @@ import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.storage.Snapshot;
+import com.cloud.storage.Upload;
 import com.cloud.storage.Snapshot.SnapshotType;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotVO;
@@ -233,6 +235,7 @@ import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
+import com.cloud.storage.Upload.Mode;
 import com.cloud.storage.Upload.Type;
 import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateVO;
@@ -6675,41 +6678,66 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public void extractVolume(ExtractVolumeCmd cmd) throws URISyntaxException, InternalErrorException {
+    public Long extractVolume(ExtractVolumeCmd cmd) throws URISyntaxException, InternalErrorException, PermissionDeniedException {
         Long volumeId = cmd.getId();
         String url = cmd.getUrl();
         Long zoneId = cmd.getZoneId();
         AsyncJobVO job = cmd.getJob();
-          
+        String mode = cmd.getMode();
+        Account account = UserContext.current().getAccount();
+        
         VolumeVO volume = _volumeDao.findById(volumeId);        
         if (volume == null) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to find volume with id " + volumeId);
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find volume with id " + volumeId);
         }
 
-        URI uri = new URI(url);
-        if ( (uri.getScheme() == null) || (!uri.getScheme().equalsIgnoreCase("ftp") )) {
-           throw new IllegalArgumentException("Unsupported scheme for url: " + url);
-        }
-
-        String host = uri.getHost();
-        try {
-            InetAddress hostAddr = InetAddress.getByName(host);
-            if (hostAddr.isAnyLocalAddress() || hostAddr.isLinkLocalAddress() || hostAddr.isLoopbackAddress() || hostAddr.isMulticastAddress() ) {
-                throw new IllegalArgumentException("Illegal host specified in url");
-            }
-            if (hostAddr instanceof Inet6Address) {
-                throw new IllegalArgumentException("IPV6 addresses not supported (" + hostAddr.getHostAddress() + ")");
-            }
-        } catch (UnknownHostException uhe) {
-            throw new IllegalArgumentException("Unable to resolve " + host);
-        }
-        
         if (_dcDao.findById(zoneId) == null) {
-            throw new IllegalArgumentException("Please specify a valid zone.");
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please specify a valid zone.");          
+        }
+
+        Upload.Mode extractMode;
+        if( mode == null || (!mode.equals(Upload.Mode.FTP_UPLOAD.toString()) && !mode.equals(Upload.Mode.HTTP_DOWNLOAD.toString())) ){
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please specify a valid extract Mode ");
+        }else{
+            extractMode = mode.equals(Upload.Mode.FTP_UPLOAD.toString()) ? Upload.Mode.FTP_UPLOAD : Upload.Mode.HTTP_DOWNLOAD;
         }
         
-        if ( _uploadMonitor.isTypeUploadInProgress(volumeId, Type.VOLUME) ){
-            throw new IllegalArgumentException(volume.getName() + " upload is in progress. Please wait for some time to schedule another upload for the same");
+        if (account != null) {                  
+            if(!isAdmin(account.getType())){
+                if (volume.getAccountId() != account.getId()){
+                    throw new PermissionDeniedException("Unable to find volume with ID: " + volumeId + " for account: " + account.getAccountName());
+                }
+            } else {
+                Account userAccount = _accountDao.findById(volume.getAccountId());
+                if((userAccount == null) || !_domainDao.isChildDomain(account.getDomainId(), userAccount.getDomainId())) {
+                    throw new PermissionDeniedException("Unable to extract volume:" + volumeId + " - permission denied.");
+                }
+            }
+        }
+        
+        // If mode is upload perform extra checks on url and also see if there is an ongoing upload on the same.
+        if (extractMode == Upload.Mode.FTP_UPLOAD){
+            URI uri = new URI(url);
+            if ( (uri.getScheme() == null) || (!uri.getScheme().equalsIgnoreCase("ftp") )) {
+               throw new IllegalArgumentException("Unsupported scheme for url: " + url);
+            }
+    
+            String host = uri.getHost();
+            try {
+                InetAddress hostAddr = InetAddress.getByName(host);
+                if (hostAddr.isAnyLocalAddress() || hostAddr.isLinkLocalAddress() || hostAddr.isLoopbackAddress() || hostAddr.isMulticastAddress() ) {
+                    throw new IllegalArgumentException("Illegal host specified in url");
+                }
+                if (hostAddr instanceof Inet6Address) {
+                    throw new IllegalArgumentException("IPV6 addresses not supported (" + hostAddr.getHostAddress() + ")");
+                }
+            } catch (UnknownHostException uhe) {
+                throw new IllegalArgumentException("Unable to resolve " + host);
+            }        
+            
+            if ( _uploadMonitor.isTypeUploadInProgress(volumeId, Type.VOLUME) ){
+                throw new IllegalArgumentException(volume.getName() + " upload is in progress. Please wait for some time to schedule another upload for the same");
+            }
         }
         
         long userId = UserContext.current().getUserId();
@@ -6721,42 +6749,59 @@ public class ManagementServerImpl implements ManagementServer {
         List<HostVO> storageServers = _hostDao.listByTypeDataCenter(Host.Type.SecondaryStorage, zoneId);
         HostVO sserver = storageServers.get(0);
 
-        EventUtils.saveStartedEvent(1L, volume.getAccountId(), EventTypes.EVENT_VOLUME_UPLOAD, "Starting upload of " +volume.getName()+ " to " +url, cmd.getStartEventId());        
-        UploadVO uploadJob = _uploadMonitor.createNewUploadEntry(sserver.getId(), volumeId, UploadVO.Status.COPY_IN_PROGRESS, 0, Type.VOLUME, null, null, url);
-        uploadJob = _uploadDao.createForUpdate(uploadJob.getId());
+        EventUtils.saveStartedEvent(userId, accountId, EventTypes.EVENT_VOLUME_UPLOAD, "Starting extraction of " +volume.getName()+ " mode:"+mode, cmd.getStartEventId());
+        List<UploadVO> extractURLList = _uploadDao.listByTypeUploadStatus(volumeId, Upload.Type.VOLUME, UploadVO.Status.DOWNLOAD_URL_CREATED);
         
-        // Update the async Job
-        ExtractJobResultObject resultObj = new ExtractJobResultObject(volume.getAccountId(), volume.getName(), UploadVO.Status.COPY_IN_PROGRESS.toString(), 0, uploadJob.getId());
-        _asyncMgr.updateAsyncJobAttachment(job.getId(), Type.VOLUME.toString(), volumeId);
-        _asyncMgr.updateAsyncJobStatus(job.getId(), AsyncJobResult.STATUS_IN_PROGRESS, resultObj);
+        if (extractMode == Upload.Mode.HTTP_DOWNLOAD && extractURLList.size() > 0){                       
+            return extractURLList.get(0).getId(); // If download url already exists then return 
+        }else {
+            UploadVO uploadJob = _uploadMonitor.createNewUploadEntry(sserver.getId(), volumeId, UploadVO.Status.COPY_IN_PROGRESS, 0, Type.VOLUME, null, null, url);
+            uploadJob = _uploadDao.createForUpdate(uploadJob.getId());
+            
+            // Update the async Job
+            ExtractResponse resultObj = new ExtractResponse(volumeId, volume.getName(), accountId, UploadVO.Status.COPY_IN_PROGRESS.toString(), uploadJob.getId());
+            _asyncMgr.updateAsyncJobAttachment(job.getId(), Type.VOLUME.toString(), volumeId);
+            _asyncMgr.updateAsyncJobStatus(job.getId(), AsyncJobResult.STATUS_IN_PROGRESS, resultObj);
+    
+            // Copy the volume from the source storage pool to secondary storage
+            CopyVolumeCommand cvCmd = new CopyVolumeCommand(volume.getId(), volume.getPath(), srcPool, secondaryStorageURL, true);
+            CopyVolumeAnswer cvAnswer = (CopyVolumeAnswer) _agentMgr.easySend(sourceHostId, cvCmd);
 
-        // Copy the volume from the source storage pool to secondary storage
-        CopyVolumeCommand cvCmd = new CopyVolumeCommand(volume.getId(), volume.getPath(), srcPool, secondaryStorageURL, true);
-        CopyVolumeAnswer cvAnswer = (CopyVolumeAnswer) _agentMgr.easySend(sourceHostId, cvCmd);
+            // Check if you got a valid answer.
+            if (cvAnswer == null || !cvAnswer.getResult()) {                
+                String errorString = "Failed to copy the volume from the source primary storage pool to secondary storage.";
+
+                //Update the async job.
+                resultObj.setResultString(errorString);
+                resultObj.setUploadStatus(UploadVO.Status.COPY_ERROR.toString());
+                _asyncMgr.completeAsyncJob(job.getId(), AsyncJobResult.STATUS_FAILED, 0, resultObj);
+
+                //Update the DB that volume couldn't be copied
+                uploadJob.setUploadState(UploadVO.Status.COPY_ERROR);            
+                uploadJob.setErrorString(errorString);
+                uploadJob.setLastUpdated(new Date());
+                _uploadDao.update(uploadJob.getId(), uploadJob);
                 
-        if (cvAnswer == null || !cvAnswer.getResult()) {
+                EventUtils.saveEvent(userId, accountId, EventTypes.EVENT_VOLUME_UPLOAD, errorString);                
+                throw new InternalErrorException(errorString);            
+            }
             
-            String errorString = "Failed to copy the volume from the source primary storage pool to secondary storage.";
-            
-            resultObj.setResult_string(errorString);
-            resultObj.setUploadStatus(UploadVO.Status.COPY_ERROR.toString());
-            _asyncMgr.completeAsyncJob(job.getId(), AsyncJobResult.STATUS_FAILED, 0, resultObj);
-            
-            uploadJob.setUploadState(UploadVO.Status.COPY_ERROR);            
-            uploadJob.setErrorString(errorString);
+            String volumeLocalPath = "volumes/"+volume.getId()+"/"+cvAnswer.getVolumePath()+".vhd";
+            //Update the DB that volume is copied
+            uploadJob.setUploadState(UploadVO.Status.COPY_COMPLETE);
             uploadJob.setLastUpdated(new Date());
             _uploadDao.update(uploadJob.getId(), uploadJob);
             
-            EventUtils.saveEvent(1L, volume.getAccountId(), EventTypes.EVENT_VOLUME_UPLOAD, errorString);
-            
-            throw new InternalErrorException(errorString);            
+            if (extractMode == Mode.FTP_UPLOAD){ // Now that the volume is copied perform the actual uploading
+                _uploadMonitor.extractVolume(uploadJob, sserver, volume, url, zoneId, volumeLocalPath, cmd.getStartEventId(), job.getId(), _asyncMgr);
+                return uploadJob.getId();
+            }else{ // Volume is copied now make it visible under apache and create a URL.
+                s_logger.debug("volumepath " +volumeLocalPath);
+                _uploadMonitor.createVolumeDownloadURL(volumeId, volumeLocalPath, Type.VOLUME, zoneId, uploadJob.getId());                
+                EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_INFO, cmd.getEventType(), "Completed extraction of "+volume.getName()+ " in mode:" +mode, null, cmd.getStartEventId());
+                return uploadJob.getId();
+            }
         }
-        String volumeLocalPath = "volumes/"+volume.getId()+"/"+cvAnswer.getVolumePath()+".vhd"; 
-        uploadJob.setUploadState(UploadVO.Status.COPY_COMPLETE);        
-        uploadJob.setLastUpdated(new Date());
-        _uploadDao.update(uploadJob.getId(), uploadJob);
-        
-        _uploadMonitor.extractVolume(uploadJob, sserver, volume, url, zoneId, volumeLocalPath, cmd.getStartEventId(), job.getId(), _asyncMgr);
     }
 
     @Override

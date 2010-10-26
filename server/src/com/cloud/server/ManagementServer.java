@@ -1207,9 +1207,10 @@ public interface ManagementServer {
      * @param cmd the command specifying url (where the volume needs to be extracted to), zoneId (zone where the volume exists), id (the id of the volume)
      * @throws URISyntaxException
      * @throws InternalErrorException
+     * @throws PermissionDeniedException 
      *
      */
-    void extractVolume(ExtractVolumeCmd cmd) throws URISyntaxException, InternalErrorException;
+    Long extractVolume(ExtractVolumeCmd cmd) throws URISyntaxException, InternalErrorException, PermissionDeniedException;
 
     /**
      * return an array of available hypervisors

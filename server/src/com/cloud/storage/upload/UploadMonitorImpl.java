@@ -24,6 +24,7 @@ import com.cloud.agent.api.storage.CreateEntityDownloadURLCommand;
 import com.cloud.agent.api.storage.DeleteEntityDownloadURLCommand;
 import com.cloud.agent.api.storage.UploadCommand;
 import com.cloud.agent.api.storage.UploadProgressCommand.RequestType;
+import com.cloud.api.ApiDBUtils;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.event.EventTypes;
@@ -118,7 +119,7 @@ public class UploadMonitorImpl implements UploadMonitor {
 	                                        String  errorString, String  jobId, String  uploadUrl){
 	       
         UploadVO uploadObj = new UploadVO(hostId, typeId, new Date(), 
-                            uploadState, 0, type, null, "jobid0000", uploadUrl);
+                            uploadState, 0, type, null, null, uploadUrl);
         _uploadDao.persist(uploadObj);
         
         return uploadObj;
@@ -175,6 +176,9 @@ public class UploadMonitorImpl implements UploadMonitor {
 		
 	}
 	
+	
+	
+	
 	@Override
 	public UploadVO createEntityDownloadURL(VMTemplateVO template, VMTemplateHostVO vmTemplateHost, Long dataCenterId, long eventId) {
 	    
@@ -225,9 +229,56 @@ public class UploadMonitorImpl implements UploadMonitor {
             _uploadDao.update(uploadTemplateObj.getId(), vo);
             return _uploadDao.findById(uploadTemplateObj.getId(), true);
         }
-        throw new CloudRuntimeException("Couldnt find a running SSVM in the zone" + dataCenterId+ ".couldnt create the extraction URL.");
+        throw new CloudRuntimeException("Couldnt find a running SSVM in the zone" + dataCenterId+ ". Couldnt create the extraction URL.");
 	    
 	}
+	
+	@Override
+    public void createVolumeDownloadURL(Long entityId, String path, Type type, Long dataCenterId, Long uploadId) throws CloudRuntimeException{
+        
+        List<HostVO> storageServers = _serverDao.listByTypeDataCenter(Host.Type.SecondaryStorage, dataCenterId);
+        if(storageServers == null ) 
+            throw new CloudRuntimeException("No Storage Server found at the datacenter - " +dataCenterId);        
+        
+        // Update DB for state = DOWNLOAD_URL_NOT_CREATED.        
+        UploadVO uploadJob = _uploadDao.createForUpdate(uploadId);
+        uploadJob.setUploadState(Status.DOWNLOAD_URL_NOT_CREATED);
+        uploadJob.setLastUpdated(new Date());
+        _uploadDao.update(uploadJob.getId(), uploadJob);
+        
+        // Create Symlink at ssvm
+        CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(path);
+        long result = send(ApiDBUtils.findUploadById(uploadId).getHostId(), cmd, null);
+        if (result == -1){
+            String errorString = "Unable to create a link for " +type+ " id:"+entityId;
+            s_logger.warn(errorString);
+            throw new CloudRuntimeException(errorString);
+        }
+        
+        //Construct actual URL locally now that the symlink exists at SSVM
+        List<SecondaryStorageVmVO> ssVms = _secStorageVmDao.getSecStorageVmListInStates(dataCenterId, State.Running);
+        if (ssVms.size() > 0) {
+            SecondaryStorageVmVO ssVm = ssVms.get(0);
+            if (ssVm.getPublicIpAddress() == null) {
+                s_logger.warn("A running secondary storage vm has a null public ip?");
+                throw new CloudRuntimeException("SSVM has null public IP - couldnt create the URL");
+            }
+            String extractURL = generateCopyUrl(ssVm.getPublicIpAddress(), path);
+            UploadVO vo = _uploadDao.createForUpdate();
+            vo.setLastUpdated(new Date());
+            vo.setUploadUrl(extractURL);
+            vo.setUploadState(Status.DOWNLOAD_URL_CREATED);
+            
+            if(extractURL == null){
+                vo.setUploadState(Status.ERROR);
+                vo.setErrorString("Could not create the download URL");
+            }
+            _uploadDao.update(uploadId, vo);
+            return;
+        }
+        throw new CloudRuntimeException("Couldnt find a running SSVM in the zone" + dataCenterId+ ". Couldnt create the extraction URL.");
+        
+    }
 	
 	   private String generateCopyUrl(String ipAddress, String path){
 	        String hostname = ipAddress;
@@ -401,7 +452,7 @@ public class UploadMonitorImpl implements UploadMonitor {
         for (UploadVO extractURL : extractURLs){
             if( getTimeDiff(extractURL.getLastUpdated()) < EXTRACT_URL_TIME_LIMIT) continue;
             String path = extractURL.getUploadUrl().substring( (extractURL.getUploadUrl().lastIndexOf("/")) +1 );
-            DeleteEntityDownloadURLCommand cmd = new DeleteEntityDownloadURLCommand(path);
+            DeleteEntityDownloadURLCommand cmd = new DeleteEntityDownloadURLCommand(path, extractURL.getType());
             long result = send(extractURL.getHostId(), cmd, null);
             if (result == -1){
                 s_logger.warn("Unable to delete the link for " +extractURL.getType()+ " id=" +extractURL.getTypeId()+ " url="+extractURL.getUploadUrl());
