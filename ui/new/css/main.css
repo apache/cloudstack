@@ -2010,7 +2010,7 @@ a:hover.search_button {
 	font-size:11px;
 	font-weight:normal;
 	margin:0 0 0 0;
-	padding:5px 0 5px 3px;
+	padding:6px 0 5px 3px;
 	list-style:none;
 }
 
@@ -3043,7 +3043,7 @@ a:hover.search_button {
 	height:auto;
 	float:left;
 	position:absolute;
-	background:#FFF repeat top left;
+	background:#FFF url(../images/midmenu_hover.gif) repeat top left;
 	border:1px solid #CCC;
 	top:18px;
 	right:1px;

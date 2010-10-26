@@ -215,7 +215,7 @@
     </div>
     <!--Statistics tab (start)-->
     <!--Routers tab (start)-->
-    <div style="display: none;" id="tab_content_router" style="display:none">
+    <div style="display: none;" id="tab_content_router">
         Routers
     </div>
     <!--Routers tab (start)-->
@@ -852,7 +852,7 @@
     </div>
     <div class="grid_rows odd">
         <div class="vm_statusbox">
-            <div id="view_console_container">
+            <div id="view_console_container" style="float:left;">
                 <div id="view_console_template" style="display: block">
                     <div class="vm_consolebox" id="box0">
                     </div>
