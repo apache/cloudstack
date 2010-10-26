@@ -1452,12 +1452,9 @@ function initAddPrimaryStorageButton($midmenuAddLink2) {
                         $("#midmenu_container").append($midmenuItem1.fadeIn("slow"));
 				        var item = json.createstoragepoolresponse;				            			      										   
 					    primarystorageToMidmenu(item, $midmenuItem1);
-	                    bindClickToMidMenu($midmenuItem1, primarystorageToRightPanel, primarystorageGetMidmenuId);  	
-	                    
-	                    refreshClusterUnderPod($("#pod_" + podObj.id));                                
+	                    bindClickToMidMenu($midmenuItem1, primarystorageToRightPanel, primarystorageGetMidmenuId);  	                                               
 				    },			
-                    error: function(XMLHttpResponse) {	
-                        refreshClusterUnderPod($("#pod_" + podObj.id));            
+                    error: function(XMLHttpResponse) {	                                 
                         handleErrorInDialog(XMLHttpResponse, $thisDialog);	                        					    
                     }							    
 			    });
