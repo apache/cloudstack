@@ -113,10 +113,8 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
     		String certificate = cmd.getCertificate();
     		
     		//write the cert to /etc/cloud/consoleproxy/cert/
-    	    String strDirectoy = null;
 			boolean dirCreated = false;
-
-			strDirectoy = "/etc/cloud/consoleproxy/cert/";
+			String strDirectoy = "/etc/cloud/consoleproxy/cert/";
 			dirCreated = (new File(strDirectoy)).mkdirs();
 			
     	    if (dirCreated) 

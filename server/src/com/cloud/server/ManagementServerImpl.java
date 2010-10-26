@@ -6972,9 +6972,9 @@ public class ManagementServerImpl implements ManagementServer {
 							//when cp reboots, the context will be reinit with the new cert 
 						}
 				} catch (AgentUnavailableException e) {
-					s_logger.warn("Unable to send command to the console proxy resource", e);
+					s_logger.warn("Unable to send update certificate command to the console proxy resource", e);
 				} catch (OperationTimedoutException e) {
-					s_logger.warn("Unable to send command to the console proxy resource", e);
+					s_logger.warn("Unable to send update certificate command to the console proxy resource", e);
 				}
 	
     		}
