@@ -137,6 +137,9 @@ function zoneJSONToTreeNode(json, $zoneNode) {
 				    forceLogout = false;  // We don't force a logout if pod(s) exit.
 			    }
 		    }
+		    else {
+		        $zoneNode.find("#zone_arrow").removeClass("expanded_close").addClass("white_nonexpanded_close");
+		    }
 	    }
     });
     	    
@@ -1197,9 +1200,9 @@ function initAddPodButton($midmenuAddLink1) {
 			            var item = json.createpodresponse; 			            		            				    
 		                var template = $("#leftmenu_pod_node_template").clone(true);
 		                podJSONToTreeNode(item, template);			                   				
-		                $("#zone_" + zoneObj.id + " #zone_content").show();	
-		                $("#zone_" + zoneObj.id + " #pods_container").prepend(template.show());						
-		                $("#zone_" + zoneObj.id + " #zone_expand").removeClass().addClass("zonetree_openarrows");	
+		                $("#zone_" + zoneObj.id).find("#zone_content").show();	
+		                $("#zone_" + zoneObj.id).find("#pods_container").prepend(template.show());						
+		                $("#zone_" + zoneObj.id).find("#zone_arrow").removeClass("white_nonexpanded_close").addClass("expanded_open");	
                         template.fadeIn("slow");
 			                                    
                         forceLogout = false;  // We don't force a logout if pod(s) exit.
