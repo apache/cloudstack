@@ -273,6 +273,8 @@ conf.env.CPLIBDIR = Utils.subst_vars(_join("${LIBDIR}","${CPPATH}"),conf.env)
 conf.env.CPSYSCONFDIR = Utils.subst_vars(_join("${SYSCONFDIR}","${CPPATH}"),conf.env)
 conf.env.CPLOGDIR = Utils.subst_vars(_join("${LOCALSTATEDIR}","log","${CPPATH}"),conf.env)
 
+conf.env.CLIPATH = _join(conf.env.PACKAGE,"cli")
+
 conf.env.IPALLOCATORLIBDIR = Utils.subst_vars(_join("${LIBDIR}","${IPALLOCATORPATH}"),conf.env)
 conf.env.IPALLOCATORSYSCONFDIR = Utils.subst_vars(_join("${SYSCONFDIR}","${IPALLOCATORPATH}"),conf.env)
 conf.env.IPALLOCATORLOGDIR = Utils.subst_vars(_join("${LOCALSTATEDIR}","log","${IPALLOCATORPATH}"),conf.env)
@@ -285,6 +287,8 @@ conf.env.CPLOG = _join(conf.env.CPLOGDIR,"console-proxy.log")
 conf.env.IPALOCATORLOG = _join(conf.env.IPALLOCATORLOGDIR,"ipallocator.log")
 
 conf.env.SETUPDATADIR = Utils.subst_vars(_join("${DATADIR}","${SETUPPATH}"),conf.env)
+
+conf.env.CLIDIR = Utils.subst_vars(_join("${SYSCONFDIR}","${CLIPATH}"),conf.env)
 
 conf.env.SERVERSYSCONFDIR = Utils.subst_vars(_join("${SYSCONFDIR}","${SERVERPATH}"),conf.env)
 
