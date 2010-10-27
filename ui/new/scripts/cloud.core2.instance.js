@@ -1580,10 +1580,10 @@ function vmJsonToVolumeTab(jsonObj) {
 	});          
 }
     
-function vmJsonToRouterTab(jsonObj) {   
+function vmJsonToRouterTab(vmObj) {   
     $.ajax({
 		cache: false,
-		data: createURL("command=listRouters&domainid="+jsonObj.domainid+"&account="+jsonObj.account+maxPageSize),
+		data: createURL("command=listRouters&domainid="+vmObj.domainid+"&account="+vmObj.account+maxPageSize),
 		dataType: "json",
 		success: function(json) {				      
 			var items = json.listroutersresponse.router;
@@ -1816,8 +1816,13 @@ function doCreateTemplateFromVmVolume($actionLink, $subgridItem) {
 //***** Routers tab (begin) ***************************************************************************************
 
 function routerAfterSubgridItemAction(json, id, $subgridItem) {        
-    var jsonObj = json.queryasyncjobresultresponse.router[0];  
-    vmRouterJSONToTemplate(jsonObj, $subgridItem);
+    //var jsonObj = json.queryasyncjobresultresponse.router[0];  
+    //vmRouterJSONToTemplate(jsonObj, $subgridItem);
+    
+    //This is a temporary fix until bug 6787("RebootRouter API should return an embedded object on success") is fixed.
+    var $detailsTab = $("#right_panel_content #tab_content_details");  
+    var vmObj = $detailsTab.data("jsonObj");  
+    vmJsonToRouterTab(vmObj);   
 }     
   
 var vmRouterActionMap = {  
