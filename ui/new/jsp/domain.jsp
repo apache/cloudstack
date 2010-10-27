@@ -6,15 +6,7 @@
     CloudResourceBundle t = CloudResourceBundle.getBundle("resources/resource", browserLocale);
 %>
 
-<!-- Loading -->
-<div style="display:none;">
-    <div class="ui-widget-overlay">
-    </div>
-    <div class="rightpanel_mainloaderbox" >
-       <div class="rightpanel_mainloader_animatedicon"></div>
-       <p>Loading &hellip; </p>
-    </div>    
-</div>
+    
 
 <!-- domain detail panel (begin) -->
 <div class="main_title" id="right_panel_header">
@@ -41,6 +33,12 @@
     </div>  
     <!-- Details tab (start)-->
     <div id="tab_content_details">
+    	<div class="rightpanel_mainloader_panel" style="display:none;">
+              <div class="rightpanel_mainloaderbox">
+                   <div class="rightpanel_mainloader_animatedicon"></div>
+                   <p>Loading &hellip;</p>    
+              </div>               
+        </div>
         <div class="grid_container" id="domain_grid_container">
             <div class="grid_rows odd">
                 <div class="grid_row_cell" style="width: 20%;">
@@ -98,11 +96,23 @@
     
     <!-- Admin Account tab (start)-->
     <div style="display: none;" id="tab_content_admin_account">
+    		<div class="rightpanel_mainloader_panel" style="display:none;">
+                  <div class="rightpanel_mainloaderbox">
+                       <div class="rightpanel_mainloader_animatedicon"></div>
+                       <p>Loading &hellip;</p>    
+                  </div>               
+            </div>
     </div>
     <!-- Admin Account tab (end)-->
     
     <!-- Resource Limits tab (start)-->
     <div id="tab_content_resource_limits" style="display:none">
+    		<div class="rightpanel_mainloader_panel" style="display:none;">
+                  <div class="rightpanel_mainloaderbox">
+                       <div class="rightpanel_mainloader_animatedicon"></div>
+                       <p>Loading &hellip;</p>    
+                  </div>               
+            </div>
         <div class="grid_actionpanel">            
             <div class="grid_editbox" id="edit_button">
             </div>

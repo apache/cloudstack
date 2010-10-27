@@ -8,14 +8,8 @@
 %>
 <!-- account detail panel (begin) -->
 <!-- Loading -->
-<div style="display:none;">
-    <div class="ui-widget-overlay">
-    </div>
-    <div class="rightpanel_mainloaderbox" >
-       <div class="rightpanel_mainloader_animatedicon"></div>
-       <p>Loading &hellip; </p>
-    </div>    
-</div>    
+    
+ 
 <div class="main_title" id="right_panel_header">
     <div class="main_titleicon">
         <img src="images/title_accountsicon.gif" alt="Accounts" /></div>
@@ -33,7 +27,7 @@
             <%=t.t("Details")%></div>
     </div> 
     <div id="tab_content_details">
-        <div class="rightpanel_mainloader_panel">
+        <div class="rightpanel_mainloader_panel" style="display:none;">
               <div class="rightpanel_mainloaderbox">
                    <div class="rightpanel_mainloader_animatedicon"></div>
                    <p>Loading &hellip;</p>    

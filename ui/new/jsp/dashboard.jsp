@@ -7,14 +7,7 @@
     CloudResourceBundle t = CloudResourceBundle.getBundle("resources/resource", browserLocale);
 %>
 <!--Loading-->
-<div style="display:none;">
-    <div class="ui-widget-overlay">
-    </div>
-    <div class="rightpanel_mainloaderbox" >
-       <div class="rightpanel_mainloader_animatedicon"></div>
-       <p>Loading &hellip; </p>
-    </div> 
-</div>    
+    
    
 <div class="main_title" id="right_panel_header">
     <div class="main_titleicon">
@@ -27,6 +20,10 @@
 <!--Dashboard Admin (begin)-->
 <div id="dashboard_admin" style="display: none">
     <div class="contentbox">
+    	<div class="rightpanel_mainloaderbox" style="display:none;">
+               <div class="rightpanel_mainloader_animatedicon"></div>
+               <p>Loading &hellip; </p>
+        </div>  
         <div class="grid_container" id="system_wide_capacity_container">
             <div class="grid_header">
                 <div class="grid_header_cell" style="width: 60%; border: none;">

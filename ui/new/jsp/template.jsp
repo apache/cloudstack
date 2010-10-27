@@ -7,15 +7,7 @@
     CloudResourceBundle t = CloudResourceBundle.getBundle("resources/resource", browserLocale);
 %>
 
-<!-- Loading -->
-<div style="display:none;">
-    <div class="ui-widget-overlay">
-    </div>
-    <div class="rightpanel_mainloaderbox" >
-       <div class="rightpanel_mainloader_animatedicon"></div>
-       <p>Loading &hellip; </p>
-    </div>    
-</div>
+
 
 
 <!-- template detail panel (begin) -->
@@ -36,14 +28,11 @@
             <%=t.t("Details")%></div>
     </div>    
     <div id="tab_content_details">
-        <div class="grid_actionpanel">            
-            <div class="gridheader_loaderbox" id="spinning_wheel" style="border: 1px solid #999;
-                display: none;">
-                <div class="gridheader_loader" id="Div1">
-                </div>
-                <p id="description">
-                    Waiting &hellip;</p>
-            </div>               
+    	<div class="rightpanel_mainloader_panel" style="display:none;">
+              <div class="rightpanel_mainloaderbox">
+                   <div class="rightpanel_mainloader_animatedicon"></div>
+                   <p>Loading &hellip;</p>    
+              </div>               
         </div>
     
         <div class="grid_container">
@@ -56,6 +45,13 @@
                         </ul>
                     </div>
                 </div>
+                 <div class="gridheader_loaderbox" id="spinning_wheel" style="border: 1px solid #999;
+                display: none;">
+                    <div class="gridheader_loader" id="Div1">
+                    </div>
+                    <p id="description">
+                        Waiting &hellip;</p>
+                </div>   
             </div>
             <div class="grid_rows odd">
                 <div class="grid_row_cell" style="width: 20%;">

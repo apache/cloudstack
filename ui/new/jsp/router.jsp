@@ -7,15 +7,7 @@
     CloudResourceBundle t = CloudResourceBundle.getBundle("resources/resource", browserLocale);
 %>
 
-<!-- Loading -->
-<div style="display:none;">
-    <div class="ui-widget-overlay">
-    </div>
-    <div class="rightpanel_mainloaderbox" >
-       <div class="rightpanel_mainloader_animatedicon"></div>
-       <p>Loading &hellip; </p>
-    </div>    
-</div>
+
 
 <!-- router detail panel (begin) -->
 <div class="main_title" id="right_panel_header">
@@ -37,23 +29,31 @@
             <%=t.t("Details")%></div>
     </div> 
     <div id="tab_content_details">
-        <div class="grid_actionpanel">
-            <div class="grid_actionbox" id="action_link">
-                <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
-                    <ul class="actionsdropdown_boxlist" id="action_list">
-                        <li><%=t.t("no.available.actions")%></li>
-                    </ul>
-                </div>
-            </div>            
-            <div class="gridheader_loaderbox" id="spinning_wheel" style="border: 1px solid #999;
-                display: none;">
-                <div class="gridheader_loader" id="icon">
-                </div>
-                <p id="description">
-                    Detaching Disk &hellip;</p>
-            </div>                  
+    	<div class="rightpanel_mainloader_panel" style="display:block;">
+              <div class="rightpanel_mainloaderbox">
+                   <div class="rightpanel_mainloader_animatedicon"></div>
+                   <p>Loading &hellip;</p>    
+              </div>               
         </div>
-        <div class="grid_container">            
+        
+        <div class="grid_container">  
+        	<div class="grid_header">
+            	<div id="grid_header_title" class="grid_header_title">(title)</div>
+                <div id="action_link" class="grid_actionbox" id="account_action_link">
+                    <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
+                        <ul class="actionsdropdown_boxlist" id="action_list">
+                        	<li><%=t.t("no.available.actions")%></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="gridheader_loaderbox" id="spinning_wheel" style="border: 1px solid #999;
+                display: none;">
+                    <div class="gridheader_loader" id="icon">
+                    </div>
+                    <p id="description">
+                        Detaching Disk &hellip;</p>
+                </div>
+            </div>          
             <div class="grid_rows odd">
                 <div class="vm_statusbox">   
                     <div id="view_console_container">                       
