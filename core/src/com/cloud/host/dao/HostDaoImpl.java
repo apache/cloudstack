@@ -80,6 +80,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected final SearchBuilder<HostVO> MaintenanceCountSearch;
     protected final SearchBuilder<HostVO> ClusterSearch;
     protected final SearchBuilder<HostVO> ConsoleProxyHostSearch;
+    protected final SearchBuilder<HostVO> ConsoleProxyHostsListSearch;
     
     protected final Attribute _statusAttr;
     protected final Attribute _msIdAttr;
@@ -160,6 +161,10 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         ConsoleProxyHostSearch.and("name", ConsoleProxyHostSearch.entity().getName(), SearchCriteria.Op.EQ);
         ConsoleProxyHostSearch.and("type", ConsoleProxyHostSearch.entity().getType(), SearchCriteria.Op.EQ);
         ConsoleProxyHostSearch.done();
+
+        ConsoleProxyHostsListSearch = createSearchBuilder();
+        ConsoleProxyHostsListSearch.and("type", ConsoleProxyHostsListSearch.entity().getType(), SearchCriteria.Op.EQ);
+        ConsoleProxyHostsListSearch.done();
         
         PodSearch = createSearchBuilder();
         PodSearch.and("pod", PodSearch.entity().getPodId(), SearchCriteria.Op.EQ);
@@ -460,6 +465,13 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         	return null;
         else
         	return hostList.get(0);
+    }
+
+    @Override
+    public List<HostVO> listAllConsoleProxyHosts(Type type) {
+        SearchCriteria<HostVO> sc = ConsoleProxyHostSearch.create();
+        sc.setParameters("type", type);
+        return listBy(sc);
     }
     
     public List<HostVO> listByHostPod(long podId) {

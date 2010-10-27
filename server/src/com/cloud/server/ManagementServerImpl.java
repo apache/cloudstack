@@ -5880,13 +5880,21 @@ public class ManagementServerImpl implements ManagementServer {
     		//certficate uploaded to db successfully	
     		//get a list of all Console proxies from the cp table
     		List<ConsoleProxyVO> cpList = _consoleProxyDao.listAll();
+    		//get a list of all hosts in host table for type cp
+    		List<HostVO> cpHosts = _hostDao.listAllConsoleProxyHosts(com.cloud.host.Host.Type.ConsoleProxy);
+    		//create a hashmap for fast lookup
+    		Map<String,Long> hostNameToHostIdMap = new HashMap<String, Long>();
+    		for(HostVO cpHost : cpHosts){
+    			hostNameToHostIdMap.put(cpHost.getName(), cpHost.getId());
+    		}
+    		
     		for(ConsoleProxyVO cp : cpList)
     		{
-    			HostVO cpHost = _hostDao.findConsoleProxyHost(cp.getName(), com.cloud.host.Host.Type.ConsoleProxy);
+    			Long cpHostId = hostNameToHostIdMap.get(cp.getName());//there will always be a cphost for a cpvm
 	    		//now send a command to each console proxy 
 	    		UpdateCertificateCommand certCmd = new UpdateCertificateCommand(_certDao.findById(certVOId).getCertificate());
 	    		try {
-						Answer updateCertAns = _agentMgr.send(cpHost.getId(), certCmd);
+						Answer updateCertAns = _agentMgr.send(cpHostId, certCmd);
 						if(updateCertAns.getResult() == true)
 						{
 							//we have the cert copied over on cpvm

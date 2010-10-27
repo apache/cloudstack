@@ -139,5 +139,7 @@ public interface HostDao extends GenericDao<HostVO, Long> {
 
 	HostVO findConsoleProxyHost(String name, Type type);
 
+	List<HostVO> listAllConsoleProxyHosts(Type type);
+
 
 }
