@@ -33,7 +33,7 @@ function buildActionLinkForDetailsTab(label, actionMap, $actionMenu, $midmenuIte
                 
         var dialogBeforeActionFn = apiInfo.dialogBeforeActionFn;         
         if(dialogBeforeActionFn == null) {	 
-            var apiCommand = "command="+$actionLink.data("api")+"&id="+id;                      
+            var apiCommand = "command="+apiInfo.api+"&id="+id;                      
             doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab); 
         }
         else {
@@ -181,7 +181,7 @@ function buildActionLinkForSubgridItem(label, actionMap, $actionMenu, $subgridIt
         
         var dialogBeforeActionFn = apiInfo.dialogBeforeActionFn;    
         if(dialogBeforeActionFn == null) {	 
-            var apiCommand = "command="+$actionLink.data("api")+"&id="+id;                      
+            var apiCommand = "command="+apiInfo.api+"&id="+id;                      
             doActionToSubgridItem(id, $actionLink, apiCommand, $subgridItem); 
         }
         else {
