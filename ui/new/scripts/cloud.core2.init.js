@@ -372,53 +372,23 @@ $(document).ready(function() {
 	}
 	
 	// Dialogs
-	$("#dialog_confirmation").dialog({ 
-		autoOpen: false,
-		modal: true,
-		zIndex: 2000
-	});
+	initDialog("dialog_confirmation");	
+	initDialogWithOK("dialog_info");
 	
-	$("#dialog_info").dialog({ 
-		autoOpen: false,
-		modal: true,
-		zIndex: 2000,
-		buttons: { "OK": function() { $(this).dialog("close"); } }
-	});
-	
-	$("#dialog_alert").dialog({ 
-		autoOpen: false,
-		modal: true,
-		zIndex: 2000,
-		buttons: { "OK": function() { $(this).dialog("close"); } }
-	});
+	initDialogWithOK("dialog_alert");
 	$("#dialog_alert").siblings(".ui-widget-header").css("background", "url('/client/css/images/ui-bg_errorglass_30_ffffff_1x400.png') repeat-x scroll 50% 50% #393939");
 	$("#dialog_alert").siblings(".ui-dialog-buttonpane").find(".ui-state-default").css("background", "url('/client/css/images/ui-bg_errorglass_30_ffffff_1x400.png') repeat-x scroll 50% 50% #393939");
 	
-	$("#dialog_error").dialog({ 
-		autoOpen: false,
-		modal: true,
-		zIndex: 2000,
-		buttons: { "Close": function() { $(this).dialog("close"); } }
-	});
+	initDialogWithOK("dialog_error");	
 	$("#dialog_error").siblings(".ui-widget-header").css("background", "url('/client/css/images/ui-bg_errorglass_30_ffffff_1x400.png') repeat-x scroll 50% 50% #393939");
 	$("#dialog_error").siblings(".ui-dialog-buttonpane").find(".ui-state-default").css("background", "url('/client/css/images/ui-bg_errorglass_30_ffffff_1x400.png') repeat-x scroll 50% 50% #393939");
 	
-	$("#dialog_session_expired").dialog({ 
-		autoOpen: false,
-		modal: true,
-		zIndex: 2000,
-		buttons: { "OK": function() { logout(true); $(this).dialog("close"); } }
-	});
+	initDialogWithOK("dialog_session_expired");	
 	$("#dialog_session_expired").siblings(".ui-widget-header").css("background", "url('/client/css/images/ui-bg_errorglass_30_ffffff_1x400.png') repeat-x scroll 50% 50% #393939");
 	$("#dialog_session_expired").siblings(".ui-dialog-buttonpane").find(".ui-state-default").css("background", "url('/client/css/images/ui-bg_errorglass_30_ffffff_1x400.png') repeat-x scroll 50% 50% #393939");
-			
-	$("#dialog_info_please_select_one_item_in_middle_menu").dialog({ 
-		autoOpen: false,
-		modal: true,
-		zIndex: 2000,
-		buttons: { "OK": function() { $(this).dialog("close"); } }
-	});
-			
+		
+	initDialogWithOK("dialog_info_please_select_one_item_in_middle_menu");		
+				
 	// Check whether the session is valid.
 	g_mySession = $.cookie("JSESSIONID");
 	g_sessionKey = $.cookie("sessionKey");

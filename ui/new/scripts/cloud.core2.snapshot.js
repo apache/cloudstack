@@ -18,17 +18,8 @@
 
 function afterLoadSnapshotJSP() {
     //initialize dialog
-    activateDialog($("#dialog_add_volume_from_snapshot").dialog({ 
-	    autoOpen: false,
-	    modal: true,
-	    zIndex: 2000
-    }));
-    activateDialog($("#dialog_create_template_from_snapshot").dialog({ 
-        width: 400,
-        autoOpen: false,
-        modal: true,
-        zIndex: 2000
-    }));
+    initDialog("dialog_add_volume_from_snapshot");       
+    initDialog("dialog_create_template_from_snapshot", 400);    
     
     //populate dropdown
     $.ajax({

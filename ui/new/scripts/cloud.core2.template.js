@@ -185,28 +185,10 @@ function afterLoadTemplateJSP() {
 	
 	//initialize dialog box ***
 	initDialog("dialog_confirmation_delete_template_all_zones");
-    initDialog("dialog_confirmation_delete_template");
-    
-	activateDialog($("#dialog_add_template").dialog({ 
-		width:450,
-		autoOpen: false,
-		modal: true,
-		zIndex: 2000
-	}));
-	
-	activateDialog($("#dialog_copy_template").dialog({ 
-		width:300,
-		autoOpen: false,
-		modal: true,
-		zIndex: 2000
-	}));
-	
-	activateDialog($("#dialog_create_vm_from_template").dialog({ 
-		width:300,
-		autoOpen: false,
-		modal: true,
-		zIndex: 2000
-	}));
+    initDialog("dialog_confirmation_delete_template");    
+    initDialog("dialog_add_template", 450);	
+	initDialog("dialog_copy_template", 300);	
+	initDialog("dialog_create_vm_from_template", 300);	
 }
 
 function templateGetMidmenuId(jsonObj) {

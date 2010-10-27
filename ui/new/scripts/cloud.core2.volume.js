@@ -17,44 +17,13 @@
  */
 
 function afterLoadVolumeJSP() {
-    activateDialog($("#dialog_create_template").dialog({
-        width: 400,
-        autoOpen: false,
-        modal: true,
-        zIndex: 2000
-    }));
-    activateDialog($("#dialog_create_snapshot").dialog({ 
-	    autoOpen: false,
-	    modal: true,
-	    zIndex: 2000
-    }));
-	activateDialog($("#dialog_recurring_snapshot").dialog({ 
-	    width: 735,
-	    autoOpen: false,
-	    modal: true,
-	    zIndex: 2000
-    }));
-	activateDialog($("#dialog_add_volume").dialog({ 
-	    autoOpen: false,
-	    modal: true,
-	    zIndex: 2000
-    }));	
-	activateDialog($("#dialog_attach_volume").dialog({ 
-	    autoOpen: false,
-	    modal: true,
-	    zIndex: 2000
-    }));	
-	activateDialog($("#dialog_add_volume_from_snapshot").dialog({ 
-	    autoOpen: false,
-	    modal: true,
-	    zIndex: 2000
-    }));
-    activateDialog($("#dialog_create_template_from_snapshot").dialog({ 
-        width: 400,
-        autoOpen: false,
-        modal: true,
-        zIndex: 2000
-    }));    
+    initDialog("dialog_create_template", 400); 
+    initDialog("dialog_create_snapshot");        
+    initDialog("dialog_recurring_snapshot", 735);	    
+    initDialog("dialog_add_volume");	
+    initDialog("dialog_attach_volume");	
+    initDialog("dialog_add_volume_from_snapshot");	
+    initDialog("dialog_create_template_from_snapshot", 400);    
 	        
     $.ajax({
         data: createURL("command=listOsTypes"),
