@@ -24,15 +24,7 @@ function buildActionLinkForDetailsTab(label, actionMap, $actionMenu, $midmenuIte
     $listItem.find("#link").text(label);   
     $listItem.data("label", label);	  
     $listItem.data("apiInfo", apiInfo);	 
-    /*
-    $listItem.data("inProcessText", apiInfo.inProcessText);	 
-    $listItem.data("api", apiInfo.api);				                 
-    $listItem.data("isAsyncJob", apiInfo.isAsyncJob);
-    $listItem.data("asyncJobResponse", apiInfo.asyncJobResponse);		     
-    $listItem.data("afterActionSeccessFn", apiInfo.afterActionSeccessFn);
-    $listItem.data("dialogBeforeActionFn", apiInfo.dialogBeforeActionFn);     
-    */
-     
+      
     var id = $detailsTab.data("jsonObj").id;
     
     $listItem.bind("click", function(event) {   
@@ -176,22 +168,18 @@ function handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label, $afterActi
 function buildActionLinkForSubgridItem(label, actionMap, $actionMenu, $subgridItem) {
     var apiInfo = actionMap[label];
     var $listItem = $("#action_list_item").clone();
-    $actionMenu.find("#action_list").append($listItem.show());
-    var $link = $listItem.find("#link").text(label);
-    $link.data("label", label);	  
-    $link.data("inProcessText", apiInfo.inProcessText);	 
-    $link.data("api", apiInfo.api);				                 
-    $link.data("isAsyncJob", apiInfo.isAsyncJob);
-    $link.data("asyncJobResponse", apiInfo.asyncJobResponse);		     
-    $link.data("afterActionSeccessFn", apiInfo.afterActionSeccessFn);
-    $link.data("dialogBeforeActionFn", apiInfo.dialogBeforeActionFn);      
+    $actionMenu.find("#action_list").append($listItem.show());    
+    $listItem.find("#link").text(label);   
+    $listItem.data("label", label);	  
+    $listItem.data("apiInfo", apiInfo);	 
     
     var id = $subgridItem.data("jsonObj").id;
     
-    $link.bind("click", function(event) {   
+    $listItem.bind("click", function(event) {   
         $actionMenu.hide();    	 
         var $actionLink = $(this);   
-        var dialogBeforeActionFn = $actionLink.data("dialogBeforeActionFn"); 
+        
+        var dialogBeforeActionFn = apiInfo.dialogBeforeActionFn;    
         if(dialogBeforeActionFn == null) {	 
             var apiCommand = "command="+$actionLink.data("api")+"&id="+id;                      
             doActionToSubgridItem(id, $actionLink, apiCommand, $subgridItem); 
@@ -205,10 +193,12 @@ function buildActionLinkForSubgridItem(label, actionMap, $actionMenu, $subgridIt
 
 function doActionToSubgridItem(id, $actionLink, apiCommand, $subgridItem) {       
     var label = $actionLink.data("label");	
-    var inProcessText = $actionLink.data("inProcessText");		           
-    var isAsyncJob = $actionLink.data("isAsyncJob");
-    var asyncJobResponse = $actionLink.data("asyncJobResponse");	
-    var afterActionSeccessFn = $actionLink.data("afterActionSeccessFn");	
+    var apiInfo = $actionLink.data("apiInfo");	
+    
+    var inProcessText = apiInfo.inProcessText;		           
+    var isAsyncJob = apiInfo.isAsyncJob;
+    var asyncJobResponse = apiInfo.asyncJobResponse;	
+    var afterActionSeccessFn = apiInfo.afterActionSeccessFn;	 
            
     var $spinningWheel = $subgridItem.find("#spinning_wheel");
     $spinningWheel.find("#description").text(inProcessText);  
