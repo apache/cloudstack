@@ -58,6 +58,7 @@ function doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detai
         
     $midmenuItem1.find("#content").removeClass("selected").addClass("inaction");                          
     $midmenuItem1.find("#spinning_wheel").addClass("midmenu_addingloader").show();	
+    $midmenuItem1.find("#spinning_wheel").data("inProcessText", inProcessText);
     $midmenuItem1.find("#info_icon").hide();		
     
     var $afterActionInfoContainer = $("#right_panel_content #after_action_info_container_on_top");   
@@ -358,6 +359,7 @@ function doActionToMidMenu(id, apiInfo, apiCommand) {
     var $midmenuItem1 = $("#midmenuItem_"+id);	
     $midmenuItem1.find("#content").removeClass("selected").addClass("inaction");                          
     $midmenuItem1.find("#spinning_wheel").addClass("midmenu_addingloader").show();	
+    $midmenuItem1.find("#spinning_wheel").data("inProcessText", inProcessText);
     $midmenuItem1.find("#info_icon").hide();		  
 	
 	var $detailsTab = $("#right_panel_content #tab_content_details");  
@@ -508,6 +510,16 @@ function copyActionInfoFromMidMenuToRightPanel($midmenuItem1) {
         $afterActionInfoContainer.find("#after_action_info").text("");
         $afterActionInfoContainer.hide();                
     }  
+    
+    var $midMenuSpinningWheel = $midmenuItem1.find("#spinning_wheel");
+    if($midMenuSpinningWheel.css("display") != "none") { 
+        var $detailsTabSpinningWheel = $("#right_panel_content #tab_content_details").find("#spinning_wheel");
+        if($detailsTabSpinningWheel.css("display") == "none") {
+            var inProcessText = $midMenuSpinningWheel.data("inProcessText");
+            $detailsTabSpinningWheel.find("#description").text(inProcessText);  
+            $detailsTabSpinningWheel.show();  
+        }
+    }
 }
                 
 //***** actions for middle menu (end) **************************************************************************
