@@ -2375,17 +2375,20 @@ a:hover.search_button {
 	cursor:hand;
 }
 
-.rightpanel_mainloaderbox {
-	width:auto;
+.rightpanel_mainloader_panel {
+	width:100%;
 	height:auto;
-	position:absolute;
-	top:30%;
-	left:40%;
-	background:#FFF;
-	border:1px solid #CCC;
-	margin:0;
+	float:left;
+	margin:10px 0 0 0;
 	padding:0;
-	z-index:1008;
+}
+
+.rightpanel_mainloaderbox {
+	width:134px;
+	height:22px;
+	background:url(../images/right_loadingbg.png) no-repeat top left;
+	margin:0 auto;
+	padding:0;
 }
 
 .rightpanel_mainloaderbox p{
@@ -2393,18 +2396,18 @@ a:hover.search_button {
 	height:auto;
 	float:left;
 	color:#333;
-	font-size:16px;
+	font-size:12px;
 	font-weight:normal;
-	margin:15px 10px 0 10px;
+	margin:5px 10px 0 10px;
 	display:inline;
 	padding:0;
 }
 .rightpanel_mainloader_animatedicon {
-	width:40px;
-	height:40px;
+	width:16px;
+	height:16px;
 	float:left;
-	background:url(../images/big_loading.gif) no-repeat top left;
-	margin:3px 0 0 5px;
+	background:url(../images/leftmenu_loader.gif) no-repeat top left;
+	margin:3px 0 0 25px;
 	display:inline;
 	padding:0;
 }
@@ -2921,7 +2924,7 @@ a:hover.search_button {
 
 .gridheader_loaderbox {
 	width:auto;
-	height:20px;
+	height:18px;
 	float:right;
 	position:absolute;
 	background:#99b2c3 url(../images/gridheader_loadingbg.gif) repeat-x top left;

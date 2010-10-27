@@ -274,6 +274,13 @@ Group:     System Environment/Libraries
 The Cloud.com console proxy is the service in charge of granting console
 access into virtual machines managed by the Cloud.com CloudStack.
 
+%package cli
+Summary:   Cloud.com command line tools
+Requires: python
+Group:     System Environment/Libraries
+%description cli
+The Cloud.com command line tools contain a few Python modules that can call cloudStack APIs.
+
 
 %if %{_premium}
 
@@ -618,6 +625,13 @@ fi
 %{_libdir}/%{name}/console-proxy/*
 %attr(0755,root,root) %{_bindir}/%{name}-setup-console-proxy
 %dir %attr(770,root,root) %{_localstatedir}/log/%{name}/console-proxy
+
+%files cli
+%{_bindir}/%{name}-tool
+%{_sysconfdir}/%{name}/cli/commands.xml
+%dir %{_prefix}/lib*/python*/site-packages/%{name}tool
+%{_prefix}/lib*/python*/site-packages/%{name}tool/*
+%{_prefix}/lib*/python*/site-packages/%{name}apis.py
 
 %if %{_premium}
 

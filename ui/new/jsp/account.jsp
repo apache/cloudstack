@@ -33,15 +33,11 @@
             <%=t.t("Details")%></div>
     </div> 
     <div id="tab_content_details">
-        <div class="grid_actionpanel">
-                       
-            <div class="gridheader_loaderbox" id="spinning_wheel" style="border: 1px solid #999;
-                display: none;">
-                <div class="gridheader_loader" id="icon">
-                </div>
-                <p id="description">
-                    Detaching Disk &hellip;</p>
-            </div>                 
+        <div class="rightpanel_mainloader_panel">
+              <div class="rightpanel_mainloaderbox">
+                   <div class="rightpanel_mainloader_animatedicon"></div>
+                   <p>Loading &hellip;</p>    
+              </div>               
         </div>
         <div class="grid_container">
         	<div class="grid_header">
@@ -52,6 +48,13 @@
                         	<li><%=t.t("no.available.actions")%></li>
                         </ul>
                     </div>
+                </div>
+                <div class="gridheader_loaderbox" id="spinning_wheel" style="border: 1px solid #999;
+                display: none;">
+                    <div class="gridheader_loader" id="icon">
+                    </div>
+                    <p id="description">
+                        Detaching Disk &hellip;</p>
                 </div>
             </div>
             <div class="grid_rows odd">
