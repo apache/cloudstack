@@ -295,7 +295,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.net.MacAddress;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.vm.ConsoleProxy;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.InstanceGroupVMMapVO;
@@ -4699,8 +4698,9 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public boolean stopConsoleProxy(long instanceId, long startEventId) {
-        return _consoleProxyMgr.stopProxy(instanceId, startEventId);
+    public ConsoleProxyVO stopConsoleProxy(long instanceId, long startEventId) {
+        _consoleProxyMgr.stopProxy(instanceId, startEventId);
+        return _consoleProxyDao.findById(instanceId);
     }
 
     @Override
@@ -6275,8 +6275,9 @@ public class ManagementServerImpl implements ManagementServer {
         return _secStorageVmMgr.startSecStorageVm(instanceId, startEventId);
     }
 
-    public boolean stopSecondaryStorageVm(long instanceId, long startEventId) {
-        return _secStorageVmMgr.stopSecStorageVm(instanceId, startEventId);
+    public SecondaryStorageVmVO stopSecondaryStorageVm(long instanceId, long startEventId) {
+        _secStorageVmMgr.stopSecStorageVm(instanceId, startEventId);
+        return _secStorageVmDao.findById(instanceId);
     }
 
     public SecondaryStorageVmVO rebootSecondaryStorageVm(long instanceId, long startEventId) {
@@ -6405,13 +6406,11 @@ public class ManagementServerImpl implements ManagementServer {
         // FIXME: We need to return the system VM from this method, so what do we do with the boolean response from stopConsoleProxy and stopSecondaryStorageVm?
 		if (systemVm.getType().equals(VirtualMachine.Type.ConsoleProxy)){
 			long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_STOP, "stopping console proxy with Id: "+id);
-			stopConsoleProxy(id, eventId);
+			return stopConsoleProxy(id, eventId);
 		} else {
 			long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_SSVM_STOP, "stopping secondary storage Vm Id: "+id);
-			stopSecondaryStorageVm(id, eventId);
+			return stopSecondaryStorageVm(id, eventId);
 		}
-
-		return systemVm;
 	}
 
 	@Override
