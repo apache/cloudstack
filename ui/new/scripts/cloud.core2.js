@@ -478,7 +478,9 @@ function copyAfterActionInfoToRightPanel($midmenuItem1) {
             $afterActionInfoContainer.addClass("errorbox");
          else
             $afterActionInfoContainer.removeClass("errorbox");                                        
-        $afterActionInfoContainer.show();                                         
+        $afterActionInfoContainer.show(); 
+        
+        $midmenuItem1.find("#info_icon").hide(); //make info icon disappear after the middle menu item is clicked once                                    
     }  
     else {
         $afterActionInfoContainer.find("#after_action_info").text("");
