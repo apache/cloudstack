@@ -26,9 +26,9 @@ import java.util.Set;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.AgentManager;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.HostResponse;
@@ -44,7 +44,7 @@ import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.vm.UserVmVO;
 
-@Implementation(method="reconnectHost", manager=Manager.AgentManager, description="Reconnects a host.")
+@Implementation(method="reconnectHost", manager=AgentManager.class, description="Reconnects a host.")
 public class ReconnectHostCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(ReconnectHostCmd.class.getName());
 

@@ -22,18 +22,18 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseAsyncCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.network.LoadBalancerVO;
+import com.cloud.network.NetworkManager;
 import com.cloud.user.Account;
 import com.cloud.utils.StringUtils;
 
-@Implementation(method="removeFromLoadBalancer", manager=Manager.NetworkManager, description="Removes a virtual machine or a list of virtual machines from a load balancer rule.")
+@Implementation(method="removeFromLoadBalancer", manager=NetworkManager.class, description="Removes a virtual machine or a list of virtual machines from a load balancer rule.")
 public class RemoveFromLoadBalancerRuleCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RemoveFromLoadBalancerRuleCmd.class.getName());
 

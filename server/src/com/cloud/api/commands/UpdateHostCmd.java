@@ -26,9 +26,9 @@ import java.util.Set;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.AgentManager;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -42,7 +42,7 @@ import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.vm.UserVmVO;
 
-@Implementation(method="updateHost", manager=Manager.AgentManager, description="Updates a host.")
+@Implementation(method="updateHost", manager=AgentManager.class, description="Updates a host.")
 public class UpdateHostCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateHostCmd.class.getName());
     private static final String s_name = "updatehostresponse";

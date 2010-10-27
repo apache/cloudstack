@@ -22,7 +22,6 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCreateCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.TemplateResponse;
@@ -35,8 +34,9 @@ import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.user.Account;
+import com.cloud.vm.UserVmManager;
 
-@Implementation(method="createPrivateTemplate", createMethod="createPrivateTemplateRecord", manager=Manager.UserVmManager, description="Creates a template of a virtual machine. " +
+@Implementation(method="createPrivateTemplate", createMethod="createPrivateTemplateRecord", manager=UserVmManager.class, description="Creates a template of a virtual machine. " +
 																															"The virtual machine must be in a STOPPED state. " +
 																															"A template created from this command is automatically designated as a private template visible to the account that created it.")
 public class CreateTemplateCmd extends BaseAsyncCreateCmd {

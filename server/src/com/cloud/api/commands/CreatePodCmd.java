@@ -22,13 +22,13 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.PodResponse;
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.HostPodVO;
 
-@Implementation(method="createPod", manager=Manager.ConfigManager, description="Creates a new Pod.")
+@Implementation(method="createPod", manager=ConfigurationManager.class, description="Creates a new Pod.")
 public class CreatePodCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreatePodCmd.class.getName());
 

@@ -3,13 +3,13 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.storage.StorageManager;
 
-@Implementation(method="deletePool", manager=Manager.StorageManager, description="Deletes a storage pool.")
+@Implementation(method="deletePool", manager=StorageManager.class, description="Deletes a storage pool.")
 public class DeletePoolCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeletePoolCmd.class.getName());
     private static final String s_name = "deletepoolresponse";

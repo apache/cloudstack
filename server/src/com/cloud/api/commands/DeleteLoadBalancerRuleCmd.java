@@ -21,15 +21,15 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.network.LoadBalancerVO;
+import com.cloud.network.NetworkManager;
 import com.cloud.user.Account;
 
-@Implementation(method="deleteLoadBalancerRule", manager=Manager.NetworkManager, description="Deletes a load balancer rule.")
+@Implementation(method="deleteLoadBalancerRule", manager=NetworkManager.class, description="Deletes a load balancer rule.")
 public class DeleteLoadBalancerRuleCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteLoadBalancerRuleCmd.class.getName());
     private static final String s_name = "deleteloadbalancerruleresponse";

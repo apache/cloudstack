@@ -19,8 +19,8 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.AgentManager;
 import com.cloud.api.BaseAsyncCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SuccessResponse;
@@ -28,7 +28,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(method="maintain", manager=Manager.AgentManager, description="Prepares a host for maintenance.")
+@Implementation(method="maintain", manager=AgentManager.class, description="Prepares a host for maintenance.")
 public class PrepareForMaintenanceCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(PrepareForMaintenanceCmd.class.getName());
 	

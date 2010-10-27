@@ -23,7 +23,6 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -32,10 +31,11 @@ import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
+import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VmStats;
 
-@Implementation(method="upgradeVirtualMachine", manager=Manager.UserVmManager, description="Changes the service offering for a virtual machine. " +
+@Implementation(method="upgradeVirtualMachine", manager=UserVmManager.class, description="Changes the service offering for a virtual machine. " +
 																							"The virtual machine must be in a \"Stopped\" state for " +
 																							"this command to take effect.")
 public class UpgradeVMCmd extends BaseCmd {

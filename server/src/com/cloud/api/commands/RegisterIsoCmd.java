@@ -24,7 +24,6 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
@@ -33,9 +32,10 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 
-@Implementation(method="registerIso", manager=Manager.TemplateManager, description="Registers an existing ISO into the Cloud.com Cloud.")
+@Implementation(method="registerIso", manager=TemplateManager.class, description="Registers an existing ISO into the Cloud.com Cloud.")
 public class RegisterIsoCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(RegisterIsoCmd.class.getName());
 

@@ -22,15 +22,15 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.StoragePoolResponse;
 import com.cloud.dc.ClusterVO;
+import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
 
-@Implementation(method="updateStoragePool", manager=Manager.StorageManager, description="Updates a storage pool.")
+@Implementation(method="updateStoragePool", manager=StorageManager.class, description="Updates a storage pool.")
 public class UpdateStoragePoolCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateStoragePoolCmd.class.getName());
 

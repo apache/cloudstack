@@ -22,17 +22,17 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCreateCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.VolumeResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.StorageManager;
 import com.cloud.storage.VolumeVO;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(createMethod="allocVolume", method="createVolume", manager=Manager.StorageManager, description="Creates a disk volume from a disk offering. " +
+@Implementation(createMethod="allocVolume", method="createVolume", manager=StorageManager.class, description="Creates a disk volume from a disk offering. " +
 																				  "This disk volume must still be attached to a virtual machine to make use of it.")
 public class CreateVolumeCmd extends BaseAsyncCreateCmd {
 	public static final Logger s_logger = Logger.getLogger(CreateVolumeCmd.class.getName());

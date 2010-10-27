@@ -22,17 +22,17 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.DomainRouterResponse;
 import com.cloud.event.EventTypes;
+import com.cloud.network.DomainRouterService;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.DomainRouterVO;
 
 
-@Implementation(method="startRouter", manager=Manager.DomainRouterService, description="Starts a router.")
+@Implementation(method="startRouter", manager=DomainRouterService.class, description="Starts a router.")
 public class StartRouterCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(StartRouterCmd.class.getName());
     private static final String s_name = "startrouterresponse";

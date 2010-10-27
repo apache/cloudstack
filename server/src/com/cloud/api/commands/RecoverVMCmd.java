@@ -24,15 +24,15 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.response.UserVmResponse;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.InstanceGroupVO;
+import com.cloud.vm.UserVmManager;
 
-@Implementation(method="recoverVirtualMachine", manager=Manager.UserVmManager, description="Recovers a virtual machine.")
+@Implementation(method="recoverVirtualMachine", manager=UserVmManager.class, description="Recovers a virtual machine.")
 public class RecoverVMCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(RecoverVMCmd.class.getName());
 

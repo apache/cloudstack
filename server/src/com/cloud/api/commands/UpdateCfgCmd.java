@@ -21,13 +21,13 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.configuration.ConfigurationManager;
 
-@Implementation(method="updateConfiguration", manager=Manager.ConfigManager, description="Updates a configuration.")
+@Implementation(method="updateConfiguration", manager=ConfigurationManager.class, description="Updates a configuration.")
 public class UpdateCfgCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateCfgCmd.class.getName());
     private static final String s_name = "updateconfigurationresponse";

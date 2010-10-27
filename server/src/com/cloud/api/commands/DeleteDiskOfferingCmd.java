@@ -20,13 +20,13 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.configuration.ConfigurationManager;
 
-@Implementation(method="deleteDiskOffering", manager=Manager.ConfigManager, description="Updates a disk offering.")
+@Implementation(method="deleteDiskOffering", manager=ConfigurationManager.class, description="Updates a disk offering.")
 public class DeleteDiskOfferingCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteDiskOfferingCmd.class.getName());
     private static final String s_name = "deletediskofferingresponse";

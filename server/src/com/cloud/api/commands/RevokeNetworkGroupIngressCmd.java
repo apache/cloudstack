@@ -7,18 +7,18 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseAsyncCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
+import com.cloud.network.security.NetworkGroupManager;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
 @SuppressWarnings("rawtypes")
-@Implementation(method="revokeNetworkGroupIngress", manager=Manager.NetworkGroupManager)
+@Implementation(method="revokeNetworkGroupIngress", manager=NetworkGroupManager.class)
 public class RevokeNetworkGroupIngressCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(RevokeNetworkGroupIngressCmd.class.getName());
 

@@ -6,13 +6,13 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import com.cloud.api.BaseCmd.Manager;
+import com.cloud.server.ManagementServer;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target({TYPE})
 public @interface Implementation {
     String createMethod() default "";
     String method() default "";
-    Manager manager() default Manager.ManagementServer;
+    Class<?> manager() default ManagementServer.class;
     String description() default "";
 }

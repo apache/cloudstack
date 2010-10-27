@@ -23,15 +23,15 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.network.LoadBalancerVO;
+import com.cloud.network.NetworkManager;
 import com.cloud.user.Account;
 
-@Implementation(method="assignToLoadBalancer", manager=Manager.NetworkManager, description="Assigns virtual machine or a list of virtual machines to a load balancer rule.")
+@Implementation(method="assignToLoadBalancer", manager=NetworkManager.class, description="Assigns virtual machine or a list of virtual machines to a load balancer rule.")
 public class AssignToLoadBalancerRuleCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AssignToLoadBalancerRuleCmd.class.getName());
 

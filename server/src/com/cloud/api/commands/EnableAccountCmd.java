@@ -20,13 +20,13 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.server.ManagementServer;
 
-@Implementation(method="enableAccount", manager=Manager.ManagementServer, description="Enables an account")
+@Implementation(method="enableAccount", manager=ManagementServer.class, description="Enables an account")
 public class EnableAccountCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(EnableAccountCmd.class.getName());
     private static final String s_name = "enableaccountresponse";

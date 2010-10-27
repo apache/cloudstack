@@ -19,17 +19,17 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseAsyncCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.network.SecurityGroupVO;
+import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
 
-@Implementation(method="removeSecurityGroup", manager=Manager.ManagementServer, description="Removes a port forwarding service from a virtual machine")
+@Implementation(method="removeSecurityGroup", manager=ManagementServer.class, description="Removes a port forwarding service from a virtual machine")
 public class RemovePortForwardingServiceCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(RemovePortForwardingServiceCmd.class.getName());
 

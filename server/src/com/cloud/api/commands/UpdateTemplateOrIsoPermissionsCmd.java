@@ -5,12 +5,12 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.server.ManagementServer;
 
-@Implementation(method="updateTemplatePermissions", manager=Manager.ManagementServer)
+@Implementation(method="updateTemplatePermissions", manager=ManagementServer.class)
 public abstract class UpdateTemplateOrIsoPermissionsCmd extends BaseCmd {
 	public Logger s_logger = getLogger();
     protected String s_name = getResponseName();

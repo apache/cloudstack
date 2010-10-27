@@ -22,13 +22,13 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.VlanIpRangeResponse;
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.VlanVO;
 
-@Implementation(method="createVlanAndPublicIpRange", manager=Manager.ConfigManager, description="Creates a VLAN IP range.")
+@Implementation(method="createVlanAndPublicIpRange", manager=ConfigurationManager.class, description="Creates a VLAN IP range.")
 public class CreateVlanIpRangeCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(CreateVlanIpRangeCmd.class.getName());
 

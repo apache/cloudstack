@@ -22,15 +22,15 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 
-@Implementation(method="deleteTemplate", manager=Manager.TemplateManager, description="Deletes a template from the system. All virtual machines using the deleted template will not be affected.")
+@Implementation(method="deleteTemplate", manager=TemplateManager.class, description="Deletes a template from the system. All virtual machines using the deleted template will not be affected.")
 public class DeleteTemplateCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(DeleteTemplateCmd.class.getName());
     private static final String s_name = "deletetemplateresponse";

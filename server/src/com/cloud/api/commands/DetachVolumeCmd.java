@@ -21,17 +21,16 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.response.SuccessResponse;
 import com.cloud.api.response.VolumeResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.storage.VolumeVO;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
+import com.cloud.vm.UserVmManager;
 
-@Implementation(method="detachVolumeFromVM", manager=Manager.UserVmManager, description="Detaches a disk volume from a virtual machine.")
+@Implementation(method="detachVolumeFromVM", manager=UserVmManager.class, description="Detaches a disk volume from a virtual machine.")
 public class DetachVolumeCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(DetachVolumeCmd.class.getName());
     private static final String s_name = "detachvolumeresponse";

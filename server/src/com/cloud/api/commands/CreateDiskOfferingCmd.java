@@ -21,14 +21,14 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.DiskOfferingResponse;
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.storage.DiskOfferingVO;
 
-@Implementation(method="createDiskOffering", manager=Manager.ConfigManager, description="Creates a disk offering.")
+@Implementation(method="createDiskOffering", manager=ConfigurationManager.class, description="Creates a disk offering.")
 public class CreateDiskOfferingCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateDiskOfferingCmd.class.getName());
 
@@ -93,7 +93,7 @@ public class CreateDiskOfferingCmd extends BaseCmd {
         if (responseObject != null) {
             response.setId(responseObject.getId());
             response.setCreated(responseObject.getCreated());
-            response.setDiskSize(responseObject.getDiskSize());
+            response.setDiskSize(responseObject.getDiskSizeInBytes());
             response.setDisplayText(responseObject.getDisplayText());
             response.setDomainId(responseObject.getDomainId());
             response.setDomain(ApiDBUtils.findDomainById(responseObject.getDomainId()).getName());

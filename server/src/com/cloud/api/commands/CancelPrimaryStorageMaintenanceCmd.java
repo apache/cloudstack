@@ -22,18 +22,18 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.StoragePoolResponse;
 import com.cloud.dc.ClusterVO;
 import com.cloud.event.EventTypes;
+import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(method="cancelPrimaryStorageForMaintenance", manager=Manager.StorageManager)
+@Implementation(method="cancelPrimaryStorageForMaintenance", manager=StorageManager.class)
 public class CancelPrimaryStorageMaintenanceCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(CancelPrimaryStorageMaintenanceCmd.class.getName());
 	

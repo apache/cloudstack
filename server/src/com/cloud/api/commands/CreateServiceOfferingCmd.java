@@ -21,14 +21,14 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.ServiceOfferingResponse;
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.service.ServiceOfferingVO;
 
-@Implementation(method="createServiceOffering", manager=Manager.ConfigManager, description="Creates a service offering.")
+@Implementation(method="createServiceOffering", manager=ConfigurationManager.class, description="Creates a service offering.")
 public class CreateServiceOfferingCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(CreateServiceOfferingCmd.class.getName());
 	private static final String _name = "createserviceofferingresponse";

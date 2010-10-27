@@ -23,15 +23,15 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.SnapshotPolicyResponse;
 import com.cloud.storage.SnapshotPolicyVO;
+import com.cloud.storage.snapshot.SnapshotManager;
 
-@Implementation(method="listPoliciesforVolume", manager=Manager.SnapshotManager, description="Lists snapshot policies.")
+@Implementation(method="listPoliciesforVolume", manager=SnapshotManager.class, description="Lists snapshot policies.")
 public class ListSnapshotPoliciesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListSnapshotPoliciesCmd.class.getName());
 

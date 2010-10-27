@@ -20,12 +20,12 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.vm.UserVmManager;
 
-@Implementation(method="deleteVmGroup", manager=Manager.UserVmManager)
+@Implementation(method="deleteVmGroup", manager=UserVmManager.class)
 public class DeleteVMGroupCmd extends BaseCmd{
     public static final Logger s_logger = Logger.getLogger(DeleteVMGroupCmd.class.getName());
     private static final String s_name = "deleteinstancegroupresponse";

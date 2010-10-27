@@ -21,14 +21,14 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.InstanceGroupResponse;
 import com.cloud.user.Account;
 import com.cloud.vm.InstanceGroupVO;
+import com.cloud.vm.UserVmManager;
 
-@Implementation(method="createVmGroup", manager=Manager.UserVmManager)
+@Implementation(method="createVmGroup", manager=UserVmManager.class)
 public class CreateVMGroupCmd extends BaseCmd{
     public static final Logger s_logger = Logger.getLogger(CreateVMGroupCmd.class.getName());
 

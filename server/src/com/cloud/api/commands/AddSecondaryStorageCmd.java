@@ -26,9 +26,9 @@ import java.util.Set;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.AgentManager;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -39,7 +39,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status.Event;
 import com.cloud.storage.GuestOSCategoryVO;
 
-@Implementation(method="discoverHosts", manager=Manager.AgentManager, description="Adds secondary storage.")
+@Implementation(method="discoverHosts", manager=AgentManager.class, description="Adds secondary storage.")
 public class AddSecondaryStorageCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddSecondaryStorageCmd.class.getName());
     private static final String s_name = "addsecondarystorageresponse";

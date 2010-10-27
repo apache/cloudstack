@@ -20,13 +20,13 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.TemplateResponse;
+import com.cloud.server.ManagementServer;
 import com.cloud.storage.VMTemplateVO;
 
-@Implementation(method="updateTemplate", manager=Manager.ManagementServer, description="Updates an ISO file.")
+@Implementation(method="updateTemplate", manager=ManagementServer.class, description="Updates an ISO file.")
 public class UpdateIsoCmd extends UpdateTemplateOrIsoCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateIsoCmd.class.getName());
     private static final String s_name = "updateisoresponse";

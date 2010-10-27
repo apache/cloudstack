@@ -21,14 +21,13 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.BaseCmd.CommandType;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.ZoneResponse;
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenterVO;
 
-@Implementation(method="createZone", manager=Manager.ConfigManager, description="Creates a Zone.")
+@Implementation(method="createZone", manager=ConfigurationManager.class, description="Creates a Zone.")
 public class CreateZoneCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateZoneCmd.class.getName());
 

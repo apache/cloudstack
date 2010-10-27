@@ -22,15 +22,15 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.storage.Snapshot;
+import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.user.Account;
 
-@Implementation(method="deleteSnapshot", manager=Manager.SnapshotManager, description="Deletes a snapshot of a disk volume.")
+@Implementation(method="deleteSnapshot", manager=SnapshotManager.class, description="Deletes a snapshot of a disk volume.")
 public class DeleteSnapshotCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteSnapshotCmd.class.getName());
     private static final String s_name = "deletesnapshotresponse";

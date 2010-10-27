@@ -18,23 +18,21 @@
 package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
-import org.hamcrest.core.Is;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.IsoVmResponse;
-import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.vm.VMInstanceVO;
 
-@Implementation(method="attachIso", manager=Manager.TemplateManager, description="Attaches an ISO to a virtual machine.")
+@Implementation(method="attachIso", manager=TemplateManager.class, description="Attaches an ISO to a virtual machine.")
 public class AttachIsoCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AttachIsoCmd.class.getName());
 

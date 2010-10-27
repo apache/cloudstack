@@ -20,7 +20,6 @@ package com.cloud.api.commands;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -28,8 +27,9 @@ import com.cloud.api.ResponseObject;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.SnapshotScheduleResponse;
 import com.cloud.storage.SnapshotScheduleVO;
+import com.cloud.storage.snapshot.SnapshotManager;
 
-@Implementation(method="findRecurringSnapshotSchedule", manager=Manager.SnapshotManager)
+@Implementation(method="findRecurringSnapshotSchedule", manager=SnapshotManager.class)
 public class ListRecurringSnapshotScheduleCmd extends BaseListCmd {
     private static final String s_name = "listrecurringsnapshotscheduleresponse";
 

@@ -23,7 +23,6 @@ import org.apache.log4j.Logger;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -33,10 +32,11 @@ import com.cloud.storage.GuestOS;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(method="copyTemplate", manager=Manager.TemplateManager, description="Copies a template from one zone to another.")
+@Implementation(method="copyTemplate", manager=TemplateManager.class, description="Copies a template from one zone to another.")
 public class CopyTemplateCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(CopyTemplateCmd.class.getName());
     private static final String s_name = "copytemplateresponse";

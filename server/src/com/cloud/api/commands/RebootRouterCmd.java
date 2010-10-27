@@ -22,15 +22,15 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.DomainRouterResponse;
 import com.cloud.event.EventTypes;
+import com.cloud.network.NetworkManager;
 import com.cloud.user.Account;
 import com.cloud.vm.DomainRouterVO;
 
-@Implementation(method="rebootRouter", manager=Manager.NetworkManager, description="Starts a router.")
+@Implementation(method="rebootRouter", manager=NetworkManager.class, description="Starts a router.")
 public class RebootRouterCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(RebootRouterCmd.class.getName());
     private static final String s_name = "rebootrouterresponse";

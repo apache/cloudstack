@@ -24,16 +24,16 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
-import com.cloud.api.ServerApiException;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ServerApiException;
 import com.cloud.api.response.StoragePoolResponse;
+import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
 
 @SuppressWarnings("rawtypes")
-@Implementation(method="createPool", manager=Manager.StorageManager, description="Creates a storage pool.")
+@Implementation(method="createPool", manager=StorageManager.class, description="Creates a storage pool.")
 public class CreateStoragePoolCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateStoragePoolCmd.class.getName());
 

@@ -23,16 +23,16 @@ import org.apache.log4j.Logger;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.network.SecurityGroupVO;
+import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
 
-@Implementation(method="deleteSecurityGroup", manager=Manager.ManagementServer, description="Deletes a port forwarding service")
+@Implementation(method="deleteSecurityGroup", manager=ManagementServer.class, description="Deletes a port forwarding service")
 public class DeletePortForwardingServiceCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeletePortForwardingServiceCmd.class.getName());
     private static final String s_name = "deleteportforwardingserviceresponse";

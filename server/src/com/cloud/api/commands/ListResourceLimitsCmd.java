@@ -24,7 +24,6 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -32,8 +31,9 @@ import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.ResourceLimitResponse;
 import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
 
-@Implementation(method="searchForLimits", manager=Manager.AccountManager, description="Lists resource limits.")
+@Implementation(method="searchForLimits", manager=AccountManager.class, description="Lists resource limits.")
 public class ListResourceLimitsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListResourceLimitsCmd.class.getName());
 

@@ -2340,36 +2340,40 @@ a:hover.search_button {
 	width:100%;
 	height:auto;
 	float:left;
-	border-bottom:1px solid #CCC;
+	border-bottom:1px solid #efefef;
 	margin:0;
 	padding:0;
 }
 
 .content_tabs {
 	width:101px;
-	height:13px;
+	height:15px;
 	float:left;
 	font-size:11px;
 	margin:0 0 0 2px;
 	text-align:center;
-	padding:4px 0 0 0;
+	padding:6px 0 0 0;
 	display:inline;
+
 }
 
 .content_tabs.on {
-	background:url(../images/contenttab_selected.gif) no-repeat top left;
+	background:url(../images/contenttab_selected.gif) no-repeat bottom left;
 	color:#0d4861;
+
+
 }
 
 .content_tabs.off {
-	background:url(../images/contenttab_unselected.gif) no-repeat top left;
+	background:url(../images/contenttab_unselected.gif) no-repeat bottom left;
 	color:#FFF;
 	cursor:pointer;
 	cursor:hand;
+
 }
 
 .content_tabs.off:hover {
-	background:url(../images/contenttab_unselected_hover.gif) no-repeat top left;
+	background:url(../images/contenttab_unselected_hover.gif) no-repeat bottom left;
 	color:#FFF;
 	cursor:pointer;
 	cursor:hand;

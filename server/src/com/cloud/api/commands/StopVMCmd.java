@@ -22,7 +22,6 @@ import org.apache.log4j.Logger;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.UserVmResponse;
@@ -34,8 +33,9 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.InstanceGroupVO;
+import com.cloud.vm.UserVmManager;
 
-@Implementation(method="stopVirtualMachine", manager=Manager.UserVmManager, description="Stops a virtual machine.")
+@Implementation(method="stopVirtualMachine", manager=UserVmManager.class, description="Stops a virtual machine.")
 public class StopVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(StopVMCmd.class.getName());
 

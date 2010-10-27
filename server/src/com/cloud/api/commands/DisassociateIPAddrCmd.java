@@ -20,12 +20,12 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.network.NetworkManager;
 
-@Implementation(method="disassociateIpAddress", manager=Manager.NetworkManager, description="Disassociates an ip address from the account.")
+@Implementation(method="disassociateIpAddress", manager=NetworkManager.class, description="Disassociates an ip address from the account.")
 public class DisassociateIPAddrCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DisassociateIPAddrCmd.class.getName());
 
