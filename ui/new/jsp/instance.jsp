@@ -7,15 +7,7 @@
     CloudResourceBundle t = CloudResourceBundle.getBundle("resources/resource", browserLocale);
 %>
 
-<!-- Loading -->
-<div style="display:none;">
-    <div class="ui-widget-overlay">
-    </div>
-    <div class="rightpanel_mainloaderbox" >
-       <div class="rightpanel_mainloader_animatedicon"></div>
-       <p>Loading &hellip; </p>
-    </div>    
-</div>
+
 
 <!-- VM detail panel (begin) -->
 <div class="main_title" id="right_panel_header">
@@ -41,7 +33,13 @@
             <%=t.t("Routers")%></div>
     </div>
     <!--Details tab (start)-->
-    <div  id="tab_content_details">  
+    <div  id="tab_content_details">
+    	<div class="rightpanel_mainloader_panel" style="display:none;">
+              <div class="rightpanel_mainloaderbox">
+                   <div class="rightpanel_mainloader_animatedicon"></div>
+                   <p>Loading &hellip;</p>    
+              </div>               
+        </div>  
         <div class="grid_actionpanel">                        
             <div class="gridheader_loaderbox" id="spinning_wheel" style="border: 1px solid #999;
                 display: none;">
@@ -738,6 +736,12 @@
 
 <!--  volume tab template (begin) -->
 <div class="grid_container" id="volume_tab_template" style="display: none">
+	<div class="rightpanel_mainloader_panel" style="display:none;">
+              <div class="rightpanel_mainloaderbox">
+                   <div class="rightpanel_mainloader_animatedicon"></div>
+                   <p>Loading &hellip;</p>    
+              </div>               
+     </div>
     <div class="grid_header">
         <div class="grid_header_title" id="title">
         </div>
@@ -827,6 +831,12 @@
 
 <!--  router tab template (begin) -->
 <div class="grid_container" id="router_tab_template" style="display: none">
+	<div class="rightpanel_mainloader_panel" style="display:none;">
+              <div class="rightpanel_mainloaderbox">
+                   <div class="rightpanel_mainloader_animatedicon"></div>
+                   <p>Loading &hellip;</p>    
+              </div>               
+     </div>
     <div class="grid_header">
         <div class="grid_header_title" id="title">
         </div>
