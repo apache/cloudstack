@@ -180,36 +180,49 @@ function afterLoadInstanceJSP() {
             $("#dialog_info_please_select_one_item_in_middle_menu").dialog("open");		
             return false;
         }        
-                        	                   
-        for(var id in selectedItemsInMidMenu) {	
-            var apiCommand = "command=rebootVirtualMachine&id="+id;  
-            var apiInfo = {
-                label: "Reboot Instance",
-                isAsyncJob: true,
-                asyncJobResponse: "rebootvirtualmachineresponse",                  
-                afterActionSeccessFn: function(json, $midmenuItem1, id) {  
-                    //call listVirtualMachine to get embedded object until Bug 6751("rebootVirtualMachine API should return an embedded object") is fixed.
-                    var jsonObj;
-                    $.ajax({
-                        data: createURL("command=listVirtualMachines&id="+id),
-                        dataType: "json",
-                        async: false,
-                        success: function(json) {                    
-                            jsonObj = json.listvirtualmachinesresponse.virtualmachine[0];                    
-                        }
-                    });                      
-                    
-                    vmToMidmenu(jsonObj, $midmenuItem1);    
-                    if( ($("#right_panel_content #tab_content_details").length > 0)
-                      && ($("#right_panel_content #tab_content_details").data("jsonObj") != null )
-                      && (jsonObj.id == $("#right_panel_content #tab_content_details").data("jsonObj").id)) 
-                        vmToRightPanel($midmenuItem1);                                         
-                }
-            }                                     
-            doActionForMidMenu(id, apiInfo, apiCommand); 	
-        }   
-        
-        selectedItemsInMidMenu = {}; //clear selected items for action	                          
+               
+        $("#dialog_confirmation_reboot_vm")	
+	    .dialog('option', 'buttons', { 						
+		    "Confirm": function() { 
+			    $(this).dialog("close"); 			
+			    
+			    var apiInfo = {
+                    label: "Reboot Instance",
+                    isAsyncJob: true,
+                    asyncJobResponse: "rebootvirtualmachineresponse",                  
+                    afterActionSeccessFn: function(json, $midmenuItem1, id) {  
+                        //call listVirtualMachine to get embedded object until Bug 6751("rebootVirtualMachine API should return an embedded object") is fixed.
+                        var jsonObj;
+                        $.ajax({
+                            data: createURL("command=listVirtualMachines&id="+id),
+                            dataType: "json",
+                            async: false,
+                            success: function(json) {                    
+                                jsonObj = json.listvirtualmachinesresponse.virtualmachine[0];                    
+                            }
+                        });                      
+                        
+                        vmToMidmenu(jsonObj, $midmenuItem1);    
+                        if( ($("#right_panel_content #tab_content_details").length > 0)
+                          && ($("#right_panel_content #tab_content_details").data("jsonObj") != null )
+                          && (jsonObj.id == $("#right_panel_content #tab_content_details").data("jsonObj").id)) 
+                            vmToRightPanel($midmenuItem1);                                         
+                    }
+                }                       
+			                    
+                for(var id in selectedItemsInMidMenu) {	
+                    var apiCommand = "command=rebootVirtualMachine&id="+id;                                               
+                    doActionForMidMenu(id, apiInfo, apiCommand); 	
+                }  
+                
+                selectedItemsInMidMenu = {}; //clear selected items for action	                      					    
+		    }, 
+		    "Cancel": function() { 
+			    $(this).dialog("close"); 
+    			
+		    } 
+	    }).dialog("open");
+                                          
         return false;        
     }); 
 
