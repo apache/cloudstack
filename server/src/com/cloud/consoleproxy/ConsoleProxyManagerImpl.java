@@ -539,6 +539,9 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
         } catch (ConcurrentOperationException e) {
             s_logger.warn("Exception while trying to start console proxy", e);
             return null;
+        } catch (ResourceUnavailableException e) {
+            s_logger.warn("Exception while trying to start console proxy", e);
+            return null;
         }
     }
 
@@ -1486,6 +1489,8 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
                         s_logger.warn("insuffiient capacity", e);
                     } catch (ConcurrentOperationException e) {
                         s_logger.debug("Concurrent operation: " + e.getMessage());
+                    } catch (ResourceUnavailableException e) {
+                        s_logger.debug("Concurrent operation: " + e.getMessage());
                     }
                 }
             }
@@ -2344,8 +2349,8 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
         String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
         _networkRate = ((networkRateStr == null) ? 200 : Integer.parseInt(networkRateStr));
         _multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));
-        _serviceOffering = new ServiceOfferingVO("Fake Offering For DomP", 1, _proxyRamSize, 0, 0, 0, false, null, NetworkOffering.GuestIpType.Virtualized,
-                useLocalStorage, true, null);
+        _serviceOffering = new ServiceOfferingVO("System Offering For Console Proxy", 1, _proxyRamSize, 0, 0, 0, false, null, NetworkOffering.GuestIpType.Virtualized,
+                useLocalStorage, true, null, true);
         _serviceOffering.setUniqueName("Cloud.com-ConsoleProxy");
         _serviceOffering = _offeringDao.persistSystemServiceOffering(_serviceOffering);
         _template = _templateDao.findConsoleProxyTemplate();

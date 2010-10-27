@@ -62,8 +62,8 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
         super();
     }
 
-    public ServiceOfferingVO(String name, int cpu, int ramSize, int speed, int rateMbps, int multicastRateMbps, boolean offerHA, String displayText, NetworkOffering.GuestIpType guestIpType, boolean useLocalStorage, boolean recreatable, String tags) {
-        super(name, displayText, false, tags, recreatable, useLocalStorage);
+    public ServiceOfferingVO(String name, int cpu, int ramSize, int speed, int rateMbps, int multicastRateMbps, boolean offerHA, String displayText, NetworkOffering.GuestIpType guestIpType, boolean useLocalStorage, boolean recreatable, String tags, boolean systemUse) {
+        super(name, displayText, false, tags, recreatable, useLocalStorage, systemUse);
         this.cpu = cpu;
         this.ramSize = ramSize;
         this.speed = speed;
@@ -124,7 +124,8 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
 		this.rateMbps = rateMbps;
 	}
 
-	public int getRateMbps() {
+	@Override
+    public int getRateMbps() {
 		return rateMbps;
 	}
 
@@ -132,7 +133,8 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
 		this.multicastRateMbps = multicastRateMbps;
 	}
 	
-	public int getMulticastRateMbps() {
+	@Override
+    public int getMulticastRateMbps() {
 		return multicastRateMbps;
 	}
 
@@ -140,7 +142,8 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
 		this.guestIpType = guestIpType;
 	}
 
-	public NetworkOffering.GuestIpType getGuestIpType() {
+	@Override
+    public NetworkOffering.GuestIpType getGuestIpType() {
 		return guestIpType;
 	}
 }

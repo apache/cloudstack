@@ -591,16 +591,21 @@ public class AccountManagerImpl implements AccountManager {
     @Override
     public void checkAccess(Account caller, ControlledEntity... entities) {
         for (ControlledEntity entity : entities) {
+            boolean granted = false;
             for (SecurityChecker checker : _securityCheckers) {
                 if (checker.checkAccess(caller, entity)) {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Access to " + entity + " granted to " + caller + " by " + checker.getName());
                     }
+                    granted = true;
+                    break;
                 }
             }
         
-            assert false : "How can all of the security checkers pass on checking this check?";
-            throw new PermissionDeniedException("There's no way to confirm " + caller + " has access to " + entity);
+            if (!granted) {
+                assert false : "How can all of the security checkers pass on checking this check: " + entity;
+                throw new PermissionDeniedException("There's no way to confirm " + caller + " has access to " + entity);
+            }
         }
     }
 }

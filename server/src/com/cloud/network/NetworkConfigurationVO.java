@@ -111,12 +111,16 @@ public class NetworkConfigurationVO implements NetworkConfiguration {
         this.networkOfferingId = networkOfferingId;
         this.dataCenterId = dataCenterId;
         this.state = State.Allocated;
+        this.id = -1;
     }
     
     public NetworkConfigurationVO(long id, NetworkConfiguration that, long offeringId, long dataCenterId, String guruName, long domainId, long accountId, long related) {
         this(id, that.getTrafficType(), that.getMode(), that.getBroadcastDomainType(), offeringId, dataCenterId, domainId, accountId, related);
         this.guruName = guruName;
         this.state = that.getState();
+        if (state == null) {
+            state = State.Allocated;
+        }
     }
 
     /**
@@ -134,6 +138,7 @@ public class NetworkConfigurationVO implements NetworkConfiguration {
         this.domainId = domainId;
         this.accountId = accountId;
         this.related = related;
+        this.id = id;
     }
     
     @Override
@@ -151,7 +156,7 @@ public class NetworkConfigurationVO implements NetworkConfiguration {
     }
 
     @Override
-    public Long getId() {
+    public long getId() {
         return id;
     }
 
@@ -223,6 +228,7 @@ public class NetworkConfigurationVO implements NetworkConfiguration {
         this.cidr = cidr;
     }
     
+    @Override
     public String getBroadcastUri() {
         return broadcastUri;
     }
@@ -241,6 +247,7 @@ public class NetworkConfigurationVO implements NetworkConfiguration {
         return dataCenterId;
     }
     
+    @Override
     public String getDns() {
         return dns;
     }

@@ -1630,7 +1630,7 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
                 continue;
             }
             
-            if (config.getId() != null) {
+            if (config.getId() != -1) {
                 if (config instanceof NetworkConfigurationVO) {
                     configs.add((NetworkConfigurationVO)config);
                 } else {

@@ -87,6 +87,9 @@ public class DiskOfferingVO implements DiskOffering {
     @Column(name="use_local_storage")
     private boolean useLocalStorage;
     
+    @Column(name="system_use")
+    private boolean systemUse;
+    
     public DiskOfferingVO() {
     }
 
@@ -101,7 +104,7 @@ public class DiskOfferingVO implements DiskOffering {
         this.useLocalStorage = false;
     }
     
-    public DiskOfferingVO(String name, String displayText, boolean mirrored, String tags, boolean recreatable, boolean useLocalStorage) {
+    public DiskOfferingVO(String name, String displayText, boolean mirrored, String tags, boolean recreatable, boolean useLocalStorage, boolean systemUse) {
         this.domainId = null;
         this.type = Type.Service;
         this.name = name;
@@ -110,20 +113,25 @@ public class DiskOfferingVO implements DiskOffering {
         this.tags = tags;
         this.recreatable = recreatable;
         this.useLocalStorage = useLocalStorage;
+        this.systemUse = systemUse;
     }
 
+    @Override
     public long getId() {
         return id;
     }
     
+    @Override
     public String getUniqueName() {
         return uniqueName;
     }
     
+    @Override
     public boolean getUseLocalStorage() {
         return useLocalStorage;
     }
     
+    @Override
     public Long getDomainId() {
         return domainId;
     }
@@ -140,6 +148,7 @@ public class DiskOfferingVO implements DiskOffering {
         this.domainId = domainId;
     }
 
+    @Override
     public String getName() {
         return name;
     }
@@ -147,7 +156,12 @@ public class DiskOfferingVO implements DiskOffering {
     public void setName(String name) {
         this.name = name;
     }
+    
+    public boolean isSystemUse() {
+        return systemUse;
+    }
 
+    @Override
     public String getDisplayText() {
         return displayText;
     }
@@ -159,6 +173,7 @@ public class DiskOfferingVO implements DiskOffering {
     	return diskSize;
     }
     
+    @Override
     public long getDiskSizeInBytes() {
         return diskSize * 1024 * 1024;
     }
@@ -186,6 +201,7 @@ public class DiskOfferingVO implements DiskOffering {
         this.tags = tags;
     }
     
+    @Override
     public String getTags() {
         return tags;
     }
@@ -194,6 +210,7 @@ public class DiskOfferingVO implements DiskOffering {
         this.uniqueName = name;
     }
 
+    @Override
     @Transient
     public String[] getTagsArray() {
         String tags = getTags();

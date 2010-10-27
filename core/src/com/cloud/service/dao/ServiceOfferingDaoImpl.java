@@ -21,6 +21,7 @@ package com.cloud.service.dao;
 import java.util.List;
 
 import javax.ejb.Local;
+import javax.persistence.EntityExistsException;
 
 import org.apache.log4j.Logger;
 
@@ -29,7 +30,6 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
 
 @Local(value={ServiceOfferingDao.class}) @DB(txn=false)
 public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Long> implements ServiceOfferingDao {
@@ -41,7 +41,7 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
         
         UniqueNameSearch = createSearchBuilder();
         UniqueNameSearch.and("name", UniqueNameSearch.entity().getUniqueName(), SearchCriteria.Op.EQ);
-        UniqueNameSearch.and("removed", UniqueNameSearch.entity().getRemoved(), SearchCriteria.Op.NNULL);
+        UniqueNameSearch.and("system", UniqueNameSearch.entity().isSystemUse(), SearchCriteria.Op.EQ);
         UniqueNameSearch.done();
     }
     
@@ -49,7 +49,8 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
     public ServiceOfferingVO findByName(String name) {
         SearchCriteria<ServiceOfferingVO> sc = UniqueNameSearch.create();
         sc.setParameters("name", name);
-        List<ServiceOfferingVO> vos = searchIncludingRemoved(sc, null, null, false);
+        sc.setParameters("system", true);
+        List<ServiceOfferingVO> vos = search(sc, null, null, false);
         if (vos.size() == 0) {
             return null;
         }
@@ -64,14 +65,9 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
         if (vo != null) {
             return vo;
         }
-        Transaction txn = Transaction.currentTxn();
         try {
-            txn.start();
-            vo = persist(offering);
-            remove(vo.getId());
-            txn.commit();
-            return vo;
-        } catch (Exception e) {
+            return persist(offering);
+        } catch (EntityExistsException e) {
             // Assume it's conflict on unique name
             return findByName(offering.getUniqueName());
         }

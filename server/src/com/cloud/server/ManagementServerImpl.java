@@ -2777,6 +2777,7 @@ public class ManagementServerImpl implements ManagementServer {
         if (name != null) {
             sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + name + "%");
         }
+        sc.addAnd("systemUse", SearchCriteria.Op.EQ, false);
 
         return _offeringsDao.search(sc, searchFilter);
     }
@@ -5191,7 +5192,7 @@ public class ManagementServerImpl implements ManagementServer {
         if (accountId != null) {
             sc.setParameters("accountId", accountId);
         } else if (domainId != null) {
-            DomainVO domain = _domainDao.findById((Long)domainId);
+            DomainVO domain = _domainDao.findById(domainId);
             SearchCriteria<?> joinSearch = sc.getJoin("accountSearch");
             joinSearch.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
         }
