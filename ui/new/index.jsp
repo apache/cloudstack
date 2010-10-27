@@ -724,10 +724,13 @@ long milliseconds = new Date().getTime();
         </div>
     </div>
     
-    <div id="midmenu_itemheader" class="midmenu_itemheader" style="display:none; margin-top:40px;">
-    	<p id="name"></p>
-       <!-- <div class="midmenu_itemheader_arrow"></div>-->
+    <div id="midmenu_itemheader_without_margin" class="midmenu_itemheader" style="display:none; ">
+    	<p id="name"></p>      
     </div>    
+    <div id="midmenu_itemheader_with_margin" class="midmenu_itemheader" style="display:none; margin-top:40px;">
+    	<p id="name"></p>       
+    </div>    
+    
     <div class="midmenu_list" id="midmenu_item" style="display: none;">
         <div class="midmenu_content" id="content">
             <div class="midmenu_icons" id="icon_container" style="display: none">

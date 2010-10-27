@@ -326,14 +326,14 @@ function showPage2($pageToShow, $menuItem1) {
 		
 	    var clusterId = jsonObj.id;
 	    var $midmenuContainer = $("#midmenu_container").empty();	    
-	    var $header1 = $("#midmenu_itemheader").clone();
+	    var $header1 = $("#midmenu_itemheader_without_margin").clone();  //without margin on top
 	    $header1.find("#name").text("Host");
 	    $midmenuContainer.append($header1);
 	    var count1 = listMidMenuItems2(("listHosts&type=Routing&clusterid="+clusterId), "listhostsresponse", "host", hostToMidmenu, hostToRightPanel, hostGetMidmenuId, false, true); 					
 	    if(count1 > 0)
 		    $header1.show();
 		    
-		var $header2 = $("#midmenu_itemheader").clone();
+		var $header2 = $("#midmenu_itemheader_with_margin").clone(); //with margin on top
 	    $header2.find("#name").text("Primary Storage");
 	    $midmenuContainer.append($header2);
 		var count2 = listMidMenuItems2(("listStoragePools&clusterid="+clusterId), "liststoragepoolsresponse", "storagepool", primarystorageToMidmenu, primarystorageToRightPanel, primarystorageGetMidmenuId, false, false); 			
