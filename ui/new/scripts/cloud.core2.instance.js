@@ -870,12 +870,23 @@ function initVMWizard() {
 
 //***** VM Detail (begin) ******************************************************************************
       
-var vmActionMap = {        
-    "Stop Instance": {
-        api: "stopVirtualMachine",            
+var vmActionMap = {    
+    "Start Instance": {        
+        isAsyncJob: true,
+        asyncJobResponse: "startvirtualmachineresponse",
+        inProcessText: "Starting Instance....",
+        dialogBeforeActionFn : doStartVM,
+        afterActionSeccessFn: function(json, $midmenuItem1, id) { 
+            var jsonObj = json.queryasyncjobresultresponse.jobresult.startvirtualmachineresponse;      
+            vmToMidmenu(jsonObj, $midmenuItem1);
+            vmToRightPanel($midmenuItem1);
+        }
+    },
+    "Stop Instance": {             
         isAsyncJob: true,
         asyncJobResponse: "stopvirtualmachineresponse",
         inProcessText: "Stopping Instance....",
+        dialogBeforeActionFn : doStopVM,
         afterActionSeccessFn: function(json, $midmenuItem1, id) { 
             //call listVirtualMachine to get embedded object until bug 6486 ("StopVirtualMachine API should return an embedded object on success") is fixed.
             var jsonObj;
@@ -892,22 +903,11 @@ var vmActionMap = {
             vmToRightPanel($midmenuItem1);
         }
     },
-    "Start Instance": {
-        api: "startVirtualMachine",            
-        isAsyncJob: true,
-        asyncJobResponse: "startvirtualmachineresponse",
-        inProcessText: "Starting Instance....",
-        afterActionSeccessFn: function(json, $midmenuItem1, id) { 
-            var jsonObj = json.queryasyncjobresultresponse.jobresult.startvirtualmachineresponse;      
-            vmToMidmenu(jsonObj, $midmenuItem1);
-            vmToRightPanel($midmenuItem1);
-        }
-    },
-    "Reboot Instance": {
-        api: "rebootVirtualMachine",           
+    "Reboot Instance": {        
         isAsyncJob: true,
         asyncJobResponse: "rebootvirtualmachineresponse",
         inProcessText: "Rebooting Instance....",
+        dialogBeforeActionFn : doRebootVM,
         afterActionSeccessFn: function(json, $midmenuItem1, id) { 
             //call listVirtualMachine to get embedded object until Bug 6751("rebootVirtualMachine API should return an embedded object") is fixed.
             var jsonObj;
@@ -924,11 +924,11 @@ var vmActionMap = {
             vmToRightPanel($midmenuItem1);
         }
     },
-    "Destroy Instance": {
-        api: "destroyVirtualMachine",           
+    "Destroy Instance": {        
         isAsyncJob: true,
         asyncJobResponse: "destroyvirtualmachineresponse",
         inProcessText: "Destroying Instance....",
+        dialogBeforeActionFn : doDestroyVM,
         afterActionSeccessFn: function(json, $midmenuItem1, id) { 
             //call listVirtualMachine to get embedded object until bug 6041 ("DestroyVirtualMachine API should return an embedded object on success") is fixed.
             var id = $midmenuItem1.data("jsonObj").id; 
@@ -946,10 +946,10 @@ var vmActionMap = {
             vmToRightPanel($midmenuItem1);
         }
     },
-    "Restore Instance": {
-        api: "recoverVirtualMachine",           
+    "Restore Instance": {          
         isAsyncJob: false,
         inProcessText: "Restoring Instance....",
+        dialogBeforeActionFn : doRestoreVM,
         afterActionSeccessFn: function(json, $midmenuItem1, id) { 
             //call listVirtualMachine to get embedded object until bug 6037 ("RecoverVirtualMachine API should return an embedded object on success") is fixed.
             var id = $midmenuItem1.data("jsonObj").id; 
@@ -1120,8 +1120,98 @@ var vmActionMap = {
     }                 
 }                      
    
-function doAttachISO($actionLink, $detailsTab, $midmenuItem1) {    
-//function doAttachISO($actionLink, selectedItemsInMidMenu) {   
+  
+function doStartVM($actionLink, $detailsTab, $midmenuItem1) {       
+    $("#dialog_confirmation_start_vm")	
+    .dialog('option', 'buttons', { 						
+	    "Confirm": function() { 
+		    $(this).dialog("close"); 			
+		    
+		    var jsonObj = $midmenuItem1.data("jsonObj");
+		    var id = jsonObj.id;
+		    var apiCommand = "command=startVirtualMachine&id="+id;  
+            doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);				   	                         					    
+	    }, 
+	    "Cancel": function() { 
+		    $(this).dialog("close"); 
+			
+	    } 
+    }).dialog("open");
+}   
+
+function doStopVM($actionLink, $detailsTab, $midmenuItem1) {   
+    $("#dialog_confirmation_stop_vm")	
+    .dialog('option', 'buttons', { 						
+	    "Confirm": function() { 
+		    $(this).dialog("close"); 			
+		    
+		    var jsonObj = $midmenuItem1.data("jsonObj");
+		    var id = jsonObj.id;
+		    var apiCommand = "command=stopVirtualMachine&id="+id;  
+            doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);				   	                         					    
+	    }, 
+	    "Cancel": function() { 
+		    $(this).dialog("close"); 
+			
+	    } 
+    }).dialog("open");
+}   
+   
+function doRebootVM($actionLink, $detailsTab, $midmenuItem1) {   
+    $("#dialog_confirmation_reboot_vm")	
+    .dialog('option', 'buttons', { 						
+	    "Confirm": function() { 
+		    $(this).dialog("close"); 			
+		    
+		    var jsonObj = $midmenuItem1.data("jsonObj");
+		    var id = jsonObj.id;
+		    var apiCommand = "command=rebootVirtualMachine&id="+id;  
+            doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);				   	                         					    
+	    }, 
+	    "Cancel": function() { 
+		    $(this).dialog("close"); 
+			
+	    } 
+    }).dialog("open");
+}   
+  
+function doDestroyVM($actionLink, $detailsTab, $midmenuItem1) {   
+    $("#dialog_confirmation_destroy_vm")	
+    .dialog('option', 'buttons', { 						
+	    "Confirm": function() { 
+		    $(this).dialog("close"); 			
+		    
+		    var jsonObj = $midmenuItem1.data("jsonObj");
+		    var id = jsonObj.id;
+		    var apiCommand = "command=destroyVirtualMachine&id="+id;  
+            doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);				   	                         					    
+	    }, 
+	    "Cancel": function() { 
+		    $(this).dialog("close"); 
+			
+	    } 
+    }).dialog("open");
+}   
+  
+function doRestoreVM($actionLink, $detailsTab, $midmenuItem1) {   
+    $("#dialog_confirmation_restore_vm")	
+    .dialog('option', 'buttons', { 						
+	    "Confirm": function() { 
+		    $(this).dialog("close"); 			
+		    
+		    var jsonObj = $midmenuItem1.data("jsonObj");
+		    var id = jsonObj.id;
+		    var apiCommand = "command=recoverVirtualMachine&id="+id;  
+            doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);				   	                         					    
+	    }, 
+	    "Cancel": function() { 
+		    $(this).dialog("close"); 
+			
+	    } 
+    }).dialog("open");
+}   
+         
+function doAttachISO($actionLink, $detailsTab, $midmenuItem1) {   
     $.ajax({
 	    data: createURL("command=listIsos&isReady=true"),
 		dataType: "json",
@@ -1163,8 +1253,7 @@ function doAttachISO($actionLink, $detailsTab, $midmenuItem1) {
 	}).dialog("open");
 }
 
-function doDetachISO($actionLink, $detailsTab, $midmenuItem1) {
-//function doDetachISO($actionLink, selectedItemsInMidMenu) {    
+function doDetachISO($actionLink, $detailsTab, $midmenuItem1) {  
     $("#dialog_detach_iso_from_vm")	
 	.dialog('option', 'buttons', { 						
 		"OK": function() { 
@@ -1181,8 +1270,7 @@ function doDetachISO($actionLink, $detailsTab, $midmenuItem1) {
 	}).dialog("open");
 }
 
-function doResetPassword($actionLink, $detailsTab, $midmenuItem1) {  
-//function doResetPassword($actionLink, selectedItemsInMidMenu) {   		
+function doResetPassword($actionLink, $detailsTab, $midmenuItem1) {   		
 	$("#dialog_confirmation_change_root_password")	
 	.dialog('option', 'buttons', { 						
 		"Yes": function() { 
@@ -1207,7 +1295,6 @@ function doResetPassword($actionLink, $detailsTab, $midmenuItem1) {
 }
 
 function doChangeName($actionLink, $detailsTab, $midmenuItem1) {  
-//function doChangeName($actionLink, selectedItemsInMidMenu) { 
     var jsonObj = $midmenuItem1.data("jsonObj");
     $("#dialog_change_name").find("#change_instance_name").val(fromdb(jsonObj.displayname));
     
@@ -1238,7 +1325,6 @@ function doChangeName($actionLink, $detailsTab, $midmenuItem1) {
 }
 
 function doChangeGroup($actionLink, $detailsTab, $midmenuItem1) {  
-//function doChangeGroup($actionLink, selectedItemsInMidMenu) { 
 	var jsonObj = $midmenuItem1.data("jsonObj");
     $("#dialog_change_group").find("#change_group_name").val(fromdb(jsonObj.group));
 		
@@ -1268,8 +1354,7 @@ function doChangeGroup($actionLink, $detailsTab, $midmenuItem1) {
 	}).dialog("open");	
 }
 
-function doChangeService($actionLink, $detailsTab, $midmenuItem1) {  
-//function doChangeService($actionLink, selectedItemsInMidMenu) {    
+function doChangeService($actionLink, $detailsTab, $midmenuItem1) {    
     var jsonObj = $midmenuItem1.data("jsonObj");
 	var id = jsonObj.id;
 	
@@ -1316,8 +1401,7 @@ function doChangeService($actionLink, $detailsTab, $midmenuItem1) {
 	}).dialog("open");
 }
 
-function doEnableHA($actionLink, $detailsTab, $midmenuItem1) {  
-//function doEnableHA($actionLink, selectedItemsInMidMenu) {            
+function doEnableHA($actionLink, $detailsTab, $midmenuItem1) {        
 	$("#dialog_confirmation_enable_ha")	
 	.dialog('option', 'buttons', { 						
 		"Confirm": function() { 
@@ -1334,8 +1418,7 @@ function doEnableHA($actionLink, $detailsTab, $midmenuItem1) {
 	}).dialog("open");
 }
 
-function doDisableHA($actionLink, $detailsTab, $midmenuItem1) {  
-//function doDisableHA($actionLink, selectedItemsInMidMenu) {       
+function doDisableHA($actionLink, $detailsTab, $midmenuItem1) {      
     $("#dialog_confirmation_disable_ha")	
 	.dialog('option', 'buttons', { 						
 		"Confirm": function() { 
