@@ -265,7 +265,7 @@ long milliseconds = new Date().getTime();
                                     Destroy VM</div>
                             </div>
                         </div>
-                        <div class="actionpanel_button_wrapper" id="help_link" style="display: block; float: right;
+                        <div class="actionpanel_button_wrapper" id="help_link" style="display: block; border:none; float: right;
                         position: relative;">
                             <div class="actionpanel_button" id="help_button">
                                 <div class="actionpanel_button_icons">
@@ -274,15 +274,7 @@ long milliseconds = new Date().getTime();
                                     <%=t.t("help")%></div>
                             </div>
                         </div>
-                        <div class="actionpanel_button_wrapper" style="display: block; float: right;
-                            background: none; position: relative;">
-                            <div class="actionpanel_button" id="help_button">
-                                <div class="actionpanel_button_icons">
-                                    <img src="images/test_provisioning.png" alt="Test" /></div>
-                                <div class="actionpanel_button_links">
-                                   Launch Test Provisioning Tool </div>
-                            </div>
-                        </div>
+                        
 						<div class="help_dropdown_box" id="help_dropdown_dialog" style="display:none;">
                             	<div class="help_dropdown_box_titlebox">
                                 	<h2>Help</h2>
