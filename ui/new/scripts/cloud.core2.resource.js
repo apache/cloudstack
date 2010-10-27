@@ -639,7 +639,7 @@ function hostToMidmenu(jsonObj, $midmenuItem1) {
 }
 
 function hostToRightPanel($midmenuItem1) { 
-    copyAfterActionInfoToRightPanel($midmenuItem1);
+    copyActionInfoFromMidMenuToRightPanel($midmenuItem1);
     hostJsonToDetailsTab($midmenuItem1);       
     showPage($("#host_page"), $midmenuItem1);
 }
@@ -775,7 +775,7 @@ function primarystorageToMidmenu(jsonObj, $midmenuItem1) {
 }
 
 function primarystorageToRightPanel($midmenuItem1) {  
-    copyAfterActionInfoToRightPanel($midmenuItem1);
+    copyActionInfoFromMidMenuToRightPanel($midmenuItem1);
     primarystorageJsonToDetailsTab($midmenuItem1);      
     showPage($("#primarystorage_page"), $midmenuItem1);
 }

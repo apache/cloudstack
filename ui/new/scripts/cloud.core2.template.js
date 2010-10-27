@@ -226,7 +226,7 @@ function templateToMidmenu(jsonObj, $midmenuItem1) {
 }
 
 function templateToRightPanel($midmenuItem1) {  
-    copyAfterActionInfoToRightPanel($midmenuItem1); 
+    copyActionInfoFromMidMenuToRightPanel($midmenuItem1); 
     templateJsonToDetailsTab($midmenuItem1);   
 }
 

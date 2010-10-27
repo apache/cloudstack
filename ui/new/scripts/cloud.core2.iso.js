@@ -170,7 +170,7 @@ function isoToMidmenu(jsonObj, $midmenuItem1) {
 }
 
 function isoToRightPanel($midmenuItem1) {  
-    copyAfterActionInfoToRightPanel($midmenuItem1); 
+    copyActionInfoFromMidMenuToRightPanel($midmenuItem1); 
     isoJsonToDetailsTab($midmenuItem1);   
 }
 

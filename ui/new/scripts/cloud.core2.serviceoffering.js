@@ -158,7 +158,7 @@ function serviceOfferingToMidmenu(jsonObj, $midmenuItem1) {
 }
 
 function serviceOfferingToRightPanel($midmenuItem1) {
-    copyAfterActionInfoToRightPanel($midmenuItem1);
+    copyActionInfoFromMidMenuToRightPanel($midmenuItem1);
     serviceOfferingJsonToDetailsTab($midmenuItem1);   
 }
 

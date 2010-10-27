@@ -37,7 +37,7 @@ function eventToMidmenu(jsonObj, $midmenuItem1) {
 }
 
 function eventToRightPanel($midmenuItem1) {  
-    copyAfterActionInfoToRightPanel($midmenuItem1);
+    copyActionInfoFromMidMenuToRightPanel($midmenuItem1);
     eventJsonToDetailsTab($midmenuItem1);   
 }
 

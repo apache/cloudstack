@@ -1457,7 +1457,7 @@ function vmToRightPanel($midmenuItem1) {
     var vmName = getVmName(jsonObj.name, jsonObj.displayname);        
     $("right_panel_header").find("#vm_name").text(vmName);	
      
-    copyAfterActionInfoToRightPanel($midmenuItem1); 
+    copyActionInfoFromMidMenuToRightPanel($midmenuItem1); 
              
     vmJsonToDetailsTab($midmenuItem1);   
     vmJsonToVolumeTab(jsonObj);

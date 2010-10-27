@@ -212,7 +212,7 @@ function isIpManageable(domainid, account) {
 function ipToRightPanel($midmenuItem1) {       
     var ipObj = $midmenuItem1.data("jsonObj");
     
-    copyAfterActionInfoToRightPanel($midmenuItem1);
+    copyActionInfoFromMidMenuToRightPanel($midmenuItem1);
     
     //Details tab
     ipJsonToDetailsTab($midmenuItem1);       

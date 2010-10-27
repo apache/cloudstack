@@ -43,7 +43,7 @@ function accountToMidmenu(jsonObj, $midmenuItem1) {
 }
 
 function accountToRightPanel($midmenuItem1) { 
-    copyAfterActionInfoToRightPanel($midmenuItem1);  
+    copyActionInfoFromMidMenuToRightPanel($midmenuItem1);  
     accountJsonToDetailsTab($midmenuItem1);   
 }
 

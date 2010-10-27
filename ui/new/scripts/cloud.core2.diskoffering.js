@@ -141,7 +141,7 @@ function diskOfferingToMidmenu(jsonObj, $midmenuItem1) {
 }
 
 function diskOfferingToRightPanel($midmenuItem1) {
-    copyAfterActionInfoToRightPanel($midmenuItem1);
+    copyActionInfoFromMidMenuToRightPanel($midmenuItem1);
     diskOfferingJsonToDetailsTab($midmenuItem1);   
 }
 

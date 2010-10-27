@@ -401,7 +401,7 @@ function volumeToMidmenu(jsonObj, $midmenuItem1) {
 }
 
 function volumeToRightPanel($midmenuItem1) {  
-    copyAfterActionInfoToRightPanel($midmenuItem1); 
+    copyActionInfoFromMidMenuToRightPanel($midmenuItem1); 
     volumeJsonToDetailsTab($midmenuItem1);  
     
     var jsonObj = $midmenuItem1.data("jsonObj");  
