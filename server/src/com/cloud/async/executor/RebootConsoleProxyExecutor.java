@@ -39,7 +39,7 @@ public class RebootConsoleProxyExecutor extends VMOperationExecutor {
     	AsyncJobVO job = getJob();
 		ManagementServer managementServer = asyncMgr.getExecutorContext().getManagementServer();
     	VMOperationParam param = gson.fromJson(job.getCmdInfo(), VMOperationParam.class);
-    	
+    	/*
 		if(getSyncSource() == null) {
 	    	asyncMgr.syncAsyncJobExecution(job, "ConsoleProxy", param.getVmId());
 			return true;
@@ -59,6 +59,8 @@ public class RebootConsoleProxyExecutor extends VMOperationExecutor {
 			}
 	    	return true;
 		}
+		*/
+    	return true;
 	}
 	
 	public void processAnswer(VMOperationListener listener, long agentId, long seq, Answer answer) {

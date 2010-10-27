@@ -26,7 +26,6 @@ import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.cert.Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -146,10 +145,8 @@ import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.async.BaseAsyncJobExecutor;
 import com.cloud.async.dao.AsyncJobDao;
-import com.cloud.async.executor.ExtractJobResultObject;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
-import com.cloud.certificate.CertificateVO;
 import com.cloud.certificate.dao.CertificateDao;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
@@ -228,7 +225,6 @@ import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.storage.Snapshot;
-import com.cloud.storage.Upload;
 import com.cloud.storage.Snapshot.SnapshotType;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotVO;
@@ -238,6 +234,7 @@ import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
+import com.cloud.storage.Upload;
 import com.cloud.storage.Upload.Mode;
 import com.cloud.storage.Upload.Type;
 import com.cloud.storage.UploadVO;
@@ -298,6 +295,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.net.MacAddress;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.ConsoleProxy;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.InstanceGroupVMMapVO;
@@ -308,7 +306,6 @@ import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.InstanceGroupDao;
@@ -4707,8 +4704,9 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public boolean rebootConsoleProxy(long instanceId, long startEventId) {
-        return _consoleProxyMgr.rebootProxy(instanceId, startEventId);
+    public ConsoleProxyVO rebootConsoleProxy(long instanceId, long startEventId) {
+        _consoleProxyMgr.rebootProxy(instanceId, startEventId);
+        return _consoleProxyDao.findById(instanceId);
     }
 
     @Override
@@ -6281,8 +6279,9 @@ public class ManagementServerImpl implements ManagementServer {
         return _secStorageVmMgr.stopSecStorageVm(instanceId, startEventId);
     }
 
-    public boolean rebootSecondaryStorageVm(long instanceId, long startEventId) {
-        return _secStorageVmMgr.rebootSecStorageVm(instanceId, startEventId);
+    public SecondaryStorageVmVO rebootSecondaryStorageVm(long instanceId, long startEventId) {
+        _secStorageVmMgr.rebootSecStorageVm(instanceId, startEventId);
+        return _secStorageVmDao.findById(instanceId);
     }
 
     public boolean destroySecondaryStorageVm(long instanceId, long startEventId) {
@@ -6416,7 +6415,7 @@ public class ManagementServerImpl implements ManagementServer {
 	}
 
 	@Override
-	public boolean rebootSystemVM(RebootSystemVmCmd cmd)  {
+	public VMInstanceVO rebootSystemVM(RebootSystemVmCmd cmd)  {
 		VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(cmd.getId(), VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
 	
 		if (systemVm == null) {
