@@ -123,7 +123,7 @@ function initStartVMButton() {
 			                    
                 for(var id in selectedItemsInMidMenu) {	
                     var apiCommand = "command=startVirtualMachine&id="+id;                                                
-                    doActionForMidMenu(id, apiInfo, apiCommand); 	
+                    doActionToMidMenu(id, apiInfo, apiCommand); 	
                 }  
                 
                 selectedItemsInMidMenu = {}; //clear selected items for action	                      					    
@@ -182,7 +182,7 @@ function initStopVMButton() {
 			                    
                 for(var id in selectedItemsInMidMenu) {	
                     var apiCommand = "command=stopVirtualMachine&id="+id;                                    
-                    doActionForMidMenu(id, apiInfo, apiCommand); 	
+                    doActionToMidMenu(id, apiInfo, apiCommand); 	
                 }  
                 
                 selectedItemsInMidMenu = {}; //clear selected items for action	                      					    
@@ -241,7 +241,7 @@ function initRebootVMButton() {
 			                    
                 for(var id in selectedItemsInMidMenu) {	
                     var apiCommand = "command=rebootVirtualMachine&id="+id;                                               
-                    doActionForMidMenu(id, apiInfo, apiCommand); 	
+                    doActionToMidMenu(id, apiInfo, apiCommand); 	
                 }  
                 
                 selectedItemsInMidMenu = {}; //clear selected items for action	                      					    
@@ -300,7 +300,7 @@ function initDestroyVMButton() {
 			                    
                 for(var id in selectedItemsInMidMenu) {	
                     var apiCommand = "command=destroyVirtualMachine&id="+id;                                       
-                    doActionForMidMenu(id, apiInfo, apiCommand); 	
+                    doActionToMidMenu(id, apiInfo, apiCommand); 	
                 }  
                 
                 selectedItemsInMidMenu = {}; //clear selected items for action	                      					    

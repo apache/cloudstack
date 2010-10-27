@@ -55,6 +55,10 @@ function doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detai
     var $spinningWheel = $detailsTab.find("#spinning_wheel");
     $spinningWheel.find("#description").text(inProcessText);  
     $spinningWheel.show();  
+        
+    $midmenuItem1.find("#content").removeClass("selected").addClass("inaction");                          
+    $midmenuItem1.find("#spinning_wheel").addClass("midmenu_addingloader").show();	
+    $midmenuItem1.find("#info_icon").hide();		
     
     var $afterActionInfoContainer = $("#right_panel_content #after_action_info_container_on_top");   
     $afterActionInfoContainer.removeClass("errorbox").hide();       
@@ -80,21 +84,17 @@ function doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detai
 			                        return; //Job has not completed
 		                        } else {											                    
 			                        $("body").stopTime(timerKey);				                        
-			                        $spinningWheel.hide();   			                                             
+			                        $spinningWheel.hide(); 
+			                        			                          			                                             
 			                        if (result.jobstatus == 1) { // Succeeded 	
+			                            handleMidMenuItemAfterDetailsTabAction($midmenuItem1, true, (label + " action succeeded."));	
 			                            $afterActionInfoContainer.find("#after_action_info").text(label + " action succeeded.");
                                         $afterActionInfoContainer.removeClass("errorbox").show();  
-                                        
-                                        $midmenuItem1.data("afterActionInfo", (label + " action succeeded.")); 	
-                                        $midmenuItem1.find("#info_icon").removeClass("error").show();                                        
-                                                                               
                                         afterActionSeccessFn(json, $midmenuItem1, id);     
-			                        } else if (result.jobstatus == 2) { // Failed		
+			                        } else if (result.jobstatus == 2) { // Failed	
+			                            handleMidMenuItemAfterDetailsTabAction($midmenuItem1, false, (label + " action failed. Reason: " + fromdb(result.jobresult)));		
 			                            $afterActionInfoContainer.find("#after_action_info").text(label + " action failed. Reason: " + fromdb(result.jobresult));
-                                        $afterActionInfoContainer.addClass("errorbox").show();                                        
-                                        
-                                        $midmenuItem1.data("afterActionInfo", (label + " action failed. Reason: " + fromdb(result.jobresult))); 
-                                        $midmenuItem1.find("#info_icon").addClass("error").show();                                        
+                                        $afterActionInfoContainer.addClass("errorbox").show();     
 			                        }											                    
 		                        }
 	                        },
@@ -121,13 +121,12 @@ function doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detai
 	        dataType: "json",
 	        async: false,
 	        success: function(json) {	 	                  
-	            $spinningWheel.hide(); 	        
+	            $spinningWheel.hide(); 	      
+	            handleMidMenuItemAfterDetailsTabAction($midmenuItem1, false, (label + " action succeeded."));	
+	            	              
 	            $afterActionInfoContainer.find("#after_action_info").text(label + " action succeeded.");
-                $afterActionInfoContainer.removeClass("errorbox").show(); 
-                
-                $midmenuItem1.data("afterActionInfo", (label + " action succeeded.")); 	
-                $midmenuItem1.find("#info_icon").removeClass("error").show();     
-                 				
+                $afterActionInfoContainer.removeClass("errorbox").show();              	
+                                 				
 				afterActionSeccessFn(json, $midmenuItem1, id);				
 	        },
             error: function(XMLHttpResponse) {	                
@@ -138,10 +137,7 @@ function doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detai
     //Sync job (end) *****
 }
 
-function handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label, $afterActionInfoContainer, $midmenuItem1) { 
-    //details tab
-    $detailsTab.find("#spinning_wheel").hide();      
-		                        
+function handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label, $afterActionInfoContainer, $midmenuItem1) {     
     var errorMsg = "";
     if(XMLHttpResponse.responseText != null & XMLHttpResponse.responseText.length > 0) {
         var start = XMLHttpResponse.responseText.indexOf("h1") + 3;
@@ -158,10 +154,23 @@ function handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label, $afterActi
     $afterActionInfoContainer.find("#after_action_info").text(afterActionInfo);         
     $afterActionInfoContainer.addClass("errorbox").show();
     
-    //middle menu
-    $midmenuItem1.data("afterActionInfo", afterActionInfo); 	
-    $midmenuItem1.find("#info_icon").addClass("error").show();		
-}    	                
+    $detailsTab.find("#spinning_wheel").hide();  
+    handleMidMenuItemAfterDetailsTabAction($midmenuItem1, false, afterActionInfo);	 	
+}  
+
+function handleMidMenuItemAfterDetailsTabAction($midmenuItem1, isSuccessful, afterActionInfo) {
+    $midmenuItem1.find("#content").removeClass("inaction");
+	$midmenuItem1.find("#spinning_wheel").hide();	
+	
+	$midmenuItem1.data("afterActionInfo", afterActionInfo); 
+	
+	var $infoIcon = $midmenuItem1.find("#info_icon").show();
+	if(isSuccessful)
+	    $infoIcon.removeClass("error");	    
+	else
+	    $infoIcon.addClass("error");	    
+}
+  	                
 //***** actions for details tab in right panel (end) **************************************************************************
 
 //***** actions for a subgrid item in right panel (begin) ************************************************************************
@@ -327,7 +336,7 @@ function buildActionLinkForMidMenu(label, actionMap, $actionMenu) {
         if(dialogBeforeActionFn == null) {		                   
             for(var id in selectedItemsInMidMenu) {	
                 var apiCommand = "command="+$actionLink.data("api")+"&id="+id;                      
-                doActionForMidMenu(id, apiInfo, apiCommand); 	
+                doActionToMidMenu(id, apiInfo, apiCommand); 	
             }
         }
         else {
@@ -339,7 +348,7 @@ function buildActionLinkForMidMenu(label, actionMap, $actionMenu) {
     });  
 } 
 
-function doActionForMidMenu(id, apiInfo, apiCommand) {   
+function doActionToMidMenu(id, apiInfo, apiCommand) {   
     var label = apiInfo.label;			           
     var isAsyncJob = apiInfo.isAsyncJob;
     var inProcessText = apiInfo.inProcessText;   
@@ -473,7 +482,7 @@ function handleAsyncJobFailInMidMenu(errorMsg, $midmenuItem1) {
 
 /*
 If Cancel button in dialog is clicked, action won't preceed. 
-i.e. doActionForMidMenu() won't get called => highlight won't be removd from middle menu. 
+i.e. doActionToMidMenu() won't get called => highlight won't be removd from middle menu. 
 So, we need to remove highlight here. Otherwise, it won't be consistent of selectedItemsInMidMenu which will be emptied soon.
 */
 function removeHighlightInMiddleMenu(selectedItemsInMidMenu) {
@@ -486,10 +495,10 @@ function removeHighlightInMiddleMenu(selectedItemsInMidMenu) {
 function copyAfterActionInfoToRightPanel($midmenuItem1) {     
     var $afterActionInfoContainer = $("#right_panel_content #after_action_info_container_on_top");       
     if($midmenuItem1.find("#info_icon").css("display") != "none") {                
-        $afterActionInfoContainer.find("#after_action_info").text($midmenuItem1.data("afterActionInfo"));
+        $afterActionInfoContainer.find("#after_action_info").text($midmenuItem1.data("afterActionInfo"));     
         if($midmenuItem1.find("#info_icon").hasClass("error"))
             $afterActionInfoContainer.addClass("errorbox");
-         else
+        else
             $afterActionInfoContainer.removeClass("errorbox");                                        
         $afterActionInfoContainer.show(); 
         
