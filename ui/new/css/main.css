@@ -2169,7 +2169,7 @@ a:hover.search_button {
 	width:auto;
 	height:auto;
 	float:left;
-	color:#FFF;
+	color:#2b4454;
 	text-align:left;
 	font-weight:bold;
 	font-size:11px;
@@ -2201,14 +2201,14 @@ a:hover.search_button {
 }
 
 .midmenu_content.selected {
-	background:#626262 url(../images/leftmenu_selected.gif) repeat-x top left;
+	background:#838383 url(../images/leftmenu_selected.gif) repeat-x top left;
 	color:#FFF;
 
 }
 
 .midmenu_content.inaction{
-	background:#7497ae url(../images/mid_addingbg.gif) repeat-x top left;
-	color:#FFF;
+	background:#fffacd url(../images/mid_addingbg.gif) repeat-x top left;
+	color:#333;
 }
 /*
 .midmenu_content:hover{
@@ -2757,7 +2757,7 @@ a:hover.search_button {
 	width:16px;
 	height:16px;
 	float:left;
-	background:url(../images/adding_loader.gif) no-repeat top left;
+	background:url(../images/leftmenu_loader.gif) no-repeat top left;
 	margin:5px 0 0 0;
 	display:inline;
 	padding:0;
