@@ -246,6 +246,11 @@ public class DomainRouterVO extends VMInstanceVO implements DomainRouter {
     }
     
     @Override
+    public void setRamSize(int ramSize) {
+        this.ramSize = ramSize;
+    }
+    
+    @Override
     public String getGateway() {
         return gateway;
     }

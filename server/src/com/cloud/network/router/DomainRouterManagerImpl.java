@@ -691,10 +691,9 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
                     "curruent local storage status: " + currentServiceOffering.getUseLocalStorage());
         }
 
-    	 router = _routerDao.acquire(routerId);
-    	 
-    	 router.setServiceOfferingId(serviceOfferingId);
-    	 return _routerDao.update(routerId, router);
+        router.setServiceOfferingId(serviceOfferingId);
+        return _routerDao.update(routerId, router);
+        
     }
 
     private String rot13(final String password) {
@@ -926,6 +925,9 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
 	                router.setPrivateNetmask(privateNetMask);
 	                router.setGuestMacAddress(routerMacAddress);
 	                router.setVnet(vnet);
+	                /*Ram size can be changed by upgradeRouterCmd*/
+	                router.setRamSize(offering.getRamSize());
+	                
 	                final String name = VirtualMachineName.attachVnet(router.getName(), vnet);
 	                router.setInstanceName(name);
 	                long accountId = router.getAccountId();
