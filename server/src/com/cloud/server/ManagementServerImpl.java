@@ -26,7 +26,6 @@ import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.cert.Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -146,10 +145,8 @@ import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.async.BaseAsyncJobExecutor;
 import com.cloud.async.dao.AsyncJobDao;
-import com.cloud.async.executor.ExtractJobResultObject;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
-import com.cloud.certificate.CertificateVO;
 import com.cloud.certificate.dao.CertificateDao;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
@@ -228,7 +225,6 @@ import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.storage.Snapshot;
-import com.cloud.storage.Upload;
 import com.cloud.storage.Snapshot.SnapshotType;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotVO;
@@ -238,6 +234,7 @@ import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
+import com.cloud.storage.Upload;
 import com.cloud.storage.Upload.Mode;
 import com.cloud.storage.Upload.Type;
 import com.cloud.storage.UploadVO;
@@ -308,7 +305,6 @@ import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.InstanceGroupDao;
@@ -2781,6 +2777,7 @@ public class ManagementServerImpl implements ManagementServer {
         if (name != null) {
             sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + name + "%");
         }
+        sc.addAnd("systemUse", SearchCriteria.Op.EQ, false);
 
         return _offeringsDao.search(sc, searchFilter);
     }
@@ -4702,13 +4699,15 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public boolean stopConsoleProxy(long instanceId, long startEventId) {
-        return _consoleProxyMgr.stopProxy(instanceId, startEventId);
+    public ConsoleProxyVO stopConsoleProxy(long instanceId, long startEventId) {
+        _consoleProxyMgr.stopProxy(instanceId, startEventId);
+        return _consoleProxyDao.findById(instanceId);
     }
 
     @Override
-    public boolean rebootConsoleProxy(long instanceId, long startEventId) {
-        return _consoleProxyMgr.rebootProxy(instanceId, startEventId);
+    public ConsoleProxyVO rebootConsoleProxy(long instanceId, long startEventId) {
+        _consoleProxyMgr.rebootProxy(instanceId, startEventId);
+        return _consoleProxyDao.findById(instanceId);
     }
 
     @Override
@@ -5193,7 +5192,7 @@ public class ManagementServerImpl implements ManagementServer {
         if (accountId != null) {
             sc.setParameters("accountId", accountId);
         } else if (domainId != null) {
-            DomainVO domain = _domainDao.findById((Long)domainId);
+            DomainVO domain = _domainDao.findById(domainId);
             SearchCriteria<?> joinSearch = sc.getJoin("accountSearch");
             joinSearch.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
         }
@@ -6277,12 +6276,14 @@ public class ManagementServerImpl implements ManagementServer {
         return _secStorageVmMgr.startSecStorageVm(instanceId, startEventId);
     }
 
-    public boolean stopSecondaryStorageVm(long instanceId, long startEventId) {
-        return _secStorageVmMgr.stopSecStorageVm(instanceId, startEventId);
+    public SecondaryStorageVmVO stopSecondaryStorageVm(long instanceId, long startEventId) {
+        _secStorageVmMgr.stopSecStorageVm(instanceId, startEventId);
+        return _secStorageVmDao.findById(instanceId);
     }
 
-    public boolean rebootSecondaryStorageVm(long instanceId, long startEventId) {
-        return _secStorageVmMgr.rebootSecStorageVm(instanceId, startEventId);
+    public SecondaryStorageVmVO rebootSecondaryStorageVm(long instanceId, long startEventId) {
+        _secStorageVmMgr.rebootSecStorageVm(instanceId, startEventId);
+        return _secStorageVmDao.findById(instanceId);
     }
 
     public boolean destroySecondaryStorageVm(long instanceId, long startEventId) {
@@ -6406,17 +6407,15 @@ public class ManagementServerImpl implements ManagementServer {
         // FIXME: We need to return the system VM from this method, so what do we do with the boolean response from stopConsoleProxy and stopSecondaryStorageVm?
 		if (systemVm.getType().equals(VirtualMachine.Type.ConsoleProxy)){
 			long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_STOP, "stopping console proxy with Id: "+id);
-			stopConsoleProxy(id, eventId);
+			return stopConsoleProxy(id, eventId);
 		} else {
 			long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_SSVM_STOP, "stopping secondary storage Vm Id: "+id);
-			stopSecondaryStorageVm(id, eventId);
+			return stopSecondaryStorageVm(id, eventId);
 		}
-
-		return systemVm;
 	}
 
 	@Override
-	public boolean rebootSystemVM(RebootSystemVmCmd cmd)  {
+	public VMInstanceVO rebootSystemVM(RebootSystemVmCmd cmd)  {
 		VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(cmd.getId(), VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
 	
 		if (systemVm == null) {

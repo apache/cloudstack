@@ -182,6 +182,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	saveConfigurationEvent(userId, null, EventTypes.EVENT_CONFIGURATION_VALUE_EDIT, "Successfully edited configuration value.", "name=" + name, "value=" + value);
     }
     
+    @Override
     public boolean updateConfiguration(UpdateCfgCmd cmd) throws InvalidParameterValueException, InternalErrorException{
     	Long userId = UserContext.current().getUserId();
     	String name = cmd.getCfgName();
@@ -1076,7 +1077,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	int multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));
     	NetworkOffering.GuestIpType guestIpType = useVirtualNetwork ? NetworkOffering.GuestIpType.Virtualized : NetworkOffering.GuestIpType.DirectSingle;        
     	tags = cleanupTags(tags);
-    	ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, networkRate, multicastRate, offerHA, displayText, guestIpType, localStorageRequired, false, tags);
+    	ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, networkRate, multicastRate, offerHA, displayText, guestIpType, localStorageRequired, false, tags, false);
     	
     	if ((offering = _serviceOfferingDao.persist(offering)) != null) {
     		saveConfigurationEvent(userId, null, EventTypes.EVENT_SERVICE_OFFERING_CREATE, "Successfully created new service offering with name: " + name + ".", "soId=" + offering.getId(), "name=" + name, "numCPUs=" + cpu, "ram=" + ramSize, "cpuSpeed=" + speed,
@@ -1087,6 +1088,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	}
     }
 
+    @Override
     public ServiceOfferingVO updateServiceOffering(UpdateServiceOfferingCmd cmd) {
     	String displayText = cmd.getDisplayText();
     	Long id = cmd.getId();
@@ -1177,6 +1179,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
         return createDiskOffering(domainId, name, description, numGibibytes, tags);
     }
 
+    @Override
     public DiskOfferingVO updateDiskOffering(UpdateDiskOfferingCmd cmd) throws InvalidParameterValueException{
     	Long diskOfferingId = cmd.getId();
     	String name = cmd.getName();
@@ -1222,6 +1225,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	}
     }
 
+    @Override
     public boolean deleteDiskOffering(DeleteDiskOfferingCmd cmd) throws InvalidParameterValueException{
     	Long diskOfferingId = cmd.getId();
     	
@@ -1238,6 +1242,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	}
     }
 
+    @Override
     public boolean deleteServiceOffering(DeleteServiceOfferingCmd cmd) throws InvalidParameterValueException{
     	
         Long offeringId = cmd.getId();
@@ -1264,6 +1269,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	}
     }
 
+    @Override
     public String changePrivateIPRange(boolean add, long podId, String startIP, String endIP) throws InvalidParameterValueException {
     	checkPrivateIpRangeErrors(podId, startIP, endIP);
     	

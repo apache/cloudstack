@@ -484,7 +484,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
 
 
 
-    protected AgentAttache handleDirectConnect(ServerResource resource, StartupCommand[] startup, Map<String, String> details, boolean old) {
+    protected AgentAttache handleDirectConnect(ServerResource resource, StartupCommand[] startup, Map<String, String> details, boolean old) throws ConnectionException {
         if (startup == null) {
             return null;
         }
@@ -1043,7 +1043,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         return true;
     }
 
-    protected  AgentAttache notifyMonitorsOfConnection(AgentAttache attache, final StartupCommand[] cmd) {
+    protected  AgentAttache notifyMonitorsOfConnection(AgentAttache attache, final StartupCommand[] cmd) throws ConnectionException {
         long hostId = attache.getId();
         HostVO host = _hostDao.findById(hostId);
         for (Pair<Integer, Listener> monitor : _hostMonitors) {
@@ -1057,11 +1057,12 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
                     if (e.isSetupError()) {
                         s_logger.warn("Monitor " + monitor.second().getClass().getSimpleName() + " says there is an error in the connect process for " + hostId + " due to " + e.getMessage());
                         handleDisconnect(attache, Event.AgentDisconnected, false);
+                        throw e;
                     } else {
                         s_logger.info("Monitor " + monitor.second().getClass().getSimpleName() + " says not to continue the connect process for " + hostId + " due to " + e.getMessage());
                         handleDisconnect(attache, Event.ShutdownRequested, false);
+                        return attache;
                     }
-                    return null;
                 } 
             }
         }
@@ -1181,12 +1182,11 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         }
         try {
             attache = handleDirectConnect(resource, cmds, details, old);
-        }catch (IllegalArgumentException ex)
+        } catch (IllegalArgumentException ex)
         {
         	s_logger.warn("Unable to connect due to ", ex);
         	throw ex;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             s_logger.warn("Unable to connect due to ", e);
         }
 
@@ -1788,7 +1788,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         return result;
     }
 
-    public AgentAttache handleConnect(final Link link, final StartupCommand[] startup) throws IllegalArgumentException {
+    public AgentAttache handleConnect(final Link link, final StartupCommand[] startup) throws IllegalArgumentException, ConnectionException {
         HostVO server = createHost(startup, null, null, false);
         if ( server == null ) {
             return null;
@@ -2164,6 +2164,12 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
                         startups[i] = (StartupCommand) cmds[i];
                     attache = handleConnect(link, startups);
                 } catch (final IllegalArgumentException e) {
+                    _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, 0, new Long(0), "Agent from " + startup.getPrivateIpAddress()
+                            + " is unable to connect due to " + e.getMessage(), "Agent from " + startup.getPrivateIpAddress() + " is unable to connect with "
+                            + request.toString() + " because of " + e.getMessage());
+                    s_logger.warn("Unable to create attache for agent: " + request.toString(), e);
+                    response = new Response(request, new StartupAnswer((StartupCommand) cmd, e.getMessage()), _nodeId, -1);
+                } catch (ConnectionException e) {
                     _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, 0, new Long(0), "Agent from " + startup.getPrivateIpAddress()
                             + " is unable to connect due to " + e.getMessage(), "Agent from " + startup.getPrivateIpAddress() + " is unable to connect with "
                             + request.toString() + " because of " + e.getMessage());

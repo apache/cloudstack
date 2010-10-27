@@ -53,7 +53,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             throw new PermissionDeniedException(account + " does not have permission to operate within " + domain);
         }
         
-        return false;
+        return true;
     }
 
     @Override

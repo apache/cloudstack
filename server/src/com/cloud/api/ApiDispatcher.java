@@ -231,6 +231,8 @@ public class ApiDispatcher {
                 throw new ServerApiException(BaseCmd.PARAM_ERROR, cause.getMessage());
             } else if (cause instanceof PermissionDeniedException) {
                 throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, cause.getMessage());
+            } else if (cause instanceof ServerApiException) {
+                throw (ServerApiException)cause;
             }
             s_logger.warn("Exception executing method " + methodName + " for command " + cmd.getClass().getSimpleName(), ite);
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to execute method " + methodName + " for command " + cmd.getClass().getSimpleName() + ", internal error in the implementation.");

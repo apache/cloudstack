@@ -693,7 +693,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
             ub.clear();
             return result;
         } catch (final SQLException e) {
-            if (e.getSQLState().equals("23000")) {
+            if (e.getSQLState().equals("23000") && e.getErrorCode() == 1062) {
                 throw new EntityExistsException("Entity already exists ", e);
             }
             final String sqlStr = pstmt.toString();
@@ -1129,7 +1129,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
             }
             txn.commit();
         } catch (final SQLException e) {
-            if (e.getSQLState().equals("23000")) {
+            if (e.getSQLState().equals("23000") && e.getErrorCode() == 1062) {
                 throw new EntityExistsException("Entity already exists: ", e);
             } else {
                 final String sqlStr = pstmt.toString();

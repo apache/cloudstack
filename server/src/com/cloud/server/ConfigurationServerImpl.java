@@ -89,7 +89,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         _domainDao = locator.getDao(DomainDao.class);
 	}
 
-	public void persistDefaultValues() throws InvalidParameterValueException, InternalErrorException {
+	@Override
+    public void persistDefaultValues() throws InvalidParameterValueException, InternalErrorException {
 		
 		// Create system user and admin user
 		saveUser();
@@ -653,7 +654,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         int multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));
         NetworkOffering.GuestIpType guestIpType = useVirtualNetwork ? NetworkOffering.GuestIpType.Virtualized : NetworkOffering.GuestIpType.DirectSingle;        
         tags = cleanupTags(tags);
-        ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, networkRate, multicastRate, offerHA, displayText, guestIpType, localStorageRequired, false, tags);
+        ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, networkRate, multicastRate, offerHA, displayText, guestIpType, localStorageRequired, false, tags, false);
         
         if ((offering = _serviceOfferingDao.persist(offering)) != null) {
             return offering;

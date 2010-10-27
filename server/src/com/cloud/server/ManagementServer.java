@@ -787,14 +787,14 @@ public interface ManagementServer {
 
 	ConsoleProxyInfo getConsoleProxy(long dataCenterId, long userVmId);
 	ConsoleProxyVO startConsoleProxy(long instanceId, long startEventId) throws InternalErrorException;
-	boolean stopConsoleProxy(long instanceId, long startEventId);
-	boolean rebootConsoleProxy(long instanceId, long startEventId);
+	ConsoleProxyVO stopConsoleProxy(long instanceId, long startEventId);
+	ConsoleProxyVO rebootConsoleProxy(long instanceId, long startEventId);
 	String getConsoleAccessUrlRoot(long vmId);
 	ConsoleProxyVO findConsoleProxyById(long instanceId);
 	VMInstanceVO findSystemVMById(long instanceId);
 	VMInstanceVO stopSystemVM(StopSystemVmCmd cmd);
 	VMInstanceVO startSystemVM(StartSystemVMCmd cmd) throws InternalErrorException;
-	boolean rebootSystemVM(RebootSystemVmCmd cmd);
+	VMInstanceVO rebootSystemVM(RebootSystemVmCmd cmd);
 
 	/**
 	 * Returns a configuration value with the specified name

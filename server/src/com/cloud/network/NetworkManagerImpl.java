@@ -1630,7 +1630,7 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
                 continue;
             }
             
-            if (config.getId() != null) {
+            if (config.getId() != -1) {
                 if (config instanceof NetworkConfigurationVO) {
                     configs.add((NetworkConfigurationVO)config);
                 } else {
@@ -2130,7 +2130,7 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
     	Long loadBalancerId = cmd.getId();
     	String privatePort = cmd.getPrivatePort();
     	String algorithm = cmd.getAlgorithm();
-    	String name = cmd.getName();
+    	String name = cmd.getLoadBalancerName();
     	String description = cmd.getDescription();
     	Account account = UserContext.current().getAccount();
     	
@@ -2148,7 +2148,7 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
             }
         }
         
-        Account lbOwner = _accountDao.findById(loadBalancer.getId());
+        Account lbOwner = _accountDao.findById(loadBalancer.getAccountId());
         if (lbOwner == null) {
             throw new InvalidParameterValueException("Unable to update load balancer rule, cannot find owning account");
         }

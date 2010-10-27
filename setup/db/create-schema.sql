@@ -104,6 +104,9 @@ CREATE TABLE `cloud`.`network_configurations` (
   `data_center_id` bigint unsigned NOT NULL COMMENT 'data center id that this configuration is used in',
   `guru_name` varchar(255) NOT NULL COMMENT 'who is responsible for this type of network configuration',
   `state` varchar(32) NOT NULL COMMENT 'what state is this configuration in',
+  `related` bigint unsigned NOT NULL COMMENT 'related to what other network configuration',
+  `domain_id` bigint unsigned NOT NULL COMMENT 'foreign key to domain id',
+  `account_id` bigint unsigned NOT NULL COMMENT 'owner of this network',
   `mac_address_seq` bigint unsigned DEFAULT 1 COMMENT 'mac address seq number',
   `dns` varchar(255) COMMENT 'comma separated DNS list',
   PRIMARY KEY (`id`)
@@ -113,6 +116,7 @@ CREATE TABLE `cloud`.`account_network_ref` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `account_id` bigint unsigned NOT NULL COMMENT 'account id',
   `network_configuration_id` bigint unsigned NOT NULL COMMENT 'network configuration id',
+  `is_owner` smallint(1) NOT NULL COMMENT 'is the owner of the network',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -859,7 +863,7 @@ CREATE TABLE `cloud`.`disk_offering` (
   `id` bigint unsigned NOT NULL auto_increment,
   `domain_id` bigint unsigned,
   `name` varchar(255) NOT NULL,
-  `display_text` varchar(4096) NULL COMMENT 'Description text set by the admin for display purpose only',
+  `display_text` varchar(4096) NULL COMMENT 'Descrianaption text set by the admin for display purpose only',
   `disk_size` bigint unsigned NOT NULL COMMENT 'disk space in mbs',
   `mirrored` tinyint(1) unsigned NOT NULL DEFAULT 1 COMMENT 'Enable mirroring?',
   `type` varchar(32) COMMENT 'inheritted by who?',
@@ -867,6 +871,7 @@ CREATE TABLE `cloud`.`disk_offering` (
   `recreatable` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'The root disk is always recreatable',
   `use_local_storage` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Indicates whether local storage pools should be used',
   `unique_name` varchar(32) UNIQUE COMMENT 'unique name',
+  `system_use` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'is this offering for system used only',
   `removed` datetime COMMENT 'date removed',
   `created` datetime COMMENT 'date the disk offering was created',
   PRIMARY KEY  (`id`)
