@@ -98,14 +98,21 @@ function buildZoneTree() {
 				}				
 				break;
 											    
-			case "pod_arrow" :					 	   
+			case "pod_arrow" :	
+			    var $podNode = target.parent().parent().parent().parent();
+			    var podObj = $podNode.data("jsonObj");
+			    var $podContent = $podNode.find("#pod_content");					 	   
 				if(target.hasClass("expanded_close")) {						
-					target.removeClass("expanded_close").addClass("expanded_open");					
-					target.parent().parent().siblings("#pod_content").show();	
+					target.removeClass("expanded_close").addClass("expanded_open");		
+					$podContent.show();				
+					target.parent().parent().siblings("#pod_content").show();
+					refreshClusterUnderPod($podNode); 
 				} 
 				else if(target.hasClass("expanded_open")) {					
-					target.removeClass("expanded_open").addClass("expanded_close");					
-					target.parent().parent().siblings("#pod_content").hide();									
+					target.removeClass("expanded_open").addClass("expanded_close");		
+					$podContent.hide();			
+					target.parent().parent().siblings("#pod_content").hide();		
+					$podContent.find("#clusters_container").empty();									
 				}
 				break;	
 				
