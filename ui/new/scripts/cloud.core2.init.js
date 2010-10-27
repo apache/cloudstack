@@ -59,7 +59,9 @@ $(document).ready(function() {
 		return false;
 	});
 	$("#leftmenu_system").bind("click", function(event) {
-		selectLeftMenu($(this), true);
+		selectLeftMenu($(this), true);	
+		if($("#leftmenu_resource").find("#resource_arrow").hasClass("expanded_open") == true)
+		    $("#leftmenu_resource").click(); //if resource menu is open (i.e. zonetree is shown), empty zonetree and close resource menu.
 		return false;
 	});
 	
