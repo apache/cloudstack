@@ -27,7 +27,7 @@
             <%=t.t("details")%></div>
     </div>
     <div id="tab_content_details">
-    	<div class="rightpanel_mainloader_panel" style="display:block;">
+    	<div class="rightpanel_mainloader_panel" style="display:none;">
               <div class="rightpanel_mainloaderbox">
                    <div class="rightpanel_mainloader_animatedicon"></div>
                    <p>Loading &hellip;</p>    
