@@ -84,4 +84,6 @@ public interface DomainRouter extends VirtualMachine {
      * @return the range of dhcp addresses served (start and end)
      */
     String[] getDhcpRange();
+
+	void setRamSize(int ramSize);
 }
