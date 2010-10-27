@@ -551,6 +551,10 @@ function setBooleanField(value, $field) {
 function clearMiddleMenu() {
     $("#midmenu_container").empty();
     $("#midmenu_action_link").hide();
+    clearAddButtonsOnTop();
+}
+
+function clearAddButtonsOnTop() {
     $("#midmenu_add_link").unbind("click").hide();    
     $("#midmenu_add2_link").unbind("click").hide();     
     $("#midmenu_add3_link").unbind("click").hide();          

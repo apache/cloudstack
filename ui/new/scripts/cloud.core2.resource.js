@@ -234,6 +234,7 @@ function clusterJSONToTreeNode(json, $clusterNode) {
 
 //$menuItem1 is either $leftmenuItem1 or $midmenuItem1
 function showPage($pageToShow, $menuItem1) {       
+    clearAddButtonsOnTop();       
     if($pageToShow.length == 0) { //resource.jsp is not loaded in right panel      
         $("#right_panel").load("jsp/resource.jsp", function(){  
 			showPage2($($pageToShow.selector), $menuItem1); //$pageToShow is still empty (i.e. $pageToShow.length == 0), So, select the element again.
@@ -264,8 +265,7 @@ function showPage2($pageToShow, $menuItem1) {
         $pageToShow.data("jsonObj", jsonObj);
     }   
     
-    if($pageToShow.attr("id") == "resource_page") {  
-        clearMiddleMenu();       
+    if($pageToShow.attr("id") == "resource_page") {          
         hideMiddleMenu();
         
         initAddZoneButton($("#midmenu_add_link")); 
@@ -314,8 +314,7 @@ function showPage2($pageToShow, $menuItem1) {
 	    	    
 		podJsonToRightPanel($menuItem1);     		
     }  
-    else if($pageToShow.attr("id") == "cluster_page") {
-        clearMiddleMenu(); 
+    else if($pageToShow.attr("id") == "cluster_page") {        
         showMiddleMenu();
         
         $("#midmenu_add_link").unbind("click").hide();              
@@ -325,6 +324,7 @@ function showPage2($pageToShow, $menuItem1) {
 		clusterJsonToRightPanel($menuItem1);
 		
 	    var clusterId = jsonObj.id;
+	    
 	    var $midmenuContainer = $("#midmenu_container").empty();	    
 	    var $header1 = $("#midmenu_itemheader_without_margin").clone();  //without margin on top
 	    $header1.find("#name").text("Host");
