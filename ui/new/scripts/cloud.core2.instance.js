@@ -52,19 +52,43 @@ function afterLoadInstanceJSP() {
     //Add VM button
     $("#midmenu_add_link").find("#label").text("Add VM"); 
     $("#midmenu_add_link").show(); 
-		        
-    //middle menu actions
-    /*        
-    $("#midmenu_action_link").show();
-    $("#action_menu #action_list").empty();		        
-    for(var label in vmActionMapForMidMenu) 				            
-        buildActionLinkForMidMenu(label, vmActionMapForMidMenu, $("#action_menu"));	
-    */
-    
+	
     if (isAdmin() || isDomainAdmin())
         $("#right_panel_content").find("#tab_router,#tab_router").show();
-     
-    //Start VM button 
+        
+    initStartVMButton();    
+    initStopVMButton(); 
+    initRebootVMButton();    
+    initDestroyVMButton();
+    
+    // switch between different tabs 
+    var tabArray = [$("#tab_details"), $("#tab_volume"), $("#tab_statistics"), $("#tab_router")];
+    var tabContentArray = [$("#tab_content_details"), $("#tab_content_volume"), $("#tab_content_statistics"), $("#tab_content_router")];
+    switchBetweenDifferentTabs(tabArray, tabContentArray);       
+    
+    //initialize VM Wizard    
+    initVMWizard();       
+    
+    // dialogs
+    initDialog("dialog_detach_iso_from_vm");       	
+   	initDialog("dialog_attach_iso");  
+    initDialog("dialog_change_name"); 
+    initDialog("dialog_change_group"); 
+    initDialog("dialog_change_service_offering", 600); 
+    initDialog("dialog_confirmation_change_root_password");
+    initDialog("dialog_confirmation_enable_ha");  
+    initDialog("dialog_confirmation_disable_ha");            
+    initDialog("dialog_create_template", 400);  
+    initDialog("dialog_confirmation_start_vm");
+    initDialog("dialog_confirmation_stop_vm");
+    initDialog("dialog_confirmation_reboot_vm");
+    initDialog("dialog_confirmation_destroy_vm");
+    initDialog("dialog_confirmation_restore_vm");
+    
+    vmPopulateDropdown();
+}
+
+function initStartVMButton() {
     $("#midmenu_startvm_link").show();   
     $("#midmenu_startvm_link").bind("click", function(event) {            
         var itemCounts = 0;
@@ -111,8 +135,9 @@ function afterLoadInstanceJSP() {
                                                  
         return false;        
     }); 	
+}
 
-    //Stop VM button 
+function initStopVMButton() {
     $("#midmenu_stopvm_link").show();   
     $("#midmenu_stopvm_link").bind("click", function(event) {            
         var itemCounts = 0;
@@ -168,8 +193,9 @@ function afterLoadInstanceJSP() {
          
         return false;        
     }); 	
+}
 
-    //Reboot VM button 
+function initRebootVMButton() {
     $("#midmenu_rebootvm_link").show();   
     $("#midmenu_rebootvm_link").bind("click", function(event) {            
         var itemCounts = 0;
@@ -225,8 +251,9 @@ function afterLoadInstanceJSP() {
                                           
         return false;        
     }); 
+}
 
-    //Destroy VM button 
+function initDestroyVMButton() {
     $("#midmenu_destroyvm_link").show();   
     $("#midmenu_destroyvm_link").bind("click", function(event) {            
         var itemCounts = 0;
@@ -237,63 +264,54 @@ function afterLoadInstanceJSP() {
             $("#dialog_info_please_select_one_item_in_middle_menu").dialog("open");		
             return false;
         }        
-                        	                   
-        for(var id in selectedItemsInMidMenu) {	
-            var apiCommand = "command=destroyVirtualMachine&id="+id;  
-            var apiInfo = {
-                label: "Destroy Instance",
-                isAsyncJob: true,
-                asyncJobResponse: "destroyvirtualmachineresponse",                 
-                afterActionSeccessFn: function(json, $midmenuItem1, id) {  
-                    //call listVirtualMachine to get embedded object until bug 6041 ("DestroyVirtualMachine API should return an embedded object on success") is fixed.
-                    var jsonObj;
-                    $.ajax({
-                        data: createURL("command=listVirtualMachines&id="+id),
-                        dataType: "json",
-                        async: false,
-                        success: function(json) {                    
-                            jsonObj = json.listvirtualmachinesresponse.virtualmachine[0];                    
-                        }
-                    });                      
-                    
-                    vmToMidmenu(jsonObj, $midmenuItem1);  
-                    if( ($("#right_panel_content #tab_content_details").length > 0)
-                      && ($("#right_panel_content #tab_content_details").data("jsonObj") != null )
-                      && (jsonObj.id == $("#right_panel_content #tab_content_details").data("jsonObj").id)) 
-                        vmToRightPanel($midmenuItem1);                                           
-                }
-            }                                     
-            doActionForMidMenu(id, apiInfo, apiCommand); 	
-        }   
-        
-        selectedItemsInMidMenu = {}; //clear selected items for action	                          
+                
+        $("#dialog_confirmation_destroy_vm")	
+	    .dialog('option', 'buttons', { 						
+		    "Confirm": function() { 
+			    $(this).dialog("close"); 			
+			    
+			    var apiInfo = {
+                    label: "Destroy Instance",
+                    isAsyncJob: true,
+                    asyncJobResponse: "destroyvirtualmachineresponse",                 
+                    afterActionSeccessFn: function(json, $midmenuItem1, id) {  
+                        //call listVirtualMachine to get embedded object until bug 6041 ("DestroyVirtualMachine API should return an embedded object on success") is fixed.
+                        var jsonObj;
+                        $.ajax({
+                            data: createURL("command=listVirtualMachines&id="+id),
+                            dataType: "json",
+                            async: false,
+                            success: function(json) {                    
+                                jsonObj = json.listvirtualmachinesresponse.virtualmachine[0];                    
+                            }
+                        });                      
+                        
+                        vmToMidmenu(jsonObj, $midmenuItem1);  
+                        if( ($("#right_panel_content #tab_content_details").length > 0)
+                          && ($("#right_panel_content #tab_content_details").data("jsonObj") != null )
+                          && (jsonObj.id == $("#right_panel_content #tab_content_details").data("jsonObj").id)) 
+                            vmToRightPanel($midmenuItem1);                                           
+                    }
+                }                            
+			                    
+                for(var id in selectedItemsInMidMenu) {	
+                    var apiCommand = "command=destroyVirtualMachine&id="+id;                                       
+                    doActionForMidMenu(id, apiInfo, apiCommand); 	
+                }  
+                
+                selectedItemsInMidMenu = {}; //clear selected items for action	                      					    
+		    }, 
+		    "Cancel": function() { 
+			    $(this).dialog("close"); 
+    			
+		    } 
+	    }).dialog("open");                 
+             
         return false;        
     }); 	
+}
 
-    // switch between different tabs 
-    var tabArray = [$("#tab_details"), $("#tab_volume"), $("#tab_statistics"), $("#tab_router")];
-    var tabContentArray = [$("#tab_content_details"), $("#tab_content_volume"), $("#tab_content_statistics"), $("#tab_content_router")];
-    switchBetweenDifferentTabs(tabArray, tabContentArray);       
-    
-    //initialize VM Wizard    
-    initVMWizard();       
-    
-    // dialogs
-    initDialog("dialog_detach_iso_from_vm");       	
-   	initDialog("dialog_attach_iso");  
-    initDialog("dialog_change_name"); 
-    initDialog("dialog_change_group"); 
-    initDialog("dialog_change_service_offering", 600); 
-    initDialog("dialog_confirmation_change_root_password");
-    initDialog("dialog_confirmation_enable_ha");  
-    initDialog("dialog_confirmation_disable_ha");            
-    initDialog("dialog_create_template", 400);  
-    initDialog("dialog_confirmation_start_vm");
-    initDialog("dialog_confirmation_stop_vm");
-    initDialog("dialog_confirmation_reboot_vm");
-    initDialog("dialog_confirmation_destroy_vm");
-    initDialog("dialog_confirmation_restore_vm");
-         
+function vmPopulateDropdown() {         
     $.ajax({
         data: createURL("command=listOsTypes&response=json"),
 	    dataType: "json",
