@@ -5881,9 +5881,12 @@ public class ManagementServerImpl implements ManagementServer {
     		//get a list of all Console proxies from the cp table
     		List<ConsoleProxyVO> cpList = _consoleProxyDao.listAll();
     		//get a list of all hosts in host table for type cp
-    		List<HostVO> cpHosts = _hostDao.listAllConsoleProxyHosts(com.cloud.host.Host.Type.ConsoleProxy);
+    		List<HostVO> cpHosts = _hostDao.listByType(com.cloud.host.Host.Type.ConsoleProxy);
     		//create a hashmap for fast lookup
     		Map<String,Long> hostNameToHostIdMap = new HashMap<String, Long>();
+    		//updated console proxies list
+    		List<ConsoleProxyVO> updatedCpList = new ArrayList<ConsoleProxyVO>();
+    		
     		for(HostVO cpHost : cpHosts){
     			hostNameToHostIdMap.put(cpHost.getName(), cpHost.getId());
     		}
@@ -5903,9 +5906,9 @@ public class ManagementServerImpl implements ManagementServer {
 							//when cp reboots, the context will be reinit with the new cert 
 						}
 				} catch (AgentUnavailableException e) {
-					s_logger.warn("Unable to send update certificate command to the console proxy resource", e);
+					s_logger.warn("Unable to send update certificate command to the console proxy resource as agent is unavailable", e);
 				} catch (OperationTimedoutException e) {
-					s_logger.warn("Unable to send update certificate command to the console proxy resource", e);
+					s_logger.warn("Unable to send update certificate command to the console proxy resource as there was a timeout", e);
 				}	
     		}
     		return true;

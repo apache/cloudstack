@@ -111,7 +111,7 @@ public interface HostDao extends GenericDao<HostVO, Long> {
 	 * @param type
 	 * @return
 	 */
-	List<HostVO> listByType(Type type, boolean routingCapable);
+	List<HostVO> listByType(Type type);
 
 	/**
 	 * Find hosts that have not responded to a ping regardless of state
@@ -138,8 +138,4 @@ public interface HostDao extends GenericDao<HostVO, Long> {
     void loadDetails(HostVO host);
 
 	HostVO findConsoleProxyHost(String name, Type type);
-
-	List<HostVO> listAllConsoleProxyHosts(Type type);
-
-
 }

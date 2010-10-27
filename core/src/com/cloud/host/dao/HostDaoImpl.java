@@ -80,7 +80,6 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected final SearchBuilder<HostVO> MaintenanceCountSearch;
     protected final SearchBuilder<HostVO> ClusterSearch;
     protected final SearchBuilder<HostVO> ConsoleProxyHostSearch;
-    protected final SearchBuilder<HostVO> ConsoleProxyHostsListSearch;
     
     protected final Attribute _statusAttr;
     protected final Attribute _msIdAttr;
@@ -161,10 +160,6 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         ConsoleProxyHostSearch.and("name", ConsoleProxyHostSearch.entity().getName(), SearchCriteria.Op.EQ);
         ConsoleProxyHostSearch.and("type", ConsoleProxyHostSearch.entity().getType(), SearchCriteria.Op.EQ);
         ConsoleProxyHostSearch.done();
-
-        ConsoleProxyHostsListSearch = createSearchBuilder();
-        ConsoleProxyHostsListSearch.and("type", ConsoleProxyHostsListSearch.entity().getType(), SearchCriteria.Op.EQ);
-        ConsoleProxyHostsListSearch.done();
         
         PodSearch = createSearchBuilder();
         PodSearch.and("pod", PodSearch.entity().getPodId(), SearchCriteria.Op.EQ);
@@ -466,13 +461,6 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         else
         	return hostList.get(0);
     }
-
-    @Override
-    public List<HostVO> listAllConsoleProxyHosts(Type type) {
-        SearchCriteria<HostVO> sc = ConsoleProxyHostSearch.create();
-        sc.setParameters("type", type);
-        return listBy(sc);
-    }
     
     public List<HostVO> listByHostPod(long podId) {
         SearchCriteria<HostVO> sc = PodSearch.create("pod", podId);
@@ -496,15 +484,10 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     }
 
     @Override
-    public List<HostVO> listByType(Type type, boolean routingCapable) {
+    public List<HostVO> listByType(Type type) {
         SearchCriteria<HostVO> sc = TypeSearch.create();
         sc.setParameters("type", type.toString());
-
-        if (routingCapable) {
-            sc.addAnd("routing_capbable", SearchCriteria.Op.EQ, Integer.valueOf(1));
-        }
-
-        return listIncludingRemovedBy(sc);
+        return listBy(sc);
     }
 
     protected void saveDetails(HostVO host) {
