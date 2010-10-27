@@ -48,14 +48,53 @@ function buildZoneTree() {
 		var name = template.data("name");
 		
 		switch (action) {
-			case "zone_arrow" :				  	   
+			case "zone_arrow" :		
+			    var $zoneNode = target.parent().parent().parent().parent();			   
+			    var zoneObj = $zoneNode.data("jsonObj");
+			    var $zoneContent = $zoneNode.find("#zone_content");				  	   
 				if(target.hasClass("expanded_close")) {						
-					target.removeClass("expanded_close").addClass("expanded_open");					
-					target.parent().parent().siblings("#zone_content").show();	
+					target.removeClass("expanded_close").addClass("expanded_open");							
+					$zoneContent.show();	
+									
+					$.ajax({
+                        data: createURL("command=listPods&zoneid="+zoneObj.id+maxPageSize),
+	                    dataType: "json",
+	                    async: false,
+	                    success: function(json) {
+		                    var items = json.listpodsresponse.pod;			    
+		                    var $container = $zoneContent.find("#pods_container");		                    
+		                    if (items != null && items.length > 0) {					    
+			                    for (var i = 0; i < items.length; i++) {
+				                    var $podNode = $("#leftmenu_pod_node_template").clone(true);
+				                    podJSONToTreeNode(items[i], $podNode);
+				                    $container.append($podNode.show());				                    
+			                    }			                    
+		                    }		    
+	                    }
+                    });
+                    
+                     $.ajax({
+                        data: createURL("command=listSystemVms&zoneid="+zoneObj.id+maxPageSize),
+	                    dataType: "json",
+	                    async: false,
+	                    success: function(json) {
+		                    var items = json.listsystemvmsresponse.systemvm;
+		                    var $container = $zoneContent.find("#systemvms_container").empty();		                    
+		                    if (items != null && items.length > 0) {					    
+			                    for (var i = 0; i < items.length; i++) {
+				                    var $systemvmNode = $("#leftmenu_systemvm_node_template").clone(true);
+				                    systemvmJSONToTreeNode(items[i], $systemvmNode);
+				                    $container.append($systemvmNode.show());
+			                    }
+		                    }
+	                    }
+                    });					
 				} 
 				else if(target.hasClass("expanded_open")) {					
 					target.removeClass("expanded_open").addClass("expanded_close");					
-					target.parent().parent().siblings("#zone_content").hide();									
+					$zoneContent.hide();
+					$zoneContent.find("#pods_container").empty();		
+					$zoneContent.find("#systemvms_container").empty();							
 				}				
 				break;
 											    
@@ -124,41 +163,37 @@ function zoneJSONToTreeNode(json, $zoneNode) {
     var zoneName = $zoneNode.find("#zone_name").text(fromdb(json.name));	    
     zoneName.data("jsonObj", json);	    
 	
-    $.ajax({
+	var zoneArrowExpandable = false;
+	$.ajax({
         data: createURL("command=listPods&zoneid="+zoneid+maxPageSize),
 	    dataType: "json",
 	    async: false,
 	    success: function(json) {
-		    var items = json.listpodsresponse.pod;			    
-		    var container = $zoneNode.find("#pods_container");
+		    var items = json.listpodsresponse.pod;	
 		    if (items != null && items.length > 0) {					    
-			    for (var i = 0; i < items.length; i++) {
-				    var $podNode = $("#leftmenu_pod_node_template").clone(true);
-				    podJSONToTreeNode(items[i], $podNode);
-				    container.append($podNode.show());
-				    forceLogout = false;  // We don't force a logout if pod(s) exit.
-			    }
-			    $zoneNode.find("#zone_arrow").removeClass("white_nonexpanded_close").addClass("expanded_close");
-		    }		    
+			    zoneArrowExpandable = true;  
+			    forceLogout = false;  // We don't force a logout if pod(s) exit.	
+			}	    		    
 	    }
     });
-    	    
-    $.ajax({
-        data: createURL("command=listSystemVms&zoneid="+zoneid+maxPageSize),
-	    dataType: "json",
-	    async: false,
-	    success: function(json) {
-		    var items = json.listsystemvmsresponse.systemvm;
-		    var container = $zoneNode.find("#systemvms_container").empty();
-		    if (items != null && items.length > 0) {					    
-			    for (var i = 0; i < items.length; i++) {
-				    var $systemvmNode = $("#leftmenu_systemvm_node_template").clone(true);
-				    systemvmJSONToTreeNode(items[i], $systemvmNode);
-				    container.append($systemvmNode.show());
-			    }
-		    }
-	    }
-    });
+	
+	if(zoneArrowExpandable == false) {
+	    $.ajax({
+            data: createURL("command=listSystemVms&zoneid="+zoneid+maxPageSize),
+	        dataType: "json",
+	        async: false,
+	        success: function(json) {
+		        var items = json.listsystemvmsresponse.systemvm;		        
+		        if (items != null && items.length > 0) {				    
+			        zoneArrowExpandable = true;  
+			    } 		        
+	        }
+        });
+	}
+	
+	if(zoneArrowExpandable == true) {
+	    $zoneNode.find("#zone_arrow").removeClass("white_nonexpanded_close").addClass("expanded_close");
+	}
 }
 
 function podJSONToTreeNode(json, $podNode) {	
