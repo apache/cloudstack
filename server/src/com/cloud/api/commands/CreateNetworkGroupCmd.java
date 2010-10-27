@@ -21,13 +21,13 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.NetworkGroupResponse;
+import com.cloud.network.security.NetworkGroupManager;
 import com.cloud.network.security.NetworkGroupVO;
 
-@Implementation(method="createNetworkGroup", manager=Manager.NetworkGroupManager)
+@Implementation(method="createNetworkGroup", manager=NetworkGroupManager.class)
 public class CreateNetworkGroupCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateNetworkGroupCmd.class.getName());
 

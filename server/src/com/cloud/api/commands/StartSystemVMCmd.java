@@ -22,18 +22,18 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SystemVmResponse;
 import com.cloud.event.EventTypes;
+import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.VMInstanceVO;
 
-@Implementation(method="startSystemVM", manager=Manager.ManagementServer, description="Starts a system virtual machine.")
+@Implementation(method="startSystemVM", manager=ManagementServer.class, description="Starts a system virtual machine.")
 public class StartSystemVMCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(StartSystemVMCmd.class.getName());
 

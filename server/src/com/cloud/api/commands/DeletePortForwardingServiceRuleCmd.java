@@ -22,16 +22,16 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
+import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkRuleConfigVO;
 import com.cloud.network.SecurityGroupVO;
 import com.cloud.user.Account;
 
-@Implementation(method="deleteNetworkRuleConfig", manager=Manager.NetworkManager, description="Deletes a port forwarding service rule")
+@Implementation(method="deleteNetworkRuleConfig", manager=NetworkManager.class, description="Deletes a port forwarding service rule")
 public class DeletePortForwardingServiceRuleCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeletePortForwardingServiceRuleCmd.class.getName());
 

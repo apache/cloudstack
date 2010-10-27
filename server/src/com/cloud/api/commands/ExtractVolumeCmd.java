@@ -23,7 +23,6 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.ExtractResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.storage.UploadVO;

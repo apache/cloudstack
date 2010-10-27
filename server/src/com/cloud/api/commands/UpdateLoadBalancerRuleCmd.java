@@ -21,15 +21,15 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.LoadBalancerResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.network.LoadBalancerVO;
+import com.cloud.network.NetworkManager;
 import com.cloud.user.Account;
 
-@Implementation(method="updateLoadBalancerRule", manager=Manager.NetworkManager)
+@Implementation(method="updateLoadBalancerRule", manager=NetworkManager.class)
 public class UpdateLoadBalancerRuleCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateLoadBalancerRuleCmd.class.getName());
     private static final String s_name = "updateloadbalancerruleresponse";

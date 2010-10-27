@@ -22,7 +22,6 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCreateCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SnapshotResponse;
@@ -30,9 +29,10 @@ import com.cloud.event.EventTypes;
 import com.cloud.storage.Snapshot.SnapshotType;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.user.Account;
 
-@Implementation(createMethod="createSnapshotDB", method="createSnapshot", manager=Manager.SnapshotManager, description="Creates an instant snapshot of a volume.")
+@Implementation(createMethod="createSnapshotDB", method="createSnapshot", manager=SnapshotManager.class, description="Creates an instant snapshot of a volume.")
 public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
 	public static final Logger s_logger = Logger.getLogger(CreateSnapshotCmd.class.getName());
 	private static final String s_name = "createsnapshotresponse";

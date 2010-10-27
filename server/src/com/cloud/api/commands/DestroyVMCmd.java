@@ -22,7 +22,6 @@ import org.apache.log4j.Logger;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.UserVmResponse;
@@ -32,8 +31,9 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.InstanceGroupVO;
+import com.cloud.vm.UserVmManager;
 
-@Implementation(method="destroyVm", manager=Manager.UserVmManager, description="Destroys a virtual machine. Once destroyed, only the administrator can recover it.")
+@Implementation(method="destroyVm", manager=UserVmManager.class, description="Destroys a virtual machine. Once destroyed, only the administrator can recover it.")
 public class DestroyVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DestroyVMCmd.class.getName());
 

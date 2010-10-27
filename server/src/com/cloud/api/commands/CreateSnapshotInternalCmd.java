@@ -23,15 +23,15 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.response.SnapshotResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.storage.Snapshot.SnapshotType;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.user.Account;
 
-@Implementation(method="createSnapshotInternal", manager=Manager.SnapshotManager, description="Creates an instant snapshot of a volume.")
+@Implementation(method="createSnapshotInternal", manager=SnapshotManager.class, description="Creates an instant snapshot of a volume.")
 public class CreateSnapshotInternalCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(CreateSnapshotInternalCmd.class.getName());
     private static final String s_name = "createsnapshotresponse";

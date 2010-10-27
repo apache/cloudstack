@@ -25,7 +25,6 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -33,10 +32,11 @@ import com.cloud.api.response.FirewallRuleResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.network.FirewallRuleVO;
 import com.cloud.network.IPAddressVO;
+import com.cloud.network.NetworkManager;
 import com.cloud.server.Criteria;
 import com.cloud.vm.UserVmVO;
 
-@Implementation(method="listPortForwardingRules", manager=Manager.NetworkManager, description="Lists all port forwarding rules for an IP address.")
+@Implementation(method="listPortForwardingRules", manager=NetworkManager.class, description="Lists all port forwarding rules for an IP address.")
 public class ListPortForwardingRulesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListPortForwardingRulesCmd.class.getName());
 

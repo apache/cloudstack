@@ -21,12 +21,12 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.configuration.ConfigurationManager;
 
-@Implementation(method="editPod", manager=Manager.ConfigManager, description="Updates a Pod.")
+@Implementation(method="editPod", manager=ConfigurationManager.class, description="Updates a Pod.")
 public class UpdatePodCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdatePodCmd.class.getName());
 

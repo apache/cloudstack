@@ -23,13 +23,13 @@ import java.util.ArrayList;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.CloudIdentifierResponse;
+import com.cloud.server.ManagementServer;
 
-@Implementation(method="getCloudIdentifierResponse", manager=Manager.ManagementServer, description="Retrieves a cloud identifier.")
+@Implementation(method="getCloudIdentifierResponse", manager=ManagementServer.class, description="Retrieves a cloud identifier.")
 public class GetCloudIdentifierCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(GetCloudIdentifierCmd.class.getName());
     private static final String s_name = "getcloudidentifierresponse";

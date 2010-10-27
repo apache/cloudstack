@@ -20,12 +20,12 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.server.ManagementServer;
 
-@Implementation(method="lockAccount", manager=Manager.ManagementServer, description="Locks an account")
+@Implementation(method="lockAccount", manager=ManagementServer.class, description="Locks an account")
 public class LockAccountCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(LockAccountCmd.class.getName());
 

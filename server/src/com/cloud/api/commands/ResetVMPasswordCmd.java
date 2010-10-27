@@ -22,7 +22,6 @@ import org.apache.log4j.Logger;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.UserVmResponse;
@@ -34,8 +33,9 @@ import com.cloud.user.User;
 import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.InstanceGroupVO;
+import com.cloud.vm.UserVmManager;
 
-@Implementation(method="resetVMPassword", manager=Manager.UserVmManager, description="Resets the password for virtual machine. " +
+@Implementation(method="resetVMPassword", manager=UserVmManager.class, description="Resets the password for virtual machine. " +
 																					"The virtual machine must be in a \"Stopped\" state and the template must already " +
 																					"support this feature for this command to take effect. [async]")
 public class ResetVMPasswordCmd extends BaseAsyncCmd {

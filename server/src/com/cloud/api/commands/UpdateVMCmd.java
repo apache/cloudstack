@@ -20,12 +20,12 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.vm.UserVmManager;
 
-@Implementation(method="updateVirtualMachine", manager=Manager.UserVmManager, description="Updates parameters of a virtual machine.")
+@Implementation(method="updateVirtualMachine", manager=UserVmManager.class, description="Updates parameters of a virtual machine.")
 public class UpdateVMCmd extends BaseCmd{
     public static final Logger s_logger = Logger.getLogger(UpdateVMCmd.class.getName());
     private static final String s_name = "updatevirtualmachineresponse";

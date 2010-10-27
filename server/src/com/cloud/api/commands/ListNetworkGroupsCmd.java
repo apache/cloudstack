@@ -23,7 +23,6 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -32,9 +31,10 @@ import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.NetworkGroupResponse;
 import com.cloud.async.executor.IngressRuleResultObject;
 import com.cloud.async.executor.NetworkGroupResultObject;
+import com.cloud.network.security.NetworkGroupManager;
 import com.cloud.network.security.NetworkGroupRulesVO;
 
-@Implementation(method="searchForNetworkGroupRules", manager=Manager.NetworkGroupManager)
+@Implementation(method="searchForNetworkGroupRules", manager=NetworkGroupManager.class)
 public class ListNetworkGroupsCmd extends BaseListCmd {
 	public static final Logger s_logger = Logger.getLogger(ListNetworkGroupsCmd.class.getName());
 

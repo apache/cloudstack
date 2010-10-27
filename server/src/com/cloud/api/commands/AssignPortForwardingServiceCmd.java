@@ -23,15 +23,15 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.network.SecurityGroupVO;
+import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
 
-@Implementation(method="assignSecurityGroup", manager=Manager.ManagementServer, description="Assigns a single or a list of port forwarding services to a virtual machine. If a list of port forwarding services is given, it will overwrite the previous assignment of port forwarding services. For example, on the first call, if you assigned port forwarding service A to virtual machine 1 and on the next call, you assign port forwarding services B and C to virtual machine 1, the ultimate result of these two commands would be that virtual machine 1 would only have port forwarding services B and C assigned to it. Individual port forwarding services can be assigned to the virtual machine by specifying a single port forwarding service group.")
+@Implementation(method="assignSecurityGroup", manager=ManagementServer.class, description="Assigns a single or a list of port forwarding services to a virtual machine. If a list of port forwarding services is given, it will overwrite the previous assignment of port forwarding services. For example, on the first call, if you assigned port forwarding service A to virtual machine 1 and on the next call, you assign port forwarding services B and C to virtual machine 1, the ultimate result of these two commands would be that virtual machine 1 would only have port forwarding services B and C assigned to it. Individual port forwarding services can be assigned to the virtual machine by specifying a single port forwarding service group.")
 public class AssignPortForwardingServiceCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(AssignPortForwardingServiceCmd.class.getName());
 	

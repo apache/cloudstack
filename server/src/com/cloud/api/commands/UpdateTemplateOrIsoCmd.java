@@ -21,11 +21,11 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.server.ManagementServer;
 
-@Implementation(method="updateTemplate", manager=Manager.ManagementServer)
+@Implementation(method="updateTemplate", manager=ManagementServer.class)
 public abstract class UpdateTemplateOrIsoCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateIsoCmd.class.getName());
 

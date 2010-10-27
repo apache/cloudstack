@@ -22,15 +22,15 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.FirewallRuleResponse;
 import com.cloud.network.FirewallRuleVO;
+import com.cloud.network.NetworkManager;
 import com.cloud.uservm.UserVm;
 
-@Implementation(method="createPortForwardingRule", manager=Manager.NetworkManager, description="Creates a port forwarding rule")
+@Implementation(method="createPortForwardingRule", manager=NetworkManager.class, description="Creates a port forwarding rule")
 public class CreateIPForwardingRuleCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateIPForwardingRuleCmd.class.getName());
 

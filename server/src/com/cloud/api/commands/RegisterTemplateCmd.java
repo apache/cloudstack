@@ -24,7 +24,6 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
@@ -34,9 +33,10 @@ import com.cloud.storage.GuestOS;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 
-@Implementation(method="registerTemplate", manager=Manager.TemplateManager, description="Registers an existing template into the Cloud.com cloud. ")
+@Implementation(method="registerTemplate", manager=TemplateManager.class, description="Registers an existing template into the Cloud.com cloud. ")
 public class RegisterTemplateCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(RegisterTemplateCmd.class.getName());
 

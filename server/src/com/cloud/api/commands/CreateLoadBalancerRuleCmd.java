@@ -22,13 +22,13 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.LoadBalancerResponse;
 import com.cloud.network.LoadBalancerVO;
+import com.cloud.network.NetworkManager;
 
-@Implementation(method="createLoadBalancerRule", manager=Manager.NetworkManager, description="Creates a load balancer rule")
+@Implementation(method="createLoadBalancerRule", manager=NetworkManager.class, description="Creates a load balancer rule")
 public class CreateLoadBalancerRuleCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateLoadBalancerRuleCmd.class.getName());
 

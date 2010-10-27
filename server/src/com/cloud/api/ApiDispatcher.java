@@ -29,26 +29,15 @@ import java.util.StringTokenizer;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.AgentManager;
 import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.async.AsyncCommandQueued;
-import com.cloud.configuration.ConfigurationManager;
-import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
-import com.cloud.network.DomainRouterService;
-import com.cloud.network.NetworkManager;
-import com.cloud.network.security.NetworkGroupManager;
 import com.cloud.server.ManagementServer;
-import com.cloud.storage.StorageManager;
-import com.cloud.storage.snapshot.SnapshotManager;
-import com.cloud.template.TemplateManager;
-import com.cloud.user.AccountManager;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.UserVmService;
 
 /**
  * A class that dispatches API commands to the appropriate manager for execution.
@@ -56,18 +45,7 @@ import com.cloud.vm.UserVmService;
 public class ApiDispatcher {
     private static final Logger s_logger = Logger.getLogger(ApiDispatcher.class.getName());
 
-    private AccountManager _accountMgr;
-    private AgentManager _agentMgr;
-    private ConfigurationManager _configMgr;
-    private ConsoleProxyManager _consoleProxyMgr;
-    private ManagementServer _mgmtServer;
-    private NetworkGroupManager _networkGroupMgr;
-    private NetworkManager _networkMgr;
-    private SnapshotManager _snapshotMgr;
-    private StorageManager _storageMgr;
-    private TemplateManager _templateMgr;
-    private UserVmService _userVmMgr;
-    private DomainRouterService _domainRouterService;
+    ComponentLocator _locator = null;
 
     // singleton class
     private static ApiDispatcher s_instance = new ApiDispatcher();
@@ -77,19 +55,7 @@ public class ApiDispatcher {
     }
 
     private ApiDispatcher() {
-        ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
-        _mgmtServer = (ManagementServer)ComponentLocator.getComponent(ManagementServer.Name);
-        _accountMgr = locator.getManager(AccountManager.class);
-        _agentMgr = locator.getManager(AgentManager.class);
-        _configMgr = locator.getManager(ConfigurationManager.class);
-        _consoleProxyMgr = locator.getManager(ConsoleProxyManager.class);
-        _networkGroupMgr = locator.getManager(NetworkGroupManager.class);
-        _networkMgr = locator.getManager(NetworkManager.class);
-        _snapshotMgr = locator.getManager(SnapshotManager.class);
-        _storageMgr = locator.getManager(StorageManager.class);
-        _templateMgr = locator.getManager(TemplateManager.class);
-        _userVmMgr = locator.getManager(UserVmService.class);
-        _domainRouterService = locator.getManager(DomainRouterService.class);
+        _locator = ComponentLocator.getLocator(ManagementServer.Name);
     }
 
     public Long dispatchCreateCmd(BaseAsyncCreateCmd cmd, Map<String, String> params) {
@@ -101,41 +67,16 @@ public class ApiDispatcher {
         }
 
         String methodName = impl.createMethod();
-        Object mgr = _mgmtServer;
-        switch (impl.manager()) {
-        case AccountManager:
-            mgr = _accountMgr;
-            break;
-        case AgentManager:
-            mgr = _agentMgr;
-            break;
-        case ConfigManager:
-            mgr = _configMgr;
-            break;
-        case ConsoleProxyManager:
-            mgr = _consoleProxyMgr;
-            break;
-        case NetworkGroupManager:
-            mgr = _networkGroupMgr;
-            break;
-        case NetworkManager:
-            mgr = _networkMgr;
-            break;
-        case SnapshotManager:
-            mgr = _snapshotMgr;
-            break;
-        case StorageManager:
-            mgr = _storageMgr;
-            break;
-        case TemplateManager:
-            mgr = _templateMgr;
-            break;
-        case UserVmManager:
-            mgr = _userVmMgr;
-            break;
-        case DomainRouterService:
-            mgr = _domainRouterService;
-            break;
+        Class<?> mgrClass = impl.manager();
+        Object mgr = null;
+        if (mgrClass.equals(ManagementServer.class)) {
+            mgr = ComponentLocator.getComponent(ManagementServer.Name);
+        } else {
+            mgr = _locator.getManager(impl.manager());
+        }
+
+        if (mgr == null) {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to execute method " + methodName + " for command " + cmd.getClass().getSimpleName() + ", unable to find manager " + impl.manager() + " to execute method " + methodName);
         }
 
         try {
@@ -178,41 +119,16 @@ public class ApiDispatcher {
         }
 
         String methodName = impl.method();
-        Object mgr = _mgmtServer;
-        switch (impl.manager()) {
-        case AccountManager:
-            mgr = _accountMgr;
-            break;
-        case AgentManager:
-            mgr = _agentMgr;
-            break;
-        case ConfigManager:
-            mgr = _configMgr;
-            break;
-        case ConsoleProxyManager:
-            mgr = _consoleProxyMgr;
-            break;
-        case NetworkGroupManager:
-            mgr = _networkGroupMgr;
-            break;
-        case NetworkManager:
-            mgr = _networkMgr;
-            break;
-        case SnapshotManager:
-            mgr = _snapshotMgr;
-            break;
-        case StorageManager:
-            mgr = _storageMgr;
-            break;
-        case TemplateManager:
-            mgr = _templateMgr;
-            break;
-        case UserVmManager:
-            mgr = _userVmMgr;
-            break;
-        case DomainRouterService:
-            mgr = _domainRouterService;
-            break;
+        Class<?> mgrClass = impl.manager();
+        Object mgr = null;
+        if (mgrClass.equals(ManagementServer.class)) {
+            mgr = ComponentLocator.getComponent(ManagementServer.Name);
+        } else {
+            mgr = _locator.getManager(impl.manager());
+        }
+
+        if (mgr == null) {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to execute method " + methodName + " for command " + cmd.getClass().getSimpleName() + ", unable to find manager " + impl.manager() + " to execute method " + methodName);
         }
 
         try {

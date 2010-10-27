@@ -21,15 +21,15 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseAsyncCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(method="destroyConsoleProxy", manager=Manager.ConsoleProxyManager)
+@Implementation(method="destroyConsoleProxy", manager=ConsoleProxyManager.class)
 public class DestroyConsoleProxyCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(DestroyConsoleProxyCmd.class.getName());
 

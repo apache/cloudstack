@@ -84,7 +84,7 @@ public class ListDiskOfferingsCmd extends BaseListCmd {
         for (DiskOfferingVO offering : offerings) {
             DiskOfferingResponse diskOffResp = new DiskOfferingResponse();
             diskOffResp.setCreated(offering.getCreated());
-            diskOffResp.setDiskSize(offering.getDiskSize());
+            diskOffResp.setDiskSize(offering.getDiskSizeInBytes());
             diskOffResp.setDisplayText(offering.getDisplayText());
             diskOffResp.setDomainId(offering.getDomainId());
             diskOffResp.setId(offering.getId());

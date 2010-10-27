@@ -21,13 +21,13 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SnapshotPolicyResponse;
 import com.cloud.storage.SnapshotPolicyVO;
+import com.cloud.storage.snapshot.SnapshotManager;
 
-@Implementation(method="createPolicy", manager=Manager.SnapshotManager, description="Creates a snapshot policy for the account.")
+@Implementation(method="createPolicy", manager=SnapshotManager.class, description="Creates a snapshot policy for the account.")
 public class CreateSnapshotPolicyCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateSnapshotPolicyCmd.class.getName());
 

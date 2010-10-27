@@ -21,13 +21,13 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.configuration.ConfigurationManager;
 
-@Implementation(method="deletePod", manager=Manager.ConfigManager, description="Deletes a Pod.")
+@Implementation(method="deletePod", manager=ConfigurationManager.class, description="Deletes a Pod.")
 public class DeletePodCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeletePodCmd.class.getName());
 

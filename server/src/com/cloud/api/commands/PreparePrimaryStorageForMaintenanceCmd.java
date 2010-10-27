@@ -20,15 +20,15 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseAsyncCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
+import com.cloud.storage.StorageManager;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(method="preparePrimaryStorageForMaintenance", manager=Manager.StorageManager)
+@Implementation(method="preparePrimaryStorageForMaintenance", manager=StorageManager.class)
 public class PreparePrimaryStorageForMaintenanceCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(PreparePrimaryStorageForMaintenanceCmd.class.getName());	
     private static final String s_name = "prepareprimarystorageformaintenanceresponse";

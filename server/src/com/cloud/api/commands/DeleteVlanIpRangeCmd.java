@@ -21,12 +21,12 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.configuration.ConfigurationManager;
 
-@Implementation(method="deleteVlanIpRange", manager=Manager.ConfigManager, description="Creates a VLAN IP range.")
+@Implementation(method="deleteVlanIpRange", manager=ConfigurationManager.class, description="Creates a VLAN IP range.")
 public class DeleteVlanIpRangeCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(DeleteVlanIpRangeCmd.class.getName());
 

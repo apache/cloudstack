@@ -20,14 +20,14 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.storage.DiskOfferingVO;
 
-@Implementation(method="updateDiskOffering", manager=Manager.ConfigManager, description="Updates a disk offering.")
+@Implementation(method="updateDiskOffering", manager=ConfigurationManager.class, description="Updates a disk offering.")
 public class UpdateDiskOfferingCmd extends BaseCmd{
     public static final Logger s_logger = Logger.getLogger(UpdateDiskOfferingCmd.class.getName());
     private static final String s_name = "updatediskofferingresponse";

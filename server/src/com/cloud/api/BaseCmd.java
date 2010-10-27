@@ -41,10 +41,6 @@ public abstract class BaseCmd {
         BOOLEAN, DATE, FLOAT, INTEGER, LIST, LONG, OBJECT, MAP, STRING, TZDATE
     }
 
-    public enum Manager {
-        AccountManager, AgentManager, ConfigManager, ManagementServer, NetworkGroupManager, NetworkManager, StorageManager, UserVmManager, SnapshotManager, TemplateManager, ConsoleProxyManager, DomainRouterService 
-    }
-
     // FIXME:  Extract these out into a separate file
     // Client error codes
     public static final int MALFORMED_PARAMETER_ERROR = 430;
