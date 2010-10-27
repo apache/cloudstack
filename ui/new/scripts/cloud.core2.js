@@ -780,39 +780,39 @@ function setVmStateInRightPanel(stateValue, $stateField) {
 
 function initDialog(elementId, width1) {
 	if(width1 == null) {
-	    $("#"+elementId).dialog({    	            
+	    activateDialog($("#"+elementId).dialog({    	            
 	        autoOpen: false,
 	        modal: true,
 	        zIndex: 2000
-        }); 
+        })); 
     }
     else {
-        $("#"+elementId).dialog({ 
+        activateDialog($("#"+elementId).dialog({ 
    	        width: width1,	
 	        autoOpen: false,
 	        modal: true,
 	        zIndex: 2000
-        }); 
+        })); 
     }
 } 
 
 function initDialogWithOK(elementId, width1) {
 	if(width1 == null) {
-	    $("#"+elementId).dialog({    	            
+	    activateDialog($("#"+elementId).dialog({    	            
 	        autoOpen: false,
 	        modal: true,
 	        zIndex: 2000,
 	        buttons: { "OK": function() { $(this).dialog("close"); } }
-        }); 
+        })); 
     }
     else {
-        $("#"+elementId).dialog({ 
+        activateDialog($("#"+elementId).dialog({ 
    	        width: width1,	
 	        autoOpen: false,
 	        modal: true,
 	        zIndex: 2000,
 	        buttons: { "OK": function() { $(this).dialog("close"); } }
-        }); 
+        })); 
     }
 } 
 
