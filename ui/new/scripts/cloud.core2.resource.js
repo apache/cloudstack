@@ -49,6 +49,7 @@ function buildZoneTree() {
 		
 		switch (action) {
 			case "zone_arrow" :		
+			    selectRowInZoneTree(target.parent().parent());
 			    var $zoneNode = target.parent().parent().parent().parent();			   
 			    var zoneObj = $zoneNode.data("jsonObj");
 			    var $zoneContent = $zoneNode.find("#zone_content");				  	   
@@ -99,6 +100,7 @@ function buildZoneTree() {
 				break;
 											    
 			case "pod_arrow" :	
+			    selectRowInZoneTree(target.parent().parent());
 			    var $podNode = target.parent().parent().parent().parent();
 			    var podObj = $podNode.data("jsonObj");
 			    var $podContent = $podNode.find("#pod_content");					 	   
@@ -119,8 +121,8 @@ function buildZoneTree() {
 			
 			case "zone_name_label":	
 			case "zone_name":	
-			    target.siblings("#zone_arrow").click();
-			    selectTreeNodeInLeftMenu(target.parent().parent().parent());	
+			    target.siblings("#zone_arrow").click();			    
+			    selectRowInZoneTree(target.parent().parent());			    
 			    var $leftmenuItem1 = target.parent().parent().parent().parent();	
 			    showPage($("#zone_page"), $leftmenuItem1);			    		   				    		   			    
 			    break;		
@@ -128,21 +130,21 @@ function buildZoneTree() {
 			case "pod_name_label" :	
 			case "pod_name" :	
 			    target.siblings("#pod_arrow").click();
-			    selectTreeNodeInLeftMenu(target.parent().parent().parent());
+			    selectRowInZoneTree(target.parent().parent());
 			    var $leftmenuItem1 = target.parent().parent().parent().parent();
 			    showPage($("#pod_page"), $leftmenuItem1);				   			
 				break;		
 				    
 			case "cluster_name_label" :	
 			case "cluster_name" :	
-			    selectTreeNodeInLeftMenu(target.parent().parent().parent());
+			    selectRowInZoneTree(target.parent().parent());
 			    var $leftmenuItem1 = target.parent().parent().parent().parent();	
 			    showPage($("#cluster_page"), $leftmenuItem1);
 			    break;								
 						
 			case "systemvm_name_label" :
 			case "systemvm_name" :		
-			    selectTreeNodeInLeftMenu(target.parent().parent().parent());	
+			    selectRowInZoneTree(target.parent().parent());	
 			    var $leftmenuItem1 = target.parent().parent().parent().parent();	
 			    showPage($("#systemvm_page"), $leftmenuItem1);
 				break;			
@@ -154,6 +156,13 @@ function buildZoneTree() {
 	});    	
 	//***** build zone tree (end) *************************************************************************************************       
 }    
+
+function selectRowInZoneTree($rowToSelect) { 
+    if($selectedSubMenu != null)
+        $selectedSubMenu.removeClass("selected");    
+    $rowToSelect.addClass("selected");
+    $selectedSubMenu = $rowToSelect;
+}
 
 function selectTreeNodeInLeftMenu($menuToSelect, expandable) {	
 	if($selectedLeftMenu != null)
