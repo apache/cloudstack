@@ -2169,7 +2169,7 @@ a:hover.search_button {
 	width:auto;
 	height:auto;
 	float:left;
-	color:#333;
+	color:#FFF;
 	text-align:left;
 	font-weight:bold;
 	font-size:11px;
@@ -2202,7 +2202,7 @@ a:hover.search_button {
 
 .midmenu_content.selected {
 	background:#626262 url(../images/leftmenu_selected.gif) repeat-x top left;
-	color:#FFF !important;
+	color:#FFF;
 
 }
 
