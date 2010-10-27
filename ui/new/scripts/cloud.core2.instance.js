@@ -75,27 +75,40 @@ function afterLoadInstanceJSP() {
             $("#dialog_info_please_select_one_item_in_middle_menu").dialog("open");		
             return false;
         }        
-                        	                   
-        for(var id in selectedItemsInMidMenu) {	
-            var apiCommand = "command=startVirtualMachine&id="+id;  
-            var apiInfo = {
-                label: "Start Instance",
-                isAsyncJob: true,
-                asyncJobResponse: "startvirtualmachineresponse",   
-                afterActionSeccessFn: function(json, $midmenuItem1, id) {                    
-                    var jsonObj = json.queryasyncjobresultresponse.jobresult.startvirtualmachineresponse;      
-                    
-                    vmToMidmenu(jsonObj, $midmenuItem1);                     
-                    if( ($("#right_panel_content #tab_content_details").length > 0)
-                      && ($("#right_panel_content #tab_content_details").data("jsonObj") != null )
-                      && (jsonObj.id == $("#right_panel_content #tab_content_details").data("jsonObj").id)) 
-                        vmToRightPanel($midmenuItem1);                              
-                }
-            }                                     
-            doActionForMidMenu(id, apiInfo, apiCommand); 	
-        }   
-        
-        selectedItemsInMidMenu = {}; //clear selected items for action	                          
+                
+        $("#dialog_confirmation_start_vm")	
+	    .dialog('option', 'buttons', { 						
+		    "Confirm": function() { 
+			    $(this).dialog("close"); 			
+			    
+			    var apiInfo = {
+                    label: "Start Instance",
+                    isAsyncJob: true,
+                    asyncJobResponse: "startvirtualmachineresponse",                  
+                    afterActionSeccessFn: function(json, $midmenuItem1, id) {                    
+                        var jsonObj = json.queryasyncjobresultresponse.jobresult.startvirtualmachineresponse;      
+                        
+                        vmToMidmenu(jsonObj, $midmenuItem1);                     
+                        if( ($("#right_panel_content #tab_content_details").length > 0)
+                          && ($("#right_panel_content #tab_content_details").data("jsonObj") != null )
+                          && (jsonObj.id == $("#right_panel_content #tab_content_details").data("jsonObj").id)) 
+                            vmToRightPanel($midmenuItem1);                              
+                    }
+                }          
+			                    
+                for(var id in selectedItemsInMidMenu) {	
+                    var apiCommand = "command=startVirtualMachine&id="+id;                                                
+                    doActionForMidMenu(id, apiInfo, apiCommand); 	
+                }  
+                
+                selectedItemsInMidMenu = {}; //clear selected items for action	                      					    
+		    }, 
+		    "Cancel": function() { 
+			    $(this).dialog("close"); 
+    			
+		    } 
+	    }).dialog("open");
+                                                 
         return false;        
     }); 	
 
@@ -116,7 +129,7 @@ function afterLoadInstanceJSP() {
             var apiInfo = {
                 label: "Stop Instance",
                 isAsyncJob: true,
-                asyncJobResponse: "stopvirtualmachineresponse",   
+                asyncJobResponse: "stopvirtualmachineresponse",                 
                 afterActionSeccessFn: function(json, $midmenuItem1, id) {  
                     //call listVirtualMachine to get embedded object until bug 6486 ("StopVirtualMachine API should return an embedded object on success") is fixed.
                     var jsonObj;
@@ -160,7 +173,7 @@ function afterLoadInstanceJSP() {
             var apiInfo = {
                 label: "Reboot Instance",
                 isAsyncJob: true,
-                asyncJobResponse: "rebootvirtualmachineresponse",   
+                asyncJobResponse: "rebootvirtualmachineresponse",                  
                 afterActionSeccessFn: function(json, $midmenuItem1, id) {  
                     //call listVirtualMachine to get embedded object until Bug 6751("rebootVirtualMachine API should return an embedded object") is fixed.
                     var jsonObj;
@@ -204,7 +217,7 @@ function afterLoadInstanceJSP() {
             var apiInfo = {
                 label: "Destroy Instance",
                 isAsyncJob: true,
-                asyncJobResponse: "destroyvirtualmachineresponse",   
+                asyncJobResponse: "destroyvirtualmachineresponse",                 
                 afterActionSeccessFn: function(json, $midmenuItem1, id) {  
                     //call listVirtualMachine to get embedded object until bug 6041 ("DestroyVirtualMachine API should return an embedded object on success") is fixed.
                     var jsonObj;
@@ -249,6 +262,11 @@ function afterLoadInstanceJSP() {
     initDialog("dialog_confirmation_enable_ha");  
     initDialog("dialog_confirmation_disable_ha");            
     initDialog("dialog_create_template", 400);  
+    initDialog("dialog_confirmation_start_vm");
+    initDialog("dialog_confirmation_stop_vm");
+    initDialog("dialog_confirmation_reboot_vm");
+    initDialog("dialog_confirmation_destroy_vm");
+    initDialog("dialog_confirmation_restore_vm");
          
     $.ajax({
         data: createURL("command=listOsTypes&response=json"),

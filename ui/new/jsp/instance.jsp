@@ -1118,4 +1118,35 @@
         <%=t.t("please.confirm.you.want.to.disable.HA.for.the.virtual.machine.once.HA.is.disabled.the.virtual.machine.will.no.longer.be.automatically.restarted.in.the.event.of.a.failure")%>
     </p>
 </div>
+
+<div id="dialog_confirmation_start_vm" title="Confirmation" style="display:none">
+    <p>        
+        <%=t.t("please.confirm.you.want.to.start.instance")%>
+    </p>
+</div>
+
+<div id="dialog_confirmation_stop_vm" title="Confirmation" style="display:none">
+    <p>        
+        <%=t.t("please.confirm.you.want.to.stop.instance")%>
+    </p>
+</div>
+
+<div id="dialog_confirmation_reboot_vm" title="Confirmation" style="display:none">
+    <p>        
+        <%=t.t("please.confirm.you.want.to.reboot.instance")%>
+    </p>
+</div>
+
+<div id="dialog_confirmation_destroy_vm" title="Confirmation" style="display:none">
+    <p>        
+        <%=t.t("please.confirm.you.want.to.destroy.instance")%>
+    </p>
+</div>
+
+<div id="dialog_confirmation_restore_vm" title="Confirmation" style="display:none">
+    <p>        
+        <%=t.t("please.confirm.you.want.to.restore.instance")%>
+    </p>
+</div>
+
 <!--  ***** Dialogs (end) ***** -->
