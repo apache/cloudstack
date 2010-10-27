@@ -1224,7 +1224,7 @@ a:hover {
 	min-width:960px;
 	width:100%;
 	min-height:1000px;
-	height:auto;
+	height:100%;
 	float:left;
 	background:#FFF;
 	margin:0;
@@ -3609,7 +3609,7 @@ a:hover.search_button {
 }
 
 .networkswitch_infodropdown {
-	width:200px;
+	width:270px;
 	height:auto;
 	background:#FFF;
 	border:1px solid #999;
@@ -3618,10 +3618,11 @@ a:hover.search_button {
 	left:20px;
 	margin:0;
 	padding:0 0 10px 0;
+	z-index:1005;
 }
 
 .networkswitch_infodropdown_textbox {
-	width:180px;
+	width:250px;
 	height:auto;
 	float:left;
 	margin:0 0 0 10px;
@@ -3630,7 +3631,7 @@ a:hover.search_button {
 }
 
 .networkswitch_infodropdown_actionbox {
-	width:192px;
+	width:262px;
 	height:auto;
 	float:left;
 	margin:5px 0 0 0;
@@ -3658,7 +3659,7 @@ a:hover.search_button {
 	text-decoration:underline;
 }
 .networkswitch_infodropdown_textbox li{
-	width:180px;
+	width:250px;
 	height:auto;
 	float:left;
 	margin:10px 0 0 0;
