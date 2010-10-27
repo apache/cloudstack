@@ -342,13 +342,19 @@ function buildActionLinkForMidMenu(label, actionMap, $actionMenu) {
 function doActionForMidMenu(id, apiInfo, apiCommand) {   
     var label = apiInfo.label;			           
     var isAsyncJob = apiInfo.isAsyncJob;
+    var inProcessText = apiInfo.inProcessText;   
     var asyncJobResponse = apiInfo.asyncJobResponse;	
-    var afterActionSeccessFn = apiInfo.afterActionSeccessFn;	   
+    var afterActionSeccessFn = apiInfo.afterActionSeccessFn;	    
         
     var $midmenuItem1 = $("#midmenuItem_"+id);	
     $midmenuItem1.find("#content").removeClass("selected").addClass("inaction");                          
     $midmenuItem1.find("#spinning_wheel").addClass("midmenu_addingloader").show();	
     $midmenuItem1.find("#info_icon").hide();		  
+	
+	var $detailsTab = $("#right_panel_content #tab_content_details");  
+    var $spinningWheel = $detailsTab.find("#spinning_wheel");
+    $spinningWheel.find("#description").text(inProcessText);  
+    $spinningWheel.show();     
 	
 	//Async job (begin) *****
 	if(isAsyncJob == true) {	                     
@@ -372,7 +378,8 @@ function doActionForMidMenu(id, apiInfo, apiCommand) {
 		                        } else {											                    
 			                        $("body").stopTime(timerKey);	
 			                        $midmenuItem1.find("#content").removeClass("inaction");
-			                        $midmenuItem1.find("#spinning_wheel").hide();			                       
+			                        $midmenuItem1.find("#spinning_wheel").hide();			                        
+			                        hideDetailsTabActionSpinningWheel(id, inProcessText);				                        			                       
 			                        if (result.jobstatus == 1) { // Succeeded  
 			                            $midmenuItem1.find("#info_icon").removeClass("error").show();
 			                            $midmenuItem1.data("afterActionInfo", (label + " action succeeded.")); 			                            
@@ -409,7 +416,8 @@ function doActionForMidMenu(id, apiInfo, apiCommand) {
 	            $midmenuItem1.find("#content").removeClass("inaction");
 				$midmenuItem1.find("#spinning_wheel").hide();				
 				$midmenuItem1.find("#info_icon").removeClass("error").show();
-			    $midmenuItem1.data("afterActionInfo", (label + " action succeeded.")); 			
+			    $midmenuItem1.data("afterActionInfo", (label + " action succeeded.")); 		
+			    hideDetailsTabActionSpinningWheel(id, inProcessText);	
 				afterActionSeccessFn(json, $midmenuItem1, id); 		
 	        },
             error: function(XMLHttpResponse) {	                
@@ -424,7 +432,8 @@ function handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1) {
     $midmenuItem1.find("#content").removeClass("inaction");
 	$midmenuItem1.find("#spinning_wheel").hide();	
 	$midmenuItem1.find("#info_icon").addClass("error").show();		
-	$midmenuItem1.find("#first_row").text("Action failed");	
+	$midmenuItem1.find("#first_row").text("Action failed");		
+	hideDetailsTabActionSpinningWheel(id, inProcessText);		
 		                        
     var errorMsg = "";
     if(XMLHttpResponse.responseText != null & XMLHttpResponse.responseText.length > 0) {
@@ -437,6 +446,15 @@ function handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1) {
     else
         $midmenuItem1.find("#second_row").html("&nbsp;");     
 }  
+
+function hideDetailsTabActionSpinningWheel(id, inProcessText) {			                        
+    var $detailsTab = $("#right_panel_content #tab_content_details");  
+    var jsonObj = $detailsTab.data("jsonObj");
+    var $spinningWheel = $detailsTab.find("#spinning_wheel");         
+    if(jsonObj != null && ("id" in jsonObj) && jsonObj.id == id && ($spinningWheel.find("#description").text() == inProcessText)) {                                                                           
+        $spinningWheel.hide();     
+    }
+}	
 
 /*
 function handleAsyncJobFailInMidMenu(errorMsg, $midmenuItem1) { 

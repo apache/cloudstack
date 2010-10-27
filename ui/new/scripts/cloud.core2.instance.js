@@ -108,6 +108,7 @@ function initStartVMButton() {
 			    var apiInfo = {
                     label: "Start Instance",
                     isAsyncJob: true,
+                    inProcessText: "Starting Instance....",
                     asyncJobResponse: "startvirtualmachineresponse",                  
                     afterActionSeccessFn: function(json, $midmenuItem1, id) {                    
                         var jsonObj = json.queryasyncjobresultresponse.jobresult.startvirtualmachineresponse;      
@@ -157,6 +158,7 @@ function initStopVMButton() {
 			    var apiInfo = {
                     label: "Stop Instance",
                     isAsyncJob: true,
+                    inProcessText: "Stopping Instance....",
                     asyncJobResponse: "stopvirtualmachineresponse",                 
                     afterActionSeccessFn: function(json, $midmenuItem1, id) {  
                         //call listVirtualMachine to get embedded object until bug 6486 ("StopVirtualMachine API should return an embedded object on success") is fixed.
@@ -215,6 +217,7 @@ function initRebootVMButton() {
 			    var apiInfo = {
                     label: "Reboot Instance",
                     isAsyncJob: true,
+                    inProcessText: "Rebooting Instance....",
                     asyncJobResponse: "rebootvirtualmachineresponse",                  
                     afterActionSeccessFn: function(json, $midmenuItem1, id) {  
                         //call listVirtualMachine to get embedded object until Bug 6751("rebootVirtualMachine API should return an embedded object") is fixed.
@@ -273,6 +276,7 @@ function initDestroyVMButton() {
 			    var apiInfo = {
                     label: "Destroy Instance",
                     isAsyncJob: true,
+                    inProcessText: "Destroying Instance....",
                     asyncJobResponse: "destroyvirtualmachineresponse",                 
                     afterActionSeccessFn: function(json, $midmenuItem1, id) {  
                         //call listVirtualMachine to get embedded object until bug 6041 ("DestroyVirtualMachine API should return an embedded object on success") is fixed.
