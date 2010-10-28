@@ -747,6 +747,8 @@ long milliseconds = new Date().getTime();
             </div>
             <div class="midmenu_infoicon" id="info_icon" style="display: none;">
             </div>
+            <div class="midmenu_addingfailed_closeicon" id="close_icon" style="display: none;">
+            </div>
         </div>
     </div>
     <!-- action list item for middle menu -->
