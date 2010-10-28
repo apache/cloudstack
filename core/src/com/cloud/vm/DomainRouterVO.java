@@ -35,7 +35,7 @@ import com.cloud.utils.net.NetUtils;
 @PrimaryKeyJoinColumn(name="id")
 @DiscriminatorValue(value="DomainRouter")
 public class DomainRouterVO extends VMInstanceVO implements DomainRouter {
-    @Column(name="ram_size", updatable=false, nullable=false)
+    @Column(name="ram_size", nullable=false)
     private int ramSize;
     
     @Column(name="gateway")
