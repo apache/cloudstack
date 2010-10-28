@@ -178,7 +178,7 @@ function serviceOfferingJsonToDetailsTab($midmenuItem1) {
     $detailsTab.find("#cpu").text(jsonObj.cpunumber + " x " + convertHz(jsonObj.cpuspeed));
     $detailsTab.find("#memory").text(convertBytes(parseInt(jsonObj.memory)*1024*1024));
     
-    setBooleanField(jsonObj.offerha, $detailsTab.find("#offerha"));	
+    setBooleanReadField(jsonObj.offerha, $detailsTab.find("#offerha"));	
     $detailsTab.find("#offerha_edit").val(jsonObj.offerha);
     
     $detailsTab.find("#networktype").text(toNetworkType(jsonObj.usevirtualnetwork));

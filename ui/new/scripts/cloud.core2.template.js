@@ -235,16 +235,16 @@ function templateJsonToDetailsTab($midmenuItem1) {
 	else
 	    $detailsTab.find("#size").text(""); 
     
-    setBooleanField(jsonObj.passwordenabled, $detailsTab.find("#passwordenabled"));	
+    setBooleanReadField(jsonObj.passwordenabled, $detailsTab.find("#passwordenabled"));	
     $detailsTab.find("#passwordenabled_edit").val(jsonObj.passwordenabled);
     
-    setBooleanField(jsonObj.ispublic, $detailsTab.find("#ispublic"));	
+    setBooleanReadField(jsonObj.ispublic, $detailsTab.find("#ispublic"));	
     $detailsTab.find("#ispublic_edit").val(jsonObj.ispublic);
     
-    setBooleanField(jsonObj.isfeatured, $detailsTab.find("#isfeatured"));
+    setBooleanReadField(jsonObj.isfeatured, $detailsTab.find("#isfeatured"));
     $detailsTab.find("#isfeatured_edit").val(jsonObj.isfeatured);
     
-    setBooleanField(jsonObj.crossZones, $detailsTab.find("#crossZones"));
+    setBooleanReadField(jsonObj.crossZones, $detailsTab.find("#crossZones"));
     
     $detailsTab.find("#ostypename").text(fromdb(jsonObj.ostypename));
     $detailsTab.find("#ostypename_edit").val(jsonObj.ostypeid);    

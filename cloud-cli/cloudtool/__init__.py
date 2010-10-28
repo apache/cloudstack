@@ -20,7 +20,7 @@ def main(argv=None):
     api = __import__("cloudapis")
     apis = getattr(api, "implementor")
     if len(prelim_args) == 0:
-        parser.error("you need to specify an API as the first argument\n\nSupported APIs:\n" + "\n".join(utils.get_api_list()))
+        parser.error("you need to specify an API as the first argument\n\nSupported APIs:\n" + "\n".join(utils.get_api_list(apis)))
     elif len(prelim_args) == 1:
         commandlist = utils.get_command_list(apis)
         parser.error("you need to specify a command name as the second argument\n\nCommands supported by the %s API:\n"%prelim_args[0] + "\n".join(commandlist))
