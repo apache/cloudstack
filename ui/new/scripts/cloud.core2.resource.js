@@ -310,7 +310,7 @@ function showPage2($pageToShow, $menuItem1) {
     else if($pageToShow.attr("id") == "pod_page") {  
         hideMiddleMenu();	
           	
-        initAddHostButton($("#midmenu_add_link")); 
+        initAddHostButton($("#midmenu_add_link"), "pod_page"); 
         initAddPrimaryStorageButton($("#midmenu_add2_link"));  
                
         initDialog("dialog_add_host");
@@ -350,9 +350,11 @@ function showPage2($pageToShow, $menuItem1) {
 		    $header2.show();
     }
     else if($pageToShow.attr("id") == "host_page") {
-        initAddHostButton($("#midmenu_add_link")); 
+        initAddHostButton($("#midmenu_add_link"), "host_page"); 
         initAddPrimaryStorageButton($("#midmenu_add2_link"));          
     
+        initDialog("dialog_add_host");
+        initDialog("dialog_add_pool");
         initDialog("dialog_confirmation_enable_maintenance");
 	    initDialog("dialog_confirmation_cancel_maintenance");
 	    initDialog("dialog_confirmation_force_reconnect");
@@ -360,9 +362,11 @@ function showPage2($pageToShow, $menuItem1) {
 	    initDialog("dialog_update_os");
     }  
     else if($pageToShow.attr("id") == "primarystorage_page") {
-        initAddHostButton($("#midmenu_add_link")); 
+        initAddHostButton($("#midmenu_add_link"), "primarystorage_page"); 
         initAddPrimaryStorageButton($("#midmenu_add2_link"));  
         
+        initDialog("dialog_add_host");
+        initDialog("dialog_add_pool");
         initDialog("dialog_confirmation_delete_primarystorage");
     }  
     else if($pageToShow.attr("id") == "systemvm_page") {  
@@ -1289,19 +1293,39 @@ function initAddPodButton($midmenuAddLink1) {
     });            
 }
 
-function initAddHostButton($midmenuAddLink1) {
+function initAddHostButton($midmenuAddLink1, currentPageInRightPanel) {
     $midmenuAddLink1.find("#label").text("Add Host"); 
     $midmenuAddLink1.show();
     $midmenuAddLink1.unbind("click").bind("click", function(event) {     
         dialogAddHost = $("#dialog_add_host");      
         dialogAddHost.find("#info_container").hide();    
-        var podObj = $("#pod_page").find("#tab_content_details").data("jsonObj");   
-        dialogAddHost.find("#zone_name").text(fromdb(podObj.zonename));  
-        dialogAddHost.find("#pod_name").text(fromdb(podObj.name)); 
         dialogAddHost.find("#new_cluster_name").val("");
-                          
+        
+        var zoneId, podId;        
+        if(currentPageInRightPanel == "pod_page") {
+            var podObj = $("#pod_page").find("#tab_content_details").data("jsonObj");   
+            zoneId = podObj.zoneid;
+            podId = podObj.id;
+            dialogAddHost.find("#zone_name").text(fromdb(podObj.zonename));  
+            dialogAddHost.find("#pod_name").text(fromdb(podObj.name)); 
+        }
+        else if(currentPageInRightPanel == "host_page") {
+            var hostObj = $("#host_page").find("#tab_content_details").data("jsonObj");  
+            zoneId = hostObj.zoneid;
+            podId = hostObj.podid; 
+            dialogAddHost.find("#zone_name").text(fromdb(hostObj.zonename));  
+            dialogAddHost.find("#pod_name").text(fromdb(hostObj.podname)); 
+        }
+        else if(currentPageInRightPanel == "primarystorage_page") {
+            var primarystorageObj = $("#primarystorage_page").find("#tab_content_details").data("jsonObj");   
+            zoneId = primarystorageObj.zoneid;
+            podId = primarystorageObj.podid;           
+            dialogAddHost.find("#zone_name").text(fromdb(primarystorageObj.zonename));  
+            dialogAddHost.find("#pod_name").text(fromdb(primarystorageObj.podname)); 
+        }
+                                  
         $.ajax({
-	       data: createURL("command=listClusters&podid="+podObj.id+maxPageSize),
+	       data: createURL("command=listClusters&podid="+podId+maxPageSize),
             dataType: "json",
             success: function(json) {			            
                 var items = json.listclustersresponse.cluster;
@@ -1337,8 +1361,8 @@ function initAddHostButton($midmenuAddLink1) {
 				$thisDialog.find("#spinning_wheel").show() 				
 				
 		        var array1 = [];    
-		        array1.push("&zoneId="+podObj.zoneid);
-		        array1.push("&podId="+podObj.id);
+		        array1.push("&zoneId="+zoneId);
+		        array1.push("&podId="+podId);
 						      
 		        var username = trim($thisDialog.find("#host_username").val());
 		        array1.push("&username="+encodeURIComponent(username));
@@ -1395,10 +1419,10 @@ function initAddHostButton($midmenuAddLink1) {
                         }   
                         */                             
                         
-                        clickClusterNodeAfterAddHost(clusterRadio, podObj.id, newClusterName, existingClusterId, $thisDialog);                                  
+                        clickClusterNodeAfterAddHost(clusterRadio, podId, newClusterName, existingClusterId, $thisDialog);                                  
 			        },			
                     error: function(XMLHttpResponse) {	
-                        clickClusterNodeAfterAddHost(clusterRadio, podObj.id, newClusterName, existingClusterId, $thisDialog);                                  
+                        clickClusterNodeAfterAddHost(clusterRadio, podId, newClusterName, existingClusterId, $thisDialog);                                  
                         handleErrorInDialog(XMLHttpResponse, $thisDialog);					    
                     }				
 		        });
