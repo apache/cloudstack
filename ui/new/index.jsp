@@ -677,7 +677,7 @@ long milliseconds = new Date().getTime();
     <!-- Left Menu ends here-->
     </div>
     <div id="footer">
-     <div class="footer_testprovisiongtool">
+     <div class="footer_testprovisiongtool" id="launch_test" style="display:none">
      	<div class="footer_testprovisiongtool_icon"></div>
         <a href="#">Launch Test Provisioning Tool</a>
      </div>

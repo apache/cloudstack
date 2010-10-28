@@ -181,9 +181,7 @@ $(document).ready(function() {
 		return false;
 	});
 	
-	/*
 	initializeTestTool();
-	*/
 		
 	// Default AJAX Setup
 	$.ajaxSetup({
@@ -357,6 +355,11 @@ $(document).ready(function() {
 				
 				$("#main_username").text(g_username);
 				$("#login_wrapper").hide();
+				if (isAdmin()) {
+					$("#launch_test").show();
+				} else {
+					$("#launch_test").hide();
+				}
 				$("#main").show();	
 				$("#leftmenu_dashboard").click();
 			},
@@ -436,6 +439,11 @@ $(document).ready(function() {
 			buildSecondLevelNavigation();
 			$("#main_username").text(g_username);
 			$("#leftmenu_dashboard").click();
+			if (isAdmin()) {
+				$("#launch_test").show();
+			} else {
+				$("#launch_test").hide();
+			}
 			$("#main").show();
 		},
 		error: function(xmlHTTP) {
