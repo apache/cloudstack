@@ -199,8 +199,8 @@ function isoJsonToDetailsTab($midmenuItem1) {
 	else
 	    $detailsTab.find("#size").text("");    
               
-    setBooleanField(jsonObj.bootable, $detailsTab.find("#bootable"));	
-    setBooleanField(jsonObj.crossZones, $detailsTab.find("#crossZones"));	     
+    setBooleanReadField(jsonObj.bootable, $detailsTab.find("#bootable"));	
+    setBooleanReadField(jsonObj.crossZones, $detailsTab.find("#crossZones"));	     
     setDateField(jsonObj.created, $detailsTab.find("#created"));	  
     
     

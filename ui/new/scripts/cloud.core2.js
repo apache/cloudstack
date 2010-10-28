@@ -540,7 +540,7 @@ function todb(val) {
 
 var midmenuItemCount = 20;
 
-function setBooleanField(value, $field) {
+function setBooleanReadField(value, $field) {
     if(value == "true" || value == true)
         $field.text("Yes").show();
     else if(value == "false" || value == false)
@@ -549,7 +549,7 @@ function setBooleanField(value, $field) {
         $field.hide();
 }
 
-function setBooleanDropdownField(value, $field) {
+function setBooleanEditField(value, $field) {
     if(value == "true" || value == true)
         $field.val("true");
     else if(value == "false" || value == false)

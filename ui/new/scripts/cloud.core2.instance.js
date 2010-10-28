@@ -1607,11 +1607,11 @@ function vmJsonToDetailsTab($midmenuItem1){
     $detailsTab.find("#group").text(fromdb(jsonObj.group));	
     $detailsTab.find("#group_edit").val(fromdb(jsonObj.group));	
     
-    setBooleanField(jsonObj.haenable, $detailsTab.find("#haenable"));
-    setBooleanDropdownField(jsonObj.haenable, $detailsTab.find("#haenable_edit"));
+    setBooleanReadField(jsonObj.haenable, $detailsTab.find("#haenable"));
+    setBooleanEditField(jsonObj.haenable, $detailsTab.find("#haenable_edit"));
     //$detailsTab.find("#haenable_edit").val(jsonObj.haenable);
     	
-    setBooleanField((jsonObj.isoid != null), $detailsTab.find("#iso"));	
+    setBooleanReadField((jsonObj.isoid != null), $detailsTab.find("#iso"));	
       
     //actions ***
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
