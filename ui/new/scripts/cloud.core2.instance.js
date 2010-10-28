@@ -569,14 +569,24 @@ function initVMWizard() {
 			    loading.hide();
 			    container.empty(); 
 			    if (items != null && items.length > 0) {
-				    var first = true;
+				    //var first = true;
 				    var $vmTemplateInWizard = $("#vmtemplate_in_vmwizard");
 				    for (var i = 0; i < items.length; i++) {
 				        var $newTemplate = $vmTemplateInWizard.clone();
 				        $newTemplate.find("#icon").removeClass().addClass(getIconForOS(items[i].ostypename));
-				        $newTemplate.find("#name").text(fromdb(items[i].displaytext));		
-				        $newTemplate.find("#hypervisor").text(fromdb(items[i].hypervisor));					    
+				        $newTemplate.find("#name").text(fromdb(items[i].displaytext));	
+				        	
+				        //$newTemplate.find("#hypervisor").text(fromdb(items[i].hypervisor));	
+				        $newTemplate.find("#hypervisor").text("XenServer"); //temporary for testing, will remove this line and uncomment the line above later.
+				        				    
 				        $newTemplate.find("#submitted_by").text(fromdb(items[i].account));
+				        $newTemplate.attr("id", items[i].id);
+				        
+				        if(i == 0)
+				            $newTemplate.addClass("rev_wiztemplistbox_selected");
+				        else
+				            $newTemplate.addClass("rev_wiztemplistbox");
+				        
 				        container.append($newTemplate.show());
 				        /*
 					    var divClass = "rev_wiztemplistbox";
@@ -786,7 +796,7 @@ function initVMWizard() {
 		    // Create a new VM!!!!
 		    var moreCriteria = [];								
 		    moreCriteria.push("&zoneId="+$thisPopup.find("#wizard_zone").val());			    
-			moreCriteria.push("&hypervisor="+$thisPopup.find("#wizard_hypervisor").val());	    								
+			moreCriteria.push("&hypervisor="+$thisPopup.find("#step1 .rev_wiztemplistbox_selected").find("#hypervisor").text());	    								
 		    moreCriteria.push("&templateId="+$thisPopup.find("#step1 .rev_wiztemplistbox_selected").attr("id"));    							
 		    moreCriteria.push("&serviceOfferingId="+$thisPopup.find("input:radio[name=service_offering_radio]:checked").val());
 			
