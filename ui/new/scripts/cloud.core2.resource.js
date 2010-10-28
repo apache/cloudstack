@@ -311,7 +311,7 @@ function showPage2($pageToShow, $menuItem1) {
         hideMiddleMenu();	
           	
         initAddHostButton($("#midmenu_add_link"), "pod_page"); 
-        initAddPrimaryStorageButton($("#midmenu_add2_link"));  
+        initAddPrimaryStorageButton($("#midmenu_add2_link"), "pod_page");  
                
         initDialog("dialog_add_host");
         initDialog("dialog_add_pool");
@@ -351,7 +351,7 @@ function showPage2($pageToShow, $menuItem1) {
     }
     else if($pageToShow.attr("id") == "host_page") {
         initAddHostButton($("#midmenu_add_link"), "host_page"); 
-        initAddPrimaryStorageButton($("#midmenu_add2_link"));          
+        initAddPrimaryStorageButton($("#midmenu_add2_link"), "host_page");          
     
         initDialog("dialog_add_host");
         initDialog("dialog_add_pool");
@@ -363,7 +363,7 @@ function showPage2($pageToShow, $menuItem1) {
     }  
     else if($pageToShow.attr("id") == "primarystorage_page") {
         initAddHostButton($("#midmenu_add_link"), "primarystorage_page"); 
-        initAddPrimaryStorageButton($("#midmenu_add2_link"));  
+        initAddPrimaryStorageButton($("#midmenu_add2_link"), "primarystorage_page");  
         
         initDialog("dialog_add_host");
         initDialog("dialog_add_pool");
@@ -1474,19 +1474,40 @@ function refreshClusterUnderPod($podNode, newClusterName) {
     });	
 }
 
-function initAddPrimaryStorageButton($midmenuAddLink2) {
+function initAddPrimaryStorageButton($midmenuAddLink2, currentPageInRightPanel) {
     $midmenuAddLink2.find("#label").text("Add Primary Storage"); 
     $midmenuAddLink2.show();   
     $midmenuAddLink2.unbind("click").bind("click", function(event) {   
-        var podObj = $("#pod_page").find("#tab_content_details").data("jsonObj");
         dialogAddPool = $("#dialog_add_pool");  
         dialogAddPool.find("#info_container").hide();	
-        dialogAddPool.find("#zone_name").text(fromdb(podObj.zonename));  
-        dialogAddPool.find("#pod_name").text(fromdb(podObj.name)); 
-                                
+             
+        var zoneId, podId;        
+        if(currentPageInRightPanel == "pod_page") {
+            var podObj = $("#pod_page").find("#tab_content_details").data("jsonObj");   
+            var podObj = $("#pod_page").find("#tab_content_details").data("jsonObj");
+            zoneId = podObj.zoneid;
+            podId = podObj.id;
+            dialogAddPool.find("#zone_name").text(fromdb(podObj.zonename));  
+            dialogAddPool.find("#pod_name").text(fromdb(podObj.name)); 
+        }
+        else if(currentPageInRightPanel == "host_page") {
+            var hostObj = $("#host_page").find("#tab_content_details").data("jsonObj");  
+            zoneId = hostObj.zoneid;
+            podId = hostObj.podid; 
+            dialogAddPool.find("#zone_name").text(fromdb(hostObj.zonename));  
+            dialogAddPool.find("#pod_name").text(fromdb(hostObj.podname)); 
+        }
+        else if(currentPageInRightPanel == "primarystorage_page") {
+            var primarystorageObj = $("#primarystorage_page").find("#tab_content_details").data("jsonObj");   
+            zoneId = primarystorageObj.zoneid;
+            podId = primarystorageObj.podid;           
+            dialogAddPool.find("#zone_name").text(fromdb(primarystorageObj.zonename));  
+            dialogAddPool.find("#pod_name").text(fromdb(primarystorageObj.podname)); 
+        }
+                                             
         var clusterSelect = $("#dialog_add_pool").find("#pool_cluster").empty();			            
 	    $.ajax({
-		    data: createURL("command=listClusters&podid=" + podObj.id),
+		    data: createURL("command=listClusters&podid=" + podId),
 	        dataType: "json",
 	        success: function(json) {				                        
 	            var items = json.listclustersresponse.cluster;
@@ -1522,8 +1543,8 @@ function initAddPrimaryStorageButton($midmenuAddLink2) {
 				$thisDialog.find("#spinning_wheel").show()  
 							
 				var array1 = [];
-				array1.push("&zoneId="+podObj.zoneid);
-		        array1.push("&podId="+podObj.id);
+				array1.push("&zoneId="+zoneId);
+		        array1.push("&podId="+podId);
 				
 				var clusterId = $thisDialog.find("#pool_cluster").val();
 			    array1.push("&clusterid="+clusterId);	
