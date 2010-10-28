@@ -174,7 +174,7 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
 	
 	@Override
 	public void markForCleanup(long accountId) {
-		AccountVO account = findById(accountId);
+		AccountVO account = findByIdIncludingRemoved(accountId);
 		if (!account.getNeedsCleanup()) {
 			account.setNeedsCleanup(true);
         	update(accountId, account);
