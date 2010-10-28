@@ -111,3 +111,5 @@ for name,meth in load_dynamic_methods(): setattr(CloudAPI,name,meth)
 implementor = CloudAPI
 
 del name,meth,describe,load_dynamic_methods
+
+
