@@ -123,7 +123,7 @@ function doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detai
 	        async: false,
 	        success: function(json) {	 	                  
 	            $spinningWheel.hide(); 	      
-	            handleMidMenuItemAfterDetailsTabAction($midmenuItem1, false, (label + " action succeeded."));	
+	            handleMidMenuItemAfterDetailsTabAction($midmenuItem1, true, (label + " action succeeded."));	
 	            	              
 	            $afterActionInfoContainer.find("#after_action_info").text(label + " action succeeded.");
                 $afterActionInfoContainer.removeClass("errorbox").show();              	
@@ -496,6 +496,7 @@ function removeHighlightInMiddleMenu(selectedItemsInMidMenu) {
 
 function copyActionInfoFromMidMenuToRightPanel($midmenuItem1) {     
     var $afterActionInfoContainer = $("#right_panel_content #after_action_info_container_on_top");       
+    
     if($midmenuItem1.find("#info_icon").css("display") != "none") {                
         $afterActionInfoContainer.find("#after_action_info").text($midmenuItem1.data("afterActionInfo"));     
         if($midmenuItem1.find("#info_icon").hasClass("error"))
