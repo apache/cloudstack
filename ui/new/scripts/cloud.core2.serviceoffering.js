@@ -18,12 +18,7 @@
 
 function afterLoadServiceOfferingJSP() {
     var $detailsTab = $("#right_panel_content #tab_content_details"); 
-
-    //edit button ***
-    var $readonlyFields  = $detailsTab.find("#name, #displaytext, #passwordenabled");
-    var $editFields = $detailsTab.find("#name_edit, #displaytext_edit, #passwordenabled_edit"); 
-    initializeEditFunction($readonlyFields, $editFields, doUpdateServiceOffering); 
-     
+   
     //dialogs
     initDialog("dialog_add_service");
      
@@ -114,7 +109,30 @@ function afterLoadServiceOfferingJSP() {
     });
 }
 
-function doUpdateServiceOffering() {
+function doEditServiceOffering($actionLink, $detailsTab, $midmenuItem1) {       
+    var $readonlyFields  = $detailsTab.find("#name, #displaytext, #offerha");
+    var $editFields = $detailsTab.find("#name_edit, #displaytext_edit, #offerha_edit"); 
+             
+    $readonlyFields.hide();
+    $editFields.show();  
+    $detailsTab.find("#cancel_button, #save_button").show();
+    
+    $detailsTab.find("#cancel_button").unbind("click").bind("click", function(event){    
+        $editFields.hide();
+        $readonlyFields.show();   
+        $("#save_button, #cancel_button").hide();       
+        return false;
+    });
+    $detailsTab.find("#save_button").unbind("click").bind("click", function(event){        
+        doEditServiceOffering2($actionLink, $detailsTab, $midmenuItem1);     
+        $editFields.hide();      
+        $readonlyFields.show();       
+        $("#save_button, #cancel_button").hide();       
+        return false;
+    });   
+}
+
+function doEditServiceOffering2($actionLink, $detailsTab, $midmenuItem1) { 
     var $detailsTab = $("#right_panel_content #tab_content_details");   
     var jsonObj = $detailsTab.data("jsonObj");
     var id = jsonObj.id;
@@ -127,7 +145,7 @@ function doUpdateServiceOffering() {
         return;	
      
     var array1 = [];    
-    var name = $detailsTab.find("#name_edit").val();
+    var name = $detailsTab.find("#name_edit").val();   
     array1.push("&name="+todb(name));
     var displaytext = $detailsTab.find("#displaytext_edit").val();
     array1.push("&displayText="+todb(displaytext));
@@ -138,8 +156,7 @@ function doUpdateServiceOffering() {
 	    data: createURL("command=updateServiceOffering&id="+id+array1.join("")),
 		dataType: "json",
 		success: function(json) {	  
-		    var jsonObj = json.updateserviceofferingresponse;
-		    var $midmenuItem1 = $("#"+getMidmenuId(jsonObj));		  
+		    var jsonObj = json.updateserviceofferingresponse;	
 		    serviceOfferingToMidmenu(jsonObj, $midmenuItem1);
 		    serviceOfferingToRightPanel($midmenuItem1);		  
 		}
@@ -167,7 +184,8 @@ function serviceOfferingJsonToDetailsTab($midmenuItem1) {
     var $detailsTab = $("#right_panel_content #tab_content_details");   
     $detailsTab.data("jsonObj", jsonObj);      
     $detailsTab.find("#id").text(jsonObj.id);
-    
+   
+    $detailsTab.find("#grid_header_title").text(fromdb(jsonObj.name)); 
     $detailsTab.find("#name").text(fromdb(jsonObj.name));
     $detailsTab.find("#name_edit").val(fromdb(jsonObj.name));
     
@@ -188,6 +206,7 @@ function serviceOfferingJsonToDetailsTab($midmenuItem1) {
     //actions ***
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty();      
+    buildActionLinkForDetailsTab("Edit Service Offering", serviceOfferingActionMap, $actionMenu, $midmenuItem1, $detailsTab);	
     buildActionLinkForDetailsTab("Delete Service Offering", serviceOfferingActionMap, $actionMenu, $midmenuItem1, $detailsTab);	
 }
 
@@ -216,7 +235,10 @@ function serviceOfferingClearDetailsTab() {
     $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());
 }
 
-var serviceOfferingActionMap = {     
+var serviceOfferingActionMap = {    
+    "Edit Service Offering": {
+        dialogBeforeActionFn: doEditServiceOffering
+    }, 
     "Delete Service Offering": {              
         api: "deleteServiceOffering",     
         isAsyncJob: false,           
