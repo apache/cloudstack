@@ -642,7 +642,7 @@ long milliseconds = new Date().getTime();
                         <div class="leftmenu_expandedlist">
                             <div class="leftmenu_content" style="border-bottom: 1px dashed b4c8d6;" id="leftmenu_service_offering">
                                 <div class="leftmenu_secondindent">
-                                    <div class="leftmenu_arrows expanded_close" id="arrowIcon">
+                                    <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
                                     </div>
                                     
                                     <%=t.t("service.offerings")%>
@@ -652,7 +652,7 @@ long milliseconds = new Date().getTime();
                         <div class="leftmenu_expandedlist">
                             <div class="leftmenu_content" id="leftmenu_disk_offering">
                                 <div class="leftmenu_secondindent">
-                                    <div class="leftmenu_arrows expanded_close" id="arrowIcon">
+                                    <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
                                     </div>
                                     
                                     <%=t.t("disk.offerings")%>
@@ -662,7 +662,7 @@ long milliseconds = new Date().getTime();
                         <div class="leftmenu_expandedlist">
                             <div class="leftmenu_content" id="leftmenu_global_setting">
                                 <div class="leftmenu_secondindent">
-                                    <div class="leftmenu_arrows expanded_close" id="arrowIcon">
+                                    <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
                                     </div>
                                     
                                     <%=t.t("global.settings")%>
