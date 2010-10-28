@@ -267,6 +267,9 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
     
     @Inject
     private VmManager _vmMgr;
+    
+    @Inject
+    private ClusterManager _clMgr;
 
     private final ScheduledExecutorService _capacityScanScheduler = Executors.newScheduledThreadPool(1, new NamedThreadFactory("CP-Scan"));
     private final ExecutorService _requestHandlerScheduler = Executors.newCachedThreadPool(new NamedThreadFactory("Request-handler"));
@@ -2359,12 +2362,28 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
         }
         
         _capacityScanScheduler.scheduleAtFixedRate(getCapacityScanTask(), STARTUP_DELAY, _capacityScanInterval, TimeUnit.MILLISECONDS);
+        
+		//cert job cleanup
+		cleanupCertTable(_clMgr.getId());
 
         if (s_logger.isInfoEnabled())
             s_logger.info("Console Proxy Manager is configured.");
         return true;
     }
 
+    private void cleanupCertTable(Long mServerId){
+    	CertificateVO cert = _certDao.listAll().get(0);//always 1 record in db
+    	Long mgmtSvrIdForCertJob = null;
+    	if(cert!=null){
+    		mgmtSvrIdForCertJob = cert.getMgmtServerId();
+    	}
+		if(mgmtSvrIdForCertJob!=null && mgmtSvrIdForCertJob.longValue() == (_clMgr.getId())){
+			CertificateVO lockedCert = _certDao.acquire(cert.getId());
+			lockedCert.setMgmtServerId(null);
+			_certDao.release(lockedCert.getId());
+		}
+    }
+    
     @Override
     public boolean destroyConsoleProxy(DestroyConsoleProxyCmd cmd) throws ServerApiException{
         Long proxyId = cmd.getId();
@@ -2448,7 +2467,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
 		//get cert from db
 		CertificateVO cert = _certDao.listAll().get(0);
 		
-		if(cert.getUpdated().equals("t")){
+		if(cert.getUpdated().equalsIgnoreCase("Y")){
 			String certStr = cert.getCertificate(); 
 			long proxyVmId = (cmd).getProxyVmId();
 			ConsoleProxyVO consoleProxy = _consoleProxyDao.findById(proxyVmId);

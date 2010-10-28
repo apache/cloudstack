@@ -494,7 +494,7 @@ public class ManagementServerImpl implements ManagementServer {
 			_networkGroupsEnabled = true;
 		}
     }
-
+    
     protected Map<String, String> getConfigs() {
         return _configs;
     }
@@ -5871,8 +5871,9 @@ public class ManagementServerImpl implements ManagementServer {
     	try 
     	{
     		CertificateVO cert = _certDao.listAll().get(0); //always 1 record in db
-    		
-    		if(cert.getUpdated().equals("t")){
+    		if(cert.getMgmtServerId()!=null)
+    			throw new ServerApiException(BaseCmd.CUSTOM_CERT_UPDATE_ERROR, "Another management server is in the process of custom cert updating");
+    		if(cert.getUpdated().equalsIgnoreCase("Y")){
 				 if(s_logger.isDebugEnabled())
 					 s_logger.debug("A custom certificate already exists in the DB, will replace it with the new one being uploaded");
 			}else{
@@ -5881,8 +5882,10 @@ public class ManagementServerImpl implements ManagementServer {
 			}
 			String certificatePath = cmd.getPath();
 			CertificateVO lockedCert = _certDao.acquire(cert.getId());
-			Long certVOId = _certDao.persistCustomCertToDb(certificatePath,lockedCert);//0 implies failure
-
+			//assigned mgmt server id to mark as processing under this ms
+			Long certVOId = _certDao.persistCustomCertToDb(certificatePath,lockedCert,this.getId());//0 implies failure
+			_certDao.release(lockedCert.getId());
+			
 			if (certVOId!=null && certVOId!=0) 
 			{
 				//certficate uploaded to db successfully	
@@ -5928,7 +5931,9 @@ public class ManagementServerImpl implements ManagementServer {
 					}	
 				}
 
-				_certDao.release(lockedCert.getId());
+				CertificateVO lockedCertPostPatching = _certDao.acquire(cert.getId());
+				lockedCertPostPatching.setMgmtServerId(null);//release for other ms
+				_certDao.release(lockedCertPostPatching.getId());
 				return ("Updated:"+updatedCpIdList.size()+" out of:"+cpList.size()+" console proxies");
 			}
 			else

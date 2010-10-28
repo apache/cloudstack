@@ -38,7 +38,10 @@ public class CertificateVO {
 
     @Column(name="updated")
     private String updated;
-    
+
+	@Column(name="mgmt_server_id")
+    private Long mgmtServerId;
+
     public CertificateVO() {}
 
     public Long getId() {
@@ -59,4 +62,13 @@ public class CertificateVO {
     public void setUpdated(String updated){
     	this.updated = updated;
     }
+
+
+    public Long getMgmtServerId() {
+		return mgmtServerId;
+	}
+
+	public void setMgmtServerId(Long mgmtServerId) {
+		this.mgmtServerId = mgmtServerId;
+	}
 }

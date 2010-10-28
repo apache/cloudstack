@@ -15,12 +15,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
+package com.cloud.api.response;
 
-package com.cloud.certificate.dao;
+import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
-import com.cloud.certificate.CertificateVO;
-import com.cloud.utils.db.GenericDao;
+public class CustomCertificateResponse extends BaseResponse {
 
-public interface CertificateDao extends GenericDao<CertificateVO, Long> {
-	public Long persistCustomCertToDb(String certPath, CertificateVO cert, Long managementServerId);
+    @SerializedName("updatedconsoleproxyidlist") @Param(description="the list of the console proxy ids which were successfully updated")
+    private String updatedConsoleProxyIdList;
+
+	public String getUpdatedConsoleProxyIdList() {
+		return updatedConsoleProxyIdList;
+	}
+
+	public void setUpdatedConsoleProxyIdList(String updatedConsoleProxyIdList) {
+		this.updatedConsoleProxyIdList = updatedConsoleProxyIdList;
+	}
+
 }

@@ -24,7 +24,7 @@ public class CertificateDaoImpl extends GenericDaoBase<CertificateVO, Long>  imp
     }
     
 	@Override
-	public Long persistCustomCertToDb(String certPath, CertificateVO cert){		
+	public Long persistCustomCertToDb(String certPath, CertificateVO cert, Long managementServerId){		
 	    BufferedInputStream f = null;
 		String certStr = null;
 		try 
@@ -34,7 +34,8 @@ public class CertificateDaoImpl extends GenericDaoBase<CertificateVO, Long>  imp
 	        f.read(buffer);
 	        certStr = new String(buffer);
         	cert.setCertificate(certStr);
-        	cert.setUpdated("t");
+        	cert.setUpdated("Y");
+        	cert.setMgmtServerId(managementServerId);
         	update(cert.getId(),cert);
         	return cert.getId();
 	    } catch (FileNotFoundException e) {
