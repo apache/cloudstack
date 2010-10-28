@@ -3432,6 +3432,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     @Override
     public void updateVirtualMachine(UpdateVMCmd cmd) {
         String displayName = cmd.getDisplayName();
+        String group = cmd.getGroup();
         Boolean ha = cmd.getHaEnable();
         Long id = cmd.getId();
         Account account = UserContext.current().getAccount();
@@ -3439,14 +3440,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     
         //Input validation
         UserVmVO vmInstance = null;
-        
+
         // Verify input parameters
-        try 
-        {
+        try  {
         	vmInstance = _vmDao.findById(id.longValue());
-        } 
-        catch (Exception ex1) 
-        {
+        } catch (Exception ex1) {
         	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "unable to find virtual machine by id");
         }
 
@@ -3459,7 +3457,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     	if (displayName == null) {
     		displayName = vmInstance.getDisplayName();
     	}
-    	
+
     	if (ha == null) {
     		ha = vmInstance.isHaEnabled();
     	}
@@ -3468,6 +3466,10 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         UserVmVO vm = _vmDao.findById(id);
         if (vm == null) {
             throw new CloudRuntimeException("Unable to find virual machine with id " + id);
+        }
+
+        if (group != null) {
+            addInstanceToGroup(id, group);
         }
 
         boolean haEnabled = vm.isHaEnabled();
