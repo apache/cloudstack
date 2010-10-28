@@ -61,6 +61,7 @@ import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.alert.AlertManager;
 import com.cloud.alert.AlertVO;
 import com.cloud.alert.dao.AlertDao;
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.AssignPortForwardingServiceCmd;
@@ -6696,7 +6697,12 @@ public class ManagementServerImpl implements ManagementServer {
         if (_dcDao.findById(zoneId) == null) {
             throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please specify a valid zone.");          
         }
-
+        //Extract activity only for detached volumes or for volumes whose instance is stopped
+        if(volume.getInstanceId() != null && ApiDBUtils.findVMInstanceById(volume.getInstanceId()).getState() != State.Stopped ){
+            s_logger.debug("Invalid state of the volume with ID: " + volumeId + ". It should be either detached or the VM should be in stopped state.");
+            throw new PermissionDeniedException("Invalid state of the volume with ID: " + volumeId + ". It should be either detached or the VM should be in stopped state.");
+        }
+        
         Upload.Mode extractMode;
         if( mode == null || (!mode.equals(Upload.Mode.FTP_UPLOAD.toString()) && !mode.equals(Upload.Mode.HTTP_DOWNLOAD.toString())) ){
             throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please specify a valid extract Mode ");
@@ -6704,7 +6710,7 @@ public class ManagementServerImpl implements ManagementServer {
             extractMode = mode.equals(Upload.Mode.FTP_UPLOAD.toString()) ? Upload.Mode.FTP_UPLOAD : Upload.Mode.HTTP_DOWNLOAD;
         }
         
-        if (account != null) {                  
+        if (account != null) {    
             if(!isAdmin(account.getType())){
                 if (volume.getAccountId() != account.getId()){
                     throw new PermissionDeniedException("Unable to find volume with ID: " + volumeId + " for account: " + account.getAccountName());
@@ -6751,17 +6757,19 @@ public class ManagementServerImpl implements ManagementServer {
         List<HostVO> storageServers = _hostDao.listByTypeDataCenter(Host.Type.SecondaryStorage, zoneId);
         HostVO sserver = storageServers.get(0);
 
-        EventUtils.saveStartedEvent(userId, accountId, EventTypes.EVENT_VOLUME_UPLOAD, "Starting extraction of " +volume.getName()+ " mode:"+mode, cmd.getStartEventId());
+        EventUtils.saveStartedEvent(userId, accountId, cmd.getEventType(), "Starting extraction of " +volume.getName()+ " mode:"+mode, cmd.getStartEventId());
         List<UploadVO> extractURLList = _uploadDao.listByTypeUploadStatus(volumeId, Upload.Type.VOLUME, UploadVO.Status.DOWNLOAD_URL_CREATED);
         
-        if (extractMode == Upload.Mode.HTTP_DOWNLOAD && extractURLList.size() > 0){                       
+        if (extractMode == Upload.Mode.HTTP_DOWNLOAD && extractURLList.size() > 0){   
             return extractURLList.get(0).getId(); // If download url already exists then return 
         }else {
-            UploadVO uploadJob = _uploadMonitor.createNewUploadEntry(sserver.getId(), volumeId, UploadVO.Status.COPY_IN_PROGRESS, 0, Type.VOLUME, null, null, url);
+            UploadVO uploadJob = _uploadMonitor.createNewUploadEntry(sserver.getId(), volumeId, UploadVO.Status.COPY_IN_PROGRESS, Type.VOLUME, url, extractMode);
+            s_logger.debug("Extract Mode - " +uploadJob.getMode());
             uploadJob = _uploadDao.createForUpdate(uploadJob.getId());
             
             // Update the async Job
             ExtractResponse resultObj = new ExtractResponse(volumeId, volume.getName(), accountId, UploadVO.Status.COPY_IN_PROGRESS.toString(), uploadJob.getId());
+            resultObj.setResponseName(cmd.getName());
             _asyncMgr.updateAsyncJobAttachment(job.getId(), Type.VOLUME.toString(), volumeId);
             _asyncMgr.updateAsyncJobStatus(job.getId(), AsyncJobResult.STATUS_IN_PROGRESS, resultObj);
     
@@ -6789,16 +6797,16 @@ public class ManagementServerImpl implements ManagementServer {
             }
             
             String volumeLocalPath = "volumes/"+volume.getId()+"/"+cvAnswer.getVolumePath()+".vhd";
-            //Update the DB that volume is copied
+            //Update the DB that volume is copied and volumePath
             uploadJob.setUploadState(UploadVO.Status.COPY_COMPLETE);
             uploadJob.setLastUpdated(new Date());
+            uploadJob.setInstallPath(volumeLocalPath);
             _uploadDao.update(uploadJob.getId(), uploadJob);
             
             if (extractMode == Mode.FTP_UPLOAD){ // Now that the volume is copied perform the actual uploading
                 _uploadMonitor.extractVolume(uploadJob, sserver, volume, url, zoneId, volumeLocalPath, cmd.getStartEventId(), job.getId(), _asyncMgr);
                 return uploadJob.getId();
             }else{ // Volume is copied now make it visible under apache and create a URL.
-                s_logger.debug("volumepath " +volumeLocalPath);
                 _uploadMonitor.createVolumeDownloadURL(volumeId, volumeLocalPath, Type.VOLUME, zoneId, uploadJob.getId());                
                 EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_INFO, cmd.getEventType(), "Completed extraction of "+volume.getName()+ " in mode:" +mode, null, cmd.getStartEventId());
                 return uploadJob.getId();

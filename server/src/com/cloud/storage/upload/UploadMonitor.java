@@ -19,7 +19,9 @@
 package com.cloud.storage.upload;
 
 import com.cloud.async.AsyncJobManager;
+import com.cloud.exception.InternalErrorException;
 import com.cloud.host.HostVO;
+import com.cloud.storage.Upload.Mode;
 import com.cloud.storage.Upload.Status;
 import com.cloud.storage.Upload.Type;
 import com.cloud.storage.UploadVO;
@@ -46,8 +48,7 @@ public interface UploadMonitor extends Manager{
     void handleUploadSync(long sserverId);
 
     UploadVO createNewUploadEntry(Long hostId, Long typeId, Status uploadState,
-            int uploadPercent, Type type, String errorString, String jobId,
-            String uploadUrl);
+            Type type, String errorString, Mode extractMode);
 
     void extractVolume(UploadVO uploadVolumeObj, HostVO sserver, VolumeVO volume, String url,
             Long dataCenterId, String installPath, long eventId,
@@ -57,6 +58,6 @@ public interface UploadMonitor extends Manager{
             VMTemplateHostVO vmTemplateHost, Long dataCenterId, long eventId);
 
     void createVolumeDownloadURL(Long entityId, String path, Type type,
-            Long dataCenterId, Long uploadId) throws CloudRuntimeException;
+            Long dataCenterId, Long uploadId) throws InternalErrorException;
 
 }

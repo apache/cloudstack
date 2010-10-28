@@ -82,6 +82,9 @@ public class UploadVO implements Upload {
 	@Column (name="url")
 	private String uploadUrl;
 
+	@Column (name="install_path")
+	private String installPath;
+	   
 	public long getHostId() {
 		return hostId;
 	}
@@ -113,17 +116,15 @@ public class UploadVO implements Upload {
 	}
 
 	public UploadVO(long hostId, long typeId, Date lastUpdated,
-			Status uploadState, int uploadPercent, Type type,
-			String errorString, String jobId, String uploadUrl) {
+			Status uploadState, Type type,
+			String uploadUrl, Mode mode) {
 		super();
 		this.hostId = hostId;
 		this.typeId = typeId;
 		this.lastUpdated = lastUpdated;
 		this.uploadState = uploadState;
-		this.uploadPercent = uploadPercent;
+		this.mode = mode;
 		this.type = type;
-		this.errorString = errorString;
-		this.jobId = jobId;
 		this.uploadUrl = uploadUrl;
 	}
 	
@@ -240,5 +241,13 @@ public class UploadVO implements Upload {
 	public void setCreated(Date created) {
 		this.created = created;
 	}
+
+    public String getInstallPath() {
+        return installPath;
+    }
+
+    public void setInstallPath(String installPath) {
+        this.installPath = installPath;
+    }
 
 }

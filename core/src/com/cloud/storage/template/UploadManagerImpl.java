@@ -358,11 +358,13 @@ public class UploadManagerImpl implements UploadManager {
     @Override
     public DeleteEntityDownloadURLAnswer handleDeleteEntityDownloadURLCommand(DeleteEntityDownloadURLCommand cmd){
 
-        //Delete the soft link
-        s_logger.debug("handleDeleteEntityDownloadURLCommand "+cmd.getPath());
+        //Delete the soft link. Example path = volumes/8/74eeb2c6-8ab1-4357-841f-2e9d06d1f360.vhd
+        s_logger.warn("handleDeleteEntityDownloadURLCommand Path:"+cmd.getPath() + " Type:" +cmd.getType().toString());
+        String path = cmd.getPath();
         Script command = new Script("/bin/bash", s_logger);
         command.add("-c");
-        command.add("unlink /var/www/html/"+cmd.getPath());
+        //We just need to remove the UUID.vhd
+        command.add("unlink /var/www/html/" +path.substring(path.lastIndexOf(File.separator) + 1));
         String result = command.execute();
         if (result != null) {
             String errorString = "Error in deleting =" + result;
@@ -370,11 +372,12 @@ public class UploadManagerImpl implements UploadManager {
             return new DeleteEntityDownloadURLAnswer(errorString, CreateEntityDownloadURLAnswer.RESULT_FAILURE);
         }
         
-        // If its a volume also delete the Hard link
+        // If its a volume also delete the Hard link since it was created only for the purpose of download.
         if(cmd.getType() == Upload.Type.VOLUME){
             command = new Script("/bin/bash", s_logger);
             command.add("-c");
-            command.add("rm -f " + publicTemplateRepo + cmd.getPath());
+            command.add("rm -f " + parentDir +File.separator+ path);
+            s_logger.warn(" " +parentDir +File.separator+ path);
             result = command.execute();
             if (result != null) {
                 String errorString = "Error in linking  err=" + result;

@@ -648,6 +648,7 @@ CREATE TABLE  `cloud`.`upload` (
   `upload_state` varchar(255),
   `error_str` varchar(255),
   `url` varchar(255),
+  `install_path` varchar(255),
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
