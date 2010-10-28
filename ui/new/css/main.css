@@ -865,7 +865,7 @@ a:hover {
 	float:left;
 	border-bottom:1px solid #999;
 	margin:0;
-	padding:0;
+	padding:0 0 3px 0;
 	background:#FFF repeat top left;
 	cursor:pointer;
 	cursor:hand;
@@ -881,7 +881,7 @@ a:hover {
 	float:left;
 	border-bottom:1px solid #999;
 	margin:0;
-	padding:0;
+	padding:0 0 3px 0;
 	background:#8fe0f4 repeat top left;
 	cursor:pointer;
 	cursor:hand;
@@ -917,26 +917,46 @@ a:hover {
 }
 
 .rev_wiztemp_listtext {
-	width:380px;
-	height:auto;
-	float:left;
-	color:#021a28;
-	font-size:11px;
-	font-weight:normal;
-	text-align:left;
-	margin:5px 0 5px 0;
-	padding:0;
-}
-
-.rev_wiztemp_ownertext {
-	width:80px;
+	width:350px;
 	height:auto;
 	float:left;
 	color:#021a28;
 	font-size:11px;
 	font-weight:bold;
 	text-align:left;
+	margin:5px 0 0 0;
+	padding:0;
+}
+
+.rev_wiztemp_listtext.hypervisortext {
+	width:350px;
+	height:auto;
+	float:left;
+	color:#525252;
+	font-size:10px;
+	font-weight:normal;
+	text-align:left;
+	margin:2px 0 0 0;
+	padding:0;
+}
+
+.rev_wiztemp_ownertext {
+	width:110px;
+	height:auto;
+	float:left;
+	color:#666;
+	font-size:10px;
+	font-weight:normal;
+	text-align:left;
 	margin:5px 0 5px 0;
+	padding:0;
+}
+.rev_wiztemp_ownertext span {
+	color:#666;
+	font-size:10px;
+	font-weight:bold;
+	text-align:left;
+	margin:0;
 	padding:0;
 }
 
@@ -2210,6 +2230,11 @@ a:hover.search_button {
 	background:#fffacd url(../images/mid_addingbg.gif) repeat-x top left;
 	color:#333;
 }
+
+.midmenu_content.addingfailed{
+	background:#ffe5e5url(../images/errormsg_bg.gif) repeat-x top left;
+	color:#a90000;
+}
 /*
 .midmenu_content:hover{
 	background:#626262 url(../images/leftmenu_hover.gif) repeat-x top left;
@@ -2761,6 +2786,21 @@ a:hover.search_button {
 	margin:5px 0 0 0;
 	display:inline;
 	padding:0;
+}
+.midmenu_addingfailed_closeicon {
+	width:12px;
+	height:12px;
+	float:left;
+	background:url(../images/addingfailed_closeicon.png) no-repeat top left;
+	margin:8px 0 0 0;
+	display:inline;
+	padding:0;
+	cursor:pointer;
+	cursor:hand;
+}
+
+.midmenu_addingfailed_closeicon:hover {
+	background:url(../images/addingfailed_closeicon_hover.png) no-repeat top left;
 }
 
 .midmenu_defaultloader {

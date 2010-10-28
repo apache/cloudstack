@@ -40,24 +40,23 @@
                    <p>Loading &hellip;</p>    
               </div>               
         </div>  
-        <div class="grid_actionpanel">                        
-            <div class="gridheader_loaderbox" id="spinning_wheel" style="border: 1px solid #999;
-                display: none;">
-                <div class="gridheader_loader" id="icon">
-                </div>
-                <p id="description">
-                    Waiting &hellip;</p>
-            </div>                  
-        </div>      
+         
         <div class="grid_container" style="display: block;">            
             <div class="grid_header">
             	<div id="title" class="grid_header_title">Title</div>
                     <div class="grid_actionbox" id="action_link">
-                    <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
-                        <ul class="actionsdropdown_boxlist" id="action_list">
-                            <li><%=t.t("no.available.actions")%></li>
-                        </ul>
+                        <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
+                            <ul class="actionsdropdown_boxlist" id="action_list">
+                                <li><%=t.t("no.available.actions")%></li>
+                            </ul>
+                        </div>
                     </div>
+                <div class="gridheader_loaderbox" id="spinning_wheel" style="border: 1px solid #999;
+                display: none;">
+                    <div class="gridheader_loader" id="icon">
+                    </div>
+                    <p id="description">
+                        Waiting &hellip;</p>
                 </div>
             </div>            
             <div class="grid_rows odd">
@@ -255,13 +254,7 @@
                         <select class="select" id="wizard_zone" name="zone">
                         </select>
                         
-                        <label>
-                            Hypervisor:</label>
-                        <select id="wizard_hypervisor">
-                            <option value='XenServer'>Citrix XenServer</option>
-                            <option value='VmWare'>VMware ESX</option>                            
-                            <option value='KVM'>KVM</option>
-                        </select>                        
+                                        
                         
                         <div class="rev_tempsearchbox">
                             <form method="post" action="#">
@@ -304,24 +297,19 @@
                             </div>
                             <div class="rev_wizmid_tempbox_right">
                                 <div class="rev_wiztemplistpanel" id="template_container">
-                                    <!--
-                                    <div class="rev_wiztemplistbox_selected">
-                                        <div class="rev_wiztemo_centosicons">
-                                        </div>
-                                        <div class="rev_wiztemp_listtext">
-                                            CentOS 5.4 64-bit Web Server (Apache)</div>
-                                        <div class="rev_wiztemp_ownertext">
-                                            System</div>
-                                    </div>
+                                 
                                     <div class="rev_wiztemplistbox">
                                         <div class="rev_wiztemo_centosicons">
                                         </div>
                                         <div class="rev_wiztemp_listtext">
-                                            CentOS 5.4 64-bit Web Server (Apache)</div>
+                                            CentOS 5.4 64-bit Web Server (Apache) 
+                                            <div class="rev_wiztemp_listtext hypervisortext">Hypervisor: <strong>VMWare Xen</strong></div>
+                                        </div>
                                         <div class="rev_wiztemp_ownertext">
-                                            System</div>
+                                            [Submitted by: <span>System</span>]</div>
                                     </div>
-                                    -->
+                                    
+                                  
                                 </div>
                                 <div class="rev_wiztemplistactions">
                                     <div class="rev_wiztemplist_actionsbox">
