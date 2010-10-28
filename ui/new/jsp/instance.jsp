@@ -297,19 +297,19 @@
                             </div>
                             <div class="rev_wizmid_tempbox_right">
                                 <div class="rev_wiztemplistpanel" id="template_container">
-                                 
-                                    <div class="rev_wiztemplistbox">
-                                        <div class="rev_wiztemo_centosicons">
+                                    <!--  
+                                    <div id="vmtemplate_in_vmwizard" class="rev_wiztemplistbox">
+                                        <div id="icon">
                                         </div>
                                         <div class="rev_wiztemp_listtext">
-                                            CentOS 5.4 64-bit Web Server (Apache) 
-                                            <div class="rev_wiztemp_listtext hypervisortext">Hypervisor: <strong>VMWare Xen</strong></div>
+                                            <span id="name"></span>
+                                            <div class="rev_wiztemp_listtext hypervisortext">
+                                                Hypervisor: <strong id="hypervisor"></strong></div>
                                         </div>
                                         <div class="rev_wiztemp_ownertext">
-                                            [Submitted by: <span>System</span>]</div>
-                                    </div>
-                                    
-                                  
+                                            [Submitted by: <span id="submitted_by"></span>]</div>
+                                    </div>                                    
+                                    -->
                                 </div>
                                 <div class="rev_wiztemplistactions">
                                     <div class="rev_wiztemplist_actionsbox">
@@ -675,6 +675,22 @@
     </div>
 </div>
 <!-- VM wizard (end)-->
+
+<!-- VM Wizard - VM template (begin) -->
+<div id="vmtemplate_in_vmwizard" class="rev_wiztemplistbox" style="display:none">
+    <div id="icon">
+    </div>
+    <div class="rev_wiztemp_listtext">
+        <span id="name"></span>
+        <div class="rev_wiztemp_listtext hypervisortext">
+            Hypervisor: <strong id="hypervisor"></strong>
+        </div>
+    </div>
+    <div class="rev_wiztemp_ownertext">
+        [Submitted by: <span id="submitted_by"></span>]</div>
+</div>
+<!-- VM Wizard - VM template (end) -->
+
 <!-- VM Wizard - Service Offering template (begin) -->
 <div class="vmpopup_offeringbox" id="vm_popup_service_offering_template" style="display: none">
     <input type="radio" name="service_offering_radio" class="radio" checked />
