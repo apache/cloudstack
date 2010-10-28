@@ -2191,12 +2191,12 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         vm.removeFromOtherConfig(conn, "disks");
 
         if (!(guestOsTypeName.startsWith("Windows") || guestOsTypeName.startsWith("Citrix") || guestOsTypeName.startsWith("Other"))) {
-            if (cmd.getBootFromISO())
+            if (cmd.getBootFromISO()) {
                 vm.setPVBootloader(conn, "eliloader");
-            else
+                vm.addToOtherConfig(conn, "install-repository", "cdrom");
+            } else {
                 vm.setPVBootloader(conn, "pygrub");
-
-            vm.addToOtherConfig(conn, "install-repository", "cdrom");
+            }
         }
         return vm;
     }
@@ -2369,171 +2369,153 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         VM vm = null;
         SR isosr = null;
         List<Ternary<SR, VDI, VolumeVO>> mounts = null;
-        for (int retry = 0; retry < 2; retry++) {
-            try {
-                synchronized (_vms) {
-                    _vms.put(cmd.getVmName(), State.Starting);
-                }
+        try {
+            synchronized (_vms) {
+                _vms.put(cmd.getVmName(), State.Starting);
+            }
 
-                List<VolumeVO> vols = cmd.getVolumes();
+            List<VolumeVO> vols = cmd.getVolumes();
 
-                mounts = mount(vols);
-                if (retry == 1) {
-                    // at the second time, try hvm
-                    cmd.setGuestOSDescription("Other install media");
-                }
+            mounts = mount(vols);
+            vm = createVmFromTemplate(conn, cmd);
 
-                vm = createVmFromTemplate(conn, cmd);
+            long memsize = cmd.getRamSize() * 1024L * 1024L;
+            setMemory(conn, vm, memsize);
 
-                long memsize = cmd.getRamSize() * 1024L * 1024L;
-                setMemory(conn, vm, memsize);
+            vm.setIsATemplate(conn, false);
 
-                vm.setIsATemplate(conn, false);
+            vm.setVCPUsMax(conn, (long) cmd.getCpu());
+            vm.setVCPUsAtStartup(conn, (long) cmd.getCpu());
 
-                vm.setVCPUsMax(conn, (long) cmd.getCpu());
-                vm.setVCPUsAtStartup(conn, (long) cmd.getCpu());
+            Host host = Host.getByUuid(conn, _host.uuid);
+            vm.setAffinity(conn, host);
 
-                Host host = Host.getByUuid(conn, _host.uuid);
-                vm.setAffinity(conn, host);
+            Map<String, String> vcpuparam = new HashMap<String, String>();
 
-                Map<String, String> vcpuparam = new HashMap<String, String>();
+            vcpuparam.put("weight", Integer.toString(cmd.getCpuWeight()));
+            vcpuparam.put("cap", Integer.toString(cmd.getUtilization()));
+            vm.setVCPUsParams(conn, vcpuparam);
 
-                vcpuparam.put("weight", Integer.toString(cmd.getCpuWeight()));
-                vcpuparam.put("cap", Integer.toString(cmd.getUtilization()));
-                vm.setVCPUsParams(conn, vcpuparam);
+            boolean bootFromISO = cmd.getBootFromISO();
 
-                boolean bootFromISO = cmd.getBootFromISO();
+            /* create root VBD */
+            VBD.Record vbdr = new VBD.Record();
+            Ternary<SR, VDI, VolumeVO> mount = mounts.get(0);
+            vbdr.VM = vm;
+            vbdr.VDI = mount.second();
+            vbdr.bootable = !bootFromISO;
+            vbdr.userdevice = "0";
+            vbdr.mode = Types.VbdMode.RW;
+            vbdr.type = Types.VbdType.DISK;
+            VBD.create(conn, vbdr);
 
-                /* create root VBD */
-                VBD.Record vbdr = new VBD.Record();
-                Ternary<SR, VDI, VolumeVO> mount = mounts.get(0);
+            /* determine available slots to attach data volumes to */
+            List<String> availableSlots = new ArrayList<String>();
+            availableSlots.add("1");
+            availableSlots.add("2");
+            availableSlots.add("4");
+            availableSlots.add("5");
+            availableSlots.add("6");
+            availableSlots.add("7");
+
+            /* create data VBDs */
+            for (int i = 1; i < mounts.size(); i++) {
+                mount = mounts.get(i);
+                // vdi.setNameLabel(conn, cmd.getVmName() + "-DATA");
                 vbdr.VM = vm;
                 vbdr.VDI = mount.second();
-                vbdr.bootable = !bootFromISO;
-                vbdr.userdevice = "0";
+                vbdr.bootable = false;
+                vbdr.userdevice = Long.toString(mount.third().getDeviceId());
                 vbdr.mode = Types.VbdMode.RW;
                 vbdr.type = Types.VbdType.DISK;
+                vbdr.unpluggable = true;
                 VBD.create(conn, vbdr);
 
-                /* determine available slots to attach data volumes to */
-                List<String> availableSlots = new ArrayList<String>();
-                availableSlots.add("1");
-                availableSlots.add("2");
-                availableSlots.add("4");
-                availableSlots.add("5");
-                availableSlots.add("6");
-                availableSlots.add("7");
+            }
 
-                /* create data VBDs */
-                for (int i = 1; i < mounts.size(); i++) {
-                    mount = mounts.get(i);
-                    // vdi.setNameLabel(conn, cmd.getVmName() + "-DATA");
-                    vbdr.VM = vm;
-                    vbdr.VDI = mount.second();
-                    vbdr.bootable = false;
-                    vbdr.userdevice = Long.toString(mount.third().getDeviceId());
-                    vbdr.mode = Types.VbdMode.RW;
-                    vbdr.type = Types.VbdType.DISK;
-                    vbdr.unpluggable = true;
-                    VBD.create(conn, vbdr);
+            /* create CD-ROM VBD */
+            VBD.Record cdromVBDR = new VBD.Record();
+            cdromVBDR.VM = vm;
+            cdromVBDR.empty = true;
+            cdromVBDR.bootable = bootFromISO;
+            cdromVBDR.userdevice = "3";
+            cdromVBDR.mode = Types.VbdMode.RO;
+            cdromVBDR.type = Types.VbdType.CD;
+            VBD cdromVBD = VBD.create(conn, cdromVBDR);
 
-                }
+            /* insert the ISO VDI if isoPath is not null */
+            String isopath = cmd.getISOPath();
+            if (isopath != null) {
+                int index = isopath.lastIndexOf("/");
 
-                /* create CD-ROM VBD */
-                VBD.Record cdromVBDR = new VBD.Record();
-                cdromVBDR.VM = vm;
-                cdromVBDR.empty = true;
-                cdromVBDR.bootable = bootFromISO;
-                cdromVBDR.userdevice = "3";
-                cdromVBDR.mode = Types.VbdMode.RO;
-                cdromVBDR.type = Types.VbdType.CD;
-                VBD cdromVBD = VBD.create(conn, cdromVBDR);
+                String mountpoint = isopath.substring(0, index);
+                URI uri = new URI(mountpoint);
+                isosr = createIsoSRbyURI(uri, cmd.getVmName(), false);
 
-                /* insert the ISO VDI if isoPath is not null */
-                String isopath = cmd.getISOPath();
-                if (isopath != null) {
-                    int index = isopath.lastIndexOf("/");
+                String isoname = isopath.substring(index + 1);
 
-                    String mountpoint = isopath.substring(0, index);
-                    URI uri = new URI(mountpoint);
-                    isosr = createIsoSRbyURI(uri, cmd.getVmName(), false);
+                VDI isovdi = getVDIbyLocationandSR(isoname, isosr);
 
-                    String isoname = isopath.substring(index + 1);
-
-                    VDI isovdi = getVDIbyLocationandSR(isoname, isosr);
-
-                    if (isovdi == null) {
-                        String msg = " can not find ISO " + cmd.getISOPath();
-                        s_logger.warn(msg);
-                        return new StartAnswer(cmd, msg);
-                    } else {
-                        cdromVBD.insert(conn, isovdi);
-                    }
-
-                }
-
-                createVIF(conn, vm, cmd.getGuestMacAddress(), cmd.getGuestNetworkId(), cmd.getNetworkRateMbps(), "0", false);
-
-                if (cmd.getExternalMacAddress() != null && cmd.getExternalVlan() != null) {
-                    createVIF(conn, vm, cmd.getExternalMacAddress(), cmd.getExternalVlan(), 0, "1", true);
-                }
-
-                /* set action after crash as destroy */
-                vm.setActionsAfterCrash(conn, Types.OnCrashBehaviour.DESTROY);
-
-                vm.start(conn, false, true);
-                
-                if(!vm.getResidentOn(conn).getUuid(conn).equals(_host.uuid)){
-                    startvmfailhandle(vm, null);
-                    throw new Exception("can not start VM " + cmd.getVmName() + " On host " + _host.ip);
-                }
-
-                if (_canBridgeFirewall) {
-                    String result = callHostPlugin("default_network_rules",
-                    		"vmName", cmd.getVmName(),
-                    		"vmIP", cmd.getGuestIpAddress(),
-                    		"vmMAC", cmd.getGuestMacAddress(),
-                    		"vmID", Long.toString(cmd.getId()));
-                    if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
-                        s_logger.warn("Failed to program default network rules for vm " + cmd.getVmName());
-                    } else {
-                        s_logger.info("Programmed default network rules for vm " + cmd.getVmName());
-                    }
-                }
-
-                state = State.Running;
-                return new StartAnswer(cmd);
-
-            } catch (XenAPIException e) {
-                String errormsg = e.toString();
-                String msg = "Exception caught while starting VM due to message:" + errormsg + " (" + e.getClass().getName() + ")";
-                if (!errormsg.contains("Unable to find partition containing kernel") && !errormsg.contains("Unable to access a required file in the specified repository")) {
-                    s_logger.warn(msg, e);
-                    startvmfailhandle(vm, mounts);
-                    removeSR(isosr);
+                if (isovdi == null) {
+                    String msg = " can not find ISO " + cmd.getISOPath();
+                    s_logger.warn(msg);
+                    return new StartAnswer(cmd, msg);
                 } else {
-                    startvmfailhandle(vm, mounts);
-                    removeSR(isosr);
-                    continue;
-                }
-                state = State.Stopped;
-                return new StartAnswer(cmd, msg);
-            } catch (Exception e) {
-                String msg = "Exception caught while starting VM due to message:" + e.getMessage();
-                s_logger.warn(msg, e);
-                startvmfailhandle(vm, mounts);
-                removeSR(isosr);
-                state = State.Stopped;
-                return new StartAnswer(cmd, msg);
-            } finally {
-                synchronized (_vms) {
-                    _vms.put(cmd.getVmName(), state);
+                    cdromVBD.insert(conn, isovdi);
                 }
 
             }
+
+            createVIF(conn, vm, cmd.getGuestMacAddress(), cmd.getGuestNetworkId(), cmd.getNetworkRateMbps(), "0", false);
+
+            if (cmd.getExternalMacAddress() != null && cmd.getExternalVlan() != null) {
+                createVIF(conn, vm, cmd.getExternalMacAddress(), cmd.getExternalVlan(), 0, "1", true);
+            }
+
+            /* set action after crash as destroy */
+            vm.setActionsAfterCrash(conn, Types.OnCrashBehaviour.DESTROY);
+
+            vm.start(conn, false, true);
+
+            if (!vm.getResidentOn(conn).getUuid(conn).equals(_host.uuid)) {
+                startvmfailhandle(vm, null);
+                throw new Exception("can not start VM " + cmd.getVmName() + " On host " + _host.ip);
+            }
+
+            if (_canBridgeFirewall) {
+                String result = callHostPlugin("default_network_rules", "vmName", cmd.getVmName(), "vmIP", cmd
+                        .getGuestIpAddress(), "vmMAC", cmd.getGuestMacAddress(), "vmID", Long.toString(cmd.getId()));
+                if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
+                    s_logger.warn("Failed to program default network rules for vm " + cmd.getVmName());
+                } else {
+                    s_logger.info("Programmed default network rules for vm " + cmd.getVmName());
+                }
+            }
+
+            state = State.Running;
+            return new StartAnswer(cmd);
+
+        } catch (XenAPIException e) {
+            String errormsg = e.toString();
+            String msg = "Exception caught while starting VM due to message:" + errormsg + " ("
+                    + e.getClass().getName() + ")";
+            startvmfailhandle(vm, mounts);
+            removeSR(isosr);
+            state = State.Stopped;
+            return new StartAnswer(cmd, msg);
+        } catch (Exception e) {
+            String msg = "Exception caught while starting VM due to message:" + e.getMessage();
+            s_logger.warn(msg, e);
+            startvmfailhandle(vm, mounts);
+            removeSR(isosr);
+            state = State.Stopped;
+            return new StartAnswer(cmd, msg);
+        } finally {
+            synchronized (_vms) {
+                _vms.put(cmd.getVmName(), state);
+            }
+
         }
-        String msg = "Start VM failed";
-        return new StartAnswer(cmd, msg);
     }
     
     protected VIF createVIF(Connection conn, VM vm, String mac, int rate, String devNum, Network network) throws XenAPIException, XmlRpcException,
