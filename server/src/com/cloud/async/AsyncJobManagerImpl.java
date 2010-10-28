@@ -38,6 +38,7 @@ import com.cloud.api.ApiDispatcher;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.response.ExceptionResponse;
 import com.cloud.async.dao.AsyncJobDao;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -323,6 +324,7 @@ public class AsyncJobManagerImpl implements AsyncJobManager {
             public void run() {
                 long jobId = 0;
 
+                BaseAsyncCmd cmdObj = null;
                 Transaction txn = Transaction.open(Transaction.CLOUD_DB);
                 try {
                     jobId = job.getId();
@@ -333,7 +335,7 @@ public class AsyncJobManagerImpl implements AsyncJobManager {
                     }
 
                     Class<?> cmdClass = Class.forName(job.getCmd());
-                    BaseAsyncCmd cmdObj = (BaseAsyncCmd)cmdClass.newInstance();
+                    cmdObj = (BaseAsyncCmd)cmdClass.newInstance();
                     cmdObj.setAsyncJobManager(mgr);
                     cmdObj.setJob(job);
 
@@ -379,13 +381,25 @@ public class AsyncJobManagerImpl implements AsyncJobManager {
                         }
                         checkQueue(((AsyncCommandQueued)e).getQueue().getId());
                     } else {
+                        String errorMsg = null;
+                        int errorCode = BaseCmd.INTERNAL_ERROR;
                         if (!(e instanceof ServerApiException)) {
                             s_logger.error("Unexpected exception while executing " + job.getCmd(), e);
+                            errorMsg = e.getMessage();
+                        } else {
+                            ServerApiException sApiEx = (ServerApiException)e;
+                            errorMsg = sApiEx.getDescription();
+                            errorCode = sApiEx.getErrorCode();
                         }
+
+                        ExceptionResponse response = new ExceptionResponse();
+                        response.setErrorCode(errorCode);
+                        response.setErrorText(errorMsg);
+                        response.setResponseName((cmdObj == null) ? "unknowncommandresponse" : cmdObj.getName());
 
                         // FIXME:  setting resultCode to BaseCmd.INTERNAL_ERROR is not right, usually executors have their exception handling
                         //         and we need to preserve that as much as possible here
-                        completeAsyncJob(jobId, AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR, e.getMessage());
+                        completeAsyncJob(jobId, AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR, response);
 
                         // need to clean up any queue that happened as part of the dispatching and move on to the next item in the queue
                         try {
