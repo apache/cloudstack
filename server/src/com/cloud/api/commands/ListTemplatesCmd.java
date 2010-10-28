@@ -180,6 +180,7 @@ public class ListTemplatesCmd extends BaseListCmd {
                 if (template.getTemplateType() != null) {
                     templateResponse.setTemplateType(template.getTemplateType().toString());
                 }
+                templateResponse.setHypervisor(template.getHypervisorType().toString());
                 
                 GuestOS os = ApiDBUtils.findGuestOSById(template.getGuestOSId());
                 if (os != null) {
