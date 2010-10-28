@@ -642,7 +642,7 @@ function hostGetMidmenuId(jsonObj) {
 function hostToMidmenu(jsonObj, $midmenuItem1) {    
     $midmenuItem1.attr("id", hostGetMidmenuId(jsonObj));  
     $midmenuItem1.data("jsonObj", jsonObj);      
-    //$iconContainer.find("#icon").attr("src", "images/midmenuicon_host.png");      
+    $iconContainer.find("#icon").attr("src", "images/midmenuicon_host.png");      
     $midmenuItem1.find("#first_row").text(fromdb(jsonObj.name).substring(0,25)); 
     $midmenuItem1.find("#second_row").text(jsonObj.ipaddress.substring(0,25)); 
 }
@@ -778,7 +778,7 @@ function primarystorageGetMidmenuId(jsonObj) {
 function primarystorageToMidmenu(jsonObj, $midmenuItem1) {    
     $midmenuItem1.attr("id", primarystorageGetMidmenuId(jsonObj));  
     $midmenuItem1.data("jsonObj", jsonObj);      
-    //$iconContainer.find("#icon").attr("src", "images/midmenuicon_primarystorage.png");      
+    $iconContainer.find("#icon").attr("src", "images/midmenuicon_primarystorage.png");      
     $midmenuItem1.find("#first_row").text(fromdb(jsonObj.name).substring(0,25)); 
     $midmenuItem1.find("#second_row").text(jsonObj.ipaddress.substring(0,25));          
 }
