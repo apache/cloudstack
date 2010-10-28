@@ -316,14 +316,15 @@
                                         </div>
                                         <div class="rev_wiztemp_listtext">
                                             <span id="name">Centos</span>
-                                            <div class="rev_wiztemp_listtext hypervisortext">
+                                        </div>
+                                        <div class="rev_wiztemp_listtext hypervisortext">
                                                 Hypervisor: <select class="select" style="width:70px; float:none; height:15px; font-size:10px; margin:0 0 0 5px; display:inline;">
                                                 	<option value="op1">Hypervisor 1 </option>
                                                     <option value="op1">Hypervisor 2</option>
                                                     <option value="op1">Hypervisor 3</option>
                                                 </select>
-                                            </div>
-                                        </div>
+                                         </div>
+                                        
                                         <div class="rev_wiztemp_ownertext">
                                             [Submitted by: <span id="submitted_by"></span>]</div>
                                     </div>                                    
@@ -700,9 +701,9 @@
     </div>
     <div class="rev_wiztemp_listtext">
         <span id="name"></span>
-        <div class="rev_wiztemp_listtext hypervisortext">
+    </div>
+    <div class="rev_wiztemp_hypervisortext">
             Hypervisor: <strong id="hypervisor"></strong>
-        </div>
     </div>
     <div class="rev_wiztemp_ownertext">
         [Submitted by: <span id="submitted_by"></span>]</div>

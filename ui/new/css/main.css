@@ -865,7 +865,7 @@ a:hover {
 	float:left;
 	border-bottom:1px solid #999;
 	margin:0;
-	padding:0 0 3px 0;
+	padding:0 0 2px 0;
 	background:#FFF repeat top left;
 	cursor:pointer;
 	cursor:hand;
@@ -881,7 +881,7 @@ a:hover {
 	float:left;
 	border-bottom:1px solid #999;
 	margin:0;
-	padding:0 0 3px 0;
+	padding:0 0 2px 0;
 	background:#8fe0f4 repeat top left;
 	cursor:pointer;
 	cursor:hand;
@@ -917,7 +917,7 @@ a:hover {
 }
 
 .rev_wiztemp_listtext {
-	width:350px;
+	width:460px;
 	height:auto;
 	float:left;
 	color:#021a28;
@@ -928,15 +928,16 @@ a:hover {
 	padding:0;
 }
 
-.rev_wiztemp_listtext.hypervisortext {
-	width:350px;
+.rev_wiztemp_hypervisortext {
+	width:318px;
 	height:auto;
 	float:left;
 	color:#525252;
 	font-size:10px;
 	font-weight:normal;
 	text-align:left;
-	margin:2px 0 0 0;
+	margin:2px 0 0 33px;
+	display:inline;
 	padding:0;
 }
 
@@ -948,7 +949,7 @@ a:hover {
 	font-size:10px;
 	font-weight:normal;
 	text-align:left;
-	margin:5px 0 5px 0;
+	margin:1px 0 0 0;
 	padding:0;
 }
 .rev_wiztemp_ownertext span {
