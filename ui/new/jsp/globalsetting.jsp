@@ -34,71 +34,78 @@
                    <p>Loading &hellip;</p>    
               </div>               
         </div>
-        <div class="grid_actionpanel">
-            <div class="grid_editbox" id="edit_button">
-            </div>
-                        
-        </div>
         <div class="grid_container">
         	<div class="grid_header">
-            	<div id="grid_header_title" class="grid_header_title">(title)</div>
-                <div id="action_link" class="grid_actionbox" id="account_action_link">
-                    <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
-                        <ul class="actionsdropdown_boxlist" id="action_list">
-                        	<li><%=t.t("no.available.actions")%></li>
-                        </ul>
-                    </div>
+            	<div class="grid_header_cell" style="width:25%;">
+            		<div class="grid_header_title">Name</div>
                 </div>
-                <div class="gridheader_loaderbox" id="spinning_wheel" style="border: 1px solid #999;
-                display: none;">
-                    <div class="gridheader_loader" id="Div1">
-                    </div>
-                    <p id="description">
-                        Waiting &hellip;</p>
-                </div>     
-            </div>
-            <div class="grid_rows odd">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        <%=t.t("name")%>:</div>
+                <div class="grid_header_cell" style="width:20%;">
+            		<div class="grid_header_title">Value</div>
                 </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="name">
-                    </div>
+                <div class="grid_header_cell" style="width:24%;">
+            		<div class="grid_header_title">Description</div>
                 </div>
+                <div class="grid_header_cell" style="width:20%;">
+            		<div class="grid_header_title">Category</div>
+                </div>
+                <div class="grid_header_cell" style="width:10%;">
+            		<div class="grid_header_title"></div>
+                </div>
+                     
             </div>
             <div class="grid_rows even">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        <%=t.t("value")%>:</div>
+                <div class="grid_row_cell" style="width: 25%;">
+                    <div class="row_celltitles" id="name"></div>
                 </div>
-                <div class="grid_row_cell" style="width: 79%;">
+                <div class="grid_row_cell" style="width: 20%;">
                     <div class="row_celltitles" id="value">
                     </div>                    
                     <input class="text" id="value_edit" style="width: 200px; display: none;" type="text" />
                     <div id="value_edit_errormsg" style="display:none"></div>                    
                 </div>
-            </div>
-            <div class="grid_rows odd">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        <%=t.t("description")%>:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
+                <div class="grid_row_cell" style="width: 24%;">
                     <div class="row_celltitles" id="description">
                     </div>
                 </div>
-            </div>            
-            <div class="grid_rows even">
                 <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        <%=t.t("category")%>:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
                     <div class="row_celltitles" id="category">
                     </div>
                 </div>
-            </div>               
+                <div class="grid_row_cell" style="width: 10%;">
+                    <div class="row_celltitles">
+                    	<a id="edit_button" href="#">Edit</a>
+                    </div>
+                </div>
+               
+            </div>
+            
+            <div class="grid_rows odd">
+                <div class="grid_row_cell" style="width: 25%;">
+                    <div class="row_celltitles" id="name"></div>
+                </div>
+                <div class="grid_row_cell" style="width: 20%;">
+                    <div class="row_celltitles" id="value">
+                    </div>                    
+                    <input class="text" id="value_edit" style="width: 200px; display: none;" type="text" />
+                    <div id="value_edit_errormsg" style="display:none"></div>                    
+                </div>
+                <div class="grid_row_cell" style="width: 24%;">
+                    <div class="row_celltitles" id="description">
+                    </div>
+                </div>
+                <div class="grid_row_cell" style="width: 20%;">
+                    <div class="row_celltitles" id="category">
+                    </div>
+                </div>
+                <div class="grid_row_cell" style="width: 10%;">
+                    <div class="row_celltitles">
+                    	<a href="#">Edit</a>
+                    </div>
+                </div>
+               
+            </div>
+                        
+                           
         </div>        
         <div class="grid_botactionpanel">
         	<div class="gridbot_buttons" id="save_button" style="display:none;">Save</div>
