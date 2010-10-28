@@ -2012,48 +2012,7 @@ a:hover.search_button {
 	padding:0;
 }
 
-.actionsdropdown_boxlist {
-	width:197px;
-	height:auto;
-	float:left;
-	margin:0 0 5px 6px;
-	padding:0 0 10px 0;
-	list-style:none;
-}
 
-.actionsdropdown_boxlist li{
-	width:194px;
-	height:auto;
-	float:left;
-	text-align:left;
-	background:#FFF url(../images/midmenu_hover.gif) repeat-x top left;
-	color:#CCC;
-	font-size:11px;
-	font-weight:normal;
-	margin:0 0 0 0;
-	padding:6px 0 5px 3px;
-	list-style:none;
-}
-
-.actionsdropdown_boxlist li:hover{
-	background:#e6e6e6 repeat top left;
-}
-
-.actionsdropdown_boxlist a{
-	text-decoration:none;
-	color:#2c8bbc;
-}
-
-
-.actionsdropdown_boxlist a:link, actionsdropdown_boxlist a:visited {
-	text-decoration:none;
-	color:#2c8bbc;
-}
-
-.actionsdropdown_boxlist a:hover{
-	text-decoration:none;
-	color:#2c8bbc;
-}
 
 #contentwrapper{
 	height:100%;
@@ -2740,17 +2699,41 @@ a:hover.search_button {
 	padding:0;
 }
 
-#footer p{
+.footer_testprovisiongtool{
 	width:auto;
 	height:auto;
 	float:left;
-	text-align:left;
-	font-size:11px;
-	font-weight:normal;
-	color:#c2c2c2;
 	margin:9px 0 0 10px;
 	display:inline;
 	padding:0;
+}
+
+.footer_testprovisiongtool_icon {
+	width:11px;
+	height:13px;
+	float:left;
+	background:url(../images/test_provisioning.png) no-repeat top left;
+	margin:0;
+	padding:0;
+}
+.footer_testprovisiongtool a{
+	width:auto;
+	height:auto;
+	float:left;
+	text-decoration:none;
+	font-weight:normal;
+	color:#CCC;
+	margin:2px 0 0 7px;
+	display:inline;
+	padding:0;
+}
+
+.footer_testprovisiongtool a:link, .footer_testprovisiongtool a:visited {
+	text-decoration:none;
+}
+
+.footer_testprovisiongtool a:hover {
+	text-decoration:underline;
 }
 
 #footer span{
@@ -3138,17 +3121,60 @@ a:hover.search_button {
 }
 
 .grid_actionsdropdown_box {
-	width:209px;
+	width:195px;
 	height:auto;
 	float:left;
 	position:absolute;
 	background:#FFF repeat top left;
 	border:1px solid #CCC;
 	top:18px;
-	right:1px;
+	right:0;
 	margin:0;
 	padding:0;
 	z-index:1002;
+}
+
+.actionsdropdown_boxlist {
+	width:183px;
+	height:auto;
+	float:left;
+	margin:0 0 5px 6px;
+	padding:0 0 10px 0;
+	list-style:none;
+}
+
+.actionsdropdown_boxlist li{
+	width:181px;
+	height:auto;
+	float:left;
+	text-align:left;
+	background:#FFF url(../images/midmenu_hover.gif) repeat-x top left;
+	color:#CCC;
+	font-size:11px;
+	font-weight:normal;
+	margin:0 0 0 0;
+	padding:6px 0 5px 3px;
+	list-style:none;
+}
+
+.actionsdropdown_boxlist li:hover{
+	background:#e6e6e6 repeat top left;
+}
+
+.actionsdropdown_boxlist a{
+	text-decoration:none;
+	color:#2c8bbc;
+}
+
+
+.actionsdropdown_boxlist a:link, actionsdropdown_boxlist a:visited {
+	text-decoration:none;
+	color:#2c8bbc;
+}
+
+.actionsdropdown_boxlist a:hover{
+	text-decoration:none;
+	color:#2c8bbc;
 }
 
 .dbrow {
