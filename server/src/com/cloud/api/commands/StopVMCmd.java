@@ -186,7 +186,8 @@ public class StopVMCmd extends BaseAsyncCmd {
         //Network groups
         response.setNetworkGroupList(ApiDBUtils.getNetworkGroupsNamesForVm(vm.getId()));
 
-        response.setResponseName(getResultObjectName());
+        response.setResponseName(getName());
+        //response.setResponseName(getResultObjectName());
         return response;
 	}
 }
