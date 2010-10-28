@@ -549,6 +549,15 @@ function setBooleanField(value, $field) {
         $field.hide();
 }
 
+function setBooleanDropdownField(value, $field) {
+    if(value == "true" || value == true)
+        $field.val("true");
+    else if(value == "false" || value == false)
+        $field.val("false");	
+    else
+        $field.hide();
+}
+
 function clearMiddleMenu() {
     $("#midmenu_container").empty();
     $("#midmenu_action_link").hide();

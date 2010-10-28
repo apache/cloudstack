@@ -46,8 +46,6 @@ function instanceBuildSubMenu2(label, commandString) {
     $instanceSubMenuContainer.append($newSubMenu.show());
 }
 
-var vmActionMapForMidMenu = {};
-
 function afterLoadInstanceJSP() {
     //Add VM button
     $("#midmenu_add_link").find("#label").text("Add VM"); 
@@ -1014,6 +1012,9 @@ var vmActionMap = {
             vmToRightPanel($midmenuItem1);
         }
     },
+    "Edit Instance": {
+        dialogBeforeActionFn: doEditVM  
+    },
     "Attach ISO": {
         isAsyncJob: true,
         asyncJobResponse: "attachisoresponse",    
@@ -1257,6 +1258,74 @@ function doRestoreVM($actionLink, $detailsTab, $midmenuItem1) {
 	    } 
     }).dialog("open");
 }   
+ 
+function doEditVM($actionLink, $detailsTab, $midmenuItem1) {       
+    var $readonlyFields  = $detailsTab.find("#vmname, #group, #haenable");
+    var $editFields = $detailsTab.find("#vmname_edit, #group_edit, #haenable_edit"); 
+           
+    $readonlyFields.hide();
+    $editFields.show();  
+    $detailsTab.find("#cancel_button, #save_button").show();
+    
+    $detailsTab.find("#cancel_button").unbind("click").bind("click", function(event){    
+        $editFields.hide();
+        $readonlyFields.show();   
+        $("#save_button, #cancel_button").hide();       
+        return false;
+    });
+    $detailsTab.find("#save_button").unbind("click").bind("click", function(event){        
+        doEditVM2($actionLink, $detailsTab, $midmenuItem1);     
+        $editFields.hide();      
+        $readonlyFields.show();       
+        $("#save_button, #cancel_button").hide();       
+        return false;
+    });   
+}
+
+function doEditVM2($actionLink, $detailsTab, $midmenuItem1) {   
+    // validate values
+    var isValid = true;					
+    isValid &= validateString("Name", $detailsTab.find("#name_edit"), $detailsTab.find("#name_edit_errormsg"), true);  //optional
+    isValid &= validateString("Display Text", $detailsTab.find("#group_edit"), $detailsTab.find("#group_edit_errormsg"), true);	//optional	
+    if (!isValid) 
+        return;
+       
+    var jsonObj = $detailsTab.data("jsonObj"); 
+	var id = jsonObj.id;	
+	
+	var array1 = [];						
+	var name = trim($detailsTab.find("#vmname_edit").val());
+	array1.push("&displayName="+todb(name));
+	//var apiCommand = "command=updateVirtualMachine&id="+id+"&displayName="+todb(name);	
+	
+	var group = trim($detailsTab.find("#group_edit").val());
+	array1.push("&group="+todb(group));
+	//var apiCommand = "command=updateVirtualMachine&id="+id+"&group="+todb(group);  
+	
+	var haenable = $detailsTab.find("#haenable_edit").val();     
+	array1.push("&haenable="+haenable);
+	//var apiCommand = "command=updateVirtualMachine&id="+id+"&haenable=true";        
+	
+	$.ajax({
+	    data: createURL("command=updateVirtualMachine&id="+id+array1.join("")),
+		dataType: "json",
+		success: function(json) {	
+		    //call listVirtualMachine to get embedded object until bug 6489 ("updateVirtualMachine API should return an embedded object on success") is fixed.
+            var jsonObj;         
+            $.ajax({
+                data: createURL("command=listVirtualMachines&id="+id),
+                dataType: "json",
+                async: false,
+                success: function(json) {                                
+                    jsonObj = json.listvirtualmachinesresponse.virtualmachine[0];                    
+                }
+            });
+         
+            vmToMidmenu(jsonObj, $midmenuItem1);
+            vmToRightPanel($midmenuItem1);	     					
+		}
+	});
+} 
          
 function doAttachISO($actionLink, $detailsTab, $midmenuItem1) {   
     $.ajax({
@@ -1522,7 +1591,10 @@ function vmJsonToDetailsTab($midmenuItem1){
            
     var vmName = getVmName(jsonObj.name, jsonObj.displayname);        
     $detailsTab.find("#title").text(vmName);
+    
     $detailsTab.find("#vmname").text(vmName);
+    $detailsTab.find("#vmname_edit").val(fromdb(jsonObj.displayname));
+    
     $detailsTab.find("#ipaddress").text(fromdb(jsonObj.ipaddress));
     
     $detailsTab.find("#templateName").text(fromdb(jsonObj.templatename));
@@ -1531,18 +1603,25 @@ function vmJsonToDetailsTab($midmenuItem1){
     $detailsTab.find("#account").text(fromdb(jsonObj.account));
     $detailsTab.find("#domain").text(fromdb(jsonObj.domain));
     $detailsTab.find("#hostName").text(fromdb(jsonObj.hostname));
-    $detailsTab.find("#group").text(fromdb(jsonObj.group));	
     
-    setBooleanField(jsonObj.haenable, $detailsTab.find("#haenable"));	
+    $detailsTab.find("#group").text(fromdb(jsonObj.group));	
+    $detailsTab.find("#group_edit").val(fromdb(jsonObj.group));	
+    
+    setBooleanField(jsonObj.haenable, $detailsTab.find("#haenable"));
+    setBooleanDropdownField(jsonObj.haenable, $detailsTab.find("#haenable_edit"));
+    //$detailsTab.find("#haenable_edit").val(jsonObj.haenable);
+    	
     setBooleanField((jsonObj.isoid != null), $detailsTab.find("#iso"));	
       
     //actions ***
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty();              
+	  
+	buildActionLinkForDetailsTab("Edit Instance", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab); 
 	           
     // Show State of the VM
 	if (jsonObj.state == 'Destroyed') {
-		buildActionLinkForDetailsTab("Restore Instance"  , vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
+		buildActionLinkForDetailsTab("Restore Instance", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
 		//to hide view console in details tab....(to-do)
 		//to hide volume tab....(to-do)	
 	} 
