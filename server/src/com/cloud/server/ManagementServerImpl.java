@@ -805,7 +805,7 @@ public class ManagementServerImpl implements ManagementServer {
             }
 
             accountId = user.getAccountId();
-            userAccount = _userAccountDao.findById(userId);
+            userAccount = _userAccountDao.findByIdIncludingRemoved(userId);
 
             List<UserVO> users = _userDao.listByAccount(accountId);
             if (users.size() != 0) {

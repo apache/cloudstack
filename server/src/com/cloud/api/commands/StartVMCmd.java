@@ -188,6 +188,7 @@ public class StartVMCmd extends BaseAsyncCmd {
         response.setNetworkGroupList(ApiDBUtils.getNetworkGroupsNamesForVm(vm.getId()));
 
         response.setResponseName(getName());
+        //response.setResponseName(getResultObjectName());
         return response;
 	}
 }
