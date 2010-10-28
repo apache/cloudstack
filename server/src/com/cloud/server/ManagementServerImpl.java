@@ -47,6 +47,7 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+import javax.naming.InsufficientResourcesException;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
@@ -177,9 +178,12 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientStorageCapacityException;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ManagementServerException;
+import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -5872,7 +5876,7 @@ public class ManagementServerImpl implements ManagementServer {
     	{
     		CertificateVO cert = _certDao.listAll().get(0); //always 1 record in db
     		if(cert.getMgmtServerId()!=null)
-    			throw new ServerApiException(BaseCmd.CUSTOM_CERT_UPDATE_ERROR, "Another management server is in the process of custom cert updating");
+    			throw new ResourceUnavailableException("Another management server is in the process of custom cert updating");
     		if(cert.getUpdated().equalsIgnoreCase("Y")){
 				 if(s_logger.isDebugEnabled())
 					 s_logger.debug("A custom certificate already exists in the DB, will replace it with the new one being uploaded");
@@ -5892,12 +5896,18 @@ public class ManagementServerImpl implements ManagementServer {
 				//get a list of all Console proxies from the cp table
 				List<ConsoleProxyVO> cpList = _consoleProxyDao.listAll();
 				if(cpList.size() == 0){
-					throw new ServerApiException(BaseCmd.CUSTOM_CERT_UPDATE_ERROR, "Unable to find any console proxies in the system for certificate update");
+					releaseCertRecord(cert);
+					String msg = "Unable to find any console proxies in the system for certificate update";
+					s_logger.warn(msg);
+					throw new ResourceUnavailableException(msg);
 				}
 				//get a list of all hosts in host table for type cp
 				List<HostVO> cpHosts = _hostDao.listByType(com.cloud.host.Host.Type.ConsoleProxy);
 				if(cpHosts.size() == 0){
-					throw new ServerApiException(BaseCmd.CUSTOM_CERT_UPDATE_ERROR, "Unable to find any console proxy hosts in the system for certificate update");
+					releaseCertRecord(cert);
+					String msg = "Unable to find any console proxy hosts in the system for certificate update";
+					s_logger.warn(msg);
+					throw new ResourceUnavailableException(msg);
 				}
 				//create a hashmap for fast lookup
 				Map<String,Long> hostNameToHostIdMap = new HashMap<String, Long>();
@@ -5931,20 +5941,36 @@ public class ManagementServerImpl implements ManagementServer {
 					}	
 				}
 
-				CertificateVO lockedCertPostPatching = _certDao.acquire(cert.getId());
-				lockedCertPostPatching.setMgmtServerId(null);//release for other ms
-				_certDao.release(lockedCertPostPatching.getId());
-				return ("Updated:"+updatedCpIdList.size()+" out of:"+cpList.size()+" console proxies");
+				releaseCertRecord(cert);
+				
+				if(updatedCpIdList.size() == cpList.size()){
+					//success case, all updated
+					return ("Updated:"+updatedCpIdList.size()+" out of:"+cpList.size()+" console proxies");
+				}else{
+					//failure case, if even one update fails
+					throw new ManagementServerException("Updated:"+updatedCpIdList.size()+" out of:"+cpList.size()+" console proxies with successfully updated console proxy ids being:"+updatedCpIdList.toString());
+				}
 			}
 			else
 			{
 				return null;
 			}
-		} catch (Exception e) {
-			s_logger.warn("Failed to persist custom certificate to the db");
+		}catch (Exception e) {
+			s_logger.warn("Failed to successfully update the cert across console proxies on management server:"+this.getId());			
+			if(e instanceof ResourceUnavailableException)
+				throw new ServerApiException(BaseCmd.CUSTOM_CERT_UPDATE_ERROR, e.getMessage());
+			if(e instanceof ManagementServerException)
+				throw new ServerApiException(BaseCmd.CUSTOM_CERT_UPDATE_ERROR, e.getMessage());
 		}
 		return null;
     }
+
+	private void releaseCertRecord(CertificateVO cert) {
+		CertificateVO lockedCertPostPatching = _certDao.acquire(cert.getId());
+		lockedCertPostPatching.setMgmtServerId(null);//release for other ms
+		_certDao.update(lockedCertPostPatching.getId(), lockedCertPostPatching);
+		_certDao.release(lockedCertPostPatching.getId());
+	}
 
     @Override
     public String[] getHypervisors(ListHypervisorsCmd cmd) {

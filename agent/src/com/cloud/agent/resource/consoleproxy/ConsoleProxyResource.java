@@ -125,13 +125,7 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
     	    	if(s_logger.isDebugEnabled())
     	    		s_logger.debug("Directory: " + strDirectory + " created");    
     	    	if(dirCreated){
-	    	    	//copy cert to the dir
-					FileWriter fstream = new FileWriter(filePath);
-					BufferedWriter out = new BufferedWriter(fstream);
-					out.write(certificate);
-					//Close the output stream
-					out.close();
-		    		success = true;
+	    	    	success = copyCertToDirectory(certificate, filePath);
 		    		successStr = "Successfully created cert at /etc/cloud/consoleproxy/cert/ from the listener flow for new console proxy starting up";
     	    	}
 			}
@@ -145,13 +139,7 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
 				}
 	    	    if (dirExists || dirCreated) 
 	    	    {
-	    	    	//copy cert to the dir
-					FileWriter fstream = new FileWriter(filePath);
-					BufferedWriter out = new BufferedWriter(fstream);
-					out.write(certificate);
-					//Close the output stream
-					out.close();
-		    		success = true;
+	    	    	success = copyCertToDirectory(certificate, filePath);
 		    		successStr = "Successfully created cert at /etc/cloud/consoleproxy/cert/ from the UploadCustomCert cmd flow for existing console proxy";
 	    	    }
 			}
@@ -173,6 +161,18 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
     	
         return new Answer(cmd, success, errorStr!=null?errorStr:successStr);
     }
+
+	private boolean copyCertToDirectory(String certificate, String filePath) throws IOException {
+		boolean success;
+		//copy cert to the dir
+		FileWriter fstream = new FileWriter(filePath);
+		BufferedWriter out = new BufferedWriter(fstream);
+		out.write(certificate);
+		//Close the output stream
+		out.close();
+		success = true;
+		return success;
+	}
 
     protected Answer execute(final CheckConsoleProxyLoadCommand cmd) {
         return executeProxyLoadScan(cmd, cmd.getProxyVmId(), cmd.getProxyVmName(), cmd.getProxyManagementIp(), cmd.getProxyCmdPort());

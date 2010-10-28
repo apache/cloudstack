@@ -1119,5 +1119,11 @@ public interface ManagementServer {
      */
     String[] getHypervisors(ListHypervisorsCmd cmd);
 
+    /**
+     * This method uploads a custom cert to the db, and patches every cpvm with it on the current ms
+     * @param cmd -- upload certificate cmd
+     * @return -- returns a string on success
+     * @throws ServerApiException -- even if one of the console proxy patching fails, we throw back this exception
+     */
     String uploadCertificate(UploadCustomCertificateCmd cmd) throws ServerApiException;
 }
