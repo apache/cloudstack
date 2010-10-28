@@ -31,6 +31,7 @@ $(document).ready(function() {
 	// Setup first level navigation
 	$("#leftmenu_dashboard").bind("click", function(event) {
 		if (selectLeftMenu($(this))) {
+			clearMiddleMenu();
 			hideMiddleMenu();
 			$("#right_panel").load("jsp/dashboard.jsp", function(){
 				afterLoadDashboardJSP();        
