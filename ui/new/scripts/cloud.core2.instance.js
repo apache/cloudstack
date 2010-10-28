@@ -1070,49 +1070,7 @@ var vmActionMap = {
 		    $afterActionInfoContainer.find("#after_action_info").html("New password is <b>" + item.password + "</b>");  
 		    $afterActionInfoContainer.removeClass("errorbox").show();            
         }
-    },
-    "Change Name": {
-        isAsyncJob: false,     
-        inProcessText: "Changing Name....",       
-        dialogBeforeActionFn : doChangeName,
-        afterActionSeccessFn: function(json, $midmenuItem1, id) { 
-            //call listVirtualMachine to get embedded object until bug 6489 ("updateVirtualMachine API should return an embedded object on success") is fixed.
-            var id = $midmenuItem1.data("jsonObj").id; 
-            var jsonObj;
-            $.ajax({
-                data: createURL("command=listVirtualMachines&id="+id),
-                dataType: "json",
-                async: false,
-                success: function(json) {                    
-                    jsonObj = json.listvirtualmachinesresponse.virtualmachine[0];                    
-                }
-            });
-            
-            vmToMidmenu(jsonObj, $midmenuItem1);
-            vmToRightPanel($midmenuItem1);
-        }
-    },    
-    "Change Group": {
-        isAsyncJob: false,      
-        inProcessText: "Changing Group....",      
-        dialogBeforeActionFn : doChangeGroup,
-        afterActionSeccessFn: function(json, $midmenuItem1, id) { 
-            //call listVirtualMachine to get embedded object until bug 6489 ("updateVirtualMachine API should return an embedded object on success") is fixed.
-            var id = $midmenuItem1.data("jsonObj").id; 
-            var jsonObj;
-            $.ajax({
-                data: createURL("command=listVirtualMachines&id="+id),
-                dataType: "json",
-                async: false,
-                success: function(json) {                    
-                    jsonObj = json.listvirtualmachinesresponse.virtualmachine[0];                    
-                }
-            });
-            
-            vmToMidmenu(jsonObj, $midmenuItem1);
-            vmToRightPanel($midmenuItem1);
-        }
-    },
+    },       
     "Change Service": {
         isAsyncJob: true,
         asyncJobResponse: "changeserviceforvirtualmachineresponse",
@@ -1123,52 +1081,9 @@ var vmActionMap = {
             vmToMidmenu(jsonObj, $midmenuItem1);
             vmToRightPanel($midmenuItem1);
         }
-    },
-    "Enable HA": {
-        isAsyncJob: false,     
-        inProcessText: "Enabling HA....",       
-        dialogBeforeActionFn : doEnableHA,
-        afterActionSeccessFn: function(json, $midmenuItem1, id) { 
-            //call listVirtualMachine to get embedded object until bug 6489 ("updateVirtualMachine API should return an embedded object on success") is fixed.
-            var id = $midmenuItem1.data("jsonObj").id; 
-            var jsonObj;
-            $.ajax({
-                data: createURL("command=listVirtualMachines&id="+id),
-                dataType: "json",
-                async: false,
-                success: function(json) {                    
-                    jsonObj = json.listvirtualmachinesresponse.virtualmachine[0];                    
-                }
-            });
-            
-            vmToMidmenu(jsonObj, $midmenuItem1);
-            vmToRightPanel($midmenuItem1);
-        }
-    },
-    "Disable HA": {
-        isAsyncJob: false,   
-        inProcessText: "Disabling HA....",         
-        dialogBeforeActionFn : doDisableHA,
-        afterActionSeccessFn: function(json, $midmenuItem1, id) { 
-            //call listVirtualMachine to get embedded object until bug 6489 ("updateVirtualMachine API should return an embedded object on success") is fixed.
-            var id = $midmenuItem1.data("jsonObj").id; 
-            var jsonObj;
-            $.ajax({
-                data: createURL("command=listVirtualMachines&id="+id),
-                dataType: "json",
-                async: false,
-                success: function(json) {                    
-                    jsonObj = json.listvirtualmachinesresponse.virtualmachine[0];                    
-                }
-            });
-            
-            vmToMidmenu(jsonObj, $midmenuItem1);
-            vmToRightPanel($midmenuItem1);
-        }
-    }                 
+    }      
 }                      
-   
-  
+     
 function doStartVM($actionLink, $detailsTab, $midmenuItem1) {       
     $("#dialog_confirmation_start_vm")	
     .dialog('option', 'buttons', { 						
@@ -1410,66 +1325,6 @@ function doResetPassword($actionLink, $detailsTab, $midmenuItem1) {
 	}).dialog("open");
 }
 
-function doChangeName($actionLink, $detailsTab, $midmenuItem1) {  
-    var jsonObj = $midmenuItem1.data("jsonObj");
-    $("#dialog_change_name").find("#change_instance_name").val(fromdb(jsonObj.displayname));
-    
-	$("#dialog_change_name")
-	.dialog('option', 'buttons', { 						
-		"OK": function() { 			    
-		    var thisDialog = $(this);			    
-		    											
-			// validate values
-	        var isValid = true;					
-	        isValid &= validateString("Name", thisDialog.find("#change_instance_name"), thisDialog.find("#change_instance_name_errormsg"));								
-	        if (!isValid) 
-	            return;	
-	        
-	        thisDialog.dialog("close"); 							
-			
-			var name = trim(thisDialog.find("#change_instance_name").val());
-			
-			var id = jsonObj.id;
-			var apiCommand = "command=updateVirtualMachine&id="+id+"&displayName="+todb(name);		
-            doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	
-		}, 
-		"Cancel": function() { 
-			$(this).dialog("close"); 
-			
-		} 
-	}).dialog("open");
-}
-
-function doChangeGroup($actionLink, $detailsTab, $midmenuItem1) {  
-	var jsonObj = $midmenuItem1.data("jsonObj");
-    $("#dialog_change_group").find("#change_group_name").val(fromdb(jsonObj.group));
-		
-	$("#dialog_change_group")
-	.dialog('option', 'buttons', { 						
-		"OK": function() { 	
-		    var thisDialog = $(this);	        
-											
-			// validate values
-	        var isValid = true;					
-	        isValid &= validateString("Group", thisDialog.find("#change_group_name"), thisDialog.find("#change_group_name_errormsg"), true); //group name is optional								
-	        if (!isValid) 
-	            return;
-	        
-	        thisDialog.dialog("close"); 
-	        
-	        var group = trim(thisDialog.find("#change_group_name").val());
-	        
-			var id = jsonObj.id;
-			var apiCommand = "command=updateVirtualMachine&id="+id+"&group="+todb(group);  
-            doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	
-		}, 
-		"Cancel": function() { 
-			$(this).dialog("close"); 
-			
-		} 
-	}).dialog("open");	
-}
-
 function doChangeService($actionLink, $detailsTab, $midmenuItem1) {    
     var jsonObj = $midmenuItem1.data("jsonObj");
 	var id = jsonObj.id;
@@ -1513,40 +1368,6 @@ function doChangeService($actionLink, $detailsTab, $midmenuItem1) {
 		}, 
 		"Cancel": function() { 
 			$(this).dialog("close"); 			
-		} 
-	}).dialog("open");
-}
-
-function doEnableHA($actionLink, $detailsTab, $midmenuItem1) {        
-	$("#dialog_confirmation_enable_ha")	
-	.dialog('option', 'buttons', { 						
-		"Confirm": function() { 
-			$(this).dialog("close"); 
-			var jsonObj = $midmenuItem1.data("jsonObj");
-			var id = jsonObj.id;
-			var apiCommand = "command=updateVirtualMachine&id="+id+"&haenable=true";        
-            doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);								    
-		}, 
-		"Cancel": function() { 
-			$(this).dialog("close"); 
-			
-		} 
-	}).dialog("open");
-}
-
-function doDisableHA($actionLink, $detailsTab, $midmenuItem1) {      
-    $("#dialog_confirmation_disable_ha")	
-	.dialog('option', 'buttons', { 						
-		"Confirm": function() { 
-			$(this).dialog("close"); 
-			var jsonObj = $midmenuItem1.data("jsonObj");
-			var id = jsonObj.id;
-			var apiCommand = "command=updateVirtualMachine&id="+id+"&haenable=false";        
-            doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);							    
-		}, 
-		"Cancel": function() { 
-			$(this).dialog("close"); 
-			
 		} 
 	}).dialog("open");
 }
@@ -1634,15 +1455,7 @@ function vmJsonToDetailsTab($midmenuItem1){
 		if (jsonObj.isoid == null)	
 	        buildActionLinkForDetailsTab("Attach ISO", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
 	    else 		
-	       buildActionLinkForDetailsTab("Detach ISO", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);		
-		
-		buildActionLinkForDetailsTab("Change Name", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
-		buildActionLinkForDetailsTab("Change Group", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);						
-			
-	    if (jsonObj.haenable == true) 	
-            buildActionLinkForDetailsTab("Disable HA", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
-	    else 		
-		    buildActionLinkForDetailsTab("Enable HA", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);	
+	       buildActionLinkForDetailsTab("Detach ISO", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);	
 	} 
 	else {	    
 		if (jsonObj.state == 'Stopped') {
@@ -1656,28 +1469,14 @@ function vmJsonToDetailsTab($midmenuItem1){
 		       buildActionLinkForDetailsTab("Detach ISO", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);				    
 		    
 		    buildActionLinkForDetailsTab("Reset Password", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
-		    buildActionLinkForDetailsTab("Change Name", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
-		    buildActionLinkForDetailsTab("Change Service", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);	
-		    buildActionLinkForDetailsTab("Change Group", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);	
-		    
-		    if (jsonObj.haenable == true) 	
-                buildActionLinkForDetailsTab("Disable HA", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
-	        else 		
-		        buildActionLinkForDetailsTab("Enable HA", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);					
+		    buildActionLinkForDetailsTab("Change Service", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);			    					
 		} 
 		else { //jsonObj.state == "Starting", "Creating", ~~~ 	
 			if(jsonObj.state != 'Creating')
 			    buildActionLinkForDetailsTab("Destroy Instance", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
 			    
 			//instanceTemplate.find("#vm_action_start, #vm_action_stop, #vm_action_reboot, #vm_action_attach_iso, #vm_action_detach_iso, #vm_action_reset_password, #vm_action_change_service").removeClass().addClass("vmaction_links_off");
-			buildActionLinkForDetailsTab("Change Name", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
-		    buildActionLinkForDetailsTab("Change Group", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
-									
-			if (jsonObj.haenable == true ) 	
-                buildActionLinkForDetailsTab("Disable HA", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
-	        else 		
-		        buildActionLinkForDetailsTab("Enable HA", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);	
-		}
+	    }
 		//to hide view console in details tab....(to-do)
 	}       
 }
