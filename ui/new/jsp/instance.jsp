@@ -739,7 +739,7 @@
                 </ul>
             </div>
         </div>
-        <div class="gridheader_loaderbox" id="spinning_wheel" style="display: none; height: 18px;">
+        <div class="gridheader_loaderbox" id="spinning_wheel" style="display: none; border: 1px solid #999; ">
             <div class="gridheader_loader" id="icon">
             </div>
             <p id="description">
@@ -834,7 +834,7 @@
                 </ul>
             </div>
         </div>
-        <div class="gridheader_loaderbox" id="spinning_wheel" style="display: none; height: 18px;">
+        <div class="gridheader_loaderbox" id="spinning_wheel" style="display: none; border: 1px solid #999;">
             <div class="gridheader_loader" id="icon">
             </div>
             <p id="description">
