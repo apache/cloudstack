@@ -36,6 +36,9 @@ public class CertificateVO {
     @Column(name="certificate",length=65535)
     private String certificate;
 
+    @Column(name="updated")
+    private String updated;
+    
     public CertificateVO() {}
 
     public Long getId() {
@@ -47,5 +50,13 @@ public class CertificateVO {
     }
     public void setCertificate(String certificate) {
         this.certificate = certificate;
+    }
+    
+    public String getUpdated(){
+    	return this.updated;
+    }
+    
+    public void setUpdated(String updated){
+    	this.updated = updated;
     }
 }

@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.alert.AlertVO;
+import com.cloud.api.ServerApiException;
+import com.cloud.api.commands.AssignPortForwardingServiceCmd;
 import com.cloud.api.commands.CreateDomainCmd;
 import com.cloud.api.commands.CreateUserCmd;
 import com.cloud.api.commands.DeleteDomainCmd;
@@ -1117,5 +1119,5 @@ public interface ManagementServer {
      */
     String[] getHypervisors(ListHypervisorsCmd cmd);
 
-    boolean uploadCertificate(UploadCustomCertificateCmd cmd) throws ResourceAllocationException;
+    String uploadCertificate(UploadCustomCertificateCmd cmd) throws ServerApiException;
 }

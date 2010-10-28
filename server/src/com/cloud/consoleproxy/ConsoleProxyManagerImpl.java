@@ -2446,10 +2446,9 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
     public boolean applyCustomCertToNewProxy(StartupProxyCommand cmd){
         //this is the case for updating cust cert on each new starting proxy, if such cert exists
 		//get cert from db
-		List<CertificateVO> certList = _certDao.listAll();
+		CertificateVO cert = _certDao.listAll().get(0);
 		
-		if(certList.size()>0){
-			CertificateVO cert = certList.get(0);//there will only be 1 cert in db for now
+		if(cert.getUpdated().equals("t")){
 			String certStr = cert.getCertificate(); 
 			long proxyVmId = (cmd).getProxyVmId();
 			ConsoleProxyVO consoleProxy = _consoleProxyDao.findById(proxyVmId);
@@ -2466,14 +2465,14 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
 							long eventId = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_REBOOT, "rebooting console proxy with Id: "+consoleProxy.getId());    				
 							rebootProxy(consoleProxy.getId(), eventId);
 							//when cp reboots, the context will be reinit with the new cert 
-							s_logger.info("Successfully rebooted console proxy resource after custom certificate application");
+							s_logger.info("Successfully rebooted console proxy resource after custom certificate application for proxy:"+cmd.getProxyVmId());
 							return true;
 						}
 				} catch (AgentUnavailableException e) {
-					s_logger.warn("Unable to send update certificate command to the console proxy resource", e);
+					s_logger.warn("Unable to send update certificate command to the console proxy resource for proxy:"+cmd.getProxyVmId(), e);
 					return false;
 				} catch (OperationTimedoutException e) {
-					s_logger.warn("Unable to send update certificate command to the console proxy resource", e);
+					s_logger.warn("Unable to send update certificate command to the console proxy resource for proxy:"+cmd.getProxyVmId(), e);
 					return false;
 				}
 			}

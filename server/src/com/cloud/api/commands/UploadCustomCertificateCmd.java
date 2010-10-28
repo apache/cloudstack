@@ -23,7 +23,7 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.response.StatusResponse;
+import com.cloud.api.response.CustomCertificateResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 
@@ -40,14 +40,12 @@ public class UploadCustomCertificateCmd extends BaseAsyncCmd {
         return path;
     }
 
-
     @Override @SuppressWarnings("unchecked")
-    public StatusResponse getResponse() {
-        Boolean status = (Boolean)getResponseObject();
-
-        StatusResponse response = new StatusResponse();
-        response.setStatus(status);
-        response.setResponseName(getName());
+    public CustomCertificateResponse getResponse() {
+        String updatedCpIdList = (String)getResponseObject();
+        CustomCertificateResponse response = new CustomCertificateResponse();
+        response.setResponseName(s_name);
+        response.setUpdatedConsoleProxyIdList(updatedCpIdList);
         return response;
     }
 

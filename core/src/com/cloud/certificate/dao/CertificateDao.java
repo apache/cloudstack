@@ -22,5 +22,5 @@ import com.cloud.certificate.CertificateVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface CertificateDao extends GenericDao<CertificateVO, Long> {
-	public Long persistCustomCertToDb(String certPath);
+	public Long persistCustomCertToDb(String certPath, CertificateVO cert);
 }

@@ -5865,58 +5865,79 @@ public class ManagementServerImpl implements ManagementServer {
         return event.getId();
     }
 
-    @Override
-    public boolean uploadCertificate(UploadCustomCertificateCmd cmd) throws ResourceAllocationException {
-    	//limit no.of certs uploaded to 1
-    	if(_certDao.listAll().size()>0){
-    		throw new ResourceAllocationException("There is already a custom certificate in the db");
-    	}
-    	
-        String certificatePath = cmd.getPath();
-    	Long certVOId = _certDao.persistCustomCertToDb(certificatePath);//0 implies failure
+    @Override @DB
+    public String uploadCertificate(UploadCustomCertificateCmd cmd) throws ServerApiException{
+    	try 
+    	{
+    		CertificateVO cert = _certDao.listAll().get(0); //always 1 record in db
+    		
+    		if(cert.getUpdated().equals("t")){
+				 if(s_logger.isDebugEnabled())
+					 s_logger.debug("A custom certificate already exists in the DB, will replace it with the new one being uploaded");
+			}else{
+				 if(s_logger.isDebugEnabled())
+					 s_logger.debug("No custom certificate exists in the DB, will upload a new one");				
+			}
+			String certificatePath = cmd.getPath();
+			CertificateVO lockedCert = _certDao.acquire(cert.getId());
+			Long certVOId = _certDao.persistCustomCertToDb(certificatePath,lockedCert);//0 implies failure
 
-    	if (certVOId!=null && certVOId!=0) 
-    	{
-    		//certficate uploaded to db successfully	
-    		//get a list of all Console proxies from the cp table
-    		List<ConsoleProxyVO> cpList = _consoleProxyDao.listAll();
-    		//get a list of all hosts in host table for type cp
-    		List<HostVO> cpHosts = _hostDao.listByType(com.cloud.host.Host.Type.ConsoleProxy);
-    		//create a hashmap for fast lookup
-    		Map<String,Long> hostNameToHostIdMap = new HashMap<String, Long>();
-    		//updated console proxies list
-    		List<ConsoleProxyVO> updatedCpList = new ArrayList<ConsoleProxyVO>();
-    		
-    		for(HostVO cpHost : cpHosts){
-    			hostNameToHostIdMap.put(cpHost.getName(), cpHost.getId());
-    		}
-    		
-    		for(ConsoleProxyVO cp : cpList)
-    		{
-    			Long cpHostId = hostNameToHostIdMap.get(cp.getName());//there will always be a cphost for a cpvm
-	    		//now send a command to each console proxy 
-	    		UpdateCertificateCommand certCmd = new UpdateCertificateCommand(_certDao.findById(certVOId).getCertificate());
-	    		try {
-						Answer updateCertAns = _agentMgr.send(cpHostId, certCmd);
-						if(updateCertAns.getResult() == true)
-						{
-							//we have the cert copied over on cpvm
-							long eventId = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_REBOOT, "rebooting console proxy with Id: "+cp.getId());    				
-							_consoleProxyMgr.rebootProxy(cp.getId(), eventId);
-							//when cp reboots, the context will be reinit with the new cert 
-						}
-				} catch (AgentUnavailableException e) {
-					s_logger.warn("Unable to send update certificate command to the console proxy resource as agent is unavailable", e);
-				} catch (OperationTimedoutException e) {
-					s_logger.warn("Unable to send update certificate command to the console proxy resource as there was a timeout", e);
-				}	
-    		}
-    		return true;
-    	}
-    	else
-    	{
-    		return false;
-    	}
+			if (certVOId!=null && certVOId!=0) 
+			{
+				//certficate uploaded to db successfully	
+				//get a list of all Console proxies from the cp table
+				List<ConsoleProxyVO> cpList = _consoleProxyDao.listAll();
+				if(cpList.size() == 0){
+					throw new ServerApiException(BaseCmd.CUSTOM_CERT_UPDATE_ERROR, "Unable to find any console proxies in the system for certificate update");
+				}
+				//get a list of all hosts in host table for type cp
+				List<HostVO> cpHosts = _hostDao.listByType(com.cloud.host.Host.Type.ConsoleProxy);
+				if(cpHosts.size() == 0){
+					throw new ServerApiException(BaseCmd.CUSTOM_CERT_UPDATE_ERROR, "Unable to find any console proxy hosts in the system for certificate update");
+				}
+				//create a hashmap for fast lookup
+				Map<String,Long> hostNameToHostIdMap = new HashMap<String, Long>();
+				//updated console proxies id list
+				List<Long> updatedCpIdList = new ArrayList<Long>();
+				for(HostVO cpHost : cpHosts){
+					hostNameToHostIdMap.put(cpHost.getName(), cpHost.getId());
+				}
+				
+				for(ConsoleProxyVO cp : cpList)
+				{
+					Long cpHostId = hostNameToHostIdMap.get(cp.getName());
+					//now send a command to each console proxy 
+					UpdateCertificateCommand certCmd = new UpdateCertificateCommand(_certDao.findById(certVOId).getCertificate());
+					try {
+							Answer updateCertAns = _agentMgr.send(cpHostId, certCmd);
+							if(updateCertAns.getResult() == true)
+							{
+								//we have the cert copied over on cpvm
+								long eventId = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_REBOOT, "rebooting console proxy with Id: "+cp.getId());    				
+								_consoleProxyMgr.rebootProxy(cp.getId(), eventId);
+								//when cp reboots, the context will be reinit with the new cert
+								if(s_logger.isDebugEnabled())
+									s_logger.debug("Successfully updated custom certificate on console proxy vm id:"+cp.getId()+" ,console proxy host id:"+cpHostId);
+								updatedCpIdList.add(cp.getId());
+							}
+					} catch (AgentUnavailableException e) {
+						s_logger.warn("Unable to send update certificate command to the console proxy resource as agent is unavailable for console proxy vm id:"+cp.getId()+" ,console proxy host id:"+cpHostId, e);
+					} catch (OperationTimedoutException e) {
+						s_logger.warn("Unable to send update certificate command to the console proxy resource as there was a timeout for console proxy vm id:"+cp.getId()+" ,console proxy host id:"+cpHostId, e);
+					}	
+				}
+
+				_certDao.release(lockedCert.getId());
+				return ("Updated:"+updatedCpIdList.size()+" out of:"+cpList.size());
+			}
+			else
+			{
+				return null;
+			}
+		} catch (Exception e) {
+			s_logger.warn("Failed to persist custom certificate to the db");
+		}
+		return null;
     }
 
     @Override

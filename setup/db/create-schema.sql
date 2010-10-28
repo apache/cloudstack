@@ -134,8 +134,11 @@ CREATE TABLE `cloud`.`account_network_ref` (
 CREATE TABLE `cloud`.`certificate` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `certificate` text COMMENT 'the actual custom certificate being stored in the db',
+  `updated` varchar(1) COMMENT 'status of the certificate',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+INSERT INTO `cloud`.`certificate` (id,certificate,updated) VALUES ('1',null,'f');
 
 CREATE TABLE `cloud`.`nics` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
