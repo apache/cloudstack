@@ -821,7 +821,7 @@ public class ManagementServerImpl implements ManagementServer {
                 s_logger.debug("Remove account " + accountId);
             }
 
-            AccountVO account = _accountDao.findById(accountId);
+            AccountVO account = _accountDao.findByIdIncludingRemoved(accountId);
             deleteAccount(account);
             EventUtils.saveEvent(Long.valueOf(1), Long.valueOf(1), EventVO.LEVEL_INFO, EventTypes.EVENT_USER_DELETE, "User " + username + " (id: " + userId
                     + ") for accountId = " + accountId + " and domainId = " + userAccount.getDomainId() + " was deleted.");

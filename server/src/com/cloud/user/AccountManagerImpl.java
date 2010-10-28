@@ -125,7 +125,7 @@ public class AccountManagerImpl implements AccountManager {
 
                 // on a per-domain basis, decrement the count
                 // FIXME:  can this decrement be done on the database side in a custom update statement?
-                Account account = _accountDao.findById(accountId);
+                Account account = _accountDao.findByIdIncludingRemoved(accountId);  // find all accounts, even removed accounts if this happens to be for an account that's being deleted
                 Long domainId = account.getDomainId();
                 while (domainId != null) {
                     _resourceCountDao.updateDomainCount(domainId, type, false, numToDecrement);

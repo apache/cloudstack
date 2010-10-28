@@ -1137,7 +1137,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
             }
         }
         
-        return _idField != null ? findById(id) : null;
+        return _idField != null ? findByIdIncludingRemoved(id) : null;
     }
 
     @DB(txn=false)
