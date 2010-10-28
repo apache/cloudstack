@@ -310,19 +310,24 @@
                             </div>
                             <div class="rev_wizmid_tempbox_right">
                                 <div class="rev_wiztemplistpanel" id="template_container">
-                                    <!--  
+                                   
                                     <div id="vmtemplate_in_vmwizard" class="rev_wiztemplistbox">
-                                        <div id="icon">
+                                        <div id="icon" class="rev_wiztemo_centosicons">
                                         </div>
                                         <div class="rev_wiztemp_listtext">
-                                            <span id="name"></span>
+                                            <span id="name">Centos</span>
                                             <div class="rev_wiztemp_listtext hypervisortext">
-                                                Hypervisor: <strong id="hypervisor"></strong></div>
+                                                Hypervisor: <select class="select" style="width:70px; float:none; height:15px; font-size:10px; margin:0 0 0 5px; display:inline;">
+                                                	<option value="op1">Hypervisor 1 </option>
+                                                    <option value="op1">Hypervisor 2</option>
+                                                    <option value="op1">Hypervisor 3</option>
+                                                </select>
+                                            </div>
                                         </div>
                                         <div class="rev_wiztemp_ownertext">
                                             [Submitted by: <span id="submitted_by"></span>]</div>
                                     </div>                                    
-                                    -->
+                                   
                                 </div>
                                 <div class="rev_wiztemplistactions">
                                     <div class="rev_wiztemplist_actionsbox">
@@ -729,12 +734,15 @@
     <input type="radio" class="radio" value="custom" checked />
     <label class="label">
         Custom:</label>
-    <label class="label1">
-        Disk Size:</label>
-    <input type="text" id="custom_disk_size" class="text" />
-    <span>MB</span>
-    <div id="custom_disk_size_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
-    </div>
+    <div class="vmpopup_offdescriptionbox_bot" style="background:none;">
+        <label class="label1" style="margin-left:33px; display:inline;">
+            Disk Size:</label>
+        <input type="text" id="custom_disk_size" class="text" />
+        <span>MB</span>
+       
+        <div id="custom_disk_size_errormsg" class="errormsg" style="display: none;">
+        </div>
+     </div>
 </div>
 <div class="vmpopup_offeringbox" id="vm_popup_disk_offering_template_existing" style="display: none">
     <input type="radio" class="radio" checked />
