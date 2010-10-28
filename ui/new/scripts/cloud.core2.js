@@ -858,7 +858,7 @@ function listMidMenuItems2(commandString, jsonResponse1, jsonResponse2, toMidmen
         enableMultipleSelectionInMidMenu();
     else
         disableMultipleSelectionInMidMenu();
-    
+   
     var count = 0;    
     $.ajax({
         cache: false,
@@ -867,7 +867,7 @@ function listMidMenuItems2(commandString, jsonResponse1, jsonResponse2, toMidmen
         async: false,
         success: function(json) {		                    
             selectedItemsInMidMenu = {};    	                
-            var items = json[jsonResponse1][jsonResponse2];
+            var items = json[jsonResponse1][jsonResponse2];      
             if(items != null && items.length > 0) {
                 for(var i=0; i<items.length;i++) { 
                     var $midmenuItem1 = $("#midmenu_item").clone();  
