@@ -572,21 +572,8 @@ function initVMWizard() {
 				    //var first = true;
 				    var $vmTemplateInWizard = $("#vmtemplate_in_vmwizard");
 				    for (var i = 0; i < items.length; i++) {
-				        var $newTemplate = $vmTemplateInWizard.clone();
-				        $newTemplate.find("#icon").removeClass().addClass(getIconForOS(items[i].ostypename));
-				        $newTemplate.find("#name").text(fromdb(items[i].displaytext));	
-				        	
-				        //$newTemplate.find("#hypervisor").text(fromdb(items[i].hypervisor));	
-				        $newTemplate.find("#hypervisor").text("XenServer"); //temporary for testing, will remove this line and uncomment the line above later.
-				        				    
-				        $newTemplate.find("#submitted_by").text(fromdb(items[i].account));
-				        $newTemplate.attr("id", items[i].id);
-				        
-				        if(i == 0)
-				            $newTemplate.addClass("rev_wiztemplistbox_selected");
-				        else
-				            $newTemplate.addClass("rev_wiztemplistbox");
-				        
+				        var $newTemplate = $vmTemplateInWizard.clone();				        
+				        vmWizardTemplateJsonToTemplate(items[i], $newTemplate, i);
 				        container.append($newTemplate.show());
 				        /*
 					    var divClass = "rev_wiztemplistbox";
@@ -625,10 +612,45 @@ function initVMWizard() {
 		    }
 	    });
     }
-			
+		
+	var $selectedVmWizardTemplate;		
+	function vmWizardTemplateJsonToTemplate(jsonObj, $template, i) {	 
+	    $template.attr("id", ("vmWizardTemplate_"+jsonObj.id));
+	    $template.data("templateId", jsonObj.id);
+	
+        $template.find("#icon").removeClass().addClass(getIconForOS(jsonObj.ostypename));
+        $template.find("#name").text(fromdb(jsonObj.displaytext));	
+        	
+        $template.find("#hypervisor").text(fromdb(jsonObj.hypervisor));	 
+             
+        $template.data("hypervisor", fromdb(jsonObj.hypervisor));
+        //$template.data("hypervisor", "XenServer");  //temporary for testing, will remove this line and uncomment the line above later.
+        				    
+        $template.find("#submitted_by").text(fromdb(jsonObj.account));				      
+                
+        if(i == 0) { //select the 1st one
+            $selectedVmWizardTemplate = $template;
+            $template.addClass("rev_wiztemplistbox_selected");
+        }
+        else {
+            $template.addClass("rev_wiztemplistbox");
+        }
+            
+        $template.bind("click", function(event) {
+            if($selectedVmWizardTemplate != null)
+                $selectedVmWizardTemplate.removeClass("rev_wiztemplistbox_selected").addClass("rev_wiztemplistbox");          
+             
+            $(this).removeClass("rev_wiztemplistbox").addClass("rev_wiztemplistbox_selected");  
+            $selectedVmWizardTemplate = $(this);
+            return false;
+        });
+	}		
+	
+	/*		
     $vmPopup.find("#template_container").bind("click", function(event) {
 	    var container = $(this);
 	    var target = $(event.target);
+	   
 	    var parent = target.parent();
 	    if (parent.hasClass("rev_wiztemplistbox_selected") || parent.hasClass("rev_wiztemplistbox")) {
 		    target = parent;
@@ -642,6 +664,7 @@ function initVMWizard() {
 		    }
 	    }
     });
+    */
              
     $vmPopup.find("#wizard_zone").bind("change", function(event) {       
         var selectedZone = $(this).val();   
@@ -796,8 +819,8 @@ function initVMWizard() {
 		    // Create a new VM!!!!
 		    var moreCriteria = [];								
 		    moreCriteria.push("&zoneId="+$thisPopup.find("#wizard_zone").val());			    
-			moreCriteria.push("&hypervisor="+$thisPopup.find("#step1 .rev_wiztemplistbox_selected").find("#hypervisor").text());	    								
-		    moreCriteria.push("&templateId="+$thisPopup.find("#step1 .rev_wiztemplistbox_selected").attr("id"));    							
+			moreCriteria.push("&hypervisor="+$selectedVmWizardTemplate.data("hypervisor"));	    								
+		    moreCriteria.push("&templateId="+$selectedVmWizardTemplate.data("templateId"));    							
 		    moreCriteria.push("&serviceOfferingId="+$thisPopup.find("input:radio[name=service_offering_radio]:checked").val());
 			
 			var diskOfferingId;    						
