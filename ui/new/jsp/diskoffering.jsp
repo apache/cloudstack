@@ -33,13 +33,7 @@
                    <div class="rightpanel_mainloader_animatedicon"></div>
                    <p>Loading &hellip;</p>    
               </div>               
-        </div>
-        <div class="grid_actionpanel">
-            <div class="grid_editbox" id="edit_button">
-            </div>
-                             
-        </div>
-
+        </div>   
         <div class="grid_container">
         	<div class="grid_header">
             	<div id="grid_header_title" class="grid_header_title">(title)</div>

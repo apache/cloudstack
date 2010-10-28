@@ -18,12 +18,7 @@
 
 function afterLoadDiskOfferingJSP() {
     var $detailsTab = $("#right_panel_content #tab_content_details"); 
-
-    //edit button ***
-    var $readonlyFields  = $detailsTab.find("#name, #displaytext");
-    var $editFields = $detailsTab.find("#name_edit, #displaytext_edit"); 
-    initializeEditFunction($readonlyFields, $editFields, doUpdateDiskOffering);   
-    
+      
     //dialogs
     initDialog("dialog_add_disk");
     
@@ -90,7 +85,30 @@ function afterLoadDiskOfferingJSP() {
 	});
 }
 
-function doUpdateDiskOffering() {
+function doEditDiskOffering($actionLink, $detailsTab, $midmenuItem1) {       
+    var $readonlyFields  = $detailsTab.find("#name, #displaytext");
+    var $editFields = $detailsTab.find("#name_edit, #displaytext_edit"); 
+             
+    $readonlyFields.hide();
+    $editFields.show();  
+    $detailsTab.find("#cancel_button, #save_button").show();
+    
+    $detailsTab.find("#cancel_button").unbind("click").bind("click", function(event){    
+        $editFields.hide();
+        $readonlyFields.show();   
+        $("#save_button, #cancel_button").hide();       
+        return false;
+    });
+    $detailsTab.find("#save_button").unbind("click").bind("click", function(event){        
+        doEditDiskOffering2($actionLink, $detailsTab, $midmenuItem1);     
+        $editFields.hide();      
+        $readonlyFields.show();       
+        $("#save_button, #cancel_button").hide();       
+        return false;
+    });   
+}
+
+function doEditDiskOffering2($actionLink, $detailsTab, $midmenuItem1) { 
     var $detailsTab = $("#right_panel_content #tab_content_details");   
     var jsonObj = $detailsTab.data("jsonObj");
     var id = jsonObj.id;
@@ -151,6 +169,7 @@ function diskOfferingJsonToDetailsTab($midmenuItem1) {
     $detailsTab.data("jsonObj", jsonObj);      
     $detailsTab.find("#id").text(jsonObj.id);
     
+    $detailsTab.find("#grid_header_title").text(fromdb(jsonObj.name));
     $detailsTab.find("#name").text(fromdb(jsonObj.name));
     $detailsTab.find("#name_edit").val(fromdb(jsonObj.name));
     
@@ -164,6 +183,7 @@ function diskOfferingJsonToDetailsTab($midmenuItem1) {
     //actions ***
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty();    
+    buildActionLinkForDetailsTab("Edit Disk Offering", diskOfferingActionMap, $actionMenu, $midmenuItem1, $detailsTab);	  
     buildActionLinkForDetailsTab("Delete Disk Offering", diskOfferingActionMap, $actionMenu, $midmenuItem1, $detailsTab);	    
 }
 
@@ -187,7 +207,10 @@ function diskOfferingClearDetailsTab() {
     $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());
 }
 
-var diskOfferingActionMap = {     
+var diskOfferingActionMap = {   
+    "Edit Disk Offering": {
+        dialogBeforeActionFn: doEditDiskOffering
+    },   
     "Delete Disk Offering": {              
         api: "deleteDiskOffering",     
         isAsyncJob: false,           
