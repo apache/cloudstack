@@ -648,6 +648,8 @@ function hostToMidmenu(jsonObj, $midmenuItem1) {
        
     $midmenuItem1.find("#first_row").text(fromdb(jsonObj.name).substring(0,25)); 
     $midmenuItem1.find("#second_row").text(jsonObj.ipaddress.substring(0,25)); 
+    
+    updateHostStateInMidMenu(jsonObj, $midmenuItem1);   
 }
 
 function hostToRightPanel($midmenuItem1) { 

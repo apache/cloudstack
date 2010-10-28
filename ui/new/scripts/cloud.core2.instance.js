@@ -1489,7 +1489,7 @@ function vmToMidmenu(jsonObj, $midmenuItem1) {
     var vmName = getVmName(jsonObj.name, jsonObj.displayname);
     $midmenuItem1.find("#first_row").text(vmName);        
     $midmenuItem1.find("#second_row").text(jsonObj.ipaddress); 
-    updateStateInMidMenu(jsonObj, $midmenuItem1);     
+    updateVmStateInMidMenu(jsonObj, $midmenuItem1);     
     
     $midmenuItem1.data("toRightPanelFn", vmToRightPanel);   
 }

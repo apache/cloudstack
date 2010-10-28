@@ -725,7 +725,7 @@ function switchToTab(tabIndex, tabArray, tabContentArray, afterSwitchFnArray) {
     });   
 }
 
-function updateStateInMidMenu(jsonObj, $midmenuItem1) {         
+function updateVmStateInMidMenu(jsonObj, $midmenuItem1) {         
     if(jsonObj.state == "Running")
         $midmenuItem1.find("#icon").attr("src", "images/status_green.png");
     else if(jsonObj.state == "Stopped")
@@ -735,6 +735,17 @@ function updateStateInMidMenu(jsonObj, $midmenuItem1) {
     
     $midmenuItem1.find("#icon_container").show();
 }
+ 
+function updateHostStateInMidMenu(jsonObj, $midmenuItem1) {         
+    if(jsonObj.state == "Up" || jsonObj.state == "Connecting")
+        $midmenuItem1.find("#icon").attr("src", "images/status_green.png");
+    else if(jsonObj.state == "Down" || jsonObj.state == "Alert")
+        $midmenuItem1.find("#icon").attr("src", "images/status_red.png");
+    else  //ErrorInMaintenance, PrepareForMaintenance, Maintenance, Disconnected                               
+        $midmenuItem1.find("#icon").attr("src", "images/status_gray.png");
+    
+    $midmenuItem1.find("#icon_container").show();
+} 
   
 function resetViewConsoleAction(jsonObj, $detailsTab) {
     var $viewConsoleContainer = $detailsTab.find("#view_console_container").empty(); //reset view console panel

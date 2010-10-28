@@ -26,7 +26,7 @@ function routerToMidmenu(jsonObj, $midmenuItem1) {
     
     $midmenuItem1.find("#first_row").text(jsonObj.name.substring(0,25)); 
     $midmenuItem1.find("#second_row").text(jsonObj.publicip.substring(0,25));
-    updateStateInMidMenu(jsonObj, $midmenuItem1);       
+    updateVmStateInMidMenu(jsonObj, $midmenuItem1);       
 }
 
 function routerAfterDetailsTabAction(json, $midmenuItem1, id) {        
