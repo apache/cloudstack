@@ -139,6 +139,7 @@ import com.cloud.async.BaseAsyncJobExecutor;
 import com.cloud.async.dao.AsyncJobDao;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
+import com.cloud.certificate.CertificateVO;
 import com.cloud.certificate.dao.CertificateDao;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
@@ -5928,7 +5929,7 @@ public class ManagementServerImpl implements ManagementServer {
 				}
 
 				_certDao.release(lockedCert.getId());
-				return ("Updated:"+updatedCpIdList.size()+" out of:"+cpList.size());
+				return ("Updated:"+updatedCpIdList.size()+" out of:"+cpList.size()+" console proxies");
 			}
 			else
 			{

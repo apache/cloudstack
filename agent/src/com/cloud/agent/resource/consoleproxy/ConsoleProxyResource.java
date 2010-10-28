@@ -128,7 +128,11 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
 				out.close();
 	    		success = true;
     	    }
-    	}catch (Exception e)
+    	}catch (SecurityException se){
+    		s_logger.error("Unable to read the cert string in console proxy resource due to directory creation failure",se);
+    		success = false;    		
+    	}
+    	catch (Exception e)
     	{
     		s_logger.error("Unable to read the cert string in console proxy resource",e);
     		success = false;
