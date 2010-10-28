@@ -3575,6 +3575,7 @@ public class ManagementServerImpl implements ManagementServer {
         c.addCriteria(Criteria.NAME, cmd.getInstanceName());
         c.addCriteria(Criteria.STATE, cmd.getState());
         c.addCriteria(Criteria.DATACENTERID, cmd.getZoneId());
+        c.addCriteria(Criteria.GROUPID, cmd.getGroupId());
 
         // ignore these search requests if it's not an admin
         if (isAdmin == true) {

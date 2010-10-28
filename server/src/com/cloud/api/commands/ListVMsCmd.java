@@ -56,6 +56,9 @@ public class ListVMsCmd extends BaseListCmd {
     @Parameter(name="domainid", type=CommandType.LONG, description="the domain ID. If used with the account parameter, lists virtual machines for the specified account in this domain.")
     private Long domainId;
 
+    @Parameter(name="groupid", type=CommandType.LONG, description="the group ID")
+    private Long groupId;
+
     @Parameter(name="hostid", type=CommandType.LONG, description="the host ID")
     private Long hostId;
 
@@ -84,6 +87,10 @@ public class ListVMsCmd extends BaseListCmd {
 
     public Long getDomainId() {
         return domainId;
+    }
+
+    public Long getGroupId() {
+        return groupId;
     }
 
     public Long getHostId() {
@@ -127,6 +134,16 @@ public class ListVMsCmd extends BaseListCmd {
         List<UserVmResponse> vmResponses = new ArrayList<UserVmResponse>();
         for (UserVmVO userVm : userVms) {
             UserVmResponse userVmResponse = new UserVmResponse();
+
+            Account acct = ApiDBUtils.findAccountById(Long.valueOf(userVm.getAccountId()));
+            if ((acct != null) && (acct.getRemoved() == null)) {
+                userVmResponse.setAccountName(acct.getAccountName());
+                userVmResponse.setDomainId(acct.getDomainId());
+                userVmResponse.setDomainName(ApiDBUtils.findDomainById(acct.getDomainId()).getName());
+            } else {
+                continue; // the account has been deleted, skip this VM in the response
+            }
+
             userVmResponse.setId(userVm.getId());
             AsyncJobVO asyncJob = ApiDBUtils.findInstancePendingAsyncJob("vm_instance", userVm.getId());
             if (asyncJob != null) {
@@ -141,12 +158,6 @@ public class ListVMsCmd extends BaseListCmd {
                 userVmResponse.setState(userVm.getState().toString());
             }
 
-            Account acct = ApiDBUtils.findAccountById(Long.valueOf(userVm.getAccountId()));
-            if (acct != null) {
-                userVmResponse.setAccountName(acct.getAccountName());
-                userVmResponse.setDomainId(acct.getDomainId());
-                userVmResponse.setDomainName(ApiDBUtils.findDomainById(acct.getDomainId()).getName());
-            }
 
             userVmResponse.setHaEnable(userVm.isHaEnabled());
             
