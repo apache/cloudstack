@@ -825,12 +825,12 @@ function initVMWizard() {
 									    $("body").stopTime(timerKey);										    
 									    if (result.jobstatus == 1) {
 										    // Succeeded						                        
-				                            vmToMidmenu(result.virtualmachine[0], $midmenuItem1);
+				                            vmToMidmenu(result.jobresult.deployvirtualmachineresponse, $midmenuItem1);
 				                            bindClickToMidMenu($midmenuItem1, vmToRightPanel, getMidmenuId);  
-				                            if (result.virtualmachine[0].passwordenabled == 'true') {							                                									        
-										        var extraMessage = "New password: " + result.virtualmachine[0].password;
+				                            if (result.jobresult.deployvirtualmachineresponse.passwordenabled == 'true') {							                                									        
+										        var extraMessage = "New password: " + result.jobresult.deployvirtualmachineresponse.password;
 										        afterAddingMidMenuItem($midmenuItem1, true, extraMessage);
-										        var afterActionInfo = "Your instance has been successfully created.  Your new password is : " + result.virtualmachine[0].password;
+										        var afterActionInfo = "Your instance has been successfully created.  Your new password is : " + result.jobresult.deployvirtualmachineresponse.password;
 										        $midmenuItem1.data("afterActionInfo", afterActionInfo); 
 									        } 	
 									        else {
