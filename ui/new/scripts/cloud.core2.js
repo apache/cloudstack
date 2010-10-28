@@ -606,7 +606,9 @@ function selectLeftMenu($menuToSelect, expandable) {
 		// Close the help link if it's opened
 		$("#help_dropdown_dialog").hide();
 		$("#help_button").removeClass("selected");
+		return true;
 	}
+	return false;
 }
 
 var $selectedSubMenu;
