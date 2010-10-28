@@ -30,6 +30,7 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
+import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
@@ -53,6 +54,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.State;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
+import com.sun.corba.se.impl.logging.InterceptorsSystemException;
 
 /**
  * @author nitin
@@ -115,11 +117,10 @@ public class UploadMonitorImpl implements UploadMonitor {
 	
 	@Override
 	public UploadVO createNewUploadEntry(Long hostId, Long typeId, UploadVO.Status  uploadState,
-	                                        int uploadPercent, Type  type, 
-	                                        String  errorString, String  jobId, String  uploadUrl){
+	                                        Type  type, String uploadUrl, Upload.Mode mode){
 	       
         UploadVO uploadObj = new UploadVO(hostId, typeId, new Date(), 
-                            uploadState, 0, type, null, null, uploadUrl);
+                                          uploadState, type, uploadUrl, mode);
         _uploadDao.persist(uploadObj);
         
         return uploadObj;
@@ -156,8 +157,7 @@ public class UploadMonitorImpl implements UploadMonitor {
 		HostVO sserver = storageServers.get(0);			
 		
 		UploadVO uploadTemplateObj = new UploadVO(sserver.getId(), template.getId(), new Date(), 
-													Upload.Status.NOT_UPLOADED, 0, type, 
-													null, "jobid0000", url);
+													Upload.Status.NOT_UPLOADED, type, url, Mode.FTP_UPLOAD);
 		_uploadDao.persist(uploadTemplateObj);        		               
         		
 		if(vmTemplateHost != null) {
@@ -197,7 +197,7 @@ public class UploadMonitorImpl implements UploadMonitor {
 	    HostVO sserver = storageServers.get(0);
 	    UploadVO uploadTemplateObj = new UploadVO(sserver.getId(), template.getId(), new Date(), 
 	                                                Status.DOWNLOAD_URL_NOT_CREATED, 0, type, Mode.HTTP_DOWNLOAD); 
-	                                                
+	    uploadTemplateObj.setInstallPath(vmTemplateHost.getInstallPath());	                                                
 	    _uploadDao.persist(uploadTemplateObj);
 	    
 	    // Create Symlink at ssvm
@@ -234,50 +234,61 @@ public class UploadMonitorImpl implements UploadMonitor {
 	}
 	
 	@Override
-    public void createVolumeDownloadURL(Long entityId, String path, Type type, Long dataCenterId, Long uploadId) throws CloudRuntimeException{
+    public void createVolumeDownloadURL(Long entityId, String path, Type type, Long dataCenterId, Long uploadId) throws InternalErrorException{
         
-        List<HostVO> storageServers = _serverDao.listByTypeDataCenter(Host.Type.SecondaryStorage, dataCenterId);
-        if(storageServers == null ) 
-            throw new CloudRuntimeException("No Storage Server found at the datacenter - " +dataCenterId);        
-        
-        // Update DB for state = DOWNLOAD_URL_NOT_CREATED.        
-        UploadVO uploadJob = _uploadDao.createForUpdate(uploadId);
-        uploadJob.setUploadState(Status.DOWNLOAD_URL_NOT_CREATED);
-        uploadJob.setLastUpdated(new Date());
-        _uploadDao.update(uploadJob.getId(), uploadJob);
-        
-        // Create Symlink at ssvm
-        CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(path);
-        long result = send(ApiDBUtils.findUploadById(uploadId).getHostId(), cmd, null);
-        if (result == -1){
-            String errorString = "Unable to create a link for " +type+ " id:"+entityId;
-            s_logger.warn(errorString);
-            throw new CloudRuntimeException(errorString);
-        }
-        
-        //Construct actual URL locally now that the symlink exists at SSVM
-        List<SecondaryStorageVmVO> ssVms = _secStorageVmDao.getSecStorageVmListInStates(dataCenterId, State.Running);
-        if (ssVms.size() > 0) {
-            SecondaryStorageVmVO ssVm = ssVms.get(0);
-            if (ssVm.getPublicIpAddress() == null) {
-                s_logger.warn("A running secondary storage vm has a null public ip?");
-                throw new CloudRuntimeException("SSVM has null public IP - couldnt create the URL");
-            }
-            String extractURL = generateCopyUrl(ssVm.getPublicIpAddress(), path);
-            UploadVO vo = _uploadDao.createForUpdate();
-            vo.setLastUpdated(new Date());
-            vo.setUploadUrl(extractURL);
-            vo.setUploadState(Status.DOWNLOAD_URL_CREATED);
+	    String errorString = "";
+	    boolean success = false;
+	    try{
+            List<HostVO> storageServers = _serverDao.listByTypeDataCenter(Host.Type.SecondaryStorage, dataCenterId);
+            if(storageServers == null ){
+                errorString = "No Storage Server found at the datacenter - " +dataCenterId;
+                throw new CloudRuntimeException(errorString);   
+            }                    
             
-            if(extractURL == null){
-                vo.setUploadState(Status.ERROR);
-                vo.setErrorString("Could not create the download URL");
+            // Update DB for state = DOWNLOAD_URL_NOT_CREATED.        
+            UploadVO uploadJob = _uploadDao.createForUpdate(uploadId);
+            uploadJob.setUploadState(Status.DOWNLOAD_URL_NOT_CREATED);
+            uploadJob.setLastUpdated(new Date());
+            _uploadDao.update(uploadJob.getId(), uploadJob);
+            
+            // Create Symlink at ssvm
+            CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(path);
+            long result = send(ApiDBUtils.findUploadById(uploadId).getHostId(), cmd, null);
+            if (result == -1){
+                errorString = "Unable to create a link for " +type+ " id:"+entityId;
+                s_logger.warn(errorString);
+                throw new InternalErrorException(errorString);
             }
-            _uploadDao.update(uploadId, vo);
-            return;
-        }
-        throw new CloudRuntimeException("Couldnt find a running SSVM in the zone" + dataCenterId+ ". Couldnt create the extraction URL.");
-        
+            
+            //Construct actual URL locally now that the symlink exists at SSVM
+            List<SecondaryStorageVmVO> ssVms = _secStorageVmDao.getSecStorageVmListInStates(dataCenterId, State.Running);
+            if (ssVms.size() > 0) {
+                SecondaryStorageVmVO ssVm = ssVms.get(0);
+                if (ssVm.getPublicIpAddress() == null) {
+                    errorString = "A running secondary storage vm has a null public ip?";
+                    s_logger.warn(errorString);
+                    throw new InternalErrorException(errorString);
+                }
+                String extractURL = generateCopyUrl(ssVm.getPublicIpAddress(), path);
+                UploadVO vo = _uploadDao.createForUpdate();
+                vo.setLastUpdated(new Date());
+                vo.setUploadUrl(extractURL);
+                vo.setUploadState(Status.DOWNLOAD_URL_CREATED);
+                _uploadDao.update(uploadId, vo);
+                success = true;
+                return;
+            }
+            errorString = "Couldnt find a running SSVM in the zone" + dataCenterId+ ". Couldnt create the extraction URL.";
+            throw new InternalErrorException(errorString);
+	    }finally{
+	        if(!success){
+	            UploadVO uploadJob = _uploadDao.createForUpdate(uploadId);
+	            uploadJob.setLastUpdated(new Date());
+	            uploadJob.setErrorString(errorString);
+	            uploadJob.setUploadState(Status.ERROR);
+	            _uploadDao.update(uploadId, uploadJob);
+	        }
+	    }
     }
 	
 	   private String generateCopyUrl(String ipAddress, String path){
@@ -328,7 +339,7 @@ public class UploadMonitorImpl implements UploadMonitor {
 
 	@Override
 	public boolean start() {
-	    //FIX ME - Make the timings configurable.
+	    //FIX ME - Make the timings configurable. // Keep them to 86400 for now.
 	    _executor.scheduleWithFixedDelay(new StorageGarbageCollector(), 86400, 86400, TimeUnit.SECONDS);
 		_timer = new Timer();
 		return true;
@@ -437,27 +448,30 @@ public class UploadMonitorImpl implements UploadMonitor {
     
     
     private long getTimeDiff(Date date){
-        Calendar currentCalendar = Calendar.getInstance();
+        Calendar currentDateCalendar = Calendar.getInstance();
         Calendar givenDateCalendar = Calendar.getInstance();
         givenDateCalendar.setTime(date);
         
-        return (currentCalendar.getTimeInMillis() - givenDateCalendar.getTimeInMillis() )/1000;  
+        return (currentDateCalendar.getTimeInMillis() - givenDateCalendar.getTimeInMillis() )/1000;  
     }
     
     public void cleanupStorage() {
 
-        final int EXTRACT_URL_TIME_LIMIT = 40;
-        List<UploadVO> extractURLs= _uploadDao.listByModeAndStatus(Mode.HTTP_DOWNLOAD, Status.DOWNLOAD_URL_CREATED);
+        final int EXTRACT_URL_LIFE_LIMIT_IN_SECONDS = 86400;//FIX ME make it configurable.
+        List<UploadVO> extractJobs= _uploadDao.listByModeAndStatus(Mode.HTTP_DOWNLOAD, Status.DOWNLOAD_URL_CREATED);
         
-        for (UploadVO extractURL : extractURLs){
-            if( getTimeDiff(extractURL.getLastUpdated()) < EXTRACT_URL_TIME_LIMIT) continue;
-            String path = extractURL.getUploadUrl().substring( (extractURL.getUploadUrl().lastIndexOf("/")) +1 );
-            DeleteEntityDownloadURLCommand cmd = new DeleteEntityDownloadURLCommand(path, extractURL.getType());
-            long result = send(extractURL.getHostId(), cmd, null);
-            if (result == -1){
-                s_logger.warn("Unable to delete the link for " +extractURL.getType()+ " id=" +extractURL.getTypeId()+ " url="+extractURL.getUploadUrl());
-            }else{
-                _uploadDao.remove(extractURL.getId());
+        for (UploadVO extractJob : extractJobs){
+            if( getTimeDiff(extractJob.getLastUpdated()) > EXTRACT_URL_LIFE_LIMIT_IN_SECONDS ){                           
+                String path = extractJob.getInstallPath();
+                s_logger.debug("Sending deletion of extract URL "+extractJob.getUploadUrl());
+                // Would delete the symlink for the Type and if Type == VOLUME then also the volume
+                DeleteEntityDownloadURLCommand cmd = new DeleteEntityDownloadURLCommand(path, extractJob.getType());            
+                long result = send(extractJob.getHostId(), cmd, null);
+                if (result == -1){
+                    s_logger.warn("Unable to delete the link for " +extractJob.getType()+ " id=" +extractJob.getTypeId()+ " url="+extractJob.getUploadUrl());
+                }else{
+                    _uploadDao.remove(extractJob.getId());
+                }
             }
         }
                 
