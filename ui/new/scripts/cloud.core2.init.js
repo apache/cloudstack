@@ -30,11 +30,13 @@ $(document).ready(function() {
 
 	// Setup first level navigation
 	$("#leftmenu_dashboard").bind("click", function(event) {
-		selectLeftMenu($(this));
-		hideMiddleMenu();
-		$("#right_panel").load("jsp/dashboard.jsp", function(){
-			afterLoadDashboardJSP();        
-		});
+		if (selectLeftMenu($(this))) {
+			clearMiddleMenu();
+			hideMiddleMenu();
+			$("#right_panel").load("jsp/dashboard.jsp", function(){
+				afterLoadDashboardJSP();        
+			});
+		}
 		return false;
 	});	
 	$("#leftmenu_storage").bind("click", function(event) {
@@ -50,8 +52,9 @@ $(document).ready(function() {
 		return false;
 	});
 	$("#leftmenu_account").bind("click", function(event) {
-		selectLeftMenu($(this));
-		listMidMenuItems("listAccounts", "listaccountsresponse", "account", "jsp/account.jsp", afterLoadAccountJSP, accountToMidmenu, accountToRightPanel, getMidmenuId, false);
+		if (selectLeftMenu($(this))) {
+			listMidMenuItems("listAccounts", "listaccountsresponse", "account", "jsp/account.jsp", afterLoadAccountJSP, accountToMidmenu, accountToRightPanel, getMidmenuId, false);
+		}
 		return false;
 	});	
 	$("#leftmenu_events").bind("click", function(event) {
@@ -59,9 +62,28 @@ $(document).ready(function() {
 		return false;
 	});
 	$("#leftmenu_system").bind("click", function(event) {
-		selectLeftMenu($(this), true);	
-		if($("#leftmenu_resource").find("#resource_arrow").hasClass("expanded_open") == true)
-		    $("#leftmenu_resource").click(); //if resource menu is open (i.e. zonetree is shown), empty zonetree and close resource menu.
+		if (selectLeftMenu($(this), true)) {
+			if($("#leftmenu_resource").find("#resource_arrow").hasClass("expanded_open") == true)
+				$("#leftmenu_resource").click(); //if resource menu is open (i.e. zonetree is shown), empty zonetree and close resource menu.
+		}
+		return false;
+	});
+	
+	$("#leftmenu_instances").bind("click", function(event) {
+		instanceBuildSubMenu();
+		selectLeftMenu($(this), true);		
+		return false;
+	});	
+			
+	$("#leftmenu_domain").bind("click", function(event) {
+		if (selectLeftMenu($(this), true)) {
+			hideMiddleMenu();		
+			disableMultipleSelectionInMidMenu();      
+			clearMiddleMenu();
+					
+			bindEventHandlerToDomainTreeNode();		
+			refreshWholeTree(g_domainid, defaultRootLevel); 
+		}
 		return false;
 	});
 	
@@ -94,24 +116,6 @@ $(document).ready(function() {
 		bindAndListMidMenuItems($("#leftmenu_disk_offering"), "listDiskOfferings", "listdiskofferingsresponse", "diskoffering", "jsp/diskoffering.jsp", afterLoadDiskOfferingJSP, diskOfferingToMidmenu, diskOfferingToRightPanel, getMidmenuId, false); 
 		bindAndListMidMenuItems($("#leftmenu_global_setting"), "listConfigurations", "listconfigurationsresponse", "configuration", "jsp/globalsetting.jsp", afterLoadGlobalSettingJSP, globalSettingToMidmenu, globalSettingToRightPanel, globalSettingGetMidmenuId, false); 
 		
-		$("#leftmenu_instances").bind("click", function(event) {
-			instanceBuildSubMenu();
-			selectLeftMenu($(this), true);		
-			return false;
-		});	
-			
-		$("#leftmenu_domain").bind("click", function(event) {
-			selectLeftMenu($(this), true);
-			hideMiddleMenu();		
-			disableMultipleSelectionInMidMenu();      
-			clearMiddleMenu();
-					
-			bindEventHandlerToDomainTreeNode();		
-			refreshWholeTree(g_domainid, defaultRootLevel); 
-					
-			return false;
-		});  
-			
 		$("#leftmenu_resource").bind("click", function(event) {
 			showMiddleMenu();
 			disableMultipleSelectionInMidMenu();  
@@ -140,10 +144,6 @@ $(document).ready(function() {
         return false;
     });
     
-    
-    
-    
-   
 	// Prevent the UI from being iframed if the iframe isn't from the same domain.
 	try {
 		if ( top != self && self.location.hostname != top.location.hostname) {
@@ -383,7 +383,12 @@ $(document).ready(function() {
 	$("#dialog_error").siblings(".ui-widget-header").css("background", "url('/client/css/images/ui-bg_errorglass_30_ffffff_1x400.png') repeat-x scroll 50% 50% #393939");
 	$("#dialog_error").siblings(".ui-dialog-buttonpane").find(".ui-state-default").css("background", "url('/client/css/images/ui-bg_errorglass_30_ffffff_1x400.png') repeat-x scroll 50% 50% #393939");
 	
-	initDialogWithOK("dialog_session_expired");	
+	$("#dialog_session_expired").dialog({ 
+		autoOpen: false,
+		modal: true,
+		zIndex: 2000,
+		buttons: { "OK": function() { logout(true); $(this).dialog("close"); } }
+	});	
 	$("#dialog_session_expired").siblings(".ui-widget-header").css("background", "url('/client/css/images/ui-bg_errorglass_30_ffffff_1x400.png') repeat-x scroll 50% 50% #393939");
 	$("#dialog_session_expired").siblings(".ui-dialog-buttonpane").find(".ui-state-default").css("background", "url('/client/css/images/ui-bg_errorglass_30_ffffff_1x400.png') repeat-x scroll 50% 50% #393939");
 		

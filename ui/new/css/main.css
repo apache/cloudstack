@@ -2167,7 +2167,7 @@ a:hover.search_button {
 
 .midmenu_content{
 	width:220px;
-	height:auto;
+	height:35px;
 	float:left;
 	color:#333;
 	text-align:left;
@@ -2224,24 +2224,26 @@ a:hover.search_button {
 
 .midmenu_textbox p {
 	width:165px;
-	height:auto;
+	height:13px;
 	float:left;
 	text-align:left;
 	font-weight:normal;
 	font-size:11px;
 	margin:3px 0 0 0;
 	padding:0;
+	overflow:hidden;
 	
 }
 .midmenu_textbox span {
 	width:165px;
-	height:auto;
+	height:13px;
 	float:left;
 	text-align:left;
 	font-weight:normal;
 	font-size:10px;
 	margin:3px 0 0 0;
 	padding:0;
+	overflow:hidden;
 }
 
 .midmenu_emptymsgbox {
