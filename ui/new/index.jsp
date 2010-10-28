@@ -737,10 +737,10 @@ long milliseconds = new Date().getTime();
             <div class="midmenu_icons" id="icon_container" style="display: none">
                 <img id="icon" /></div>
             <div class="midmenu_textbox">
-                <p>
+                <p title="temp">
                     <strong id="first_row">&nbsp;</strong>
                 </p>
-                <span id="second_row_container">
+                <span title="tmp1" id="second_row_container">
                     <span id="second_row">&nbsp;</span>
                 </span>
             </div>
