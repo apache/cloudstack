@@ -567,10 +567,18 @@ function initVMWizard() {
 			    else
 			        items = json.listisosresponse.iso;
 			    loading.hide();
-			    container.empty();
+			    container.empty(); 
 			    if (items != null && items.length > 0) {
 				    var first = true;
+				    var $vmTemplateInWizard = $("#vmtemplate_in_vmwizard");
 				    for (var i = 0; i < items.length; i++) {
+				        var $newTemplate = $vmTemplateInWizard.clone();
+				        $newTemplate.find("#icon").removeClass().addClass(getIconForOS(items[i].ostypename));
+				        $newTemplate.find("#name").text(fromdb(items[i].displaytext));		
+				        $newTemplate.find("#hypervisor").text(fromdb(items[i].hypervisor));					    
+				        $newTemplate.find("#submitted_by").text(fromdb(items[i].account));
+				        container.append($newTemplate.show());
+				        /*
 					    var divClass = "rev_wiztemplistbox";
 					    if (first) {
 						    divClass = "rev_wiztemplistbox_selected";
@@ -583,6 +591,8 @@ function initVMWizard() {
 								      +'<div class="rev_wiztemp_ownertext">'+fromdb(items[i].account)+'</div>'
 							      +'</div>';
 					    container.append(html);
+					    */
+					    
 				    }						
 				    if(items.length < vmPopupStep2PageSize)
 	                    $vmPopup.find("#nextPage").hide();
