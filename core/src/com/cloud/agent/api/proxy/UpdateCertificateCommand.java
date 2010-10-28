@@ -25,19 +25,30 @@ package com.cloud.agent.api.proxy;
 public class UpdateCertificateCommand extends ProxyCommand {
 
 	private String certificate; //certificate to be applied
+	private boolean forNewProxy; //denotes if this is called from the listener flow
 	
 	public UpdateCertificateCommand() {
+		this.forNewProxy = false;
 	}
 	
-	public UpdateCertificateCommand(String certificate) {
+	public UpdateCertificateCommand(String certificate, boolean forNewProxy) {
 		this.certificate = certificate;
+		this.forNewProxy = forNewProxy;
 	}
 		
 	public String getCertificate() {
 		return this.certificate;
 	}
 		
-    @Override
+    public boolean isForNewProxy() {
+		return forNewProxy;
+	}
+
+	public void setForNewProxy(boolean forNewProxy) {
+		this.forNewProxy = forNewProxy;
+	}
+
+	@Override
     public boolean executeInSequence() {
         return false;
     }

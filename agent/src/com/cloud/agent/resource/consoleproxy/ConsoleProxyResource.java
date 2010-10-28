@@ -109,36 +109,69 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
 
     protected Answer execute(final UpdateCertificateCommand cmd) {
     	boolean success = false;
+    	String errorStr = null;
+    	String successStr = null;
     	try
     	{
     		String certificate = cmd.getCertificate();
     		//write the cert to /etc/cloud/consoleproxy/cert/
 			boolean dirCreated = false;
-			String strDirectoy = "/etc/cloud/consoleproxy/cert/";
-			dirCreated = (new File(strDirectoy)).mkdirs();
-    	    if (dirCreated) 
-    	    {
+			boolean dirExists = false;
+			boolean forNewProxy = cmd.isForNewProxy();
+			String strDirectory = "/etc/cloud/consoleproxy/cert/";
+			String filePath = "/etc/cloud/consoleproxy/cert/customcert";
+			if(forNewProxy){
+				dirCreated = (new File(strDirectory)).mkdirs();
     	    	if(s_logger.isDebugEnabled())
-    	    		s_logger.debug("Directory: " + strDirectoy + " created");    
-    	    	//copy cert to the dir
-				FileWriter fstream = new FileWriter("/etc/cloud/consoleproxy/cert/customcert");
-				BufferedWriter out = new BufferedWriter(fstream);
-				out.write(certificate);
-				//Close the output stream
-				out.close();
-	    		success = true;
-    	    }
+    	    		s_logger.debug("Directory: " + strDirectory + " created");    
+    	    	if(dirCreated){
+	    	    	//copy cert to the dir
+					FileWriter fstream = new FileWriter(filePath);
+					BufferedWriter out = new BufferedWriter(fstream);
+					out.write(certificate);
+					//Close the output stream
+					out.close();
+		    		success = true;
+		    		successStr = "Successfully created cert at /etc/cloud/consoleproxy/cert/ from the listener flow for new console proxy starting up";
+    	    	}
+			}
+			else{
+				File dir = new File(strDirectory);
+				dirExists = dir.exists();
+				if(!dirExists){
+					dirCreated = (new File(strDirectory)).mkdirs();
+	    	    	if(s_logger.isDebugEnabled())
+	    	    		s_logger.debug("Directory: " + strDirectory + " created");    
+				}
+	    	    if (dirExists || dirCreated) 
+	    	    {
+	    	    	//copy cert to the dir
+					FileWriter fstream = new FileWriter(filePath);
+					BufferedWriter out = new BufferedWriter(fstream);
+					out.write(certificate);
+					//Close the output stream
+					out.close();
+		    		success = true;
+		    		successStr = "Successfully created cert at /etc/cloud/consoleproxy/cert/ from the UploadCustomCert cmd flow for existing console proxy";
+	    	    }
+			}
     	}catch (SecurityException se){
-    		s_logger.error("Unable to read the cert string in console proxy resource due to directory creation failure",se);
+    		errorStr = "Unable to upload cert in console proxy resource due to directory creation failure";
+    		s_logger.error(errorStr,se);
     		success = false;    		
+    	}catch (IOException ioe){
+    		errorStr = "Unable to write cert to the location /etc/cloud/consoleproxy/cert/ ";
+    		s_logger.error(errorStr,ioe);
+    		success = false;    		    		
     	}
     	catch (Exception e)
     	{
-    		s_logger.error("Unable to read the cert string in console proxy resource",e);
+    		errorStr = "Unable to upload cert in console proxy resource";
+    		s_logger.error(errorStr,e);
     		success = false;
     	}
     	
-        return new Answer(cmd, success, "Custom certificate response from the updatecertificate flow");
+        return new Answer(cmd, success, errorStr!=null?errorStr:successStr);
     }
 
     protected Answer execute(final CheckConsoleProxyLoadCommand cmd) {

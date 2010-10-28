@@ -5908,7 +5908,7 @@ public class ManagementServerImpl implements ManagementServer {
 				{
 					Long cpHostId = hostNameToHostIdMap.get(cp.getName());
 					//now send a command to each console proxy 
-					UpdateCertificateCommand certCmd = new UpdateCertificateCommand(_certDao.findById(certVOId).getCertificate());
+					UpdateCertificateCommand certCmd = new UpdateCertificateCommand(_certDao.findById(certVOId).getCertificate(), false);
 					try {
 							Answer updateCertAns = _agentMgr.send(cpHostId, certCmd);
 							if(updateCertAns.getResult() == true)
