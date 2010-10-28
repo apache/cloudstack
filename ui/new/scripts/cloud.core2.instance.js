@@ -535,11 +535,10 @@ function initVMWizard() {
         var commandString;    		  	   
         var searchInput = $vmPopup.find("#search_input").val();   
         if (selectedTemplateTypeInVmPopup != "blank") {  //template   
-            var hypervisor = $vmPopup.find("#wizard_hypervisor").val();	                
             if (searchInput != null && searchInput.length > 0)                 
-                commandString = "command=listTemplates&templatefilter="+selectedTemplateTypeInVmPopup+"&zoneid="+zoneId+"&hypervisor="+hypervisor+"&keyword="+searchInput+"&page="+currentPageInTemplateGridInVmPopup; 
+                commandString = "command=listTemplates&templatefilter="+selectedTemplateTypeInVmPopup+"&zoneid="+zoneId+"&keyword="+searchInput+"&page="+currentPageInTemplateGridInVmPopup; 
             else
-                commandString = "command=listTemplates&templatefilter="+selectedTemplateTypeInVmPopup+"&zoneid="+zoneId+"&hypervisor="+hypervisor+"&page="+currentPageInTemplateGridInVmPopup;           		    		
+                commandString = "command=listTemplates&templatefilter="+selectedTemplateTypeInVmPopup+"&zoneid="+zoneId+"&page="+currentPageInTemplateGridInVmPopup;           		    		
 	    } 
 	    else {  //ISO
 	        if (searchInput != null && searchInput.length > 0)                 
@@ -671,13 +670,6 @@ function initVMWizard() {
         return false;
     });
             
-    $vmPopup.find("#wizard_hypervisor").bind("change", function(event) {       
-        var selectedHypervisor = $(this).val();
-        if(selectedHypervisor != null && selectedHypervisor.length > 0)
-            listTemplatesInVmPopup();         
-        return false;
-    });        
-   
     function displayDiskOffering(type) {
         if(type=="data") {
             $vmPopup.find("#wizard_data_disk_offering_title").show();
@@ -762,7 +754,8 @@ function initVMWizard() {
 		    }	
 			
 			$thisPopup.find("#wizard_review_zone").text($thisPopup.find("#wizard_zone option:selected").text());    
-			$thisPopup.find("#wizard_review_hypervisor").text($thisPopup.find("#wizard_hypervisor option:selected").text());   	
+			// This is taking from the selected template but need to change this to the dropdown that supports ISO.
+			$thisPopup.find("#wizard_review_hypervisor").text($selectedVmWizardTemplate.data("hypervisor"));   	
 			$thisPopup.find("#wizard_review_template").text($thisPopup.find("#step1 .rev_wiztemplistbox_selected .rev_wiztemp_listtext").text()); 
 	    }			
 		

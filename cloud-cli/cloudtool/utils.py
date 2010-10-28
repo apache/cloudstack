@@ -165,14 +165,13 @@ def lookup_command_in_api(api,command_name):
     command = getattr(api,command_name.replace("-","_"),None)
     return command
 
-def get_api_list():
-        apilist = []
-        for api in apis.get_all_apis():
-            api_module = api
-            api_name = api.__name__.split(".")[-1]
-            if not api_name.startswith("_") and hasattr(api_module,'__doc__'):
-                apilist.append( "    %20s     %s"%(api_name.replace("_",'-'),api_module.__doc__) )
-        return apilist
+def get_api_list(api):
+	apilist = []
+	for cmd_name in dir(api):
+		cmd = getattr(api,cmd_name)
+            	if callable(cmd) and not cmd_name.startswith("_"):
+			apilist.append(cmd_name)	
+	return apilist
 
 def get_command_list(api):
         cmds = []

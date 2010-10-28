@@ -39,6 +39,7 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao.TemplateFilter;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.user.Account;
+import com.cloud.user.AccountVO;
 import com.cloud.user.UserContext;
 
 @Implementation(method="listTemplates", description="List all public, private, and privileged templates.")
@@ -151,7 +152,9 @@ public class ListTemplatesCmd extends BaseListCmd {
         List<TemplateResponse> templateResponses = new ArrayList<TemplateResponse>();
 
         for (VMTemplateVO template : templates) {
-            if (!showDomr && template.getId() == TemplateConstants.DEFAULT_SYSTEM_VM_DB_ID) {
+        	// Since we've added multiple domR templates and with different DB ids, I'm changing
+        	// this to filter out any templates with names that start with system for now.
+            if (!showDomr && template.getName().startsWith("SystemVM")) {
                 continue;
             }
 

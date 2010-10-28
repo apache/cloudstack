@@ -2556,6 +2556,45 @@ a:hover.search_button {
 	padding:0;
 }
 
+.row_celltitles.status_red {
+	width:auto;
+	height:auto;
+	float:left;
+	color:#AB0202;
+	text-align:left;
+	font-size:11px;
+	font-weight:bold;
+	margin:0 0 0 10px;
+	display:inline;
+	padding:0;
+}
+
+.row_celltitles.status_green {
+	width:auto;
+	height:auto;
+	float:left;
+	color:#538002;
+	text-align:left;
+	font-size:11px;
+	font-weight:bold;
+	margin:0 0 0 10px;
+	display:inline;
+	padding:0;
+}
+
+.row_celltitles.status_gray {
+	width:auto;
+	height:auto;
+	float:left;
+	color:#666666;
+	text-align:left;
+	font-size:11px;
+	font-weight:bold;
+	margin:0 0 0 10px;
+	display:inline;
+	padding:0;
+}
+
 .row_celltitles.alert {
 	width:100%;
 	height:auto;
