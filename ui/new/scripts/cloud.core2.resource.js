@@ -1338,16 +1338,16 @@ function initAddHostButton($midmenuAddLink1) {
 		        var password = trim($thisDialog.find("#host_password").val());
 		        array1.push("&password="+encodeURIComponent(password));
 					
-				var newClusterName;							
+				var newClusterName, existingClusterId;							
 			    if(clusterRadio == "new_cluster_radio") {
 		            newClusterName = trim($thisDialog.find("#new_cluster_name").val());
 		            array1.push("&clustername="+todb(newClusterName));				    
 		        }
 		        else if(clusterRadio == "existing_cluster_radio") {			            
-		            var clusterId = $thisDialog.find("#cluster_select").val();
+		            existingClusterId = $thisDialog.find("#cluster_select").val();
 				    // We will default to no cluster if someone selects Join Cluster with no cluster available.
-				    if (clusterId != '-1') {
-					    array1.push("&clusterid="+clusterId);
+				    if (existingClusterId != '-1') {
+					    array1.push("&clusterid="+existingClusterId);
 				    }
 		        }				
 				
@@ -1369,6 +1369,8 @@ function initAddHostButton($midmenuAddLink1) {
 			            $thisDialog.dialog("close");
 					
 					    showMiddleMenu();
+					    
+					    /*
 					    var $midmenuItem1 = $("#midmenu_item").clone();
                         $("#midmenu_container").append($midmenuItem1.fadeIn("slow"));
                         var items = json.addhostresponse.host;				            			      										   
@@ -1382,18 +1384,13 @@ function initAddHostButton($midmenuAddLink1) {
                                 bindClickToMidMenu($midmenuItem2, hostToRightPanel, hostGetMidmenuId); 
                                 $("#midmenu_container").append($midmenuItem2.fadeIn("slow"));                                   
                             }	
-                        }                                
+                        }   
+                        */                             
                         
-                        if(clusterRadio == "new_cluster_radio") {                              
-                            refreshClusterUnderPod($("#pod_" + podObj.id), newClusterName);                             
-                            $thisDialog.find("#new_cluster_name").val("");   
-                        }                           
+                        clickClusterNodeAfterAddHost(clusterRadio, podObj.id, newClusterName, existingClusterId, $thisDialog);                                  
 			        },			
                     error: function(XMLHttpResponse) {	
-                        if(clusterRadio == "new_cluster_radio") {                              
-                            refreshClusterUnderPod($("#pod_" + podObj.id), newClusterName);                             
-                            $thisDialog.find("#new_cluster_name").val("");   //even AddHost fails, new cluster is still created. So, we clean up new cluster field to avoid the same one gets created twice.
-                        }                                                      
+                        clickClusterNodeAfterAddHost(clusterRadio, podObj.id, newClusterName, existingClusterId, $thisDialog);                                  
                         handleErrorInDialog(XMLHttpResponse, $thisDialog);					    
                     }				
 		        });
@@ -1404,6 +1401,18 @@ function initAddHostButton($midmenuAddLink1) {
         }).dialog("open");            
         return false;
     });        
+}
+
+function clickClusterNodeAfterAddHost(clusterRadio, podId, newClusterName, existingClusterId, $thisDialog) {
+    if(clusterRadio == "new_cluster_radio") {    //*** new cluster ***                         
+        refreshClusterUnderPod($("#pod_" + podId), newClusterName);  //this function will click the new cluster node                         
+        $thisDialog.find("#new_cluster_name").val("");   
+    }        
+    else if(clusterRadio == "existing_cluster_radio") { //*** existing cluster ***     
+        if (existingClusterId != null && existingClusterId != '-1') {
+            $("#cluster_"+existingClusterId).find("#cluster_name").click();
+        }    
+    }         
 }
 
 function refreshClusterUnderPod($podNode, newClusterName) {  
@@ -1516,13 +1525,15 @@ function initAddPrimaryStorageButton($midmenuAddLink2) {
 				    dataType: "json",
 				    success: function(json) {
 				        $thisDialog.find("#spinning_wheel").hide();					       
-				        $thisDialog.dialog("close");
-					
+				        $thisDialog.dialog("close");					
+					    $("#cluster_"+clusterId).find("#cluster_name").click();
+					    /*
 					    var $midmenuItem1 = $("#midmenu_item").clone();
                         $("#midmenu_container").append($midmenuItem1.fadeIn("slow"));
 				        var item = json.createstoragepoolresponse;				            			      										   
 					    primarystorageToMidmenu(item, $midmenuItem1);
-	                    bindClickToMidMenu($midmenuItem1, primarystorageToRightPanel, primarystorageGetMidmenuId);  	                                               
+	                    bindClickToMidMenu($midmenuItem1, primarystorageToRightPanel, primarystorageGetMidmenuId);  
+	                    */	                                               
 				    },			
                     error: function(XMLHttpResponse) {	                                 
                         handleErrorInDialog(XMLHttpResponse, $thisDialog);	                        					    
