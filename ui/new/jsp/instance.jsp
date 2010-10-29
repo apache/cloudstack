@@ -311,24 +311,7 @@
                             <div class="rev_wizmid_tempbox_right">
                                 <div class="rev_wiztemplistpanel" id="template_container">
                                    
-                                    <div id="vmtemplate_in_vmwizard" class="rev_wiztemplistbox">
-                                        <div id="icon" class="rev_wiztemo_centosicons">
-                                        </div>
-                                        <div class="rev_wiztemp_listtext">
-                                            <span id="name">Centos</span>
-                                        </div>
-                                        <div class="rev_wiztemp_listtext hypervisortext">
-                                                Hypervisor: <select class="select" style="width:70px; float:none; height:15px; font-size:10px; margin:0 0 0 5px; display:inline;">
-                                                	<option value="op1">Hypervisor 1 </option>
-                                                    <option value="op1">Hypervisor 2</option>
-                                                    <option value="op1">Hypervisor 3</option>
-                                                </select>
-                                         </div>
-                                        
-                                        <div class="rev_wiztemp_ownertext">
-                                            [Submitted by: <span id="submitted_by"></span>]</div>
-                                    </div>                                    
-                                   
+                                    
                                 </div>
                                 <div class="rev_wiztemplistactions">
                                     <div class="rev_wiztemplist_actionsbox">
@@ -703,12 +686,32 @@
         <span id="name"></span>
     </div>
     <div class="rev_wiztemp_hypervisortext">
-            Hypervisor: <strong id="hypervisor"></strong>
+            Hypervisor: <strong id="hypervisor_text"></strong>
     </div>
     <div class="rev_wiztemp_ownertext">
         [Submitted by: <span id="submitted_by"></span>]</div>
 </div>
 <!-- VM Wizard - VM template (end) -->
+
+<!-- VM Wizard - ISO template (begin) -->
+<div id="vmiso_in_vmwizard" class="rev_wiztemplistbox" style="display:none">
+    <div id="icon" class="rev_wiztemo_centosicons">
+    </div>
+    <div class="rev_wiztemp_listtext">
+        <span id="name">Centos</span>
+    </div>
+    <div class="rev_wiztemp_listtext hypervisortext">
+        Hypervisor:
+        <select id="hypervisor_select" class="select" style="width: 70px; float: none; height: 15px; font-size: 10px; margin: 0 0 0 5px; display: inline;">
+            <option value='XenServer'>XenServer</option>
+            <option value='VmWare'>VmWare</option>
+            <option value='KVM'>KVM</option>
+        </select>
+    </div>
+    <div class="rev_wiztemp_ownertext">
+        [Submitted by: <span id="submitted_by"></span>]</div>
+</div>
+<!-- VM Wizard - ISO template (end) -->
 
 <!-- VM Wizard - Service Offering template (begin) -->
 <div class="vmpopup_offeringbox" id="vm_popup_service_offering_template" style="display: none">

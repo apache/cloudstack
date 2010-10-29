@@ -532,15 +532,17 @@ function initVMWizard() {
 	
         var container = $vmPopup.find("#template_container");	 		    	
 		   
-        var commandString;    		  	   
+        var commandString, templateType;    		  	   
         var searchInput = $vmPopup.find("#search_input").val();   
-        if (selectedTemplateTypeInVmPopup != "blank") {  //template   
+        if (selectedTemplateTypeInVmPopup != "blank") {  //*** template ***  
+            templateType = "template";
             if (searchInput != null && searchInput.length > 0)                 
                 commandString = "command=listTemplates&templatefilter="+selectedTemplateTypeInVmPopup+"&zoneid="+zoneId+"&keyword="+searchInput+"&page="+currentPageInTemplateGridInVmPopup; 
             else
                 commandString = "command=listTemplates&templatefilter="+selectedTemplateTypeInVmPopup+"&zoneid="+zoneId+"&page="+currentPageInTemplateGridInVmPopup;           		    		
 	    } 
-	    else {  //ISO
+	    else {  //*** ISO ***
+	        templateType = "ISO";
 	        if (searchInput != null && searchInput.length > 0)                 
                 commandString = "command=listIsos&isReady=true&bootable=true&zoneid="+zoneId+"&keyword="+searchInput+"&page="+currentPageInTemplateGridInVmPopup;  
             else
@@ -558,35 +560,23 @@ function initVMWizard() {
 		    dataType: "json",
 		    async: false,
 		    success: function(json) {
-		        var items;		
-		        if (selectedTemplateTypeInVmPopup != "blank")
+		        var items, $vmTemplateInWizard;		
+		        if (templateType == "template") {
 			        items = json.listtemplatesresponse.template;
-			    else
+			        $vmTemplateInWizard = $("#vmtemplate_in_vmwizard");
+			    }
+			    else if (templateType == "ISO") {
 			        items = json.listisosresponse.iso;
+			        $vmTemplateInWizard = $("#vmiso_in_vmwizard");
+			    }
+			        
 			    loading.hide();
 			    container.empty(); 
-			    if (items != null && items.length > 0) {
-				    //var first = true;
-				    var $vmTemplateInWizard = $("#vmtemplate_in_vmwizard");
+			    if (items != null && items.length > 0) {	
 				    for (var i = 0; i < items.length; i++) {
 				        var $newTemplate = $vmTemplateInWizard.clone();				        
-				        vmWizardTemplateJsonToTemplate(items[i], $newTemplate, i);
-				        container.append($newTemplate.show());
-				        /*
-					    var divClass = "rev_wiztemplistbox";
-					    if (first) {
-						    divClass = "rev_wiztemplistbox_selected";
-						    first = false;
-					    }
-
-					    var html = '<div class="'+divClass+'" id="'+items[i].id+'">'
-								      +'<div class="'+getIconForOS(items[i].ostypename)+'"></div>'
-								      +'<div class="rev_wiztemp_listtext">'+fromdb(items[i].displaytext)+'</div>'
-								      +'<div class="rev_wiztemp_ownertext">'+fromdb(items[i].account)+'</div>'
-							      +'</div>';
-					    container.append(html);
-					    */
-					    
+				        vmWizardTemplateJsonToTemplate(items[i], $newTemplate, templateType, i);
+				        container.append($newTemplate.show());				       
 				    }						
 				    if(items.length < vmPopupStep2PageSize)
 	                    $vmPopup.find("#nextPage").hide();
@@ -611,17 +601,19 @@ function initVMWizard() {
     }
 		
 	var $selectedVmWizardTemplate;		
-	function vmWizardTemplateJsonToTemplate(jsonObj, $template, i) {	 
+	function vmWizardTemplateJsonToTemplate(jsonObj, $template, templateType, i) {	 
 	    $template.attr("id", ("vmWizardTemplate_"+jsonObj.id));
 	    $template.data("templateId", jsonObj.id);
+	    $template.data("templateType", templateType);
+	    $template.data("templateName", fromdb(jsonObj.displaytext));
 	
         $template.find("#icon").removeClass().addClass(getIconForOS(jsonObj.ostypename));
         $template.find("#name").text(fromdb(jsonObj.displaytext));	
-        	
-        $template.find("#hypervisor").text(fromdb(jsonObj.hypervisor));	 
-             
-        $template.data("hypervisor", fromdb(jsonObj.hypervisor));
-        //$template.data("hypervisor", "XenServer");  //temporary for testing, will remove this line and uncomment the line above later.
+        
+        if(templateType == "template") {
+            $template.find("#hypervisor_text").text(fromdb(jsonObj.hypervisor));	
+            //$template.find("#hypervisor_text").text("XenServer");  //This line is for testing only. Comment this line and uncomment the line above before checkin.
+        }
         				    
         $template.find("#submitted_by").text(fromdb(jsonObj.account));				      
                 
@@ -754,9 +746,15 @@ function initVMWizard() {
 		    }	
 			
 			$thisPopup.find("#wizard_review_zone").text($thisPopup.find("#wizard_zone option:selected").text());    
-			// This is taking from the selected template but need to change this to the dropdown that supports ISO.
+			
+			// This is taking from the selected template but need to change this to the dropdown that supports ISO.		
+			if($selectedVmWizardTemplate.data("templateType") == "template")
+			    $selectedVmWizardTemplate.data("hypervisor", $selectedVmWizardTemplate.find("#hypervisor_text").text());
+			else 
+			    $selectedVmWizardTemplate.data("hypervisor", $selectedVmWizardTemplate.find("#hypervisor_select").val());			
 			$thisPopup.find("#wizard_review_hypervisor").text($selectedVmWizardTemplate.data("hypervisor"));   	
-			$thisPopup.find("#wizard_review_template").text($thisPopup.find("#step1 .rev_wiztemplistbox_selected .rev_wiztemp_listtext").text()); 
+						
+			$thisPopup.find("#wizard_review_template").text($selectedVmWizardTemplate.data("templateName")); 
 	    }			
 		
 	    if (currentStepInVmPopup == 2) { //service offering
