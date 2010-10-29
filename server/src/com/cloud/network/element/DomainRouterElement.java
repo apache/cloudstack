@@ -17,19 +17,16 @@
  */
 package com.cloud.network.element;
 
-import java.util.List;
-
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network.TrafficType;
 import com.cloud.network.NetworkConfiguration;
-import com.cloud.network.NetworkConfiguration.State;
-import com.cloud.network.NetworkConfigurationVO;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.dao.NetworkConfigurationDao;
 import com.cloud.network.router.DomainRouterManager;
@@ -60,52 +57,25 @@ public class DomainRouterElement extends AdapterBase implements NetworkElement {
     @Inject DomainRouterDao _routerDao;
 
     @Override
-    public Boolean implement(NetworkConfiguration config, NetworkOffering offering, Account user) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException {
+    public boolean implement(NetworkConfiguration guestConfig, NetworkOffering offering, DeployDestination dest, Account user) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException {
         if (offering.getGuestIpType() != GuestIpType.Virtualized) {
             s_logger.trace("Not handling guest ip type = " + offering.getGuestIpType());
-            return null;
-        }
-        
-        List<NetworkConfigurationVO> configs = _networkConfigDao.getRelatedNetworkConfigurations(config.getRelated());
-        NetworkConfigurationVO publicConfig = null;
-        NetworkConfigurationVO guestConfig = null;
-        for (NetworkConfigurationVO c : configs) {
-            if (c.getState() != State.Implemented && c.getState() != State.Setup) {
-                s_logger.debug("Not all network is ready to be implemented yet.");
-                return true;
-            }
-            if (c.getTrafficType() == TrafficType.Public) {
-                publicConfig = c;
-            } else if (c.getTrafficType() == TrafficType.Guest) {
-                guestConfig = c;
-            } else {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("The network configurations are different than what I expected: " + c);
-                }
-                return null;
-            }
-        }
-        
-        if (publicConfig == null || guestConfig == null) {
-            s_logger.debug("Expected to find the network configuration for " + (publicConfig == null ? "public" : "") + (guestConfig == null ? " guest" : ""));
-            return null;
-        }
-        
-        DomainRouterVO router;
-        router = _routerMgr.deploy(publicConfig, guestConfig, offering, user);
-        if (router == null) {
-            s_logger.debug("Unable to deploy the router for " + guestConfig);
             return false;
+        }
+        
+        DomainRouterVO router = _routerMgr.deploy(guestConfig, offering, dest, user);
+        if (router == null) {
+            throw new ResourceUnavailableException("Unable to deploy the router for " + guestConfig);
         }
         
         return true;
     }
 
     @Override
-    public Boolean prepare(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile vm, NetworkOffering offering, Account user) throws ConcurrentOperationException {
+    public boolean prepare(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile vm, NetworkOffering offering, DeployDestination dest, Account user) throws ConcurrentOperationException {
         if (config.getTrafficType() != TrafficType.Guest || vm.getType() != Type.User) {
             s_logger.trace("Domain Router only cares about guest network and User VMs");
-            return null;  
+            return false;
         }
         
         UserVmVO userVm = _userVmDao.findById(vm.getId());
@@ -114,10 +84,10 @@ public class DomainRouterElement extends AdapterBase implements NetworkElement {
     }
 
     @Override
-    public Boolean release(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile vm, NetworkOffering offering, Account user) {
+    public boolean release(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile vm, NetworkOffering offering, Account user) {
         if (config.getTrafficType() != TrafficType.Guest || vm.getType() != Type.User) {
             s_logger.trace("Domain Router only cares about guest network and User VMs");
-            return null;  
+            return false;
         }
         
         
@@ -125,10 +95,10 @@ public class DomainRouterElement extends AdapterBase implements NetworkElement {
     }
 
     @Override
-    public Boolean shutdown(NetworkConfiguration config, NetworkOffering offering, Account user) throws ConcurrentOperationException {
+    public boolean shutdown(NetworkConfiguration config, NetworkOffering offering, Account user) throws ConcurrentOperationException {
         if (config.getTrafficType() != TrafficType.Guest) {
             s_logger.trace("Domain Router only cares about guet network.");
-            return null;
+            return false;
         }
         DomainRouterVO router = _routerDao.findByNetworkConfiguration(config.getId());
         if (router == null) {

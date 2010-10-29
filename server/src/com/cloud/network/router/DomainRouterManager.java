@@ -27,6 +27,7 @@ import com.cloud.api.commands.UpgradeRouterCmd;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.VlanVO;
+import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -167,5 +168,5 @@ public interface DomainRouterManager extends Manager {
 	DomainRouterVO getRouter(long accountId, long zoneId);
 	DomainRouterVO getRouter(String publicIpAddress);
 	
-	DomainRouterVO deploy(NetworkConfiguration publicConfig, NetworkConfiguration virtualConfig, NetworkOffering offering, Account owner) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException;
+	DomainRouterVO deploy(NetworkConfiguration guestConfig, NetworkOffering offering, DeployDestination dest, Account owner) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException;
 }

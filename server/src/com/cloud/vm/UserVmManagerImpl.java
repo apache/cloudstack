@@ -3917,16 +3917,16 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         
         s_logger.debug("Allocating in the DB for vm");
         
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        vm = _vmDao.persist(vm);
-        
         List<NetworkConfigurationVO> configs = _networkMgr.setupNetworkConfiguration(owner, offering, plan);
         List<Pair<NetworkConfigurationVO, NicProfile>> networks = new ArrayList<Pair<NetworkConfigurationVO, NicProfile>>(); 
         for (NetworkConfigurationVO config : configs) {
             networks.add(new Pair<NetworkConfigurationVO, NicProfile>(config, null));
         }
 
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        vm = _vmDao.persist(vm);
+        
         if (_itMgr.allocate(vm, template, offering, rootDiskOffering, dataDiskOfferings, networks, plan, owner) == null) {
             return null;
         }

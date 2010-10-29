@@ -3,6 +3,7 @@
  */
 package com.cloud.network;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Set;
 
@@ -92,7 +93,9 @@ public interface NetworkConfiguration extends ControlledEntity {
     
     long getRelated();
     
-    String getBroadcastUri();
+    URI getBroadcastUri();
     
-    String getDns();
+    String getDns1();
+    
+    String getDns2();
 }

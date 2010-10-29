@@ -103,6 +103,11 @@ public class SqlGenerator {
         for (Field field : fields) {
             field.setAccessible(true);
             
+            TableGenerator tg = field.getAnnotation(TableGenerator.class);
+            if (tg != null) {
+                _generators.put(field.getName(), tg);
+            }
+            
             if (!DbUtil.isPersistable(field)) {
                 continue;
             }
@@ -121,11 +126,6 @@ public class SqlGenerator {
                 assert (embeddedClass.getAnnotation(Embeddable.class) != null) : "Class is not annotated with Embeddable: " + embeddedClass.getName();
                 buildAttributes(embeddedClass, tableName, DbUtil.getAttributeOverrides(field), true, true);
                 continue;
-            }
-            
-            TableGenerator tg = field.getAnnotation(TableGenerator.class);
-            if (tg != null) {
-                _generators.put(field.getName(), tg);
             }
             
             Attribute attr = new Attribute(clazz, overrides, field, tableName, embedded, isId);

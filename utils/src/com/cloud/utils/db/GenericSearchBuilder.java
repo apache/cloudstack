@@ -96,6 +96,15 @@ public class GenericSearchBuilder<T, K> implements MethodInterceptor {
         return this;
     }
     
+    /**
+     * Specifies the field to select.
+     *  
+     * @param fieldName The field name of the result object to put the value of the field selected.  This can be null if you're selecting only one field and the result is not a complex object.
+     * @param func function to place.
+     * @param useless column to select.  Call this with this.entity() method.
+     * @param params parameters to the function.
+     * @return a SearchBuilder to build more search parts.
+     */
     public GenericSearchBuilder<T, K> select(String fieldName, Func func, Object useless, Object... params) {
         assert _entity != null : "SearchBuilder cannot be modified once it has been setup";
         assert _specifiedAttrs.size() <= 1 : "You can't specify more than one field to search on";
@@ -346,7 +355,7 @@ public class GenericSearchBuilder<T, K> implements MethodInterceptor {
             }
             
             if (op == Op.SC) {
-                sql.append(" (").append(((SearchCriteria)params[0]).getWhereClause()).append(") ");
+                sql.append(" (").append(((SearchCriteria<?>)params[0]).getWhereClause()).append(") ");
                 return;
             }
             

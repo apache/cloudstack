@@ -91,6 +91,13 @@ CREATE TABLE `cloud`.`hypervsior_properties` (
   `max_network_devices` int(10) NOT NULL COMMENT 'maximum number of network devices'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `cloud`.`op_network_configurations`(
+  `id` bigint unsigned NOT NULL UNIQUE KEY,
+  `mac_address_seq` bigint unsigned NOT NULL DEFAULT 1 COMMENT 'mac address',
+  PRIMARY KEY(`id`)
+#  CONSTRAINT `fk__op_network_configurations__id` FOREIGN KEY `fk_op_network_configurations__id`(`id`) REFERENCES `network_configurations`(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE `cloud`.`network_configurations` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `name` varchar(255) COMMENT 'name for this network',
@@ -107,10 +114,14 @@ CREATE TABLE `cloud`.`network_configurations` (
   `related` bigint unsigned NOT NULL COMMENT 'related to what other network configuration',
   `domain_id` bigint unsigned NOT NULL COMMENT 'foreign key to domain id',
   `account_id` bigint unsigned NOT NULL COMMENT 'owner of this network',
-  `mac_address_seq` bigint unsigned DEFAULT 1 COMMENT 'mac address seq number',
-  `dns` varchar(255) COMMENT 'comma separated DNS list',
+  `dns1` varchar(255) COMMENT 'comma separated DNS list',
+  `dns2` varchar(255) COMMENT 'comma separated DNS list',
+  `guru_data` varchar(1024) COMMENT 'data stored by the network guru that setup this network',
+  `set_fields` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'which fields are set already',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
 
 CREATE TABLE `cloud`.`account_network_ref` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
@@ -613,7 +624,7 @@ CREATE TABLE `cloud`.`user_vm` (
 
 CREATE TABLE `cloud`.`domain_router` (
   `id` bigint unsigned UNIQUE NOT NULL COMMENT 'Primary Key',
-  `gateway` varchar(15)  NOT NULL COMMENT 'ip address of the gateway to this domR',
+  `gateway` varchar(15)  COMMENT 'ip address of the gateway to this domR',
   `ram_size` int(10) unsigned NOT NULL DEFAULT 128 COMMENT 'memory to use in mb',
   `dns1` varchar(15) COMMENT 'dns1',
   `dns2` varchar(15) COMMENT 'dns2',
@@ -621,15 +632,15 @@ CREATE TABLE `cloud`.`domain_router` (
   `public_mac_address` varchar(17)   COMMENT 'mac address of the public facing network card',
   `public_ip_address` varchar(15)  COMMENT 'public ip address used for source net',
   `public_netmask` varchar(15)  COMMENT 'netmask used for the domR',
-  `guest_mac_address` varchar(17) NOT NULL COMMENT 'mac address of the pod facing network card',
+  `guest_mac_address` varchar(17) COMMENT 'mac address of the pod facing network card',
   `guest_dc_mac_address` varchar(17) COMMENT 'mac address of the data center facing network card',
-  `guest_netmask` varchar(15) NOT NULL COMMENT 'netmask used for the guest network',
-  `guest_ip_address` varchar(15) NOT NULL COMMENT ' ip address in the guest network',   
+  `guest_netmask` varchar(15) COMMENT 'netmask used for the guest network',
+  `guest_ip_address` varchar(15) COMMENT ' ip address in the guest network',   
   `vnet` varchar(18) COMMENT 'vnet',
   `dc_vlan` varchar(18) COMMENT 'vnet',
   `vlan_db_id` bigint unsigned COMMENT 'Foreign key into vlan id table',
   `vlan_id` varchar(255) COMMENT 'optional VLAN ID for DomainRouter that can be used in rundomr.sh',
-  `dhcp_ip_address` bigint unsigned NOT NULL DEFAULT 2 COMMENT 'next ip address for dhcp for this domR',
+  `dhcp_ip_address` bigint unsigned DEFAULT 2 COMMENT 'next ip address for dhcp for this domR',
   `network_configuration_id` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'network configuration that this domain router belongs to',
   `role` varchar(64) NOT NULL COMMENT 'type of role played by this router',
   PRIMARY KEY (`id`)

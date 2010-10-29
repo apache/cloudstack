@@ -32,6 +32,7 @@ public interface SerialVersionUID {
     public static final long CloudRuntimeException = Base | 0x2;
     public static final long CloudStartupServlet = Base | 0x3;
     public static final long CloudServiceImpl = Base | 0x4;
+    public static final long AccountLimitException = Base | 0x5;
     public static final long UnsupportedVersionException = Base | 0xb;
     public static final long DataCenterIpAddressPK = Base | 0xc;
     public static final long UnableToExecuteException = Base | 0xd;

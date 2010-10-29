@@ -36,4 +36,8 @@ public class CloudRuntimeException extends RuntimeException {
     public CloudRuntimeException(String message, Throwable th) {
         super(message, th);
     }
+    
+    protected CloudRuntimeException() {
+        super();
+    }
 }
