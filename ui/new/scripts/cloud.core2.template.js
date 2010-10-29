@@ -227,8 +227,8 @@ function templateJsonToDetailsTab($midmenuItem1) {
     
     var status = "Ready";
 	if (jsonObj.isready == "false") 
-		status = fromdb(jsonObj.templatestatus);	
-	$detailsTab.find("#status").text(status);    
+		status = fromdb(jsonObj.templatestatus);	 
+    setTemplateStateInRightPanel(status, $detailsTab.find("#status"));
     
     if(jsonObj.size != null)
 	    $detailsTab.find("#size").text(convertBytes(parseInt(jsonObj.size))); 

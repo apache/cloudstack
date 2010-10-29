@@ -191,8 +191,8 @@ function isoJsonToDetailsTab($midmenuItem1) {
                       
     var status = "Ready";
 	if (jsonObj.isready == "false")
-		status = fromdb(jsonObj.isostatus);	
-	$detailsTab.find("#status").text(status); 
+		status = fromdb(jsonObj.isostatus);		
+	setTemplateStateInRightPanel(status, $detailsTab.find("#status"));
 	
 	if(jsonObj.size != null)
 	    $detailsTab.find("#size").text(convertBytes(parseInt(jsonObj.size)));  

@@ -810,6 +810,15 @@ function setHostStateInRightPanel(stateValue, $stateField) {
         $stateField.text(stateValue).removeClass("status_green status_red").addClass("status_gray");            			       
 }
 
+function setTemplateStateInRightPanel(stateValue, $stateField) {   
+    $stateField.text(stateValue);    
+     
+    if(stateValue == "Ready")
+        $stateField.text(stateValue).removeClass("status_red").addClass("status_green");
+    else 
+        $stateField.text(stateValue).removeClass("status_green").addClass("status_red");              			       
+}
+
 function initDialog(elementId, width1) {
 	if(width1 == null) {
 	    activateDialog($("#"+elementId).dialog({    	            
