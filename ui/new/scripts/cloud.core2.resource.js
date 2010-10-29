@@ -668,7 +668,9 @@ function hostJsonToDetailsTab($midmenuItem1) {
     $detailsTab.data("jsonObj", jsonObj);           
     $detailsTab.find("#id").text(fromdb(jsonObj.id));
     $detailsTab.find("#name").text(fromdb(jsonObj.name));
-    $detailsTab.find("#state").text(fromdb(jsonObj.state));  
+        
+    setHostStateInRightPanel(fromdb(jsonObj.state), $detailsTab.find("#state"));
+    
     $detailsTab.find("#type").text(fromdb(jsonObj.type));      
     $detailsTab.find("#zonename").text(fromdb(jsonObj.zonename)); 
     $detailsTab.find("#podname").text(fromdb(jsonObj.podname));   
@@ -1610,7 +1612,9 @@ function secondaryStorageJSONToTemplate(json, template) {
    	template.find("#zonename").text(fromdb(json.zonename));	
 	template.find("#type").text(json.type);	
     template.find("#ipaddress").text(json.ipaddress);
-    template.find("#state").text(json.state);
+       
+    setHostStateInRightPanel(fromdb(json.state), template.find("#state"))
+    
     template.find("#version").text(json.version); 
     setDateField(json.disconnected, template.find("#disconnected"));
     

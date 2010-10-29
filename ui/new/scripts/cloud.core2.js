@@ -801,6 +801,15 @@ function setVmStateInRightPanel(stateValue, $stateField) {
         $stateField.text(stateValue).removeClass("green red").addClass("gray");            			       
 }
 
+function setHostStateInRightPanel(stateValue, $stateField) {    
+    if(stateValue == "Up" || stateValue == "Connecting")
+        $stateField.text(stateValue).removeClass("status_red status_gray").addClass("status_green");
+    else if(stateValue == "Down" || stateValue == "Alert")
+        $stateField.text(stateValue).removeClass("status_green status_gray").addClass("status_red");
+    else  //"ErrorInMaintenance", "PrepareForMaintenance", "Maintenance", "Disconnected"                                
+        $stateField.text(stateValue).removeClass("status_green status_red").addClass("status_gray");            			       
+}
+
 function initDialog(elementId, width1) {
 	if(width1 == null) {
 	    activateDialog($("#"+elementId).dialog({    	            
