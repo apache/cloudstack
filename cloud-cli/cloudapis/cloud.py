@@ -58,26 +58,32 @@ def load_dynamic_methods():
 		name = getText(cmd.getElementsByTagName('name')[0].childNodes).strip()
 		assert name
 		
-		description = cmd.getElementsByTagName('name')[0].getAttribute("description")
-		if description: description = '"""%s"""' % description
+		description = getText(cmd.getElementsByTagName('description')[0].childNodes).strip()
+		if description: 
+                    description = '"""%s"""' % description
 		else: description = ''
 		arguments = []
 		options = []
 		descriptions = []
 	
-		for param in cmd.getElementsByTagName('arg'):
-			argname = getText(param.childNodes).strip()
+		for param in cmd.getElementsByTagName("request")[0].getElementsByTagName("arg"):
+			argname = getText(param.getElementsByTagName('name')[0].childNodes).strip()
 			assert argname
 			
-			required = param.getAttribute("required").strip()
+			required = getText(param.getElementsByTagName('required')[0].childNodes).strip()
 			if required == 'true': required = True
 			elif required == 'false': required = False
 			else: raise AssertionError, "Not reached"
 			if required: arguments.append(argname)
 			options.append(argname)
 			
-			description = param.getAttribute("description").strip()
-			if description: descriptions.append( (argname,description) )
+                        #import ipdb; ipdb.set_trace()
+			requestDescription = param.getElementsByTagName('description')
+			if requestDescription:			
+			    descriptionParam = getText(requestDescription[0].childNodes)
+                        else: 
+                            descriptionParam = ''
+			if descriptionParam: descriptions.append( (argname,descriptionParam) )
 		
 		funcparams = ["self"] + [ "%s=None"%o for o in options ]
 		funcparams = ", ".join(funcparams)
@@ -95,7 +101,7 @@ def load_dynamic_methods():
 			output = self._make_request("%s",parms)
 			return output
 		"""%(name,funcparams,description,arguments,name)
-		
+
 		namespace = {}
 		exec code.strip() in namespace
 		
@@ -106,7 +112,8 @@ def load_dynamic_methods():
 		yield (name,func)
 
 
-for name,meth in load_dynamic_methods(): setattr(CloudAPI,name,meth)
+for name,meth in load_dynamic_methods(): 
+    setattr(CloudAPI, name, meth)
 
 implementor = CloudAPI
 

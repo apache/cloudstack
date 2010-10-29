@@ -421,7 +421,7 @@ def generate_xml_api_description(task):
 	cp += jars
 	cp = pathsep.join(cp)
 	arguments = ["-f",",".join(properties),"-d",builddir]
-	ret = Utils.exec_command(["java","-cp",cp,"com.cloud.utils.commandlinetool.BuildCommandLineInputFile"]+arguments,log=True)
+	ret = Utils.exec_command(["java","-cp",cp,"com.cloud.api.doc.ApiXmlDocWriter"]+arguments,log=True)
 	return ret
 props = " client/tomcatconf/commands.properties"
 jarnames = ['utils','server','core', 'api']
