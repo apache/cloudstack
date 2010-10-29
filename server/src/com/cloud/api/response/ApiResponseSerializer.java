@@ -4,6 +4,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Date;
 import java.util.List;
 
 import org.apache.log4j.Logger;
@@ -28,7 +29,7 @@ public class ApiResponseSerializer {
 
     private static String toJSONSerializedString(ResponseObject result) {
         if (result != null) {
-            Gson gson = GsonHelper.getBuilder().excludeFieldsWithModifiers(Modifier.TRANSIENT).create();
+            Gson gson = GsonHelper.getBuilder().excludeFieldsWithModifiers(Modifier.TRANSIENT).setDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").create();
             StringBuilder sb = new StringBuilder();
 
             sb.append("{ \"" + result.getResponseName() + "\" : ");
@@ -133,6 +134,8 @@ public class ApiResponseSerializer {
                         if (fieldValue instanceof ResponseObject) {
                             ResponseObject subObj = (ResponseObject)fieldValue;
                             serializeResponseObjXML(sb, subObj);
+                        } else if (fieldValue instanceof Date) {
+                            sb.append("<" + serializedName.value() + ">" + BaseCmd.getDateString((Date)fieldValue) + "</" + serializedName.value() + ">");
                         } else {
                             sb.append("<" + serializedName.value() + ">" + fieldValue.toString() + "</" + serializedName.value() + ">");
                         }

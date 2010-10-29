@@ -33,6 +33,7 @@ import com.cloud.async.AsyncJobVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.host.HostVO;
 import com.cloud.storage.GuestOS;
+import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
@@ -152,9 +153,7 @@ public class ListTemplatesCmd extends BaseListCmd {
         List<TemplateResponse> templateResponses = new ArrayList<TemplateResponse>();
 
         for (VMTemplateVO template : templates) {
-        	// Since we've added multiple domR templates and with different DB ids, I'm changing
-        	// this to filter out any templates with names that start with system for now.
-            if (!showDomr && template.getName().startsWith("SystemVM")) {
+            if (!showDomr && template.getTemplateType() == Storage.TemplateType.SYSTEM) {
                 continue;
             }
 
