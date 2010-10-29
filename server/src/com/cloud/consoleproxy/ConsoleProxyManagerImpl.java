@@ -2371,16 +2371,35 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
         return true;
     }
 
-    private void cleanupCertTable(Long mServerId){
-    	CertificateVO cert = _certDao.listAll().get(0);//always 1 record in db
-    	Long mgmtSvrIdForCertJob = null;
-    	if(cert!=null){
-    		mgmtSvrIdForCertJob = cert.getMgmtServerId();
-    	}
-		if(mgmtSvrIdForCertJob!=null && mgmtSvrIdForCertJob.longValue() == (_clMgr.getId())){
-			CertificateVO lockedCert = _certDao.acquire(cert.getId());
-			lockedCert.setMgmtServerId(null);
-			_certDao.release(lockedCert.getId());
+    @DB
+    protected void cleanupCertTable(Long mServerId){
+    	Transaction.currentTxn();
+    	try {
+			CertificateVO cert = _certDao.listAll().get(0);//always 1 record in db
+			Long mgmtSvrIdForCertJob = null;
+			if(cert!=null){
+				mgmtSvrIdForCertJob = cert.getMgmtServerId();
+			}
+			if(mgmtSvrIdForCertJob!=null && mgmtSvrIdForCertJob.longValue() == (_clMgr.getId())){
+				CertificateVO lockedCert = _certDao.acquire(cert.getId());
+				if(lockedCert == null){
+					s_logger.error("Could not acquire lock on certificate table during cleanupCertTable()");
+				}else{
+					try{
+						lockedCert.setMgmtServerId(null);
+						_certDao.update(cert.getId(), lockedCert);
+					}catch (Exception e){
+						s_logger.error("Unable to update record in cert table during cleanupCertTable()",e);
+					}
+					finally{
+						_certDao.release(cert.getId());
+					}
+				}
+			}
+		} catch (Exception e) {
+			if(e instanceof IndexOutOfBoundsException){
+				s_logger.error("Custom certificate record in the db deleted, this should never happen! Insert a new dummy record in the certificate table and restart the management server again");
+			}
 		}
     }
     

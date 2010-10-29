@@ -5874,6 +5874,8 @@ public class ManagementServerImpl implements ManagementServer {
     public String uploadCertificate(UploadCustomCertificateCmd cmd) throws ServerApiException{
     	try 
     	{
+        	Transaction.currentTxn();
+        	Long certVOId = null;
     		CertificateVO cert = _certDao.listAll().get(0); //always 1 record in db
     		if(cert.getMgmtServerId()!=null)
     			throw new ResourceUnavailableException("Another management server is in the process of custom cert updating");
@@ -5887,9 +5889,17 @@ public class ManagementServerImpl implements ManagementServer {
 			String certificatePath = cmd.getPath();
 			CertificateVO lockedCert = _certDao.acquire(cert.getId());
 			//assigned mgmt server id to mark as processing under this ms
-			Long certVOId = _certDao.persistCustomCertToDb(certificatePath,lockedCert,this.getId());//0 implies failure
-			_certDao.release(lockedCert.getId());
-			
+			if(lockedCert == null){
+				String msg = "Unable to obtain lock on the cert from uploadCertificate()";
+				s_logger.error(msg);
+				throw new ResourceUnavailableException(msg);
+			}else{
+				try{
+					certVOId = _certDao.persistCustomCertToDb(certificatePath,lockedCert,this.getId());//0 implies failure
+				}finally{
+					_certDao.release(cert.getId());					
+				}
+			}
 			if (certVOId!=null && certVOId!=0) 
 			{
 				//certficate uploaded to db successfully	
@@ -5941,8 +5951,7 @@ public class ManagementServerImpl implements ManagementServer {
 					}	
 				}
 
-				releaseCertRecord(cert);
-				
+				releaseCertRecord(cert);				
 				if(updatedCpIdList.size() == cpList.size()){
 					//success case, all updated
 					return ("Updated:"+updatedCpIdList.size()+" out of:"+cpList.size()+" console proxies");
@@ -5953,7 +5962,7 @@ public class ManagementServerImpl implements ManagementServer {
 			}
 			else
 			{
-				return null;
+				throw new ManagementServerException("Unable to persist custom certificate to the cloud db");
 			}
 		}catch (Exception e) {
 			s_logger.warn("Failed to successfully update the cert across console proxies on management server:"+this.getId());			
@@ -5961,15 +5970,30 @@ public class ManagementServerImpl implements ManagementServer {
 				throw new ServerApiException(BaseCmd.CUSTOM_CERT_UPDATE_ERROR, e.getMessage());
 			if(e instanceof ManagementServerException)
 				throw new ServerApiException(BaseCmd.CUSTOM_CERT_UPDATE_ERROR, e.getMessage());
+			if(e instanceof IndexOutOfBoundsException){
+				String msg = "Custom certificate record in the db deleted; this should never happen!";
+				s_logger.error(msg);
+				throw new ServerApiException(BaseCmd.CUSTOM_CERT_UPDATE_ERROR, msg);
+			}
 		}
 		return null;
     }
 
-	private void releaseCertRecord(CertificateVO cert) {
+	private void releaseCertRecord(CertificateVO cert) throws ResourceUnavailableException {
 		CertificateVO lockedCertPostPatching = _certDao.acquire(cert.getId());
-		lockedCertPostPatching.setMgmtServerId(null);//release for other ms
-		_certDao.update(lockedCertPostPatching.getId(), lockedCertPostPatching);
-		_certDao.release(lockedCertPostPatching.getId());
+		if(lockedCertPostPatching == null){
+			String msg = "Unable to obtain lock on the cert from releaseCertRecord() in uploadCertificate()";
+			s_logger.error(msg);
+		}else{
+			try{
+				lockedCertPostPatching.setMgmtServerId(null);//release for other ms
+				_certDao.update(lockedCertPostPatching.getId(), lockedCertPostPatching);
+			}catch (Exception e){
+				s_logger.warn("Unable to update record in cert table from releaseCertRecord() during uploadCertificate()",e);
+			}finally{
+				_certDao.release(cert.getId());
+			}
+		}
 	}
 
     @Override
