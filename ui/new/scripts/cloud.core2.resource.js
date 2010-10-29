@@ -897,9 +897,14 @@ function systemvmJsonToDetailsTab($leftmenuItem1) {
     });	  
     var $actionMenu = $actionLink.find("#action_menu");
     $actionMenu.find("#action_list").empty();   
-    buildActionLinkForDetailsTab("Start System VM", systemVmActionMap, $actionMenu, $leftmenuItem1, $detailsTab);         
-    buildActionLinkForDetailsTab("Stop System VM", systemVmActionMap, $actionMenu, $leftmenuItem1, $detailsTab);     
-    buildActionLinkForDetailsTab("Reboot System VM", systemVmActionMap, $actionMenu, $leftmenuItem1, $detailsTab);      
+    		
+	if (jsonObj.state == 'Running') {	//Show "Stop System VM", "Reboot System VM"
+	    buildActionLinkForDetailsTab("Stop System VM", systemVmActionMap, $actionMenu, $leftmenuItem1, $detailsTab);     
+        buildActionLinkForDetailsTab("Reboot System VM", systemVmActionMap, $actionMenu, $leftmenuItem1, $detailsTab);   
+	} 
+	else if (jsonObj.state == 'Stopped') { //show "Start System VM"	    
+	    buildActionLinkForDetailsTab("Start System VM", systemVmActionMap, $actionMenu, $leftmenuItem1, $detailsTab); 
+	}     
 }
 
 function toSystemVMTypeText(value) {
