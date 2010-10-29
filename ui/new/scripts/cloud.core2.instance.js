@@ -768,12 +768,8 @@ function initVMWizard() {
 	    }			
 		
 	    if(currentStepInVmPopup ==3) { //disk offering	 
-	        if($thisPopup.find("#wiz_blank").hasClass("rev_wizmid_selectedtempbut"))  { //ISO
-	            $thisPopup.find("#wizard_review_disk_offering_label").text("Root Disk Offering:");
-		        $thisPopup.find("#wizard_review_disk_offering").text($thisPopup.find("#root_disk_offering_container input[name=root_disk_offering_radio]:checked").next().text());	
-		    }
-		    else { //template
-		        var checkedRadioButton = $thisPopup.find("#data_disk_offering_container input[name=data_disk_offering_radio]:checked");			        
+	        if($selectedVmWizardTemplate.data("templateType") == "template") {	//*** template ***            
+	            var checkedRadioButton = $thisPopup.find("#data_disk_offering_container input[name=data_disk_offering_radio]:checked");			        
 		        			    
 		        // validate values
 		        var isValid = true;		
@@ -781,15 +777,31 @@ function initVMWizard() {
 		            isValid &= validateNumber("Disk Size", $thisPopup.find("#custom_disk_size"), $thisPopup.find("#custom_disk_size_errormsg"), null, null, false);	//required	
 		        else
 		            isValid &= validateNumber("Disk Size", $thisPopup.find("#custom_disk_size"), $thisPopup.find("#custom_disk_size_errormsg"), null, null, true);	//optional		    		
-		        if (!isValid) return;
+		        if (!isValid) 
+		            return;
 		        
 		        $thisPopup.find("#wizard_review_disk_offering_label").text("Data Disk Offering:");
 		        
 		        var diskOfferingName = checkedRadioButton.next().text();
 		        if(checkedRadioButton.parent().attr("id") == "vm_popup_disk_offering_template_custom")
 		            diskOfferingName += (" " + $thisPopup.find("#data_disk_offering_container input[name=data_disk_offering_radio]:checked").next().next().next().val() + " MB");
-		        $thisPopup.find("#wizard_review_disk_offering").text(diskOfferingName);
-		    }	
+		        $thisPopup.find("#wizard_review_disk_offering").text(diskOfferingName);     	        
+	        }
+	        else {  //*** ISO ***
+	            var checkedRadioButton = $thisPopup.find("#root_disk_offering_container input[name=root_disk_offering_radio]:checked");		
+	                     	    
+		        // validate values
+		        var isValid = true;		
+		        if(checkedRadioButton.parent().attr("id") == "vm_popup_disk_offering_template_custom")			    
+		            isValid &= validateNumber("Disk Size", $thisPopup.find("#custom_disk_size"), $thisPopup.find("#custom_disk_size_errormsg"), null, null, false);	//required	
+		        else
+		            isValid &= validateNumber("Disk Size", $thisPopup.find("#custom_disk_size"), $thisPopup.find("#custom_disk_size_errormsg"), null, null, true);	//optional		    		
+		        if (!isValid) 
+		            return;
+	            
+	            $thisPopup.find("#wizard_review_disk_offering_label").text("Root Disk Offering:");
+		        $thisPopup.find("#wizard_review_disk_offering").text($thisPopup.find("#root_disk_offering_container input[name=root_disk_offering_radio]:checked").next().text());	
+		    }
 	    }	
 	    	
 	    if (currentStepInVmPopup == 4) { //network
