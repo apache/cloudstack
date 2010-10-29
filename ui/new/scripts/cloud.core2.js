@@ -662,8 +662,19 @@ function afterAddingMidMenuItem($midmenuItem1, isSuccessful, extraMessage) {
 	    $midmenuItem1.data("afterActionInfo", ("Adding succeeded.")); 
 	}
 	else {	
-	    $midmenuItem1.find("#info_icon").addClass("error").show();			
-	    $midmenuItem1.find("#first_row").text("Adding failed");		    
+	    $midmenuItem1.find("#content").addClass("addingfailed");
+	        	    
+	    $midmenuItem1.find("#icon").attr("src", "images/addingfailed_icon.png");
+	    $midmenuItem1.find("#icon_container").show();	    
+	    
+	    $midmenuItem1.find("#close_icon").show().bind("click", function(event) {	        
+	        $midmenuItem1.slideUp("slow", function() {	            
+	            $(this).remove();
+	        });	        
+	        return false;
+	    });	  
+	    //$midmenuItem1.find("#info_icon").addClass("error").show();	
+	    $midmenuItem1.find("#first_row").text("Adding failed");		        
 	}
 	
 	if(extraMessage != null)
