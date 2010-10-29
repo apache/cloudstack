@@ -989,13 +989,16 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             } else {
                 args = "-D";
             }
+            String cidrSize = Long.toString(NetUtils.getCidrSize(vlanNetmask));
             if (sourceNat) {
                 args += " -f";
-                long cidrSize = NetUtils.getCidrSize(vlanNetmask);
                 args += " -l ";
-                args += publicIpAddress + "/" + Long.toString(cidrSize);
-            } else {
+                args += publicIpAddress + "/" + cidrSize;
+            } else if (firstIP) {
             	args += " -l ";
+                args += publicIpAddress + "/" + cidrSize;
+            } else {
+              	args += " -l ";
                 args += publicIpAddress;
             }
             args += " -i ";
