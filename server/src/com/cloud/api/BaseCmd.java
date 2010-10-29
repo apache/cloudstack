@@ -113,7 +113,7 @@ public abstract class BaseCmd {
         _responseObject = responseObject;
     }
 
-    public String getDateString(Date date) {
+    public static String getDateString(Date date) {
         if (date == null) {
             return "";
         }
