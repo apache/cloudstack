@@ -1241,4 +1241,22 @@
     </p>
 </div>
 
+<div id="dialog_confirmation_start_router" title="Confirmation" style="display:none">
+    <p>        
+        <%=t.t("please.confirm.you.want.to.start.router")%>
+    </p>
+</div>
+
+<div id="dialog_confirmation_stop_router" title="Confirmation" style="display:none">
+    <p>        
+        <%=t.t("please.confirm.you.want.to.stop.router")%>
+    </p>
+</div>
+
+<div id="dialog_confirmation_reboot_router" title="Confirmation" style="display:none">
+    <p>        
+        <%=t.t("please.confirm.you.want.to.reboot.router")%>
+    </p>
+</div>
+
 <!--  ***** Dialogs (end) ***** -->

@@ -81,7 +81,10 @@ function afterLoadInstanceJSP() {
     initDialog("dialog_confirmation_stop_vm");
     initDialog("dialog_confirmation_reboot_vm");
     initDialog("dialog_confirmation_destroy_vm");
-    initDialog("dialog_confirmation_restore_vm");
+    initDialog("dialog_confirmation_restore_vm");    
+    initDialog("dialog_confirmation_start_router");
+    initDialog("dialog_confirmation_stop_router");
+    initDialog("dialog_confirmation_reboot_router");
     
     vmPopulateDropdown();
 }
@@ -1743,7 +1746,7 @@ function doCreateTemplateFromVmVolume($actionLink, $subgridItem) {
 
 //***** Routers tab (begin) ***************************************************************************************
 
-function routerAfterSubgridItemAction(json, id, $subgridItem) {        
+function vmRouterAfterSubgridItemAction(json, id, $subgridItem) {        
     //var jsonObj = json.queryasyncjobresultresponse.router[0];  
     //vmRouterJSONToTemplate(jsonObj, $subgridItem);
     
@@ -1753,27 +1756,85 @@ function routerAfterSubgridItemAction(json, id, $subgridItem) {
     vmJsonToRouterTab(vmObj);   
 }     
   
-var vmRouterActionMap = {  
-    "Stop Router": {
-        api: "stopRouter",            
-        isAsyncJob: true,
-        asyncJobResponse: "stoprouterresponse",
-        inProcessText: "Stopping Router....",
-        afterActionSeccessFn: routerAfterSubgridItemAction
-    },
+var vmRouterActionMap = {      
     "Start Router": {
         api: "startRouter",            
         isAsyncJob: true,
         asyncJobResponse: "startrouterresponse",
         inProcessText: "Starting Router....",
-        afterActionSeccessFn: routerAfterSubgridItemAction
+        dialogBeforeActionFn : doStartVmRouter,
+        afterActionSeccessFn: vmRouterAfterSubgridItemAction
+    },
+    "Stop Router": {
+        api: "stopRouter",            
+        isAsyncJob: true,
+        asyncJobResponse: "stoprouterresponse",
+        inProcessText: "Stopping Router....",
+        dialogBeforeActionFn : doStopVmRouter,
+        afterActionSeccessFn: vmRouterAfterSubgridItemAction
     },
     "Reboot Router": {
         api: "rebootRouter",           
         isAsyncJob: true,
         asyncJobResponse: "rebootrouterresponse",
         inProcessText: "Rebooting Router....",
-        afterActionSeccessFn: routerAfterSubgridItemAction
+        dialogBeforeActionFn : doRebootVmRouter,
+        afterActionSeccessFn: vmRouterAfterSubgridItemAction
     }
+}   
+
+function doStartVmRouter($actionLink, $subgridItem) {
+    $("#dialog_confirmation_start_router")	
+    .dialog('option', 'buttons', { 						
+	    "Confirm": function() { 
+		    $(this).dialog("close"); 			
+		    
+		    var jsonObj = $subgridItem.data("jsonObj");
+		    var id = jsonObj.id;
+		    var apiCommand = "command=startRouter&id="+id;  
+            doActionToSubgridItem(id, $actionLink, apiCommand, $subgridItem); 			   			   	                         					    
+	    }, 
+	    "Cancel": function() { 
+		    $(this).dialog("close"); 
+			
+	    } 
+    }).dialog("open");
+}   
+
+function doStopVmRouter($actionLink, $subgridItem) {
+//function doStopRouter($actionLink, $detailsTab, $midmenuItem1) {   
+    $("#dialog_confirmation_stop_router")	
+    .dialog('option', 'buttons', { 						
+	    "Confirm": function() { 
+		    $(this).dialog("close"); 			
+		    
+		    var jsonObj = $subgridItem.data("jsonObj");
+		    var id = jsonObj.id;
+		    var apiCommand = "command=stopRouter&id="+id;              
+            doActionToSubgridItem(id, $actionLink, apiCommand, $subgridItem); 			   	                         					    
+	    }, 
+	    "Cancel": function() { 
+		    $(this).dialog("close"); 
+			
+	    } 
+    }).dialog("open");
+}   
+   
+function doRebootVmRouter($actionLink, $subgridItem) {
+    $("#dialog_confirmation_reboot_router")	
+    .dialog('option', 'buttons', { 						
+	    "Confirm": function() { 
+		    $(this).dialog("close"); 			
+		    
+		    var jsonObj = $subgridItem.data("jsonObj");
+		    var id = jsonObj.id;
+		    var apiCommand = "command=rebootRouter&id="+id;  
+            doActionToSubgridItem(id, $actionLink, apiCommand, $subgridItem); 			   			   	                         					    
+	    }, 
+	    "Cancel": function() { 
+		    $(this).dialog("close"); 
+			
+	    } 
+    }).dialog("open");
 }   
 //***** Routers tab (end) ***************************************************************************************
