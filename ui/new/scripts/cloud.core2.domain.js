@@ -45,20 +45,25 @@ function refreshWholeTree(rootDomainId, rootLevel) {
 
 //draw root node
 function drawRootNode(rootDomainId) {
-    $("#leftmenu_domain_tree").empty();
+    var $loading = $("#leftmenu_domain_tree").find("#loading_container").show();
+    var $domainTree = $("#leftmenu_domain_tree").find("#tree_container").hide();
+   
     $.ajax({
         data: createURL("command=listDomains&id="+rootDomainId+"&pageSize=-1"), //pageSize=-1 will return all items (no limitation)
         dataType: "json",
         async: false,
         success: function(json) {					        
-            var domains = json.listdomainsresponse.domain;				        	    
+            var domains = json.listdomainsresponse.domain;	
+            $domainTree.empty();			        	    
 	        if (domains != null && domains.length > 0) {				   					    
-			    var node = drawNode(domains[0], defaultRootLevel, $("#leftmenu_domain_tree")); 
+			    var node = drawNode(domains[0], defaultRootLevel, $domainTree); 
 			    
 			    var treeLevelsbox = node.find(".tree_levelsbox");	//root node shouldn't have margin-left:20px				   
 			    if(treeLevelsbox!=null && treeLevelsbox.length >0)
 			        treeLevelsbox[0].style.marginLeft="0px";        //set root node's margin-left to 0px.
-			}				
+			}		
+			$loading.hide();
+            $domainTree.show();			
         }
     }); 		
 }
