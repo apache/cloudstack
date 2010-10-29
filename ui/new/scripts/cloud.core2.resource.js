@@ -74,7 +74,7 @@ function buildZoneTree() {
 	                    }
                     });
                     
-                     $.ajax({
+                    $.ajax({
                         data: createURL("command=listSystemVms&zoneid="+zoneObj.id+maxPageSize),
 	                    dataType: "json",
 	                    async: false,
@@ -1992,9 +1992,10 @@ var systemVmActionMap = {
         asyncJobResponse: "startsystemvmresponse",
         inProcessText: "Starting System VM....",
         dialogBeforeActionFn : doStartSystemVM,
-        afterActionSeccessFn: function(json, $midmenuItem1, id) {
-            var item = json.queryasyncjobresultresponse.jobresult.startsystemvmresponse;
-            systemvmJsonToRightPanel($midmenuItem1);            
+        afterActionSeccessFn: function(json, $leftmenuItem1, id) {
+            var item = json.queryasyncjobresultresponse.jobresult.startsystemvmresponse; 
+            $leftmenuItem1.data("jsonObj", item);
+            systemvmJsonToRightPanel($leftmenuItem1);            
         }
     },
     "Stop System VM": {            
@@ -2002,9 +2003,23 @@ var systemVmActionMap = {
         asyncJobResponse: "stopsystemvmresponse",
         inProcessText: "Stopping System VM....",
         dialogBeforeActionFn : doStopSystemVM,
-        afterActionSeccessFn: function(json, $midmenuItem1, id) {
-            var item = json.queryasyncjobresultresponse.jobresult.stopsystemvmresponse;
-            systemvmJsonToRightPanel($midmenuItem1);      
+        afterActionSeccessFn: function(json, $leftmenuItem1, id) {
+            //var item = json.queryasyncjobresultresponse.jobresult.stopsystemvmresponse; //waiting for Bug 6859 to be fixed ("The embedded object returned by StopSystemVM on success is not up-to-date. "state" property in the embedded object should be "Stopped" instead of "Running")
+            var item;           
+            $.ajax({
+                data: createURL("command=listSystemVms&id="+id),
+                dataType: "json",
+                async: false,
+                success: function(json) {
+                    var items = json.listsystemvmsresponse.systemvm;                                       
+                    if (items != null && items.length > 0) {					    
+	                    item = items[0];
+                    }
+                }
+            });				
+                        
+            $leftmenuItem1.data("jsonObj", item);
+            systemvmJsonToRightPanel($leftmenuItem1);      
         }
     },
     "Reboot System VM": {        
@@ -2012,9 +2027,23 @@ var systemVmActionMap = {
         asyncJobResponse: "rebootsystemvmresponse",
         inProcessText: "Rebooting System VM....",
         dialogBeforeActionFn : doRebootSystemVM,
-        afterActionSeccessFn: function(json, $midmenuItem1, id) {
-            var item = json.queryasyncjobresultresponse.jobresult.rebootsystemvmresponse;
-            systemvmJsonToRightPanel($midmenuItem1);      
+        afterActionSeccessFn: function(json, $leftmenuItem1, id) {
+            //var item = json.queryasyncjobresultresponse.jobresult.rebootsystemvmresponse;  //waiting for Bug 6860 to be fixed ("RebootSystemVM should return an embedded object on success")
+            var item;           
+            $.ajax({
+                data: createURL("command=listSystemVms&id="+id),
+                dataType: "json",
+                async: false,
+                success: function(json) {
+                    var items = json.listsystemvmsresponse.systemvm;                                       
+                    if (items != null && items.length > 0) {					    
+	                    item = items[0];
+                    }
+                }
+            });			
+            
+            $leftmenuItem1.data("jsonObj", item);
+            systemvmJsonToRightPanel($leftmenuItem1);      
         }
     }
 }   
