@@ -481,7 +481,6 @@ function handleAsyncJobFailInMidMenu(errorMsg, $midmenuItem1) {
 }       
 */
 
-
 /*
 If Cancel button in dialog is clicked, action won't preceed. 
 i.e. doActionToMidMenu() won't get called => highlight won't be removd from middle menu. 

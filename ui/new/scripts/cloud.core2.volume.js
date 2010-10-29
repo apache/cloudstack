@@ -115,19 +115,19 @@ function afterLoadVolumeJSP() {
 						                    bindClickToMidMenu($midmenuItem1, volumeToRightPanel, getMidmenuId);  
 						                    afterAddingMidMenuItem($midmenuItem1, true);	         
 									    } else if (result.jobstatus == 2) {
-									        handleAsyncJobFailInMidMenu(result.jobresult, $midmenuItem1);											   				    
+									        afterAddingMidMenuItem($midmenuItem1, false, fromdb(result.jobresult));										        								   				    
 									    }
 								    }
 							    },
 							    error: function(XMLHttpResponse) {
 								    $("body").stopTime(timerKey);
-								    handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1);	
+								    afterAddingMidMenuItem($midmenuItem1, false);	
 							    }
 						    });
 					    }, 0);						    					
 				    },
 				    error: function(XMLHttpResponse) {							    
-						handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1);	
+						afterAddingMidMenuItem($midmenuItem1, false);	
 				    }
 			    });
 		    }, 
