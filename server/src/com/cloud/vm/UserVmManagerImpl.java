@@ -462,6 +462,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         	rootVolumeOfVm = rootVolumesOfVm.get(0);
         }
         
+        HypervisorType rootDiskHyperType = _volsDao.getHypervisorType(rootVolumeOfVm.getId());
+        
         if (volume.getState().equals(Volume.State.Allocated)) {
     		/*Need to create the volume*/
         	VMTemplateVO rootDiskTmplt = _templateDao.findById(vm.getTemplateId());
@@ -470,14 +472,18 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         	StoragePoolVO rootDiskPool = _storagePoolDao.findById(rootVolumeOfVm.getPoolId());
         	ServiceOfferingVO svo = _serviceOfferingDao.findById(vm.getServiceOfferingId());
         	DiskOfferingVO diskVO = _diskOfferingDao.findById(volume.getDiskOfferingId());
-        	HypervisorType rootDiskHyperType = _volsDao.getHypervisorType(rootVolumeOfVm.getId());
-        	
+        	       
         	volume = _storageMgr.createVolume(volume, vm, rootDiskTmplt, dcVO, pod, rootDiskPool.getClusterId(), svo, diskVO, new ArrayList<StoragePoolVO>(), volume.getSize(), rootDiskHyperType);
         	
         	if (volume == null) {
         		throw new InternalErrorException("Failed to create volume when attaching it to VM: " + vm.getName());
         	}       	
     	}
+        
+        HypervisorType dataDiskHyperType = _volsDao.getHypervisorType(volume.getId());
+        if (rootDiskHyperType != dataDiskHyperType) {
+        	throw new InvalidParameterValueException("Can't attach a volume created by: " + dataDiskHyperType + " to a " + rootDiskHyperType + " vm");
+        }
         
         List<VolumeVO> vols = _volsDao.findByInstance(vmId);
         if( deviceId != null ) {
