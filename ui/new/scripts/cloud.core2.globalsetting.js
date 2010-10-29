@@ -17,82 +17,107 @@
  */
 
 function afterLoadGlobalSettingJSP() {
-    var $detailsTab = $("#right_panel_content #tab_content_details"); 
-
-    //edit button ***
-    var $readonlyFields  = $detailsTab.find("#value");
-    var $editFields = $detailsTab.find("#value_edit"); 
-    initializeEditFunction($readonlyFields, $editFields, doUpdateGlobalSetting);   
+    populateGlobalSettingGrid();
     
-    //initialize dialogs
+    //actions      
+    var $actionList = $("#right_panel_content #tab_content_details #action_link #action_menu").find("#action_list").empty();        
+    var $listItem = $("#action_list_item").clone();
+    $listItem.find("#link").text("Edit Global Setting");   
+    $listItem.bind("click", function(event) {        
+        doEditGlobalSetting();
+        return false;
+    });
+    $actionList.append($listItem.show());
+    
+    //dialogs
     initDialogWithOK("dialog_alert_restart_management_server");   
 }
 
-function doUpdateGlobalSetting() {
-    // validate values
-    var $detailsTab = $("#right_panel_content #tab_content_details");   
-    
-    var isValid = true;					
-    isValid &= validateString("Value", $detailsTab.find("#value_edit"), $detailsTab.find("#value_edit_errormsg"), true);					
-    if (!isValid) 
-        return;						
-	
-	var jsonObj = $detailsTab.data("jsonObj");		
-	var name = jsonObj.name;
-    var value = trim($detailsTab.find("#value_edit").val());
-
+function populateGlobalSettingGrid() {   
     $.ajax({
-      data: createURL("command=updateConfiguration&name="+todb(name)+"&value="+todb(value)+"&response=json"),
-	    dataType: "json",
-	    success: function(json) {	
-	        //call listConfigurations before bug 6506("What updateConfiguration API returns should include an embedded object") is fixed.
-		    var jsonObj;		   
-		    $.ajax({
-		        data: createURL("command=listConfigurations&name="+name),
-		        dataType: "json",
-		        async: false,
-		        success: function(json) {			                      
-		            jsonObj = json.listconfigurationsresponse.configuration[0];
-		        }
-		    });		   
-		    var $midmenuItem1 = $("#"+globalSettingGetMidmenuId(jsonObj));		   
-		    globalSettingToMidmenu(jsonObj, $midmenuItem1);
-		    globalSettingToRightPanel($midmenuItem1);		        
-		    	    
-		    $("#dialog_alert_restart_management_server").dialog("open");
-	    }
-    });		
+        data: createURL("command=listConfigurations"+maxPageSize),
+        dataType: "json",
+        success: function(json) {           
+            var items = json.listconfigurationsresponse.configuration;
+            $container = $("#tab_content_details").find("#grid_content").empty();
+            $template = $("#globalsetting_template");            
+            if(items != null && items.length > 0) {
+                for(var i=0; i<items.length; i++) {
+                    var $newTemplate = $template.clone();
+                    globalsettingJSONToTemplate(items[i], $newTemplate);
+                    $container.append($newTemplate.show());
+                }
+            }           
+        }
+    });    
 }
 
-function globalSettingGetMidmenuId(jsonObj) {
-    return "midmenuItem_" + fromdb(jsonObj.name).replace(/\./g, "_").replace(/\s/g, ""); //remove all spaces in jsonObj.name
+var globalsettingGridIndex = 0;
+function globalsettingJSONToTemplate(jsonObj, template) {      
+    (globalsettingGridIndex++ % 2 == 0)? template.addClass("even"): template.addClass("odd");		
+	template.find("#name").text(fromdb(jsonObj.name));
+	template.find("#value").text(fromdb(jsonObj.value));
+	template.find("#value_edit").val(fromdb(jsonObj.value));	
+	template.find("#description").text(fromdb(jsonObj.description));
 }
 
-function globalSettingToMidmenu(jsonObj, $midmenuItem1) {    
-    var id = globalSettingGetMidmenuId(jsonObj);
-    $midmenuItem1.attr("id", id);   
-       
-    $midmenuItem1.data("jsonObj", jsonObj); 
-        
-    var $iconContainer = $midmenuItem1.find("#icon_container").show();   
-    $iconContainer.find("#icon").attr("src", "images/midmenuicon_system_globalsettings.png");	
+function doEditGlobalSetting() {
+    var $detailsTab = $("#right_panel_content #tab_content_details"); 
+    var $readonlyFields  = $detailsTab.find("#value");
+    var $editFields = $detailsTab.find("#value_edit"); 
+                 
+    $readonlyFields.hide();
+    $editFields.show();  
+    $detailsTab.find("#cancel_button, #save_button").show();
     
-    $midmenuItem1.find("#first_row").text(fromdb(jsonObj.name).substring(0,25)); 
-    $midmenuItem1.find("#second_row").text(fromdb(jsonObj.value).substring(0,25));  
+    $detailsTab.find("#cancel_button").unbind("click").bind("click", function(event){    
+        $editFields.hide();
+        $readonlyFields.show();   
+        $("#save_button, #cancel_button").hide();       
+        return false;
+    });
+    $detailsTab.find("#save_button").unbind("click").bind("click", function(event){        
+        doEditGlobalSetting2();     
+        $editFields.hide();      
+        $readonlyFields.show();       
+        $("#save_button, #cancel_button").hide();       
+        return false;
+    });   
 }
 
-function globalSettingToRightPanel($midmenuItem1) {
-    copyActionInfoFromMidMenuToRightPanel($midmenuItem1);
-    globalSettingJsonToDetailsTab($midmenuItem1);   
-}
-
-function globalSettingJsonToDetailsTab($midmenuItem1) { 
-    var jsonObj = $midmenuItem1.data("jsonObj");
-    var $detailsTab = $("#right_panel_content #tab_content_details");   
-    $detailsTab.data("jsonObj", jsonObj);          
-    $detailsTab.find("#name").text(fromdb(jsonObj.name));
-    $detailsTab.find("#value").text(fromdb(jsonObj.value));
-    $detailsTab.find("#value_edit").val(fromdb(jsonObj.value));
-    $detailsTab.find("#description").text(fromdb(jsonObj.description));   
-    $detailsTab.find("#category").text(fromdb(jsonObj.category)); 
+function doEditGlobalSetting2() {        
+    $("#right_panel_content #tab_content_details").find("#globalsetting_template").each(function(index) {        
+        var $thisRow =$(this);        
+        if($thisRow.find("#value_edit").val() != $thisRow.find("#value").text()) {            
+            // validate values        
+            var isValid = true;					
+            isValid &= validateString("Value", $thisRow.find("#value_edit"), $thisRow.find("#value_edit_errormsg"), true);					
+            if (!isValid) 
+                return;						
+        		        
+	        var name = $thisRow.find("#name").text();
+            var value = $thisRow.find("#value_edit").val();
+          
+            $.ajax({
+              data: createURL("command=updateConfiguration&name="+todb(name)+"&value="+todb(value)),
+	            dataType: "json",
+	            async: false,
+	            success: function(json) {	
+	                //call listConfigurations before bug 6506("What updateConfiguration API returns should include an embedded object") is fixed.	           
+		            var jsonObj;		   
+		            $.ajax({
+		                data: createURL("command=listConfigurations&name="+name),
+		                dataType: "json",
+		                async: false,
+		                success: function(json) {			                      
+		                    jsonObj = json.listconfigurationsresponse.configuration[0];
+		                }
+		            });		
+		            globalsettingJSONToTemplate(jsonObj, $thisRow);  
+        		    	    
+		            $("#dialog_alert_restart_management_server").dialog("open");
+	            }
+            });		           
+        }
+    });    
 }

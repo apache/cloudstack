@@ -102,8 +102,7 @@ $(document).ready(function() {
 		bindAndListMidMenuItems($("#leftmenu_volume"), "listVolumes", "listvolumesresponse", "volume", "jsp/volume.jsp", afterLoadVolumeJSP, volumeToMidmenu, volumeToRightPanel, getMidmenuId, false);
 		bindAndListMidMenuItems($("#leftmenu_snapshot"), "listSnapshots", "listsnapshotsresponse", "snapshot", "jsp/snapshot.jsp", afterLoadSnapshotJSP, snapshotToMidmenu, snapshotToRightPanel, getMidmenuId, false);
 		bindAndListMidMenuItems($("#leftmenu_ip"), "listPublicIpAddresses", "listpublicipaddressesresponse", "publicipaddress", "jsp/ipaddress.jsp", afterLoadIpJSP, ipToMidmenu, ipToRightPanel, ipGetMidmenuId, false);
-		//bindAndListMidMenuItems("leftmenu_router", "listRouters", "listroutersresponse", "router", "jsp/router.jsp", afterLoadRouterJSP, routerToMidmenu, routerToRightPanel, getMidmenuId, false);
-		  
+		 
 		bindAndListMidMenuItems($("#leftmenu_submenu_my_template"), "listTemplates&templatefilter=self", "listtemplatesresponse", "template", "jsp/template.jsp", afterLoadTemplateJSP, templateToMidmenu, templateToRightPanel, templateGetMidmenuId, false);
 		bindAndListMidMenuItems($("#leftmenu_submenu_featured_template"), "listTemplates&templatefilter=featured", "listtemplatesresponse", "template", "jsp/template.jsp", afterLoadTemplateJSP, templateToMidmenu, templateToRightPanel, templateGetMidmenuId, false);
 		bindAndListMidMenuItems($("#leftmenu_submenu_community_template"), "listTemplates&templatefilter=community", "listtemplatesresponse", "template", "jsp/template.jsp", afterLoadTemplateJSP, templateToMidmenu, templateToRightPanel, templateGetMidmenuId, false);
@@ -114,7 +113,26 @@ $(document).ready(function() {
 		
 		bindAndListMidMenuItems($("#leftmenu_service_offering"), "listServiceOfferings", "listserviceofferingsresponse", "serviceoffering", "jsp/serviceoffering.jsp", afterLoadServiceOfferingJSP, serviceOfferingToMidmenu, serviceOfferingToRightPanel, getMidmenuId, false); 
 		bindAndListMidMenuItems($("#leftmenu_disk_offering"), "listDiskOfferings", "listdiskofferingsresponse", "diskoffering", "jsp/diskoffering.jsp", afterLoadDiskOfferingJSP, diskOfferingToMidmenu, diskOfferingToRightPanel, getMidmenuId, false); 
-		bindAndListMidMenuItems($("#leftmenu_global_setting"), "listConfigurations", "listconfigurationsresponse", "configuration", "jsp/globalsetting.jsp", afterLoadGlobalSettingJSP, globalSettingToMidmenu, globalSettingToRightPanel, globalSettingGetMidmenuId, false); 
+		
+		$("#leftmenu_global_setting").bind("click", function(event) {
+		    selectLeftSubMenu($(this));		
+		    		    
+		    $("#right_panel").load("jsp/globalsetting.jsp", function(){     
+		        var $actionLink = $("#right_panel_content #tab_content_details #action_link");
+		        $actionLink.bind("mouseover", function(event) {	    
+			        $(this).find("#action_menu").show();    
+			        return false;
+		        });
+		        $actionLink.bind("mouseout", function(event) {       
+			        $(this).find("#action_menu").hide();    
+			        return false;
+		        });	   
+        					  
+		        afterLoadGlobalSettingJSP();   
+	        });    
+		    
+		    return false;
+		});
 		
 		$("#leftmenu_resource").bind("click", function(event) {
 			showMiddleMenu();
