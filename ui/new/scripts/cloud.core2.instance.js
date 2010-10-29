@@ -1461,7 +1461,7 @@ function vmJsonToDetailsTab($midmenuItem1){
 		if (jsonObj.isoid == null)	
 	        buildActionLinkForDetailsTab("Attach ISO", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
 	    else 		
-	       buildActionLinkForDetailsTab("Detach ISO", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);	
+	        buildActionLinkForDetailsTab("Detach ISO", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);	
 	} 
 	else {	    
 		if (jsonObj.state == 'Stopped') {
@@ -1757,24 +1757,21 @@ function vmRouterAfterSubgridItemAction(json, id, $subgridItem) {
 }     
   
 var vmRouterActionMap = {      
-    "Start Router": {
-        api: "startRouter",            
+    "Start Router": {                
         isAsyncJob: true,
         asyncJobResponse: "startrouterresponse",
         inProcessText: "Starting Router....",
         dialogBeforeActionFn : doStartVmRouter,
         afterActionSeccessFn: vmRouterAfterSubgridItemAction
     },
-    "Stop Router": {
-        api: "stopRouter",            
+    "Stop Router": {        
         isAsyncJob: true,
         asyncJobResponse: "stoprouterresponse",
         inProcessText: "Stopping Router....",
         dialogBeforeActionFn : doStopVmRouter,
         afterActionSeccessFn: vmRouterAfterSubgridItemAction
     },
-    "Reboot Router": {
-        api: "rebootRouter",           
+    "Reboot Router": {        
         isAsyncJob: true,
         asyncJobResponse: "rebootrouterresponse",
         inProcessText: "Rebooting Router....",
@@ -1802,7 +1799,6 @@ function doStartVmRouter($actionLink, $subgridItem) {
 }   
 
 function doStopVmRouter($actionLink, $subgridItem) {
-//function doStopRouter($actionLink, $detailsTab, $midmenuItem1) {   
     $("#dialog_confirmation_stop_router")	
     .dialog('option', 'buttons', { 						
 	    "Confirm": function() { 

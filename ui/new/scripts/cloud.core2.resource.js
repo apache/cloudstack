@@ -372,6 +372,10 @@ function showPage2($pageToShow, $menuItem1) {
     else if($pageToShow.attr("id") == "systemvm_page") {  
         hideMiddleMenu();			
 	    systemvmJsonToRightPanel($menuItem1);		
+	    
+	    initDialog("dialog_confirmation_start_systemVM");
+	    initDialog("dialog_confirmation_stop_systemVM");
+	    initDialog("dialog_confirmation_reboot_systemVM");
     }    
 }
 
@@ -863,6 +867,7 @@ function systemvmJsonToDetailsTab($leftmenuItem1) {
     var jsonObj = $leftmenuItem1.data("jsonObj"); 
     var $detailsTab = $("#systemvm_page").find("#tab_content_details");   
     $detailsTab.data("jsonObj", jsonObj);   
+    $detailsTab.find("#grid_header_title").text(fromdb(jsonObj.name));  
      
     resetViewConsoleAction(jsonObj, $detailsTab);         
     setVmStateInRightPanel(jsonObj.state, $detailsTab.find("#state"));		
@@ -878,7 +883,23 @@ function systemvmJsonToDetailsTab($leftmenuItem1) {
     $detailsTab.find("#privateip").text(fromdb(jsonObj.privateip)); 
     $detailsTab.find("#hostname").text(fromdb(jsonObj.hostname));
     $detailsTab.find("#gateway").text(fromdb(jsonObj.gateway)); 
-    $detailsTab.find("#created").text(fromdb(jsonObj.created));             
+    $detailsTab.find("#created").text(fromdb(jsonObj.created));   
+        
+    //actions ***
+    var $actionLink = $detailsTab.find("#action_link"); 
+    $actionLink.bind("mouseover", function(event) {	    
+        $(this).find("#action_menu").show();    
+        return false;
+    });
+    $actionLink.bind("mouseout", function(event) {       
+        $(this).find("#action_menu").hide();    
+        return false;
+    });	  
+    var $actionMenu = $actionLink.find("#action_menu");
+    $actionMenu.find("#action_list").empty();   
+    buildActionLinkForDetailsTab("Start System VM", systemVmActionMap, $actionMenu, $leftmenuItem1, $detailsTab);         
+    buildActionLinkForDetailsTab("Stop System VM", systemVmActionMap, $actionMenu, $leftmenuItem1, $detailsTab);     
+    buildActionLinkForDetailsTab("Reboot System VM", systemVmActionMap, $actionMenu, $leftmenuItem1, $detailsTab);      
 }
 
 function toSystemVMTypeText(value) {
@@ -1959,3 +1980,92 @@ var podActionMap = {
     }
 }
 
+//SystemVM 
+var systemVmActionMap = {      
+    "Start System VM": {             
+        isAsyncJob: true,
+        asyncJobResponse: "startrouterresponse",
+        inProcessText: "Starting System VM....",
+        dialogBeforeActionFn : doStartSystemVM,
+        afterActionSeccessFn: systemVMAfterAction
+    },
+    "Stop System VM": {            
+        isAsyncJob: true,
+        asyncJobResponse: "stoprouterresponse",
+        inProcessText: "Stopping System VM....",
+        dialogBeforeActionFn : doStopSystemVM,
+        afterActionSeccessFn: systemVMAfterAction
+    },
+    "Reboot System VM": {        
+        isAsyncJob: true,
+        asyncJobResponse: "rebootrouterresponse",
+        inProcessText: "Rebooting System VM....",
+        dialogBeforeActionFn : doRebootSystemVM,
+        afterActionSeccessFn: systemVMAfterAction
+    }
+}   
+
+function doStartSystemVM($actionLink, $detailsTab, $midmenuItem1) {   
+    $("#dialog_confirmation_start_systemVM")	
+    .dialog('option', 'buttons', { 						
+	    "Confirm": function() { 
+		    $(this).dialog("close"); 			
+		    
+		    var jsonObj = $midmenuItem1.data("jsonObj");
+		    var id = jsonObj.id;
+		    var apiCommand = "command=startRouter&id="+id;              
+            doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab); 			   			   	                         					    
+	    }, 
+	    "Cancel": function() { 
+		    $(this).dialog("close"); 
+			
+	    } 
+    }).dialog("open");
+}   
+
+function doStopSystemVM($actionLink, $detailsTab, $midmenuItem1) {     
+    $("#dialog_confirmation_stop_systemVM")	
+    .dialog('option', 'buttons', { 						
+	    "Confirm": function() { 
+		    $(this).dialog("close"); 			
+		    
+		    var jsonObj = $midmenuItem1.data("jsonObj");
+		    var id = jsonObj.id;
+		    var apiCommand = "command=stopRouter&id="+id;  
+            doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab); 			   	                         					    
+	    }, 
+	    "Cancel": function() { 
+		    $(this).dialog("close"); 
+			
+	    } 
+    }).dialog("open");
+}   
+   
+function doRebootSystemVM($actionLink, $detailsTab, $midmenuItem1) {   
+    $("#dialog_confirmation_reboot_systemVM")	
+    .dialog('option', 'buttons', { 						
+	    "Confirm": function() { 
+		    $(this).dialog("close"); 			
+		    
+		    var jsonObj = $midmenuItem1.data("jsonObj");
+		    var id = jsonObj.id;
+		    var apiCommand = "command=rebootRouter&id="+id;              
+            doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab); 		   			   	                         					    
+	    }, 
+	    "Cancel": function() { 
+		    $(this).dialog("close"); 
+			
+	    } 
+    }).dialog("open");
+}   
+
+function systemVMAfterAction(json, $midmenuItem1, id) {
+    debugger;     
+    //var jsonObj = json.queryasyncjobresultresponse.router[0];  
+    //vmRouterJSONToTemplate(jsonObj, $subgridItem);
+    
+    //This is a temporary fix until bug 6787("RebootRouter API should return an embedded object on success") is fixed.
+    //var $detailsTab = $("#right_panel_content #tab_content_details");  
+    //var vmObj = $detailsTab.data("jsonObj");  
+   //vmJsonToRouterTab(vmObj);   
+}     

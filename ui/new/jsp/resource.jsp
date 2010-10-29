@@ -1339,6 +1339,24 @@
     </p>
 </div>
 
+<div id="dialog_confirmation_start_systemVM" title="Confirmation" style="display:none">
+    <p>        
+        <%=t.t("please.confirm.you.want.to.start.systemVM")%>
+    </p>
+</div>
+
+<div id="dialog_confirmation_stop_systemVM" title="Confirmation" style="display:none">
+    <p>        
+        <%=t.t("please.confirm.you.want.to.stop.systemVM")%>
+    </p>
+</div>
+
+<div id="dialog_confirmation_reboot_systemVM" title="Confirmation" style="display:none">
+    <p>        
+        <%=t.t("please.confirm.you.want.to.reboot.systemVM")%>
+    </p>
+</div>
+
 <!-- Update OS Preference Dialog -->
 <div id="dialog_update_os" title="Update OS Preference" style="display:none">
 	<p>	    
