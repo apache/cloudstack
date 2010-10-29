@@ -33,4 +33,11 @@ public interface NetworkConfigurationDao extends GenericDao<NetworkConfiguration
     SearchBuilder<NetworkAccountVO> createSearchBuilderForAccount();
     List<NetworkConfigurationVO> getNetworkConfigurationsForOffering(long offeringId, long dataCenterId, long accountId);
     List<NetworkConfigurationVO> getRelatedNetworkConfigurations(long related);
+    
+    /**
+     * Retrieves the next available mac address in this network configuration.
+     * @param networkConfigId id 
+     * @return mac address if there is one.  null if not.
+     */
+    String getNextAvailableMacAddress(long networkConfigId);
 }

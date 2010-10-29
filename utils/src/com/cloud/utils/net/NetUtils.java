@@ -604,6 +604,11 @@ public class NetUtils {
     	return long2Ip(numericNetmask);
     }
     
+    public static String cidr2Netmask(String cidr) {
+        String[] tokens = cidr.split("\\/");
+        return getCidrNetmask(Integer.parseInt(tokens[1]));
+    }
+    
     public static long getCidrSize(String netmask) {
     	long ip = ip2Long(netmask);
     	int count = 0;

@@ -20,20 +20,22 @@ package com.cloud.exception;
 import com.cloud.utils.SerialVersionUID;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-/**
- * @author chiradeep
- *
- */
-public class PermissionDeniedException extends CloudRuntimeException {
-
-	private static final long serialVersionUID = SerialVersionUID.PermissionDeniedException;
-
-	public PermissionDeniedException(String message) {
-		super(message);
-	}
-	
-	protected PermissionDeniedException() {
-	    super();
-	}
+public class AccountLimitException extends CloudRuntimeException {
+    
+    private static final long serialVersionUID = SerialVersionUID.AccountLimitException;
+    
+    protected AccountLimitException() {
+        super();
+    }
+    
+    public AccountLimitException(String msg) {
+        super(msg);
+    }
+    
+    public AccountLimitException(String msg, Throwable cause) {
+        super(msg, cause);
+    }
+    
+    // TODO: Add the actual thing that causes the exception.  Is it ip address, vm, etc?
 
 }

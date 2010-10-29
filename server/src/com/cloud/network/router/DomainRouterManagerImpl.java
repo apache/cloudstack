@@ -119,6 +119,7 @@ import com.cloud.network.dao.NetworkRuleConfigDao;
 import com.cloud.network.dao.SecurityGroupDao;
 import com.cloud.network.dao.SecurityGroupVMMapDao;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.service.ServiceOfferingVO;
@@ -2000,47 +2001,58 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
 	}
 	
 	@Override @DB
-	public DomainRouterVO deploy(NetworkConfiguration publicConfig, NetworkConfiguration virtualConfig, NetworkOffering offering, Account owner) throws InsufficientCapacityException, StorageUnavailableException, ConcurrentOperationException, ResourceUnavailableException {
-	    long dcId = virtualConfig.getDataCenterId();
+	public DomainRouterVO deploy(NetworkConfiguration guestConfig, NetworkOffering offering, DeployDestination dest, Account owner) throws InsufficientCapacityException, StorageUnavailableException, ConcurrentOperationException, ResourceUnavailableException {
+	    long dcId = dest.getDataCenter().getId();
 	    
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Starting a router for network configurations: public=" + publicConfig + "; virtual="  + virtualConfig);
+            s_logger.debug("Starting a router for network configurations: virtual="  + guestConfig + " in " + dest);
         }
-	    assert publicConfig.getState() == NetworkConfiguration.State.Implemented : "Network is not yet fully implemented: " + publicConfig;
-	    assert virtualConfig.getState() == NetworkConfiguration.State.Implemented : "Network is not yet fully implemented: " + virtualConfig;
+	    assert guestConfig.getState() == NetworkConfiguration.State.Implemented : "Network is not yet fully implemented: " + guestConfig;
+	    assert offering.getGuestIpType() == GuestIpType.Virtualized;
 	    
         DataCenterDeployment plan = new DataCenterDeployment(dcId, 1);
         
         Transaction txn = Transaction.currentTxn();
         txn.start();
         
-        virtualConfig = _networkConfigurationDao.lock(virtualConfig.getId(), true);
-        if (virtualConfig == null) {
-            throw new ConcurrentOperationException("Unable to get the lock on " + virtualConfig);
+        guestConfig = _networkConfigurationDao.lock(guestConfig.getId(), true);
+        if (guestConfig == null) {
+            throw new ConcurrentOperationException("Unable to get the lock on " + guestConfig);
         }
         
-        DomainRouterVO router = _routerDao.findByNetworkConfiguration(virtualConfig.getId());
+        DomainRouterVO router = _routerDao.findByNetworkConfiguration(guestConfig.getId());
         if (router == null) {
             long id = _routerDao.getNextInSequence(Long.class, "id");
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Creating the router " + id);
             }
+            
+            String sourceNatIp = _networkMgr.assignSourceNatIpAddress(owner, dest.getDataCenter());
         
             List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemVmControlNetwork);
-            
             NetworkOfferingVO controlOffering = offerings.get(0);
             NetworkConfigurationVO controlConfig = _networkMgr.setupNetworkConfiguration(_systemAcct, controlOffering, plan).get(0);
             
-            router = new DomainRouterVO(id, _offering.getId(), VirtualMachineName.getRouterName(id, _instance), _template.getId(), _template.getGuestOSId(), owner.getDomainId(), owner.getId(), virtualConfig.getId(), _offering.getOfferHA());
-    	    _routerDao.persist(router);
-    	    
-    	    List<Pair<NetworkConfigurationVO, NicProfile>> networks = new ArrayList<Pair<NetworkConfigurationVO, NicProfile>>(3);
+            List<Pair<NetworkConfigurationVO, NicProfile>> networks = new ArrayList<Pair<NetworkConfigurationVO, NicProfile>>(3);
+            NetworkOfferingVO publicOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemVmPublicNetwork).get(0);
+            List<NetworkConfigurationVO> publicConfigs = _networkMgr.setupNetworkConfiguration(_systemAcct, publicOffering, plan);
             NicProfile defaultNic = new NicProfile();
             defaultNic.setDefaultNic(true);
+            defaultNic.setIp4Address(sourceNatIp);
             defaultNic.setDeviceId(2);
-            networks.add(new Pair<NetworkConfigurationVO, NicProfile>((NetworkConfigurationVO)publicConfig, defaultNic));
-            networks.add(new Pair<NetworkConfigurationVO, NicProfile>((NetworkConfigurationVO)virtualConfig, null));
-    	    networks.add(new Pair<NetworkConfigurationVO, NicProfile>(controlConfig, null));
+            networks.add(new Pair<NetworkConfigurationVO, NicProfile>(publicConfigs.get(0), defaultNic));
+            NicProfile gatewayNic = new NicProfile();
+            gatewayNic.setIp4Address(guestConfig.getGateway());
+            gatewayNic.setBroadcastUri(guestConfig.getBroadcastUri());
+            gatewayNic.setBroadcastType(guestConfig.getBroadcastDomainType());
+            gatewayNic.setIsolationUri(guestConfig.getBroadcastUri());
+            gatewayNic.setMode(guestConfig.getMode());
+            gatewayNic.setNetmask(NetUtils.getCidrSubNet(guestConfig.getCidr()));
+            networks.add(new Pair<NetworkConfigurationVO, NicProfile>((NetworkConfigurationVO)guestConfig, gatewayNic));
+            networks.add(new Pair<NetworkConfigurationVO, NicProfile>(controlConfig, null));
+            
+            router = new DomainRouterVO(id, _offering.getId(), VirtualMachineName.getRouterName(id, _instance), _template.getId(), _template.getGuestOSId(), owner.getDomainId(), owner.getId(), guestConfig.getId(), _offering.getOfferHA());
+            router = _routerDao.persist(router);
     	    
     	    _vmMgr.allocate(router, _template, _offering, networks, plan, owner);
         }

@@ -427,6 +427,15 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
         }
     }
     
+    @Override @DB(txn=false)
+    public <M> List<M> customSearch(SearchCriteria<M> sc, final Filter filter) {
+        if (_removed != null) {
+            sc.addAnd(_removed.second().field.getName(), SearchCriteria.Op.NULL);
+        }
+        
+        return searchIncludingRemoved(sc, filter);
+    }
+    
     @DB(txn=false)
     protected void setField(Object entity, Field field, ResultSet rs, int index) throws SQLException {
         try {
@@ -731,6 +740,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
         return _entityBeanType;
     }
 
+    @DB(txn=false)
     protected T findOneIncludingRemovedBy(final SearchCriteria<T> sc) {
         Filter filter = new Filter(1);
         List<T> results = searchIncludingRemoved(sc, filter, null, false);

@@ -64,6 +64,7 @@ import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Vlan.VlanType;
@@ -79,6 +80,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
+import com.cloud.exception.AccountLimitException;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
@@ -358,6 +360,108 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
         }
     }
 
+    @Override @DB
+    public String assignSourceNatIpAddress(Account account, DataCenter dc) throws InsufficientAddressCapacityException {
+        final long dcId = dc.getId();
+        String sourceNat = null;
+
+        final long accountId = account.getId();
+        
+        Transaction txn = Transaction.currentTxn();
+        try {
+            final EventVO event = new EventVO();
+            event.setUserId(1L); // system user performed the action...
+            event.setAccountId(account.getId());
+            event.setType(EventTypes.EVENT_NET_IP_ASSIGN);
+            
+            txn.start();
+
+            account = _accountDao.acquire(accountId);
+            if (account == null) {
+                s_logger.warn("Unable to lock account " + accountId);
+                return null;
+            }
+            if(s_logger.isDebugEnabled())
+                s_logger.debug("lock account " + accountId + " is acquired");
+            
+            boolean isAccountIP = false;
+            List<IPAddressVO> addrs = listPublicIpAddressesInVirtualNetwork(account.getId(), dcId, true);            
+            if (addrs.size() == 0) {
+                
+                // Check that the maximum number of public IPs for the given accountId will not be exceeded
+                if (_accountMgr.resourceLimitExceeded(account, ResourceType.public_ip)) {
+                    throw new AccountLimitException("Maximum number of public IP addresses for account: " + account.getAccountName() + " has been exceeded.");
+                }
+                
+                //check for account specific IP pool.
+                addrs = listPublicIpAddressesInVirtualNetwork(account.getId(), dcId, null);
+                if (addrs.size() == 0){
+                    
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("assigning a new ip address");
+                    }                
+                    Pair<String, VlanVO> ipAndVlan = _vlanDao.assignIpAddress(dc.getId(), accountId, account.getDomainId(), VlanType.VirtualNetwork, true);
+                                                                     
+                    if (ipAndVlan != null) {
+                        sourceNat = ipAndVlan.first();
+                        
+                        // Increment the number of public IPs for this accountId in the database
+                        _accountMgr.incrementResourceCount(accountId, ResourceType.public_ip);
+                        event.setParameters("address=" + sourceNat + "\nsourceNat=true\ndcId="+dcId);
+                        event.setDescription("Acquired a public ip: " + sourceNat);
+                        _eventDao.persist(event);
+                    }
+                }else{ 
+                    isAccountIP = true;
+                    sourceNat = addrs.get(0).getAddress();
+                    _ipAddressDao.setIpAsSourceNat(sourceNat);
+                    s_logger.debug("assigning a new ip address " +sourceNat);
+                    
+                    // Increment the number of public IPs for this accountId in the database
+                    _accountMgr.incrementResourceCount(accountId, ResourceType.public_ip);
+                    event.setParameters("address=" + sourceNat + "\nsourceNat=true\ndcId="+dcId);
+                    event.setDescription("Acquired a public ip: " + sourceNat);
+                    _eventDao.persist(event);
+                }
+                
+            } else {
+                sourceNat = addrs.get(0).getAddress();
+            }
+
+            if (sourceNat == null) {
+                txn.rollback();
+                event.setLevel(EventVO.LEVEL_ERROR);
+                event.setParameters("dcId=" + dcId);
+                event.setDescription("Failed to acquire a public ip.");
+                _eventDao.persist(event);
+                s_logger.error("Unable to get source nat ip address for account " + account.getId());
+                return null;
+            }
+            
+            UserStatisticsVO stats = _userStatsDao.findBy(account.getId(), dcId);
+            if (stats == null) {
+                stats = new UserStatisticsVO(account.getId(), dcId);
+                _userStatsDao.persist(stats);
+            }
+
+            txn.commit();
+
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Source Nat is " + sourceNat);
+            }
+            
+            return sourceNat;
+
+        } finally {
+            if (account != null) {
+                if(s_logger.isDebugEnabled())
+                    s_logger.debug("Releasing lock account " + accountId);
+                
+                _accountDao.release(accountId);
+            }
+        }
+    }
+    
     @Override
     @DB
     public DomainRouterVO createDhcpServerForDirectlyAttachedGuests(long userId, long accountId, DataCenterVO dc, HostPodVO pod, Long candidateHost, VlanVO guestVlan) throws ConcurrentOperationException{
@@ -1766,12 +1870,11 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
         to.setIp(nic.getIp4Address());
         to.setNetmask(nic.getNetmask());
         to.setMac(nic.getMacAddress());
-        if (config.getDns() != null) {
-            String[] tokens = config.getDns().split(",");
-            to.setDns1(tokens[0]);
-            if (tokens.length > 2) {
-                to.setDns2(tokens[1]);
-            }
+        if (config.getDns1() != null) {
+            to.setDns1(config.getDns1());
+        }
+        if (config.getDns2() != null) {
+            to.setDns2(config.getDns2());
         }
         if (nic.getGateway() != null) {
             to.setGateway(nic.getGateway());
@@ -1790,8 +1893,10 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
     }
     
     @DB
-    protected Pair<NetworkGuru, NetworkConfigurationVO> implementNetworkConfiguration(long configId, DeployDestination dest) throws ConcurrentOperationException {
-        Transaction txn = Transaction.currentTxn();
+    protected Pair<NetworkGuru, NetworkConfigurationVO> implementNetworkConfiguration(long configId, DeployDestination dest, Account user) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientAddressCapacityException {
+        Transaction.currentTxn();
+        Pair<NetworkGuru, NetworkConfigurationVO> implemented = new Pair<NetworkGuru, NetworkConfigurationVO>(null, null);
+        
         NetworkConfigurationVO config = _networkConfigDao.acquire(configId);
         if (config == null) {
             throw new ConcurrentOperationException("Unable to acquire network configuration: " + configId);
@@ -1800,21 +1905,43 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
         try {
             NetworkGuru guru = _networkGurus.get(config.getGuruName());
             if (config.getState() == NetworkConfiguration.State.Implemented || config.getState() == NetworkConfiguration.State.Setup) {
-                return new Pair<NetworkGuru, NetworkConfigurationVO>(guru, config);
+                implemented.set(guru, config);
+                return implemented;
             }
             
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Asking " + guru + " to implement " + config);
+            }
             
-            NetworkConfiguration result = guru.implement(config, _networkOfferingDao.findById(config.getNetworkOfferingId()), dest);
+            NetworkOfferingVO offering = _networkOfferingDao.findById(config.getNetworkOfferingId());
+            
+            NetworkConfiguration result = guru.implement(config, offering, dest);
             config.setCidr(result.getCidr());
             config.setBroadcastUri(result.getBroadcastUri());
             config.setGateway(result.getGateway());
-            config.setDns(result.getDns());
+            config.setDns1(result.getDns1());
+            config.setDns2(result.getDns2());
             config.setMode(result.getMode());
             config.setState(NetworkConfiguration.State.Implemented);
             _networkConfigDao.update(configId, config);
             
-            return new Pair<NetworkGuru, NetworkConfigurationVO>(guru, config);
+            for (NetworkElement element : _networkElements) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Asking " + element.getName() + " to implmenet " + config);
+                }
+                try {
+                    element.implement(config, offering, dest, user);
+                } catch (InsufficientCapacityException e) {
+                    throw new ResourceUnavailableException("Unable to start domain router for this VM", e);
+                }
+            }
+            
+            implemented.set(guru, config);
+            return implemented;
         } finally {
+            if (implemented.first() == null) {
+                s_logger.debug("Cleaning up because we're unable to implement network " + config);
+            }
             _networkConfigDao.release(configId);
         }
     }
@@ -1825,7 +1952,7 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
         NicTO[] nicTos = new NicTO[nics.size()];
         int i = 0;
         for (NicVO nic : nics) {
-            Pair<NetworkGuru, NetworkConfigurationVO> implemented = implementNetworkConfiguration(nic.getNetworkConfigurationId(), dest);
+            Pair<NetworkGuru, NetworkConfigurationVO> implemented = implementNetworkConfiguration(nic.getNetworkConfigurationId(), dest, user);
             NetworkGuru concierge = implemented.first();
             NetworkConfigurationVO config = implemented.second();
             NicProfile profile = null;
@@ -1847,10 +1974,10 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
                 nic.setAddressFormat(profile.getFormat());
                 _nicDao.update(nic.getId(), nic);
                 for (NetworkElement element : _networkElements) {
-                    if (!element.prepare(config, profile, vmProfile, null, user)) {
-                        s_logger.warn("Unable to prepare " + nic + " for element " + element.getName());
-                        return null;
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Asking " + element.getName() + " to prepare for " + nic);
                     }
+                    element.prepare(config, profile, vmProfile, null, dest, user);
                 }
             }
             

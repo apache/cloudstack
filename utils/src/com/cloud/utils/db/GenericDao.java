@@ -222,4 +222,6 @@ public interface GenericDao<T, ID extends Serializable> {
      */
     boolean configure(String name, Map<String, Object> params) throws ConfigurationException;
     
+    <M> List<M> customSearch(SearchCriteria<M> sc, Filter filter);
+    
 }

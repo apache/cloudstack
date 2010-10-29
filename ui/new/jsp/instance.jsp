@@ -231,25 +231,25 @@
         	<div class="grid_header">
             	<div id="grid_header_title" class="grid_header_title">(title)</div>
             </div>
-            <div class="dbrow odd" id="public_ip_address">
-                <div class="dbrow_cell" style="width: 29%;">
+            <div class="dbrow odd">
+                <div class="dbrow_cell" style="width: 40%;">
                     <div class="dbgraph_titlebox">
                         <h2>
                             CPU</h2>
                         <div class="dbgraph_title_usedbox">
                             <p>
-                                Used: <span id="capacityused">1x500 MHZ</span>/<span id="capacitytotal">A</span>
+                                Total: <span id="capacityused">1x500 MHZ</span>
                             </p>
                         </div>
                     </div>
                 </div>
-                <div class="dbrow_cell" style="width: 58%; border: none;">
-                    <div class="db_barbox low" style="width:20%;" id="bar_chart">
+                <div class="dbrow_cell" style="width: 43%; border: none;">
+                    <div class="db_barbox low" id="bar_chart">
                     </div>
                 </div>
-                <div class="dbrow_cell" style="width: 12%; border: none;">
+                <div class="dbrow_cell" style="width: 16%; border: none;">
                     <div class="db_totaltitle" id="percentused">
-                    1 x 20 MHZ
+                    0.2%
                     </div>
                 </div>
             </div>
@@ -791,13 +791,13 @@
     <input type="radio" class="radio" value="custom" checked />
     <label class="label">
         Custom:</label>
-    <div class="vmpopup_offdescriptionbox_bot" style="background:none;">
+    <div class="vmpopup_offdescriptionbox_bot" style="background:none; border:none;">
         <label class="label1" style="margin-left:33px; display:inline;">
             Disk Size:</label>
         <input type="text" id="custom_disk_size" class="text" />
         <span>MB</span>
        
-        <div id="custom_disk_size_errormsg" class="errormsg" style="display: none;">
+        <div id="custom_disk_size_errormsg" class="errormsg" style="display: none; margin-left:89px; display:inline;">
         </div>
      </div>
 </div>

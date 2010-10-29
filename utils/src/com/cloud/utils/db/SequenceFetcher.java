@@ -19,6 +19,7 @@ package com.cloud.utils.db;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -83,6 +84,7 @@ public class SequenceFetcher {
         @Override @SuppressWarnings("unchecked")
         public T call() throws Exception {
             try {
+                PreparedStatement stmt = null;
                 StringBuilder sql = new StringBuilder("SELECT ");
                 sql.append(_tg.valueColumnName()).append(" FROM ").append(_tg.table());
                 sql.append(" WHERE ").append(_tg.pkColumnName()).append(" = ? FOR UPDATE");
@@ -97,22 +99,23 @@ public class SequenceFetcher {
                 }
 
                 sql = new StringBuilder("UPDATE ");
-                sql.append(_tg.table()).append(" SET ").append(_tg.valueColumnName()).append("=").append(_tg.valueColumnName()).append("+?");
+                sql.append(_tg.table()).append(" SET ").append(_tg.valueColumnName()).append("=").append("?+?");
                 sql.append(" WHERE ").append(_tg.pkColumnName()).append("=?");
                 
                 PreparedStatement updateStmt = txn.prepareStatement(sql.toString());
-                updateStmt.setInt(1, _tg.allocationSize());
+                updateStmt.setInt(2, _tg.allocationSize());
                 if (_key == null) {
-                    updateStmt.setString(2, _tg.pkColumnValue());
+                    updateStmt.setString(3, _tg.pkColumnValue());
                 } else {
-                    updateStmt.setObject(2, _key);
+                    updateStmt.setObject(3, _key);
                 }
                 
                 ResultSet rs = null;
                 try {
                     txn.start();
                     
-                    rs = selectStmt.executeQuery();
+                    stmt = selectStmt;
+                    rs = stmt.executeQuery();
                     Object obj = null;
                     while (rs.next()) {
                         if (_clazz.isAssignableFrom(Long.class)) {
@@ -129,10 +132,14 @@ public class SequenceFetcher {
                         return null;
                     }
                     
-                    int rows = updateStmt.executeUpdate();
+                    updateStmt.setObject(1, obj);
+                    stmt = updateStmt;
+                    int rows = stmt.executeUpdate();
                     assert rows == 1 : "Come on....how exactly did we update this many rows " + rows + " for " + updateStmt.toString();
                     txn.commit();
                     return (T)obj;
+                } catch (SQLException e) {
+                    s_logger.warn("Caught this exception when running: " + (stmt != null ? stmt.toString() : ""), e);
                 } finally {
                     if (rs != null) {
                         rs.close();
@@ -142,7 +149,7 @@ public class SequenceFetcher {
                     txn.close();
                 }
             } catch (Exception e) {
-                s_logger.warn("Caught this exception when running", e);
+                s_logger.warn("Caught this exception when running.", e);
             }
             return null;
         }

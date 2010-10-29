@@ -564,6 +564,9 @@ public class AccountManagerImpl implements AccountManager {
 
     @Override
     public AccountVO getSystemAccount() {
+        if (_systemAccount == null) {
+            _systemAccount = _accountDao.findById(Account.ACCOUNT_ID_SYSTEM);
+        }
         return _systemAccount;
     }
     

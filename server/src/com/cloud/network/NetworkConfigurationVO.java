@@ -17,6 +17,8 @@
  */
 package com.cloud.network;
 
+import java.net.URI;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -24,6 +26,7 @@ import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.TableGenerator;
+import javax.persistence.Transient;
 
 import com.cloud.network.Network.BroadcastDomainType;
 import com.cloud.network.Network.Mode;
@@ -56,7 +59,7 @@ public class NetworkConfigurationVO implements NetworkConfiguration {
     TrafficType trafficType;
     
     @Column(name="broadcast_uri")
-    String broadcastUri; 
+    URI broadcastUri; 
     
     @Column(name="gateway")
     String gateway;
@@ -80,8 +83,8 @@ public class NetworkConfigurationVO implements NetworkConfiguration {
     @Enumerated(value=EnumType.STRING)
     State state;
     
-    @Column(name="dns")
-    String dns;
+    @Column(name="dns1")
+    String dns1;
     
     @Column(name="domain_id")
     long domainId;
@@ -89,9 +92,18 @@ public class NetworkConfigurationVO implements NetworkConfiguration {
     @Column(name="account_id")
     long accountId;
     
-    @Column(name="mac_address_seq", updatable=false, nullable=false)
-    @TableGenerator(name="mac_address_seq", table="network_configuration", pkColumnName="id", valueColumnName="mac_address_seq", allocationSize=1)
+    @Column(name="set_fields")
+    long setFields;
+    
+    @TableGenerator(name="mac_address_seq", table="op_network_configurations", pkColumnName="id", valueColumnName="mac_address_seq", allocationSize=1)
+    @Transient
     long macAddress = 1;
+    
+    @Column(name="guru_data")
+    String guruData;
+    
+    @Column(name="dns2")
+    String dns2;
     
     public NetworkConfigurationVO() {
     }
@@ -116,6 +128,10 @@ public class NetworkConfigurationVO implements NetworkConfiguration {
     
     public NetworkConfigurationVO(long id, NetworkConfiguration that, long offeringId, long dataCenterId, String guruName, long domainId, long accountId, long related) {
         this(id, that.getTrafficType(), that.getMode(), that.getBroadcastDomainType(), offeringId, dataCenterId, domainId, accountId, related);
+        this.gateway = that.getGateway();
+        this.dns1 = that.getDns1();
+        this.dns2 = that.getDns2();
+        this.cidr = that.getCidr();
         this.guruName = guruName;
         this.state = that.getState();
         if (state == null) {
@@ -189,6 +205,14 @@ public class NetworkConfigurationVO implements NetworkConfiguration {
         return broadcastDomainType;
     }
     
+    public String getGuruData() {
+        return guruData;
+    }
+    
+    public void setGuruData(String guruData) {
+        this.guruData = guruData;
+    }
+    
     public String getGuruName() {
         return guruName;
     }
@@ -229,11 +253,11 @@ public class NetworkConfigurationVO implements NetworkConfiguration {
     }
     
     @Override
-    public String getBroadcastUri() {
+    public URI getBroadcastUri() {
         return broadcastUri;
     }
 
-    public void setBroadcastUri(String broadcastUri) {
+    public void setBroadcastUri(URI broadcastUri) {
         this.broadcastUri = broadcastUri;
     }
     
@@ -248,13 +272,24 @@ public class NetworkConfigurationVO implements NetworkConfiguration {
     }
     
     @Override
-    public String getDns() {
-        return dns;
+    public String getDns1() {
+        return dns1;
     }
     
-    public void setDns(String dns) {
-        this.dns = dns;
+    public void setDns1(String dns) {
+        this.dns1 = dns;
     }
+    
+    @Override
+    public String getDns2() {
+        return dns2;
+    }
+    
+    public void setDns2(String dns) {
+        this.dns2 = dns;
+    }
+    
+    
     
     @Override
     public boolean equals(Object obj) {
@@ -275,5 +310,9 @@ public class NetworkConfigurationVO implements NetworkConfiguration {
         }
         
         return NetUtils.isNetworkAWithinNetworkB(this.cidr, that.cidr);
+    }
+    
+    public boolean isImplemented() {
+        return broadcastUri != null && cidr != null && gateway != null && mode != null && broadcastDomainType != null;
     }
 }

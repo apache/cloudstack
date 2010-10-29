@@ -44,6 +44,11 @@ public class Pair<T, U> {
     	return t;
     }
     
+    public void set(T t, U u) {
+        this.t = t;
+        this.u = u;
+    }
+    
     @Override
     // Note: This means any two pairs with null for both values will match each
     // other but what can I do?  This is due to stupid type erasure.

@@ -348,6 +348,9 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
             Info<Manager> info = entry.getValue();
             s_logger.info("Injecting Manager: " + info.name);
             inject(info.clazz, info.instance);
+        }
+        for (Map.Entry<String, Info<Manager>> entry : entries) {
+            Info<Manager> info = entry.getValue();
             s_logger.info("Configuring Manager: " + info.name);
             try {
                 info.instance.configure(info.name, info.params);

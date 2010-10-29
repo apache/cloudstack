@@ -17,9 +17,13 @@
  */
 package com.cloud.network.dao;
 
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.List;
+import java.util.Random;
 
 import javax.ejb.Local;
+import javax.persistence.TableGenerator;
 
 import com.cloud.network.Network.BroadcastDomainType;
 import com.cloud.network.Network.Mode;
@@ -33,7 +37,10 @@ import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SequenceFetcher;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils;
 
 @Local(value=NetworkConfigurationDao.class) @DB(txn=false)
 public class NetworkConfigurationDaoImpl extends GenericDaoBase<NetworkConfigurationVO, Long> implements NetworkConfigurationDao {
@@ -44,6 +51,9 @@ public class NetworkConfigurationDaoImpl extends GenericDaoBase<NetworkConfigura
     final SearchBuilder<NetworkConfigurationVO> RelatedConfigsSearch;
     
     NetworkAccountDaoImpl _accountsDao = new NetworkAccountDaoImpl();
+    final TableGenerator _tgMacAddress;
+    Random _rand = new Random(System.currentTimeMillis());
+    long _prefix = 0x2;
     
     protected NetworkConfigurationDaoImpl() {
         super();
@@ -79,6 +89,8 @@ public class NetworkConfigurationDaoImpl extends GenericDaoBase<NetworkConfigura
         RelatedConfigsSearch = createSearchBuilder();
         RelatedConfigsSearch.and("related", RelatedConfigsSearch.entity().getRelated(), SearchCriteria.Op.EQ);
         RelatedConfigsSearch.done();
+        
+        _tgMacAddress = _tgs.get("macAddress");
     }
     
     public List<NetworkConfigurationVO> findBy(TrafficType trafficType, Mode mode, BroadcastDomainType broadcastType, long networkOfferingId, long dataCenterId) {
@@ -116,6 +128,13 @@ public class NetworkConfigurationDaoImpl extends GenericDaoBase<NetworkConfigura
         txn.start();
         config = super.persist(config);
         addAccountToNetworkConfiguration(config.getId(), config.getAccountId(), true);
+        try {
+            PreparedStatement pstmt = txn.prepareAutoCloseStatement("INSERT INTO op_network_configurations (id) VALUES(?)");
+            pstmt.setLong(1, config.getId());
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Problem inserting into the op_network_configurations");
+        }
         txn.commit();
         return config;
     }
@@ -149,5 +168,14 @@ public class NetworkConfigurationDaoImpl extends GenericDaoBase<NetworkConfigura
         SearchCriteria<NetworkConfigurationVO> sc = RelatedConfigsSearch.create();
         sc.setParameters("related", related);
         return search(sc, null);
+    }
+    
+    @Override
+    public String getNextAvailableMacAddress(long networkConfigId) {
+        SequenceFetcher fetch = SequenceFetcher.getInstance();
+        
+        long seq = fetch.getNextSequence(Long.class, _tgMacAddress, networkConfigId);
+        seq = seq | _prefix | ((_rand.nextInt(Short.MAX_VALUE) << 16) & 0x00000000ffff0000l);
+        return NetUtils.long2Mac(seq);
     }
 }

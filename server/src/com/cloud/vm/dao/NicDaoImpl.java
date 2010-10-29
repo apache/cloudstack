@@ -8,13 +8,16 @@ import java.util.List;
 import javax.ejb.Local;
 
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.vm.NicVO;
 
 @Local(value=NicDao.class)
 public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
     private final SearchBuilder<NicVO> InstanceSearch;
+    private final GenericSearchBuilder<NicVO, String> IpSearch;
     
     protected NicDaoImpl() {
         super();
@@ -22,6 +25,12 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
         InstanceSearch = createSearchBuilder();
         InstanceSearch.and("instance", InstanceSearch.entity().getInstanceId(), SearchCriteria.Op.EQ);
         InstanceSearch.done();
+        
+        IpSearch = createSearchBuilder(String.class);
+        IpSearch.select(null, Func.DISTINCT, IpSearch.entity().getIp4Address());
+        IpSearch.and("nc", IpSearch.entity().getNetworkConfigurationId(), SearchCriteria.Op.EQ);
+        IpSearch.and("address", IpSearch.entity().getIp4Address(), SearchCriteria.Op.NNULL);
+        IpSearch.done();
     }
     
     @Override
@@ -31,4 +40,10 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
         return listBy(sc);
     }
     
+    @Override
+    public List<String> listIpAddressInNetworkConfiguration(long networkConfigId) {
+        SearchCriteria<String> sc = IpSearch.create();
+        sc.setParameters("nc", networkConfigId);
+        return customSearch(sc, null);
+    }
 }
