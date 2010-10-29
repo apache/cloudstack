@@ -56,7 +56,8 @@
                     </div>
                 </div>                     
             </div>            
-            <div id="grid_content">             	
+            <div id="grid_content" class="fixed_gridcontainer"> 
+                        	
          	</div>               
         </div>        
         <div class="grid_botactionpanel">
@@ -66,23 +67,25 @@
     </div>
 </div>
 <!-- global setting grid template (begin) -->
-<div id="globalsetting_template" class="grid_rows even" style="display:none">
-    <div class="grid_row_cell" style="width: 35%;">
-        <div class="row_celltitles" id="name">
+
+    <div id="globalsetting_template" class="grid_rows even" style="display:none">
+        <div class="grid_row_cell" style="width: 35%;">
+            <div class="row_celltitles" id="name">
+            </div>
+        </div>
+        <div class="grid_row_cell" style="width: 23%;">
+            <div class="row_celltitles" id="value">
+            </div>
+            <input class="text" id="value_edit" style="width: 200px; display: none;" type="text" />
+            <div id="value_edit_errormsg" style="display: none">
+            </div>
+        </div>
+        <div class="grid_row_cell" style="width: 40%;">
+            <div class="row_celltitles" id="description">description
+            </div>
         </div>
     </div>
-    <div class="grid_row_cell" style="width: 23%;">
-        <div class="row_celltitles" id="value">
-        </div>
-        <input class="text" id="value_edit" style="width: 200px; display: none;" type="text" />
-        <div id="value_edit_errormsg" style="display: none">
-        </div>
-    </div>
-    <div class="grid_row_cell" style="width: 27%;">
-        <div class="row_celltitles" id="description">description
-        </div>
-    </div>
-</div>
+
 <!-- global setting grid template (end) -->
 
 <div id="dialog_alert_restart_management_server" title="Alert" style="display:none">
