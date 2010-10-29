@@ -98,10 +98,14 @@ public class ApiDispatcher {
             Throwable cause = ite.getCause();
             if (cause instanceof InvalidParameterValueException) {
                 throw new ServerApiException(BaseCmd.PARAM_ERROR, cause.getMessage());
+            } else if (cause instanceof IllegalArgumentException) {
+                throw new ServerApiException(BaseCmd.PARAM_ERROR, cause.getMessage());
             } else if (cause instanceof PermissionDeniedException) {
                 throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, cause.getMessage());
             } else if (cause instanceof ResourceAllocationException){
             	throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, cause.getMessage());
+            } else if (cause instanceof ServerApiException) {
+                throw (ServerApiException)cause;
             }
             s_logger.warn("Exception executing method " + methodName + " for command " + cmd.getClass().getSimpleName(), ite);
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to execute method " + methodName + " for command " + cmd.getClass().getSimpleName() + ", internal error in the implementation.");
@@ -148,6 +152,8 @@ public class ApiDispatcher {
                 throw (AsyncCommandQueued)cause;
             }
             if (cause instanceof InvalidParameterValueException) {
+                throw new ServerApiException(BaseCmd.PARAM_ERROR, cause.getMessage());
+            } else if (cause instanceof IllegalArgumentException) {
                 throw new ServerApiException(BaseCmd.PARAM_ERROR, cause.getMessage());
             } else if (cause instanceof PermissionDeniedException) {
                 throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, cause.getMessage());
