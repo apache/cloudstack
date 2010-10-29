@@ -83,6 +83,10 @@ public class ApiDispatcher {
             Method method = mgr.getClass().getMethod(methodName, cmd.getClass());
             Object dbObject = method.invoke(mgr, cmd);
 
+            if (dbObject == null) {
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Create method " + methodName + " in class " + cmd.getClass().getSimpleName() + " failed to create an object.");
+            }
+
             Method getIdMethod = dbObject.getClass().getMethod("getId");
             Object id = getIdMethod.invoke(dbObject);
             
