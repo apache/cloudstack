@@ -116,6 +116,8 @@ $(document).ready(function() {
 		
 		$("#leftmenu_global_setting").bind("click", function(event) {
 		    selectLeftSubMenu($(this));		
+		    hideMiddleMenu();	
+	        clearMiddleMenu();
 		    		    
 		    $("#right_panel").load("jsp/globalsetting.jsp", function(){     
 		        var $actionLink = $("#right_panel_content #tab_content_details #action_link");
