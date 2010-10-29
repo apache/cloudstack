@@ -97,6 +97,7 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.UserVmDao;
 
@@ -237,8 +238,12 @@ public class SnapshotManagerImpl implements SnapshotManager {
     @Override @DB
     public SnapshotVO createSnapshotImpl(long volumeId, long policyId) throws InvalidParameterValueException, ResourceAllocationException {
         Long userId = UserContext.current().getUserId();
+        SnapshotVO createdSnapshot = null;
 
-        VolumeVO volume = _volsDao.findById(volumeId);
+        VolumeVO volume = _volsDao.lock(volumeId, true);
+        if (volume == null) {
+            throw new CloudRuntimeException("Failed to lock volume " + volumeId + " for creating a snapshot.");
+        }
 
         if (!shouldRunSnapshot(userId, volume, policyId)) {
             // A null snapshot is interpreted as snapshot creation failed which
@@ -246,7 +251,6 @@ public class SnapshotManagerImpl implements SnapshotManager {
             return null;
         }
 
-        SnapshotVO createdSnapshot = null;
         Long id = null;
 
         // Determine the name for this snapshot
@@ -271,9 +275,9 @@ public class SnapshotManagerImpl implements SnapshotManager {
 
         // Send a ManageSnapshotCommand to the agent
         String vmName = _storageMgr.getVmNameOnVolume(volume);
-        
+
         long  preId = _snapshotDao.getLastSnapshot(volumeId, id);
-        
+
         String preSnapshotPath = null;
         // half of maxsnaps are delta snapshot
         // when there are half of maxsnaps or presnapshot has not backed up , create a full snapshot
@@ -298,9 +302,9 @@ public class SnapshotManagerImpl implements SnapshotManager {
                 createdSnapshot =  _snapshotDao.findById(id);
                 // delete from the snapshots table
                 _snapshotDao.expunge(id);
-                
+
                 createdSnapshot.setStatus(Status.EmptySnapshot);
-                
+
             } else {
                 long preSnapshotId = 0;
                 if( preSnapshotVO != null && preSnapshotVO.getBackupSnapshotId() != null) {
@@ -357,9 +361,9 @@ public class SnapshotManagerImpl implements SnapshotManager {
             createdSnapshot =  _snapshotDao.findById(id);
             // delete from the snapshots table
             _snapshotDao.expunge(id);
-            
+
         }
-        
+
         return createdSnapshot;
     }
 
@@ -368,16 +372,18 @@ public class SnapshotManagerImpl implements SnapshotManager {
         SnapshotVO snapshot = _snapshotDao.findById(cmd.getId());
         Long snapshotId = null;
         boolean backedUp = false;
-        if (snapshot != null && snapshot.getStatus() == Snapshot.Status.CreatedOnPrimary) {
-            snapshotId = snapshot.getId();
-            backedUp = backupSnapshotToSecondaryStorage(snapshot, cmd.getStartEventId());
-            if (!backedUp) {
-                throw new InternalErrorException("Created snapshot: " + snapshotId + " on primary but failed to backup on secondary");
+        if (snapshot != null) {
+            if (snapshot.getStatus() == Snapshot.Status.CreatedOnPrimary) {
+                snapshotId = snapshot.getId();
+                backedUp = backupSnapshotToSecondaryStorage(snapshot, cmd.getStartEventId());
+                if (!backedUp) {
+                    throw new InternalErrorException("Created snapshot: " + snapshotId + " on primary but failed to backup on secondary");
+                }
             }
-        }
 
-        // Cleanup jobs to do after the snapshot has been created.
-        postCreateSnapshot(cmd.getVolumeId(), snapshotId, Snapshot.MANUAL_POLICY_ID, backedUp);
+            // Cleanup jobs to do after the snapshot has been created.
+            postCreateSnapshot(cmd.getVolumeId(), snapshotId, Snapshot.MANUAL_POLICY_ID, backedUp);
+        }
 
         return snapshot;
     }

@@ -2685,6 +2685,8 @@ a:hover.search_button {
 	background:url(../images/consoletb_box.gif) no-repeat top left;
 	margin:0;
 	padding:0;
+	cursor:pointer;
+	cursor:hand;
 }
 
 .vm_liveconsole {
