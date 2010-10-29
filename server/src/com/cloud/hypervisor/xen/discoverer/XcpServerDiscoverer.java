@@ -23,6 +23,7 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -147,15 +148,21 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                 s_logger.debug(msg);
                 return null;
             }
-            if( poolUuid == null ) {
-            	Set<Pool> pools = Pool.getAll(conn);
-            	Pool pool = pools.iterator().next();
-            	Pool.Record pr = pool.getRecord(conn);
-            	poolUuid = pr.uuid;
-            }
-
-            Map<Host, Host.Record> hosts = Host.getAllRecords(conn);
            
+            Set<Pool> pools = Pool.getAll(conn);
+            Pool pool = pools.iterator().next();
+            Pool.Record pr = pool.getRecord(conn);
+            poolUuid = pr.uuid;
+            Host master = pr.master;
+            LinkedHashMap<Host, Host.Record> hosts = new LinkedHashMap<Host, Host.Record>(20);
+            hosts.put(master, master.getRecord(conn));
+            Map<Host, Host.Record> thosts = Host.getAllRecords(conn);
+            for (Map.Entry<Host, Host.Record> entry : thosts.entrySet()) {
+                if( !master.equals(entry.getKey()) ) {
+                    hosts.put(entry.getKey(), entry.getValue());
+                }
+            }
+                       
             if (_checkHvm) {
                 for (Map.Entry<Host, Host.Record> entry : hosts.entrySet()) {
                     Host.Record record = entry.getValue();
@@ -267,7 +274,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             _clusterDao.update(clusterId, clu);
             
         } catch (SessionAuthenticationFailed e) {
-            s_logger.warn("Authentication error", e);
+            s_logger.warn("Authentication error", e);           
             return null;
         } catch (XenAPIException e) {
             s_logger.warn("XenAPI exception", e);
@@ -279,7 +286,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             s_logger.warn("Unable to resolve the host name", e);
             return null;
         } catch (Exception e) {
-        	s_logger.debug("other exceptions: " + e.toString());
+        	s_logger.debug("other exceptions: " + e.toString(), e);
         	return null;
         }
         finally {
