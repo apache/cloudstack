@@ -403,7 +403,7 @@ function doActionToMidMenu(id, apiInfo, apiCommand) {
 	                        },
 	                        error: function(XMLHttpResponse) {
 		                        $("body").stopTime(timerKey);		                       		                        
-		                        handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1); 		                        
+		                        handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1, id, inProcessText); 		                        
 	                        }
                         });
                     },
@@ -411,7 +411,7 @@ function doActionToMidMenu(id, apiInfo, apiCommand) {
                 );
             },
             error: function(XMLHttpResponse) {	
-		        handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1);    
+		        handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1, id, inProcessText);    
             }
         });     
     }     
@@ -432,14 +432,14 @@ function doActionToMidMenu(id, apiInfo, apiCommand) {
 				afterActionSeccessFn(json, $midmenuItem1, id); 		
 	        },
             error: function(XMLHttpResponse) {	                
-		        handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1);    
+		        handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1, id, inProcessText);    
             }        
         });
     }
     //Sync job (end) *****
 }
 
-function handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1) { 
+function handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1, id, inProcessText) { 
     $midmenuItem1.find("#content").removeClass("inaction");
 	$midmenuItem1.find("#spinning_wheel").hide();	
 	$midmenuItem1.find("#info_icon").addClass("error").show();		
