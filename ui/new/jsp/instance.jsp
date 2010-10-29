@@ -221,7 +221,61 @@
     <!--Volume tab (end)-->
     <!--Statistics tab (start)-->
     <div style="display: none;" id="tab_content_statistics">
-        statistics
+        <div class="rightpanel_mainloader_panel" style="display:none;">
+              <div class="rightpanel_mainloaderbox">
+                   <div class="rightpanel_mainloader_animatedicon"></div>
+                   <p>Loading &hellip;</p>    
+              </div>               
+        </div>
+        <div class="grid_container">
+        	<div class="grid_header">
+            	<div id="grid_header_title" class="grid_header_title">(title)</div>
+            </div>
+            <div class="dbrow odd" id="public_ip_address">
+                <div class="dbrow_cell" style="width: 29%;">
+                    <div class="dbgraph_titlebox">
+                        <h2>
+                            CPU</h2>
+                        <div class="dbgraph_title_usedbox">
+                            <p>
+                                Used: <span id="capacityused">1x500 MHZ</span>/<span id="capacitytotal">A</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="dbrow_cell" style="width: 58%; border: none;">
+                    <div class="db_barbox low" style="width:20%;" id="bar_chart">
+                    </div>
+                </div>
+                <div class="dbrow_cell" style="width: 12%; border: none;">
+                    <div class="db_totaltitle" id="percentused">
+                    1 x 20 MHZ
+                    </div>
+                </div>
+            </div>
+            <div class="grid_rows even">
+                <div class="grid_row_cell" style="width: 20%;">
+                    <div class="row_celltitles">
+                        Network Read:</div>
+                </div>
+                <div class="grid_row_cell" style="width: 79%;">
+                    <div class="row_celltitles" >
+                    </div>
+                </div>
+            </div>
+            <div class="grid_rows odd">
+                <div class="grid_row_cell" style="width: 20%;">
+                    <div class="row_celltitles">
+                        Network Write:</div>
+                </div>
+                <div class="grid_row_cell">
+                    <div class="row_celltitles" id="account">
+                    </div>
+                </div>
+            </div>
+            
+            
+        </div>
     </div>
     <!--Statistics tab (start)-->
     <!--Routers tab (start)-->
@@ -309,8 +363,7 @@
                                     Blank Template</div>
                             </div>
                             <div class="rev_wizmid_tempbox_right">
-                                <div class="rev_wiztemplistpanel" id="template_container">
-                                   
+                                <div class="rev_wiztemplistpanel" id="template_container">  
                                     
                                 </div>
                                 <div class="rev_wiztemplistactions">
@@ -700,7 +753,7 @@
     <div class="rev_wiztemp_listtext">
         <span id="name">Centos</span>
     </div>
-    <div class="rev_wiztemp_listtext hypervisortext">
+    <div class="rev_wiztemp_hypervisortext">
         Hypervisor:
         <select id="hypervisor_select" class="select" style="width: 70px; float: none; height: 15px; font-size: 10px; margin: 0 0 0 5px; display: inline;">
             <option value='XenServer'>XenServer</option>

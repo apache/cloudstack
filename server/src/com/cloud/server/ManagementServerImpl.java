@@ -4535,7 +4535,9 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public void logoutUser(Long userId) {
         UserAccount userAcct = _userAccountDao.findById(userId);
-        EventUtils.saveEvent(userId, userAcct.getAccountId(), EventTypes.EVENT_USER_LOGOUT, "user has logged out");
+        if (userAcct != null) {
+            EventUtils.saveEvent(userId, userAcct.getAccountId(), EventTypes.EVENT_USER_LOGOUT, "user has logged out");
+        } // else log some kind of error event?  This likely means the user doesn't exist, or has been deleted...
     }
 
     @Override

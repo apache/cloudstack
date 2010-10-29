@@ -22,8 +22,10 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCreateCmd;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SnapshotResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.storage.Snapshot.SnapshotType;
@@ -104,26 +106,30 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
     public SnapshotResponse getResponse() {
         SnapshotVO snapshot = (SnapshotVO)getResponseObject();
 
-        SnapshotResponse response = new SnapshotResponse();
-        response.setId(snapshot.getId());
+        if (snapshot != null) {
+            SnapshotResponse response = new SnapshotResponse();
+            response.setId(snapshot.getId());
 
-        Account account = ApiDBUtils.findAccountById(snapshot.getAccountId());
-        if (account != null) {
-            response.setAccountName(account.getAccountName());
-            response.setDomainId(account.getDomainId());
-            response.setDomainName(ApiDBUtils.findDomainById(account.getDomainId()).getName());
+            Account account = ApiDBUtils.findAccountById(snapshot.getAccountId());
+            if (account != null) {
+                response.setAccountName(account.getAccountName());
+                response.setDomainId(account.getDomainId());
+                response.setDomainName(ApiDBUtils.findDomainById(account.getDomainId()).getName());
+            }
+
+            VolumeVO volume = ApiDBUtils.findVolumeById(snapshot.getVolumeId());
+            String snapshotTypeStr = SnapshotType.values()[snapshot.getSnapshotType()].name();
+            response.setSnapshotType(snapshotTypeStr);
+            response.setVolumeId(snapshot.getVolumeId());
+            response.setVolumeName(volume.getName());
+            response.setVolumeType(volume.getVolumeType().toString());
+            response.setCreated(snapshot.getCreated());
+            response.setName(snapshot.getName());
+
+            response.setResponseName(getName());
+            return response;
         }
 
-        VolumeVO volume = ApiDBUtils.findVolumeById(snapshot.getVolumeId());
-        String snapshotTypeStr = SnapshotType.values()[snapshot.getSnapshotType()].name();
-        response.setSnapshotType(snapshotTypeStr);
-        response.setVolumeId(snapshot.getVolumeId());
-        response.setVolumeName(volume.getName());
-        response.setVolumeType(volume.getVolumeType().toString());
-        response.setCreated(snapshot.getCreated());
-        response.setName(snapshot.getName());
-
-        response.setResponseName(getName());
-        return response;
+        throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create snapshot due to an internal error creating snapshot for volume " + volumeId);
     }
 }
