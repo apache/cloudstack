@@ -2515,9 +2515,9 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
 				}
 			}
 		}else{
-			return false;//no cert
+			return false;//no cert entry in the db record
 		}
-		return false;
+		return false;//cert already applied in previous cycles
     }
     
     private Long saveScheduledEvent(Long userId, Long accountId, String type, String description) 
