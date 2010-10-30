@@ -32,7 +32,6 @@ import com.cloud.resource.ServerResource;
 
 @Local(value={ServerResource.class})
 public class DummyResource implements ServerResource {
-	private boolean _isRemoteAgent = false;
     String _name;
     Host.Type _type;
     boolean _negative;
@@ -101,13 +100,5 @@ public class DummyResource implements ServerResource {
     @Override
     public void setAgentControl(IAgentControl agentControl) {
     	_agentControl = agentControl;
-    }
-    
-    public boolean IsRemoteAgent() {
-    	return _isRemoteAgent;
-    }
-    
-    public void setRemoteAgent(boolean remote) {
-    	_isRemoteAgent = remote;
     }
 }

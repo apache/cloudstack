@@ -24,6 +24,7 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.exception.DiscoveryException;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.Status.Event;
@@ -47,7 +48,7 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 	 private String _setupAgentPath;
 	 private ConfigurationDao _configDao;
 	 private String _hostIp;
-	 private int _waitTime = 3; /*wait for 3 minutes*/
+	 private int _waitTime = 5; /*wait for 5 minutes*/
 	 @Inject HostDao _hostDao = null;
 	 @Inject ClusterDao _clusterDao;
 	 
@@ -218,15 +219,20 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 			KvmDummyResourceBase kvmResource = new KvmDummyResourceBase();
 			Map<String, Object> params = new HashMap<String, Object>();
 			
+			guid = guid + "-LibvirtComputingResource";/*tail added by agent.java*/
 			params.put("zone", Long.toString(dcId));
 			params.put("pod", Long.toString(podId));
 			params.put("cluster",  Long.toString(clusterId));
-			params.put("guid", guid + "-LibvirtComputingResource"); /*tail added by agent.java*/
+			params.put("guid", guid); 
 			params.put("agentIp", agentIp);
 			kvmResource.configure("kvm agent", params);
-			kvmResource.setRemoteAgent(true);
 			resources.put(kvmResource, details);
 			
+			HostVO connectedHost = waitForHostConnect(dcId, podId, clusterId, guid);
+			if (connectedHost == null)
+				return null;
+			
+			details.put("guid", guid);
 			 /*set cluster hypervisor type to xenserver*/
             ClusterVO clu = _clusterDao.findById(clusterId);
             clu.setHypervisorType(HypervisorType.KVM.toString());
@@ -243,31 +249,22 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 		return null;
 	}
 
-	@Override
-	public void postDiscovery(List<HostVO> hosts, long msId) throws DiscoveryException {
-		/*Wait for agent coming back*/
-		if (hosts.isEmpty()) {
-			return;
-		}
-		HostVO host = hosts.get(0);
-		for (int i = 0 ; i < _waitTime; i++) {
-			
-			if (host.getStatus() != Status.Up) {
-				s_logger.debug("Wait host comes back, try: " + i);
-				try {
-					Thread.sleep(60000);
-				} catch (InterruptedException e) {
-					s_logger.debug("Failed to sleep: " + e.toString());
+	private HostVO waitForHostConnect(long dcId, long podId, long clusterId, String guid) {
+		for (int i = 0; i < _waitTime; i++) {
+			List<HostVO> hosts = _hostDao.listBy(Host.Type.Routing, clusterId, podId, dcId);
+			for (HostVO host : hosts) {
+				if (host.getGuid() == guid) {
+					return host;
 				}
-			} else {
-				return;
+			}
+			try {
+				Thread.sleep(60000);
+			} catch (InterruptedException e) {
+				s_logger.debug("Failed to sleep: " + e.toString());
 			}
 		}
-		
-		
-		_hostDao.updateStatus(host, Event.AgentDisconnected, msId);
-		/*Timeout, throw warning msg to user*/
-		throw new DiscoveryException("Host " + host.getId() + ":" + host.getPrivateIpAddress() + " does not come back, It may connect to server later, if not, please check the agent log on this host");
+		s_logger.debug("Timeout, to wait for the host connecting to mgt svr, assuming it is failed");
+		return null;
 	}
 	
 	@Override
@@ -289,4 +286,11 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 	protected String getPatchPath() {
         return "scripts/vm/hypervisor/kvm/";
     }
+
+	@Override
+	public void postDiscovery(List<HostVO> hosts, long msId)
+			throws DiscoveryException {
+		// TODO Auto-generated method stub
+		
+	}
 }
