@@ -1142,11 +1142,11 @@ public class UserVmManagerImpl implements UserVmManager {
                 );
             userVm.setGuestMacAddress(vmMacAddress);
         	_vmDao.update(userVm.getId(), userVm);
+        	txn.commit();
         	if (routerLock) {
         		_routerDao.release(routerId);
         		routerLock = false;
         	}
-        	txn.commit();
         	return ipAddressStr;
         }finally {
         	if (routerLock) {
