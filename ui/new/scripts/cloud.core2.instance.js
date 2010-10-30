@@ -62,7 +62,8 @@ function afterLoadInstanceJSP() {
     // switch between different tabs 
     var tabArray = [$("#tab_details"), $("#tab_volume"), $("#tab_statistics"), $("#tab_router")];
     var tabContentArray = [$("#tab_content_details"), $("#tab_content_volume"), $("#tab_content_statistics"), $("#tab_content_router")];
-    switchBetweenDifferentTabs(tabArray, tabContentArray);       
+    var afterSwitchFnArray = [vmJsonToDetailsTab, vmJsonToVolumeTab, null, vmJsonToRouterTab];
+    switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray);       
     
     //initialize VM Wizard    
     initVMWizard();       
@@ -1397,16 +1398,22 @@ function vmToRightPanel($midmenuItem1) {
     $("right_panel_header").find("#vm_name").text(vmName);	
      
     copyActionInfoFromMidMenuToRightPanel($midmenuItem1); 
-             
+     
+    $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);
+    $("#tab_details").click();
+    /*         
     vmJsonToDetailsTab($midmenuItem1);   
     vmJsonToVolumeTab(jsonObj);
     
     if (isAdmin() || isDomainAdmin())
         vmJsonToRouterTab(jsonObj);
+    */
 }
- 
-function vmJsonToDetailsTab($midmenuItem1){
+  
+function vmJsonToDetailsTab(){
+    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
     var jsonObj = $midmenuItem1.data("jsonObj");
+    
     var $detailsTab = $("#right_panel_content #tab_content_details");  
     $detailsTab.data("jsonObj", jsonObj);  
 
@@ -1487,10 +1494,12 @@ function vmJsonToDetailsTab($midmenuItem1){
 	}       
 }
 
-function vmJsonToVolumeTab(jsonObj) {
-    //volume tab
+function vmJsonToVolumeTab() {    
     //if (getHypervisorType() == "kvm") 
 		//detail.find("#volume_action_create_template").show();		
+	
+	var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");	
+	var jsonObj = $midmenuItem1.data("jsonObj");	
 
     $.ajax({
 		cache: false,
@@ -1511,7 +1520,10 @@ function vmJsonToVolumeTab(jsonObj) {
 	});          
 }
     
-function vmJsonToRouterTab(vmObj) {   
+function vmJsonToRouterTab($midmenuItem1) {   
+    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
+    var vmObj = $midmenuItem1.data("jsonObj");
+
     $.ajax({
 		cache: false,
 		data: createURL("command=listRouters&domainid="+vmObj.domainid+"&account="+vmObj.account+maxPageSize),

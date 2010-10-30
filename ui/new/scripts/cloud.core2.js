@@ -738,8 +738,10 @@ function switchToTab(tabIndex, tabArray, tabContentArray, afterSwitchFnArray) {
                 tabContentArray[k].hide();   //other tab content hide
         }   
         
-        if(afterSwitchFnArray != null)
-            afterSwitchFnArray[tabIndex]();           
+        if(afterSwitchFnArray != null) {
+            if(afterSwitchFnArray[tabIndex] != null)
+                afterSwitchFnArray[tabIndex]();  
+        }         
         return false;
     });   
 }
