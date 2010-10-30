@@ -34,7 +34,7 @@
     </div>
     <!--Details tab (start)-->
     <div  id="tab_content_details">
-    	<div class="rightpanel_mainloader_panel" style="display:none;">
+    	<div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display:none;">
               <div class="rightpanel_mainloaderbox">
                    <div class="rightpanel_mainloader_animatedicon"></div>
                    <p>Loading &hellip;</p>    
@@ -216,12 +216,19 @@
     <!--Details tab (end)-->
     <!--Volume tab (start)-->
     <div style="display: none;" id="tab_content_volume">    
-        Volume    
+        <div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display:none;">
+              <div class="rightpanel_mainloaderbox">
+                   <div class="rightpanel_mainloader_animatedicon"></div>
+                   <p>Loading &hellip;</p>    
+              </div>               
+        </div> 
+        <div id="tab_container">        
+        </div>
     </div>
     <!--Volume tab (end)-->
     <!--Statistics tab (start)-->
     <div style="display: none;" id="tab_content_statistics">
-        <div class="rightpanel_mainloader_panel" style="display:none;">
+        <div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display:none;">
               <div class="rightpanel_mainloaderbox">
                    <div class="rightpanel_mainloader_animatedicon"></div>
                    <p>Loading &hellip;</p>    
@@ -280,7 +287,14 @@
     <!--Statistics tab (start)-->
     <!--Routers tab (start)-->
     <div style="display: none;" id="tab_content_router">
-        Routers
+        <div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display:none;">
+              <div class="rightpanel_mainloaderbox">
+                   <div class="rightpanel_mainloader_animatedicon"></div>
+                   <p>Loading &hellip;</p>    
+              </div>               
+        </div>  
+        <div id="tab_container">
+        </div>
     </div>
     <!--Routers tab (start)-->
 </div>
@@ -817,13 +831,7 @@
 <!-- VM Wizard - disk Offering template (end)-->
 
 <!--  volume tab template (begin) -->
-<div class="grid_container" id="volume_tab_template" style="display: none">
-	<div class="rightpanel_mainloader_panel" style="display:none;">
-              <div class="rightpanel_mainloaderbox">
-                   <div class="rightpanel_mainloader_animatedicon"></div>
-                   <p>Loading &hellip;</p>    
-              </div>               
-     </div>
+<div class="grid_container" id="volume_tab_template" style="display: none">	
     <div class="grid_header">
         <div class="grid_header_title" id="title">
         </div>
@@ -912,13 +920,7 @@
 <!-- view console template (end)  -->
 
 <!--  router tab template (begin) -->
-<div class="grid_container" id="router_tab_template" style="display: none">
-	<div class="rightpanel_mainloader_panel" style="display:none;">
-              <div class="rightpanel_mainloaderbox">
-                   <div class="rightpanel_mainloader_animatedicon"></div>
-                   <p>Loading &hellip;</p>    
-              </div>               
-     </div>
+<div class="grid_container" id="router_tab_template" style="display: none">	
     <div class="grid_header">
         <div class="grid_header_title" id="title">
         </div>

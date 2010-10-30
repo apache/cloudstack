@@ -993,6 +993,26 @@ function handleErrorInDialog(XMLHttpResponse, $thisDialog) {
 	$infoContainer.show();
 }
 
+function beforeLoadingToTab($thisTab) {
+    $thisTab.find("#tab_spinning_wheel").show();   
+	$thisTab.find("#tab_container").hide();
+}
+
+function afterLoadingToTab($thisTab) {
+    $thisTab.find("#tab_spinning_wheel").hide();   
+	$thisTab.find("#tab_container").show();
+}
+
+
+
+
+
+
+
+
+
+
+
 
 
 

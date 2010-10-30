@@ -1410,11 +1410,12 @@ function vmToRightPanel($midmenuItem1) {
     */
 }
   
-function vmJsonToDetailsTab(){
+function vmJsonToDetailsTab(){  
+    var $detailsTab = $("#right_panel_content #tab_content_details");  
+    $detailsTab.find("#tab_spinning_wheel").show();    
+    
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
     var jsonObj = $midmenuItem1.data("jsonObj");
-    
-    var $detailsTab = $("#right_panel_content #tab_content_details");  
     $detailsTab.data("jsonObj", jsonObj);  
 
     resetViewConsoleAction(jsonObj, $detailsTab);      
@@ -1491,13 +1492,17 @@ function vmJsonToDetailsTab(){
 			//instanceTemplate.find("#vm_action_start, #vm_action_stop, #vm_action_reboot, #vm_action_attach_iso, #vm_action_detach_iso, #vm_action_reset_password, #vm_action_change_service").removeClass().addClass("vmaction_links_off");
 	    }
 		//to hide view console in details tab....(to-do)
-	}       
+	}   
+	
+	$detailsTab.find("#tab_spinning_wheel").hide();        
 }
 
 function vmJsonToVolumeTab() {    
     //if (getHypervisorType() == "kvm") 
 		//detail.find("#volume_action_create_template").show();		
-	
+	var $thisTab = $("#right_panel_content #tab_content_volume");  
+	beforeLoadingToTab($thisTab);
+		
 	var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");	
 	var jsonObj = $midmenuItem1.data("jsonObj");	
 
@@ -1508,19 +1513,23 @@ function vmJsonToVolumeTab() {
 		success: function(json) {			    
 			var items = json.listvolumesresponse.volume;
 			if (items != null && items.length > 0) {
-				var container = $("#right_panel_content #tab_content_volume").empty();
+				var $container = $thisTab.find("#tab_container").empty();
 				var template = $("#volume_tab_template");				
 				for (var i = 0; i < items.length; i++) {
 					var newTemplate = template.clone(true);
 	                vmVolumeJSONToTemplate(items[i], newTemplate); 
-	                container.append(newTemplate.show());	
+	                $container.append(newTemplate.show());	
 				}
-			}						
+			}	
+			afterLoadingToTab($thisTab);							
 		}
 	});          
 }
     
 function vmJsonToRouterTab($midmenuItem1) {   
+    var $thisTab = $("#right_panel_content #tab_content_router");  
+	beforeLoadingToTab($thisTab);
+
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
     var vmObj = $midmenuItem1.data("jsonObj");
 
@@ -1531,14 +1540,15 @@ function vmJsonToRouterTab($midmenuItem1) {
 		success: function(json) {				      
 			var items = json.listroutersresponse.router;
 			if (items != null && items.length > 0) {
-				var container = $("#right_panel_content #tab_content_router").empty();
+				var $container = $thisTab.find("#tab_container").empty();
 				var template = $("#router_tab_template");				
 				for (var i = 0; i < items.length; i++) {
 					var newTemplate = template.clone(true);
 	                vmRouterJSONToTemplate(items[i], newTemplate); 
-	                container.append(newTemplate.show());	
+	                $container.append(newTemplate.show());	
 				}
-			}						
+			}
+			afterLoadingToTab($thisTab);					
 		}
 	});          
 }    
