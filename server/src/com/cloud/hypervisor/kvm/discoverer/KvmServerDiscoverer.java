@@ -253,7 +253,7 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 		for (int i = 0; i < _waitTime; i++) {
 			List<HostVO> hosts = _hostDao.listBy(Host.Type.Routing, clusterId, podId, dcId);
 			for (HostVO host : hosts) {
-				if (host.getGuid() == guid) {
+				if (host.getGuid().equalsIgnoreCase(guid)) {
 					return host;
 				}
 			}
