@@ -22,6 +22,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
@@ -45,25 +46,25 @@ public class ListSnapshotsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING, description="lists snapshot belongig to the specified account. Must be used with the domainId parameter.")
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="lists snapshot belongig to the specified account. Must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name="domainid", type=CommandType.LONG, description="the domain ID. If used with the account parameter, lists snapshots for the specified account in this domain.")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID. If used with the account parameter, lists snapshots for the specified account in this domain.")
     private Long domainId;
 
-    @Parameter(name="id", type=CommandType.LONG, description="lists snapshot by snapshot ID")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="lists snapshot by snapshot ID")
     private Long id;
 
-    @Parameter(name="intervalType", type=CommandType.STRING, description="valid values are HOURLY, DAILY, WEEKLY, and MONTHLY.")
+    @Parameter(name=ApiConstants.INTERVAL_TYPE, type=CommandType.STRING, description="valid values are HOURLY, DAILY, WEEKLY, and MONTHLY.")
     private String intervalType;
 
-    @Parameter(name="name", type=CommandType.STRING, description="lists snapshot by snapshot name")
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="lists snapshot by snapshot name")
     private String snapshotName;
 
-    @Parameter(name="snapshottype", type=CommandType.STRING, description="valid values are MANUAL or RECURRING.")
+    @Parameter(name=ApiConstants.SNAPSHOT_TYPE, type=CommandType.STRING, description="valid values are MANUAL or RECURRING.")
     private String snapshotType;
 
-    @Parameter(name="volumeid", type=CommandType.LONG, description="the ID of the disk volume")
+    @Parameter(name=ApiConstants.VOLUME_ID, type=CommandType.LONG, description="the ID of the disk volume")
     private Long volumeId;
 
     /////////////////////////////////////////////////////

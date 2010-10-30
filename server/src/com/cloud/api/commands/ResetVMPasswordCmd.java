@@ -19,6 +19,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
@@ -47,11 +48,11 @@ public class ResetVMPasswordCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="id", type=CommandType.LONG, required=true, description="The ID of the virtual machine")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="The ID of the virtual machine")
     private Long id;
 
     // unexposed parameter needed for serializing/deserializing the command
-    @Parameter(name="password", type=CommandType.STRING, expose=false)
+    @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, expose=false)
     private String password;
 
     /////////////////////////////////////////////////////

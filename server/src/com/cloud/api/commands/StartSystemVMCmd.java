@@ -20,6 +20,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.Implementation;
@@ -43,7 +44,7 @@ public class StartSystemVMCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="id", type=CommandType.LONG, required=true, description="The ID of the system virtual machine")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="The ID of the system virtual machine")
     private Long id;
 
     /////////////////////////////////////////////////////

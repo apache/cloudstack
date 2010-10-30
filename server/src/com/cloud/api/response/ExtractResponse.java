@@ -19,14 +19,15 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class ExtractResponse extends BaseResponse {
-    @SerializedName("id") @Param(description="the id of extracted object")
+    @SerializedName(ApiConstants.ID) @Param(description="the id of extracted object")
     private Long id;
     
-    @SerializedName("name") @Param(description="the name of the extracted object")
+    @SerializedName(ApiConstants.NAME) @Param(description="the name of the extracted object")
     private String name;
     
     @SerializedName("extractId") @Param(description="the upload id of extracted object")
@@ -44,10 +45,10 @@ public class ExtractResponse extends BaseResponse {
     @SerializedName("resultstring") @Param(description="")
     private String resultString;    
 
-    @SerializedName("created") @Param(description="the time and date the object was created")
+    @SerializedName(ApiConstants.CREATED) @Param(description="the time and date the object was created")
     private Date createdDate;
 
-    @SerializedName("state") @Param(description="the state of the extracted object")
+    @SerializedName(ApiConstants.STATE) @Param(description="the state of the extracted object")
     private String state;
     
     //FIXME - add description
@@ -58,7 +59,7 @@ public class ExtractResponse extends BaseResponse {
     @SerializedName("storage")
     private String storage;
     
-    @SerializedName("zoneid") @Param(description="zone ID the object was extracted from")
+    @SerializedName(ApiConstants.ZONE_ID) @Param(description="zone ID the object was extracted from")
     private Long zoneId;
 
     @SerializedName("zonename") @Param(description="zone name the object was extracted from")
@@ -67,7 +68,7 @@ public class ExtractResponse extends BaseResponse {
     @SerializedName("extractMode") @Param(description="the mode of extraction - upload or download")
     private String mode;
     
-    @SerializedName("url") @Param(description="if mode = upload then url of the uploaded entity. if mode = download the url from which the entity can be downloaded")
+    @SerializedName(ApiConstants.URL) @Param(description="if mode = upload then url of the uploaded entity. if mode = download the url from which the entity can be downloaded")
     private String url;   
     
     public ExtractResponse(){        
@@ -118,7 +119,7 @@ public class ExtractResponse extends BaseResponse {
         return status;
     }
 
-    public void setUploadStatus(String Status) {
+    public void setUploadStatus(String status) {
         this.status = status;
     }
 

@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
@@ -42,16 +43,16 @@ public class ListPortForwardingServicesCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING, description="lists all available port forwarding services for the account. Must be used with the domainId parameter.")
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="lists all available port forwarding services for the account. Must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name="domainid", type=CommandType.LONG, description="lists all available port forwarding services for the domain ID. If used with the account parameter, lists all available port forwarding services for the account in the specified domain ID.")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="lists all available port forwarding services for the domain ID. If used with the account parameter, lists all available port forwarding services for the account in the specified domain ID.")
     private Long domainId;
 
-    @Parameter(name="id", type=CommandType.LONG, description="the ID of the port forwarding service")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="the ID of the port forwarding service")
     private Long id;
 
-    @Parameter(name="name", type=CommandType.STRING, description="the name of the port forwarding service")
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the port forwarding service")
     private String portForwardingServiceName;
 
 

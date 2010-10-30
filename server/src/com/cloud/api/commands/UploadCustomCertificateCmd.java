@@ -19,6 +19,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -32,7 +33,7 @@ public class UploadCustomCertificateCmd extends BaseAsyncCmd {
 
     private static final String s_name = "uploadcustomcertificateresponse";
 
-    @Parameter(name="path", type=CommandType.STRING)
+    @Parameter(name=ApiConstants.PATH, type=CommandType.STRING)
     private String path;
 
     public String getPath() {

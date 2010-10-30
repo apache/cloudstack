@@ -1,9 +1,10 @@
 package com.cloud.api.response;
 
+import com.cloud.api.ApiConstants;
 import com.google.gson.annotations.SerializedName;
 
 public class HypervisorResponse extends BaseResponse {
-    @SerializedName("name")
+    @SerializedName(ApiConstants.NAME)
     private String name;
 
     public String getName() {

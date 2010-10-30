@@ -20,6 +20,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
@@ -37,16 +38,16 @@ public class CreatePortForwardingServiceCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING, description="the account associated with the port forwarding service.  Must be used with the domainId parameter.")
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the account associated with the port forwarding service.  Must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name="description", type=CommandType.STRING, description="an optional user generated description for the port forwarding service")
+    @Parameter(name=ApiConstants.DESCRIPTION, type=CommandType.STRING, description="an optional user generated description for the port forwarding service")
     private String description;
 
-    @Parameter(name="domainid", type=CommandType.LONG, description="the domain ID associated with the port forwarding service.  If used with the account parameter, creates a new port forwarding service for the account in the specified domain ID.")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID associated with the port forwarding service.  If used with the account parameter, creates a new port forwarding service for the account in the specified domain ID.")
     private Long domainId;
 
-    @Parameter(name="name", type=CommandType.STRING, required=true, description="name of the port forwarding service")
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="name of the port forwarding service")
     private String portForwardingServiceName;
 
 

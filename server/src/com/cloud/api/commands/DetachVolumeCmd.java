@@ -19,6 +19,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.Implementation;
@@ -39,13 +40,13 @@ public class DetachVolumeCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="id", type=CommandType.LONG, description="the ID of the disk volume")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="the ID of the disk volume")
     private Long id;
 
-    @Parameter(name="deviceid", type=CommandType.LONG, description="the device ID on the virtual machine where volume is detached from")
+    @Parameter(name=ApiConstants.DEVICE_ID, type=CommandType.LONG, description="the device ID on the virtual machine where volume is detached from")
     private Long deviceId;
 
-    @Parameter(name="virtualmachineid", type=CommandType.LONG, description="the ID of the virtual machine where the volume is detached from")
+    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, description="the ID of the virtual machine where the volume is detached from")
     private Long virtualMachineId;
 
     /////////////////////////////////////////////////////

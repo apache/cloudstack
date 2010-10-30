@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
@@ -50,31 +51,31 @@ public class ListVMsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING, description="account. Must be used with the domainId parameter.")
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="account. Must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name="domainid", type=CommandType.LONG, description="the domain ID. If used with the account parameter, lists virtual machines for the specified account in this domain.")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID. If used with the account parameter, lists virtual machines for the specified account in this domain.")
     private Long domainId;
 
-    @Parameter(name="groupid", type=CommandType.LONG, description="the group ID")
+    @Parameter(name=ApiConstants.GROUP_ID, type=CommandType.LONG, description="the group ID")
     private Long groupId;
 
-    @Parameter(name="hostid", type=CommandType.LONG, description="the host ID")
+    @Parameter(name=ApiConstants.HOST_ID, type=CommandType.LONG, description="the host ID")
     private Long hostId;
 
-    @Parameter(name="id", type=CommandType.LONG, description="the ID of the virtual machine")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="the ID of the virtual machine")
     private Long id;
 
-    @Parameter(name="name", type=CommandType.STRING, description="name of the virtual machine")
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="name of the virtual machine")
     private String instanceName;
 
-    @Parameter(name="podid", type=CommandType.LONG, description="the pod ID")
+    @Parameter(name=ApiConstants.POD_ID, type=CommandType.LONG, description="the pod ID")
     private Long podId;
 
-    @Parameter(name="state", type=CommandType.STRING, description="state of the virtual machine")
+    @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="state of the virtual machine")
     private String state;
 
-    @Parameter(name="zoneid", type=CommandType.LONG, description="the availability zone ID")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the availability zone ID")
     private Long zoneId;
 
     /////////////////////////////////////////////////////

@@ -19,6 +19,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -37,10 +38,10 @@ public class DisableAccountCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING, required=true, description="Disables specified account.")
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, required=true, description="Disables specified account.")
     private String accountName;
 
-    @Parameter(name="domainid", type=CommandType.LONG, required=true, description="Disables specified account in this domain.")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, required=true, description="Disables specified account in this domain.")
     private Long domainId;
 
     /////////////////////////////////////////////////////

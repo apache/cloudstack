@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
@@ -38,9 +39,7 @@ import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao.TemplateFilter;
-import com.cloud.storage.template.TemplateConstants;
 import com.cloud.user.Account;
-import com.cloud.user.AccountVO;
 import com.cloud.user.UserContext;
 
 @Implementation(method="listTemplates", description="List all public, private, and privileged templates.")
@@ -53,29 +52,29 @@ public class ListTemplatesCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING, description="list template by account. Must be used with the domainId parameter.")
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="list template by account. Must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name="domainid", type=CommandType.LONG, description="list all templates in specified domain. If used with the account parameter, lists all templates for an account in the specified domain.")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="list all templates in specified domain. If used with the account parameter, lists all templates for an account in the specified domain.")
     private Long domainId;
 
-    @Parameter(name="hypervisor", type=CommandType.STRING, description="the hypervisor for which to restrict the search")
+    @Parameter(name=ApiConstants.HYPERVISOR, type=CommandType.STRING, description="the hypervisor for which to restrict the search")
     private String hypervisor;
 
-    @Parameter(name="id", type=CommandType.LONG, description="the template ID")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="the template ID")
     private Long id;
 
-    @Parameter(name="name", type=CommandType.STRING, description="the template name")
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the template name")
     private String templateName;
 
-    @Parameter(name="templatefilter", type=CommandType.STRING, required=true, description="possible values are \"featured\", \"self\", \"self-executable\", \"executable\", and \"community\"." +
+    @Parameter(name=ApiConstants.TEMPLATE_FILTER, type=CommandType.STRING, required=true, description="possible values are \"featured\", \"self\", \"self-executable\", \"executable\", and \"community\"." +
     																					"* featured-templates that are featured and are public" +
     																					"* self-templates that have been registered/created by the owner" +
     																					"* selfexecutable-templates that have been registered/created by the owner that can be used to deploy a new VM" +
     																					"* executable-all templates that can be used to deploy a new VM* community-templates that are public.")
     private String templateFilter;
 
-    @Parameter(name="zoneid", type=CommandType.LONG, description="list templates by zoneId")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="list templates by zoneId")
     private Long zoneId;
 
     /////////////////////////////////////////////////////

@@ -27,6 +27,7 @@ import java.util.Set;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
@@ -48,10 +49,10 @@ public class AddSecondaryStorageCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="url", type=CommandType.STRING, required=true, description="the URL for the secondary storage")
+    @Parameter(name=ApiConstants.URL, type=CommandType.STRING, required=true, description="the URL for the secondary storage")
     private String url;
 
-    @Parameter(name="zoneid", type=CommandType.LONG, description="the Zone ID for the secondary storage")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the Zone ID for the secondary storage")
     private Long zoneId;
 
     /////////////////////////////////////////////////////

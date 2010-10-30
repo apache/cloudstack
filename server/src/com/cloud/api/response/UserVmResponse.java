@@ -19,59 +19,60 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class UserVmResponse extends BaseResponse {
-    @SerializedName("id") @Param(description="the ID of the virtual machine")
+    @SerializedName(ApiConstants.ID) @Param(description="the ID of the virtual machine")
     private Long id;
 
-    @SerializedName("name") @Param(description="the name of the virtual machine")
+    @SerializedName(ApiConstants.NAME) @Param(description="the name of the virtual machine")
     private String name;
 
     @SerializedName("displayname") @Param(description="user generated name. The name of the virtual machine is returned if no displayname exists.")
     private String displayName;
 
-    @SerializedName("ipaddress") @Param(description="the ip address of the virtual machine")
+    @SerializedName(ApiConstants.IP_ADDRESS) @Param(description="the ip address of the virtual machine")
     private String ipAddress;
 
-    @SerializedName("account") @Param(description="the account associated with the virtual machine")
+    @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account associated with the virtual machine")
     private String accountName;
 
-    @SerializedName("domainid") @Param(description="the ID of the domain in which the virtual machine exists")
+    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the ID of the domain in which the virtual machine exists")
     private Long domainId;
 
-    @SerializedName("domain") @Param(description="the name of the domain in which the virtual machine exists")
+    @SerializedName(ApiConstants.DOMAIN) @Param(description="the name of the domain in which the virtual machine exists")
     private String domainName;
 
-    @SerializedName("created") @Param(description="the date when this virtual machine was created")
+    @SerializedName(ApiConstants.CREATED) @Param(description="the date when this virtual machine was created")
     private Date created;
 
-    @SerializedName("state") @Param(description="the state of the virtual machine")
+    @SerializedName(ApiConstants.STATE) @Param(description="the state of the virtual machine")
     private String state;
 
-    @SerializedName("haenable") @Param(description="true if high-availability is enabled, false otherwise")
+    @SerializedName(ApiConstants.HA_ENABLE) @Param(description="true if high-availability is enabled, false otherwise")
     private Boolean haEnable;
 
-    @SerializedName("groupid") @Param(description="the group ID of the virtual machine")
+    @SerializedName(ApiConstants.GROUP_ID) @Param(description="the group ID of the virtual machine")
     private Long groupId;
 
-    @SerializedName("group") @Param(description="the group name of the virtual machine")
+    @SerializedName(ApiConstants.GROUP) @Param(description="the group name of the virtual machine")
     private String group;
 
-    @SerializedName("zoneid") @Param(description="the ID of the availablility zone for the virtual machine")
+    @SerializedName(ApiConstants.ZONE_ID) @Param(description="the ID of the availablility zone for the virtual machine")
     private Long zoneId;
 
     @SerializedName("zonename") @Param(description="the name of the availability zone for the virtual machine")
     private String zoneName;
 
-    @SerializedName("hostid") @Param(description="the ID of the host for the virtual machine")
+    @SerializedName(ApiConstants.HOST_ID) @Param(description="the ID of the host for the virtual machine")
     private Long hostId;
 
     @SerializedName("hostname") @Param(description="the name of the host for the virtual machine")
     private String hostName;
 
-    @SerializedName("templateid") @Param(description="the ID of the template for the virtual machine. A -1 is returned if the virtual machine was created from an ISO file.")
+    @SerializedName(ApiConstants.TEMPLATE_ID) @Param(description="the ID of the template for the virtual machine. A -1 is returned if the virtual machine was created from an ISO file.")
     private Long templateId;
 
     @SerializedName("templatename") @Param(description="the name of the template for the virtual machine")
@@ -80,7 +81,7 @@ public class UserVmResponse extends BaseResponse {
     @SerializedName("templatedisplaytext") @Param(description="	an alternate display text of the template for the virtual machine")
     private String templateDisplayText;
 
-    @SerializedName("passwordenabled") @Param(description="true if the password rest feature is enabled, false otherwise")
+    @SerializedName(ApiConstants.PASSWORD_ENABLED) @Param(description="true if the password rest feature is enabled, false otherwise")
     private Boolean passwordEnabled;
 
     @SerializedName("isoid") @Param(description="the ID of the ISO attached to the virtual machine")
@@ -98,13 +99,13 @@ public class UserVmResponse extends BaseResponse {
     @SerializedName("serviceofferingname") @Param(description="the name of the service offering of the virtual machine")
     private String serviceOfferingName;
 
-    @SerializedName("cpunumber") @Param(description="the number of cpu this virtual machine is running with")
+    @SerializedName(ApiConstants.CPU_NUMBER) @Param(description="the number of cpu this virtual machine is running with")
     private Integer cpuNumber;
 
-    @SerializedName("cpuspeed") @Param(description="the speed of each cpu")
+    @SerializedName(ApiConstants.CPU_SPEED) @Param(description="the speed of each cpu")
     private Integer cpuSpeed;
 
-    @SerializedName("memory") @Param(description="the memory allocated for the virtual machine")
+    @SerializedName(ApiConstants.MEMORY) @Param(description="the memory allocated for the virtual machine")
     private Integer memory;
 
     @SerializedName("cpuused") @Param(description="the amount of the vm's CPU currently used")
@@ -128,10 +129,10 @@ public class UserVmResponse extends BaseResponse {
     @SerializedName("networkgrouplist") @Param(description="list of network groups associated with the virtual machine")
     private String networkGroupList;
 
-    @SerializedName("password") @Param(description="the password (if exists) of the virtual machine")
+    @SerializedName(ApiConstants.PASSWORD) @Param(description="the password (if exists) of the virtual machine")
     private String password;
 
-    @SerializedName("jobid") @Param(description="shows the current pending asynchronous job ID. This tag is not returned if no current pending jobs are acting on the virtual machine")
+    @SerializedName(ApiConstants.JOB_ID) @Param(description="shows the current pending asynchronous job ID. This tag is not returned if no current pending jobs are acting on the virtual machine")
     private Long jobId;
 
     @SerializedName("jobstatus") @Param(description="shows the current pending asynchronous job status")

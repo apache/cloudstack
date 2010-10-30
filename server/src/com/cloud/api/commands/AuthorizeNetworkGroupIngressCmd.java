@@ -27,6 +27,7 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.Implementation;
@@ -50,43 +51,43 @@ public class AuthorizeNetworkGroupIngressCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="protocol", type=CommandType.STRING, description="TCP is default. UDP is the other supported protocol")
+    @Parameter(name=ApiConstants.PROTOCOL, type=CommandType.STRING, description="TCP is default. UDP is the other supported protocol")
     private String protocol;
 
     //FIXME - add description
-    @Parameter(name="startport", type=CommandType.INTEGER)
+    @Parameter(name=ApiConstants.START_PORT, type=CommandType.INTEGER)
     private Integer startPort;
 
     //FIXME - add description
-    @Parameter(name="endport", type=CommandType.INTEGER)
+    @Parameter(name=ApiConstants.END_PORT, type=CommandType.INTEGER)
     private Integer endPort;
 
     //FIXME - add description
-    @Parameter(name="icmptype", type=CommandType.INTEGER)
+    @Parameter(name=ApiConstants.ICMP_TYPE, type=CommandType.INTEGER)
     private Integer icmpType;
 
     //FIXME - add description
-    @Parameter(name="icmpcode", type=CommandType.INTEGER)
+    @Parameter(name=ApiConstants.ICMP_CODE, type=CommandType.INTEGER)
     private Integer icmpCode;
 
     //FIXME - add description
-    @Parameter(name="networkgroupname", type=CommandType.STRING, required=true)
+    @Parameter(name=ApiConstants.NETWORK_GROUP_NAME, type=CommandType.STRING, required=true)
     private String networkGroupName;
 
     //FIXME - add description
-    @Parameter(name="cidrlist", type=CommandType.LIST, collectionType=CommandType.STRING)
+    @Parameter(name=ApiConstants.CIDR_LIST, type=CommandType.LIST, collectionType=CommandType.STRING)
     private List<String> cidrList;
 
     //FIXME - add description
-    @Parameter(name="usernetworkgrouplist", type=CommandType.MAP)
+    @Parameter(name=ApiConstants.USER_NETWORK_GROUP_LIST, type=CommandType.MAP)
     private Map userNetworkGroupList;
 
     //FIXME - add description
-    @Parameter(name="account", type=CommandType.STRING)
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING)
     private String accountName;
 
     //FIXME - add description
-    @Parameter(name="domainid", type=CommandType.LONG)
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG)
     private Long domainId;
 
 

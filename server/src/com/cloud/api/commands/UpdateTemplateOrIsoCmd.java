@@ -20,6 +20,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -33,25 +34,25 @@ public abstract class UpdateTemplateOrIsoCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="bootable", type=CommandType.BOOLEAN, description="true if image is bootable, false otherwise")
+    @Parameter(name=ApiConstants.BOOTABLE, type=CommandType.BOOLEAN, description="true if image is bootable, false otherwise")
     private Boolean bootable;
 
-    @Parameter(name="displaytext", type=CommandType.STRING, description="the display text of the image")
+    @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, description="the display text of the image")
     private String displayText;
 
-    @Parameter(name="id", type=CommandType.LONG, required=true, description="the ID of the image file")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the image file")
     private Long id;
 
-    @Parameter(name="name", type=CommandType.STRING, description="the name of the image file")
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the image file")
     private String templateName;
 
-    @Parameter(name="ostypeid", type=CommandType.LONG, description="the ID of the OS type that best represents the OS of this image.")
+    @Parameter(name=ApiConstants.OS_TYPE_ID, type=CommandType.LONG, description="the ID of the OS type that best represents the OS of this image.")
     private Long osTypeId;
     
-    @Parameter(name="format", type=CommandType.STRING, description="the format for the image")
+    @Parameter(name=ApiConstants.FORMAT, type=CommandType.STRING, description="the format for the image")
     private String format;
     
-    @Parameter(name="passwordenabled", type=CommandType.BOOLEAN, description="true if the image supports the password reset feature; default is false")
+    @Parameter(name=ApiConstants.PASSWORD_ENABLED, type=CommandType.BOOLEAN, description="true if the image supports the password reset feature; default is false")
     private Boolean passwordEnabled;
 
     /////////////////////////////////////////////////////

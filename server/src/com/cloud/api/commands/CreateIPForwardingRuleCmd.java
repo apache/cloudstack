@@ -20,6 +20,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
@@ -40,19 +41,19 @@ public class CreateIPForwardingRuleCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="ipaddress", type=CommandType.STRING, required=true, description="the IP address of the port forwarding rule")
+    @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, required=true, description="the IP address of the port forwarding rule")
     private String ipAddress;
 
-    @Parameter(name="privateport", type=CommandType.STRING, required=true, description="the private port of the port forwarding rule")
+    @Parameter(name=ApiConstants.PRIVATE_PORT, type=CommandType.STRING, required=true, description="the private port of the port forwarding rule")
     private String privatePort;
 
-    @Parameter(name="protocol", type=CommandType.STRING, required=true, description="the protocol for the port fowarding rule. Valid values are TCP or UDP.")
+    @Parameter(name=ApiConstants.PROTOCOL, type=CommandType.STRING, required=true, description="the protocol for the port fowarding rule. Valid values are TCP or UDP.")
     private String protocol;
 
-    @Parameter(name="publicport", type=CommandType.STRING, required=true, description="	the public port of the port forwarding rule")
+    @Parameter(name=ApiConstants.PUBLIC_PORT, type=CommandType.STRING, required=true, description="	the public port of the port forwarding rule")
     private String publicPort;
 
-    @Parameter(name="virtualmachineid", type=CommandType.LONG, required=true, description="the ID of the virtual machine for the port forwarding rule")
+    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, required=true, description="the ID of the virtual machine for the port forwarding rule")
     private Long virtualMachineId;
 
 

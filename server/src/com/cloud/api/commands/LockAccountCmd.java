@@ -19,6 +19,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -35,10 +36,10 @@ public class LockAccountCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING, required=true, description="Locks the specified account.")
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, required=true, description="Locks the specified account.")
     private String accountName;
 
-    @Parameter(name="domainid", type=CommandType.LONG, required=true, description="Locks the specified account on this domain.")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, required=true, description="Locks the specified account on this domain.")
     private Long domainId;
 
     /////////////////////////////////////////////////////

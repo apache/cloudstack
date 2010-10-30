@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
@@ -45,25 +46,25 @@ public class ListPublicIpAddressesCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING, description="lists all public IP addresses by account. Must be used with the domainId parameter.")
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="lists all public IP addresses by account. Must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name="allocatedonly", type=CommandType.BOOLEAN, description="limits search results to allocated public IP addresses")
+    @Parameter(name=ApiConstants.ALLOCATED_ONLY, type=CommandType.BOOLEAN, description="limits search results to allocated public IP addresses")
     private Boolean allocatedOnly;
 
-    @Parameter(name="domainid", type=CommandType.LONG, description="lists all public IP addresses by domain ID. If used with the account parameter, lists all public IP addresses by account for specified domain.")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="lists all public IP addresses by domain ID. If used with the account parameter, lists all public IP addresses by account for specified domain.")
     private Long domainId;
 
-    @Parameter(name="forvirtualnetwork", type=CommandType.BOOLEAN, description="the virtual network for the IP address")
+    @Parameter(name=ApiConstants.FOR_VIRTUAL_NETWORK, type=CommandType.BOOLEAN, description="the virtual network for the IP address")
     private Boolean forVirtualNetwork;
 
-    @Parameter(name="ipaddress", type=CommandType.STRING, description="lists the specified IP address")
+    @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, description="lists the specified IP address")
     private String ipAddress;
 
-    @Parameter(name="vlanid", type=CommandType.LONG, description="lists all public IP addresses by VLAN ID")
+    @Parameter(name=ApiConstants.VLAN_ID, type=CommandType.LONG, description="lists all public IP addresses by VLAN ID")
     private Long vlanId;
 
-    @Parameter(name="zoneid", type=CommandType.LONG, description="lists all public IP addresses by Zone ID")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="lists all public IP addresses by Zone ID")
     private Long zoneId;
 
     /////////////////////////////////////////////////////

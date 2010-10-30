@@ -19,6 +19,7 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.host.Host;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -26,19 +27,19 @@ import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class HostResponse extends BaseResponse {
-    @SerializedName("id") @Param(description="the ID of the host")
+    @SerializedName(ApiConstants.ID) @Param(description="the ID of the host")
     private Long id;
 
-    @SerializedName("name") @Param(description="the name of the host")
+    @SerializedName(ApiConstants.NAME) @Param(description="the name of the host")
     private String name;
 
-    @SerializedName("state") @Param(description="the state of the host")
+    @SerializedName(ApiConstants.STATE) @Param(description="the state of the host")
     private Status state;
 
     @SerializedName("disconnected") @Param(description="true if the host is disconnected. False otherwise.")
     private Date disconnectedOn;
 
-    @SerializedName("type") @Param(description="the host type")
+    @SerializedName(ApiConstants.TYPE) @Param(description="the host type")
     private Host.Type hostType;
 
     @SerializedName("oscategoryid") @Param(description="the OS category ID of the host")
@@ -47,16 +48,16 @@ public class HostResponse extends BaseResponse {
     @SerializedName("oscategoryname") @Param(description="the OS category name of the host")
     private String osCategoryName;
 
-    @SerializedName("ipaddress") @Param(description="the IP address of the host")
+    @SerializedName(ApiConstants.IP_ADDRESS) @Param(description="the IP address of the host")
     private String ipAddress;
 
-    @SerializedName("zoneid") @Param(description="the Zone ID of the host")
+    @SerializedName(ApiConstants.ZONE_ID) @Param(description="the Zone ID of the host")
     private Long zoneId;
 
     @SerializedName("zonename") @Param(description="the Zone name of the host")
     private String zoneName;
 
-    @SerializedName("podid") @Param(description="the Pod ID of the host")
+    @SerializedName(ApiConstants.POD_ID) @Param(description="the Pod ID of the host")
     private Long podId;
 
     @SerializedName("podname") @Param(description="the Pod name of the host")
@@ -65,7 +66,7 @@ public class HostResponse extends BaseResponse {
     @SerializedName("version") @Param(description="the host version")
     private String version;
 
-    @SerializedName("hypervisor") @Param(description="the host hypervisor")
+    @SerializedName(ApiConstants.HYPERVISOR) @Param(description="the host hypervisor")
     private HypervisorType hypervisor;
 
     @SerializedName("cpunumber") @Param(description="the CPU number of the host")
@@ -122,7 +123,7 @@ public class HostResponse extends BaseResponse {
     @SerializedName("islocalstorageactive") @Param(description="true if local storage is active, false otherwise")
     private Boolean localStorageActive;
 
-    @SerializedName("created") @Param(description="the date and time the host was created")
+    @SerializedName(ApiConstants.CREATED) @Param(description="the date and time the host was created")
     private Date created;
 
     @SerializedName("removed") @Param(description="the date and time the host was removed")

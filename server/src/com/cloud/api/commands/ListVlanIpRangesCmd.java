@@ -22,6 +22,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
@@ -43,22 +44,22 @@ public class ListVlanIpRangesCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING, description="the account with which the VLAN IP range is associated. Must be used with the domainId parameter.")
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the account with which the VLAN IP range is associated. Must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name="domainid", type=CommandType.LONG, description="the domain ID with which the VLAN IP range is associated.  If used with the account parameter, returns all VLAN IP ranges for that account in the specified domain.")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID with which the VLAN IP range is associated.  If used with the account parameter, returns all VLAN IP ranges for that account in the specified domain.")
     private Long domainId;
 
-    @Parameter(name="id", type=CommandType.LONG, required=false, description="the ID of the VLAN IP range")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=false, description="the ID of the VLAN IP range")
     private Long id;
 
-    @Parameter(name="podid", type=CommandType.LONG, description="the Pod ID of the VLAN IP range")
+    @Parameter(name=ApiConstants.POD_ID, type=CommandType.LONG, description="the Pod ID of the VLAN IP range")
     private Long podId;
 
-    @Parameter(name="vlan", type=CommandType.STRING, description="the ID or VID of the VLAN. Default is an \"untagged\" VLAN.")
+    @Parameter(name=ApiConstants.VLAN, type=CommandType.STRING, description="the ID or VID of the VLAN. Default is an \"untagged\" VLAN.")
     private String vlan;
 
-    @Parameter(name="zoneid", type=CommandType.LONG, description="the Zone ID of the VLAN IP range")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the Zone ID of the VLAN IP range")
     private Long zoneId;
 
     /////////////////////////////////////////////////////

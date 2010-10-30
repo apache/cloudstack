@@ -17,47 +17,48 @@
  */
 package com.cloud.api.response;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class AccountResponse extends BaseResponse {
-    @SerializedName("id") @Param(description="the id of the account")
+    @SerializedName(ApiConstants.ID) @Param(description="the id of the account")
     private Long id;
 
-    @SerializedName("name") @Param(description="the name of the account")
+    @SerializedName(ApiConstants.NAME) @Param(description="the name of the account")
     private String name;
 
-    @SerializedName("accounttype") @Param(description="account type (admin, domain-admin, user)")
+    @SerializedName(ApiConstants.ACCOUNT_TYPE) @Param(description="account type (admin, domain-admin, user)")
     private Short accountType;
 
-    @SerializedName("domainid") @Param(description="id of the Domain the account belongs too")
+    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="id of the Domain the account belongs too")
     private Long domainId;
 
-    @SerializedName("domain") @Param(description="name of the Domain the account belongs too")
+    @SerializedName(ApiConstants.DOMAIN) @Param(description="name of the Domain the account belongs too")
     private String domainName;
 
-    @SerializedName("receivedbytes") @Param(description="the total number of network traffic bytes received")
+    @SerializedName(ApiConstants.RECEIVED_BYTES) @Param(description="the total number of network traffic bytes received")
     private Long bytesReceived;
 
-    @SerializedName("sentbytes") @Param(description="the total number of network traffic bytes sent")
+    @SerializedName(ApiConstants.SENT_BYTES) @Param(description="the total number of network traffic bytes sent")
     private Long bytesSent;
 
-    @SerializedName("vmlimit") @Param(description="the total number of virtual machines that can be deployed by this account")
+    @SerializedName(ApiConstants.VM_LIMIT) @Param(description="the total number of virtual machines that can be deployed by this account")
     private String vmLimit;
 
-    @SerializedName("vmtotal") @Param(description="the total number of virtual machines deployed by this account")
+    @SerializedName(ApiConstants.VM_TOTAL) @Param(description="the total number of virtual machines deployed by this account")
     private Long vmTotal;
 
-    @SerializedName("vmavailable") @Param(description="the total number of virtual machines available for this account to acquire")
+    @SerializedName(ApiConstants.VM_AVAILABLE) @Param(description="the total number of virtual machines available for this account to acquire")
     private String vmAvailable;
 
-    @SerializedName("iplimit") @Param(description="the total number of public ip addresses this account can acquire")
+    @SerializedName(ApiConstants.IP_LIMIT) @Param(description="the total number of public ip addresses this account can acquire")
     private String ipLimit;
 
-    @SerializedName("iptotal") @Param(description="the total number of public ip addresses allocated for this account")
+    @SerializedName(ApiConstants.IP_TOTAL) @Param(description="the total number of public ip addresses allocated for this account")
     private Long ipTotal;
 
-    @SerializedName("ipavailable") @Param(description="the total number of public ip addresses available for this account to acquire")
+    @SerializedName(ApiConstants.IP_AVAILABLE) @Param(description="the total number of public ip addresses available for this account to acquire")
     private String ipAvailable;
 
     @SerializedName("volumelimit") @Param(description="the total volume which can be used by this account")
@@ -93,10 +94,10 @@ public class AccountResponse extends BaseResponse {
     @SerializedName("vmrunning") @Param(description="the total number of virtual machines running for this account")
     private Integer vmRunning;
 
-    @SerializedName("state") @Param(description="the state of the account")
+    @SerializedName(ApiConstants.STATE) @Param(description="the state of the account")
     private String state;
 
-    @SerializedName("iscleanuprequired") @Param(description="true if the account requires cleanup")
+    @SerializedName(ApiConstants.IS_CLEANUP_REQUIRED) @Param(description="true if the account requires cleanup")
     private Boolean cleanupRequired;
 
     public Long getId() {

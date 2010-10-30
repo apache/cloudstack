@@ -22,6 +22,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
@@ -44,16 +45,16 @@ public class ListNetworkGroupsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING, description="lists all available port network groups for the account. Must be used with domainID parameter")
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="lists all available port network groups for the account. Must be used with domainID parameter")
     private String accountName;
 
-    @Parameter(name="domainid", type=CommandType.LONG, description="lists all available network groups for the domain ID. If used with the account parameter, lists all available network groups for the account in the specified domain ID.")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="lists all available network groups for the domain ID. If used with the account parameter, lists all available network groups for the account in the specified domain ID.")
     private Long domainId;
 
-    @Parameter(name="networkgroupname", type=CommandType.STRING, description="lists network groups by name")
+    @Parameter(name=ApiConstants.NETWORK_GROUP_NAME, type=CommandType.STRING, description="lists network groups by name")
     private String networkGroupName;
 
-    @Parameter(name="virtualmachineid", type=CommandType.LONG, description="lists network groups by virtual machine id")
+    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, description="lists network groups by virtual machine id")
     private Long virtualMachineId;
 
     /////////////////////////////////////////////////////

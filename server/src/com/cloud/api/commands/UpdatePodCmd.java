@@ -20,6 +20,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -36,22 +37,22 @@ public class UpdatePodCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="cidr", type=CommandType.STRING, description="the CIDR notation for the base IP address of the Pod")
+    @Parameter(name=ApiConstants.CIDR, type=CommandType.STRING, description="the CIDR notation for the base IP address of the Pod")
     private String cidr;
 
-    @Parameter(name="endip", type=CommandType.STRING, description="the ending IP address for the Pod")
+    @Parameter(name=ApiConstants.END_IP, type=CommandType.STRING, description="the ending IP address for the Pod")
     private String endIp;
 
-    @Parameter(name="gateway", type=CommandType.STRING, description="the gateway for the Pod")
+    @Parameter(name=ApiConstants.GATEWAY, type=CommandType.STRING, description="the gateway for the Pod")
     private String gateway;
 
-    @Parameter(name="id", type=CommandType.LONG, required=true, description="the ID of the Pod")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the Pod")
     private Long id;
 
-    @Parameter(name="name", type=CommandType.STRING, description="the name of the Pod")
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the Pod")
     private String podName;
 
-    @Parameter(name="startip", type=CommandType.STRING, description="the starting IP address for the Pod")
+    @Parameter(name=ApiConstants.START_IP, type=CommandType.STRING, description="the starting IP address for the Pod")
     private String startIp;
 
     /////////////////////////////////////////////////////

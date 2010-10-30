@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
@@ -43,22 +44,22 @@ public class ListStoragePoolsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="clusterid", type=CommandType.LONG, description="list storage pools belongig to the specific cluster")
+    @Parameter(name=ApiConstants.CLUSTER_ID, type=CommandType.LONG, description="list storage pools belongig to the specific cluster")
     private Long clusterId;
 
-    @Parameter(name="ipaddress", type=CommandType.STRING, description="the IP address for the storage pool")
+    @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, description="the IP address for the storage pool")
     private String ipAddress;
 
-    @Parameter(name="name", type=CommandType.STRING, description="the name of the storage pool")
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the storage pool")
     private String storagePoolName;
 
-    @Parameter(name="path", type=CommandType.STRING, description="the storage pool path")
+    @Parameter(name=ApiConstants.PATH, type=CommandType.STRING, description="the storage pool path")
     private String path;
 
-    @Parameter(name="podid", type=CommandType.LONG, description="the Pod ID for the storage pool")
+    @Parameter(name=ApiConstants.POD_ID, type=CommandType.LONG, description="the Pod ID for the storage pool")
     private Long podId;
 
-    @Parameter(name="zoneid", type=CommandType.LONG, description="the Zone ID for the storage pool")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the Zone ID for the storage pool")
     private Long zoneId;
 
     /////////////////////////////////////////////////////

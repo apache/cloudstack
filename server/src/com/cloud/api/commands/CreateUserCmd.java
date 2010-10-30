@@ -20,6 +20,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
@@ -37,34 +38,34 @@ public class CreateUserCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING, description="Creates the user under the specified account. If no account is specified, the username will be used as the account name.")
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="Creates the user under the specified account. If no account is specified, the username will be used as the account name.")
     private String accountName;
 
-    @Parameter(name="accounttype", type=CommandType.LONG, required=true, description="Type of the account.  Specify 0 for user, 1 for root admin, and 2 for domain admin")
+    @Parameter(name=ApiConstants.ACCOUNT_TYPE, type=CommandType.LONG, required=true, description="Type of the account.  Specify 0 for user, 1 for root admin, and 2 for domain admin")
     private Long accountType;
 
-    @Parameter(name="domainid", type=CommandType.LONG, description="Creates the user under the specified domain.")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="Creates the user under the specified domain.")
     private Long domainId;
 
-    @Parameter(name="email", type=CommandType.STRING, required=true, description="email")
+    @Parameter(name=ApiConstants.EMAIL, type=CommandType.STRING, required=true, description="email")
     private String email;
 
-    @Parameter(name="firstname", type=CommandType.STRING, required=true, description="firstname")
+    @Parameter(name=ApiConstants.FIRSTNAME, type=CommandType.STRING, required=true, description="firstname")
     private String firstname;
 
-    @Parameter(name="lastname", type=CommandType.STRING, required=true, description="lastname")
+    @Parameter(name=ApiConstants.LASTNAME, type=CommandType.STRING, required=true, description="lastname")
     private String lastname;
 
-    @Parameter(name="password", type=CommandType.STRING, required=true, description="Hashed password (Default is MD5). If you wish to use any other hashing algorithm, you would need to write a custom authentication adapter See Docs section.")
+    @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, required=true, description="Hashed password (Default is MD5). If you wish to use any other hashing algorithm, you would need to write a custom authentication adapter See Docs section.")
     private String password;
 
-    @Parameter(name="timezone", type=CommandType.STRING, description="Specifies a timezone for this command. For more information on the timezone parameter, see Time Zone Format.")
+    @Parameter(name=ApiConstants.TIMEZONE, type=CommandType.STRING, description="Specifies a timezone for this command. For more information on the timezone parameter, see Time Zone Format.")
     private String timezone;
 
-    @Parameter(name="username", type=CommandType.STRING, required=true, description="Unique username.")
+    @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, required=true, description="Unique username.")
     private String username;
     
-    @Parameter(name="networkdomain", type=CommandType.STRING, description="Network domain name of the Vms that belong to the domain")
+    @Parameter(name=ApiConstants.NETWORK_DOMAIN, type=CommandType.STRING, description="Network domain name of the Vms that belong to the domain")
     private String networkdomain;
 
 

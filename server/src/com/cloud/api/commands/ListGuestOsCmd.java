@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -40,10 +41,10 @@ public class ListGuestOsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="id", type=CommandType.LONG, description="list by Os type Id")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list by Os type Id")
     private Long id;
 
-    @Parameter(name="oscategoryid", type=CommandType.LONG, description="list by Os Category id")
+    @Parameter(name=ApiConstants.OS_CATEGORY_ID, type=CommandType.LONG, description="list by Os Category id")
     private Long osCategoryId;
 
 

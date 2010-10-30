@@ -19,6 +19,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -34,16 +35,16 @@ public class UpdateVMCmd extends BaseCmd{
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="displayname", type=CommandType.STRING, description="user generated name")
+    @Parameter(name=ApiConstants.DISPLAY_NAME, type=CommandType.STRING, description="user generated name")
     private String displayName;
 
-    @Parameter(name="group", type=CommandType.STRING, description="group of the virtual machine")
+    @Parameter(name=ApiConstants.GROUP, type=CommandType.STRING, description="group of the virtual machine")
     private String group;
 
-    @Parameter(name="haenable", type=CommandType.BOOLEAN, description="true if high-availability is enabled for the virtual machine, false otherwise")
+    @Parameter(name=ApiConstants.HA_ENABLE, type=CommandType.BOOLEAN, description="true if high-availability is enabled for the virtual machine, false otherwise")
     private Boolean haEnable;
 
-    @Parameter(name="id", type=CommandType.LONG, required=true, description="The ID of the virtual machine")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="The ID of the virtual machine")
     private Long id;
 
     /////////////////////////////////////////////////////

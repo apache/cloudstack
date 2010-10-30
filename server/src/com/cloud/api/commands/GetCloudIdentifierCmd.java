@@ -22,6 +22,7 @@ import java.util.ArrayList;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -38,7 +39,7 @@ public class GetCloudIdentifierCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="userid", type=CommandType.LONG, required=true, description="the user ID for the cloud identifier")
+    @Parameter(name=ApiConstants.USER_ID, type=CommandType.LONG, required=true, description="the user ID for the cloud identifier")
     private Long userid;
 
 

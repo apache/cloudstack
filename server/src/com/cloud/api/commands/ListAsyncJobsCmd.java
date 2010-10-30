@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -38,13 +39,13 @@ public class ListAsyncJobsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING, description="the account associated with the async job. Must be used with the domainId parameter.")
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the account associated with the async job. Must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name="domainid", type=CommandType.LONG, description="the domain ID associated with the async job.  If used with the account parameter, returns async jobs for the account in the specified domain.")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID associated with the async job.  If used with the account parameter, returns async jobs for the account in the specified domain.")
     private Long domainId;
 
-    @Parameter(name="startdate", type=CommandType.TZDATE, description="the start date of the async job")
+    @Parameter(name=ApiConstants.START_DATE, type=CommandType.TZDATE, description="the start date of the async job")
     private Date startDate;
 
 

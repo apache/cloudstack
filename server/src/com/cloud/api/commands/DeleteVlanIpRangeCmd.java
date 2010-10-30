@@ -20,6 +20,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -36,7 +37,7 @@ public class DeleteVlanIpRangeCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="id", type=CommandType.LONG, required=true, description="the id of the VLAN IP range")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the id of the VLAN IP range")
     private Long id;
 
     /////////////////////////////////////////////////////

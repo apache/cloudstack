@@ -20,6 +20,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.Implementation;
@@ -40,16 +41,16 @@ public class CreatePortForwardingServiceRuleCmd extends BaseAsyncCreateCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="portforwardingserviceid", type=CommandType.LONG, required=true, description="the ID of the port forwarding service the rule is being created for")
+    @Parameter(name=ApiConstants.PORT_FORWARDING_SERVICE_ID, type=CommandType.LONG, required=true, description="the ID of the port forwarding service the rule is being created for")
     private Long portForwardingServiceId;
 
-    @Parameter(name="privateport", type=CommandType.STRING, required=true, description="the port of the private ip address/virtual machine to forward traffic to")
+    @Parameter(name=ApiConstants.PRIVATE_PORT, type=CommandType.STRING, required=true, description="the port of the private ip address/virtual machine to forward traffic to")
     private String privatePort;
 
-    @Parameter(name="protocol", type=CommandType.STRING, description="TCP is default. UDP is the other supported protocol")
+    @Parameter(name=ApiConstants.PROTOCOL, type=CommandType.STRING, description="TCP is default. UDP is the other supported protocol")
     private String protocol;
 
-    @Parameter(name="publicport", type=CommandType.STRING, required=true, description="the port of the public ip address to forward traffic from")
+    @Parameter(name=ApiConstants.PUBLIC_PORT, type=CommandType.STRING, required=true, description="the port of the public ip address to forward traffic from")
     private String publicPort;
 
 

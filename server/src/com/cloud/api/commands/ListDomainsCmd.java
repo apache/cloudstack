@@ -22,6 +22,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
@@ -40,13 +41,13 @@ public class ListDomainsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="id", type=CommandType.LONG, description="List domain by domain ID.")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="List domain by domain ID.")
     private Long id;
 
-    @Parameter(name="level", type=CommandType.INTEGER, description="List domains by domain level.")
+    @Parameter(name=ApiConstants.LEVEL, type=CommandType.INTEGER, description="List domains by domain level.")
     private Integer level;
 
-    @Parameter(name="name", type=CommandType.STRING, description="List domain by domain name.")
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="List domain by domain name.")
     private String domainName;
 
     /////////////////////////////////////////////////////

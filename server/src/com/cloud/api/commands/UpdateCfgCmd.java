@@ -20,6 +20,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -36,10 +37,10 @@ public class UpdateCfgCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="name", type=CommandType.STRING, required=true, description="the name of the configuration")
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="the name of the configuration")
     private String cfgName;
 
-    @Parameter(name="value", type=CommandType.STRING, description="the value of the configuration")
+    @Parameter(name=ApiConstants.VALUE, type=CommandType.STRING, description="the value of the configuration")
     private String value;
 
     /////////////////////////////////////////////////////

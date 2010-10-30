@@ -22,6 +22,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -40,13 +41,13 @@ public class ListServiceOfferingsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="id", type=CommandType.LONG, description="ID of the service offering")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="ID of the service offering")
     private Long id;
 
-    @Parameter(name="name", type=CommandType.STRING, description="name of the service offering")
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="name of the service offering")
     private String serviceOfferingName;
 
-    @Parameter(name="virtualmachineid", type=CommandType.LONG, description="the ID of the virtual machine. Pass this in if you want to see the available service offering that a virtual machine can be changed to.")
+    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, description="the ID of the virtual machine. Pass this in if you want to see the available service offering that a virtual machine can be changed to.")
     private Long virtualMachineId;
 
     /////////////////////////////////////////////////////

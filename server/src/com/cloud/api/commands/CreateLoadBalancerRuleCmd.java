@@ -20,6 +20,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
@@ -38,22 +39,22 @@ public class CreateLoadBalancerRuleCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="algorithm", type=CommandType.STRING, required=true, description="load balancer algorithm (source, roundrobin, leastconn)")
+    @Parameter(name=ApiConstants.ALGORITHM, type=CommandType.STRING, required=true, description="load balancer algorithm (source, roundrobin, leastconn)")
     private String algorithm;
 
-    @Parameter(name="description", type=CommandType.STRING, description="the description of the load balancer rule")
+    @Parameter(name=ApiConstants.DESCRIPTION, type=CommandType.STRING, description="the description of the load balancer rule")
     private String description;
 
-    @Parameter(name="name", type=CommandType.STRING, required=true, description="name of the load balancer rule")
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="name of the load balancer rule")
     private String loadBalancerRuleName;
 
-    @Parameter(name="privateport", type=CommandType.STRING, required=true, description="the private port of the private ip address/virtual machine where the network traffic will be load balanced to")
+    @Parameter(name=ApiConstants.PRIVATE_PORT, type=CommandType.STRING, required=true, description="the private port of the private ip address/virtual machine where the network traffic will be load balanced to")
     private String privatePort;
 
-    @Parameter(name="publicip", type=CommandType.STRING, required=true, description="public ip address from where the network traffic will be load balanced from")
+    @Parameter(name=ApiConstants.PUBLIC_IP, type=CommandType.STRING, required=true, description="public ip address from where the network traffic will be load balanced from")
     private String publicIp;
 
-    @Parameter(name="publicport", type=CommandType.STRING, required=true, description="the public port from where the network traffic will be load balanced from")
+    @Parameter(name=ApiConstants.PUBLIC_PORT, type=CommandType.STRING, required=true, description="the public port from where the network traffic will be load balanced from")
     private String publicPort;
 
 

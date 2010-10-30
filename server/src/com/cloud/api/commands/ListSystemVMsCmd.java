@@ -22,6 +22,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
@@ -44,25 +45,25 @@ public class ListSystemVMsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="hostid", type=CommandType.LONG, description="the host ID of the system VM")
+    @Parameter(name=ApiConstants.HOST_ID, type=CommandType.LONG, description="the host ID of the system VM")
     private Long hostId;
 
-    @Parameter(name="id", type=CommandType.LONG, description="the ID of the system VM")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="the ID of the system VM")
     private Long id;
 
-    @Parameter(name="name", type=CommandType.STRING, description="the name of the system VM")
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the system VM")
     private String systemVmName;
 
-    @Parameter(name="podid", type=CommandType.LONG, description="the Pod ID of the system VM")
+    @Parameter(name=ApiConstants.POD_ID, type=CommandType.LONG, description="the Pod ID of the system VM")
     private Long podId;
 
-    @Parameter(name="state", type=CommandType.STRING, description="the state of the system VM")
+    @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="the state of the system VM")
     private String state;
 
-    @Parameter(name="systemvmtype", type=CommandType.STRING, description="the system VM type. Possible types are \"consoleproxy\" and \"secondarystoragevm\".")
+    @Parameter(name=ApiConstants.SYSTEM_VM_TYPE, type=CommandType.STRING, description="the system VM type. Possible types are \"consoleproxy\" and \"secondarystoragevm\".")
     private String systemVmType;
 
-    @Parameter(name="zoneid", type=CommandType.LONG, description="the Zone ID of the system VM")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the Zone ID of the system VM")
     private Long zoneId;
 
     /////////////////////////////////////////////////////

@@ -21,6 +21,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
@@ -39,13 +40,13 @@ public class ListTemplateOrIsoPermissionsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING, description="List template visibility and permissions for the specified account. Must be used with the domainId parameter.")
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="List template visibility and permissions for the specified account. Must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name="domainid", type=CommandType.LONG, description="List template visibility and permissions by domain. If used with the account parameter, specifies in which domain the specified account exists.")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="List template visibility and permissions by domain. If used with the account parameter, specifies in which domain the specified account exists.")
     private Long domainId;
 
-    @Parameter(name="id", type=CommandType.LONG, required=true, description="the template ID")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the template ID")
     private Long id;
 
     /////////////////////////////////////////////////////

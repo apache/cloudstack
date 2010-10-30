@@ -20,6 +20,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -36,33 +37,35 @@ public class CreateZoneCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name="dns1", type=CommandType.STRING, required=true, description="the first DNS for the Zone")
+
+    @Parameter(name=ApiConstants.DNS1, type=CommandType.STRING, required=true, description="the first DNS for the Zone")
     private String dns1;
 
-    @Parameter(name="dns2", type=CommandType.STRING, description="the second DNS for the Zone")
+    @Parameter(name=ApiConstants.DNS2, type=CommandType.STRING, description="the second DNS for the Zone")
     private String dns2;
 
-    @Parameter(name="guestcidraddress", type=CommandType.STRING, required=true, description="the guest CIDR address for the Zone")
+    @Parameter(name=ApiConstants.GUEST_CIDR_ADDRESS, type=CommandType.STRING, required=true, description="the guest CIDR address for the Zone")
     private String guestCidrAddress;
 
-    @Parameter(name="internaldns1", type=CommandType.STRING, required=true, description="the first internal DNS for the Zone")
+    @Parameter(name=ApiConstants.INTERNAL_DNS1, type=CommandType.STRING, required=true, description="the first internal DNS for the Zone")
     private String internalDns1;
 
-    @Parameter(name="internaldns2", type=CommandType.STRING, description="the second internal DNS for the Zone")
+    @Parameter(name=ApiConstants.INTERNAL_DNS2, type=CommandType.STRING, description="the second internal DNS for the Zone")
     private String internalDns2;
 
-    @Parameter(name="name", type=CommandType.STRING, required=true, description="the name of the Zone")
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="the name of the Zone")
     private String zoneName;
     
     //FIXME - this parameter is called "vnet" in updateZone. Have to figure out which one is right
-    @Parameter(name="vlan", type=CommandType.STRING, description="the VNET for the Zone")
+    @Parameter(name=ApiConstants.VLAN, type=CommandType.STRING, description="the VNET for the Zone")
     private String vlan;
     
-    @Parameter(name="domain", type=CommandType.STRING, description="Domain name for the Vms in the zone")
+    @Parameter(name=ApiConstants.DOMAIN, type=CommandType.STRING, description="Domain name for the Vms in the zone")
     private String domain;
 
-    @Parameter(name="domainid", type=CommandType.LONG, description="the ID of the containing domain, null for public zones")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the ID of the containing domain, null for public zones")
     private Long domainId; 
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////

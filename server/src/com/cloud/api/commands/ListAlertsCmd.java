@@ -23,6 +23,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.alert.AlertVO;
+import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -40,7 +41,7 @@ public class ListAlertsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="type", type=CommandType.STRING, description="list by alert type")
+    @Parameter(name=ApiConstants.TYPE, type=CommandType.STRING, description="list by alert type")
     private String type;
 
     /////////////////////////////////////////////////////

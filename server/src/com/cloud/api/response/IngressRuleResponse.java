@@ -17,6 +17,7 @@
  */
 package com.cloud.api.response;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
@@ -28,26 +29,26 @@ public class IngressRuleResponse extends BaseResponse {
     private String protocol;
 
     //FIXME - add description
-    @SerializedName("icmptype")
+    @SerializedName(ApiConstants.ICMP_TYPE)
     private Integer icmpType;
 
     //FIXME - add description
-    @SerializedName("icmpcode")
+    @SerializedName(ApiConstants.ICMP_CODE)
     private Integer icmpCode;
 
-    @SerializedName("startport") @Param(description="the starting IP of the ingress rule")
+    @SerializedName(ApiConstants.START_PORT) @Param(description="the starting IP of the ingress rule")
     private Integer startPort;
 
-    @SerializedName("endport") @Param(description="the ending IP of the ingress rule ")
+    @SerializedName(ApiConstants.END_PORT) @Param(description="the ending IP of the ingress rule ")
     private Integer endPort;
 
-    @SerializedName("networkgroupname") @Param(description="network group name")
+    @SerializedName(ApiConstants.NETWORK_GROUP_NAME) @Param(description="network group name")
     private String networkGroupName;
 
-    @SerializedName("account") @Param(description="account owning the ingress rule")
+    @SerializedName(ApiConstants.ACCOUNT) @Param(description="account owning the ingress rule")
     private String accountName;
 
-    @SerializedName("cidr") @Param(description="the CIDR notation for the base IP address of the ingress rule")
+    @SerializedName(ApiConstants.CIDR) @Param(description="the CIDR notation for the base IP address of the ingress rule")
     private String cidr;
 
     public Long getRuleId() {

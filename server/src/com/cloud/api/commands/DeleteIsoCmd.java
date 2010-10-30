@@ -19,6 +19,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
@@ -40,10 +41,10 @@ public class DeleteIsoCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="id", type=CommandType.LONG, required=true, description="the ID of the ISO file")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the ISO file")
     private Long id;
 
-    @Parameter(name="zoneid", type=CommandType.LONG, description="the ID of the zone of the ISO file. If not specified, the ISO will be deleted from all the zones")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the ID of the zone of the ISO file. If not specified, the ISO will be deleted from all the zones")
     private Long zoneId;
 
 

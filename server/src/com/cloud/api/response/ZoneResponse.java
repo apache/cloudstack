@@ -17,49 +17,50 @@
  */
 package com.cloud.api.response;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class ZoneResponse extends BaseResponse {
-    @SerializedName("id") @Param(description="Zone id")
+    @SerializedName(ApiConstants.ID) @Param(description="Zone id")
     private Long id;
 
-    @SerializedName("name") @Param(description="Zone name")
+    @SerializedName(ApiConstants.NAME) @Param(description="Zone name")
     private String name;
 
-    @SerializedName("description") @Param(description="Zone description")
+    @SerializedName(ApiConstants.DESCRIPTION) @Param(description="Zone description")
     private String description;
 
-    @SerializedName("dns1") @Param(description="the first DNS for the Zone")
+    @SerializedName(ApiConstants.DNS1) @Param(description="the first DNS for the Zone")
     private String dns1;
 
-    @SerializedName("dns2") @Param(description="the second DNS for the Zone")
+    @SerializedName(ApiConstants.DNS2) @Param(description="the second DNS for the Zone")
     private String dns2;
 
-    @SerializedName("internaldns1") @Param(description="the first internal DNS for the Zone")
+    @SerializedName(ApiConstants.INTERNAL_DNS1) @Param(description="the first internal DNS for the Zone")
     private String internalDns1;
 
-    @SerializedName("internaldns2") @Param(description="the second internal DNS for the Zone")
+    @SerializedName(ApiConstants.INTERNAL_DNS2) @Param(description="the second internal DNS for the Zone")
     private String internalDns2;
 
     //FIXME - add description. This parameter is called "vnet" in updateZone, and vlan in createZone - figure out which one is right.
-    @SerializedName("vlan")
+    @SerializedName(ApiConstants.VLAN)
     private String vlan;
 
-    @SerializedName("guestcidraddress") @Param(description="the guest CIDR address for the Zone")
+    @SerializedName(ApiConstants.GUEST_CIDR_ADDRESS) @Param(description="the guest CIDR address for the Zone")
     private String guestCidrAddress;
     
     //FIXME - do we need 2 parameters below at all?
     @SerializedName("status")
     private String status;
 
-    @SerializedName("displaytext")
+    @SerializedName(ApiConstants.DISPLAY_TEXT)
     private String displayText;
     
-    @SerializedName("domain") @Param(description="Domain name for the Vms in the zone")
+    @SerializedName(ApiConstants.DOMAIN) @Param(description="Domain name for the Vms in the zone")
     private String domain;
 
-    @SerializedName("domainid") @Param(description="the ID of the containing domain, null for public zones")
+    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the ID of the containing domain, null for public zones")
     private Long domainId;
     
     public Long getId() {

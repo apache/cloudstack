@@ -19,6 +19,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -36,23 +37,23 @@ public class AddConfigCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="category", type=CommandType.STRING, required=true, description="component's category")
+    @Parameter(name=ApiConstants.CATEGORY, type=CommandType.STRING, required=true, description="component's category")
     private String category;
 
-    @Parameter(name="component", type=CommandType.STRING, required=true, description="the component of the configuration")
+    @Parameter(name=ApiConstants.COMPONENT, type=CommandType.STRING, required=true, description="the component of the configuration")
     private String component;
 
-    @Parameter(name="description", type=CommandType.STRING, description="the description of the configuration")
+    @Parameter(name=ApiConstants.DESCRIPTION, type=CommandType.STRING, description="the description of the configuration")
     private String description;
 
     //FIXME - add description
-    @Parameter(name="instance", type=CommandType.STRING, required=true)
+    @Parameter(name=ApiConstants.INSTANCE, type=CommandType.STRING, required=true)
     private String instance;
 
-    @Parameter(name="name", type=CommandType.STRING, required=true, description="the name of the configuration")
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="the name of the configuration")
     private String name;
 
-    @Parameter(name="value", type=CommandType.STRING, description="the value of the configuration")
+    @Parameter(name=ApiConstants.VALUE, type=CommandType.STRING, description="the value of the configuration")
     private String value;
 
 

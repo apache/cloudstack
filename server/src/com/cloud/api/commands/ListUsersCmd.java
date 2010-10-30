@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
@@ -41,22 +42,22 @@ public class ListUsersCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING, description="List user by account. Must be used with the domainId parameter.")
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="List user by account. Must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name="accounttype", type=CommandType.LONG, description="List users by account type. Valid types include admin, domain-admin, read-only-admin, or user.")
+    @Parameter(name=ApiConstants.ACCOUNT_TYPE, type=CommandType.LONG, description="List users by account type. Valid types include admin, domain-admin, read-only-admin, or user.")
     private Long accountType;
 
-    @Parameter(name="domainid", type=CommandType.LONG, description="List all users in a domain. If used with the account parameter, lists an account in a specific domain.")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="List all users in a domain. If used with the account parameter, lists an account in a specific domain.")
     private Long domainId;
 
-    @Parameter(name="id", type=CommandType.LONG, description="List user by ID.")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="List user by ID.")
     private Long id;
 
-    @Parameter(name="state", type=CommandType.STRING, description="List users by state of the user account.")
+    @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="List users by state of the user account.")
     private String state;
 
-    @Parameter(name="username", type=CommandType.STRING, description="List user by the username")
+    @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, description="List user by the username")
     private String username;
 
     /////////////////////////////////////////////////////

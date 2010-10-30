@@ -20,6 +20,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.Implementation;
@@ -39,13 +40,13 @@ public class DeleteSnapshotCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING)
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING)
     private String accountName;
 
-    @Parameter(name="domainid", type=CommandType.LONG)
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG)
     private Long domainId;
 
-    @Parameter(name="id", type=CommandType.LONG, required=true, description="The ID of the snapshot")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="The ID of the snapshot")
     private Long id;
 
 

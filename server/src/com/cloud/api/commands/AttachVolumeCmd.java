@@ -20,6 +20,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.Implementation;
@@ -40,7 +41,7 @@ public class AttachVolumeCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="deviceid", type=CommandType.LONG, description="the ID of the device to map the volume to within the guest OS. " +
+    @Parameter(name=ApiConstants.DEVICE_ID, type=CommandType.LONG, description="the ID of the device to map the volume to within the guest OS. " +
     																"If no deviceId is passed in, the next available deviceId will be chosen. " +
     																"Possible values for a Linux OS are:" +
     																"* 1 - /dev/xvdb" +
@@ -53,10 +54,10 @@ public class AttachVolumeCmd extends BaseAsyncCmd {
     																"* 9 - /dev/xvdj")
     private Long deviceId;
 
-    @Parameter(name="id", type=CommandType.LONG, required=true, description="the ID of the disk volume")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the disk volume")
     private Long id;
 
-    @Parameter(name="virtualmachineid", type=CommandType.LONG, required=true, description="	the ID of the virtual machine")
+    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, required=true, description="	the ID of the virtual machine")
     private Long virtualMachineId;
 
 

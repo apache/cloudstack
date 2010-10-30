@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -40,10 +41,10 @@ public class ListCfgsByCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="category", type=CommandType.STRING, description="lists configurations by category")
+    @Parameter(name=ApiConstants.CATEGORY, type=CommandType.STRING, description="lists configurations by category")
     private String category;
 
-    @Parameter(name="name", type=CommandType.STRING, description="lists configuration by name")
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="lists configuration by name")
     private String configName;
 
 

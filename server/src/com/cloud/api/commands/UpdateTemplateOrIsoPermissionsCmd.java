@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -21,19 +22,19 @@ public abstract class UpdateTemplateOrIsoPermissionsCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="accounts", type=CommandType.LIST, collectionType=CommandType.STRING, description="a comma delimited list of accounts")
+    @Parameter(name=ApiConstants.ACCOUNTS, type=CommandType.LIST, collectionType=CommandType.STRING, description="a comma delimited list of accounts")
     private List<String> accountNames;
 
-    @Parameter(name="id", type=CommandType.LONG, required=true, description="the template ID")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the template ID")
     private Long id;
 
-    @Parameter(name="isfeatured", type=CommandType.BOOLEAN, description="true for featured templates/isos, false otherwise")
+    @Parameter(name=ApiConstants.IS_FEATURED, type=CommandType.BOOLEAN, description="true for featured templates/isos, false otherwise")
     private Boolean featured;
 
-    @Parameter(name="ispublic", type=CommandType.BOOLEAN, description="true for public templates/isos, false for private templates/isos")
+    @Parameter(name=ApiConstants.IS_PUBLIC, type=CommandType.BOOLEAN, description="true for public templates/isos, false for private templates/isos")
     private Boolean isPublic;
 
-    @Parameter(name="op", type=CommandType.STRING, description="permission operator (add, remove, reset)")
+    @Parameter(name=ApiConstants.OP, type=CommandType.STRING, description="permission operator (add, remove, reset)")
     private String operation;
 
     /////////////////////////////////////////////////////

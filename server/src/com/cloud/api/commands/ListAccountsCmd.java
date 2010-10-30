@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseListCmd;
@@ -49,25 +50,25 @@ public class ListAccountsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING, description="list account for a specified account. Must be used with the domainId parameter.")
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="list account for a specified account. Must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name="accounttype", type=CommandType.LONG, description="list accounts by account type. Valid account types are 1 (admin), 2 (domain-admin), and 0 (user).")
+    @Parameter(name=ApiConstants.ACCOUNT_TYPE, type=CommandType.LONG, description="list accounts by account type. Valid account types are 1 (admin), 2 (domain-admin), and 0 (user).")
     private Long accountType;
 
-    @Parameter(name="domainid", type=CommandType.LONG, description="list all accounts in specified domain. If used with the account parameter, retrieves account information for specified account in specified domain.")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="list all accounts in specified domain. If used with the account parameter, retrieves account information for specified account in specified domain.")
     private Long domainId;
 
-    @Parameter(name="id", type=CommandType.LONG, description="list account by account ID")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list account by account ID")
     private Long id;
 
-    @Parameter(name="iscleanuprequired", type=CommandType.BOOLEAN, description="list accounts by cleanuprequred attribute (values are true or false)")
+    @Parameter(name=ApiConstants.IS_CLEANUP_REQUIRED, type=CommandType.BOOLEAN, description="list accounts by cleanuprequred attribute (values are true or false)")
     private Boolean cleanupRequired;
 
-    @Parameter(name="name", type=CommandType.STRING, description="list account by account name")
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="list account by account name")
     private String searchName;
 
-    @Parameter(name="state", type=CommandType.STRING, description="list accounts by state. Valid states are enabled, disabled, and locked.")
+    @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="list accounts by state. Valid states are enabled, disabled, and locked.")
     private String state;
 
 

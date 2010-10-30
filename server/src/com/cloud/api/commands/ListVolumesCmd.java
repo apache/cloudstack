@@ -22,6 +22,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseListCmd;
@@ -48,31 +49,31 @@ public class ListVolumesCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING, description="the account associated with the disk volume. Must be used with the domainId parameter.")
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the account associated with the disk volume. Must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name="domainid", type=CommandType.LONG, description="Lists all disk volumes for the specified domain ID. If used with the account parameter, returns all disk volumes for an account in the specified domain ID.")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="Lists all disk volumes for the specified domain ID. If used with the account parameter, returns all disk volumes for an account in the specified domain ID.")
     private Long domainId;
 
-    @Parameter(name="hostid", type=CommandType.LONG, description="list volumes on specified host")
+    @Parameter(name=ApiConstants.HOST_ID, type=CommandType.LONG, description="list volumes on specified host")
     private Long hostId;
 
-    @Parameter(name="id", type=CommandType.LONG, description="the ID of the disk volume")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="the ID of the disk volume")
     private Long id;
 
-    @Parameter(name="name", type=CommandType.STRING, description="the name of the disk volume")
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the disk volume")
     private String volumeName;
 
-    @Parameter(name="podid", type=CommandType.LONG)
+    @Parameter(name=ApiConstants.POD_ID, type=CommandType.LONG)
     private Long podId;
 
-    @Parameter(name="type", type=CommandType.STRING, description="the type of disk volume")
+    @Parameter(name=ApiConstants.TYPE, type=CommandType.STRING, description="the type of disk volume")
     private String type;
 
-    @Parameter(name="virtualmachineid", type=CommandType.LONG, description="the ID of the virtual machine")
+    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, description="the ID of the virtual machine")
     private Long virtualMachineId;
 
-    @Parameter(name="zoneid", type=CommandType.LONG, description="the ID of the availability zone")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the ID of the availability zone")
     private Long zoneId;
 
     /////////////////////////////////////////////////////

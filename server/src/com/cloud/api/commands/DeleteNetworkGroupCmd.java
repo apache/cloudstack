@@ -2,6 +2,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -17,13 +18,13 @@ public class DeleteNetworkGroupCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING, description="the account of the network group. Must be specified with domain ID")
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the account of the network group. Must be specified with domain ID")
     private String accountName;
 
-    @Parameter(name="domainid", type=CommandType.LONG, description="the domain ID of account owning the network group")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID of account owning the network group")
     private Long domainId;
 
-    @Parameter(name="name", type=CommandType.STRING, required=true, description="the network group name")
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="the network group name")
     private String networkGroupName;
 
 

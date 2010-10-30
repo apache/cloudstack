@@ -22,6 +22,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
@@ -46,40 +47,40 @@ public class RegisterTemplateCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="bits", type=CommandType.INTEGER, description="32 or 64 bits support. 64 by default")
+    @Parameter(name=ApiConstants.BITS, type=CommandType.INTEGER, description="32 or 64 bits support. 64 by default")
     private Integer bits;
 
-    @Parameter(name="displaytext", type=CommandType.STRING, required=true, description="the display text of the template. This is usually used for display purposes.")
+    @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, required=true, description="the display text of the template. This is usually used for display purposes.")
     private String displayText;
 
-    @Parameter(name="format", type=CommandType.STRING, required=true, description="the format for the template. Possible values include QCOW2, RAW, and VHD.")
+    @Parameter(name=ApiConstants.FORMAT, type=CommandType.STRING, required=true, description="the format for the template. Possible values include QCOW2, RAW, and VHD.")
     private String format;
 
-    @Parameter(name="hypervisor", type=CommandType.STRING, required=true, description="the target hypervisor for the template")
+    @Parameter(name=ApiConstants.HYPERVISOR, type=CommandType.STRING, required=true, description="the target hypervisor for the template")
     private String hypervisor;
 
-    @Parameter(name="isfeatured", type=CommandType.BOOLEAN, description="true if this template is a featured template, false otherwise")
+    @Parameter(name=ApiConstants.IS_FEATURED, type=CommandType.BOOLEAN, description="true if this template is a featured template, false otherwise")
     private Boolean featured;
 
-    @Parameter(name="ispublic", type=CommandType.BOOLEAN, description="true if the template is available to all accounts; default is true")
+    @Parameter(name=ApiConstants.IS_PUBLIC, type=CommandType.BOOLEAN, description="true if the template is available to all accounts; default is true")
     private Boolean publicTemplate;
 
-    @Parameter(name="name", type=CommandType.STRING, required=true, description="the name of the template")
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="the name of the template")
     private String templateName;
 
-    @Parameter(name="ostypeid", type=CommandType.LONG, required=true, description="the ID of the OS Type that best represents the OS of this template.")
+    @Parameter(name=ApiConstants.OS_TYPE_ID, type=CommandType.LONG, required=true, description="the ID of the OS Type that best represents the OS of this template.")
     private Long osTypeId;
 
-    @Parameter(name="passwordenabled", type=CommandType.BOOLEAN, description="true if the template supports the password reset feature; default is false")
+    @Parameter(name=ApiConstants.PASSWORD_ENABLED, type=CommandType.BOOLEAN, description="true if the template supports the password reset feature; default is false")
     private Boolean passwordEnabled;
 
-    @Parameter(name="requireshvm", type=CommandType.BOOLEAN, description="true if this template requires HVM")
+    @Parameter(name=ApiConstants.REQUIRES_HVM, type=CommandType.BOOLEAN, description="true if this template requires HVM")
     private Boolean requiresHvm;
 
-    @Parameter(name="url", type=CommandType.STRING, required=true, description="the URL of where the template is hosted. Possible URL include http:// and https://")
+    @Parameter(name=ApiConstants.URL, type=CommandType.STRING, required=true, description="the URL of where the template is hosted. Possible URL include http:// and https://")
     private String url;
 
-    @Parameter(name="zoneid", type=CommandType.LONG, required=true, description="the ID of the zone the template is to be hosted on")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="the ID of the zone the template is to be hosted on")
     private Long zoneId;
 
     /////////////////////////////////////////////////////

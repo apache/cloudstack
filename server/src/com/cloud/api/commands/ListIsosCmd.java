@@ -25,6 +25,7 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
@@ -52,40 +53,39 @@ public class ListIsosCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING, description="the account of the ISO file. Must be used with the domainId parameter.")
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the account of the ISO file. Must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name="bootable", type=CommandType.BOOLEAN, description="true if the ISO is bootable, false otherwise")
+    @Parameter(name=ApiConstants.BOOTABLE, type=CommandType.BOOLEAN, description="true if the ISO is bootable, false otherwise")
     private Boolean bootable;
 
-    @Parameter(name="domainid", type=CommandType.LONG, description="lists all available ISO files by ID of a domain. If used with the account parameter, lists all available ISO files for the account in the ID of a domain.")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="lists all available ISO files by ID of a domain. If used with the account parameter, lists all available ISO files for the account in the ID of a domain.")
     private Long domainId;
 
-    @Parameter(name="hypervisor", type=CommandType.STRING, description="the hypervisor for which to restrict the search")
+    @Parameter(name=ApiConstants.HYPERVISOR, type=CommandType.STRING, description="the hypervisor for which to restrict the search")
     private String hypervisor;
 
-    @Parameter(name="id", type=CommandType.LONG, description="list all isos by id")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list all isos by id")
     private Long id;
 
-    @Parameter(name="ispublic", type=CommandType.BOOLEAN, description="true if the ISO is publicly available to all users, false otherwise.")
+    @Parameter(name=ApiConstants.IS_PUBLIC, type=CommandType.BOOLEAN, description="true if the ISO is publicly available to all users, false otherwise.")
     private Boolean publicIso;
 
-    @Parameter(name="isready", type=CommandType.BOOLEAN, description="true if this ISO is ready to be deployed")
+    @Parameter(name=ApiConstants.IS_READY, type=CommandType.BOOLEAN, description="true if this ISO is ready to be deployed")
     private Boolean ready;
 
-    @Parameter(name="isofilter", type=CommandType.STRING, description="possible values are \"featured\", \"self\", \"self-executable\",\"executable\", and \"community\". " +
+    @Parameter(name=ApiConstants.ISO_FILTER, type=CommandType.STRING, description="possible values are \"featured\", \"self\", \"self-executable\",\"executable\", and \"community\". " +
     														"* featured-ISOs that are featured and are publicself-ISOs that have been registered/created by the owner. " +
     														"* selfexecutable-ISOs that have been registered/created by the owner that can be used to deploy a new VM. " +
     														"* executable-all ISOs that can be used to deploy a new VM " +
     														"* community-ISOs that are public.")
     private String isoFilter = TemplateFilter.selfexecutable.toString();
 
-    @Parameter(name="name", type=CommandType.STRING, description="list all isos by name")
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="list all isos by name")
     private String isoName;
 
-    @Parameter(name="zoneid", type=CommandType.LONG, description="the ID of the zone")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the ID of the zone")
     private Long zoneId;
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////

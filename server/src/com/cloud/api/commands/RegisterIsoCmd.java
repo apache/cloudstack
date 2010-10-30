@@ -22,6 +22,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
@@ -45,28 +46,28 @@ public class RegisterIsoCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="bootable", type=CommandType.BOOLEAN, description="true if this ISO is bootable")
+    @Parameter(name=ApiConstants.BOOTABLE, type=CommandType.BOOLEAN, description="true if this ISO is bootable")
     private Boolean bootable;
 
-    @Parameter(name="displaytext", type=CommandType.STRING, required=true, description="the display text of the ISO. This is usually used for display purposes.")
+    @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, required=true, description="the display text of the ISO. This is usually used for display purposes.")
     private String displayText;
 
-    @Parameter(name="isfeatured", type=CommandType.BOOLEAN, description="true if you want this ISO to be featured")
+    @Parameter(name=ApiConstants.IS_FEATURED, type=CommandType.BOOLEAN, description="true if you want this ISO to be featured")
     private Boolean featured;
 
-    @Parameter(name="ispublic", type=CommandType.BOOLEAN, description="true if you want to register the ISO to be publicly available to all users, false otherwise.")
+    @Parameter(name=ApiConstants.IS_PUBLIC, type=CommandType.BOOLEAN, description="true if you want to register the ISO to be publicly available to all users, false otherwise.")
     private Boolean publicIso;
 
-    @Parameter(name="name", type=CommandType.STRING, required=true, description="the name of the ISO")
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="the name of the ISO")
     private String isoName;
 
-    @Parameter(name="ostypeid", type=CommandType.LONG, required=true, description="the ID of the OS Type that best represents the OS of this ISO")
+    @Parameter(name=ApiConstants.OS_TYPE_ID, type=CommandType.LONG, required=true, description="the ID of the OS Type that best represents the OS of this ISO")
     private Long osTypeId;
 
-    @Parameter(name="url", type=CommandType.STRING, required=true, description="the URL to where the ISO is currently being hosted")
+    @Parameter(name=ApiConstants.URL, type=CommandType.STRING, required=true, description="the URL to where the ISO is currently being hosted")
     private String url;
 
-    @Parameter(name="zoneid", type=CommandType.LONG, required=true, description="the ID of the zone you wish to register the ISO to.")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="the ID of the zone you wish to register the ISO to.")
     private Long zoneId;
 
     /////////////////////////////////////////////////////

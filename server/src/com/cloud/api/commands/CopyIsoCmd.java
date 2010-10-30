@@ -20,6 +20,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
@@ -48,7 +49,7 @@ public class CopyIsoCmd extends BaseAsyncCmd {
     @Parameter(name="destzoneid", type=CommandType.LONG, required=true, description="the ID of the destination zone to which the ISO file will be copied")
     private Long destZoneId;
 
-    @Parameter(name="id", type=CommandType.LONG, required=true, description="the ID of the ISO file")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the ISO file")
     private Long id;
 
     @Parameter(name="sourcezoneid", type=CommandType.LONG, required=true, description="the ID of the source zone from which the ISO file will be copied")

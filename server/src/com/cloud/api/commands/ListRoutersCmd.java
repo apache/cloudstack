@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
@@ -43,25 +44,25 @@ public class ListRoutersCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING, description="the name of the account associated with the router. Must be used with the domainId parameter.")
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the name of the account associated with the router. Must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name="domainid", type=CommandType.LONG, description="the domain ID associated with the router. If used with the account parameter, lists all routers associated with an account in the specified domain.")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID associated with the router. If used with the account parameter, lists all routers associated with an account in the specified domain.")
     private Long domainId;
 
-    @Parameter(name="hostid", type=CommandType.LONG, description="the host ID of the router")
+    @Parameter(name=ApiConstants.HOST_ID, type=CommandType.LONG, description="the host ID of the router")
     private Long hostId;
 
-    @Parameter(name="name", type=CommandType.STRING, description="the name of the router")
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the router")
     private String routerName;
 
-    @Parameter(name="podid", type=CommandType.LONG, description="the Pod ID of the router")
+    @Parameter(name=ApiConstants.POD_ID, type=CommandType.LONG, description="the Pod ID of the router")
     private Long podId;
 
-    @Parameter(name="state", type=CommandType.STRING, description="the state of the router")
+    @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="the state of the router")
     private String state;
 
-    @Parameter(name="zoneid", type=CommandType.LONG, description="the Zone ID of the router")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the Zone ID of the router")
     private Long zoneId;
 
     /////////////////////////////////////////////////////

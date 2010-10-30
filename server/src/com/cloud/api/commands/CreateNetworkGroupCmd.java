@@ -19,6 +19,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
@@ -37,16 +38,16 @@ public class CreateNetworkGroupCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING, description="an optional account for the network group. Must be used with domainId.")
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="an optional account for the network group. Must be used with domainId.")
     private String accountName;
 
-    @Parameter(name="description", type=CommandType.STRING, description="the description of the network group")
+    @Parameter(name=ApiConstants.DESCRIPTION, type=CommandType.STRING, description="the description of the network group")
     private String description;
 
-    @Parameter(name="domainid", type=CommandType.LONG, description="an optional domainId for the network group. If the account parameter is used, domainId must also be used.")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="an optional domainId for the network group. If the account parameter is used, domainId must also be used.")
     private Long domainId;
 
-    @Parameter(name="name", type=CommandType.STRING, required=true, description="name of the network group")
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="name of the network group")
     private String networkGroupName;
 
 

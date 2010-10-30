@@ -22,6 +22,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
@@ -41,16 +42,16 @@ public class ListPortForwardingServiceRulesCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING, description="the account associated with the port forwarding service rule. Must be used with the domainId parameter.")
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the account associated with the port forwarding service rule. Must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name="domainid", type=CommandType.LONG, description="the domainId associated with the port forwarding service rule. If used with the account parameter, returns a list of port forwarding service rules for an account for the specified domain ID.")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domainId associated with the port forwarding service rule. If used with the account parameter, returns a list of port forwarding service rules for an account for the specified domain ID.")
     private Long domainId;
 
-    @Parameter(name="id", type=CommandType.LONG, description="the ID of the port forwarding service rule")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="the ID of the port forwarding service rule")
     private Long id;
 
-    @Parameter(name="portforwardingserviceid", type=CommandType.LONG, description="the ID of the port forwarding service the rule is being created for")
+    @Parameter(name=ApiConstants.PORT_FORWARDING_SERVICE_ID, type=CommandType.LONG, description="the ID of the port forwarding service the rule is being created for")
     private Long portForwardingServiceId;
 
     /////////////////////////////////////////////////////

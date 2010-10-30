@@ -21,6 +21,7 @@ import java.text.DecimalFormat;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
@@ -46,10 +47,10 @@ public class UpgradeVMCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="id", type=CommandType.LONG, required=true, description="The ID of the virtual machine")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="The ID of the virtual machine")
     private Long id;
 
-    @Parameter(name="serviceofferingid", type=CommandType.LONG, required=true, description="the service offering ID to apply to the virtual machine")
+    @Parameter(name=ApiConstants.SERVICE_OFFERING_ID, type=CommandType.LONG, required=true, description="the service offering ID to apply to the virtual machine")
     private Long serviceOfferingId;
 
     /////////////////////////////////////////////////////

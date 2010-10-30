@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -41,13 +42,13 @@ public class ListSnapshotPoliciesCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING, description="lists snapshot policies for the specified account. Must be used with domainid parameter.")
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="lists snapshot policies for the specified account. Must be used with domainid parameter.")
     private String accountName;
 
-    @Parameter(name="domainid", type=CommandType.LONG, description="the domain ID. If used with the account parameter, lists snapshot policies for the specified account in this domain.")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID. If used with the account parameter, lists snapshot policies for the specified account in this domain.")
     private Long domainId;
 
-    @Parameter(name="volumeid", type=CommandType.LONG, required=true, description="the ID of the disk volume")
+    @Parameter(name=ApiConstants.VOLUME_ID, type=CommandType.LONG, required=true, description="the ID of the disk volume")
     private Long volumeId;
 
     /////////////////////////////////////////////////////

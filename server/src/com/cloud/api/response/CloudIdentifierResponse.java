@@ -1,11 +1,12 @@
 package com.cloud.api.response;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class CloudIdentifierResponse extends BaseResponse {
 	
-    @SerializedName("userid") @Param(description="the user ID for the cloud identifier")
+    @SerializedName(ApiConstants.USER_ID) @Param(description="the user ID for the cloud identifier")
     private Long userId;
     
     @SerializedName("cloudidentifier") @Param(description="the cloud identifier")

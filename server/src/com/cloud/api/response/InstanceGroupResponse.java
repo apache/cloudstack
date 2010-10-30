@@ -2,26 +2,27 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class InstanceGroupResponse extends BaseResponse {
-    @SerializedName("id") @Param(description="the id of the instance group")
+    @SerializedName(ApiConstants.ID) @Param(description="the id of the instance group")
     private Long id;
 
-    @SerializedName("name") @Param(description="the name of the instance group")
+    @SerializedName(ApiConstants.NAME) @Param(description="the name of the instance group")
     private String name;
 
-    @SerializedName("created") @Param(description="time and date the instance group was created")
+    @SerializedName(ApiConstants.CREATED) @Param(description="time and date the instance group was created")
     private Date created;
 
-    @SerializedName("account") @Param(description="the account owning the instance group")
+    @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account owning the instance group")
     private String accountName;
 
-    @SerializedName("domainid") @Param(description="the domain ID of the instance group")
+    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain ID of the instance group")
     private Long domainId;
 
-    @SerializedName("domain") @Param(description="the domain name of the instance group")
+    @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name of the instance group")
     private String domainName;
 
     public Long getId() {

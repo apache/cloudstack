@@ -24,6 +24,7 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
@@ -43,16 +44,16 @@ public class ListPortForwardingServicesByVmCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING, description="the account associated with the port forwarding services. Must be used with the domainId parameter.")
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the account associated with the port forwarding services. Must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name="domainid", type=CommandType.LONG, description="the domain ID associated with the port forwarding services. If used with the account parameter, returns a list of all port forwarding services for an account in the specified domain ID.")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID associated with the port forwarding services. If used with the account parameter, returns a list of all port forwarding services for an account in the specified domain ID.")
     private Long domainId;
 
-    @Parameter(name="ipaddress", type=CommandType.STRING, description="public ip address")
+    @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, description="public ip address")
     private String ipAddress;
 
-    @Parameter(name="virtualmachineid", type=CommandType.LONG, description="ID of the virtual machine")
+    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, description="ID of the virtual machine")
     private Long virtualMachineId;
 
 

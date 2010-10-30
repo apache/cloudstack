@@ -20,6 +20,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
@@ -38,36 +39,35 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING, description="account who will own the VLAN. If VLAN is Zone wide, this parameter should be ommited")
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="account who will own the VLAN. If VLAN is Zone wide, this parameter should be ommited")
     private String accountName;
 
-    @Parameter(name="domainid", type=CommandType.LONG, description="domain ID of the account owning a VLAN")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="domain ID of the account owning a VLAN")
     private Long domainId;
 
-    @Parameter(name="endip", type=CommandType.STRING, description="the ending IP address in the VLAN IP range")
+    @Parameter(name=ApiConstants.END_IP, type=CommandType.STRING, description="the ending IP address in the VLAN IP range")
     private String endIp;
 
-    @Parameter(name="forvirtualnetwork", type=CommandType.BOOLEAN, description="true if VLAN is of Virtual type, false if Direct")
+    @Parameter(name=ApiConstants.FOR_VIRTUAL_NETWORK, type=CommandType.BOOLEAN, description="true if VLAN is of Virtual type, false if Direct")
     private Boolean forVirtualNetwork;
 
-    @Parameter(name="gateway", type=CommandType.STRING, required=true, description="the gateway of the VLAN IP range")
+    @Parameter(name=ApiConstants.GATEWAY, type=CommandType.STRING, required=true, description="the gateway of the VLAN IP range")
     private String gateway;
 
-    @Parameter(name="netmask", type=CommandType.STRING, required=true, description="the netmask of the VLAN IP range")
+    @Parameter(name=ApiConstants.NETMASK, type=CommandType.STRING, required=true, description="the netmask of the VLAN IP range")
     private String netmask;
 
-    @Parameter(name="podid", type=CommandType.LONG, description="optional parameter. Have to be specified for Direct Untagged vlan only.")
+    @Parameter(name=ApiConstants.POD_ID, type=CommandType.LONG, description="optional parameter. Have to be specified for Direct Untagged vlan only.")
     private Long podId;
 
-    @Parameter(name="startip", type=CommandType.STRING, required=true, description="the beginning IP address in the VLAN IP range")
+    @Parameter(name=ApiConstants.START_IP, type=CommandType.STRING, required=true, description="the beginning IP address in the VLAN IP range")
     private String startIp;
 
-    @Parameter(name="vlan", type=CommandType.STRING, description="the ID or VID of the VLAN. Default is an \"untagged\" VLAN.")
+    @Parameter(name=ApiConstants.VLAN, type=CommandType.STRING, description="the ID or VID of the VLAN. Default is an \"untagged\" VLAN.")
     private String vlan;
 
-    @Parameter(name="zoneid", type=CommandType.LONG, required=true, description="	the Zone ID of the VLAN IP range")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="	the Zone ID of the VLAN IP range")
     private Long zoneId;
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////

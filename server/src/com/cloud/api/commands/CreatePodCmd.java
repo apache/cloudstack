@@ -20,6 +20,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
@@ -38,22 +39,22 @@ public class CreatePodCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="cidr", type=CommandType.STRING, required=true, description="the CIDR notation for the base IP address of the Pod")
+    @Parameter(name=ApiConstants.CIDR, type=CommandType.STRING, required=true, description="the CIDR notation for the base IP address of the Pod")
     private String cidr;
 
-    @Parameter(name="endip", type=CommandType.STRING, description="the ending IP address for the Pod")
+    @Parameter(name=ApiConstants.END_IP, type=CommandType.STRING, description="the ending IP address for the Pod")
     private String endIp;
 
-    @Parameter(name="gateway", type=CommandType.STRING, required=true, description="the gateway for the Pod")
+    @Parameter(name=ApiConstants.GATEWAY, type=CommandType.STRING, required=true, description="the gateway for the Pod")
     private String gateway;
 
-    @Parameter(name="name", type=CommandType.STRING, required=true, description="the name of the Pod")
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="the name of the Pod")
     private String podName;
 
-    @Parameter(name="startip", type=CommandType.STRING, required=true, description="the starting IP address for the Pod")
+    @Parameter(name=ApiConstants.START_IP, type=CommandType.STRING, required=true, description="the starting IP address for the Pod")
     private String startIp;
 
-    @Parameter(name="zoneid", type=CommandType.LONG, required=true, description="the Zone ID in which the Pod will be created	")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="the Zone ID in which the Pod will be created	")
     private Long zoneId;
 
 

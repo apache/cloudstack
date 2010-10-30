@@ -22,6 +22,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
@@ -49,44 +50,44 @@ public class DeployVMCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING, description="an optional account for the virtual machine. Must be used with domainId.")
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="an optional account for the virtual machine. Must be used with domainId.")
     private String accountName;
 
-    @Parameter(name="diskofferingid", type=CommandType.LONG, description="the ID of the disk offering for the virtual machine. If the template is of ISO format, the diskOfferingId is for the root disk volume. Otherwise this parameter is used to dinidcate the offering for the data disk volume. If the templateId parameter passed is from a Template object, the diskOfferingId refers to a DATA Disk Volume created. If the templateId parameter passed is from an ISO object, the diskOfferingId refers to a ROOT Disk Volume created.")
+    @Parameter(name=ApiConstants.DISK_OFFERING_ID, type=CommandType.LONG, description="the ID of the disk offering for the virtual machine. If the template is of ISO format, the diskOfferingId is for the root disk volume. Otherwise this parameter is used to dinidcate the offering for the data disk volume. If the templateId parameter passed is from a Template object, the diskOfferingId refers to a DATA Disk Volume created. If the templateId parameter passed is from an ISO object, the diskOfferingId refers to a ROOT Disk Volume created.")
     private Long diskOfferingId;
 
-    @Parameter(name="displayname", type=CommandType.STRING, description="an optional user generated name for the virtual machine")
+    @Parameter(name=ApiConstants.DISPLAY_NAME, type=CommandType.STRING, description="an optional user generated name for the virtual machine")
     private String displayName;
 
-    @Parameter(name="domainid", type=CommandType.LONG, description="an optional domainId for the virtual machine. If the account parameter is used, domainId must also be used.")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="an optional domainId for the virtual machine. If the account parameter is used, domainId must also be used.")
     private Long domainId;
 
-    @Parameter(name="group", type=CommandType.STRING, description="an optional group for the virtual machine")
+    @Parameter(name=ApiConstants.GROUP, type=CommandType.STRING, description="an optional group for the virtual machine")
     private String group;
 
-    @Parameter(name="hypervisor", type=CommandType.STRING, description="the hypervisor on which to deploy the virtual machine")
+    @Parameter(name=ApiConstants.HYPERVISOR, type=CommandType.STRING, description="the hypervisor on which to deploy the virtual machine")
     private String hypervisor;
 
-    @Parameter(name="networkgrouplist", type=CommandType.LIST, collectionType=CommandType.STRING, description="comma separated list of network groups that going to be applied to the virtual machine. Should be passed only when vm is created from service offering with Direct Attach Network support")
+    @Parameter(name=ApiConstants.NETWORK_GROUP_LIST, type=CommandType.LIST, collectionType=CommandType.STRING, description="comma separated list of network groups that going to be applied to the virtual machine. Should be passed only when vm is created from service offering with Direct Attach Network support")
     private List<String> networkGroupList;
 
-    @Parameter(name="serviceofferingid", type=CommandType.LONG, required=true, description="the ID of the service offering for the virtual machine")
+    @Parameter(name=ApiConstants.SERVICE_OFFERING_ID, type=CommandType.LONG, required=true, description="the ID of the service offering for the virtual machine")
     private Long serviceOfferingId;
 
-    @Parameter(name="size", type=CommandType.LONG, description="the arbitrary size for the DATADISK volume. Mutually exclusive with diskOfferingId")
+    @Parameter(name=ApiConstants.SIZE, type=CommandType.LONG, description="the arbitrary size for the DATADISK volume. Mutually exclusive with diskOfferingId")
     private Long size;
 
-    @Parameter(name="templateid", type=CommandType.LONG, required=true, description="the ID of the template for the virtual machine")
+    @Parameter(name=ApiConstants.TEMPLATE_ID, type=CommandType.LONG, required=true, description="the ID of the template for the virtual machine")
     private Long templateId;
 
-    @Parameter(name="userdata", type=CommandType.STRING, description="an optional binary data that can be sent to the virtual machine upon a successful deployment. This binary data must be base64 encoded before adding it to the request. Currently only HTTP GET is supported. Using HTTP GET (via querystring), you can send up to 2KB of data after base64 encoding.")
+    @Parameter(name=ApiConstants.USER_DATA, type=CommandType.STRING, description="an optional binary data that can be sent to the virtual machine upon a successful deployment. This binary data must be base64 encoded before adding it to the request. Currently only HTTP GET is supported. Using HTTP GET (via querystring), you can send up to 2KB of data after base64 encoding.")
     private String userData;
 
-    @Parameter(name="zoneid", type=CommandType.LONG, required=true, description="availability zone for the virtual machine")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="availability zone for the virtual machine")
     private Long zoneId;
 
     // unexposed parameter needed for serializing/deserializing the command
-    @Parameter(name="password", type=CommandType.STRING, expose=false)
+    @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, expose=false)
     private String password;
 
     /////////////////////////////////////////////////////

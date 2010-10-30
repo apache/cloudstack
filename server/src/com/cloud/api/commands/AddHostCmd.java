@@ -27,6 +27,7 @@ import java.util.Set;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
@@ -53,25 +54,25 @@ public class AddHostCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="clusterid", type=CommandType.LONG, description="the cluster ID for the host")
+    @Parameter(name=ApiConstants.CLUSTER_ID, type=CommandType.LONG, description="the cluster ID for the host")
     private Long clusterId;
 
-    @Parameter(name="clustername", type=CommandType.STRING, description="the cluster name for the host")
+    @Parameter(name=ApiConstants.CLUSTER_NAME, type=CommandType.STRING, description="the cluster name for the host")
     private String clusterName;
 
-    @Parameter(name="password", type=CommandType.STRING, required=true, description="the password for the host")
+    @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, required=true, description="the password for the host")
     private String password;
 
-    @Parameter(name="podid", type=CommandType.LONG, description="the Pod ID for the host")
+    @Parameter(name=ApiConstants.POD_ID, type=CommandType.LONG, description="the Pod ID for the host")
     private Long podId;
 
-    @Parameter(name="url", type=CommandType.STRING, required=true, description="the host URL")
+    @Parameter(name=ApiConstants.URL, type=CommandType.STRING, required=true, description="the host URL")
     private String url;
 
-    @Parameter(name="username", type=CommandType.STRING, required=true, description="the username for the host")
+    @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, required=true, description="the username for the host")
     private String username;
 
-    @Parameter(name="zoneid", type=CommandType.LONG, required=true, description="the Zone ID for the host")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="the Zone ID for the host")
     private Long zoneId;
 
 

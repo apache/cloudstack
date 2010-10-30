@@ -19,6 +19,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.Implementation;
@@ -38,19 +39,19 @@ public class UpdateLoadBalancerRuleCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="algorithm", type=CommandType.STRING, description="load balancer algorithm (source, roundrobin, leastconn)")
+    @Parameter(name=ApiConstants.ALGORITHM, type=CommandType.STRING, description="load balancer algorithm (source, roundrobin, leastconn)")
     private String algorithm;
 
-    @Parameter(name="description", type=CommandType.STRING, description="the description of the load balancer rule")
+    @Parameter(name=ApiConstants.DESCRIPTION, type=CommandType.STRING, description="the description of the load balancer rule")
     private String description;
 
-    @Parameter(name="id", type=CommandType.LONG, required=true, description="the id of the load balancer rule to update")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the id of the load balancer rule to update")
     private Long id;
 
-    @Parameter(name="name", type=CommandType.STRING, description="the name of the load balancer rule")
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the load balancer rule")
     private String loadBalancerName;
 
-    @Parameter(name="privateport", type=CommandType.STRING, description="the private port of the private ip address/virtual machine where the network traffic will be load balanced to")
+    @Parameter(name=ApiConstants.PRIVATE_PORT, type=CommandType.STRING, description="the private port of the private ip address/virtual machine where the network traffic will be load balanced to")
     private String privatePort;
 
     /////////////////////////////////////////////////////

@@ -22,6 +22,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
@@ -40,13 +41,13 @@ public class ListDomainChildrenCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="id", type=CommandType.LONG, description="list children domain by parent domain ID.")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list children domain by parent domain ID.")
     private Long id;
 
-    @Parameter(name="isrecursive", type=CommandType.BOOLEAN, description="to return the entire tree, use the value \"true\". To return the first level children, use the value \"false\".")
+    @Parameter(name=ApiConstants.IS_RECURSIVE, type=CommandType.BOOLEAN, description="to return the entire tree, use the value \"true\". To return the first level children, use the value \"false\".")
     private Boolean recursive;
 
-    @Parameter(name="name", type=CommandType.STRING, description="list children domain by parent domain name.")
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="list children domain by parent domain name.")
     private String domainName;
 
     /////////////////////////////////////////////////////

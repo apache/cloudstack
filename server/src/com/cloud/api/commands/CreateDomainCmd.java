@@ -19,6 +19,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
@@ -37,10 +38,10 @@ public class CreateDomainCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="name", type=CommandType.STRING, required=true, description="creates domain with this name")
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="creates domain with this name")
     private String domainName;
 
-    @Parameter(name="parentdomainid", type=CommandType.LONG, description="assigns new domain a parent domain by domain ID of the parent.  If no parent domain is specied, the ROOT domain is assumed.")
+    @Parameter(name=ApiConstants.PARENT_DOMAIN_ID, type=CommandType.LONG, description="assigns new domain a parent domain by domain ID of the parent.  If no parent domain is specied, the ROOT domain is assumed.")
     private Long parentDomainId;
 
 

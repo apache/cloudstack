@@ -22,6 +22,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
@@ -41,16 +42,16 @@ public class ListVMGroupsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="id", type=CommandType.LONG, description="list instance groups by ID")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list instance groups by ID")
     private Long id;
 
-    @Parameter(name="name", type=CommandType.STRING, description="list instance groups by name")
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="list instance groups by name")
     private String groupName;
 
-    @Parameter(name="account", type=CommandType.STRING, description="list instance group belonging to the specified account. Must be used with domainid parameter")
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="list instance group belonging to the specified account. Must be used with domainid parameter")
     private String accountName;
 
-    @Parameter(name="domainid", type=CommandType.LONG, description="the domain ID. If used with the account parameter, lists virtual machines for the specified account in this domain.")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID. If used with the account parameter, lists virtual machines for the specified account in this domain.")
     private Long domainId;
 
     /////////////////////////////////////////////////////

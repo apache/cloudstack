@@ -20,6 +20,7 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -38,7 +39,7 @@ public class PrepareForMaintenanceCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="id", type=CommandType.LONG, required=true, description="the host ID")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the host ID")
     private Long id;
 
     /////////////////////////////////////////////////////

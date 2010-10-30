@@ -19,6 +19,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
@@ -38,19 +39,19 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="disksize", type=CommandType.LONG, required=true, description="disk size of the disk offering in GB")
+    @Parameter(name=ApiConstants.DISK_SIZE, type=CommandType.LONG, required=true, description="disk size of the disk offering in GB")
     private Long diskSize;
 
-    @Parameter(name="displaytext", type=CommandType.STRING, required=true, description="alternate display text of the disk offering")
+    @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, required=true, description="alternate display text of the disk offering")
     private String displayText;
 
-    @Parameter(name="domainid", type=CommandType.LONG, description="domain ID where disk offering is going to be created")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="domain ID where disk offering is going to be created")
     private Long domainId;
 
-    @Parameter(name="name", type=CommandType.STRING, required=true, description="name of the disk offering")
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="name of the disk offering")
     private String offeringName;
 
-    @Parameter(name="tags", type=CommandType.STRING, description="tags for the disk offering")
+    @Parameter(name=ApiConstants.TAGS, type=CommandType.STRING, description="tags for the disk offering")
     private String tags;
 
     /////////////////////////////////////////////////////

@@ -19,35 +19,36 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class VolumeResponse extends BaseResponse {
-    @SerializedName("id") @Param(description="ID of the disk volume")
+    @SerializedName(ApiConstants.ID) @Param(description="ID of the disk volume")
     private Long id;
 
-    @SerializedName("jobid") @Param(description="shows the current pending asynchronous job ID. This tag is not returned if no current pending jobs are acting on the volume")
+    @SerializedName(ApiConstants.JOB_ID) @Param(description="shows the current pending asynchronous job ID. This tag is not returned if no current pending jobs are acting on the volume")
     private Long jobId;
 
     @SerializedName("jobstatus") @Param(description="shows the current pending asynchronous job status")
     private Integer jobStatus;
 
-    @SerializedName("name") @Param(description="name of the disk volume")
+    @SerializedName(ApiConstants.NAME) @Param(description="name of the disk volume")
     private String name;
 
-    @SerializedName("zoneid") @Param(description="ID of the availability zone")
+    @SerializedName(ApiConstants.ZONE_ID) @Param(description="ID of the availability zone")
     private Long zoneId;
 
     @SerializedName("zonename") @Param(description="name of the availability zone")
     private String zoneName;
 
-    @SerializedName("type") @Param(description="type of the disk volume (ROOT or DATADISK)")
+    @SerializedName(ApiConstants.TYPE) @Param(description="type of the disk volume (ROOT or DATADISK)")
     private String volumeType;
 
-    @SerializedName("deviceid") @Param(description="the ID of the device on user vm the volume is attahed to. This tag is not returned when the volume is detached.")
+    @SerializedName(ApiConstants.DEVICE_ID) @Param(description="the ID of the device on user vm the volume is attahed to. This tag is not returned when the volume is detached.")
     private Long deviceId;
 
-    @SerializedName("virtualmachineid") @Param(description="id of the virtual machine")
+    @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID) @Param(description="id of the virtual machine")
     private Long virtualMachineId;
 
     @SerializedName("vmname") @Param(description="name of the virtual machine")
@@ -59,22 +60,22 @@ public class VolumeResponse extends BaseResponse {
     @SerializedName("vmstate") @Param(description="state of the virtual machine")
     private String virtualMachineState;
 
-    @SerializedName("size") @Param(description="size of the disk volume")
+    @SerializedName(ApiConstants.SIZE) @Param(description="size of the disk volume")
     private Long size;
 
-    @SerializedName("created") @Param(description="the date the disk volume was created")
+    @SerializedName(ApiConstants.CREATED) @Param(description="the date the disk volume was created")
     private Date created;
 
-    @SerializedName("state") @Param(description="the state of the disk volume")
+    @SerializedName(ApiConstants.STATE) @Param(description="the state of the disk volume")
     private String state;
 
-    @SerializedName("account") @Param(description="the account associated with the disk volume")
+    @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account associated with the disk volume")
     private String accountName;
 
-    @SerializedName("domainid") @Param(description="the ID of the domain associated with the disk volume")
+    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the ID of the domain associated with the disk volume")
     private Long domainId;
 
-    @SerializedName("domain") @Param(description="the domain associated with the disk volume")
+    @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain associated with the disk volume")
     private String domainName;
 
     @SerializedName("storagetype") @Param(description="shared or local storage")
@@ -86,10 +87,10 @@ public class VolumeResponse extends BaseResponse {
     @SerializedName("sourcetype")
     private String sourceType;
 
-    @SerializedName("hypervisor")
+    @SerializedName(ApiConstants.HYPERVISOR)
     private String hypervisor;
 
-    @SerializedName("diskofferingid") @Param(description="ID of the disk offering")
+    @SerializedName(ApiConstants.DISK_OFFERING_ID) @Param(description="ID of the disk offering")
     private Long diskOfferingId;
 
     @SerializedName("diskofferingname") @Param(description="name of the disk offering")
@@ -101,7 +102,7 @@ public class VolumeResponse extends BaseResponse {
     @SerializedName("storage") @Param(description="name of the primary storage hosting the disk volume")
     private String storagePoolName;
 
-    @SerializedName("snapshotid") @Param(description="ID of the snapshot from which this volume was created")
+    @SerializedName(ApiConstants.SNAPSHOT_ID) @Param(description="ID of the snapshot from which this volume was created")
     private Long snapshotId;
 
     @SerializedName("attached") @Param(description="the date the volume was attached to a VM instance")

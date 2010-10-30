@@ -20,6 +20,7 @@ package com.cloud.api.commands;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -37,10 +38,10 @@ public class ListRecurringSnapshotScheduleCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="snapshotpolicyid", type=CommandType.LONG, description="lists recurring snapshots by snapshot policy ID")
+    @Parameter(name=ApiConstants.SNAPSHOT_POLICY_ID, type=CommandType.LONG, description="lists recurring snapshots by snapshot policy ID")
     private Long snapshotPolicyId;
 
-    @Parameter(name="volumeid", type=CommandType.LONG, required=true, description="list recurring snapshots by volume ID")
+    @Parameter(name=ApiConstants.VOLUME_ID, type=CommandType.LONG, required=true, description="list recurring snapshots by volume ID")
     private Long volumeId;
 
     /////////////////////////////////////////////////////

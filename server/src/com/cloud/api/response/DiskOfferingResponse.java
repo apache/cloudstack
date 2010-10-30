@@ -19,36 +19,36 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class DiskOfferingResponse extends BaseResponse {
-    @SerializedName("id") @Param(description="unique ID of the disk offering")
+    @SerializedName(ApiConstants.ID) @Param(description="unique ID of the disk offering")
     private Long id;
 
-    @SerializedName("domainid") @Param(description="the domain ID this disk offering belongs to. Ignore this information as it is not currently applicable.")
+    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain ID this disk offering belongs to. Ignore this information as it is not currently applicable.")
     private Long domainId;
 
-    @SerializedName("domain") @Param(description="the domain name this disk offering belongs to. Ignore this information as it is not currently applicable.")
+    @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name this disk offering belongs to. Ignore this information as it is not currently applicable.")
     private String domain;
 
-    @SerializedName("name") @Param(description="the name of the disk offering")
+    @SerializedName(ApiConstants.NAME) @Param(description="the name of the disk offering")
     private String name;
 
-    @SerializedName("displaytext") @Param(description="an alternate display text of the disk offering.")
+    @SerializedName(ApiConstants.DISPLAY_TEXT) @Param(description="an alternate display text of the disk offering.")
     private String displayText;
 
-    @SerializedName("disksize") @Param(description="the size of the disk offering in GB")
+    @SerializedName(ApiConstants.DISK_SIZE) @Param(description="the size of the disk offering in GB")
     private Long diskSize;
 
-    @SerializedName("created") @Param(description="the date this disk offering was created")
+    @SerializedName(ApiConstants.CREATED) @Param(description="the date this disk offering was created")
     private Date created;
 
     @SerializedName("ismirrored")
     private Boolean mirrored;
 
-    @SerializedName("tags") @Param(description="the tags for the disk offering")
-
+    @SerializedName(ApiConstants.TAGS) @Param(description="the tags for the disk offering")
     private String tags;
 
     public Long getId() {

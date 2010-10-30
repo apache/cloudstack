@@ -20,6 +20,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.BaseCmd;
@@ -43,13 +44,13 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING, description="The account of the snapshot. The account parameter must be used with the domainId parameter.")
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="The account of the snapshot. The account parameter must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name="domainid", type=CommandType.LONG, description="The domain ID of the snapshot. If used with the account parameter, specifies a domain for the account associated with the disk volume.")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="The domain ID of the snapshot. If used with the account parameter, specifies a domain for the account associated with the disk volume.")
     private Long domainId;
 
-    @Parameter(name="volumeid", type=CommandType.LONG, required=true, description="The ID of the disk volume")
+    @Parameter(name=ApiConstants.VOLUME_ID, type=CommandType.LONG, required=true, description="The ID of the disk volume")
     private Long volumeId;
 
     /////////////////////////////////////////////////////

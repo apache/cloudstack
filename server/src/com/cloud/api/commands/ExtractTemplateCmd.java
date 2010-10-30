@@ -19,6 +19,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.Implementation;
@@ -40,16 +41,16 @@ public class ExtractTemplateCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="id", type=CommandType.LONG, required=true, description="the ID of the template")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the template")
     private Long id;
 
-    @Parameter(name="url", type=CommandType.STRING, required=false, description="the url to which the ISO would be extracted")
+    @Parameter(name=ApiConstants.URL, type=CommandType.STRING, required=false, description="the url to which the ISO would be extracted")
     private String url;
     
-    @Parameter(name="zoneid", type=CommandType.LONG, required=true, description="the ID of the zone where the ISO is originally located" )
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="the ID of the zone where the ISO is originally located" )
     private Long zoneId;
 
-    @Parameter(name="mode", type=CommandType.STRING, required=true, description="the mode of extraction - HTTP_DOWNLOAD or FTP_UPLOAD")
+    @Parameter(name=ApiConstants.MODE, type=CommandType.STRING, required=true, description="the mode of extraction - HTTP_DOWNLOAD or FTP_UPLOAD")
     private String mode;
     
     /////////////////////////////////////////////////////

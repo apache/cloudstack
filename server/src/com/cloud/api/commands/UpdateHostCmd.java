@@ -27,6 +27,7 @@ import java.util.Set;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
@@ -51,10 +52,10 @@ public class UpdateHostCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="id", type=CommandType.LONG, required=true, description="the ID of the host to update")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the host to update")
     private Long id;
 
-    @Parameter(name="oscategoryid", type=CommandType.LONG)
+    @Parameter(name=ApiConstants.OS_CATEGORY_ID, type=CommandType.LONG)
     private Long osCategoryId;
 
     /////////////////////////////////////////////////////

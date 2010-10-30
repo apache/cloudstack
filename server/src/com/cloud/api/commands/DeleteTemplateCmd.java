@@ -20,6 +20,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.Implementation;
@@ -39,10 +40,10 @@ public class DeleteTemplateCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="id", type=CommandType.LONG, required=true, description="the ID of the template")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the template")
     private Long id;
 
-    @Parameter(name="zoneid", type=CommandType.LONG, description="the ID of zone of the template")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the ID of zone of the template")
     private Long zoneId;
 
 

@@ -19,6 +19,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
@@ -40,13 +41,13 @@ public class AssociateIPAddrCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING, description="the account to associate with this IP address")
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the account to associate with this IP address")
     private String accountName;
 
-    @Parameter(name="domainid", type=CommandType.LONG, description="the ID of the domain to associate with this IP address")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the ID of the domain to associate with this IP address")
     private Long domainId;
 
-    @Parameter(name="zoneid", type=CommandType.LONG, required=true, description="the ID of the availability zone you want to acquire an public IP address from")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="the ID of the availability zone you want to acquire an public IP address from")
     private Long zoneId;
 
 

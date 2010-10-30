@@ -19,6 +19,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -35,10 +36,10 @@ public class EnableAccountCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING, description="Enables specified account.")
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="Enables specified account.")
     private String accountName;
 
-    @Parameter(name="domainid", type=CommandType.LONG, description="Enables specified account in this domain.")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="Enables specified account in this domain.")
     private Long domainId;
 
     /////////////////////////////////////////////////////

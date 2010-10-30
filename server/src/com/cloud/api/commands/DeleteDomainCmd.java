@@ -19,6 +19,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
@@ -39,10 +40,10 @@ public class DeleteDomainCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="id", type=CommandType.LONG, required=true, description="ID of domain to delete")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="ID of domain to delete")
     private Long id;
 
-    @Parameter(name="cleanup", type=CommandType.BOOLEAN)
+    @Parameter(name=ApiConstants.CLEANUP, type=CommandType.BOOLEAN)
     private Boolean cleanup;
 
 

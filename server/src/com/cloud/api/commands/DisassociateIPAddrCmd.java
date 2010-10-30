@@ -19,6 +19,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -35,7 +36,7 @@ public class DisassociateIPAddrCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="ipaddress", type=CommandType.STRING, required=true, description="the public ip address to disassociate")
+    @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, required=true, description="the public ip address to disassociate")
     private String ipAddress;
 
     /////////////////////////////////////////////////////

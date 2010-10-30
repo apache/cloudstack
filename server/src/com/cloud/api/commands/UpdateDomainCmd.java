@@ -19,6 +19,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -35,10 +36,10 @@ public class UpdateDomainCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="id", type=CommandType.LONG, required=true, description="ID of domain to update")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="ID of domain to update")
     private Long id;
 
-    @Parameter(name="name", type=CommandType.STRING, description="updates domain with this name")
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="updates domain with this name")
     private String domainName;
 
     /////////////////////////////////////////////////////

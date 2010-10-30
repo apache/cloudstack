@@ -17,6 +17,7 @@
  */
 package com.cloud.api.commands;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -32,25 +33,25 @@ public class RegisterPreallocatedLunCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     //FIXME - add description
-    @Parameter(name="disksize", type=CommandType.LONG, required=true)
+    @Parameter(name=ApiConstants.DISK_SIZE, type=CommandType.LONG, required=true)
     private Long diskSize;
 
     //FIXME - add description
-    @Parameter(name="lun", type=CommandType.INTEGER, required=true)
+    @Parameter(name=ApiConstants.LUN, type=CommandType.INTEGER, required=true)
     private Integer lun;
 
     //FIXME - add description
-    @Parameter(name="portal", type=CommandType.STRING, required=true)
+    @Parameter(name=ApiConstants.PORTAL, type=CommandType.STRING, required=true)
     private String portal;
 
     //FIXME - add description
-    @Parameter(name="tags", type=CommandType.STRING)
+    @Parameter(name=ApiConstants.TAGS, type=CommandType.STRING)
     private String tags;
 
-    @Parameter(name="targetiqn", type=CommandType.STRING, required=true, description="the target IQN on the storage host where LUN is created")
+    @Parameter(name=ApiConstants.TARGET_IQN, type=CommandType.STRING, required=true, description="the target IQN on the storage host where LUN is created")
     private String targetIqn;
 
-    @Parameter(name="zoneid", type=CommandType.LONG, required=true, description="zone ID where LUN is going to be created")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="zone ID where LUN is going to be created")
     private Long zoneId;
 
     /////////////////////////////////////////////////////

@@ -1,12 +1,13 @@
 package com.cloud.api.response;
 
+import com.cloud.api.ApiConstants;
 import com.google.gson.annotations.SerializedName;
 
 public class CreateCmdResponse extends BaseResponse {
-    @SerializedName("jobid")
+    @SerializedName(ApiConstants.JOB_ID)
     private Long jobId;
 
-    @SerializedName("id")
+    @SerializedName(ApiConstants.ID)
     private Long id;
 
     public Long getJobId() {

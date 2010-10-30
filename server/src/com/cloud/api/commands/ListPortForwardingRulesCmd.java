@@ -24,6 +24,7 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
@@ -46,7 +47,7 @@ public class ListPortForwardingRulesCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="ipaddress", type=CommandType.STRING, required=true, description="the IP address of the port forwarding services")
+    @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, required=true, description="the IP address of the port forwarding services")
     private String ipAddress;
 
     /////////////////////////////////////////////////////

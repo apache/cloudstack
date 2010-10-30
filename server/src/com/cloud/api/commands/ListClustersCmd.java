@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
@@ -43,16 +44,16 @@ public class ListClustersCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="id", type=CommandType.LONG, description="lists clusters by the cluster ID")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="lists clusters by the cluster ID")
     private Long id;
 
-    @Parameter(name="name", type=CommandType.STRING, description="lists clusters by the cluster name")
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="lists clusters by the cluster name")
     private String clusterName;
 
-    @Parameter(name="podid", type=CommandType.LONG, description="lists clusters by Pod ID")
+    @Parameter(name=ApiConstants.POD_ID, type=CommandType.LONG, description="lists clusters by Pod ID")
     private Long podId;
 
-    @Parameter(name="zoneid", type=CommandType.LONG, description="lists clusters by Zone ID")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="lists clusters by Zone ID")
     private Long zoneId;
 
 

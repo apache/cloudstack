@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -41,11 +42,11 @@ public class ListPreallocatedLunsCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
 
     //FIXME - add description
-    @Parameter(name="scope", type=CommandType.STRING)
+    @Parameter(name=ApiConstants.SCOPE, type=CommandType.STRING)
     private String scope;
 
     //FIXME - add description
-    @Parameter(name="targetiqn", type=CommandType.STRING)
+    @Parameter(name=ApiConstants.TARGET_IQN, type=CommandType.STRING)
     private String targetIqn;
 
     /////////////////////////////////////////////////////

@@ -22,6 +22,7 @@ import java.util.Date;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -40,7 +41,7 @@ public class QueryAsyncJobResultCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="jobid", type=CommandType.LONG, required=true, description="the ID of the asychronous job")
+    @Parameter(name=ApiConstants.JOB_ID, type=CommandType.LONG, required=true, description="the ID of the asychronous job")
     private Long id;
 
     /////////////////////////////////////////////////////

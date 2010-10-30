@@ -20,6 +20,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -37,19 +38,19 @@ public class CreateSnapshotPolicyCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING, description="The account of the snapshot policy. The account parameter must be used with the domainId parameter.")
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="The account of the snapshot policy. The account parameter must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name="domainid", type=CommandType.LONG, description="The domain ID of the snapshot. If used with the account parameter, specifies a domain for the account associated with the snapshot policy.")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="The domain ID of the snapshot. If used with the account parameter, specifies a domain for the account associated with the snapshot policy.")
     private Long domainId;
 
-    @Parameter(name="intervaltype", type=CommandType.STRING, required=true, description="valid values are HOURLY, DAILY, WEEKLY, and MONTHLY")
+    @Parameter(name=ApiConstants.INTERVAL_TYPE, type=CommandType.STRING, required=true, description="valid values are HOURLY, DAILY, WEEKLY, and MONTHLY")
     private String intervalType;
 
-    @Parameter(name="maxsnaps", type=CommandType.INTEGER, required=true, description="maximum number of snapshots to retain")
+    @Parameter(name=ApiConstants.MAX_SNAPS, type=CommandType.INTEGER, required=true, description="maximum number of snapshots to retain")
     private Integer maxSnaps;
 
-    @Parameter(name="schedule", type=CommandType.STRING, required=true, description="time the snapshot is scheduled to be taken. " +
+    @Parameter(name=ApiConstants.SCHEDULE, type=CommandType.STRING, required=true, description="time the snapshot is scheduled to be taken. " +
     																				"Format is:" +
     																				"* if HOURLY, MM" +
     																				"* if DAILY, MM:HH" +
@@ -57,10 +58,10 @@ public class CreateSnapshotPolicyCmd extends BaseCmd {
     																				"* if MONTHLY, MM:HH:DD (1-28)")
     private String schedule;
 
-    @Parameter(name="timezone", type=CommandType.STRING, required=true, description="Specifies a timezone for this command. For more information on the timezone parameter, see Time Zone Format.")
+    @Parameter(name=ApiConstants.TIMEZONE, type=CommandType.STRING, required=true, description="Specifies a timezone for this command. For more information on the timezone parameter, see Time Zone Format.")
     private String timezone;
 
-    @Parameter(name="volumeid", type=CommandType.LONG, required=true, description="the ID of the disk volume")
+    @Parameter(name=ApiConstants.VOLUME_ID, type=CommandType.LONG, required=true, description="the ID of the disk volume")
     private Long volumeId;
 
 

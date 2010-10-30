@@ -19,6 +19,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.Implementation;
@@ -39,13 +40,13 @@ public class RemovePortForwardingServiceCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="id", type=CommandType.LONG, required=true, description="the ID of the port forwarding service to remove from the virtual machine/publicIp")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the port forwarding service to remove from the virtual machine/publicIp")
     private Long id;
 
-    @Parameter(name="publicip", type=CommandType.STRING, required=true, description="the public IP address associated with the port forwarding service")
+    @Parameter(name=ApiConstants.PUBLIC_IP, type=CommandType.STRING, required=true, description="the public IP address associated with the port forwarding service")
     private String publicIp;
 
-    @Parameter(name="virtualmachineid", type=CommandType.LONG, required=true, description="the virtual machine currently assigned to the port forwarding service")
+    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, required=true, description="the virtual machine currently assigned to the port forwarding service")
     private Long virtualMachineId;
 
     /////////////////////////////////////////////////////

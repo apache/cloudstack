@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
@@ -43,16 +44,16 @@ public class ListResourceLimitsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING, description="Lists resource limits by account. Must be used with the domainId parameter.")
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="Lists resource limits by account. Must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name="domainid", type=CommandType.LONG, description="Lists resource limits by domain ID. If used with the account parameter, lists resource limits for a specified account in a specified domain.")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="Lists resource limits by domain ID. If used with the account parameter, lists resource limits for a specified account in a specified domain.")
     private Long domainId;
 
-    @Parameter(name="id", type=CommandType.LONG, description="Lists resource limits by ID.")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="Lists resource limits by ID.")
     private Long id;
 
-    @Parameter(name="resourcetype", type=CommandType.INTEGER, description="Type of resource to update. Values are 0, 1, 2, 3, and 4. 0 - Instance. Number of instances a user can create. " +
+    @Parameter(name=ApiConstants.RESOURCE_TYPE, type=CommandType.INTEGER, description="Type of resource to update. Values are 0, 1, 2, 3, and 4. 0 - Instance. Number of instances a user can create. " +
 																						"1 - IP. Number of public IP addresses a user can own. " +
 																						"2 - Volume. Number of disk volumes a user can create." +
 																						"3 - Snapshot. Number of snapshots a user can create." +

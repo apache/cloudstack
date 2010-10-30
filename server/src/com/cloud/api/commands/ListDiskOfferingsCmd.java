@@ -22,6 +22,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
@@ -41,13 +42,13 @@ public class ListDiskOfferingsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="domainid", type=CommandType.LONG, description="the ID of the domain of the disk offering. This information is not currently applicable, and should not be used as a parameter.")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the ID of the domain of the disk offering. This information is not currently applicable, and should not be used as a parameter.")
     private Long domainId;
 
-    @Parameter(name="id", type=CommandType.LONG, description="ID of the disk offering")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="ID of the disk offering")
     private Long id;
 
-    @Parameter(name="name", type=CommandType.STRING, description="name of the disk offering")
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="name of the disk offering")
     private String diskOfferingName;
 
     /////////////////////////////////////////////////////

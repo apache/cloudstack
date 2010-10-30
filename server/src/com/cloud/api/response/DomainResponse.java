@@ -17,17 +17,18 @@
  */
 package com.cloud.api.response;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class DomainResponse extends BaseResponse {
-    @SerializedName("id") @Param(description="the ID of the domain")
+    @SerializedName(ApiConstants.ID) @Param(description="the ID of the domain")
     private Long id;
 
-    @SerializedName("name") @Param(description="the name of the domain")
+    @SerializedName(ApiConstants.NAME) @Param(description="the name of the domain")
     private String domainName;
 
-    @SerializedName("level") @Param(description="the level of the domain")
+    @SerializedName(ApiConstants.LEVEL) @Param(description="the level of the domain")
     private Integer level;
 
     @SerializedName("parentdomainid") @Param(description="the domain ID of the parent domain")

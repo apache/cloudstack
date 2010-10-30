@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -41,13 +42,13 @@ public class ListPodsByCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="id", type=CommandType.LONG, description="list Pods by ID")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list Pods by ID")
     private Long id;
 
-    @Parameter(name="name", type=CommandType.STRING, description="list Pods by name")
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="list Pods by name")
     private String podName;
 
-    @Parameter(name="zoneid", type=CommandType.LONG, description="list Pods by Zone ID")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="list Pods by Zone ID")
     private Long zoneId;
 
 

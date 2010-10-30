@@ -19,6 +19,7 @@
 package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -35,18 +36,17 @@ public class UpdateDiskOfferingCmd extends BaseCmd{
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    
 
-    @Parameter(name="displaytext", type=CommandType.STRING, description="updates alternate display text of the disk offering with this value")
+    @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, description="updates alternate display text of the disk offering with this value")
     private String displayText;
 
-    @Parameter(name="id", type=CommandType.LONG, required=true, description="ID of the disk offering")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="ID of the disk offering")
     private Long id;
 
-    @Parameter(name="name", type=CommandType.STRING, description="updates name of the disk offering with this value")
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="updates name of the disk offering with this value")
     private String diskOfferingName;
 
-    @Parameter(name="tags", type=CommandType.STRING, description="update tags of the disk offering with this value")
+    @Parameter(name=ApiConstants.TAGS, type=CommandType.STRING, description="update tags of the disk offering with this value")
     private String tags;
 
     /////////////////////////////////////////////////////

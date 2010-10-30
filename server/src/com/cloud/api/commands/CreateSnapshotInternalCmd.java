@@ -19,6 +19,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.Implementation;
@@ -40,10 +41,10 @@ public class CreateSnapshotInternalCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="policyid", type=CommandType.LONG)
+    @Parameter(name=ApiConstants.POLICY_ID, type=CommandType.LONG)
     private Long policyId;
 
-    @Parameter(name="volumeid", type=CommandType.LONG, required=true)
+    @Parameter(name=ApiConstants.VOLUME_ID, type=CommandType.LONG, required=true)
     private Long volumeId;
 
     /////////////////////////////////////////////////////

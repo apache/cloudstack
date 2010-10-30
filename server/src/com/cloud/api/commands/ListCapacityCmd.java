@@ -29,6 +29,7 @@ import java.util.StringTokenizer;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
@@ -52,16 +53,16 @@ public class ListCapacityCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="hostid", type=CommandType.LONG, description="lists capacity by the Host ID")
+    @Parameter(name=ApiConstants.HOST_ID, type=CommandType.LONG, description="lists capacity by the Host ID")
     private Long hostId;
 
-    @Parameter(name="podid", type=CommandType.LONG, description="lists capacity by the Pod ID")
+    @Parameter(name=ApiConstants.POD_ID, type=CommandType.LONG, description="lists capacity by the Pod ID")
     private Long podId;
 
-    @Parameter(name="type", type=CommandType.STRING, description="lists capacity by type")
+    @Parameter(name=ApiConstants.TYPE, type=CommandType.STRING, description="lists capacity by type")
     private String type;
 
-    @Parameter(name="zoneid", type=CommandType.LONG, description="lists capacity by the Zone ID")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="lists capacity by the Zone ID")
     private Long zoneId;
 
 

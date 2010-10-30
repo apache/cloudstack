@@ -19,6 +19,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -36,22 +37,22 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="displaytext", type=CommandType.STRING, description="the display text of the service offering to be updated")
+    @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, description="the display text of the service offering to be updated")
     private String displayText;
 
-    @Parameter(name="id", type=CommandType.LONG, required=true, description="the ID of the service offering to be updated")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the service offering to be updated")
     private Long id;
 
-    @Parameter(name="name", type=CommandType.STRING, description="the name of the service offering to be updated")
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the service offering to be updated")
     private String serviceOfferingName;
     
-    @Parameter(name="offerha", type=CommandType.BOOLEAN, description="the HA of the service offering to be updated")
+    @Parameter(name=ApiConstants.OFFER_HA, type=CommandType.BOOLEAN, description="the HA of the service offering to be updated")
     private Boolean offerHa;
     
-    @Parameter(name="tags", type=CommandType.STRING, description="the tags for this service offering.")
+    @Parameter(name=ApiConstants.TAGS, type=CommandType.STRING, description="the tags for this service offering.")
     private String tags;
 
-    @Parameter(name="usevirtualnetwork", type=CommandType.BOOLEAN, description="if true, the VM created from the offering will use default virtual networking. If false, the VM created will use a direct attached networking model. The default value is true.")
+    @Parameter(name=ApiConstants.USE_VIRTUAL_NETWORK, type=CommandType.BOOLEAN, description="if true, the VM created from the offering will use default virtual networking. If false, the VM created will use a direct attached networking model. The default value is true.")
     private Boolean useVirtualNetwork;
 
     /////////////////////////////////////////////////////
