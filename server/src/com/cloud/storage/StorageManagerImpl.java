@@ -1751,9 +1751,6 @@ public class StorageManagerImpl implements StorageManager {
         List<StoragePoolVO> storagePools = _storagePoolDao.listAllActive();
         for (StoragePoolVO pool : storagePools) {
             try {
-                if (recurring && pool.isLocal()) {
-                    continue;
-                }
     
                 List<VMTemplateStoragePoolVO> unusedTemplatesInPool = _tmpltMgr.getUnusedTemplatesInPool(pool);
                 s_logger.debug("Storage pool garbage collector found " + unusedTemplatesInPool.size() + " templates to clean up in storage pool: " + pool.getName());

@@ -1859,11 +1859,6 @@ public class ManagementServerImpl implements ManagementServer {
             throw new InvalidParameterValueException("Please specify a valid volume ID.");
         }
 
-        // Check that the volume is stored on shared storage
-        if (!_storageMgr.volumeOnSharedStoragePool(volume)) {
-            throw new InvalidParameterValueException("Please specify a volume that has been created on a shared storage pool.");
-        }
-
         // Check that the volume is not currently attached to any VM
         if (volume.getInstanceId() != null) {
             throw new InvalidParameterValueException("Please specify a volume that is not attached to any VM.");

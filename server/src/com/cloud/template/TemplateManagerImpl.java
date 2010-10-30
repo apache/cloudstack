@@ -479,7 +479,7 @@ public class TemplateManagerImpl implements TemplateManager {
 			VMTemplateVO template = _tmpltDao.findById(templatePoolVO.getTemplateId());
 			
 			// If this is a routing template, consider it in use
-			if (template.getUniqueName().equals("routing")) {
+			if (template.getUniqueName().equals("routing") && pool.isShared() ) {
 				continue;
 			}
 			
