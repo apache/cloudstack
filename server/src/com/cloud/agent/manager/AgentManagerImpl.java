@@ -613,7 +613,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
                     	String guid = details.get("guid");
                     	List<HostVO> kvmHosts = _hostDao.listBy(Host.Type.Routing, clusterId, podId, dcId);
                     	for (HostVO host: kvmHosts) {
-                    		if (host.getGuid() == guid) {
+                    		if (host.getGuid().equalsIgnoreCase(guid)) {
                     			hosts.add(host);
                     			return hosts;
                     		}
