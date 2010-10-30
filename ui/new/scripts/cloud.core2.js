@@ -933,7 +933,9 @@ function listMidMenuItems2(commandString, jsonResponse1, jsonResponse2, toMidmen
                     }                 
                 }  
                 count = items.length;
-            }             
+            }  
+            $("#midmenu_container").show();
+	        $("#midmenu_spinning_wheel").hide();           
         }
     });	 
     
@@ -941,8 +943,10 @@ function listMidMenuItems2(commandString, jsonResponse1, jsonResponse2, toMidmen
 }
 
 function listMidMenuItems(commandString, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSPFn, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu) { 
-	showMiddleMenu();	
 	clearMiddleMenu();
+	showMiddleMenu();	
+	$("#midmenu_container").hide();
+	$("#midmenu_spinning_wheel").show();
 	
 	$("#right_panel").load(rightPanelJSP, function(){     
 		var $actionLink = $("#right_panel_content #tab_content_details #action_link");
