@@ -1429,7 +1429,8 @@ function vmJsonToDetailsTab(){
                 jsonObj = items[0];
         }
     });        
-    $thisTab.data("jsonObj", jsonObj);  
+    $thisTab.data("jsonObj", jsonObj);    
+    $midmenuItem1.data("jsonObj", jsonObj);    
 
     resetViewConsoleAction(jsonObj, $thisTab);      
     setVmStateInRightPanel(jsonObj.state, $thisTab.find("#state"));		
