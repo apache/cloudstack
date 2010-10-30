@@ -934,6 +934,9 @@ function listMidMenuItems2(commandString, jsonResponse1, jsonResponse2, toMidmen
                 }  
                 count = items.length;
             }  
+            else {
+                $("#midmenu_container").append($("#midmenu_container_no_items_available").clone().show());  
+            }
             $("#midmenu_container").show();
 	        $("#midmenu_spinning_wheel").hide();           
         }

@@ -323,11 +323,7 @@ long milliseconds = new Date().getTime();
                             <p>
                                 Loading &hellip;</p>
                         </div>
-                        <div id="midmenu_container">
-                            <div class="midmenu_emptymsgbox">
-                                <p>
-                                    No Items Available</p>
-                            </div>
+                        <div id="midmenu_container">                            
                         </div>
                     </div>
                 </div>
@@ -780,7 +776,14 @@ long milliseconds = new Date().getTime();
     <li id="no_available_actions" style="display: none">
         <%=t.t("no.available.actions")%></li>
     
-    <!-- Zonetree Template (begin) --> 
+    <!-- middle menu: no items available (begin) --> 
+    <div id="midmenu_container_no_items_available" class="midmenu_emptymsgbox" style="display:none">
+        <p>
+            No Items Available</p>
+    </div>
+    <!-- middle menu: no items available (end) --> 
+    
+    <!-- Zone Template (begin) --> 
     <div class="leftmenu_expandedlist" id="leftmenu_zone_node_template" style="display:none">
      	<div class="leftmenu_loadingbox" style="display:none;" id="loading_container">
         	<div class="leftmenu_loader"></div>
