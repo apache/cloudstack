@@ -40,178 +40,179 @@
                    <p>Loading &hellip;</p>    
               </div>               
         </div>  
-         
-        <div class="grid_container" style="display: block;">            
-            <div class="grid_header">
-            	<div id="title" class="grid_header_title">Title</div>
-                    <div class="grid_actionbox" id="action_link">
-                        <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
-                            <ul class="actionsdropdown_boxlist" id="action_list">
-                                <li><%=t.t("no.available.actions")%></li>
-                            </ul>
-                        </div>
-                    </div>
-                <div class="gridheader_loaderbox" id="spinning_wheel" style="border: 1px solid #999;
-                display: none;">
-                    <div class="gridheader_loader" id="icon">
-                    </div>
-                    <p id="description">
-                        Waiting &hellip;</p>
-                </div>
-            </div>            
-            <div class="grid_rows odd">
-                <div class="vm_statusbox">
-                    <div id="view_console_container" style="float:left;">  
-                	    <div id="view_console_template" style="display:block">
-    					    <div class="vm_consolebox" id="box0">
-    					    </div>
-   						    <div class="vm_consolebox" id="box1" style="display: none">
-    					    </div>
-					    </div>           
-                    </div>
-                    <div class="vm_status_textbox">
-                        <div class="vm_status_textline green" id="state">
-                        </div>
-                        <br />
-                        <p id="ipAddress">
-                        </p>
-                    </div>
-                </div>
-            </div>
-            <div class="grid_rows even">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        <%=t.t("Zone")%>:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="zoneName">
-                    </div>
-                </div>
-            </div>        
-            <div class="grid_rows odd">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        <%=t.t("Name")%>:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="vmname">
-                    </div>
-                    <input class="text" id="vmname_edit" style="width: 200px; display: none;" type="text" />
-                    <div id="vmname_edit_errormsg" style="display:none"></div>
-                </div>
-            </div>
-            <div class="grid_rows even">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        <%=t.t("IP")%>:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="ipaddress">
-                    </div>
-                </div>
-            </div>        
-            <div class="grid_rows odd">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        <%=t.t("Template")%>:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="templateName">
-                    </div>
-                </div>
-            </div>
-            <div class="grid_rows even">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        <%=t.t("Service")%>:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="serviceOfferingName">
-                    </div>
-                </div>
-            </div>
-            <div class="grid_rows odd">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        <%=t.t("HA.Enabled")%>:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="haenable">                   
-                    </div>
-                    <select class="select" id="haenable_edit" style="width: 202px; display: none;">
-                        <option value="false">No</option>
-						<option value="true">Yes</option>
-                    </select>
-                </div>
-            </div>
-            <div class="grid_rows even">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        <%=t.t("Created")%>:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="created">
-                    </div>
-                </div>
-            </div>
-            <div class="grid_rows odd">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        <%=t.t("Account")%>:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="account">
-                    </div>
-                </div>
-            </div>
-            <div class="grid_rows even">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        <%=t.t("Domain")%>:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="domain">
-                    </div>
-                </div>
-            </div>
-            <div class="grid_rows odd">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        <%=t.t("Host")%>:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="hostName">
-                    </div>
-                </div>
-            </div>
-            <div class="grid_rows even">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        <%=t.t("ISO.attached")%>:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="iso">                    
-                    </div>
-                </div>
-            </div>
-            <div class="grid_rows odd">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        <%=t.t("Group")%>:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="group">
-                    </div>
-                    <input class="text" id="group_edit" style="width: 200px; display: none;" type="text" />
-                    <div id="group_edit_errormsg" style="display:none"></div>
-                </div>
-            </div>
-            
-            <div class="grid_botactionpanel">
-        		<div class="gridbot_buttons" id="save_button" style="display:none;">Save</div>
-            	<div class="gridbot_buttons" id="cancel_button" style="display:none;">Cancel</div>
-        	</div>  
-        </div>
+        <div id="tab_container"> 
+	        <div class="grid_container" style="display: block;">            
+	            <div class="grid_header">
+	            	<div id="title" class="grid_header_title">Title</div>
+	                    <div class="grid_actionbox" id="action_link">
+	                        <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
+	                            <ul class="actionsdropdown_boxlist" id="action_list">
+	                                <li><%=t.t("no.available.actions")%></li>
+	                            </ul>
+	                        </div>
+	                    </div>
+	                <div class="gridheader_loaderbox" id="spinning_wheel" style="border: 1px solid #999;
+	                display: none;">
+	                    <div class="gridheader_loader" id="icon">
+	                    </div>
+	                    <p id="description">
+	                        Waiting &hellip;</p>
+	                </div>
+	            </div>            
+	            <div class="grid_rows odd">
+	                <div class="vm_statusbox">
+	                    <div id="view_console_container" style="float:left;">  
+	                	    <div id="view_console_template" style="display:block">
+	    					    <div class="vm_consolebox" id="box0">
+	    					    </div>
+	   						    <div class="vm_consolebox" id="box1" style="display: none">
+	    					    </div>
+						    </div>           
+	                    </div>
+	                    <div class="vm_status_textbox">
+	                        <div class="vm_status_textline green" id="state">
+	                        </div>
+	                        <br />
+	                        <p id="ipAddress">
+	                        </p>
+	                    </div>
+	                </div>
+	            </div>
+	            <div class="grid_rows even">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <%=t.t("Zone")%>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="zoneName">
+	                    </div>
+	                </div>
+	            </div>        
+	            <div class="grid_rows odd">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <%=t.t("Name")%>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="vmname">
+	                    </div>
+	                    <input class="text" id="vmname_edit" style="width: 200px; display: none;" type="text" />
+	                    <div id="vmname_edit_errormsg" style="display:none"></div>
+	                </div>
+	            </div>
+	            <div class="grid_rows even">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <%=t.t("IP")%>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="ipaddress">
+	                    </div>
+	                </div>
+	            </div>        
+	            <div class="grid_rows odd">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <%=t.t("Template")%>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="templateName">
+	                    </div>
+	                </div>
+	            </div>
+	            <div class="grid_rows even">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <%=t.t("Service")%>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="serviceOfferingName">
+	                    </div>
+	                </div>
+	            </div>
+	            <div class="grid_rows odd">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <%=t.t("HA.Enabled")%>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="haenable">                   
+	                    </div>
+	                    <select class="select" id="haenable_edit" style="width: 202px; display: none;">
+	                        <option value="false">No</option>
+							<option value="true">Yes</option>
+	                    </select>
+	                </div>
+	            </div>
+	            <div class="grid_rows even">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <%=t.t("Created")%>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="created">
+	                    </div>
+	                </div>
+	            </div>
+	            <div class="grid_rows odd">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <%=t.t("Account")%>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="account">
+	                    </div>
+	                </div>
+	            </div>
+	            <div class="grid_rows even">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <%=t.t("Domain")%>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="domain">
+	                    </div>
+	                </div>
+	            </div>
+	            <div class="grid_rows odd">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <%=t.t("Host")%>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="hostName">
+	                    </div>
+	                </div>
+	            </div>
+	            <div class="grid_rows even">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <%=t.t("ISO.attached")%>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="iso">                    
+	                    </div>
+	                </div>
+	            </div>
+	            <div class="grid_rows odd">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <%=t.t("Group")%>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="group">
+	                    </div>
+	                    <input class="text" id="group_edit" style="width: 200px; display: none;" type="text" />
+	                    <div id="group_edit_errormsg" style="display:none"></div>
+	                </div>
+	            </div>
+	            
+	            <div class="grid_botactionpanel">
+	        		<div class="gridbot_buttons" id="save_button" style="display:none;">Save</div>
+	            	<div class="gridbot_buttons" id="cancel_button" style="display:none;">Cancel</div>
+	        	</div>  
+	        </div>
+	    </div>
     </div>  
     <!--Details tab (end)-->
     <!--Volume tab (start)-->

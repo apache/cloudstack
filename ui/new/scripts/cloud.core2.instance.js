@@ -1411,95 +1411,110 @@ function vmToRightPanel($midmenuItem1) {
 }
   
 function vmJsonToDetailsTab(){  
-    var $detailsTab = $("#right_panel_content #tab_content_details");  
-    $detailsTab.find("#tab_spinning_wheel").show();    
+    var $thisTab = $("#right_panel_content #tab_content_details");  
+    $thisTab.find("#tab_container").hide(); 
+    $thisTab.find("#tab_spinning_wheel").show();        
     
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    var jsonObj = $midmenuItem1.data("jsonObj");
-    $detailsTab.data("jsonObj", jsonObj);  
-
-    resetViewConsoleAction(jsonObj, $detailsTab);      
-    setVmStateInRightPanel(jsonObj.state, $detailsTab.find("#state"));		
-    $detailsTab.find("#ipAddress").text(jsonObj.ipaddress);
+    var id = $midmenuItem1.data("jsonObj").id
     
-    $detailsTab.find("#zoneName").text(fromdb(jsonObj.zonename));
+    var jsonObj;   
+    $.ajax({
+        data: createURL("command=listVirtualMachines&id="+id),
+        dataType: "json",
+        async: false,
+        success: function(json) {  
+            var items = json.listvirtualmachinesresponse.virtualmachine;
+            if(items != null && items.length > 0)
+                jsonObj = items[0];
+        }
+    });        
+    $thisTab.data("jsonObj", jsonObj);  
+
+    resetViewConsoleAction(jsonObj, $thisTab);      
+    setVmStateInRightPanel(jsonObj.state, $thisTab.find("#state"));		
+    $thisTab.find("#ipAddress").text(jsonObj.ipaddress);
+    
+    $thisTab.find("#zoneName").text(fromdb(jsonObj.zonename));
            
     var vmName = getVmName(jsonObj.name, jsonObj.displayname);        
-    $detailsTab.find("#title").text(vmName);
+    $thisTab.find("#title").text(vmName);
     
-    $detailsTab.find("#vmname").text(vmName);
-    $detailsTab.find("#vmname_edit").val(fromdb(jsonObj.displayname));
+    $thisTab.find("#vmname").text(vmName);
+    $thisTab.find("#vmname_edit").val(fromdb(jsonObj.displayname));
     
-    $detailsTab.find("#ipaddress").text(fromdb(jsonObj.ipaddress));
+    $thisTab.find("#ipaddress").text(fromdb(jsonObj.ipaddress));
     
-    $detailsTab.find("#templateName").text(fromdb(jsonObj.templatename));
-    $detailsTab.find("#serviceOfferingName").text(fromdb(jsonObj.serviceofferingname));		
-    $detailsTab.find("#created").text(jsonObj.created);
-    $detailsTab.find("#account").text(fromdb(jsonObj.account));
-    $detailsTab.find("#domain").text(fromdb(jsonObj.domain));
-    $detailsTab.find("#hostName").text(fromdb(jsonObj.hostname));
+    $thisTab.find("#templateName").text(fromdb(jsonObj.templatename));
+    $thisTab.find("#serviceOfferingName").text(fromdb(jsonObj.serviceofferingname));		
+    $thisTab.find("#created").text(jsonObj.created);
+    $thisTab.find("#account").text(fromdb(jsonObj.account));
+    $thisTab.find("#domain").text(fromdb(jsonObj.domain));
+    $thisTab.find("#hostName").text(fromdb(jsonObj.hostname));
     
-    $detailsTab.find("#group").text(fromdb(jsonObj.group));	
-    $detailsTab.find("#group_edit").val(fromdb(jsonObj.group));	
+    $thisTab.find("#group").text(fromdb(jsonObj.group));	
+    $thisTab.find("#group_edit").val(fromdb(jsonObj.group));	
     
-    setBooleanReadField(jsonObj.haenable, $detailsTab.find("#haenable"));
-    setBooleanEditField(jsonObj.haenable, $detailsTab.find("#haenable_edit"));
-    //$detailsTab.find("#haenable_edit").val(jsonObj.haenable);
+    setBooleanReadField(jsonObj.haenable, $thisTab.find("#haenable"));
+    setBooleanEditField(jsonObj.haenable, $thisTab.find("#haenable_edit"));
+    //$thisTab.find("#haenable_edit").val(jsonObj.haenable);
     	
-    setBooleanReadField((jsonObj.isoid != null), $detailsTab.find("#iso"));	
+    setBooleanReadField((jsonObj.isoid != null), $thisTab.find("#iso"));	
       
     //actions ***
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty();              
 	  
-	buildActionLinkForDetailsTab("Edit Instance", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab); 
+	buildActionLinkForDetailsTab("Edit Instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab); 
 	           
     // Show State of the VM
 	if (jsonObj.state == 'Destroyed') {
-		buildActionLinkForDetailsTab("Restore Instance", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
+		buildActionLinkForDetailsTab("Restore Instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
 		//to hide view console in details tab....(to-do)
 		//to hide volume tab....(to-do)	
 	} 
 	else if (jsonObj.state == 'Running') {
 		//instanceTemplate.find("#vm_action_start, #vm_action_reset_password, #vm_action_change_service").removeClass().addClass("vmaction_links_off");
-		buildActionLinkForDetailsTab("Stop Instance", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
-		buildActionLinkForDetailsTab("Reboot Instance", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
-		buildActionLinkForDetailsTab("Destroy Instance", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
+		buildActionLinkForDetailsTab("Stop Instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
+		buildActionLinkForDetailsTab("Reboot Instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
+		buildActionLinkForDetailsTab("Destroy Instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
 		
 		if (jsonObj.isoid == null)	
-	        buildActionLinkForDetailsTab("Attach ISO", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
+	        buildActionLinkForDetailsTab("Attach ISO", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
 	    else 		
-	        buildActionLinkForDetailsTab("Detach ISO", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);	
+	        buildActionLinkForDetailsTab("Detach ISO", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);	
 	} 
 	else {	    
 		if (jsonObj.state == 'Stopped') {
 			//instanceTemplate.find("#vm_action_stop, #vm_action_reboot").removeClass().addClass("vmaction_links_off");
-			buildActionLinkForDetailsTab("Start Instance", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);		    
-		    buildActionLinkForDetailsTab("Destroy Instance", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
+			buildActionLinkForDetailsTab("Start Instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);		    
+		    buildActionLinkForDetailsTab("Destroy Instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
 		    
 		    if (jsonObj.isoid == null)	
-		        buildActionLinkForDetailsTab("Attach ISO", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
+		        buildActionLinkForDetailsTab("Attach ISO", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
 		    else 		
-		       buildActionLinkForDetailsTab("Detach ISO", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);				    
+		       buildActionLinkForDetailsTab("Detach ISO", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);				    
 		    
-		    buildActionLinkForDetailsTab("Reset Password", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
-		    buildActionLinkForDetailsTab("Change Service", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);			    					
+		    buildActionLinkForDetailsTab("Reset Password", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
+		    buildActionLinkForDetailsTab("Change Service", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);			    					
 		} 
 		else { //jsonObj.state == "Starting", "Creating", ~~~ 	
 			if(jsonObj.state != 'Creating')
-			    buildActionLinkForDetailsTab("Destroy Instance", vmActionMap, $actionMenu, $midmenuItem1, $detailsTab);
+			    buildActionLinkForDetailsTab("Destroy Instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
 			    
 			//instanceTemplate.find("#vm_action_start, #vm_action_stop, #vm_action_reboot, #vm_action_attach_iso, #vm_action_detach_iso, #vm_action_reset_password, #vm_action_change_service").removeClass().addClass("vmaction_links_off");
 	    }
 		//to hide view console in details tab....(to-do)
 	}   
 	
-	$detailsTab.find("#tab_spinning_wheel").hide();        
+	$thisTab.find("#tab_spinning_wheel").hide();    
+    $thisTab.find("#tab_container").show();       
 }
 
 function vmJsonToVolumeTab() {       	
 	var $thisTab = $("#right_panel_content #tab_content_volume");  
-	beforeLoadingToTab($thisTab);
+	$thisTab.find("#tab_container").hide(); 
+    $thisTab.find("#tab_spinning_wheel").show();   
 		
 	var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");	
 	var jsonObj = $midmenuItem1.data("jsonObj");	
@@ -1519,14 +1534,16 @@ function vmJsonToVolumeTab() {
 	                $container.append(newTemplate.show());	
 				}
 			}	
-			afterLoadingToTab($thisTab);							
+			$thisTab.find("#tab_spinning_wheel").hide();    
+            $thisTab.find("#tab_container").show();    						
 		}
 	});          
 }
     
 function vmJsonToRouterTab($midmenuItem1) {   
     var $thisTab = $("#right_panel_content #tab_content_router");  
-	beforeLoadingToTab($thisTab);
+	$thisTab.find("#tab_container").hide(); 
+    $thisTab.find("#tab_spinning_wheel").show();   
 
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
     var vmObj = $midmenuItem1.data("jsonObj");
@@ -1546,7 +1563,8 @@ function vmJsonToRouterTab($midmenuItem1) {
 	                $container.append(newTemplate.show());	
 				}
 			}
-			afterLoadingToTab($thisTab);					
+			$thisTab.find("#tab_spinning_wheel").hide();    
+            $thisTab.find("#tab_container").show();    				
 		}
 	});          
 }    
