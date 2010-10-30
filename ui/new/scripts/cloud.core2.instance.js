@@ -1497,9 +1497,7 @@ function vmJsonToDetailsTab(){
 	$detailsTab.find("#tab_spinning_wheel").hide();        
 }
 
-function vmJsonToVolumeTab() {    
-    //if (getHypervisorType() == "kvm") 
-		//detail.find("#volume_action_create_template").show();		
+function vmJsonToVolumeTab() {       	
 	var $thisTab = $("#right_panel_content #tab_content_volume");  
 	beforeLoadingToTab($thisTab);
 		
@@ -1621,10 +1619,12 @@ function vmVolumeJSONToTemplate(json, $template) {
 	var $actionMenu = $actionLink.find("#volume_action_menu");
     $actionMenu.find("#action_list").empty();
     var noAvailableActions = true;
-    
+     
+    var hasCreateTemplate = false;        
 	if(json.type=="ROOT") { //"create template" is allowed(when stopped), "detach disk" is disallowed.
 		if (json.vmstate == "Stopped") {
 		    buildActionLinkForSubgridItem("Create Template", vmVolumeActionMap, $actionMenu, $template);	
+		    hasCreateTemplate = true;
 		    noAvailableActions = false;		
 		}
 	} 
@@ -1632,6 +1632,11 @@ function vmVolumeJSONToTemplate(json, $template) {
 		buildActionLinkForSubgridItem("Detach Disk", vmVolumeActionMap, $actionMenu, $template);		
 		noAvailableActions = false;				
 	}	
+	
+	if (getHypervisorType() == "kvm" && hasCreateTemplate == false) {
+	    buildActionLinkForSubgridItem("Create Template", vmVolumeActionMap, $actionMenu, $template);	
+	    noAvailableActions = false;	
+	}
 	
 	// no available actions 
 	if(noAvailableActions == true) {	    
