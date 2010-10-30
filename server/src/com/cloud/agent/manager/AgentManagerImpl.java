@@ -496,11 +496,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         long id = server.getId();
 
         AgentAttache attache = createAttache(id, server, resource);
-        if (!resource.IsRemoteAgent())
-             attache = notifyMonitorsOfConnection(attache, startup);
-        else {
-             _hostDao.updateStatus(server, Event.AgentConnected, _nodeId);
-        }
+       
+        attache = notifyMonitorsOfConnection(attache, startup);
+       
         return attache;
     }
 
@@ -609,7 +607,19 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
             if (resources != null) {
                 for (Map.Entry<? extends ServerResource, Map<String, String>> entry : resources.entrySet()) {
                     ServerResource resource = entry.getKey();
-
+                    /*For KVM, if we go to here, that means kvm agent is already connected to mgt svr.*/
+                    if (resource instanceof KvmDummyResourceBase) {
+                    	Map<String, String> details = entry.getValue();
+                    	String guid = details.get("guid");
+                    	List<HostVO> kvmHosts = _hostDao.listBy(Host.Type.Routing, clusterId, podId, dcId);
+                    	for (HostVO host: kvmHosts) {
+                    		if (host.getGuid() == guid) {
+                    			hosts.add(host);
+                    			return hosts;
+                    		}
+                    	}
+                    	return null;
+                    }
                     AgentAttache attache = simulateStart(resource, entry.getValue(), true);
                     if (attache != null) {
                         hosts.add(_hostDao.findById(attache.getId()));

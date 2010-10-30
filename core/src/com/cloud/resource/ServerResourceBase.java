@@ -48,7 +48,6 @@ public abstract class ServerResourceBase implements ServerResource {
     protected NetworkInterface _storageNic;
     protected NetworkInterface _storageNic2;
     protected IAgentControl _agentControl;
-    protected boolean _isRemoteAgent = false;
 
     @Override
     public String getName() {
@@ -301,13 +300,5 @@ public abstract class ServerResourceBase implements ServerResource {
     @Override
     public boolean stop() {
         return true;
-    }
-    
-    public boolean IsRemoteAgent() {
-    	return _isRemoteAgent;
-    }
-    
-    public void setRemoteAgent(boolean remote) {
-    	_isRemoteAgent = remote;
     }
 }

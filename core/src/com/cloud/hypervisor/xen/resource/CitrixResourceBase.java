@@ -232,7 +232,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     protected String _guestNetworkName;
     protected int _wait;
     protected IAgentControl _agentControl;
-    protected boolean _isRemoteAgent = false;
     
     int _userVMCap = 0;
     final int _maxWeight = 256;
@@ -6044,17 +6043,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     public void setAgentControl(IAgentControl agentControl) {
         _agentControl = agentControl;
     }
-
-    @Override
-    public boolean IsRemoteAgent() {
-    	return _isRemoteAgent;
-    }
-    
-    @Override
-    public void setRemoteAgent(boolean remote) {
-    	_isRemoteAgent = remote;
-    }
-
     
     protected Answer execute(PoolEjectCommand cmd) {
         Connection conn = getConnection();

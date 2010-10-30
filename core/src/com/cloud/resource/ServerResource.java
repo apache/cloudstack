@@ -71,8 +71,4 @@ public interface ServerResource extends Manager {
     public IAgentControl getAgentControl();
     
     public void setAgentControl(IAgentControl agentControl);
-    
-    public boolean IsRemoteAgent();
-    
-    public void setRemoteAgent(boolean remote);
 }
