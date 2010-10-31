@@ -114,8 +114,8 @@ function afterLoadIpJSP() {
 	        data: createURL("command=createPortForwardingRule"+array1.join("")),
 	        dataType: "json",
 	        success: function(json) {		                      
-	            var items = json.createportforwardingruleresponse.portforwardingrule;	  	        	
-	            portForwardingJsonToTemplate(items[0],$template);
+	            var item = json.createportforwardingruleresponse;	  	        	
+	            portForwardingJsonToTemplate(item,$template);
 	            $spinningWheel.hide();   
 	            refreshCreatePortForwardingRow();			   						
 	        },
@@ -167,8 +167,8 @@ function afterLoadIpJSP() {
 	        data: createURL("command=createLoadBalancerRule"+array1.join("")),
 			dataType: "json",
 			success: function(json) {					    	    
-				var items = json.createloadbalancerruleresponse.loadbalancerrule;						
-	            loadBalancerJsonToTemplate(items[0], $template);
+				var item = json.createloadbalancerruleresponse;						
+	            loadBalancerJsonToTemplate(item, $template);
 	            $spinningWheel.hide();   
 	            refreshCreateLoadBalancerRow();	            	
 			},
@@ -943,7 +943,8 @@ function refreshLbVmSelect($template, loadBalancerId) {
 			    for (var i = 0; i < instances.length; i++) {
 			        var vmName = getVmName(instances[i].name, instances[i].displayname);
 				    html = $("<option value='" + instances[i].id + "'>" + vmName + "</option>")
-				    html.data("vmPrivateIp", instances[i].privateip).data("vmName", vmName);
+				    html.data("vmPrivateIp", instances[i].privateip);
+				    html.data("vmName", vmName);
 				    vmSelect.append(html); 
 			    }
 		    } else {
