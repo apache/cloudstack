@@ -184,7 +184,8 @@ function isoJsonToDetailsTab() {
     
     
     var jsonObj = $midmenuItem1.data("jsonObj");
-    //comment the following code because listIsos API has a bug => listIsos API returns nothing when id is 200(tool) and zoneid is specified
+    
+    //listIsos API has a bug => it returns nothing when id is 200(xs-tools.iso) and zoneid is specified. So, comment the following code before the bug is fixed.
     /*
     var array1 = [];
     var id = $midmenuItem1.data("jsonObj").id;

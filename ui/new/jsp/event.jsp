@@ -26,94 +26,98 @@
             <%=t.t("Details")%></div>        
     </div>    
     <div id="tab_content_details">
-    	<div class="rightpanel_mainloader_panel" style="display:none;">
-              <div class="rightpanel_mainloaderbox">
-                   <div class="rightpanel_mainloader_animatedicon"></div>
-                   <p>Loading &hellip;</p>    
-              </div>               
-        </div>
-	    <div class="grid_container">
-	        <div class="grid_rows odd">
-	            <div class="grid_row_cell" style="width: 20%;">
-	                <div class="row_celltitles">
-	                    <%=t.t("id")%>:</div>
-	            </div>
-	            <div class="grid_row_cell" style="width: 79%;">
-	                <div class="row_celltitles" id="id">
-	                </div>
-	            </div>
-	        </div>
-	        <div class="grid_rows even">
-	            <div class="grid_row_cell" style="width: 20%;">
-	                <div class="row_celltitles">
-	                    <%=t.t("Initiated.By")%>:</div>
-	            </div>
-	            <div class="grid_row_cell" style="width: 79%;">
-	                <div class="row_celltitles" id="username">
-	                </div>
-	            </div>
-	        </div>
-	        <div class="grid_rows odd">
-	            <div class="grid_row_cell" style="width: 20%;">
-	                <div class="row_celltitles">
-	                    <%=t.t("Owner.Account")%>:</div>
-	            </div>
-	            <div class="grid_row_cell" style="width: 79%;">
-	                <div class="row_celltitles" id="account">
-	                    </div>
-	            </div>
-	        </div>
-	        <div class="grid_rows even">
-	            <div class="grid_row_cell" style="width: 20%;">
-	                <div class="row_celltitles">
-	                    <%=t.t("Type")%>:</div>
-	            </div>
-	            <div class="grid_row_cell" style="width: 79%;">
-	                <div class="row_celltitles" id="type">
-	                </div>
-	            </div>
-	        </div>
-	        <div class="grid_rows odd">
-	            <div class="grid_row_cell" style="width: 20%;">
-	                <div class="row_celltitles">
-	                    <%=t.t("Level")%>:</div>
-	            </div>
-	            <div class="grid_row_cell" style="width: 79%;">
-	                <div class="row_celltitles" id="level">
-	                </div>
-	            </div>
-	        </div>
-	        <div class="grid_rows even">
-	            <div class="grid_row_cell" style="width: 20%;">
-	                <div class="row_celltitles">
-	                    <%=t.t("Description")%>:</div>
-	            </div>
-	            <div class="grid_row_cell" style="width: 79%;">
-	                <div class="row_celltitles" id="description">
-	                </div>
-	            </div>
-	        </div>
-	        <div class="grid_rows odd">
-	            <div class="grid_row_cell" style="width: 20%;">
-	                <div class="row_celltitles">
-	                    <%=t.t("State")%>:</div>
-	            </div>
-	            <div class="grid_row_cell" style="width: 79%;">
-	                <div class="row_celltitles" id="state">
-	                </div>
-	            </div>
-	        </div>
-	        <div class="grid_rows even">
-	            <div class="grid_row_cell" style="width: 20%;">
-	                <div class="row_celltitles">
-	                    <%=t.t("Date")%>:</div>
-	            </div>
-	            <div class="grid_row_cell" style="width: 79%;">
-	                <div class="row_celltitles" id="created">
-	                </div>
-	            </div>
-	        </div>       
-	    </div>
+    	<div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display: none;">
+            <div class="rightpanel_mainloaderbox">
+                <div class="rightpanel_mainloader_animatedicon">
+                </div>
+                <p>
+                    Loading &hellip;</p>
+            </div>
+        </div>   
+        <div id="tab_container">
+		    <div class="grid_container">
+		        <div class="grid_rows odd">
+		            <div class="grid_row_cell" style="width: 20%;">
+		                <div class="row_celltitles">
+		                    <%=t.t("id")%>:</div>
+		            </div>
+		            <div class="grid_row_cell" style="width: 79%;">
+		                <div class="row_celltitles" id="id">
+		                </div>
+		            </div>
+		        </div>
+		        <div class="grid_rows even">
+		            <div class="grid_row_cell" style="width: 20%;">
+		                <div class="row_celltitles">
+		                    <%=t.t("Initiated.By")%>:</div>
+		            </div>
+		            <div class="grid_row_cell" style="width: 79%;">
+		                <div class="row_celltitles" id="username">
+		                </div>
+		            </div>
+		        </div>
+		        <div class="grid_rows odd">
+		            <div class="grid_row_cell" style="width: 20%;">
+		                <div class="row_celltitles">
+		                    <%=t.t("Owner.Account")%>:</div>
+		            </div>
+		            <div class="grid_row_cell" style="width: 79%;">
+		                <div class="row_celltitles" id="account">
+		                    </div>
+		            </div>
+		        </div>
+		        <div class="grid_rows even">
+		            <div class="grid_row_cell" style="width: 20%;">
+		                <div class="row_celltitles">
+		                    <%=t.t("Type")%>:</div>
+		            </div>
+		            <div class="grid_row_cell" style="width: 79%;">
+		                <div class="row_celltitles" id="type">
+		                </div>
+		            </div>
+		        </div>
+		        <div class="grid_rows odd">
+		            <div class="grid_row_cell" style="width: 20%;">
+		                <div class="row_celltitles">
+		                    <%=t.t("Level")%>:</div>
+		            </div>
+		            <div class="grid_row_cell" style="width: 79%;">
+		                <div class="row_celltitles" id="level">
+		                </div>
+		            </div>
+		        </div>
+		        <div class="grid_rows even">
+		            <div class="grid_row_cell" style="width: 20%;">
+		                <div class="row_celltitles">
+		                    <%=t.t("Description")%>:</div>
+		            </div>
+		            <div class="grid_row_cell" style="width: 79%;">
+		                <div class="row_celltitles" id="description">
+		                </div>
+		            </div>
+		        </div>
+		        <div class="grid_rows odd">
+		            <div class="grid_row_cell" style="width: 20%;">
+		                <div class="row_celltitles">
+		                    <%=t.t("State")%>:</div>
+		            </div>
+		            <div class="grid_row_cell" style="width: 79%;">
+		                <div class="row_celltitles" id="state">
+		                </div>
+		            </div>
+		        </div>
+		        <div class="grid_rows even">
+		            <div class="grid_row_cell" style="width: 20%;">
+		                <div class="row_celltitles">
+		                    <%=t.t("Date")%>:</div>
+		            </div>
+		            <div class="grid_row_cell" style="width: 79%;">
+		                <div class="row_celltitles" id="created">
+		                </div>
+		            </div>
+		        </div>       
+		    </div>
+		</div>    
     </div>     
 </div>
 <!-- event detail panel (end) -->
