@@ -7,16 +7,6 @@
     CloudResourceBundle t = CloudResourceBundle.getBundle("resources/resource", browserLocale);
 %>
 
-<!-- Loading -->
-<div style="display:none;">
-    <div class="ui-widget-overlay">
-    </div>
-    <div class="rightpanel_mainloaderbox" >
-       <div class="rightpanel_mainloader_animatedicon"></div>
-       <p>Loading &hellip; </p>
-    </div>    
-</div>
-
 <!-- snapshot detail panel (begin) -->
 <div class="main_title" id="right_panel_header">
     <div class="main_titleicon">
@@ -34,102 +24,106 @@
         <div class="content_tabs on">
             <%=t.t("Details")%></div>
     </div>    
-    <div id="tab_content_details">
-		<div class="rightpanel_mainloader_panel" style="display:none;">
-              <div class="rightpanel_mainloaderbox">
-                   <div class="rightpanel_mainloader_animatedicon"></div>
-                   <p>Loading &hellip;</p>    
-              </div>               
-        </div>
-        <div class="grid_container">
-        	<div class="grid_header">
-            	<div class="grid_header_title">Title</div>
-                   <div class="grid_actionbox" id="action_link">
-                    <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
-                        <ul class="actionsdropdown_boxlist" id="action_list">
-                            <li><%=t.t("no.available.actions")%></li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="gridheader_loaderbox" id="spinning_wheel" style="border: 1px solid #999;
-                 display: none;">
-                    <div class="gridheader_loader" id="icon">
-                    </div>
-                    <p id="description">
-                        Waiting &hellip;</p>
-                </div>
-            </div>
-            <div class="grid_rows odd">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        <%=t.t("ID")%>:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="id">
-                    </div>
-                </div>
-            </div>
-            <div class="grid_rows even">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        <%=t.t("Name")%>:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="name">
-                    </div>
-                </div>
-            </div>
-            <div class="grid_rows odd">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        <%=t.t("Volume")%>:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="volume_name">
-                    </div>
-                </div>
-            </div>
-            <div class="grid_rows even">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        <%=t.t("Interval.Type")%>:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="interval_type">
-                    </div>
-                </div>
-            </div>
-            <div class="grid_rows odd">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        <%=t.t("Created")%>:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="created">
-                    </div>
-                </div>
-            </div>
-            <div class="grid_rows even">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        <%=t.t("Account")%>:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="account">
-                    </div>
-                </div>
-            </div>
-            <div class="grid_rows odd">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        <%=t.t("Domain")%>:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="domain">
-                    </div>
-                </div>
-            </div>
-        </div>
+    <div id="tab_content_details">  
+        <div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display: none;">
+	        <div class="rightpanel_mainloaderbox">
+	            <div class="rightpanel_mainloader_animatedicon">
+	            </div>
+	            <p>
+	                Loading &hellip;</p>
+	        </div>
+	    </div>    
+        <div id="tab_container">			
+	        <div class="grid_container">
+	        	<div class="grid_header">
+	            	<div class="grid_header_title">Title</div>
+	                   <div class="grid_actionbox" id="action_link">
+	                    <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
+	                        <ul class="actionsdropdown_boxlist" id="action_list">
+	                            <li><%=t.t("no.available.actions")%></li>
+	                        </ul>
+	                    </div>
+	                </div>
+	                <div class="gridheader_loaderbox" id="spinning_wheel" style="border: 1px solid #999;
+	                 display: none;">
+	                    <div class="gridheader_loader" id="icon">
+	                    </div>
+	                    <p id="description">
+	                        Waiting &hellip;</p>
+	                </div>
+	            </div>
+	            <div class="grid_rows odd">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <%=t.t("ID")%>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="id">
+	                    </div>
+	                </div>
+	            </div>
+	            <div class="grid_rows even">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <%=t.t("Name")%>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="name">
+	                    </div>
+	                </div>
+	            </div>
+	            <div class="grid_rows odd">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <%=t.t("Volume")%>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="volume_name">
+	                    </div>
+	                </div>
+	            </div>
+	            <div class="grid_rows even">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <%=t.t("Interval.Type")%>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="interval_type">
+	                    </div>
+	                </div>
+	            </div>
+	            <div class="grid_rows odd">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <%=t.t("Created")%>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="created">
+	                    </div>
+	                </div>
+	            </div>
+	            <div class="grid_rows even">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <%=t.t("Account")%>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="account">
+	                    </div>
+	                </div>
+	            </div>
+	            <div class="grid_rows odd">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <%=t.t("Domain")%>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="domain">
+	                    </div>
+	                </div>
+	            </div>
+	        </div>
+	    </div>    
     </div>        
 </div>
 <!-- snapshot detail panel (end) -->

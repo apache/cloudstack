@@ -51,38 +51,64 @@ function snapshotToMidmenu(jsonObj, $midmenuItem1) {
 
 function snapshotToRightPanel($midmenuItem1) {    
     copyActionInfoFromMidMenuToRightPanel($midmenuItem1);
-    snapshotJsonToDetailsTab($midmenuItem1);   
+    $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);
+    snapshotJsonToDetailsTab();   
 }
 
-function snapshotJsonToDetailsTab($midmenuItem1) { 
-    var jsonObj = $midmenuItem1.data("jsonObj");
-    var $detailsTab = $("#right_panel_content #tab_content_details");   
-    $detailsTab.data("jsonObj", jsonObj);  
-    $detailsTab.find("#id").text(jsonObj.id);
-    $detailsTab.find("#name").text(fromdb(jsonObj.name));
-    $detailsTab.find("#volume_name").text(fromdb(jsonObj.volumename));
-    $detailsTab.find("#interval_type").text(jsonObj.intervaltype);
-    $detailsTab.find("#account").text(fromdb(jsonObj.account));
-    $detailsTab.find("#domain").text(fromdb(jsonObj.domain));      
-    setDateField(jsonObj.created, $detailsTab.find("#created"));	
+function snapshotJsonToDetailsTab() { 
+   var $thisTab = $("#right_panel_content #tab_content_details");  
+    $thisTab.find("#tab_container").hide(); 
+    $thisTab.find("#tab_spinning_wheel").show();        
+    
+    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
+    var id = $midmenuItem1.data("jsonObj").id
+    
+    var jsonObj;   
+    $.ajax({
+        data: createURL("command=listSnapshots&id="+id),
+        dataType: "json",
+        async: false,
+        success: function(json) {  
+            var items = json.listvirtualmachinesresponse.virtualmachine;
+            if(items != null && items.length > 0)
+                jsonObj = items[0];
+        }
+    });        
+    $thisTab.data("jsonObj", jsonObj);    
+    $midmenuItem1.data("jsonObj", jsonObj);    
+ 
+    $thisTab.find("#id").text(jsonObj.id);
+    $thisTab.find("#name").text(fromdb(jsonObj.name));
+    $thisTab.find("#volume_name").text(fromdb(jsonObj.volumename));
+    $thisTab.find("#interval_type").text(jsonObj.intervaltype);
+    $thisTab.find("#account").text(fromdb(jsonObj.account));
+    $thisTab.find("#domain").text(fromdb(jsonObj.domain));      
+    setDateField(jsonObj.created, $thisTab.find("#created"));	
     
     //actions ***
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty();  
-    buildActionLinkForDetailsTab("Create Volume"  , snapshotActionMap, $actionMenu, $midmenuItem1, $detailsTab);		
-    buildActionLinkForDetailsTab("Delete Snapshot", snapshotActionMap, $actionMenu, $midmenuItem1, $detailsTab);	
-    buildActionLinkForDetailsTab("Create Template", snapshotActionMap, $actionMenu, $midmenuItem1, $detailsTab);					
+    buildActionLinkForDetailsTab("Create Volume"  , snapshotActionMap, $actionMenu, $midmenuItem1, $thisTab);		
+    buildActionLinkForDetailsTab("Delete Snapshot", snapshotActionMap, $actionMenu, $midmenuItem1, $thisTab);	
+    buildActionLinkForDetailsTab("Create Template", snapshotActionMap, $actionMenu, $midmenuItem1, $thisTab);	
+    
+    $thisTab.find("#tab_spinning_wheel").hide();    
+    $thisTab.find("#tab_container").show();     				
 }
 
 function snapshotClearRightPanel() {
-    var $detailsTab = $("#right_panel_content #tab_content_details");   
-    $detailsTab.find("#id").text("");
-    $detailsTab.find("#name").text("");
-    $detailsTab.find("#volume_name").text("");
-    $detailsTab.find("#interval_type").text("");
-    $detailsTab.find("#account").text("");
-    $detailsTab.find("#domain").text("");      
-    $detailsTab.find("#created").text("");   
+    snapshotClearDetailsTab();
+}
+
+function snapshotClearDetailsTab() {
+    var $thisTab = $("#right_panel_content #tab_content_details");   
+    $thisTab.find("#id").text("");
+    $thisTab.find("#name").text("");
+    $thisTab.find("#volume_name").text("");
+    $thisTab.find("#interval_type").text("");
+    $thisTab.find("#account").text("");
+    $thisTab.find("#domain").text("");      
+    $thisTab.find("#created").text("");   
 }
 
 var snapshotActionMap = {  
