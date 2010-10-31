@@ -839,7 +839,9 @@ function loadBalancerJsonToTemplate(jsonObj, $template) {
 									    refreshLbVmSelect($template, loadBalancerId);											    
 		                                $spinningWheel.hide();   
 									} else if (result.jobstatus == 2) { // Failed
-										$("#dialog_error").text(fromdb(result.jobresult)).dialog("open");
+										//fail reason ("jobresult") is not returned any more after API refactor....
+										//$("#dialog_error").text(fromdb(result.jobresult)).dialog("open");  
+										$("#dialog_error").text("Assigning instance to load balancer rule failed").dialog("open");  								
 										$spinningWheel.hide();   
 									}
 								}
