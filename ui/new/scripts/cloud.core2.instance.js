@@ -1409,7 +1409,7 @@ function vmJsonToDetailsTab(){
     $thisTab.find("#tab_spinning_wheel").show();        
     
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    var id = $midmenuItem1.data("jsonObj").id
+    var id = $midmenuItem1.data("jsonObj").id;
     
     var jsonObj;   
     $.ajax({

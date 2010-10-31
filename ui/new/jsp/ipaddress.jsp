@@ -30,233 +30,244 @@
             <%=t.t("Load Balancer")%></div>
     </div>  
     <div id="tab_content_details">
-    	<div class="rightpanel_mainloader_panel" style="display:none;">
-              <div class="rightpanel_mainloaderbox">
-                   <div class="rightpanel_mainloader_animatedicon"></div>
-                   <p>Loading &hellip;</p>    
-              </div>               
-        </div>
-
-        <div class="grid_container">
-        	<div class="grid_header">
-            	<div id="grid_header_title" class="grid_header_title">(title)</div>
-                <div class="grid_actionbox" id="action_link">
-                    <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
-                        <ul class="actionsdropdown_boxlist" id="action_list">
-                            <li><%=t.t("no.available.actions")%></li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="gridheader_loaderbox" id="spinning_wheel" style="border: 1px solid #999;
-                display: none;">
-                    <div class="gridheader_loader" id="icon">
-                    </div>
-                    <p id="description">
-                        Detaching Disk &hellip;</p>
-                </div>
-            </div>
-            <div class="grid_rows odd">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        IP:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="ipaddress">
-                    </div>
-                </div>
-            </div>
-            <div class="grid_rows even">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        Zone:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="zonename">
-                    </div>
-                </div>
-            </div>
-            <div class="grid_rows odd">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        VLAN:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="vlanname">
-                    </div>
-                </div>
-            </div>           
-            <div class="grid_rows even">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        Source NAT:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="source_nat">
-                    </div>
-                </div>
-            </div>
-            <div class="grid_rows odd">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        Network Type:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="network_type">
-                    </div>
-                </div>
-            </div>
-            <div class="grid_rows even">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        Domain:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="domain">
-                    </div>
-                </div>
-            </div>
-            <div class="grid_rows odd">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        Account:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="account">
-                    </div>
-                </div>
-            </div>
-            <div class="grid_rows even">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        Allocated:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="allocated">
-                    </div>
-                </div>
-            </div>
-        </div>
+    	<div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display: none;">
+	        <div class="rightpanel_mainloaderbox">
+	            <div class="rightpanel_mainloader_animatedicon">
+	            </div>
+	            <p>
+	                Loading &hellip;</p>
+	        </div>
+	    </div>
+		<div id="tab_container">
+	        <div class="grid_container">
+	        	<div class="grid_header">
+	            	<div id="grid_header_title" class="grid_header_title">(title)</div>
+	                <div class="grid_actionbox" id="action_link">
+	                    <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
+	                        <ul class="actionsdropdown_boxlist" id="action_list">
+	                            <li><%=t.t("no.available.actions")%></li>
+	                        </ul>
+	                    </div>
+	                </div>
+	                <div class="gridheader_loaderbox" id="spinning_wheel" style="border: 1px solid #999;
+	                display: none;">
+	                    <div class="gridheader_loader" id="icon">
+	                    </div>
+	                    <p id="description">
+	                        Detaching Disk &hellip;</p>
+	                </div>
+	            </div>
+	            <div class="grid_rows odd">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        IP:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="ipaddress">
+	                    </div>
+	                </div>
+	            </div>
+	            <div class="grid_rows even">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        Zone:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="zonename">
+	                    </div>
+	                </div>
+	            </div>
+	            <div class="grid_rows odd">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        VLAN:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="vlanname">
+	                    </div>
+	                </div>
+	            </div>           
+	            <div class="grid_rows even">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        Source NAT:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="source_nat">
+	                    </div>
+	                </div>
+	            </div>
+	            <div class="grid_rows odd">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        Network Type:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="network_type">
+	                    </div>
+	                </div>
+	            </div>
+	            <div class="grid_rows even">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        Domain:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="domain">
+	                    </div>
+	                </div>
+	            </div>
+	            <div class="grid_rows odd">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        Account:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="account">
+	                    </div>
+	                </div>
+	            </div>
+	            <div class="grid_rows even">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        Allocated:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="allocated">
+	                    </div>
+	                </div>
+	            </div>
+	        </div>
+        </div>        
     </div>
     <!-- Details ends here-->
     <!-- Port Forwarding start here-->
     <div id="tab_content_port_forwarding" style="display:none">
-    	<div class="rightpanel_mainloader_panel" style="display:none;">
-              <div class="rightpanel_mainloaderbox">
-                   <div class="rightpanel_mainloader_animatedicon"></div>
-                   <p>Loading &hellip;</p>    
-              </div>               
-        </div>
-        <div class="grid_container" id="grid_container">
-            <div class="grid_header">
-                <div class="grid_header_cell" style="width: 15%">
-                    <div class="grid_header_title">
-                        Public Port</div>
+    	<div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display: none;">
+            <div class="rightpanel_mainloaderbox">
+                <div class="rightpanel_mainloader_animatedicon">
                 </div>
-                <div class="grid_header_cell" style="width: 15%">
-                    <div class="grid_header_title">
-                        Private Port</div>
-                </div>
-                <div class="grid_header_cell" style="width: 15%">
-                    <div class="grid_header_title">
-                        Protocol</div>
-                </div>
-                <div class="grid_header_cell" style="width: 39%; border: none;">
-                    <div class="grid_header_title">
-                        Instance</div>
-                </div>
-                <div class="grid_header_cell" style="width: 15%">
-                    <div class="grid_header_title">
-                        Action</div>
-                </div>
+                <p>
+                    Loading &hellip;</p>
             </div>
-            <div class="grid_rows even" id="create_port_forwarding_row">
-                <div class="grid_row_cell" style="width: 15%;">
-                    <input id="public_port" class="text" style="width: 70%;" type="text" />
-                    <div id="public_port_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
-                </div>
-                <div class="grid_row_cell" style="width: 15%;">
-                    <input id="private_port" class="text" style="width: 70%;" type="text" />
-                    <div id="private_port_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
-                </div>
-                <div class="grid_row_cell" style="width: 15%;">  
-                   <select class="select" id="protocol" style="width:70%;">
-                       <option value="TCP">TCP</option>
-                       <option value="UDP">UDP</option>
-                   </select>
-                </div>
-                <div class="grid_row_cell" style="width: 39%;">                   
-                    <select class="select" id="vm">
-                    </select>
-                </div>
-                <div class="grid_row_cell" style="width: 15%;">
-                    <div class="row_celltitles">
-                        <a id="add_link" href="#">Add</a></div>
-                </div>
-            </div>              
-            <div id="grid_content">
-            </div>            
-        </div>
+        </div>        
+        <div id="tab_container">
+	        <div class="grid_container" id="grid_container">
+	            <div class="grid_header">
+	                <div class="grid_header_cell" style="width: 15%">
+	                    <div class="grid_header_title">
+	                        Public Port</div>
+	                </div>
+	                <div class="grid_header_cell" style="width: 15%">
+	                    <div class="grid_header_title">
+	                        Private Port</div>
+	                </div>
+	                <div class="grid_header_cell" style="width: 15%">
+	                    <div class="grid_header_title">
+	                        Protocol</div>
+	                </div>
+	                <div class="grid_header_cell" style="width: 39%; border: none;">
+	                    <div class="grid_header_title">
+	                        Instance</div>
+	                </div>
+	                <div class="grid_header_cell" style="width: 15%">
+	                    <div class="grid_header_title">
+	                        Action</div>
+	                </div>
+	            </div>
+	            <div class="grid_rows even" id="create_port_forwarding_row">
+	                <div class="grid_row_cell" style="width: 15%;">
+	                    <input id="public_port" class="text" style="width: 70%;" type="text" />
+	                    <div id="public_port_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 15%;">
+	                    <input id="private_port" class="text" style="width: 70%;" type="text" />
+	                    <div id="private_port_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 15%;">  
+	                   <select class="select" id="protocol" style="width:70%;">
+	                       <option value="TCP">TCP</option>
+	                       <option value="UDP">UDP</option>
+	                   </select>
+	                </div>
+	                <div class="grid_row_cell" style="width: 39%;">                   
+	                    <select class="select" id="vm">
+	                    </select>
+	                </div>
+	                <div class="grid_row_cell" style="width: 15%;">
+	                    <div class="row_celltitles">
+	                        <a id="add_link" href="#">Add</a></div>
+	                </div>
+	            </div>              
+	            <div id="grid_content">
+	            </div>            
+	        </div>
+        </div>      
     </div>
     <!-- Port Forwarding ends here-->
     <!-- Load Balancer start here-->
     <div id="tab_content_load_balancer" style="display:none">
-    	<div class="rightpanel_mainloader_panel" style="display:none;">
-              <div class="rightpanel_mainloaderbox">
-                   <div class="rightpanel_mainloader_animatedicon"></div>
-                   <p>Loading &hellip;</p>    
-              </div>               
-        </div>
-        <div class="grid_container">
-            <div class="grid_header">
-                <div class="grid_header_cell" style="width: 25%">
-                    <div class="grid_header_title">
-                        Name</div>
+    	<div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display: none;">
+            <div class="rightpanel_mainloaderbox">
+                <div class="rightpanel_mainloader_animatedicon">
                 </div>
-                <div class="grid_header_cell" style="width: 15%">
-                    <div class="grid_header_title">
-                        Public Port</div>
-                </div>
-                <div class="grid_header_cell" style="width: 15%">
-                    <div class="grid_header_title">
-                        Private Port</div>
-                </div>
-                <div class="grid_header_cell" style="width: 15%; border: none;">
-                    <div class="grid_header_title">
-                        Algorithm</div>
-                </div>
-                <div class="grid_header_cell" style="width: 29%">
-                    <div class="grid_header_title">
-                        Action</div>
-                </div>
+                <p>
+                    Loading &hellip;</p>
             </div>
-            <div class="grid_rows even" id="create_load_balancer_row">
-                <div class="grid_row_cell" style="width: 25%;">
-                    <input id="name" class="text" style="width: 70%;" type="text" />
-                    <div id="name_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
-                </div>
-                <div class="grid_row_cell" style="width: 15%;">
-                    <input id="public_port" class="text" style="width: 70%;" type="text" />
-                    <div id="public_port_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
-                </div>
-                <div class="grid_row_cell" style="width: 15%;">
-                    <input id="private_port" class="text" style="width: 70%;" type="text" />
-                    <div id="private_port_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
-                </div>
-                <div class="grid_row_cell" style="width: 15%;">
-                    <select id="algorithm_select" class="select" style="width: 70%;">                       
-						<option value="roundrobin">roundrobin</option>
-                        <option value="leastconn">leastconn</option>
-                        <option value="source">source</option>
-                    </select>
-                </div>
-                <div class="grid_row_cell" style="width: 29%;">
-                    <div class="row_celltitles">
-                        <a id="add_link" href="#">Add</a></div>
-                </div>
-            </div>
-            <div id="grid_content">
-            </div>
-        </div>
+        </div>        
+        <div id="tab_container">
+	        <div class="grid_container">
+	            <div class="grid_header">
+	                <div class="grid_header_cell" style="width: 25%">
+	                    <div class="grid_header_title">
+	                        Name</div>
+	                </div>
+	                <div class="grid_header_cell" style="width: 15%">
+	                    <div class="grid_header_title">
+	                        Public Port</div>
+	                </div>
+	                <div class="grid_header_cell" style="width: 15%">
+	                    <div class="grid_header_title">
+	                        Private Port</div>
+	                </div>
+	                <div class="grid_header_cell" style="width: 15%; border: none;">
+	                    <div class="grid_header_title">
+	                        Algorithm</div>
+	                </div>
+	                <div class="grid_header_cell" style="width: 29%">
+	                    <div class="grid_header_title">
+	                        Action</div>
+	                </div>
+	            </div>
+	            <div class="grid_rows even" id="create_load_balancer_row">
+	                <div class="grid_row_cell" style="width: 25%;">
+	                    <input id="name" class="text" style="width: 70%;" type="text" />
+	                    <div id="name_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 15%;">
+	                    <input id="public_port" class="text" style="width: 70%;" type="text" />
+	                    <div id="public_port_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 15%;">
+	                    <input id="private_port" class="text" style="width: 70%;" type="text" />
+	                    <div id="private_port_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 15%;">
+	                    <select id="algorithm_select" class="select" style="width: 70%;">                       
+							<option value="roundrobin">roundrobin</option>
+	                        <option value="leastconn">leastconn</option>
+	                        <option value="source">source</option>
+	                    </select>
+	                </div>
+	                <div class="grid_row_cell" style="width: 29%;">
+	                    <div class="row_celltitles">
+	                        <a id="add_link" href="#">Add</a></div>
+	                </div>
+	            </div>
+	            <div id="grid_content">
+	            </div>
+	        </div>
+        </div>      
     </div>
     <!-- Load Balancer ends here-->
 </div>
