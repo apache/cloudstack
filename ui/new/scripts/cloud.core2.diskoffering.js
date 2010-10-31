@@ -160,31 +160,53 @@ function diskOfferingToMidmenu(jsonObj, $midmenuItem1) {
 
 function diskOfferingToRightPanel($midmenuItem1) {
     copyActionInfoFromMidMenuToRightPanel($midmenuItem1);
-    diskOfferingJsonToDetailsTab($midmenuItem1);   
+    $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);
+    diskOfferingJsonToDetailsTab();   
 }
 
-function diskOfferingJsonToDetailsTab($midmenuItem1) { 
-    var jsonObj = $midmenuItem1.data("jsonObj");
-    var $detailsTab = $("#right_panel_content #tab_content_details");   
-    $detailsTab.data("jsonObj", jsonObj);      
-    $detailsTab.find("#id").text(jsonObj.id);
+function diskOfferingJsonToDetailsTab() { 
+    var $thisTab = $("#right_panel_content #tab_content_details");  
+    $thisTab.find("#tab_container").hide(); 
+    $thisTab.find("#tab_spinning_wheel").show();        
     
-    $detailsTab.find("#grid_header_title").text(fromdb(jsonObj.name));
-    $detailsTab.find("#name").text(fromdb(jsonObj.name));
-    $detailsTab.find("#name_edit").val(fromdb(jsonObj.name));
+    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
+    var id = $midmenuItem1.data("jsonObj").id;
     
-    $detailsTab.find("#displaytext").text(fromdb(jsonObj.displaytext));
-    $detailsTab.find("#displaytext_edit").val(fromdb(jsonObj.displaytext));
+    var jsonObj;   
+    $.ajax({
+        data: createURL("command=listDiskOfferings&id="+id),
+        dataType: "json",
+        async: false,
+        success: function(json) {  
+            var items = json.listdiskofferingsresponse.diskoffering;
+            if(items != null && items.length > 0)
+                jsonObj = items[0];
+        }
+    });        
+    $thisTab.data("jsonObj", jsonObj);    
+    $midmenuItem1.data("jsonObj", jsonObj);    
+   
+    $thisTab.find("#id").text(jsonObj.id);
     
-    $detailsTab.find("#disksize").text(convertBytes(jsonObj.disksize));
-    $detailsTab.find("#tags").text(fromdb(jsonObj.tags));   
-    $detailsTab.find("#domain").text(fromdb(jsonObj.domain));   
+    $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));
+    $thisTab.find("#name").text(fromdb(jsonObj.name));
+    $thisTab.find("#name_edit").val(fromdb(jsonObj.name));
+    
+    $thisTab.find("#displaytext").text(fromdb(jsonObj.displaytext));
+    $thisTab.find("#displaytext_edit").val(fromdb(jsonObj.displaytext));
+    
+    $thisTab.find("#disksize").text(convertBytes(jsonObj.disksize));
+    $thisTab.find("#tags").text(fromdb(jsonObj.tags));   
+    $thisTab.find("#domain").text(fromdb(jsonObj.domain));   
     
     //actions ***
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty();    
-    buildActionLinkForDetailsTab("Edit Disk Offering", diskOfferingActionMap, $actionMenu, $midmenuItem1, $detailsTab);	  
-    buildActionLinkForDetailsTab("Delete Disk Offering", diskOfferingActionMap, $actionMenu, $midmenuItem1, $detailsTab);	    
+    buildActionLinkForDetailsTab("Edit Disk Offering", diskOfferingActionMap, $actionMenu, $midmenuItem1, $thisTab);	  
+    buildActionLinkForDetailsTab("Delete Disk Offering", diskOfferingActionMap, $actionMenu, $midmenuItem1, $thisTab);	  
+    
+    $thisTab.find("#tab_spinning_wheel").hide();    
+    $thisTab.find("#tab_container").show();         
 }
 
 function diskOfferingClearRightPanel() {
@@ -192,15 +214,15 @@ function diskOfferingClearRightPanel() {
 }
 
 function diskOfferingClearDetailsTab() {
-    var $detailsTab = $("#right_panel_content #tab_content_details");     
-    $detailsTab.find("#id").text("");    
-    $detailsTab.find("#name").text("");
-    $detailsTab.find("#name_edit").val("");    
-    $detailsTab.find("#displaytext").text("");
-    $detailsTab.find("#displaytext_edit").val("");    
-    $detailsTab.find("#disksize").text("");
-    $detailsTab.find("#tags").text("");   
-    $detailsTab.find("#domain").text("");   
+    var $thisTab = $("#right_panel_content #tab_content_details");     
+    $thisTab.find("#id").text("");    
+    $thisTab.find("#name").text("");
+    $thisTab.find("#name_edit").val("");    
+    $thisTab.find("#displaytext").text("");
+    $thisTab.find("#displaytext_edit").val("");    
+    $thisTab.find("#disksize").text("");
+    $thisTab.find("#tags").text("");   
+    $thisTab.find("#domain").text("");   
     
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty(); 
