@@ -642,8 +642,8 @@ function loadBalancerJsonToTemplate(jsonObj, $template) {
 				    var instances = json.listloadbalancerruleinstancesresponse.loadbalancerruleinstance;						
 				    if (instances != null && instances.length > 0) {							
 					    for (var i = 0; i < instances.length; i++) {                                  
-                            var $lbVmTemplate = $("#load_balancer_vm_template").clone();	                                    									    											    											    
-						    var obj = {"loadBalancerId": loadBalancerId, "vmId": instances[i].id, "vmName": getVmName(instances[i].name, instances[i].displayname), "vmPrivateIp": instances[i].privateip};	
+                            var $lbVmTemplate = $("#load_balancer_vm_template").clone();    											    											    
+						    var obj = {"loadBalancerId": loadBalancerId, "vmId": instances[i].id, "vmName": getVmName(instances[i].name, instances[i].displayname), "vmPrivateIp": instances[i].ipaddress};	
 						    lbVmObjToTemplate(obj, $lbVmTemplate);		
 						    $vmSubgrid.append($lbVmTemplate.show());	                                   
 					    }
@@ -944,8 +944,8 @@ function refreshLbVmSelect($template, loadBalancerId) {
 		    if (instances != null && instances.length > 0) {
 			    for (var i = 0; i < instances.length; i++) {
 			        var vmName = getVmName(instances[i].name, instances[i].displayname);
-				    html = $("<option value='" + instances[i].id + "'>" + vmName + "</option>")
-				    html.data("vmPrivateIp", instances[i].privateip);
+				    html = $("<option value='" + instances[i].id + "'>" + vmName + "</option>");				  
+				    html.data("vmPrivateIp", instances[i].ipaddress);
 				    html.data("vmName", vmName);
 				    vmSelect.append(html); 
 			    }
