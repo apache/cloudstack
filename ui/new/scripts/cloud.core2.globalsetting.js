@@ -33,7 +33,11 @@ function afterLoadGlobalSettingJSP() {
     initDialogWithOK("dialog_alert_restart_management_server");   
 }
 
-function populateGlobalSettingGrid() {   
+function populateGlobalSettingGrid() {  
+    var $thisTab = $("#right_panel_content #tab_content_details");  
+    $thisTab.find("#tab_container").hide(); 
+    $thisTab.find("#tab_spinning_wheel").show();   
+ 
     $.ajax({
         data: createURL("command=listConfigurations"+maxPageSize),
         dataType: "json",
@@ -47,7 +51,9 @@ function populateGlobalSettingGrid() {
                     globalsettingJSONToTemplate(items[i], $newTemplate);
                     $container.append($newTemplate.show());
                 }
-            }           
+            }    
+            $thisTab.find("#tab_spinning_wheel").hide();    
+            $thisTab.find("#tab_container").show();            
         }
     });    
 }
