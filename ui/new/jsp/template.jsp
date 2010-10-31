@@ -28,184 +28,187 @@
             <%=t.t("Details")%></div>
     </div>    
     <div id="tab_content_details">
-    	<div class="rightpanel_mainloader_panel" style="display:none;">
-              <div class="rightpanel_mainloaderbox">
-                   <div class="rightpanel_mainloader_animatedicon"></div>
-                   <p>Loading &hellip;</p>    
-              </div>               
-        </div>
-    
-        <div class="grid_container">
-        	<div class="grid_header">
-            	<div class="grid_header_title">Title</div>
-                <div class="grid_actionbox" id="action_link">
-                    <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
-                        <ul class="actionsdropdown_boxlist" id="action_list">
-                            <li><%=t.t("no.available.actions")%></li>
-                        </ul>
-                    </div>
+    	<div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display: none;">
+            <div class="rightpanel_mainloaderbox">
+                <div class="rightpanel_mainloader_animatedicon">
                 </div>
-                 <div class="gridheader_loaderbox" id="spinning_wheel" style="border: 1px solid #999;
-                display: none;">
-                    <div class="gridheader_loader" id="Div1">
-                    </div>
-                    <p id="description">
-                        Waiting &hellip;</p>
-                </div>   
+                <p>
+                    Loading &hellip;</p>
             </div>
-            <div class="grid_rows odd">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        <%=t.t("ID")%>:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="id">
-                    </div>
-                </div>
-            </div>
-            <div class="grid_rows even">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        <%=t.t("Zone")%>:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="zonename">
-                    </div>
-                </div>
-            </div>
-            <div class="grid_rows odd">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        <%=t.t("Name")%>:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="name">
-                    </div>
-                    <input class="text" id="name_edit" style="width: 200px; display: none;" type="text" />
-                    <div id="name_edit_errormsg" style="display:none"></div>
-                </div>
-            </div>
-            <div class="grid_rows even">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        <%=t.t("Display.Text")%>:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="displaytext">
-                    </div>
-                    <input class="text" id="displaytext_edit" style="width: 200px; display: none;" type="text" />
-                    <div id="displaytext_edit_errormsg" style="display:none"></div>
-                </div>
-            </div>
-            <div class="grid_rows odd">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        <%=t.t("Status")%>:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="status">
-                    </div>
-                </div>
-            </div>
-            <div class="grid_rows even">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        <%=t.t("Size")%>:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="size">
-                    </div>
-                </div>
-            </div>
-            <div class="grid_rows odd">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        <%=t.t("Password.Enabled")%>:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="passwordenabled">                        
-                    </div>
-                    <select class="select" id="passwordenabled_edit" style="width: 202px; display: none;">
-                        <option value="false">No</option>
-						<option value="true">Yes</option>
-                    </select>
-                </div>
-            </div>
-            <div class="grid_rows even">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        <%=t.t("Public")%>:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="ispublic">                       
-                    </div>
-                    <select class="select" id="ispublic_edit" style="width: 202px; display: none;">
-                        <option value="true">Yes</option>
-						<option value="false">No</option>
-                    </select>
-                </div>
-            </div>
-            <div class="grid_rows odd">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        <%=t.t("Featured")%>:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="isfeatured">                        
-                    </div>
-                    <select class="select" id="isfeatured_edit" style="width: 202px; display: none;">
-                        <option value="true">Yes</option>
-						<option value="false">No</option>
-                    </select>
-                </div>
-            </div>
-            <div class="grid_rows even">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        <%=t.t("Cross.Zones")%>:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="crossZones">                        
-                    </div>
-                </div>
-            </div>
-            <div class="grid_rows odd">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        <%=t.t("OS.Type")%>:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="ostypename">
-                    </div>
-                    <select class="select" id="ostypename_edit" style="width: 202px; display: none;">                      
-                    </select>
-                </div>
-            </div>
-            <div class="grid_rows even">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        <%=t.t("Account")%>:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="account">
-                    </div>                   
-                </div>
-            </div>
-            <div class="grid_rows odd">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        <%=t.t("Created")%>:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="created">
-                    </div>
-                </div>
-            </div>            
-        </div>
-        <div class="grid_botactionpanel">
-        	<div class="gridbot_buttons" id="save_button" style="display:none;">Save</div>
-            <div class="gridbot_buttons" id="cancel_button" style="display:none;">Cancel</div>
-        </div>
+        </div>   
+        <div id="tab_container">
+	        <div class="grid_container">
+	        	<div class="grid_header">
+	            	<div class="grid_header_title">Title</div>
+	                <div class="grid_actionbox" id="action_link">
+	                    <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
+	                        <ul class="actionsdropdown_boxlist" id="action_list">
+	                            <li><%=t.t("no.available.actions")%></li>
+	                        </ul>
+	                    </div>
+	                </div>
+	                 <div class="gridheader_loaderbox" id="spinning_wheel" style="border: 1px solid #999;
+	                display: none;">
+	                    <div class="gridheader_loader" id="Div1">
+	                    </div>
+	                    <p id="description">
+	                        Waiting &hellip;</p>
+	                </div>   
+	            </div>
+	            <div class="grid_rows odd">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <%=t.t("ID")%>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="id">
+	                    </div>
+	                </div>
+	            </div>
+	            <div class="grid_rows even">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <%=t.t("Zone")%>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="zonename">
+	                    </div>
+	                </div>
+	            </div>
+	            <div class="grid_rows odd">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <%=t.t("Name")%>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="name">
+	                    </div>
+	                    <input class="text" id="name_edit" style="width: 200px; display: none;" type="text" />
+	                    <div id="name_edit_errormsg" style="display:none"></div>
+	                </div>
+	            </div>
+	            <div class="grid_rows even">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <%=t.t("Display.Text")%>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="displaytext">
+	                    </div>
+	                    <input class="text" id="displaytext_edit" style="width: 200px; display: none;" type="text" />
+	                    <div id="displaytext_edit_errormsg" style="display:none"></div>
+	                </div>
+	            </div>
+	            <div class="grid_rows odd">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <%=t.t("Status")%>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="status">
+	                    </div>
+	                </div>
+	            </div>
+	            <div class="grid_rows even">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <%=t.t("Size")%>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="size">
+	                    </div>
+	                </div>
+	            </div>
+	            <div class="grid_rows odd">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <%=t.t("Password.Enabled")%>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="passwordenabled">                        
+	                    </div>
+	                    <select class="select" id="passwordenabled_edit" style="width: 202px; display: none;">
+	                        <option value="false">No</option>
+							<option value="true">Yes</option>
+	                    </select>
+	                </div>
+	            </div>
+	            <div class="grid_rows even">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <%=t.t("Public")%>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="ispublic">                       
+	                    </div>
+	                    <select class="select" id="ispublic_edit" style="width: 202px; display: none;">
+	                        <option value="true">Yes</option>
+							<option value="false">No</option>
+	                    </select>
+	                </div>
+	            </div>
+	            <div class="grid_rows odd">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <%=t.t("Featured")%>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="isfeatured">                        
+	                    </div>
+	                    <select class="select" id="isfeatured_edit" style="width: 202px; display: none;">
+	                        <option value="true">Yes</option>
+							<option value="false">No</option>
+	                    </select>
+	                </div>
+	            </div>
+	            <div class="grid_rows even">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <%=t.t("Cross.Zones")%>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="crossZones">                        
+	                    </div>
+	                </div>
+	            </div>
+	            <div class="grid_rows odd">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <%=t.t("OS.Type")%>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="ostypename">
+	                    </div>
+	                    <select class="select" id="ostypename_edit" style="width: 202px; display: none;">                      
+	                    </select>
+	                </div>
+	            </div>
+	            <div class="grid_rows even">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <%=t.t("Account")%>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="account">
+	                    </div>                   
+	                </div>
+	            </div>
+	            <div class="grid_rows odd">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <%=t.t("Created")%>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="created">
+	                    </div>
+	                </div>
+	            </div>            
+	        </div>
+	        <div class="grid_botactionpanel">
+	        	<div class="gridbot_buttons" id="save_button" style="display:none;">Save</div>
+	            <div class="gridbot_buttons" id="cancel_button" style="display:none;">Cancel</div>
+	        </div>
+        </div>   
     </div>
 </div>
 <!-- template detail panel (end) -->

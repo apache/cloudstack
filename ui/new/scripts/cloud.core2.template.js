@@ -209,49 +209,70 @@ function templateToMidmenu(jsonObj, $midmenuItem1) {
 
 function templateToRightPanel($midmenuItem1) {  
     copyActionInfoFromMidMenuToRightPanel($midmenuItem1); 
-    templateJsonToDetailsTab($midmenuItem1);   
+    $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);
+    templateJsonToDetailsTab();   
 }
 
-function templateJsonToDetailsTab($midmenuItem1) {   
-    var jsonObj = $midmenuItem1.data("jsonObj");
-    var $detailsTab = $("#right_panel_content #tab_content_details");   
-    $detailsTab.data("jsonObj", jsonObj);
-    $detailsTab.find("#id").text(fromdb(jsonObj.id));
-    $detailsTab.find("#zonename").text(fromdb(jsonObj.zonename));
+function templateJsonToDetailsTab() {   
+    var $thisTab = $("#right_panel_content #tab_content_details");  
+    $thisTab.find("#tab_container").hide(); 
+    $thisTab.find("#tab_spinning_wheel").show();        
     
-    $detailsTab.find("#name").text(fromdb(jsonObj.name));
-    $detailsTab.find("#name_edit").val(fromdb(jsonObj.name));
+    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
+    var id = $midmenuItem1.data("jsonObj").id;
+    var zoneid = $midmenuItem1.data("jsonObj").zoneid;
+        
+    var jsonObj;   
+    $.ajax({
+        data: createURL("command=listTemplates&templatefilter=self&id="+id+"&zoneid="+zoneid),
+        dataType: "json",
+        async: false,
+        success: function(json) {             
+            var items = json.listtemplatesresponse.template;            
+            if(items != null && items.length > 0)
+                jsonObj = items[0];
+        }
+    });      
     
-    $detailsTab.find("#displaytext").text(fromdb(jsonObj.displaytext));
-    $detailsTab.find("#displaytext_edit").val(fromdb(jsonObj.displaytext));
+    $thisTab.data("jsonObj", jsonObj);    
+    $midmenuItem1.data("jsonObj", jsonObj);    
+     
+    $thisTab.find("#id").text(fromdb(jsonObj.id));
+    $thisTab.find("#zonename").text(fromdb(jsonObj.zonename));
+    
+    $thisTab.find("#name").text(fromdb(jsonObj.name));
+    $thisTab.find("#name_edit").val(fromdb(jsonObj.name));
+    
+    $thisTab.find("#displaytext").text(fromdb(jsonObj.displaytext));
+    $thisTab.find("#displaytext_edit").val(fromdb(jsonObj.displaytext));
     
     var status = "Ready";
 	if (jsonObj.isready == "false") 
 		status = fromdb(jsonObj.templatestatus);	 
-    setTemplateStateInRightPanel(status, $detailsTab.find("#status"));
+    setTemplateStateInRightPanel(status, $thisTab.find("#status"));
     
     if(jsonObj.size != null)
-	    $detailsTab.find("#size").text(convertBytes(parseInt(jsonObj.size))); 
+	    $thisTab.find("#size").text(convertBytes(parseInt(jsonObj.size))); 
 	else
-	    $detailsTab.find("#size").text(""); 
+	    $thisTab.find("#size").text(""); 
     
-    setBooleanReadField(jsonObj.passwordenabled, $detailsTab.find("#passwordenabled"));	
-    $detailsTab.find("#passwordenabled_edit").val(jsonObj.passwordenabled);
+    setBooleanReadField(jsonObj.passwordenabled, $thisTab.find("#passwordenabled"));	
+    $thisTab.find("#passwordenabled_edit").val(jsonObj.passwordenabled);
     
-    setBooleanReadField(jsonObj.ispublic, $detailsTab.find("#ispublic"));	
-    $detailsTab.find("#ispublic_edit").val(jsonObj.ispublic);
+    setBooleanReadField(jsonObj.ispublic, $thisTab.find("#ispublic"));	
+    $thisTab.find("#ispublic_edit").val(jsonObj.ispublic);
     
-    setBooleanReadField(jsonObj.isfeatured, $detailsTab.find("#isfeatured"));
-    $detailsTab.find("#isfeatured_edit").val(jsonObj.isfeatured);
+    setBooleanReadField(jsonObj.isfeatured, $thisTab.find("#isfeatured"));
+    $thisTab.find("#isfeatured_edit").val(jsonObj.isfeatured);
     
-    setBooleanReadField(jsonObj.crossZones, $detailsTab.find("#crossZones"));
+    setBooleanReadField(jsonObj.crossZones, $thisTab.find("#crossZones"));
     
-    $detailsTab.find("#ostypename").text(fromdb(jsonObj.ostypename));
-    $detailsTab.find("#ostypename_edit").val(jsonObj.ostypeid);    
+    $thisTab.find("#ostypename").text(fromdb(jsonObj.ostypename));
+    $thisTab.find("#ostypename_edit").val(jsonObj.ostypeid);    
     
-    $detailsTab.find("#account").text(fromdb(jsonObj.account));   
+    $thisTab.find("#account").text(fromdb(jsonObj.account));   
     
-    setDateField(jsonObj.created, $detailsTab.find("#created"));	
+    setDateField(jsonObj.created, $thisTab.find("#created"));	
     
     //actions ***
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
@@ -263,10 +284,10 @@ function templateJsonToDetailsTab($midmenuItem1) {
 		//$("#edit_button").hide();		
     }
     else {
-        buildActionLinkForDetailsTab("Edit Template", templateActionMap, $actionMenu, $midmenuItem1, $detailsTab);      
+        buildActionLinkForDetailsTab("Edit Template", templateActionMap, $actionMenu, $midmenuItem1, $thisTab);      
         //$("#edit_button").show();
-        buildActionLinkForDetailsTab("Copy Template", templateActionMap, $actionMenu, $midmenuItem1, $detailsTab);			
-        buildActionLinkForDetailsTab("Create VM", templateActionMap, $actionMenu, $midmenuItem1, $detailsTab);	
+        buildActionLinkForDetailsTab("Copy Template", templateActionMap, $actionMenu, $midmenuItem1, $thisTab);			
+        buildActionLinkForDetailsTab("Create VM", templateActionMap, $actionMenu, $midmenuItem1, $thisTab);	
         noAvailableActions = false;		
     }
 	
@@ -275,14 +296,17 @@ function templateJsonToDetailsTab($midmenuItem1) {
 		//template.find("#template_delete_container").hide();
     }
     else {
-        buildActionLinkForDetailsTab("Delete Template", templateActionMap, $actionMenu, $midmenuItem1, $detailsTab);
+        buildActionLinkForDetailsTab("Delete Template", templateActionMap, $actionMenu, $midmenuItem1, $thisTab);
         noAvailableActions = false;	
     }
     
     // no available actions 
 	if(noAvailableActions == true) {
 	    $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());
-	}	  
+	}	 
+	
+	$thisTab.find("#tab_spinning_wheel").hide();    
+    $thisTab.find("#tab_container").show();      
 }
 
 //setIconByOsType() is shared by template page and ISO page
@@ -302,36 +326,36 @@ function templateClearRightPanel() {
 }
 
 function templateClearDetailsTab() {
-    var $detailsTab = $("#right_panel_content #tab_content_details");   
-    $detailsTab.data("jsonObj", null);
-    $detailsTab.find("#id").text("");
-    $detailsTab.find("#zonename").text("");
+    var $thisTab = $("#right_panel_content #tab_content_details");   
+    $thisTab.data("jsonObj", null);
+    $thisTab.find("#id").text("");
+    $thisTab.find("#zonename").text("");
     
-    $detailsTab.find("#name").text("");
-    $detailsTab.find("#name_edit").val("");
+    $thisTab.find("#name").text("");
+    $thisTab.find("#name_edit").val("");
     
-    $detailsTab.find("#displaytext").text("");
-    $detailsTab.find("#displaytext_edit").val("");
+    $thisTab.find("#displaytext").text("");
+    $thisTab.find("#displaytext_edit").val("");
         
-	$detailsTab.find("#status").text("");    
+	$thisTab.find("#status").text("");    
     
-    $detailsTab.find("#passwordenabled").text("");
-    $detailsTab.find("#passwordenabled_edit").val(null);
+    $thisTab.find("#passwordenabled").text("");
+    $thisTab.find("#passwordenabled_edit").val(null);
     
-    $detailsTab.find("#ispublic").text("");
-    $detailsTab.find("#ispublic_edit").val(null);
+    $thisTab.find("#ispublic").text("");
+    $thisTab.find("#ispublic_edit").val(null);
     
-    $detailsTab.find("#isfeatured").text("");
-    $detailsTab.find("#isfeatured_edit").val(null);
+    $thisTab.find("#isfeatured").text("");
+    $thisTab.find("#isfeatured_edit").val(null);
     
-    $detailsTab.find("#crossZones").text("");    
+    $thisTab.find("#crossZones").text("");    
     
-    $detailsTab.find("#ostypename").text("");
-    $detailsTab.find("#ostypename_edit").val(null);    
+    $thisTab.find("#ostypename").text("");
+    $thisTab.find("#ostypename_edit").val(null);    
     
-    $detailsTab.find("#account").text("");  
-	$detailsTab.find("#size").text("");  
-    $detailsTab.find("#created").text("");      
+    $thisTab.find("#account").text("");  
+	$thisTab.find("#size").text("");  
+    $thisTab.find("#created").text("");      
 }
 
 var templateActionMap = {  
