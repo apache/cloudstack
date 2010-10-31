@@ -354,7 +354,8 @@ function afterLoadVolumeJSP() {
     //***** switch between different tabs (begin) ********************************************************************
     var tabArray = [$("#tab_details"), $("#tab_snapshot")];
     var tabContentArray = [$("#tab_content_details"), $("#tab_content_snapshot")];
-    switchBetweenDifferentTabs(tabArray, tabContentArray);       
+    var afterSwitchFnArray = [volumeJsonToDetailsTab, volumeJsonToSnapshotTab];
+    switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray);       
     //***** switch between different tabs (end) **********************************************************************    
 }
 
@@ -370,67 +371,90 @@ function volumeToMidmenu(jsonObj, $midmenuItem1) {
 }
 
 function volumeToRightPanel($midmenuItem1) {  
-    copyActionInfoFromMidMenuToRightPanel($midmenuItem1); 
-    volumeJsonToDetailsTab($midmenuItem1);  
-    
-    var jsonObj = $midmenuItem1.data("jsonObj");  
-    volumeJsonToSnapshotTab(jsonObj);
+    copyActionInfoFromMidMenuToRightPanel($midmenuItem1);  
+    $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);  
+    $("#tab_details").click();   
 }
  
-function volumeJsonToDetailsTab($midmenuItem1){
-    var jsonObj = $midmenuItem1.data("jsonObj"); 
-    var $detailsTab = $("#right_panel_content #tab_content_details");  
-    $detailsTab.data("jsonObj", jsonObj);   
-    $detailsTab.find("#id").text(jsonObj.id);
-    $detailsTab.find("#name").text(fromdb(jsonObj.name));    
-    $detailsTab.find("#zonename").text(fromdb(jsonObj.zonename));    
-    $detailsTab.find("#device_id").text(jsonObj.deviceid);   
-    $detailsTab.find("#state").text(jsonObj.state);    
-    $detailsTab.find("#storage").text(fromdb(jsonObj.storage));
-    $detailsTab.find("#account").text(fromdb(jsonObj.account)); 
+function volumeJsonToDetailsTab(){    
+    var $thisTab = $("#right_panel_content #tab_content_details");  
+    $thisTab.find("#tab_container").hide(); 
+    $thisTab.find("#tab_spinning_wheel").show();        
     
-    $detailsTab.find("#type").text(jsonObj.type + " (" + jsonObj.storagetype + " storage)");
-    $detailsTab.find("#size").text((jsonObj.size == "0") ? "" : convertBytes(jsonObj.size));		
+    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
+    var id = $midmenuItem1.data("jsonObj").id;
     
+    var jsonObj;   
+    $.ajax({
+        data: createURL("command=listVolumes&id="+id),
+        dataType: "json",
+        async: false,
+        success: function(json) {  
+            var items = json.listvolumesresponse.volume;
+            if(items != null && items.length > 0)
+                jsonObj = items[0];
+        }
+    });        
+    $thisTab.data("jsonObj", jsonObj);    
+    $midmenuItem1.data("jsonObj", jsonObj);    
+        
+    $thisTab.find("#id").text(jsonObj.id);
+    $thisTab.find("#name").text(fromdb(jsonObj.name));    
+    $thisTab.find("#zonename").text(fromdb(jsonObj.zonename));    
+    $thisTab.find("#device_id").text(jsonObj.deviceid);   
+    $thisTab.find("#state").text(jsonObj.state);    
+    $thisTab.find("#storage").text(fromdb(jsonObj.storage));
+    $thisTab.find("#account").text(fromdb(jsonObj.account));     
+    $thisTab.find("#type").text(jsonObj.type + " (" + jsonObj.storagetype + " storage)");
+    $thisTab.find("#size").text((jsonObj.size == "0") ? "" : convertBytes(jsonObj.size));	    
     if (jsonObj.virtualmachineid == null) 
-		$detailsTab.find("#vm_name").text("detached");
+		$thisTab.find("#vm_name").text("detached");
 	else 
-		$detailsTab.find("#vm_name").text(getVmName(jsonObj.vmname, jsonObj.vmdisplayname) + " (" + jsonObj.vmstate + ")");
-		
-    setDateField(jsonObj.created, $detailsTab.find("#created"));	
+		$thisTab.find("#vm_name").text(getVmName(jsonObj.vmname, jsonObj.vmdisplayname) + " (" + jsonObj.vmstate + ")");		
+    setDateField(jsonObj.created, $thisTab.find("#created"));	
        
     //actions ***    
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty();
         
-    buildActionLinkForDetailsTab("Take Snapshot", volumeActionMap, $actionMenu, $midmenuItem1, $detailsTab);	//show take snapshot
-    buildActionLinkForDetailsTab("Recurring Snapshot", volumeActionMap, $actionMenu, $midmenuItem1, $detailsTab);	//show Recurring Snapshot
+    buildActionLinkForDetailsTab("Take Snapshot", volumeActionMap, $actionMenu, $midmenuItem1, $thisTab);	//show take snapshot
+    buildActionLinkForDetailsTab("Recurring Snapshot", volumeActionMap, $actionMenu, $midmenuItem1, $thisTab);	//show Recurring Snapshot
     
     if(jsonObj.state != "Creating" && jsonObj.state != "Corrupted" && jsonObj.name != "attaching") {
         if(jsonObj.type=="ROOT") {
             if (jsonObj.vmstate == "Stopped") { 
-                //buildActionLinkForDetailsTab("Create Template", volumeActionMap, $actionMenu, $midmenuItem1, $detailsTab);	//backend of CreateTemplateFromVolume is not working. Hide the option from UI until backend is fixed.
+                //buildActionLinkForDetailsTab("Create Template", volumeActionMap, $actionMenu, $midmenuItem1, $thisTab);	//backend of CreateTemplateFromVolume is not working. Hide the option from UI until backend is fixed.
             }
         } 
         else { 
 	        if (jsonObj.virtualmachineid != null) {
 		        if (jsonObj.storagetype == "shared" && (jsonObj.vmstate == "Running" || jsonObj.vmstate == "Stopped")) {
-			        buildActionLinkForDetailsTab("Detach Disk", volumeActionMap, $actionMenu, $midmenuItem1, $detailsTab); //show detach disk
+			        buildActionLinkForDetailsTab("Detach Disk", volumeActionMap, $actionMenu, $midmenuItem1, $thisTab); //show detach disk
 		        }
 	        } else {
 		        // Disk not attached
 		        if (jsonObj.storagetype == "shared") {
-			        buildActionLinkForDetailsTab("Attach Disk", volumeActionMap, $actionMenu, $midmenuItem1, $detailsTab);   //show attach disk
+			        buildActionLinkForDetailsTab("Attach Disk", volumeActionMap, $actionMenu, $midmenuItem1, $thisTab);   //show attach disk
     			    			  		    
 			        if(jsonObj.vmname == null || jsonObj.vmname == "none")
-			            buildActionLinkForDetailsTab("Delete Volume", volumeActionMap, $actionMenu, $midmenuItem1, $detailsTab); //show delete volume
+			            buildActionLinkForDetailsTab("Delete Volume", volumeActionMap, $actionMenu, $midmenuItem1, $thisTab); //show delete volume
 		        }
 	        }
         }
     }
+    
+    $thisTab.find("#tab_spinning_wheel").hide();    
+    $thisTab.find("#tab_container").show();     
 } 
 
-function  volumeJsonToSnapshotTab(jsonObj) {
+function  volumeJsonToSnapshotTab() {   
+    var $thisTab = $("#right_panel_content #tab_content_snapshot");
+	$thisTab.find("#tab_container").hide(); 
+    $thisTab.find("#tab_spinning_wheel").show();   
+		
+	var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");	
+	var jsonObj = $midmenuItem1.data("jsonObj");	
+    
     $.ajax({
 		cache: false,
 		data: createURL("command=listSnapshots&volumeid="+jsonObj.id+maxPageSize),
@@ -438,14 +462,16 @@ function  volumeJsonToSnapshotTab(jsonObj) {
 		success: function(json) {							    
 			var items = json.listsnapshotsresponse.snapshot;																						
 			if (items != null && items.length > 0) {
-			    var container = $("#right_panel_content #tab_content_snapshot").empty();
+			    var $container = $thisTab.find("#tab_container").empty();
 				var template = $("#snapshot_tab_template");				
 				for (var i = 0; i < items.length; i++) {
 					var newTemplate = template.clone(true);	               
 	                volumeSnapshotJSONToTemplate(items[i], newTemplate); 
-	                container.append(newTemplate.show());	
+	                $container.append(newTemplate.show());	
 				}			
-			}			
+			}	
+			$thisTab.find("#tab_spinning_wheel").hide();    
+            $thisTab.find("#tab_container").show();    			
 		}
 	});
 } 
@@ -481,18 +507,18 @@ function volumeSnapshotJSONToTemplate(jsonObj, template) {
 } 
  
 function volumeClearRightPanel() {       
-    var $detailsTab = $("#right_panel_content #tab_content_details");  
-    $detailsTab.find("#id").text("");
-    $detailsTab.find("#name").text("");    
-    $detailsTab.find("#zonename").text("");    
-    $detailsTab.find("#device_id").text("");   
-    $detailsTab.find("#state").text("");    
-    $detailsTab.find("#storage").text("");
-    $detailsTab.find("#account").text(""); 
-    $detailsTab.find("#type").text("");
-    $detailsTab.find("#size").text("");		
-    $detailsTab.find("#vm_name").text("");
-    $detailsTab.find("#created").text("");
+    var $thisTab = $("#right_panel_content #tab_content_details");  
+    $thisTab.find("#id").text("");
+    $thisTab.find("#name").text("");    
+    $thisTab.find("#zonename").text("");    
+    $thisTab.find("#device_id").text("");   
+    $thisTab.find("#state").text("");    
+    $thisTab.find("#storage").text("");
+    $thisTab.find("#account").text(""); 
+    $thisTab.find("#type").text("");
+    $thisTab.find("#size").text("");		
+    $thisTab.find("#vm_name").text("");
+    $thisTab.find("#created").text("");
 } 
    
 var volumeActionMap = {  

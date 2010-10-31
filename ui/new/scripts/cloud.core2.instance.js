@@ -1400,14 +1400,7 @@ function vmToRightPanel($midmenuItem1) {
     copyActionInfoFromMidMenuToRightPanel($midmenuItem1); 
      
     $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);
-    $("#tab_details").click();
-    /*         
-    vmJsonToDetailsTab($midmenuItem1);   
-    vmJsonToVolumeTab(jsonObj);
-    
-    if (isAdmin() || isDomainAdmin())
-        vmJsonToRouterTab(jsonObj);
-    */
+    $("#tab_details").click();   
 }
   
 function vmJsonToDetailsTab(){  
