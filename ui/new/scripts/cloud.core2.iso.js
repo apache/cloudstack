@@ -171,37 +171,69 @@ function isoToMidmenu(jsonObj, $midmenuItem1) {
 
 function isoToRightPanel($midmenuItem1) {  
     copyActionInfoFromMidMenuToRightPanel($midmenuItem1); 
-    isoJsonToDetailsTab($midmenuItem1);   
+    $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);
+    isoJsonToDetailsTab();   
 }
 
-function isoJsonToDetailsTab($midmenuItem1) { 
-    var jsonObj = $midmenuItem1.data("jsonObj");  
-    var $detailsTab = $("#right_panel_content #tab_content_details");   
-    $detailsTab.data("jsonObj", jsonObj);      
-    $detailsTab.find("#id").text(fromdb(jsonObj.id));
-    $detailsTab.find("#zonename").text(fromdb(jsonObj.zonename));
+function isoJsonToDetailsTab() { 
+    var $thisTab = $("#right_panel_content #tab_content_details");  
+    $thisTab.find("#tab_container").hide(); 
+    $thisTab.find("#tab_spinning_wheel").show();        
     
-    $detailsTab.find("#name").text(fromdb(jsonObj.name));
-    $detailsTab.find("#name_edit").val(fromdb(jsonObj.name));
+    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
     
-    $detailsTab.find("#displaytext").text(fromdb(jsonObj.displaytext));
-    $detailsTab.find("#displaytext_edit").val(fromdb(jsonObj.displaytext));
     
-    $detailsTab.find("#account").text(fromdb(jsonObj.account));
+    var jsonObj = $midmenuItem1.data("jsonObj");
+    //comment the following code because listIsos API has a bug => listIsos API returns nothing when id is 200(tool) and zoneid is specified
+    /*
+    var array1 = [];
+    var id = $midmenuItem1.data("jsonObj").id;
+    array1.push("&id="+id);
+    
+    var zoneid = $midmenuItem1.data("jsonObj").zoneid;
+    if(zoneid != null)
+        array1.push("&zoneid="+zoneid);
+        
+    var jsonObj;     
+    $.ajax({
+        data: createURL("command=listIsos&isofilter=self"+array1.join("")),
+        dataType: "json",
+        async: false,
+        success: function(json) {            
+            var items = json.listisosresponse.iso;  
+            if(items != null && items.length > 0)
+                jsonObj = items[0];
+        }
+    });   
+    */   
+    
+    $thisTab.data("jsonObj", jsonObj);    
+    $midmenuItem1.data("jsonObj", jsonObj);   
+    
+    $thisTab.find("#id").text(fromdb(jsonObj.id));
+    $thisTab.find("#zonename").text(fromdb(jsonObj.zonename));
+    
+    $thisTab.find("#name").text(fromdb(jsonObj.name));
+    $thisTab.find("#name_edit").val(fromdb(jsonObj.name));
+    
+    $thisTab.find("#displaytext").text(fromdb(jsonObj.displaytext));
+    $thisTab.find("#displaytext_edit").val(fromdb(jsonObj.displaytext));
+    
+    $thisTab.find("#account").text(fromdb(jsonObj.account));
                       
     var status = "Ready";
 	if (jsonObj.isready == "false")
 		status = fromdb(jsonObj.isostatus);		
-	setTemplateStateInRightPanel(status, $detailsTab.find("#status"));
+	setTemplateStateInRightPanel(status, $thisTab.find("#status"));
 	
 	if(jsonObj.size != null)
-	    $detailsTab.find("#size").text(convertBytes(parseInt(jsonObj.size)));  
+	    $thisTab.find("#size").text(convertBytes(parseInt(jsonObj.size)));  
 	else
-	    $detailsTab.find("#size").text("");    
+	    $thisTab.find("#size").text("");    
               
-    setBooleanReadField(jsonObj.bootable, $detailsTab.find("#bootable"));	
-    setBooleanReadField(jsonObj.crossZones, $detailsTab.find("#crossZones"));	     
-    setDateField(jsonObj.created, $detailsTab.find("#created"));	  
+    setBooleanReadField(jsonObj.bootable, $thisTab.find("#bootable"));	
+    setBooleanReadField(jsonObj.crossZones, $thisTab.find("#crossZones"));	     
+    setDateField(jsonObj.created, $thisTab.find("#created"));	  
     
     
     //actions ***
@@ -214,9 +246,9 @@ function isoJsonToDetailsTab($midmenuItem1) {
 		//$("#edit_button").hide();
     }
     else {        
-        buildActionLinkForDetailsTab("Edit ISO", isoActionMap, $actionMenu, $midmenuItem1, $detailsTab);		
+        buildActionLinkForDetailsTab("Edit ISO", isoActionMap, $actionMenu, $midmenuItem1, $thisTab);		
         //$("#edit_button").show();
-        buildActionLinkForDetailsTab("Copy ISO", isoActionMap, $actionMenu, $midmenuItem1, $detailsTab);		
+        buildActionLinkForDetailsTab("Copy ISO", isoActionMap, $actionMenu, $midmenuItem1, $thisTab);		
         noAvailableActions = false;
     }
 		
@@ -224,7 +256,7 @@ function isoJsonToDetailsTab($midmenuItem1) {
 	if (((isUser() && jsonObj.ispublic == "true" && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) || jsonObj.isready == "false") || (jsonObj.bootable == "false")) {
 	}
     else {        
-        buildActionLinkForDetailsTab("Create VM", isoActionMap, $actionMenu, $midmenuItem1, $detailsTab);	
+        buildActionLinkForDetailsTab("Create VM", isoActionMap, $actionMenu, $midmenuItem1, $thisTab);	
         noAvailableActions = false;
     }
     
@@ -232,14 +264,17 @@ function isoJsonToDetailsTab($midmenuItem1) {
 	if (((isUser() && jsonObj.ispublic == "true" && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account))) || (jsonObj.isready == "false" && jsonObj.isostatus != null && jsonObj.isostatus.indexOf("% Downloaded") != -1)) {
 	}
 	else {	    
-	    buildActionLinkForDetailsTab("Delete ISO", isoActionMap, $actionMenu, $midmenuItem1, $detailsTab);	
+	    buildActionLinkForDetailsTab("Delete ISO", isoActionMap, $actionMenu, $midmenuItem1, $thisTab);	
 	    noAvailableActions = false;
 	}    
 	
 	// no available actions 
 	if(noAvailableActions == true) {
 	    $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());
-	}	    
+	}	 
+	
+	$thisTab.find("#tab_spinning_wheel").hide();    
+    $thisTab.find("#tab_container").show();     
 }
 
 function isoClearRightPanel() {
@@ -247,23 +282,23 @@ function isoClearRightPanel() {
 }
 
 function isoClearDetailsTab() {
-    var $detailsTab = $("#right_panel_content #tab_content_details");   
+    var $thisTab = $("#right_panel_content #tab_content_details");   
     
-    $detailsTab.find("#id").text("");
-    $detailsTab.find("#zonename").text("");
+    $thisTab.find("#id").text("");
+    $thisTab.find("#zonename").text("");
     
-    $detailsTab.find("#name").text("");
-    $detailsTab.find("#name_edit").val("");
+    $thisTab.find("#name").text("");
+    $thisTab.find("#name_edit").val("");
     
-    $detailsTab.find("#displaytext").text("");
-    $detailsTab.find("#displaytext_edit").val("");
+    $thisTab.find("#displaytext").text("");
+    $thisTab.find("#displaytext_edit").val("");
     
-    $detailsTab.find("#account").text("");    
-    $detailsTab.find("#size").text("");  
-	$detailsTab.find("#status").text(""); 
-	$detailsTab.find("#bootable").text("");
-	$detailsTab.find("#crossZones").text("");
-    $detailsTab.find("#created").text("");   
+    $thisTab.find("#account").text("");    
+    $thisTab.find("#size").text("");  
+	$thisTab.find("#status").text(""); 
+	$thisTab.find("#bootable").text("");
+	$thisTab.find("#crossZones").text("");
+    $thisTab.find("#created").text("");   
 }
 
 var isoActionMap = {  
