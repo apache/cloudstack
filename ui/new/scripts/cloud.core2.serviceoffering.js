@@ -176,38 +176,60 @@ function serviceOfferingToMidmenu(jsonObj, $midmenuItem1) {
 
 function serviceOfferingToRightPanel($midmenuItem1) {
     copyActionInfoFromMidMenuToRightPanel($midmenuItem1);
-    serviceOfferingJsonToDetailsTab($midmenuItem1);   
+    $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);
+    serviceOfferingJsonToDetailsTab();   
 }
 
-function serviceOfferingJsonToDetailsTab($midmenuItem1) { 
-    var jsonObj = $midmenuItem1.data("jsonObj");
-    var $detailsTab = $("#right_panel_content #tab_content_details");   
-    $detailsTab.data("jsonObj", jsonObj);      
-    $detailsTab.find("#id").text(jsonObj.id);
+function serviceOfferingJsonToDetailsTab() { 
+    var $thisTab = $("#right_panel_content #tab_content_details");  
+    $thisTab.find("#tab_container").hide(); 
+    $thisTab.find("#tab_spinning_wheel").show();        
+    
+    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
+    var id = $midmenuItem1.data("jsonObj").id;
+    
+    var jsonObj;   
+    $.ajax({
+        data: createURL("command=listServiceOfferings&id="+id),
+        dataType: "json",
+        async: false,
+        success: function(json) {  
+            var items = json.listserviceofferingsresponse.serviceoffering;
+            if(items != null && items.length > 0)
+                jsonObj = items[0];
+        }
+    });        
+    $thisTab.data("jsonObj", jsonObj);    
+    $midmenuItem1.data("jsonObj", jsonObj);    
+    
+    $thisTab.find("#id").text(jsonObj.id);
    
-    $detailsTab.find("#grid_header_title").text(fromdb(jsonObj.name)); 
-    $detailsTab.find("#name").text(fromdb(jsonObj.name));
-    $detailsTab.find("#name_edit").val(fromdb(jsonObj.name));
+    $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name)); 
+    $thisTab.find("#name").text(fromdb(jsonObj.name));
+    $thisTab.find("#name_edit").val(fromdb(jsonObj.name));
     
-    $detailsTab.find("#displaytext").text(fromdb(jsonObj.displaytext));
-    $detailsTab.find("#displaytext_edit").val(fromdb(jsonObj.displaytext));
+    $thisTab.find("#displaytext").text(fromdb(jsonObj.displaytext));
+    $thisTab.find("#displaytext_edit").val(fromdb(jsonObj.displaytext));
     
-    $detailsTab.find("#storagetype").text(jsonObj.storagetype);
-    $detailsTab.find("#cpu").text(jsonObj.cpunumber + " x " + convertHz(jsonObj.cpuspeed));
-    $detailsTab.find("#memory").text(convertBytes(parseInt(jsonObj.memory)*1024*1024));
+    $thisTab.find("#storagetype").text(jsonObj.storagetype);
+    $thisTab.find("#cpu").text(jsonObj.cpunumber + " x " + convertHz(jsonObj.cpuspeed));
+    $thisTab.find("#memory").text(convertBytes(parseInt(jsonObj.memory)*1024*1024));
     
-    setBooleanReadField(jsonObj.offerha, $detailsTab.find("#offerha"));	
-    $detailsTab.find("#offerha_edit").val(jsonObj.offerha);
+    setBooleanReadField(jsonObj.offerha, $thisTab.find("#offerha"));	
+    $thisTab.find("#offerha_edit").val(jsonObj.offerha);
     
-    $detailsTab.find("#networktype").text(toNetworkType(jsonObj.usevirtualnetwork));
-    $detailsTab.find("#tags").text(fromdb(jsonObj.tags));   
-    setDateField(jsonObj.created, $detailsTab.find("#created"));	
+    $thisTab.find("#networktype").text(toNetworkType(jsonObj.usevirtualnetwork));
+    $thisTab.find("#tags").text(fromdb(jsonObj.tags));   
+    setDateField(jsonObj.created, $thisTab.find("#created"));	
     
     //actions ***
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty();      
-    buildActionLinkForDetailsTab("Edit Service Offering", serviceOfferingActionMap, $actionMenu, $midmenuItem1, $detailsTab);	
-    buildActionLinkForDetailsTab("Delete Service Offering", serviceOfferingActionMap, $actionMenu, $midmenuItem1, $detailsTab);	
+    buildActionLinkForDetailsTab("Edit Service Offering", serviceOfferingActionMap, $actionMenu, $midmenuItem1, $thisTab);	
+    buildActionLinkForDetailsTab("Delete Service Offering", serviceOfferingActionMap, $actionMenu, $midmenuItem1, $thisTab);
+    
+    $thisTab.find("#tab_spinning_wheel").hide();    
+    $thisTab.find("#tab_container").show();    	
 }
 
 function serviceOfferingClearRightPanel() {
@@ -215,20 +237,20 @@ function serviceOfferingClearRightPanel() {
 }
 
 function serviceOfferingClearDetailsTab() {
-    var $detailsTab = $("#right_panel_content #tab_content_details");    
-    $detailsTab.find("#id").text("");    
-    $detailsTab.find("#name").text("");
-    $detailsTab.find("#name_edit").val("");    
-    $detailsTab.find("#displaytext").text("");
-    $detailsTab.find("#displaytext_edit").val("");    
-    $detailsTab.find("#storagetype").text("");
-    $detailsTab.find("#cpu").text("");
-    $detailsTab.find("#memory").text("");    
-    $detailsTab.find("#offerha").text("");
-    $detailsTab.find("#offerha_edit").val("");    
-    $detailsTab.find("#networktype").text("");
-    $detailsTab.find("#tags").text("");  
-    $detailsTab.find("#created").text(""); 
+    var $thisTab = $("#right_panel_content #tab_content_details");    
+    $thisTab.find("#id").text("");    
+    $thisTab.find("#name").text("");
+    $thisTab.find("#name_edit").val("");    
+    $thisTab.find("#displaytext").text("");
+    $thisTab.find("#displaytext_edit").val("");    
+    $thisTab.find("#storagetype").text("");
+    $thisTab.find("#cpu").text("");
+    $thisTab.find("#memory").text("");    
+    $thisTab.find("#offerha").text("");
+    $thisTab.find("#offerha_edit").val("");    
+    $thisTab.find("#networktype").text("");
+    $thisTab.find("#tags").text("");  
+    $thisTab.find("#created").text(""); 
     
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty(); 

@@ -34,10 +34,10 @@ function alertToMidmenu(jsonObj, $midmenuItem1) {
 function alertToRightPanel($midmenuItem1) {   
     copyActionInfoFromMidMenuToRightPanel($midmenuItem1);
     $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);
-    alertJsonToDetailsTab($midmenuItem1);   
+    alertJsonToDetailsTab();   
 }
 
-function alertJsonToDetailsTab($midmenuItem1) {   
+function alertJsonToDetailsTab() {   
     var $thisTab = $("#right_panel_content #tab_content_details");  
     $thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();        
