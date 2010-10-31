@@ -33,15 +33,23 @@ function alertToMidmenu(jsonObj, $midmenuItem1) {
 
 function alertToRightPanel($midmenuItem1) {   
     copyActionInfoFromMidMenuToRightPanel($midmenuItem1);
+    $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);
     alertJsonToDetailsTab($midmenuItem1);   
 }
 
 function alertJsonToDetailsTab($midmenuItem1) {   
-    var jsonObj = $midmenuItem1.data("jsonObj");
-    var $detailsTab = $("#right_panel_content #tab_content_details");   
-    $detailsTab.data("jsonObj", jsonObj);  
+    var $thisTab = $("#right_panel_content #tab_content_details");  
+    $thisTab.find("#tab_container").hide(); 
+    $thisTab.find("#tab_spinning_wheel").show();        
+    
+    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
+    var jsonObj = $midmenuItem1.data("jsonObj");       
+    $thisTab.data("jsonObj", jsonObj);     
         
-    $detailsTab.find("#type").text(jsonObj.type);
-    $detailsTab.find("#description").text(jsonObj.description);    
-    setDateField(jsonObj.sent, $detailsTab.find("#sent"));	
+    $thisTab.find("#type").text(jsonObj.type);
+    $thisTab.find("#description").text(jsonObj.description);    
+    setDateField(jsonObj.sent, $thisTab.find("#sent"));	
+    
+    $thisTab.find("#tab_spinning_wheel").hide();    
+    $thisTab.find("#tab_container").show();  
 }

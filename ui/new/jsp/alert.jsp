@@ -26,45 +26,48 @@
             <%=t.t("Details")%></div>        
     </div>    
     <div id="tab_content_details">
-    	<!-- Loading -->
-         <div class="rightpanel_mainloader_panel" style="display:none;">
-              <div class="rightpanel_mainloaderbox">
-                   <div class="rightpanel_mainloader_animatedicon"></div>
-                   <p>Loading &hellip;</p>    
-              </div>               
-        </div> 
-	    <div class="grid_container">
-	        <div class="grid_rows odd">
-	            <div class="grid_row_cell" style="width: 20%;">
-	                <div class="row_celltitles">
-	                    <%=t.t("Type")%>:</div>
-	            </div>
-	            <div class="grid_row_cell" style="width: 79%;">
-	                <div class="row_celltitles" id="type">
-	                </div>
-	            </div>
-	        </div>
-	        <div class="grid_rows even">
-	            <div class="grid_row_cell" style="width: 20%;">
-	                <div class="row_celltitles">
-	                    <%=t.t("Description")%>:</div>
-	            </div>
-	            <div class="grid_row_cell" style="width: 79%;">
-	                <div class="row_celltitles" id="description">
-	                    </div>
-	            </div>
-	        </div>
-	        <div class="grid_rows odd">
-	            <div class="grid_row_cell" style="width: 20%;">
-	                <div class="row_celltitles">
-	                    <%=t.t("Sent")%>:</div>
-	            </div>
-	            <div class="grid_row_cell" style="width: 79%;">
-	                <div class="row_celltitles" id="sent">
-	                </div>
-	            </div>
-	        </div>        
-	    </div>
+        <div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display: none;">
+            <div class="rightpanel_mainloaderbox">
+                <div class="rightpanel_mainloader_animatedicon">
+                </div>
+                <p>
+                    Loading &hellip;</p>
+            </div>
+        </div>  
+        <div id="tab_container">
+		    <div class="grid_container">
+		        <div class="grid_rows odd">
+		            <div class="grid_row_cell" style="width: 20%;">
+		                <div class="row_celltitles">
+		                    <%=t.t("Type")%>:</div>
+		            </div>
+		            <div class="grid_row_cell" style="width: 79%;">
+		                <div class="row_celltitles" id="type">
+		                </div>
+		            </div>
+		        </div>
+		        <div class="grid_rows even">
+		            <div class="grid_row_cell" style="width: 20%;">
+		                <div class="row_celltitles">
+		                    <%=t.t("Description")%>:</div>
+		            </div>
+		            <div class="grid_row_cell" style="width: 79%;">
+		                <div class="row_celltitles" id="description">
+		                    </div>
+		            </div>
+		        </div>
+		        <div class="grid_rows odd">
+		            <div class="grid_row_cell" style="width: 20%;">
+		                <div class="row_celltitles">
+		                    <%=t.t("Sent")%>:</div>
+		            </div>
+		            <div class="grid_row_cell" style="width: 79%;">
+		                <div class="row_celltitles" id="sent">
+		                </div>
+		            </div>
+		        </div>        
+		    </div>
+	    </div>    
     </div>    
 </div>
 <!-- alert detail panel (end) -->
