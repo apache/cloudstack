@@ -56,7 +56,7 @@ public class UploadCustomCertificateCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  ("Uploading custom certificate to the db, and applying it to the cpvm");
+        return  ("Uploading custom certificate to the db, and applying it to all the cpvms in the system");
     }
     
     @Override

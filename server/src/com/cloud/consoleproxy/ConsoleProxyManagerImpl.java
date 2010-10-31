@@ -2493,7 +2493,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
 			//find corresponding host
 			if(consoleProxy!=null){
 				HostVO consoleProxyHost = _hostDao.findConsoleProxyHost(consoleProxy.getName(), Type.ConsoleProxy);
-				//now send a command to console proxy 
+				//now send a command to console proxy host
 	    		UpdateCertificateCommand certCmd = new UpdateCertificateCommand(certStr, true);
 	    		try {
 						Answer updateCertAns = _agentMgr.send(consoleProxyHost.getId(), certCmd);

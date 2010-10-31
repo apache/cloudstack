@@ -5876,7 +5876,7 @@ public class ManagementServerImpl implements ManagementServer {
     	{
         	Transaction.currentTxn();
         	Long certVOId = null;
-    		CertificateVO cert = _certDao.listAll().get(0); //always 1 record in db
+    		CertificateVO cert = _certDao.listAll().get(0); //always 1 record in db (from the deploydb time)
     		if(cert.getMgmtServerId()!=null)
     			throw new ResourceUnavailableException("Another management server is in the process of custom cert updating");
     		if(cert.getUpdated().equalsIgnoreCase("Y")){
@@ -5930,7 +5930,7 @@ public class ManagementServerImpl implements ManagementServer {
 				for(ConsoleProxyVO cp : cpList)
 				{
 					Long cpHostId = hostNameToHostIdMap.get(cp.getName());
-					//now send a command to each console proxy 
+					//now send a command to each console proxy host
 					UpdateCertificateCommand certCmd = new UpdateCertificateCommand(_certDao.findById(certVOId).getCertificate(), false);
 					try {
 							Answer updateCertAns = _agentMgr.send(cpHostId, certCmd);
@@ -5971,7 +5971,7 @@ public class ManagementServerImpl implements ManagementServer {
 			if(e instanceof ManagementServerException)
 				throw new ServerApiException(BaseCmd.CUSTOM_CERT_UPDATE_ERROR, e.getMessage());
 			if(e instanceof IndexOutOfBoundsException){
-				String msg = "Custom certificate record in the db deleted; this should never happen!";
+				String msg = "Custom certificate record in the db deleted; this should never happen. Please create a new record in the certificate table";
 				s_logger.error(msg);
 				throw new ServerApiException(BaseCmd.CUSTOM_CERT_UPDATE_ERROR, msg);
 			}
@@ -5980,14 +5980,14 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
 	private void releaseCertRecord(CertificateVO cert) throws ResourceUnavailableException {
-		CertificateVO lockedCertPostPatching = _certDao.acquire(cert.getId());
-		if(lockedCertPostPatching == null){
+		CertificateVO lockedCert = _certDao.acquire(cert.getId());
+		if(lockedCert == null){
 			String msg = "Unable to obtain lock on the cert from releaseCertRecord() in uploadCertificate()";
 			s_logger.error(msg);
 		}else{
 			try{
-				lockedCertPostPatching.setMgmtServerId(null);//release for other ms
-				_certDao.update(lockedCertPostPatching.getId(), lockedCertPostPatching);
+				lockedCert.setMgmtServerId(null);//release for other ms
+				_certDao.update(lockedCert.getId(), lockedCert);
 			}catch (Exception e){
 				s_logger.warn("Unable to update record in cert table from releaseCertRecord() during uploadCertificate()",e);
 			}finally{
