@@ -25,6 +25,8 @@ import com.cloud.deploy.DeployDestination;
  *
  */
 public interface VirtualMachineGuru<T extends VMInstanceVO> {
+    T persist(T vm);
+    
     /**
      * finalize the virtual machine deployment.
      * @param cmds commands that were created.

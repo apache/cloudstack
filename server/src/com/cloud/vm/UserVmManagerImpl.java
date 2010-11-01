@@ -2214,6 +2214,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         _executor = Executors.newScheduledThreadPool(wrks, new NamedThreadFactory("UserVm-Scavenger"));
         
         _haMgr.registerHandler(Type.User, this);
+        _itMgr.registerGuru(Type.User, this);
         
         s_logger.info("User VM Manager is configured.");
 
@@ -3897,7 +3898,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 	    
 	    AccountVO owner = _accountDao.findById(vm.getAccountId());
 	    
-	    return _itMgr.start(vm, plan, owner, this);
+	    return _itMgr.start(vm, plan, owner);
 	}
 
     @Override
@@ -3909,5 +3910,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     public boolean processDeploymentResult(Commands cmds, UserVmVO vm, VirtualMachineProfile profile, DeployDestination dest) {
         return true;
     }
-	
+    
+    @Override
+    public UserVmVO persist(UserVmVO vm) {
+        return _vmDao.persist(vm);
+    }
 }

@@ -552,7 +552,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
         ConsoleProxyVO proxy = _consoleProxyDao.findById(proxyVmId);
         DeploymentPlan plan = new DataCenterDeployment(proxy.getDataCenterId(), 1);
         AccountVO systemAcct = _accountMgr.getSystemAccount();
-        return _vmMgr.start(proxy, plan, systemAcct, this);
+        return _vmMgr.start(proxy, plan, systemAcct);
     }
 
     @Override
@@ -2346,6 +2346,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
         if (haMgr != null) {
             haMgr.registerHandler(VirtualMachine.Type.ConsoleProxy, this);
         }
+        _vmMgr.registerGuru(VirtualMachine.Type.ConsoleProxy, this);
 
         boolean useLocalStorage = Boolean.parseBoolean(configs.get(Config.SystemVMUseLocalStorage.key()));
         String networkRateStr = _configDao.getValue("network.throttling.rate");
@@ -2530,5 +2531,10 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
         event.setDescription("Scheduled async job for "+description);
         event = _eventDao.persist(event);
         return event.getId();
+    }
+    
+    @Override
+    public ConsoleProxyVO persist(ConsoleProxyVO proxy) {
+        return _consoleProxyDao.persist(proxy);
     }
 }

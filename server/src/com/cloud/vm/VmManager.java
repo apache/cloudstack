@@ -63,10 +63,12 @@ public interface VmManager extends Manager {
             DeploymentPlan plan,
             Account owner) throws InsufficientCapacityException, StorageUnavailableException;
     
-    <T extends VMInstanceVO> T start(T vm, DeploymentPlan plan, Account user, VirtualMachineGuru<T> checker) throws InsufficientCapacityException, StorageUnavailableException, ConcurrentOperationException, ResourceUnavailableException;
+    <T extends VMInstanceVO> T start(T vm, DeploymentPlan plan, Account user) throws InsufficientCapacityException, StorageUnavailableException, ConcurrentOperationException, ResourceUnavailableException;
     
     <T extends VMInstanceVO> T stop(T vm) throws AgentUnavailableException, ConcurrentOperationException;
     
     void destroy();
+    
+    <T extends VMInstanceVO> void registerGuru(VirtualMachine.Type type, VirtualMachineGuru<T> guru);
     
 }

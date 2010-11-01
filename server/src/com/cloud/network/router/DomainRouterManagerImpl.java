@@ -1454,6 +1454,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
 
         _agentMgr.registerForHostEvents(new SshKeysDistriMonitor(this, _hostDao, _configDao), true, false, false);
         _haMgr.registerHandler(VirtualMachine.Type.DomainRouter, this);
+        _vmMgr.registerGuru(VirtualMachine.Type.DomainRouter, this);
 
         boolean useLocalStorage = Boolean.parseBoolean(configs.get(Config.SystemVMUseLocalStorage.key()));
         String networkRateStr = _configDao.getValue("network.throttling.rate");
@@ -2056,7 +2057,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
         }
         txn.commit();
         
-        return _vmMgr.start(router, plan, owner, this);
+        return _vmMgr.start(router, plan, owner);
 	}
 
     @Override
@@ -2107,6 +2108,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
         return true;
     }
 
+<<<<<<< HEAD
 	@Override
 	public RemoteAccessVpnVO startRemoteAccessVpn(RemoteAccessVpnVO vpnVO) {
 		DomainRouterVO router = getRouter(vpnVO.getAccountId(), vpnVO.getZoneId());
@@ -2163,4 +2165,8 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
 		}
 	}
 
+    @Override
+    public DomainRouterVO persist(DomainRouterVO router) {
+        return _routerDao.persist(router);
+    }
 }

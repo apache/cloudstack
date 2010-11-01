@@ -18,6 +18,7 @@
 package com.cloud.vm;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -91,8 +92,17 @@ public class MauriceMoss implements VmManager {
     @Inject(adapter=DeploymentPlanner.class)
     private Adapters<DeploymentPlanner> _planners;
     
+    Map<VirtualMachine.Type, VirtualMachineGuru<? extends VMInstanceVO>> _vmGurus = new HashMap<VirtualMachine.Type, VirtualMachineGuru<? extends VMInstanceVO>>();
+    
     private int _retry;
 
+    @Override
+    public <T extends VMInstanceVO> void registerGuru(VirtualMachine.Type type, VirtualMachineGuru<T> guru) {
+        synchronized(_vmGurus) { 
+            _vmGurus.put(type, guru);
+        }
+    }
+    
     @Override @DB
     public <T extends VMInstanceVO> VirtualMachineProfile allocate(T vm,
             VMTemplateVO template,
@@ -212,7 +222,7 @@ public class MauriceMoss implements VmManager {
     }
 
     @Override
-    public <T extends VMInstanceVO> T start(T vm, DeploymentPlan plan, Account acct, VirtualMachineGuru<T> guru) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
+    public <T extends VMInstanceVO> T start(T vm, DeploymentPlan plan, Account acct) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
         State state = vm.getState();
         if (state == State.Starting || state == State.Running) {
             s_logger.debug("VM is already started: " + vm);
@@ -286,6 +296,10 @@ public class MauriceMoss implements VmManager {
             
             Commands cmds = new Commands(OnError.Revert);
             cmds.addCommand(new Start2Command(vmTO));
+            
+            @SuppressWarnings("unchecked")
+            VirtualMachineGuru<T> guru = (VirtualMachineGuru<T>)_vmGurus.get(vm.getType());
+            
             if (guru != null) {
                 guru.finalizeDeployment(cmds, vm, vmProfile, dest);
             }
