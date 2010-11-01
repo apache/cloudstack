@@ -52,6 +52,7 @@ import com.cloud.agent.api.StartRouterCommand;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.routing.DhcpEntryCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
+import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
@@ -109,6 +110,7 @@ import com.cloud.network.Network.TrafficType;
 import com.cloud.network.NetworkConfiguration;
 import com.cloud.network.NetworkConfigurationVO;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.RemoteAccessVpnVO;
 import com.cloud.network.SshKeysDistriMonitor;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
@@ -2104,5 +2106,61 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
     public boolean processDeploymentResult(Commands cmds, DomainRouterVO router, VirtualMachineProfile profile, DeployDestination dest) {
         return true;
     }
+
+	@Override
+	public RemoteAccessVpnVO startRemoteAccessVpn(RemoteAccessVpnVO vpnVO) {
+		DomainRouterVO router = getRouter(vpnVO.getAccountId(), vpnVO.getZoneId());
+		if (router == null) {
+			s_logger.warn("Failed to start remote access VPN: no router found for account and zone");
+			return null;
+		}
+		if (router.getState() != State.Running) {
+			s_logger.warn("Failed to start remote access VPN: router not in running state");
+			return null;
+		}
+		try {
+			Answer answer = _agentMgr.send(router.getHostId(), new RemoteAccessVpnCfgCommand(true, router.getPrivateIpAddress(), vpnVO.getVpnServerAddress(), vpnVO.getLocalIp(), vpnVO.getIpRange(), vpnVO.getIpsecPresharedKey()));
+			if (answer != null && answer.getResult()) {
+				return vpnVO;
+			} else {
+				s_logger.debug("Failed to start remote access VPN: " + answer.getDetails());
+				return null;
+			}
+		} catch (AgentUnavailableException e) {
+			s_logger.debug("Failed to start remote access VPN: ", e);
+			return null;
+		} catch (OperationTimedoutException e) {
+			s_logger.debug("Failed to start remote access VPN: ", e);
+			return null;		
+		}
+	}
+
+	@Override
+	public boolean deleteRemoteAccessVpn(RemoteAccessVpnVO vpnVO) {
+		DomainRouterVO router = getRouter(vpnVO.getAccountId(), vpnVO.getZoneId());
+		if (router == null) {
+			s_logger.warn("Failed to delete remote access VPN: no router found for account and zone");
+			return false;
+		}
+		if (router.getState() != State.Running) {
+			s_logger.warn("Failed to delete remote access VPN: router not in running state");
+			return false;
+		}
+		try {
+			Answer answer = _agentMgr.send(router.getHostId(), new RemoteAccessVpnCfgCommand(false, router.getPrivateIpAddress(), vpnVO.getVpnServerAddress(), vpnVO.getLocalIp(), vpnVO.getIpRange(), vpnVO.getIpsecPresharedKey()));
+			if (answer != null && answer.getResult()) {
+				return true;
+			} else {
+				s_logger.debug("Failed to delete remote access VPN: " + answer.getDetails());
+				return false;
+			}
+		} catch (AgentUnavailableException e) {
+			s_logger.debug("Failed to delete remote access VPN: ", e);
+			return false;
+		} catch (OperationTimedoutException e) {
+			s_logger.debug("Failed to delete remote access VPN: ", e);
+			return false;		
+		}
+	}
 
 }

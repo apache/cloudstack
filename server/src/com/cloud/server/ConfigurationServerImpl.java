@@ -499,7 +499,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 		if (already == null) {
 		
 			s_logger.info("Need to store secondary storage vm copy password in the database");
-			String password = PasswordGenerator.generateRandomPassword();
+			String password = PasswordGenerator.generateRandomPassword(12);
 
 			String insertSql1 = "INSERT INTO `cloud`.`configuration` (category, instance, component, name, value, description) " +
 			"VALUES ('Hidden','DEFAULT', 'management-server','secstorage.copy.password', '" + password + "','Password used to authenticate zone-to-zone template copy requests')";

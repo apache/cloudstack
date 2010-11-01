@@ -25,7 +25,7 @@ import java.util.Random;
  *
  */
 public class PasswordGenerator {
-	 public static String generateRandomPassword() {
+	 public static String generateRandomPassword(int num) {
 	        Random r = new Random();
 	        StringBuffer password = new StringBuffer();
 
@@ -46,7 +46,7 @@ public class PasswordGenerator {
 
 	        // Generate a random 6-character string with only lowercase
 	        // characters
-	        for (int i = 0; i < 6; i++) {
+	        for (int i = 0; i < num; i++) {
 	            // Generate a random lowercase character (don't allow lowercase
 	            // "l" or lowercase "o")
 	            lowercase = generateLowercaseChar(r);

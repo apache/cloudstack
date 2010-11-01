@@ -104,6 +104,7 @@ import com.cloud.api.commands.ListLoadBalancerRulesCmd;
 import com.cloud.api.commands.ListPodsByCmd;
 import com.cloud.api.commands.ListPreallocatedLunsCmd;
 import com.cloud.api.commands.ListPublicIpAddressesCmd;
+import com.cloud.api.commands.ListRemoteAccessVpnsCmd;
 import com.cloud.api.commands.ListRoutersCmd;
 import com.cloud.api.commands.ListServiceOfferingsCmd;
 import com.cloud.api.commands.ListSnapshotsCmd;
@@ -202,10 +203,18 @@ import com.cloud.network.IPAddressVO;
 import com.cloud.network.LoadBalancerVMMapVO;
 import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkRuleConfigVO;
+import com.cloud.network.RemoteAccessVpnVO;
+import com.cloud.network.SecurityGroupVMMapVO;
+import com.cloud.network.SecurityGroupVO;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
+import com.cloud.network.dao.NetworkRuleConfigDao;
+import com.cloud.network.dao.RemoteAccessVpnDao;
+import com.cloud.network.dao.SecurityGroupDao;
+import com.cloud.network.dao.SecurityGroupVMMapDao;
 import com.cloud.network.security.NetworkGroupManager;
 import com.cloud.network.security.NetworkGroupVO;
 import com.cloud.network.security.dao.NetworkGroupDao;
@@ -375,6 +384,7 @@ public class ManagementServerImpl implements ManagementServer {
     private final UploadMonitor _uploadMonitor;
     private final UploadDao _uploadDao;
     private final CertificateDao _certDao;
+    private final RemoteAccessVpnDao _remoteAccessVpnDao;
 
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AccountChecker"));
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
@@ -449,6 +459,7 @@ public class ManagementServerImpl implements ManagementServer {
         _groupVMMapDao = locator.getDao(InstanceGroupVMMapDao.class);
         _uploadDao = locator.getDao(UploadDao.class);
         _certDao = locator.getDao(CertificateDao.class);
+        _remoteAccessVpnDao = locator.getDao(RemoteAccessVpnDao.class);
         _configs = _configDao.getConfiguration();
         _userStatsDao = locator.getDao(UserStatisticsDao.class);
         _vmInstanceDao = locator.getDao(VMInstanceDao.class);
@@ -1432,7 +1443,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public String generateRandomPassword() {
-    	return PasswordGenerator.generateRandomPassword();
+    	return PasswordGenerator.generateRandomPassword(6);
     }
 
     @Override
@@ -6048,4 +6059,96 @@ public class ManagementServerImpl implements ManagementServer {
     
         return accountId;
     }
+
+	@Override
+	public List<RemoteAccessVpnVO> searchForRemoteAccessVpns(ListRemoteAccessVpnsCmd cmd) throws InvalidParameterValueException,
+			PermissionDeniedException {
+		// do some parameter validation
+        Account account = UserContext.current().getAccount();
+        String accountName = cmd.getAccountName();
+        Long domainId = cmd.getDomainId();
+        Long accountId = null;
+        Account ipAddressOwner = null;
+        String ipAddress = cmd.getPublicIp();
+
+        if (ipAddress != null) {
+            IPAddressVO ipAddressVO = _publicIpAddressDao.findById(ipAddress);
+            if (ipAddressVO == null) {
+                throw new InvalidParameterValueException("Unable to list remote access vpns, IP address " + ipAddress + " not found.");
+            } else {
+                Long ipAddrAcctId = ipAddressVO.getAccountId();
+                if (ipAddrAcctId == null) {
+                    throw new InvalidParameterValueException("Unable to list remote access vpns, IP address " + ipAddress + " is not associated with an account.");
+                }
+                ipAddressOwner = _accountDao.findById(ipAddrAcctId);
+            }
+        }
+
+        if ((account == null) || isAdmin(account.getType())) {
+            // validate domainId before proceeding
+            if (domainId != null) {
+                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
+                    throw new PermissionDeniedException("Unable to list remote access vpns for domain id " + domainId + ", permission denied.");
+                }
+                if (accountName != null) {
+                    Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
+                    if (userAccount != null) {
+                        accountId = userAccount.getId();
+                    } else {
+                        throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
+                    }
+                }
+            } else if (ipAddressOwner != null) {
+                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), ipAddressOwner.getDomainId())) {
+                    throw new PermissionDeniedException("Unable to list remote access vpn  for IP address " + ipAddress + ", permission denied.");
+                }
+            } else {
+                domainId = ((account == null) ? DomainVO.ROOT_DOMAIN : account.getDomainId());
+            }
+        } else {
+            accountId = account.getId();
+        }
+
+        Filter searchFilter = new Filter(RemoteAccessVpnVO.class, "vpnServerAddress", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+
+        Object id = cmd.getId();
+        Object zoneId = cmd.getZoneId();
+        
+
+        SearchBuilder<RemoteAccessVpnVO> sb = _remoteAccessVpnDao.createSearchBuilder();
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("zoneId", sb.entity().getZoneId(), SearchCriteria.Op.EQ);
+        sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
+        sb.and("ipAddress", sb.entity().getVpnServerAddress(), SearchCriteria.Op.EQ);
+
+        if ((accountId == null) && (domainId != null)) {
+            // if accountId isn't specified, we can do a domain match for the admin case
+            SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
+            domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
+            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+        }
+
+        SearchCriteria<RemoteAccessVpnVO> sc = sb.create();
+       
+        if (id != null) {
+            sc.setParameters("id", id);
+        }
+
+        if (ipAddress != null) {
+            sc.setParameters("ipAddress", ipAddress);
+        }
+        
+        if (zoneId != null) {
+        	sc.setParameters("zoneId", zoneId);
+        }
+
+        if (accountId != null) {
+            sc.setParameters("accountId", accountId);
+        } else if (domainId != null) {
+            DomainVO domain = _domainDao.findById(domainId);
+            sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
+        }
+
+        return _remoteAccessVpnDao.search(sc, searchFilter);
+	}
 }
