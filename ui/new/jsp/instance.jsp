@@ -207,11 +207,12 @@
 	                </div>
 	            </div>
 	            
-	            <div class="grid_botactionpanel">
+	              
+	        </div>
+            <div class="grid_botactionpanel">
 	        		<div class="gridbot_buttons" id="save_button" style="display:none;">Save</div>
 	            	<div class="gridbot_buttons" id="cancel_button" style="display:none;">Cancel</div>
-	        	</div>  
-	        </div>
+	      </div>
 	    </div>
     </div>  
     <!--Details tab (end)-->
