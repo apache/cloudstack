@@ -25,7 +25,6 @@ import java.util.Map;
 
 import com.cloud.alert.AlertVO;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.commands.AssignPortForwardingServiceCmd;
 import com.cloud.api.commands.CreateDomainCmd;
 import com.cloud.api.commands.CreateUserCmd;
 import com.cloud.api.commands.DeleteDomainCmd;
