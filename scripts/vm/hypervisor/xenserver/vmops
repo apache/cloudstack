@@ -717,30 +717,19 @@ def default_network_rules(session, args):
         util.pread2(['iptables', '-F', vmchain_default])        
 
     try:
-<<<<<<< HEAD
-        util.pread2(['iptables', '-A', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', vif, '-j', vmchain])
-        util.pread2(['iptables', '-A', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', vif, '-j', vmchain])
-        util.pread2(['iptables', '-A', vmchain, '-m', 'state', '--state', 'RELATED,ESTABLISHED', '-j', 'ACCEPT'])
-=======
         for v in vifs:
             util.pread2(['iptables', '-A', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', v, '-j', vmchain_default])
             util.pread2(['iptables', '-A', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '-j', vmchain_default])
         util.pread2(['iptables', '-A', vmchain_default, '-m', 'state', '--state', 'RELATED,ESTABLISHED', '-j', 'ACCEPT'])
->>>>>>> 6fd5d61... dont wipe dhcp and antispoof rules every time
         #allow dhcp
         for v in vifs:
             util.pread2(['iptables', '-A', vmchain_default, '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '-p', 'udp', '--dport', '67', '--sport', '68',  '-j', 'ACCEPT'])
             util.pread2(['iptables', '-A', vmchain_default, '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', v, '-p', 'udp', '--dport', '68', '--sport', '67',  '-j', 'ACCEPT'])
 
         #don't let vm spoof its ip address
-<<<<<<< HEAD
-        util.pread2(['iptables', '-A', vmchain, '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', vif, '--source', vm_ip, '-j', 'RETURN'])
-        util.pread2(['iptables', '-A', vmchain, '-j', 'DROP'])
-=======
         for v in vifs:
             util.pread2(['iptables', '-A', vmchain_default, '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '--source', vm_ip, '-j', 'RETURN'])
         util.pread2(['iptables', '-A', vmchain_default, '-j', vmchain])
->>>>>>> 6fd5d61... dont wipe dhcp and antispoof rules every time
     except:
         util.SMlog("Failed to program default rules for vm " + vm_name)
         return 'false'
@@ -1126,12 +1115,6 @@ def network_rules(session, args):
             util.pread2(iptables)
             util.SMlog(iptables)
             
-<<<<<<< HEAD
-
-    util.pread2(['iptables', '-A', vmchain, '-p', 'udp', '--dport', '67:68', '--sport', '67:68',  '-j', 'ACCEPT'])
-    util.pread2(['iptables', '-I', vmchain, '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', vif, '--source', vm_ip, '-j', 'RETURN'])
-=======
->>>>>>> 6fd5d61... dont wipe dhcp and antispoof rules every time
     util.pread2(['iptables', '-A', vmchain, '-j', 'DROP'])
 
     if write_rule_log_for_vm(vmName, vm_id, vm_ip, domid, signature, seqno) == False:
