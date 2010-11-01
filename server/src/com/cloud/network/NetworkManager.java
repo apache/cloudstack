@@ -28,7 +28,6 @@ import com.cloud.api.commands.CreateLoadBalancerRuleCmd;
 import com.cloud.api.commands.CreateRemoteAccessVpnCmd;
 import com.cloud.api.commands.DeleteIPForwardingRuleCmd;
 import com.cloud.api.commands.DeleteLoadBalancerRuleCmd;
-import com.cloud.api.commands.DeletePortForwardingServiceRuleCmd;
 import com.cloud.api.commands.DeleteRemoteAccessVpnCmd;
 import com.cloud.api.commands.DisassociateIPAddrCmd;
 import com.cloud.api.commands.ListPortForwardingRulesCmd;

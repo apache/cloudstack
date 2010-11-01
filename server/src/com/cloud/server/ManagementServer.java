@@ -116,7 +116,6 @@ import com.cloud.network.IPAddressVO;
 import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.NetworkRuleConfigVO;
 import com.cloud.network.RemoteAccessVpnVO;
-import com.cloud.network.SecurityGroupVO;
 import com.cloud.network.security.NetworkGroupVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
