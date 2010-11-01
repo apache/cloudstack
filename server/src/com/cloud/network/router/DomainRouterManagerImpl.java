@@ -51,8 +51,8 @@ import com.cloud.agent.api.StartRouterAnswer;
 import com.cloud.agent.api.StartRouterCommand;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.routing.DhcpEntryCommand;
-import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
+import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
@@ -2108,7 +2108,6 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
         return true;
     }
 
-<<<<<<< HEAD
 	@Override
 	public RemoteAccessVpnVO startRemoteAccessVpn(RemoteAccessVpnVO vpnVO) {
 		DomainRouterVO router = getRouter(vpnVO.getAccountId(), vpnVO.getZoneId());
