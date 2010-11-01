@@ -152,7 +152,7 @@ $(document).ready(function() {
 				$("#leftmenu_zone_tree").find("#tree_container").empty();
 			}
 			
-			showPage($("#resource_page"), null);			
+			resourceLoadPage("jsp/resource.jsp", null);			
 			return false;
 		});
 	}
