@@ -48,7 +48,7 @@ except ImportError:
 #---------------------- option parsing and command line checks ------------------------
 
 
-usage = """%prog user:password@mysqlhost:port <kvm|xenserver|vmware> [--deploy-as=rootuser:rootpassword] [--auto=/path/to/server-setup.xml]
+usage = """%prog user:password@mysqlhost:port [--deploy-as=rootuser:rootpassword] [--auto=/path/to/server-setup.xml]
 
 This command sets up the CloudStack Management Server and CloudStack Usage Server database configuration (connection credentials and host information) based on the first argument.
 
@@ -60,27 +60,24 @@ The port and the password are optional and can be left out..  If host is omitted
 
 Examples:
 
-%prog cloud:secret xenserver
+%prog cloud:secret 
 	sets user cloud and password 'secret' up in
 	@MSCONF@/db.properties, using localhost as the
-	database server and XenServer as the VT technology
+	database server
 	
-%prog sheng:rules@192.168.1.1 kvm
+%prog sheng:rules@192.168.1.1 
 	sets these credentials up in @MSCONF@/db.properties
-        prepares the system for KVM hosts
 	
-%prog alex:founder@1.2.3.4 --deploy-as=root:nonsense kvm
+%prog alex:founder@1.2.3.4 --deploy-as=root:nonsense
 	sets alex up as the MySQL user, then connects as the root user
 	with password 'nonsense', and recreates the databases, creating
 	the user alex with password 'founder' as necessary
-        prepares the system for KVM hosts
 
-%prog alena:tests@5.6.7.8 --deploy-as=root:nonsense --auto=/root/server-setup.xml kvm
+%prog alena:tests@5.6.7.8 --deploy-as=root:nonsense --auto=/root/server-setup.xml
 	sets alena up as the MySQL user, then connects as the root user
 	with password 'nonsense' to server 5.6.7.8, then recreates the
 	databases and sets up the alena user, then performs an automated
 	database setup using the information in server-setup.xml
-        prepares the system for KVM hosts
 """
 
 parser = OptionParser(usage=usage)
