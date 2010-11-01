@@ -2050,13 +2050,14 @@ a:hover.search_button {
 }
 
 .midmenu_mainloaderbox {
-	width:auto;
-	height:auto;
+	width:134px;
+	height:22px;
+	background:url(../images/right_loadingbg.png) no-repeat top left;
+	margin:0;
+	padding:0;
 	position:absolute;
 	top:100px;
 	left:40px;
-	background:#FFF;
-	border:1px solid #CCC;
 	margin:0;
 	padding:0;
 }
@@ -2066,18 +2067,18 @@ a:hover.search_button {
 	height:auto;
 	float:left;
 	color:#333;
-	font-size:16px;
-	font-weight:normal;
-	margin:15px 10px 0 10px;
+	font-size:12px;
+	font-weight:bold;
+	margin:4px 10px 0 10px;
 	display:inline;
 	padding:0;
 }
 .midmenu_mainloader_animatedicon {
-	width:40px;
-	height:40px;
+	width:16px;
+	height:16px;
 	float:left;
-	background:url(../images/big_loading.gif) no-repeat top left;
-	margin:3px 0 0 5px;
+	background:url(../images/leftmenu_loader.gif) no-repeat top left;
+	margin:3px 0 0 15px;
 	display:inline;
 	padding:0;
 }
