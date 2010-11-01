@@ -17,6 +17,9 @@
  */
 package com.cloud.server;
 
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.math.BigInteger;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -26,6 +29,9 @@ import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -5887,6 +5893,16 @@ public class ManagementServerImpl implements ManagementServer {
 					 s_logger.debug("No custom certificate exists in the DB, will upload a new one");				
 			}
 			String certificatePath = cmd.getPath();
+			//validate if the cert follows X509 format, if not, don't persist to db
+			FileInputStream fis = new FileInputStream(certificatePath);
+			BufferedInputStream bis = new BufferedInputStream(fis);
+			CertificateFactory cf = CertificateFactory.getInstance("X.509");			
+			while (bis.available() > 1) {
+			   Certificate localCert = cf.generateCertificate(bis);//throws certexception if not valid cert format
+			   if(s_logger.isDebugEnabled()){
+				   s_logger.debug("The custom certificate generated for validation is:"+localCert.toString());
+			   }
+			}
 			CertificateVO lockedCert = _certDao.acquire(cert.getId());
 			//assigned mgmt server id to mark as processing under this ms
 			if(lockedCert == null){
@@ -5974,6 +5990,16 @@ public class ManagementServerImpl implements ManagementServer {
 				String msg = "Custom certificate record in the db deleted; this should never happen. Please create a new record in the certificate table";
 				s_logger.error(msg);
 				throw new ServerApiException(BaseCmd.CUSTOM_CERT_UPDATE_ERROR, msg);
+			}
+			if(e instanceof FileNotFoundException){
+				String msg = "Invalid file path for custom cert found during cert validation";
+				s_logger.error(msg);
+				throw new ServerApiException(BaseCmd.CUSTOM_CERT_UPDATE_ERROR, msg);
+			}
+			if(e instanceof CertificateException){
+				String msg = "The file format for custom cert does not conform to the X.509 specification";
+				s_logger.error(msg);
+				throw new ServerApiException(BaseCmd.CUSTOM_CERT_UPDATE_ERROR, msg);				
 			}
 		}
 		return null;
