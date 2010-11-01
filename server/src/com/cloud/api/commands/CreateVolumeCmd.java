@@ -169,7 +169,9 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
         response.setSnapshotId(getSnapshotId());
         response.setZoneId(volume.getDataCenterId());
         response.setZoneName(ApiDBUtils.findZoneById(volume.getDataCenterId()).getName());
-
+        if(volume.getDeviceId() != null){
+        	response.setDeviceId(volume.getDeviceId());
+        }
         response.setResponseName(getName());
         return response;
     }

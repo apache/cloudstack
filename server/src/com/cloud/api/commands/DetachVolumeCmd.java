@@ -118,6 +118,8 @@ public class DetachVolumeCmd extends BaseAsyncCmd {
 	@Override @SuppressWarnings("unchecked")
 	public VolumeResponse getResponse() {
         VolumeResponse response = (VolumeResponse)getResponseObject();     
+        if(deviceId!=null)
+        	response.setDeviceId(deviceId);
         return response;
 	}
 }

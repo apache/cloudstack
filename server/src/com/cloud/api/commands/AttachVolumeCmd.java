@@ -120,7 +120,8 @@ public class AttachVolumeCmd extends BaseAsyncCmd {
 	    response.setName(volume.getName());
 	    response.setVolumeType(volume.getVolumeType().toString());
 	    response.setResponseName(getName());
-
+	    if(volume.getDeviceId() != null)
+	    	response.setDeviceId(volume.getDeviceId());
 		return response;
 	}
 }
