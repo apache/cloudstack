@@ -466,12 +466,18 @@ $(document).ready(function() {
 		success: function(json) {
 			buildSecondLevelNavigation();
 			$("#main_username").text(g_username);
-			$("#leftmenu_dashboard").click();
-			if (isAdmin()) {
+			$("#leftmenu_dashboard").click();						
+			if (isAdmin()) {				    
+			    $("#leftmenu_domain, #leftmenu_account, #leftmenu_system").show();
 				$("#launch_test").show();
-			} else {
+			} 
+			else if(isDomainAdmin()){				    
+			    $("#leftmenu_domain, #leftmenu_account").show();
 				$("#launch_test").hide();
 			}
+			else{  //isUser() == true
+				$("#launch_test").hide();
+			}						
 			$("#main").show();
 		},
 		error: function(xmlHTTP) {
