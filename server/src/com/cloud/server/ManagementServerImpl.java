@@ -6004,6 +6004,14 @@ public class ManagementServerImpl implements ManagementServer {
 				s_logger.error(msg);
 				throw new ServerApiException(BaseCmd.CUSTOM_CERT_UPDATE_ERROR, msg);				
 			}
+		}finally{
+			try {
+				releaseCertRecord(_certDao.listAll().get(0));//release record in case of unforseen exceptions
+			} catch (ResourceUnavailableException e) {
+				String msg = "Unable to release the cert record for other mgmt servers";
+				s_logger.error(msg);
+				throw new ServerApiException(BaseCmd.CUSTOM_CERT_UPDATE_ERROR, msg);
+			}
 		}
 		return null;
     }
@@ -6013,12 +6021,15 @@ public class ManagementServerImpl implements ManagementServer {
 		if(lockedCert == null){
 			String msg = "Unable to obtain lock on the cert from releaseCertRecord() in uploadCertificate()";
 			s_logger.error(msg);
+			throw new ResourceUnavailableException(msg);
 		}else{
 			try{
 				lockedCert.setMgmtServerId(null);//release for other ms
 				_certDao.update(lockedCert.getId(), lockedCert);
 			}catch (Exception e){
-				s_logger.warn("Unable to update record in cert table from releaseCertRecord() during uploadCertificate()",e);
+				String msg = "Unable to update record in cert table from releaseCertRecord() during uploadCertificate()";
+				s_logger.warn(msg,e);
+				throw new ResourceUnavailableException(msg);
 			}finally{
 				_certDao.release(cert.getId());
 			}
