@@ -723,6 +723,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
             response.setName(volume.getName());
             response.setVolumeType(volume.getVolumeType().toString());
             response.setResponseName(cmmd.getName());
+            if(volume.getDeviceId() != null)
+            	response.setDeviceId(volume.getDeviceId());
             return response;
     	} else {
     		
