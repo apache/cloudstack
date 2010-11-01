@@ -335,8 +335,12 @@ xenstore_utils() {
   for f in $(find ${scriptdir}/xe/ -name xe-*)
   do
     cp $f ./usr/sbin/
-    chmod a+x /usr/sbin/xe-*
+    chmod a+x ./usr/sbin/xe-*
   done
+}
+
+vpn_config() {
+  cp -r ${scriptdir}/vpn/* ./
 }
 
 packages() {
@@ -346,7 +350,7 @@ packages() {
   export DEBIAN_FRONTEND DEBIAN_PRIORITY DEBCONF_DB_OVERRIDE
 
   #basic stuff
-  chroot .  apt-get --no-install-recommends -q -y --force-yes install rsyslog logrotate cron chkconfig insserv net-tools ifupdown vim-tiny netbase iptables openssh-server grub e2fsprogs dhcp3-client dnsmasq tcpdump socat wget  python bzip2 sed gawk diff grep gzip less tar telnet traceroute psmisc procps monit inetutils-ping iputils-arping httping dnsutils zip unzip ethtool uuid file iproute acpid iptables-persistent sysstat
+  chroot .  apt-get --no-install-recommends -q -y --force-yes install rsyslog logrotate cron chkconfig insserv net-tools ifupdown vim-tiny netbase iptables openssh-server grub e2fsprogs dhcp3-client dnsmasq tcpdump socat wget  python bzip2 sed gawk diff grep gzip less tar telnet traceroute psmisc lsof procps monit inetutils-ping iputils-arping httping dnsutils zip unzip ethtool uuid file iproute acpid iptables-persistent sysstat
   #apache
   chroot .  apt-get --no-install-recommends -q -y --force-yes install apache2 ssl-cert 
   #haproxy
@@ -422,6 +426,7 @@ cleanup() {
 signature() {
   (cd ${scriptdir}/config;  tar czf ${MOUNTPOINT}/usr/share/cloud/cloud-scripts.tgz *)
   md5sum ${MOUNTPOINT}/usr/share/cloud/cloud-scripts.tgz |awk '{print $1}'  > ${MOUNTPOINT}/var/cache/cloud/cloud-scripts-signature
+  echo "Cloudstack Release 2.2 $(date)" > ${MOUNTPOUNT}/etc/cloudstack-release
 }
 
 mkdir -p $IMAGENAME
@@ -486,6 +491,9 @@ services
 
 echo "*************CONFIGURING APACHE********************"
 apache2
+
+echo "*************CONFIGURING VPN********************"
+vpn_config
 
 echo "*************CLEANING UP********************"
 cleanup 

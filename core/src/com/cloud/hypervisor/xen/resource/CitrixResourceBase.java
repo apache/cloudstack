@@ -131,6 +131,7 @@ import com.cloud.agent.api.routing.IPAssocCommand;
 import com.cloud.agent.api.routing.LoadBalancerCfgCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.SetFirewallRuleCommand;
+import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
@@ -642,6 +643,8 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             return execute((PoolEjectCommand) cmd);
         } else if (cmd instanceof Start2Command) {
             return execute((Start2Command)cmd);
+        } else if (cmd instanceof RemoteAccessVpnCfgCommand) {
+            return execute((RemoteAccessVpnCfgCommand)cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
@@ -1203,6 +1206,25 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             return new Answer(cmd, false, "DhcpEntry failed");
         }
         return new Answer(cmd);
+    }
+    
+    protected synchronized Answer execute(final RemoteAccessVpnCfgCommand cmd) {
+        String args = cmd.getRouterPrivateIpAddress();
+        if (cmd.isCreate()) {
+        	args += " -r " + cmd.getIpRange();
+        	args += " -p " + cmd.getPresharedKey();
+        	args += " -s " + cmd.getVpnServerIp();
+        	args += " -l " + cmd.getLocalIp();
+        	args += " -c";
+        	
+        } else {
+        	args += " -d";
+        }
+        String result = callHostPlugin("vmops", "lt2p_vpn", "args", args);
+    	if (result == null || result.isEmpty()) {
+    		return new Answer(cmd, false, "Configure VPN failed");
+    	}
+    	return new Answer(cmd);
     }
 
     protected Answer execute(final VmDataCommand cmd) {

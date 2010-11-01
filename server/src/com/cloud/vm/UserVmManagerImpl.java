@@ -322,7 +322,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 
     	VMTemplateVO template = _templateDao.findById(vmInstance.getTemplateId());
     	if (template.getEnablePassword()) {
-            password = PasswordGenerator.generateRandomPassword();;
+            password = PasswordGenerator.generateRandomPassword(6);;
     	} else {
     		password = "saved_password";
     	}
@@ -3824,7 +3824,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         }
 
         // Check that the password was passed in and is valid
-        String password = PasswordGenerator.generateRandomPassword();
+        String password = PasswordGenerator.generateRandomPassword(6);
         if (!template.getEnablePassword()) {
             password = "saved_password";
         }

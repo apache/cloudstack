@@ -58,6 +58,7 @@ import com.cloud.api.commands.ListLoadBalancerRulesCmd;
 import com.cloud.api.commands.ListPodsByCmd;
 import com.cloud.api.commands.ListPreallocatedLunsCmd;
 import com.cloud.api.commands.ListPublicIpAddressesCmd;
+import com.cloud.api.commands.ListRemoteAccessVpnsCmd;
 import com.cloud.api.commands.ListRoutersCmd;
 import com.cloud.api.commands.ListServiceOfferingsCmd;
 import com.cloud.api.commands.ListSnapshotsCmd;
@@ -113,6 +114,9 @@ import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.network.FirewallRuleVO;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.LoadBalancerVO;
+import com.cloud.network.NetworkRuleConfigVO;
+import com.cloud.network.RemoteAccessVpnVO;
+import com.cloud.network.SecurityGroupVO;
 import com.cloud.network.security.NetworkGroupVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
@@ -1125,4 +1129,6 @@ public interface ManagementServer {
      * @throws ServerApiException -- even if one of the console proxy patching fails, we throw back this exception
      */
     String uploadCertificate(UploadCustomCertificateCmd cmd) throws ServerApiException;
+    
+    public List<RemoteAccessVpnVO> searchForRemoteAccessVpns(ListRemoteAccessVpnsCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
 }

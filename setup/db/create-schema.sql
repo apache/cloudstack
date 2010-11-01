@@ -952,6 +952,17 @@ CREATE TABLE `cloud`.`load_balancer` (
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `cloud`.`remote_access_vpn` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `account_id` bigint unsigned NOT NULL,
+  `zone_id` bigint unsigned NOT NULL,
+  `vpn_server_addr` varchar(15) NOT NULL,
+  `local_ip` varchar(15) NOT NULL,
+  `ip_range` varchar(32) NOT NULL,
+  `ipsec_psk` varchar(255) NOT NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE  `cloud`.`storage_pool` (
   `id` bigint unsigned UNIQUE NOT NULL,
   `name` varchar(255) COMMENT 'should be NOT NULL',

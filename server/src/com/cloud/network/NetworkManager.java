@@ -25,8 +25,11 @@ import com.cloud.api.commands.AssignToLoadBalancerRuleCmd;
 import com.cloud.api.commands.AssociateIPAddrCmd;
 import com.cloud.api.commands.CreateIPForwardingRuleCmd;
 import com.cloud.api.commands.CreateLoadBalancerRuleCmd;
+import com.cloud.api.commands.CreateRemoteAccessVpnCmd;
 import com.cloud.api.commands.DeleteIPForwardingRuleCmd;
 import com.cloud.api.commands.DeleteLoadBalancerRuleCmd;
+import com.cloud.api.commands.DeletePortForwardingServiceRuleCmd;
+import com.cloud.api.commands.DeleteRemoteAccessVpnCmd;
 import com.cloud.api.commands.DisassociateIPAddrCmd;
 import com.cloud.api.commands.ListPortForwardingRulesCmd;
 import com.cloud.api.commands.RebootRouterCmd;
@@ -318,4 +321,29 @@ public interface NetworkManager extends Manager {
     List<NetworkConfigurationVO> setupNetworkConfiguration(Account owner, ServiceOfferingVO offering, DeploymentPlan plan);
     
     String assignSourceNatIpAddress(Account account, DataCenter dc) throws InsufficientAddressCapacityException;
+    /**
+     * Create a remote access vpn from the given public ip address and client ip range
+     * @param cmd the command specifying the ip address, ip range
+     * @return the newly created RemoteAccessVpnVO if successful, null otherwise
+     * @throws InvalidParameterValueException
+     * @throws PermissionDeniedException
+     * @throws ConcurrentOperationException 
+     */
+    public RemoteAccessVpnVO createRemoteAccessVpn(CreateRemoteAccessVpnCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, ConcurrentOperationException;
+    
+    /**
+     * Start a remote access vpn for the given public ip address and client ip range
+     * @param cmd the command specifying the ip address, ip range
+     * @return the RemoteAccessVpnVO if successful, null otherwise
+     * @throws ConcurrentOperationException 
+     */
+    public RemoteAccessVpnVO startRemoteAccessVpn(CreateRemoteAccessVpnCmd cmd) throws ConcurrentOperationException;
+    
+    /**
+     * Destroy a previously created remote access VPN
+     * @param cmd the command specifying the account and zone
+     * @return success if successful, false otherwise
+     * @throws ConcurrentOperationException 
+     */
+    public boolean destroyRemoteAccessVpn(DeleteRemoteAccessVpnCmd cmd) throws ConcurrentOperationException;
 }
