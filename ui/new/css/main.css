@@ -1348,6 +1348,7 @@ a:hover {
 
 .leftmenu_content_flevel.selected{
 	background:#d4dce1 url(../images/leftmenu_highlighted.gif) repeat-x top left;
+	border-bottom:1px solid #92a7b7;
 	font-weight:bold;
 }
 
