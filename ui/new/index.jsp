@@ -561,7 +561,7 @@ long milliseconds = new Date().getTime();
                     </div>
                 </div>  
                 <div class="leftmenu_list">
-                    <div class="leftmenu_content_flevel" id="leftmenu_account">
+                    <div class="leftmenu_content_flevel" id="leftmenu_account" style="display: none">
                         <div class="leftmenu_firstindent">
                             <!-- <div class="leftmenu_arrows_firstlevel_open" id="expandable_first_level_arrow" style="display:none;"></div> -->
                             <div class="leftmenu_list_icons">
@@ -572,7 +572,7 @@ long milliseconds = new Date().getTime();
                     
                 </div>                
                 <div class="leftmenu_list">
-                    <div class="leftmenu_content_flevel" id="leftmenu_domain">
+                    <div class="leftmenu_content_flevel" id="leftmenu_domain" style="display: none">
                         <div class="leftmenu_firstindent">
                             <div class="leftmenu_arrows_firstlevel_open" id="expandable_first_level_arrow" style="display:none;"></div>
                             <div class="leftmenu_list_icons">
@@ -627,7 +627,7 @@ long milliseconds = new Date().getTime();
                     </div>
                 </div>
                 <div class="leftmenu_list">
-                    <div class="leftmenu_content_flevel" id="leftmenu_system">
+                    <div class="leftmenu_content_flevel" id="leftmenu_system" style="display: none">
                         <div class="leftmenu_firstindent">
                             <div class="leftmenu_arrows_firstlevel_open" id="expandable_first_level_arrow" style="display:none;"></div>
                             <div class="leftmenu_list_icons">

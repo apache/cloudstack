@@ -29,6 +29,32 @@ $(document).ready(function() {
 	);
 
 	// Setup first level navigation
+	$("#leftmenu_system").bind("click", function(event) {
+		if (selectLeftMenu($(this), true)) {
+			if($("#leftmenu_resource").find("#resource_arrow").hasClass("expanded_open") == true)
+				$("#leftmenu_resource").click(); //if resource menu is open (i.e. zonetree is shown), empty zonetree and close resource menu.
+		}
+		return false;
+	});				
+	$("#leftmenu_domain").bind("click", function(event) {
+		if (selectLeftMenu($(this), true)) {
+			hideMiddleMenu();		
+			disableMultipleSelectionInMidMenu();      
+			clearMiddleMenu();
+					
+			bindEventHandlerToDomainTreeNode();		
+			refreshWholeTree(g_domainid, defaultRootLevel); 
+		}
+		return false;
+	});	
+	$("#leftmenu_account").bind("click", function(event) {
+		if (selectLeftMenu($(this))) {
+			listMidMenuItems("listAccounts", "listaccountsresponse", "account", "jsp/account.jsp", afterLoadAccountJSP, accountToMidmenu, accountToRightPanel, getMidmenuId, false);
+		}
+		return false;
+	});	
+	
+	
 	$("#leftmenu_dashboard").bind("click", function(event) {
 		if (selectLeftMenu($(this))) {
 			clearMiddleMenu();
@@ -50,22 +76,9 @@ $(document).ready(function() {
 	$("#leftmenu_templates").bind("click", function(event) {
 		selectLeftMenu($(this), true);
 		return false;
-	});
-	$("#leftmenu_account").bind("click", function(event) {
-		if (selectLeftMenu($(this))) {
-			listMidMenuItems("listAccounts", "listaccountsresponse", "account", "jsp/account.jsp", afterLoadAccountJSP, accountToMidmenu, accountToRightPanel, getMidmenuId, false);
-		}
-		return false;
 	});	
 	$("#leftmenu_events").bind("click", function(event) {
 		selectLeftMenu($(this), true);
-		return false;
-	});
-	$("#leftmenu_system").bind("click", function(event) {
-		if (selectLeftMenu($(this), true)) {
-			if($("#leftmenu_resource").find("#resource_arrow").hasClass("expanded_open") == true)
-				$("#leftmenu_resource").click(); //if resource menu is open (i.e. zonetree is shown), empty zonetree and close resource menu.
-		}
 		return false;
 	});
 	
@@ -74,18 +87,7 @@ $(document).ready(function() {
 		selectLeftMenu($(this), true);		
 		return false;
 	});	
-			
-	$("#leftmenu_domain").bind("click", function(event) {
-		if (selectLeftMenu($(this), true)) {
-			hideMiddleMenu();		
-			disableMultipleSelectionInMidMenu();      
-			clearMiddleMenu();
-					
-			bindEventHandlerToDomainTreeNode();		
-			refreshWholeTree(g_domainid, defaultRootLevel); 
-		}
-		return false;
-	});
+	
 	
 	// Setup 2nd level navigation
 	function buildSecondLevelNavigation() {
@@ -375,9 +377,15 @@ $(document).ready(function() {
 				
 				$("#main_username").text(g_username);
 				$("#login_wrapper").hide();
-				if (isAdmin()) {
+				if (isAdmin()) {				    
+				    $("#leftmenu_domain, #leftmenu_account, #leftmenu_system").show();
 					$("#launch_test").show();
-				} else {
+				} 
+				else if(isDomainAdmin()){				    
+				    $("#leftmenu_domain, #leftmenu_account").show();
+					$("#launch_test").hide();
+				}
+				else{  //isUser() == true
 					$("#launch_test").hide();
 				}
 				$("#main").show();	
