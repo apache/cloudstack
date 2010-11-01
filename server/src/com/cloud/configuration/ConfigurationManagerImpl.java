@@ -1182,7 +1182,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     @Override
     public DiskOfferingVO updateDiskOffering(UpdateDiskOfferingCmd cmd) throws InvalidParameterValueException{
     	Long diskOfferingId = cmd.getId();
-    	String name = cmd.getName();
+    	String name = cmd.getDiskOfferingName();
     	String displayText = cmd.getDisplayText();
     	String tags = cmd.getTags();
     	

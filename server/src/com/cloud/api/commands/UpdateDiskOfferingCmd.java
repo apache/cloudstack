@@ -20,12 +20,17 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.response.DiskOfferingResponse;
+import com.cloud.api.response.ServiceOfferingResponse;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.configuration.ConfigurationManager;
+import com.cloud.offering.NetworkOffering.GuestIpType;
+import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
 
 @Implementation(method="updateDiskOffering", manager=ConfigurationManager.class, description="Updates a disk offering.")
@@ -78,16 +83,37 @@ public class UpdateDiskOfferingCmd extends BaseCmd{
         return s_name;
     }
     
-    @SuppressWarnings("unchecked")
-    public SuccessResponse getResponse() {
-        SuccessResponse response = new SuccessResponse();
-        DiskOfferingVO responseObject = (DiskOfferingVO)getResponseObject();
-        if (responseObject != null) {
-            response.setSuccess(Boolean.TRUE);
-        } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update disk offering");
-        }
+//    @SuppressWarnings("unchecked")
+//    public SuccessResponse getResponse() {
+//        SuccessResponse response = new SuccessResponse();
+//        DiskOfferingVO responseObject = (DiskOfferingVO)getResponseObject();
+//        if (responseObject != null) {
+//            response.setSuccess(Boolean.TRUE);
+//        } else {
+//            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update disk offering");
+//        }
+//
+//        response.setResponseName(getName());
+//        return response;
+//    }
+//    
+    @Override @SuppressWarnings("unchecked")
+    public DiskOfferingResponse getResponse() {
+        DiskOfferingVO offering = (DiskOfferingVO) getResponseObject();
 
+        DiskOfferingResponse response = new DiskOfferingResponse();
+        response.setId(offering.getId());
+        response.setName(offering.getName());
+        response.setDisplayText(offering.getDisplayText());
+        response.setTags(offering.getTags());
+        response.setCreated(offering.getCreated());
+        response.setDiskSize(offering.getDiskSize());
+        if(offering.getDomainId() != null){
+        	response.setDomain(ApiDBUtils.findDomainById(offering.getDomainId()).getName());
+        	response.setDomainId(offering.getDomainId());
+        }
+        response.setMirrored(offering.isMirrored());
+        response.setTags(offering.getTags());
         response.setResponseName(getName());
         return response;
     }
