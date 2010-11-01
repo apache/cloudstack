@@ -301,7 +301,10 @@ function showPage2($pageToShow, $menuItem1) {
 	    var $zonePage = $pageToShow;
         var tabArray = [$zonePage.find("#tab_details"), $zonePage.find("#tab_network"), $zonePage.find("#tab_secondarystorage")];
         var tabContentArray = [$zonePage.find("#tab_content_details"), $zonePage.find("#tab_content_network"), $zonePage.find("#tab_content_secondarystorage")];
-        //var afterSwitchFnArray = [afterSwitchToDetailsTab, afterSwitchToNetworkTab, afterSwitchToSecondaryStorageTab];
+        
+        var afterSwitchFnArray = [zoneJsonToDetailsTab, zoneJsonToNetworkTab, zoneJsonToSecondaryStorageTab];
+        //switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray); 
+           
         switchBetweenDifferentTabs(tabArray, tabContentArray);    
         $zonePage.find("#tab_details").click();   
                 
@@ -403,6 +406,7 @@ function zoneJsonToDetailsTab($leftmenuItem1) {
     var $detailsTab = $("#zone_page").find("#tab_content_details");   
     $detailsTab.data("jsonObj", jsonObj);           
     $detailsTab.find("#id").text(jsonObj.id);
+    $detailsTab.find("#title").text(fromdb(jsonObj.name));
     $detailsTab.find("#name").text(fromdb(jsonObj.name));
     $detailsTab.find("#dns1").text(fromdb(jsonObj.dns1));
     $detailsTab.find("#dns2").text(fromdb(jsonObj.dns2));
