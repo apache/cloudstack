@@ -500,11 +500,11 @@ public class AccountManagerImpl implements AccountManager {
                 throw new InvalidParameterValueException("Please specify a valid account ID.");
             } else if (accountHandle.getRemoved() != null) {
             	throw new InvalidParameterValueException("Please specify an active account.");
-            } else if (account.getType() == Account.ACCOUNT_TYPE_ADMIN || accountHandle.getType() == Account.ACCOUNT_ID_SYSTEM) {
+            } else if (accountHandle.getType() == Account.ACCOUNT_TYPE_ADMIN || accountHandle.getType() == Account.ACCOUNT_ID_SYSTEM) {
             	throw new InvalidParameterValueException("Please specify a non-admin account.");
             }
 
-            DomainVO domain = _domainDao.findById(account.getDomainId());
+            DomainVO domain = _domainDao.findById(accountHandle.getDomainId());
             long parentMaximum = findCorrectResourceLimit(domain, resourceType);
             if ((parentMaximum >= 0) && ((max.longValue() == -1) || (max.longValue() > parentMaximum))) {
                 throw new InvalidParameterValueException("Account " + account.getAccountName() + "(id: " + accountId + ") has maximum allowed resource limit " + parentMaximum +
@@ -530,7 +530,7 @@ public class AccountManagerImpl implements AccountManager {
         }
 
         // A valid limit type must be passed in
-        if (type == null) {
+        if (resourceType == null) {
             throw new InvalidParameterValueException("A valid limit type must be passed in.");
         }
 
@@ -546,8 +546,8 @@ public class AccountManagerImpl implements AccountManager {
             sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
         }
 
-        if (type != null) {
-            sc.addAnd("type", SearchCriteria.Op.EQ, type);
+        if (resourceType != null) {
+            sc.addAnd("type", SearchCriteria.Op.EQ, resourceType);
         }
 
         List<ResourceLimitVO> limits = _resourceLimitDao.search(sc, searchFilter);
