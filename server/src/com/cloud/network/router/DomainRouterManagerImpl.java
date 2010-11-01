@@ -116,8 +116,6 @@ import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.dao.NetworkConfigurationDao;
 import com.cloud.network.dao.NetworkRuleConfigDao;
-import com.cloud.network.dao.SecurityGroupDao;
-import com.cloud.network.dao.SecurityGroupVMMapDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.offerings.NetworkOfferingVO;
@@ -182,7 +180,6 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
     @Inject DataCenterDao _dcDao = null;
     @Inject VlanDao _vlanDao = null;
     @Inject FirewallRulesDao _rulesDao = null;
-    @Inject SecurityGroupVMMapDao _securityGroupVMMapDao = null;
     @Inject LoadBalancerDao _loadBalancerDao = null;
     @Inject LoadBalancerVMMapDao _loadBalancerVMMapDao = null;
     @Inject IPAddressDao _ipAddressDao = null;
@@ -210,7 +207,6 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
     @Inject ConfigurationManager _configMgr;
     @Inject AsyncJobManager _asyncMgr;
     @Inject StoragePoolDao _storagePoolDao = null;
-    @Inject SecurityGroupDao _securityGroupDao = null;
     @Inject ServiceOfferingDao _serviceOfferingDao = null;
     @Inject UserVmDao _userVmDao;
     @Inject FirewallRulesDao _firewallRulesDao;

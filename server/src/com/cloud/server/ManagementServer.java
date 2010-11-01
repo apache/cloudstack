@@ -24,13 +24,9 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.alert.AlertVO;
-import com.cloud.api.commands.AssignPortForwardingServiceCmd;
 import com.cloud.api.commands.CreateDomainCmd;
-import com.cloud.api.commands.CreatePortForwardingServiceCmd;
-import com.cloud.api.commands.CreatePortForwardingServiceRuleCmd;
 import com.cloud.api.commands.CreateUserCmd;
 import com.cloud.api.commands.DeleteDomainCmd;
-import com.cloud.api.commands.DeletePortForwardingServiceCmd;
 import com.cloud.api.commands.DeletePreallocatedLunCmd;
 import com.cloud.api.commands.DeleteUserCmd;
 import com.cloud.api.commands.DeployVMCmd;
@@ -59,9 +55,6 @@ import com.cloud.api.commands.ListIsosCmd;
 import com.cloud.api.commands.ListLoadBalancerRuleInstancesCmd;
 import com.cloud.api.commands.ListLoadBalancerRulesCmd;
 import com.cloud.api.commands.ListPodsByCmd;
-import com.cloud.api.commands.ListPortForwardingServiceRulesCmd;
-import com.cloud.api.commands.ListPortForwardingServicesByVmCmd;
-import com.cloud.api.commands.ListPortForwardingServicesCmd;
 import com.cloud.api.commands.ListPreallocatedLunsCmd;
 import com.cloud.api.commands.ListPublicIpAddressesCmd;
 import com.cloud.api.commands.ListRoutersCmd;
@@ -83,7 +76,6 @@ import com.cloud.api.commands.QueryAsyncJobResultCmd;
 import com.cloud.api.commands.RebootSystemVmCmd;
 import com.cloud.api.commands.RegisterCmd;
 import com.cloud.api.commands.RegisterPreallocatedLunCmd;
-import com.cloud.api.commands.RemovePortForwardingServiceCmd;
 import com.cloud.api.commands.StartSystemVMCmd;
 import com.cloud.api.commands.StopSystemVmCmd;
 import com.cloud.api.commands.UpdateAccountCmd;
@@ -112,7 +104,6 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientStorageCapacityException;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
@@ -121,8 +112,6 @@ import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.network.FirewallRuleVO;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.LoadBalancerVO;
-import com.cloud.network.NetworkRuleConfigVO;
-import com.cloud.network.SecurityGroupVO;
 import com.cloud.network.security.NetworkGroupVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
@@ -659,13 +648,6 @@ public interface ManagementServer {
     IPAddressVO findIPAddressById(String ipAddress);
 
     /**
-     * Search for network rules given the search criteria.
-     * @param cmd the command containing the search criteria including port forwarding service id or rule id.
-     * @return list of rules for the port forwarding service id specified in the search criteria
-     */
-    List<NetworkRuleConfigVO> searchForNetworkRules(ListPortForwardingServiceRulesCmd c) throws InvalidParameterValueException, PermissionDeniedException;
-
-    /**
      * Obtains a list of events by the specified search criteria.
      * Can search by: "username", "type", "level", "startDate", "endDate"
      * @param c
@@ -765,25 +747,6 @@ public interface ManagementServer {
      * @param userId
      */
     void logoutUser(Long userId);
-
-	/**
-	 * Creates a network rule as part of a port forwarding service.  If this port forwarding service has been applied to any virtual
-	 * machines, the network rules will get sent to the router.
-     * @param cmd the command describing the port forwarding service the rule belongs to, the public port, the private port, and the protocol
-     * @return a new network rule that is part of the port forwarding service if successful, null otherwise
-     * @throws InvalidParameterValueException
-     * @throws PermissionDeniedException
-     * @throws NetworkRuleConflictException
-     * @throws InternalErrorException
-     */
-    NetworkRuleConfigVO createPortForwardingServiceRule(CreatePortForwardingServiceRuleCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, NetworkRuleConflictException, InternalErrorException;
-
-    /**
-     * Apply a port forwarding service rule to all VMs that have the port forwarding service applied
-     * @param cmd the command object that wraps the id of the created rule to apply
-     * @return the updated rule if successful, null otherwise
-     */
-    NetworkRuleConfigVO applyPortForwardingServiceRule(CreatePortForwardingServiceRuleCmd cmd) throws NetworkRuleConflictException;
 
 	ConsoleProxyInfo getConsoleProxy(long dataCenterId, long userVmId);
 	ConsoleProxyVO startConsoleProxy(long instanceId, long startEventId) throws InternalErrorException;
@@ -1034,71 +997,6 @@ public interface ManagementServer {
      * @return the list of async jobs that match the criteria
      */
     List<AsyncJobVO> searchForAsyncJobs(ListAsyncJobsCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
-
-    /**
-     * Assign a security group to a VM
-     * @param cmd the command specifying secuirtyGroupId, securityGroupIdList, publicIp, vmId parameters
-     */
-    void assignSecurityGroup(AssignPortForwardingServiceCmd cmd) throws PermissionDeniedException, NetworkRuleConflictException, InvalidParameterValueException, InternalErrorException;
-
-    /**
-     * remove a security group from a publicIp/vmId combination where it had been previously applied
-     * @param userId id of the user performing the action (for events)
-     * @param securityGroupId the id of the security group to remove
-     * @param publicIp
-     * @param vmId
-     */
-    void removeSecurityGroup(long userId, long securityGroupId, String publicIp, long vmId, long startEventId) throws InvalidParameterValueException, PermissionDeniedException;
-    void removeSecurityGroup(RemovePortForwardingServiceCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
-
-    /**
-     * validate that the list of security groups can be applied to the instance
-     * @param securityGroupIds
-     * @param instanceId
-     * @return accountId that owns the instance if the security groups can be applied to the instance, null otherwise
-     */
-    Long validateSecurityGroupsAndInstance(List<Long> securityGroupIds, Long instanceId);
-
-    /**
-     * returns a list of security groups
-     * @param cmd
-     * @return a list of security groups
-     */
-    List<SecurityGroupVO> searchForSecurityGroups(ListPortForwardingServicesCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
-
-    /**
-     * returns a list of security groups from a given ip and vm id
-     * @param c
-     * @return a list of security groups
-     */
-    Map<String, List<SecurityGroupVO>> searchForSecurityGroupsByVM(ListPortForwardingServicesByVmCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
-
-    /**
-     * Create a security group, a group of network rules (port, private port, protocol, algorithm) that can be applied in mass to a VM
-     * @param cmd the command specifying name, description, domainId, account parameters
-     * @return
-     */
-    SecurityGroupVO createPortForwardingService(CreatePortForwardingServiceCmd cmd) throws InvalidParameterValueException;
-
-    /**
-     * Delete a security group.  If the group is being actively used, it cannot be deleted.
-     * @param cmd - the command containing securityGroupId
-     * @return true if the security group is deleted, exception is thrown otherwise
-     * @throws InvalidParameterValueException, PermissionDeniedException
-     */
-    boolean deleteSecurityGroup(DeletePortForwardingServiceCmd cmd)  throws InvalidParameterValueException, PermissionDeniedException;
-
-    /**
-     * check if a security group name in the given account/domain is in use
-     *      - if accountId is specified, look only for the account
-     *      - otherwise look for the name in domain-level security groups (accountId is null)
-     * @param domainId id of the domain in which to search for security groups
-     * @param accountId id of the account in which to search for security groups
-     * @param name name of the security group to look for
-     * @return true if the security group name is found, false otherwise
-     */
-    boolean isSecurityGroupNameInUse(Long domainId, Long accountId, String name);
-    SecurityGroupVO findSecurityGroupById(Long groupId);
 
     LoadBalancerVO findLoadBalancer(Long accountId, String name);
     LoadBalancerVO findLoadBalancerById(long loadBalancerId);

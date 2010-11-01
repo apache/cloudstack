@@ -102,15 +102,6 @@ disassociateIpAddress=com.cloud.api.commands.DisassociateIPAddrCmd;15
 listPublicIpAddresses=com.cloud.api.commands.ListPublicIpAddressesCmd;15
 
 #### firewall commands
-createPortForwardingServiceRule=com.cloud.api.commands.CreatePortForwardingServiceRuleCmd;15
-deletePortForwardingServiceRule=com.cloud.api.commands.DeletePortForwardingServiceRuleCmd;15
-listPortForwardingServiceRules=com.cloud.api.commands.ListPortForwardingServiceRulesCmd;15
-createPortForwardingService=com.cloud.api.commands.CreatePortForwardingServiceCmd;15
-deletePortForwardingService=com.cloud.api.commands.DeletePortForwardingServiceCmd;15
-assignPortForwardingService=com.cloud.api.commands.AssignPortForwardingServiceCmd;15
-removePortForwardingService=com.cloud.api.commands.RemovePortForwardingServiceCmd;15
-listPortForwardingServices=com.cloud.api.commands.ListPortForwardingServicesCmd;15
-listPortForwardingServicesByVm=com.cloud.api.commands.ListPortForwardingServicesByVmCmd;15
 listPortForwardingRules=com.cloud.api.commands.ListPortForwardingRulesCmd;15
 createPortForwardingRule=com.cloud.api.commands.CreateIPForwardingRuleCmd;15
 deletePortForwardingRule=com.cloud.api.commands.DeleteIPForwardingRuleCmd;15

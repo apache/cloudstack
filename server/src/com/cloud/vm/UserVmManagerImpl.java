@@ -136,13 +136,10 @@ import com.cloud.network.IpAddrAllocator;
 import com.cloud.network.LoadBalancerVMMapVO;
 import com.cloud.network.NetworkConfigurationVO;
 import com.cloud.network.NetworkManager;
-import com.cloud.network.SecurityGroupVMMapVO;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
-import com.cloud.network.dao.SecurityGroupDao;
-import com.cloud.network.dao.SecurityGroupVMMapDao;
 import com.cloud.network.security.NetworkGroupManager;
 import com.cloud.network.security.NetworkGroupVO;
 import com.cloud.offering.NetworkOffering;
@@ -227,8 +224,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     @Inject VolumeDao _volsDao = null;
     @Inject DataCenterDao _dcDao = null;
     @Inject FirewallRulesDao _rulesDao = null;
-    @Inject SecurityGroupDao _securityGroupDao = null;
-    @Inject SecurityGroupVMMapDao _securityGroupVMMapDao = null;
     @Inject LoadBalancerVMMapDao _loadBalancerVMMapDao = null;
     @Inject LoadBalancerDao _loadBalancerDao = null;
     @Inject IPAddressDao _ipAddressDao = null;
@@ -258,7 +253,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     @Inject EventDao _eventDao = null;
     @Inject InstanceGroupDao _vmGroupDao;
     @Inject InstanceGroupVMMapDao _groupVMMapDao;
-    @Inject SecurityGroupDao _networkSecurityGroupDao;
     @Inject VmManager _itMgr;
     
     private IpAddrAllocator _IpAllocator;
@@ -2608,60 +2602,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         UserVmVO vm = _vmDao.findById(instanceId);
         String guestIpAddr = vm.getGuestIpAddress();
         long accountId = vm.getAccountId();
-
-        // clean up any load balancer rules and security group mappings for this VM
-        List<SecurityGroupVMMapVO> securityGroupMappings = _securityGroupVMMapDao.listByInstanceId(vm.getId());
-        for (SecurityGroupVMMapVO securityGroupMapping : securityGroupMappings) {
-            String ipAddress = securityGroupMapping.getIpAddress();
-
-            // find the router from the ipAddress
-            DomainRouterVO router = null;
-            if (vm.getDomainRouterId() != null)
-            	router = _routerDao.findById(vm.getDomainRouterId());
-            else 
-            	continue;
-            // grab all the firewall rules
-            List<FirewallRuleVO> fwRules = _rulesDao.listForwardingByPubAndPrivIp(true, ipAddress, vm.getGuestIpAddress());
-            for (FirewallRuleVO fwRule : fwRules) {
-                fwRule.setEnabled(false);
-            }
-
-            List<FirewallRuleVO> updatedRules = _networkMgr.updateFirewallRules(ipAddress, fwRules, router);
-
-            // Save and create the event
-            String description;
-            String type = EventTypes.EVENT_NET_RULE_DELETE;
-            String ruleName = "ip forwarding";
-            String level = EventVO.LEVEL_INFO;
-
-            if (updatedRules != null) {
-                _securityGroupVMMapDao.remove(securityGroupMapping.getId());
-                for (FirewallRuleVO updatedRule : updatedRules) {
-                _rulesDao.remove(updatedRule.getId());
-
-                    description = "deleted " + ruleName + " rule [" + updatedRule.getPublicIpAddress() + ":" + updatedRule.getPublicPort() +
-                              "]->[" + updatedRule.getPrivateIpAddress() + ":" + updatedRule.getPrivatePort() + "]" + " " + updatedRule.getProtocol();
-
-                EventVO fwRuleEvent = new EventVO();
-                fwRuleEvent.setUserId(userId);
-                fwRuleEvent.setAccountId(accountId);
-                fwRuleEvent.setType(type);
-                fwRuleEvent.setDescription(description);
-                    fwRuleEvent.setLevel(level);
-                _eventDao.persist(fwRuleEvent);
-            }
-            // save off an event for removing the security group
-            EventVO event = new EventVO();
-            event.setUserId(userId);
-            event.setAccountId(vm.getAccountId());
-            event.setType(EventTypes.EVENT_PORT_FORWARDING_SERVICE_REMOVE);
-            event.setDescription("Successfully removed port forwarding service " + securityGroupMapping.getSecurityGroupId() + " from virtual machine " + vm.getName());
-            event.setLevel(EventVO.LEVEL_INFO);
-            String params = "sgId="+securityGroupMapping.getSecurityGroupId()+"\nvmId="+vm.getId();
-            event.setParameters(params);
-            _eventDao.persist(event);
-            }
-        }
 
         List<LoadBalancerVMMapVO> loadBalancerMappings = _loadBalancerVMMapDao.listByInstanceId(vm.getId());
         for (LoadBalancerVMMapVO loadBalancerMapping : loadBalancerMappings) {

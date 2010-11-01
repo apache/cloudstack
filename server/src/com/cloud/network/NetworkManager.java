@@ -27,7 +27,6 @@ import com.cloud.api.commands.CreateIPForwardingRuleCmd;
 import com.cloud.api.commands.CreateLoadBalancerRuleCmd;
 import com.cloud.api.commands.DeleteIPForwardingRuleCmd;
 import com.cloud.api.commands.DeleteLoadBalancerRuleCmd;
-import com.cloud.api.commands.DeletePortForwardingServiceRuleCmd;
 import com.cloud.api.commands.DisassociateIPAddrCmd;
 import com.cloud.api.commands.ListPortForwardingRulesCmd;
 import com.cloud.api.commands.RebootRouterCmd;
@@ -294,8 +293,6 @@ public interface NetworkManager extends Manager {
      */
     List<IPAddressVO> listPublicIpAddressesInVirtualNetwork(long accountId, long dcId, Boolean sourceNat);	
     
-    public boolean deleteNetworkRuleConfig(DeletePortForwardingServiceRuleCmd cmd) throws PermissionDeniedException;
-	
     public boolean disassociateIpAddress(DisassociateIPAddrCmd cmd) throws PermissionDeniedException;
     
     public boolean deleteIpForwardingRule(DeleteIPForwardingRuleCmd cmd) throws PermissionDeniedException, InvalidParameterValueException;

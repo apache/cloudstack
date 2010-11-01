@@ -27,11 +27,9 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.NetworkRuleConfigVO;
-import com.cloud.network.SecurityGroupVO;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkRuleConfigDao;
-import com.cloud.network.dao.SecurityGroupDao;
 import com.cloud.network.security.NetworkGroupManager;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.server.Criteria;
@@ -106,7 +104,6 @@ public class ApiDBUtils {
     private static LoadBalancerDao _loadBalancerDao;
     private static NetworkRuleConfigDao _networkRuleConfigDao;
     private static HostPodDao _podDao;
-    private static SecurityGroupDao _securityGroupDao;
     private static ServiceOfferingDao _serviceOfferingDao;
     private static SnapshotDao _snapshotDao;
     private static StoragePoolDao _storagePoolDao;
@@ -145,7 +142,6 @@ public class ApiDBUtils {
         _loadBalancerDao = locator.getDao(LoadBalancerDao.class);
         _networkRuleConfigDao = locator.getDao(NetworkRuleConfigDao.class);        
         _podDao = locator.getDao(HostPodDao.class);
-        _securityGroupDao = locator.getDao(SecurityGroupDao.class);
         _serviceOfferingDao = locator.getDao(ServiceOfferingDao.class);
         _snapshotDao = locator.getDao(SnapshotDao.class);
         _storagePoolDao = locator.getDao(StoragePoolDao.class);
@@ -337,10 +333,6 @@ public class ApiDBUtils {
 
     public static HostPodVO findPodById(Long podId) {
         return _podDao.findById(podId);
-    }
-
-    public static SecurityGroupVO findPortForwardingServiceById(Long securityGroupId) {
-        return _securityGroupDao.findById(securityGroupId);
     }
 
     public static VolumeVO findRootVolume(long vmId) {

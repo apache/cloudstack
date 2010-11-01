@@ -63,10 +63,8 @@
             <param name="cache.time.to.live">-1</param>
         </dao>
         <dao name="Firewall Rules" class="com.cloud.network.dao.FirewallRulesDaoImpl"/>
-        <dao name="Security Group" class="com.cloud.network.dao.SecurityGroupDaoImpl"/>
         <dao name="Load Balancer" class="com.cloud.network.dao.LoadBalancerDaoImpl"/>
         <dao name="Network Rule Config" class="com.cloud.network.dao.NetworkRuleConfigDaoImpl"/>
-        <dao name="Security Group Mapping" class="com.cloud.network.dao.SecurityGroupVMMapDaoImpl"/>
         <dao name="Load Balancer Mapping" class="com.cloud.network.dao.LoadBalancerVMMapDaoImpl"/>
         <dao name="Datacenter IP Addresses" class="com.cloud.dc.dao.DataCenterIpAddressDaoImpl"/>
         <dao name="Network Security Group" class="com.cloud.network.security.dao.NetworkGroupDaoImpl"/>

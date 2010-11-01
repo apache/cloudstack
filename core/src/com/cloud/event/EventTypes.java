@@ -57,11 +57,6 @@ public class EventTypes {
     public static final String EVENT_NET_RULE_DELETE = "NET.RULEDELETE";
     public static final String EVENT_NET_RULE_MODIFY = "NET.RULEMODIFY";
 
-    // Security Groups
-    public static final String EVENT_PORT_FORWARDING_SERVICE_APPLY = "PF.SERVICE.APPLY";
-    public static final String EVENT_PORT_FORWARDING_SERVICE_DELETE = "PF.SERVICE.DELETE";
-    public static final String EVENT_PORT_FORWARDING_SERVICE_REMOVE = "PF.SERVICE.REMOVE";
-
     // Load Balancers
     public static final String EVENT_ASSIGN_TO_LOAD_BALANCER_RULE = "LB.ASSIGN.TO.RULE";
     public static final String EVENT_REMOVE_FROM_LOAD_BALANCER_RULE = "LB.REMOVE.FROM.RULE";

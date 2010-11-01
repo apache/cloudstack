@@ -64,13 +64,9 @@ import com.cloud.alert.dao.AlertDao;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.commands.AssignPortForwardingServiceCmd;
 import com.cloud.api.commands.CreateDomainCmd;
-import com.cloud.api.commands.CreatePortForwardingServiceCmd;
-import com.cloud.api.commands.CreatePortForwardingServiceRuleCmd;
 import com.cloud.api.commands.CreateUserCmd;
 import com.cloud.api.commands.DeleteDomainCmd;
-import com.cloud.api.commands.DeletePortForwardingServiceCmd;
 import com.cloud.api.commands.DeletePreallocatedLunCmd;
 import com.cloud.api.commands.DeleteUserCmd;
 import com.cloud.api.commands.DeployVMCmd;
@@ -99,9 +95,6 @@ import com.cloud.api.commands.ListIsosCmd;
 import com.cloud.api.commands.ListLoadBalancerRuleInstancesCmd;
 import com.cloud.api.commands.ListLoadBalancerRulesCmd;
 import com.cloud.api.commands.ListPodsByCmd;
-import com.cloud.api.commands.ListPortForwardingServiceRulesCmd;
-import com.cloud.api.commands.ListPortForwardingServicesByVmCmd;
-import com.cloud.api.commands.ListPortForwardingServicesCmd;
 import com.cloud.api.commands.ListPreallocatedLunsCmd;
 import com.cloud.api.commands.ListPublicIpAddressesCmd;
 import com.cloud.api.commands.ListRoutersCmd;
@@ -123,7 +116,6 @@ import com.cloud.api.commands.QueryAsyncJobResultCmd;
 import com.cloud.api.commands.RebootSystemVmCmd;
 import com.cloud.api.commands.RegisterCmd;
 import com.cloud.api.commands.RegisterPreallocatedLunCmd;
-import com.cloud.api.commands.RemovePortForwardingServiceCmd;
 import com.cloud.api.commands.StartSystemVMCmd;
 import com.cloud.api.commands.StopSystemVmCmd;
 import com.cloud.api.commands.UpdateAccountCmd;
@@ -139,7 +131,6 @@ import com.cloud.api.commands.UpdateUserCmd;
 import com.cloud.api.commands.UpdateVMGroupCmd;
 import com.cloud.api.commands.UploadCustomCertificateCmd;
 import com.cloud.api.response.ExtractResponse;
-import com.cloud.async.AsyncInstanceCreateStatus;
 import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobResult;
@@ -185,7 +176,6 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientStorageCapacityException;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
@@ -201,21 +191,14 @@ import com.cloud.network.IPAddressVO;
 import com.cloud.network.LoadBalancerVMMapVO;
 import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.NetworkManager;
-import com.cloud.network.NetworkRuleConfigVO;
-import com.cloud.network.SecurityGroupVMMapVO;
-import com.cloud.network.SecurityGroupVO;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
-import com.cloud.network.dao.NetworkRuleConfigDao;
-import com.cloud.network.dao.SecurityGroupDao;
-import com.cloud.network.dao.SecurityGroupVMMapDao;
 import com.cloud.network.security.NetworkGroupManager;
 import com.cloud.network.security.NetworkGroupVO;
 import com.cloud.network.security.dao.NetworkGroupDao;
 import com.cloud.offering.NetworkOffering;
-import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.server.auth.UserAuthenticator;
 import com.cloud.service.ServiceOfferingVO;
@@ -280,7 +263,6 @@ import com.cloud.utils.EnumUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -321,11 +303,8 @@ public class ManagementServerImpl implements ManagementServer {
     private final AgentManager _agentMgr;
     private final ConfigurationManager _configMgr;
     private final FirewallRulesDao _firewallRulesDao;
-    private final SecurityGroupDao _securityGroupDao;
 	private final NetworkGroupDao _networkSecurityGroupDao;
     private final LoadBalancerDao _loadBalancerDao;
-    private final NetworkRuleConfigDao _networkRuleConfigDao;
-    private final SecurityGroupVMMapDao _securityGroupVMMapDao;
     private final IPAddressDao _publicIpAddressDao;
     private final DataCenterIpAddressDaoImpl _privateIpAddressDao;
     private final LoadBalancerVMMapDao _loadBalancerVMMapDao;
@@ -429,11 +408,8 @@ public class ManagementServerImpl implements ManagementServer {
         _secStorageVmMgr = locator.getManager(SecondaryStorageVmManager.class);
         _storageMgr = locator.getManager(StorageManager.class);
         _firewallRulesDao = locator.getDao(FirewallRulesDao.class);
-        _securityGroupDao = locator.getDao(SecurityGroupDao.class);
         _networkSecurityGroupDao  = locator.getDao(NetworkGroupDao.class);
         _loadBalancerDao = locator.getDao(LoadBalancerDao.class);
-        _networkRuleConfigDao = locator.getDao(NetworkRuleConfigDao.class);
-        _securityGroupVMMapDao = locator.getDao(SecurityGroupVMMapDao.class);
         _publicIpAddressDao = locator.getDao(IPAddressDao.class);
         _privateIpAddressDao = locator.getDao(DataCenterIpAddressDaoImpl.class);
         _loadBalancerVMMapDao = locator.getDao(LoadBalancerVMMapDao.class);
@@ -919,19 +895,6 @@ public class ManagementServerImpl implements ManagementServer {
             	accountCleanupNeeded = true;
             }
             
-            List<SecurityGroupVO> securityGroups = _securityGroupDao.listByAccountId(accountId);
-            if (securityGroups != null) {
-                for (SecurityGroupVO securityGroup : securityGroups) {
-                    // All vm instances have been destroyed, delete the security group -> instance_id mappings
-                    SearchCriteria<SecurityGroupVMMapVO> sc = _securityGroupVMMapDao.createSearchCriteria();
-                    sc.addAnd("securityGroupId", SearchCriteria.Op.EQ, securityGroup.getId());
-                    _securityGroupVMMapDao.expunge(sc);
-
-                    // now clean the network rules and security groups themselves
-                    _networkRuleConfigDao.deleteBySecurityGroup(securityGroup.getId());
-                    _securityGroupDao.remove(securityGroup.getId());
-                }
-            }
             
             // Delete the account's VLANs
             List<VlanVO> accountVlans = _vlanDao.listVlansForAccountByType(null, accountId, VlanType.DirectAttached);
@@ -2010,607 +1973,8 @@ public class ManagementServerImpl implements ManagementServer {
             throw new InvalidParameterValueException("Invalid protocol");
         }
     }
+   
 
-    @Override
-    @DB
-    public void assignSecurityGroup(AssignPortForwardingServiceCmd cmd) throws PermissionDeniedException,
-            NetworkRuleConflictException, InvalidParameterValueException, InternalErrorException {
-    	Long userId = UserContext.current().getUserId();
-    	Account account = UserContext.current().getAccount();
-    	Long securityGroupId = cmd.getId();
-    	List<Long> sgIdList = cmd.getIds();
-    	String publicIp = cmd.getPublicIp();
-    	Long vmId = cmd.getVirtualMachineId();
-    	
-    	//Verify input parameters
-        if ((securityGroupId == null) && (sgIdList == null)) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "No service id (or list of ids) specified.");
-        }
-
-
-        if (userId == null) {
-            userId = Long.valueOf(1);
-        }
-
-        List<Long> validateSGList = null;
-        if (securityGroupId == null) {
-            validateSGList = sgIdList;
-        } else {
-            validateSGList = new ArrayList<Long>();
-            validateSGList.add(securityGroupId);
-        }
-        Long validatedAccountId = validateSecurityGroupsAndInstance(validateSGList, vmId);
-        if (validatedAccountId == null) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to apply port forwarding services " + StringUtils.join(sgIdList, ",") + " to instance " + vmId + ".  Invalid list of port forwarding services for the given instance.");
-        }
-        if (account != null) {
-            if (!isAdmin(account.getType()) && (account.getId() != validatedAccountId.longValue())) {
-                throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Permission denied applying port forwarding services " + StringUtils.join(sgIdList, ",") + " to instance " + vmId + ".");
-            } else {
-                Account validatedAccount = findAccountById(validatedAccountId);
-                if (!isChildDomain(account.getDomainId(), validatedAccount.getDomainId())) {
-                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Permission denied applying port forwarding services " + StringUtils.join(sgIdList, ",") + " to instance " + vmId + ".");
-                }
-            }
-        }
-    	
-        UserVm userVm = _userVmDao.findById(vmId);
-        if (userVm == null) {
-            s_logger.warn("Unable to find virtual machine with id " + vmId);
-            throw new InvalidParameterValueException("Unable to find virtual machine with id " + vmId);
-        }
-        long startEventId = EventUtils.saveScheduledEvent(userId, userVm.getAccountId(), EventTypes.EVENT_PORT_FORWARDING_SERVICE_APPLY, "applying port forwarding service for Vm with Id: "+vmId);
-    	
-        boolean locked = false;
-        Transaction txn = Transaction.currentTxn();
-        try {
-            EventUtils.saveStartedEvent(userId, userVm.getAccountId(), EventTypes.EVENT_PORT_FORWARDING_SERVICE_APPLY, "Applying port forwarding service for Vm with Id: "+vmId, startEventId);
-            State vmState = userVm.getState();
-            switch (vmState) {
-            case Destroyed:
-            case Error:
-            case Expunging:
-            case Unknown:
-                throw new InvalidParameterValueException("Unable to assign port forwarding service(s) '"
-                        + ((securityGroupId == null) ? StringUtils.join(sgIdList, ",") : securityGroupId) + "' to virtual machine " + vmId
-                        + " due to virtual machine being in an invalid state for assigning a port forwarding service (" + vmState + ")");
-            }
-
-            // sanity check that the vm can be applied to the load balancer
-            ServiceOfferingVO offering = _offeringsDao.findById(userVm.getServiceOfferingId());
-            if ((offering == null) || !NetworkOffering.GuestIpType.Virtualized.equals(offering.getGuestIpType())) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Unable to apply port forwarding service to virtual machine " + userVm.toString() + ", bad network type (" + ((offering == null) ? "null" : offering.getGuestIpType()) + ")");
-                }
-
-                throw new InvalidParameterValueException("Unable to apply port forwarding service to virtual machine " + userVm.toString() + ", bad network type (" + ((offering == null) ? "null" : offering.getGuestIpType()) + ")");
-            }
-            
-            DomainRouterVO router = null;
-            if (userVm.getDomainRouterId() != null)
-            	router = _routerDao.findById(userVm.getDomainRouterId());
-            if (router == null) {
-                s_logger.warn("Unable to find router (" + userVm.getDomainRouterId() + ") for virtual machine " + userVm.toString());
-                throw new InvalidParameterValueException("Unable to find router (" + userVm.getDomainRouterId() + ") for virtual machine with id " + vmId);
-            }
-
-            IPAddressVO ipVO = _publicIpAddressDao.acquire(publicIp);
-            if (ipVO == null) {
-                // throw this exception because hackers can use the api to probe for allocated ips
-                throw new PermissionDeniedException("User does not own supplied address");
-            }
-            locked = true;
-
-            if ((ipVO.getAllocated() == null) || (ipVO.getAccountId() == null) || (ipVO.getAccountId().longValue() != userVm.getAccountId())) {
-                throw new PermissionDeniedException("User does not own supplied address");
-            }
-
-            VlanVO vlan = _vlanDao.findById(ipVO.getVlanDbId());
-            if (!VlanType.VirtualNetwork.equals(vlan.getVlanType())) {
-                throw new InvalidParameterValueException("Invalid IP address " + publicIp + " for applying port forwarding services, the IP address is not in a 'virtual network' vlan.");
-            }
-
-            txn.start();
-
-            if (securityGroupId == null) {
-                // - send one command to agent to remove *all* rules for
-                // publicIp/vm combo
-                // - add back all rules based on list passed in
-                List<FirewallRuleVO> fwRulesToRemove = _firewallRulesDao.listForwardingByPubAndPrivIp(true, publicIp, userVm.getGuestIpAddress());
-                {
-                    // Save and create the event
-                    String description;
-                    String type = EventTypes.EVENT_NET_RULE_DELETE;
-                    String level = EventVO.LEVEL_INFO;
-
-                    for (FirewallRuleVO fwRule : fwRulesToRemove) {
-                        fwRule.setEnabled(false); // disable rule for sending to the agent
-                        _firewallRulesDao.remove(fwRule.getId()); // remove the rule from the database
-
-                        description = "deleted ip forwarding rule [" + fwRule.getPublicIpAddress() + ":" + fwRule.getPublicPort() + "]->[" + fwRule.getPrivateIpAddress() + ":"
-                                + fwRule.getPrivatePort() + "]" + " " + fwRule.getProtocol();
-
-                        EventUtils.saveEvent(userId, userVm.getAccountId(), level, type, description);
-                    }
-                }
-
-                List<FirewallRuleVO> updatedRules = _networkMgr.updateFirewallRules(null, fwRulesToRemove, router);
-                if ((updatedRules != null) && (updatedRules.size() != fwRulesToRemove.size())) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Unable to clean up all port forwarding service rules for public IP " + publicIp + " and guest vm " + userVm.getName()
-                                + " while applying port forwarding service(s) '" + ((securityGroupId == null) ? StringUtils.join(sgIdList, ",") : securityGroupId) + "'"
-                                + " -- intended to remove " + fwRulesToRemove.size() + " rules, removd " + ((updatedRules == null) ? "null" : updatedRules.size()) + " rules.");
-                    }
-                }
-
-                List<SecurityGroupVMMapVO> sgVmMappings = _securityGroupVMMapDao.listByIpAndInstanceId(publicIp, vmId);
-                for (SecurityGroupVMMapVO sgVmMapping : sgVmMappings) {
-                    boolean success = _securityGroupVMMapDao.remove(sgVmMapping.getId());
-
-                    SecurityGroupVO securityGroup = _securityGroupDao.findById(sgVmMapping.getSecurityGroupId());
-
-                    // save off an event for removing the security group
-                    EventVO event = new EventVO();
-                    event.setUserId(userId);
-                    event.setAccountId(userVm.getAccountId());
-                    event.setType(EventTypes.EVENT_PORT_FORWARDING_SERVICE_REMOVE);
-                    String sgRemoveLevel = EventVO.LEVEL_INFO;
-                    String sgRemoveDesc = "Successfully removed ";
-                    if (!success) {
-                        sgRemoveLevel = EventVO.LEVEL_ERROR;
-                        sgRemoveDesc = "Failed to remove ";
-                    }
-                    String params = "sgId="+securityGroup.getId()+"\nvmId="+vmId;
-                    event.setParameters(params);
-                    event.setDescription(sgRemoveDesc + "port forwarding service " + securityGroup.getName() + " from virtual machine " + userVm.getName());
-                    event.setLevel(sgRemoveLevel);
-                    _eventDao.persist(event);
-                }
-            } else {
-                List<SecurityGroupVMMapVO> existingVMMaps = _securityGroupVMMapDao.listBySecurityGroup(securityGroupId.longValue());
-                if ((existingVMMaps != null) && !existingVMMaps.isEmpty()) {
-                    for (SecurityGroupVMMapVO existingVMMap : existingVMMaps) {
-                        if (existingVMMap.getInstanceId() == userVm.getId()) {
-                            if (s_logger.isDebugEnabled()) {
-                                s_logger.debug("port forwarding service " + securityGroupId + " is already applied to virtual machine " + userVm.toString() + ", skipping assignment.");
-                            }
-                            return;
-                        }
-                    }
-                }
-            }
-
-            List<Long> finalSecurityGroupIdList = new ArrayList<Long>();
-            if (securityGroupId != null) {
-                finalSecurityGroupIdList.add(securityGroupId);
-            } else {
-                finalSecurityGroupIdList.addAll(sgIdList);
-            }
-
-            for (Long sgId : finalSecurityGroupIdList) {
-                if (sgId.longValue() == 0) {
-                    // group id of 0 means to remove all groups, which we just did above
-                    break;
-                }
-
-                SecurityGroupVO securityGroup = _securityGroupDao.findById(Long.valueOf(sgId));
-                if (securityGroup == null) {
-                    s_logger.warn("Unable to find port forwarding service with id " + sgId);
-                    throw new InvalidParameterValueException("Unable to find port forwarding service with id " + sgId);
-                }
-
-                if (!_domainDao.isChildDomain(securityGroup.getDomainId(), userVm.getDomainId())) {
-                    s_logger.warn("Unable to assign port forwarding service " + sgId + " to user vm " + vmId + ", user vm's domain (" + userVm.getDomainId()
-                            + ") is not in the domain of the port forwarding service (" + securityGroup.getDomainId() + ")");
-                    throw new InvalidParameterValueException("Unable to assign port forwarding service " + sgId + " to user vm " + vmId + ", user vm's domain (" + userVm.getDomainId()
-                            + ") is not in the domain of the port forwarding service (" + securityGroup.getDomainId() + ")");
-                }
-
-                // check for ip address/port conflicts by checking exising forwarding and loadbalancing rules
-                List<FirewallRuleVO> existingRulesOnPubIp = _firewallRulesDao.listIPForwarding(publicIp);
-                Map<String, Pair<String, String>> mappedPublicPorts = new HashMap<String, Pair<String, String>>();
-
-                if (existingRulesOnPubIp != null) {
-                    for (FirewallRuleVO fwRule : existingRulesOnPubIp) {
-                        mappedPublicPorts.put(fwRule.getPublicPort(), new Pair<String, String>(fwRule.getPrivateIpAddress(), fwRule.getPrivatePort()));
-                    }
-                }
-
-                List<LoadBalancerVO> loadBalancers = _loadBalancerDao.listByIpAddress(publicIp);
-                if (loadBalancers != null) {
-                    for (LoadBalancerVO loadBalancer : loadBalancers) {
-                        // load balancers don't have to be applied to an
-                        // instance for there to be a conflict on the load
-                        // balancers ip/port, so just
-                        // map the public port to a pair of empty strings
-                        mappedPublicPorts.put(loadBalancer.getPublicPort(), new Pair<String, String>("", ""));
-                    }
-                }
-
-                List<FirewallRuleVO> firewallRulesToApply = new ArrayList<FirewallRuleVO>();
-                List<NetworkRuleConfigVO> netRules = _networkRuleConfigDao.listBySecurityGroupId(sgId);
-                for (NetworkRuleConfigVO netRule : netRules) {
-                    Pair<String, String> privateIpPort = mappedPublicPorts.get(netRule.getPublicPort());
-                    if (privateIpPort != null) {
-                        if (privateIpPort.first().equals(userVm.getGuestIpAddress()) && privateIpPort.second().equals(netRule.getPrivatePort())) {
-                            continue; // already mapped
-                        } else {
-                            throw new NetworkRuleConflictException("An existing service rule for " + publicIp + ":" + netRule.getPublicPort()
-                                    + " already exists, found while trying to apply service rule " + netRule.getId() + " from port forwarding service " + securityGroup.getName() + ".");
-                        }
-                    }
-
-                    FirewallRuleVO newFwRule = new FirewallRuleVO();
-                    newFwRule.setEnabled(true);
-                    newFwRule.setForwarding(true);
-                    newFwRule.setPrivatePort(netRule.getPrivatePort());
-                    newFwRule.setProtocol(netRule.getProtocol());
-                    newFwRule.setPublicPort(netRule.getPublicPort());
-                    newFwRule.setPublicIpAddress(publicIp);
-                    newFwRule.setPrivateIpAddress(userVm.getGuestIpAddress());
-                    newFwRule.setGroupId(netRule.getSecurityGroupId());
-
-                    firewallRulesToApply.add(newFwRule);
-                    _firewallRulesDao.persist(newFwRule);
-
-                    String description = "created new ip forwarding rule [" + newFwRule.getPublicIpAddress() + ":" + newFwRule.getPublicPort() + "]->["
-                            + newFwRule.getPrivateIpAddress() + ":" + newFwRule.getPrivatePort() + "]" + " " + newFwRule.getProtocol();
-
-                    EventUtils.saveEvent(userId, userVm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_NET_RULE_ADD, description);
-                }
-
-                // now that individual rules have been created from the security group, save the security group mapping for this ip/vm instance
-                SecurityGroupVMMapVO sgVmMap = new SecurityGroupVMMapVO(sgId, publicIp, vmId);
-                _securityGroupVMMapDao.persist(sgVmMap);
-
-                // Save off information for the event that the security group was applied
-                EventVO event = new EventVO();
-                event.setUserId(userId);
-                event.setAccountId(userVm.getAccountId());
-                event.setType(EventTypes.EVENT_PORT_FORWARDING_SERVICE_APPLY);
-                event.setStartId(startEventId);
-                event.setDescription("Successfully applied port forwarding service " + securityGroup.getName() + " to virtual machine " + userVm.getName());
-                String params = "sgId="+securityGroup.getId()+"\nvmId="+vmId+"\nnumRules="+firewallRulesToApply.size()+"\ndcId="+userVm.getDataCenterId();
-                event.setParameters(params);
-                event.setLevel(EventVO.LEVEL_INFO);
-                _eventDao.persist(event);
-
-                _networkMgr.updateFirewallRules(publicIp, firewallRulesToApply, router);
-            }
-
-            txn.commit();
-        } catch (Throwable e) {
-            txn.rollback();
-            if (e instanceof NetworkRuleConflictException) {
-                throw (NetworkRuleConflictException) e;
-            } else if (e instanceof InvalidParameterValueException) {
-                throw (InvalidParameterValueException) e;
-            } else if (e instanceof PermissionDeniedException) {
-                throw (PermissionDeniedException) e;
-            } else if (e instanceof InternalErrorException) {
-                s_logger.warn("ManagementServer error", e);
-                throw (InternalErrorException) e;
-            }
-            s_logger.warn("ManagementServer error", e);
-        } finally {
-            if (locked) {
-                _publicIpAddressDao.release(publicIp);
-            }
-        }
-    }
-
-    @Override
-    public void removeSecurityGroup(RemovePortForwardingServiceCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
-    	
-    	Account account = UserContext.current().getAccount();
-        Long userId = UserContext.current().getUserId();
-        Long securityGroupId = cmd.getId();
-        String publicIp = cmd.getPublicIp();
-        Long vmId = cmd.getVirtualMachineId();
-        
-        //verify input parameters
-        SecurityGroupVO securityG = _securityGroupDao.findById(securityGroupId);
-        if (securityG == null) {
-        	throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find a port forwarding service with id " + securityGroupId);
-        } else if (account != null) {
-            if (!isAdmin(account.getType()) && (account.getId() != securityG.getAccountId())) {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find a port forwarding service with id " + securityGroupId + " for this account");
-            } else if (!isChildDomain(account.getDomainId(), securityG.getDomainId())) {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid port forwarding service id (" + securityGroupId + ") given, unable to remove port forwarding service.");
-            }
-        }
-        
-        UserVmVO vmInstance = findUserVMInstanceById(vmId.longValue());
-        if (vmInstance == null) {
-        	throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + vmId);
-        }
-        if (account != null) {
-            if (!isAdmin(account.getType()) && (account.getId() != vmInstance.getAccountId())) {
-                throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + vmId + " for this account");
-            } else if (!isChildDomain(account.getDomainId(), vmInstance.getDomainId())) {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid virtual machine id (" + vmId + ") given, unable to remove port forwarding service.");
-            }
-        }
-
-        Account ipAddrAccount = findAccountByIpAddress(publicIp);
-        if (ipAddrAccount == null) {
-            if (account == null) {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find ip address " + publicIp);
-            } else {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "account " + account.getAccountName() + " doesn't own ip address " + publicIp);
-            }
-        }
-
-        Long accountId = ipAddrAccount.getId();
-        if ((account != null) && !isAdmin(account.getType())) {
-            if (account.getId() != accountId) {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "account " + account.getAccountName() + " doesn't own ip address " + publicIp);
-            }
-        }
-
-        if (userId == null) {
-            userId = Long.valueOf(1);
-        }
-
-        long eventId = EventUtils.saveScheduledEvent(userId, vmInstance.getAccountId(), EventTypes.EVENT_PORT_FORWARDING_SERVICE_REMOVE, "removing port forwarding services for Vm with Id: "+vmId);
-
-        /*TODO : ASK KRIS AS TO WHAT DO WE DO WITH THIS PART IN THE EXECUTOR CODE
-        UserVmVO userVm = userVmDao.findById(param.getInstanceId());
-        if(userVm == null)
-        	return null;
-        
-        if (userVm.getDomainRouterId() == null) {
-        	return null;
-        } else
-        	return routerDao.findById(userVm.getDomainRouterId());
-	    */
-        removeSecurityGroup(userId, securityGroupId, publicIp, vmId, eventId);
-    }
-    
-    @Override
-    @DB
-    public void removeSecurityGroup(long userId, long securityGroupId, String publicIp, long vmId, long startEventId) throws InvalidParameterValueException, PermissionDeniedException {
-        // This gets complicated with overlapping rules. As an example:
-        // security group 1 has the following port mappings: 22->22 on TCP,
-        // 23->23 on TCP, 80->8080 on TCP
-        // security group 2 has the following port mappings: 22->22 on TCP,
-        // 7891->7891 on TCP
-        // User assigns group 1 & 2 on 192.168.10.120 to vm 1
-        // Later, user removed group 1 from 192.168.10.120 and vm 1
-        // Final valid port mappings should be 22->22 and 7891->7891 which both
-        // come from security group 2. The mapping
-        // for port 22 should not be removed.
-        boolean locked = false;
-        UserVm userVm = _userVmDao.findById(vmId);
-        if (userVm == null) {
-            throw new InvalidParameterValueException("Unable to find vm: " + vmId);
-        }
-        EventUtils.saveStartedEvent(userId, userVm.getAccountId(), EventTypes.EVENT_PORT_FORWARDING_SERVICE_REMOVE, "Removing port forwarding services for Vm with Id: "+vmId, startEventId);
-        SecurityGroupVO securityGroup = _securityGroupDao.findById(Long.valueOf(securityGroupId));
-        if (securityGroup == null) {
-            throw new InvalidParameterValueException("Unable to find port forwarding service: " + securityGroupId);
-        }
-
-        DomainRouterVO router = null;
-        if (userVm.getDomainRouterId() != null)
-        	router = _routerDao.findById(userVm.getDomainRouterId());
-        if (router == null) {
-            throw new InvalidParameterValueException("Unable to find router for ip address: " + publicIp);
-        }
-
-        Transaction txn = Transaction.currentTxn();
-        try {
-            IPAddressVO ipVO = _publicIpAddressDao.acquire(publicIp);
-            if (ipVO == null) {
-                // throw this exception because hackers can use the api to probe
-                // for allocated ips
-                throw new PermissionDeniedException("User does not own supplied address");
-            }
-
-            locked = true;
-            if ((ipVO.getAllocated() == null) || (ipVO.getAccountId() == null) || (ipVO.getAccountId().longValue() != userVm.getAccountId())) {
-                throw new PermissionDeniedException("User/account does not own supplied address");
-            }
-
-            txn.start();
-
-            // get the account for writing events
-            Account account = _accountDao.findById(userVm.getAccountId());
-            {
-                // - send one command to agent to remove *all* rules for
-                // publicIp/vm combo
-                // - add back all rules based on existing SG mappings
-                List<FirewallRuleVO> fwRulesToRemove = _firewallRulesDao.listForwardingByPubAndPrivIp(true, publicIp, userVm.getGuestIpAddress());
-                for (FirewallRuleVO fwRule : fwRulesToRemove) {
-                    fwRule.setEnabled(false);
-                }
-
-                List<FirewallRuleVO> updatedRules = _networkMgr.updateFirewallRules(null, fwRulesToRemove, router);
-
-                // Save and create the event
-                String description;
-                String type = EventTypes.EVENT_NET_RULE_DELETE;
-                String ruleName = "ip forwarding";
-                String level = EventVO.LEVEL_INFO;
-
-                for (FirewallRuleVO fwRule : updatedRules) {
-                    _firewallRulesDao.remove(fwRule.getId());
-
-                    description = "deleted " + ruleName + " rule [" + fwRule.getPublicIpAddress() + ":" + fwRule.getPublicPort() + "]->[" + fwRule.getPrivateIpAddress() + ":"
-                            + fwRule.getPrivatePort() + "]" + " " + fwRule.getProtocol();
-
-                    EventUtils.saveEvent(userId, account.getId(), level, type, description);
-                }
-            }
-
-            // since we know these groups all pass muster, just keep track
-            // of the public ports we are mapping on this public IP and
-            // don't duplicate
-            List<String> alreadyMappedPorts = new ArrayList<String>();
-            List<FirewallRuleVO> fwRulesToAdd = new ArrayList<FirewallRuleVO>();
-            List<SecurityGroupVMMapVO> sgVmMappings = _securityGroupVMMapDao.listByIpAndInstanceId(publicIp, vmId);
-            for (SecurityGroupVMMapVO sgVmMapping : sgVmMappings) {
-                if (sgVmMapping.getSecurityGroupId() == securityGroupId) {
-                    _securityGroupVMMapDao.remove(sgVmMapping.getId());
-                } else {
-                    List<NetworkRuleConfigVO> netRules = _networkRuleConfigDao.listBySecurityGroupId(sgVmMapping.getSecurityGroupId());
-                    for (NetworkRuleConfigVO netRule : netRules) {
-                        if (!alreadyMappedPorts.contains(netRule.getPublicPort())) {
-                            FirewallRuleVO newFwRule = new FirewallRuleVO();
-                            newFwRule.setEnabled(true);
-                            newFwRule.setForwarding(true);
-                            newFwRule.setPrivatePort(netRule.getPrivatePort());
-                            newFwRule.setProtocol(netRule.getProtocol());
-                            newFwRule.setPublicPort(netRule.getPublicPort());
-                            newFwRule.setPublicIpAddress(publicIp);
-                            newFwRule.setPrivateIpAddress(userVm.getGuestIpAddress());
-                            newFwRule.setGroupId(netRule.getSecurityGroupId());
-
-                            fwRulesToAdd.add(newFwRule);
-
-                            alreadyMappedPorts.add(netRule.getPublicPort());
-                        }
-                    }
-                }
-            }
-
-            for (FirewallRuleVO addedRule : fwRulesToAdd) {
-                _firewallRulesDao.persist(addedRule);
-
-                String description = "created new ip forwarding rule [" + addedRule.getPublicIpAddress() + ":" + addedRule.getPublicPort() + "]->["
-                        + addedRule.getPrivateIpAddress() + ":" + addedRule.getPrivatePort() + "]" + " " + addedRule.getProtocol();
-
-                EventUtils.saveEvent(userId, account.getId(), EventVO.LEVEL_INFO, EventTypes.EVENT_NET_RULE_ADD, description);
-            }
-
-            // save off an event for removing the security group
-            EventVO event = new EventVO();
-            event.setUserId(userId);
-            event.setAccountId(userVm.getAccountId());
-            event.setType(EventTypes.EVENT_PORT_FORWARDING_SERVICE_REMOVE);
-            event.setDescription("Successfully removed port forwarding service " + securityGroup.getName() + " from virtual machine " + userVm.getName());
-            event.setLevel(EventVO.LEVEL_INFO);
-            String params = "sgId="+securityGroup.getId()+"\nvmId="+vmId;
-            event.setParameters(params);
-            _eventDao.persist(event);
-
-            _networkMgr.updateFirewallRules(publicIp, fwRulesToAdd, router);
-
-            txn.commit();
-        } catch (Exception ex) {
-            txn.rollback();
-            throw new CloudRuntimeException("Unhandled exception", ex);
-        } finally {
-            if (locked) {
-                _publicIpAddressDao.release(publicIp);
-            }
-        }
-    }
-
-    @Override
-    public Long validateSecurityGroupsAndInstance(List<Long> securityGroupIds, Long instanceId) {
-        if ((securityGroupIds == null) || securityGroupIds.isEmpty() || (instanceId == null)) {
-            return null;
-        }
-
-        List<SecurityGroupVO> securityGroups = new ArrayList<SecurityGroupVO>();
-        for (Long securityGroupId : securityGroupIds) {
-            if (securityGroupId.longValue() == 0) {
-                continue;
-            }
-            SecurityGroupVO securityGroup = _securityGroupDao.findById(securityGroupId);
-            if (securityGroup == null) {
-                return null;
-            }
-            securityGroups.add(securityGroup);
-        }
-
-        UserVm userVm = _userVmDao.findById(instanceId);
-        if (userVm == null) {
-            return null;
-        }
-
-        long accountId = userVm.getAccountId();
-        for (SecurityGroupVO securityGroup : securityGroups) {
-            Long sgAccountId = securityGroup.getAccountId();
-            if ((sgAccountId != null) && (sgAccountId.longValue() != accountId)) {
-                return null;
-            }
-        }
-        return Long.valueOf(accountId);
-    }
-
-    private FirewallRuleVO createFirewallRule(long userId, String ipAddress, UserVm userVm, String publicPort, String privatePort, String protocol, Long securityGroupId) throws NetworkRuleConflictException {
-        // sanity check that the vm can be applied to the load balancer
-        ServiceOfferingVO offering = _offeringsDao.findById(userVm.getServiceOfferingId());
-        if ((offering == null) || !GuestIpType.Virtualized.equals(offering.getGuestIpType())) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Unable to create port forwarding rule (" + protocol + ":" + publicPort + "->" + privatePort+ ") for virtual machine " + userVm.toString() + ", bad network type (" + ((offering == null) ? "null" : offering.getGuestIpType()) + ")");
-            }
-
-            throw new IllegalArgumentException("Unable to create port forwarding rule (" + protocol + ":" + publicPort + "->" + privatePort+ ") for virtual machine " + userVm.toString() + ", bad network type (" + ((offering == null) ? "null" : offering.getGuestIpType()) + ")");
-        }
-
-        // check for ip address/port conflicts by checking existing forwarding and load balancing rules
-        List<FirewallRuleVO> existingRulesOnPubIp = _firewallRulesDao.listIPForwarding(ipAddress);
-        Map<String, Pair<String, String>> mappedPublicPorts = new HashMap<String, Pair<String, String>>();
-
-        if (existingRulesOnPubIp != null) {
-            for (FirewallRuleVO fwRule : existingRulesOnPubIp) {
-                mappedPublicPorts.put(fwRule.getPublicPort(), new Pair<String, String>(fwRule.getPrivateIpAddress(), fwRule.getPrivatePort()));
-            }
-        }
-
-        Pair<String, String> privateIpPort = mappedPublicPorts.get(publicPort);
-        if (privateIpPort != null) {
-            if (privateIpPort.first().equals(userVm.getGuestIpAddress()) && privateIpPort.second().equals(privatePort)) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("skipping the creating of firewall rule " + ipAddress + ":" + publicPort + " to " + userVm.getGuestIpAddress() + ":" + privatePort + "; rule already exists.");
-                }
-                return null; // already mapped
-            } else {
-                throw new NetworkRuleConflictException("An existing port forwarding service rule for " + ipAddress + ":" + publicPort
-                        + " already exists, found while trying to create mapping to " + userVm.getGuestIpAddress() + ":" + privatePort + ((securityGroupId == null) ? "." : " from port forwarding service "
-                        + securityGroupId.toString() + "."));
-            }
-        }
-
-        FirewallRuleVO newFwRule = new FirewallRuleVO();
-        newFwRule.setEnabled(true);
-        newFwRule.setForwarding(true);
-        newFwRule.setPrivatePort(privatePort);
-        newFwRule.setProtocol(protocol);
-        newFwRule.setPublicPort(publicPort);
-        newFwRule.setPublicIpAddress(ipAddress);
-        newFwRule.setPrivateIpAddress(userVm.getGuestIpAddress());
-        newFwRule.setGroupId(securityGroupId);
-
-        // In 1.0 the rules were always persisted when a user created a rule.  When the rules get sent down
-        // the stopOnError parameter is set to false, so the agent will apply all rules that it can.  That
-        // behavior is preserved here by persisting the rule before sending it to the agent.
-        _firewallRulesDao.persist(newFwRule);
-
-        boolean success = _networkMgr.updateFirewallRule(newFwRule, null, null);
-
-        // Save and create the event
-        String description;
-        String ruleName = "ip forwarding";
-        String level = EventVO.LEVEL_INFO;
-        Account account = _accountDao.findById(userVm.getAccountId());
-
-        if (success == true) {
-            description = "created new " + ruleName + " rule [" + newFwRule.getPublicIpAddress() + ":" + newFwRule.getPublicPort() + "]->["
-                    + newFwRule.getPrivateIpAddress() + ":" + newFwRule.getPrivatePort() + "]" + " " + newFwRule.getProtocol();
-        } else {
-            level = EventVO.LEVEL_ERROR;
-            description = "failed to create new " + ruleName + " rule [" + newFwRule.getPublicIpAddress() + ":" + newFwRule.getPublicPort() + "]->["
-                    + newFwRule.getPrivateIpAddress() + ":" + newFwRule.getPrivatePort() + "]" + " " + newFwRule.getProtocol();
-        }
-
-        EventUtils.saveEvent(Long.valueOf(userId), account.getId(), level, EventTypes.EVENT_NET_RULE_ADD, description);
-
-        return newFwRule;
-    }
 
     @Override
     public List<EventVO> getEvents(long userId, long accountId, Long domainId, String type, String level, Date startDate, Date endDate) {
@@ -3828,81 +3192,6 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public List<NetworkRuleConfigVO> searchForNetworkRules(ListPortForwardingServiceRulesCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
-        Long accountId = null;
-        Account account = UserContext.current().getAccount();
-        Long domainId = cmd.getDomainId();
-        String accountName = cmd.getAccountName();
-        Long groupId = cmd.getPortForwardingServiceId();
-
-        if ((account == null) || isAdmin(account.getType())) {
-            if (domainId != null) {
-                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
-                    throw new PermissionDeniedException("Unable to list port forwarding service rules for domain " + domainId + ", permission denied.");
-                }
-                if (accountName != null) {
-                    Account userAcct = _accountDao.findActiveAccount(accountName, domainId);
-                    if (userAcct != null) {
-                        accountId = userAcct.getId();
-                    } else {
-                        throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
-                    }
-                }
-            }
-        } else {
-            accountId = account.getId();
-        }
-
-        if ((groupId != null) && (accountId != null)) {
-            SecurityGroupVO sg = _securityGroupDao.findById(groupId);
-            if (sg != null) {
-                if (sg.getAccountId() != accountId.longValue()) {
-                    throw new PermissionDeniedException("Unable to list port forwarding service rules, account " + accountId + " does not own port forwarding service " + groupId);
-                }
-            } else {
-                throw new InvalidParameterValueException("Unable to find port forwarding service with id " + groupId);
-            }
-        }
-
-        Filter searchFilter = new Filter(NetworkRuleConfigVO.class, "id", true, null, null);
-
-        // search by rule id is also supported
-        Object id = cmd.getId();
-
-        SearchBuilder<NetworkRuleConfigVO> sb = _networkRuleConfigDao.createSearchBuilder();
-        if (id != null) {
-            sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        }
-
-        if (groupId != null) {
-            sb.and("securityGroupId", sb.entity().getSecurityGroupId(), SearchCriteria.Op.EQ);
-        }
-
-        if (accountId != null) {
-            // join with securityGroup table to make sure the account is the owner of the network rule
-            SearchBuilder<SecurityGroupVO> securityGroupSearch = _securityGroupDao.createSearchBuilder();
-            securityGroupSearch.and("accountId", securityGroupSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
-            sb.join("groupId", securityGroupSearch, securityGroupSearch.entity().getId(), sb.entity().getSecurityGroupId(), JoinBuilder.JoinType.INNER);
-        }
-
-        SearchCriteria<NetworkRuleConfigVO> sc = sb.create();
-
-        if (id != null) {
-            sc.setParameters("id", id);
-        }
-
-        if (groupId != null) {
-            sc.setParameters("securityGroupId", groupId);
-        }
-
-        if (accountId != null) {
-            sc.setJoinParameters("groupId", "accountId", accountId);
-        }
-
-        return _networkRuleConfigDao.search(sc, searchFilter);
-    }
-
-    @Override
     public List<EventVO> searchForEvents(ListEventsCmd cmd) throws PermissionDeniedException, InvalidParameterValueException {
         Account account = UserContext.current().getAccount();
         Long accountId = null;
@@ -4540,107 +3829,6 @@ public class ManagementServerImpl implements ManagementServer {
         } // else log some kind of error event?  This likely means the user doesn't exist, or has been deleted...
     }
 
-    @Override
-    public NetworkRuleConfigVO createPortForwardingServiceRule(CreatePortForwardingServiceRuleCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, NetworkRuleConflictException, InternalErrorException {
-        NetworkRuleConfigVO rule = null;
-        try {
-            Long securityGroupId = cmd.getPortForwardingServiceId();
-            String port = cmd.getPublicPort();
-            String privatePort = cmd.getPrivatePort();
-            String protocol = cmd.getProtocol();
-            Long userId = UserContext.current().getUserId();
-            if (userId == null) {
-                userId = Long.valueOf(User.UID_SYSTEM);
-            }
-
-            SecurityGroupVO sg = _securityGroupDao.findById(Long.valueOf(securityGroupId));
-            if (sg == null) {
-                throw new InvalidParameterValueException("port forwarding service " + securityGroupId + " does not exist");
-            }
-            if (!NetUtils.isValidPort(port)) {
-                throw new InvalidParameterValueException("port is an invalid value");
-            }
-            if (!NetUtils.isValidPort(privatePort)) {
-                throw new InvalidParameterValueException("privatePort is an invalid value");
-            }
-            if (protocol != null) {
-                if (!NetUtils.isValidProto(protocol)) {
-                    throw new InvalidParameterValueException("Invalid protocol");
-                }
-            } else {
-                protocol = "TCP";
-            }
-
-            // validate permissions
-            Account account = UserContext.current().getAccount();
-            if (account != null) {
-                if (isAdmin(account.getType())) {
-                    if (!_domainDao.isChildDomain(account.getDomainId(), sg.getDomainId())) {
-                        throw new PermissionDeniedException("Unable to find rules for port forwarding service id = " + securityGroupId + ", permission denied.");
-                    }
-                } else if (account.getId() != sg.getAccountId()) {
-                    throw new PermissionDeniedException("Invalid port forwarding service (" + securityGroupId + ") given, unable to create rule.");
-                }
-            }
-
-            List<NetworkRuleConfigVO> existingRules = _networkRuleConfigDao.listBySecurityGroupId(securityGroupId);
-            for (NetworkRuleConfigVO existingRule : existingRules) {
-                if (existingRule.getPublicPort().equals(port) && existingRule.getProtocol().equals(protocol)) {
-                    throw new NetworkRuleConflictException("port conflict, port forwarding service contains a rule on public port " + port + " for protocol " + protocol);
-                }
-            }
-
-            NetworkRuleConfigVO netRule = new NetworkRuleConfigVO(securityGroupId, port, privatePort, protocol);
-            netRule.setCreateStatus(AsyncInstanceCreateStatus.Creating);
-            rule = _networkRuleConfigDao.persist(netRule);
-        } catch (Exception e) {
-            if (e instanceof NetworkRuleConflictException) {
-                throw (NetworkRuleConflictException) e;
-            } else if (e instanceof InvalidParameterValueException) {
-                throw (InvalidParameterValueException) e;
-            } else if (e instanceof PermissionDeniedException) {
-                throw (PermissionDeniedException) e;
-            } else if (e instanceof InternalErrorException) {
-                throw (InternalErrorException) e;
-            } else {
-                s_logger.error("Unhandled exception creating or updating network rule", e);
-                throw new CloudRuntimeException("Unhandled exception creating network rule", e);
-            }
-        }
-        return rule;
-    }
-
-    @Override
-    public NetworkRuleConfigVO applyPortForwardingServiceRule(CreatePortForwardingServiceRuleCmd cmd) throws NetworkRuleConflictException {
-        Long ruleId = cmd.getId();
-        NetworkRuleConfigVO netRule = null;
-        if (ruleId != null) {
-            Long userId = UserContext.current().getUserId();
-            if (userId == null) {
-                userId = User.UID_SYSTEM;
-            }
-
-            netRule = _networkRuleConfigDao.findById(ruleId);
-            List<SecurityGroupVMMapVO> sgMappings = _securityGroupVMMapDao.listBySecurityGroup(netRule.getSecurityGroupId());
-            if ((sgMappings != null) && !sgMappings.isEmpty()) {
-                try {
-                    for (SecurityGroupVMMapVO sgMapping : sgMappings) {
-                        UserVm userVm = _userVmDao.findById(sgMapping.getInstanceId());
-                        createFirewallRule(userId, sgMapping.getIpAddress(), userVm, netRule.getPublicPort(), netRule.getPrivatePort(), netRule.getProtocol(), netRule.getSecurityGroupId());
-                    }
-                } catch (NetworkRuleConflictException ex) {
-                    netRule.setCreateStatus(AsyncInstanceCreateStatus.Corrupted);
-                    _networkRuleConfigDao.update(ruleId, netRule);
-                    throw ex;
-                }
-            }
-
-            netRule.setCreateStatus(AsyncInstanceCreateStatus.Created);
-            _networkRuleConfigDao.update(ruleId, netRule);
-        }
-
-        return netRule;
-    }
 
     @Override
     public List<VMTemplateVO> listAllTemplates() {
@@ -5148,7 +4336,6 @@ public class ManagementServerImpl implements ManagementServer {
         Object id = cmd.getId();
         Object keyword = cmd.getKeyword();
         Object snapshotTypeStr = cmd.getSnapshotType();
-        String interval = cmd.getIntervalType();
 
         Filter searchFilter = new Filter(SnapshotVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<SnapshotVO> sb = _snapshotDao.createSearchBuilder();
@@ -5572,286 +4759,7 @@ public class ManagementServerImpl implements ManagementServer {
     public AsyncJobVO findAsyncJobById(long jobId) {
         return _asyncMgr.getAsyncJob(jobId);
     }
-
-    @Override
-    public SecurityGroupVO createPortForwardingService(CreatePortForwardingServiceCmd cmd) throws InvalidParameterValueException {
-        Account account = UserContext.current().getAccount();
-        Long domainId = cmd.getDomainId();
-        String accountName = cmd.getAccountName();
-        Long accountId = null;
-        String portForwardingServiceName = cmd.getPortForwardingServiceName();
-
-        if ((account == null) || isAdmin(account.getType())) {
-            if ((accountName != null) && (domainId != null)) {
-                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
-                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to create port forwarding service in domain " + domainId + ", permission denied.");
-                }
-
-                Account userAccount = findActiveAccount(accountName, domainId);
-                if (userAccount != null) {
-                    accountId = userAccount.getId();
-                } else {
-                    throw new InvalidParameterValueException("Unable to create port forwarding service " + portForwardingServiceName + ", could not find account " + accountName + " in domain " + domainId);
-                }
-            } else {
-                // the admin must be creating the security group
-                if (account != null) {
-                    accountId = account.getId();
-                    domainId = account.getDomainId();
-                }
-            }
-        } else {
-            accountId = account.getId();
-            domainId = account.getDomainId();
-        }
-
-        if (accountId == null) {
-            throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to create port forwarding service, no account specified.");
-        }
-
-        if (isSecurityGroupNameInUse(domainId, accountId, portForwardingServiceName)) {
-            throw new InvalidParameterValueException("Unable to create port forwarding service, a service with name " + portForwardingServiceName + " already exisits.");
-        }
-
-        SecurityGroupVO group = new SecurityGroupVO(portForwardingServiceName, cmd.getDescription(), domainId, accountId);
-        return _securityGroupDao.persist(group);
-    }
-
-    @Override
-    public boolean deleteSecurityGroup(DeletePortForwardingServiceCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
-    	Long securityGroupId = cmd.getId();
-    	Long userId = UserContext.current().getUserId();
-    	Account account = UserContext.current().getAccount();
-    	
-        //Verify input parameters
-        if (userId == null) {
-            userId = Long.valueOf(User.UID_SYSTEM);
-        }
-
-        //verify parameters
-        SecurityGroupVO securityGroup = _securityGroupDao.findById(Long.valueOf(securityGroupId));
-        if (securityGroup == null) {
-        	throw new InvalidParameterValueException("unable to find port forwarding service with id " + securityGroupId);
-        }
-
-        if (account != null) {
-            if (!isAdmin(account.getType())) {
-                if (account.getId() != securityGroup.getAccountId()) {
-                    throw new PermissionDeniedException("unable to find port forwarding service with id " + securityGroupId + " for this account, permission denied");
-                }
-            } else if (!isChildDomain(account.getDomainId(), securityGroup.getDomainId())) {
-                throw new PermissionDeniedException("Unable to delete port forwarding service " + securityGroupId + ", permission denied.");
-            }
-        }
-        
-        long startEventId = EventUtils.saveScheduledEvent(userId, securityGroup.getAccountId(), EventTypes.EVENT_PORT_FORWARDING_SERVICE_DELETE, "deleting port forwarding service with Id: " + securityGroupId);
-        
-        final EventVO event = new EventVO();
-        event.setUserId(userId);
-        event.setAccountId(securityGroup.getAccountId());
-        event.setType(EventTypes.EVENT_PORT_FORWARDING_SERVICE_DELETE);
-        event.setStartId(startEventId);
-        try {
-            List<SecurityGroupVMMapVO> sgVmMappings = _securityGroupVMMapDao.listBySecurityGroup(securityGroupId);
-            if (sgVmMappings != null) {
-                for (SecurityGroupVMMapVO sgVmMapping : sgVmMappings) {
-                    removeSecurityGroup(userId, sgVmMapping.getSecurityGroupId(), sgVmMapping.getIpAddress(), sgVmMapping.getInstanceId(), startEventId);
-                }
-            }
-
-            _networkRuleConfigDao.deleteBySecurityGroup(securityGroupId);
-
-        } catch (InvalidParameterValueException ex1) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Invalid parameter value exception deleting port forwarding service " + securityGroup.getName() + " (id: " + securityGroup.getId() + "), " + ex1);
-            }
-            event.setLevel(EventVO.LEVEL_ERROR);
-            event.setDescription("Failed to delete port forwarding service - " + securityGroup.getName() + " (id: " + securityGroup.getId() + ")");
-            _eventDao.persist(event);
-            throw ex1;
-        } catch (PermissionDeniedException ex2) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Invalid parameter value exception deleting port forwarding service " + securityGroup.getName() + " (id: " + securityGroup.getId() + "), " + ex2);
-            }
-            event.setLevel(EventVO.LEVEL_ERROR);
-            event.setDescription("failed to delete port forwarding service - " + securityGroup.getName() + " (id: " + securityGroup.getId() + ")");
-            _eventDao.persist(event);
-            throw ex2;
-        }
-
-        boolean success = _securityGroupDao.remove(Long.valueOf(securityGroupId));
-
-        event.setLevel(EventVO.LEVEL_INFO);
-        event.setDescription("Deleting port forwarding service - " + securityGroup.getName() + " (id: " + securityGroup.getId() + ")");
-        _eventDao.persist(event);
-
-        return success;
-    }
-
-    @Override
-    public List<SecurityGroupVO> searchForSecurityGroups(ListPortForwardingServicesCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
-        // if an admin account was passed in, or no account was passed in, make sure we honor the accountName/domainId parameters
-        Account account = UserContext.current().getAccount();
-        Long accountId = null;
-        Long domainId = cmd.getDomainId();
-        String accountName = cmd.getAccountName();
-
-        if ((account == null) || isAdmin(account.getType())) {
-            // validate domainId before proceeding
-            if (domainId != null) {
-                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
-                    throw new PermissionDeniedException("Invalid domain id (" + domainId + ") given, unable to list port forwarding services.");
-                }
-                if (accountName != null) {
-                    Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
-                    if (userAccount != null) {
-                        accountId = userAccount.getId();
-                    } else {
-                        throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
-                    }
-                }
-            } else {
-                domainId = ((account == null) ? DomainVO.ROOT_DOMAIN : account.getDomainId());
-            }
-        } else {
-            accountId = account.getId();
-        }
-
-        Filter searchFilter = new Filter(SecurityGroupVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
-
-        Object name = cmd.getPortForwardingServiceName();
-        Object id = cmd.getId();
-        Object keyword = cmd.getKeyword();
-
-        SearchBuilder<SecurityGroupVO> sb = _securityGroupDao.createSearchBuilder();
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
-        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
-
-        if ((accountId == null) && (domainId != null)) {
-            // if accountId isn't specified, we can do a domain match for the admin case
-            SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
-            domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
-            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-        }
-
-        SearchCriteria<SecurityGroupVO> sc = sb.create();
-        if (keyword != null) {
-            SearchCriteria<SecurityGroupVO> ssc = _securityGroupDao.createSearchCriteria();
-            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("description", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-
-            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
-        }
-
-        if (name != null) {
-            sc.addAnd("name", SearchCriteria.Op.LIKE, name + "%");
-        }
-
-        if (id != null) {
-            sc.addAnd("id", SearchCriteria.Op.EQ, id);
-        }
-
-        if (accountId != null) {
-            sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
-        } else if (domainId != null) {
-            DomainVO domain = _domainDao.findById(domainId);
-            sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
-        }
-
-        return _securityGroupDao.search(sc, searchFilter);
-    }
-
-    @Override
-    public Map<String, List<SecurityGroupVO>> searchForSecurityGroupsByVM(ListPortForwardingServicesByVmCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
-        Account account = UserContext.current().getAccount();
-        Long domainId = cmd.getDomainId();
-        String accountName = cmd.getAccountName();
-        Long accountId = null;
-
-        if ((account == null) || isAdmin(account.getType())) {
-            // validate domainId before proceeding
-            if (domainId != null) {
-                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
-                    throw new PermissionDeniedException("Unable to list port forwarding services for domain " + domainId + ", permission denied.");
-                }
-                if (accountName != null) {
-                    Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
-                    if (userAccount != null) {
-                        accountId = userAccount.getId();
-                    } else {
-                        throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
-                    }
-                }
-            }
-        } else {
-            accountId = account.getId();
-        }
-
-        Object ipAddress = cmd.getIpAddress();
-        Long instanceId = cmd.getVirtualMachineId();
-        UserVm userVm = _userVmDao.findById(instanceId);
-        if (userVm == null) {
-            throw new InvalidParameterValueException("Internal error, unable to find virtual machine " + instanceId + " for listing port forwarding services.");
-        }
-
-        if ((accountId != null) && (userVm.getAccountId() != accountId.longValue())) {
-            throw new PermissionDeniedException("Unable to list port forwarding services, account " + accountId + " does not own virtual machine " + instanceId);
-        }
-
-        Filter searchFilter = new Filter(SecurityGroupVMMapVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
-        SearchCriteria<SecurityGroupVMMapVO> sc = _securityGroupVMMapDao.createSearchCriteria();
-
-        // TODO: keyword search on vm name?  vm group?  what makes sense here?  We can't search directly on 'name' as that's not a field of SecurityGroupVMMapVO.
-        //Object keyword = cmd.getKeyword();
-
-        /*
-        if (keyword != null) {
-            SearchCriteria ssc = _securityGroupVMMapDao.createSearchCriteria();
-            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-
-            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
-        }
-        */
-
-        if (instanceId != null) {
-            sc.addAnd("instanceId", SearchCriteria.Op.EQ, instanceId);
-        }
-
-        if (ipAddress != null) {
-            sc.addAnd("ipAddress", SearchCriteria.Op.EQ, ipAddress);
-        }
-
-        Map<String, List<SecurityGroupVO>> securityGroups = new HashMap<String, List<SecurityGroupVO>>();
-        List<SecurityGroupVMMapVO> sgVmMappings = _securityGroupVMMapDao.search(sc, searchFilter);
-        if (sgVmMappings != null) {
-            for (SecurityGroupVMMapVO sgVmMapping : sgVmMappings) {
-                SecurityGroupVO sg = _securityGroupDao.findById(sgVmMapping.getSecurityGroupId());
-                List<SecurityGroupVO> sgList = securityGroups.get(sgVmMapping.getIpAddress());
-                if (sgList == null) {
-                    sgList = new ArrayList<SecurityGroupVO>();
-                }
-                sgList.add(sg);
-                securityGroups.put(sgVmMapping.getIpAddress(), sgList);
-            }
-        }
-        return securityGroups;
-    }
-
-    @Override
-    public boolean isSecurityGroupNameInUse(Long domainId, Long accountId, String name) {
-        if (domainId == null) {
-            domainId = DomainVO.ROOT_DOMAIN;
-        }
-
-        return _securityGroupDao.isNameInUse(accountId, domainId, name);
-    }
-
-    @Override
-    public SecurityGroupVO findSecurityGroupById(Long groupId) {
-        return _securityGroupDao.findById(groupId);
-    }
-
+   
     @Override
     public LoadBalancerVO findLoadBalancer(Long accountId, String name) {
         SearchCriteria<LoadBalancerVO> sc = _loadBalancerDao.createSearchCriteria();
