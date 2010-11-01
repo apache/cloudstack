@@ -22,7 +22,7 @@ cert="/root/.ssh/id_rsa.cloud"
 
 create_usage_rules () {
   local dRIp=$1
-   ssh -p 3922 -o StrictHostKeyChecking=no -i $cert root@$dRIp "\
+   ssh -q -p 3922 -o StrictHostKeyChecking=no -i $cert root@$dRIp "\
      iptables -N NETWORK_STATS > /dev/null;
      iptables -I FORWARD -j NETWORK_STATS > /dev/null;
      iptables -I INPUT -j NETWORK_STATS > /dev/null;
@@ -32,33 +32,33 @@ create_usage_rules () {
      iptables -A NETWORK_STATS -o eth2 ! -i eth0 -p tcp > /dev/null;
      iptables -A NETWORK_STATS -i eth2 ! -o eth0 -p tcp > /dev/null;
      "
-     return 1
+  return $?
 }
 
 add_public_interface () {
   local dRIp=$1
   local pubIf=$2
-   ssh -p 3922 -o StrictHostKeyChecking=no -i $cert root@$dRIp "\
+   ssh -q -p 3922 -o StrictHostKeyChecking=no -i $cert root@$dRIp "\
      iptables -A NETWORK_STATS -i eth0 -o $pubIf > /dev/null;
      iptables -A NETWORK_STATS -i $pubIf -o eth0 > /dev/null;
      iptables -A NETWORK_STATS -o $pubIf ! -i eth0 -p tcp > /dev/null;
      iptables -A NETWORK_STATS -i $pubIf ! -o eth0 -p tcp > /dev/null;
      "
-     return 1
+  return $?
 }
 
 delete_public_interface () {
   local dRIp=$1
   local pubIf=$2
-   ssh -p 3922 -o StrictHostKeyChecking=no -i $cert root@$dRIp "\
+   ssh -q -p 3922 -o StrictHostKeyChecking=no -i $cert root@$dRIp "\
      echo $pubIf >> /root/removedVifs;
      "
-     return 1
+  return $?
 }
 
 get_usage () {
   local dRIp=$1
-   ssh -p 3922 -o StrictHostKeyChecking=no -i $cert root@$dRIp "\
+   ssh -q -p 3922 -o StrictHostKeyChecking=no -i $cert root@$dRIp "\
      iptables -L NETWORK_STATS -n -v -x | awk '\$1 ~ /^[0-9]+\$/ { printf \"%s:\", \$2}';
      /root/clearUsageRules.sh > /dev/null;
      "
@@ -71,7 +71,7 @@ get_usage () {
 
 reset_usage () {
   local dRIp=$1
-   ssh -p 3922 -o StrictHostKeyChecking=no -i $cert root@$dRIp "\
+   ssh -q -p 3922 -o StrictHostKeyChecking=no -i $cert root@$dRIp "\
      iptables -Z NETWORK_STATS > /dev/null;
      "
   if [ $? -gt 0  -a $? -ne 2 ]
