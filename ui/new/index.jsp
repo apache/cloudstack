@@ -142,7 +142,7 @@ long milliseconds = new Date().getTime();
                                 <li>
                                     <div class="search_textbg">
                                         <input class="text" type="text" name="search_input" />
-                                        <div class="search_closebutton" style="display: block;">
+                                        <div class="search_closebutton" style="display: none;">
                                         </div>
                                     </div>
                                 </li>
