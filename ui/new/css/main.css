@@ -2267,7 +2267,8 @@ a:hover.search_button {
 	float:left;
 	background:#d4d4d4 url(../images/midmenu_emptymsg.gif) repeat-x top left;
 	margin:0 0 0 0;
-	padding:0;
+	padding:0 0 10px 0;
+	border-bottom:1px dashed #999;
 }
 
 .midmenu_emptymsgbox p{
@@ -2276,8 +2277,8 @@ a:hover.search_button {
 	float:left;
 	color:#666;
 	font-size:11px;
-	font-weight:normal;
-	margin:0 0 0 0;
+	font-weight:bold;
+	margin:10px 0 0 15px;
 	padding:0;
 }
 
