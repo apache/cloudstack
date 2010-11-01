@@ -125,11 +125,6 @@ public class StopVMCmd extends BaseAsyncCmd {
             response.setDomainId(acct.getDomainId());
             response.setDomainName(ApiDBUtils.findDomainById(acct.getDomainId()).getName());
         }
-
-        if (BaseCmd.isAdmin(acct.getType()) && (vm.getHostId() != null)) {
-            response.setHostName(ApiDBUtils.findHostById(vm.getHostId()).getName());
-            response.setHostId(vm.getHostId());
-        }
         
         String templateName = "ISO Boot";
         boolean templatePasswordEnabled = false;
