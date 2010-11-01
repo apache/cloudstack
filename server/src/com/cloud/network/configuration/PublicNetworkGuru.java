@@ -23,6 +23,7 @@ import com.cloud.network.Network.Mode;
 import com.cloud.network.Network.TrafficType;
 import com.cloud.network.NetworkConfiguration;
 import com.cloud.network.NetworkConfigurationVO;
+import com.cloud.network.dao.NetworkConfigurationDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.resource.Resource.ReservationStrategy;
 import com.cloud.user.Account;
@@ -38,6 +39,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     
     @Inject DataCenterDao _dcDao;
     @Inject VlanDao _vlanDao;
+    @Inject NetworkConfigurationDao _networkConfigDao;
 
     @Override
     public NetworkConfiguration design(NetworkOffering offering, DeploymentPlan plan, NetworkConfiguration config, Account owner) {
@@ -65,6 +67,12 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
             nic.setStrategy(ReservationStrategy.Create);
         }
         
+        String mac = _networkConfigDao.getNextAvailableMacAddress(config.getId());
+        if (mac == null) {
+            throw new InsufficientAddressCapacityException("Not enough mac addresses");
+        }
+        nic.setMacAddress(mac);
+        
         return nic;
     }
 
@@ -75,29 +83,27 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
         }
         
         DataCenter dc = dest.getDataCenter();
-            
         long dcId = dc.getId();
         
-        String[] macs = _dcDao.getNextAvailableMacAddressPair(dcId);
-
-        Pair<String, VlanVO> ipAndVlan = _vlanDao.assignIpAddress(dcId, vm.getVm().getAccountId(), vm.getVm().getDomainId(), VlanType.VirtualNetwork, true);
-        if (ipAndVlan == null) {
-            throw new InsufficientVirtualNetworkCapcityException("Unable to get public ip address in " + dcId);
+        if (ch.getIp4Address() != null) {
+            Pair<String, VlanVO> ipAndVlan = _vlanDao.assignIpAddress(dcId, vm.getVm().getAccountId(), vm.getVm().getDomainId(), VlanType.VirtualNetwork, true);
+            if (ipAndVlan == null) {
+                throw new InsufficientVirtualNetworkCapcityException("Unable to get public ip address in " + dcId);
+            }
+            VlanVO vlan = ipAndVlan.second();
+            ch.setIp4Address(ipAndVlan.first());
+            ch.setGateway(vlan.getVlanGateway());
+            ch.setNetmask(vlan.getVlanNetmask());
+            ch.setIsolationUri(IsolationType.Vlan.toUri(vlan.getVlanId()));
+            ch.setBroadcastType(BroadcastDomainType.Vlan);
+            ch.setBroadcastUri(BroadcastDomainType.Vlan.toUri(vlan.getVlanId()));
+            ch.setFormat(AddressFormat.Ip4);
+            ch.setReservationId(Long.toString(vlan.getId()));
         }
-        VlanVO vlan = ipAndVlan.second();
-        ch.setIp4Address(ipAndVlan.first());
-        ch.setGateway(vlan.getVlanGateway());
-        ch.setNetmask(vlan.getVlanNetmask());
-        ch.setIsolationUri(IsolationType.Vlan.toUri(vlan.getVlanId()));
-        ch.setBroadcastType(BroadcastDomainType.Vlan);
-        ch.setBroadcastUri(BroadcastDomainType.Vlan.toUri(vlan.getVlanId()));
-        ch.setMacAddress(macs[1]);
-        ch.setFormat(AddressFormat.Ip4);
-        ch.setReservationId(Long.toString(vlan.getId()));
         ch.setDns1(dc.getDns1());
         ch.setDns2(dc.getDns2());
         
-        return Long.toString(vlan.getId());
+        return ch.getReservationId();
     }
 
     @Override

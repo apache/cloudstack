@@ -177,7 +177,7 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
             return null;
         }
         Long[] array = allPossibleIps.toArray(new Long[allPossibleIps.size()]);
-        return NetUtils.long2Ip(array[_rand.nextInt() % array.length]);
+        return NetUtils.long2Ip(array[_rand.nextInt(array.length)]);
      }
 
     @Override
