@@ -18,6 +18,9 @@
 package com.cloud.network;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -97,6 +100,7 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.network.IpAddrAllocator.networkInfo;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
@@ -1286,26 +1290,44 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         final Command [] cmds = new Command[ipAddrList.size()];
         int i=0;
         boolean sourceNat = false;
+        Map<VlanVO, ArrayList<IPAddressVO>> vlanIpMap = new HashMap<VlanVO, ArrayList<IPAddressVO>>();
         for (final String ipAddress: ipAddrList) {
-        	if (ipAddress.equalsIgnoreCase(router.getPublicIpAddress()))
-        		sourceNat=true;
-        	
         	IPAddressVO ip = _ipAddressDao.findById(ipAddress);
+        	
         	VlanVO vlan = _vlanDao.findById(ip.getVlanDbId());
-			String vlanId = vlan.getVlanId();
-			String vlanGateway = vlan.getVlanGateway();
-			String vlanNetmask = vlan.getVlanNetmask();
-        	boolean firstIP = (!sourceNat && (_ipAddressDao.countIPs(vlan.getDataCenterId(), vlan.getVlanId(), vlan.getVlanGateway(), vlan.getVlanNetmask(), true) == 1));
-        				
-			String vifMacAddress = null;
-			if (firstIP) {
-				String[] macAddresses = _dcDao.getNextAvailableMacAddressPair(ip.getDataCenterId());
-            	vifMacAddress = macAddresses[1];
-			}
+        	ArrayList<IPAddressVO> ipList = vlanIpMap.get(vlan.getId());
+        	if (ipList == null) {
+        		ipList = new ArrayList<IPAddressVO>();
+        	}
+        	ipList.add(ip);
+        	vlanIpMap.put(vlan, ipList);
+        }
+        for (Map.Entry<VlanVO, ArrayList<IPAddressVO>> vlanAndIp: vlanIpMap.entrySet()) {
+        	boolean firstIP = true;
+        	ArrayList<IPAddressVO> ipList = vlanAndIp.getValue();
+        	Collections.sort(ipList, new Comparator<IPAddressVO>() {
+        		@Override
+        		public int compare(IPAddressVO o1, IPAddressVO o2) {
+        			return o1.getAddress().compareTo(o2.getAddress());
+        		} });
 
-            cmds[i++] = new IPAssocCommand(router.getInstanceName(), router.getPrivateIpAddress(), ipAddress, add, firstIP, sourceNat, vlanId, vlanGateway, vlanNetmask, vifMacAddress);
-            
-            sourceNat = false;
+        	for (final IPAddressVO ip: ipList) {
+        		sourceNat = ip.getSourceNat();
+        		VlanVO vlan = vlanAndIp.getKey();
+        		String vlanId = vlan.getVlanId();
+        		String vlanGateway = vlan.getVlanGateway();
+        		String vlanNetmask = vlan.getVlanNetmask();
+
+        		String vifMacAddress = null;
+        		if (firstIP && add) {
+        			String[] macAddresses = _dcDao.getNextAvailableMacAddressPair(ip.getDataCenterId());
+        			vifMacAddress = macAddresses[1];
+        		}
+
+        		cmds[i++] = new IPAssocCommand(router.getInstanceName(), router.getPrivateIpAddress(), ip.getAddress(), add, firstIP, sourceNat, vlanId, vlanGateway, vlanNetmask, vifMacAddress);
+
+        		firstIP = false;
+        	}
         }
 
         Answer[] answers = null;
@@ -1326,13 +1348,49 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         if (answers.length != ipAddrList.size()) {
             return false;
         }
-        
+        boolean result = true;
         for (int i1=0; i1 < answers.length; i1++) {
             Answer ans = answers[i1];
-            return ans.getResult();
+            result = result && ans.getResult();
         }
 
-        return true;
+        return result;
+    }
+
+    public boolean associateIP(final DomainRouterVO router, final String ipAddress, final boolean add) {
+       	IPAddressVO ip = _ipAddressDao.findById(ipAddress);
+        VlanVO vlan = _vlanDao.findById(ip.getVlanDbId());
+        boolean sourceNat = ip.isSourceNat();
+        boolean firstIP = (!sourceNat && (_ipAddressDao.countIPs(vlan.getDataCenterId(), router.getAccountId(), vlan.getVlanId(), vlan.getVlanGateway(), vlan.getVlanNetmask()) == 1));
+        String vlanId = vlan.getVlanId();
+		String vlanGateway = vlan.getVlanGateway();
+		String vlanNetmask = vlan.getVlanNetmask();
+		String vifMacAddress = null;
+		if (firstIP && add) {
+			String[] macAddresses = _dcDao.getNextAvailableMacAddressPair(ip.getDataCenterId());
+			vifMacAddress = macAddresses[1];
+		}
+        IPAssocCommand cmd = new IPAssocCommand(router.getInstanceName(), router.getPrivateIpAddress(), ip.getAddress(), add, firstIP, sourceNat, vlanId, vlanGateway, vlanNetmask, vifMacAddress);
+        Answer[] answers = null;
+        try {
+            answers = _agentMgr.send(router.getHostId(), new Command[]{cmd}, false);
+        } catch (final AgentUnavailableException e) {
+            s_logger.warn("Agent unavailable", e);
+            return false;
+        } catch (final OperationTimedoutException e) {
+            s_logger.warn("Timed Out", e);
+            return false;
+        }
+
+        if (answers == null) {
+            return false;
+        }
+
+        if (answers.length != 1) {
+            return false;
+        }
+        return  answers[0].getResult();
+        
     }
 
     @Override
@@ -1645,7 +1703,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
                     s_logger.debug("Disassociate ip " + router.getName());
                 }
 
-                if (associateIP(router, ipAddrs, false)) {
+                if (associateIP(router, ip.getAddress(), false)) {
                     _ipAddressDao.unassignIpAddress(ipAddress);
                 } else {
                 	if (s_logger.isDebugEnabled()) {

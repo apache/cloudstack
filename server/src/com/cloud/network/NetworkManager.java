@@ -174,6 +174,15 @@ public interface NetworkManager extends Manager {
      */
     boolean associateIP(DomainRouterVO router, List<String> ipAddrList, boolean add) throws ResourceAllocationException;
     
+    /**
+     * Associates or disassociates a single IP address for a router.
+     * @param router router object to send the association to
+     * @param ipAddress  public IP addresses
+     * @param add true if associate, false if disassociate
+     * @return
+     */
+    boolean associateIP(DomainRouterVO router, String ipAddress, boolean add) throws ResourceAllocationException;
+    
     boolean updateFirewallRule(FirewallRuleVO fwRule, String oldPrivateIP, String oldPrivatePort);
     boolean executeAssignToLoadBalancer(AssignToLoadBalancerExecutor executor, LoadBalancerParam param);
     

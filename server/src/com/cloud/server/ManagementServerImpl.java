@@ -1473,7 +1473,6 @@ public class ManagementServerImpl implements ManagementServer {
 		     	// Associate the IP's to DomR
 		     	boolean success = true;
 		     	String params = "\nsourceNat=" + false + "\ndcId=" + zoneId;
-		     	ArrayList<String> dummyipAddrList = new ArrayList<String>();
 		     	success = _networkMgr.associateIP(router,ipAddrsList, true);
 		     	String errorMsg = "Unable to assign public IP address pool";
             	if (!success) {
@@ -1557,7 +1556,7 @@ public class ManagementServerImpl implements ManagementServer {
             ipAddrs.add(ipAddress);
 
             if (router.getState() == State.Running) {
-                success = _networkMgr.associateIP(router, ipAddrs, true);
+                success = _networkMgr.associateIP(router, ipAddress, true);
                 if (!success) {
                     errorMsg = "Unable to assign public IP address.";
                 }
@@ -2415,7 +2414,6 @@ public class ManagementServerImpl implements ManagementServer {
                     _vmInstanceDao.update(started.getId(), updatedInstance);
                     started = _userVmDao.findById(started.getId());
                 }
-                String params = "\nsourceNat=" + false + "\ndcId=" + dc.getId();
                 try {
 					associateIpAddressListToAccount(userId, accountId, dc.getId(),null);															
 				} catch (InsufficientAddressCapacityException e) {

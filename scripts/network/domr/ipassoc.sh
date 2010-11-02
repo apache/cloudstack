@@ -3,7 +3,7 @@
 # ipassoc.sh -- associate/disassociate a public ip with an instance
 #
 #
-# @VERSION@
+# 2.1.4
 usage() {
   printf "Usage:\n %s -A  -i <domR eth1 ip>  -l <public-ip-address>  -r <domr name> [-f] \n" $(basename $0) >&2
   printf " %s -D -i <domR eth1 ip> -l <public-ip-address> -r <domr name> [-f] \n" $(basename $0) >&2
@@ -54,10 +54,11 @@ check_gw() {
 add_nat_entry() {
   local dRIp=$1
   local pubIp=$2
+  local ipNoMask=$(echo $2 | awk -F'/' '{print $1}')
    ssh -p 3922 -o StrictHostKeyChecking=no -i $cert root@$dRIp "\
       ip addr add dev $correctVif $pubIp
-      iptables -t nat -I POSTROUTING   -j SNAT -o $correctVif --to-source $pubIp ;
-      /sbin/arping -c 3 -I $correctVif -A -U -s $pubIp $pubIp;
+      iptables -t nat -I POSTROUTING   -j SNAT -o $correctVif --to-source $ipNoMask ;
+      /sbin/arping -c 3 -I $correctVif -A -U -s $ipNoMask $ipNoMask;
      "
   if [ $? -gt 0  -a $? -ne 2 ]
   then
@@ -71,9 +72,12 @@ add_nat_entry() {
 del_nat_entry() {
   local dRIp=$1
   local pubIp=$2
+  local ipNoMask=$(echo $2 | awk -F'/' '{print $1}')
+  local mask=$(echo $2 | awk -F'/' '{print $2}')
+  [ "$mask" == "" ] && mask="32"
    ssh -p 3922 -o StrictHostKeyChecking=no -i $cert root@$dRIp "\
-      iptables -t nat -D POSTROUTING   -j SNAT -o $correctVif --to-source $pubIp;
-      ip addr del dev $correctVif $pubIp/32
+      iptables -t nat -D POSTROUTING   -j SNAT -o $correctVif --to-source $ipNoMask;
+      ip addr del dev $correctVif "$ipNoMask/$mask"
      "
  
   if [ $? -gt 0  -a $? -ne 2 ]
@@ -88,10 +92,11 @@ del_nat_entry() {
 add_an_ip () {
   local dRIp=$1
   local pubIp=$2
+  local ipNoMask=$(echo $2 | awk -F'/' '{print $1}')
    ssh -p 3922 -o StrictHostKeyChecking=no -i $cert root@$dRIp "\
    	  ifconfig $correctVif up;
       ip addr add dev $correctVif $pubIp ;
-      /sbin/arping -c 3 -I $correctVif -A -U -s $pubIp $pubIp;
+      /sbin/arping -c 3 -I $correctVif -A -U -s $ipNoMask $ipNoMask;
      "
    return $?
 }
@@ -99,8 +104,11 @@ add_an_ip () {
 remove_an_ip () {
   local dRIp=$1
   local pubIp=$2
+  local ipNoMask=$(echo $2 | awk -F'/' '{print $1}')
+  local mask=$(echo $2 | awk -F'/' '{print $2}')
+  [ "$mask" == "" ] && mask="32"
    ssh -p 3922 -o StrictHostKeyChecking=no -i $cert root@$dRIp "\
-      ip addr del dev $correctVif $pubIp/32
+      ip addr del dev $correctVif "$ipNoMask/$mask"
      "
   if [ $? -gt 0  -a $? -ne 2 ]
   then
