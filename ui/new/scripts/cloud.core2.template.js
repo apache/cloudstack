@@ -444,7 +444,7 @@ function doEditTemplate2($actionLink, $detailsTab, $midmenuItem1) {
 	if(newDesc != oldDesc)
 	    array1.push("&displaytext="+todb(newDesc));
 	    
-	var oldPasswordEnabled = jsonObj.passwordenabled;	
+	var oldPasswordEnabled = jsonObj.passwordenabled.toString();	
 	var newPasswordEnabled = $detailsTab.find("#passwordenabled_edit").val();     
 	if(newPasswordEnabled != oldPasswordEnabled)
 	    array1.push("&passwordenabled="+newPasswordEnabled);	
@@ -467,12 +467,12 @@ function doEditTemplate2($actionLink, $detailsTab, $midmenuItem1) {
 		
 	//updateTemplatePermissions	
 	var array2 = [];		
-	var oldIsPublic = jsonObj.ispublic;
+	var oldIsPublic = jsonObj.ispublic.toString();	
 	var newIsPublic = $detailsTab.find("#ispublic_edit").val();        
 	if(newIsPublic != oldIsPublic)
 	    array2.push("&ispublic="+newIsPublic);
 	    
-	var oldIsFeatured = jsonObj.isfeatured;
+	var oldIsFeatured = jsonObj.isfeatured.toString();	
 	var newIsFeatured = $detailsTab.find("#isfeatured_edit").val();           
     if(newIsFeatured != oldIsFeatured)
         array2.push("&isfeatured="+newIsFeatured);											
