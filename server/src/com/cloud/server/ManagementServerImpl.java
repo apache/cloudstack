@@ -5881,51 +5881,46 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override @DB
     public String uploadCertificate(UploadCustomCertificateCmd cmd) throws ServerApiException{
+    	CertificateVO cert = null;
+    	Long certVOId = null;
     	try 
     	{
         	Transaction.currentTxn();
-        	Long certVOId = null;
-    		CertificateVO cert = _certDao.listAll().get(0); //always 1 record in db (from the deploydb time)
-    		if(cert.getMgmtServerId()!=null)
-    			throw new ResourceUnavailableException("Another management server is in the process of custom cert updating");
-    		if(cert.getUpdated().equalsIgnoreCase("Y")){
-				 if(s_logger.isDebugEnabled())
-					 s_logger.debug("A custom certificate already exists in the DB, will replace it with the new one being uploaded");
-			}else{
-				 if(s_logger.isDebugEnabled())
-					 s_logger.debug("No custom certificate exists in the DB, will upload a new one");				
-			}
 			String certificatePath = cmd.getPath();
-			//validate if the cert follows X509 format, if not, don't persist to db
-			FileInputStream fis = new FileInputStream(certificatePath);
-			BufferedInputStream bis = new BufferedInputStream(fis);
-			CertificateFactory cf = CertificateFactory.getInstance("X.509");			
-			while (bis.available() > 1) {
-			   Certificate localCert = cf.generateCertificate(bis);//throws certexception if not valid cert format
-			   if(s_logger.isDebugEnabled()){
-				   s_logger.debug("The custom certificate generated for validation is:"+localCert.toString());
-			   }
-			}
-			CertificateVO lockedCert = _certDao.acquire(cert.getId());
-			//assigned mgmt server id to mark as processing under this ms
-			if(lockedCert == null){
+    		cert = _certDao.listAll().get(0); //always 1 record in db (from the deploydb time)
+			cert = _certDao.acquire(cert.getId());
+			//assign mgmt server id to mark as processing under this ms
+			if(cert == null){
 				String msg = "Unable to obtain lock on the cert from uploadCertificate()";
 				s_logger.error(msg);
 				throw new ResourceUnavailableException(msg);
 			}else{
-				try{
-					certVOId = _certDao.persistCustomCertToDb(certificatePath,lockedCert,this.getId());//0 implies failure
-				}finally{
-					_certDao.release(cert.getId());					
+	    		if(cert.getUpdated().equalsIgnoreCase("Y")){
+					 if(s_logger.isDebugEnabled())
+						 s_logger.debug("A custom certificate already exists in the DB, will replace it with the new one being uploaded");
+				}else{
+					 if(s_logger.isDebugEnabled())
+						 s_logger.debug("No custom certificate exists in the DB, will upload a new one");				
 				}
+				certVOId = _certDao.persistCustomCertToDb(certificatePath,cert,this.getId());//0 implies failure
 			}
-			if (certVOId!=null && certVOId!=0) 
+
+			if (certVOId != 0) 
 			{
+				//validate if the cert follows X509 format, if not, don't persist to db
+				FileInputStream fis = new FileInputStream(certificatePath);
+				BufferedInputStream bis = new BufferedInputStream(fis);
+				CertificateFactory cf = CertificateFactory.getInstance("X.509");			
+				while (bis.available() > 1) {
+				   Certificate localCert = cf.generateCertificate(bis);//throws certexception if not valid cert format
+				   if(s_logger.isDebugEnabled()){
+					   s_logger.debug("The custom certificate generated for validation is:"+localCert.toString());
+				   }
+				}
 				//certficate uploaded to db successfully	
 				//get a list of all Console proxies from the cp table
 				List<ConsoleProxyVO> cpList = _consoleProxyDao.listAll();
 				if(cpList.size() == 0){
-					releaseCertRecord(cert);
 					String msg = "Unable to find any console proxies in the system for certificate update";
 					s_logger.warn(msg);
 					throw new ResourceUnavailableException(msg);
@@ -5933,7 +5928,6 @@ public class ManagementServerImpl implements ManagementServer {
 				//get a list of all hosts in host table for type cp
 				List<HostVO> cpHosts = _hostDao.listByType(com.cloud.host.Host.Type.ConsoleProxy);
 				if(cpHosts.size() == 0){
-					releaseCertRecord(cert);
 					String msg = "Unable to find any console proxy hosts in the system for certificate update";
 					s_logger.warn(msg);
 					throw new ResourceUnavailableException(msg);
@@ -5945,7 +5939,6 @@ public class ManagementServerImpl implements ManagementServer {
 				for(HostVO cpHost : cpHosts){
 					hostNameToHostIdMap.put(cpHost.getName(), cpHost.getId());
 				}
-				
 				for(ConsoleProxyVO cp : cpList)
 				{
 					Long cpHostId = hostNameToHostIdMap.get(cp.getName());
@@ -5969,8 +5962,7 @@ public class ManagementServerImpl implements ManagementServer {
 						s_logger.warn("Unable to send update certificate command to the console proxy resource as there was a timeout for console proxy vm id:"+cp.getId()+" ,console proxy host id:"+cpHostId, e);
 					}	
 				}
-
-				releaseCertRecord(cert);				
+				
 				if(updatedCpIdList.size() == cpList.size()){
 					//success case, all updated
 					return ("Updated:"+updatedCpIdList.size()+" out of:"+cpList.size()+" console proxies");
@@ -6005,36 +5997,10 @@ public class ManagementServerImpl implements ManagementServer {
 				throw new ServerApiException(BaseCmd.CUSTOM_CERT_UPDATE_ERROR, msg);				
 			}
 		}finally{
-			try {
-				releaseCertRecord(_certDao.listAll().get(0));//release record in case of unforseen exceptions
-			} catch (ResourceUnavailableException e) {
-				String msg = "Unable to release the cert record for other mgmt servers";
-				s_logger.error(msg);
-				throw new ServerApiException(BaseCmd.CUSTOM_CERT_UPDATE_ERROR, msg);
-			}
+				_certDao.release(cert.getId());					
 		}
 		return null;
     }
-
-	private void releaseCertRecord(CertificateVO cert) throws ResourceUnavailableException {
-		CertificateVO lockedCert = _certDao.acquire(cert.getId());
-		if(lockedCert == null){
-			String msg = "Unable to obtain lock on the cert from releaseCertRecord() in uploadCertificate()";
-			s_logger.error(msg);
-			throw new ResourceUnavailableException(msg);
-		}else{
-			try{
-				lockedCert.setMgmtServerId(null);//release for other ms
-				_certDao.update(lockedCert.getId(), lockedCert);
-			}catch (Exception e){
-				String msg = "Unable to update record in cert table from releaseCertRecord() during uploadCertificate()";
-				s_logger.warn(msg,e);
-				throw new ResourceUnavailableException(msg);
-			}finally{
-				_certDao.release(cert.getId());
-			}
-		}
-	}
 
     @Override
     public String[] getHypervisors(ListHypervisorsCmd cmd) {

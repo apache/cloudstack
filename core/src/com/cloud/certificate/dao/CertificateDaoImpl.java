@@ -35,7 +35,6 @@ public class CertificateDaoImpl extends GenericDaoBase<CertificateVO, Long>  imp
 	        certStr = new String(buffer);
         	cert.setCertificate(certStr);
         	cert.setUpdated("Y");
-        	cert.setMgmtServerId(managementServerId);
         	update(cert.getId(),cert);
         	return cert.getId();
 	    } catch (FileNotFoundException e) {

@@ -135,7 +135,6 @@ CREATE TABLE `cloud`.`certificate` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `certificate` text COMMENT 'the actual custom certificate being stored in the db',
   `updated` varchar(1) COMMENT 'status of the certificate',
-  `mgmt_server_id` bigint unsigned DEFAULT NULL COMMENT 'management server instance id',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
