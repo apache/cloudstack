@@ -250,7 +250,7 @@ function initAddPrimaryStorageButton($midmenuAddLink2, currentPageInRightPanel) 
         dialogAddPool = $("#dialog_add_pool");  
         dialogAddPool.find("#info_container").hide();	
              
-        var zoneId, podId;        
+        var zoneId, podId, clusterId;        
         if(currentPageInRightPanel == "pod_page") {
             var podObj = $("#tab_content_details").data("jsonObj");   
             var podObj = $("#tab_content_details").data("jsonObj");
@@ -263,13 +263,15 @@ function initAddPrimaryStorageButton($midmenuAddLink2, currentPageInRightPanel) 
             var hostObj = $("#tab_content_details").data("jsonObj");  
             zoneId = hostObj.zoneid;
             podId = hostObj.podid; 
+            clusterId = hostObj.clusterid;            
             dialogAddPool.find("#zone_name").text(fromdb(hostObj.zonename));  
             dialogAddPool.find("#pod_name").text(fromdb(hostObj.podname)); 
         }
         else if(currentPageInRightPanel == "primarystorage_page") {
             var primarystorageObj = $("#tab_content_details").data("jsonObj");   
             zoneId = primarystorageObj.zoneid;
-            podId = primarystorageObj.podid;           
+            podId = primarystorageObj.podid;  
+            clusterId = primarystorageObj.clusterid;   
             dialogAddPool.find("#zone_name").text(fromdb(primarystorageObj.zonename));  
             dialogAddPool.find("#pod_name").text(fromdb(primarystorageObj.podname)); 
         }
@@ -281,8 +283,12 @@ function initAddPrimaryStorageButton($midmenuAddLink2, currentPageInRightPanel) 
 	        success: function(json) {				                        
 	            var items = json.listclustersresponse.cluster;
 	            if(items != null && items.length > 0) {				                		                
-	                for(var i=0; i<items.length; i++) 			                    
-	                    clusterSelect.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");		                
+	                for(var i=0; i<items.length; i++) {	
+	                    if(clusterId != null && items[i].id == clusterId)
+	                        clusterSelect.append("<option value='" + items[i].id + "' selected>" + fromdb(items[i].name) + "</option>");	
+	                    else               
+	                        clusterSelect.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");		
+	                }                
 	            }			            
 	        }
 	    });		   
@@ -353,8 +359,8 @@ function initAddPrimaryStorageButton($midmenuAddLink2, currentPageInRightPanel) 
 					    if($container.length == 0) { //not on cluster node (still on pod node)
 					  	    $("#cluster_"+clusterId).find("#cluster_name").click();			
 					    }
-					    else {					 		   
-					        var $noItemsAvailable = $container.find("#midmenu_container_no_items_available");
+					    else {	
+					        var $noItemsAvailable = $container.siblings("#midmenu_container_no_items_available");
 					        if($noItemsAvailable.length > 0) {
 					            $noItemsAvailable.slideUp("slow", function() {
 					                $(this).remove();
