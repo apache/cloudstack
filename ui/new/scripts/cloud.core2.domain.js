@@ -200,9 +200,7 @@ function domainToRightPanel2(jsonObj) {
 
     listAdminAccounts(domainId);  
 
-	if (isAdmin() || (isDomainAdmin() && (g_domainid != domainId))) {		
-		//comment this out until 6697(resourcetype parameter of ListResourceLimitsCmd should be optional instead of required) is fixed.
-		/*	
+	if (isAdmin() || (isDomainAdmin() && (g_domainid != domainId))) {				
 		var $resourceLimitsTab = $("#right_panel_content #tab_content_resource_limits");	
 		$.ajax({
 			cache: false,				
@@ -245,8 +243,7 @@ function domainToRightPanel2(jsonObj) {
 				}						
 			}
 		});		
-		*/		
-		
+			
 		$("#tab_resource_limits").show();	
 	} 
 	else {
@@ -320,7 +317,7 @@ function doUpdateResourceLimits() {
 	if (!isValid) 
 	    return;
 								
-	var jsonObj = $detailsTab.data("jsonObj");
+	var jsonObj = $("#right_panel_content #tab_content_details").data("jsonObj");
 	var domainId = jsonObj.id;
 	
 	var instanceLimit = trim($resourceLimitsTab.find("#limits_vm_edit").val());
