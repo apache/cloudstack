@@ -2195,6 +2195,11 @@ a:hover.search_button {
 	padding:0 0 4px 0;
 }
 
+.midmenu_content:hover{
+	background:#c5c5c5 url(../images/midmenu_hover.gif) repeat-x top left;
+	color:#333;
+}
+
 .midmenu_content.selected {
 	background:#838383 url(../images/leftmenu_selected.gif) repeat-x top left;
 	color:#FFF;
@@ -2210,12 +2215,7 @@ a:hover.search_button {
 	background:#ffe5e5 url(../images/errormsg_bg.gif) repeat-x top left;
 	color:#a90000;
 }
-/*
-.midmenu_content:hover{
-	background:#626262 url(../images/leftmenu_hover.gif) repeat-x top left;
-	color:#FFF;
-}
-*/
+
 
 
 
