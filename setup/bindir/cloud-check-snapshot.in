@@ -1,0 +1,101 @@
+#!/bin/bash
+#set -x
+Usage() {
+  echo "check snapshots before migrate to CloudStack 2.1.4 and later format:"
+  echo "$0 -m {secondary-storage mount point} "
+  exit 1
+}
+
+if [ "$#" -ne "2" ]
+then
+  Usage
+fi
+
+mountPath=
+
+while getopts m: OPTION
+do
+  case $OPTION in
+  m)  mountPath="$OPTARG"
+      ;;
+  *) 
+      Usage
+      ;;
+  esac
+done
+
+which vhd-util >> /dev/null
+if [ $? -gt 0 ]
+then
+  echo 'Cant find vhd-utils, please install it or running this tools on a xenserver host'
+  exit 2
+fi
+
+if [ ! -d $mountPath ]
+then
+  echo "$mountPath does not exist, please specify a valid path"
+  exit 2
+fi
+
+mountPath=$mountPath/snapshots
+if [ ! -d $mountPath ]
+then
+  echo "No snapshots exist, nothing to do"
+  exit 0
+fi
+
+echo "0: sanity checking all the snapshots under $mountPath"
+foundBadTemplt=0
+
+
+for account in `ls $mountPath`
+do
+  for templateId in `ls $mountPath/$account`
+  do
+    for template in `ls $mountPath/$account/$templateId`
+    do
+       templateFullName=$mountPath/$account/$templateId/$template
+
+       vhd-util check -n $templateFullName >> /dev/null
+       res=$?
+       if [ $res -eq 22 ]
+       then
+           parent=`vhd-util query -p -n $templateFullName`
+           if [ $? -gt 0 ]
+           then
+               echo "can not get parent of $templateFullName"
+               foundBadTemplt=1
+               continue
+           fi
+
+           vhd-util modify -p $parent -n $templateFullName
+           if [ $? -gt 0 ]
+           then
+               echo "failed to set parent of $templateFullName to $parent"
+               foundBadTemplt=1
+               continue
+           fi
+
+           vhd-util check -n $templateFullName >> /dev/null
+           if [ $? -gt 0 ]
+           then
+              echo "snapshot $templateFullName is bad"
+              foundBadTemplt=1
+           fi
+       else
+           if [ $res -gt 0 ]
+           then
+              echo "snapshot $templateFullName is bad"
+              foundBadTemplt=1
+           fi
+       fi
+    done
+  done
+done
+
+if [ "$foundBadTemplt" -eq "0" ]
+then
+   echo "All the snapshots under $mountPath are OK"
+fi
+
+
