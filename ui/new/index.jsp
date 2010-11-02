@@ -45,11 +45,17 @@ long milliseconds = new Date().getTime();
     <script type="text/javascript" src="scripts/cloud.core2.iso.js?t=<%=milliseconds%>"></script>
     <script type="text/javascript" src="scripts/cloud.core2.router.js?t=<%=milliseconds%>"></script>
     <script type="text/javascript" src="scripts/cloud.core2.dashboard.js?t=<%=milliseconds%>"></script>
-    <script type="text/javascript" src="scripts/cloud.core2.domain.js?t=<%=milliseconds%>"></script>
-    <script type="text/javascript" src="scripts/cloud.core2.resource.js?t=<%=milliseconds%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core2.domain.js?t=<%=milliseconds%>"></script>    
     <script type="text/javascript" src="scripts/cloud.core2.serviceoffering.js?t=<%=milliseconds%>"></script>
     <script type="text/javascript" src="scripts/cloud.core2.diskoffering.js?t=<%=milliseconds%>"></script>
     <script type="text/javascript" src="scripts/cloud.core2.globalsetting.js?t=<%=milliseconds%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core2.resource.js?t=<%=milliseconds%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core2.zone.js?t=<%=milliseconds%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core2.pod.js?t=<%=milliseconds%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core2.cluster.js?t=<%=milliseconds%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core2.host.js?t=<%=milliseconds%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core2.primarystorage.js?t=<%=milliseconds%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core2.systemvm.js?t=<%=milliseconds%>"></script>
 	
 	<!-- Favicon -->
 	<link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
