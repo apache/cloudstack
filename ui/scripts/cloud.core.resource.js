@@ -155,7 +155,7 @@ function buildZoneTree() {
 	});  
 }    
 
-function refreshClusterUnderPod($podNode, newClusterName) {  
+function refreshClusterUnderPod($podNode, newClusterName, existingClusterId) {  
     var podId = $podNode.data("podId"); 
     $.ajax({
         data: createURL("command=listClusters&podid="+podId+maxPageSize),
@@ -173,10 +173,14 @@ function refreshClusterUnderPod($podNode, newClusterName) {
                                         
                     if(newClusterName != null && fromdb(item.name) == newClusterName) {   
                         $clusterNode.find("#cluster_name").click();                
-                    }                            
+                    }                 
                 }                         
                 $podNode.find("#pod_arrow").removeClass("white_nonexpanded_close").addClass("expanded_open");
-                $podNode.find("#pod_content").show();    
+                $podNode.find("#pod_content").show();                  
+                
+                if(existingClusterId != null) {
+                    $("#cluster_"+existingClusterId).find("#cluster_name").click();	
+                }                      
             }            
         }
     });	

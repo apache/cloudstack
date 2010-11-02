@@ -256,7 +256,7 @@ function initAddPrimaryStorageButton($midmenuAddLink2, currentPageInRightPanel) 
         dialogAddPool = $("#dialog_add_pool");  
         dialogAddPool.find("#info_container").hide();	
              
-        var zoneId, podId, clusterId;        
+        var zoneId, podId, sourceClusterId;        
         if(currentPageInRightPanel == "pod_page") {
             var podObj = $("#tab_content_details").data("jsonObj");   
             var podObj = $("#tab_content_details").data("jsonObj");
@@ -269,7 +269,7 @@ function initAddPrimaryStorageButton($midmenuAddLink2, currentPageInRightPanel) 
             var hostObj = $("#tab_content_details").data("jsonObj");  
             zoneId = hostObj.zoneid;
             podId = hostObj.podid; 
-            clusterId = hostObj.clusterid;            
+            sourceClusterId = hostObj.clusterid;            
             dialogAddPool.find("#zone_name").text(fromdb(hostObj.zonename));  
             dialogAddPool.find("#pod_name").text(fromdb(hostObj.podname)); 
         }
@@ -277,7 +277,7 @@ function initAddPrimaryStorageButton($midmenuAddLink2, currentPageInRightPanel) 
             var primarystorageObj = $("#tab_content_details").data("jsonObj");   
             zoneId = primarystorageObj.zoneid;
             podId = primarystorageObj.podid;  
-            clusterId = primarystorageObj.clusterid;   
+            sourceClusterId = primarystorageObj.clusterid;   
             dialogAddPool.find("#zone_name").text(fromdb(primarystorageObj.zonename));  
             dialogAddPool.find("#pod_name").text(fromdb(primarystorageObj.podname)); 
         }
@@ -290,7 +290,7 @@ function initAddPrimaryStorageButton($midmenuAddLink2, currentPageInRightPanel) 
 	            var items = json.listclustersresponse.cluster;
 	            if(items != null && items.length > 0) {				                		                
 	                for(var i=0; i<items.length; i++) {	
-	                    if(clusterId != null && items[i].id == clusterId)
+	                    if(sourceClusterId != null && items[i].id == sourceClusterId)
 	                        clusterSelect.append("<option value='" + items[i].id + "' selected>" + fromdb(items[i].name) + "</option>");	
 	                    else               
 	                        clusterSelect.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");		
@@ -360,12 +360,16 @@ function initAddPrimaryStorageButton($midmenuAddLink2, currentPageInRightPanel) 
 				    success: function(json) {
 				        $thisDialog.find("#spinning_wheel").hide();					       
 				        $thisDialog.dialog("close");					
-					    
-					    var $container = $("#midmenu_container").find("#midmenu_primarystorage_container");
-					    if($container.length == 0) { //not on cluster node (still on pod node)
-					  	    $("#cluster_"+clusterId).find("#cluster_name").click();			
+						            
+					    if(isMiddleMenuShown() == false) { //not on cluster node (still on pod node, so middle menu is hidden)
+					        var $clusterNode = $("#cluster_"+clusterId);
+					        if($clusterNode.length > 0)
+					  	        $("#cluster_"+clusterId).find("#cluster_name").click();		
+					  	    else  //pod node is close. Expand pod node.	
+					  	        refreshClusterUnderPod($("#pod_" + podId), null, clusterId);
 					    }
 					    else {	
+					        var $container = $("#midmenu_container").find("#midmenu_primarystorage_container");
 					        var $noItemsAvailable = $container.siblings("#midmenu_container_no_items_available");
 					        if($noItemsAvailable.length > 0) {
 					            $noItemsAvailable.slideUp("slow", function() {

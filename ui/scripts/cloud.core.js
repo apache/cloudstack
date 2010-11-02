@@ -640,6 +640,12 @@ function showMiddleMenu() {
     $("#middle_menu, #search_panel, #middle_menu_pagination").show();
     $("#right_panel").removeClass("main_contentarea_without_midmenu").addClass("main_contentarea_with_midmenu");
 }    
+function isMiddleMenuShown() {
+    if($("#middle_menu").css("display") == "none")
+        return false;
+    else
+        return true;
+}
 
 // adding middle menu item ***
 function beforeAddingMidMenuItem() {
