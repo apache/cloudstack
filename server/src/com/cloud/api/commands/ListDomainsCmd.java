@@ -23,7 +23,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -82,15 +82,7 @@ public class ListDomainsCmd extends BaseListCmd {
         ListResponse<DomainResponse> response = new ListResponse<DomainResponse>();
         List<DomainResponse> domainResponses = new ArrayList<DomainResponse>();
         for (DomainVO domain : domains) {
-            DomainResponse domainResponse = new DomainResponse();
-            domainResponse.setDomainName(domain.getName());
-            domainResponse.setId(domain.getId());
-            domainResponse.setLevel(domain.getLevel());
-            domainResponse.setParentDomainId(domain.getParent());
-            if (domain.getParent() != null) {
-                domainResponse.setParentDomainName(ApiDBUtils.findDomainById(domain.getParent()).getName());
-            }
-
+            DomainResponse domainResponse = ApiResponseHelper.createDomainResponse(domain);
             domainResponse.setResponseName("domain");
             domainResponses.add(domainResponse);
         }

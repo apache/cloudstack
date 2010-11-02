@@ -18,28 +18,18 @@
 package com.cloud.api.commands;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.ApiDBUtils;
-import com.cloud.api.BaseCmd;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
 import com.cloud.api.response.AccountResponse;
 import com.cloud.api.response.ListResponse;
-import com.cloud.configuration.ResourceCount.ResourceType;
-import com.cloud.server.Criteria;
-import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
-import com.cloud.user.UserContext;
-import com.cloud.user.UserStatisticsVO;
-import com.cloud.uservm.UserVm;
-import com.cloud.vm.State;
 
 @Implementation(method="searchForAccounts", description="Lists accounts and provides detailed account information for listed accounts")
 public class ListAccountsCmd extends BaseListCmd {
@@ -121,107 +111,7 @@ public class ListAccountsCmd extends BaseListCmd {
 
         List<AccountResponse> accountResponses = new ArrayList<AccountResponse>();
         for (AccountVO account : accounts) {
-            boolean accountIsAdmin = (account.getType() == Account.ACCOUNT_TYPE_ADMIN);
-
-            AccountResponse acctResponse = new AccountResponse();
-            acctResponse.setId(account.getId());
-            acctResponse.setName(account.getAccountName());
-            acctResponse.setAccountType(account.getType());
-            acctResponse.setDomainId(account.getDomainId());
-            acctResponse.setDomainName(ApiDBUtils.findDomainById(account.getDomainId()).getName());
-
-            //get network stat
-            List<UserStatisticsVO> stats = ApiDBUtils.listUserStatsBy(account.getId());
-            if (stats == null) {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Internal error searching for user stats");
-            }
-
-            long bytesSent = 0;
-            long bytesReceived = 0;
-            for (UserStatisticsVO stat : stats) {
-                long rx = stat.getNetBytesReceived() + stat.getCurrentBytesReceived();
-                long tx = stat.getNetBytesSent() + stat.getCurrentBytesSent();
-                bytesReceived = bytesReceived + Long.valueOf(rx);
-                bytesSent = bytesSent + Long.valueOf(tx);
-            }
-            acctResponse.setBytesReceived(bytesReceived);
-            acctResponse.setBytesSent(bytesSent);
-
-            // Get resource limits and counts
-            
-            long vmLimit = ApiDBUtils.findCorrectResourceLimit(ResourceType.user_vm, account.getId());
-            String vmLimitDisplay = (accountIsAdmin || vmLimit == -1) ? "Unlimited" : String.valueOf(vmLimit);
-            long vmTotal = ApiDBUtils.getResourceCount(ResourceType.user_vm, account.getId());
-            String vmAvail = (accountIsAdmin || vmLimit == -1) ? "Unlimited" : String.valueOf(vmLimit - vmTotal);
-            acctResponse.setVmLimit(vmLimitDisplay);
-            acctResponse.setVmTotal(vmTotal);
-            acctResponse.setVmAvailable(vmAvail);
-            
-            long ipLimit = ApiDBUtils.findCorrectResourceLimit(ResourceType.public_ip, account.getId());
-            String ipLimitDisplay = (accountIsAdmin || ipLimit == -1) ? "Unlimited" : String.valueOf(ipLimit);
-            long ipTotal = ApiDBUtils.getResourceCount(ResourceType.public_ip, account.getId());
-            String ipAvail = (accountIsAdmin || ipLimit == -1) ? "Unlimited" : String.valueOf(ipLimit - ipTotal);
-            acctResponse.setIpLimit(ipLimitDisplay);
-            acctResponse.setIpTotal(ipTotal);
-            acctResponse.setIpAvailable(ipAvail);
-            
-            long volumeLimit = ApiDBUtils.findCorrectResourceLimit(ResourceType.volume, account.getId());
-            String volumeLimitDisplay = (accountIsAdmin || volumeLimit == -1) ? "Unlimited" : String.valueOf(volumeLimit);
-            long volumeTotal = ApiDBUtils.getResourceCount(ResourceType.volume, account.getId());
-            String volumeAvail = (accountIsAdmin || volumeLimit == -1) ? "Unlimited" : String.valueOf(volumeLimit - volumeTotal);
-            acctResponse.setVolumeLimit(volumeLimitDisplay);
-            acctResponse.setVolumeTotal(volumeTotal);
-            acctResponse.setVolumeAvailable(volumeAvail);
-            
-            long snapshotLimit = ApiDBUtils.findCorrectResourceLimit(ResourceType.snapshot, account.getId());
-            String snapshotLimitDisplay = (accountIsAdmin || snapshotLimit == -1) ? "Unlimited" : String.valueOf(snapshotLimit);
-            long snapshotTotal = ApiDBUtils.getResourceCount(ResourceType.snapshot, account.getId());
-            String snapshotAvail = (accountIsAdmin || snapshotLimit == -1) ? "Unlimited" : String.valueOf(snapshotLimit - snapshotTotal);
-            acctResponse.setSnapshotLimit(snapshotLimitDisplay);
-            acctResponse.setSnapshotTotal(snapshotTotal);
-            acctResponse.setSnapshotAvailable(snapshotAvail);
-            
-            long templateLimit = ApiDBUtils.findCorrectResourceLimit(ResourceType.template, account.getId());
-            String templateLimitDisplay = (accountIsAdmin || templateLimit == -1) ? "Unlimited" : String.valueOf(templateLimit);
-            long templateTotal = ApiDBUtils.getResourceCount(ResourceType.template, account.getId());
-            String templateAvail = (accountIsAdmin || templateLimit == -1) ? "Unlimited" : String.valueOf(templateLimit - templateTotal);
-            acctResponse.setTemplateLimit(templateLimitDisplay);
-            acctResponse.setTemplateTotal(templateTotal);
-            acctResponse.setTemplateAvailable(templateAvail);
-            
-            // Get stopped and running VMs
-            int vmStopped = 0;
-            int vmRunning = 0;
-
-            Long[] accountIds = new Long[1];
-            accountIds[0] = account.getId();
-
-            Criteria c1 = new Criteria();
-            c1.addCriteria(Criteria.ACCOUNTID, accountIds);
-            List<? extends UserVm> virtualMachines = ApiDBUtils.searchForUserVMs(c1);
-
-            //get Running/Stopped VMs
-            for (Iterator<? extends UserVm> iter = virtualMachines.iterator(); iter.hasNext();) {
-                // count how many stopped/running vms we have
-                UserVm vm = iter.next();
-
-                if (vm.getState() == State.Stopped) {
-                    vmStopped++;
-                } else if (vm.getState() == State.Running) {
-                    vmRunning++;
-                }
-            }
-
-            acctResponse.setVmStopped(vmStopped);
-            acctResponse.setVmRunning(vmRunning);
-
-            //show this info to admins only
-            Account ctxAccount = (Account)UserContext.current().getAccount();
-            if ((ctxAccount == null) || isAdmin(ctxAccount.getType())) {
-                acctResponse.setState(account.getState());
-                acctResponse.setCleanupRequired(account.getNeedsCleanup());
-            }
-
+            AccountResponse acctResponse = ApiResponseHelper.createAccountResponse(account);
             acctResponse.setResponseName("account");
             accountResponses.add(acctResponse);
         }

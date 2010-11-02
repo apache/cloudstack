@@ -20,13 +20,15 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.response.SuccessResponse;
+import com.cloud.api.response.AccountResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
+import com.cloud.user.AccountVO;
 import com.cloud.user.UserContext;
 
 @Implementation(method="disableAccount", manager=ManagementServer.class, description="Disables an account")
@@ -86,10 +88,9 @@ public class DisableAccountCmd extends BaseAsyncCmd {
     }
 
     @Override @SuppressWarnings("unchecked")
-    public SuccessResponse getResponse() {
-        Boolean success = (Boolean)getResponseObject();
-        SuccessResponse response = new SuccessResponse();
-        response.setSuccess(success);
+    public AccountResponse getResponse() {
+        AccountVO account = (AccountVO)getResponseObject();
+        AccountResponse response = ApiResponseHelper.createAccountResponse(account);
         response.setResponseName(getName());
         return response;
     }

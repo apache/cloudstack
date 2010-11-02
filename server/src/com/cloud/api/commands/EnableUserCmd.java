@@ -21,12 +21,13 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
-import com.cloud.api.response.SuccessResponse;
+import com.cloud.api.response.UserResponse;
 import com.cloud.server.ManagementServer;
+import com.cloud.user.UserAccount;
 
 @Implementation(method="enableUser", manager=ManagementServer.class, description="Enables a user account")
 public class EnableUserCmd extends BaseCmd {
@@ -59,16 +60,9 @@ public class EnableUserCmd extends BaseCmd {
     }
     
     @Override @SuppressWarnings("unchecked")
-    public SuccessResponse getResponse() {
-        SuccessResponse response = new SuccessResponse();
-        Boolean responseObject = (Boolean)getResponseObject();
-      
-        if (responseObject != null) {
-        	response.setSuccess(responseObject);
-        } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to enable user");
-        }
-
+    public UserResponse getResponse() {
+        UserAccount user = (UserAccount)getResponseObject();
+        UserResponse response = ApiResponseHelper.createUserResponse(user);
         response.setResponseName(getName());
         return response;
     }

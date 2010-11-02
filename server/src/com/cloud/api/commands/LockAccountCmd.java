@@ -20,11 +20,13 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.response.SuccessResponse;
+import com.cloud.api.response.AccountResponse;
 import com.cloud.server.ManagementServer;
+import com.cloud.user.AccountVO;
 
 @Implementation(method="lockAccount", manager=ManagementServer.class, description="Locks an account")
 public class LockAccountCmd extends BaseCmd {
@@ -64,10 +66,9 @@ public class LockAccountCmd extends BaseCmd {
     }
 
 	@Override @SuppressWarnings("unchecked")
-	public SuccessResponse getResponse() {
-        Boolean success = (Boolean)getResponseObject();
-        SuccessResponse response = new SuccessResponse();
-        response.setSuccess(success);
+	public AccountResponse getResponse() {
+	    AccountVO account = (AccountVO)getResponseObject();
+        AccountResponse response = ApiResponseHelper.createAccountResponse(account);
         response.setResponseName(getName());
         return response;
 	}

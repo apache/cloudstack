@@ -21,11 +21,13 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.response.SuccessResponse;
+import com.cloud.api.response.UserResponse;
 import com.cloud.server.ManagementServer;
+import com.cloud.user.UserAccount;
 
 @Implementation(method="updateUser", manager=ManagementServer.class, description="Updates a user account")
 public class UpdateUserCmd extends BaseCmd {
@@ -113,11 +115,10 @@ public class UpdateUserCmd extends BaseCmd {
     }
    
 	@Override @SuppressWarnings("unchecked")
-	public SuccessResponse getResponse() {
-        Boolean success = (Boolean)getResponseObject();
-        SuccessResponse response = new SuccessResponse();
-        response.setSuccess(success);
+	public UserResponse getResponse() {
+        UserAccount user = (UserAccount)getResponseObject();
+        UserResponse response = ApiResponseHelper.createUserResponse(user);
         response.setResponseName(getName());
         return response;
-	}
+    }
 }

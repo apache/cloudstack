@@ -24,7 +24,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -104,26 +104,10 @@ public class ListUsersCmd extends BaseListCmd {
         ListResponse<UserResponse> response = new ListResponse<UserResponse>();
         List<UserResponse> userResponses = new ArrayList<UserResponse>();
         for (UserAccountVO user : users) {
-            UserResponse userResponse = new UserResponse();
-            userResponse.setId(user.getId());
-            userResponse.setUsername(user.getUsername());
-            userResponse.setFirstname(user.getFirstname());
-            userResponse.setLastname(user.getLastname());
-            userResponse.setEmail(user.getEmail());
-            userResponse.setCreated(user.getCreated());
-            userResponse.setState(user.getState());
-            userResponse.setAccountName(user.getAccountName());
-            userResponse.setAccountType(user.getType());
-            userResponse.setDomainId(user.getDomainId());
-            userResponse.setDomainName(ApiDBUtils.findDomainById(user.getDomainId()).getName());
-            userResponse.setTimezone(user.getTimezone());
-            userResponse.setApiKey(user.getApiKey());
-            userResponse.setSecretKey(user.getSecretKey());
-
+            UserResponse userResponse = ApiResponseHelper.createUserResponse(user);
             userResponse.setResponseName("user");
             userResponses.add(userResponse);
         }
-
         response.setResponses(userResponses);
         response.setResponseName(getName());
         return response;

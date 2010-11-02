@@ -114,7 +114,6 @@ import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.network.FirewallRuleVO;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.LoadBalancerVO;
-import com.cloud.network.NetworkRuleConfigVO;
 import com.cloud.network.RemoteAccessVpnVO;
 import com.cloud.network.security.NetworkGroupVO;
 import com.cloud.service.ServiceOfferingVO;
@@ -201,9 +200,10 @@ public interface ManagementServer {
     /**
      * Disables a user by userId
      * @param cmd the command wrapping the userId parameter
-     * @return true if disable was successful, false otherwise
+     * @return UserAccount object
+     * @throws InvalidParameterValueException, PermissionDeniedException
      */
-    boolean disableUser(DisableUserCmd cmd);
+    UserAccount disableUser(DisableUserCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;;
 
     /**
      * Disables an account by accountId
@@ -214,51 +214,50 @@ public interface ManagementServer {
 
     /**
      * Disables an account by accountName and domainId
-     * @param cmd the command wrapping the accountName and domainId
+     * @param disabled account if success
      * @return true if disable was successful, false otherwise
-     * @throws InvalidParameterValueException
-     * @throws PermissionDeniedException
+     * @throws InvalidParameterValueException, PermissionDeniedException
      */
-    boolean disableAccount(DisableAccountCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+    AccountVO disableAccount(DisableAccountCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
 
     /**
      * Enables an account by accountId
      * @param cmd - the enableAccount command defining the accountId to be deleted.
-     * @return true if enable was successful, false otherwise
+     * @return account object
      * @throws InvalidParameterValueException, PermissionDeniedException
      */
-    boolean enableAccount(EnableAccountCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+    AccountVO enableAccount(EnableAccountCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
 
     /**
      * Locks an account by accountId.  A locked account cannot access the API, but will still have running VMs/IP addresses allocated/etc.
      * @param cmd - the LockAccount command defining the accountId to be locked.
-     * @return true if enable was successful, false otherwise
+     * @return account object
      */
-    boolean lockAccount(LockAccountCmd cmd);
+    AccountVO lockAccount(LockAccountCmd cmd);
 
     /**
      * Updates an account name
      * @param cmd - the parameter containing accountId
-     * @return true if update was successful, false otherwise
+     * @return updated account object
      * @throws InvalidParameterValueException, PermissionDeniedException
      */
     
-    boolean updateAccount(UpdateAccountCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+    AccountVO updateAccount(UpdateAccountCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
 
     /**
      * Enables a user
      * @param cmd - the command containing userId
-     * @return true if enable was successful, false otherwise
-     * @throws InvalidParameterValueException
+     * @return UserAccount object
+     * @throws InvalidParameterValueException, PermissionDeniedException
      */
-    boolean enableUser(EnableUserCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+    UserAccount enableUser(EnableUserCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
 
     /**
      * Locks a user by userId.  A locked user cannot access the API, but will still have running VMs/IP addresses allocated/etc.
      * @param userId
-     * @return true if enable was successful, false otherwise
+     * @return UserAccount object
      */
-    boolean lockUser(LockUserCmd cmd);
+    UserAccount lockUser(LockUserCmd cmd);
     
     /**
      * registerPreallocatedLun registers a preallocated lun in our database.
@@ -805,10 +804,10 @@ public interface ManagementServer {
     /**
      * update an existing domain
      * @param cmd - the command containing domainId and new domainName
-     * @return true if domain is updated, false otherwise
+     * @return Domain object if the command succeeded
      * @throws InvalidParameterValueException, PermissionDeniedException
      */
-    boolean updateDomain(UpdateDomainCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+    DomainVO updateDomain(UpdateDomainCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
 
     /**
      * find the domain Id associated with the given account
@@ -1077,7 +1076,7 @@ public interface ManagementServer {
 
 	boolean checkLocalStorageConfigVal(); 
 
-	boolean updateUser(UpdateUserCmd cmd) throws InvalidParameterValueException;
+	UserAccount updateUser(UpdateUserCmd cmd) throws InvalidParameterValueException;
 	boolean updateTemplatePermissions(UpdateTemplatePermissionsCmd cmd)throws InvalidParameterValueException, PermissionDeniedException,InternalErrorException;
     boolean updateTemplatePermissions(UpdateIsoPermissionsCmd cmd)throws InvalidParameterValueException, PermissionDeniedException,InternalErrorException;
 	String[] createApiKeyAndSecretKey(RegisterCmd cmd);

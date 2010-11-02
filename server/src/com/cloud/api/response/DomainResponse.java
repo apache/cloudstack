@@ -38,7 +38,7 @@ public class DomainResponse extends BaseResponse {
     private String parentDomainName;
 
     @SerializedName("haschild") @Param(description="whether the domain has one or more sub-domains")
-    private Boolean hasChild;
+    private boolean hasChild;
 
     public Long getId() {
         return id;
@@ -80,11 +80,11 @@ public class DomainResponse extends BaseResponse {
         this.parentDomainName = parentDomainName;
     }
 
-    public Boolean getHasChild() {
+    public boolean getHasChild() {
         return hasChild;
     }
 
-    public void setHasChild(Boolean hasChild) {
+    public void setHasChild(boolean hasChild) {
         this.hasChild = hasChild;
     }
 }

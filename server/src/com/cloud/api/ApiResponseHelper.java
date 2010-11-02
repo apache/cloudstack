@@ -23,10 +23,8 @@ import java.util.List;
 import com.cloud.api.response.AccountResponse;
 import com.cloud.api.response.DiskOfferingResponse;
 import com.cloud.api.response.DomainResponse;
-import com.cloud.api.response.ResourceLimitResponse;
 import com.cloud.api.response.UserResponse;
 import com.cloud.configuration.ResourceCount.ResourceType;
-import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.domain.DomainVO;
 import com.cloud.server.Criteria;
 import com.cloud.storage.DiskOfferingVO;
@@ -40,7 +38,6 @@ public class ApiResponseHelper {
     
     public static UserResponse createUserResponse (UserAccount user) {
         UserResponse userResponse = new UserResponse();
-        
         userResponse.setAccountName(user.getAccountName());
         userResponse.setAccountType(user.getType());
         userResponse.setCreated(user.getCreated());
@@ -60,7 +57,6 @@ public class ApiResponseHelper {
     }
     
    public static AccountResponse createAccountResponse (Account account) {
-       
        boolean accountIsAdmin = (account.getType() == Account.ACCOUNT_TYPE_ADMIN);
        AccountResponse accountResponse = new AccountResponse();
        accountResponse.setId(account.getId());
@@ -166,6 +162,9 @@ public class ApiResponseHelper {
        if (domain.getParent() != null) {
            domainResponse.setParentDomainName(ApiDBUtils.findDomainById(domain.getParent()).getName());
        }
+       if (domain.getChildCount() > 0) {
+           domainResponse.setHasChild(true);
+       }
        return domainResponse;
    }
    
@@ -181,7 +180,6 @@ public class ApiResponseHelper {
            diskOfferingResponse.setDomainId(offering.getDomainId());
        }
        diskOfferingResponse.setTags(offering.getTags());
-       
        return diskOfferingResponse;
    }
 

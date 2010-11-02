@@ -21,7 +21,7 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -124,22 +124,7 @@ public class CreateUserCmd extends BaseCmd {
     @Override @SuppressWarnings("unchecked")
     public UserResponse getResponse() {
         UserAccount user = (UserAccount)getResponseObject();
-
-        // TODO:  user keys?
-        UserResponse response = new UserResponse();
-        response.setAccountName(user.getAccountName());
-        response.setAccountType(user.getType());
-        response.setCreated(user.getCreated());
-        response.setDomainId(user.getDomainId());
-        response.setDomainName(ApiDBUtils.findDomainById(user.getDomainId()).getName());
-        response.setEmail(user.getEmail());
-        response.setFirstname(user.getFirstname());
-        response.setId(user.getId());
-        response.setLastname(user.getLastname());
-        response.setState(user.getState());
-        response.setTimezone(user.getTimezone());
-        response.setUsername(user.getUsername());
-
+        UserResponse response = ApiResponseHelper.createUserResponse(user);
         response.setResponseName(getName());
         return response;
     }

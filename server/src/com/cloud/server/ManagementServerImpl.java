@@ -151,8 +151,8 @@ import com.cloud.certificate.dao.CertificateDao;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ConfigurationVO;
-import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.configuration.ResourceCount.ResourceType;
+import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.consoleproxy.ConsoleProxyManager;
@@ -162,8 +162,8 @@ import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.PodVlanMapVO;
-import com.cloud.dc.VlanVO;
 import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
@@ -221,23 +221,23 @@ import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.storage.Snapshot;
+import com.cloud.storage.Snapshot.SnapshotType;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
 import com.cloud.storage.Upload;
+import com.cloud.storage.Upload.Mode;
+import com.cloud.storage.Upload.Type;
 import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeStats;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.Snapshot.SnapshotType;
-import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.Upload.Mode;
-import com.cloud.storage.Upload.Type;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.DiskTemplateDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
@@ -249,8 +249,8 @@ import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.UploadDao;
 import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VMTemplateDao.TemplateFilter;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.preallocatedlun.PreallocatedLunVO;
 import com.cloud.storage.preallocatedlun.dao.PreallocatedLunDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
@@ -282,10 +282,10 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.JoinBuilder;
+import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
-import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.net.MacAddress;
@@ -952,13 +952,13 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public boolean disableUser(DisableUserCmd cmd) {
+    public UserAccount disableUser(DisableUserCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
         Long userId = cmd.getId();
         if (userId <= 2) {
             if (s_logger.isInfoEnabled()) {
-                s_logger.info("disableUser -- invalid user id: " + userId);
+                s_logger.error("disableUser -- invalid user id: " + userId);
+                throw new InvalidParameterValueException("Unable to disable with id " + userId + " as it belongs to system account");
             }
-            return false;
         }
 
         boolean success = doSetUserStatus(userId, Account.ACCOUNT_STATE_DISABLED);
@@ -967,19 +967,23 @@ public class ManagementServerImpl implements ManagementServer {
             List<UserVO> allUsersByAccount = _userDao.listByAccount(user.getAccountId());
             for (UserVO oneUser : allUsersByAccount) {
                 if (oneUser.getState().equals(Account.ACCOUNT_STATE_ENABLED)) {
-                    return true;
+                    return _userAccountDao.findById(userId);
                 }
             }
 
             // there are no enabled users attached to this user's account, disable the account
-            return disableAccount(user.getAccountId());
+            if (disableAccount(user.getAccountId()))
+                return _userAccountDao.findById(userId);
+            else
+                throw new CloudRuntimeException("Unable to disable corresponding account for the user " + userId);
+
         } else {
-            return false;
+            throw new CloudRuntimeException("Unable to disable user " + userId);
         }
     }
 
     @Override
-    public boolean enableUser(EnableUserCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
+    public UserAccount enableUser(EnableUserCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
     	Long userId = cmd.getId();
     	Account adminAccount = UserContext.current().getAccount();
         boolean success = false;
@@ -1004,11 +1008,13 @@ public class ManagementServerImpl implements ManagementServer {
         // make sure the account is enabled too
         success = (success && enableAccount(user.getAccountId()));
         
-        return success;
+        if (success)
+            return _userAccountDao.findById(userId);
+        else throw new CloudRuntimeException("Unable to enable user " + userId);
     }
 
     @Override
-    public boolean lockUser(LockUserCmd cmd) {
+    public UserAccount lockUser(LockUserCmd cmd) {
         boolean success = false;
         
         Account adminAccount = UserContext.current().getAccount();
@@ -1036,7 +1042,7 @@ public class ManagementServerImpl implements ManagementServer {
         // if the user is either locked already or disabled already, don't change state...only lock currently enabled users
         if (user.getState().equals(Account.ACCOUNT_STATE_LOCKED)) {
             // already locked...no-op
-            return true;
+            return _userAccountDao.findById(id);
         } else if (user.getState().equals(Account.ACCOUNT_STATE_ENABLED)) {
             success = doSetUserStatus(user.getId(), Account.ACCOUNT_STATE_LOCKED);
 
@@ -1057,7 +1063,11 @@ public class ManagementServerImpl implements ManagementServer {
                 s_logger.info("Attempting to lock a non-enabled user, current state is " + user.getState() + " (userId: " + user.getId() + "), locking failed.");
             }
         }
-        return success;
+        
+        if (success)
+            return _userAccountDao.findById(id);
+        else
+            throw new CloudRuntimeException("Unable to lock user " + id);
     }
 
     private boolean doSetUserStatus(long userId, String state) {
@@ -1067,7 +1077,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public boolean disableAccount(DisableAccountCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+    public AccountVO disableAccount(DisableAccountCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
         String accountName = cmd.getAccountName();
         Long domainId = cmd.getDomainId();
 
@@ -1080,7 +1090,10 @@ public class ManagementServerImpl implements ManagementServer {
         if (account == null) {
             throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
         }
-        return disableAccount(account.getId());
+        if (disableAccount(account.getId()))
+            return _accountDao.findById(account.getId());
+        else 
+            throw new CloudRuntimeException("Unable to update account " + accountName + " in domain " + domainId);
     }
 
     @Override
@@ -1107,7 +1120,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public boolean updateAccount(UpdateAccountCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
+    public AccountVO updateAccount(UpdateAccountCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
     	Long domainId = cmd.getDomainId();
     	String accountName = cmd.getAccountName();
     	String newAccountName = cmd.getNewName();
@@ -1143,7 +1156,10 @@ public class ManagementServerImpl implements ManagementServer {
             acctForUpdate.setAccountName(newAccountName);
             success = _accountDao.update(Long.valueOf(account.getId()), acctForUpdate);
         }
-        return success;
+        if (success)
+            return _accountDao.findById(account.getId());
+        else 
+            throw new CloudRuntimeException("Unable to update account " + accountName + " in domain " + domainId);
     }
 
     private boolean doDisableAccount(long accountId) {
@@ -1176,7 +1192,7 @@ public class ManagementServerImpl implements ManagementServer {
     	
     
     @Override
-    public boolean enableAccount(EnableAccountCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
+    public AccountVO enableAccount(EnableAccountCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
     	String accountName = cmd.getAccountName();
     	Long domainId = cmd.getDomainId();
         boolean success = false;
@@ -1200,7 +1216,10 @@ public class ManagementServerImpl implements ManagementServer {
         }
         
         success = enableAccount(account.getId());
-        return success;
+        if (success)
+            return _accountDao.findById(account.getId());
+        else
+            throw new CloudRuntimeException("Unable to enable account " + accountName + " in domain " + domainId);
     }
 
     private boolean lockAccountInternal(long accountId) {
@@ -1225,7 +1244,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public boolean updateUser(UpdateUserCmd cmd) throws InvalidParameterValueException {
+    public UserAccount updateUser(UpdateUserCmd cmd) throws InvalidParameterValueException {
         Long id = cmd.getId();
         String apiKey = cmd.getApiKey();
         String firstName = cmd.getFirstname();
@@ -1307,9 +1326,9 @@ public class ManagementServerImpl implements ManagementServer {
             s_logger.error("error updating user", th);
             EventUtils.saveEvent(Long.valueOf(1), Long.valueOf(1), EventVO.LEVEL_ERROR, EventTypes.EVENT_USER_UPDATE, "Error updating user, " + userName
                     + " for accountId = " + accountId + " and domainId = " + userAccount.getDomainId());
-            return false;
-        }
-        return true;
+            throw new CloudRuntimeException("Unable to update user " + id);
+        } 
+        return _userAccountDao.findById(id);
     }
     
     @Override
@@ -4169,9 +4188,9 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public boolean updateDomain(UpdateDomainCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
+    public DomainVO updateDomain(UpdateDomainCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
     	Long domainId = cmd.getId();
-    	String domainName = cmd.getName();
+    	String domainName = cmd.getDomainName();
     	
         //check if domain exists in the system
     	DomainVO domain = _domainDao.findById(domainId);
@@ -4188,8 +4207,8 @@ public class ManagementServerImpl implements ManagementServer {
             throw new PermissionDeniedException("Unable to update domain " + domainId + ", permission denied");
     	}
 
-    	if (domainName == null) {
-    		domainName = domain.getName();
+    	if (domainName == null || domainName.equals(domain.getName())) {
+    		return _domainDao.findById(domainId);
     	}
     	
         SearchCriteria<DomainVO> sc = _domainDao.createSearchCriteria();
@@ -4199,11 +4218,12 @@ public class ManagementServerImpl implements ManagementServer {
             _domainDao.update(domainId, domainName);
             domain = _domainDao.findById(domainId);
             EventUtils.saveEvent(new Long(1), domain.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_DOMAIN_UPDATE, "Domain, " + domainName + " was updated");
-            return true;
+            return _domainDao.findById(domainId);
         } else {
             domain = _domainDao.findById(domainId);
             EventUtils.saveEvent(new Long(1), domain.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_DOMAIN_UPDATE, "Failed to update domain " + domain.getName() + " with name " + domainName + ", name in use.");
-            return false;
+            s_logger.error("Domain with name " + domainName + " already exists in the system");
+            throw new CloudRuntimeException("Fail to update domain " + domainId);
         }
     }
 
@@ -5491,7 +5511,7 @@ public class ManagementServerImpl implements ManagementServer {
 	}
 
 	@Override
-	public boolean lockAccount(LockAccountCmd cmd) {
+	public AccountVO lockAccount(LockAccountCmd cmd) {
         Account adminAccount = UserContext.current().getAccount();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
@@ -5510,7 +5530,10 @@ public class ManagementServerImpl implements ManagementServer {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "can not lock system account");
         }
 
-        return lockAccountInternal(account.getId());
+        if (lockAccountInternal(account.getId()))
+            return _accountDao.findById(account.getId());
+        else
+            throw new CloudRuntimeException("Unable to lock account " + accountName + " in domain " + domainId);
 	}
 
 	@Override

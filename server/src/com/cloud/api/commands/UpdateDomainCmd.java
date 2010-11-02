@@ -20,11 +20,13 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.response.SuccessResponse;
+import com.cloud.api.response.DomainResponse;
+import com.cloud.domain.DomainVO;
 import com.cloud.server.ManagementServer;
 
 @Implementation(method="updateDomain", manager=ManagementServer.class, description="Updates a domain with a new name")
@@ -64,17 +66,14 @@ public class UpdateDomainCmd extends BaseCmd {
     }
     
     @Override @SuppressWarnings("unchecked")
-    public SuccessResponse getResponse() {
-        SuccessResponse response = new SuccessResponse();
-        Boolean responseObject = (Boolean)getResponseObject();
-      
-        if (responseObject != null) {
-        	response.setSuccess(responseObject);
+        public DomainResponse getResponse() {
+        DomainVO domain = (DomainVO)getResponseObject();
+        if (domain != null) {
+            DomainResponse response = ApiResponseHelper.createDomainResponse(domain);
+            response.setResponseName(getName());
+            return response;
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update domain");
         }
-
-        response.setResponseName(getName());
-        return response;
     }
 }

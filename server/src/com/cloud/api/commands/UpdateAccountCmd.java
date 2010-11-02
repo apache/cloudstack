@@ -20,12 +20,13 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
-import com.cloud.api.response.SuccessResponse;
+import com.cloud.api.response.AccountResponse;
 import com.cloud.server.ManagementServer;
+import com.cloud.user.AccountVO;
 
 @Implementation(method="updateAccount", manager=ManagementServer.class, description="Updates account information for the authenticated user")
 public class UpdateAccountCmd extends BaseCmd{
@@ -71,16 +72,9 @@ public class UpdateAccountCmd extends BaseCmd{
     }
 
     @Override @SuppressWarnings("unchecked")
-    public SuccessResponse getResponse() {
-        SuccessResponse response = new SuccessResponse();
-        Boolean responseObject = (Boolean)getResponseObject();
-      
-        if (responseObject != null) {
-        	response.setSuccess(responseObject);
-        } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update account");
-        }
-
+    public AccountResponse getResponse() {
+        AccountVO account = (AccountVO)getResponseObject();
+        AccountResponse response = ApiResponseHelper.createAccountResponse(account);
         response.setResponseName(getName());
         return response;
     }
