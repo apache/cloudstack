@@ -1269,7 +1269,7 @@ a:hover {
 .leftmenu_panel {
 	width:221px;
 	height:100%;
-	min-height:1000px;
+	min-height:1025px;
 	float:left;
 	background:#d6dfe5 repeat top left;
 	border-right:1px solid #aeb9c5;
