@@ -1151,7 +1151,7 @@ public class ManagementServerImpl implements ManagementServer {
         	throw new PermissionDeniedException("There already exists an account with the name:"+newAccountName+" in the domain:"+domainId+" with existing account id:"+duplicateAcccount.getId());
         }
                 
-        if (account.getAccountName().equalsIgnoreCase(newAccountName)) {
+        if (account.getAccountName().equals(newAccountName)) {
             success = true;
         } else {
             AccountVO acctForUpdate = _accountDao.createForUpdate();
