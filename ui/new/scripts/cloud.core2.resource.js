@@ -241,33 +241,33 @@ function clusterJSONToTreeNode(json, $clusterNode) {
     clusterName.data("jsonObj", json);	   
 }			
 
-function resourceLoadPage(pageToShow, $menuItem1) {   //$menuItem1 is either $leftmenuItem1 or $midmenuItem1    
+function resourceLoadPage(pageToShow, $midmenuItem1) {   //$midmenuItem1 is either $leftmenuItem1 or $midmenuItem1    
     clearAddButtonsOnTop();  
     $("#right_panel").load(pageToShow, function(){       
 	    if(pageToShow == "jsp/resource.jsp")
-            afterLoadResourceJSP($menuItem1); 
+            afterLoadResourceJSP($midmenuItem1); 
         else if(pageToShow == "jsp/zone.jsp")
-            afterLoadZoneJSP($menuItem1); 
+            afterLoadZoneJSP($midmenuItem1); 
         else if(pageToShow == "jsp/pod.jsp")
-            afterLoadPodJSP($menuItem1); 
+            afterLoadPodJSP($midmenuItem1); 
         else if(pageToShow == "jsp/cluster.jsp")
-            afterLoadClusterJSP($menuItem1); 
+            afterLoadClusterJSP($midmenuItem1); 
         else if(pageToShow == "jsp/host.jsp")
-            afterLoadHostJSP($menuItem1); 
+            afterLoadHostJSP($midmenuItem1); 
         else if(pageToShow == "jsp/primarystorage.jsp")
-            afterLoadPrimaryStorageJSP($menuItem1); 
+            afterLoadPrimaryStorageJSP($midmenuItem1); 
         else if(pageToShow == "jsp/systemvm.jsp")
-            afterLoadSystemVmJSP($menuItem1); 	    
+            afterLoadSystemVmJSP($midmenuItem1); 	    
     });    
 }
 
-function afterLoadResourceJSP($menuItem1) {
+function afterLoadResourceJSP($midmenuItem1) {
     hideMiddleMenu();        
     initAddZoneButton($("#midmenu_add_link")); 
     initDialog("dialog_add_zone");       
 }
 
-function afterLoadZoneJSP($menuItem1) {
+function afterLoadZoneJSP($midmenuItem1) {
     hideMiddleMenu();  
                  
     initAddPodButton($("#midmenu_add_link"));                  
@@ -293,10 +293,10 @@ function afterLoadZoneJSP($menuItem1) {
     //switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray); 
     //$zonePage.find("#tab_details").click();   
             
-	zoneJsonToRightPanel($menuItem1);		  
+	zoneJsonToRightPanel($midmenuItem1);		  
 }
 
-function afterLoadPodJSP($menuItem1) {
+function afterLoadPodJSP($midmenuItem1) {
     hideMiddleMenu();	
           	
     initAddHostButton($("#midmenu_add_link"), "pod_page"); 
@@ -310,19 +310,19 @@ function afterLoadPodJSP($menuItem1) {
 	    $("#dialog_add_pool").find("#add_pool_protocol").empty().html('<option value="nfs">NFS</option>');	
     bindEventHandlerToDialogAddPool();	 
     	    
-	podJsonToRightPanel($menuItem1);     	
+	podJsonToRightPanel($midmenuItem1);     	
 }
 
-function afterLoadClusterJSP($menuItem1) {
+function afterLoadClusterJSP($midmenuItem1) {
     showMiddleMenu();
         
     $("#midmenu_add_link").unbind("click").hide();              
     $("#midmenu_add2_link").unbind("click").hide();   
     $("#midmenu_add3_link").unbind("click").hide();          
     
-	clusterJsonToRightPanel($menuItem1);
+	clusterJsonToRightPanel($midmenuItem1);
 	
-	var clusterId = $menuItem1.data("jsonObj").id;     
+	var clusterId = $midmenuItem1.data("jsonObj").id;     
         
     var $midmenuContainer = $("#midmenu_container").empty();	    
     var $header1 = $("#midmenu_itemheader_without_margin").clone();  //without margin on top
@@ -340,7 +340,7 @@ function afterLoadClusterJSP($menuItem1) {
 	    $header2.show();
 }
 
-function afterLoadHostJSP($menuItem1) {
+function afterLoadHostJSP($midmenuItem1) {
     initAddHostButton($("#midmenu_add_link"), "host_page"); 
     initAddPrimaryStorageButton($("#midmenu_add2_link"), "host_page");          
 
@@ -351,20 +351,24 @@ function afterLoadHostJSP($menuItem1) {
     initDialog("dialog_confirmation_force_reconnect");
     initDialog("dialog_confirmation_remove_host");
     initDialog("dialog_update_os");
+        
+    hostJsonToDetailsTab($midmenuItem1);    
 }
 
-function afterLoadPrimaryStorageJSP($menuItem1) {
+function afterLoadPrimaryStorageJSP($midmenuItem1) {
     initAddHostButton($("#midmenu_add_link"), "primarystorage_page"); 
     initAddPrimaryStorageButton($("#midmenu_add2_link"), "primarystorage_page");  
     
     initDialog("dialog_add_host");
     initDialog("dialog_add_pool");
     initDialog("dialog_confirmation_delete_primarystorage");
+        
+    primarystorageJsonToDetailsTab($midmenuItem1); 
 }
 
-function afterLoadSystemVmJSP($menuItem1) {
+function afterLoadSystemVmJSP($midmenuItem1) {
     hideMiddleMenu();			
-    systemvmJsonToRightPanel($menuItem1);		
+    systemvmJsonToRightPanel($midmenuItem1);		
     
     initDialog("dialog_confirmation_start_systemVM");
     initDialog("dialog_confirmation_stop_systemVM");
@@ -654,8 +658,7 @@ function hostToMidmenu(jsonObj, $midmenuItem1) {
 }
 
 function hostToRightPanel($midmenuItem1) { 
-    copyActionInfoFromMidMenuToRightPanel($midmenuItem1);
-    hostJsonToDetailsTab($midmenuItem1);       
+    copyActionInfoFromMidMenuToRightPanel($midmenuItem1);       
     resourceLoadPage("jsp/host.jsp", $midmenuItem1);
 }
 
@@ -795,8 +798,7 @@ function primarystorageToMidmenu(jsonObj, $midmenuItem1) {
 }
 
 function primarystorageToRightPanel($midmenuItem1) {  
-    copyActionInfoFromMidMenuToRightPanel($midmenuItem1);
-    primarystorageJsonToDetailsTab($midmenuItem1);      
+    copyActionInfoFromMidMenuToRightPanel($midmenuItem1);         
     resourceLoadPage("jsp/primarystorage.jsp", $midmenuItem1);
 }
 
