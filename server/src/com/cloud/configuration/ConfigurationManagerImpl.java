@@ -69,9 +69,9 @@ import com.cloud.event.EventTypes;
 import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
+import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.NetworkManager;
@@ -94,6 +94,7 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouterVO;
@@ -162,7 +163,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     }
     
     @Override
-    public void updateConfiguration(long userId, String name, String value) throws InvalidParameterValueException, InternalErrorException {
+    public void updateConfiguration(long userId, String name, String value)  {
     	if (value != null && (value.trim().isEmpty() || value.equals("null"))) {
     		value = null;
     	}
@@ -176,14 +177,14 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	
     	if (!_configDao.update(name, value)) {
     		s_logger.error("Failed to update configuration option, name: " + name + ", value:" + value);
-    		throw new InternalErrorException("Failed to update configuration value. Please contact Cloud Support.");
+    		throw new CloudRuntimeException("Failed to update configuration value. Please contact Cloud Support.");
     	}
     	
     	saveConfigurationEvent(userId, null, EventTypes.EVENT_CONFIGURATION_VALUE_EDIT, "Successfully edited configuration value.", "name=" + name, "value=" + value);
     }
     
     @Override
-    public boolean updateConfiguration(UpdateCfgCmd cmd) throws InvalidParameterValueException, InternalErrorException{
+    public boolean updateConfiguration(UpdateCfgCmd cmd) {
     	Long userId = UserContext.current().getUserId();
     	String name = cmd.getCfgName();
     	String value = cmd.getValue();
@@ -288,14 +289,14 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     }
     
     @DB
-    protected void checkIfPodIsDeletable(long podId) throws InternalErrorException {
+    protected void checkIfPodIsDeletable(long podId)  {
     	List<List<String>> tablesToCheck = new ArrayList<List<String>>();
     	
     	HostPodVO pod = _podDao.findById(podId);
     	
     	// Check if there are allocated private IP addresses in the pod
     	if (_privateIpAddressDao.countIPs(podId, pod.getDataCenterId(), true) != 0) {
-    		throw new InternalErrorException("There are private IP addresses allocated for this pod");
+    		throw new CloudRuntimeException("There are private IP addresses allocated for this pod");
     	}
 
     	List<String> volumes = new ArrayList<String>();
@@ -344,10 +345,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
                 stmt.setLong(1, podId);
                 ResultSet rs = stmt.executeQuery();
                 if (rs != null && rs.next()) {
-                	throw new InternalErrorException("The pod cannot be edited because " + errorMsg);
+                	throw new CloudRuntimeException("The pod cannot be edited because " + errorMsg);
                 }
             } catch (SQLException ex) {
-                throw new InternalErrorException("The Management Server failed to detect if pod is editable. Please contact Cloud Support.");
+                throw new CloudRuntimeException("The Management Server failed to detect if pod is editable. Please contact Cloud Support.");
             }
     	}
     }
@@ -404,7 +405,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     
     @Override
     @DB
-    public boolean deletePod(DeletePodCmd cmd) throws InvalidParameterValueException, InternalErrorException {
+    public boolean deletePod(DeletePodCmd cmd)  {
     	Long podId = cmd.getId();
     	Long userId = 1L;
     	
@@ -432,7 +433,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 
     @Override
     @DB
-    public HostPodVO editPod(UpdatePodCmd cmd) throws InvalidParameterValueException, InternalErrorException 
+    public HostPodVO editPod(UpdatePodCmd cmd)  
     {
     	
     	//Input validation
@@ -472,7 +473,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	// If the gateway, CIDR, private IP range is being updated, check if the pod has allocated private IP addresses
     	if (gateway!= null || cidr != null || startIp != null || endIp != null) {
     		if (podHasAllocatedPrivateIPs(id)) {
-    			throw new InternalErrorException("The specified pod has allocated private IP addresses, so its CIDR and IP address range cannot be changed.");
+    			throw new CloudRuntimeException("The specified pod has allocated private IP addresses, so its CIDR and IP address range cannot be changed.");
     		}
     	}
     	
@@ -528,14 +529,14 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 	    	pod.setDescription(ipRange);
 	    	
 	    	if (!_podDao.update(id, pod)) {
-	    		throw new InternalErrorException("Failed to edit pod. Please contact Cloud Support.");
+	    		throw new CloudRuntimeException("Failed to edit pod. Please contact Cloud Support.");
 	    	}
     	
 	    	txn.commit();
 		} catch(Exception e) {
 			s_logger.error("Unable to edit pod due to " + e.getMessage(), e);
 			txn.rollback();
-			throw new InternalErrorException("Failed to edit pod. Please contact Cloud Support.");
+			throw new CloudRuntimeException("Failed to edit pod. Please contact Cloud Support.");
 		}
 		
 		saveConfigurationEvent(userId, null, EventTypes.EVENT_POD_EDIT, "Successfully edited pod. New pod name is: " + name + " and new zone name is: " + zone.getName() + ".", "podId=" + pod.getId(), "dcId=" + zone.getId(), "gateway=" + gateway, "cidr=" + cidr, "startIp=" + startIp, "endIp=" + endIp);
@@ -544,7 +545,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     }
 
     @Override
-    public HostPodVO createPod(CreatePodCmd cmd) throws InvalidParameterValueException, InternalErrorException {
+    public HostPodVO createPod(CreatePodCmd cmd)  {
         String cidr = cmd.getCidr();
         String endIp = cmd.getEndIp();
         String gateway = cmd.getGateway();
@@ -571,7 +572,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     }
 
     @Override @DB
-    public HostPodVO createPod(long userId, String podName, long zoneId, String gateway, String cidr, String startIp, String endIp) throws InvalidParameterValueException, InternalErrorException {
+    public HostPodVO createPod(long userId, String podName, long zoneId, String gateway, String cidr, String startIp, String endIp)  {
     	checkPodAttributes(-1, podName, zoneId, gateway, cidr, startIp, endIp, true);
 		
 		String cidrAddress = getCidrAddress(cidr);
@@ -601,7 +602,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 			
 			if (_podDao.persist(pod) == null) {
 				txn.rollback();
-				throw new InternalErrorException("Failed to create new pod. Please contact Cloud Support.");
+				throw new CloudRuntimeException("Failed to create new pod. Please contact Cloud Support.");
 			}
 			
 			if (startIp != null) {
@@ -618,7 +619,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 		} catch(Exception e) {
 			txn.rollback();
 			s_logger.error("Unable to create new pod due to " + e.getMessage(), e);
-			throw new InternalErrorException("Failed to create new pod. Please contact Cloud Support.");
+			throw new CloudRuntimeException("Failed to create new pod. Please contact Cloud Support.");
 		}
 		
 		DataCenterVO zone = _zoneDao.findById(zoneId);
@@ -627,17 +628,17 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 		return pod;
     }
     
-    private boolean zoneHasVMs(long zoneId) throws InternalErrorException {
+    private boolean zoneHasVMs(long zoneId) {
     	List<VMInstanceVO> vmInstances = _vmInstanceDao.listByZoneId(zoneId);
     	return !vmInstances.isEmpty();
     }
     
-    private boolean zoneHasAllocatedVnets(long zoneId) throws InternalErrorException {
+    private boolean zoneHasAllocatedVnets(long zoneId)  {
     	return !_zoneDao.listAllocatedVnets(zoneId).isEmpty();
     }
     
     @DB
-    protected void checkIfZoneIsDeletable(long zoneId) throws InternalErrorException {
+    protected void checkIfZoneIsDeletable(long zoneId)  {
     	List<List<String>> tablesToCheck = new ArrayList<List<String>>();
     	
     	List<String> alert = new ArrayList<String>();
@@ -707,10 +708,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
                 stmt.setLong(1, zoneId);
                 ResultSet rs = stmt.executeQuery();
                 if (rs != null && rs.next()) {
-                	throw new InternalErrorException("The zone is not deletable because " + errorMsg);
+                	throw new CloudRuntimeException("The zone is not deletable because " + errorMsg);
                 }
             } catch (SQLException ex) {
-            	throw new InternalErrorException("The Management Server failed to detect if zone is deletable. Please contact Cloud Support.");
+            	throw new CloudRuntimeException("The Management Server failed to detect if zone is deletable. Please contact Cloud Support.");
             }
     	}
     
@@ -776,7 +777,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     
     @Override
     @DB
-    public void deleteZone(DeleteZoneCmd cmd) throws InvalidParameterValueException, InternalErrorException {
+    public void deleteZone(DeleteZoneCmd cmd) {
     	
     	Long userId = UserContext.current().getUserId();
     	Long zoneId = cmd.getId();
@@ -803,7 +804,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     }
     
     @Override
-    public DataCenterVO editZone(UpdateZoneCmd cmd) throws InvalidParameterValueException, InternalErrorException {
+    public DataCenterVO editZone(UpdateZoneCmd cmd) {
     	//Parameter validation as from execute() method in V1
     	Long zoneId = cmd.getId();
     	String zoneName = cmd.getZoneName();
@@ -838,7 +839,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	// If the Vnet range is being changed, make sure there are no allocated VNets
     	if (vnetRange != null) {
     		if (zoneHasAllocatedVnets(zoneId)) {
-    			throw new InternalErrorException("The vlan range is not editable because there are allocated vlans.");
+    			throw new CloudRuntimeException("The vlan range is not editable because there are allocated vlans.");
     		}
     	}
 
@@ -885,7 +886,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	}
     	
     	if (!_zoneDao.update(zoneId, zone)) {
-    		throw new InternalErrorException("Failed to edit zone. Please contact Cloud Support.");
+    		throw new CloudRuntimeException("Failed to edit zone. Please contact Cloud Support.");
     	}
     	
     	if (vnetRange != null) {
@@ -945,7 +946,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     }
 
     @Override @DB
-    public DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String vnetRange, String guestCidr, String domain, Long domainId) throws InvalidParameterValueException, InternalErrorException {
+    public DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String vnetRange, String guestCidr, String domain, Long domainId)  {
         int vnetStart, vnetEnd;
         if (vnetRange != null) {
             String[] tokens = vnetRange.split("-");
@@ -991,7 +992,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     }
 
     @Override
-    public DataCenterVO createZone(CreateZoneCmd cmd) throws InvalidParameterValueException, InternalErrorException {
+    public DataCenterVO createZone(CreateZoneCmd cmd)  {
         // grab parameters from the command
         Long userId = UserContext.current().getUserId();
         String zoneName = cmd.getZoneName();
@@ -1289,7 +1290,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     }
 
     @Override
-    public VlanVO createVlanAndPublicIpRange(CreateVlanIpRangeCmd cmd) throws InvalidParameterValueException, InternalErrorException, InsufficientCapacityException {
+    public VlanVO createVlanAndPublicIpRange(CreateVlanIpRangeCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException {
         Long userId = UserContext.current().getUserId();
         if (userId == null) {
             userId = Long.valueOf(User.UID_SYSTEM);
@@ -1335,7 +1336,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 	    	{
 	    		if(_configDao.getValue("xen.public.network.device") == null || _configDao.getValue("xen.public.network.device").equals(""))
 	    		{
-	    			throw new InternalErrorException("For adding an untagged IP range, please set up xen.public.network.device");
+	    			throw new CloudRuntimeException("For adding an untagged IP range, please set up xen.public.network.device");
 	    		}
 	    	}
 	    	
@@ -1496,12 +1497,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 			if(!savePublicIPRangeForAccount(startIP, endIP, zoneId, vlan.getId(), account.getId(), account.getDomainId())) {
 				deletePublicIPRange(vlan.getId());
 				_vlanDao.expunge(vlan.getId());
-				throw new InternalErrorException("Failed to save IP range. Please contact Cloud Support."); //It can be Direct IP or Public IP.
+				throw new CloudRuntimeException("Failed to save IP range. Please contact Cloud Support."); //It can be Direct IP or Public IP.
 			}				
 		}else if (!savePublicIPRange(startIP, endIP, zoneId, vlan.getId())) {
 			deletePublicIPRange(vlan.getId());
 			_vlanDao.expunge(vlan.getId());
-			throw new InternalErrorException("Failed to save IP range. Please contact Cloud Support."); //It can be Direct IP or Public IP.
+			throw new CloudRuntimeException("Failed to save IP range. Please contact Cloud Support."); //It can be Direct IP or Public IP.
 		}
 		
 		if (account != null) {
@@ -1536,7 +1537,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 
     @Override @DB
     public void associateIpAddressListToAccount(long userId, long accountId, long zoneId, Long vlanId) throws InsufficientAddressCapacityException,
-            InvalidParameterValueException, InternalErrorException {
+            ConcurrentOperationException {
         
         Transaction txn = Transaction.currentTxn();
         AccountVO account = null;
@@ -1546,7 +1547,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
             account = _accountDao.acquire(accountId);
             if (account == null) {
                 s_logger.warn("Unable to lock account: " + accountId);
-                throw new InternalErrorException("Unable to acquire account lock");
+                throw new ConcurrentOperationException("Unable to acquire account lock");
             }            
             s_logger.debug("Associate IP address lock acquired");
             
@@ -1590,19 +1591,19 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
                      for(String ip : ipAddrsList){
                          EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_ERROR, EventTypes.EVENT_NET_IP_ASSIGN, "Unable to assign public IP " +ip, params);
                      }
-                    throw new InternalErrorException(errorMsg);
+                    throw new CloudRuntimeException(errorMsg);
                 }
                 txn.commit();
                 for(String ip : ipAddrsList){
                     EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_INFO, EventTypes.EVENT_NET_IP_ASSIGN, "Successfully assigned account IP " +ip, params);
                 }
             }
-            } catch (InternalErrorException iee) {
-                s_logger.error("Associate IP threw an InternalErrorException.", iee);
+            } catch (CloudRuntimeException iee) {
+                s_logger.error("Associate IP threw an CloudRuntimeException.", iee);
                 throw iee;
             } catch (Throwable t) {
                 s_logger.error("Associate IP address threw an exception.", t);
-                throw new InternalErrorException("Associate IP address exception");
+                throw new CloudRuntimeException("Associate IP address exception");
             } finally {
                 if (account != null) {
                     _accountDao.release(accountId);

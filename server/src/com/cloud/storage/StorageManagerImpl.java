@@ -96,7 +96,6 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientStorageCapacityException;
-import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
@@ -1566,7 +1565,7 @@ public class StorageManagerImpl implements StorageManager {
     }
 
     @Override
-    public VolumeVO moveVolume(VolumeVO volume, long destPoolDcId, Long destPoolPodId, Long destPoolClusterId) throws InternalErrorException {
+    public VolumeVO moveVolume(VolumeVO volume, long destPoolDcId, Long destPoolPodId, Long destPoolClusterId) {
     	// Find a destination storage pool with the specified criteria
     	DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
     	DiskProfile dskCh = new DiskProfile(volume.getId(), volume.getVolumeType(), volume.getName(), diskOffering.getId(), diskOffering.getDiskSizeInBytes(), diskOffering.getTagsArray(), diskOffering.getUseLocalStorage(), diskOffering.isRecreatable(), null);
@@ -1575,7 +1574,7 @@ public class StorageManagerImpl implements StorageManager {
         StoragePoolVO destPool = findStoragePool(dskCh, destPoolDataCenter, destPoolPod, destPoolClusterId, null, null, null, new HashSet<StoragePool>());
     	
         if (destPool == null) {
-        	throw new InternalErrorException("Failed to find a storage pool with enough capacity to move the volume to.");
+        	throw new CloudRuntimeException("Failed to find a storage pool with enough capacity to move the volume to.");
         }
         
         StoragePoolVO srcPool = _storagePoolDao.findById(volume.getPoolId());
@@ -1587,9 +1586,9 @@ public class StorageManagerImpl implements StorageManager {
         Long destHostId = findHostIdForStoragePool(destPool);
 
         if (sourceHostId == null) {
-            throw new InternalErrorException("Failed to find a host where the source storage pool is visible.");
+            throw new CloudRuntimeException("Failed to find a host where the source storage pool is visible.");
         } else if (destHostId == null) {
-            throw new InternalErrorException("Failed to find a host where the dest storage pool is visible.");
+            throw new CloudRuntimeException("Failed to find a host where the dest storage pool is visible.");
         }
 
         // Copy the volume from the source storage pool to secondary storage
@@ -1597,7 +1596,7 @@ public class StorageManagerImpl implements StorageManager {
         CopyVolumeAnswer cvAnswer = (CopyVolumeAnswer) _agentMgr.easySend(sourceHostId, cvCmd);
 
         if (cvAnswer == null || !cvAnswer.getResult()) {
-            throw new InternalErrorException("Failed to copy the volume from the source primary storage pool to secondary storage.");
+            throw new CloudRuntimeException("Failed to copy the volume from the source primary storage pool to secondary storage.");
         }
 
         secondaryStorageVolumePath = cvAnswer.getVolumePath();
@@ -1608,7 +1607,7 @@ public class StorageManagerImpl implements StorageManager {
         cvAnswer = (CopyVolumeAnswer) _agentMgr.easySend(destHostId, cvCmd);
 
         if (cvAnswer == null || !cvAnswer.getResult()) {
-            throw new InternalErrorException("Failed to copy the volume from secondary storage to the destination primary storage pool.");
+            throw new CloudRuntimeException("Failed to copy the volume from secondary storage to the destination primary storage pool.");
         }
 
         String destPrimaryStorageVolumePath = cvAnswer.getVolumePath();
@@ -1619,7 +1618,7 @@ public class StorageManagerImpl implements StorageManager {
         Answer destroyAnswer = _agentMgr.easySend(sourceHostId, cmd);
         
         if (destroyAnswer == null || !destroyAnswer.getResult()) {
-            throw new InternalErrorException("Failed to delete the volume from the source primary storage pool.");
+            throw new CloudRuntimeException("Failed to delete the volume from the source primary storage pool.");
         }
 
         volume.setPath(destPrimaryStorageVolumePath);
@@ -1636,7 +1635,7 @@ public class StorageManagerImpl implements StorageManager {
     @Override
     public VolumeVO allocVolume(CreateVolumeCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, ResourceAllocationException {
         // FIXME:  some of the scheduled event stuff might be missing here...
-        Account account = (Account)UserContext.current().getAccount();
+        Account account = UserContext.current().getAccount();
         String accountName = cmd.getAccountName();
         Long domainId = cmd.getDomainId();
         Account targetAccount = null;
@@ -1662,7 +1661,7 @@ public class StorageManagerImpl implements StorageManager {
 
         // check if the volume can be created for the user
         // Check that the resource limit for volumes won't be exceeded
-        if (_accountMgr.resourceLimitExceeded((Account)targetAccount, ResourceType.volume)) {
+        if (_accountMgr.resourceLimitExceeded(targetAccount, ResourceType.volume)) {
             ResourceAllocationException rae = new ResourceAllocationException("Maximum number of volumes for account: " + targetAccount.getAccountName() + " has been exceeded.");
             rae.setResourceType("volume");
             throw rae;
@@ -2426,7 +2425,7 @@ public class StorageManagerImpl implements StorageManager {
         	primaryStorage.setStatus(Status.ErrorInMaintenance);
     		_storagePoolDao.persist(primaryStorage);
 			return primaryStorage;
-		} catch (InternalErrorException e) {
+		} catch (CloudRuntimeException e) {
 			s_logger.warn("Error changing consoleproxy.restart back to false at end of cancel maintenance:"+e);
         	primaryStorage.setStatus(Status.ErrorInMaintenance);
     		_storagePoolDao.persist(primaryStorage);
@@ -2458,7 +2457,7 @@ public class StorageManagerImpl implements StorageManager {
 	
 	@Override
 	public boolean deleteVolume(DeleteVolumeCmd cmd) throws InvalidParameterValueException {
-    	Account account = (Account) UserContext.current().getAccount();
+    	Account account = UserContext.current().getAccount();
     	Long volumeId = cmd.getId();
     	
     	boolean isAdmin;

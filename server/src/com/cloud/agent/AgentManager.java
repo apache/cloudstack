@@ -35,7 +35,6 @@ import com.cloud.dc.HostPodVO;
 import com.cloud.dc.PodCluster;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.DiscoveryException;
-import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
@@ -153,7 +152,6 @@ public interface AgentManager extends Manager {
      * Obtains statistics for a host; vCPU utilisation, memory utilisation, and network utilisation
      * @param hostId
      * @return HostStats
-     * @throws InternalErrorException
      */
 	HostStats getHostStatistics(long hostId);
 	

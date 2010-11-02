@@ -117,7 +117,6 @@ import com.cloud.event.dao.EventDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
@@ -358,7 +357,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     }
     
     @Override
-    public void attachVolumeToVM(AttachVolumeCmd command) throws InternalErrorException, InvalidParameterValueException, PermissionDeniedException {
+    public void attachVolumeToVM(AttachVolumeCmd command) {
     	Long vmId = command.getVirtualMachineId();
     	Long volumeId = command.getId();
     	Long deviceId = command.getDeviceId();
@@ -450,7 +449,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         VolumeVO rootVolumeOfVm = null;
         List<VolumeVO> rootVolumesOfVm = _volsDao.findByInstanceAndType(vmId, VolumeType.ROOT);
         if (rootVolumesOfVm.size() != 1) {
-        	throw new InternalErrorException("The VM " + vm.getName() + " has more than one ROOT volume and is in an invalid state. Please contact Cloud Support.");
+        	throw new CloudRuntimeException("The VM " + vm.getName() + " has more than one ROOT volume and is in an invalid state. Please contact Cloud Support.");
         } else {
         	rootVolumeOfVm = rootVolumesOfVm.get(0);
         }
@@ -469,7 +468,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         	volume = _storageMgr.createVolume(volume, vm, rootDiskTmplt, dcVO, pod, rootDiskPool.getClusterId(), svo, diskVO, new ArrayList<StoragePoolVO>(), volume.getSize(), rootDiskHyperType);
         	
         	if (volume == null) {
-        		throw new InternalErrorException("Failed to create volume when attaching it to VM: " + vm.getName());
+        		throw new CloudRuntimeException("Failed to create volume when attaching it to VM: " + vm.getName());
         	}       	
     	}
         
@@ -517,7 +516,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         	} else {
         		poolType = "zone";
         	}
-        	throw new InternalErrorException("There are no storage pools in the VM's " + poolType + " with all of the volume's tags (" + volumeDiskOffering.getTags() + ").");
+        	throw new CloudRuntimeException("There are no storage pools in the VM's " + poolType + " with all of the volume's tags (" + volumeDiskOffering.getTags() + ").");
         } else {
         	Long sourcePoolDcId = sourcePool.getDataCenterId();
         	Long sourcePoolPodId = sourcePool.getPodId();
@@ -562,7 +561,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     		try {
     			answer = (AttachVolumeAnswer)_agentMgr.send(hostId, cmd);
     		} catch (Exception e) {
-    			throw new InternalErrorException(errorMsg + " due to: " + e.getMessage());
+    			throw new CloudRuntimeException(errorMsg + " due to: " + e.getMessage());
     		}
     	}
 
@@ -591,12 +590,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     			if (details != null && !details.isEmpty())
     				errorMsg += "; " + details;
     		}
-    		throw new InternalErrorException(errorMsg);
+    		throw new CloudRuntimeException(errorMsg);
     	}
     }
     
     @Override
-    public VolumeResponse detachVolumeFromVM(DetachVolumeCmd cmmd) throws InternalErrorException, InvalidParameterValueException {    	
+    public VolumeResponse detachVolumeFromVM(DetachVolumeCmd cmmd) {    	
     	Account account = UserContext.current().getAccount();
     	if ((cmmd.getId() == null && cmmd.getDeviceId() == null && cmmd.getVirtualMachineId() == null) ||
     	    (cmmd.getId() != null && (cmmd.getDeviceId() != null || cmmd.getVirtualMachineId() != null)) ||
@@ -691,7 +690,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 			try {
     			answer = _agentMgr.send(vm.getHostId(), cmd);
     		} catch (Exception e) {
-    			throw new InternalErrorException(errorMsg + " due to: " + e.getMessage());
+    			throw new CloudRuntimeException(errorMsg + " due to: " + e.getMessage());
     		}
     	}
     	
@@ -733,7 +732,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     				errorMsg += "; " + details;
     		}
     		
-    		throw new InternalErrorException(errorMsg);
+    		throw new CloudRuntimeException(errorMsg);
     	}
     }
     
@@ -1440,7 +1439,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 	}
 
     @Override
-    public HashMap<Long, VmStatsEntry> getVirtualMachineStatistics(long hostId, String hostName, List<Long> vmIds) throws InternalErrorException {
+    public HashMap<Long, VmStatsEntry> getVirtualMachineStatistics(long hostId, String hostName, List<Long> vmIds) throws CloudRuntimeException {
     	HashMap<Long, VmStatsEntry> vmStatsById = new HashMap<Long, VmStatsEntry>();
     	
     	if (vmIds.isEmpty()) {
@@ -1476,7 +1475,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     }
     
     @DB
-    protected String acquireGuestIpAddress(long dcId, long accountId, UserVmVO userVm) throws InternalErrorException {
+    protected String acquireGuestIpAddress(long dcId, long accountId, UserVmVO userVm) throws CloudRuntimeException {
     	boolean routerLock = false;
         DomainRouterVO router = _routerDao.findBy(accountId, dcId);
         long routerId = router.getId();
@@ -1485,7 +1484,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     		txn.start();
         	router = _routerDao.acquire(routerId);
         	if (router == null) {
-        		throw new InternalErrorException("Unable to lock up the router:" + routerId);
+        		throw new CloudRuntimeException("Unable to lock up the router:" + routerId);
         	}
         	routerLock = true;
         	List<UserVmVO> userVms = _vmDao.listByAccountAndDataCenter(accountId, dcId);
@@ -1559,7 +1558,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     }
     
     @Override @DB
-    public UserVmVO createVirtualMachine(Long vmId, long userId, AccountVO account, DataCenterVO dc, ServiceOfferingVO offering, VMTemplateVO template, DiskOfferingVO diskOffering, String displayName, String userData, List<StoragePoolVO> avoids, long startEventId, long size) throws InternalErrorException, ResourceAllocationException {
+    public UserVmVO createVirtualMachine(Long vmId, long userId, AccountVO account, DataCenterVO dc, ServiceOfferingVO offering, VMTemplateVO template, DiskOfferingVO diskOffering, String displayName, String userData, List<StoragePoolVO> avoids, long startEventId, long size) throws CloudRuntimeException, ResourceAllocationException {
         long accountId = account.getId();
         long dataCenterId = dc.getId();
         long serviceOfferingId = offering.getId();
@@ -1574,7 +1573,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 
         DomainRouterVO router = _routerDao.findBy(accountId, dataCenterId, Role.DHCP_FIREWALL_LB_PASSWD_USERDATA);
         if (router == null) {
-            throw new InternalErrorException("Cannot find a router for account (" + accountId + "/" +
+            throw new CloudRuntimeException("Cannot find a router for account (" + accountId + "/" +
             	account.getAccountName() + ") in " + dataCenterId);
         }
         
@@ -1583,7 +1582,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         if (template != null) {
         	guestOSId = template.getGuestOSId();
         } else {
-        	throw new InternalErrorException("No template or ISO was specified for the VM.");
+        	throw new CloudRuntimeException("No template or ISO was specified for the VM.");
         }
         long numVolumes = -1;
         Transaction txn = Transaction.currentTxn();
@@ -1594,7 +1593,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         
         account = _accountDao.lock(accountId, true);
         if (account == null) {
-            throw new InternalErrorException("Unable to lock up the account: " + accountId);
+            throw new CloudRuntimeException("Unable to lock up the account: " + accountId);
         }
 
         // First check that the maximum number of UserVMs for the given accountId will not be exceeded
@@ -1886,7 +1885,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 //    }
     
     @Override @DB
-    public boolean recoverVirtualMachine(RecoverVMCmd cmd) throws ResourceAllocationException, InternalErrorException {
+    public boolean recoverVirtualMachine(RecoverVMCmd cmd) throws ResourceAllocationException, CloudRuntimeException {
     	
         Long vmId = cmd.getId();
         Account accountHandle = UserContext.current().getAccount();
@@ -1939,7 +1938,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         
         //if the account is deleted, throw error
         if(account.getRemoved()!=null)
-        	throw new InternalErrorException("Unable to recover VM as the account is deleted");
+        	throw new CloudRuntimeException("Unable to recover VM as the account is deleted");
         
     	// First check that the maximum number of UserVMs for the given accountId will not be exceeded
         if (_accountMgr.resourceLimitExceeded(account, ResourceType.user_vm)) {
@@ -2609,7 +2608,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     }
 
     @Override @DB
-    public VMTemplateVO createPrivateTemplate(CreateTemplateCmd command) throws InternalErrorException {
+    public VMTemplateVO createPrivateTemplate(CreateTemplateCmd command) throws CloudRuntimeException {
         Long userId = UserContext.current().getUserId();
         if (userId == null) {
             userId = User.UID_SYSTEM;
@@ -2638,7 +2637,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
                 s_logger.info(msg);
             }
 
-            throw new InternalErrorException(msg);
+            throw new CloudRuntimeException(msg);
         }
 
         SnapshotCommand cmd = null;        
@@ -2759,7 +2758,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     
     @DB
     @Override
-	public UserVmVO createDirectlyAttachedVM(Long vmId, long userId, AccountVO account, DataCenterVO dc, ServiceOfferingVO offering, VMTemplateVO template, DiskOfferingVO diskOffering, String displayName, String userData, List<StoragePoolVO> a, List<NetworkGroupVO>  networkGroups, long startEventId, long size) throws InternalErrorException, ResourceAllocationException {
+	public UserVmVO createDirectlyAttachedVM(Long vmId, long userId, AccountVO account, DataCenterVO dc, ServiceOfferingVO offering, VMTemplateVO template, DiskOfferingVO diskOffering, String displayName, String userData, List<StoragePoolVO> a, List<NetworkGroupVO>  networkGroups, long startEventId, long size) throws CloudRuntimeException, ResourceAllocationException {
     	
     	long accountId = account.getId();
 	    long dataCenterId = dc.getId();
@@ -2780,7 +2779,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         if (template != null) {
         	guestOSId = template.getGuestOSId();
         } else {
-        	throw new InternalErrorException("No template or ISO was specified for the VM.");
+        	throw new CloudRuntimeException("No template or ISO was specified for the VM.");
         }
 	    
 	    Transaction txn = Transaction.currentTxn();
@@ -2788,7 +2787,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         
         account = _accountDao.lock(accountId, true);
         if (account == null) {
-            throw new InternalErrorException("Unable to lock up the account: " + accountId);
+            throw new CloudRuntimeException("Unable to lock up the account: " + accountId);
         }
 
         // First check that the maximum number of UserVMs for the given accountId will not be exceeded
@@ -2970,7 +2969,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 	        	else
 	        	{
 	        		s_logger.debug("failed to create VM instance : " + name);
-	        		throw new InternalErrorException("We could not find a suitable pool for creating this directly attached vm");
+	        		throw new CloudRuntimeException("We could not find a suitable pool for creating this directly attached vm");
 	        		
 	        	}
 	            _accountMgr.decrementResourceCount(account.getId(), ResourceType.user_vm);
@@ -3012,7 +3011,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     
     @DB
     @Override
-	public UserVmVO createDirectlyAttachedVMExternal(Long vmId, long userId, AccountVO account, DataCenterVO dc, ServiceOfferingVO offering, VMTemplateVO template, DiskOfferingVO diskOffering, String displayName, String userData, List<StoragePoolVO> a, List<NetworkGroupVO>  networkGroups, long startEventId, long size) throws InternalErrorException, ResourceAllocationException {
+	public UserVmVO createDirectlyAttachedVMExternal(Long vmId, long userId, AccountVO account, DataCenterVO dc, ServiceOfferingVO offering, VMTemplateVO template, DiskOfferingVO diskOffering, String displayName, String userData, List<StoragePoolVO> a, List<NetworkGroupVO>  networkGroups, long startEventId, long size) throws CloudRuntimeException, ResourceAllocationException {
 	    long accountId = account.getId();
 	    long dataCenterId = dc.getId();
 	    long serviceOfferingId = offering.getId();
@@ -3032,7 +3031,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         if (template != null) {
         	guestOSId = template.getGuestOSId();
         } else {
-        	throw new InternalErrorException("No template or ISO was specified for the VM.");
+        	throw new CloudRuntimeException("No template or ISO was specified for the VM.");
         }
 	    
         boolean isIso = Storage.ImageFormat.ISO.equals(template.getFormat());
@@ -3045,7 +3044,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 	        
 	    	account = _accountDao.lock(accountId, true);
 	    	if (account == null) {
-	    		throw new InternalErrorException("Unable to lock up the account: " + accountId);
+	    		throw new CloudRuntimeException("Unable to lock up the account: " + accountId);
 	    	}
 	
 	        // First check that the maximum number of UserVMs for the given accountId will not be exceeded

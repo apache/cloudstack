@@ -17,7 +17,6 @@
  */
 package com.cloud.vm;
 
-import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.AttachVolumeCmd;
 import com.cloud.api.commands.CreateTemplateCmd;
 import com.cloud.api.commands.CreateVMGroupCmd;
@@ -47,7 +46,6 @@ import com.cloud.exception.StorageUnavailableException;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.Manager;
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
 
 public interface UserVmService extends Manager {
@@ -70,7 +68,7 @@ public interface UserVmService extends Manager {
      * @param cmd - the command specifying volumeId and vmId
      * @throws InternalErrorException, InvalidParameterValueException, PermissionDeniedException
      */
-    void attachVolumeToVM(AttachVolumeCmd cmd) throws InternalErrorException, InvalidParameterValueException, PermissionDeniedException;
+    void attachVolumeToVM(AttachVolumeCmd cmd);
     
     /**
      * Detaches the specified volume from the VM it is currently attached to.
@@ -79,16 +77,16 @@ public interface UserVmService extends Manager {
      * @throws InternalErrorException
      * @throws InvalidParameterValueException 
      */
-    VolumeResponse detachVolumeFromVM(DetachVolumeCmd cmmd) throws InternalErrorException, InvalidParameterValueException;
+    VolumeResponse detachVolumeFromVM(DetachVolumeCmd cmmd);
     
     UserVmVO startVirtualMachine(StartVMCmd cmd) throws StorageUnavailableException, ExecutionException, ConcurrentOperationException;
-    UserVmVO stopVirtualMachine(StopVMCmd cmd) throws ServerApiException;
+    UserVmVO stopVirtualMachine(StopVMCmd cmd);
     UserVm rebootVirtualMachine(RebootVMCmd cmd);
     
     @Deprecated
     OperationResponse executeRebootVM(RebootVMExecutor executor, VMOperationParam param);
     
-    boolean recoverVirtualMachine(RecoverVMCmd cmd) throws ResourceAllocationException, InternalErrorException;
+    boolean recoverVirtualMachine(RecoverVMCmd cmd) throws ResourceAllocationException;
 
     /**
      * Create a template database record in preparation for creating a private template.
@@ -97,7 +95,7 @@ public interface UserVmService extends Manager {
      * @return the vm template object if successful, null otherwise
      * @throws InvalidParameterValueException, PermissionDeniedException
      */
-    VMTemplateVO createPrivateTemplateRecord(CreateTemplateCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+    VMTemplateVO createPrivateTemplateRecord(CreateTemplateCmd cmd);
     
     /**
      * Creates a private template from a snapshot of a VM
@@ -105,21 +103,43 @@ public interface UserVmService extends Manager {
      * @return a template if successfully created, null otherwise
      * @throws InvalidParameterValueException
      */
-    VMTemplateVO createPrivateTemplate(CreateTemplateCmd cmd) throws InternalErrorException;
+    VMTemplateVO createPrivateTemplate(CreateTemplateCmd cmd);
 
     void updateVirtualMachine(UpdateVMCmd cmd);
     
-    UserVm createVirtualMachine(DeployVm2Cmd cmd) throws InvalidParameterValueException, PermissionDeniedException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, CloudRuntimeException;
+    /**
+     * Creates a User VM in the database and returns the VM to the caller.
+     *  
+     * @param cmd Command to deploy.
+     * @return UserVm object if successful.
+     * 
+     * @throws InsufficientCapacityException if there is insufficient capacity to deploy the VM.
+     * @throws ConcurrentOperationException if there are multiple users working on the same VM or in the same environment.
+     * @throws ResourceUnavailableException if the resources required to deploy the VM is not currently available.
+     * @throws PermissionDeniedException if the caller doesn't have any access rights to the VM.
+     * @throws InvalidParameterValueException if the parameters are incorrect. 
+     */
+    UserVm createVirtualMachine(DeployVm2Cmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException;
     
-    UserVm startVirtualMachine(DeployVm2Cmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, CloudRuntimeException;
+    /**
+     * Starts the virtual machine created from createVirtualMachine.
+     *  
+     * @param cmd Command to deploy.
+     * @return UserVm object if successful.
+     * @throws InsufficientCapacityException if there is insufficient capacity to deploy the VM.
+     * @throws ConcurrentOperationException if there are multiple users working on the same VM.
+     * @throws ResourceUnavailableException if the resources required the deploy the VM is not currently available.
+     */
+    UserVm startVirtualMachine(DeployVm2Cmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException;
+    
     /**
      * Creates a vm group.
      * @param name - name of the group
      * @param accountId - accountId
      */
-    InstanceGroupVO createVmGroup(CreateVMGroupCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+    InstanceGroupVO createVmGroup(CreateVMGroupCmd cmd);
 
-    boolean deleteVmGroup(DeleteVMGroupCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+    boolean deleteVmGroup(DeleteVMGroupCmd cmd);
 
     /**
      * upgrade the service offering of the virtual machine
@@ -127,5 +147,5 @@ public interface UserVmService extends Manager {
      * @return the vm
      * @throws InvalidParameterValueException 
      */
-    UserVm upgradeVirtualMachine(UpgradeVMCmd cmd) throws ServerApiException, InvalidParameterValueException;
+    UserVm upgradeVirtualMachine(UpgradeVMCmd cmd);
 }

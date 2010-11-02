@@ -36,7 +36,6 @@ import com.cloud.dc.HostPodVO;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientStorageCapacityException;
-import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
@@ -205,7 +204,7 @@ public interface StorageManager extends Manager {
 	 * @param destPoolClusterId
 	 * @return VolumeVO
 	 */
-	VolumeVO moveVolume(VolumeVO volume, long destPoolDcId, Long destPoolPodId, Long destPoolClusterId) throws InternalErrorException;
+	VolumeVO moveVolume(VolumeVO volume, long destPoolDcId, Long destPoolPodId, Long destPoolClusterId);
 
 	/**
 	 * Creates the database object for a volume based on the given criteria
@@ -214,7 +213,7 @@ public interface StorageManager extends Manager {
 	 * @throws InvalidParameterValueException
 	 * @throws PermissionDeniedException
 	 */
-	VolumeVO allocVolume(CreateVolumeCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, ResourceAllocationException;
+	VolumeVO allocVolume(CreateVolumeCmd cmd) throws ResourceAllocationException;
 
 	/**
      * Creates the volume based on the given criteria
@@ -314,7 +313,7 @@ public interface StorageManager extends Manager {
      * @return success or failure
      * @throws InvalidParameterValueException
      */
-    public boolean preparePrimaryStorageForMaintenance(PreparePrimaryStorageForMaintenanceCmd cmd) throws InvalidParameterValueException;
+    public boolean preparePrimaryStorageForMaintenance(PreparePrimaryStorageForMaintenanceCmd cmd);
     
     /**
      * Complete maintenance for primary storage
@@ -322,7 +321,7 @@ public interface StorageManager extends Manager {
      * @return the primary storage pool
      * @throws InvalidParameterValueException
      */
-    public StoragePoolVO cancelPrimaryStorageForMaintenance(CancelPrimaryStorageMaintenanceCmd cmd) throws InvalidParameterValueException;
+    public StoragePoolVO cancelPrimaryStorageForMaintenance(CancelPrimaryStorageMaintenanceCmd cmd);
 
 	public StoragePoolVO updateStoragePool(UpdateStoragePoolCmd cmd) throws IllegalArgumentException;
     

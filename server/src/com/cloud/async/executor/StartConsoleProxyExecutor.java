@@ -25,7 +25,6 @@ import com.cloud.api.BaseCmd;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
-import com.cloud.exception.InternalErrorException;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ManagementServer;
 import com.cloud.vm.ConsoleProxyVO;
@@ -34,7 +33,8 @@ import com.google.gson.Gson;
 public class StartConsoleProxyExecutor extends VMOperationExecutor {
     public static final Logger s_logger = Logger.getLogger(StartConsoleProxyExecutor.class.getName());
     
-	public boolean execute() {
+	@Override
+    public boolean execute() {
     	Gson gson = GsonHelper.getBuilder().create();
     	AsyncJobManager asyncMgr = getAsyncJobMgr();
     	AsyncJobVO job = getJob();
@@ -52,9 +52,6 @@ public class StartConsoleProxyExecutor extends VMOperationExecutor {
 	    		else
 	    			asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR, 
 						"operation failed");
-			} catch (InternalErrorException e) {
-				asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR, 
-					e.getMessage());
 			} catch(Exception e) {
 				s_logger.warn("Unable to start console proxy " + param.getVmId() + ":" + e.getMessage(), e);
 				asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR, 
@@ -64,12 +61,15 @@ public class StartConsoleProxyExecutor extends VMOperationExecutor {
 		}
 	}
 	
-	public void processAnswer(VMOperationListener listener, long agentId, long seq, Answer answer) {
+	@Override
+    public void processAnswer(VMOperationListener listener, long agentId, long seq, Answer answer) {
 	}
 	
-	public void processDisconnect(VMOperationListener listener, long agentId) {
+	@Override
+    public void processDisconnect(VMOperationListener listener, long agentId) {
 	}
 
-	public void processTimeout(VMOperationListener listener, long agentId, long seq) {
+	@Override
+    public void processTimeout(VMOperationListener listener, long agentId, long seq) {
 	}
 }
