@@ -252,7 +252,7 @@ var hostActionMap = {
                 }
             });            
         }
-    },          
+    }          
 } 
 
 function doEnableMaintenanceMode($actionLink, $detailsTab, $midmenuItem1){ 
