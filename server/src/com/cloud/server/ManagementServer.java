@@ -203,7 +203,7 @@ public interface ManagementServer {
      * @return UserAccount object
      * @throws InvalidParameterValueException, PermissionDeniedException
      */
-    UserAccount disableUser(DisableUserCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;;
+    UserAccount disableUser(DisableUserCmd cmd);
 
     /**
      * Disables an account by accountId
@@ -218,7 +218,7 @@ public interface ManagementServer {
      * @return true if disable was successful, false otherwise
      * @throws InvalidParameterValueException, PermissionDeniedException
      */
-    AccountVO disableAccount(DisableAccountCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+    AccountVO disableAccount(DisableAccountCmd cmd);
 
     /**
      * Enables an account by accountId
@@ -226,7 +226,7 @@ public interface ManagementServer {
      * @return account object
      * @throws InvalidParameterValueException, PermissionDeniedException
      */
-    AccountVO enableAccount(EnableAccountCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+    AccountVO enableAccount(EnableAccountCmd cmd);
 
     /**
      * Locks an account by accountId.  A locked account cannot access the API, but will still have running VMs/IP addresses allocated/etc.
@@ -242,7 +242,7 @@ public interface ManagementServer {
      * @throws InvalidParameterValueException, PermissionDeniedException
      */
     
-    AccountVO updateAccount(UpdateAccountCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+    AccountVO updateAccount(UpdateAccountCmd cmd);
 
     /**
      * Enables a user
@@ -250,7 +250,7 @@ public interface ManagementServer {
      * @return UserAccount object
      * @throws InvalidParameterValueException, PermissionDeniedException
      */
-    UserAccount enableUser(EnableUserCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+    UserAccount enableUser(EnableUserCmd cmd);
 
     /**
      * Locks a user by userId.  A locked user cannot access the API, but will still have running VMs/IP addresses allocated/etc.
@@ -320,7 +320,7 @@ public interface ManagementServer {
      * @param cmd
      * @return List of Vlans
      */
-    List<VlanVO> searchForVlans(ListVlanIpRangesCmd cmd) throws InvalidParameterValueException;
+    List<VlanVO> searchForVlans(ListVlanIpRangesCmd cmd);
     
     /**
      * If the specified VLAN is associated with the pod, returns the pod ID. Else, returns null.
@@ -383,7 +383,7 @@ public interface ManagementServer {
      * @throws StorageUnavailableException
      * @throws ConcurrentOperationException
      */
-    UserVm deployVirtualMachine(DeployVMCmd cmd) throws ResourceAllocationException, InvalidParameterValueException, InternalErrorException, InsufficientStorageCapacityException, PermissionDeniedException, ExecutionException, StorageUnavailableException, ConcurrentOperationException;
+    UserVm deployVirtualMachine(DeployVMCmd cmd) throws ResourceAllocationException, InsufficientStorageCapacityException, ExecutionException, StorageUnavailableException, ConcurrentOperationException;
 
     /**
      * Finds a domain router by user and data center
@@ -449,7 +449,7 @@ public interface ManagementServer {
      * @param cmd
      * @return List of UserAccounts
      */
-    List<UserAccountVO> searchForUsers(ListUsersCmd cmd) throws PermissionDeniedException;
+    List<UserAccountVO> searchForUsers(ListUsersCmd cmd);
     
     /**
      * Searches for Service Offerings by the specified search criteria
@@ -457,7 +457,7 @@ public interface ManagementServer {
      * @param cmd
      * @return List of ServiceOfferings
      */
-    List<ServiceOfferingVO> searchForServiceOfferings(ListServiceOfferingsCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+    List<ServiceOfferingVO> searchForServiceOfferings(ListServiceOfferingsCmd cmd);
     
     /**
      * Searches for Clusters by the specified search criteria
@@ -521,7 +521,7 @@ public interface ManagementServer {
      * @return Message to display to user
      * @throws InvalidParameterValueException if unable to add private ip range
      */
-    String changePrivateIPRange(boolean add, Long podId, String startIP, String endIP) throws InvalidParameterValueException;
+    String changePrivateIPRange(boolean add, Long podId, String startIP, String endIP);
     
     /**
      * Finds a user by their user ID.
@@ -592,8 +592,8 @@ public interface ManagementServer {
      * @return updated template
      * @throws InvalidParameterValueException, PermissionDeniedException
      */
-    VMTemplateVO updateTemplate(UpdateIsoCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
-    VMTemplateVO updateTemplate(UpdateTemplateCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+    VMTemplateVO updateTemplate(UpdateIsoCmd cmd);
+    VMTemplateVO updateTemplate(UpdateTemplateCmd cmd);
     
     /**
      * Copies a template from one secondary storage server to another
@@ -604,7 +604,7 @@ public interface ManagementServer {
      * @return true if success
      * @throws InternalErrorException
      */
-    boolean copyTemplate(long userId, long templateId, long sourceZoneId, long destZoneId, long startEventId) throws InternalErrorException;
+    boolean copyTemplate(long userId, long templateId, long sourceZoneId, long destZoneId, long startEventId);
 
     /**
      * Finds a template by the specified ID.
@@ -627,14 +627,14 @@ public interface ManagementServer {
      * @param cmd the API command that wraps the search criteria
      * @return List of UserVMs.
      */
-    List<UserVmVO> searchForUserVMs(ListVMsCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+    List<UserVmVO> searchForUserVMs(ListVMsCmd cmd);
 
     /**
      * Update an existing port forwarding rule on the given public IP / public port for the given protocol
      * @param cmd - the UpdateIPForwardingRuleCmd command that wraps publicIp, privateIp, publicPort, privatePort, protocol of the rule to update
      * @return the new firewall rule if updated, null if no rule on public IP / public port of that protocol could be found
      */
-    FirewallRuleVO updatePortForwardingRule(UpdateIPForwardingRuleCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+    FirewallRuleVO updatePortForwardingRule(UpdateIPForwardingRuleCmd cmd);
 
     /**
      * Find a firewall rule by rule id
@@ -656,7 +656,7 @@ public interface ManagementServer {
      * @param c
      * @return List of Events.
      */
-    List<EventVO> searchForEvents(ListEventsCmd c) throws PermissionDeniedException, InvalidParameterValueException;
+    List<EventVO> searchForEvents(ListEventsCmd c);
     
     List<EventVO> listPendingEvents(int entryTime, int duration);
     
@@ -679,7 +679,7 @@ public interface ManagementServer {
      * @param cmd
      * @return List of DomainRouters.
      */
-    List<DomainRouterVO> searchForRouters(ListRoutersCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+    List<DomainRouterVO> searchForRouters(ListRoutersCmd cmd);
     
     List<ConsoleProxyVO> searchForConsoleProxy(Criteria c);
     
@@ -689,7 +689,7 @@ public interface ManagementServer {
      * @param cmd
      * @return List of Volumes.
      */
-    List<VolumeVO> searchForVolumes(ListVolumesCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+    List<VolumeVO> searchForVolumes(ListVolumesCmd cmd);
 
     /**
      * Finds a pod by the specified ID.
@@ -711,7 +711,7 @@ public interface ManagementServer {
      * @param cmd the command that wraps the search criteria
      * @return List of IPAddresses
      */
-    List<IPAddressVO> searchForIPAddresses(ListPublicIpAddressesCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+    List<IPAddressVO> searchForIPAddresses(ListPublicIpAddressesCmd cmd);
     
     /**
      * Obtains a list of billing records by the specified search criteria.
@@ -752,14 +752,14 @@ public interface ManagementServer {
     void logoutUser(Long userId);
 
 	ConsoleProxyInfo getConsoleProxy(long dataCenterId, long userVmId);
-	ConsoleProxyVO startConsoleProxy(long instanceId, long startEventId) throws InternalErrorException;
+	ConsoleProxyVO startConsoleProxy(long instanceId, long startEventId);
 	ConsoleProxyVO stopConsoleProxy(long instanceId, long startEventId);
 	ConsoleProxyVO rebootConsoleProxy(long instanceId, long startEventId);
 	String getConsoleAccessUrlRoot(long vmId);
 	ConsoleProxyVO findConsoleProxyById(long instanceId);
 	VMInstanceVO findSystemVMById(long instanceId);
 	VMInstanceVO stopSystemVM(StopSystemVmCmd cmd);
-	VMInstanceVO startSystemVM(StartSystemVMCmd cmd) throws InternalErrorException;
+	VMInstanceVO startSystemVM(StartSystemVMCmd cmd);
 	VMInstanceVO rebootSystemVM(RebootSystemVmCmd cmd);
 
 	/**
@@ -782,15 +782,15 @@ public interface ManagementServer {
 	 * in a command object.
 	 * @return list of domains owned by the given user
 	 */
-	List<DomainVO> searchForDomains(ListDomainsCmd c) throws PermissionDeniedException;
+	List<DomainVO> searchForDomains(ListDomainsCmd c);
 	
-	List<DomainVO> searchForDomainChildren(ListDomainChildrenCmd cmd) throws PermissionDeniedException;
+	List<DomainVO> searchForDomainChildren(ListDomainChildrenCmd cmd);
 
 	/**
 	 * create a new domain
 	 * @param command - the create command defining the name to use and the id of the parent domain under which to create the new domain.
 	 */
-    DomainVO createDomain(CreateDomainCmd command) throws InvalidParameterValueException, PermissionDeniedException;
+    DomainVO createDomain(CreateDomainCmd command);
 
 	/**
      * delete a domain with the given domainId
@@ -799,7 +799,7 @@ public interface ManagementServer {
      *   - ownerId
      *   - cleanup:  whether or not to delete all accounts/VMs/sub-domains when deleting the domain
      */
-	boolean deleteDomain(DeleteDomainCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+	boolean deleteDomain(DeleteDomainCmd cmd);
 
     /**
      * update an existing domain
@@ -807,7 +807,7 @@ public interface ManagementServer {
      * @return Domain object if the command succeeded
      * @throws InvalidParameterValueException, PermissionDeniedException
      */
-    DomainVO updateDomain(UpdateDomainCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+    DomainVO updateDomain(UpdateDomainCmd cmd);
 
     /**
      * find the domain Id associated with the given account
@@ -927,7 +927,7 @@ public interface ManagementServer {
      * @throws InvalidParameterValueException
      * @throws PermissionDeniedException
      */
-    List<SnapshotVO> listSnapshots(ListSnapshotsCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+    List<SnapshotVO> listSnapshots(ListSnapshotsCmd cmd);
 
     /**
      * Finds a diskOffering by the specified ID.
@@ -947,7 +947,7 @@ public interface ManagementServer {
      * @param cmd the command wrapping the search criteria (template id)
      * @return list of account names that have been granted permission to launch instances from the template
      */
-    List<String> listTemplatePermissions(ListTemplateOrIsoPermissionsCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+    List<String> listTemplatePermissions(ListTemplateOrIsoPermissionsCmd cmd);
 
     /**
      * List private templates for which the given account/domain has been granted permission to launch instances
@@ -961,14 +961,14 @@ public interface ManagementServer {
      * @param cmd The command that wraps the (optional) templateId, name, keyword, templateFilter, bootable, account, and zoneId parameters.
      * @return list of ISOs
      */
-    List<VMTemplateVO> listIsos(ListIsosCmd cmd) throws IllegalArgumentException, InvalidParameterValueException;
+    List<VMTemplateVO> listIsos(ListIsosCmd cmd);
 
     /**
      * List templates that match the specified criteria. 
      * @param cmd The command that wraps the (optional) templateId, name, keyword, templateFilter, bootable, account, and zoneId parameters.
      * @return list of ISOs
      */
-    List<VMTemplateVO> listTemplates(ListTemplatesCmd cmd) throws IllegalArgumentException, InvalidParameterValueException;
+    List<VMTemplateVO> listTemplates(ListTemplatesCmd cmd);
 
     /**
      * Search for disk offerings based on search criteria
@@ -982,7 +982,7 @@ public interface ManagementServer {
      * @param jobId async-call job id
      * @return async-call result object
      */
-    AsyncJobResult queryAsyncJobResult(long jobId) throws PermissionDeniedException;
+    AsyncJobResult queryAsyncJobResult(long jobId);
 
     /**
      * Queries for the status or final result of an async job.
@@ -990,7 +990,7 @@ public interface ManagementServer {
      * @return an async-call result object
      * @throws PermissionDeniedException
      */
-    AsyncJobResult queryAsyncJobResult(QueryAsyncJobResultCmd cmd) throws PermissionDeniedException;
+    AsyncJobResult queryAsyncJobResult(QueryAsyncJobResultCmd cmd);
 
     AsyncJobVO findAsyncJobById(long jobId);
 
@@ -999,7 +999,7 @@ public interface ManagementServer {
      * @param cmd the command specifying the account and start date parameters
      * @return the list of async jobs that match the criteria
      */
-    List<AsyncJobVO> searchForAsyncJobs(ListAsyncJobsCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+    List<AsyncJobVO> searchForAsyncJobs(ListAsyncJobsCmd cmd);
 
     LoadBalancerVO findLoadBalancer(Long accountId, String name);
     LoadBalancerVO findLoadBalancerById(long loadBalancerId);
@@ -1009,7 +1009,7 @@ public interface ManagementServer {
      * @param cmd
      * @return list of vm instances that have been or can be applied to a load balancer
      */
-    List<UserVmVO> listLoadBalancerInstances(ListLoadBalancerRuleInstancesCmd cmd) throws PermissionDeniedException;
+    List<UserVmVO> listLoadBalancerInstances(ListLoadBalancerRuleInstancesCmd cmd);
 
     /**
      * List load balancer rules based on the given criteria
@@ -1017,7 +1017,7 @@ public interface ManagementServer {
      *            by id, name, public ip, and vm instance id
      * @return list of load balancers that match the criteria
      */
-    List<LoadBalancerVO> searchForLoadBalancers(ListLoadBalancerRulesCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+    List<LoadBalancerVO> searchForLoadBalancers(ListLoadBalancerRulesCmd cmd);
 
     String[] getApiConfig();
     StoragePoolVO findPoolById(Long id);
@@ -1054,7 +1054,7 @@ public interface ManagementServer {
 	 * @param userId -- id for the user
 	 * @return -- ArrayList of <CloudId+Signature>
 	 */
-    ArrayList<String> getCloudIdentifierResponse(GetCloudIdentifierCmd cmd) throws InvalidParameterValueException;
+    ArrayList<String> getCloudIdentifierResponse(GetCloudIdentifierCmd cmd);
 
     NetworkGroupVO findNetworkGroupByName(Long accountId, String groupName);
 
@@ -1076,9 +1076,9 @@ public interface ManagementServer {
 
 	boolean checkLocalStorageConfigVal(); 
 
-	UserAccount updateUser(UpdateUserCmd cmd) throws InvalidParameterValueException;
-	boolean updateTemplatePermissions(UpdateTemplatePermissionsCmd cmd)throws InvalidParameterValueException, PermissionDeniedException,InternalErrorException;
-    boolean updateTemplatePermissions(UpdateIsoPermissionsCmd cmd)throws InvalidParameterValueException, PermissionDeniedException,InternalErrorException;
+	UserAccount updateUser(UpdateUserCmd cmd);
+	boolean updateTemplatePermissions(UpdateTemplatePermissionsCmd cmd);
+    boolean updateTemplatePermissions(UpdateIsoPermissionsCmd cmd);
 	String[] createApiKeyAndSecretKey(RegisterCmd cmd);
 
 	VolumeVO findVolumeByInstanceAndDeviceId(long instanceId, long deviceId);
@@ -1111,7 +1111,7 @@ public interface ManagementServer {
      * @throws PermissionDeniedException 
      *
      */
-    Long extractVolume(ExtractVolumeCmd cmd) throws URISyntaxException, InternalErrorException, PermissionDeniedException;
+    Long extractVolume(ExtractVolumeCmd cmd) throws URISyntaxException;
 
     /**
      * return an array of available hypervisors
@@ -1126,7 +1126,7 @@ public interface ManagementServer {
      * @return -- returns a string on success
      * @throws ServerApiException -- even if one of the console proxy patching fails, we throw back this exception
      */
-    String uploadCertificate(UploadCustomCertificateCmd cmd) throws ServerApiException;
+    String uploadCertificate(UploadCustomCertificateCmd cmd);
     
-    public List<RemoteAccessVpnVO> searchForRemoteAccessVpns(ListRemoteAccessVpnsCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+    public List<RemoteAccessVpnVO> searchForRemoteAccessVpns(ListRemoteAccessVpnsCmd cmd);
 }

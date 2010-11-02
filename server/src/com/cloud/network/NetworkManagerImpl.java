@@ -87,7 +87,6 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientNetworkCapacityException;
-import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.OperationTimedoutException;
@@ -2426,7 +2425,7 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
     }
     
     @Override @DB
-    public boolean deleteIpForwardingRule(DeleteIPForwardingRuleCmd cmd) throws PermissionDeniedException, InvalidParameterValueException {
+    public boolean deleteIpForwardingRule(DeleteIPForwardingRuleCmd cmd) {
     	Long ruleId = cmd.getId();
     	Long userId = UserContext.current().getUserId();
     	Account account = UserContext.current().getAccount();
@@ -2500,7 +2499,7 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
                     throw new InvalidParameterValueException("No such rule");
                 }
             } else {
-                throw new InternalErrorException("Multiple matches. Please contact support");
+                throw new CloudRuntimeException("Multiple matches. Please contact support");
             }
             fwRule.setEnabled(false);
             success = updateFirewallRule(fwRule, null, null);

@@ -51,9 +51,9 @@ import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
-@Local(value={AccountManager.class})
-public class AccountManagerImpl implements AccountManager {
-	public static final Logger s_logger = Logger.getLogger(AccountManagerImpl.class.getName());
+@Local(value={AccountManager.class, AccountService.class})
+public class AccountManagerImpl implements AccountManager, AccountService {
+	public static final Logger s_logger = Logger.getLogger(AccountManagerImpl.class);
 	
 	private String _name;
 	@Inject private AccountDao _accountDao;

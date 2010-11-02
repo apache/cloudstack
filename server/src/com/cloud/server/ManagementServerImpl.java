@@ -186,7 +186,6 @@ import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientStorageCapacityException;
-import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.OperationTimedoutException;
@@ -933,9 +932,9 @@ public class ManagementServerImpl implements ManagementServer {
             List<VMTemplateVO> userTemplates = _templateDao.listByAccountId(accountId);
             boolean allTemplatesDeleted = true;
             for (VMTemplateVO template : userTemplates) {
-            	try {
-            		allTemplatesDeleted = _tmpltMgr.delete(userId, template.getId(), null);
-            	} catch (InternalErrorException e) {
+                try {
+                    allTemplatesDeleted = _tmpltMgr.delete(userId, template.getId(), null);
+            	} catch (Exception e) {
             		s_logger.warn("Failed to delete template while removing account: " + template.getName() + " due to: " + e.getMessage());
             		allTemplatesDeleted = false;
             	}
@@ -1508,8 +1507,8 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     private UserVm deployVirtualMachineImpl(long userId, long accountId, long dataCenterId, long serviceOfferingId, long templateId, Long diskOfferingId,
-            String domain, String password, String displayName, String group, String userData, String [] networkGroups, long startEventId, long size) throws ResourceAllocationException, InvalidParameterValueException, InternalErrorException,
-            InsufficientStorageCapacityException, PermissionDeniedException, ExecutionException, StorageUnavailableException, ConcurrentOperationException {
+            String domain, String password, String displayName, String group, String userData, String [] networkGroups, long startEventId, long size) throws ResourceAllocationException, 
+            InsufficientStorageCapacityException, ExecutionException, StorageUnavailableException, ConcurrentOperationException {
 
     	EventUtils.saveStartedEvent(userId, accountId, EventTypes.EVENT_VM_CREATE, "Deploying Vm", startEventId);
 
@@ -1605,7 +1604,7 @@ public class ManagementServerImpl implements ManagementServer {
             		}
 
             		if (externalIp == null) {
-            			throw new InternalErrorException("Unable to allocate a source nat ip address");
+            			throw new CloudRuntimeException("Unable to allocate a source nat ip address");
             		}
 
             		if (s_logger.isDebugEnabled()) {
@@ -1631,16 +1630,16 @@ public class ManagementServerImpl implements ManagementServer {
                 if (group != null) {
                 boolean addToGroup = _vmMgr.addInstanceToGroup(Long.valueOf(vmId), group);
                 if (!addToGroup) {
-                    throw new InternalErrorException("Unable to assing Vm to the group " + group);
+                    throw new CloudRuntimeException("Unable to assing Vm to the group " + group);
                 }
                 }
             } catch (Exception ex) {
-                throw new InternalErrorException("Unable to assing Vm to the group " + group);
+                throw new CloudRuntimeException("Unable to assing Vm to the group " + group);
             }
             
             
             if (created == null) {
-                throw new InternalErrorException("Unable to create VM for account (" + accountId + "): " + account.getAccountName());
+                throw new CloudRuntimeException("Unable to create VM for account (" + accountId + "): " + account.getAccountName());
             }
 
             if (s_logger.isDebugEnabled()) {
@@ -1726,7 +1725,7 @@ public class ManagementServerImpl implements ManagementServer {
                     throw new ConcurrentOperationException(concurrentOperationExceptionMsg);
                 }
                 else{
-                    throw new InternalErrorException("Unable to start the VM " + created.getId() + "-" + created.getName());
+                    throw new CloudRuntimeException("Unable to start the VM " + created.getId() + "-" + created.getName());
                 }
                 
             } else {
@@ -1752,8 +1751,8 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public UserVm deployVirtualMachine(DeployVMCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, ResourceAllocationException,
-                                                               InternalErrorException, InsufficientStorageCapacityException, ExecutionException,
+    public UserVm deployVirtualMachine(DeployVMCmd cmd) throws ResourceAllocationException,
+                                                               InsufficientStorageCapacityException, ExecutionException,
                                                                StorageUnavailableException, ConcurrentOperationException {
         Account ctxAccount = UserContext.current().getAccount();
         Long userId = UserContext.current().getUserId();
@@ -1919,11 +1918,6 @@ public class ManagementServerImpl implements ManagementServer {
             if(s_logger.isDebugEnabled())
                 s_logger.debug("Unable to deploy VM: " + e.getMessage());
             EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_CREATE, "Unable to deploy VM: VM_INVALID_PARAM_ERROR", null, eventId);
-            throw e;
-        } catch (InternalErrorException e) {
-            if(s_logger.isDebugEnabled())
-                s_logger.debug("Unable to deploy VM: " + e.getMessage());
-            EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_CREATE, "Unable to deploy VM: INTERNAL_ERROR", null, eventId);
             throw e;
         } catch (InsufficientStorageCapacityException e) {
             if(s_logger.isDebugEnabled())
@@ -2925,7 +2919,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
     
     @Override
-    public boolean copyTemplate(long userId, long templateId, long sourceZoneId, long destZoneId, long startEventId) throws InternalErrorException {
+    public boolean copyTemplate(long userId, long templateId, long sourceZoneId, long destZoneId, long startEventId) {
     	boolean success = false;
 		try {
 			success = _tmpltMgr.copy(userId, templateId, sourceZoneId, destZoneId, startEventId);
@@ -3925,7 +3919,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public ConsoleProxyVO startConsoleProxy(long instanceId, long startEventId) throws InternalErrorException {
+    public ConsoleProxyVO startConsoleProxy(long instanceId, long startEventId) {
         return _consoleProxyMgr.startProxy(instanceId, startEventId);
     }
 
@@ -4463,20 +4457,17 @@ public class ManagementServerImpl implements ManagementServer {
 	}
 
     @Override @DB
-    public boolean updateTemplatePermissions(UpdateTemplatePermissionsCmd cmd) throws InvalidParameterValueException,
-            PermissionDeniedException, InternalErrorException {
+    public boolean updateTemplatePermissions(UpdateTemplatePermissionsCmd cmd)  {
         return updateTemplateOrIsoPermissions(cmd);
     }
 
     @Override @DB
-    public boolean updateTemplatePermissions(UpdateIsoPermissionsCmd cmd) throws InvalidParameterValueException,
-            PermissionDeniedException, InternalErrorException {
+    public boolean updateTemplatePermissions(UpdateIsoPermissionsCmd cmd) {
         return updateTemplateOrIsoPermissions(cmd);
     }
 
     @DB
-    protected boolean updateTemplateOrIsoPermissions(UpdateTemplateOrIsoPermissionsCmd cmd) throws InvalidParameterValueException,
-            PermissionDeniedException, InternalErrorException {
+    protected boolean updateTemplateOrIsoPermissions(UpdateTemplateOrIsoPermissionsCmd cmd) {
         Transaction txn = Transaction.currentTxn();
         
         //Input validation
@@ -4600,18 +4591,14 @@ public class ManagementServerImpl implements ManagementServer {
             }
             txn.commit();
         } else if ("remove".equalsIgnoreCase(operation)) {
-            try {
-                List<Long> accountIds = new ArrayList<Long>();
-                for (String accountName : accountNames) {
-                    Account permittedAccount = _accountDao.findActiveAccount(accountName, domainId);
-                    if (permittedAccount != null) {
-                        accountIds.add(permittedAccount.getId());
-                    }
+            List<Long> accountIds = new ArrayList<Long>();
+            for (String accountName : accountNames) {
+                Account permittedAccount = _accountDao.findActiveAccount(accountName, domainId);
+                if (permittedAccount != null) {
+                    accountIds.add(permittedAccount.getId());
                 }
-                _launchPermissionDao.removePermissions(id, accountIds);
-            } catch (CloudRuntimeException ex) {
-                throw new InternalErrorException("Internal error removing launch permissions for template " + template.getName());
             }
+            _launchPermissionDao.removePermissions(id, accountIds);
         } else if ("reset".equalsIgnoreCase(operation)) {
             // do we care whether the owning account is an admin? if the
             // owner is an admin, will we still set public to false?
@@ -5224,7 +5211,7 @@ public class ManagementServerImpl implements ManagementServer {
         return _domainDao.isChildDomain(parentId, childId);
     }
 
-    public SecondaryStorageVmVO startSecondaryStorageVm(long instanceId, long startEventId) throws InternalErrorException {
+    public SecondaryStorageVmVO startSecondaryStorageVm(long instanceId, long startEventId) {
         return _secStorageVmMgr.startSecStorageVm(instanceId, startEventId);
     }
 
@@ -5327,9 +5314,9 @@ public class ManagementServerImpl implements ManagementServer {
 	}
 
 	@Override
-	public VMInstanceVO startSystemVM(StartSystemVMCmd cmd) throws InternalErrorException {
+	public VMInstanceVO startSystemVM(StartSystemVMCmd cmd) {
 		
-		//verify input
+		//verify inputf
 		Long id = cmd.getId();
 
 		VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(id, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
@@ -5635,7 +5622,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public Long extractVolume(ExtractVolumeCmd cmd) throws URISyntaxException, InternalErrorException, PermissionDeniedException {
+    public Long extractVolume(ExtractVolumeCmd cmd) throws URISyntaxException {
         Long volumeId = cmd.getId();
         String url = cmd.getUrl();
         Long zoneId = cmd.getZoneId();
@@ -5747,7 +5734,7 @@ public class ManagementServerImpl implements ManagementServer {
                 _uploadDao.update(uploadJob.getId(), uploadJob);
                 
                 EventUtils.saveEvent(userId, accountId, EventTypes.EVENT_VOLUME_UPLOAD, errorString);                
-                throw new InternalErrorException(errorString);            
+                throw new CloudRuntimeException(errorString);            
             }
             
             String volumeLocalPath = "volumes/"+volume.getId()+"/"+cvAnswer.getVolumePath()+".vhd";

@@ -30,7 +30,6 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
-import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
@@ -54,7 +53,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.State;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
-import com.sun.corba.se.impl.logging.InterceptorsSystemException;
 
 /**
  * @author nitin
@@ -234,7 +232,7 @@ public class UploadMonitorImpl implements UploadMonitor {
 	}
 	
 	@Override
-    public void createVolumeDownloadURL(Long entityId, String path, Type type, Long dataCenterId, Long uploadId) throws InternalErrorException{
+    public void createVolumeDownloadURL(Long entityId, String path, Type type, Long dataCenterId, Long uploadId) {
         
 	    String errorString = "";
 	    boolean success = false;
@@ -257,7 +255,7 @@ public class UploadMonitorImpl implements UploadMonitor {
             if (result == -1){
                 errorString = "Unable to create a link for " +type+ " id:"+entityId;
                 s_logger.warn(errorString);
-                throw new InternalErrorException(errorString);
+                throw new CloudRuntimeException(errorString);
             }
             
             //Construct actual URL locally now that the symlink exists at SSVM
@@ -267,7 +265,7 @@ public class UploadMonitorImpl implements UploadMonitor {
                 if (ssVm.getPublicIpAddress() == null) {
                     errorString = "A running secondary storage vm has a null public ip?";
                     s_logger.warn(errorString);
-                    throw new InternalErrorException(errorString);
+                    throw new CloudRuntimeException(errorString);
                 }
                 String extractURL = generateCopyUrl(ssVm.getPublicIpAddress(), path);
                 UploadVO vo = _uploadDao.createForUpdate();
@@ -279,7 +277,7 @@ public class UploadMonitorImpl implements UploadMonitor {
                 return;
             }
             errorString = "Couldnt find a running SSVM in the zone" + dataCenterId+ ". Couldnt create the extraction URL.";
-            throw new InternalErrorException(errorString);
+            throw new CloudRuntimeException(errorString);
 	    }finally{
 	        if(!success){
 	            UploadVO uploadJob = _uploadDao.createForUpdate(uploadId);

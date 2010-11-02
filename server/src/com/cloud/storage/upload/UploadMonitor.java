@@ -19,7 +19,6 @@
 package com.cloud.storage.upload;
 
 import com.cloud.async.AsyncJobManager;
-import com.cloud.exception.InternalErrorException;
 import com.cloud.host.HostVO;
 import com.cloud.storage.Upload.Mode;
 import com.cloud.storage.Upload.Status;
@@ -29,7 +28,6 @@ import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.utils.component.Manager;
-import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
  * Monitor upload progress of all entities.
@@ -58,6 +56,6 @@ public interface UploadMonitor extends Manager{
             VMTemplateHostVO vmTemplateHost, Long dataCenterId, long eventId);
 
     void createVolumeDownloadURL(Long entityId, String path, Type type,
-            Long dataCenterId, Long uploadId) throws InternalErrorException;
+            Long dataCenterId, Long uploadId);
 
 }

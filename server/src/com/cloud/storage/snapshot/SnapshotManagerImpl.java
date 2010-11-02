@@ -57,7 +57,6 @@ import com.cloud.event.EventState;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
-import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
@@ -186,7 +185,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
     }
 
     private boolean shouldRunSnapshot(long userId, VolumeVO volume, long policyId)
-            throws InvalidParameterValueException, ResourceAllocationException {
+            throws ResourceAllocationException {
         boolean runSnap = isVolumeDirty(volume.getId(), policyId);
 
         /*
@@ -207,7 +206,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
     }
 
     @Override
-    public SnapshotVO createSnapshotDB(CreateSnapshotCmd cmd) throws InvalidParameterValueException, ResourceAllocationException, InternalErrorException {
+    public SnapshotVO createSnapshotDB(CreateSnapshotCmd cmd) throws ResourceAllocationException {
         // FIXME:  When a valid snapshot is returned, the snapshot must have been created on the storage server side so that the caller
         //         knows it is safe to once again resume normal operations on the volume in question.
         Long volumeId = cmd.getVolumeId();
@@ -236,7 +235,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
     }
 
     @Override @DB
-    public SnapshotVO createSnapshotImpl(long volumeId, long policyId) throws InvalidParameterValueException, ResourceAllocationException {
+    public SnapshotVO createSnapshotImpl(long volumeId, long policyId) throws ResourceAllocationException {
         Long userId = UserContext.current().getUserId();
         SnapshotVO createdSnapshot = null;
 
@@ -368,7 +367,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
     }
 
     @Override
-    public SnapshotVO createSnapshot(CreateSnapshotCmd cmd) throws InvalidParameterValueException, ResourceAllocationException, InternalErrorException {
+    public SnapshotVO createSnapshot(CreateSnapshotCmd cmd) throws ResourceAllocationException {
         SnapshotVO snapshot = _snapshotDao.findById(cmd.getId());
         Long snapshotId = null;
         boolean backedUp = false;
@@ -377,7 +376,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
                 snapshotId = snapshot.getId();
                 backedUp = backupSnapshotToSecondaryStorage(snapshot, cmd.getStartEventId());
                 if (!backedUp) {
-                    throw new InternalErrorException("Created snapshot: " + snapshotId + " on primary but failed to backup on secondary");
+                    throw new CloudRuntimeException("Created snapshot: " + snapshotId + " on primary but failed to backup on secondary");
                 }
             }
 
@@ -389,7 +388,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
     }
 
     @Override
-    public SnapshotVO createSnapshotInternal(CreateSnapshotInternalCmd cmd) throws InternalErrorException, ResourceAllocationException {
+    public SnapshotVO createSnapshotInternal(CreateSnapshotInternalCmd cmd) throws ResourceAllocationException {
         Long volumeId = cmd.getVolumeId();
         Long policyId = cmd.getPolicyId();
         SnapshotVO snapshot = null;
@@ -405,7 +404,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
             snapshotId = snapshot.getId();
             backedUp = backupSnapshotToSecondaryStorage(snapshot, cmd.getStartEventId());
             if (!backedUp) {
-                throw new InternalErrorException("Created snapshot: " + snapshotId + " on primary but failed to backup on secondary");
+                throw new CloudRuntimeException("Created snapshot: " + snapshotId + " on primary but failed to backup on secondary");
             }
         } else {
             // if the snapshot wasn't created properly, just return now and avoid problems in the postCreate step
@@ -614,6 +613,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
         
     }
 
+    @Override
     @DB
     public void postCreateSnapshot(long volumeId, long snapshotId, long policyId, boolean backedUp) {
         Long userId = UserContext.current().getUserId();
@@ -660,7 +660,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
     private Long checkAccountPermissions(long targetAccountId, long targetDomainId, String targetDesc, long targetId) throws ServerApiException {
     	Long accountId = null;
 
-    	Account account = (Account)UserContext.current().getAccount();
+    	Account account = UserContext.current().getAccount();
     	if (account != null) {
     		if (!isAdmin(account.getType())) {
     			if (account.getId() != targetAccountId) {
@@ -705,7 +705,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
         }
 
         boolean status = true; 
-        if (SnapshotType.MANUAL.ordinal() == (int)snapshotCheck.getSnapshotType()) {
+        if (SnapshotType.MANUAL.ordinal() == snapshotCheck.getSnapshotType()) {
             status = deleteSnapshotInternal(snapshotId, Snapshot.MANUAL_POLICY_ID, userId);
 
             if (!status) {
@@ -1089,7 +1089,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
     public List<SnapshotScheduleVO> findRecurringSnapshotSchedule(ListRecurringSnapshotScheduleCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
         Long volumeId = cmd.getVolumeId();
         Long policyId = cmd.getSnapshotPolicyId();
-        Account account = (Account)UserContext.current().getAccount();
+        Account account = UserContext.current().getAccount();
 
         //Verify parameters
         VolumeVO volume = _volsDao.findById(volumeId);

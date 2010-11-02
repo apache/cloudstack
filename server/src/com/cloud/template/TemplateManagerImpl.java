@@ -62,7 +62,6 @@ import com.cloud.event.EventTypes;
 import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
-import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
@@ -159,7 +158,7 @@ public class TemplateManagerImpl implements TemplateManager {
     protected SearchBuilder<VMTemplateHostVO> HostTemplateStatesSearch;
     
     @Override
-    public VMTemplateVO registerIso(RegisterIsoCmd cmd) throws InvalidParameterValueException, IllegalArgumentException, ResourceAllocationException{
+    public VMTemplateVO registerIso(RegisterIsoCmd cmd) throws ResourceAllocationException{
         Account account = UserContext.current().getAccount();
         Long userId = UserContext.current().getUserId();
         String name = cmd.getIsoName();
@@ -229,7 +228,7 @@ public class TemplateManagerImpl implements TemplateManager {
     }
 
     @Override
-    public VMTemplateVO registerTemplate(RegisterTemplateCmd cmd) throws InvalidParameterValueException, URISyntaxException, ResourceAllocationException{
+    public VMTemplateVO registerTemplate(RegisterTemplateCmd cmd) throws URISyntaxException, ResourceAllocationException{
     	
         Account account = UserContext.current().getAccount();
         Long userId = UserContext.current().getUserId();
@@ -311,7 +310,7 @@ public class TemplateManagerImpl implements TemplateManager {
     	
     }
     
-    private VMTemplateVO createTemplateOrIso(long userId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, String format, String diskType, String url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable, HypervisorType hypervisorType) throws InvalidParameterValueException,IllegalArgumentException, ResourceAllocationException {
+    private VMTemplateVO createTemplateOrIso(long userId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, String format, String diskType, String url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable, HypervisorType hypervisorType) throws IllegalArgumentException, ResourceAllocationException {
         try
         {
             if (name.length() > 32)
@@ -411,7 +410,7 @@ public class TemplateManagerImpl implements TemplateManager {
     }
 
     @Override
-    public Long extract(ExtractIsoCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+    public Long extract(ExtractIsoCmd cmd) {
         Account account = UserContext.current().getAccount();
         Long templateId = cmd.getId();
         Long zoneId = cmd.getZoneId();
@@ -423,7 +422,7 @@ public class TemplateManagerImpl implements TemplateManager {
     }
 
     @Override
-    public Long extract(ExtractTemplateCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+    public Long extract(ExtractTemplateCmd cmd) {
         Account account = UserContext.current().getAccount();
         Long templateId = cmd.getId();
         Long zoneId = cmd.getZoneId();
@@ -434,7 +433,7 @@ public class TemplateManagerImpl implements TemplateManager {
         return extract(account, templateId, url, zoneId, mode, eventId, false, cmd.getJob(), cmd.getAsyncJobManager());
     }
 
-    private Long extract(Account account, Long templateId, String url, Long zoneId, String mode, Long eventId, boolean isISO, AsyncJobVO job, AsyncJobManager mgr) throws InvalidParameterValueException, PermissionDeniedException {
+    private Long extract(Account account, Long templateId, String url, Long zoneId, String mode, Long eventId, boolean isISO, AsyncJobVO job, AsyncJobManager mgr) {
         String desc = "template";
         if (isISO) {
             desc = "ISO";
@@ -668,7 +667,7 @@ public class TemplateManagerImpl implements TemplateManager {
     
     @Override
     @DB
-    public boolean copy(long userId, long templateId, long sourceZoneId, long destZoneId, long startEventId) throws StorageUnavailableException, InvalidParameterValueException {
+    public boolean copy(long userId, long templateId, long sourceZoneId, long destZoneId, long startEventId) throws StorageUnavailableException {
     	HostVO srcSecHost = _storageMgr.getSecondaryStorageHost(sourceZoneId);
     	HostVO dstSecHost = _storageMgr.getSecondaryStorageHost(destZoneId);
     	DataCenterVO destZone = _dcDao.findById(destZoneId);
@@ -774,7 +773,7 @@ public class TemplateManagerImpl implements TemplateManager {
     }
       
     @Override
-    public VMTemplateVO copyIso(CopyIsoCmd cmd) throws InvalidParameterValueException, StorageUnavailableException, PermissionDeniedException {
+    public VMTemplateVO copyIso(CopyIsoCmd cmd) throws StorageUnavailableException {
     	Long isoId = cmd.getId();
     	Long userId = UserContext.current().getUserId();
     	Long sourceZoneId = cmd.getSourceZoneId();
@@ -808,7 +807,7 @@ public class TemplateManagerImpl implements TemplateManager {
     
     
     @Override
-    public VMTemplateVO copyTemplate(CopyTemplateCmd cmd) throws InvalidParameterValueException, StorageUnavailableException, PermissionDeniedException {
+    public VMTemplateVO copyTemplate(CopyTemplateCmd cmd) throws StorageUnavailableException {
     	Long templateId = cmd.getId();
     	Long userId = UserContext.current().getUserId();
     	Long sourceZoneId = cmd.getSourceZoneId();
@@ -841,11 +840,11 @@ public class TemplateManagerImpl implements TemplateManager {
     }
 
     @Override @DB
-    public boolean delete(long userId, long templateId, Long zoneId) throws InternalErrorException {
+    public boolean delete(long userId, long templateId, Long zoneId) {
     	boolean success = true;
     	VMTemplateVO template = _tmpltDao.findById(templateId);
     	if (template == null || template.getRemoved() != null) {
-    		throw new InternalErrorException("Please specify a valid template.");
+    		throw new InvalidParameterValueException("Please specify a valid template.");
     	}
         
     	String zoneName;
@@ -870,7 +869,7 @@ public class TemplateManagerImpl implements TemplateManager {
 				if (templateHostVO.getDownloadState() == Status.DOWNLOAD_IN_PROGRESS) {
 					String errorMsg = "Please specify a template that is not currently being downloaded.";
 					s_logger.debug("Template: " + template.getName() + " is currently being downloaded to secondary storage host: " + secondaryStorageHost.getName() + "; cant' delete it.");
-					throw new InternalErrorException(errorMsg);
+					throw new CloudRuntimeException(errorMsg);
 				}
 			}
 		}
@@ -1131,7 +1130,7 @@ public class TemplateManagerImpl implements TemplateManager {
 	}
 
 	@Override
-	public boolean detachIso(DetachIsoCmd cmd) throws InternalErrorException, InvalidParameterValueException, PermissionDeniedException {
+	public boolean detachIso(DetachIsoCmd cmd)  {
         Account account = UserContext.current().getAccount();
         Long userId = UserContext.current().getUserId();
         Long vmId = cmd.getVirtualMachineId();
@@ -1165,7 +1164,7 @@ public class TemplateManagerImpl implements TemplateManager {
 	}
 	
 	@Override
-	public boolean attachIso(AttachIsoCmd cmd) throws InternalErrorException, InvalidParameterValueException, PermissionDeniedException {
+	public boolean attachIso(AttachIsoCmd cmd) {
         Account account = UserContext.current().getAccount();
         Long userId = UserContext.current().getUserId();
         Long vmId = cmd.getVirtualMachineId();
@@ -1269,7 +1268,7 @@ public class TemplateManagerImpl implements TemplateManager {
 	}
 	
 	@Override
-    public boolean deleteTemplate(DeleteTemplateCmd cmd) throws InvalidParameterValueException, InternalErrorException, PermissionDeniedException {
+    public boolean deleteTemplate(DeleteTemplateCmd cmd) {
         Long templateId = cmd.getId();
         Long userId = UserContext.current().getUserId();
         Account account = UserContext.current().getAccount();
@@ -1302,7 +1301,7 @@ public class TemplateManagerImpl implements TemplateManager {
 	}
 	
 	@Override
-    public boolean deleteIso(DeleteIsoCmd cmd) throws InvalidParameterValueException, InternalErrorException, PermissionDeniedException {
+    public boolean deleteIso(DeleteIsoCmd cmd) {
         Long templateId = cmd.getId();
         Long userId = UserContext.current().getUserId();
         Account account = UserContext.current().getAccount();

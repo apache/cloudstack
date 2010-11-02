@@ -129,9 +129,9 @@ import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
 import com.cloud.agent.api.routing.DhcpEntryCommand;
 import com.cloud.agent.api.routing.IPAssocCommand;
 import com.cloud.agent.api.routing.LoadBalancerCfgCommand;
+import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.SetFirewallRuleCommand;
-import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
@@ -693,7 +693,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             vifr.qosAlgorithmType = "ratelimit";
             vifr.qosAlgorithmParams = new HashMap<String, String>();
             // convert mbs to kilobyte per second
-            vifr.qosAlgorithmParams.put("kbps", Integer.toString(nic.getNetworkRateMbps() * 128));
+            vifr.qosAlgorithmParams.put("kbps", Integer.toString(nic.getNetworkRateMbps() * 1024));
         }
         
         VIF vif = VIF.create(conn, vifr);
@@ -2871,7 +2871,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         vifr.qosAlgorithmType = "ratelimit";
         vifr.qosAlgorithmParams = new HashMap<String, String>();
         // convert mbs to kilobyte per second 
-        vifr.qosAlgorithmParams.put("kbps", Integer.toString(rate * 128));
+        vifr.qosAlgorithmParams.put("kbps", Integer.toString(rate * 1024));
         return VIF.create(conn, vifr);
     }
 

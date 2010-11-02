@@ -24,7 +24,6 @@ import javax.servlet.http.HttpServlet;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiServer;
-import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.server.ConfigurationServer;
 import com.cloud.server.ManagementServer;
@@ -52,9 +51,6 @@ public class CloudStartupServlet extends HttpServlet {
 	    } catch (InvalidParameterValueException ipve) {
 	    	s_logger.error("Exception starting management server ", ipve);
 	    	throw new ServletException (ipve.getMessage());
-	    } catch (InternalErrorException iee) {
-	    	s_logger.error("Exception starting management server ", iee);
-	    	throw new ServletException (iee.getMessage());
 	    } catch (Exception e) {
 	    	s_logger.error("Exception starting management server ", e);
 	    	throw new ServletException (e.getMessage());

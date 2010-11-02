@@ -34,7 +34,6 @@ import com.cloud.api.commands.RegisterTemplateCmd;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.storage.Storage.ImageFormat;
@@ -76,8 +75,8 @@ public interface TemplateManager extends Manager {
      * @return the template created.
      */
 //    Long create(long userId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, ImageFormat format, FileSystem fs, URI url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable);
-    VMTemplateVO registerTemplate(RegisterTemplateCmd cmd) throws InvalidParameterValueException, URISyntaxException, ResourceAllocationException;
-    VMTemplateVO registerIso(RegisterIsoCmd cmd) throws InvalidParameterValueException, IllegalArgumentException, ResourceAllocationException;   
+    VMTemplateVO registerTemplate(RegisterTemplateCmd cmd) throws URISyntaxException, ResourceAllocationException;
+    VMTemplateVO registerIso(RegisterIsoCmd cmd) throws IllegalArgumentException, ResourceAllocationException;   
 
     /**
      * Creates a Template
@@ -145,9 +144,9 @@ public interface TemplateManager extends Manager {
      * @throws StorageUnavailableException 
      * @throws InvalidParameterValueException 
      */
-    boolean copy(long userId, long templateId, long sourceZoneId, long destZoneId, long startEventId) throws InternalErrorException, StorageUnavailableException, InvalidParameterValueException;
-    VMTemplateVO copyIso(CopyIsoCmd cmd) throws InvalidParameterValueException, StorageUnavailableException, PermissionDeniedException;
-    VMTemplateVO copyTemplate(CopyTemplateCmd cmd) throws InvalidParameterValueException, StorageUnavailableException, PermissionDeniedException;
+    boolean copy(long userId, long templateId, long sourceZoneId, long destZoneId, long startEventId) throws StorageUnavailableException;
+    VMTemplateVO copyIso(CopyIsoCmd cmd) throws StorageUnavailableException;
+    VMTemplateVO copyTemplate(CopyTemplateCmd cmd) throws StorageUnavailableException;
     
     /**
      * Deletes a template from secondary storage servers
@@ -156,11 +155,11 @@ public interface TemplateManager extends Manager {
      * @param zoneId - optional. If specified, will only delete the template from the specified zone's secondary storage server.
      * @return true if success
      */
-    boolean delete(long userId, long templateId, Long zoneId) throws InternalErrorException;
+    boolean delete(long userId, long templateId, Long zoneId);
     
-    boolean detachIso(DetachIsoCmd cmd) throws InternalErrorException, InvalidParameterValueException, PermissionDeniedException;
+    boolean detachIso(DetachIsoCmd cmd);
     
-    boolean attachIso(AttachIsoCmd cmd) throws InternalErrorException, InvalidParameterValueException, PermissionDeniedException;
+    boolean attachIso(AttachIsoCmd cmd);
     
     /**
      * Lists templates in the specified storage pool that are not being used by any VM.
@@ -181,7 +180,7 @@ public interface TemplateManager extends Manager {
      * Deletes a template
      * @param cmd - the command specifying templateId
      */
-    boolean deleteTemplate(DeleteTemplateCmd cmd) throws InvalidParameterValueException, InternalErrorException, PermissionDeniedException;
+    boolean deleteTemplate(DeleteTemplateCmd cmd);
     
     /**
      * Deletes a template
@@ -189,9 +188,9 @@ public interface TemplateManager extends Manager {
      * @return true if deletion is successful, false otherwise
      * @throws InvalidParameterValueException, InternalErrorException, PermissionDeniedException
      */
-    boolean deleteIso(DeleteIsoCmd cmd) throws InvalidParameterValueException, InternalErrorException, PermissionDeniedException;
+    boolean deleteIso(DeleteIsoCmd cmd);
 
 	void extract(VMTemplateVO template, String url, VMTemplateHostVO tmpltHostRef, Long zoneId, long eventId, long asyncJobId, AsyncJobManager asyncMgr);
-    Long extract(ExtractIsoCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, InternalErrorException;
-    Long extract(ExtractTemplateCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, InternalErrorException;
+    Long extract(ExtractIsoCmd cmd);
+    Long extract(ExtractTemplateCmd cmd);
 }
