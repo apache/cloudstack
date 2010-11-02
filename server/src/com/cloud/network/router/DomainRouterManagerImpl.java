@@ -93,6 +93,7 @@ import com.cloud.event.dao.EventDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
@@ -158,6 +159,7 @@ import com.cloud.vm.DomainRouter;
 import com.cloud.vm.DomainRouter.Role;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
+import com.cloud.vm.NicVO;
 import com.cloud.vm.State;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
@@ -220,7 +222,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
     @Inject NicDao _nicDao;
     @Inject GuestOSDao _guestOSDao = null;
     @Inject NetworkManager _networkMgr;
-    @Inject VmManager _vmMgr;
+    @Inject VmManager _itMgr;
     
     long _routerTemplateId = -1;
     int _routerRamSize;
@@ -1454,7 +1456,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
 
         _agentMgr.registerForHostEvents(new SshKeysDistriMonitor(this, _hostDao, _configDao), true, false, false);
         _haMgr.registerHandler(VirtualMachine.Type.DomainRouter, this);
-        _vmMgr.registerGuru(VirtualMachine.Type.DomainRouter, this);
+        _itMgr.registerGuru(VirtualMachine.Type.DomainRouter, this);
 
         boolean useLocalStorage = Boolean.parseBoolean(configs.get(Config.SystemVMUseLocalStorage.key()));
         String networkRateStr = _configDao.getValue("network.throttling.rate");
@@ -2011,9 +2013,6 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
 	    
         DataCenterDeployment plan = new DataCenterDeployment(dcId, 1);
         
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        
         guestConfig = _networkConfigurationDao.lock(guestConfig.getId(), true);
         if (guestConfig == null) {
             throw new ConcurrentOperationException("Unable to get the lock on " + guestConfig);
@@ -2050,14 +2049,17 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
             networks.add(new Pair<NetworkConfigurationVO, NicProfile>((NetworkConfigurationVO)guestConfig, gatewayNic));
             networks.add(new Pair<NetworkConfigurationVO, NicProfile>(controlConfig, null));
             
+            Transaction txn = Transaction.currentTxn();
+            txn.start();
+            
             router = new DomainRouterVO(id, _offering.getId(), VirtualMachineName.getRouterName(id, _instance), _template.getId(), _template.getGuestOSId(), owner.getDomainId(), owner.getId(), guestConfig.getId(), _offering.getOfferHA());
             router = _routerDao.persist(router);
     	    
-    	    _vmMgr.allocate(router, _template, _offering, networks, plan, owner);
+    	    _itMgr.allocate(router, _template, _offering, networks, plan, owner);
+            txn.commit();
         }
-        txn.commit();
         
-        return _vmMgr.start(router, plan, owner);
+        return _itMgr.start(router, plan, owner);
 	}
 
     @Override
@@ -2163,7 +2165,88 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
 			return false;		
 		}
 	}
+	
+	public DomainRouterVO start(long routerId, Account caller) throws StorageUnavailableException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
+	    return start(_routerDao.findById(routerId), caller);
+	}
+	
+	public DomainRouterVO start(DomainRouterVO router, Account caller) throws StorageUnavailableException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
+	    DataCenterDeployment plan = new DataCenterDeployment(router.getDataCenterId(), 1);
+	    return _itMgr.start(router, plan, caller);
+	}
 
+    @Override
+    public DomainRouterVO addVirtualMachineIntoNetwork(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile vm, Account caller) throws ConcurrentOperationException, InsufficientNetworkCapacityException, ResourceUnavailableException {
+        DomainRouterVO router = _routerDao.findByNetworkConfiguration(config.getId());
+        try {
+            router = start(router, caller);
+        } catch (InsufficientNetworkCapacityException e) {
+            throw e;
+        } catch (InsufficientCapacityException e) {
+            throw new ResourceUnavailableException("Unable to start router for " + config, e);
+        }
+        
+        if (router == null) {
+            s_logger.error("Can't find a domain router to start VM: " + vm.getName());
+            throw new ResourceUnavailableException("Can't find a domain router to start " + vm + " in " + config);
+        }
+
+        String password = null;
+        String userData = vm.getUserData();
+        int cmdsLength = (password == null ? 0:1) + 1;
+        Commands cmds = new Commands(OnError.Stop);
+        String routerPublicIpAddress = nic.getIp4Address();
+        String routerControlIpAddress = null;
+        List<NicVO> nics = _nicDao.listBy(router.getId());
+        for (NicVO n : nics) {
+            NetworkConfigurationVO nc = _networkConfigurationDao.findById(n.getNetworkConfigurationId());
+            if (n.getIp4Address() != null && nc.getTrafficType() == TrafficType.Public) {
+                routerPublicIpAddress = nic.getIp4Address();
+            } else if (nc.getTrafficType() == TrafficType.Control) {
+                routerControlIpAddress = n.getIp4Address();
+            }
+        }
+        
+        cmds.addCommand("dhcp", new DhcpEntryCommand(nic.getMacAddress(), nic.getIp4Address(), routerControlIpAddress, vm.getName()));
+        if (password != null) {
+            final String encodedPassword = rot13(password);
+            cmds.addCommand("password", new SavePasswordCommand(encodedPassword, nic.getIp4Address(), routerControlIpAddress, vm.getName()));
+        }
+        
+        String serviceOffering = _serviceOfferingDao.findById(vm.getServiceOfferingId()).getDisplayText();
+        String zoneName = _dcDao.findById(config.getDataCenterId()).getName();
+        
+        
+        cmds.addCommand("vmdata", generateVmDataCommand(routerControlIpAddress, routerPublicIpAddress, nic.getIp4Address(), userData, serviceOffering, zoneName, nic.getIp4Address(), vm.getName(), vm.getName(), vm.getId()));
+        
+        try {
+            _agentMgr.send(router.getHostId(), cmds);
+        } catch (AgentUnavailableException e) {
+            throw new ResourceUnavailableException("Unable to reach the agent ", e);
+        } catch (OperationTimedoutException e) {
+            throw new ResourceUnavailableException("Unable to reach the agent ", e);
+        }
+        
+        Answer answer = cmds.getAnswer("dhcp");
+        if (!answer.getResult()) {
+            s_logger.error("Unable to set dhcp entry for " + vm.getId() + " - " + vm.getName() +" on domR: " + router.getName() + " due to " + answer.getDetails());
+            throw new ResourceUnavailableException("Unable to set dhcp entry for " + vm + " due to " + answer.getDetails()); 
+        }
+        
+        answer = cmds.getAnswer("password");
+        if (answer != null && !answer.getResult()) {
+            s_logger.error("Unable to set password for " + vm.getId() + " - " + vm.getName() + " due to " + answer.getDetails());
+            throw new ResourceUnavailableException("Unable to set password due to " + answer.getDetails());
+        }
+        
+        answer = cmds.getAnswer("vmdata");
+        if (answer != null && !answer.getResult()) {
+            s_logger.error("Unable to set VM data for " + vm.getId() + " - " + vm.getName() + " due to " + answer.getDetails());
+            throw new ResourceUnavailableException("Unable to set VM data due to " + answer.getDetails());
+        }
+        return router;
+    }
+    
     @Override
     public DomainRouterVO persist(DomainRouterVO router) {
         return _routerDao.persist(router);

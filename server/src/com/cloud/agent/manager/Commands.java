@@ -62,7 +62,7 @@ public class Commands {
     
     public Answer getAnswer(String id) {
         int i = _ids.indexOf(id);
-        return _answers[i];
+        return i == -1 ? null : _answers[i];
     }
 
     @SuppressWarnings("unchecked")

@@ -19,8 +19,8 @@ package com.cloud.exception;
 
 import com.cloud.utils.SerialVersionUID;
 
-public class InsufficientVirtualNetworkCapcityException extends InsufficientCapacityException {
-    private static final long serialVersionUID = SerialVersionUID.InsufficientCapacityException;
+public class InsufficientVirtualNetworkCapcityException extends InsufficientNetworkCapacityException {
+    private static final long serialVersionUID = SerialVersionUID.InsufficientVirtualNetworkCapacityException;
     
     public InsufficientVirtualNetworkCapcityException(String msg) {
         super(msg);

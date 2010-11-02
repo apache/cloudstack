@@ -117,5 +117,7 @@ public interface VirtualMachine extends RunningOn, ControlledEntity {
      */
 	public Date getCreated();
 	
+	public long getServiceOfferingId();
+	
 	Type getType();
 }

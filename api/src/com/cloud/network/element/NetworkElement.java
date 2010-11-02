@@ -6,6 +6,7 @@ package com.cloud.network.element;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.NetworkConfiguration;
 import com.cloud.offering.NetworkOffering;
@@ -26,7 +27,7 @@ public interface NetworkElement extends Adapter {
      */
     boolean implement(NetworkConfiguration config, NetworkOffering offering, DeployDestination dest, Account user) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException;
     
-    boolean prepare(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile vm, NetworkOffering offering, DeployDestination dest, Account user) throws ConcurrentOperationException, ResourceUnavailableException;
+    boolean prepare(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile vm, NetworkOffering offering, DeployDestination dest, Account user) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientNetworkCapacityException;
     
     boolean release(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile vm, NetworkOffering offering, Account user) throws ConcurrentOperationException, ResourceUnavailableException;
     

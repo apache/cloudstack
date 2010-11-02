@@ -23,7 +23,7 @@ import com.cloud.utils.SerialVersionUID;
 /**
  * Exception thrown when the end there's not enough ip addresses in the system.
  */
-public class InsufficientAddressCapacityException extends InsufficientCapacityException {
+public class InsufficientAddressCapacityException extends InsufficientNetworkCapacityException {
 
 	private static final long serialVersionUID = SerialVersionUID.InsufficientAddressCapacityException;
 	

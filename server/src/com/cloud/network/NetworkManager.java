@@ -46,7 +46,7 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
+import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
@@ -306,7 +306,7 @@ public interface NetworkManager extends Manager {
     
     List<NicProfile> allocate(VirtualMachineProfile vm, List<Pair<NetworkConfigurationVO, NicProfile>> networks) throws InsufficientCapacityException;
 
-    NicTO[] prepare(VirtualMachineProfile profile, DeployDestination dest, Account user) throws InsufficientAddressCapacityException, InsufficientVirtualNetworkCapcityException, ConcurrentOperationException, ResourceUnavailableException;
+    NicTO[] prepare(VirtualMachineProfile profile, DeployDestination dest, Account user) throws InsufficientNetworkCapacityException, ConcurrentOperationException, ResourceUnavailableException;
     void release(VirtualMachineProfile vmProfile);
     
     <K extends VMInstanceVO> List<NicVO> getNics(K vm);

@@ -315,4 +315,11 @@ public class NetworkConfigurationVO implements NetworkConfiguration {
     public boolean isImplemented() {
         return broadcastUri != null && cidr != null && gateway != null && mode != null && broadcastDomainType != null;
     }
+    
+    @Override
+    public String toString() {
+        StringBuilder buf = new StringBuilder("NtwkCfg:");
+        buf.append(id).append("-").append(trafficType.toString()).append("-").append(networkOfferingId);
+        return buf.toString();
+    }
 }

@@ -27,13 +27,11 @@ import com.cloud.async.executor.StopVMExecutor;
 import com.cloud.async.executor.VMOperationParam;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientStorageCapacityException;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.network.security.NetworkGroupVO;
-import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.StoragePoolVO;
@@ -51,8 +49,6 @@ import com.cloud.vm.VirtualMachine.Event;
  */
 public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> {
 
-    UserVmVO allocate(String displayName, VMTemplateVO template, ServiceOfferingVO serviceOffering, NetworkOfferingVO[] networkOfferings, DiskOfferingVO[] diskOfferings, AccountVO owner, long userId) throws InsufficientCapacityException;
-    
 	static final int MAX_USER_DATA_LENGTH_BYTES = 2048;
     /**
      * @param hostId get all of the virtual machines that belong to one host.

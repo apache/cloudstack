@@ -30,6 +30,7 @@ import com.cloud.dc.VlanVO;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -41,7 +42,9 @@ import com.cloud.user.Account;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.DomainRouter;
 import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.NicProfile;
 import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VirtualMachineProfile;
 
 /**
  * NetworkManager manages the network for the different end users.
@@ -174,4 +177,6 @@ public interface DomainRouterManager extends Manager {
 	RemoteAccessVpnVO startRemoteAccessVpn(RemoteAccessVpnVO vpnVO);
 
 	boolean deleteRemoteAccessVpn(RemoteAccessVpnVO vpnVO);
+	
+	DomainRouterVO addVirtualMachineIntoNetwork(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile vm, Account caller) throws ConcurrentOperationException, InsufficientNetworkCapacityException, ResourceUnavailableException;
 }

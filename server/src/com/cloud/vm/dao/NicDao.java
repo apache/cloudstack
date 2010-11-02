@@ -12,5 +12,4 @@ public interface NicDao extends GenericDao<NicVO, Long> {
     List<NicVO> listBy(long instanceId);
     
     List<String> listIpAddressInNetworkConfiguration(long networkConfigId);
-
 }

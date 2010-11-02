@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network.TrafficType;
 import com.cloud.network.NetworkConfiguration;
@@ -38,7 +39,6 @@ import com.cloud.utils.component.Inject;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.UserVmManager;
-import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
@@ -72,15 +72,13 @@ public class DomainRouterElement extends AdapterBase implements NetworkElement {
     }
 
     @Override
-    public boolean prepare(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile vm, NetworkOffering offering, DeployDestination dest, Account user) throws ConcurrentOperationException {
+    public boolean prepare(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile vm, NetworkOffering offering, DeployDestination dest, Account user) throws ConcurrentOperationException, InsufficientNetworkCapacityException, ResourceUnavailableException {
         if (config.getTrafficType() != TrafficType.Guest || vm.getType() != Type.User) {
             s_logger.trace("Domain Router only cares about guest network and User VMs");
             return false;
         }
         
-        UserVmVO userVm = _userVmDao.findById(vm.getId());
-        
-        return _routerMgr.addVirtualMachineToGuestNetwork(userVm, vm.getPassword(), 1) != null; 
+        return _routerMgr.addVirtualMachineIntoNetwork(config, nic, vm, user) != null;
     }
 
     @Override

@@ -36,13 +36,22 @@ public class VirtualMachineProfile {
     List<NicProfile> _nics;
     String _os;
     String _password;
+    String _userData;
     
     public VirtualMachineProfile(VirtualMachine.Type type) {
         this._type = type;
     }
     
+    public long getServiceOfferingId() {
+        return _vm.getServiceOfferingId();
+    }
+    
     public String getPassword() {
         return _password;
+    }
+    
+    public String getUserData() {
+        return _userData;
     }
     
     public String getName() {
