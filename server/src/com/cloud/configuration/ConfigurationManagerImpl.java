@@ -1152,7 +1152,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 
     @Override
     public DiskOfferingVO createDiskOffering(long domainId, String name, String description, int numGibibytes, String tags) throws InvalidParameterValueException {
-        if ((numGibibytes != 0) && (numGibibytes < 1)) {
+        if ((numGibibytes <= 0)) {
             throw new InvalidParameterValueException("Please specify a disk size of at least 1 Gb.");
         } else if (numGibibytes > _maxVolumeSizeInGb) {
             throw new InvalidParameterValueException("The maximum size for a disk is " + _maxVolumeSizeInGb + " Gb.");
