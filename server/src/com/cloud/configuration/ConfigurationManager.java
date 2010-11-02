@@ -41,6 +41,7 @@ import com.cloud.dc.VlanVO;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.utils.component.Manager;
@@ -63,10 +64,10 @@ public interface ConfigurationManager extends Manager {
 	/**
 	 * Updates a configuration entry with a new value
 	 * @param cmd - the command wrapping name and value parameters
-	 * @return true or false
-	 * @throws , 
+	 * @return updated configuration object if successful
+	 * @throws InvalidParameterValueException
 	 */
-	boolean updateConfiguration(UpdateCfgCmd cmd);
+	ConfigurationVO updateConfiguration(UpdateCfgCmd cmd) throws InvalidParameterValueException;
 
 	/**
 	 * Creates a new service offering
@@ -298,9 +299,7 @@ public interface ConfigurationManager extends Manager {
 	
 	/**
 	 * Persists a config value via the API call
-	 * @param cmd - the command that wraps instance, component, category, name, value, description parameters
-	 * @throws , 
-	 * @return true or false
+	 * @return newly created Config object
 	 */
-	boolean addConfig(AddConfigCmd cmd);
+	ConfigurationVO addConfig(AddConfigCmd cmd);
 }

@@ -21,12 +21,14 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.response.SuccessResponse;
+import com.cloud.api.response.ConfigurationResponse;
 import com.cloud.configuration.ConfigurationManager;
+import com.cloud.configuration.ConfigurationVO;
 
 @Implementation(method="updateConfiguration", manager=ConfigurationManager.class, description="Updates a configuration.")
 public class UpdateCfgCmd extends BaseCmd {
@@ -64,18 +66,15 @@ public class UpdateCfgCmd extends BaseCmd {
     }
     
     @Override @SuppressWarnings("unchecked")
-    public SuccessResponse getResponse() {
-        SuccessResponse response = new SuccessResponse();
-        Boolean responseObject = (Boolean)getResponseObject();
+    public ConfigurationResponse getResponse() {
+        ConfigurationVO cfg = (ConfigurationVO)getResponseObject();
       
-        if (responseObject != null) {
-        	response.setSuccess(responseObject);
-        	response.setDisplayText("Successfully updated configuration value.");
+        if (cfg != null) {
+            ConfigurationResponse response = ApiResponseHelper.createConfigurationResponse(cfg);
+            response.setResponseName(getName());
+            return response;
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update config");
         }
-
-        response.setResponseName(getName());
-        return response;
     }
 }

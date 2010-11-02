@@ -24,6 +24,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -77,12 +78,7 @@ public class ListCfgsByCmd extends BaseListCmd {
         ListResponse<ConfigurationResponse> response = new ListResponse<ConfigurationResponse>();
         List<ConfigurationResponse> configResponses = new ArrayList<ConfigurationResponse>();
         for (ConfigurationVO cfg : configurations) {
-            ConfigurationResponse cfgResponse = new ConfigurationResponse();
-            cfgResponse.setCategory(cfg.getCategory());
-            cfgResponse.setDescription(cfg.getDescription());
-            cfgResponse.setName(cfg.getName());
-            cfgResponse.setValue(cfg.getValue());
-
+            ConfigurationResponse cfgResponse = ApiResponseHelper.createConfigurationResponse(cfg);
             cfgResponse.setResponseName("configuration");
             configResponses.add(cfgResponse);
         }

@@ -184,15 +184,23 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     }
     
     @Override
-    public boolean updateConfiguration(UpdateCfgCmd cmd) {
+    public ConfigurationVO updateConfiguration(UpdateCfgCmd cmd) throws InvalidParameterValueException{
     	Long userId = UserContext.current().getUserId();
     	String name = cmd.getCfgName();
     	String value = cmd.getValue();
+    	
+    	//check if config value exists
+    	if (_configDao.findByName(name) == null)
+    	    throw new InvalidParameterValueException("Config parameter with name " + name + " doesn't exist");
+    	
+    	if (value == null)
+    	    return _configDao.findByName(name);
+    	
     	updateConfiguration (userId, name, value);
     	if (_configDao.getValue(name).equalsIgnoreCase(value))
-    		return true;
+    		return _configDao.findByName(name);
     	else 
-    		return false;
+    		throw new CloudRuntimeException("Unable to update configuration parameter" + name);
     }
     
     
@@ -2139,11 +2147,11 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     }
 
 	@Override
-	public boolean addConfig(AddConfigCmd cmd){
+	public ConfigurationVO addConfig(AddConfigCmd cmd){
 		String category = cmd.getCategory();
 		String instance = cmd.getInstance();
 		String component = cmd.getComponent();
-		String name = cmd.getName();
+		String name = cmd.getConfigPropName();
 		String value = cmd.getValue();
 		String description = cmd.getDescription();
 		try
@@ -2151,12 +2159,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 			ConfigurationVO entity = new ConfigurationVO(category, instance, component, name, value, description);
 			_configDao.persist(entity);
 			s_logger.info("Successfully added configuration value into db: category:"+category+" instance:"+instance+" component:"+component+" name:"+name+" value:"+value);
-			return true;
+			return _configDao.findByName(name);
 		}
 		catch(Exception ex)
 		{
 			s_logger.error("Unable to add the new config entry:",ex);
-			return false;
+			throw new CloudRuntimeException("Unable to add configuration parameter" + name);
 		}
 	}
 

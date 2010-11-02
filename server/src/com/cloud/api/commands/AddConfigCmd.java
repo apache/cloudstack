@@ -20,6 +20,7 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -98,19 +99,13 @@ public class AddConfigCmd extends BaseCmd {
     
     @Override @SuppressWarnings("unchecked")
     public ConfigurationResponse getResponse() {
-        ConfigurationResponse response = new ConfigurationResponse();
-        ConfigurationVO responseObject = (ConfigurationVO)getResponseObject();
-        if (responseObject != null) {
-            response.setName(responseObject.getName());
-            response.setValue(responseObject.getValue());
-            //TODO - return description and category if needed (didn't return in 2.1 release)
-
+        ConfigurationVO cfg = (ConfigurationVO)getResponseObject();
+        if (cfg != null) {
+            ConfigurationResponse response = ApiResponseHelper.createConfigurationResponse(cfg);
+            response.setResponseName(getName());
+            return response;
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add config");
         }
-
-        response.setResponseName(getName());
-        return response;
-        //return ApiResponseSerializer.toSerializedString(response);
     }
 }

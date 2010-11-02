@@ -64,4 +64,6 @@ public interface ConfigurationDao extends GenericDao<ConfigurationVO, String> {
      * @return true if premium configuration, false otherwise
      */
     boolean isPremium();
+    
+    ConfigurationVO findByName(String name);
 }

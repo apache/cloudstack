@@ -21,11 +21,13 @@ import java.util.Iterator;
 import java.util.List;
 
 import com.cloud.api.response.AccountResponse;
+import com.cloud.api.response.ConfigurationResponse;
 import com.cloud.api.response.DiskOfferingResponse;
 import com.cloud.api.response.DomainResponse;
 import com.cloud.api.response.ResourceLimitResponse;
 import com.cloud.api.response.ServiceOfferingResponse;
 import com.cloud.api.response.UserResponse;
+import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.domain.DomainVO;
@@ -225,6 +227,16 @@ public class ApiResponseHelper {
        offeringResponse.setTags(offering.getTags());
        
        return offeringResponse;
+   }
+   
+   public static ConfigurationResponse createConfigurationResponse (ConfigurationVO cfg) {
+       ConfigurationResponse cfgResponse = new ConfigurationResponse();
+       cfgResponse.setCategory(cfg.getCategory());
+       cfgResponse.setDescription(cfg.getDescription());
+       cfgResponse.setName(cfg.getName());
+       cfgResponse.setValue(cfg.getValue());
+       
+       return cfgResponse;
    }
    
 

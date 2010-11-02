@@ -146,4 +146,11 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
         return value;
        
     }
+    
+    @Override
+    public ConfigurationVO findByName(String name) {
+        SearchCriteria<ConfigurationVO> sc = NameSearch.create();
+        sc.setParameters("name", name);
+        return findOneIncludingRemovedBy(sc);
+    }
 }
