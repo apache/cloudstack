@@ -904,7 +904,7 @@ function getMidmenuId(jsonObj) {
     return "midmenuItem_" + jsonObj.id; 
 }
 
-function listMidMenuItems2(commandString, jsonResponse1, jsonResponse2, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu, clickFirstItem) {                
+function listMidMenuItems2(commandString, jsonResponse1, jsonResponse2, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu, clickFirstItem, $midMenuContainer) {                
 	if(isMultipleSelectionInMidMenu == true)
         enableMultipleSelectionInMidMenu();
     else
@@ -925,7 +925,11 @@ function listMidMenuItems2(commandString, jsonResponse1, jsonResponse2, toMidmen
                     $midmenuItem1.data("toRightPanelFn", toRightPanelFn);                             
                     toMidmenuFn(items[i], $midmenuItem1);    
                     bindClickToMidMenu($midmenuItem1, toRightPanelFn, getMidmenuIdFn);             
-                    $("#midmenu_container").append($midmenuItem1.show());   
+                                        
+                    if($midMenuContainer == null)
+                        $midMenuContainer = $("#midmenu_container");
+                        
+                    $midMenuContainer.append($midmenuItem1.show());   
                     if(clickFirstItem == true && i == 0)  { //click the 1st item in middle menu as default 
                         $midmenuItem1.click();       
                         if(isMultipleSelectionInMidMenu == true) {                           

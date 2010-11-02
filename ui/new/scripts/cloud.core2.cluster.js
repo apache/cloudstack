@@ -23,24 +23,23 @@ function afterLoadClusterJSP($midmenuItem1) {
     $("#midmenu_add2_link").unbind("click").hide();   
     $("#midmenu_add3_link").unbind("click").hide();          
     
-	clusterJsonToRightPanel($midmenuItem1);
-	
-	var clusterId = $midmenuItem1.data("jsonObj").id;     
-        
-    var $midmenuContainer = $("#midmenu_container").empty();	    
-    var $header1 = $("#midmenu_itemheader_without_margin").clone();  //without margin on top
+	clusterJsonToRightPanel($midmenuItem1);	
+	var clusterId = $midmenuItem1.data("jsonObj").id;            
+    var $midmenuContainer = $("#midmenu_container").empty();	
+       
+    var $container_host = $("<div id='midmenu_host_container'></div>"); 
+    $midmenuContainer.append($container_host);        
+    var $header1 = $("#midmenu_itemheader_without_margin").clone().show();  //without margin on top
     $header1.find("#name").text("Host");
-    $midmenuContainer.append($header1);
-    var count1 = listMidMenuItems2(("listHosts&type=Routing&clusterid="+clusterId), "listhostsresponse", "host", hostToMidmenu, hostToRightPanel, hostGetMidmenuId, false, true); 					
-    if(count1 > 0)
-	    $header1.show();
-	    
-	var $header2 = $("#midmenu_itemheader_with_margin").clone(); //with margin on top
+    $container_host.append($header1);
+    listMidMenuItems2(("listHosts&type=Routing&clusterid="+clusterId), "listhostsresponse", "host", hostToMidmenu, hostToRightPanel, hostGetMidmenuId, false, true, $container_host); 					
+	
+    var $container_primarystorage = $("<div id='midmenu_primarystorage_container'></div>");
+    $midmenuContainer.append($container_primarystorage);       
+	var $header2 = $("#midmenu_itemheader_with_margin").clone().show(); //with margin on top
     $header2.find("#name").text("Primary Storage");
-    $midmenuContainer.append($header2);
-	var count2 = listMidMenuItems2(("listStoragePools&clusterid="+clusterId), "liststoragepoolsresponse", "storagepool", primarystorageToMidmenu, primarystorageToRightPanel, primarystorageGetMidmenuId, false, false); 			
-    if(count2 > 0)
-	    $header2.show();
+    $container_primarystorage.append($header2);
+	listMidMenuItems2(("listStoragePools&clusterid="+clusterId), "liststoragepoolsresponse", "storagepool", primarystorageToMidmenu, primarystorageToRightPanel, primarystorageGetMidmenuId, false, false, $container_primarystorage); 			
 }
 
 function clusterJsonToRightPanel($leftmenuItem1) {
