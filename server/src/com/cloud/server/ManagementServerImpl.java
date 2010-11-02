@@ -3210,8 +3210,10 @@ public class ManagementServerImpl implements ManagementServer {
             _firewallRulesDao.update(fwRule.getId(), fwRule);
             _networkMgr.updateFirewallRule(fwRule, oldPrivateIP, oldPrivatePort);
             return fwRule;
+        }else{
+        	s_logger.warn("Unable to find the rule to be updated for public ip:public port"+publicIp+":"+publicPort+ "private ip:private port:"+privateIp+":"+privatePort);
+        	throw new InvalidParameterValueException("Unable to find the rule to be updated for public ip:public port"+publicIp+":"+publicPort+ " private ip:private port:"+privateIp+":"+privatePort);
         }
-        return null;
     }
 
     @Override
