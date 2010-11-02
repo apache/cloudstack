@@ -1125,13 +1125,9 @@ public class ManagementServerImpl implements ManagementServer {
     	String accountName = cmd.getAccountName();
     	String newAccountName = cmd.getNewName();
     	
-    	if (newAccountName == null) {
-    		newAccountName = accountName;
-    	}
-    	
         boolean success = false;
         Account account = _accountDao.findAccount(accountName, domainId);
-
+        
         //Check if account exists
         if (account == null) {
         	s_logger.error("Unable to find account " + accountName + " in domain " + domainId);
@@ -1148,8 +1144,14 @@ public class ManagementServerImpl implements ManagementServer {
         if ((adminAccount != null) && isChildDomain(adminAccount.getDomainId(), account.getDomainId())) {
           throw new PermissionDeniedException("Invalid account " + accountName + " in domain " + domainId + " given, permission denied");
         }
-        
-        if (account.getAccountName().equals(newAccountName)) {
+
+        //check if the given account name is unique in this domain for updating
+        Account duplicateAcccount = _accountDao.findAccount(newAccountName, domainId);
+        if(duplicateAcccount != null && duplicateAcccount.getId() != account.getId()){//allow same account to update itself
+        	throw new PermissionDeniedException("There already exists an account with the name:"+newAccountName+" in the domain:"+domainId+" with existing account id:"+duplicateAcccount.getId());
+        }
+                
+        if (account.getAccountName().equalsIgnoreCase(newAccountName)) {
             success = true;
         } else {
             AccountVO acctForUpdate = _accountDao.createForUpdate();
