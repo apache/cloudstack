@@ -92,7 +92,7 @@ function accountJsonToDetailsTab($midmenuItem1) {
 
 var accountActionMap = {  
     "Resource limits": {                 
-        dialogBeforeActionFn : doResourceLimits 
+        dialogBeforeActionFn : doResourceLimitsForAccount 
     } 
     ,
     "Disable account": {              
@@ -160,7 +160,7 @@ var accountActionMap = {
     }    
 }; 
 
-function updateResourceLimit(domainId, account, type, max) {
+function updateResourceLimitForAccount(domainId, account, type, max) {
 	$.ajax({
 	    data: createURL("command=updateResourceLimit&domainid="+domainId+"&account="+account+"&resourceType="+type+"&max="+max),
 		dataType: "json",
@@ -169,7 +169,7 @@ function updateResourceLimit(domainId, account, type, max) {
 	});
 }
 
-function doResourceLimits($actionLink, $detailsTab, $midmenuItem1) {
+function doResourceLimitsForAccount($actionLink, $detailsTab, $midmenuItem1) {
     var $detailsTab = $("#right_panel_content #tab_content_details");  
 	var jsonObj = $detailsTab.data("jsonObj");
 	var domainId = jsonObj.domainid;
@@ -228,19 +228,19 @@ function doResourceLimits($actionLink, $detailsTab, $midmenuItem1) {
 											
 					$(this).dialog("close"); 
 					if (instanceLimit != preInstanceLimit) {
-						updateResourceLimit(domainId, account, 0, instanceLimit);
+						updateResourceLimitForAccount(domainId, account, 0, instanceLimit);
 					}
 					if (ipLimit != preIpLimit) {
-						updateResourceLimit(domainId, account, 1, ipLimit);
+						updateResourceLimitForAccount(domainId, account, 1, ipLimit);
 					}
 					if (diskLimit != preDiskLimit) {
-						updateResourceLimit(domainId, account, 2, diskLimit);
+						updateResourceLimitForAccount(domainId, account, 2, diskLimit);
 					}
 					if (snapshotLimit != preSnapshotLimit) {
-						updateResourceLimit(domainId, account, 3, snapshotLimit);
+						updateResourceLimitForAccount(domainId, account, 3, snapshotLimit);
 					}
 					if (templateLimit != preTemplateLimit) {
-						updateResourceLimit(domainId, account, 4, templateLimit);
+						updateResourceLimitForAccount(domainId, account, 4, templateLimit);
 					}
 				}, 
 				"Cancel": function() { 

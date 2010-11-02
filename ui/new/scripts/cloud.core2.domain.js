@@ -32,7 +32,7 @@ function afterLoadDomainJSP() {
     var $resourceLimitsTab = $("#right_panel_content #tab_content_resource_limits");	
     var $readonlyFields  =  $resourceLimitsTab.find("#limits_vm, #limits_ip, #limits_volume, #limits_snapshot, #limits_template");
     var $editFields =  $resourceLimitsTab.find("#limits_vm_edit, #limits_ip_edit, #limits_volume_edit, #limits_snapshot_edit, #limits_template_edit");   
-    initializeEditFunction($readonlyFields, $editFields, doUpdateResourceLimits);    
+    initializeEditFunction($readonlyFields, $editFields, doUpdateResourceLimitsForDomain);    
 }
 
 
@@ -142,7 +142,7 @@ function domainToRightPanel(jsonObj) {
             var $resourceLimitsTab = $("#right_panel_content #tab_content_resource_limits");	
             var $readonlyFields  =  $resourceLimitsTab.find("#limits_vm, #limits_ip, #limits_volume, #limits_snapshot, #limits_template");
             var $editFields =  $resourceLimitsTab.find("#limits_vm_edit, #limits_ip_edit, #limits_volume_edit, #limits_snapshot_edit, #limits_template_edit");   
-            initializeEditFunction($readonlyFields, $editFields, doUpdateResourceLimits);    
+            initializeEditFunction($readonlyFields, $editFields, doUpdateResourceLimitsForDomain);    
                 
 			domainToRightPanel2(jsonObj);       
 		});        
@@ -274,7 +274,7 @@ function bindEventHandlerToDomainTreeNode() {
     });
 }
 
-function updateResourceLimit(domainId, type, max, $readonlyField) {
+function updateResourceLimitForDomain(domainId, type, max, $readonlyField) {
 	$.ajax({
 	    data: createURL("command=updateResourceLimit&domainid="+domainId+"&resourceType="+type+"&max="+max),
 		dataType: "json",
@@ -305,7 +305,7 @@ function listAdminAccounts(domainId) {
 	});		
 }		
 
-function doUpdateResourceLimits() {
+function doUpdateResourceLimitsForDomain() {
     var $resourceLimitsTab = $("#right_panel_content #tab_content_resource_limits");
 
     var isValid = true;	        			
@@ -327,18 +327,18 @@ function doUpdateResourceLimits() {
 	var templateLimit = trim($resourceLimitsTab.find("#limits_template_edit").val());
 				
 	if (instanceLimit != $resourceLimitsTab.find("#limits_vm").text()) {
-		updateResourceLimit(domainId, 0, instanceLimit, $resourceLimitsTab.find("#limits_vm"));
+		updateResourceLimitForDomain(domainId, 0, instanceLimit, $resourceLimitsTab.find("#limits_vm"));
 	}
 	if (ipLimit != $resourceLimitsTab.find("#limits_ip").text()) {
-		updateResourceLimit(domainId, 1, ipLimit, $resourceLimitsTab.find("#limits_ip"));
+		updateResourceLimitForDomain(domainId, 1, ipLimit, $resourceLimitsTab.find("#limits_ip"));
 	}
 	if (diskLimit != $resourceLimitsTab.find("#limits_volume").text()) {
-		updateResourceLimit(domainId, 2, diskLimit, $resourceLimitsTab.find("#limits_volume"));
+		updateResourceLimitForDomain(domainId, 2, diskLimit, $resourceLimitsTab.find("#limits_volume"));
 	}
 	if (snapshotLimit != $resourceLimitsTab.find("#limits_snapshot").text()) {
-		updateResourceLimit(domainId, 3, snapshotLimit, $resourceLimitsTab.find("#limits_snapshot"));
+		updateResourceLimitForDomain(domainId, 3, snapshotLimit, $resourceLimitsTab.find("#limits_snapshot"));
 	}
 	if (templateLimit != $resourceLimitsTab.find("#limits_template").text()) {
-		updateResourceLimit(domainId, 4, templateLimit, $resourceLimitsTab.find("#limits_template"));
+		updateResourceLimitForDomain(domainId, 4, templateLimit, $resourceLimitsTab.find("#limits_template"));
 	}    
 }
