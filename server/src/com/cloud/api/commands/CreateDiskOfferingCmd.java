@@ -20,7 +20,7 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -89,23 +89,13 @@ public class CreateDiskOfferingCmd extends BaseCmd {
 
     @Override @SuppressWarnings("unchecked")
     public DiskOfferingResponse getResponse() {
-        DiskOfferingResponse response = new DiskOfferingResponse();
-        DiskOfferingVO responseObject = (DiskOfferingVO)getResponseObject();
-        if (responseObject != null) {
-            response.setId(responseObject.getId());
-            response.setCreated(responseObject.getCreated());
-            response.setDiskSize(responseObject.getDiskSizeInBytes());
-            response.setDisplayText(responseObject.getDisplayText());
-            response.setDomainId(responseObject.getDomainId());
-            response.setDomain(ApiDBUtils.findDomainById(responseObject.getDomainId()).getName());
-            response.setName(responseObject.getName());
-            response.setTags(responseObject.getTags());
-            response.setMirrored(responseObject.isMirrored());
+        DiskOfferingVO offering = (DiskOfferingVO)getResponseObject();
+        if (offering != null) {
+            DiskOfferingResponse response = ApiResponseHelper.createDiskOfferingResponse(offering);
+            response.setResponseName(getName());
+            return response;
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create disk offering");
-        }
-
-        response.setResponseName(getName());
-        return response;
+        } 
     }
 }

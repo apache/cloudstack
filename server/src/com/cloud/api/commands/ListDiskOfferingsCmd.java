@@ -23,13 +23,12 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.DiskOfferingResponse;
 import com.cloud.api.response.ListResponse;
-import com.cloud.domain.DomainVO;
 import com.cloud.storage.DiskOfferingVO;
 
 @Implementation(method="searchForDiskOfferings", description="Lists all available disk offerings.")
@@ -83,17 +82,7 @@ public class ListDiskOfferingsCmd extends BaseListCmd {
         ListResponse<DiskOfferingResponse> response = new ListResponse<DiskOfferingResponse>();
         List<DiskOfferingResponse> diskOfferingResponses = new ArrayList<DiskOfferingResponse>();
         for (DiskOfferingVO offering : offerings) {
-            DiskOfferingResponse diskOffResp = new DiskOfferingResponse();
-            diskOffResp.setCreated(offering.getCreated());
-            diskOffResp.setDiskSize(offering.getDiskSizeInBytes());
-            diskOffResp.setDisplayText(offering.getDisplayText());
-            diskOffResp.setDomainId(offering.getDomainId());
-            diskOffResp.setId(offering.getId());
-            diskOffResp.setName(offering.getName());
-            diskOffResp.setTags(offering.getTags());
-            DomainVO domain = ApiDBUtils.findDomainById(offering.getDomainId());
-            diskOffResp.setDomain(domain.getName());
-
+            DiskOfferingResponse diskOffResp = ApiResponseHelper.createDiskOfferingResponse(offering);
             diskOffResp.setResponseName("diskoffering");
             diskOfferingResponses.add(diskOffResp);
         }
