@@ -558,6 +558,7 @@ fi
 %attr(0755,root,root) %{_bindir}/%{name}-setup-databases
 %attr(0755,root,root) %{_bindir}/%{name}-migrate-databases
 %attr(0755,root,root) %{_bindir}/%{name}-migrate-snapshot
+%attr(0755,root,root) %{_bindir}/%{name}-check-snapshot
 %dir %{_datadir}/%{name}/setup
 %{_datadir}/%{name}/setup/create-database.sql
 %{_datadir}/%{name}/setup/create-index-fk.sql
@@ -573,6 +574,7 @@ fi
 %{_datadir}/%{name}/setup/postprocess-20to21.sql
 %{_datadir}/%{name}/setup/schema-20to21.sql
 %{_datadir}/%{name}/setup/schema-213to214.sql
+%{_datadir}/%{name}/setup/schema-214to215.sql
 %{_datadir}/%{name}/setup/schema-level.sql
 %doc README
 %doc HACKING
