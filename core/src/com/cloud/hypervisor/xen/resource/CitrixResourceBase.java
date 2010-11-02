@@ -961,8 +961,10 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             boolean removeVif = false;
             if (add && correctVif == null) {
                 addVif = true;
+                s_logger.info("ipassoc: Need to add a vif to the virtual router since the ip is in a new subnet " + publicIpAddress);
             } else if (!add && firstIP) {
                 removeVif = true;
+                s_logger.info("ipassoc: Need to remove a vif to the virtual router since the removed ip is the last one " + publicIpAddress);
             }
 
             if (addVif) {
@@ -994,9 +996,11 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 args += " -f";
                 args += " -l ";
                 args += publicIpAddress + "/" + cidrSize;
-            } else if (firstIP) {
+                s_logger.debug("ipassoc: source nat ip: " + publicIpAddress);
+            } else if (addVif || removeVif || firstIP) {
             	args += " -l ";
                 args += publicIpAddress + "/" + cidrSize;
+                s_logger.debug("ipassoc: first ip on vif: " + publicIpAddress);
             } else {
               	args += " -l ";
                 args += publicIpAddress;

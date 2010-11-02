@@ -301,22 +301,49 @@ public class StatsCollector {
 				// a list to store the new capacity entries that will be committed once everything is calculated
 				List<CapacityVO> newCapacities = new ArrayList<CapacityVO>();
 
-                // create new entries
-                for (Long hostId : storageStats.keySet()) {
-                    StorageStats stats = storageStats.get(hostId);
-                    HostVO host = _hostDao.findById(hostId);
-                    host.setTotalSize(stats.getCapacityBytes());
-                    _hostDao.update(host.getId(), host);
-
-                    if (Host.Type.SecondaryStorage.equals(host.getType())) {
-                        CapacityVO capacity = new CapacityVO(host.getId(), host.getDataCenterId(), host.getPodId(), stats.getByteUsed(), stats.getCapacityBytes(), CapacityVO.CAPACITY_TYPE_SECONDARY_STORAGE);
-                        newCapacities.add(capacity);
-//                        _capacityDao.persist(capacity);
-                    } else if (Host.Type.Storage.equals(host.getType())) {
-                        CapacityVO capacity = new CapacityVO(host.getId(), host.getDataCenterId(), host.getPodId(), stats.getByteUsed(), stats.getCapacityBytes(), CapacityVO.CAPACITY_TYPE_STORAGE);
-                        newCapacities.add(capacity);
-//                        _capacityDao.persist(capacity);
+                // Updating the storage entries and creating new ones if they dont exist.
+				Transaction txn = Transaction.open(Transaction.CLOUD_DB);
+                try {
+                    if (s_logger.isTraceEnabled()) {
+                        s_logger.trace("recalculating system storage capacity");
                     }
+                    txn.start();
+                    for (Long hostId : storageStats.keySet()) {
+                        StorageStats stats = storageStats.get(hostId);
+                        short capacityType = -1;
+                        HostVO host = _hostDao.findById(hostId);
+                        host.setTotalSize(stats.getCapacityBytes());
+                        _hostDao.update(host.getId(), host);
+                        
+                        SearchCriteria capacitySC = _capacityDao.createSearchCriteria();
+                        capacitySC.addAnd("hostOrPoolId", SearchCriteria.Op.EQ, hostId);
+                        capacitySC.addAnd("dataCenterId", SearchCriteria.Op.EQ, host.getDataCenterId());
+                        
+                        if (Host.Type.SecondaryStorage.equals(host.getType())) {
+                            capacityType = CapacityVO.CAPACITY_TYPE_SECONDARY_STORAGE;                                                                                                                
+                        } else if (Host.Type.Storage.equals(host.getType())) {
+                            capacityType = CapacityVO.CAPACITY_TYPE_STORAGE;
+                        }
+                        if(-1 != capacityType){
+                            capacitySC.addAnd("capacityType", SearchCriteria.Op.EQ, capacityType);    
+                            List<CapacityVO> capacities = _capacityDao.search(capacitySC, null);
+                            if (capacities.size() == 0){ // Create a new one
+                                CapacityVO capacity = new CapacityVO(host.getId(), host.getDataCenterId(), host.getPodId(), stats.getByteUsed(), stats.getCapacityBytes(), capacityType);
+                                _capacityDao.persist(capacity);
+                            }else{ //Update if it already exists.                             
+                                CapacityVO capacity = capacities.get(0);
+                                capacity.setUsedCapacity(stats.getByteUsed());
+                                capacity.setTotalCapacity(stats.getCapacityBytes());
+                                _capacityDao.update(capacity.getId(), capacity);
+                            }
+                        }
+                    }// End of for
+                    txn.commit();
+                } catch (Exception ex) {
+                    txn.rollback();
+                    s_logger.error("Unable to start transaction for storage capacity update");
+                }finally {
+                    txn.close();
                 }
 
                 for (Long poolId : storagePoolStats.keySet()) {
@@ -336,26 +363,7 @@ public class StatsCollector {
                     _storagePoolDao.update(pool.getId(), pool);                         
                     
                     _storageManager.createCapacityEntry(pool, 0L);
-                }
-                
-                Transaction txn = Transaction.open(Transaction.CLOUD_DB);
-                try {
-                	if (s_logger.isTraceEnabled()) {
-		                s_logger.trace("recalculating system storage capacity");
-		            }
-                	txn.start();
-	                for (CapacityVO newCapacity : newCapacities) {
-	                	s_logger.trace("Executing capacity update");
-	                    _capacityDao.persist(newCapacity);
-	                    s_logger.trace("Done with capacity update");
-	                }
-		            txn.commit();
-                } catch (Exception ex) {
-                	txn.rollback();
-                	s_logger.error("Unable to start transaction for storage capacity update");
-                }finally {
-                	txn.close();
-                }
+                }                               
 			} catch (Throwable t) {
 				s_logger.error("Error trying to retrieve storage stats", t);
 			}
