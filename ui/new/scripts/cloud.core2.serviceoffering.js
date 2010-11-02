@@ -216,7 +216,8 @@ function serviceOfferingJsonToDetailsTab() {
     $thisTab.find("#memory").text(convertBytes(parseInt(jsonObj.memory)*1024*1024));
     
     setBooleanReadField(jsonObj.offerha, $thisTab.find("#offerha"));	
-    $thisTab.find("#offerha_edit").val(jsonObj.offerha);
+    setBooleanEditField(jsonObj.offerha, $thisTab.find("#offerha_edit"));
+    //$thisTab.find("#offerha_edit").val(jsonObj.offerha);
     
     $thisTab.find("#networktype").text(toNetworkType(jsonObj.usevirtualnetwork));
     $thisTab.find("#tags").text(fromdb(jsonObj.tags));   
