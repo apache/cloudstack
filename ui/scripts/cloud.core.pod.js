@@ -97,7 +97,7 @@ function initAddHostButton($midmenuAddLink1, currentPageInRightPanel) {
         dialogAddHost.find("#info_container").hide();    
         dialogAddHost.find("#new_cluster_name").val("");
         
-        var zoneId, podId;        
+        var zoneId, podId, clusterId;               
         if(currentPageInRightPanel == "pod_page") {
             var podObj = $("#tab_content_details").data("jsonObj");   
             zoneId = podObj.zoneid;
@@ -109,13 +109,15 @@ function initAddHostButton($midmenuAddLink1, currentPageInRightPanel) {
             var hostObj = $("#tab_content_details").data("jsonObj");  
             zoneId = hostObj.zoneid;
             podId = hostObj.podid; 
+            clusterId = hostObj.clusterid;   
             dialogAddHost.find("#zone_name").text(fromdb(hostObj.zonename));  
             dialogAddHost.find("#pod_name").text(fromdb(hostObj.podname)); 
         }
         else if(currentPageInRightPanel == "primarystorage_page") {
             var primarystorageObj = $("#tab_content_details").data("jsonObj");   
             zoneId = primarystorageObj.zoneid;
-            podId = primarystorageObj.podid;           
+            podId = primarystorageObj.podid;    
+            clusterId = primarystorageObj.clusterid;          
             dialogAddHost.find("#zone_name").text(fromdb(primarystorageObj.zonename));  
             dialogAddHost.find("#pod_name").text(fromdb(primarystorageObj.podname)); 
         }
@@ -126,9 +128,13 @@ function initAddHostButton($midmenuAddLink1, currentPageInRightPanel) {
             success: function(json) {			            
                 var items = json.listclustersresponse.cluster;
                 var clusterSelect = dialogAddHost.find("#cluster_select").empty();		
-                if(items != null && items.length > 0) {			                
-                    for(var i=0; i<items.length; i++) 			                    
-                        clusterSelect.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");		      
+                if(items != null && items.length > 0) {		                                        
+                    for(var i=0; i<items.length; i++) {	
+	                    if(clusterId != null && items[i].id == clusterId)
+	                        clusterSelect.append("<option value='" + items[i].id + "' selected>" + fromdb(items[i].name) + "</option>");	
+	                    else               
+	                        clusterSelect.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");		
+	                }                             
                     dialogAddHost.find("input[value=existing_cluster_radio]").attr("checked", true);
                 }
                 else {
