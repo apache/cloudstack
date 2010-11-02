@@ -34,7 +34,7 @@
 ----------------------------------*/
 
 /* Overlays */
-.ui-widget-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+.ui-widget-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index:1007;}
 
 
 /*
@@ -60,7 +60,7 @@
 ----------------------------------*/
 .ui-state-default, .ui-widget-content .ui-state-default, .ui-widget-header .ui-state-default { border: 1px solid #cccccc; background: #f6f6f6 url(images/ui-bg_glass_100_f6f6f6_1x400.png) 50% 50% repeat-x; font-weight: bold; color: #1c94c4; }
 .ui-state-default a, .ui-state-default a:link, .ui-state-default a:visited { color: #1c94c4; text-decoration: none; }
-.ui-state-hover, .ui-widget-content .ui-state-hover, .ui-widget-header .ui-state-hover, .ui-state-focus, .ui-widget-content .ui-state-focus, .ui-widget-header .ui-state-focus { height:22px; border: 1px solid #fbcb09; background: #c7f9ff repeat-x; font-weight: bold; color: #c77405; }
+.ui-state-hover, .ui-widget-content .ui-state-hover, .ui-widget-header .ui-state-hover, .ui-state-focus, .ui-widget-content .ui-state-focus, .ui-widget-header .ui-state-focus { height:auto; border: 1px solid #fbcb09; background: #c7f9ff repeat-x; font-weight: bold; color: #c77405; }
 .ui-state-hover a, .ui-state-hover a:hover { color: #333; text-decoration: none; }
 .ui-state-active, .ui-widget-content .ui-state-active, .ui-widget-header .ui-state-active { border: 1px solid #fbd850; background: #ffffff url(images/ui-bg_glass_65_ffffff_1x400.png) 50% 50% repeat-x; font-weight: bold; color: #eb8f00; }
 .ui-state-active a, .ui-state-active a:link, .ui-state-active a:visited { color: #eb8f00; text-decoration: none; }
@@ -304,16 +304,17 @@
 .ui-selectable-helper { border:1px dotted black }
 /* Accordion
 ----------------------------------*/
-.ui-accordion .ui-accordion-header { cursor: pointer; position: relative; margin-top: 1px; zoom: 1; }
-.ui-accordion .ui-accordion-li-fix { display: inline; }
-.ui-accordion .ui-accordion-header-active { border-bottom: 0 !important; }
-.ui-accordion .ui-accordion-header a { display: block; font-size: 1em; padding: .5em .5em .5em .7em; }
+.ui-accordion .ui-accordion-header  { cursor: pointer; position: relative; margin:0; padding:0; zoom: 0; background:none;  border-bottom:1px dashed #92a7b7; border-top:none; border-left:none; border-right:none;}
+
+.ui-accordion .ui-accordion-li-fix { display: inline; border:none; padding:0; }
+.ui-accordion .ui-accordion-header-active { border-bottom: none !important;}
+.ui-accordion .ui-accordion-header a { display: block; font-size: 1em; border:none; }
 /* IE7-/Win - Fix extra vertical space in lists */
-.ui-accordion a { zoom: 1; }
-.ui-accordion-icons .ui-accordion-header a { padding-left: 2.2em; }
-.ui-accordion .ui-accordion-header .ui-icon { position: absolute; left: .5em; top: 50%; margin-top: -8px; }
-.ui-accordion .ui-accordion-content { padding: 1em 2.2em; border-top: 0; margin-top: -2px; position: relative; top: 1px; margin-bottom: 2px; overflow: auto; display: none; zoom: 1; }
-.ui-accordion .ui-accordion-content-active { display: block; }/* Autocomplete
+.ui-accordion a { zoom: 0; border:none;}
+.ui-accordion-icons .ui-accordion-header a { padding: 0 0 0 0; border:none; }
+.ui-accordion .ui-accordion-header .ui-icon { position: absolute;  border:none;}
+.ui-accordion .ui-accordion-content { /*padding: 1em 2.2em;*/ border-top: 0; margin: 0px; position: relative; top: 0;  overflow: auto; display: none; zoom:0; background:none; border:none; padding:0;}
+.ui-accordion .ui-accordion-content-active { display: block; border:none; padding:0; }/* Autocomplete
 ----------------------------------*/
 .ui-autocomplete { position: absolute; cursor: default; }	
 .ui-autocomplete-loading { background: white url('images/ui-anim_basic_16x16.gif') right center no-repeat; }
