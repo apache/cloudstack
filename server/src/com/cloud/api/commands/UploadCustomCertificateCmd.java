@@ -23,6 +23,7 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.CustomCertificateResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
@@ -33,11 +34,11 @@ public class UploadCustomCertificateCmd extends BaseAsyncCmd {
 
     private static final String s_name = "uploadcustomcertificateresponse";
 
-    @Parameter(name=ApiConstants.PATH, type=CommandType.STRING)
-    private String path;
+    @Parameter(name=ApiConstants.CERTIFICATE,type=CommandType.STRING,required=true,description="the custom cert to be uploaded")
+    private String certificate;
 
-    public String getPath() {
-        return path;
+    public String getCertificate() {
+        return certificate;
     }
 
     @Override @SuppressWarnings("unchecked")
@@ -65,7 +66,7 @@ public class UploadCustomCertificateCmd extends BaseAsyncCmd {
     }
     
     public static String getResultObjectName() {
-    	return "volume";
+    	return "certificate";
     }
 
     @Override

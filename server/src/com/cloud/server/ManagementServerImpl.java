@@ -18,8 +18,12 @@
 package com.cloud.server;
 
 import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -5911,7 +5915,7 @@ public class ManagementServerImpl implements ManagementServer {
     	try 
     	{
         	Transaction.currentTxn();
-			String certificatePath = cmd.getPath();
+			String certificate = cmd.getCertificate();
     		cert = _certDao.listAll().get(0); //always 1 record in db (from the deploydb time)
 			cert = _certDao.acquireInLockTable(cert.getId());
 			//assign mgmt server id to mark as processing under this ms
@@ -5927,14 +5931,10 @@ public class ManagementServerImpl implements ManagementServer {
 					 if(s_logger.isDebugEnabled())
 						 s_logger.debug("No custom certificate exists in the DB, will upload a new one");				
 				}
-				certVOId = _certDao.persistCustomCertToDb(certificatePath,cert,this.getId());//0 implies failure
-			}
-
-			if (certVOId != 0) 
-			{
+	    		
 				//validate if the cert follows X509 format, if not, don't persist to db
-				FileInputStream fis = new FileInputStream(certificatePath);
-				BufferedInputStream bis = new BufferedInputStream(fis);
+				InputStream is = new ByteArrayInputStream(certificate.getBytes("UTF-8"));
+				BufferedInputStream bis = new BufferedInputStream(is);
 				CertificateFactory cf = CertificateFactory.getInstance("X.509");			
 				while (bis.available() > 1) {
 				   Certificate localCert = cf.generateCertificate(bis);//throws certexception if not valid cert format
@@ -5942,6 +5942,14 @@ public class ManagementServerImpl implements ManagementServer {
 					   s_logger.debug("The custom certificate generated for validation is:"+localCert.toString());
 				   }
 				}
+				
+				certVOId = _certDao.persistCustomCertToDb(certificate,cert,this.getId());//0 implies failure				
+				 if(s_logger.isDebugEnabled())
+					 s_logger.debug("Custom certificate persisted to the DB");				
+			}
+			
+			if (certVOId != 0) 
+			{
 				//certficate uploaded to db successfully	
 				//get a list of all Console proxies from the cp table
 				List<ConsoleProxyVO> cpList = _consoleProxyDao.listAll();
@@ -6008,18 +6016,28 @@ public class ManagementServerImpl implements ManagementServer {
 				throw new ServerApiException(BaseCmd.CUSTOM_CERT_UPDATE_ERROR, e.getMessage());
 			if(e instanceof IndexOutOfBoundsException){
 				String msg = "Custom certificate record in the db deleted; this should never happen. Please create a new record in the certificate table";
-				s_logger.error(msg);
+				s_logger.error(msg,e);
 				throw new ServerApiException(BaseCmd.CUSTOM_CERT_UPDATE_ERROR, msg);
 			}
 			if(e instanceof FileNotFoundException){
 				String msg = "Invalid file path for custom cert found during cert validation";
-				s_logger.error(msg);
+				s_logger.error(msg,e);
 				throw new ServerApiException(BaseCmd.CUSTOM_CERT_UPDATE_ERROR, msg);
 			}
 			if(e instanceof CertificateException){
 				String msg = "The file format for custom cert does not conform to the X.509 specification";
-				s_logger.error(msg);
+				s_logger.error(msg,e);
 				throw new ServerApiException(BaseCmd.CUSTOM_CERT_UPDATE_ERROR, msg);				
+			}
+			if(e instanceof UnsupportedEncodingException){
+				String msg = "Unable to encode the certificate into UTF-8 input stream for validation";
+				s_logger.error(msg,e);
+				throw new ServerApiException(BaseCmd.CUSTOM_CERT_UPDATE_ERROR, msg);								
+			}
+			if(e instanceof IOException){
+				String msg = "Cannot generate input stream during custom cert validation";
+				s_logger.error(msg,e);
+				throw new ServerApiException(BaseCmd.CUSTOM_CERT_UPDATE_ERROR, msg);								
 			}
 		}finally{
 				_certDao.releaseFromLockTable(cert.getId());					
