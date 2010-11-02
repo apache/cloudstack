@@ -348,14 +348,26 @@ function initAddPrimaryStorageButton($midmenuAddLink2, currentPageInRightPanel) 
 				    success: function(json) {
 				        $thisDialog.find("#spinning_wheel").hide();					       
 				        $thisDialog.dialog("close");					
-					    $("#cluster_"+clusterId).find("#cluster_name").click();
-					    /*
-					    var $midmenuItem1 = $("#midmenu_item").clone();
-                        $("#midmenu_container").append($midmenuItem1.fadeIn("slow"));
-				        var item = json.createstoragepoolresponse;				            			      										   
-					    primarystorageToMidmenu(item, $midmenuItem1);
-	                    bindClickToMidMenu($midmenuItem1, primarystorageToRightPanel, primarystorageGetMidmenuId);  
-	                    */	                                               
+					    
+					    var $container = $("#midmenu_container").find("#midmenu_primarystorage_container");
+					    if($container.length == 0) { //not on cluster node (still on pod node)
+					  	    $("#cluster_"+clusterId).find("#cluster_name").click();			
+					    }
+					    else {					 		   
+					        var $noItemsAvailable = $container.find("#midmenu_container_no_items_available");
+					        if($noItemsAvailable.length > 0) {
+					            $noItemsAvailable.slideUp("slow", function() {
+					                $(this).remove();
+					            });
+					        }					            
+					        
+					        var $midmenuItem1 = $("#midmenu_item").clone();
+                            $container.append($midmenuItem1.fadeIn("slow"));
+				            var item = json.createstoragepoolresponse;				            			      										   
+					        primarystorageToMidmenu(item, $midmenuItem1);
+	                        bindClickToMidMenu($midmenuItem1, primarystorageToRightPanel, primarystorageGetMidmenuId);  
+	                    }
+	                                                                 
 				    },			
                     error: function(XMLHttpResponse) {	                                 
                         handleErrorInDialog(XMLHttpResponse, $thisDialog);	                        					    
