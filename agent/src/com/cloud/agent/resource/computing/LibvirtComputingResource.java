@@ -3104,9 +3104,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     protected Integer getVncPort( String vmName) {
-    	if (VirtualMachineName.isValidRouterName(vmName) || VirtualMachineName.isValidConsoleProxyName(vmName)) {
-    		return null; // no vnc ports for domr
-    	}
     	LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
     	Domain dm = null;
     	try {
