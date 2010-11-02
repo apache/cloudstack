@@ -22,8 +22,8 @@ long milliseconds = new Date().getTime();
     <link rel="stylesheet" href="css/main.css" type="text/css" />
 
 	<!-- Common libraries -->
-    <script type="text/javascript" src="scripts/jquery-1.4.2.min.js"></script>
-    <script type="text/javascript" src="scripts/jquery-ui-1.8.2.custom.min.js"></script>
+    <script type="text/javascript" src="scripts/jquery.min.js"></script>
+    <script type="text/javascript" src="scripts/jquery-ui.custom.min.js"></script>
     <script type="text/javascript" src="scripts/date.js"></script>
     <script type="text/javascript" src="scripts/jquery.cookies.js"></script>
     <script type="text/javascript" src="scripts/jquery.timers.js"></script>
@@ -31,31 +31,31 @@ long milliseconds = new Date().getTime();
 
     <!-- cloud.com scripts -->
     <script type="text/javascript" src="scripts/cloud.logger.js?t=<%=milliseconds%>"></script>
-	<script type="text/javascript" src="scripts/cloud.core2.callbacks.js?t=<%=milliseconds%>"></script>
-    <script type="text/javascript" src="scripts/cloud.core2.js?t=<%=milliseconds%>"></script>
-	<script type="text/javascript" src="scripts/cloud.core2.init.js?t=<%=milliseconds%>"></script>
-    <script type="text/javascript" src="scripts/cloud.core2.instance.js?t=<%=milliseconds%>"></script>
-    <script type="text/javascript" src="scripts/cloud.core2.event.js?t=<%=milliseconds%>"></script>
-    <script type="text/javascript" src="scripts/cloud.core2.alert.js?t=<%=milliseconds%>"></script>
-    <script type="text/javascript" src="scripts/cloud.core2.account.js?t=<%=milliseconds%>"></script>
-    <script type="text/javascript" src="scripts/cloud.core2.volume.js?t=<%=milliseconds%>"></script>
-    <script type="text/javascript" src="scripts/cloud.core2.snapshot.js?t=<%=milliseconds%>"></script>
-    <script type="text/javascript" src="scripts/cloud.core2.ipaddress.js?t=<%=milliseconds%>"></script>
-    <script type="text/javascript" src="scripts/cloud.core2.template.js?t=<%=milliseconds%>"></script>
-    <script type="text/javascript" src="scripts/cloud.core2.iso.js?t=<%=milliseconds%>"></script>
-    <script type="text/javascript" src="scripts/cloud.core2.router.js?t=<%=milliseconds%>"></script>
-    <script type="text/javascript" src="scripts/cloud.core2.dashboard.js?t=<%=milliseconds%>"></script>
-    <script type="text/javascript" src="scripts/cloud.core2.domain.js?t=<%=milliseconds%>"></script>    
-    <script type="text/javascript" src="scripts/cloud.core2.serviceoffering.js?t=<%=milliseconds%>"></script>
-    <script type="text/javascript" src="scripts/cloud.core2.diskoffering.js?t=<%=milliseconds%>"></script>
-    <script type="text/javascript" src="scripts/cloud.core2.globalsetting.js?t=<%=milliseconds%>"></script>
-    <script type="text/javascript" src="scripts/cloud.core2.resource.js?t=<%=milliseconds%>"></script>
-    <script type="text/javascript" src="scripts/cloud.core2.zone.js?t=<%=milliseconds%>"></script>
-    <script type="text/javascript" src="scripts/cloud.core2.pod.js?t=<%=milliseconds%>"></script>
-    <script type="text/javascript" src="scripts/cloud.core2.cluster.js?t=<%=milliseconds%>"></script>
-    <script type="text/javascript" src="scripts/cloud.core2.host.js?t=<%=milliseconds%>"></script>
-    <script type="text/javascript" src="scripts/cloud.core2.primarystorage.js?t=<%=milliseconds%>"></script>
-    <script type="text/javascript" src="scripts/cloud.core2.systemvm.js?t=<%=milliseconds%>"></script>
+	<script type="text/javascript" src="scripts/cloud.core.callbacks.js?t=<%=milliseconds%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core.js?t=<%=milliseconds%>"></script>
+	<script type="text/javascript" src="scripts/cloud.core.init.js?t=<%=milliseconds%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core.instance.js?t=<%=milliseconds%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core.event.js?t=<%=milliseconds%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core.alert.js?t=<%=milliseconds%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core.account.js?t=<%=milliseconds%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core.volume.js?t=<%=milliseconds%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core.snapshot.js?t=<%=milliseconds%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core.ipaddress.js?t=<%=milliseconds%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core.template.js?t=<%=milliseconds%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core.iso.js?t=<%=milliseconds%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core.router.js?t=<%=milliseconds%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core.dashboard.js?t=<%=milliseconds%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core.domain.js?t=<%=milliseconds%>"></script>    
+    <script type="text/javascript" src="scripts/cloud.core.serviceoffering.js?t=<%=milliseconds%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core.diskoffering.js?t=<%=milliseconds%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core.globalsetting.js?t=<%=milliseconds%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core.resource.js?t=<%=milliseconds%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core.zone.js?t=<%=milliseconds%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core.pod.js?t=<%=milliseconds%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core.cluster.js?t=<%=milliseconds%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core.host.js?t=<%=milliseconds%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core.primarystorage.js?t=<%=milliseconds%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core.systemvm.js?t=<%=milliseconds%>"></script>
 	
 	<!-- Favicon -->
 	<link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
