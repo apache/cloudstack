@@ -16,7 +16,7 @@
  * 
  */
 
-// Version: @VERSION@
+// Version: 1.9.1.2010-11-02T18:07:01Z
 
 var rootDomainId = 1;
 
