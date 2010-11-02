@@ -124,7 +124,7 @@ fi
 
 if [ "$ext" == "ova" ]
 then
-  tar xvf $destdir/$tmpfile -C $destdir &> /dev/null
+  tar xvf $destdir/$localfile -C $destdir &> /dev/null
 fi
 
 tmpltfile=$destdir/$localfile
