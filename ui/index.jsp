@@ -22,8 +22,8 @@ long milliseconds = new Date().getTime();
     <link rel="stylesheet" href="css/main.css" type="text/css" />
 
 	<!-- Common libraries -->
-    <script type="text/javascript" src="scripts/jquery.min.js"></script>
-    <script type="text/javascript" src="scripts/jquery-ui.custom.min.js"></script>
+    <script type="text/javascript" src="scripts/jquery-1.4.2.min.js"></script>
+    <script type="text/javascript" src="scripts/jquery-ui-1.8.2.custom.min.js"></script>
     <script type="text/javascript" src="scripts/date.js"></script>
     <script type="text/javascript" src="scripts/jquery.cookies.js"></script>
     <script type="text/javascript" src="scripts/jquery.timers.js"></script>
