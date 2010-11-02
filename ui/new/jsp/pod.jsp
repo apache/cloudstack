@@ -9,7 +9,7 @@
 
 <div class="main_title" id="right_panel_header">
     <div class="main_titleicon">
-        <img src="images/title_resourceicon.gif" alt="Pod" /></div>
+        <img src="images/title_podicon.gif" alt="Pod" /></div>
     <h1>
         Pod
     </h1>

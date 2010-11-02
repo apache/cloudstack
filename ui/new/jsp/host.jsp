@@ -9,7 +9,7 @@
 
 <div class="main_title" id="right_panel_header">
     <div class="main_titleicon">
-        <img src="images/title_resourceicon.gif" alt="Host" /></div>
+        <img src="images/title_clustericon.gif" alt="Host" /></div>
     <h1>
         Host
     </h1>
