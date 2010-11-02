@@ -279,7 +279,7 @@ $(document).ready(function() {
 		// default is to redisplay the login page
 		if (onLogoutCallback()) {
 			if (refresh) {
-				location.replace('/client/new');
+				location.replace('/client');
 				return false;
 			}
 			$("#account_password").val("");
