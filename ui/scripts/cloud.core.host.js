@@ -59,6 +59,7 @@ function hostJsonToDetailsTab($midmenuItem1) {
     var $detailsTab = $("#tab_content_details");   
     $detailsTab.data("jsonObj", jsonObj);           
     $detailsTab.find("#id").text(fromdb(jsonObj.id));
+    $detailsTab.find("#grid_header_title").text(fromdb(jsonObj.name));
     $detailsTab.find("#name").text(fromdb(jsonObj.name));
         
     setHostStateInRightPanel(fromdb(jsonObj.state), $detailsTab.find("#state"));

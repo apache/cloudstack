@@ -52,6 +52,7 @@ function primarystorageJsonToDetailsTab($midmenuItem1) {
     var $detailsTab = $("#tab_content_details");   
     $detailsTab.data("jsonObj", jsonObj);           
     $detailsTab.find("#id").text(fromdb(jsonObj.id));
+    $detailsTab.find("#grid_header_title").text(fromdb(jsonObj.name));
     $detailsTab.find("#name").text(fromdb(jsonObj.name));
     $detailsTab.find("#zonename").text(fromdb(jsonObj.zonename));
     $detailsTab.find("#podname").text(fromdb(jsonObj.podname));
