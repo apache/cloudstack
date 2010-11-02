@@ -85,7 +85,7 @@ public class DeleteUserCmd extends BaseAsyncCmd {
     @Override
     public String getEventDescription() {
         User user = ApiDBUtils.findUserById(getId());
-        return "User " + user.getUsername() + " (id: " + user.getId() + ") and accountId = " + user.getAccountId();
+        return (user != null ? ("User " + user.getUsername() + " (id: " + user.getId() + ") and accountId = " + user.getAccountId()) : "user delete, but this user does not exist in the system");
     }
 
 	@Override @SuppressWarnings("unchecked")
