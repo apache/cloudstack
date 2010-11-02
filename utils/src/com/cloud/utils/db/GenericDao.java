@@ -76,7 +76,7 @@ public interface GenericDao<T, ID extends Serializable> {
      * @param exclusive exclusive or share lock
      * @return List<T> list of entity beans
      */
-    List<T> lock(SearchCriteria<T> sc, Filter filter, boolean exclusive);
+    List<T> lockRows(SearchCriteria<T> sc, Filter filter, boolean exclusive);
     
     /**
      * lock 1 of the return set.  This method needs to be run within a
@@ -85,7 +85,7 @@ public interface GenericDao<T, ID extends Serializable> {
      * @param exclusive
      * @return T if found and locked.  null if not.
      */
-    T lock(SearchCriteria<T> sc, boolean exclusive);
+    T lockOneRandomRow(SearchCriteria<T> sc, boolean exclusive);
     
     /**
      * Find and lock the row for update.
@@ -93,7 +93,7 @@ public interface GenericDao<T, ID extends Serializable> {
      * @param exclusive is this a read share lock or exclusive lock?
      * @return T
      */
-    T lock(ID id, Boolean exclusive);
+    T lockRow(ID id, Boolean exclusive);
 
     /**
      * Acquires a database wide lock on the id of the entity.  This ensures
@@ -102,7 +102,7 @@ public interface GenericDao<T, ID extends Serializable> {
      * @param id id of the entity to acquire an lock on.
      * @return object if acquired; null if not.  If null, you need to call findById to see if it is actually not found.
      */
-    T acquire(ID id);
+    T acquireInLockTable(ID id);
     
     /**
      * Acquires a database wide lock on the id of the entity.  This ensures
@@ -112,14 +112,14 @@ public interface GenericDao<T, ID extends Serializable> {
      * @param seconds time to wait for the lock.
      * @return entity if the lock is acquired; null if not.
      */
-    T acquire(ID id, int seconds);
+    T acquireInLockTable(ID id, int seconds);
     
     /**
      * releases the lock acquired in the acquire method call.
      * @param id id of the entity to release the lock on.
      * @return true if it is released.  false if not or not found.
      */
-    boolean release(final ID id);
+    boolean releaseFromLockTable(final ID id);
     
     boolean update(ID id, T entity);
     

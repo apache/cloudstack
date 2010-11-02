@@ -278,12 +278,12 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     }
 
     @Override @DB(txn=false)
-    public List<T> lock(final SearchCriteria<T> sc, final Filter filter, final boolean exclusive) {
+    public List<T> lockRows(final SearchCriteria<T> sc, final Filter filter, final boolean exclusive) {
         return search(sc, filter, exclusive, false);
     }
 
     @Override @DB(txn=false)
-    public T lock(final SearchCriteria<T> sc, final boolean exclusive) {
+    public T lockOneRandomRow(final SearchCriteria<T> sc, final boolean exclusive) {
         final Filter filter = new Filter(1);
         final List<T> beans = search(sc, filter, exclusive, true);
         return beans.isEmpty() ? null : beans.get(0);
@@ -784,9 +784,9 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     public T findById(final ID id) {
         if (_cache != null) {
             final Element element = _cache.get(id);
-            return element == null ? lock(id, null) : (T)element.getObjectValue();
+            return element == null ? lockRow(id, null) : (T)element.getObjectValue();
         } else {
-            return lock(id, null);
+            return lockRow(id, null);
         }
     }
     
@@ -803,11 +803,11 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
         if (_cache != null) {
         	_cache.remove(id);
         }
-        return lock(id, null);
+        return lockRow(id, null);
     }
     
     @Override
-    public T lock(ID id, Boolean lock) {
+    public T lockRow(ID id, Boolean lock) {
         return findById(id, false, lock);
     }
     
@@ -836,12 +836,12 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     }
 
     @Override @DB(txn=false)
-    public T acquire(ID id) {
-    	return acquire(id, _timeoutSeconds);
+    public T acquireInLockTable(ID id) {
+    	return acquireInLockTable(id, _timeoutSeconds);
     }
     
     @Override
-    public T acquire(final ID id, int seconds) {
+    public T acquireInLockTable(final ID id, int seconds) {
         Transaction txn = Transaction.currentTxn();
         T t = null;
         boolean locked  = false;
@@ -861,7 +861,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     }
 
     @Override
-    public boolean release(final ID id) {
+    public boolean releaseFromLockTable(final ID id) {
         final Transaction txn = Transaction.currentTxn();
     	return txn.release(_table + id);
     }

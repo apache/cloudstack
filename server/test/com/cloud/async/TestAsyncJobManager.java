@@ -198,14 +198,14 @@ public class TestAsyncJobManager extends ComponentTestCase {
 					while(true) {
 						Transaction txn = Transaction.currentTxn();
 						try {
-							HostVO host = hostDao.acquire(getRandomLockId(), 10);
+							HostVO host = hostDao.acquireInLockTable(getRandomLockId(), 10);
 							if(host != null) {
 								s_logger.info("Thread " + (current + 1) + " acquired lock");
 								
 								try { Thread.sleep(getRandomMilliseconds(1000, 5000)); } catch (InterruptedException e) {}
 								
 								s_logger.info("Thread " + (current + 1) + " released lock");
-								hostDao.release(host.getId());
+								hostDao.releaseFromLockTable(host.getId());
 								
 								try { Thread.sleep(getRandomMilliseconds(1000, 5000)); } catch (InterruptedException e) {}
 							} else {

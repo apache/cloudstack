@@ -218,7 +218,7 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
             long snapshotScheId = snapshotToBeExecuted.getId();
             SnapshotScheduleVO tmpSnapshotScheduleVO = null;
             try {
-                tmpSnapshotScheduleVO = _snapshotScheduleDao.acquire(snapshotScheId);
+                tmpSnapshotScheduleVO = _snapshotScheduleDao.acquireInLockTable(snapshotScheId);
 
                 Map<String, String> params = new HashMap<String, String>();
                 params.put("volumeid", ""+volumeId);
@@ -237,7 +237,7 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
                 _snapshotScheduleDao.update(snapshotScheId, tmpSnapshotScheduleVO);
             } finally {
                 if (tmpSnapshotScheduleVO != null) {
-                    _snapshotScheduleDao.release(snapshotScheId);
+                    _snapshotScheduleDao.releaseFromLockTable(snapshotScheId);
                 }
             }
         }
@@ -269,13 +269,13 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
         } catch (EntityExistsException e ) {
             snapshotScheduleVO = _snapshotScheduleDao.findOneByVolume(policyInstance.getVolumeId());
             try {
-                snapshotScheduleVO = _snapshotScheduleDao.acquire(snapshotScheduleVO.getId());
+                snapshotScheduleVO = _snapshotScheduleDao.acquireInLockTable(snapshotScheduleVO.getId());
                 snapshotScheduleVO.setPolicyId(policyId);
                 snapshotScheduleVO.setScheduledTimestamp(nextSnapshotTimestamp);
                 _snapshotScheduleDao.update(snapshotScheduleVO.getId(), snapshotScheduleVO);
             } finally {
                 if(snapshotScheduleVO != null ) {
-                    _snapshotScheduleDao.release(snapshotScheduleVO.getId());
+                    _snapshotScheduleDao.releaseFromLockTable(snapshotScheduleVO.getId());
                 }
             }
         }

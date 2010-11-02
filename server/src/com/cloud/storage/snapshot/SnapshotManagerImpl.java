@@ -240,7 +240,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
         Long userId = UserContext.current().getUserId();
         SnapshotVO createdSnapshot = null;
 
-        VolumeVO volume = _volsDao.lock(volumeId, true);
+        VolumeVO volume = _volsDao.lockRow(volumeId, true);
         if (volume == null) {
             throw new CloudRuntimeException("Failed to lock volume " + volumeId + " for creating a snapshot.");
         }
@@ -461,12 +461,12 @@ public class SnapshotManagerImpl implements SnapshotManager {
         long snapshotId = ss.getId();
         SnapshotVO snapshot = null;
         try {
-            snapshot = _snapshotDao.acquire(snapshotId);
+            snapshot = _snapshotDao.acquireInLockTable(snapshotId);
             snapshot.setStatus(Snapshot.Status.BackingUp);
             _snapshotDao.update(snapshot.getId(), snapshot);
             
             long volumeId   = snapshot.getVolumeId();
-            VolumeVO volume = _volsDao.lock(volumeId, true);
+            VolumeVO volume = _volsDao.lockRow(volumeId, true);
             
             String primaryStoragePoolNameLabel = _storageMgr.getPrimaryStorageNameLabel(volume);
             Long dcId                          = volume.getDataCenterId();
@@ -608,7 +608,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
             return backedUp;
         } finally {
             if( snapshot != null ) {
-                _snapshotDao.release(snapshotId);
+                _snapshotDao.releaseFromLockTable(snapshotId);
             }
         }
         
@@ -982,7 +982,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
         } catch (EntityExistsException e ) {
             policy = _snapshotPolicyDao.findOneByVolume(volumeId);
             try {
-                policy = _snapshotPolicyDao.acquire(policy.getId());
+                policy = _snapshotPolicyDao.acquireInLockTable(policy.getId());
                 policy.setSchedule(cmd.getSchedule());
                 policy.setTimezone(timezoneId);
                 policy.setInterval((short)type.ordinal());
@@ -991,7 +991,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
                 _snapshotPolicyDao.update(policy.getId(), policy);
             } finally {
                 if( policy != null) {
-                    _snapshotPolicyDao.release(policy.getId());
+                    _snapshotPolicyDao.releaseFromLockTable(policy.getId());
                 }
             }
             event.setType(EventTypes.EVENT_SNAPSHOT_POLICY_UPDATE);

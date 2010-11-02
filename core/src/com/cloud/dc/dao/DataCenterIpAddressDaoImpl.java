@@ -57,7 +57,7 @@ public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddre
         try {
             txn.start();
             
-            DataCenterIpAddressVO  vo = lock(sc, true);
+            DataCenterIpAddressVO  vo = lockOneRandomRow(sc, true);
             if (vo == null) {
                 txn.rollback();
                 return vo;

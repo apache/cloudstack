@@ -108,7 +108,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
 
     @Override
     public boolean release(String uniqueId) {
-        return _vlanDao.release(Long.parseLong(uniqueId));
+        return _vlanDao.releaseFromLockTable(Long.parseLong(uniqueId));
     }
 
     @Override

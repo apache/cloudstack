@@ -84,7 +84,7 @@ public class PodVlanDaoImpl extends GenericDaoBase<PodVlanVO, Long> implements G
         Transaction txn = Transaction.currentTxn();
         try {
             txn.start();
-            PodVlanVO vo = lock(sc, true);
+            PodVlanVO vo = lockOneRandomRow(sc, true);
             if (vo == null) {
                 return null;
             }

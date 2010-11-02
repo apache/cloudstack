@@ -619,7 +619,7 @@ public class TemplateManagerImpl implements TemplateManager {
         
         List<StoragePoolHostVO> vos = _poolHostDao.listByPoolId(poolId);
         
-        templateStoragePoolRef = _tmpltPoolDao.acquire(templateStoragePoolRefId, 1200);
+        templateStoragePoolRef = _tmpltPoolDao.acquireInLockTable(templateStoragePoolRefId, 1200);
         if (templateStoragePoolRef == null) {
             throw new CloudRuntimeException("Unable to acquire lock on VMTemplateStoragePool: " + templateStoragePoolRefId);
         }
@@ -658,7 +658,7 @@ public class TemplateManagerImpl implements TemplateManager {
                 }
             }
         } finally {
-            _tmpltPoolDao.release(templateStoragePoolRefId);
+            _tmpltPoolDao.releaseFromLockTable(templateStoragePoolRefId);
         }
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Template " + templateId + " is not found on and can not be downloaded to pool " + poolId);
@@ -738,7 +738,7 @@ public class TemplateManagerImpl implements TemplateManager {
         try {
         	dstTmpltHost = _tmpltHostDao.findByHostTemplate(dstSecHost.getId(), templateId, true);
         	if (dstTmpltHost != null) {
-        		dstTmpltHost = _tmpltHostDao.lock(dstTmpltHost.getId(), true);
+        		dstTmpltHost = _tmpltHostDao.lockRow(dstTmpltHost.getId(), true);
         		if (dstTmpltHost != null && dstTmpltHost.getDownloadState() == Status.DOWNLOADED) {
         			if (dstTmpltHost.getDestroyed() == false)  {
         				return true;
@@ -894,7 +894,7 @@ public class TemplateManagerImpl implements TemplateManager {
 			long sZoneId = secondaryStorageHost.getDataCenterId();
 			List<VMTemplateHostVO> templateHostVOs = _tmpltHostDao.listByHostTemplate(hostId, templateId);
 			for (VMTemplateHostVO templateHostVO : templateHostVOs) {
-				VMTemplateHostVO lock = _tmpltHostDao.acquire(templateHostVO.getId());
+				VMTemplateHostVO lock = _tmpltHostDao.acquireInLockTable(templateHostVO.getId());
 				
 				try {
 					if (lock == null) {
@@ -915,7 +915,7 @@ public class TemplateManagerImpl implements TemplateManager {
 					saveEvent(userId, account.getId(), account.getDomainId(), eventType, description + template.getName() + " succesfully deleted.", EventVO.LEVEL_INFO, zoneParams, 0);
 				} finally {
 					if (lock != null) {
-						_tmpltHostDao.release(lock.getId());
+						_tmpltHostDao.releaseFromLockTable(lock.getId());
 					}
 				}
 			}
@@ -931,7 +931,7 @@ public class TemplateManagerImpl implements TemplateManager {
 		if (success && (_tmpltHostDao.listByTemplateId(templateId).size() == 0)) {
 			long accountId = template.getAccountId();
 			
-			VMTemplateVO lock = _tmpltDao.acquire(templateId);
+			VMTemplateVO lock = _tmpltDao.acquireInLockTable(templateId);
 
 			try {
 				if (lock == null) {
@@ -944,7 +944,7 @@ public class TemplateManagerImpl implements TemplateManager {
 
 			} finally {
 				if (lock != null) {
-					_tmpltDao.release(lock.getId());
+					_tmpltDao.releaseFromLockTable(lock.getId());
 				}
 			}
 			

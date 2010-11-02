@@ -322,7 +322,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
 			NetworkGroupWorkVO work = null;
 			UserVm vm = null;
 			try {
-				vm = _userVMDao.acquire(vmId);
+				vm = _userVMDao.acquireInLockTable(vmId);
 				if (vm == null) {
 					s_logger.warn("Failed to acquire lock on vm id " + vmId);
 					continue;
@@ -348,7 +348,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
 				
 			} finally {
 				if (vm != null) {
-					_userVMDao.release(vmId);
+					_userVMDao.releaseFromLockTable(vmId);
 				}
 			}
 			txn.commit();
@@ -573,7 +573,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
 			return null;
 		}
 		//Prevents other threads/management servers from creating duplicate ingress rules
-		NetworkGroupVO networkGroupLock = _networkGroupDao.acquire(networkGroup.getId());
+		NetworkGroupVO networkGroupLock = _networkGroupDao.acquireInLockTable(networkGroup.getId());
 		if (networkGroupLock == null)  {
 			s_logger.warn("Could not acquire lock on network security group: name= " + groupName);
 			return null;
@@ -581,7 +581,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
 		List<IngressRuleVO> newRules = new ArrayList<IngressRuleVO>();
 		try {
 			//Don't delete the group from under us.
-			networkGroup = _networkGroupDao.lock(networkGroup.getId(), false);
+			networkGroup = _networkGroupDao.lockRow(networkGroup.getId(), false);
 			if (networkGroup == null) {
 				s_logger.warn("Could not acquire lock on network group " + groupName);
 				return null;
@@ -591,7 +591,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
 				final Long ngId = ngVO.getId();
 				//Don't delete the referenced group from under us
 				if (ngVO.getId() != networkGroup.getId()) {
-					final NetworkGroupVO tmpGrp = _networkGroupDao.lock(ngId, false);
+					final NetworkGroupVO tmpGrp = _networkGroupDao.lockRow(ngId, false);
 					if (tmpGrp == null) {
 						s_logger.warn("Failed to acquire lock on network group: " + ngId);
 						txn.rollback();
@@ -628,7 +628,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
 			throw new CloudRuntimeException("Exception caught when adding ingress rules", e);
 		} finally {
 			if (networkGroupLock != null) {
-				_networkGroupDao.release(networkGroupLock.getId());
+				_networkGroupDao.releaseFromLockTable(networkGroupLock.getId());
 			}
 		}
 	}
@@ -809,7 +809,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
 		try {
 			txn.start();
 			
-			networkGroupHandle = _networkGroupDao.acquire(networkGroupHandle.getId());
+			networkGroupHandle = _networkGroupDao.acquireInLockTable(networkGroupHandle.getId());
 			if (networkGroupHandle == null)  {
 				s_logger.warn("Could not acquire lock on network security group: name= " + networkGroup);
 				return false;
@@ -832,7 +832,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
 			throw new CloudRuntimeException("Exception caught when deleting ingress rules", e);
 		} finally {
 			if (networkGroup != null) {
-				_networkGroupDao.release(networkGroupHandle.getId());
+				_networkGroupDao.releaseFromLockTable(networkGroupHandle.getId());
 			}
 			txn.commit();
 		}
@@ -915,7 +915,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
 		AccountVO account = null;
 		txn.start();
 		try {
-			account = _accountDao.acquire(accountId); //to ensure duplicate group names are not created.
+			account = _accountDao.acquireInLockTable(accountId); //to ensure duplicate group names are not created.
 			if (account == null) {
 				s_logger.warn("Failed to acquire lock on account");
 				return null;
@@ -928,7 +928,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
 			return group;
 		} finally {
 			if (account != null) {
-				_accountDao.release(accountId);
+				_accountDao.releaseFromLockTable(accountId);
 			}
 			txn.commit();
 		}
@@ -1009,7 +1009,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
 		final Transaction txn = Transaction.currentTxn();
 		txn.start();
 		try {
-			vm = _userVMDao.acquire(work.getInstanceId());
+			vm = _userVMDao.acquireInLockTable(work.getInstanceId());
 			if (vm == null) {
 				s_logger.warn("Unable to acquire lock on vm id=" + userVmId);
 				return ;
@@ -1039,7 +1039,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
 			}
 		} finally {
 			if (vm != null) {
-				_userVMDao.release(userVmId);
+				_userVMDao.releaseFromLockTable(userVmId);
 				_workDao.updateStep(work.getId(),  Step.Done);
 			}
 			txn.commit();
@@ -1059,14 +1059,14 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
 			uniqueGroups.addAll(groups);
 			final Transaction txn = Transaction.currentTxn();
 			txn.start();
-			UserVm userVm = _userVMDao.acquire(userVmId); //ensures that duplicate entries are not created.
+			UserVm userVm = _userVMDao.acquireInLockTable(userVmId); //ensures that duplicate entries are not created.
 			if (userVm == null) {
 				s_logger.warn("Failed to acquire lock on user vm id=" + userVmId);
 			}
 			try {
 				for (NetworkGroupVO networkGroup:uniqueGroups) {
 					//don't let the group be deleted from under us.
-					NetworkGroupVO ngrpLock = _networkGroupDao.lock(networkGroup.getId(), false);
+					NetworkGroupVO ngrpLock = _networkGroupDao.lockRow(networkGroup.getId(), false);
 					if (ngrpLock == null) {
 						s_logger.warn("Failed to acquire lock on network group id=" + networkGroup.getId() + " name=" + networkGroup.getName());
 						txn.rollback();
@@ -1081,7 +1081,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
 				return true;
 			} finally {
 				if (userVm != null) {
-					_userVMDao.release(userVmId);
+					_userVMDao.releaseFromLockTable(userVmId);
 				}
 			}
 			
@@ -1099,13 +1099,13 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
 		}
 		final Transaction txn = Transaction.currentTxn();
 		txn.start();
-		UserVm userVm = _userVMDao.acquire(userVmId); //ensures that duplicate entries are not created in addInstance
+		UserVm userVm = _userVMDao.acquireInLockTable(userVmId); //ensures that duplicate entries are not created in addInstance
 		if (userVm == null) {
 			s_logger.warn("Failed to acquire lock on user vm id=" + userVmId);
 		}
 		int n = _networkGroupVMMapDao.deleteVM(userVmId);
 		s_logger.info("Disassociated " + n + " network groups " + " from uservm " + userVmId);
-		_userVMDao.release(userVmId);
+		_userVMDao.releaseFromLockTable(userVmId);
 		txn.commit();
 	}
 
@@ -1165,7 +1165,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
 		final Transaction txn = Transaction.currentTxn();
 		txn.start();
 		
-		final NetworkGroupVO group = _networkGroupDao.lock(groupId, true);
+		final NetworkGroupVO group = _networkGroupDao.lockRow(groupId, true);
 		if (group == null) {
 			s_logger.info("Not deleting group -- cannot find id " + groupId);
 			return;

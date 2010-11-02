@@ -291,7 +291,7 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
 	    if (!lock)
 	    	return findOneIncludingRemovedBy(sc);
 	    else
-	    	return lock(sc, true);
+	    	return lockOneRandomRow(sc, true);
 	}
 
 }

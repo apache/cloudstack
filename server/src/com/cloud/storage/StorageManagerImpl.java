@@ -732,7 +732,7 @@ public class StorageManagerImpl implements StorageManager {
             txn.start();
             
             long podId = pod.getId();
-            pod = _podDao.lock(podId, true);
+            pod = _podDao.lockRow(podId, true);
             if (pod == null) {
                 txn.rollback();
                 volume.setStatus(AsyncInstanceCreateStatus.Failed);
@@ -1484,7 +1484,7 @@ public class StorageManagerImpl implements StorageManager {
             else {
                 // First get the host_id from storage_pool_host_ref for given
                 // pool id
-                StoragePoolVO lock = _storagePoolDao.acquire(sPool.getId());
+                StoragePoolVO lock = _storagePoolDao.acquireInLockTable(sPool.getId());
                 try {
                     if (lock == null) {
                         s_logger.debug("Failed to acquire lock when deleting StoragePool with ID: " + sPool.getId());
@@ -1505,7 +1505,7 @@ public class StorageManagerImpl implements StorageManager {
 
                 } finally {
                     if (lock != null) {
-                        _storagePoolDao.release(lock.getId());
+                        _storagePoolDao.releaseFromLockTable(lock.getId());
                     }
                 }
 

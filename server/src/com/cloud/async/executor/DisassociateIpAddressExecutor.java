@@ -92,7 +92,7 @@ public class DisassociateIpAddressExecutor extends BaseAsyncJobExecutor {
 		
         IPAddressVO ip = null;
         try {
-            ip = ipAddressDao.acquire(param.getIpAddress());
+            ip = ipAddressDao.acquireInLockTable(param.getIpAddress());
             
             DomainRouterVO router = null;
             if (ip.isSourceNat()) {
@@ -105,7 +105,7 @@ public class DisassociateIpAddressExecutor extends BaseAsyncJobExecutor {
             
         } finally {
         	if(ip != null) {
-	            ipAddressDao.release(param.getIpAddress());
+	            ipAddressDao.releaseFromLockTable(param.getIpAddress());
         	}
         }
 	}

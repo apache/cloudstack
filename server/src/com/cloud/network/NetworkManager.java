@@ -47,7 +47,6 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientNetworkCapacityException;
-import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.PermissionDeniedException;
@@ -123,7 +122,7 @@ public interface NetworkManager extends Manager {
      * @return DomainRouter object
      * @throws InvalidParameterValueException, PermissionDeniedException
      */
-    DomainRouterVO startRouter(StartRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+    DomainRouterVO startRouter(StartRouterCmd cmd);
     
     boolean releaseRouter(long routerId);
     
@@ -137,7 +136,7 @@ public interface NetworkManager extends Manager {
      * @return router if successful, null otherwise
      * @throws InvalidParameterValueException, PermissionDeniedException
      */
-    DomainRouterVO stopRouter(StopRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+    DomainRouterVO stopRouter(StopRouterCmd cmd);
     
     boolean getRouterStatistics(long vmId, Map<String, long[]> netStats, Map<String, long[]> diskStats);
 
@@ -149,7 +148,7 @@ public interface NetworkManager extends Manager {
      * @return the rebooted router
      * @throws InvalidParameterValueException, PermissionDeniedException
      */
-    DomainRouterVO rebootRouter(RebootRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+    DomainRouterVO rebootRouter(RebootRouterCmd cmd);
     /**
      * @param hostId get all of the virtual machine routers on a host.
      * @return collection of VirtualMachineRouter
@@ -210,21 +209,21 @@ public interface NetworkManager extends Manager {
      * @param cmd the command specifying the ip address, public port, protocol, private port, and virtual machine id.
      * @return the newly created FirewallRuleVO if successful, null otherwise.
      */
-    public FirewallRuleVO createPortForwardingRule(CreateIPForwardingRuleCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, NetworkRuleConflictException;
+    public FirewallRuleVO createPortForwardingRule(CreateIPForwardingRuleCmd cmd) throws NetworkRuleConflictException;
 
     /**
      * List port forwarding rules assigned to an ip address
      * @param cmd the command object holding the criteria for listing port forwarding rules (the ipAddress)
      * @return list of port forwarding rules on the given address, empty list if no rules exist
      */
-    public List<FirewallRuleVO> listPortForwardingRules(ListPortForwardingRulesCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+    public List<FirewallRuleVO> listPortForwardingRules(ListPortForwardingRulesCmd cmd);
 
     /**
      * Create a load balancer rule from the given ipAddress/port to the given private port
      * @param cmd the command specifying the ip address, public port, protocol, private port, and algorithm
      * @return the newly created LoadBalancerVO if successful, null otherwise
      */
-    public LoadBalancerVO createLoadBalancerRule(CreateLoadBalancerRuleCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+    public LoadBalancerVO createLoadBalancerRule(CreateLoadBalancerRuleCmd cmd);
 
     /**
      * Associates or disassociates a list of public IP address for a router.
@@ -234,30 +233,27 @@ public interface NetworkManager extends Manager {
      * @param vmId
      * @return
      */
-    boolean associateIP(DomainRouterVO router, List<String> ipAddrList, boolean add, long vmId);
+    boolean associateIP(DomainRouterVO router, List<String> ipAddrList, boolean add, long vmId) throws ConcurrentOperationException;
     
     /**
      * Associates a public IP address for a router.
      * @param cmd - the command specifying ipAddress
      * @return ip address object
-     * @throws ResourceAllocationException, InsufficientCapacityException, InternalErrorException, InvalidParameterValueException, PermissionDeniedException
+     * @throws ResourceAllocationException, InsufficientCapacityException 
      */
-    IPAddressVO associateIP(AssociateIPAddrCmd cmd) throws ResourceAllocationException, InsufficientAddressCapacityException, InternalErrorException, InvalidParameterValueException, PermissionDeniedException;    
+    IPAddressVO associateIP(AssociateIPAddrCmd cmd) throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException;    
     
     boolean updateFirewallRule(FirewallRuleVO fwRule, String oldPrivateIP, String oldPrivatePort);
 
     /**
      * Assign a virtual machine, or list of virtual machines, to a load balancer.
      */
-    void assignToLoadBalancer(AssignToLoadBalancerRuleCmd cmd)  throws NetworkRuleConflictException,
-                                                                       InternalErrorException,
-                                                                       PermissionDeniedException,
-                                                                       InvalidParameterValueException;
+    void assignToLoadBalancer(AssignToLoadBalancerRuleCmd cmd)  throws NetworkRuleConflictException;
 
-    public boolean removeFromLoadBalancer(RemoveFromLoadBalancerRuleCmd cmd) throws InvalidParameterValueException;
+    public boolean removeFromLoadBalancer(RemoveFromLoadBalancerRuleCmd cmd);
     
-    public boolean deleteLoadBalancerRule(DeleteLoadBalancerRuleCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
-    public LoadBalancerVO updateLoadBalancerRule(UpdateLoadBalancerRuleCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+    public boolean deleteLoadBalancerRule(DeleteLoadBalancerRuleCmd cmd);
+    public LoadBalancerVO updateLoadBalancerRule(UpdateLoadBalancerRuleCmd cmd);
     
     /**
      * Add a DHCP entry on the domr dhcp server
@@ -295,9 +291,9 @@ public interface NetworkManager extends Manager {
      */
     List<IPAddressVO> listPublicIpAddressesInVirtualNetwork(long accountId, long dcId, Boolean sourceNat);	
     
-    public boolean disassociateIpAddress(DisassociateIPAddrCmd cmd) throws PermissionDeniedException;
+    public boolean disassociateIpAddress(DisassociateIPAddrCmd cmd);
     
-    public boolean deleteIpForwardingRule(DeleteIPForwardingRuleCmd cmd) throws PermissionDeniedException, InvalidParameterValueException;
+    public boolean deleteIpForwardingRule(DeleteIPForwardingRuleCmd cmd);
 
     List<NetworkConfigurationVO> setupNetworkConfiguration(Account owner, NetworkOfferingVO offering, DeploymentPlan plan);
     List<NetworkConfigurationVO> setupNetworkConfiguration(Account owner, NetworkOfferingVO offering, NetworkConfiguration predefined, DeploymentPlan plan);
@@ -310,7 +306,7 @@ public interface NetworkManager extends Manager {
     void release(VirtualMachineProfile vmProfile);
     
     <K extends VMInstanceVO> List<NicVO> getNics(K vm);
-	boolean upgradeRouter(UpgradeRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+	boolean upgradeRouter(UpgradeRouterCmd cmd);
 	
     List<AccountVO> getAccountsUsingNetworkConfiguration(long configurationId);    
     AccountVO getNetworkConfigurationOwner(long configurationId);
@@ -328,7 +324,7 @@ public interface NetworkManager extends Manager {
      * @throws PermissionDeniedException
      * @throws ConcurrentOperationException 
      */
-    public RemoteAccessVpnVO createRemoteAccessVpn(CreateRemoteAccessVpnCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, ConcurrentOperationException;
+    public RemoteAccessVpnVO createRemoteAccessVpn(CreateRemoteAccessVpnCmd cmd) throws ConcurrentOperationException;
     
     /**
      * Start a remote access vpn for the given public ip address and client ip range

@@ -171,7 +171,7 @@ public class DisableUserExecutor extends BaseAsyncJobExecutor {
 		try {
 			txn.start();
 			
-			AsyncJobVO jobUpdate = asyncMgr.getExecutorContext().getJobDao().lock(job.getId(), true);
+			AsyncJobVO jobUpdate = asyncMgr.getExecutorContext().getJobDao().lockRow(job.getId(), true);
 			int progress = jobUpdate.getProcessStatus();
 			jobUpdate.setProcessStatus(progress -1);
 			asyncMgr.getExecutorContext().getJobDao().update(job.getId(), jobUpdate);

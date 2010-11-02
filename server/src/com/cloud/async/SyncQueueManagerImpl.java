@@ -83,7 +83,7 @@ public class SyncQueueManagerImpl implements SyncQueueManager {
     	try {
     		txt.start();
     		
-    		SyncQueueVO queueVO = _syncQueueDao.lock(queueId, true);
+    		SyncQueueVO queueVO = _syncQueueDao.lockRow(queueId, true);
     		if(queueVO == null) {
     			s_logger.error("Sync queue(id: " + queueId + ") does not exist");
     			txt.commit();
@@ -140,8 +140,8 @@ public class SyncQueueManagerImpl implements SyncQueueManager {
     		List<SyncQueueItemVO> l = _syncQueueItemDao.getNextQueueItems(maxItems);
     		if(l != null && l.size() > 0) {
     			for(SyncQueueItemVO item : l) {
-    				SyncQueueVO queueVO = _syncQueueDao.lock(item.getQueueId(), true);
-	    			SyncQueueItemVO itemVO = _syncQueueItemDao.lock(item.getId(), true);
+    				SyncQueueVO queueVO = _syncQueueDao.lockRow(item.getQueueId(), true);
+	    			SyncQueueItemVO itemVO = _syncQueueItemDao.lockRow(item.getId(), true);
     				if(queueVO.getLastProcessTime() == null && itemVO.getLastProcessNumber() == null) {
 		    			Long processNumber = queueVO.getLastProcessNumber();
 		    			if(processNumber == null)
@@ -182,7 +182,7 @@ public class SyncQueueManagerImpl implements SyncQueueManager {
     		
 			SyncQueueItemVO itemVO = _syncQueueItemDao.findById(queueItemId);
 			if(itemVO != null) {
-				SyncQueueVO queueVO = _syncQueueDao.lock(itemVO.getQueueId(), true);
+				SyncQueueVO queueVO = _syncQueueDao.lockRow(itemVO.getQueueId(), true);
 				
 				_syncQueueItemDao.expunge(itemVO.getId());
 				

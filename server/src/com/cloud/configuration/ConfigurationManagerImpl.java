@@ -1544,7 +1544,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
         
         try {
             //Acquire Lock                    
-            account = _accountDao.acquire(accountId);
+            account = _accountDao.acquireInLockTable(accountId);
             if (account == null) {
                 s_logger.warn("Unable to lock account: " + accountId);
                 throw new ConcurrentOperationException("Unable to acquire account lock");
@@ -1606,7 +1606,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
                 throw new CloudRuntimeException("Associate IP address exception");
             } finally {
                 if (account != null) {
-                    _accountDao.release(accountId);
+                    _accountDao.releaseFromLockTable(accountId);
                     s_logger.debug("Associate IP address lock released");
                 }
             }

@@ -92,7 +92,7 @@ public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long
         Transaction txn = Transaction.currentTxn();
         try {
             txn.start();
-            DataCenterVnetVO vo = lock(sc, true);
+            DataCenterVnetVO vo = lockOneRandomRow(sc, true);
             if (vo == null) {
                 return null;
             }

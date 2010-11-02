@@ -102,7 +102,7 @@ public class NetworkGroupWorkDaoImpl extends GenericDaoBase<NetworkGroupWorkVO, 
             final Filter filter = new Filter(NetworkGroupWorkVO.class, null, true, 0l, 1l);//FIXME: order desc by update time?
 
             txn.start();
-            final List<NetworkGroupWorkVO> vos = lock(sc, filter, true);
+            final List<NetworkGroupWorkVO> vos = lockRows(sc, filter, true);
             if (vos.size() == 0) {
                 txn.commit();
                 return null;
@@ -144,7 +144,7 @@ public class NetworkGroupWorkDaoImpl extends GenericDaoBase<NetworkGroupWorkVO, 
         
         final Filter filter = new Filter(WorkVO.class, null, true, 0l, 1l);
 
-        final List<NetworkGroupWorkVO> vos = lock(sc, filter, true);
+        final List<NetworkGroupWorkVO> vos = lockRows(sc, filter, true);
         if (vos.size() == 0) {
             txn.commit();
             return;
@@ -169,7 +169,7 @@ public class NetworkGroupWorkDaoImpl extends GenericDaoBase<NetworkGroupWorkVO, 
 		final Transaction txn = Transaction.currentTxn();
 		txn.start();
         
-        NetworkGroupWorkVO work = lock(workId, true);
+        NetworkGroupWorkVO work = lockRow(workId, true);
         if (work == null) {
         	txn.commit();
         	return;

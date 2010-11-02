@@ -74,7 +74,7 @@ public class DisableAccountExecutor extends BaseAsyncJobExecutor {
 	public void initialSchedule(ManagementServer managementServer, long accountId) {
 		AsyncJobManager asyncMgr = getAsyncJobMgr();
 		
-		AccountVO account = asyncMgr.getExecutorContext().getAccountDao().acquire(accountId);
+		AccountVO account = asyncMgr.getExecutorContext().getAccountDao().acquireInLockTable(accountId);
 		
 		if(account == null) {
 			s_logger.warn("Unable to acquire account." + accountId + " to execute disable account command");
@@ -104,7 +104,7 @@ public class DisableAccountExecutor extends BaseAsyncJobExecutor {
 			asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR, 
 				e.getMessage());
 		} finally {
-			asyncMgr.getExecutorContext().getAccountDao().release(accountId);
+			asyncMgr.getExecutorContext().getAccountDao().releaseFromLockTable(accountId);
 		}
 	}
 	
@@ -144,7 +144,7 @@ public class DisableAccountExecutor extends BaseAsyncJobExecutor {
 		try {
 			txn.start();
 			
-			AsyncJobVO jobUpdate = asyncMgr.getExecutorContext().getJobDao().lock(job.getId(), true);
+			AsyncJobVO jobUpdate = asyncMgr.getExecutorContext().getJobDao().lockRow(job.getId(), true);
 			int progress = jobUpdate.getProcessStatus();
 			jobUpdate.setProcessStatus(progress -1);
 			asyncMgr.getExecutorContext().getJobDao().update(job.getId(), jobUpdate);

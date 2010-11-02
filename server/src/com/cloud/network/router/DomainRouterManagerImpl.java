@@ -287,7 +287,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
         final Transaction txn = Transaction.currentTxn();
         DomainRouterVO router = null;
         Long podId = pod.getId();
-        pod = _podDao.acquire(podId, 20*60);
+        pod = _podDao.acquireInLockTable(podId, 20*60);
         if (pod == null) {
             	throw new ConcurrentOperationException("Unable to acquire lock on pod " + podId );
         }
@@ -343,7 +343,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
             
             txn.start();
             router = _routerDao.persist(router);
-            router = _routerDao.acquire(router.getId());
+            router = _routerDao.acquireInLockTable(router.getId());
             if (router == null) {
                 s_logger.debug("Unable to acquire lock on router " + id);
                 throw new CloudRuntimeException("Unable to acquire lock on router " + id);
@@ -398,12 +398,12 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Releasing lock on router " + id);
                 }
-                _routerDao.release(id);
+                _routerDao.releaseFromLockTable(id);
             }
             if (pod != null) {
                 if(s_logger.isDebugEnabled())
                 	s_logger.debug("Releasing lock on pod " + podId);
-            	_podDao.release(pod.getId());
+            	_podDao.releaseFromLockTable(pod.getId());
             }
         }
 	}
@@ -421,7 +421,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
             s_logger.debug("Creating a router for account=" + accountId + "; publicIpAddress=" + publicIpAddress + "; dc=" + dataCenterId + "domain=" + domain);
         }
         
-        final AccountVO account = _accountDao.acquire(accountId);
+        final AccountVO account = _accountDao.acquireInLockTable(accountId);
         if (account == null) {
         	throw new ConcurrentOperationException("Unable to acquire account " + accountId);
         }
@@ -570,7 +570,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
             if (account != null) {
             	if(s_logger.isDebugEnabled())
             		s_logger.debug("Releasing lock on account " + account.getId() + " for createRouter");
-            	_accountDao.release(account.getId());
+            	_accountDao.releaseFromLockTable(account.getId());
             }
             if(!success){
                 EventVO event = new EventVO();
@@ -592,7 +592,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
             s_logger.debug("Attempting to destroy router " + routerId);
         }
 
-        DomainRouterVO router = _routerDao.acquire(routerId);
+        DomainRouterVO router = _routerDao.acquireInLockTable(routerId);
 
         if (router == null) {
             s_logger.debug("Unable to acquire lock on router " + routerId);
@@ -628,7 +628,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
         } finally {
             if (s_logger.isDebugEnabled())
                 s_logger.debug("Release lock on router " + routerId + " for stop");
-            _routerDao.release(routerId);
+            _routerDao.releaseFromLockTable(routerId);
         }
                         
         router.setPublicIpAddress(null);
@@ -774,7 +774,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
             _asyncMgr.updateAsyncJobAttachment(job.getId(), "domain_router", routerId);
         }
     	
-    	DomainRouterVO router = _routerDao.acquire(routerId);
+    	DomainRouterVO router = _routerDao.acquireInLockTable(routerId);
         if (router == null) {
         	s_logger.debug("Unable to lock the router " + routerId);
         	return router;
@@ -1084,7 +1084,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
         	if (router != null) {
                 if(s_logger.isDebugEnabled())
                 	s_logger.debug("Releasing lock on router " + routerId);
-        		_routerDao.release(routerId);
+        		_routerDao.releaseFromLockTable(routerId);
         	}
 
         }
@@ -1117,10 +1117,15 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
 				ipAddrList.add(ipVO.getAddress());
 			}
 			if (!ipAddrList.isEmpty()) {
-				final boolean success = _networkMgr.associateIP(router, ipAddrList, true, 0);
-				if (!success) {
-					return false;
-				}
+			    try {
+    				final boolean success = _networkMgr.associateIP(router, ipAddrList, true, 0);
+                    if (!success) {
+                        return false;
+                    }
+                } catch (ConcurrentOperationException e) {
+                    s_logger.warn("unable to associate ip due to ", e);
+                    return false;
+                }
 			}
 			final List<FirewallRuleVO> fwRules = new ArrayList<FirewallRuleVO>();
 			for (final IPAddressVO ipVO : ipAddrs) {
@@ -1600,7 +1605,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
     public boolean stop(DomainRouterVO router, long eventId) {
     	long routerId = router.getId();
     	
-        router = _routerDao.acquire(routerId);
+        router = _routerDao.acquireInLockTable(routerId);
         if (router == null) {
             s_logger.debug("Unable to acquire lock on router " + routerId);
             return false;
@@ -1691,7 +1696,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
         } finally {
             if(s_logger.isDebugEnabled())
                 s_logger.debug("Release lock on router " + routerId + " for stop");
-            _routerDao.release(routerId);
+            _routerDao.releaseFromLockTable(routerId);
         }
         return true;
     }
@@ -2013,7 +2018,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
 	    
         DataCenterDeployment plan = new DataCenterDeployment(dcId, 1);
         
-        guestConfig = _networkConfigurationDao.lock(guestConfig.getId(), true);
+        guestConfig = _networkConfigurationDao.lockRow(guestConfig.getId(), true);
         if (guestConfig == null) {
             throw new ConcurrentOperationException("Unable to get the lock on " + guestConfig);
         }

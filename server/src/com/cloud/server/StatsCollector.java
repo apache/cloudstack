@@ -42,7 +42,6 @@ import com.cloud.agent.manager.Commands;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.exception.AgentUnavailableException;
-import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host;
 import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
@@ -237,7 +236,7 @@ public class StatsCollector {
 								}
 							}
 							
-					} catch (InternalErrorException e) {
+					} catch (Exception e) {
 						s_logger.debug("Failed to get VM stats for host with ID: " + host.getId());
 						continue;
 					}

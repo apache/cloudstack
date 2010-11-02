@@ -95,7 +95,7 @@ public class HighAvailabilityDaoImpl extends GenericDaoBase<WorkVO, Long> implem
             final Filter filter = new Filter(WorkVO.class, null, true, 0l, 1l);
 
             txn.start();
-            final List<WorkVO> vos = lock(sc, filter, true);
+            final List<WorkVO> vos = lockRows(sc, filter, true);
             if (vos.size() == 0) {
                 txn.commit();
                 return null;

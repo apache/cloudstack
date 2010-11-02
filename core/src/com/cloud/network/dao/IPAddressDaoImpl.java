@@ -86,7 +86,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, String> implem
 	        sc.setParameters("vlanDbId", vlanDbId);
 	        sc.setParameters("sourceNat", sourceNat);
 	        
-			List<IPAddressVO> ipList = this.lock(sc, null, true);
+			List<IPAddressVO> ipList = this.lockRows(sc, null, true);
 			List<String> ipStringList = new ArrayList<String>();
 			
 			for(IPAddressVO ip:ipList){
@@ -127,7 +127,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, String> implem
 	        SearchCriteria<IPAddressVO> sc = VlanDbIdSearchUnallocated.create();
 	        sc.setParameters("vlanDbId", vlanDbId);
 	        
-			IPAddressVO ip = this.lock(sc, true);
+			IPAddressVO ip = this.lockOneRandomRow(sc, true);
 			if(ip != null) {
 				ip.setAccountId(accountId);
 				ip.setAllocated(new Date());

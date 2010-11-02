@@ -70,7 +70,7 @@ public class UserStatisticsDaoImpl extends GenericDaoBase<UserStatisticsVO, Long
         SearchCriteria<UserStatisticsVO> sc = UserDcSearch.create();
         sc.setParameters("account", accountId);
         sc.setParameters("dc", dcId);
-        return lock(sc, true);
+        return lockOneRandomRow(sc, true);
     }
 
     @Override

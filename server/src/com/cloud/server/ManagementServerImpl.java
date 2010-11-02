@@ -5911,7 +5911,7 @@ public class ManagementServerImpl implements ManagementServer {
         	Transaction.currentTxn();
 			String certificatePath = cmd.getPath();
     		cert = _certDao.listAll().get(0); //always 1 record in db (from the deploydb time)
-			cert = _certDao.acquire(cert.getId());
+			cert = _certDao.acquireInLockTable(cert.getId());
 			//assign mgmt server id to mark as processing under this ms
 			if(cert == null){
 				String msg = "Unable to obtain lock on the cert from uploadCertificate()";
@@ -6020,7 +6020,7 @@ public class ManagementServerImpl implements ManagementServer {
 				throw new ServerApiException(BaseCmd.CUSTOM_CERT_UPDATE_ERROR, msg);				
 			}
 		}finally{
-				_certDao.release(cert.getId());					
+				_certDao.releaseFromLockTable(cert.getId());					
 		}
 		return null;
     }

@@ -987,7 +987,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 	        List<VolumeVO> vos = new ArrayList<VolumeVO>();
 	        /*compete with take snapshot*/
 	        for (VolumeVO userVmVol : vols) {
-	        	vos.add(_volsDao.lock(userVmVol.getId(), true));
+	        	vos.add(_volsDao.lockRow(userVmVol.getId(), true));
 	        }
 
             Answer answer = null;
@@ -1482,7 +1482,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         Transaction txn = Transaction.currentTxn();
     	try {
     		txn.start();
-        	router = _routerDao.acquire(routerId);
+        	router = _routerDao.acquireInLockTable(routerId);
         	if (router == null) {
         		throw new CloudRuntimeException("Unable to lock up the router:" + routerId);
         	}
@@ -1513,13 +1513,13 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         	_vmDao.update(userVm.getId(), userVm);
         	txn.commit();
         	if (routerLock) {
-        		_routerDao.release(routerId);
+        		_routerDao.releaseFromLockTable(routerId);
         		routerLock = false;
         	}
         	return ipAddressStr;
         }finally {
         	if (routerLock) {
-        		_routerDao.release(routerId);
+        		_routerDao.releaseFromLockTable(routerId);
         	}
         }
      }
@@ -1591,7 +1591,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         String name;
         txn.start();
         
-        account = _accountDao.lock(accountId, true);
+        account = _accountDao.lockRow(accountId, true);
         if (account == null) {
             throw new CloudRuntimeException("Unable to lock up the account: " + accountId);
         }
@@ -1934,7 +1934,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         AccountVO account = null;
     	txn.start();
 
-        account = _accountDao.lock(vm.getAccountId(), true);
+        account = _accountDao.lockRow(vm.getAccountId(), true);
         
         //if the account is deleted, throw error
         if(account.getRemoved()!=null)
@@ -2785,7 +2785,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 	    Transaction txn = Transaction.currentTxn();
         txn.start();
         
-        account = _accountDao.lock(accountId, true);
+        account = _accountDao.lockRow(accountId, true);
         if (account == null) {
             throw new CloudRuntimeException("Unable to lock up the account: " + accountId);
         }
@@ -3042,7 +3042,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 	        UserVmVO vm = null;
 	        txn.start();
 	        
-	    	account = _accountDao.lock(accountId, true);
+	    	account = _accountDao.lockRow(accountId, true);
 	    	if (account == null) {
 	    		throw new CloudRuntimeException("Unable to lock up the account: " + accountId);
 	    	}
@@ -3428,7 +3428,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 	    final Transaction txn = Transaction.currentTxn();
 		txn.start();
 		try {
-			account = _accountDao.acquire(accountId); //to ensure duplicate vm group names are not created.
+			account = _accountDao.acquireInLockTable(accountId); //to ensure duplicate vm group names are not created.
 			if (account == null) {
 				s_logger.warn("Failed to acquire lock on account");
 				return null;
@@ -3441,7 +3441,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 			return group;
 		} finally {
 			if (account != null) {
-				_accountDao.release(accountId);
+				_accountDao.releaseFromLockTable(accountId);
 			}
 			txn.commit();
 		}
@@ -3500,13 +3500,13 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 		if (group != null) {
 			final Transaction txn = Transaction.currentTxn();
 			txn.start();
-			UserVm userVm = _vmDao.acquire(userVmId);
+			UserVm userVm = _vmDao.acquireInLockTable(userVmId);
 			if (userVm == null) {
 				s_logger.warn("Failed to acquire lock on user vm id=" + userVmId);
 			}
 			try {
 				//don't let the group be deleted when we are assigning vm to it.
-				InstanceGroupVO ngrpLock = _vmGroupDao.lock(group.getId(), false);
+				InstanceGroupVO ngrpLock = _vmGroupDao.lockRow(group.getId(), false);
 				if (ngrpLock == null) {
 					s_logger.warn("Failed to acquire lock on vm group id=" + group.getId() + " name=" + group.getName());
 					txn.rollback();
@@ -3530,7 +3530,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 				return true;
 			} finally {
 				if (userVm != null) {
-					_vmDao.release(userVmId);
+					_vmDao.releaseFromLockTable(userVmId);
 				}
 			}
 	    }

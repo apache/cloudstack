@@ -37,7 +37,6 @@ import com.cloud.async.executor.RebootVMExecutor;
 import com.cloud.async.executor.VMOperationParam;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
@@ -66,7 +65,7 @@ public interface UserVmService extends Manager {
     /**
      * Attaches the specified volume to the specified VM
      * @param cmd - the command specifying volumeId and vmId
-     * @throws InternalErrorException, InvalidParameterValueException, PermissionDeniedException
+     * @throws InvalidParameterValueException, PermissionDeniedException
      */
     void attachVolumeToVM(AttachVolumeCmd cmd);
     
@@ -74,7 +73,6 @@ public interface UserVmService extends Manager {
      * Detaches the specified volume from the VM it is currently attached to.
      * @param cmd - the command specifying volumeId
      * @return the VolumeResponse object if detach worked successfully.
-     * @throws InternalErrorException
      * @throws InvalidParameterValueException 
      */
     VolumeResponse detachVolumeFromVM(DetachVolumeCmd cmmd);
