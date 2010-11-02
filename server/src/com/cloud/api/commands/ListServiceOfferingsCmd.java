@@ -23,12 +23,12 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.ServiceOfferingResponse;
-import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.service.ServiceOfferingVO;
 
 @Implementation(method="searchForServiceOfferings", description="Lists all available service offerings.")
@@ -82,19 +82,7 @@ public class ListServiceOfferingsCmd extends BaseListCmd {
         ListResponse<ServiceOfferingResponse> response = new ListResponse<ServiceOfferingResponse>();
         List<ServiceOfferingResponse> offeringResponses = new ArrayList<ServiceOfferingResponse>();
         for (ServiceOfferingVO offering : offerings) {
-            ServiceOfferingResponse offeringResponse = new ServiceOfferingResponse();
-            offeringResponse.setId(offering.getId());
-            offeringResponse.setName(offering.getName());
-            offeringResponse.setDisplayText(offering.getDisplayText());
-            offeringResponse.setCpuNumber(offering.getCpu());
-            offeringResponse.setCpuSpeed(offering.getSpeed());
-            offeringResponse.setMemory(offering.getRamSize());
-            offeringResponse.setCreated(offering.getCreated());
-            offeringResponse.setStorageType(offering.getUseLocalStorage() ? "local" : "shared");
-            offeringResponse.setOfferHa(offering.getOfferHA());
-            offeringResponse.setUseVirtualNetwork(offering.getGuestIpType().equals(GuestIpType.Virtualized));
-            offeringResponse.setTags(offering.getTags());
-
+            ServiceOfferingResponse offeringResponse = ApiResponseHelper.createServiceOfferingResponse(offering);
             offeringResponse.setResponseName("serviceoffering");
             offeringResponses.add(offeringResponse);
         }

@@ -23,10 +23,15 @@ import java.util.List;
 import com.cloud.api.response.AccountResponse;
 import com.cloud.api.response.DiskOfferingResponse;
 import com.cloud.api.response.DomainResponse;
+import com.cloud.api.response.ResourceLimitResponse;
+import com.cloud.api.response.ServiceOfferingResponse;
 import com.cloud.api.response.UserResponse;
 import com.cloud.configuration.ResourceCount.ResourceType;
+import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.domain.DomainVO;
+import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.server.Criteria;
+import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.user.Account;
 import com.cloud.user.UserAccount;
@@ -182,5 +187,45 @@ public class ApiResponseHelper {
        diskOfferingResponse.setTags(offering.getTags());
        return diskOfferingResponse;
    }
+   
+   public static ResourceLimitResponse createResourceLimitResponse (ResourceLimitVO limit) {
+       ResourceLimitResponse resourceLimitResponse = new ResourceLimitResponse();
+       if (limit.getDomainId() != null) {
+           resourceLimitResponse.setDomainId(limit.getDomainId());
+           resourceLimitResponse.setDomainName(ApiDBUtils.findDomainById(limit.getDomainId()).getName());
+       }
+           
+       if (limit.getAccountId() != null) {
+           Account accountTemp = ApiDBUtils.findAccountById(limit.getAccountId());
+           if (accountTemp != null) {
+               resourceLimitResponse.setAccountName(accountTemp.getAccountName());
+               resourceLimitResponse.setDomainId(accountTemp.getDomainId());
+               resourceLimitResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
+           }
+       }
+       resourceLimitResponse.setResourceType(Integer.valueOf(limit.getType().ordinal()).toString());
+       resourceLimitResponse.setMax(limit.getMax());
+       
+       return resourceLimitResponse;
+   }
+   
+   
+   public static ServiceOfferingResponse createServiceOfferingResponse (ServiceOfferingVO offering) {
+       ServiceOfferingResponse offeringResponse = new ServiceOfferingResponse();
+       offeringResponse.setId(offering.getId());
+       offeringResponse.setName(offering.getName());
+       offeringResponse.setDisplayText(offering.getDisplayText());
+       offeringResponse.setCpuNumber(offering.getCpu());
+       offeringResponse.setCpuSpeed(offering.getSpeed());
+       offeringResponse.setMemory(offering.getRamSize());
+       offeringResponse.setCreated(offering.getCreated());
+       offeringResponse.setStorageType(offering.getUseLocalStorage() ? "local" : "shared");
+       offeringResponse.setOfferHa(offering.getOfferHA());
+       offeringResponse.setUseVirtualNetwork(offering.getGuestIpType().equals(GuestIpType.Virtualized));
+       offeringResponse.setTags(offering.getTags());
+       
+       return offeringResponse;
+   }
+   
 
 }

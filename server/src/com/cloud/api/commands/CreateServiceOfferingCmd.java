@@ -21,12 +21,12 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.ServiceOfferingResponse;
 import com.cloud.configuration.ConfigurationManager;
-import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.service.ServiceOfferingVO;
 
 @Implementation(method="createServiceOffering", manager=ConfigurationManager.class, description="Creates a service offering.")
@@ -117,20 +117,7 @@ public class CreateServiceOfferingCmd extends BaseCmd {
 	@Override @SuppressWarnings("unchecked")
     public ServiceOfferingResponse getResponse() {
 	    ServiceOfferingVO offering = (ServiceOfferingVO)getResponseObject();
-
-	    ServiceOfferingResponse response = new ServiceOfferingResponse();
-	    response.setId(offering.getId());
-	    response.setName(offering.getName());
-	    response.setDisplayText(offering.getDisplayText());
-	    response.setCpuNumber(offering.getCpu());
-	    response.setCpuSpeed(offering.getSpeed());
-	    response.setCreated(offering.getCreated());
-	    response.setMemory(offering.getRamSize());
-	    response.setOfferHa(offering.getOfferHA());
-	    response.setStorageType(offering.getUseLocalStorage() ? "local" : "shared");
-	    response.setTags(offering.getTags());
-	    response.setUseVirtualNetwork(offering.getGuestIpType().equals(GuestIpType.Virtualized));
-
+	    ServiceOfferingResponse response = ApiResponseHelper.createServiceOfferingResponse(offering);
         response.setResponseName(getName());
         return response;
 	}

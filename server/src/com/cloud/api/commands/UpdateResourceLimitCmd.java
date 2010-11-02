@@ -21,13 +21,12 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.ResourceLimitResponse;
 import com.cloud.configuration.ResourceLimitVO;
-import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 
 @Implementation(method="updateResourceLimit", manager=AccountManager.class, description="Updates resource limits for an account or domain.")
@@ -89,24 +88,7 @@ public class UpdateResourceLimitCmd extends BaseCmd {
     @Override @SuppressWarnings("unchecked")
     public ResourceLimitResponse getResponse() {
         ResourceLimitVO limit = (ResourceLimitVO) getResponseObject();
-
-        ResourceLimitResponse response = new ResourceLimitResponse();
-        if (limit.getDomainId() != null) {
-            response.setDomainId(limit.getDomainId());
-            response.setDomainName(ApiDBUtils.findDomainById(limit.getDomainId()).getName());
-        }
-
-        if (limit.getAccountId() != null) {
-            Account accountTemp = ApiDBUtils.findAccountById(limit.getAccountId());
-            if (accountTemp != null) {
-                response.setAccountName(accountTemp.getAccountName());
-                response.setDomainId(accountTemp.getDomainId());
-                response.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
-            }
-        }
-        response.setResourceType(Integer.valueOf(limit.getType().ordinal()).toString());
-        response.setMax(limit.getMax());
-
+        ResourceLimitResponse response = ApiResponseHelper.createResourceLimitResponse(limit);
         response.setResponseName(getName());
         return response;
     }

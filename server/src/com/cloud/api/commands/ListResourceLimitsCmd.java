@@ -24,14 +24,13 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.ResourceLimitResponse;
 import com.cloud.configuration.ResourceLimitVO;
-import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 
 @Implementation(method="searchForLimits", manager=AccountManager.class, description="Lists resource limits.")
@@ -96,24 +95,7 @@ public class ListResourceLimitsCmd extends BaseListCmd {
         ListResponse<ResourceLimitResponse> response = new ListResponse<ResourceLimitResponse>();
         List<ResourceLimitResponse> limitResponses = new ArrayList<ResourceLimitResponse>();
         for (ResourceLimitVO limit : limits) {
-            ResourceLimitResponse resourceLimitResponse = new ResourceLimitResponse();
-            if (limit.getDomainId() != null) {
-                resourceLimitResponse.setDomainId(limit.getDomainId());
-                resourceLimitResponse.setDomainName(ApiDBUtils.findDomainById(limit.getDomainId()).getName());
-            }
-                
-            if (limit.getAccountId() != null) {
-                Account accountTemp = ApiDBUtils.findAccountById(limit.getAccountId());
-                if (accountTemp != null) {
-                    resourceLimitResponse.setAccountName(accountTemp.getAccountName());
-                    resourceLimitResponse.setDomainId(accountTemp.getDomainId());
-                    resourceLimitResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
-                }
-            }
-
-            resourceLimitResponse.setResourceType(Integer.valueOf(limit.getType().ordinal()).toString());
-            resourceLimitResponse.setMax(limit.getMax());
-
+            ResourceLimitResponse resourceLimitResponse = ApiResponseHelper.createResourceLimitResponse(limit);
             resourceLimitResponse.setResponseName("resourcelimit");
             limitResponses.add(resourceLimitResponse);
         }
