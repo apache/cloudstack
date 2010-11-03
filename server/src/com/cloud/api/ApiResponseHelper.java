@@ -361,7 +361,7 @@ public class ApiResponseHelper {
            userVmResponse.setJobStatus(asyncJob.getStatus());
        } 
 
-       userVmResponse.setName(userVm.getName());
+       userVmResponse.setName(userVm.getHostName());
        userVmResponse.setCreated(userVm.getCreated());
        userVmResponse.setIpAddress(userVm.getPrivateIpAddress());
        if (userVm.getState() != null) {
@@ -374,7 +374,7 @@ public class ApiResponseHelper {
        if (userVm.getDisplayName() != null) {
            userVmResponse.setDisplayName(userVm.getDisplayName());
        } else {
-           userVmResponse.setDisplayName(userVm.getName());
+           userVmResponse.setDisplayName(userVm.getHostName());
        }
 
        InstanceGroupVO group = ApiDBUtils.findInstanceGroupForVM(userVm.getId());
@@ -387,7 +387,7 @@ public class ApiResponseHelper {
        userVmResponse.setZoneId(userVm.getDataCenterId());
        userVmResponse.setZoneName(ApiDBUtils.findZoneById(userVm.getDataCenterId()).getName());
 
-       Account account = (Account)UserContext.current().getAccount();
+       Account account = UserContext.current().getAccount();
        //if user is an admin, display host id
        if (((account == null) || (account.getType() == Account.ACCOUNT_TYPE_ADMIN)) && (userVm.getHostId() != null)) {
            userVmResponse.setHostId(userVm.getHostId());
@@ -481,7 +481,7 @@ public class ApiResponseHelper {
            vmResponse.setDns2(vm.getDns2());
            vmResponse.setNetworkDomain(vm.getDomain());
            vmResponse.setGateway(vm.getGateway());
-           vmResponse.setName(vm.getName());
+           vmResponse.setName(vm.getHostName());
            vmResponse.setPodId(vm.getPodId());
            if (vm.getHostId() != null) {
                vmResponse.setHostId(vm.getHostId());
@@ -525,7 +525,7 @@ public class ApiResponseHelper {
        routerResponse.setDns2(router.getDns2());
        routerResponse.setNetworkDomain(router.getDomain());
        routerResponse.setGateway(router.getGateway());
-       routerResponse.setName(router.getName());
+       routerResponse.setName(router.getHostName());
        routerResponse.setPodId(router.getPodId());
 
        if (router.getHostId() != null) {
@@ -705,7 +705,7 @@ public class ApiResponseHelper {
        ipResponse.setForVirtualNetwork(forVirtualNetworks);
 
        //show this info to admin only
-       Account account = (Account)UserContext.current().getAccount();
+       Account account = UserContext.current().getAccount();
        if ((account == null)  || account.getType() == Account.ACCOUNT_TYPE_ADMIN) {
            ipResponse.setVlanId(ipAddress.getVlanDbId());
            ipResponse.setVlanName(ApiDBUtils.findVlanById(ipAddress.getVlanDbId()).getVlanId());
@@ -756,7 +756,7 @@ public class ApiResponseHelper {
    }
    
    public static ZoneResponse createZoneResponse (DataCenterVO dataCenter) {
-       Account account = (Account)UserContext.current().getAccount();
+       Account account = UserContext.current().getAccount();
        ZoneResponse zoneResponse = new ZoneResponse();
        zoneResponse.setId(dataCenter.getId());
        zoneResponse.setName(dataCenter.getName());
@@ -806,8 +806,8 @@ public class ApiResponseHelper {
        if (instanceId != null) {
            VMInstanceVO vm = ApiDBUtils.findVMInstanceById(instanceId);
            volResponse.setVirtualMachineId(vm.getId());
-           volResponse.setVirtualMachineName(vm.getName());
-           volResponse.setVirtualMachineDisplayName(vm.getName());
+           volResponse.setVirtualMachineName(vm.getHostName());
+           volResponse.setVirtualMachineDisplayName(vm.getHostName());
            volResponse.setVirtualMachineState(vm.getState().toString());
        }             
 
@@ -959,7 +959,7 @@ public class ApiResponseHelper {
        if (fwRule.getPublicIpAddress() != null && fwRule.getPrivateIpAddress() != null) {
            UserVm vm = ApiDBUtils.findUserVmByPublicIpAndGuestIp(fwRule.getPublicIpAddress(), fwRule.getPrivateIpAddress());
            response.setVirtualMachineId(vm.getId());
-           response.setVirtualMachineName(vm.getName());
+           response.setVirtualMachineName(vm.getHostName());
        }
 
        return response;

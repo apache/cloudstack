@@ -710,24 +710,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
             event.setLevel(EventVO.LEVEL_INFO);
             _eventDao.persist(event);
             
-<<<<<<< HEAD
             return _volsDao.findById(volumeId);
-=======
-            // Prepare the response object
-            VolumeResponse response = new VolumeResponse();            
-            response.setVirtualMachineName(vm.getHostName());
-            response.setVirtualMachineDisplayName(vm.getDisplayName());
-            response.setVirtualMachineId(vm.getId());
-            response.setVirtualMachineState(vm.getState().toString());
-            response.setStorageType("shared"); // NOTE: You can never attach a local disk volume but if that changes, we need to change this
-            response.setId(volume.getId());
-            response.setName(volume.getName());
-            response.setVolumeType(volume.getVolumeType().toString());
-            response.setResponseName(cmmd.getName());
-            if(volume.getDeviceId() != null)
-            	response.setDeviceId(volume.getDeviceId());
-            return response;
->>>>>>> Harmony among gurus
     	} else {
     		
     		if (answer != null) {
