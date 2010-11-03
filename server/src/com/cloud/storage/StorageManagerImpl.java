@@ -80,8 +80,10 @@ import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.consoleproxy.ConsoleProxyManager;
+import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
+import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.DeployDestination;
@@ -206,6 +208,7 @@ public class StorageManagerImpl implements StorageManager {
     @Inject protected ServiceOfferingDao _offeringDao;
     @Inject protected DomainDao _domainDao;
     @Inject protected UserDao _userDao;
+    @Inject protected ClusterDao _clusterDao;
     
     @Inject(adapter=StoragePoolAllocator.class)
     protected Adapters<StoragePoolAllocator> _storagePoolAllocators;
@@ -228,7 +231,6 @@ public class StorageManagerImpl implements StorageManager {
     private int _totalRetries;
     private int _pauseInterval;
     private final boolean _shouldBeSnapshotCapable = true;
-    private HypervisorType _hypervisorType;
     
     @Override
     public boolean share(VMInstanceVO vm, List<VolumeVO> vols, HostVO host, boolean cancelPreviousShare) {
@@ -1955,7 +1957,7 @@ public class StorageManagerImpl implements StorageManager {
         List<Long> hostsToAvoid = new ArrayList<Long>();
         
         int tryCount = 0;
-        boolean sendToVmHost = sendToVmResidesOn(cmd);
+        boolean sendToVmHost = sendToVmResidesOn(storagePool, cmd);
        
         if (chooseHostForStoragePool(storagePool, hostsToAvoid, sendToVmHost, vmId) == null) {
             // Don't just fail. The host could be reconnecting.
@@ -2440,8 +2442,9 @@ public class StorageManagerImpl implements StorageManager {
     	return primaryStorage;
 	}
 	
-	private boolean sendToVmResidesOn(Command cmd) {
-    	if ((_hypervisorType == HypervisorType.KVM) &&
+	private boolean sendToVmResidesOn(StoragePoolVO storagePool, Command cmd) {
+		ClusterVO cluster = _clusterDao.findById(storagePool.getClusterId());
+    	if ((cluster.getHypervisorType() == HypervisorType.KVM) &&
     		((cmd instanceof ManageSnapshotCommand) ||
     		 (cmd instanceof BackupSnapshotCommand))) {
     		return true;
