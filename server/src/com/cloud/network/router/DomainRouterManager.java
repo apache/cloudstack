@@ -36,6 +36,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.NetworkConfiguration;
 import com.cloud.network.RemoteAccessVpnVO;
+import com.cloud.network.VpnUserVO;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.user.Account;
@@ -175,6 +176,9 @@ public interface DomainRouterManager extends Manager {
 	DomainRouterVO deploy(NetworkConfiguration guestConfig, NetworkOffering offering, DeployDestination dest, Account owner) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException;
 
 	RemoteAccessVpnVO startRemoteAccessVpn(RemoteAccessVpnVO vpnVO);
+	
+	boolean addRemoveVpnUsers(RemoteAccessVpnVO vpnVO, Long accountId, List<VpnUserVO> addUsers, List<VpnUserVO> removeUsers);
+
 
 	boolean deleteRemoteAccessVpn(RemoteAccessVpnVO vpnVO);
 	

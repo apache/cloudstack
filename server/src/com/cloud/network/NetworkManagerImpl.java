@@ -105,6 +105,7 @@ import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.dao.NetworkConfigurationDao;
 import com.cloud.network.dao.NetworkRuleConfigDao;
 import com.cloud.network.dao.RemoteAccessVpnDao;
+import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.router.DomainRouterManager;
 import com.cloud.offering.NetworkOffering;
@@ -204,6 +205,7 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
     @Inject NicDao _nicDao;
     @Inject GuestOSDao _guestOSDao = null;
     @Inject RemoteAccessVpnDao _remoteAccessVpnDao = null;
+    @Inject VpnUserDao _vpnUsersDao = null;
     @Inject DomainRouterManager _routerMgr;
     
     @Inject(adapter=NetworkGuru.class)
@@ -2737,6 +2739,82 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
         	txn.commit();
         	if (locked) {
         		_ipAddressDao.releaseFromLockTable(publicIp);
+        	}
+        }
+	}
+	
+	@Override
+	@DB
+	public boolean addRemoveVpnUsers(VpnUserConfigCmd cmd) throws ConcurrentOperationException {
+    	Long userId = UserContext.current().getUserId();
+    	Account account = getAccountForApiCommand(cmd.getAccountName(), cmd.getDomainId());
+        EventUtils.saveStartedEvent(userId, account.getId(), EventTypes.EVENT_VPN_USERS_ADD_OR_DELETE, "Add/remove VPN users for account: " + account.getAccountName(), cmd.getStartEventId());
+		List<RemoteAccessVpnVO> vpnVOList = _remoteAccessVpnDao.findByAccount(account.getId());
+		String publicIp = vpnVO.getVpnServerAddress();
+		Long  vpnId = vpnVO.getId();
+		Transaction txn = Transaction.currentTxn();
+        txn.start();
+        boolean locked = false;
+        boolean created = false;
+        try {
+        	IPAddressVO ipAddr = _ipAddressDao.acquire(publicIp);
+        	if (ipAddr == null) {
+        		throw new ConcurrentOperationException("Another operation active, unable to create vpn");
+        	}
+        	locked = true;
+
+    		vpnVO = _routerMgr.startRemoteAccessVpn(vpnVO);
+    		created = (vpnVO != null);
+        	
+        	return vpnVO;
+        } finally {
+        	if (created) {
+    	        EventUtils.saveEvent(userId, account.getId(), EventTypes.EVENT_VPN_USERS_ADD_OR_DELETE, "Created a Remote Access VPN for account: " + account.getAccountName() + " in zone " + cmd.getZoneId());
+    		} else {
+    			EventUtils.saveEvent(userId, account.getId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VPN_USERS_ADD_OR_DELETE, "Unable to create Remote Access VPN ", account.getAccountName() + " in zone " + cmd.getZoneId());
+    			_remoteAccessVpnDao.remove(vpnId);
+    		}
+        	txn.commit();
+        	if (locked) {
+        		_ipAddressDao.release(publicIp);
+        	}
+        }
+	}
+	
+	@Override
+	@DB
+	public boolean addRemoveVpnUsers(VpnUserConfigCmd cmd) throws ConcurrentOperationException {
+    	Long userId = UserContext.current().getUserId();
+    	Account account = getAccountForApiCommand(cmd.getAccountName(), cmd.getDomainId());
+        EventUtils.saveStartedEvent(userId, account.getId(), EventTypes.EVENT_VPN_USERS_ADD_OR_DELETE, "Add/remove VPN users for account: " + account.getAccountName(), cmd.getStartEventId());
+		List<RemoteAccessVpnVO> vpnVOList = _remoteAccessVpnDao.findByAccount(account.getId());
+		String publicIp = vpnVO.getVpnServerAddress();
+		Long  vpnId = vpnVO.getId();
+		Transaction txn = Transaction.currentTxn();
+        txn.start();
+        boolean locked = false;
+        boolean created = false;
+        try {
+        	IPAddressVO ipAddr = _ipAddressDao.acquire(publicIp);
+        	if (ipAddr == null) {
+        		throw new ConcurrentOperationException("Another operation active, unable to create vpn");
+        	}
+        	locked = true;
+
+    		vpnVO = _routerMgr.startRemoteAccessVpn(vpnVO);
+    		created = (vpnVO != null);
+        	
+        	return vpnVO;
+        } finally {
+        	if (created) {
+    	        EventUtils.saveEvent(userId, account.getId(), EventTypes.EVENT_VPN_USERS_ADD_OR_DELETE, "Created a Remote Access VPN for account: " + account.getAccountName() + " in zone " + cmd.getZoneId());
+    		} else {
+    			EventUtils.saveEvent(userId, account.getId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VPN_USERS_ADD_OR_DELETE, "Unable to create Remote Access VPN ", account.getAccountName() + " in zone " + cmd.getZoneId());
+    			_remoteAccessVpnDao.remove(vpnId);
+    		}
+        	txn.commit();
+        	if (locked) {
+        		_ipAddressDao.release(publicIp);
         	}
         }
 	}

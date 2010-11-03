@@ -37,6 +37,7 @@ import com.cloud.api.commands.StartRouterCmd;
 import com.cloud.api.commands.StopRouterCmd;
 import com.cloud.api.commands.UpdateLoadBalancerRuleCmd;
 import com.cloud.api.commands.UpgradeRouterCmd;
+import com.cloud.api.commands.VpnUserConfigCmd;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
@@ -341,4 +342,6 @@ public interface NetworkManager extends Manager {
      * @throws ConcurrentOperationException 
      */
     public boolean destroyRemoteAccessVpn(DeleteRemoteAccessVpnCmd cmd) throws ConcurrentOperationException;
+
+	boolean addRemoveVpnUsers(VpnUserConfigCmd cmd) throws ConcurrentOperationException;
 }

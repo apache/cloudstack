@@ -166,4 +166,5 @@ public class EventTypes {
     //VPN
     public static final String EVENT_REMOTE_ACCESS_VPN_CREATE = "VPN.REMOTE.ACCESS.CREATE";
     public static final String EVENT_REMOTE_ACCESS_VPN_DESTROY = "VPN.REMOTE.ACCESS.DESTROY";
+    public static final String EVENT_VPN_USERS_ADD_OR_DELETE = "VPN.USERS.ADD.OR.DELETE";
 }

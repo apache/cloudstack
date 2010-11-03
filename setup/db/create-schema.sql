@@ -955,10 +955,18 @@ CREATE TABLE `cloud`.`remote_access_vpn` (
   `id` bigint unsigned NOT NULL auto_increment,
   `account_id` bigint unsigned NOT NULL,
   `zone_id` bigint unsigned NOT NULL,
-  `vpn_server_addr` varchar(15) NOT NULL,
+  `vpn_server_addr` varchar(15) UNIQUE NOT NULL,
   `local_ip` varchar(15) NOT NULL,
   `ip_range` varchar(32) NOT NULL,
   `ipsec_psk` varchar(255) NOT NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`vpn_users` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `account_id` bigint unsigned NOT NULL,
+  `username` varchar(255) NOT NULL,
+  `password` varchar(255) NOT NULL,
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

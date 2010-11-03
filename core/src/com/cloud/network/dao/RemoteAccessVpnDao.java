@@ -18,10 +18,13 @@
 
 package com.cloud.network.dao;
 
+import java.util.List;
+
 import com.cloud.network.RemoteAccessVpnVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface RemoteAccessVpnDao extends GenericDao<RemoteAccessVpnVO, Long> {
     RemoteAccessVpnVO findByPublicIpAddress(String ipAddress);
     RemoteAccessVpnVO findByAccountAndZone(Long accountId, Long zoneId);
+    List<RemoteAccessVpnVO> findByAccount(Long accountId);
 }

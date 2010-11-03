@@ -54,6 +54,7 @@ import com.cloud.agent.api.routing.DhcpEntryCommand;
 import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
+import com.cloud.agent.api.routing.VpnUsersCfgCommand;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VirtualMachineTO.SshMonitor;
@@ -113,6 +114,7 @@ import com.cloud.network.NetworkConfigurationVO;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.RemoteAccessVpnVO;
 import com.cloud.network.SshKeysDistriMonitor;
+import com.cloud.network.VpnUserVO;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
@@ -2262,4 +2264,32 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
     public DomainRouterVO persist(DomainRouterVO router) {
         return _routerDao.persist(router);
     }
+
+	@Override
+	public boolean addRemoveVpnUsers(RemoteAccessVpnVO vpnVO, Long accountId, List<VpnUserVO> addUsers, List<VpnUserVO> removeUsers) {
+		DomainRouterVO router = getRouter(vpnVO.getAccountId(), vpnVO.getZoneId());
+		if (router == null) {
+			s_logger.warn("Failed to add/remove VPN users: no router found for account and zone");
+			return false;
+		}
+		if (router.getState() != State.Running) {
+			s_logger.warn("Failed to add/remove VPN users: router not in running state");
+			return false;
+		}
+		try {
+			Answer answer = _agentMgr.send(router.getHostId(), new VpnUsersCfgCommand(addUsers, removeUsers));
+			if (answer != null && answer.getResult()) {
+				return true;
+			} else {
+				s_logger.debug("Failed to add/remove VPN users: " + answer.getDetails());
+				return false;
+			}
+		} catch (AgentUnavailableException e) {
+			s_logger.debug("Failed to add/remove VPN users:: ", e);
+			return false;
+		} catch (OperationTimedoutException e) {
+			s_logger.debug("Failed to add/remove VPN users:: ", e);
+			return false;		
+		}
+	}
 }

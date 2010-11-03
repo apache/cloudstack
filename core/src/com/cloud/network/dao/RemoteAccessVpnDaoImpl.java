@@ -18,6 +18,8 @@
 
 package com.cloud.network.dao;
 
+import java.util.List;
+
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
@@ -33,6 +35,8 @@ public class RemoteAccessVpnDaoImpl extends GenericDaoBase<RemoteAccessVpnVO, Lo
     
     private final SearchBuilder<RemoteAccessVpnVO> ListByIp;
     private final SearchBuilder<RemoteAccessVpnVO> AccountAndZoneSearch;
+    private final SearchBuilder<RemoteAccessVpnVO> AccountSearch;
+
 
     protected RemoteAccessVpnDaoImpl() {
         ListByIp  = createSearchBuilder();
@@ -43,6 +47,10 @@ public class RemoteAccessVpnDaoImpl extends GenericDaoBase<RemoteAccessVpnVO, Lo
         AccountAndZoneSearch.and("accountId", AccountAndZoneSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         AccountAndZoneSearch.and("zoneId", AccountAndZoneSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
         AccountAndZoneSearch.done();
+        
+        AccountSearch = createSearchBuilder();
+        AccountSearch.and("accountId", AccountSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        AccountSearch.done();
     }
 
     @Override
@@ -59,4 +67,11 @@ public class RemoteAccessVpnDaoImpl extends GenericDaoBase<RemoteAccessVpnVO, Lo
         sc.setParameters("zoneId", zoneId);
         return findOneBy(sc);
     }
+
+	@Override
+	public List<RemoteAccessVpnVO> findByAccount(Long accountId) {
+		SearchCriteria<RemoteAccessVpnVO> sc = AccountSearch.create();
+        sc.setParameters("accountId", accountId);
+        return listBy(sc);
+	}
 }
