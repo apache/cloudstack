@@ -398,19 +398,19 @@ function volumeJsonToDetailsTab(){
     $thisTab.data("jsonObj", jsonObj);    
     $midmenuItem1.data("jsonObj", jsonObj);    
         
-    $thisTab.find("#id").text(jsonObj.id);
+    $thisTab.find("#id").text(fromdb(jsonObj.id));
     $thisTab.find("#name").text(fromdb(jsonObj.name));    
     $thisTab.find("#zonename").text(fromdb(jsonObj.zonename));    
-    $thisTab.find("#device_id").text(jsonObj.deviceid);   
-    $thisTab.find("#state").text(jsonObj.state);    
+    $thisTab.find("#device_id").text(fromdb(jsonObj.deviceid));   
+    $thisTab.find("#state").text(fromdb(jsonObj.state));    
     $thisTab.find("#storage").text(fromdb(jsonObj.storage));
     $thisTab.find("#account").text(fromdb(jsonObj.account));     
-    $thisTab.find("#type").text(jsonObj.type + " (" + jsonObj.storagetype + " storage)");
+    $thisTab.find("#type").text(fromdb(jsonObj.type) + " (" + fromdb(jsonObj.storagetype) + " storage)");
     $thisTab.find("#size").text((jsonObj.size == "0") ? "" : convertBytes(jsonObj.size));	    
     if (jsonObj.virtualmachineid == null) 
 		$thisTab.find("#vm_name").text("detached");
 	else 
-		$thisTab.find("#vm_name").text(getVmName(jsonObj.vmname, jsonObj.vmdisplayname) + " (" + jsonObj.vmstate + ")");		
+		$thisTab.find("#vm_name").text(getVmName(jsonObj.vmname, jsonObj.vmdisplayname) + " (" + fromdb(jsonObj.vmstate) + ")");		
     setDateField(jsonObj.created, $thisTab.find("#created"));	
        
     //actions ***    
