@@ -2657,7 +2657,7 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
         	}
         	locked = true;
         	vpnVO = new RemoteAccessVpnVO(account.getId(), cmd.getZoneId(), publicIp, range[0], newIpRange, sharedSecret);
-        	_remoteAccessVpnDao.persist(vpnVO);
+        	vpnVO = _remoteAccessVpnDao.persist(vpnVO);
         	txn.commit();
         	return vpnVO;
         } finally {
@@ -2669,7 +2669,7 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
 
 	@Override
 	@DB
-	public RemoteAccessVpnVO startRemoteAccessVpn(CreateRemoteAccessVpnCmd cmd) throws ConcurrentOperationException {
+	public RemoteAccessVpnVO startRemoteAccessVpn(CreateRemoteAccessVpnCmd cmd) throws ConcurrentOperationException, ResourceUnavailableException {
     	Long userId = UserContext.current().getUserId();
     	Account account = getAccountForApiCommand(cmd.getAccountName(), cmd.getDomainId());
         EventUtils.saveStartedEvent(userId, account.getId(), EventTypes.EVENT_REMOTE_ACCESS_VPN_CREATE, "Creating a Remote Access VPN for account: " + account.getAccountName() + " in zone " + cmd.getZoneId(), cmd.getStartEventId());

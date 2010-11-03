@@ -121,6 +121,7 @@ import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.dao.NetworkConfigurationDao;
 import com.cloud.network.dao.NetworkRuleConfigDao;
+import com.cloud.network.dao.VpnUserDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.offerings.NetworkOfferingVO;
@@ -225,6 +226,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
     @Inject GuestOSDao _guestOSDao = null;
     @Inject NetworkManager _networkMgr;
     @Inject VmManager _itMgr;
+    @Inject VpnUserDao _vpnUsersDao;
     
     long _routerTemplateId = -1;
     int _routerRamSize;
@@ -2124,7 +2126,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
     }
 
 	@Override
-	public RemoteAccessVpnVO startRemoteAccessVpn(RemoteAccessVpnVO vpnVO) {
+	public RemoteAccessVpnVO startRemoteAccessVpn(RemoteAccessVpnVO vpnVO) throws ResourceUnavailableException {
 		DomainRouterVO router = getRouter(vpnVO.getAccountId(), vpnVO.getZoneId());
 		if (router == null) {
 			s_logger.warn("Failed to start remote access VPN: no router found for account and zone");
@@ -2134,14 +2136,14 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
 			s_logger.warn("Failed to start remote access VPN: router not in running state");
 			return null;
 		}
+		List<VpnUserVO> vpnUsers = _vpnUsersDao.listByAccount(vpnVO.getAccountId());
+		VpnUsersCfgCommand addUsersCmd = new VpnUsersCfgCommand(router.getPrivateIpAddress(), vpnUsers, new ArrayList<VpnUserVO>());
+		RemoteAccessVpnCfgCommand startVpnCmd = new RemoteAccessVpnCfgCommand(true, router.getPrivateIpAddress(), vpnVO.getVpnServerAddress(), vpnVO.getLocalIp(), vpnVO.getIpRange(), vpnVO.getIpsecPresharedKey());
+		Commands cmds = new Commands(OnError.Stop);
+		cmds.addCommand("users", addUsersCmd);
+		cmds.addCommand("startVpn", startVpnCmd);
 		try {
-			Answer answer = _agentMgr.send(router.getHostId(), new RemoteAccessVpnCfgCommand(true, router.getPrivateIpAddress(), vpnVO.getVpnServerAddress(), vpnVO.getLocalIp(), vpnVO.getIpRange(), vpnVO.getIpsecPresharedKey()));
-			if (answer != null && answer.getResult()) {
-				return vpnVO;
-			} else {
-				s_logger.debug("Failed to start remote access VPN: " + answer.getDetails());
-				return null;
-			}
+			_agentMgr.send(router.getHostId(), cmds);
 		} catch (AgentUnavailableException e) {
 			s_logger.debug("Failed to start remote access VPN: ", e);
 			return null;
@@ -2149,6 +2151,17 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
 			s_logger.debug("Failed to start remote access VPN: ", e);
 			return null;		
 		}
+		Answer answer = cmds.getAnswer("users");
+		if (!answer.getResult()) {
+            s_logger.error("Unable to start vpn: unable add users to vpn in zone " + vpnVO.getZoneId() + " for account "+ vpnVO.getAccountId() +" on domR: " + router.getName() + " due to " + answer.getDetails());
+            throw new ResourceUnavailableException("Unable to start vpn: Unable to add users to vpn in zone " + vpnVO.getZoneId() + " for account "+ vpnVO.getAccountId() +" on domR: " + router.getName() + " due to " + answer.getDetails()); 
+        }
+		answer = cmds.getAnswer("startVpn");
+		if (!answer.getResult()) {
+            s_logger.error("Unable to start vpn in zone " + vpnVO.getZoneId() + " for account "+ vpnVO.getAccountId() +" on domR: " + router.getName() + " due to " + answer.getDetails());
+            throw new ResourceUnavailableException("Unable to start vpn in zone " + vpnVO.getZoneId() + " for account "+ vpnVO.getAccountId() +" on domR: " + router.getName() + " due to " + answer.getDetails()); 
+        }
+		return vpnVO;
 	}
 
 	@Override

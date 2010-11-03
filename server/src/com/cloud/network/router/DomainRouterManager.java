@@ -175,7 +175,7 @@ public interface DomainRouterManager extends Manager {
 	
 	DomainRouterVO deploy(NetworkConfiguration guestConfig, NetworkOffering offering, DeployDestination dest, Account owner) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException;
 
-	RemoteAccessVpnVO startRemoteAccessVpn(RemoteAccessVpnVO vpnVO);
+	RemoteAccessVpnVO startRemoteAccessVpn(RemoteAccessVpnVO vpnVO) throws ResourceUnavailableException;
 	
 	boolean addRemoveVpnUsers(RemoteAccessVpnVO vpnVO, List<VpnUserVO> addUsers, List<VpnUserVO> removeUsers);
 

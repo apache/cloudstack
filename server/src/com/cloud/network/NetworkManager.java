@@ -333,8 +333,9 @@ public interface NetworkManager extends Manager {
      * @param cmd the command specifying the ip address, ip range
      * @return the RemoteAccessVpnVO if successful, null otherwise
      * @throws ConcurrentOperationException 
+     * @throws ResourceUnavailableException 
      */
-    public RemoteAccessVpnVO startRemoteAccessVpn(CreateRemoteAccessVpnCmd cmd) throws ConcurrentOperationException;
+    public RemoteAccessVpnVO startRemoteAccessVpn(CreateRemoteAccessVpnCmd cmd) throws ConcurrentOperationException, ResourceUnavailableException;
     
     /**
      * Destroy a previously created remote access VPN
