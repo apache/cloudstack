@@ -19,6 +19,8 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
+import com.cloud.api.ApiConstants;
+import com.cloud.host.Status;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
@@ -68,8 +70,8 @@ public class StoragePoolResponse extends BaseResponse {
     @SerializedName("tags") @Param(description="the tags for the storage pool")
     private String tags;
 
-    @SerializedName("state") @Param(description="the state of the storage pool")
-    private String state;
+    @SerializedName(ApiConstants.STATE) @Param(description="the state of the storage pool")
+    private Status state;
 
     public Long getId() {
         return id;
@@ -191,11 +193,11 @@ public class StoragePoolResponse extends BaseResponse {
         this.tags = tags;
     }
 
-    public String getState() {
+    public Status getState() {
         return state;
     }
 
-    public void setState(String state) {
+    public void setState(Status state) {
         this.state = state;
     }
 }

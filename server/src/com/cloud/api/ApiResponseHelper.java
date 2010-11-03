@@ -890,6 +890,7 @@ public class ApiResponseHelper {
        StoragePoolResponse poolResponse = new StoragePoolResponse();
        poolResponse.setId(pool.getId());
        poolResponse.setName(pool.getName());
+       poolResponse.setState(pool.getStatus());
        poolResponse.setPath(pool.getPath());
        poolResponse.setIpAddress(pool.getHostAddress());
        poolResponse.setZoneId(pool.getDataCenterId());
