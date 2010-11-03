@@ -53,6 +53,8 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     private static final Logger s_logger = Logger.getLogger(DataCenterDaoImpl.class);
 
     protected SearchBuilder<DataCenterVO> NameSearch;
+    protected SearchBuilder<DataCenterVO> ListZonesByDomainIdSearch;
+    protected SearchBuilder<DataCenterVO> PublicZonesSearch;
 
     protected static final DataCenterIpAddressDaoImpl _ipAllocDao = ComponentLocator.inject(DataCenterIpAddressDaoImpl.class);
     protected static final DataCenterLinkLocalIpAddressDaoImpl _LinkLocalIpAllocDao = ComponentLocator.inject(DataCenterLinkLocalIpAddressDaoImpl.class);
@@ -67,6 +69,20 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     	SearchCriteria<DataCenterVO> sc = NameSearch.create();
     	sc.setParameters("name", name);
         return findOneBy(sc);
+    }
+    
+    @Override
+    public List<DataCenterVO> findZonesByDomainId(Long domainId){
+    	SearchCriteria<DataCenterVO> sc = ListZonesByDomainIdSearch.create();
+    	sc.setParameters("domainId", domainId);
+        return listBy(sc);    	
+    }
+    
+    @Override
+    public List<DataCenterVO> listPublicZones(){
+    	SearchCriteria<DataCenterVO> sc = PublicZonesSearch.create();
+    	//sc.setParameters("domainId", domainId);
+        return listBy(sc);    	    	
     }
 
     @Override
@@ -214,6 +230,14 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
         NameSearch = createSearchBuilder();
         NameSearch.and("name", NameSearch.entity().getName(), SearchCriteria.Op.EQ);
         NameSearch.done();
+        
+        ListZonesByDomainIdSearch = createSearchBuilder();
+        ListZonesByDomainIdSearch.and("domainId", ListZonesByDomainIdSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
+        ListZonesByDomainIdSearch.done();
+        
+        PublicZonesSearch = createSearchBuilder();
+        PublicZonesSearch.and("domainId", PublicZonesSearch.entity().getDomainId(), SearchCriteria.Op.NULL);
+        PublicZonesSearch.done();        
         
         _tgMacAddress = _tgs.get("macAddress");
         assert _tgMacAddress != null : "Couldn't get mac address table generator";

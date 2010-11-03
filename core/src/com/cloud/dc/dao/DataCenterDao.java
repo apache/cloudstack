@@ -58,4 +58,8 @@ public interface DataCenterDao extends GenericDao<DataCenterVO, Long> {
     List<DataCenterVnetVO> listAllocatedVnets(long dcId);
 
     String allocatePodVlan(long podId, long accountId);
+
+	List<DataCenterVO> findZonesByDomainId(Long domainId);
+
+	List<DataCenterVO> listPublicZones();
 }

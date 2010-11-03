@@ -833,9 +833,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	String internalDns2 = cmd.getInternalDns2();
     	String vnetRange = cmd.getVnet();
     	String guestCidr = cmd.getGuestCidrAddress();
-    	String domain = cmd.getDomain();
+//    	String domain = cmd.getDomain();
     	Long userId = UserContext.current().getUserId();
-    	Long domainId = cmd.getDomainId();
+//    	Long domainId = cmd.getDomainId();
     	
     	if (userId == null) {
             userId = Long.valueOf(User.UID_SYSTEM);
@@ -886,11 +886,11 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	if(guestCidr == null)
     		guestCidr = zone.getGuestNetworkCidr();    	
     	
-    	if(domain == null)
-    	    domain = zone.getDomain();
+//    	if(domain == null)
+//    	    domain = zone.getDomain();
     	
     	boolean checkForDuplicates = !zoneName.equals(oldZoneName);
-    	checkZoneParameters(zoneName, dns1, dns2, internalDns1, internalDns2, checkForDuplicates, domainId);
+    	checkZoneParameters(zoneName, dns1, dns2, internalDns1, internalDns2, checkForDuplicates, null);//not allowing updating domain associated with a zone, once created
 
     	zone.setName(zoneName);
     	zone.setDns1(dns1);
@@ -898,7 +898,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	zone.setInternalDns1(internalDns1);
     	zone.setInternalDns2(internalDns2);
     	zone.setGuestNetworkCidr(guestCidr);
-    	zone.setDomain(domain);
+//    	zone.setDomain(domain);
     	
     	if (vnetRange != null) {
     		zone.setVnet(vnetRange);

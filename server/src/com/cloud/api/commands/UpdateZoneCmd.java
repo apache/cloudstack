@@ -64,11 +64,11 @@ public class UpdateZoneCmd extends BaseCmd {
     @Parameter(name=ApiConstants.VNET, type=CommandType.STRING, description="the VNET for the Zone")
     private String vnet;
     
-    @Parameter(name=ApiConstants.DOMAIN, type=CommandType.STRING, description="Domain name for the Vms in the zone")
-    private String domain;
+//    @Parameter(name=ApiConstants.DOMAIN, type=CommandType.STRING, description="Domain name for the Vms in the zone")
+//    private String domain;
 
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the ID of the containing domain, null for public zones")
-    private Long domainId; 
+//    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the ID of the containing domain, null for public zones")
+//    private Long domainId; 
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -106,17 +106,17 @@ public class UpdateZoneCmd extends BaseCmd {
         return vnet;
     }
     
-    public String getDomain() {
-        return domain;
-    }
+//    public String getDomain() {
+//        return domain;
+//    }
 
-	public Long getDomainId() {
-		return domainId;
-	}
-
-	public void setDomainId(Long domainId) {
-		this.domainId = domainId;
-	}
+//	public Long getDomainId() {
+//		return domainId;
+//	}
+//
+//	public void setDomainId(Long domainId) {
+//		this.domainId = domainId;
+//	}
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////

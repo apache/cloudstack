@@ -1965,10 +1965,71 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public List<DataCenterVO> listDataCenters(ListZonesByCmd cmd) {
-        List<DataCenterVO> dcs = _dcDao.listAll();
+    public List<DataCenterVO> listDataCenters(ListZonesByCmd cmd) {   	
+        Account account = UserContext.current().getAccount();    	
+        List<DataCenterVO> dcs = null;
+    	Long domainId = cmd.getDomainId();
+    	if(domainId != null){
+    		//for domainId != null
+    		//right now, we made the decision to only list zones associated with this domain
+    		dcs  = _dcDao.findZonesByDomainId(domainId); //private zones
+    	}
+    	else if((account.getType() ==  Account.ACCOUNT_TYPE_ADMIN)){
+    		dcs = _dcDao.listAll(); //all zones
+    	}else if(account.getType() ==  Account.ACCOUNT_TYPE_NORMAL){
+    		//it was decided to return all zones for the user's domain, and everything above till root
+    		//list all zones belonging to this domain, and all of its parents
+    		//check the parent, if not null, add zones for that parent to list
+    		dcs = new ArrayList<DataCenterVO>();
+    		DomainVO domainRecord = _domainDao.findById(account.getDomainId());
+    		if(domainRecord != null)
+    		{
+    			while(true){
+    				dcs.addAll(_dcDao.findZonesByDomainId(domainRecord.getId()));
+    				if(domainRecord.getParent() != null)
+    					domainRecord = _domainDao.findById(domainRecord.getParent());
+    				else
+    					break;
+    			}
+    		}
+    		//add all public zones too
+    		dcs.addAll(_dcDao.listPublicZones());    		
+    	}else if(account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN){
+    		//it was decided to return all zones for the domain admin, and everything above till root
+    		dcs = new ArrayList<DataCenterVO>();
+    		DomainVO domainRecord = _domainDao.findById(account.getDomainId());
+    		//this covers path till root
+    		if(domainRecord != null)
+    		{
+    			DomainVO localRecord = domainRecord;
+    			while(true){
+    				dcs.addAll(_dcDao.findZonesByDomainId(localRecord.getId()));
+    				if(localRecord.getParent() != null)
+    					localRecord = _domainDao.findById(localRecord.getParent());
+    				else
+    					break;
+    			}
+    		}
+    		//this covers till leaf
+    		if(domainRecord != null){
+    			DomainVO localParent = domainRecord;
+    			DomainVO immediateChild = null;
+    			while(true){
+    				dcs.addAll(_dcDao.findZonesByDomainId(localParent.getId()));
+    				//find immediate child domain
+    				immediateChild = _domainDao.findImmediateChildForParent(localParent.getId());
+    				if(immediateChild != null){
+    					dcs.addAll(_dcDao.findZonesByDomainId(immediateChild.getId()));
+    					localParent = immediateChild;//traverse down the list
+    				}else{
+    					break;
+    				}
+    			}
+    		}   		
+    		//add all public zones too
+    		dcs.addAll(_dcDao.listPublicZones());
+    	}
 
-        Account account = UserContext.current().getAccount();
         Boolean available = cmd.isAvailable();
         if (account != null) {
             if ((available != null) && Boolean.FALSE.equals(available)) {

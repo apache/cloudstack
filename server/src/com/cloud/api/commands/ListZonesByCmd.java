@@ -44,12 +44,18 @@ public class ListZonesByCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.AVAILABLE, type=CommandType.BOOLEAN, description="true if you want to retrieve all available Zones. False if you only want to return the Zones from which you have at least one VM. Default is false.")
     private Boolean available;
 
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the ID of the domain associated with the zone")
+    private Long domainId;
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
     public Boolean isAvailable() {
         return available;
+    }
+    
+    public Long getDomainId(){
+    	return domainId;
     }
 
     /////////////////////////////////////////////////////
@@ -69,6 +75,26 @@ public class ListZonesByCmd extends BaseListCmd {
         List<ZoneResponse> zoneResponses = new ArrayList<ZoneResponse>();
         for (DataCenterVO dataCenter : dataCenters) {
             ZoneResponse zoneResponse = ApiResponseHelper.createZoneResponse(dataCenter);
+
+            ZoneResponse zoneResponse = new ZoneResponse();
+            zoneResponse.setId(dataCenter.getId());
+            zoneResponse.setName(dataCenter.getName());
+
+            if ((dataCenter.getDescription() != null) && !dataCenter.getDescription().equalsIgnoreCase("null")) {
+                zoneResponse.setDescription(dataCenter.getDescription());
+            }
+
+            if ((account == null) || (account.getType() == Account.ACCOUNT_TYPE_ADMIN)) {
+                zoneResponse.setDns1(dataCenter.getDns1());
+                zoneResponse.setDns2(dataCenter.getDns2());
+                zoneResponse.setInternalDns1(dataCenter.getInternalDns1());
+                zoneResponse.setInternalDns2(dataCenter.getInternalDns2());
+                zoneResponse.setVlan(dataCenter.getVnet());
+                zoneResponse.setGuestCidrAddress(dataCenter.getGuestNetworkCidr());
+            }
+
+            zoneResponse.setDomain(dataCenter.getDomain());
+            zoneResponse.setDomainId(dataCenter.getDomainId());
             zoneResponse.setResponseName("zone");
             zoneResponses.add(zoneResponse);
         }
