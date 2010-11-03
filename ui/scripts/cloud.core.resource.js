@@ -293,7 +293,33 @@ function resourceLoadPage(pageToShow, $midmenuItem1) {   //$midmenuItem1 is eith
 function afterLoadResourceJSP($midmenuItem1) {
     hideMiddleMenu();        
     initAddZoneButton($("#midmenu_add_link")); 
-    initDialog("dialog_add_zone");       
+	initUpdateConsoleCertButton($("#midmenu_add2_link"));
+    initDialog("dialog_add_zone");
+	initDialog("dialog_update_cert", 550);
+}
+
+function initUpdateConsoleCertButton($midMenuAddLink2) {
+	$midMenuAddLink2.find("#label").text("Update SSL Certificate");
+	$midMenuAddLink2.show();   
+	$midMenuAddLink2.unbind("click").bind("click", function(event) { 
+		var $certDialog = $("#dialog_update_cert");
+		$certDialog.find("#info_container").hide();
+		$certDialog
+		.dialog('option', 'buttons', {
+			"Add": function() {
+				var $thisDialog = $(this);
+				
+				$thisDialog.dialog("close");  
+			},
+			"Cancel": function() { 
+				var $thisDialog = $(this);
+				
+				$thisDialog.dialog("close"); 
+			}
+		
+		}).dialog("open"); 
+		return false;
+	});
 }
 
 function initAddZoneButton($midmenuAddLink1) {

@@ -85,3 +85,33 @@
    </div>
 </div>
 <!-- END Add Zone Dialog -->
+
+<!-- Update Certificate Dialog -->
+<div id="dialog_update_cert" title="Update Console Proxy SSL Certificate" style="display:none">
+	<p>Please submit a new X.509 compliant SSL certificate to be updated to each console proxy virtual instance:</p>
+
+	<div class="dialog_formcontent">
+		<form action="#" method="post" id="form_acquire">
+			<ol>
+				<li>
+					<label>Certificate:</label>
+					<textarea class="text" name="update_cert" id="update_cert" style="height: 300px; width: 400px" />
+					<div id="update_cert_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+				</li>
+			</ol>
+		</form>
+	</div>
+   <!--Loading box-->
+   <div id="spinning_wheel" class="ui_dialog_loaderbox" style="display:none;">
+   	<div class="ui_dialog_loader"></div>
+       <p>Updating....</p>
+   </div>
+   
+   <!--Confirmation msg box-->
+   <!--Note: for error msg, just have to add error besides everything for eg. add error(class) next to ui_dialog_messagebox error, ui_dialog_msgicon error, ui_dialog_messagebox_text error.  -->
+	<div id="info_container" class="ui_dialog_messagebox error" style="display:none;">
+		<div id="icon" class="ui_dialog_msgicon error"></div>
+        <div id="info" class="ui_dialog_messagebox_text error">(info)</div>
+   </div>
+</div>
+<!-- End Update Certificate Dialog -->
