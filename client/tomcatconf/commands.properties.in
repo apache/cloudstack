@@ -33,10 +33,10 @@ updateResourceLimit=com.cloud.api.commands.UpdateResourceLimitCmd;3
 listResourceLimits=com.cloud.api.commands.ListResourceLimitsCmd;15
 
 #### VM commands
-deployVirtualMachine=com.cloud.api.commands.DeployVm2Cmd;11
+deployVirtualMachine=com.cloud.api.commands.DeployVMCmd;11
 destroyVirtualMachine=com.cloud.api.commands.DestroyVMCmd;15
 rebootVirtualMachine=com.cloud.api.commands.RebootVMCmd;15
-startVirtualMachine=com.cloud.api.commands.StartVm2Cmd;15
+startVirtualMachine=com.cloud.api.commands.StartVMCmd;15
 stopVirtualMachine=com.cloud.api.commands.StopVMCmd;15
 resetPasswordForVirtualMachine=com.cloud.api.commands.ResetVMPasswordCmd;15
 changeServiceForVirtualMachine=com.cloud.api.commands.UpgradeVMCmd;15
