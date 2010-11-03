@@ -371,7 +371,34 @@ function initUpdateConsoleCertButton($midMenuAddLink2) {
 
 function initAddZoneButton($midmenuAddLink1) {
     $midmenuAddLink1.find("#label").text("Add Zone");     
-    $midmenuAddLink1.show();     
+    $midmenuAddLink1.show();  
+        
+    var $dialogAddZone = $("#dialog_add_zone");
+    $dialogAddZone.find("#add_zone_public").unbind("change").bind("change", function(event) {        
+        if($(this).val() == "true") {  //public zone
+            $dialogAddZone.find("#domain_dropdown_container").hide();  
+        }
+        else {  //private zone
+            $dialogAddZone.find("#domain_dropdown_container").show();  
+        }
+        return false;
+    });
+         
+    var domainDropdown = $dialogAddZone.find("#domain_dropdown").empty();	
+	$.ajax({
+	  data: createURL("command=listDomains"+maxPageSize),
+		dataType: "json",
+		async: false,
+		success: function(json) {
+			var domains = json.listdomainsresponse.domain;						
+			if (domains != null && domains.length > 0) {
+				for (var i = 0; i < domains.length; i++) {
+					domainDropdown.append("<option value='" + domains[i].id + "'>" + fromdb(domains[i].name) + "</option>"); 
+				}
+			} 
+		}
+	});   
+       
     $midmenuAddLink1.unbind("click").bind("click", function(event) {  
         $("#dialog_add_zone").find("#info_container").hide();				
     
@@ -427,7 +454,12 @@ function initAddZoneButton($midmenuAddLink1) {
 				
 				var guestcidraddress = trim($thisDialog.find("#add_zone_guestcidraddress").val());
 				moreCriteria.push("&guestcidraddress="+encodeURIComponent(guestcidraddress));	
-										
+								
+				if($thisDialog.find("#domain_dropdown_container").css("display") != "none") {
+				    var domainId = trim($thisDialog.find("#domain_dropdown").val());
+				    moreCriteria.push("&domainid="+domainId);	
+				}
+														
                 $.ajax({
 			        data: createURL("command=createZone"+moreCriteria.join("")),
 				    dataType: "json",

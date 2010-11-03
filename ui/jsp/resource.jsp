@@ -67,7 +67,23 @@
 					<label for="add_zone_guestcidraddress">Guest CIDR:</label>
 					<input class="text" type="text" id="add_zone_guestcidraddress" value="10.1.1.0/24"/>
 					<div id="add_zone_guestcidraddress_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+				</li>				
+				<li>
+					<label>Public?:</label>
+					<select class="select" id="add_zone_public">
+					    <option value="true">Yes</option>		
+						<option value="false">No</option>										
+					</select>
+				</li>	
+				
+				
+				<li id="domain_dropdown_container" style="display:none">
+					<label>Domain:</label>
+					<select class="select" id="domain_dropdown">					
+					</select>
 				</li>
+				
+				
 			</ol>
 		</form>
 	</div>
