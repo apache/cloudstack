@@ -295,7 +295,7 @@ function afterLoadResourceJSP($midmenuItem1) {
     initAddZoneButton($("#midmenu_add_link")); 
 	initUpdateConsoleCertButton($("#midmenu_add2_link"));
     initDialog("dialog_add_zone");
-	initDialog("dialog_update_cert", 550);
+	initDialog("dialog_update_cert", 450);
 }
 
 function initUpdateConsoleCertButton($midMenuAddLink2) {
@@ -308,15 +308,62 @@ function initUpdateConsoleCertButton($midMenuAddLink2) {
 		.dialog('option', 'buttons', {
 			"Add": function() {
 				var $thisDialog = $(this);
+				var isValid = true;					
+				isValid &= validateString("SSL Certificate", $thisDialog.find("#update_cert"), $thisDialog.find("#update_cert_errormsg"), false, 4096);
+				if (!isValid) return;	
+
+				$spinningWheel = $thisDialog.find("#spinning_wheel").show();
 				
-				$thisDialog.dialog("close");  
+				var cert = trim($thisDialog.find("#update_cert").val());
+				
+				$.ajax({
+			        data: createURL("command=uploadCustomCertificate&certificate="+encodeURIComponent(cert)),
+				    dataType: "json",
+				    success: function(json) {
+						var jobId = json.uploadcustomcertificateresponse.jobid;
+						var timerKey = "asyncJob_" + jobId;					                       
+						$("body").everyTime(
+							5000,
+							timerKey,
+							function() {
+								$.ajax({
+									data: createURL("command=queryAsyncJobResult&jobId="+jobId),
+									dataType: "json",									                    					                    
+									success: function(json) {		                                                     							                       
+										var result = json.queryasyncjobresultresponse;										                   
+										if (result.jobstatus == 0) {
+											return; //Job has not completed
+										} else {											                    
+											$("body").stopTime(timerKey);				                        
+											$spinningWheel.hide(); 
+																																		 
+											if (result.jobstatus == 1) { // Succeeded 	
+												$thisDialog.dialog("close");
+												// TODO: Add a confirmation message
+											} else if (result.jobstatus == 2) { // Failed	
+												var errorMsg = result.jobresult.uploadcustomcertificateresponse.errortext;
+												$thisDialog.find("#info_container").text(errorMsg).show();
+											}	
+										}
+									},
+									error: function(XMLHttpResponse) {	                            
+										$("body").stopTime(timerKey);		                       		                        
+										handleErrorInDialog(XMLHttpResponse, $thisDialog); 		                                             
+									}
+								});
+							},
+							0
+						);
+				    },
+			        error: function(XMLHttpResponse) {
+			            handleErrorInDialog(XMLHttpResponse, $thisDialog);			
+			        }
+			    });
 			},
 			"Cancel": function() { 
 				var $thisDialog = $(this);
-				
 				$thisDialog.dialog("close"); 
 			}
-		
 		}).dialog("open"); 
 		return false;
 	});
@@ -348,7 +395,7 @@ function initAddZoneButton($midmenuAddLink1) {
 				if (!isValid) 
 				    return;							
 				
-				$thisDialog.find("#spinning_wheel").show()
+				$thisDialog.find("#spinning_wheel").show();
 				
 				var moreCriteria = [];	
 				

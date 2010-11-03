@@ -1527,7 +1527,7 @@ function validateNumber(label, field, errMsgField, min, max, isOptional) {
 	return isValid;
 }
 
-function validateString(label, field, errMsgField, isOptional) {  
+function validateString(label, field, errMsgField, isOptional, maxLength) {  
     var isValid = true;
     var errMsg = "";
     var value = field.val();     
@@ -1535,8 +1535,8 @@ function validateString(label, field, errMsgField, isOptional) {
 	    errMsg = label + " is a required value. ";	   
 		isValid = false;		
 	} 	
-	else if (value!=null && value.length >= 255) {	    
-	    errMsg = label + " must be less than 255 characters";	   
+	else if (value!=null && value.length >= maxLength) {	    
+	    errMsg = label + " must be less than " + maxLength + " characters";	   
 		isValid = false;		
 	} 	
 	else if(value!=null && value.indexOf('"')!=-1) {

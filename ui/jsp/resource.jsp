@@ -96,7 +96,7 @@
 				<li>
 					<label>Certificate:</label>
 					<textarea class="text" name="update_cert" id="update_cert" style="height: 300px; width: 400px" />
-					<div id="update_cert_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+					<div id="update_cert_errormsg" class="dialog_formcontent_errormsg" style="display:none; width:300px" ></div>
 				</li>
 			</ol>
 		</form>
