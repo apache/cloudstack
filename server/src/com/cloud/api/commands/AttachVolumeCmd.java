@@ -22,6 +22,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -29,7 +30,6 @@ import com.cloud.api.response.VolumeResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.storage.VolumeVO;
 import com.cloud.user.Account;
-import com.cloud.uservm.UserVm;
 import com.cloud.vm.UserVmManager;
 
 @Implementation(method="attachVolumeToVM", manager=UserVmManager.class, description="Attaches a disk volume to a virtual machine.")
@@ -106,22 +106,11 @@ public class AttachVolumeCmd extends BaseAsyncCmd {
         return  "attaching volume: " + getId() + " to vm: " + getVirtualMachineId();
     }
 
-	@Override @SuppressWarnings("unchecked")
-	public VolumeResponse getResponse() {
-	    VolumeVO volume = ApiDBUtils.findVolumeById(id);
-	    VolumeResponse response = new VolumeResponse();
-	    UserVm instance = ApiDBUtils.findUserVmById(volume.getInstanceId());
-	    response.setVirtualMachineName(instance.getName());
-	    response.setVirtualMachineDisplayName(instance.getDisplayName());
-	    response.setVirtualMachineId(instance.getId());
-	    response.setVirtualMachineState(instance.getState().toString());
-	    response.setStorageType("shared"); // NOTE: You can never attach a local disk volume but if that changes, we need to change this
-	    response.setId(volume.getId());
-	    response.setName(volume.getName());
-	    response.setVolumeType(volume.getVolumeType().toString());
-	    response.setResponseName(getName());
-	    if(volume.getDeviceId() != null)
-	    	response.setDeviceId(volume.getDeviceId());
-		return response;
-	}
+    @Override @SuppressWarnings("unchecked")
+    public VolumeResponse getResponse() {
+        VolumeVO volume = (VolumeVO)getResponseObject();
+        VolumeResponse response = ApiResponseHelper.createVolumeResponse(volume);
+        response.setResponseName(getName());
+        return response;
+    }
 }

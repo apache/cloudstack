@@ -23,6 +23,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.log4j.Logger;
+
 import com.cloud.api.response.AccountResponse;
 import com.cloud.api.response.ConfigurationResponse;
 import com.cloud.api.response.DiskOfferingResponse;
@@ -40,6 +42,7 @@ import com.cloud.api.response.SystemVmResponse;
 import com.cloud.api.response.UserResponse;
 import com.cloud.api.response.UserVmResponse;
 import com.cloud.api.response.VlanIpRangeResponse;
+import com.cloud.api.response.VolumeResponse;
 import com.cloud.api.response.ZoneResponse;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.configuration.ConfigurationVO;
@@ -51,6 +54,7 @@ import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
 import com.cloud.domain.DomainVO;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
 import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
@@ -68,6 +72,7 @@ import com.cloud.storage.Snapshot.SnapshotType;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.test.PodZoneConfig;
 import com.cloud.user.Account;
@@ -86,6 +91,8 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VmStats;
 
 public class ApiResponseHelper {
+    
+    public static final Logger s_logger = Logger.getLogger(ApiResponseHelper.class.getName());
     
     public static UserResponse createUserResponse (UserAccount user) {
         UserResponse userResponse = new UserResponse();
@@ -761,6 +768,86 @@ public class ApiResponseHelper {
        return zoneResponse;
    }
    
+   public static VolumeResponse createVolumeResponse (VolumeVO volume) {
+       VolumeResponse volResponse = new VolumeResponse();
+       volResponse.setId(volume.getId());
+
+       AsyncJobVO asyncJob = ApiDBUtils.findInstancePendingAsyncJob("volume", volume.getId());
+       if (asyncJob != null) {
+           volResponse.setJobId(asyncJob.getId());
+           volResponse.setJobStatus(asyncJob.getStatus());
+       } 
+
+       if (volume.getName() != null) {
+           volResponse.setName(volume.getName());
+       } else {
+           volResponse.setName("");
+       }
+       
+       volResponse.setZoneId(volume.getDataCenterId());
+       volResponse.setZoneName(ApiDBUtils.findZoneById(volume.getDataCenterId()).getName());
+
+       volResponse.setVolumeType(volume.getVolumeType().toString());
+       volResponse.setDeviceId(volume.getDeviceId());
+       
+       Long instanceId = volume.getInstanceId();
+       if (instanceId != null) {
+           VMInstanceVO vm = ApiDBUtils.findVMInstanceById(instanceId);
+           volResponse.setVirtualMachineId(vm.getId());
+           volResponse.setVirtualMachineName(vm.getName());
+           volResponse.setVirtualMachineDisplayName(vm.getName());
+           volResponse.setVirtualMachineState(vm.getState().toString());
+       }             
+
+       // Show the virtual size of the volume
+       volResponse.setSize(volume.getSize());
+
+       volResponse.setCreated(volume.getCreated());
+       volResponse.setState(volume.getStatus().toString());
+       
+       Account accountTemp = ApiDBUtils.findAccountById(volume.getAccountId());
+       if (accountTemp != null) {
+           volResponse.setAccountName(accountTemp.getAccountName());
+           volResponse.setDomainId(accountTemp.getDomainId());
+           volResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
+       }
+
+       String storageType;
+       try {
+           if(volume.getPoolId() == null){
+               if (volume.getState() == Volume.State.Allocated) {
+                   /*set it as shared, so the UI can attach it to VM*/
+                   storageType = "shared";
+               } else {
+                   storageType = "unknown";
+               }
+           } else {
+               storageType = ApiDBUtils.volumeIsOnSharedStorage(volume.getId()) ? "shared" : "local";
+           }
+       } catch (InvalidParameterValueException e) {
+           s_logger.error(e.getMessage(), e);
+           throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Volume " + volume.getName() + " does not have a valid ID");
+       }
+
+       volResponse.setStorageType(storageType);            
+       volResponse.setDiskOfferingId(volume.getDiskOfferingId());
+
+       DiskOfferingVO diskOffering = ApiDBUtils.findDiskOfferingById(volume.getDiskOfferingId());
+       volResponse.setDiskOfferingName(diskOffering.getName());
+       volResponse.setDiskOfferingDisplayText(diskOffering.getDisplayText());
+
+       Long poolId = volume.getPoolId();
+       String poolName = (poolId == null) ? "none" : ApiDBUtils.findStoragePoolById(poolId).getName();
+       volResponse.setStoragePoolName(poolName);
+       volResponse.setSourceId(volume.getSourceId());
+       if (volume.getSourceType() != null) {
+           volResponse.setSourceType(volume.getSourceType().toString());
+       }
+       volResponse.setHypervisor(ApiDBUtils.getVolumeHyperType(volume.getId()).toString());
+       volResponse.setAttached(volume.getAttached());
+       
+       return volResponse;
+   }
    
    
 }

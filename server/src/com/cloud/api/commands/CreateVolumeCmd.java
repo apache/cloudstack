@@ -22,12 +22,12 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.VolumeResponse;
 import com.cloud.event.EventTypes;
-import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.VolumeVO;
 import com.cloud.user.Account;
@@ -143,35 +143,9 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     @Override @SuppressWarnings("unchecked")
     public VolumeResponse getResponse() {
         VolumeVO volume = (VolumeVO)getResponseObject();
-
-        VolumeResponse response = new VolumeResponse();
-        response.setId(volume.getId());
-        response.setName(volume.getName());
-        response.setVolumeType(volume.getVolumeType().toString());
-        response.setSize(volume.getSize());
-        response.setCreated(volume.getCreated());
-        response.setState(volume.getStatus().toString());
-        response.setAccountName(ApiDBUtils.findAccountById(volume.getAccountId()).getAccountName());
-        response.setDomainId(volume.getDomainId());
-        response.setDiskOfferingId(volume.getDiskOfferingId());
-
-        DiskOfferingVO diskOffering = ApiDBUtils.findDiskOfferingById(volume.getDiskOfferingId());
-        response.setDiskOfferingName(diskOffering.getName());
-        response.setDiskOfferingDisplayText(diskOffering.getDisplayText());
-
-        response.setDomainName(ApiDBUtils.findDomainById(volume.getDomainId()).getName());
-        response.setStorageType("shared"); // NOTE: You can never create a local disk volume but if that changes, we need to change this
-        if (volume.getPoolId() != null) {
-            response.setStoragePoolName(ApiDBUtils.findStoragePoolById(volume.getPoolId()).getName());
-        }
-
-        // if the volume was created from a snapshot, snapshotId will be set so we pass it back in the response
-        response.setSnapshotId(getSnapshotId());
-        response.setZoneId(volume.getDataCenterId());
-        response.setZoneName(ApiDBUtils.findZoneById(volume.getDataCenterId()).getName());
-        if(volume.getDeviceId() != null){
-        	response.setDeviceId(volume.getDeviceId());
-        }
+        VolumeResponse response = ApiResponseHelper.createVolumeResponse(volume);
+        //FIXME - have to be moved to ApiResponseHelper
+        response.setSnapshotId(getSnapshotId());  // if the volume was created from a snapshot, snapshotId will be set so we pass it back in the response
         response.setResponseName(getName());
         return response;
     }

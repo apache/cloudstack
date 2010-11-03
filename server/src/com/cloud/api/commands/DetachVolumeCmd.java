@@ -21,6 +21,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -115,11 +116,11 @@ public class DetachVolumeCmd extends BaseAsyncCmd {
         return  "detaching volume" + sb.toString();
     }
 
-	@Override @SuppressWarnings("unchecked")
-	public VolumeResponse getResponse() {
-        VolumeResponse response = (VolumeResponse)getResponseObject();     
-        if(deviceId!=null)
-        	response.setDeviceId(deviceId);
+    @Override @SuppressWarnings("unchecked")
+    public VolumeResponse getResponse() {
+        VolumeVO volume = (VolumeVO)getResponseObject();
+        VolumeResponse response = ApiResponseHelper.createVolumeResponse(volume);
+        response.setResponseName(getName());
         return response;
-	}
+    }
 }

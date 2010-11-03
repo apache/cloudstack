@@ -31,7 +31,6 @@ import com.cloud.api.commands.StartVMCmd;
 import com.cloud.api.commands.StopVMCmd;
 import com.cloud.api.commands.UpdateVMCmd;
 import com.cloud.api.commands.UpgradeVMCmd;
-import com.cloud.api.response.VolumeResponse;
 import com.cloud.async.executor.OperationResponse;
 import com.cloud.async.executor.RebootVMExecutor;
 import com.cloud.async.executor.VMOperationParam;
@@ -43,6 +42,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.Volume;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.exception.ExecutionException;
@@ -65,17 +65,18 @@ public interface UserVmService extends Manager {
     /**
      * Attaches the specified volume to the specified VM
      * @param cmd - the command specifying volumeId and vmId
+     * @return the Volume object if attach worked successfully.
      * @throws InvalidParameterValueException, PermissionDeniedException
      */
-    void attachVolumeToVM(AttachVolumeCmd cmd);
+    Volume attachVolumeToVM(AttachVolumeCmd cmd);
     
     /**
      * Detaches the specified volume from the VM it is currently attached to.
      * @param cmd - the command specifying volumeId
-     * @return the VolumeResponse object if detach worked successfully.
+     * @return the Volume object if detach worked successfully.
      * @throws InvalidParameterValueException 
      */
-    VolumeResponse detachVolumeFromVM(DetachVolumeCmd cmmd);
+    Volume detachVolumeFromVM(DetachVolumeCmd cmmd);
     
     UserVm startVirtualMachine(StartVMCmd cmd) throws StorageUnavailableException, ExecutionException, ConcurrentOperationException;
     UserVm stopVirtualMachine(StopVMCmd cmd);

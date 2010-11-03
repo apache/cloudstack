@@ -79,7 +79,6 @@ import com.cloud.api.commands.StartVMCmd;
 import com.cloud.api.commands.StopVMCmd;
 import com.cloud.api.commands.UpdateVMCmd;
 import com.cloud.api.commands.UpgradeVMCmd;
-import com.cloud.api.response.VolumeResponse;
 import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobResult;
@@ -357,7 +356,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     }
     
     @Override
-    public void attachVolumeToVM(AttachVolumeCmd command) {
+    public Volume attachVolumeToVM(AttachVolumeCmd command) {
     	Long vmId = command.getVirtualMachineId();
     	Long volumeId = command.getId();
     	Long deviceId = command.getDeviceId();
@@ -584,6 +583,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
             	event.setDescription("Volume: " +volume.getName()+ " successfully attached to VM: "+vm.getName());
             event.setLevel(EventVO.LEVEL_INFO);
             _eventDao.persist(event);
+            return _volsDao.findById(volumeId);
     	} else {
     		if (answer != null) {
     			String details = answer.getDetails();
@@ -595,7 +595,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     }
     
     @Override
-    public VolumeResponse detachVolumeFromVM(DetachVolumeCmd cmmd) {    	
+    public Volume detachVolumeFromVM(DetachVolumeCmd cmmd) {    	
     	Account account = UserContext.current().getAccount();
     	if ((cmmd.getId() == null && cmmd.getDeviceId() == null && cmmd.getVirtualMachineId() == null) ||
     	    (cmmd.getId() != null && (cmmd.getDeviceId() != null || cmmd.getVirtualMachineId() != null)) ||
@@ -710,20 +710,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
             event.setLevel(EventVO.LEVEL_INFO);
             _eventDao.persist(event);
             
-            // Prepare the response object
-            VolumeResponse response = new VolumeResponse();            
-            response.setVirtualMachineName(vm.getName());
-            response.setVirtualMachineDisplayName(vm.getDisplayName());
-            response.setVirtualMachineId(vm.getId());
-            response.setVirtualMachineState(vm.getState().toString());
-            response.setStorageType("shared"); // NOTE: You can never attach a local disk volume but if that changes, we need to change this
-            response.setId(volume.getId());
-            response.setName(volume.getName());
-            response.setVolumeType(volume.getVolumeType().toString());
-            response.setResponseName(cmmd.getName());
-            if(volume.getDeviceId() != null)
-            	response.setDeviceId(volume.getDeviceId());
-            return response;
+            return _volsDao.findById(volumeId);
     	} else {
     		
     		if (answer != null) {
