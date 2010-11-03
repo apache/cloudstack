@@ -23,13 +23,12 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.UserVmResponse;
-import com.cloud.user.Account;
 import com.cloud.vm.UserVmVO;
 
 @Implementation(method="listLoadBalancerInstances", description="List all virtual machine instances that are assigned to a load balancer rule.")
@@ -76,19 +75,7 @@ public class ListLoadBalancerRuleInstancesCmd extends BaseListCmd {
         ListResponse<UserVmResponse> response = new ListResponse<UserVmResponse>();
         List<UserVmResponse> vmResponses = new ArrayList<UserVmResponse>();
         for (UserVmVO instance : instances) {
-            UserVmResponse userVmResponse = new UserVmResponse();
-            userVmResponse.setId(instance.getId());
-            userVmResponse.setName(instance.getName());
-            userVmResponse.setDisplayName(instance.getDisplayName());
-            userVmResponse.setIpAddress(instance.getPrivateIpAddress());
-
-            Account accountTemp = ApiDBUtils.findAccountById(instance.getAccountId());
-            if (accountTemp != null) {
-                userVmResponse.setAccountName(accountTemp.getAccountName());
-                userVmResponse.setDomainId(accountTemp.getDomainId());
-                userVmResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
-            }
-
+            UserVmResponse userVmResponse = ApiResponseHelper.createUserVmResponse(instance);
             userVmResponse.setResponseName("loadbalancerruleinstance");
             vmResponses.add(userVmResponse);
         }

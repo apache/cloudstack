@@ -24,17 +24,13 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.IPAddressResponse;
 import com.cloud.api.response.ListResponse;
-import com.cloud.dc.Vlan.VlanType;
-import com.cloud.dc.VlanVO;
 import com.cloud.network.IPAddressVO;
-import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @Implementation(method="searchForIPAddresses", description="Lists all public ip addresses")
 public class ListPublicIpAddressesCmd extends BaseListCmd {
@@ -115,35 +111,7 @@ public class ListPublicIpAddressesCmd extends BaseListCmd {
         ListResponse<IPAddressResponse> response = new ListResponse<IPAddressResponse>();
         List<IPAddressResponse> ipAddrResponses = new ArrayList<IPAddressResponse>();
         for (IPAddressVO ipAddress : ipAddresses) {
-            VlanVO vlan  = ApiDBUtils.findVlanById(ipAddress.getVlanDbId());
-            boolean forVirtualNetworks = vlan.getVlanType().equals(VlanType.VirtualNetwork);
-
-            IPAddressResponse ipResponse = new IPAddressResponse();
-            ipResponse.setIpAddress(ipAddress.getAddress());
-            if (ipAddress.getAllocated() != null) {
-                ipResponse.setAllocated(ipAddress.getAllocated());
-            }
-            ipResponse.setZoneId(ipAddress.getDataCenterId());
-            ipResponse.setZoneName(ApiDBUtils.findZoneById(ipAddress.getDataCenterId()).getName());
-            ipResponse.setSourceNat(ipAddress.isSourceNat());
-
-            //get account information
-            Account accountTemp = ApiDBUtils.findAccountById(ipAddress.getAccountId());
-            if (accountTemp !=null){
-                ipResponse.setAccountName(accountTemp.getAccountName());
-                ipResponse.setDomainId(accountTemp.getDomainId());
-                ipResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
-            } 
-            
-            ipResponse.setForVirtualNetwork(forVirtualNetworks);
-
-            //show this info to admin only
-            Account account = (Account)UserContext.current().getAccount();
-            if ((account == null)  || isAdmin(account.getType())) {
-                ipResponse.setVlanId(ipAddress.getVlanDbId());
-                ipResponse.setVlanName(ApiDBUtils.findVlanById(ipAddress.getVlanDbId()).getVlanId());
-            }
-
+            IPAddressResponse ipResponse = ApiResponseHelper.createIPAddressResponse(ipAddress);
             ipResponse.setResponseName("publicipaddress");
             ipAddrResponses.add(ipResponse);
         }

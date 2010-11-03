@@ -21,6 +21,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -109,19 +110,7 @@ public class UpdateLoadBalancerRuleCmd extends BaseAsyncCmd {
 	@Override @SuppressWarnings("unchecked")
 	public LoadBalancerResponse getResponse() {
 	    LoadBalancerVO loadBalancer = (LoadBalancerVO)getResponseObject();
-
-	    LoadBalancerResponse response = new LoadBalancerResponse();
-        response.setAlgorithm(loadBalancer.getAlgorithm());
-        response.setDescription(loadBalancer.getDescription());
-        response.setId(loadBalancer.getId());
-        response.setName(loadBalancer.getName());
-        response.setPrivatePort(loadBalancer.getPrivatePort());
-        response.setPublicIp(loadBalancer.getIpAddress());
-        response.setPublicPort(loadBalancer.getPublicPort());
-        response.setAccountName(loadBalancer.getAccountName());
-        response.setDomainId(loadBalancer.getDomainId());
-        response.setDomainName(ApiDBUtils.findDomainById(loadBalancer.getDomainId()).getName());
-
+	    LoadBalancerResponse response = ApiResponseHelper.createLoadBalancerResponse(loadBalancer);
         response.setResponseName(getName());
         return response;
 	}

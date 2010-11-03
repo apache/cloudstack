@@ -23,16 +23,13 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.VlanIpRangeResponse;
-import com.cloud.dc.HostPodVO;
-import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
-import com.cloud.user.Account;
 
 @Implementation(method="searchForVlans", description="Lists all VLAN IP ranges.")
 public class ListVlanIpRangesCmd extends BaseListCmd {
@@ -105,33 +102,8 @@ public class ListVlanIpRangesCmd extends BaseListCmd {
 
         ListResponse<VlanIpRangeResponse> response = new ListResponse<VlanIpRangeResponse>();
         List<VlanIpRangeResponse> vlanResponses = new ArrayList<VlanIpRangeResponse>();
-        for (VlanVO vlan : vlans) {
-            Long accountId = ApiDBUtils.getAccountIdForVlan(vlan.getId());
-            Long podId = ApiDBUtils.getPodIdForVlan(vlan.getId());
-
-            VlanIpRangeResponse vlanResponse = new VlanIpRangeResponse();
-            vlanResponse.setId(vlan.getId());
-            vlanResponse.setForVirtualNetwork(vlan.getVlanType().equals(VlanType.VirtualNetwork));
-            vlanResponse.setVlan(vlan.getVlanId());
-            vlanResponse.setZoneId(vlan.getDataCenterId());
-            
-            if (accountId != null) {
-                Account account = ApiDBUtils.findAccountById(accountId);
-                vlanResponse.setAccountName(account.getAccountName());
-                vlanResponse.setDomainId(account.getDomainId());
-                vlanResponse.setDomainName(ApiDBUtils.findDomainById(account.getDomainId()).getName());
-            }
-
-            if (podId != null) {
-                HostPodVO pod = ApiDBUtils.findPodById(podId);
-                vlanResponse.setPodId(podId);
-                vlanResponse.setPodName(pod.getName());
-            }
-
-            vlanResponse.setGateway(vlan.getVlanGateway());
-            vlanResponse.setNetmask(vlan.getVlanNetmask());
-            vlanResponse.setDescription(vlan.getIpRange());
-
+        for (VlanVO vlan : vlans) {  
+            VlanIpRangeResponse vlanResponse = ApiResponseHelper.createVlanIpRangeResponse(vlan);
             vlanResponse.setResponseName("vlaniprange");
             vlanResponses.add(vlanResponse);
         }

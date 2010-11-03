@@ -29,6 +29,8 @@ import com.cloud.api.response.DiskOfferingResponse;
 import com.cloud.api.response.DomainResponse;
 import com.cloud.api.response.DomainRouterResponse;
 import com.cloud.api.response.HostResponse;
+import com.cloud.api.response.IPAddressResponse;
+import com.cloud.api.response.LoadBalancerResponse;
 import com.cloud.api.response.ResourceLimitResponse;
 import com.cloud.api.response.ServiceOfferingResponse;
 import com.cloud.api.response.SnapshotPolicyResponse;
@@ -36,16 +38,22 @@ import com.cloud.api.response.SnapshotResponse;
 import com.cloud.api.response.SystemVmResponse;
 import com.cloud.api.response.UserResponse;
 import com.cloud.api.response.UserVmResponse;
+import com.cloud.api.response.VlanIpRangeResponse;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.dc.ClusterVO;
+import com.cloud.dc.HostPodVO;
+import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.VlanVO;
 import com.cloud.domain.DomainVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status.Event;
+import com.cloud.network.IPAddressVO;
+import com.cloud.network.LoadBalancerVO;
 import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.server.Criteria;
@@ -622,4 +630,88 @@ public class ApiResponseHelper {
        
        return hostResponse;
    }
+   
+   public static VlanIpRangeResponse createVlanIpRangeResponse (VlanVO vlan) {
+       Long accountId = ApiDBUtils.getAccountIdForVlan(vlan.getId());
+       Long podId = ApiDBUtils.getPodIdForVlan(vlan.getId());
+
+       VlanIpRangeResponse vlanResponse = new VlanIpRangeResponse();
+       vlanResponse.setId(vlan.getId());
+       vlanResponse.setForVirtualNetwork(vlan.getVlanType().equals(VlanType.VirtualNetwork));
+       vlanResponse.setVlan(vlan.getVlanId());
+       vlanResponse.setZoneId(vlan.getDataCenterId());
+       
+       if (accountId != null) {
+           Account account = ApiDBUtils.findAccountById(accountId);
+           vlanResponse.setAccountName(account.getAccountName());
+           vlanResponse.setDomainId(account.getDomainId());
+           vlanResponse.setDomainName(ApiDBUtils.findDomainById(account.getDomainId()).getName());
+       }
+
+       if (podId != null) {
+           HostPodVO pod = ApiDBUtils.findPodById(podId);
+           vlanResponse.setPodId(podId);
+           vlanResponse.setPodName(pod.getName());
+       }
+
+       vlanResponse.setGateway(vlan.getVlanGateway());
+       vlanResponse.setNetmask(vlan.getVlanNetmask());
+       vlanResponse.setDescription(vlan.getIpRange());
+       
+       return vlanResponse;
+   }
+   
+   public static IPAddressResponse createIPAddressResponse (IPAddressVO ipAddress) {
+       VlanVO vlan  = ApiDBUtils.findVlanById(ipAddress.getVlanDbId());
+       boolean forVirtualNetworks = vlan.getVlanType().equals(VlanType.VirtualNetwork);
+
+       IPAddressResponse ipResponse = new IPAddressResponse();
+       ipResponse.setIpAddress(ipAddress.getAddress());
+       if (ipAddress.getAllocated() != null) {
+           ipResponse.setAllocated(ipAddress.getAllocated());
+       }
+       ipResponse.setZoneId(ipAddress.getDataCenterId());
+       ipResponse.setZoneName(ApiDBUtils.findZoneById(ipAddress.getDataCenterId()).getName());
+       ipResponse.setSourceNat(ipAddress.isSourceNat());
+
+       //get account information
+       Account accountTemp = ApiDBUtils.findAccountById(ipAddress.getAccountId());
+       if (accountTemp !=null){
+           ipResponse.setAccountName(accountTemp.getAccountName());
+           ipResponse.setDomainId(accountTemp.getDomainId());
+           ipResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
+       } 
+       
+       ipResponse.setForVirtualNetwork(forVirtualNetworks);
+
+       //show this info to admin only
+       Account account = (Account)UserContext.current().getAccount();
+       if ((account == null)  || account.getType() == Account.ACCOUNT_TYPE_ADMIN) {
+           ipResponse.setVlanId(ipAddress.getVlanDbId());
+           ipResponse.setVlanName(ApiDBUtils.findVlanById(ipAddress.getVlanDbId()).getVlanId());
+       }
+       
+       return ipResponse;
+   }
+   
+   public static LoadBalancerResponse createLoadBalancerResponse (LoadBalancerVO loadBalancer) {
+       LoadBalancerResponse lbResponse = new LoadBalancerResponse();
+       lbResponse.setId(loadBalancer.getId());
+       lbResponse.setName(loadBalancer.getName());
+       lbResponse.setDescription(loadBalancer.getDescription());
+       lbResponse.setPublicIp(loadBalancer.getIpAddress());
+       lbResponse.setPublicPort(loadBalancer.getPublicPort());
+       lbResponse.setPrivatePort(loadBalancer.getPrivatePort());
+       lbResponse.setAlgorithm(loadBalancer.getAlgorithm());
+
+       Account accountTemp = ApiDBUtils.findAccountById(loadBalancer.getAccountId());
+       if (accountTemp != null) {
+           lbResponse.setAccountName(accountTemp.getAccountName());
+           lbResponse.setDomainId(accountTemp.getDomainId());
+           lbResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
+       }
+       
+       return lbResponse;
+   }
+   
 }

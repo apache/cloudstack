@@ -24,14 +24,13 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.LoadBalancerResponse;
 import com.cloud.network.LoadBalancerVO;
-import com.cloud.user.Account;
 
 @Implementation(method="searchForLoadBalancers", description="Lists load balancer rules.")
 public class ListLoadBalancerRulesCmd extends BaseListCmd {
@@ -105,22 +104,7 @@ public class ListLoadBalancerRulesCmd extends BaseListCmd {
         ListResponse<LoadBalancerResponse> response = new ListResponse<LoadBalancerResponse>();
         List<LoadBalancerResponse> lbResponses = new ArrayList<LoadBalancerResponse>();
         for (LoadBalancerVO loadBalancer : loadBalancers) {
-            LoadBalancerResponse lbResponse = new LoadBalancerResponse();
-            lbResponse.setId(loadBalancer.getId());
-            lbResponse.setName(loadBalancer.getName());
-            lbResponse.setDescription(loadBalancer.getDescription());
-            lbResponse.setPublicIp(loadBalancer.getIpAddress());
-            lbResponse.setPublicPort(loadBalancer.getPublicPort());
-            lbResponse.setPrivatePort(loadBalancer.getPrivatePort());
-            lbResponse.setAlgorithm(loadBalancer.getAlgorithm());
-
-            Account accountTemp = ApiDBUtils.findAccountById(loadBalancer.getAccountId());
-            if (accountTemp != null) {
-                lbResponse.setAccountName(accountTemp.getAccountName());
-                lbResponse.setDomainId(accountTemp.getDomainId());
-                lbResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
-            }
-
+            LoadBalancerResponse lbResponse = ApiResponseHelper.createLoadBalancerResponse(loadBalancer);
             lbResponse.setResponseName("loadbalancerrule");
             lbResponses.add(lbResponse);
         }

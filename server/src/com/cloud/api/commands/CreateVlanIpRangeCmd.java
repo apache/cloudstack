@@ -21,7 +21,7 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -126,30 +126,7 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
     @Override @SuppressWarnings("unchecked")
     public VlanIpRangeResponse getResponse() {
         VlanVO vlan = (VlanVO)getResponseObject();
-
-        String domainNameResponse = null;
-        if ((accountName != null) && (domainId != null)) {
-            domainNameResponse = ApiDBUtils.findDomainById(domainId).getName();
-        }
-
-        VlanIpRangeResponse response = new VlanIpRangeResponse();
-        response.setAccountName(accountName);
-        response.setDescription(vlan.getIpRange());
-        response.setDomainId(domainId);
-        response.setEndIp(endIp);
-        response.setForVirtualNetwork(forVirtualNetwork);
-        response.setGateway(vlan.getVlanGateway());
-        response.setId(vlan.getId());
-        response.setNetmask(vlan.getVlanNetmask());
-        response.setPodId(podId);
-        response.setStartIp(startIp);
-        response.setVlan(vlan.getVlanId());
-        response.setZoneId(vlan.getDataCenterId());
-        response.setDomainName(domainNameResponse);
-        if (podId != null) {
-            response.setPodName(ApiDBUtils.findPodById(podId).getName());
-        }
-
+        VlanIpRangeResponse response = ApiResponseHelper.createVlanIpRangeResponse(vlan);
         response.setResponseName(getName());
         return response;
     }
