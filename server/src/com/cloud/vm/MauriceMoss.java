@@ -98,7 +98,7 @@ public class MauriceMoss implements VmManager, ClusterManagerListener {
     @Inject private AccountDao _accountDao;
     @Inject private DomainDao _domainDao;
     @Inject private ClusterManager _clusterMgr;
-    @Inject private StartWorkDao _workDao;
+    @Inject private ItWorkDao _workDao;
     
     @Inject(adapter=DeploymentPlanner.class)
     private Adapters<DeploymentPlanner> _planners;
