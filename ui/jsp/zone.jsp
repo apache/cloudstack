@@ -76,6 +76,8 @@
                     <div class="grid_row_cell" style="width: 79%;">
                         <div class="row_celltitles" id="name">
                         </div>
+                        <input class="text" id="name_edit" style="width: 200px; display: none;" type="text" />
+	                    <div id="name_edit_errormsg" style="display:none"></div>       
                     </div>
                 </div>
                 <div class="grid_rows odd">
@@ -86,6 +88,8 @@
                     <div class="grid_row_cell" style="width: 79%;">
                         <div class="row_celltitles" id="dns1">
                         </div>
+                        <input class="text" id="dns1_edit" style="width: 200px; display: none;" type="text" />
+	                    <div id="dns1_edit_errormsg" style="display:none"></div>       
                     </div>
                 </div>
                 <div class="grid_rows even">
@@ -96,6 +100,8 @@
                     <div class="grid_row_cell" style="width: 79%;">
                         <div class="row_celltitles" id="dns2">
                         </div>
+                        <input class="text" id="dns2_edit" style="width: 200px; display: none;" type="text" />
+	                    <div id="dns2_edit_errormsg" style="display:none"></div>       
                     </div>
                 </div>
                 <div class="grid_rows odd">
@@ -106,6 +112,8 @@
                     <div class="grid_row_cell" style="width: 79%;">
                         <div class="row_celltitles" id="internaldns1">
                         </div>
+                        <input class="text" id="internaldns1_edit" style="width: 200px; display: none;" type="text" />
+	                    <div id="internaldns1_edit_errormsg" style="display:none"></div>       
                     </div>
                 </div>
                 <div class="grid_rows even">
@@ -116,6 +124,8 @@
                     <div class="grid_row_cell" style="width: 79%;">
                         <div class="row_celltitles" id="internaldns2">
                         </div>
+                        <input class="text" id="internaldns2_edit" style="width: 200px; display: none;" type="text" />
+	                    <div id="internaldns2_edit_errormsg" style="display:none"></div>       
                     </div>
                 </div>
                 <div class="grid_rows odd">
@@ -126,6 +136,10 @@
                     <div class="grid_row_cell" style="width: 79%;">
                         <div class="row_celltitles" id="vlan">
                         </div>
+                        <input class="text" id="startvlan_edit" style="width: 100px; display: none;" type="text" />
+	                    <div id="startvlan_edit_errormsg" style="display:none"></div>  	                    
+	                    <input class="text" id="endvlan_edit" style="width: 100px; display: none;" type="text" />
+	                    <div id="endvlan_edit_errormsg" style="display:none"></div>            
                     </div>
                 </div>
                 <div class="grid_rows even">
@@ -136,9 +150,19 @@
                     <div class="grid_row_cell" style="width: 79%;">
                         <div class="row_celltitles" id="guestcidraddress">
                         </div>
+                        <input class="text" id="guestcidraddress_edit" style="width: 200px; display: none;" type="text" />
+	                    <div id="guestcidraddress_edit_errormsg" style="display:none"></div>       
                     </div>
                 </div>
             </div>
+            
+            
+            <div class="grid_botactionpanel">
+	        	<div class="gridbot_buttons" id="save_button" style="display:none;">Save</div>
+	            <div class="gridbot_buttons" id="cancel_button" style="display:none;">Cancel</div>
+	        </div> 
+            
+            
         </div>
     </div>
     <!-- Details tab (end)-->

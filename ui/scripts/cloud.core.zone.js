@@ -65,13 +65,38 @@ function zoneJsonToDetailsTab($leftmenuItem1) {
     $detailsTab.data("jsonObj", jsonObj);           
     $detailsTab.find("#id").text(jsonObj.id);
     $detailsTab.find("#title").text(fromdb(jsonObj.name));
+    
     $detailsTab.find("#name").text(fromdb(jsonObj.name));
+    $detailsTab.find("#name_edit").val(fromdb(jsonObj.name));
+    
     $detailsTab.find("#dns1").text(fromdb(jsonObj.dns1));
+    $detailsTab.find("#dns1_edit").val(fromdb(jsonObj.dns1));
+    
     $detailsTab.find("#dns2").text(fromdb(jsonObj.dns2));
+    $detailsTab.find("#dns2_edit").val(fromdb(jsonObj.dns2));
+    
     $detailsTab.find("#internaldns1").text(fromdb(jsonObj.internaldns1));
-    $detailsTab.find("#internaldns2").text(fromdb(jsonObj.internaldns2));	
+    $detailsTab.find("#internaldns1_edit").val(fromdb(jsonObj.internaldns1));
+    
+    $detailsTab.find("#internaldns2").text(fromdb(jsonObj.internaldns2));
+    $detailsTab.find("#internaldns2_edit").val(fromdb(jsonObj.internaldns2));
+    	
     $detailsTab.find("#vlan").text(fromdb(jsonObj.vlan));
+    var vlan = fromdb(jsonObj.vlan);
+    if(vlan != null) {
+		if(vlan.indexOf("-")!==-1) {
+			var startVlan = vlan.substring(0, vlan.indexOf("-"));
+			var endVlan = vlan.substring((vlan.indexOf("-")+1));	
+			$detailsTab.find("#startvlan_edit").val(startVlan);
+			$detailsTab.find("#endvlan_edit").val(endVlan);			
+		}
+		else {
+		    $detailsTab.find("#startvlan_edit").val(vlan);					        
+		}
+	}   
+        
     $detailsTab.find("#guestcidraddress").text(fromdb(jsonObj.guestcidraddress));   
+    $detailsTab.find("#guestcidraddress_edit").val(fromdb(jsonObj.guestcidraddress));   
     
     //actions ***   
     var $actionLink = $detailsTab.find("#action_link"); 
@@ -84,7 +109,8 @@ function zoneJsonToDetailsTab($leftmenuItem1) {
         return false;
     });	  
     var $actionMenu = $detailsTab.find("#action_link #action_menu");
-    $actionMenu.find("#action_list").empty();        
+    $actionMenu.find("#action_list").empty();      
+    buildActionLinkForDetailsTab("Edit Zone", zoneActionMap, $actionMenu, $leftmenuItem1, $detailsTab);    
     buildActionLinkForDetailsTab("Delete Zone", zoneActionMap, $actionMenu, $leftmenuItem1, $detailsTab);     
 }	  
 
@@ -624,6 +650,9 @@ function doDeleteSecondaryStorage($actionLink, $subgridItem) {
 }
 
 var zoneActionMap = {
+    "Edit Zone": {
+        dialogBeforeActionFn: doEditZone  
+    },
     "Delete Zone": {  
         api: "deleteZone",            
         isAsyncJob: false,        
@@ -638,3 +667,90 @@ var zoneActionMap = {
     }
 }
 
+
+function doEditZone($actionLink, $detailsTab, $midmenuItem1) {       
+    var $readonlyFields  = $detailsTab.find("#name, #dns1, #dns2, #internaldns1, #internaldns2, #vlan, #guestcidraddress");
+    var $editFields = $detailsTab.find("#name_edit, #dns1_edit, #dns2_edit, #internaldns1_edit, #internaldns2_edit, #startvlan_edit, #endvlan_edit, #guestcidraddress_edit");
+           
+    $readonlyFields.hide();
+    $editFields.show();  
+    $detailsTab.find("#cancel_button, #save_button").show();
+    
+    $detailsTab.find("#cancel_button").unbind("click").bind("click", function(event){    
+        $editFields.hide();
+        $readonlyFields.show();   
+        $("#save_button, #cancel_button").hide();       
+        return false;
+    });
+    $detailsTab.find("#save_button").unbind("click").bind("click", function(event){        
+        doEditZone2($actionLink, $detailsTab, $midmenuItem1);     
+        $editFields.hide();      
+        $readonlyFields.show();       
+        $("#save_button, #cancel_button").hide();       
+        return false;
+    });   
+}
+
+function doEditZone2($actionLink, $detailsTab, $midmenuItem1) {    
+    // validate values
+	var isValid = true;			
+	isValid &= validateString("Name", $detailsTab.find("#name_edit"), $detailsTab.find("#name_edit_errormsg"));
+	isValid &= validateIp("DNS 1", $detailsTab.find("#dns1_edit"), $detailsTab.find("#dns1_edit_errormsg"), false);	//required
+	isValid &= validateIp("DNS 2", $detailsTab.find("#dns2_edit"), $detailsTab.find("#dns2_edit_errormsg"), true);	//optional	
+	isValid &= validateIp("Internal DNS 1", $detailsTab.find("#internaldns1_edit"), $detailsTab.find("#internaldns1_edit_errormsg"), false);	//required
+	isValid &= validateIp("Internal DNS 2", $detailsTab.find("#internaldns2_edit"), $detailsTab.find("#internaldns2_edit_errormsg"), true);	//optional						
+	if (getNetworkType() != "vnet") {
+		isValid &= validateString("Zone - Start VLAN Range", $detailsTab.find("#startvlan_edit"), $detailsTab.find("#startvlan_edit_errormsg"), false); //required
+		isValid &= validateString("Zone - End VLAN Range", $detailsTab.find("#endvlan_edit"), $detailsTab.find("#endvlan_edit_errormsg"), true);  //optional
+	}
+	isValid &= validateCIDR("Guest CIDR", $detailsTab.find("#guestcidraddress_edit"), $detailsTab.find("#guestcidraddress_edit_errormsg"), false);	//required					
+	if (!isValid) 
+	    return;							
+	
+	var moreCriteria = [];	
+	
+	var jsonObj = $detailsTab.data("jsonObj"); 
+	var id = jsonObj.id;
+	moreCriteria.push("&id="+id);
+	
+	var name = trim($detailsTab.find("#name_edit").val());
+	moreCriteria.push("&name="+todb(name));
+	
+	var dns1 = trim($detailsTab.find("#dns1_edit").val());
+	moreCriteria.push("&dns1="+encodeURIComponent(dns1));
+	
+	var dns2 = trim($detailsTab.find("#dns2_edit").val());
+	if (dns2 != null & dns2.length > 0) 
+		moreCriteria.push("&dns2="+encodeURIComponent(dns2));	
+	
+	var internaldns1 = trim($detailsTab.find("#internaldns1_edit").val());
+	moreCriteria.push("&internaldns1="+encodeURIComponent(internaldns1));
+	
+	var internaldns2 = trim($detailsTab.find("#internaldns2_edit").val());	
+	if (internaldns2 != null & internaldns2.length > 0) 
+		moreCriteria.push("&internaldns2="+encodeURIComponent(internaldns2));						
+	
+	var vlan;				
+	if (getNetworkType() != "vnet") {
+		var vlanStart = trim($detailsTab.find("#startvlan_edit").val());	
+		var vlanEnd = trim($detailsTab.find("#endvlan_edit").val());						
+		if (vlanEnd != null && vlanEnd.length > 0) 
+		    vlan = vlanStart + "-" + vlanEnd;						    							
+		else 	
+		    vlan = vlanStart;							
+       moreCriteria.push("&vlan=" + encodeURIComponent(vlan));	
+	}				
+	
+	var guestcidraddress = trim($detailsTab.find("#guestcidraddress_edit").val());
+	moreCriteria.push("&guestcidraddress="+encodeURIComponent(guestcidraddress));				    		 
+	 	        	
+	$.ajax({
+	  data: createURL("command=updateZone"+moreCriteria.join("")),
+		dataType: "json",
+		success: function(json) {		   
+		    var item = json.updatezoneresponse;		  
+		    $midmenuItem1.data("jsonObj", item);
+		    zoneJsonToRightPanel($midmenuItem1);		    
+		}
+	});   
+}
