@@ -29,6 +29,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -43,15 +44,14 @@ import com.cloud.agent.api.storage.DownloadCommand;
 import com.cloud.agent.api.storage.DownloadProgressCommand;
 import com.cloud.agent.api.storage.DownloadProgressCommand.RequestType;
 import com.cloud.exception.InternalErrorException;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.StorageResource;
 import com.cloud.storage.VMTemplateHostVO;
-import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.template.Processor.FormatInfo;
 import com.cloud.storage.template.TemplateDownloader.DownloadCompleteCallback;
 import com.cloud.storage.template.TemplateDownloader.Status;
 import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.UUID;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -206,6 +206,7 @@ public class DownloadManagerImpl implements DownloadManager {
     private int installTimeoutPerGig = 180 * 60 * 1000;
 	private boolean _sslCopy;
 
+    @Override
     public String setRootDir(String rootDir, StorageResource storage) {
         /*
          * if (!storage.existPath(rootDir + templateDownloadDir)) { s_logger.info("Creating template download path: " +
@@ -385,7 +386,7 @@ public class DownloadManagerImpl implements DownloadManager {
 
     @Override
     public String downloadPublicTemplate(long id, String url, String name, ImageFormat format, boolean hvm, Long accountId, String descr, String cksum, String installPathPrefix, String user, String password, long maxTemplateSizeInBytes) {
-        UUID uuid = new UUID();
+        UUID uuid = UUID.randomUUID();
         String jobId = uuid.toString();
         String tmpDir = installPathPrefix + File.separator + accountId + File.separator + id;
 
@@ -438,6 +439,7 @@ public class DownloadManagerImpl implements DownloadManager {
         }
     }
 
+    @Override
     public String getPublicTemplateRepo() {
         return publicTemplateRepo;
     }

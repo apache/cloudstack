@@ -24,8 +24,19 @@ import com.cloud.deploy.DeployDestination;
  * A VirtualMachineGuru knows how to process a certain type of virtual machine.
  *
  */
-public interface VirtualMachineGuru<T extends VMInstanceVO> {
+public interface VirtualMachineGuru<T extends VirtualMachine> {
+    /**
+     * Find the virtual machine by name.
+     * @param name
+     * @return virtual machine.
+     */
+    T findByName(String name);
+    
+    T findById(long id);
+    
     T persist(T vm);
+    
+    boolean finalizeVirtualMachineProfile(VirtualMachineProfile<T> profile, DeployDestination dest, ReservationContext context);
     
     /**
      * finalize the virtual machine deployment.
@@ -34,7 +45,7 @@ public interface VirtualMachineGuru<T extends VMInstanceVO> {
      * @param dest destination to send the command.
      * @return true if everything checks out.  false if not and we should try again.
      */
-    boolean finalizeDeployment(Commands cmds, T vm, VirtualMachineProfile profile, DeployDestination dest);
+    boolean finalizeDeployment(Commands cmds, VirtualMachineProfile<T> profile, DeployDestination dest, ReservationContext context);
     
     
     /**
@@ -44,5 +55,5 @@ public interface VirtualMachineGuru<T extends VMInstanceVO> {
      * @param dest destination it was sent to.
      * @return true if deployment was fine; false if it didn't go well.
      */
-    boolean processDeploymentResult(Commands cmds, T vm, VirtualMachineProfile profile, DeployDestination dest);
+    boolean processDeploymentResult(Commands cmds, VirtualMachineProfile<T> profile, DeployDestination dest, ReservationContext context);
 }

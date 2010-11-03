@@ -89,7 +89,52 @@ public class StartSystemVMCmd extends BaseAsyncCmd {
 	@Override @SuppressWarnings("unchecked")
 	public SystemVmResponse getResponse() {
 	    VMInstanceVO instance = (VMInstanceVO)getResponseObject();
+<<<<<<< HEAD
 	    SystemVmResponse response = ApiResponseHelper.createSystemVmResponse(instance);
+=======
+
+	    SystemVmResponse response = new SystemVmResponse();
+	    response.setId(instance.getId());
+	    response.setName(instance.getHostName());
+	    response.setZoneId(instance.getDataCenterId());
+	    response.setZoneName(ApiDBUtils.findZoneById(instance.getDataCenterId()).getName());
+	    response.setPodId(instance.getPodId());
+	    response.setHostId(instance.getHostId());
+        if (response.getHostId() != null) {
+            response.setHostName(ApiDBUtils.findHostById(instance.getHostId()).getName());
+        }
+        
+        response.setPrivateIp(instance.getPrivateIpAddress());
+        response.setPrivateMacAddress(instance.getPrivateMacAddress());
+        response.setPrivateNetmask(instance.getPrivateNetmask());
+        response.setTemplateId(instance.getTemplateId());
+        response.setCreated(instance.getCreated());
+        response.setState(instance.getState().toString());
+
+        if (instance instanceof SecondaryStorageVmVO) {
+            SecondaryStorageVmVO ssVm = (SecondaryStorageVmVO) instance;
+            response.setDns1(ssVm.getDns1());
+            response.setDns2(ssVm.getDns2());
+            response.setNetworkDomain(ssVm.getDomain());
+            response.setGateway(ssVm.getGateway());
+
+            response.setPublicIp(ssVm.getPublicIpAddress());
+            response.setPublicMacAddress(ssVm.getPublicMacAddress());
+            response.setPublicNetmask(ssVm.getPublicNetmask());
+        } else if (instance instanceof ConsoleProxyVO) {
+            ConsoleProxyVO proxy = (ConsoleProxyVO)instance;
+            response.setDns1(proxy.getDns1());
+            response.setDns2(proxy.getDns2());
+            response.setNetworkDomain(proxy.getDomain());
+            response.setGateway(proxy.getGateway());
+            
+            response.setPublicIp(proxy.getPublicIpAddress());
+            response.setPublicMacAddress(proxy.getPublicMacAddress());
+            response.setPublicNetmask(proxy.getPublicNetmask());
+            response.setActiveViewerSessions(proxy.getActiveSession());
+        }
+
+>>>>>>> Harmony among gurus
         response.setResponseName(getName());
         return response;
 	}

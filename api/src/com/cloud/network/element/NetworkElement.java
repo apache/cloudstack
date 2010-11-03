@@ -10,9 +10,10 @@ import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.NetworkConfiguration;
 import com.cloud.offering.NetworkOffering;
-import com.cloud.user.Account;
 import com.cloud.utils.component.Adapter;
 import com.cloud.vm.NicProfile;
+import com.cloud.vm.ReservationContext;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 /**
@@ -25,11 +26,11 @@ public interface NetworkElement extends Adapter {
      * @param offering network offering that originated the network configuration.
      * @return true if network configuration is now usable; false if not; null if not handled by this element.
      */
-    boolean implement(NetworkConfiguration config, NetworkOffering offering, DeployDestination dest, Account user) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException;
+    boolean implement(NetworkConfiguration config, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException;
     
-    boolean prepare(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile vm, NetworkOffering offering, DeployDestination dest, Account user) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientNetworkCapacityException;
+    boolean prepare(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientNetworkCapacityException;
     
-    boolean release(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile vm, NetworkOffering offering, Account user) throws ConcurrentOperationException, ResourceUnavailableException;
+    boolean release(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException;
     
-    boolean shutdown(NetworkConfiguration config, NetworkOffering offering, Account user) throws ConcurrentOperationException, ResourceUnavailableException;
+    boolean shutdown(NetworkConfiguration config, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException;
 }

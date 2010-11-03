@@ -31,6 +31,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
 import com.cloud.vm.NicProfile;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value={NetworkGuru.class})
@@ -77,7 +78,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     @Override
-    public String reserve(NicProfile ch, NetworkConfiguration configuration, VirtualMachineProfile vm, DeployDestination dest) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
+    public String reserve(NicProfile ch, NetworkConfiguration configuration, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
         if (ch.getReservationId() != null) {
             return ch.getReservationId();
         }
@@ -86,7 +87,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
         long dcId = dc.getId();
         
         if (ch.getIp4Address() != null) {
-            Pair<String, VlanVO> ipAndVlan = _vlanDao.assignIpAddress(dcId, vm.getVm().getAccountId(), vm.getVm().getDomainId(), VlanType.VirtualNetwork, true);
+            Pair<String, VlanVO> ipAndVlan = _vlanDao.assignIpAddress(dcId, vm.getVirtualMachine().getAccountId(), vm.getVirtualMachine().getDomainId(), VlanType.VirtualNetwork, true);
             if (ipAndVlan == null) {
                 throw new InsufficientVirtualNetworkCapcityException("Unable to get public ip address in " + dcId);
             }

@@ -19,7 +19,11 @@ package com.cloud.hypervisor;
 
 import javax.ejb.Local;
 
-import com.cloud.offering.ServiceOffering;
+import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.Storage;
+import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
@@ -31,13 +35,22 @@ public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru 
     }
     
     @Override
-    public VirtualMachineProfile design(VirtualMachine vm, ServiceOffering offering) {
-        return null;
+    public HypervisorType getHypervisorType() {
+        return HypervisorType.XenServer;
     }
 
     @Override
-    public boolean check(VirtualMachineProfile profile) {
-        return true;
+    public <T extends VirtualMachine> VirtualMachineTO implement(VirtualMachineProfile<T> vm) {
+        VirtualMachineTemplate template = vm.getTemplate();
+        
+        BootloaderType bt = BootloaderType.PyGrub;
+        if (template.getFormat() == Storage.ImageFormat.ISO || template.isRequiresHvm()) {
+            bt = BootloaderType.HVM;
+        }
+        
+        VirtualMachineTO to = toVirtualMachineTO(vm);
+        to.setBootloader(bt);
+        
+        return to;
     }
-
 }

@@ -22,7 +22,6 @@ import java.util.List;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
-import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.api.commands.CancelPrimaryStorageMaintenanceCmd;
 import com.cloud.api.commands.CreateStoragePoolCmd;
@@ -52,6 +51,7 @@ import com.cloud.utils.component.Manager;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 public interface StorageManager extends Manager {
@@ -344,6 +344,6 @@ public interface StorageManager extends Manager {
 	void createCapacityEntry(StoragePoolVO storagePool, long allocated);
 
     
-    VolumeTO[] prepare(VirtualMachineProfile vm, DeployDestination dest) throws StorageUnavailableException, InsufficientStorageCapacityException, ConcurrentOperationException;
-    void release(VirtualMachineProfile vm);
+    void prepare(VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest) throws StorageUnavailableException, InsufficientStorageCapacityException, ConcurrentOperationException;
+    void release(VirtualMachineProfile<? extends VirtualMachine> vm);
 }

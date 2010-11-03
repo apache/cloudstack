@@ -44,6 +44,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.server.Criteria;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.user.dao.UserDao;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.Filter;
@@ -60,8 +61,10 @@ public class AccountManagerImpl implements AccountManager, AccountService {
 	@Inject private DomainDao _domainDao;
 	@Inject private ResourceLimitDao _resourceLimitDao;
 	@Inject private ResourceCountDao _resourceCountDao;
+	@Inject private UserDao _userDao;
 	private final GlobalLock m_resourceCountLock = GlobalLock.getInternLock("resource.count");
 	
+	UserVO _systemUser;
 	AccountVO _systemAccount;
 	@Inject(adapter=SecurityChecker.class)
 	Adapters<SecurityChecker> _securityCheckers;
@@ -72,10 +75,20 @@ public class AccountManagerImpl implements AccountManager, AccountService {
     	
     	_systemAccount = _accountDao.findById(AccountVO.ACCOUNT_ID_SYSTEM);
     	if (_systemAccount == null) {
-    	    throw new ConfigurationException("Unable to find the system account using " + AccountVO.ACCOUNT_ID_SYSTEM);
+    	    throw new ConfigurationException("Unable to find the system account using " + Account.ACCOUNT_ID_SYSTEM);
+    	}
+    	
+    	_systemUser = _userDao.findById(UserVO.UID_SYSTEM);
+    	if (_systemUser == null) {
+    	    throw new ConfigurationException("Unable to find the system user using " + User.UID_SYSTEM);
     	}
     	return true;
     }
+	
+	@Override
+    public UserVO getSystemUser() {
+	    return _systemUser;
+	}
 	
     @Override
     public String getName() {
@@ -413,7 +426,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
     }
 
     @Override
-    public ResourceLimitVO updateResourceLimit(UpdateResourceLimitCmd cmd) throws InvalidParameterValueException  {
+    public ResourceLimitVO updateResourceLimit(UpdateResourceLimitCmd cmd)  {
 
         Account account = UserContext.current().getAccount();
     	String accountName = cmd.getAccountName();

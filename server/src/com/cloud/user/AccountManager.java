@@ -121,4 +121,6 @@ public interface AccountManager extends Manager {
 	void checkAccess(Account account, ControlledEntity... entities) throws PermissionDeniedException;
 	
 	AccountVO getSystemAccount();
+	
+	UserVO getSystemUser();
 }

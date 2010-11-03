@@ -78,7 +78,7 @@ public class StartRouterCommand extends AbstractStartCommand {
 		String eth2Ip = router.getPublicIpAddress()==null?"0.0.0.0":router.getPublicIpAddress();
 		String basic = " eth0ip=" + router.getGuestIpAddress() + " eth0mask=" + router.getGuestNetmask() + " eth1ip="
         + router.getPrivateIpAddress() + " eth1mask=" + router.getPrivateNetmask() + " gateway=" + router.getGateway()
-		+ " dns1=" + router.getDns1() +  " name=" + router.getName() + " mgmtcidr=" + mgmt_host;
+		+ " dns1=" + router.getDns1() +  " name=" + router.getHostName() + " mgmtcidr=" + mgmt_host;
 		if (!router.getPublicMacAddress().equalsIgnoreCase("FE:FF:FF:FF:FF:FF")) {
 		    basic = basic + " eth2ip=" + eth2Ip + " eth2mask=" + router.getPublicNetmask();
 		}

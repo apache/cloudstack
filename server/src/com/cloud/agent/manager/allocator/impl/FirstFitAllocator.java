@@ -54,6 +54,7 @@ import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
@@ -81,7 +82,7 @@ public class FirstFitAllocator implements HostAllocator {
     protected String _allocationAlgorithm = "random";
     
 	@Override
-	public Host allocateTo(VirtualMachineProfile vm, ServiceOffering offering, Type type, DataCenterVO dc,
+	public Host allocateTo(VirtualMachineProfile<? extends VirtualMachine> vm, ServiceOffering offering, Type type, DataCenterVO dc,
 			HostPodVO pod, Long clusterId, VMTemplateVO template,
 			Set<Host> avoid) {
 

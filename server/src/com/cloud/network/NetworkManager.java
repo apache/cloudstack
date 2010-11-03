@@ -20,7 +20,7 @@ package com.cloud.network;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.agent.api.to.NicTO;
+import com.cloud.api.commands.AddVpnUserCmd;
 import com.cloud.api.commands.AssignToLoadBalancerRuleCmd;
 import com.cloud.api.commands.AssociateIPAddrCmd;
 import com.cloud.api.commands.CreateIPForwardingRuleCmd;
@@ -38,7 +38,6 @@ import com.cloud.api.commands.StartRouterCmd;
 import com.cloud.api.commands.StopRouterCmd;
 import com.cloud.api.commands.UpdateLoadBalancerRuleCmd;
 import com.cloud.api.commands.UpgradeRouterCmd;
-import com.cloud.api.commands.AddVpnUserCmd;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
@@ -302,13 +301,13 @@ public interface NetworkManager extends Manager {
     
     List<NetworkOfferingVO> getSystemAccountNetworkOfferings(String... offeringNames);
     
-    List<NicProfile> allocate(VirtualMachineProfile vm, List<Pair<NetworkConfigurationVO, NicProfile>> networks) throws InsufficientCapacityException;
+    List<NicProfile> allocate(VirtualMachineProfile<? extends VMInstanceVO> vm, List<Pair<NetworkConfigurationVO, NicProfile>> networks) throws InsufficientCapacityException;
 
-    NicTO[] prepare(VirtualMachineProfile profile, DeployDestination dest, Account user) throws InsufficientNetworkCapacityException, ConcurrentOperationException, ResourceUnavailableException;
-    void release(VirtualMachineProfile vmProfile);
+    List<NicProfile> prepare(VirtualMachineProfile<? extends VMInstanceVO> profile, DeployDestination dest, ReservationContext context) throws InsufficientNetworkCapacityException, ConcurrentOperationException, ResourceUnavailableException;
+    void release(VirtualMachineProfile<? extends VMInstanceVO> vmProfile);
     
-    <K extends VMInstanceVO> List<NicVO> getNics(K vm);
     DomainRouter upgradeRouter(UpgradeRouterCmd cmd);
+    List<NicVO> getNics(VMInstanceVO vm);
 	
     List<AccountVO> getAccountsUsingNetworkConfiguration(long configurationId);    
     AccountVO getNetworkConfigurationOwner(long configurationId);

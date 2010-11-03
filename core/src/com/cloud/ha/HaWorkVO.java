@@ -37,7 +37,7 @@ import com.cloud.vm.VirtualMachine;
 
 @Entity
 @Table(name="op_ha_work")
-public class WorkVO {
+public class HaWorkVO {
     public enum WorkType {
         Migration,
         Stop,
@@ -92,7 +92,7 @@ public class WorkVO {
     @Column(name="tried")
     int timesTried;
     
-    protected WorkVO() {
+    protected HaWorkVO() {
     }
     
     public Long getId() {
@@ -183,7 +183,7 @@ public class WorkVO {
         this.previousState = state;
     }
     
-    public WorkVO(final long instanceId, final VirtualMachine.Type type, final WorkType workType, final Step step, final long hostId, final State previousState, final int timesTried, final long updated) {
+    public HaWorkVO(final long instanceId, final VirtualMachine.Type type, final WorkType workType, final Step step, final long hostId, final State previousState, final int timesTried, final long updated) {
         this.workType = workType;
         this.type = type;
         this.instanceId = instanceId;

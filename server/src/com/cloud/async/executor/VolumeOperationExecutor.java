@@ -151,7 +151,7 @@ public class VolumeOperationExecutor extends BaseAsyncJobExecutor {
 	private AttachVolumeOperationResultObject composeAttachResultObject(UserVm instance, VolumeVO vol) {
         AttachVolumeOperationResultObject resultObject = new AttachVolumeOperationResultObject();
 
-        resultObject.setVmName(instance.getName());
+        resultObject.setVmName(instance.getHostName());
         resultObject.setVmDisplayName(instance.getDisplayName());
         resultObject.setVirtualMachineId(instance.getId());
         resultObject.setVmState(instance.getState().toString());

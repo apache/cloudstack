@@ -625,6 +625,8 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             return execute((RemoteAccessVpnCfgCommand)cmd);
         } else if (cmd instanceof VpnUsersCfgCommand) {
             return execute((VpnUsersCfgCommand)cmd);
+        } else if (cmd instanceof CheckSshCommand) {
+            return execute((CheckSshCommand)cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
@@ -879,6 +881,31 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         cdromVBD.insert(conn, VDI.getByUuid(conn, _host.systemvmisouuid));
         
         return cdromVBD;
+    }
+    
+    protected CheckSshAnswer execute(CheckSshCommand cmd) {
+        String vmName = cmd.getName();
+        String privateIp = cmd.getIp();
+        int cmdPort = cmd.getPort();
+        
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Ping command port, " + privateIp + ":" + cmdPort);
+        }
+
+        try {
+            String result = connect(cmd.getName(), privateIp, cmdPort);
+            if (result != null) {
+                return new CheckSshAnswer(cmd, "Can not ping System vm " + vmName + "due to:" + result);
+            } 
+        } catch (Exception e) {
+            return new CheckSshAnswer(cmd, e);
+        }
+        
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Ping command port succeeded for vm " + vmName);
+        }
+        
+        return new CheckSshAnswer(cmd);
     }
     
     protected Start2Answer execute(Start2Command cmd) {

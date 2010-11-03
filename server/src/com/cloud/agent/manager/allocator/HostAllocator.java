@@ -27,10 +27,11 @@ import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.Adapter;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 public interface HostAllocator extends Adapter {
 	boolean isVirtualMachineUpgradable(final UserVm vm, final ServiceOffering offering);
-	Host allocateTo(VirtualMachineProfile vm, ServiceOffering offering, Type type, DataCenterVO dc, HostPodVO pod, Long clusterId, VMTemplateVO template, Set<Host> avoid);
+	Host allocateTo(VirtualMachineProfile<? extends VirtualMachine> vm, ServiceOffering offering, Type type, DataCenterVO dc, HostPodVO pod, Long clusterId, VMTemplateVO template, Set<Host> avoid);
 	
 }

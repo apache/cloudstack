@@ -309,7 +309,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 			if (state == State.Running) {
 				if (s_logger.isTraceEnabled())
 					s_logger.trace("Secondary storage vm is already started: "
-							+ secStorageVm.getName());
+							+ secStorageVm.getHostName());
 				saveFailedEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_SSVM_START, "Secondary storage vm is already started", startEventId);
 				return secStorageVm;
 			}
@@ -334,7 +334,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 				if (s_logger.isDebugEnabled()) {
 					SecondaryStorageVmVO temp = _secStorageVmDao.findById(secStorageVmId);
 					s_logger.debug("Unable to start secondary storage vm "
-							+ secStorageVm.getName()
+							+ secStorageVm.getHostName()
 							+ " because it is not in a startable state : "
 							+ ((temp != null) ? temp.getState().toString() : "null"));
 				}
@@ -357,7 +357,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 							secStorageVm.getDataCenterId(), routingHost.getPodId(),
 							secStorageVm.getId(), secStorageVm.getPrivateMacAddress());
 					if (privateIpAddress == null && (_IpAllocator != null && !_IpAllocator.exteralIpAddressAllocatorEnabled())) {
-                        String msg = "Unable to allocate private ip addresses for  " + secStorageVm.getName() + " in pod " + pod.getId();
+                        String msg = "Unable to allocate private ip addresses for  " + secStorageVm.getHostName() + " in pod " + pod.getId();
                         s_logger.debug(msg);
                         throw new CloudRuntimeException(msg);
 					}
@@ -370,7 +370,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 
 					List<VolumeVO> vols = _storageMgr.prepare(secStorageVm, routingHost);
 					if (vols == null || vols.size() == 0) {
-                        String msg = "Unable to prepare storage for " + secStorageVm.getName() + " in pod " + pod.getId();
+                        String msg = "Unable to prepare storage for " + secStorageVm.getHostName() + " in pod " + pod.getId();
                         s_logger.debug(msg);
                         throw new CloudRuntimeException(msg);
 					}
@@ -381,7 +381,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 		            GuestOSVO guestOS = _guestOSDao.findById(secStorageVm.getGuestOSId());
 		            if (guestOS == null) {
 		                String msg = "Could not find guest OS description for OSId " 
-		                    + secStorageVm.getGuestOSId() + " for vm: " + secStorageVm.getName();
+		                    + secStorageVm.getGuestOSId() + " for vm: " + secStorageVm.getHostName();
 		                s_logger.debug(msg); 
 		                throw new CloudRuntimeException(msg);
 		            } else {
@@ -392,11 +392,11 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 					// need to configure agent on this
 					StartSecStorageVmCommand cmdStart = new StartSecStorageVmCommand(_networkRate, 
 					        _multicastRate, _secStorageVmCmdPort, secStorageVm, 
-					        secStorageVm.getName(), "", vols, _mgmt_host, _mgmt_port, _useSSlCopy, guestOSDescription);
+					        secStorageVm.getHostName(), "", vols, _mgmt_host, _mgmt_port, _useSSlCopy, guestOSDescription);
 
 					if (s_logger.isDebugEnabled())
 						s_logger.debug("Sending start command for secondary storage vm "
-								+ secStorageVm.getName()
+								+ secStorageVm.getHostName()
 								+ " to "
 								+ routingHost.getName());
 
@@ -406,13 +406,13 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 
 	                    if (s_logger.isDebugEnabled())
 	                        s_logger.debug("Received answer on starting secondary storage vm "
-	                            + secStorageVm.getName()
+	                            + secStorageVm.getHostName()
 	                            + " on "
 	                            + routingHost.getName());
 
 	                    if ( answer != null && answer.getResult() ) {
 	                        if (s_logger.isDebugEnabled()) {
-	                            s_logger.debug("Secondary storage vm " + secStorageVm.getName()
+	                            s_logger.debug("Secondary storage vm " + secStorageVm.getHostName()
 	                                    + " started on " + routingHost.getName());
 	                        }
 	                        
@@ -430,7 +430,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 		                        event.setType(EventTypes.EVENT_SSVM_START);
 		                        event.setLevel(EventVO.LEVEL_INFO);
 		                        event.setStartId(startEventId);
-		                        event.setDescription("Secondary Storage VM started - " + secStorageVm.getName());
+		                        event.setDescription("Secondary Storage VM started - " + secStorageVm.getHostName());
 		                        _eventDao.persist(event);
 	                        }
 	                        break;
@@ -438,13 +438,13 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 	                    s_logger.debug("Unable to start " + secStorageVm.toString() + " on host " + routingHost.toString() + " due to " + answer.getDetails());
 	                } catch (OperationTimedoutException e) {
 	                    if (e.isActive()) {
-	                        s_logger.debug("Unable to start vm " + secStorageVm.getName() + " due to operation timed out and it is active so scheduling a restart.");
+	                        s_logger.debug("Unable to start vm " + secStorageVm.getHostName() + " due to operation timed out and it is active so scheduling a restart.");
 	                        saveFailedEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_SSVM_START, "Unable to start vm due to operation timed out", startEventId);
 	                        _haMgr.scheduleRestart(secStorageVm, true);
 	                        return null;
 	                    }
 	                } catch (AgentUnavailableException e) {
-	                    s_logger.debug("Agent " + routingHost.toString() + " was unavailable to start VM " + secStorageVm.getName());
+	                    s_logger.debug("Agent " + routingHost.toString() + " was unavailable to start VM " + secStorageVm.getHostName());
 	                }
 
 					avoid.add(routingHost);
@@ -472,7 +472,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
                     event.setType(EventTypes.EVENT_SSVM_START);
                     event.setLevel(EventVO.LEVEL_ERROR);
                     event.setStartId(startEventId);
-                    event.setDescription("Starting secondary storage vm failed due to unable to find a host - " + secStorageVm.getName());
+                    event.setDescription("Starting secondary storage vm failed due to unable to find a host - " + secStorageVm.getHostName());
                     _eventDao.persist(event);
 					throw new ExecutionException(
 							"Couldn't find a routingHost to run secondary storage vm");
@@ -507,7 +507,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
                 event.setType(EventTypes.EVENT_SSVM_START);
                 event.setLevel(EventVO.LEVEL_ERROR);
                 event.setStartId(startEventId);
-                event.setDescription("Starting secondary storage vm failed due to unhandled exception - " + secStorageVm.getName());
+                event.setDescription("Starting secondary storage vm failed due to unhandled exception - " + secStorageVm.getHostName());
                 _eventDao.persist(event);
 
 				Transaction txn = Transaction.currentTxn();
@@ -593,11 +593,11 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 		Answer answer = _agentMgr.easySend(storageHost.getId(), setupCmd);
 		if (answer != null) {
 			if (s_logger.isDebugEnabled())
-				s_logger.debug("Successfully programmed http auth into " + secStorageVm.getName());
+				s_logger.debug("Successfully programmed http auth into " + secStorageVm.getHostName());
 			return true;
 		} else {
 			if (s_logger.isDebugEnabled())
-				s_logger.debug("failed to program http auth into secondary storage vm : " + secStorageVm.getName());
+				s_logger.debug("failed to program http auth into secondary storage vm : " + secStorageVm.getHostName());
 			return false;
 		}
 	}
@@ -634,11 +634,11 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 		Answer answer = _agentMgr.easySend(storageHost.getId(), cpc);
 		if (answer != null) {
 			if (s_logger.isDebugEnabled())
-				s_logger.debug("Successfully programmed firewall rules into " + secStorageVm.getName());
+				s_logger.debug("Successfully programmed firewall rules into " + secStorageVm.getHostName());
 			return true;
 		} else {
 			if (s_logger.isDebugEnabled())
-				s_logger.debug("failed to program firewall rules into secondary storage vm : " + secStorageVm.getName());
+				s_logger.debug("failed to program firewall rules into secondary storage vm : " + secStorageVm.getHostName());
 			return false;
 		}
 		
@@ -777,7 +777,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
             event.setType(EventTypes.EVENT_SSVM_CREATE);
             event.setLevel(EventVO.LEVEL_INFO);
             event.setStartId(startEventId);
-            event.setDescription("New Secondary Storage VM created - " + secStorageVm.getName());
+            event.setDescription("New Secondary Storage VM created - " + secStorageVm.getHostName());
             _eventDao.persist(event);
 			txn.commit();
 			success = true;
@@ -915,7 +915,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 										}
 									} else {
 										if (s_logger.isInfoEnabled())
-											s_logger.info("Unable to acquire synchronization lock to start secondary storage vm : " + readysecStorageVm.getName());
+											s_logger.info("Unable to acquire synchronization lock to start secondary storage vm : " + readysecStorageVm.getHostName());
 									}
 								} finally {
 									secStorageVmLock.releaseRef();
@@ -1026,7 +1026,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 			if (s_logger.isTraceEnabled()) {
 				s_logger.trace("Running secondary storage vm pool size : " + runningList.size());
 				for (SecondaryStorageVmVO secStorageVm : runningList)
-					s_logger.trace("Running secStorageVm instance : " + secStorageVm.getName());
+					s_logger.trace("Running secStorageVm instance : " + secStorageVm.getHostName());
 			}
 
 			Map<Long, Integer> loadInfo = new HashMap<Long, Integer>();
@@ -1105,7 +1105,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 					destroySecStorageVm(secStorageVmId, 0);
 			} else {
 				if (s_logger.isInfoEnabled())
-					s_logger.info("Secondary storage vm " + secStorageVm.getName() + " is started");
+					s_logger.info("Secondary storage vm " + secStorageVm.getHostName() + " is started");
 			}
 		}
 	}
@@ -1503,7 +1503,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 			return stop(secStorageVm, startEventId);
 		} catch (AgentUnavailableException e) {
 			if (s_logger.isDebugEnabled())
-				s_logger.debug("Stopping secondary storage vm " + secStorageVm.getName() + " faled : exception " + e.toString());
+				s_logger.debug("Stopping secondary storage vm " + secStorageVm.getHostName() + " faled : exception " + e.toString());
 			return false;
 		}
 	}
@@ -1537,7 +1537,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 
 			if (answer != null) {
 				if (s_logger.isDebugEnabled())
-					s_logger.debug("Successfully reboot secondary storage vm " + secStorageVm.getName());
+					s_logger.debug("Successfully reboot secondary storage vm " + secStorageVm.getHostName());
 				
 				SubscriptionMgr.getInstance().notifySubscribers(
 						ALERT_SUBJECT, this,
@@ -1552,11 +1552,11 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 	            event.setType(EventTypes.EVENT_SSVM_REBOOT);
 	            event.setLevel(EventVO.LEVEL_INFO);
 	            event.setStartId(startEventId);
-	            event.setDescription("Secondary Storage Vm rebooted - " + secStorageVm.getName());
+	            event.setDescription("Secondary Storage Vm rebooted - " + secStorageVm.getHostName());
 	            _eventDao.persist(event);
 				return true;
 			} else {
-			    String msg = "Rebooting Secondary Storage VM failed - " + secStorageVm.getName();
+			    String msg = "Rebooting Secondary Storage VM failed - " + secStorageVm.getHostName();
 			    saveFailedEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_SSVM_REBOOT, msg, startEventId);
 				if (s_logger.isDebugEnabled())
 					s_logger.debug(msg);
@@ -1638,7 +1638,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 	            event.setType(EventTypes.EVENT_SSVM_DESTROY);
 	            event.setLevel(EventVO.LEVEL_INFO);
 	            event.setStartId(startEventId);
-	            event.setDescription("Secondary Storage Vm destroyed - " + vm.getName());
+	            event.setDescription("Secondary Storage Vm destroyed - " + vm.getHostName());
 	            _eventDao.persist(event);
 				txn.commit();
 			} catch (Exception e) {
@@ -1647,7 +1647,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 				return false;
 			} finally {
 				s_logger.debug("secondary storage vm vm is destroyed : "
-						+ vm.getName());
+						+ vm.getHostName());
 			}
 		}
 	}
@@ -1670,7 +1670,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 				event.setAccountId(Account.ACCOUNT_ID_SYSTEM);
 				event.setType(EventTypes.EVENT_SSVM_DESTROY);
 				event.setLevel(EventVO.LEVEL_INFO);
-				event.setDescription("Secondary Storage Vm destroyed - " + secStorageVm.getName());
+				event.setDescription("Secondary Storage Vm destroyed - " + secStorageVm.getHostName());
 				_eventDao.persist(event);
 			}
 			txn.commit();
@@ -1727,12 +1727,12 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
                             event.setType(EventTypes.EVENT_SSVM_STOP);
                             event.setLevel(EventVO.LEVEL_INFO);
                             event.setStartId(startEventId);
-                            event.setDescription("Secondary Storage Vm stopped - " + secStorageVm.getName());
+                            event.setDescription("Secondary Storage Vm stopped - " + secStorageVm.getHostName());
                             _eventDao.persist(event);
 						return true;
                         } catch (OperationTimedoutException e) {
                             saveFailedEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_SSVM_STOP, 
-                                    "Stopping secondary storage vm failed due to operation time out - " + secStorageVm.getName(), startEventId);
+                                    "Stopping secondary storage vm failed due to operation time out - " + secStorageVm.getHostName(), startEventId);
                             throw new AgentUnavailableException(secStorageVm.getHostId());
                         }
                     } finally {
@@ -1816,7 +1816,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 			storageIps[1] = vols.get(1).getHostIp();
 		}
 
-		PrepareForMigrationCommand cmd = new PrepareForMigrationCommand(secStorageVm.getName(), null, storageIps, vols, mirroredVols);
+		PrepareForMigrationCommand cmd = new PrepareForMigrationCommand(secStorageVm.getHostName(), null, storageIps, vols, mirroredVols);
 
 		HostVO routingHost = null;
 		HashSet<Host> avoid = new HashSet<Host>();
@@ -1836,8 +1836,8 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 			}
 
 			if( !_storageMgr.share(secStorageVm, vols, routingHost, false) ) {
-				s_logger.warn("Can not share " + vol.getPath() + " to " + secStorageVm.getName());
-				throw new StorageUnavailableException("Can not share " + vol.getPath() + " to " + secStorageVm.getName(), vol);
+				s_logger.warn("Can not share " + vol.getPath() + " to " + secStorageVm.getHostName());
+				throw new StorageUnavailableException("Can not share " + vol.getPath() + " to " + secStorageVm.getHostName(), vol);
 			}
 
 			Answer answer = _agentMgr.easySend(routingHost.getId(), cmd);

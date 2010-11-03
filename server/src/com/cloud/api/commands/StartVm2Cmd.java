@@ -96,7 +96,7 @@ public class StartVm2Cmd extends BaseAsyncCmd {
 
 	    UserVmResponse response = new UserVmResponse();
 	    response.setId(vm.getId());
-	    response.setName(vm.getName());
+	    response.setName(vm.getHostName());
 	    response.setCreated(vm.getCreated());
 	    response.setZoneId(vm.getDataCenterId());
 	    response.setZoneName(ApiDBUtils.findZoneById(vm.getDataCenterId()).getName());
@@ -104,7 +104,7 @@ public class StartVm2Cmd extends BaseAsyncCmd {
 	    response.setServiceOfferingId(vm.getServiceOfferingId());
 	    response.setHaEnable(vm.isHaEnabled());
         if (vm.getDisplayName() == null || vm.getDisplayName().length() == 0) {
-            response.setDisplayName(vm.getName());
+            response.setDisplayName(vm.getHostName());
         } else {
             response.setDisplayName(vm.getDisplayName());
         }

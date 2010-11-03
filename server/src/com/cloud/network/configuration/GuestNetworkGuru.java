@@ -34,6 +34,7 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.NicProfile;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
 
@@ -181,7 +182,7 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
      }
 
     @Override
-    public String reserve(NicProfile nic, NetworkConfiguration config, VirtualMachineProfile vm, DeployDestination dest) throws InsufficientVirtualNetworkCapcityException,
+    public String reserve(NicProfile nic, NetworkConfiguration config, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException {
         assert (nic.getReservationStrategy() == ReservationStrategy.Start) : "What can I do for nics that are not allocated at start? ";
 

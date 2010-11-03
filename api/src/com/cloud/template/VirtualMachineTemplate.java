@@ -18,6 +18,7 @@
 package com.cloud.template;
 
 import com.cloud.acl.ControlledEntity;
+import com.cloud.storage.Storage.ImageFormat;
 
 public interface VirtualMachineTemplate extends ControlledEntity {
     
@@ -38,4 +39,7 @@ public interface VirtualMachineTemplate extends ControlledEntity {
      */
     String getName();
     
+    ImageFormat getFormat();
+
+    boolean isRequiresHvm();
 }

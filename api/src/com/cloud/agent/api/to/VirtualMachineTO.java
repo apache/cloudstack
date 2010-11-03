@@ -20,8 +20,8 @@ package com.cloud.agent.api.to;
 import java.util.Map;
 
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
-import com.cloud.vm.VirtualMachineProfile;
 
 public class VirtualMachineTO {
     private long id;
@@ -39,25 +39,25 @@ public class VirtualMachineTO {
     String[] bootupScripts;
     boolean rebootOnCrash;
     Monitor monitor;
-    
+
     VolumeTO[] disks;
     NicTO[] nics;
-    
-    public VirtualMachineTO(VirtualMachineProfile profile, BootloaderType bootloader) {
-        this.id = profile.getId();
-        this.type = profile.getType();
-        this.cpus = profile.getCpus();
-        this.minRam = profile.getRam();
-        this.maxRam = profile.getRam();
-        this.speed = profile.getSpeed();
-        this.os = profile.getOs();
-        this.name = profile.getName();
+
+    public VirtualMachineTO(long id, String instanceName, VirtualMachine.Type type, int cpus, Integer speed, long minRam, long maxRam, BootloaderType bootloader, String os) {
+        this.id = id;
+        this.name = instanceName;
+        this.type = type;
+        this.cpus = cpus;
+        this.speed = speed;
+        this.minRam = minRam;
+        this.maxRam = maxRam;
         this.bootloader = bootloader;
+        this.os = os;
     }
 
     protected VirtualMachineTO() {
     }
-    
+
     public long getId() {
         return id;
     }
@@ -69,11 +69,11 @@ public class VirtualMachineTO {
     public String getName() {
         return name;
     }
-    
+
     public Monitor getMonitor() {
         return monitor;
     }
-    
+
     public void setMonitor(Monitor monitor) {
         this.monitor = monitor;
     }
@@ -81,7 +81,7 @@ public class VirtualMachineTO {
     public void setName(String name) {
         this.name = name;
     }
-    
+
     public Type getType() {
         return type;
     }
@@ -101,11 +101,11 @@ public class VirtualMachineTO {
     public void setCpus(int cpus) {
         this.cpus = cpus;
     }
-    
+
     public Integer getSpeed() {
         return speed;
     }
-    
+
     public long getMinRam() {
         return minRam;
     }
@@ -142,7 +142,7 @@ public class VirtualMachineTO {
     public void setOs(String os) {
         this.os = os;
     }
-    
+
     public String getBootArgs() {
         StringBuilder buf = new StringBuilder(bootArgs != null ? bootArgs : "");
         buf.append(" ");
@@ -155,9 +155,9 @@ public class VirtualMachineTO {
     public void setBootArgs(String bootArgs) {
         this.bootArgs = bootArgs;
     }
-    
+
     public void setBootArgs(Map<String, String> bootParams) {
-        StringBuilder buf   = new StringBuilder();
+        StringBuilder buf = new StringBuilder();
         for (Map.Entry<String, String> entry : bootParams.entrySet()) {
             buf.append(" ").append(entry.getKey()).append("=").append(entry.getValue());
         }
@@ -187,23 +187,23 @@ public class VirtualMachineTO {
     public void setNics(NicTO[] nics) {
         this.nics = nics;
     }
-    
+
     public static interface Monitor {
-        
+
     }
-    
+
     public static class SshMonitor implements Monitor {
         String ip;
         int port;
-        
+
         public String getIp() {
             return ip;
         }
-        
+
         public int getPort() {
             return port;
         }
-        
+
         public SshMonitor(String ip, int port) {
             this.ip = ip;
             this.port = port;

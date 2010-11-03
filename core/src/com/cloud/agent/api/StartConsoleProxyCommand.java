@@ -107,7 +107,7 @@ public class StartConsoleProxyCommand extends AbstractStartCommand {
 		String basic = " eth0ip=" + proxy.getGuestIpAddress() + " eth0mask=" + proxy.getGuestNetmask() + " eth1ip="
         + eth1Ip + " eth1mask=" + eth1NetMask + " eth2ip="
         + eth2Ip + " eth2mask=" + eth2NetMask + " gateway=" + gateWay
-		+ " dns1=" + proxy.getDns1() + " type=consoleproxy"+ " name=" + proxy.getName() + " template=domP";
+		+ " dns1=" + proxy.getDns1() + " type=consoleproxy"+ " name=" + proxy.getHostName() + " template=domP";
 		if (proxy.getDns2() != null) {
 			basic = basic + " dns2=" + proxy.getDns2();
 		}

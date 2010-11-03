@@ -87,7 +87,7 @@ public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, Virtu
         if (vm.getHostId() == null) {
             return -1;
         }
-        GetVncPortAnswer answer = (GetVncPortAnswer) _agentMgr.easySend(vm.getHostId(), new GetVncPortCommand(vm.getId(), vm.getName()));
+        GetVncPortAnswer answer = (GetVncPortAnswer) _agentMgr.easySend(vm.getHostId(), new GetVncPortCommand(vm.getId(), vm.getHostName()));
         return answer == null ? -1 : answer.getPort();
     }
 

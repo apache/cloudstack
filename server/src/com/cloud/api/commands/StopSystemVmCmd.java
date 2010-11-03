@@ -90,7 +90,7 @@ public class StopSystemVmCmd extends BaseAsyncCmd {
 
         SystemVmResponse response = new SystemVmResponse();
         response.setId(instance.getId());
-        response.setName(instance.getName());
+        response.setName(instance.getHostName());
         response.setZoneId(instance.getDataCenterId());
         response.setZoneName(ApiDBUtils.findZoneById(instance.getDataCenterId()).getName());
         response.setPodId(instance.getPodId());

@@ -26,7 +26,7 @@ public class ConsoleProxyExecutorHelper {
 	public static ConsoleProxyOperationResultObject composeResultObject(ManagementServer managementServer, ConsoleProxyVO proxy) {
 		ConsoleProxyOperationResultObject result = new ConsoleProxyOperationResultObject();
 		result.setId(proxy.getId());
-		result.setName(proxy.getName());
+		result.setName(proxy.getHostName());
 		result.setZoneId(proxy.getDataCenterId());
 		result.setZoneName(managementServer.findDataCenterById(proxy.getDataCenterId()).getName());
 		result.setDns1(proxy.getDns1());

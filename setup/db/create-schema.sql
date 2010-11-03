@@ -83,6 +83,18 @@ DROP TABLE IF EXISTS `cloud`.`account_network_ref`;
 DROP TABLE IF EXISTS `cloud`.`instance_group`;
 DROP TABLE IF EXISTS `cloud`.`instance_group_vm_map`;
 DROP TABLE IF EXISTS `cloud`.`certificate`;
+DROP TABLE IF EXISTS `cloud`.`op_it_work`;
+
+CREATE TABLE `cloud`.`op_it_work` (
+  `id` char(40) COMMENT 'id',
+  `mgmt_server_id` bigint unsigned COMMENT 'management server id',
+  `created` timestamp NOT NULL COMMENT 'when was this work detail created',
+  `thread` varchar(255) NOT NULL COMMENT 'thread name',
+  `type` char(32) NOT NULL COMMENT 'type of work',
+  `state` char(32) NOT NULL COMMENT 'state',
+  `cancel_taken` timestamp COMMENT 'time it was taken over',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`hypervsior_properties` (
   `hypervisor` varchar(32) NOT NULL UNIQUE COMMENT 'hypervisor type',
@@ -95,7 +107,6 @@ CREATE TABLE `cloud`.`op_network_configurations`(
   `id` bigint unsigned NOT NULL UNIQUE KEY,
   `mac_address_seq` bigint unsigned NOT NULL DEFAULT 1 COMMENT 'mac address',
   PRIMARY KEY(`id`)
-#  CONSTRAINT `fk__op_network_configurations__id` FOREIGN KEY `fk_op_network_configurations__id`(`id`) REFERENCES `network_configurations`(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`network_configurations` (
@@ -588,7 +599,7 @@ CREATE TABLE  `cloud`.`vm_instance` (
   `private_mac_address` varchar(17),
   `private_ip_address` varchar(15),
   `private_netmask` varchar(15),
-  `pod_id` bigint unsigned NOT NULL,
+  `pod_id` bigint unsigned,
   `data_center_id` bigint unsigned NOT NULL COMMENT 'Data Center the instance belongs to',
   `host_id` bigint unsigned,
   `last_host_id` bigint unsigned COMMENT 'tentative host for first run or last host that it has been running on',

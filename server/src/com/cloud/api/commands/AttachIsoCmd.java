@@ -106,7 +106,7 @@ public class AttachIsoCmd extends BaseAsyncCmd {
             response.setOsTypeId(iso.getGuestOSId());
             response.setOsTypeName(ApiDBUtils.findGuestOSById(iso.getGuestOSId()).getName());
             response.setVirtualMachineId(virtualMachineId);
-            response.setVirtualMachineName(vmInstance.getName());
+            response.setVirtualMachineName(vmInstance.getHostName());
             response.setVirtualMachineState(vmInstance.getState().toString());            
             response.setResponseName(getName());
             return response;

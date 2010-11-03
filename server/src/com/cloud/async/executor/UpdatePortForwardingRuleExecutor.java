@@ -77,7 +77,7 @@ public class UpdatePortForwardingRuleExecutor extends BaseAsyncJobExecutor {
         if ((userVMs != null) && (userVMs.size() > 0)) {
             UserVmVO userVM = userVMs.get(0);
             resultObject.setVirtualMachineId(userVM.getId());
-            resultObject.setVirtualMachineName(userVM.getName());
+            resultObject.setVirtualMachineName(userVM.getHostName());
             resultObject.setVirtualMachineDisplayName(userVM.getDisplayName());
         }
 

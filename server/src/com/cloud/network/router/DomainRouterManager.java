@@ -40,10 +40,12 @@ import com.cloud.network.VpnUserVO;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.user.Account;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.DomainRouter;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
+import com.cloud.vm.ReservationContext;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachineProfile;
 
@@ -181,5 +183,5 @@ public interface DomainRouterManager extends Manager {
 
 	boolean deleteRemoteAccessVpn(RemoteAccessVpnVO vpnVO);
 	
-	DomainRouterVO addVirtualMachineIntoNetwork(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile vm, Account caller) throws ConcurrentOperationException, InsufficientNetworkCapacityException, ResourceUnavailableException;
+	DomainRouterVO addVirtualMachineIntoNetwork(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile<UserVm> vm, ReservationContext context) throws ConcurrentOperationException, InsufficientNetworkCapacityException, ResourceUnavailableException;
 }

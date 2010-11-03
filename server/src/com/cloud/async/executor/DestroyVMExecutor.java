@@ -84,7 +84,7 @@ public class DestroyVMExecutor extends VMOperationExecutor {
 		VMOperationParam param = listener.getParam();
 		AsyncJobManager asyncMgr = getAsyncJobMgr();
 		ManagementServer managementServer = asyncMgr.getExecutorContext().getManagementServer();
-		String params = "id="+vm.getId() + "\nvmName=" + vm.getName() + "\nsoId=" + vm.getServiceOfferingId() + "\ntId=" + vm.getTemplateId() + "\ndcId=" + vm.getDataCenterId();
+		String params = "id="+vm.getId() + "\nvmName=" + vm.getHostName() + "\nsoId=" + vm.getServiceOfferingId() + "\ntId=" + vm.getTemplateId() + "\ndcId=" + vm.getDataCenterId();
     	if(s_logger.isDebugEnabled())
     		s_logger.debug("Execute asynchronize destroy VM command: received stop-VM answer, " + vm.getHostId() + "-" + seq);
     	
@@ -132,7 +132,7 @@ public class DestroyVMExecutor extends VMOperationExecutor {
 	    	} else {
 	            asyncMgr.getExecutorContext().getVmDao().updateIf(vm, Event.OperationFailed, vm.getHostId());
 	            asyncMgr.completeAsyncJob(getJob().getId(),
-	        		AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR, "Agent failed to stop VM: " + vm.getName());
+	        		AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR, "Agent failed to stop VM: " + vm.getHostName());
 //	            managementServer.saveEvent(param.getUserId(), vm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_STOP,
 //	            		"failed to stop VM instance : " + vm.getName(), params, param.getChildEventId());
 //	            managementServer.saveEvent(param.getUserId(), param.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_DESTROY,
@@ -171,8 +171,8 @@ public class DestroyVMExecutor extends VMOperationExecutor {
         event.setUserId(param.getUserId());
         event.setAccountId(vm.getAccountId());
         event.setType(EventTypes.EVENT_VM_DESTROY);
-        event.setParameters("id="+vm.getId() + "\nvmName=" + vm.getName() + "\nsoId=" + vm.getServiceOfferingId() + "\ntId=" + vm.getTemplateId() + "\ndcId=" + vm.getDataCenterId());
-        event.setDescription("failed to stop VM instance : " + vm.getName() + " due to " + resultMessage);
+        event.setParameters("id="+vm.getId() + "\nvmName=" + vm.getHostName() + "\nsoId=" + vm.getServiceOfferingId() + "\ntId=" + vm.getTemplateId() + "\ndcId=" + vm.getDataCenterId());
+        event.setDescription("failed to stop VM instance : " + vm.getHostName() + " due to " + resultMessage);
         event.setLevel(EventVO.LEVEL_ERROR);
 
         boolean jobStatusUpdated = false;

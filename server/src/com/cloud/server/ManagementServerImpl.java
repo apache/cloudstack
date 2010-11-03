@@ -1187,7 +1187,7 @@ public class ManagementServerImpl implements ManagementServer {
             try {
                 success = (success && _vmMgr.stop(vm, 0));
             } catch (AgentUnavailableException aue) {
-                s_logger.warn("Agent running on host " + vm.getHostId() + " is unavailable, unable to stop vm " + vm.getName());
+                s_logger.warn("Agent running on host " + vm.getHostId() + " is unavailable, unable to stop vm " + vm.getHostName());
                 success = false;
             }
         }
@@ -1656,7 +1656,7 @@ public class ManagementServerImpl implements ManagementServer {
             }
 
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("VM created: " + created.getId() + "-" + created.getName());
+                s_logger.debug("VM created: " + created.getId() + "-" + created.getHostName());
             }
             boolean executionExceptionFlag = false;
             boolean storageUnavailableExceptionFlag = false;
@@ -1738,7 +1738,7 @@ public class ManagementServerImpl implements ManagementServer {
                     throw new ConcurrentOperationException(concurrentOperationExceptionMsg);
                 }
                 else{
-                    throw new CloudRuntimeException("Unable to start the VM " + created.getId() + "-" + created.getName());
+                    throw new CloudRuntimeException("Unable to start the VM " + created.getId() + "-" + created.getHostName());
                 }
                 
             } else {
@@ -1755,7 +1755,7 @@ public class ManagementServerImpl implements ManagementServer {
                 }
             }
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("VM started: " + started.getId() + "-" + started.getName());
+                s_logger.debug("VM started: " + started.getId() + "-" + started.getHostName());
             }
             return started;
         }
@@ -3100,7 +3100,7 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("accountIdEQ", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
         sb.and("accountIdIN", sb.entity().getAccountId(), SearchCriteria.Op.IN);
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("name", sb.entity().getHostName(), SearchCriteria.Op.LIKE);
         sb.and("stateEQ", sb.entity().getState(), SearchCriteria.Op.EQ);
         sb.and("stateNEQ", sb.entity().getState(), SearchCriteria.Op.NEQ);
         sb.and("stateNIN", sb.entity().getState(), SearchCriteria.Op.NIN);
@@ -3466,7 +3466,7 @@ public class ManagementServerImpl implements ManagementServer {
         Object keyword = cmd.getKeyword();
 
         SearchBuilder<DomainRouterVO> sb = _routerDao.createSearchBuilder();
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("name", sb.entity().getHostName(), SearchCriteria.Op.LIKE);
         sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.IN);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
@@ -4036,18 +4036,18 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public int getVncPort(VirtualMachine vm) {
         if (vm.getHostId() == null) {
-        	s_logger.warn("VM " + vm.getName() + " does not have host, return -1 for its VNC port");
+        	s_logger.warn("VM " + vm.getHostName() + " does not have host, return -1 for its VNC port");
             return -1;
         }
         
         if(s_logger.isTraceEnabled())
-        	s_logger.trace("Trying to retrieve VNC port from agent about VM " + vm.getName());
+        	s_logger.trace("Trying to retrieve VNC port from agent about VM " + vm.getHostName());
         
         GetVncPortAnswer answer = (GetVncPortAnswer) _agentMgr.easySend(vm.getHostId(), new GetVncPortCommand(vm.getId(), vm.getInstanceName()));
         int port = answer == null ? -1 : answer.getPort();
         
         if(s_logger.isTraceEnabled())
-        	s_logger.trace("Retrieved VNC port about VM " + vm.getName() + " is " + port);
+        	s_logger.trace("Retrieved VNC port about VM " + vm.getHostName() + " is " + port);
         
         return port;
     }
@@ -6048,7 +6048,7 @@ public class ManagementServerImpl implements ManagementServer {
 				}
 				for(ConsoleProxyVO cp : cpList)
 				{
-					Long cpHostId = hostNameToHostIdMap.get(cp.getName());
+					Long cpHostId = hostNameToHostIdMap.get(cp.getHostName());
 					//now send a command to each console proxy host
 					UpdateCertificateCommand certCmd = new UpdateCertificateCommand(_certDao.findById(certVOId).getCertificate(), false);
 					try {

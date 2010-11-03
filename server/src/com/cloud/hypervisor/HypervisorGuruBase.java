@@ -17,10 +17,59 @@
  */
 package com.cloud.hypervisor;
 
+import java.util.List;
+
+import com.cloud.agent.api.to.NicTO;
+import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.agent.api.to.VolumeTO;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.vm.NicProfile;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineProfile;
 
 public abstract class HypervisorGuruBase extends AdapterBase implements HypervisorGuru {
     protected HypervisorGuruBase() {
         super();
     }
+    
+    protected NicTO toNicTO(NicProfile profile) {
+        NicTO to = new NicTO();
+        to.setDeviceId(profile.getDeviceId());
+        to.setBroadcastType(profile.getBroadcastType());
+        to.setType(profile.getTrafficType());
+        to.setIp(profile.getIp4Address());
+        to.setNetmask(profile.getNetmask());
+        to.setMac(profile.getMacAddress());
+        to.setDns1(profile.getDns1());
+        to.setDns2(profile.getDns2());
+        to.setGateway(profile.getGateway());
+        to.setDefaultNic(profile.isDefaultNic());
+        to.setBroadcastUri(profile.getBroadCastUri());
+        to.setIsolationuri(profile.getIsolationUri());
+        
+        return to;
+    }
+    
+    
+    protected <T extends VirtualMachine> VirtualMachineTO toVirtualMachineTO(VirtualMachineProfile<T> vmProfile) {
+        
+        ServiceOffering offering = vmProfile.getServiceOffering();  
+        VirtualMachine vm = vmProfile.getVirtualMachine();
+        
+        VirtualMachineTO to = new VirtualMachineTO(vm.getId(), vm.getInstanceName(), vm.getType(), offering.getCpu(), offering.getSpeed(), offering.getRamSize(), offering.getRamSize(), null, vmProfile.getOs());
+        
+        List<NicProfile> nicProfiles = vmProfile.getNics();
+        NicTO[] nics = new NicTO[nicProfiles.size()];
+        int i = 0;
+        for (NicProfile nicProfile : nicProfiles) {
+            nics[i++] = toNicTO(nicProfile);
+        }
+        
+        to.setNics(nics);
+        to.setDisks(vmProfile.getDisks().toArray(new VolumeTO[vmProfile.getDisks().size()]));
+        
+        return to;
+    }
+    
 }

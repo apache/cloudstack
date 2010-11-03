@@ -28,11 +28,11 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
-import com.cloud.deploy.DeployDestination;
-import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
+import com.cloud.deploy.DeployDestination;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.server.StatsCollector;
@@ -241,11 +241,11 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 	}
 	
 	@Override
-	public StoragePool allocateTo(DiskProfile dskCh, VirtualMachineProfile vm, DeployDestination dest, List<? extends Volume> disks, Set<? extends StoragePool> avoids) {
+	public StoragePool allocateTo(DiskProfile dskCh, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, List<? extends Volume> disks, Set<? extends StoragePool> avoids) {
 	    
-	    VMInstanceVO instance = (VMInstanceVO)(vm.getVm());
+	    VMInstanceVO instance = (VMInstanceVO)(vm.getVirtualMachine());
 	    
-	    VMTemplateVO template = vm.getTemplateId() != null ? _templateDao.findById(vm.getTemplateId()) : null;
+	    VMTemplateVO template = _templateDao.findById(instance.getTemplateId());
 	    return allocateToPool(dskCh, (DataCenterVO)dest.getDataCenter(), (HostPodVO)dest.getPod(), dest.getCluster().getId(), instance, template, avoids);
 	}
 }

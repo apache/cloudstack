@@ -198,7 +198,7 @@ public class DeployVm2Cmd extends BaseAsyncCreateCmd {
 
         UserVmResponse response = new UserVmResponse();
         response.setId(userVm.getId());
-        response.setName(userVm.getName());
+        response.setName(userVm.getHostName());
         response.setCreated(userVm.getCreated());
         response.setZoneId(userVm.getDataCenterId());
         response.setZoneName(ApiDBUtils.findZoneById(userVm.getDataCenterId()).getName());
@@ -213,7 +213,7 @@ public class DeployVm2Cmd extends BaseAsyncCreateCmd {
         }
 
         if (userVm.getDisplayName() == null || userVm.getDisplayName().length() == 0) {
-            response.setDisplayName(userVm.getName());
+            response.setDisplayName(userVm.getHostName());
         } else {
             response.setDisplayName(userVm.getDisplayName());
         }

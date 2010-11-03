@@ -8,10 +8,10 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 
 import javax.naming.ConfigurationException;
 
@@ -22,20 +22,18 @@ import com.cloud.agent.api.storage.CreateEntityDownloadURLCommand;
 import com.cloud.agent.api.storage.DeleteEntityDownloadURLAnswer;
 import com.cloud.agent.api.storage.DeleteEntityDownloadURLCommand;
 import com.cloud.agent.api.storage.UploadAnswer;
-import com.cloud.agent.api.storage.UploadProgressCommand;
 import com.cloud.agent.api.storage.UploadCommand;
+import com.cloud.agent.api.storage.UploadProgressCommand;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.StorageResource;
 import com.cloud.storage.Upload;
 import com.cloud.storage.UploadVO;
-import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.template.TemplateUploader.UploadCompleteCallback;
 import com.cloud.storage.template.TemplateUploader.Status;
+import com.cloud.storage.template.TemplateUploader.UploadCompleteCallback;
 import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.UUID;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
@@ -174,7 +172,7 @@ public class UploadManagerImpl implements UploadManager {
 			String cksum, String installPathPrefix, String userName,
 			String passwd, long templateSizeInBytes) {		
 		
-        UUID uuid = new UUID();
+        UUID uuid = UUID.randomUUID();
         String jobId = uuid.toString();
 
         String completePath = parentDir + File.separator + installPathPrefix;

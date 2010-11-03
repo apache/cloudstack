@@ -159,6 +159,7 @@ import com.cloud.utils.nio.Task;
 import com.cloud.vm.State;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.VMInstanceDao;
 
 /**
@@ -431,7 +432,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
 	public Host findHost(final Host.Type type, final DataCenterVO dc, final HostPodVO pod, final StoragePoolVO sp,
     		final ServiceOffering offering, final VMTemplateVO template, VMInstanceVO vm,
     		Host currentHost, final Set<Host> avoid) {
-        VirtualMachineProfile vmc = new VirtualMachineProfile(vm.getType());
+        VirtualMachineProfile<VMInstanceVO> vmc = new VirtualMachineProfileImpl<VMInstanceVO>(vm.getType());
         Enumeration<HostAllocator> en = _hostAllocators.enumeration();
         while (en.hasMoreElements()) {
             final HostAllocator allocator = en.nextElement();

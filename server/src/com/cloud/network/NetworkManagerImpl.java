@@ -153,6 +153,7 @@ import com.cloud.vm.DomainRouter;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
+import com.cloud.vm.ReservationContext;
 import com.cloud.vm.State;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
@@ -330,7 +331,7 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
 
             if (router != null) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Router is " + router.getName());
+                    s_logger.debug("Router is " + router.getHostName());
                 }
                 return sourceNat;
             }
@@ -1174,9 +1175,9 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
             if (accountId == 0) {
                 accountId = userVm.getAccountId();
             } else if (accountId != userVm.getAccountId()) {
-                s_logger.warn("guest vm " + userVm.getName() + " (id:" + userVm.getId() + ") belongs to account " + userVm.getAccountId()
+                s_logger.warn("guest vm " + userVm.getHostName() + " (id:" + userVm.getId() + ") belongs to account " + userVm.getAccountId()
                         + ", previous vm in list belongs to account " + accountId);
-                throw new InvalidParameterValueException("guest vm " + userVm.getName() + " (id:" + userVm.getId() + ") belongs to account " + userVm.getAccountId()
+                throw new InvalidParameterValueException("guest vm " + userVm.getHostName() + " (id:" + userVm.getId() + ") belongs to account " + userVm.getAccountId()
                         + ", previous vm in list belongs to account " + accountId);
             }
             
@@ -1194,12 +1195,12 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
                 // Make sure owner of router is owner of load balancer.  Since we are already checking that all VMs belong to the same router, by checking router
                 // ownership once we'll make sure all VMs belong to the owner of the load balancer.
                 if (router.getAccountId() != loadBalancer.getAccountId()) {
-                    throw new InvalidParameterValueException("guest vm " + userVm.getName() + " (id:" + userVm.getId() + ") does not belong to the owner of load balancer " +
+                    throw new InvalidParameterValueException("guest vm " + userVm.getHostName() + " (id:" + userVm.getId() + ") does not belong to the owner of load balancer " +
                             loadBalancer.getName() + " (owner is account id " + loadBalancer.getAccountId() + ")");
                 }
             } else if (router.getId() != nextRouter.getId()) {
-                throw new InvalidParameterValueException("guest vm " + userVm.getName() + " (id:" + userVm.getId() + ") belongs to router " + nextRouter.getName()
-                        + ", previous vm in list belongs to router " + router.getName());
+                throw new InvalidParameterValueException("guest vm " + userVm.getHostName() + " (id:" + userVm.getId() + ") belongs to router " + nextRouter.getHostName()
+                        + ", previous vm in list belongs to router " + router.getHostName());
             }
 
             // check for ip address/port conflicts by checking exising forwarding and loadbalancing rules
@@ -1217,7 +1218,7 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
                         if (fwRule.getPublicPort().equals(loadBalancer.getPublicPort())) {
                             throw new NetworkRuleConflictException("An existing port forwarding service rule for " + ipAddress + ":" + loadBalancer.getPublicPort()
                                     + " exists, found while trying to apply load balancer " + loadBalancer.getName() + " (id:" + loadBalancer.getId() + ") to instance "
-                                    + userVm.getName() + ".");
+                                    + userVm.getHostName() + ".");
                         }
                     } else if (fwRule.getPrivateIpAddress().equals(privateIpAddress) && fwRule.getPrivatePort().equals(loadBalancer.getPrivatePort()) && fwRule.isEnabled()) {
                         // for the current load balancer, don't add the same instance to the load balancer more than once
@@ -1516,14 +1517,14 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
 
             if ((router != null) && (router.getState() == State.Running)) {
             	if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Disassociate ip " + router.getName());
+                    s_logger.debug("Disassociate ip " + router.getHostName());
                 }
 
                 if (associateIP(router, ipAddrs, false, 0)) {
                     _ipAddressDao.unassignIpAddress(ipAddress);
                 } else {
                 	if (s_logger.isDebugEnabled()) {
-                		s_logger.debug("Unable to dissociate IP : " + ipAddress + " due to failing to dissociate with router: " + router.getName());
+                		s_logger.debug("Unable to dissociate IP : " + ipAddress + " due to failing to dissociate with router: " + router.getHostName());
                 	}
 
                 	final EventVO event = new EventVO();
@@ -1532,7 +1533,7 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
                     event.setType(EventTypes.EVENT_NET_IP_RELEASE);
                     event.setLevel(EventVO.LEVEL_ERROR);
                     event.setParameters("address=" + ipAddress + "\nsourceNat="+ip.isSourceNat());
-                    event.setDescription("failed to released a public ip: " + ipAddress + " due to failure to disassociate with router " + router.getName());
+                    event.setDescription("failed to released a public ip: " + ipAddress + " due to failure to disassociate with router " + router.getHostName());
                     _eventDao.persist(event);
 
                     return false;
@@ -1758,7 +1759,7 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
     }
     
     @Override @DB
-    public List<NicProfile> allocate(VirtualMachineProfile vm, List<Pair<NetworkConfigurationVO, NicProfile>> networks) throws InsufficientCapacityException {
+    public List<NicProfile> allocate(VirtualMachineProfile<? extends VMInstanceVO> vm, List<Pair<NetworkConfigurationVO, NicProfile>> networks) throws InsufficientCapacityException {
         List<NicProfile> nicProfiles = new ArrayList<NicProfile>(networks.size());
         
         Transaction txn = Transaction.currentTxn();
@@ -1878,7 +1879,7 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
     }
     
     @DB
-    protected Pair<NetworkGuru, NetworkConfigurationVO> implementNetworkConfiguration(long configId, DeployDestination dest, Account user) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientAddressCapacityException {
+    protected Pair<NetworkGuru, NetworkConfigurationVO> implementNetworkConfiguration(long configId, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientAddressCapacityException {
         Transaction.currentTxn();
         Pair<NetworkGuru, NetworkConfigurationVO> implemented = new Pair<NetworkGuru, NetworkConfigurationVO>(null, null);
         
@@ -1915,7 +1916,7 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
                     s_logger.debug("Asking " + element.getName() + " to implmenet " + config);
                 }
                 try {
-                    element.implement(config, offering, dest, user);
+                    element.implement(config, offering, dest, context);
                 } catch (InsufficientCapacityException e) {
                     throw new ResourceUnavailableException("Unable to start domain router for this VM", e);
                 }
@@ -1932,12 +1933,10 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
     }
     
     @Override
-    public NicTO[] prepare(VirtualMachineProfile vmProfile, DeployDestination dest, Account user) throws InsufficientNetworkCapacityException, ConcurrentOperationException, ResourceUnavailableException {
+    public List<NicProfile> prepare(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, DeployDestination dest, ReservationContext context) throws InsufficientNetworkCapacityException, ConcurrentOperationException, ResourceUnavailableException {
         List<NicVO> nics = _nicDao.listBy(vmProfile.getId());
-        NicTO[] nicTos = new NicTO[nics.size()];
-        int i = 0;
         for (NicVO nic : nics) {
-            Pair<NetworkGuru, NetworkConfigurationVO> implemented = implementNetworkConfiguration(nic.getNetworkConfigurationId(), dest, user);
+            Pair<NetworkGuru, NetworkConfigurationVO> implemented = implementNetworkConfiguration(nic.getNetworkConfigurationId(), dest, context);
             NetworkGuru concierge = implemented.first();
             NetworkConfigurationVO config = implemented.second();
             NicProfile profile = null;
@@ -1962,18 +1961,17 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Asking " + element.getName() + " to prepare for " + nic);
                     }
-                    element.prepare(config, profile, vmProfile, null, dest, user);
+                    element.prepare(config, profile, vmProfile, dest, context);
                 }
             }
-            
-            nicTos[i++] = toNicTO(nic, profile, config);
-            
+
+            vmProfile.addNic(profile);
         }
-        return nicTos;
+        return vmProfile.getNics();
     }
     
     @Override
-    public void release(VirtualMachineProfile vmProfile) {
+    public void release(VirtualMachineProfile<? extends VMInstanceVO> vmProfile) {
         List<NicVO> nics = _nicDao.listBy(vmProfile.getId());
         for (NicVO nic : nics) {
             NetworkConfigurationVO config = _networkConfigDao.findById(nic.getNetworkConfigurationId());
@@ -2008,7 +2006,7 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
     }
     
     @Override
-    public <K extends VMInstanceVO> List<NicVO> getNics(K vm) {
+    public List<NicVO> getNics(VMInstanceVO vm) {
         return _nicDao.listBy(vm.getId());
     }
     

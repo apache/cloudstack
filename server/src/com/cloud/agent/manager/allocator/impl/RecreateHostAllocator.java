@@ -62,7 +62,7 @@ public class RecreateHostAllocator extends FirstFitRoutingAllocator {
     boolean _isDirect;
     
     @Override
-    public Host allocateTo(VirtualMachineProfile vm, ServiceOffering offering, Host.Type type, DataCenterVO dc, HostPodVO pod,
+    public Host allocateTo(VirtualMachineProfile<? extends VirtualMachine> vm, ServiceOffering offering, Host.Type type, DataCenterVO dc, HostPodVO pod,
     		Long clusterId, VMTemplateVO template, Set<Host> avoid) {
         Host host = super.allocateTo(vm, offering, type, dc, pod, clusterId, template, avoid);
         if (host != null) {

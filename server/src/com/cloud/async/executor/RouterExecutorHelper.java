@@ -32,7 +32,7 @@ public class RouterExecutorHelper {
 		resultObject.setDns2(router.getDns2());
 		resultObject.setNetworkDomain(router.getDomain());
 		resultObject.setGateway(router.getGateway());
-		resultObject.setName(router.getName());
+		resultObject.setName(router.getHostName());
 		resultObject.setPodId(router.getPodId());
 		resultObject.setPrivateIp(router.getPrivateIpAddress());
 		resultObject.setPrivateMacAddress(router.getPrivateMacAddress());

@@ -29,14 +29,14 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.host.Host;
 import com.cloud.offering.ServiceOffering;
-import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value={HostAllocator.class})
 public class FirstFitRoutingAllocator extends FirstFitAllocator {
     @Override
-    public Host allocateTo(VirtualMachineProfile vm, ServiceOffering offering, Host.Type type, DataCenterVO dc, HostPodVO pod,
+    public Host allocateTo(VirtualMachineProfile<? extends VirtualMachine> vm, ServiceOffering offering, Host.Type type, DataCenterVO dc, HostPodVO pod,
     		Long clusterId, VMTemplateVO template, Set<Host> avoid) {
         try {
             NDC.push("FirstFitRoutingAllocator");

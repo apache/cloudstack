@@ -19,19 +19,38 @@ package com.cloud.deploy;
 
 public class DataCenterDeployment implements DeploymentPlan {
     long _dcId;
-    int _count;
+    Long _podId;
+    Long _clusterId;
+    Long _poolId;
     
-    public DataCenterDeployment(long dataCenterId, int count) {
+    public DataCenterDeployment(long dataCenterId) {
+        this(dataCenterId, null, null, null);
+    }
+    
+    public DataCenterDeployment(long dataCenterId, Long podId, Long clusterId, Long poolId) {
         _dcId = dataCenterId;
+        _podId = podId;
+        _clusterId = clusterId;
+        _poolId = poolId;
     }
     
     @Override
     public long getDataCenterId() {
         return _dcId;
     }
+
+    @Override
+    public Long getPodId() {
+        return _podId;
+    }
+
+    @Override
+    public Long getClusterId() {
+        return _clusterId;
+    }
     
     @Override
-    public int getCount() {
-        return _count;
+    public Long getPoolId() {
+        return _poolId;
     }
 }

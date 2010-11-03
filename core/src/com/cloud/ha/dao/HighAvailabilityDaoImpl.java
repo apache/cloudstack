@@ -25,9 +25,9 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 
 import com.cloud.ha.HighAvailabilityManager;
-import com.cloud.ha.WorkVO;
+import com.cloud.ha.HaWorkVO;
 import com.cloud.ha.HighAvailabilityManager.Step;
-import com.cloud.ha.WorkVO.WorkType;
+import com.cloud.ha.HaWorkVO.WorkType;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -36,15 +36,15 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Local(value={HighAvailabilityDao.class})
-public class HighAvailabilityDaoImpl extends GenericDaoBase<WorkVO, Long> implements HighAvailabilityDao {
+public class HighAvailabilityDaoImpl extends GenericDaoBase<HaWorkVO, Long> implements HighAvailabilityDao {
     private static final Logger s_logger = Logger.getLogger(HighAvailabilityDaoImpl.class);
 	
-    private final SearchBuilder<WorkVO> TBASearch;
-    private final SearchBuilder<WorkVO> PreviousInstanceSearch;
-    private final SearchBuilder<WorkVO> UntakenMigrationSearch;
-    private final SearchBuilder<WorkVO> CleanupSearch;
-    private final SearchBuilder<WorkVO> PreviousWorkSearch;
-    private final SearchBuilder<WorkVO> TakenWorkSearch;
+    private final SearchBuilder<HaWorkVO> TBASearch;
+    private final SearchBuilder<HaWorkVO> PreviousInstanceSearch;
+    private final SearchBuilder<HaWorkVO> UntakenMigrationSearch;
+    private final SearchBuilder<HaWorkVO> CleanupSearch;
+    private final SearchBuilder<HaWorkVO> PreviousWorkSearch;
+    private final SearchBuilder<HaWorkVO> TakenWorkSearch;
 
     protected HighAvailabilityDaoImpl() {
         super();
@@ -86,22 +86,22 @@ public class HighAvailabilityDaoImpl extends GenericDaoBase<WorkVO, Long> implem
     }
 
     @Override
-    public WorkVO take(final long serverId) {
+    public HaWorkVO take(final long serverId) {
         final Transaction txn = Transaction.currentTxn();
         try {
-            final SearchCriteria<WorkVO> sc = TBASearch.create();
+            final SearchCriteria<HaWorkVO> sc = TBASearch.create();
             sc.setParameters("time", System.currentTimeMillis() >> 10);
 
-            final Filter filter = new Filter(WorkVO.class, null, true, 0l, 1l);
+            final Filter filter = new Filter(HaWorkVO.class, null, true, 0l, 1l);
 
             txn.start();
-            final List<WorkVO> vos = lockRows(sc, filter, true);
+            final List<HaWorkVO> vos = lockRows(sc, filter, true);
             if (vos.size() == 0) {
                 txn.commit();
                 return null;
             }
 
-            final WorkVO work = vos.get(0);
+            final HaWorkVO work = vos.get(0);
             work.setServerId(serverId);
             work.setDateTaken(new Date());
 
@@ -117,15 +117,15 @@ public class HighAvailabilityDaoImpl extends GenericDaoBase<WorkVO, Long> implem
     }
 
     @Override
-    public List<WorkVO> findPreviousHA(final long instanceId) {
-        final SearchCriteria<WorkVO> sc = PreviousInstanceSearch.create();
+    public List<HaWorkVO> findPreviousHA(final long instanceId) {
+        final SearchCriteria<HaWorkVO> sc = PreviousInstanceSearch.create();
         sc.setParameters("instance", instanceId);
         return listIncludingRemovedBy(sc);
     }
 
     @Override
     public void cleanup(final long time) {
-        final SearchCriteria<WorkVO> sc = CleanupSearch.create();
+        final SearchCriteria<HaWorkVO> sc = CleanupSearch.create();
         sc.setParameters("time", time);
         sc.setParameters("step", HighAvailabilityManager.Step.Done, HighAvailabilityManager.Step.Cancelled);
         expunge(sc);
@@ -133,11 +133,11 @@ public class HighAvailabilityDaoImpl extends GenericDaoBase<WorkVO, Long> implem
 
     @Override
     public void deleteMigrationWorkItems(final long hostId, final WorkType type, final long serverId) {
-        final SearchCriteria<WorkVO> sc = UntakenMigrationSearch.create();
+        final SearchCriteria<HaWorkVO> sc = UntakenMigrationSearch.create();
         sc.setParameters("host", hostId);
         sc.setParameters("type", type.toString());
 
-        WorkVO work = createForUpdate();
+        HaWorkVO work = createForUpdate();
         Date date = new Date();
         work.setDateTaken(date);
         work.setServerId(serverId);
@@ -147,8 +147,8 @@ public class HighAvailabilityDaoImpl extends GenericDaoBase<WorkVO, Long> implem
     }
 
     @Override
-    public List<WorkVO> findTakenWorkItems(WorkType type) {
-    	SearchCriteria<WorkVO> sc = TakenWorkSearch.create();
+    public List<HaWorkVO> findTakenWorkItems(WorkType type) {
+    	SearchCriteria<HaWorkVO> sc = TakenWorkSearch.create();
     	sc.setParameters("type", type);
     	sc.setParameters("step", Step.Done, Step.Cancelled, Step.Error);
     	
@@ -158,7 +158,7 @@ public class HighAvailabilityDaoImpl extends GenericDaoBase<WorkVO, Long> implem
     
     @Override
     public boolean delete(long instanceId, WorkType type) {
-    	SearchCriteria<WorkVO> sc = PreviousWorkSearch.create();
+    	SearchCriteria<HaWorkVO> sc = PreviousWorkSearch.create();
     	sc.setParameters("instance", instanceId);
     	sc.setParameters("type", type);
     	return expunge(sc) > 0;
@@ -166,7 +166,7 @@ public class HighAvailabilityDaoImpl extends GenericDaoBase<WorkVO, Long> implem
     
     @Override
     public boolean hasBeenScheduled(long instanceId, WorkType type) {
-    	SearchCriteria<WorkVO> sc = PreviousWorkSearch.create();
+    	SearchCriteria<HaWorkVO> sc = PreviousWorkSearch.create();
     	sc.setParameters("instance", instanceId);
     	sc.setParameters("type", type);
     	return listBy(sc, null).size() > 0;

@@ -59,7 +59,7 @@ public interface VirtualMachine extends RunningOn, ControlledEntity {
     /**
      * @return the name of the virtual machine.
      */
-    public String getName();
+    public String getHostName();
     
     /**
      * @return the ip address of the virtual machine.
@@ -95,7 +95,7 @@ public interface VirtualMachine extends RunningOn, ControlledEntity {
     /**
      * @return pod id.
      */
-    public long getPodId();
+    public Long getPodId();
     
     /**
      * @return data center id.
@@ -111,7 +111,7 @@ public interface VirtualMachine extends RunningOn, ControlledEntity {
      * @return should HA be enabled for this machine?
      */
     public boolean isHaEnabled();
-
+    
 	/**
      * @return date when machine was created
      */

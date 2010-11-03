@@ -17,12 +17,20 @@
  */
 package com.cloud.hypervisor;
 
-import com.cloud.offering.ServiceOffering;
+import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.component.Adapter;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 public interface HypervisorGuru extends Adapter {
-    VirtualMachineProfile design(VirtualMachine vm, ServiceOffering offering);
-    boolean check(VirtualMachineProfile profile);
+    HypervisorType getHypervisorType();
+    
+    /**
+     * Convert from a virtual machine to the
+     * virtual machine that the hypervisor expects. 
+     * @param vm 
+     * @return
+     */
+    <T extends VirtualMachine> VirtualMachineTO implement(VirtualMachineProfile<T> vm);
 }

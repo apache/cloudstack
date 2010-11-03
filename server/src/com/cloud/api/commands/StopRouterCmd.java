@@ -85,8 +85,51 @@ public class StopRouterCmd extends BaseAsyncCmd {
 
     @Override @SuppressWarnings("unchecked")
     public DomainRouterResponse getResponse() {
+<<<<<<< HEAD
         DomainRouter router = (DomainRouter)getResponseObject();
         DomainRouterResponse response =ApiResponseHelper.createDomainRouterResponse(router);
+=======
+        DomainRouterVO router = (DomainRouterVO)getResponseObject();
+
+        DomainRouterResponse response = new DomainRouterResponse();
+        response.setId(router.getId());
+        response.setZoneId(router.getDataCenterId());
+        response.setZoneName(ApiDBUtils.findZoneById(router.getDataCenterId()).getName());
+        response.setDns1(router.getDns1());
+        response.setDns2(router.getDns2());
+        response.setNetworkDomain(router.getDomain());
+        response.setGateway(router.getGateway());
+        response.setName(router.getHostName());
+        response.setPodId(router.getPodId());
+        response.setPrivateIp(router.getPrivateIpAddress());
+        response.setPrivateMacAddress(router.getPrivateMacAddress());
+        response.setPrivateNetmask(router.getPrivateNetmask());
+        response.setPublicIp(router.getPublicIpAddress());
+        response.setPublicMacAddress(router.getPublicMacAddress());
+        response.setPublicNetmask(router.getPrivateNetmask());
+        response.setGuestIpAddress(router.getGuestIpAddress());
+        response.setGuestMacAddress(router.getGuestMacAddress());
+        response.setTemplateId(router.getTemplateId());
+        response.setCreated(router.getCreated());
+        response.setGuestNetmask(router.getGuestNetmask());
+
+        if (router.getHostId() != null) {
+            response.setHostName(ApiDBUtils.findHostById(router.getHostId()).getName());
+            response.setHostId(router.getHostId());
+        }
+
+        Account acct = ApiDBUtils.findAccountById(router.getAccountId());
+        if (acct != null) {
+            response.setAccountName(acct.getAccountName());
+            response.setDomainId(acct.getDomainId());
+            response.setDomainName(ApiDBUtils.findDomainById(acct.getDomainId()).getName());
+        }
+
+        if (router.getState() != null) {
+            response.setState(router.getState());
+        }
+
+>>>>>>> Harmony among gurus
         response.setResponseName(getName());
         return response;
     }

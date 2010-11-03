@@ -23,7 +23,7 @@ import java.util.List;
 
 import javax.ejb.Local;
 
-import com.cloud.ha.WorkVO;
+import com.cloud.ha.HaWorkVO;
 import com.cloud.network.security.NetworkGroupWorkVO;
 import com.cloud.network.security.NetworkGroupWorkVO.Step;
 import com.cloud.utils.db.Filter;
@@ -142,7 +142,7 @@ public class NetworkGroupWorkDaoImpl extends GenericDaoBase<NetworkGroupWorkVO, 
         sc.setParameters("vmId", vmId);
         sc.setParameters("seqno", logSequenceNumber);
         
-        final Filter filter = new Filter(WorkVO.class, null, true, 0l, 1l);
+        final Filter filter = new Filter(HaWorkVO.class, null, true, 0l, 1l);
 
         final List<NetworkGroupWorkVO> vos = lockRows(sc, filter, true);
         if (vos.size() == 0) {

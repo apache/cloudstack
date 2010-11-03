@@ -50,7 +50,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
 	private long id;
 
     @Column(name="name", updatable=false, nullable=false, length=255)
-	private String name = null;
+	private String hostName = null;
 
     @Column(name="vnc_password", updatable=true, nullable=false, length=255)
     String vncPassword;
@@ -91,7 +91,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     private Long lastHostId;
 
     @Column(name="pod_id", updatable=true, nullable=false)
-    private long podId;
+    private Long podId;
 
     @Column(name="private_mac_address", updatable=true, nullable=true)
     String privateMacAddress;
@@ -145,7 +145,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
                         long accountId,
                         boolean haEnabled) {
         this.id = id;
-        this.name = name;
+        this.hostName = name;
         if (vmTemplateId != null) {
             this.templateId = vmTemplateId;
         }
@@ -180,7 +180,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
                         Long hostId) {
         super();
         this.id = id;
-        this.name = name;
+        this.hostName = name;
         if (vmTemplateId > -1)
         	this.templateId = vmTemplateId;
         else
@@ -263,8 +263,8 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
 	}
 	
 	@Override
-	public String getName() {
-		return name;
+	public String getHostName() {
+		return hostName;
 	}
 	
 	@Override
@@ -305,6 +305,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
         return vncPassword;
     }
     
+    @Override
     public long getServiceOfferingId() {
         return serviceOfferingId;
     }
@@ -379,7 +380,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     }
 
     @Override
-    public long getPodId() {
+    public Long getPodId() {
         return podId;
     }
     

@@ -68,7 +68,7 @@ public class StartCommand extends AbstractStartCommand {
         this.guestNetworkId = guestNetworkId;
         guestMacAddress = vm.getGuestMacAddress();
         vncPassword = vm.getVncPassword();
-        hostName = vm.getName();
+        hostName = vm.getHostName();
 //        networkRateMbps = offering.getRateMbps();
 //        networkRateMulticastMbps = offering.getMulticastRateMbps();
         networkRateMbps = networkRate;

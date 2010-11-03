@@ -19,11 +19,11 @@ package com.cloud.ha.dao;
 
 import java.util.List;
 
-import com.cloud.ha.WorkVO;
-import com.cloud.ha.WorkVO.WorkType;
+import com.cloud.ha.HaWorkVO;
+import com.cloud.ha.HaWorkVO.WorkType;
 import com.cloud.utils.db.GenericDao;
 
-public interface HighAvailabilityDao extends GenericDao<WorkVO, Long> {
+public interface HighAvailabilityDao extends GenericDao<HaWorkVO, Long> {
 
     /**
      * Takes an available HA work item.
@@ -31,7 +31,7 @@ public interface HighAvailabilityDao extends GenericDao<WorkVO, Long> {
      * @param serverId server that is taking this.
      * @return WorkVO if there's one to work on; null if none.
      */
-    WorkVO take(long serverId);
+    HaWorkVO take(long serverId);
 
     /**
      * Finds all the work items related to this instance.
@@ -39,7 +39,7 @@ public interface HighAvailabilityDao extends GenericDao<WorkVO, Long> {
      * @param instanceId
      * @return list of WorkVO or empty list.
      */
-    List<WorkVO> findPreviousHA(long instanceId);
+    List<HaWorkVO> findPreviousHA(long instanceId);
     
     boolean delete(long instanceId, WorkType type);
 
@@ -53,7 +53,7 @@ public interface HighAvailabilityDao extends GenericDao<WorkVO, Long> {
     
     void deleteMigrationWorkItems(final long hostId, final WorkType type, final long serverId);
     
-    List<WorkVO> findTakenWorkItems(WorkType type);
+    List<HaWorkVO> findTakenWorkItems(WorkType type);
     
     /**
      * finds out if a work item has been scheduled for this work type but has not been taken yet.

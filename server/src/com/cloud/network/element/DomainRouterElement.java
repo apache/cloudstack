@@ -33,12 +33,14 @@ import com.cloud.network.dao.NetworkConfigurationDao;
 import com.cloud.network.router.DomainRouterManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.GuestIpType;
-import com.cloud.user.Account;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
+import com.cloud.vm.ReservationContext;
 import com.cloud.vm.UserVmManager;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
@@ -57,13 +59,13 @@ public class DomainRouterElement extends AdapterBase implements NetworkElement {
     @Inject DomainRouterDao _routerDao;
 
     @Override
-    public boolean implement(NetworkConfiguration guestConfig, NetworkOffering offering, DeployDestination dest, Account user) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException {
+    public boolean implement(NetworkConfiguration guestConfig, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException {
         if (offering.getGuestIpType() != GuestIpType.Virtualized) {
             s_logger.trace("Not handling guest ip type = " + offering.getGuestIpType());
             return false;
         }
         
-        DomainRouterVO router = _routerMgr.deploy(guestConfig, offering, dest, user);
+        DomainRouterVO router = _routerMgr.deploy(guestConfig, offering, dest, context.getAccount());
         if (router == null) {
             throw new ResourceUnavailableException("Unable to deploy the router for " + guestConfig);
         }
@@ -72,17 +74,24 @@ public class DomainRouterElement extends AdapterBase implements NetworkElement {
     }
 
     @Override
-    public boolean prepare(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile vm, NetworkOffering offering, DeployDestination dest, Account user) throws ConcurrentOperationException, InsufficientNetworkCapacityException, ResourceUnavailableException {
+    public boolean prepare(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientNetworkCapacityException, ResourceUnavailableException {
         if (config.getTrafficType() != TrafficType.Guest || vm.getType() != Type.User) {
             s_logger.trace("Domain Router only cares about guest network and User VMs");
             return false;
         }
         
-        return _routerMgr.addVirtualMachineIntoNetwork(config, nic, vm, user) != null;
+        if (vm.getType() != VirtualMachine.Type.User) {
+            return false;
+        }
+        
+        @SuppressWarnings("unchecked")
+        VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>)vm;
+        
+        return _routerMgr.addVirtualMachineIntoNetwork(config, nic, uservm, context) != null;
     }
 
     @Override
-    public boolean release(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile vm, NetworkOffering offering, Account user) {
+    public boolean release(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, ReservationContext context) {
         if (config.getTrafficType() != TrafficType.Guest || vm.getType() != Type.User) {
             s_logger.trace("Domain Router only cares about guest network and User VMs");
             return false;
@@ -93,7 +102,7 @@ public class DomainRouterElement extends AdapterBase implements NetworkElement {
     }
 
     @Override
-    public boolean shutdown(NetworkConfiguration config, NetworkOffering offering, Account user) throws ConcurrentOperationException {
+    public boolean shutdown(NetworkConfiguration config, ReservationContext context) throws ConcurrentOperationException {
         if (config.getTrafficType() != TrafficType.Guest) {
             s_logger.trace("Domain Router only cares about guet network.");
             return false;

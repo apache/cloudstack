@@ -55,6 +55,7 @@ import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
@@ -103,7 +104,7 @@ public class LocalStoragePoolAllocator extends FirstFitStoragePoolAllocator {
         }
 
         Set<StoragePool> myAvoids = new HashSet<StoragePool>(avoid);
-        VirtualMachineProfile vmc = new VirtualMachineProfile(vm.getType());
+        VirtualMachineProfile<VMInstanceVO> vmc = new VirtualMachineProfileImpl<VMInstanceVO>(vm.getType());
         StoragePool pool = null;
         while ((pool = super.allocateToPool(dskCh, dc, pod, clusterId, vm, template, myAvoids)) != null) {
             myAvoids.add(pool);

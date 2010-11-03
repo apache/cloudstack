@@ -28,10 +28,10 @@ import com.cloud.dc.HostPodVO;
 import com.cloud.host.Host;
 import com.cloud.host.dao.HostDao;
 import com.cloud.offering.ServiceOffering;
-import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.ComponentLocator;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 /**
@@ -47,7 +47,7 @@ public class TestingAllocator implements HostAllocator {
     String _name;
 
     @Override
-    public Host allocateTo(VirtualMachineProfile vm, ServiceOffering offering, Host.Type type, DataCenterVO dc, HostPodVO pod,
+    public Host allocateTo(VirtualMachineProfile<? extends VirtualMachine> vm, ServiceOffering offering, Host.Type type, DataCenterVO dc, HostPodVO pod,
     		Long clusterId, VMTemplateVO template, Set<Host> avoid) {
         if (type == Host.Type.Routing && _routingHost != null) {
             return _hostDao.findById(_routingHost);

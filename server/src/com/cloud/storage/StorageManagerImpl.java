@@ -902,7 +902,7 @@ public class StorageManagerImpl implements StorageManager {
             List<StoragePoolVO> avoids, long size) {
         List<VolumeVO> volumes = create(account, vm, template, dc, pod, offering, diskOffering, avoids, size);
         if( volumes == null || volumes.size() == 0) {
-            throw new CloudRuntimeException("Unable to create volume for " + vm.getName());
+            throw new CloudRuntimeException("Unable to create volume for " + vm.getHostName());
         }
         
         for (VolumeVO v : volumes) {
@@ -2601,14 +2601,13 @@ public class StorageManagerImpl implements StorageManager {
     }
     
     @Override
-    public VolumeTO[] prepare(VirtualMachineProfile vm, DeployDestination dest) throws StorageUnavailableException, InsufficientStorageCapacityException {
+    public void prepare(VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest) throws StorageUnavailableException, InsufficientStorageCapacityException {
         List<VolumeVO> vols = _volsDao.findUsableVolumesForInstance(vm.getId());
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Preparing " + vols.size() + " volumes for " + vm);
         }
         
         List<VolumeVO> recreateVols = new ArrayList<VolumeVO>(vols.size());
-        VolumeTO[] disks = new VolumeTO[vols.size()];
         
         int i = 0;
         for (VolumeVO vol : vols) {
@@ -2628,7 +2627,7 @@ public class StorageManagerImpl implements StorageManager {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Volume " + vol + " is ready.");
                     }
-                    disks[i++] = new VolumeTO(vol, pool);
+                    vm.addDisk(new VolumeTO(vol, pool));
                 }
             } else if (state == Volume.State.Allocated) {
                 if (s_logger.isDebugEnabled()) {
@@ -2680,10 +2679,9 @@ public class StorageManagerImpl implements StorageManager {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Volume " + newVol + " is created on " + created.second());
             }
-            disks[i++] = created.first();
+
+            vm.addDisk(created.first());
         }
-        
-        return disks;
     }
     
     @DB
@@ -2700,7 +2698,7 @@ public class StorageManagerImpl implements StorageManager {
         }
     }
     
-    public Pair<VolumeTO, StoragePool> createVolume(VolumeVO toBeCreated, DiskOfferingVO offering, VirtualMachineProfile vm, List<? extends Volume> alreadyCreated, DeployDestination dest) {
+    public Pair<VolumeTO, StoragePool> createVolume(VolumeVO toBeCreated, DiskOfferingVO offering, VirtualMachineProfile<? extends VirtualMachine> vm, List<? extends Volume> alreadyCreated, DeployDestination dest) {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Creating volume: " + toBeCreated);
         }

@@ -18,114 +18,103 @@
 package com.cloud.vm;
 
 import java.util.List;
-import java.util.Map;
 
+import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.template.VirtualMachineTemplate.BootloaderType;
+import com.cloud.user.Account;
 
-public class VirtualMachineProfile {
-    VirtualMachine _vm;
-    Integer _cpus;
-    Integer _speed; // in mhz
-    long _ram; // in bytes
-    HypervisorType _hypervisorType;
-    VirtualMachine.Type _type;
-    Map<String, String> _params;
-    Long _templateId;
-    List<DiskProfile> _disks;
-    List<NicProfile> _nics;
-    String _os;
-    String _password;
-    String _userData;
+
+/**
+ * VirtualMachineProfile describes one virtual machine.  This object
+ * is passed to various adapters to be processed.  Anything that is 
+ * set in this object is transitional.  It does not get persisted 
+ * back to the database.  This allows the adapters to process
+ * the information in the virtual machine and make determinations
+ * on what the virtual machin profile should look like before it is
+ * actually started on the hypervisor.
+ *
+ * @param <T> a VirtualMachine
+ */
+public interface VirtualMachineProfile<T extends VirtualMachine> {
     
-    public VirtualMachineProfile(VirtualMachine.Type type) {
-        this._type = type;
-    }
+    String getHostName();
     
-    public long getServiceOfferingId() {
-        return _vm.getServiceOfferingId();
-    }
+    String getInstanceName();
     
-    public String getPassword() {
-        return _password;
-    }
+    Account getOwner();
     
-    public String getUserData() {
-        return _userData;
-    }
+    /**
+     * @return the virtual machine that backs up this profile.
+     */
+    T getVirtualMachine();
     
-    public String getName() {
-        return _vm.getInstanceName();
-    }
+    /**
+     * @return service offering for this virtual machine.
+     */
+    ServiceOffering getServiceOffering();
     
-    public String getOs() {
-        return _os;
-    }
+    /**
+     * @return parameter specific for this type of virtual machine.
+     */
+    Object getParameter(String name);
     
-    public long getId() {
-        return _vm.getId();
-    }
+    /**
+     * @return the hypervisor type needed for this virtual machine.
+     */
+    HypervisorType getHypervisorType();
     
-    public VirtualMachine.Type getType() {
-        return _type;
-    }
+    /**
+     * @return os to be run on the virtual machine.
+     */
+    String getGuestOs();
     
-    public Long getTemplateId() {
-        return _templateId;
-    }
+    /**
+     * @return template the virtual machine is based on.
+     */
+    VirtualMachineTemplate getTemplate();
     
-    public Integer getCpus() {
-        return _cpus;
-    }
+    /**
+     * @return the template id
+     */
+    long getTemplateId();
     
-    public Integer getSpeed() {
-        return _speed;
-    }
+    /**
+     * @return the service offering id
+     */
+    long getServiceOfferingId();
     
-    public long getRam() {
-        return _ram;
-    }
+    /**
+     * @return virtual machine id.
+     */
+    long getId();
     
-    public void setNics(List<NicProfile> profiles) {
-        this._nics = profiles;
-    }
+    List<NicProfile> getNics();
     
-    public List<NicProfile> getNics() {
-        return _nics;
-    }
+    List<VolumeTO> getDisks();
     
-    public void setDisks(List<DiskProfile> profiles) {
-        this._disks = profiles;
-    }
+    void addNic(int index, NicProfile nic);
     
-    public List<DiskProfile> getDisks() {
-        return _disks;
-    }
+    void addDisk(int index, VolumeTO disk);
     
-    public HypervisorType getHypervisorType() {
-        return _hypervisorType;
-    }
+    StringBuilder getBootArgsBuilder();
     
-    public VirtualMachine getVm() {
-        return _vm;
-    }
+    void addBootArgs(String... args);
     
-    public VirtualMachineProfile(VirtualMachine vm, ServiceOffering offering, String os, HypervisorType hypervisorType) {
-        this._cpus = offering.getCpu();
-        this._speed = offering.getSpeed();
-        this._ram = offering.getRamSize() * 1024l * 1024l;
-        this._templateId = vm.getTemplateId();
-        this._type = vm.getType();
-        this._vm = vm;
-        this._os = os;
-        this._hypervisorType = hypervisorType;
-    }
+    String getBootArgs();
     
-    protected VirtualMachineProfile() {
-    }
+    void addNic(NicProfile nic);
     
-    @Override
-    public String toString() {
-        return "VM-" + _type + "-" + _vm.getId();
-    }
+    void addDisk(VolumeTO disk);
+    
+    void setBootloader(BootloaderType type);
+    BootloaderType getBootloader();
+    
+    String getOs();
+    
+    VirtualMachine.Type getType();
+    
+    void setParameter(String name, Object value);
 }

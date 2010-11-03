@@ -46,18 +46,22 @@ import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.RebootRouterCommand;
-import com.cloud.agent.api.Start2Command;
 import com.cloud.agent.api.StartRouterAnswer;
 import com.cloud.agent.api.StartRouterCommand;
 import com.cloud.agent.api.StopCommand;
+import com.cloud.agent.api.check.CheckSshAnswer;
+import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.routing.DhcpEntryCommand;
 import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
+<<<<<<< HEAD
 import com.cloud.agent.api.routing.VpnUsersCfgCommand;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VirtualMachineTO.SshMonitor;
+=======
+>>>>>>> Harmony among gurus
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.commands.RebootRouterCmd;
@@ -148,6 +152,7 @@ import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserStatisticsDao;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
@@ -163,6 +168,7 @@ import com.cloud.vm.DomainRouter.Role;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
+import com.cloud.vm.ReservationContext;
 import com.cloud.vm.State;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
@@ -372,16 +378,16 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
             event.setType(EventTypes.EVENT_ROUTER_CREATE);
 
             if (vols == null) {
-                event.setDescription("failed to create DHCP Server : " + router.getName());
+                event.setDescription("failed to create DHCP Server : " + router.getHostName());
                 event.setLevel(EventVO.LEVEL_ERROR);
                 _eventDao.persist(event);
                 throw new ExecutionException("Unable to create DHCP Server");
             }
             _routerDao.updateIf(router, Event.OperationSucceeded, null);
 
-            s_logger.info("DHCP server created: id=" + router.getId() + "; name=" + router.getName() + "; vlan=" + guestVlan.getVlanId() + "; pod=" + pod.getName());
+            s_logger.info("DHCP server created: id=" + router.getId() + "; name=" + router.getHostName() + "; vlan=" + guestVlan.getVlanId() + "; pod=" + pod.getName());
 
-            event.setDescription("successfully created DHCP Server : " + router.getName() + " with ip : " + router.getGuestIpAddress());
+            event.setDescription("successfully created DHCP Server : " + router.getHostName() + " with ip : " + router.getGuestIpAddress());
             _eventDao.persist(event);
 
             return router;
@@ -547,14 +553,14 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
             }
             _routerDao.updateIf(router, Event.OperationSucceeded, null);
 
-            s_logger.debug("Router created: id=" + router.getId() + "; name=" + router.getName());
+            s_logger.debug("Router created: id=" + router.getId() + "; name=" + router.getHostName());
             
             event = new EventVO();
             event.setUserId(1L); // system user performed the action
             event.setAccountId(accountId);
             event.setType(EventTypes.EVENT_ROUTER_CREATE);
             event.setStartId(startEventId);
-            event.setDescription("successfully created Domain Router : " + router.getName() + " with ip : " + publicIpAddress);
+            event.setDescription("successfully created Domain Router : " + router.getHostName() + " with ip : " + publicIpAddress);
             _eventDao.persist(event);
             success = true;
             return router;
@@ -609,7 +615,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
         event.setType(EventTypes.EVENT_ROUTER_DESTROY);
         event.setState(EventState.Started);
         event.setParameters("id=" + routerId);
-        event.setDescription("Starting to destroy router : " + router.getName());
+        event.setDescription("Starting to destroy router : " + router.getHostName());
         event = _eventDao.persist(event);
 
         try {
@@ -653,7 +659,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
         completedEvent.setType(EventTypes.EVENT_ROUTER_DESTROY);
         completedEvent.setStartId(event.getId());
         completedEvent.setParameters("id=" + routerId);        
-        completedEvent.setDescription("successfully destroyed router : " + router.getName());
+        completedEvent.setDescription("successfully destroyed router : " + router.getHostName());
         _eventDao.persist(completedEvent);
 
         return true;
@@ -727,7 +733,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
 
         final DomainRouterVO router = _routerDao.findById(routerId);
         final String routerPrivateIpAddress = router.getPrivateIpAddress();
-        final String vmName = router.getName();
+        final String vmName = router.getHostName();
         final String encodedPassword = rot13(password);
         final SavePasswordCommand cmdSavePassword = new SavePasswordCommand(encodedPassword, vmIpAddress, routerPrivateIpAddress, vmName);
 
@@ -866,9 +872,9 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
 	            }
 	            
 	            if (vnet != null) {
-	            	s_logger.debug("Router: " + router.getName() + " discovered vnet: " + vnet + " from existing VMs.");
+	            	s_logger.debug("Router: " + router.getHostName() + " discovered vnet: " + vnet + " from existing VMs.");
 	            } else {
-	            	s_logger.debug("Router: " + router.getName() + " was unable to discover vnet from existing VMs. Acquiring new vnet.");
+	            	s_logger.debug("Router: " + router.getHostName() + " was unable to discover vnet from existing VMs. Acquiring new vnet.");
 	            }
 	
 	            String routerMacAddress = null;
@@ -894,10 +900,10 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
 	            }
 	
 	            if (vnet == null) {
-	                s_logger.error("Unable to get another vnet while starting router " + router.getName());
+	                s_logger.error("Unable to get another vnet while starting router " + router.getHostName());
 	                return null;
 	            } else {
-	            	s_logger.debug("Router: " + router.getName() + " is using vnet: " + vnet);
+	            	s_logger.debug("Router: " + router.getHostName() + " is using vnet: " + vnet);
 	            }
 	           	
 	            Answer answer = null;
@@ -936,7 +942,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
 	                /*Ram size can be changed by upgradeRouterCmd*/
 	                router.setRamSize(offering.getRamSize());
 	                
-	                final String name = VirtualMachineName.attachVnet(router.getName(), vnet);
+	                final String name = VirtualMachineName.attachVnet(router.getHostName(), vnet);
 	                router.setInstanceName(name);
 	                long accountId = router.getAccountId();
 	                // Use account level network domain if available
@@ -973,7 +979,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
 	                    GuestOSVO guestOS = _guestOSDao.findById(router.getGuestOSId());
 	                    if (guestOS == null) {
 	                        String msg = "Could not find guest OS description for OSId " 
-	                            + router.getGuestOSId() + " for vm: " + router.getName();
+	                            + router.getGuestOSId() + " for vm: " + router.getHostName();
 	                        s_logger.debug(msg); 
 	                        throw new CloudRuntimeException(msg);
 	                    } else {
@@ -995,13 +1001,13 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
 	                        }
 	                        if (resendRouterState(router)) {
 	                            if (s_logger.isDebugEnabled()) {
-	                                s_logger.debug("Router " + router.getName() + " started on " + routingHost.getName());
+	                                s_logger.debug("Router " + router.getHostName() + " started on " + routingHost.getName());
 	                            }
 	                            started = true;
 	                            break;
 	                        } else {
 	                            if (s_logger.isDebugEnabled()) {
-	                                s_logger.debug("Router " + router.getName() + " started on " + routingHost.getName() + " but failed to program rules");
+	                                s_logger.debug("Router " + router.getHostName() + " started on " + routingHost.getName() + " but failed to program rules");
 	                            }
 	                            sendStopCommand(router);
 	                        }
@@ -1009,12 +1015,12 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
 	                    s_logger.debug("Unable to start " + router.toString() + " on host " + routingHost.toString() + " due to " + answer.getDetails());
 	                } catch (OperationTimedoutException e) {
 	                    if (e.isActive()) {
-	                        s_logger.debug("Unable to start vm " + router.getName() + " due to operation timed out and it is active so scheduling a restart.");
+	                        s_logger.debug("Unable to start vm " + router.getHostName() + " due to operation timed out and it is active so scheduling a restart.");
 	                        _haMgr.scheduleRestart(router, true);
 	                        return null;
 	                    }
 	                } catch (AgentUnavailableException e) {
-	                    s_logger.debug("Agent " + routingHost.toString() + " was unavailable to start VM " + router.getName());
+	                    s_logger.debug("Agent " + routingHost.toString() + " was unavailable to start VM " + router.getHostName());
 	                }
 	                avoid.add(routingHost);
 	                
@@ -1038,7 +1044,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
 	                s_logger.debug("Router " + router.toString() + " is now started on " + routingHost.toString());
 	            }
 	            
-	            event.setDescription("successfully started Domain Router: " + router.getName());
+	            event.setDescription("successfully started Domain Router: " + router.getHostName());
 	            _eventDao.persist(event);
 	
 	            return _routerDao.findById(routerId);
@@ -1152,9 +1158,9 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
     	final List<UserVmVO> vms = _vmDao.listBy(router.getId(), State.Creating, State.Starting, State.Running, State.Stopping, State.Stopped, State.Migrating);
     	Commands cmds = new Commands(OnError.Continue);
     	for (UserVmVO vm: vms) {
-    		if (vm.getGuestIpAddress() == null || vm.getGuestMacAddress() == null || vm.getName() == null)
+    		if (vm.getGuestIpAddress() == null || vm.getGuestMacAddress() == null || vm.getHostName() == null)
     			continue;
-    		DhcpEntryCommand decmd = new DhcpEntryCommand(vm.getGuestMacAddress(), vm.getGuestIpAddress(), router.getPrivateIpAddress(), vm.getName());
+    		DhcpEntryCommand decmd = new DhcpEntryCommand(vm.getGuestMacAddress(), vm.getGuestIpAddress(), router.getPrivateIpAddress(), vm.getHostName());
     		cmds.addCommand(decmd);
     	}
     	if (cmds.size() > 0) {
@@ -1374,11 +1380,11 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
 
             if (answer != null &&  resendRouterState(router)) {
             	processStopOrRebootAnswer(router, answer);
-                event.setDescription("successfully rebooted Domain Router : " + router.getName());
+                event.setDescription("successfully rebooted Domain Router : " + router.getHostName());
                 _eventDao.persist(event);
                 return true;
             } else {
-                event.setDescription("failed to reboot Domain Router : " + router.getName());
+                event.setDescription("failed to reboot Domain Router : " + router.getHostName());
                 event.setLevel(EventVO.LEVEL_ERROR);
                 _eventDao.persist(event);
                 return false;
@@ -1674,7 +1680,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
                 answer = _agentMgr.send(hostId, stop);
                 if (!answer.getResult()) {
                     s_logger.error("Unable to stop router");
-                    event.setDescription("failed to stop Domain Router : " + router.getName());
+                    event.setDescription("failed to stop Domain Router : " + router.getHostName());
                     event.setLevel(EventVO.LEVEL_ERROR);
                     _eventDao.persist(event);
                 } else {
@@ -1688,7 +1694,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
             }
     
             if (!stopped) {
-                event.setDescription("failed to stop Domain Router : " + router.getName());
+                event.setDescription("failed to stop Domain Router : " + router.getHostName());
                 event.setLevel(EventVO.LEVEL_ERROR);
                 _eventDao.persist(event);
                 _routerDao.updateIf(router, Event.OperationFailed, router.getHostId());
@@ -1696,7 +1702,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
             }
     
             completeStopCommand(router, Event.OperationSucceeded);
-            event.setDescription("successfully stopped Domain Router : " + router.getName());
+            event.setDescription("successfully stopped Domain Router : " + router.getHostName());
             _eventDao.persist(event);
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Router " + router.toString() + " is stopped");
@@ -1749,8 +1755,8 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
             }
 
             if( ! _storageMgr.share(router, vols, routingHost, false) ) {
-                s_logger.warn("Can not share " + vol.getPath() + " to " + router.getName() );
-                throw new StorageUnavailableException("Can not share " + vol.getPath() + " to " + router.getName(), vol);
+                s_logger.warn("Can not share " + vol.getPath() + " to " + router.getHostName() );
+                throw new StorageUnavailableException("Can not share " + vol.getPath() + " to " + router.getHostName(), vol);
             }
 
             final Answer answer = _agentMgr.easySend(routingHost.getId(), cmd);
@@ -1846,7 +1852,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
         try {
         	DomainRouterVO router = start(vm.getDomainRouterId(), 0);
 	        if (router == null) {
-        		s_logger.error("Can't find a domain router to start VM: " + vm.getName());
+        		s_logger.error("Can't find a domain router to start VM: " + vm.getHostName());
         		return null;
 	        }
 	        
@@ -1873,10 +1879,10 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
 	        int cmdIndex = 0;
 	        int passwordIndex = -1;
 	        int vmDataIndex = -1;
-	        cmds.addCommand(new DhcpEntryCommand(vm.getGuestMacAddress(), vm.getGuestIpAddress(), router.getPrivateIpAddress(), vm.getName()));
+	        cmds.addCommand(new DhcpEntryCommand(vm.getGuestMacAddress(), vm.getGuestIpAddress(), router.getPrivateIpAddress(), vm.getHostName()));
 	        if (password != null) {
 	            final String encodedPassword = rot13(password);
-	            cmds.addCommand(new SavePasswordCommand(encodedPassword, vm.getPrivateIpAddress(), router.getPrivateIpAddress(), vm.getName()));
+	            cmds.addCommand(new SavePasswordCommand(encodedPassword, vm.getPrivateIpAddress(), router.getPrivateIpAddress(), vm.getHostName()));
 	        	passwordIndex = cmdIndex;
 	        }
 	        	        
@@ -1885,22 +1891,22 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
 	        String zoneName = _dcDao.findById(vm.getDataCenterId()).getName();
 	        String routerPublicIpAddress = (router.getPublicIpAddress() != null) ? router.getPublicIpAddress() : vm.getGuestIpAddress();
 	        
-	        cmds.addCommand(generateVmDataCommand(router.getPrivateIpAddress(), routerPublicIpAddress, vm.getPrivateIpAddress(), userData, serviceOffering, zoneName, vm.getGuestIpAddress(), vm.getName(), vm.getInstanceName(), vm.getId()));
+	        cmds.addCommand(generateVmDataCommand(router.getPrivateIpAddress(), routerPublicIpAddress, vm.getPrivateIpAddress(), userData, serviceOffering, zoneName, vm.getGuestIpAddress(), vm.getHostName(), vm.getInstanceName(), vm.getId()));
 	        vmDataIndex = cmdIndex;
 	        
 	        Answer[] answers = _agentMgr.send(router.getHostId(), cmds);
 	        if (!answers[0].getResult()) {
-	        	s_logger.error("Unable to set dhcp entry for " + vm.getId() + " - " + vm.getName() +" on domR: " + router.getName() + " due to " + answers[0].getDetails());
+	        	s_logger.error("Unable to set dhcp entry for " + vm.getId() + " - " + vm.getHostName() +" on domR: " + router.getHostName() + " due to " + answers[0].getDetails());
 	        	return null;
 	        }
 	        
 	        if (password != null && !answers[passwordIndex].getResult()) {
-	        	s_logger.error("Unable to set password for " + vm.getId() + " - " + vm.getName() + " due to " + answers[passwordIndex].getDetails());
+	        	s_logger.error("Unable to set password for " + vm.getId() + " - " + vm.getHostName() + " due to " + answers[passwordIndex].getDetails());
 	        	return null;
 	        }
 	        
 	        if (vmDataIndex > 0 && !answers[vmDataIndex].getResult()) {
-	        	s_logger.error("Unable to set VM data for " + vm.getId() + " - " + vm.getName() + " due to " + answers[vmDataIndex].getDetails());
+	        	s_logger.error("Unable to set VM data for " + vm.getId() + " - " + vm.getHostName() + " due to " + answers[vmDataIndex].getDetails());
 	        	return null;
 	        }
 	        return router;
@@ -1908,10 +1914,10 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
         	s_logger.error("Unable to start router " + vm.getDomainRouterId() + " because storage is unavailable.");
         	return null;
         } catch (AgentUnavailableException e) {
-        	s_logger.error("Unable to setup the router " + vm.getDomainRouterId() + " for vm " + vm.getId() + " - " + vm.getName() + " because agent is unavailable");
+        	s_logger.error("Unable to setup the router " + vm.getDomainRouterId() + " for vm " + vm.getId() + " - " + vm.getHostName() + " because agent is unavailable");
         	return null;
 		} catch (OperationTimedoutException e) {
-        	s_logger.error("Unable to setup the router " + vm.getDomainRouterId() + " for vm " + vm.getId() + " - " + vm.getName() + " because agent is too busy");
+        	s_logger.error("Unable to setup the router " + vm.getDomainRouterId() + " for vm " + vm.getId() + " - " + vm.getHostName() + " because agent is too busy");
         	return null;
 		}
 	}
@@ -1947,7 +1953,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
         final CreateZoneVlanCommand cmdCreateZoneVlan = new CreateZoneVlanCommand(router);
         CreateZoneVlanAnswer answer = (CreateZoneVlanAnswer) _agentMgr.easySend(router.getHostId(), cmdCreateZoneVlan);
         if(!answer.getResult()){
-            s_logger.error("Unable to create zone vlan for router: "+router.getName()+ " zoneVlan: "+zoneVlan);
+            s_logger.error("Unable to create zone vlan for router: "+router.getHostName()+ " zoneVlan: "+zoneVlan);
             return null;
         }
         return zoneVlan;
@@ -1966,7 +1972,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
             for (DomainRouterVO router : routers) {
                 String privateIP = router.getPrivateIpAddress();
                 if(privateIP != null){
-                    final NetworkUsageCommand usageCmd = new NetworkUsageCommand(privateIP, router.getName());
+                    final NetworkUsageCommand usageCmd = new NetworkUsageCommand(privateIP, router.getHostName());
                     final NetworkUsageAnswer answer = (NetworkUsageAnswer)_agentMgr.easySend(router.getHostId(), usageCmd);
                     if(answer != null){
                         Transaction txn = Transaction.open(Transaction.CLOUD_DB);
@@ -2016,7 +2022,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
 	            (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
 	}
 	
-	@Override @DB
+	@Override
 	public DomainRouterVO deploy(NetworkConfiguration guestConfig, NetworkOffering offering, DeployDestination dest, Account owner) throws InsufficientCapacityException, StorageUnavailableException, ConcurrentOperationException, ResourceUnavailableException {
 	    long dcId = dest.getDataCenter().getId();
 	    
@@ -2026,7 +2032,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
 	    assert guestConfig.getState() == NetworkConfiguration.State.Implemented : "Network is not yet fully implemented: " + guestConfig;
 	    assert offering.getGuestIpType() == GuestIpType.Virtualized;
 	    
-        DataCenterDeployment plan = new DataCenterDeployment(dcId, 1);
+        DataCenterDeployment plan = new DataCenterDeployment(dcId);
         
         guestConfig = _networkConfigurationDao.lockRow(guestConfig.getId(), true);
         if (guestConfig == null) {
@@ -2064,31 +2070,22 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
             networks.add(new Pair<NetworkConfigurationVO, NicProfile>((NetworkConfigurationVO)guestConfig, gatewayNic));
             networks.add(new Pair<NetworkConfigurationVO, NicProfile>(controlConfig, null));
             
-            Transaction txn = Transaction.currentTxn();
-            txn.start();
-            
             router = new DomainRouterVO(id, _offering.getId(), VirtualMachineName.getRouterName(id, _instance), _template.getId(), _template.getGuestOSId(), owner.getDomainId(), owner.getId(), guestConfig.getId(), _offering.getOfferHA());
-            router = _routerDao.persist(router);
-    	    
     	    _itMgr.allocate(router, _template, _offering, networks, plan, owner);
-            txn.commit();
         }
         
-        return _itMgr.start(router, plan, owner);
+        return _itMgr.start(router, null, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
 	}
-
-    @Override
-    public boolean finalizeDeployment(Commands cmds, DomainRouterVO router, VirtualMachineProfile profile, DeployDestination dest) {
-        Start2Command cmd = cmds.getCommand(Start2Command.class);
-        VirtualMachineTO vm = cmd.getVirtualMachine();
-        
+	
+	@Override
+    public boolean finalizeVirtualMachineProfile(VirtualMachineProfile<DomainRouterVO> profile, DeployDestination dest, ReservationContext context) {
         StringBuilder buf = new StringBuilder();
         buf.append(" template=domP type=router");
-        buf.append(" name=").append(vm.getName());
-        NicTO controlNic = null;
-        for (NicTO nic : vm.getNics()) {
+        buf.append(" name=").append(profile.getHostName());
+        NicProfile controlNic = null;
+        for (NicProfile nic : profile.getNics()) {
             int deviceId = nic.getDeviceId();
-            buf.append(" eth").append(deviceId).append("ip=").append(nic.getIp());
+            buf.append(" eth").append(deviceId).append("ip=").append(nic.getIp4Address());
             buf.append(" eth").append(deviceId).append("mask=").append(nic.getNetmask());
             if (nic.isDefaultNic()) {
                 buf.append(" gateway=").append(nic.getGateway());
@@ -2097,31 +2094,40 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
                     buf.append(" dns2=").append(nic.getDns2());
                 }
             }
-            if (nic.getType() == TrafficType.Management) {
+            if (nic.getTrafficType() == TrafficType.Management) {
                 buf.append(" localgw=").append(dest.getPod().getGateway());
-            } else if (nic.getType() == TrafficType.Control) {
+            } else if (nic.getTrafficType() == TrafficType.Control) {
                 controlNic = nic;
             }
         }
   
-        String bootArgs = buf.toString();
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Boot Args for " + vm + ": " + bootArgs);
+            s_logger.debug("Boot Args for " + profile + ": " + buf.toString());
         }
-        vm.setBootArgs(bootArgs);
         
         if (controlNic == null) {
             throw new CloudRuntimeException("Didn't start a control port");
         }
         
-        SshMonitor monitor = new SshMonitor(controlNic.getIp(), 3922);
-        vm.setMonitor(monitor);
+        profile.setParameter("control.nic", controlNic);
         
+        return true;
+	}
+
+    @Override
+    public boolean finalizeDeployment(Commands cmds, VirtualMachineProfile<DomainRouterVO> profile, DeployDestination dest, ReservationContext context) {
+        NicProfile controlNic = (NicProfile)profile.getParameter("control.nic");
+        cmds.addCommand("checkSsh", new CheckSshCommand(profile.getInstanceName(), controlNic.getIp4Address(), 3922, 5, 20));
         return true;
     }
 
     @Override
-    public boolean processDeploymentResult(Commands cmds, DomainRouterVO router, VirtualMachineProfile profile, DeployDestination dest) {
+    public boolean processDeploymentResult(Commands cmds, VirtualMachineProfile<DomainRouterVO> profile, DeployDestination dest, ReservationContext context) {
+        CheckSshAnswer answer = (CheckSshAnswer)cmds.getAnswer("checkSsh");
+        if (!answer.getResult()) {
+            s_logger.warn("Unable to ssh to the VM: " + answer.getDetails());
+            return false;
+        }
         return true;
     }
 
@@ -2192,20 +2198,19 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
 		}
 	}
 	
-	public DomainRouterVO start(long routerId, Account caller) throws StorageUnavailableException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
-	    return start(_routerDao.findById(routerId), caller);
+	public DomainRouterVO start(long routerId, User user, Account caller) throws StorageUnavailableException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
+	    return start(_routerDao.findById(routerId), user, caller);
 	}
 	
-	public DomainRouterVO start(DomainRouterVO router, Account caller) throws StorageUnavailableException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
-	    DataCenterDeployment plan = new DataCenterDeployment(router.getDataCenterId(), 1);
-	    return _itMgr.start(router, plan, caller);
+	public DomainRouterVO start(DomainRouterVO router, User user, Account caller) throws StorageUnavailableException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
+	    return _itMgr.start(router, null, user, caller);
 	}
 
     @Override
-    public DomainRouterVO addVirtualMachineIntoNetwork(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile vm, Account caller) throws ConcurrentOperationException, InsufficientNetworkCapacityException, ResourceUnavailableException {
+    public DomainRouterVO addVirtualMachineIntoNetwork(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile<UserVm> profile, ReservationContext context) throws ConcurrentOperationException, InsufficientNetworkCapacityException, ResourceUnavailableException {
         DomainRouterVO router = _routerDao.findByNetworkConfiguration(config.getId());
         try {
-            router = start(router, caller);
+            router = start(router, context.getCaller(), context.getAccount());
         } catch (InsufficientNetworkCapacityException e) {
             throw e;
         } catch (InsufficientCapacityException e) {
@@ -2213,12 +2218,12 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
         }
         
         if (router == null) {
-            s_logger.error("Can't find a domain router to start VM: " + vm.getName());
-            throw new ResourceUnavailableException("Can't find a domain router to start " + vm + " in " + config);
+            s_logger.error("Can't find a domain router to start VM: " + profile);
+            throw new ResourceUnavailableException("Can't find a domain router to start " + profile + " in " + config);
         }
 
         String password = null;
-        String userData = vm.getUserData();
+        String userData = profile.getVirtualMachine().getUserData();
         int cmdsLength = (password == null ? 0:1) + 1;
         Commands cmds = new Commands(OnError.Stop);
         String routerPublicIpAddress = nic.getIp4Address();
@@ -2233,17 +2238,17 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
             }
         }
         
-        cmds.addCommand("dhcp", new DhcpEntryCommand(nic.getMacAddress(), nic.getIp4Address(), routerControlIpAddress, vm.getName()));
+        cmds.addCommand("dhcp", new DhcpEntryCommand(nic.getMacAddress(), nic.getIp4Address(), routerControlIpAddress, profile.getVirtualMachine().getHostName()));
         if (password != null) {
             final String encodedPassword = rot13(password);
-            cmds.addCommand("password", new SavePasswordCommand(encodedPassword, nic.getIp4Address(), routerControlIpAddress, vm.getName()));
+            cmds.addCommand("password", new SavePasswordCommand(encodedPassword, nic.getIp4Address(), routerControlIpAddress, profile.getVirtualMachine().getHostName()));
         }
         
-        String serviceOffering = _serviceOfferingDao.findById(vm.getServiceOfferingId()).getDisplayText();
+        String serviceOffering = _serviceOfferingDao.findById(profile.getServiceOfferingId()).getDisplayText();
         String zoneName = _dcDao.findById(config.getDataCenterId()).getName();
         
         
-        cmds.addCommand("vmdata", generateVmDataCommand(routerControlIpAddress, routerPublicIpAddress, nic.getIp4Address(), userData, serviceOffering, zoneName, nic.getIp4Address(), vm.getName(), vm.getName(), vm.getId()));
+        cmds.addCommand("vmdata", generateVmDataCommand(routerControlIpAddress, routerPublicIpAddress, nic.getIp4Address(), userData, serviceOffering, zoneName, nic.getIp4Address(), profile.getVirtualMachine().getHostName(), profile.getVirtualMachine().getHostName(), profile.getId()));
         
         try {
             _agentMgr.send(router.getHostId(), cmds);
@@ -2255,19 +2260,19 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
         
         Answer answer = cmds.getAnswer("dhcp");
         if (!answer.getResult()) {
-            s_logger.error("Unable to set dhcp entry for " + vm.getId() + " - " + vm.getName() +" on domR: " + router.getName() + " due to " + answer.getDetails());
-            throw new ResourceUnavailableException("Unable to set dhcp entry for " + vm + " due to " + answer.getDetails()); 
+            s_logger.error("Unable to set dhcp entry for " + profile +" on domR: " + router.getHostName() + " due to " + answer.getDetails());
+            throw new ResourceUnavailableException("Unable to set dhcp entry for " + profile + " due to " + answer.getDetails()); 
         }
         
         answer = cmds.getAnswer("password");
         if (answer != null && !answer.getResult()) {
-            s_logger.error("Unable to set password for " + vm.getId() + " - " + vm.getName() + " due to " + answer.getDetails());
+            s_logger.error("Unable to set password for " + profile + " due to " + answer.getDetails());
             throw new ResourceUnavailableException("Unable to set password due to " + answer.getDetails());
         }
         
         answer = cmds.getAnswer("vmdata");
         if (answer != null && !answer.getResult()) {
-            s_logger.error("Unable to set VM data for " + vm.getId() + " - " + vm.getName() + " due to " + answer.getDetails());
+            s_logger.error("Unable to set VM data for " + profile + " due to " + answer.getDetails());
             throw new ResourceUnavailableException("Unable to set VM data due to " + answer.getDetails());
         }
         return router;
@@ -2305,4 +2310,18 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
 			return false;		
 		}
 	}
+    
+    @Override
+    public DomainRouterVO findById(long id) {
+        return _routerDao.findById(id);
+    }
+    
+    @Override
+    public DomainRouterVO findByName(String name) {
+        if (!VirtualMachineName.isValidRouterName(name)) {
+            return null;
+        }
+        
+        return _routerDao.findById(VirtualMachineName.getRouterId(name));
+    }
 }

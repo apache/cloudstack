@@ -145,7 +145,7 @@ public class DeployVMExecutor extends VMOperationExecutor {
 			return resultObject;
 		
 		resultObject.setId(vm.getId());
-		resultObject.setName(vm.getName());
+		resultObject.setName(vm.getHostName());
 		resultObject.setCreated(vm.getCreated());
 		resultObject.setZoneId(vm.getDataCenterId());
 		resultObject.setZoneName(getAsyncJobMgr().getExecutorContext().getManagementServer().findDataCenterById(vm.getDataCenterId()).getName());
@@ -153,7 +153,7 @@ public class DeployVMExecutor extends VMOperationExecutor {
 		resultObject.setServiceOfferingId(vm.getServiceOfferingId());
 		resultObject.setHaEnabled(vm.isHaEnabled());
 		if (vm.getDisplayName() == null || vm.getDisplayName().length() == 0) {
-			resultObject.setDisplayName(vm.getName());
+			resultObject.setDisplayName(vm.getHostName());
 		}
 		else {
 			resultObject.setDisplayName(vm.getDisplayName());
