@@ -360,7 +360,7 @@ packages() {
   #nfs client
   chroot . apt-get --no-install-recommends -q -y --force-yes install nfs-common
   #vpn stuff
-  chroot .  apt-get --no-install-recommends -q -y --force-yes install xl2tpd openswan bcrelay ppp ipsec-tools
+  chroot .  apt-get --no-install-recommends -q -y --force-yes install xl2tpd openswan bcrelay ppp ipsec-tools tdb-tools
   #vmware tools
   chroot . apt-get --no-install-recommends -q -y --force-yes install open-vm-tools
   #xenstore utils
@@ -426,7 +426,7 @@ cleanup() {
 signature() {
   (cd ${scriptdir}/config;  tar czf ${MOUNTPOINT}/usr/share/cloud/cloud-scripts.tgz *)
   md5sum ${MOUNTPOINT}/usr/share/cloud/cloud-scripts.tgz |awk '{print $1}'  > ${MOUNTPOINT}/var/cache/cloud/cloud-scripts-signature
-  echo "Cloudstack Release 2.2 $(date)" > ${MOUNTPOUNT}/etc/cloudstack-release
+  echo "Cloudstack Release 2.2 $(date)" > ${MOUNTPOINT}/etc/cloudstack-release
 }
 
 mkdir -p $IMAGENAME
