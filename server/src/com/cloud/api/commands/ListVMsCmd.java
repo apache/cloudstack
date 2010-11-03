@@ -17,29 +17,19 @@
  */
 package com.cloud.api.commands;
 
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.UserVmResponse;
-import com.cloud.async.AsyncJobVO;
-import com.cloud.offering.ServiceOffering;
-import com.cloud.storage.StoragePoolVO;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.VolumeVO;
-import com.cloud.user.Account;
-import com.cloud.user.UserContext;
-import com.cloud.vm.InstanceGroupVO;
-import com.cloud.vm.UserVmVO;
-import com.cloud.vm.VmStats;
+import com.cloud.uservm.UserVm;
 
 @Implementation(method="searchForUserVMs", description="List the virtual machines owned by the account.")
 public class ListVMsCmd extends BaseListCmd {
@@ -129,125 +119,17 @@ public class ListVMsCmd extends BaseListCmd {
 
     @Override @SuppressWarnings("unchecked")
 	public ListResponse<UserVmResponse> getResponse() {
-        List<UserVmVO> userVms = (List<UserVmVO>)getResponseObject();
+        List<UserVm> userVms = (List<UserVm>)getResponseObject();
 
         ListResponse<UserVmResponse> response = new ListResponse<UserVmResponse>();
         List<UserVmResponse> vmResponses = new ArrayList<UserVmResponse>();
-        for (UserVmVO userVm : userVms) {
-            UserVmResponse userVmResponse = new UserVmResponse();
-
-            Account acct = ApiDBUtils.findAccountById(Long.valueOf(userVm.getAccountId()));
-            if ((acct != null) && (acct.getRemoved() == null)) {
-                userVmResponse.setAccountName(acct.getAccountName());
-                userVmResponse.setDomainId(acct.getDomainId());
-                userVmResponse.setDomainName(ApiDBUtils.findDomainById(acct.getDomainId()).getName());
-            } else {
-                continue; // the account has been deleted, skip this VM in the response
+        for (UserVm userVm : userVms) {
+            UserVmResponse userVmResponse = ApiResponseHelper.createUserVmResponse(userVm);
+            if (userVmResponse != null) {
+                userVmResponse.setResponseName("virtualmachine");
+                vmResponses.add(userVmResponse);
             }
-
-            userVmResponse.setId(userVm.getId());
-            AsyncJobVO asyncJob = ApiDBUtils.findInstancePendingAsyncJob("vm_instance", userVm.getId());
-            if (asyncJob != null) {
-                userVmResponse.setJobId(asyncJob.getId());
-                userVmResponse.setJobStatus(asyncJob.getStatus());
-            } 
-
-            userVmResponse.setName(userVm.getName());
-            userVmResponse.setCreated(userVm.getCreated());
-            userVmResponse.setIpAddress(userVm.getPrivateIpAddress());
-            if (userVm.getState() != null) {
-                userVmResponse.setState(userVm.getState().toString());
-            }
-
-
-            userVmResponse.setHaEnable(userVm.isHaEnabled());
-            
-            if (userVm.getDisplayName() != null) {
-                userVmResponse.setDisplayName(userVm.getDisplayName());
-            } else {
-                userVmResponse.setDisplayName(userVm.getName());
-            }
-
-            InstanceGroupVO group = ApiDBUtils.findInstanceGroupForVM(userVm.getId());
-            if (group != null) {
-                userVmResponse.setGroup(group.getName());
-                userVmResponse.setGroupId(group.getId());
-            }
-
-            // Data Center Info
-            userVmResponse.setZoneId(userVm.getDataCenterId());
-            userVmResponse.setZoneName(ApiDBUtils.findZoneById(userVm.getDataCenterId()).getName());
-
-            Account account = (Account)UserContext.current().getAccount();
-            //if user is an admin, display host id
-            if (((account == null) || isAdmin(account.getType())) && (userVm.getHostId() != null)) {
-                userVmResponse.setHostId(userVm.getHostId());
-                userVmResponse.setHostName(ApiDBUtils.findHostById(userVm.getHostId()).getName());
-            }
-
-            // Template Info
-            VMTemplateVO template = ApiDBUtils.findTemplateById(userVm.getTemplateId());
-            if (template != null) {
-                userVmResponse.setTemplateId(userVm.getTemplateId());
-                userVmResponse.setTemplateName(template.getName());
-                userVmResponse.setTemplateDisplayText(template.getDisplayText());
-                userVmResponse.setPasswordEnabled(template.getEnablePassword());
-            } else {
-                userVmResponse.setTemplateId(-1L);
-                userVmResponse.setTemplateName("ISO Boot");
-                userVmResponse.setTemplateDisplayText("ISO Boot");
-                userVmResponse.setPasswordEnabled(false);
-            }
-
-            // ISO Info
-            if (userVm.getIsoId() != null) {
-                VMTemplateVO iso = ApiDBUtils.findTemplateById(userVm.getIsoId().longValue());
-                if (iso != null) {
-                    userVmResponse.setIsoId(userVm.getIsoId());
-                    userVmResponse.setIsoName(iso.getName());
-                }
-            }
-
-            // Service Offering Info
-            ServiceOffering offering = ApiDBUtils.findServiceOfferingById(userVm.getServiceOfferingId());
-            userVmResponse.setServiceOfferingId(userVm.getServiceOfferingId());
-            userVmResponse.setServiceOfferingName(offering.getName());
-            userVmResponse.setCpuNumber(offering.getCpu());
-            userVmResponse.setCpuSpeed(offering.getSpeed());
-            userVmResponse.setMemory(offering.getRamSize());
-
-            VolumeVO rootVolume = ApiDBUtils.findRootVolume(userVm.getId());
-            if (rootVolume != null) {
-                userVmResponse.setRootDeviceId(rootVolume.getDeviceId());
-                StoragePoolVO storagePool = ApiDBUtils.findStoragePoolById(rootVolume.getPoolId());
-                userVmResponse.setRootDeviceType(storagePool.getPoolType().toString());
-            }
-
-            //stats calculation
-            DecimalFormat decimalFormat = new DecimalFormat("#.##");
-            String cpuUsed = null;
-            VmStats vmStats = ApiDBUtils.getVmStatistics(userVm.getId());
-            if (vmStats != null) {
-                float cpuUtil = (float) vmStats.getCPUUtilization();
-                cpuUsed = decimalFormat.format(cpuUtil) + "%";
-                userVmResponse.setCpuUsed(cpuUsed);
-
-                long networkKbRead = (long)vmStats.getNetworkReadKBs();
-                userVmResponse.setNetworkKbsRead(networkKbRead);
-                
-                long networkKbWrite = (long)vmStats.getNetworkWriteKBs();
-                userVmResponse.setNetworkKbsWrite(networkKbWrite);
-            }
-            
-            userVmResponse.setGuestOsId(userVm.getGuestOSId());
-
-            //network groups
-            userVmResponse.setNetworkGroupList(ApiDBUtils.getNetworkGroupsNamesForVm(userVm.getId()));
-
-            userVmResponse.setResponseName("virtualmachine");
-            vmResponses.add(userVmResponse);
         }
-
         response.setResponses(vmResponses);
         response.setResponseName(getName());
         return response;

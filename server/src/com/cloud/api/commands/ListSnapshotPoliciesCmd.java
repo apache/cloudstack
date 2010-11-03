@@ -24,6 +24,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -83,14 +84,7 @@ public class ListSnapshotPoliciesCmd extends BaseListCmd {
         ListResponse<SnapshotPolicyResponse> response = new ListResponse<SnapshotPolicyResponse>();
         List<SnapshotPolicyResponse> policyResponses = new ArrayList<SnapshotPolicyResponse>();
         for (SnapshotPolicyVO policy : policies) {
-            SnapshotPolicyResponse policyResponse = new SnapshotPolicyResponse();
-            policyResponse.setId(policy.getId());
-            policyResponse.setVolumeId(policy.getVolumeId());
-            policyResponse.setSchedule(policy.getSchedule());
-            policyResponse.setIntervalType(policy.getInterval());
-            policyResponse.setMaxSnaps(policy.getMaxSnaps());
-            policyResponse.setTimezone(policy.getTimezone());
-
+            SnapshotPolicyResponse policyResponse = ApiResponseHelper.createSnapshotPolicyResponse(policy);
             policyResponse.setResponseName("snapshotpolicy");
             policyResponses.add(policyResponse);
         }

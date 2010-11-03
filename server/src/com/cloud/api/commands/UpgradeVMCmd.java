@@ -17,24 +17,16 @@
  */
 package com.cloud.api.commands;
 
-import java.text.DecimalFormat;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
 import com.cloud.api.response.UserVmResponse;
-import com.cloud.offering.ServiceOffering;
-import com.cloud.service.ServiceOfferingVO;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.user.Account;
+import com.cloud.uservm.UserVm;
 import com.cloud.vm.UserVmManager;
-import com.cloud.vm.UserVmVO;
-import com.cloud.vm.VmStats;
 
 @Implementation(method="upgradeVirtualMachine", manager=UserVmManager.class, description="Changes the service offering for a virtual machine. " +
 																							"The virtual machine must be in a \"Stopped\" state for " +
@@ -80,67 +72,9 @@ public class UpgradeVMCmd extends BaseCmd {
     
     @Override @SuppressWarnings("unchecked")
     public UserVmResponse getResponse() {
-        UserVmVO userVm = (UserVmVO)getResponseObject();
-
-        UserVmResponse response = new UserVmResponse();
-        if (userVm != null) {
-    		Account acct = ApiDBUtils.findAccountById(userVm.getAccountId());
-    		response.setId(userVm.getId());
-    		response.setAccountName(acct.getAccountName());
-
-    		ServiceOffering offering = ApiDBUtils.findServiceOfferingById(userVm.getServiceOfferingId());
-    		response.setCpuSpeed(offering.getSpeed());
-    		response.setMemory(offering.getRamSize());
-    		if (((ServiceOfferingVO)offering).getDisplayText() != null) {
-    		    response.setServiceOfferingName(((ServiceOfferingVO)offering).getDisplayText());
-    		} else {
-    		    response.setServiceOfferingName(offering.getName());
-    		}
-
-    		response.setServiceOfferingId(userVm.getServiceOfferingId());
-
-            //stats calculation
-            DecimalFormat decimalFormat = new DecimalFormat("#.##");
-            String cpuUsed = null;
-    		VmStats vmStats = ApiDBUtils.getVmStatistics(userVm.getId());
-    		if (vmStats != null) {
-                float cpuUtil = (float) vmStats.getCPUUtilization();
-                cpuUsed = decimalFormat.format(cpuUtil) + "%";
-                response.setCpuUsed(cpuUsed);
-
-                long networkKbRead = (long)vmStats.getNetworkReadKBs();
-                response.setNetworkKbsRead(networkKbRead);
-                
-                long networkKbWrite = (long)vmStats.getNetworkWriteKBs();
-                response.setNetworkKbsWrite(networkKbWrite);
-    		}
-    		
-    		response.setCreated(userVm.getCreated());
-    		response.setDisplayName(userVm.getDisplayName());
-    		response.setDomainName(ApiDBUtils.findDomainById(acct.getDomainId()).getName());
-    		response.setDomainId(acct.getDomainId());
-    		response.setHaEnable(userVm.isHaEnabled());
-
-    		if (userVm.getHostId() != null) {
-    		    response.setHostId(userVm.getHostId());
-    			response.setHostName(ApiDBUtils.findHostById(userVm.getHostId()).getName());
-    		}
-    		response.setIpAddress(userVm.getPrivateIpAddress());
-    		response.setName(userVm.getName());
-    		response.setState(userVm.getState().toString());
-    		response.setZoneId(userVm.getDataCenterId());
-    		response.setZoneName(ApiDBUtils.findZoneById(userVm.getDataCenterId()).getName());
-    		
-    		VMTemplateVO template = ApiDBUtils.findTemplateById(userVm.getTemplateId());
-    		response.setPasswordEnabled(template.getEnablePassword());
-    		response.setTemplateDisplayText(template.getDisplayText());
-    		response.setTemplateId(template.getId());
-    		response.setTemplateName(template.getName());
-        } else {
-        	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update zone; internal error.");
-        }
-
-        response.setResponseName(getName());
-        return response;
+        UserVm userVm = (UserVm)getResponseObject();
+        UserVmResponse recoverVmResponse = ApiResponseHelper.createUserVmResponse(userVm);
+        recoverVmResponse.setResponseName(getName());
+        return recoverVmResponse;
     }
 }

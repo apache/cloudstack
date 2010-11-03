@@ -53,7 +53,7 @@ public interface UserVmService extends Manager {
      * @param userId the id of the user performing the action
      * @param vmId the id of the virtual machine.
      */
-    boolean destroyVm(DestroyVMCmd cmd);
+    UserVm destroyVm(DestroyVMCmd cmd);
     
     /**
      * Resets the password of a virtual machine.
@@ -77,15 +77,15 @@ public interface UserVmService extends Manager {
      */
     VolumeResponse detachVolumeFromVM(DetachVolumeCmd cmmd);
     
-    UserVmVO startVirtualMachine(StartVMCmd cmd) throws StorageUnavailableException, ExecutionException, ConcurrentOperationException;
-    UserVmVO stopVirtualMachine(StopVMCmd cmd);
+    UserVm startVirtualMachine(StartVMCmd cmd) throws StorageUnavailableException, ExecutionException, ConcurrentOperationException;
+    UserVm stopVirtualMachine(StopVMCmd cmd);
     UserVm rebootVirtualMachine(RebootVMCmd cmd);
+    UserVm updateVirtualMachine(UpdateVMCmd cmd);
+    UserVm recoverVirtualMachine(RecoverVMCmd cmd) throws ResourceAllocationException;
     
     @Deprecated
     OperationResponse executeRebootVM(RebootVMExecutor executor, VMOperationParam param);
     
-    boolean recoverVirtualMachine(RecoverVMCmd cmd) throws ResourceAllocationException;
-
     /**
      * Create a template database record in preparation for creating a private template.
      * @param cmd the command object that defines the name, display text, snapshot/volume, bits, public/private, etc.
@@ -102,8 +102,6 @@ public interface UserVmService extends Manager {
      * @throws InvalidParameterValueException
      */
     VMTemplateVO createPrivateTemplate(CreateTemplateCmd cmd);
-
-    void updateVirtualMachine(UpdateVMCmd cmd);
     
     /**
      * Creates a User VM in the database and returns the VM to the caller.

@@ -21,6 +21,7 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -110,14 +111,7 @@ public class CreateSnapshotPolicyCmd extends BaseCmd {
     @Override @SuppressWarnings("unchecked")
     public SnapshotPolicyResponse getResponse() {
         SnapshotPolicyVO snapshotPolicy = (SnapshotPolicyVO)getResponseObject();
-
-        SnapshotPolicyResponse response = new SnapshotPolicyResponse();
-        response.setId(snapshotPolicy.getId());
-        response.setIntervalType(snapshotPolicy.getInterval());
-        response.setMaxSnaps(snapshotPolicy.getMaxSnaps());
-        response.setSchedule(snapshotPolicy.getSchedule());
-        response.setVolumeId(snapshotPolicy.getVolumeId());
-
+        SnapshotPolicyResponse response = ApiResponseHelper.createSnapshotPolicyResponse(snapshotPolicy);
         response.setResponseName(getName());
         return response;
     }

@@ -20,10 +20,12 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.response.SuccessResponse;
+import com.cloud.api.response.UserVmResponse;
+import com.cloud.uservm.UserVm;
 import com.cloud.vm.UserVmManager;
 
 @Implementation(method="updateVirtualMachine", manager=UserVmManager.class, description="Updates parameters of a virtual machine.")
@@ -81,10 +83,10 @@ public class UpdateVMCmd extends BaseCmd{
     }
 
     @Override @SuppressWarnings("unchecked")
-    public SuccessResponse getResponse() {
-        SuccessResponse response = new SuccessResponse();
-        response.setSuccess(Boolean.TRUE);
-        response.setResponseName(getName());
-        return response;
+    public UserVmResponse getResponse() {
+        UserVm userVm = (UserVm)getResponseObject();
+        UserVmResponse recoverVmResponse = ApiResponseHelper.createUserVmResponse(userVm);
+        recoverVmResponse.setResponseName(getName());
+        return recoverVmResponse;
     }
 }

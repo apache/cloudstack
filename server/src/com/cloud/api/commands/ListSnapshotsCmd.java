@@ -23,18 +23,14 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.SnapshotResponse;
-import com.cloud.async.AsyncJobVO;
 import com.cloud.storage.Snapshot;
-import com.cloud.storage.Snapshot.SnapshotType;
 import com.cloud.storage.SnapshotVO;
-import com.cloud.storage.VolumeVO;
-import com.cloud.user.Account;
 
 @Implementation(method="listSnapshots", description="Lists all available snapshots for the account.")
 public class ListSnapshotsCmd extends BaseListCmd {
@@ -115,32 +111,7 @@ public class ListSnapshotsCmd extends BaseListCmd {
         ListResponse<SnapshotResponse> response = new ListResponse<SnapshotResponse>();
         List<SnapshotResponse> snapshotResponses = new ArrayList<SnapshotResponse>();
         for (Snapshot snapshot : snapshots) {
-            SnapshotResponse snapshotResponse = new SnapshotResponse();
-            snapshotResponse.setId(snapshot.getId());
-
-            Account acct = ApiDBUtils.findAccountById(Long.valueOf(snapshot.getAccountId()));
-            if (acct != null) {
-                snapshotResponse.setAccountName(acct.getAccountName());
-                snapshotResponse.setDomainId(acct.getDomainId());
-                snapshotResponse.setDomainName(ApiDBUtils.findDomainById(acct.getDomainId()).getName());
-            }
-
-            VolumeVO volume = ApiDBUtils.findVolumeById(snapshot.getVolumeId());
-            String snapshotTypeStr = SnapshotType.values()[snapshot.getSnapshotType()].name();
-            snapshotResponse.setSnapshotType(snapshotTypeStr);
-            snapshotResponse.setVolumeId(snapshot.getVolumeId());
-            snapshotResponse.setVolumeName(volume.getName());
-            snapshotResponse.setVolumeType(volume.getVolumeType().name());
-            snapshotResponse.setCreated(snapshot.getCreated());
-            snapshotResponse.setName(snapshot.getName());
-
-            AsyncJobVO asyncJob = ApiDBUtils.findInstancePendingAsyncJob("snapshot", snapshot.getId());
-            if (asyncJob != null) {
-                snapshotResponse.setJobId(asyncJob.getId());
-                snapshotResponse.setJobStatus(asyncJob.getStatus());
-            }
-            snapshotResponse.setIntervalType(ApiDBUtils.getSnapshotIntervalTypes(snapshot.getId()));
-
+            SnapshotResponse snapshotResponse = ApiResponseHelper.createSnapshotResponse(snapshot);
             snapshotResponse.setResponseName("snapshot");
             snapshotResponses.add(snapshotResponse);
         }

@@ -1885,7 +1885,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 //    }
     
     @Override @DB
-    public boolean recoverVirtualMachine(RecoverVMCmd cmd) throws ResourceAllocationException, CloudRuntimeException {
+    public UserVm recoverVirtualMachine(RecoverVMCmd cmd) throws ResourceAllocationException, CloudRuntimeException {
     	
         Long vmId = cmd.getId();
         Account accountHandle = UserContext.current().getAccount();
@@ -1910,14 +1910,14 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Unable to find vm or vm is removed: " + vmId);
             }
-            return false;
+            throw new InvalidParameterValueException("Unable to find vm by id " + vmId);
         }
         
         if (vm.getState() != State.Destroyed) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("vm is not in the right state: " + vmId);
             }
-        	return true;
+            throw new InvalidParameterValueException("Vm with id " + vmId + " is not in the right state");
         }
 
         if (s_logger.isDebugEnabled()) {
@@ -1960,7 +1960,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 
         if (!_vmDao.updateIf(vm, Event.RecoveryRequested, null)) {
             s_logger.debug("Unable to recover the vm because it is not in the correct state: " + vmId);
-            return false;
+            throw new InvalidParameterValueException("Unable to recover the vm because it is not in the correct state: " + vmId);
         }
         
         // Recover the VM's disks
@@ -1997,7 +1997,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         
         txn.commit();
         
-        return true;
+        return _vmDao.findById(vmId);
     }
 
     @Override
@@ -3208,7 +3208,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 	}
 	
     @Override
-    public void updateVirtualMachine(UpdateVMCmd cmd) {
+    public UserVm updateVirtualMachine(UpdateVMCmd cmd) {
         String displayName = cmd.getDisplayName();
         String group = cmd.getGroup();
         Boolean ha = cmd.getHaEnable();
@@ -3265,10 +3265,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
             // create a event for the change in HA Enabled flag
             EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_INFO, type, description, null);
         }
+        return _vmDao.findById(id);
     }
 
 	@Override
-	public UserVmVO stopVirtualMachine(StopVMCmd cmd) throws ServerApiException{
+	public UserVm stopVirtualMachine(StopVMCmd cmd) throws ServerApiException{
 		
 		//Input validation
 		Account account = UserContext.current().getAccount();
@@ -3290,14 +3291,13 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
    
         boolean success = stopVirtualMachine(userId, id, eventId);
         if (!success) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to stop virtual machine with id " + id + ", internal error.");
+            throw new CloudRuntimeException("Unable to stop virtual machine with id " + id + ", internal error.");
         }
-
         return _vmDao.findById(id);
 	}
 
 	@Override
-	public UserVmVO startVirtualMachine(StartVMCmd cmd) throws StorageUnavailableException, ExecutionException, ConcurrentOperationException {
+	public UserVm startVirtualMachine(StartVMCmd cmd) throws StorageUnavailableException, ExecutionException, ConcurrentOperationException {
 		//Input validation
 		Account account = UserContext.current().getAccount();
 		Long userId = UserContext.current().getUserId();
@@ -3348,7 +3348,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 	}
 
 	@Override
-	public boolean destroyVm(DestroyVMCmd cmd) {
+	public UserVm destroyVm(DestroyVMCmd cmd) {
 	
         Account account = UserContext.current().getAccount();
         Long userId = UserContext.current().getUserId();
@@ -3369,12 +3369,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         if(status)
         {
         	EventUtils.saveEvent(userId, vmInstance.getAccountId(), EventTypes.EVENT_VM_DESTROY, "Successfully destroyed vm with id:"+vmId);
-        	return status;
+        	return _vmDao.findById(vmId);
         }
         else
         {
         	EventUtils.saveEvent(userId, vmInstance.getAccountId(), EventTypes.EVENT_VM_DESTROY, "Failed to destroy vm with id:"+vmId);
-        	return status;
+        	throw new CloudRuntimeException("Failed to destroy vm with id " + vmId);
         }
 	}
 

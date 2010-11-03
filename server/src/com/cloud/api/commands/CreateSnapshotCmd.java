@@ -22,6 +22,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
@@ -29,7 +30,6 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SnapshotResponse;
 import com.cloud.event.EventTypes;
-import com.cloud.storage.Snapshot.SnapshotType;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.snapshot.SnapshotManager;
@@ -108,25 +108,7 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
         SnapshotVO snapshot = (SnapshotVO)getResponseObject();
 
         if (snapshot != null) {
-            SnapshotResponse response = new SnapshotResponse();
-            response.setId(snapshot.getId());
-
-            Account account = ApiDBUtils.findAccountById(snapshot.getAccountId());
-            if (account != null) {
-                response.setAccountName(account.getAccountName());
-                response.setDomainId(account.getDomainId());
-                response.setDomainName(ApiDBUtils.findDomainById(account.getDomainId()).getName());
-            }
-
-            VolumeVO volume = ApiDBUtils.findVolumeById(snapshot.getVolumeId());
-            String snapshotTypeStr = SnapshotType.values()[snapshot.getSnapshotType()].name();
-            response.setSnapshotType(snapshotTypeStr);
-            response.setVolumeId(snapshot.getVolumeId());
-            response.setVolumeName(volume.getName());
-            response.setVolumeType(volume.getVolumeType().toString());
-            response.setCreated(snapshot.getCreated());
-            response.setName(snapshot.getName());
-
+            SnapshotResponse response = ApiResponseHelper.createSnapshotResponse(snapshot);
             response.setResponseName(getName());
             return response;
         }

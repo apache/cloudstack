@@ -9,7 +9,7 @@
     as the only address, specify as <ipAddressRange>192.168.1.1<ipAddressRange>.  To specify 192.168.1.1
     to 192.168.1.150 specify as <ipAddressRange>192.168.1.1-192.168.1.150</ipAddressRange>
    -->
-  <zones>
+<!--  <zones>
     <zone>
       <id>1</id>
       <name>NM</name>
@@ -22,7 +22,7 @@
 	  <vnet>560-579</vnet>      
       <guestNetworkCidr>10.1.1.0/24</guestNetworkCidr>
     </zone>
-  </zones>
+  </zones> -->
 
   <!--
     ipAddressRange:  It is possible to specify a single IP address.  For example, to add 192.168.1.1
@@ -32,7 +32,7 @@
     At the moment there is no way to specify a different netmask for each pod.  The netmask
     is controlled by the private.net.mask parameter further down this file.
    -->
-  <pods>
+ <!-- <pods>
     <pod>
       <id>1</id>
       <name>NM</name>
@@ -41,7 +41,7 @@
       <cidr>10.91.28.0/24</cidr>
       <ipAddressRange>10.91.28.160-10.91.28.179</ipAddressRange>
     </pod>
-  </pods>
+  </pods> --> 
 <!--
 <storagePools>
 <storagePool>
@@ -64,7 +64,7 @@
 </secondaryStorages>
 -->
 
-  <vlans>
+ <!-- <vlans>
     <vlan>
       <zoneId>1</zoneId>
       <vlanId>30</vlanId>
@@ -73,7 +73,7 @@
       <netmask>255.255.255.0</netmask>
       <ipAddressRange>10.91.30.160-10.91.30.179</ipAddressRange>
     </vlan>
-  </vlans>
+  </vlans>-->
 <!--    
     <vlan>
       <zoneId>1</zoneId>
