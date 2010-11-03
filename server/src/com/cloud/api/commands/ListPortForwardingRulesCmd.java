@@ -18,24 +18,19 @@
 package com.cloud.api.commands;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.FirewallRuleResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.network.FirewallRuleVO;
-import com.cloud.network.IPAddressVO;
 import com.cloud.network.NetworkManager;
-import com.cloud.server.Criteria;
-import com.cloud.vm.UserVmVO;
 
 @Implementation(method="listPortForwardingRules", manager=NetworkManager.class, description="Lists all port forwarding rules for an IP address.")
 public class ListPortForwardingRulesCmd extends BaseListCmd {
@@ -69,39 +64,12 @@ public class ListPortForwardingRulesCmd extends BaseListCmd {
 
     @Override @SuppressWarnings("unchecked")
     public ListResponse<FirewallRuleResponse> getResponse() {
-        List<FirewallRuleVO> firewallRules = (List<FirewallRuleVO>)getResponseObject();
-        Map<String, UserVmVO> userVmCache = new HashMap<String, UserVmVO>();
-        IPAddressVO ipAddr = ApiDBUtils.findIpAddressById(ipAddress);
-
+        List<FirewallRuleVO> firewallRules = (List<FirewallRuleVO>)getResponseObject();        
         ListResponse<FirewallRuleResponse> response = new ListResponse<FirewallRuleResponse>();
         List<FirewallRuleResponse> fwResponses = new ArrayList<FirewallRuleResponse>();
+        
         for (FirewallRuleVO fwRule : firewallRules) {
-            FirewallRuleResponse ruleData = new FirewallRuleResponse();
-
-            ruleData.setId(fwRule.getId());
-            ruleData.setPublicPort(fwRule.getPublicPort());
-            ruleData.setPrivatePort(fwRule.getPrivatePort());
-            ruleData.setProtocol(fwRule.getProtocol());
-
-            UserVmVO userVM = userVmCache.get(fwRule.getPrivateIpAddress());
-            if (userVM == null) {
-                Criteria c = new Criteria();
-                c.addCriteria(Criteria.ACCOUNTID, new Object[] {ipAddr.getAccountId()});
-                c.addCriteria(Criteria.DATACENTERID, ipAddr.getDataCenterId());
-                c.addCriteria(Criteria.IPADDRESS, fwRule.getPrivateIpAddress());
-                List<UserVmVO> userVMs = ApiDBUtils.searchForUserVMs(c);
-
-                if ((userVMs != null) && (userVMs.size() > 0)) {
-                    userVM = userVMs.get(0);
-                    userVmCache.put(fwRule.getPrivateIpAddress(), userVM);
-                }
-            }
-
-            if (userVM != null) {
-                ruleData.setVirtualMachineId(userVM.getId());
-                ruleData.setVirtualMachineName(userVM.getName());
-            }
-
+            FirewallRuleResponse ruleData = ApiResponseHelper.createFirewallRuleResponse(fwRule);
             ruleData.setResponseName("portforwardingrule");
             fwResponses.add(ruleData);
         }

@@ -4,6 +4,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -13,7 +14,6 @@ import com.cloud.network.FirewallRuleVO;
 import com.cloud.network.IPAddressVO;
 import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
-import com.cloud.uservm.UserVm;
 
 @Implementation(method="updatePortForwardingRule", manager=ManagementServer.class, description="Updates a port forwarding rule.  Only the private port and the virtual machine can be updated.")
 public class UpdateIPForwardingRuleCmd extends BaseAsyncCmd {
@@ -103,17 +103,7 @@ public class UpdateIPForwardingRuleCmd extends BaseAsyncCmd {
 	@Override @SuppressWarnings("unchecked")
 	public FirewallRuleResponse getResponse() {
 	    FirewallRuleVO fwRule = (FirewallRuleVO)getResponseObject();
-
-	    FirewallRuleResponse response = new FirewallRuleResponse();
-	    response.setId(fwRule.getId());
-	    response.setPrivatePort(fwRule.getPrivatePort());
-	    response.setProtocol(fwRule.getProtocol());
-	    response.setPublicPort(fwRule.getPublicPort());
-
-	    UserVm vm = ApiDBUtils.findUserVmByPublicIpAndGuestIp(fwRule.getPublicIpAddress(), fwRule.getPrivateIpAddress());
-	    response.setVirtualMachineId(vm.getId());
-	    response.setVirtualMachineName(vm.getName());
-
+	    FirewallRuleResponse response = ApiResponseHelper.createFirewallRuleResponse(fwRule);
 	    response.setResponseName(getName());
 	    return response;
 	}

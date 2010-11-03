@@ -31,6 +31,7 @@ import com.cloud.api.response.ConfigurationResponse;
 import com.cloud.api.response.DiskOfferingResponse;
 import com.cloud.api.response.DomainResponse;
 import com.cloud.api.response.DomainRouterResponse;
+import com.cloud.api.response.FirewallRuleResponse;
 import com.cloud.api.response.HostResponse;
 import com.cloud.api.response.IPAddressResponse;
 import com.cloud.api.response.InstanceGroupResponse;
@@ -63,6 +64,7 @@ import com.cloud.host.Host;
 import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status.Event;
+import com.cloud.network.FirewallRuleVO;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.LoadBalancerVO;
 import com.cloud.offering.NetworkOffering.GuestIpType;
@@ -945,6 +947,21 @@ public class ApiResponseHelper {
        clusterResponse.setZoneName(zone.getName());
        
        return clusterResponse;
+   }
+   
+   public static FirewallRuleResponse createFirewallRuleResponse(FirewallRuleVO fwRule) {
+       FirewallRuleResponse response = new FirewallRuleResponse();
+       response.setId(fwRule.getId());
+       response.setPrivatePort(fwRule.getPrivatePort());
+       response.setProtocol(fwRule.getProtocol());
+       response.setPublicPort(fwRule.getPublicPort());
+       if (fwRule.getPublicIpAddress() != null && fwRule.getPrivateIpAddress() != null) {
+           UserVm vm = ApiDBUtils.findUserVmByPublicIpAndGuestIp(fwRule.getPublicIpAddress(), fwRule.getPrivateIpAddress());
+           response.setVirtualMachineId(vm.getId());
+           response.setVirtualMachineName(vm.getName());
+       }
+
+       return response;
    }
    
 }

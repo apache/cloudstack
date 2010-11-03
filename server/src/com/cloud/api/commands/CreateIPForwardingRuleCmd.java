@@ -21,7 +21,7 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -29,7 +29,6 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.FirewallRuleResponse;
 import com.cloud.network.FirewallRuleVO;
 import com.cloud.network.NetworkManager;
-import com.cloud.uservm.UserVm;
 
 @Implementation(method="createPortForwardingRule", manager=NetworkManager.class, description="Creates a port forwarding rule")
 public class CreateIPForwardingRuleCmd extends BaseCmd {
@@ -95,16 +94,7 @@ public class CreateIPForwardingRuleCmd extends BaseCmd {
     public FirewallRuleResponse getResponse() {
         FirewallRuleVO fwRule = (FirewallRuleVO)getResponseObject();
         if (fwRule != null) {
-            FirewallRuleResponse fwResponse = new FirewallRuleResponse();
-            fwResponse.setId(fwRule.getId());
-            fwResponse.setPrivatePort(fwRule.getPrivatePort());
-            fwResponse.setProtocol(fwRule.getProtocol());
-            fwResponse.setPublicPort(fwRule.getPublicPort());
-
-            UserVm vm = ApiDBUtils.findUserVmById(virtualMachineId);
-            fwResponse.setVirtualMachineId(vm.getId());
-            fwResponse.setVirtualMachineName(vm.getName());
-
+            FirewallRuleResponse fwResponse = ApiResponseHelper.createFirewallRuleResponse(fwRule);
             fwResponse.setResponseName(getName());
             return fwResponse;
         }
