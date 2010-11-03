@@ -2266,7 +2266,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
     }
 
 	@Override
-	public boolean addRemoveVpnUsers(RemoteAccessVpnVO vpnVO, Long accountId, List<VpnUserVO> addUsers, List<VpnUserVO> removeUsers) {
+	public boolean addRemoveVpnUsers(RemoteAccessVpnVO vpnVO, List<VpnUserVO> addUsers, List<VpnUserVO> removeUsers) {
 		DomainRouterVO router = getRouter(vpnVO.getAccountId(), vpnVO.getZoneId());
 		if (router == null) {
 			s_logger.warn("Failed to add/remove VPN users: no router found for account and zone");

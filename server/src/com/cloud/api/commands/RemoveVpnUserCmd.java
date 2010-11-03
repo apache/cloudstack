@@ -25,42 +25,35 @@ import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.RemoteAccessVpnResponse;
+import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.RemoteAccessVpnVO;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation( method="addRemoveVpnUsers", manager=NetworkManager.class, description="Adds or removes vpn users")
-public class VpnUserConfigCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(VpnUserConfigCmd.class.getName());
+@Implementation( method="removeVpnUser", manager=NetworkManager.class, description="Removes vpn user")
+public class RemoveVpnUserCmd extends BaseAsyncCmd {
+    public static final Logger s_logger = Logger.getLogger(RemoveVpnUserCmd.class.getName());
 
-    private static final String s_name = "addremovevpnusersresponse";
+    private static final String s_name = "removevpnuserresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name="zoneid", type=CommandType.LONG, required=true, description="zone id where the vpn server needs to be created")
-    private Long zoneId;
+    @Parameter(name="username", type=CommandType.STRING, required=true, description="username for the vpn user")
+    private String userName;
     
-    @Parameter(name="publicip", type=CommandType.STRING, required=false, description="public ip address of the vpn server")
-    private String publicIp;
-
-    @Parameter(name="iprange", type=CommandType.STRING, required=false, description="the range of ip addresses to allocate to vpn clients. The first ip in the range will be taken by the vpn server")
-    private String ipRange;
-    
-    @Parameter(name="account", type=CommandType.STRING, description="an optional account for the virtual machine. Must be used with domainId.")
+    @Parameter(name="account", type=CommandType.STRING, description="an optional account for the vpn user. Must be used with domainId.")
     private String accountName;
 
-    @Parameter(name="domainid", type=CommandType.LONG, description="an optional domainId for the virtual machine. If the account parameter is used, domainId must also be used.")
+    @Parameter(name="domainid", type=CommandType.LONG, description="an optional domainId for the vpn user. If the account parameter is used, domainId must also be used.")
     private Long domainId;
     
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-    public String getPublicIp() {
-		return publicIp;
-	}
+
 
 	public String getAccountName() {
 		return accountName;
@@ -70,25 +63,15 @@ public class VpnUserConfigCmd extends BaseAsyncCmd {
 		return domainId;
 	}
 
-	public void setPublicIp(String publicIp) {
-		this.publicIp = publicIp;
+	public String getUserName() {
+		return userName;
 	}
 
-	public String getIpRange() {
-		return ipRange;
+	public void setUserName(String userName) {
+		this.userName = userName;
 	}
 
-	public void setIpRange(String ipRange) {
-		this.ipRange = ipRange;
-	}
 	
-	public void setZoneId(Long zoneId) {
-		this.zoneId = zoneId;
-	}
-
-	public Long getZoneId() {
-		return zoneId;
-	}
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -100,16 +83,10 @@ public class VpnUserConfigCmd extends BaseAsyncCmd {
     }
 
     @Override @SuppressWarnings("unchecked")
-    public RemoteAccessVpnResponse getResponse() {
-        RemoteAccessVpnVO responseObj = (RemoteAccessVpnVO)getResponseObject();
-
-        RemoteAccessVpnResponse response = new RemoteAccessVpnResponse();
-        response.setId(responseObj.getId());
-        response.setPublicIp(responseObj.getVpnServerAddress());
-        response.setIpRange(responseObj.getIpRange());
-        response.setAccountName(responseObj.getAccountName());
-        response.setDomainId(responseObj.getDomainId());
-        response.setDomainName(ApiDBUtils.findDomainById(responseObj.getDomainId()).getName());
+    public SuccessResponse getResponse() {
+    	Boolean success = (Boolean)getResponseObject();
+        SuccessResponse response = new SuccessResponse();
+        response.setSuccess(success);
         response.setResponseName(getName());
         return response;
     }
@@ -135,12 +112,13 @@ public class VpnUserConfigCmd extends BaseAsyncCmd {
 
 	@Override
 	public String getEventDescription() {
-		return "Create Remote Access VPN for account " + getAccountId() + " in zone " + getZoneId();
+		return "Remove Remote Access VPN user for account " + getAccountId() + " username= " + getUserName();
 	}
 
+	
 	@Override
 	public String getEventType() {
-		return EventTypes.EVENT_REMOTE_ACCESS_VPN_CREATE;
+		return EventTypes.EVENT_VPN_USER_REMOVE;
 	}
 
 

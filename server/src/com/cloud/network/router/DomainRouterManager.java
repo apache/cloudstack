@@ -177,8 +177,7 @@ public interface DomainRouterManager extends Manager {
 
 	RemoteAccessVpnVO startRemoteAccessVpn(RemoteAccessVpnVO vpnVO);
 	
-	boolean addRemoveVpnUsers(RemoteAccessVpnVO vpnVO, Long accountId, List<VpnUserVO> addUsers, List<VpnUserVO> removeUsers);
-
+	boolean addRemoveVpnUsers(RemoteAccessVpnVO vpnVO, List<VpnUserVO> addUsers, List<VpnUserVO> removeUsers);
 
 	boolean deleteRemoteAccessVpn(RemoteAccessVpnVO vpnVO);
 	
