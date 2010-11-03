@@ -41,19 +41,33 @@ function afterLoadIsoJSP() {
 			        
 			    thisDialog.dialog("close");	
 			    
+			    var array1 = [];
 			    var name = trim(thisDialog.find("#add_iso_name").val());
+			    array1.push("&name="+todb(name));
+			    
 			    var desc = trim(thisDialog.find("#add_iso_display_text").val());
-			    var url = trim(thisDialog.find("#add_iso_url").val());						
-			    var zoneId = thisDialog.find("#add_iso_zone").val();	
-			    //var isPublic = thisDialog.find("#add_iso_public").val();
-			    var isPublic = "false"; //default to private for now
+			    array1.push("&displayText="+todb(desc));
+			    
+			    var url = trim(thisDialog.find("#add_iso_url").val());	
+			    array1.push("&url="+encodeURIComponent(url));
+			    					
+			    var zoneId = thisDialog.find("#add_iso_zone").val();
+			    array1.push("&zoneId="+zoneId);	
+			    
+			    var isPublic = thisDialog.find("#add_iso_public").val();
+			    array1.push("&isPublic="+isPublic);	
+			    		
 			    var osType = thisDialog.find("#add_iso_os_type").val();
-			    var bootable = thisDialog.find("#add_iso_bootable").val();			
+			    array1.push("&osTypeId="+osType);
+			    
+			    var bootable = thisDialog.find("#add_iso_bootable").val();	
+			    array1.push("&bootable="+bootable);
+			    		
     		    				    
 		        var $midmenuItem1 = beforeAddingMidMenuItem() ;				    
     		       		    				
 			    $.ajax({
-			        data: createURL("command=registerIso&name="+todb(name)+"&displayText="+todb(desc)+"&url="+encodeURIComponent(url)+"&zoneId="+zoneId+"&isPublic="+isPublic+"&osTypeId="+osType+"&bootable="+bootable+"&response=json"),
+			        data: createURL("command=registerIso"+array1.join("")),
 				    dataType: "json",
 				    success: function(json) {					
 				        var items = json.registerisoresponse.iso;				       
@@ -358,9 +372,7 @@ function doEditISO($actionLink, $detailsTab, $midmenuItem1) {
     });   
 }
 
-function doEditISO2($actionLink, $detailsTab, $midmenuItem1) { 
-    //var $detailsTab = $("#right_panel_content #tab_content_details");      
-    
+function doEditISO2($actionLink, $detailsTab, $midmenuItem1) {     
     // validate values
     var isValid = true;					
     isValid &= validateString("Name", $detailsTab.find("#name_edit"), $detailsTab.find("#name_edit_errormsg"));
@@ -370,13 +382,20 @@ function doEditISO2($actionLink, $detailsTab, $midmenuItem1) {
        
     var jsonObj = $detailsTab.data("jsonObj"); 
 	var id = jsonObj.id;
-	//var midmenuId = isoGetMidmenuId(jsonObj);
+	
+	var array1 = [];
+	array1.push("&id="+id);
 							
-	var name = trim($detailsTab.find("#name_edit").val());
-	var displaytext = trim($detailsTab.find("#displaytext_edit").val());
+	var name = $detailsTab.find("#name_edit").val();
+	array1.push("&name="+todb(name));
+	
+	var displaytext = $detailsTab.find("#displaytext_edit").val();
+	array1.push("&displayText="+todb(displaytext));
+	
+	//var isPublic = $detailsTab.find("#public_edit").val();	//???   
 	
 	$.ajax({
-	    data: createURL("command=updateIso&id="+id+"&name="+todb(name)+"&displayText="+todb(displaytext)),
+	    data: createURL("command=updateIso"+array1.join("")),
 		dataType: "json",
 		success: function(json) {	
 		    var jsonObj = json.updateisoresponse;		    

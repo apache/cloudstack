@@ -199,7 +199,14 @@
 						<option value="true">Yes</option>
 						<option value="false">No</option>
 					</select>
-				</li>
+				</li>				
+				<li>
+					<label>Public?:</label>
+					<select class="select" id="add_iso_public">
+						<option value="false">No</option>
+						<option value="true">Yes</option>						
+					</select>
+				</li>	
 				<li>
 					<label for="add_iso_os_type"><%=t.t("os.type")%>:</label>
 					<select class="select" name="add_iso_os_type" id="add_iso_os_type">
