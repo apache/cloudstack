@@ -19,7 +19,6 @@ package com.cloud.server;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -957,16 +956,25 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public UserAccount disableUser(DisableUserCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
         Long userId = cmd.getId();
-        if (userId <= 2) {
-            if (s_logger.isInfoEnabled()) {
-                s_logger.error("disableUser -- invalid user id: " + userId);
-                throw new InvalidParameterValueException("Unable to disable with id " + userId + " as it belongs to system account");
-            }
+        Account adminAccount = UserContext.current().getAccount();
+        
+        //Check if user exists in the system
+        User user = findUserById(userId);
+        if ((user == null) || (user.getRemoved() != null))
+            throw new InvalidParameterValueException("Unable to find active user by id " + userId);
+        
+        // If the user is a System user, return an error
+        Account account = findAccountById(user.getAccountId());
+        if ((account != null) && (account.getId() == Account.ACCOUNT_ID_SYSTEM)) {
+            throw new InvalidParameterValueException("User id : " + userId + " is a system user, disabling is not allowed");
+        }
+
+        if ((adminAccount != null) && !isChildDomain(adminAccount.getDomainId(), account.getDomainId())) {
+            throw new PermissionDeniedException("Failed to disable user " + userId + ", permission denied.");
         }
 
         boolean success = doSetUserStatus(userId, Account.ACCOUNT_STATE_DISABLED);
         if (success) {
-            User user = _userDao.findById(userId);
             List<UserVO> allUsersByAccount = _userDao.listByAccount(user.getAccountId());
             for (UserVO oneUser : allUsersByAccount) {
                 if (oneUser.getState().equals(Account.ACCOUNT_STATE_ENABLED)) {
