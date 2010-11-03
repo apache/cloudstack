@@ -122,7 +122,7 @@ public interface NetworkManager extends Manager {
      * @return DomainRouter object
      * @throws InvalidParameterValueException, PermissionDeniedException
      */
-    DomainRouterVO startRouter(StartRouterCmd cmd);
+    DomainRouter startRouter(StartRouterCmd cmd);
     
     boolean releaseRouter(long routerId);
     
@@ -136,7 +136,7 @@ public interface NetworkManager extends Manager {
      * @return router if successful, null otherwise
      * @throws InvalidParameterValueException, PermissionDeniedException
      */
-    DomainRouterVO stopRouter(StopRouterCmd cmd);
+    DomainRouter stopRouter(StopRouterCmd cmd);
     
     boolean getRouterStatistics(long vmId, Map<String, long[]> netStats, Map<String, long[]> diskStats);
 
@@ -148,7 +148,7 @@ public interface NetworkManager extends Manager {
      * @return the rebooted router
      * @throws InvalidParameterValueException, PermissionDeniedException
      */
-    DomainRouterVO rebootRouter(RebootRouterCmd cmd);
+    DomainRouter rebootRouter(RebootRouterCmd cmd);
     /**
      * @param hostId get all of the virtual machine routers on a host.
      * @return collection of VirtualMachineRouter
@@ -306,7 +306,7 @@ public interface NetworkManager extends Manager {
     void release(VirtualMachineProfile vmProfile);
     
     <K extends VMInstanceVO> List<NicVO> getNics(K vm);
-	boolean upgradeRouter(UpgradeRouterCmd cmd);
+    DomainRouter upgradeRouter(UpgradeRouterCmd cmd);
 	
     List<AccountVO> getAccountsUsingNetworkConfiguration(long configurationId);    
     AccountVO getNetworkConfigurationOwner(long configurationId);

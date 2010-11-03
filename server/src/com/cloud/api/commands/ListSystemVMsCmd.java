@@ -23,16 +23,12 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.SystemVmResponse;
-import com.cloud.async.AsyncJobVO;
-import com.cloud.vm.ConsoleProxyVO;
-import com.cloud.vm.SecondaryStorageVmVO;
-import com.cloud.vm.SystemVm;
 import com.cloud.vm.VMInstanceVO;
 
 @Implementation(method="searchForSystemVm", description="List system virtual machines.")
@@ -110,60 +106,10 @@ public class ListSystemVMsCmd extends BaseListCmd {
     @Override @SuppressWarnings("unchecked")
     public ListResponse<SystemVmResponse> getResponse() {
         List<? extends VMInstanceVO> systemVMs = (List<? extends VMInstanceVO>)getResponseObject();
-
         ListResponse<SystemVmResponse> response = new ListResponse<SystemVmResponse>();
         List<SystemVmResponse> vmResponses = new ArrayList<SystemVmResponse>();
         for (VMInstanceVO systemVM : systemVMs) {
-            SystemVmResponse vmResponse = new SystemVmResponse();
-            if (systemVM instanceof SystemVm) {
-                SystemVm vm = (SystemVm)systemVM;
-
-                vmResponse.setId(vm.getId());
-                vmResponse.setSystemVmType(vm.getType().toString().toLowerCase());
-
-                String instanceType = "console_proxy";
-                if (systemVM instanceof SecondaryStorageVmVO) {
-                    instanceType = "sec_storage_vm"; // FIXME:  this should be a constant so that the async jobs get updated with the correct instance type, they are using
-                                                     //         different instance types at the moment
-                }
-
-                AsyncJobVO asyncJob = ApiDBUtils.findInstancePendingAsyncJob(instanceType, vm.getId());
-                if (asyncJob != null) {
-                    vmResponse.setJobId(asyncJob.getId());
-                    vmResponse.setJobStatus(asyncJob.getStatus());
-                } 
-
-                vmResponse.setZoneId(vm.getDataCenterId());
-                vmResponse.setZoneName(ApiDBUtils.findZoneById(vm.getDataCenterId()).getName());
-                vmResponse.setDns1(vm.getDns1());
-                vmResponse.setDns2(vm.getDns2());
-                vmResponse.setNetworkDomain(vm.getDomain());
-                vmResponse.setGateway(vm.getGateway());
-                vmResponse.setName(vm.getName());
-                vmResponse.setPodId(vm.getPodId());
-                if (vm.getHostId() != null) {
-                    vmResponse.setHostId(vm.getHostId());
-                    vmResponse.setHostName(ApiDBUtils.findHostById(vm.getHostId()).getName());
-                }
-                vmResponse.setPrivateIp(vm.getPrivateIpAddress());
-                vmResponse.setPrivateMacAddress(vm.getPrivateMacAddress());
-                vmResponse.setPrivateNetmask(vm.getPrivateNetmask());
-                vmResponse.setPublicIp(vm.getPublicIpAddress());
-                vmResponse.setPublicMacAddress(vm.getPublicMacAddress());
-                vmResponse.setPublicNetmask(vm.getPublicNetmask());
-                vmResponse.setTemplateId(vm.getTemplateId());
-                vmResponse.setCreated(vm.getCreated());
-                if (vm.getState() != null) {
-                    vmResponse.setState(vm.getState().toString());
-                }
-            }
-
-            // for console proxies, add the active sessions
-            if (systemVM instanceof ConsoleProxyVO) {
-                ConsoleProxyVO proxy = (ConsoleProxyVO)systemVM;
-                vmResponse.setActiveViewerSessions(proxy.getActiveSession());
-            }
-
+            SystemVmResponse vmResponse = ApiResponseHelper.createSystemVmResponse(systemVM);
             vmResponse.setResponseName("systemvm");
             vmResponses.add(vmResponse);
         }

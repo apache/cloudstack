@@ -101,7 +101,7 @@ public interface DomainRouterManager extends Manager {
      * @return DomainRouter object
      * @throws InvalidParameterValueException, PermissionDeniedException
      */
-    DomainRouterVO startRouter(StartRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+    DomainRouter startRouter(StartRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
     
     boolean releaseRouter(long routerId);
     
@@ -115,7 +115,7 @@ public interface DomainRouterManager extends Manager {
      * @return router if successful, null otherwise
      * @throws InvalidParameterValueException, PermissionDeniedException
      */
-    DomainRouterVO stopRouter(StopRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+    DomainRouter stopRouter(StopRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
     
     boolean getRouterStatistics(long vmId, Map<String, long[]> netStats, Map<String, long[]> diskStats);
 
@@ -124,10 +124,10 @@ public interface DomainRouterManager extends Manager {
     /**
      * Reboots domain router
      * @param cmd the command specifying router's id
-     * @return success or failure
+     * @return router if successful
      * @throws InvalidParameterValueException, PermissionDeniedException
      */
-    boolean rebootRouter(RebootRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+    DomainRouter rebootRouter(RebootRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
     /**
      * @param hostId get all of the virtual machine routers on a host.
      * @return collection of VirtualMachineRouter
@@ -167,7 +167,7 @@ public interface DomainRouterManager extends Manager {
 
     String createZoneVlan(DomainRouterVO router);
     
-	boolean upgradeRouter(UpgradeRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+	DomainRouter upgradeRouter(UpgradeRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
 	
 	DomainRouterVO getRouter(long accountId, long zoneId);
 	DomainRouterVO getRouter(String publicIpAddress);

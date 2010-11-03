@@ -22,6 +22,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -29,6 +30,7 @@ import com.cloud.api.response.DomainRouterResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.network.NetworkManager;
 import com.cloud.user.Account;
+import com.cloud.vm.DomainRouter;
 import com.cloud.vm.DomainRouterVO;
 
 @Implementation(method="rebootRouter", manager=NetworkManager.class, description="Starts a router.")
@@ -82,44 +84,8 @@ public class RebootRouterCmd extends BaseAsyncCmd {
 
     @Override @SuppressWarnings("unchecked")
     public DomainRouterResponse getResponse() {
-        DomainRouterResponse response = new DomainRouterResponse();
-        DomainRouterVO router = (DomainRouterVO)getResponseObject();
-      
-        response.setId(router.getId());
-        response.setZoneId(router.getDataCenterId());
-        response.setZoneName(ApiDBUtils.findZoneById(router.getDataCenterId()).getName());
-        response.setDns1(router.getDns1());
-        response.setDns2(router.getDns2());
-        response.setNetworkDomain(router.getDomain());
-        response.setGateway(router.getGateway());
-        response.setName(router.getName());
-        response.setPodId(router.getPodId());
-
-        if (router.getHostId() != null) {
-            response.setHostId(router.getHostId());
-            response.setHostName(ApiDBUtils.findHostById(router.getHostId()).getName());
-        } 
-
-        response.setPrivateIp(router.getPrivateIpAddress());
-        response.setPrivateMacAddress(router.getPrivateMacAddress());
-        response.setPrivateNetmask(router.getPrivateNetmask());
-        response.setPublicIp(router.getPublicIpAddress());
-        response.setPublicMacAddress(router.getPublicMacAddress());
-        response.setPublicNetmask(router.getPublicNetmask());
-        response.setGuestIpAddress(router.getGuestIpAddress());
-        response.setGuestMacAddress(router.getGuestMacAddress());
-        response.setGuestNetmask(router.getGuestNetmask());
-        response.setTemplateId(router.getTemplateId());
-        response.setCreated(router.getCreated());
-        response.setState(router.getState());
-
-        Account accountTemp = ApiDBUtils.findAccountById(router.getAccountId());
-        if (accountTemp != null) {
-            response.setAccountName(accountTemp.getAccountName());
-            response.setDomainId(accountTemp.getDomainId());
-            response.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
-        }
-        
+        DomainRouter router = (DomainRouter)getResponseObject();
+        DomainRouterResponse response = ApiResponseHelper.createDomainRouterResponse(router);
         response.setResponseName(getName());
         return response;
     }

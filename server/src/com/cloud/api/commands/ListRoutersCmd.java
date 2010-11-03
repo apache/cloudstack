@@ -24,15 +24,13 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.DomainRouterResponse;
 import com.cloud.api.response.ListResponse;
-import com.cloud.async.AsyncJobVO;
-import com.cloud.user.Account;
-import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.DomainRouter;
 
 @Implementation(method="searchForRouters", description="List routers.")
 public class ListRoutersCmd extends BaseListCmd {
@@ -108,54 +106,11 @@ public class ListRoutersCmd extends BaseListCmd {
 
     @Override @SuppressWarnings("unchecked")
     public ListResponse<DomainRouterResponse> getResponse() {
-        List<DomainRouterVO> routers = (List<DomainRouterVO>)getResponseObject();
-
+        List<DomainRouter> routers = (List<DomainRouter>)getResponseObject();
         ListResponse<DomainRouterResponse> response = new ListResponse<DomainRouterResponse>();
         List<DomainRouterResponse> routerResponses = new ArrayList<DomainRouterResponse>();
-        for (DomainRouterVO router : routers) {
-            DomainRouterResponse routerResponse = new DomainRouterResponse();
-            routerResponse.setId(router.getId());
-
-            AsyncJobVO asyncJob = ApiDBUtils.findInstancePendingAsyncJob("domain_router", router.getId());
-            if (asyncJob != null) {
-                routerResponse.setJobId(asyncJob.getId());
-                routerResponse.setJobStatus(asyncJob.getStatus());
-            } 
-
-            routerResponse.setZoneId(router.getDataCenterId());
-            routerResponse.setZoneName(ApiDBUtils.findZoneById(router.getDataCenterId()).getName());
-            routerResponse.setDns1(router.getDns1());
-            routerResponse.setDns2(router.getDns2());
-            routerResponse.setNetworkDomain(router.getDomain());
-            routerResponse.setGateway(router.getGateway());
-            routerResponse.setName(router.getName());
-            routerResponse.setPodId(router.getPodId());
-
-            if (router.getHostId() != null) {
-                routerResponse.setHostId(router.getHostId());
-                routerResponse.setHostName(ApiDBUtils.findHostById(router.getHostId()).getName());
-            } 
-
-            routerResponse.setPrivateIp(router.getPrivateIpAddress());
-            routerResponse.setPrivateMacAddress(router.getPrivateMacAddress());
-            routerResponse.setPrivateNetmask(router.getPrivateNetmask());
-            routerResponse.setPublicIp(router.getPublicIpAddress());
-            routerResponse.setPublicMacAddress(router.getPublicMacAddress());
-            routerResponse.setPublicNetmask(router.getPublicNetmask());
-            routerResponse.setGuestIpAddress(router.getGuestIpAddress());
-            routerResponse.setGuestMacAddress(router.getGuestMacAddress());
-            routerResponse.setGuestNetmask(router.getGuestNetmask());
-            routerResponse.setTemplateId(router.getTemplateId());
-            routerResponse.setCreated(router.getCreated());
-            routerResponse.setState(router.getState());
-
-            Account accountTemp = ApiDBUtils.findAccountById(router.getAccountId());
-            if (accountTemp != null) {
-                routerResponse.setAccountName(accountTemp.getAccountName());
-                routerResponse.setDomainId(accountTemp.getDomainId());
-                routerResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
-            }
-
+        for (DomainRouter router : routers) {
+            DomainRouterResponse routerResponse = ApiResponseHelper.createDomainRouterResponse(router);
             routerResponse.setResponseName("router");
             routerResponses.add(routerResponse);
         }

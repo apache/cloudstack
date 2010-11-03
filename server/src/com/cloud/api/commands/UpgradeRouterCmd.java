@@ -20,11 +20,13 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.response.SuccessResponse;
+import com.cloud.api.response.DomainRouterResponse;
 import com.cloud.network.NetworkManager;
+import com.cloud.vm.DomainRouter;
 
 @Implementation(method="upgradeRouter", manager=NetworkManager.class)
 public class UpgradeRouterCmd extends BaseCmd {
@@ -63,12 +65,10 @@ public class UpgradeRouterCmd extends BaseCmd {
 	}
 
 	@Override @SuppressWarnings("unchecked")
-	public SuccessResponse getResponse() {
-		 Boolean success = (Boolean)getResponseObject();
-
-		 SuccessResponse response = new SuccessResponse();
-		 response.setSuccess(success);
-		 response.setResponseName(getName());
-		 return response;
-	}
+    public DomainRouterResponse getResponse() {
+        DomainRouter router = (DomainRouter)getResponseObject();
+        DomainRouterResponse routerResponse = ApiResponseHelper.createDomainRouterResponse(router);
+        routerResponse.setResponseName(getName());
+        return routerResponse;
+    }
 }

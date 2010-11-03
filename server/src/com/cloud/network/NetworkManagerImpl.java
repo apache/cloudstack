@@ -485,7 +485,7 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
     }
     
     @Override
-    public boolean upgradeRouter(UpgradeRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+    public DomainRouter upgradeRouter(UpgradeRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
         return _routerMgr.upgradeRouter(cmd);
     }
 
@@ -500,7 +500,7 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
     }
     
     @Override
-    public DomainRouterVO startRouter(StartRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+    public DomainRouter startRouter(StartRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
         return _routerMgr.startRouter(cmd);
     }
 
@@ -511,7 +511,7 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
     
     
     @Override
-    public DomainRouterVO stopRouter(StopRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
+    public DomainRouter stopRouter(StopRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
         return _routerMgr.stopRouter(cmd);
     }
 

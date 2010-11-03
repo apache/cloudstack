@@ -25,10 +25,12 @@ import com.cloud.api.response.AccountResponse;
 import com.cloud.api.response.ConfigurationResponse;
 import com.cloud.api.response.DiskOfferingResponse;
 import com.cloud.api.response.DomainResponse;
+import com.cloud.api.response.DomainRouterResponse;
 import com.cloud.api.response.ResourceLimitResponse;
 import com.cloud.api.response.ServiceOfferingResponse;
 import com.cloud.api.response.SnapshotPolicyResponse;
 import com.cloud.api.response.SnapshotResponse;
+import com.cloud.api.response.SystemVmResponse;
 import com.cloud.api.response.UserResponse;
 import com.cloud.api.response.UserVmResponse;
 import com.cloud.async.AsyncJobVO;
@@ -52,8 +54,13 @@ import com.cloud.user.UserAccount;
 import com.cloud.user.UserContext;
 import com.cloud.user.UserStatisticsVO;
 import com.cloud.uservm.UserVm;
+import com.cloud.vm.ConsoleProxyVO;
+import com.cloud.vm.DomainRouter;
 import com.cloud.vm.InstanceGroupVO;
+import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.State;
+import com.cloud.vm.SystemVm;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VmStats;
 
 public class ApiResponseHelper {
@@ -408,6 +415,106 @@ public class ApiResponseHelper {
        userVmResponse.setNetworkGroupList(ApiDBUtils.getNetworkGroupsNamesForVm(userVm.getId()));
        
        return userVmResponse;
+   }
+   
+   public static SystemVmResponse createSystemVmResponse (VMInstanceVO systemVM) {
+       SystemVmResponse vmResponse = new SystemVmResponse();
+       if (systemVM instanceof SystemVm) {
+           SystemVm vm = (SystemVm)systemVM;
 
+           vmResponse.setId(vm.getId());
+           vmResponse.setSystemVmType(vm.getType().toString().toLowerCase());
+
+           String instanceType = "console_proxy";
+           if (systemVM instanceof SecondaryStorageVmVO) {
+               instanceType = "sec_storage_vm"; // FIXME:  this should be a constant so that the async jobs get updated with the correct instance type, they are using
+                                                //         different instance types at the moment
+           }
+
+           AsyncJobVO asyncJob = ApiDBUtils.findInstancePendingAsyncJob(instanceType, vm.getId());
+           if (asyncJob != null) {
+               vmResponse.setJobId(asyncJob.getId());
+               vmResponse.setJobStatus(asyncJob.getStatus());
+           } 
+
+           vmResponse.setZoneId(vm.getDataCenterId());
+           vmResponse.setZoneName(ApiDBUtils.findZoneById(vm.getDataCenterId()).getName());
+           vmResponse.setDns1(vm.getDns1());
+           vmResponse.setDns2(vm.getDns2());
+           vmResponse.setNetworkDomain(vm.getDomain());
+           vmResponse.setGateway(vm.getGateway());
+           vmResponse.setName(vm.getName());
+           vmResponse.setPodId(vm.getPodId());
+           if (vm.getHostId() != null) {
+               vmResponse.setHostId(vm.getHostId());
+               vmResponse.setHostName(ApiDBUtils.findHostById(vm.getHostId()).getName());
+           }
+           vmResponse.setPrivateIp(vm.getPrivateIpAddress());
+           vmResponse.setPrivateMacAddress(vm.getPrivateMacAddress());
+           vmResponse.setPrivateNetmask(vm.getPrivateNetmask());
+           vmResponse.setPublicIp(vm.getPublicIpAddress());
+           vmResponse.setPublicMacAddress(vm.getPublicMacAddress());
+           vmResponse.setPublicNetmask(vm.getPublicNetmask());
+           vmResponse.setTemplateId(vm.getTemplateId());
+           vmResponse.setCreated(vm.getCreated());
+           if (vm.getState() != null) {
+               vmResponse.setState(vm.getState().toString());
+           }
+       }
+
+       // for console proxies, add the active sessions
+       if (systemVM instanceof ConsoleProxyVO) {
+           ConsoleProxyVO proxy = (ConsoleProxyVO)systemVM;
+           vmResponse.setActiveViewerSessions(proxy.getActiveSession());
+       }
+       return vmResponse;
+   }
+   
+   
+   public static DomainRouterResponse createDomainRouterResponse (DomainRouter router) {
+       DomainRouterResponse routerResponse = new DomainRouterResponse();
+       routerResponse.setId(router.getId());
+
+       AsyncJobVO asyncJob = ApiDBUtils.findInstancePendingAsyncJob("domain_router", router.getId());
+       if (asyncJob != null) {
+           routerResponse.setJobId(asyncJob.getId());
+           routerResponse.setJobStatus(asyncJob.getStatus());
+       } 
+
+       routerResponse.setZoneId(router.getDataCenterId());
+       routerResponse.setZoneName(ApiDBUtils.findZoneById(router.getDataCenterId()).getName());
+       routerResponse.setDns1(router.getDns1());
+       routerResponse.setDns2(router.getDns2());
+       routerResponse.setNetworkDomain(router.getDomain());
+       routerResponse.setGateway(router.getGateway());
+       routerResponse.setName(router.getName());
+       routerResponse.setPodId(router.getPodId());
+
+       if (router.getHostId() != null) {
+           routerResponse.setHostId(router.getHostId());
+           routerResponse.setHostName(ApiDBUtils.findHostById(router.getHostId()).getName());
+       } 
+
+       routerResponse.setPrivateIp(router.getPrivateIpAddress());
+       routerResponse.setPrivateMacAddress(router.getPrivateMacAddress());
+       routerResponse.setPrivateNetmask(router.getPrivateNetmask());
+       routerResponse.setPublicIp(router.getPublicIpAddress());
+       routerResponse.setPublicMacAddress(router.getPublicMacAddress());
+       routerResponse.setPublicNetmask(router.getPublicNetmask());
+       routerResponse.setGuestIpAddress(router.getGuestIpAddress());
+       routerResponse.setGuestMacAddress(router.getGuestMacAddress());
+       routerResponse.setGuestNetmask(router.getGuestNetmask());
+       routerResponse.setTemplateId(router.getTemplateId());
+       routerResponse.setCreated(router.getCreated());
+       routerResponse.setState(router.getState());
+
+       Account accountTemp = ApiDBUtils.findAccountById(router.getAccountId());
+       if (accountTemp != null) {
+           routerResponse.setAccountName(accountTemp.getAccountName());
+           routerResponse.setDomainId(accountTemp.getDomainId());
+           routerResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
+       }
+       
+       return routerResponse;
    }
 }

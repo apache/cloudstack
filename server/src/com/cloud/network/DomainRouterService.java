@@ -22,7 +22,7 @@ import com.cloud.api.commands.StopRouterCmd;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.utils.component.Manager;
-import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.DomainRouter;
 
 public interface DomainRouterService extends Manager {
     /**
@@ -31,7 +31,7 @@ public interface DomainRouterService extends Manager {
      * @return DomainRouter object
      * @throws InvalidParameterValueException, PermissionDeniedException
      */
-    DomainRouterVO startRouter(StartRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+    DomainRouter startRouter(StartRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
     
     /**
      * Stops domain router
@@ -39,5 +39,5 @@ public interface DomainRouterService extends Manager {
      * @return router if successful, null otherwise
      * @throws InvalidParameterValueException, PermissionDeniedException
      */
-    DomainRouterVO stopRouter(StopRouterCmd cmd);
+    DomainRouter stopRouter(StopRouterCmd cmd);
 }

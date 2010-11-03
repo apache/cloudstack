@@ -657,7 +657,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
     
     @Override
     @DB
-    public boolean upgradeRouter(UpgradeRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+    public DomainRouter upgradeRouter(UpgradeRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
         Long routerId = cmd.getId();
         Long serviceOfferingId = cmd.getServiceOfferingId();
         Account account = UserContext.current().getAccount();
@@ -673,7 +673,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
 
         if (router.getServiceOfferingId() == serviceOfferingId) {
             s_logger.debug("Router: " + routerId + "already has service offering: " + serviceOfferingId);
-            return true;
+            return _routerDao.findById(routerId);
         }
 
         ServiceOfferingVO newServiceOffering = _serviceOfferingDao.findById(serviceOfferingId);
@@ -693,7 +693,10 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
         }
 
         router.setServiceOfferingId(serviceOfferingId);
-        return _routerDao.update(routerId, router);
+        if (_routerDao.update(routerId, router))
+                return _routerDao.findById(routerId);
+        else 
+            throw new CloudRuntimeException("Unable to upgrade router " + routerId);
         
     }
 
@@ -747,7 +750,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
     }
     
     @Override
-    public DomainRouterVO startRouter(StartRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
+    public DomainRouter startRouter(StartRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
     	Long routerId = cmd.getId();
     	Account account = UserContext.current().getAccount();
     	
@@ -1234,7 +1237,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
     
     
     @Override
-    public DomainRouterVO stopRouter(StopRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
+    public DomainRouter stopRouter(StopRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
 	    Long routerId = cmd.getId();
         Account account = UserContext.current().getAccount();
 
@@ -1382,7 +1385,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
     }
     
     @Override
-    public boolean rebootRouter(RebootRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
+    public DomainRouter rebootRouter(RebootRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
     	Long routerId = cmd.getId();
     	Account account = UserContext.current().getAccount();
     	
@@ -1397,7 +1400,10 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
         }
         long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_ROUTER_REBOOT, "rebooting Router with Id: "+routerId);
         
-    	return rebootRouter(routerId, eventId);
+    	if (rebootRouter(routerId, eventId))
+    	    return _routerDao.findById(routerId);
+    	else
+    	    throw new CloudRuntimeException("Fail to reboot router " + routerId);
     }
 
     @Override
