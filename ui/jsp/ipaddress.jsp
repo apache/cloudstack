@@ -314,7 +314,7 @@
 	            </div>
 	        </div>
         </div>    
-		<div id="vpn_disabled_msg" style="display:none"> <p>VPN access is currently not enabled.  Please <a href="#" id="enable_vpn_link">click here</a> to enable VPN.</p></div>
+		<div id="vpn_disabled_msg" class="info_detailbox defaultbox" style="display:none;"> <p>VPN access is currently not enabled.  Please <a href="#" id="enable_vpn_link">click here</a> to enable VPN.</p></div>
     </div>
     <!-- VPN ends here-->
 </div>

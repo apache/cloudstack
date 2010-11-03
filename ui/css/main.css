@@ -2904,6 +2904,12 @@ a:hover.search_button {
 	color:#a90000;
 }
 
+.info_detailbox.defaultbox {
+	background:FFF repeat-x top left;
+	color:#a90000;
+}
+
+
 .grid_header {
 	width:100%;
 	height:20px;
