@@ -18,15 +18,16 @@
 
 function afterLoadIpJSP() {
     //***** switch between different tabs (begin) ********************************************************************
-    var tabArray = [$("#tab_details"), $("#tab_port_forwarding"), $("#tab_load_balancer")];
-    var tabContentArray = [$("#tab_content_details"), $("#tab_content_port_forwarding"), $("#tab_content_load_balancer")];
-    var afterSwitchFnArray = [ipJsonToDetailsTab, ipJsonToPortForwardingTab, ipJsonToLoadBalancerTab];
+    var tabArray = [$("#tab_details"), $("#tab_port_forwarding"), $("#tab_load_balancer"), $("#tab_vpn")];
+    var tabContentArray = [$("#tab_content_details"), $("#tab_content_port_forwarding"), $("#tab_content_load_balancer"), $("#tab_content_vpn")];
+    var afterSwitchFnArray = [ipJsonToDetailsTab, ipJsonToPortForwardingTab, ipJsonToLoadBalancerTab, ipJsonToVPNTab];
     switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray);       
     //***** switch between different tabs (end) **********************************************************************
         
     //dialogs
     initDialog("dialog_acquire_public_ip", 325);
     initDialog("dialog_confirmation_release_ip");
+	initDialog("dialog_enable_vpn");
     
     //*** Acquire New IP (begin) ***
 	$.ajax({
@@ -225,12 +226,16 @@ function ipToRightPanel($midmenuItem1) {
     
     //Port Forwarding tab, Load Balancer tab
     if(isIpManageable(ipObj.domainid, ipObj.account) == true) {     
-	    $("#tab_port_forwarding, #tab_load_balancer").show();	        
+	    $("#tab_port_forwarding, #tab_load_balancer").show();
+		// Only show VPN tab if the IP is the source nat IP
+		if (ipObj.issourcenat == true) {
+			$("#tab_vpn").show();
+		}
         //ipJsonToPortForwardingTab(); 
         //ipJsonToLoadBalancerTab();        
     } 
     else { 
-	    $("#tab_port_forwarding, #tab_load_balancer").hide();
+	    $("#tab_port_forwarding, #tab_load_balancer, #tab_vpn").hide();
 	    //ipClearPortForwardingTab();
 	    //ipClearLoadBalancerTab();
 	    //$("#tab_details").click();
@@ -299,6 +304,92 @@ function ipJsonToLoadBalancerTab() {
             } 	 
             $thisTab.find("#tab_spinning_wheel").hide();    
             $thisTab.find("#tab_container").show();    	       	      		    						
+        }
+    });    
+}
+
+function showEnableVPNDialog($thisTab) {
+	$("#dialog_enable_vpn")	
+	.dialog('option', 'buttons', { 						
+		"Enable": function() { 
+			var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");	
+			var ipObj = $midmenuItem1.data("jsonObj");
+			var $thisDialog = $(this);
+			$spinningWheel = $thisDialog.find("#spinning_wheel").show();
+			$.ajax({
+				data: createURL("command=createRemoteAccessVpn&account="+ipObj.account+"&domainid="+ipObj.domainid+"&zoneid="+ipObj.zoneid),
+				dataType: "json",
+				success: function(json) {
+					var jobId = json.createremoteaccessvpnresponse.jobid;
+					var timerKey = "asyncJob_" + jobId;					                       
+					$("body").everyTime(
+						5000,
+						timerKey,
+						function() {
+							$.ajax({
+								data: createURL("command=queryAsyncJobResult&jobId="+jobId),
+								dataType: "json",									                    					                    
+								success: function(json) {		                                                     							                       
+									var result = json.queryasyncjobresultresponse;										                   
+									if (result.jobstatus == 0) {
+										return; //Job has not completed
+									} else {											                    
+										$("body").stopTime(timerKey);				                        
+										$spinningWheel.hide(); 
+																																	 
+										if (result.jobstatus == 1) { // Succeeded 	
+											$thisDialog.dialog("close");
+											$thisTab.find("#tab_container").show();
+											$thisTab.find("#vpn_disabled_msg").hide();
+										} else if (result.jobstatus == 2) { // Failed	
+											var errorMsg = "We were unable to enable VPN access.  Please contact support.";
+											$thisDialog.find("#info_container").text(errorMsg).show();
+										}	
+									}
+								},
+								error: function(XMLHttpResponse) {	                            
+									$("body").stopTime(timerKey);		                       		                        
+									handleErrorInDialog(XMLHttpResponse, $thisDialog); 		                                             
+								}
+							});
+						},
+						0
+					);
+				},
+				error: function(XMLHttpResponse) {
+					handleErrorInDialog(XMLHttpResponse, $thisDialog);			
+				}
+			});    
+		}, 
+		"Cancel": function() { 
+			$thisTab.find("#tab_container").hide();
+			$thisTab.find("#vpn_disabled_msg").show();
+			$(this).dialog("close"); 
+			$thisTab.find("#enable_vpn_link").unbind("click").bind("click", function(event) {
+				showEnableVPNDialog($thisTab);
+			});
+		} 
+	}).dialog("open");
+}
+
+function ipJsonToVPNTab() {
+	var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");	
+	var ipObj = $midmenuItem1.data("jsonObj");	
+	var $thisTab = $("#right_panel_content #tab_content_vpn");  
+	var ipAddress = ipObj.ipaddress;
+	$.ajax({
+        data: createURL("command=listRemoteAccessVpns&publicip="+ipAddress),
+        dataType: "json",
+        success: function(json) {		                    
+            var items = json.listremoteaccessvpnsresponse.remoteaccessvpn;  
+            if (items != null && items.length > 0) {				        			        
+				// List the VPN users
+            } else {
+				showEnableVPNDialog($thisTab);
+			}
+            $thisTab.find("#tab_spinning_wheel").hide();    
+            $thisTab.find("#tab_container").show();    	
+			$thisTab.find("#vpn_disabled_msg").hide();
         }
     });    
 }

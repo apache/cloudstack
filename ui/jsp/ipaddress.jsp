@@ -28,6 +28,8 @@
             <%=t.t("Port Forwarding")%></div>
         <div class="content_tabs off" id="tab_load_balancer">
             <%=t.t("Load Balancer")%></div>
+		<div class="content_tabs off" id="tab_vpn">
+            <%=t.t("VPN")%></div>
     </div>  
     <div id="tab_content_details">
     	<div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display: none;">
@@ -270,6 +272,51 @@
         </div>      
     </div>
     <!-- Load Balancer ends here-->
+	
+	<!-- VPN start here-->
+	<div id="tab_content_vpn" style="display:none">
+    	<div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display: none;">
+            <div class="rightpanel_mainloaderbox">
+                <div class="rightpanel_mainloader_animatedicon">
+                </div>
+                <p>
+                    Loading &hellip;</p>
+            </div>
+        </div>        
+        <div id="tab_container" style="display:none">
+			<div class="grid_container">
+	        	<div class="grid_header">
+	            	<div id="grid_header_title" class="grid_header_title">VPN Users</div>
+	                <div class="grid_actionbox" id="action_link">
+	                    <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
+	                        <ul class="actionsdropdown_boxlist" id="action_list">
+	                            <li><%=t.t("no.available.actions")%></li>
+	                        </ul>
+	                    </div>
+	                </div>
+	                <div class="gridheader_loaderbox" id="spinning_wheel" style="border: 1px solid #999;
+	                display: none;">
+	                    <div class="gridheader_loader" id="icon">
+	                    </div>
+	                    <p id="description">
+	                        Adding User &hellip;</p>
+	                </div>
+	            </div>
+	            <div class="grid_rows odd">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        Username:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="username">
+	                    </div>
+	                </div>
+	            </div>
+	        </div>
+        </div>    
+		<div id="vpn_disabled_msg" style="display:none"> <p>VPN access is currently not enabled.  Please <a href="#" id="enable_vpn_link">click here</a> to enable VPN.</p></div>
+    </div>
+    <!-- VPN ends here-->
 </div>
 <!-- IP Address detail panel (end) -->
 
@@ -472,6 +519,24 @@
     <p>
         <%=t.t("please.confirm.you.want.to.release.this.IP.address")%>
     </p>
+</div>
+
+<div id="dialog_enable_vpn" title="Enable VPN" style="display:none">
+    <p>
+        VPN is currently disabled for this IP Address.  Would you like to enable VPN access?
+    </p>
+	<!--Loading box-->
+	<div id="spinning_wheel" class="ui_dialog_loaderbox" style="display:none;">
+		<div class="ui_dialog_loader"></div>
+		<p>Enabling VPN Access....</p>
+	</div>
+   
+	<!--Confirmation msg box-->
+	<!--Note: for error msg, just have to add error besides everything for eg. add error(class) next to ui_dialog_messagebox error, ui_dialog_msgicon error, ui_dialog_messagebox_text error.  -->
+	<div id="info_container" class="ui_dialog_messagebox error" style="display:none;">
+		<div id="icon" class="ui_dialog_msgicon error"></div>
+        <div id="info" class="ui_dialog_messagebox_text error">(info)</div>
+	</div>
 </div>
 
 <div id="dialog_acquire_public_ip" title="Acquire New IP" style="display: none">
