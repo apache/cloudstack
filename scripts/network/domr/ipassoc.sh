@@ -106,11 +106,32 @@ remove_an_ip () {
   local pubIp=$2
   local ipNoMask=$(echo $2 | awk -F'/' '{print $1}')
   local mask=$(echo $2 | awk -F'/' '{print $2}')
-  [ "$mask" == "" ] && mask="32"
-   ssh -p 3922 -o StrictHostKeyChecking=no -i $cert root@$dRIp "\
-      ip addr del dev $correctVif "$ipNoMask/$mask"
-     "
-  if [ $? -gt 0  -a $? -ne 2 ]
+  local existingIpMask=$(ssh -p 3922 -o StrictHostKeyChecking=no -i $cert root@$dRIp "
+      ip addr show dev $correctVif | grep inet | awk '{print \$2}'  | grep -w $ipNoMask 
+     ")
+  [ "$existingIpMask" == "" ] && return 0
+  local existingMask=$(echo $existingIpMask | awk -F'/' '{print $2}')
+  if [ "$existingMask" == "32" ] 
+  then
+    ssh -p 3922 -o StrictHostKeyChecking=no -i $cert root@$dRIp "
+        ip addr del dev $correctVif $existingIpMask
+       "
+    result=$?
+  fi
+  if [ "$existingMask" != "32" ] 
+  then
+    ssh -p 3922 -o StrictHostKeyChecking=no -i $cert root@$dRIp "
+        replaceIpMask=\`ip addr show dev $correctVif | grep inet | grep -v $existingIpMask | awk '{print \$2}' | sort -t/ -k2 -n|tail -1\`
+        ip addr del dev $correctVif $existingIpMask;
+        if [ -n \"\$replaceIpMask\" ]; then
+          ip addr del dev $correctVif \$replaceIpMask;
+          replaceIp=\`echo \$replaceIpMask | awk -F/ '{print \$1}'\`;
+          ip addr add dev $correctVif \$replaceIp/$existingMask;
+        fi
+       "
+    result=$?
+  fi
+  if [ $result -gt 0  -a $result -ne 2 ]
   then
      return 1
   fi

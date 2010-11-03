@@ -1290,7 +1290,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         final Command [] cmds = new Command[ipAddrList.size()];
         int i=0;
         boolean sourceNat = false;
-        Map<VlanVO, ArrayList<IPAddressVO>> vlanIpMap = new HashMap<VlanVO, ArrayList<IPAddressVO>>();
+        Map<Long, ArrayList<IPAddressVO>> vlanIpMap = new HashMap<Long, ArrayList<IPAddressVO>>();
         for (final String ipAddress: ipAddrList) {
         	IPAddressVO ip = _ipAddressDao.findById(ipAddress);
         	
@@ -1300,9 +1300,9 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         		ipList = new ArrayList<IPAddressVO>();
         	}
         	ipList.add(ip);
-        	vlanIpMap.put(vlan, ipList);
+        	vlanIpMap.put(vlan.getId(), ipList);
         }
-        for (Map.Entry<VlanVO, ArrayList<IPAddressVO>> vlanAndIp: vlanIpMap.entrySet()) {
+        for (Map.Entry<Long, ArrayList<IPAddressVO>> vlanAndIp: vlanIpMap.entrySet()) {
         	boolean firstIP = true;
         	ArrayList<IPAddressVO> ipList = vlanAndIp.getValue();
         	Collections.sort(ipList, new Comparator<IPAddressVO>() {
@@ -1313,7 +1313,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
 
         	for (final IPAddressVO ip: ipList) {
         		sourceNat = ip.getSourceNat();
-        		VlanVO vlan = vlanAndIp.getKey();
+        		VlanVO vlan = _vlanDao.findById(vlanAndIp.getKey());
         		String vlanId = vlan.getVlanId();
         		String vlanGateway = vlan.getVlanGateway();
         		String vlanNetmask = vlan.getVlanNetmask();
