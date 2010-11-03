@@ -580,7 +580,7 @@ def copyfile(fromFile, toFile, isISCSI):
     errMsg = ''
     if isISCSI:
         try:
-            cmd = ['dd', 'if=' + fromFile, 'of=' + toFile]
+            cmd = ['dd', 'if=' + fromFile, 'of=' + toFile , 'bs=1M']
             txt = util.pread2(cmd)
         except:
             txt = ''
@@ -685,7 +685,7 @@ def rename(originalVHD, newVHD):
         raise xs_errors.XenError(errMsg)
     return
 
-def coalesceToChild(backupVHD, childUUID):
+def coalesceToChild(backupVHD, childUUID, childChildUUID):
     # coalesce childVHD with its parent
     childVHD = getVHD(childUUID, False)
     util.SMlog("childVHD: " + childVHD)
@@ -698,6 +698,9 @@ def coalesceToChild(backupVHD, childUUID):
     # rename the existing backupVHD file to childVHD
     # childVHD file automatically gets overwritten
     rename(backupVHD, childVHD)
+    if childChildUUID:
+        childChildVHD = getVHD(childChildUUID, False)
+        setParent(childVHD, childChildVHD)
 
     # parent of the newly coalesced file still remains the same.
     # child of childVHD has it's parent name still set to childVHD.
@@ -1110,7 +1113,8 @@ def backupSnapshot(session, args):
     # Check existence of snapshot on primary storage 
     isfile(baseCopyPath, isISCSI)
     # copy baseCopyPath to backupsDir
-    backupVHD = getVHD(baseCopyUuid, False)
+    backupUuid = util.gen_uuid()
+    backupVHD = getVHD(backupUuid, False)
     backupFile = os.path.join(backupsDir, backupVHD)
     copyfile(baseCopyPath, backupFile, isISCSI)
 
@@ -1136,7 +1140,7 @@ def backupSnapshot(session, args):
         prevBackupVHD = getVHD(prevBackupUuid, False)
         setParent(prevBackupVHD, backupFile)
 
-    txt = "1#" + baseCopyUuid
+    txt = "1#" + backupUuid
     return txt
 
 def createDummyVHD(baseCopyPath, backupsDir):
@@ -1166,6 +1170,7 @@ def deleteSnapshotBackup(session, args):
     secondaryStorageMountPath = args['secondaryStorageMountPath']
     backupUUID                = args['backupUUID']
     childUUID                 = args['childUUID']
+    childChildUUID            = args['childChildUUID']
 
     backupsDir = mountSnapshotsDir(secondaryStorageMountPath, "snapshots", dcId, accountId, volumeId)
     # chdir to the backupsDir for convenience
@@ -1182,7 +1187,7 @@ def deleteSnapshotBackup(session, args):
         
     # Case 1) childUUID exists
     if childUUID:
-        coalesceToChild(backupVHD, childUUID)
+        coalesceToChild(backupVHD, childUUID, childChildUUID)
     else:
         # Just delete the backupVHD
         try:

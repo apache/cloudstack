@@ -592,6 +592,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
                                       dcId,
                                       accountId,
                                       volumeId,
+                                      volume.getPath(),
                                       snapshotUuid,
                                       prevSnapshotUuid,
                                       prevBackupUuid,
@@ -937,8 +938,11 @@ public class SnapshotManagerImpl implements SnapshotManager {
 
                 String backupOfSnapshot = snapshot.getBackupSnapshotId();
                 String backupOfNextSnapshot = null;
-                if (nextSnapshot != null) {
-                    backupOfNextSnapshot = nextSnapshot.getBackupSnapshotId();
+                backupOfNextSnapshot = nextSnapshot.getBackupSnapshotId();
+                String backupOfNextNextSnapshot = null;
+                SnapshotVO nextNextSnapshot = _snapshotDao.findNextSnapshot(nextSnapshot.getId());
+                if( nextNextSnapshot != null ) {
+                	backupOfNextNextSnapshot = nextNextSnapshot.getBackupSnapshotId();
                 }
 
                 DeleteSnapshotBackupCommand cmd =
@@ -948,7 +952,8 @@ public class SnapshotManagerImpl implements SnapshotManager {
                                                     accountId,
                                                     volumeId,
                                                     backupOfSnapshot,
-                                                    backupOfNextSnapshot);
+                                                    backupOfNextSnapshot,
+                                                    backupOfNextNextSnapshot);
                 
                 details = "Failed to destroy snapshot id:" + snapshotId + " for volume: " + volume.getId();
                 Answer answer = _storageMgr.sendToHostsOnStoragePool(volume.getPoolId(),
@@ -1294,7 +1299,8 @@ public class SnapshotManagerImpl implements SnapshotManager {
                                 accountId,
                                 volumeId,
                                 backupOfSnapshot,
-                                backupOfNextSnapshot);
+                                backupOfNextSnapshot,
+                                null);
                     String basicErrMsg = "Failed to destroy snapshot id: " + snapshotId + " for volume id: " + volumeId;
                     Answer answer = _storageMgr.sendToHostsOnStoragePool(volume.getPoolId(), cmd, basicErrMsg, _totalRetries, _pauseInterval, _shouldBeSnapshotCapable);
                     

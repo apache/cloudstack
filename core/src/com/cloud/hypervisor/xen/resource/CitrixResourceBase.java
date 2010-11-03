@@ -399,30 +399,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         return null;
     }
 
-    protected boolean currentlyAttached(SR sr, SR.Record rec, PBD pbd, PBD.Record pbdr) {
-        String status = null;
-        if (SRType.NFS.equals(rec.type)) {
-            //status = callHostPlugin("checkMount", "mount", rec.uuid);
-            return true;
-        } else if (SRType.LVMOISCSI.equals(rec.type) ) {
-            String scsiid = pbdr.deviceConfig.get("SCSIid");
-            if (scsiid.isEmpty()) {
-                return false;
-            }
-            status = callHostPlugin("checkIscsi", "scsiid", scsiid);
-        } else {
-            return true;
-        }
-
-        if (status != null && status.equalsIgnoreCase("1")) {
-            s_logger.debug("currently attached " + pbdr.uuid);
-            return true;
-        } else {
-            s_logger.debug("currently not attached " + pbdr.uuid);
-            return false;
-        }
-    }
-
     protected boolean pingdomr(String host, String port) {
         String status;
         status = callHostPlugin("pingdomr", "host", host, "port", port);
@@ -5383,7 +5359,9 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 // new one
                 // and muddle the vhd chain on the secondary storage.
                 details = "Successfully backedUp the snapshotUuid: " + snapshotUuid + " to secondary storage.";
-                destroySnapshotOnPrimaryStorage(prevSnapshotUuid);
+                String volumeUuid = cmd.getVolumeUUID();
+                destroySnapshotOnPrimaryStorageExceptThis(volumeUuid, snapshotUuid);
+
             }
 
         } catch (XenAPIException e) {
@@ -5519,6 +5497,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         String secondaryStoragePoolURL = cmd.getSecondaryStoragePoolURL();
         String backupUUID = cmd.getSnapshotUuid();
         String childUUID = cmd.getChildUUID();
+        String childChildUUID = cmd.getChildChildUUID();
         String primaryStorageNameLabel = cmd.getPrimaryStoragePoolNameLabel();
 
         String details = null;
@@ -5556,7 +5535,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 if (secondaryStorageMountPath == null) {
                     details = "Couldn't delete snapshot because the URL passed: " + secondaryStoragePoolURL + " is invalid.";
                 } else {
-                    details = deleteSnapshotBackup(dcId, accountId, volumeId, secondaryStorageMountPath, backupUUID, childUUID, isISCSI);
+                    details = deleteSnapshotBackup(dcId, accountId, volumeId, secondaryStorageMountPath, backupUUID, childUUID, childChildUUID, isISCSI);
                     success = (details != null && details.equals("1"));
                     if (success) {
                         s_logger.debug("Successfully deleted snapshot backup " + backupUUID);
@@ -5879,6 +5858,37 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
         return backupSnapshotUuid;
     }
+    
+    private boolean destroySnapshotOnPrimaryStorageExceptThis(String volumeUuid, String avoidSnapshotUuid){
+	    try {
+	        Connection conn = getConnection();
+	        VDI volume = getVDIbyUuid(volumeUuid);
+	        if (volume == null) {
+	            throw new InternalErrorException("Could not destroy snapshot on volume " + volumeUuid + " due to can not find it");
+	        }
+	        Set<VDI> snapshots = volume.getSnapshots(conn);
+	        for( VDI snapshot : snapshots ) {
+	        	try {
+		        	if(! snapshot.getUuid(conn).equals(avoidSnapshotUuid)) {
+		    	        snapshot.destroy(conn);
+		        	}
+	    	    } catch (Exception e) {
+	    	        String msg = "Destroying snapshot: " + snapshot+ " on primary storage failed due to " + e.toString();
+	    	        s_logger.warn(msg, e);
+	    	    }
+	        }
+	        s_logger.debug("Successfully destroyed snapshot on volume: " + volumeUuid + " execept this current snapshot "+ avoidSnapshotUuid );
+	        return true;
+	    } catch (XenAPIException e) {
+	        String msg = "Destroying snapshot on volume: " + volumeUuid + " execept this current snapshot "+ avoidSnapshotUuid + " failed due to " + e.toString();
+	        s_logger.error(msg, e);
+	    } catch (Exception e) {
+	        String msg = "Destroying snapshot on volume: " + volumeUuid + " execept this current snapshot "+ avoidSnapshotUuid + " failed due to " + e.toString();
+	        s_logger.warn(msg, e);
+	    }
+	
+	    return false;
+    }
 
     protected boolean destroySnapshotOnPrimaryStorage(String snapshotUuid) {
         // Precondition snapshotUuid != null
@@ -5902,10 +5912,10 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         return false;
     }
 
-    protected String deleteSnapshotBackup(Long dcId, Long accountId, Long volumeId, String secondaryStorageMountPath, String backupUUID, String childUUID, Boolean isISCSI) {
+    protected String deleteSnapshotBackup(Long dcId, Long accountId, Long volumeId, String secondaryStorageMountPath, String backupUUID, String childUUID, String childChildUUID, Boolean isISCSI) {
 
         // If anybody modifies the formatting below again, I'll skin them
-        String result = callHostPlugin("deleteSnapshotBackup", "backupUUID", backupUUID, "childUUID", childUUID, "dcId", dcId.toString(), "accountId", accountId.toString(),
+        String result = callHostPlugin("deleteSnapshotBackup", "backupUUID", backupUUID, "childUUID", childUUID, "childChildUUID", childChildUUID, "dcId", dcId.toString(), "accountId", accountId.toString(),
                 "volumeId", volumeId.toString(), "secondaryStorageMountPath", secondaryStorageMountPath, "isISCSI", isISCSI.toString());
 
         return result;

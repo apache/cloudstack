@@ -23,6 +23,7 @@ package com.cloud.agent.api;
  */
 public class DeleteSnapshotBackupCommand extends SnapshotCommand {
     private String childUUID;
+    private String childChildUUID;
     
     protected DeleteSnapshotBackupCommand() {
         
@@ -59,10 +60,12 @@ public class DeleteSnapshotBackupCommand extends SnapshotCommand {
                                        Long   accountId,
                                        Long   volumeId,
                                        String backupUUID, 
-                                       String childUUID) 
+                                       String childUUID,
+                                       String childChildUUID) 
     {
         super(primaryStoragePoolNameLabel, secondaryStoragePoolURL, backupUUID, dcId, accountId, volumeId);
         this.childUUID = childUUID;
+        this.childChildUUID = childChildUUID;
     }
 
     /**
@@ -71,5 +74,10 @@ public class DeleteSnapshotBackupCommand extends SnapshotCommand {
     public String getChildUUID() {
         return childUUID;
     }
+
+
+	public String getChildChildUUID() {
+		return childChildUUID;
+	}
 
 }
