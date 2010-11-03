@@ -2751,11 +2751,11 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
 		Account account = getAccountForApiCommand(cmd.getAccountName(), cmd.getDomainId());
 		EventUtils.saveStartedEvent(userId, account.getId(), EventTypes.EVENT_VPN_USER_ADD, "Add VPN user for account: " + account.getAccountName(), cmd.getStartEventId());
 
-		if (!cmd.getUserName().matches("^[a-zA-Z0-9][a-zA-Z0-9@._-]{2,15}$")) {
-			throw new InvalidParameterValueException("Username has to be 3-16 characters including alphabets, numbers and the set '@.-_'");
+		if (!cmd.getUserName().matches("^[a-zA-Z0-9][a-zA-Z0-9@._-]{2,63}$")) {
+			throw new InvalidParameterValueException("Username has to be begin with an alphabet have 3-64 characters including alphabets, numbers and the set '@.-_'");
 		}
-		if (!cmd.getPassword().matches("^[a-zA-Z0-9][a-zA-Z0-9@#+=._-]{2,15}$")) {
-			throw new InvalidParameterValueException("Password has to be 3-16 characters including alphabets, numbers and the set '@#+=.-_'");
+		if (!cmd.getPassword().matches("^[a-zA-Z0-9][a-zA-Z0-9@#+=._-]{2,31}$")) {
+			throw new InvalidParameterValueException("Password has to be 3-32 characters including alphabets, numbers and the set '@#+=.-_'");
 		}
 		boolean added = addRemoveVpnUser(account, cmd.getUserName(), cmd.getPassword(), true);
 		if (added) {
