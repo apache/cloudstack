@@ -50,6 +50,7 @@ public class BackupSnapshotCommand extends SnapshotCommand {
                                  Long   dcId,
                                  Long   accountId,
                                  Long   volumeId,
+                                 String volumePath,
                                  String snapshotUuid,
                                  String snapshotName,
                                  String prevSnapshotUuid,
@@ -64,6 +65,7 @@ public class BackupSnapshotCommand extends SnapshotCommand {
         this.firstBackupUuid = firstBackupUuid;
         this.isVolumeInactive = isVolumeInactive;
         this.vmName = vmName;
+        setVolumePath(volumePath);
     }
 
     public String getPrevSnapshotUuid() {

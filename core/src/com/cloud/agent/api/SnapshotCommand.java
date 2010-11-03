@@ -32,6 +32,7 @@ public class SnapshotCommand extends Command {
     private Long   dcId;
     private Long   accountId;
     private Long   volumeId;
+    private String volumePath;
     
     protected SnapshotCommand() {
         
@@ -97,6 +98,14 @@ public class SnapshotCommand extends Command {
 
     public Long getVolumeId() {
         return volumeId;
+    }
+    
+    public String getVolumePath() {
+    	return volumePath;
+    }
+    
+    public void setVolumePath(String path) {
+    	volumePath = path;
     }
 
     /**

@@ -496,6 +496,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
                                           dcId,
                                           accountId,
                                           volumeId,
+                                          volume.getPath(),
                                           snapshotUuid,
                                           snapshot.getName(),
                                           prevSnapshotUuid,
