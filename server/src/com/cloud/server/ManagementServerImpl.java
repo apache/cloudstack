@@ -2654,6 +2654,12 @@ public class ManagementServerImpl implements ManagementServer {
         Long accountId = cmd.getId();
         String accountName = null;
 
+        if(accountId != null && accountId == 1){
+        	//system account should NOT be searchable
+        	List<AccountVO> emptyList = new ArrayList<AccountVO>();
+        	return emptyList;
+        }
+        
         if ((account == null) || isAdmin(account.getType())) {
             accountName = cmd.getSearchName(); // admin's can specify a name to search for
             if (domainId == null) {

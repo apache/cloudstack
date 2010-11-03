@@ -29,9 +29,10 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.AccountResponse;
 import com.cloud.api.response.ListResponse;
+import com.cloud.server.ManagementServer;
 import com.cloud.user.AccountVO;
 
-@Implementation(method="searchForAccounts", description="Lists accounts and provides detailed account information for listed accounts")
+@Implementation(method="searchForAccounts",manager=ManagementServer.class,description="Lists accounts and provides detailed account information for listed accounts")
 public class ListAccountsCmd extends BaseListCmd {
 	public static final Logger s_logger = Logger.getLogger(ListAccountsCmd.class.getName());
     private static final String s_name = "listaccountsresponse";
