@@ -771,6 +771,9 @@ public class ApiResponseHelper {
            zoneResponse.setGuestCidrAddress(dataCenter.getGuestNetworkCidr());
        }
        
+       zoneResponse.setDomain(dataCenter.getDomain());
+       zoneResponse.setDomainId(dataCenter.getDomainId());
+       
        return zoneResponse;
    }
    

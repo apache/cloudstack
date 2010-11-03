@@ -75,26 +75,6 @@ public class ListZonesByCmd extends BaseListCmd {
         List<ZoneResponse> zoneResponses = new ArrayList<ZoneResponse>();
         for (DataCenterVO dataCenter : dataCenters) {
             ZoneResponse zoneResponse = ApiResponseHelper.createZoneResponse(dataCenter);
-
-            ZoneResponse zoneResponse = new ZoneResponse();
-            zoneResponse.setId(dataCenter.getId());
-            zoneResponse.setName(dataCenter.getName());
-
-            if ((dataCenter.getDescription() != null) && !dataCenter.getDescription().equalsIgnoreCase("null")) {
-                zoneResponse.setDescription(dataCenter.getDescription());
-            }
-
-            if ((account == null) || (account.getType() == Account.ACCOUNT_TYPE_ADMIN)) {
-                zoneResponse.setDns1(dataCenter.getDns1());
-                zoneResponse.setDns2(dataCenter.getDns2());
-                zoneResponse.setInternalDns1(dataCenter.getInternalDns1());
-                zoneResponse.setInternalDns2(dataCenter.getInternalDns2());
-                zoneResponse.setVlan(dataCenter.getVnet());
-                zoneResponse.setGuestCidrAddress(dataCenter.getGuestNetworkCidr());
-            }
-
-            zoneResponse.setDomain(dataCenter.getDomain());
-            zoneResponse.setDomainId(dataCenter.getDomainId());
             zoneResponse.setResponseName("zone");
             zoneResponses.add(zoneResponse);
         }
