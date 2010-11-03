@@ -2277,7 +2277,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
 			return false;
 		}
 		try {
-			Answer answer = _agentMgr.send(router.getHostId(), new VpnUsersCfgCommand(addUsers, removeUsers));
+			Answer answer = _agentMgr.send(router.getHostId(), new VpnUsersCfgCommand(router.getPrivateIpAddress(), addUsers, removeUsers));
 			if (answer != null && answer.getResult()) {
 				return true;
 			} else {

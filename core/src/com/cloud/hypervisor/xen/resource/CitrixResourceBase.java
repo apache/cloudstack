@@ -133,6 +133,7 @@ import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.SetFirewallRuleCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
+import com.cloud.agent.api.routing.VpnUsersCfgCommand;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.CreateAnswer;
@@ -645,6 +646,8 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             return execute((Start2Command)cmd);
         } else if (cmd instanceof RemoteAccessVpnCfgCommand) {
             return execute((RemoteAccessVpnCfgCommand)cmd);
+        } else if (cmd instanceof VpnUsersCfgCommand) {
+            return execute((VpnUsersCfgCommand)cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
@@ -1220,6 +1223,16 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         } else {
         	args += " -d";
         }
+        String result = callHostPlugin("vmops", "lt2p_vpn", "args", args);
+    	if (result == null || result.isEmpty()) {
+    		return new Answer(cmd, false, "Configure VPN failed");
+    	}
+    	return new Answer(cmd);
+    }
+    
+    protected synchronized Answer execute(final VpnUsersCfgCommand cmd) {
+        String args = cmd.getRouterPrivateIpAddress();
+       
         String result = callHostPlugin("vmops", "lt2p_vpn", "args", args);
     	if (result == null || result.isEmpty()) {
     		return new Answer(cmd, false, "Configure VPN failed");

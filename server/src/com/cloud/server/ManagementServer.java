@@ -71,6 +71,7 @@ import com.cloud.api.commands.ListVMGroupsCmd;
 import com.cloud.api.commands.ListVMsCmd;
 import com.cloud.api.commands.ListVlanIpRangesCmd;
 import com.cloud.api.commands.ListVolumesCmd;
+import com.cloud.api.commands.ListVpnUsersCmd;
 import com.cloud.api.commands.ListZonesByCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
@@ -115,6 +116,7 @@ import com.cloud.network.FirewallRuleVO;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.RemoteAccessVpnVO;
+import com.cloud.network.VpnUserVO;
 import com.cloud.network.security.NetworkGroupVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
@@ -1129,4 +1131,6 @@ public interface ManagementServer {
     String uploadCertificate(UploadCustomCertificateCmd cmd);
     
     public List<RemoteAccessVpnVO> searchForRemoteAccessVpns(ListRemoteAccessVpnsCmd cmd);
+    
+    public List<VpnUserVO> searchForVpnUsers(ListVpnUsersCmd cmd);
 }

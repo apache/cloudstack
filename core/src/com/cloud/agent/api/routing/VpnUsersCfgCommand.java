@@ -61,14 +61,15 @@ public class VpnUsersCfgCommand extends RoutingCommand {
 			//for Gson
 		}
 	}
-	
+	String vpnAppliancePrivateIpAddress; //router private ip address typically
 	UsernamePassword [] userpwds;
 	
     protected VpnUsersCfgCommand() {
     	
     }
     
-    public VpnUsersCfgCommand(List<VpnUserVO> addUsers, List<VpnUserVO> removeUsers) {
+    public VpnUsersCfgCommand(String routerIp, List<VpnUserVO> addUsers, List<VpnUserVO> removeUsers) {
+    	this.vpnAppliancePrivateIpAddress = routerIp;
     	userpwds = new UsernamePassword[addUsers.size() + removeUsers.size()];
     	int i = 0;
     	for (VpnUserVO vpnUser: removeUsers) {
@@ -83,5 +84,12 @@ public class VpnUsersCfgCommand extends RoutingCommand {
 	public boolean executeInSequence() {
 		return true;
 	}
-    
+	
+	public String getVpnAppliancePrivateIpAddress() {
+		return vpnAppliancePrivateIpAddress;
+	}
+
+	public String getRouterPrivateIpAddress() {
+		return vpnAppliancePrivateIpAddress;
+	}
 }
