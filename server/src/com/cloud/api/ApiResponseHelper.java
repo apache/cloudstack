@@ -31,6 +31,7 @@ import com.cloud.api.response.DomainRouterResponse;
 import com.cloud.api.response.HostResponse;
 import com.cloud.api.response.IPAddressResponse;
 import com.cloud.api.response.LoadBalancerResponse;
+import com.cloud.api.response.PodResponse;
 import com.cloud.api.response.ResourceLimitResponse;
 import com.cloud.api.response.ServiceOfferingResponse;
 import com.cloud.api.response.SnapshotPolicyResponse;
@@ -39,11 +40,13 @@ import com.cloud.api.response.SystemVmResponse;
 import com.cloud.api.response.UserResponse;
 import com.cloud.api.response.UserVmResponse;
 import com.cloud.api.response.VlanIpRangeResponse;
+import com.cloud.api.response.ZoneResponse;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.dc.ClusterVO;
+import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
@@ -66,6 +69,7 @@ import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
+import com.cloud.test.PodZoneConfig;
 import com.cloud.user.Account;
 import com.cloud.user.UserAccount;
 import com.cloud.user.UserContext;
@@ -713,5 +717,50 @@ public class ApiResponseHelper {
        
        return lbResponse;
    }
+   
+   public static PodResponse createPodResponse (HostPodVO pod) {
+       String[] ipRange = new String[2];
+       if (pod.getDescription() != null && pod.getDescription().length() > 0) {
+           ipRange = pod.getDescription().split("-");
+       } else {
+           ipRange[0] = pod.getDescription();
+       }
+
+       PodResponse podResponse = new PodResponse();
+       podResponse.setId(pod.getId());
+       podResponse.setName(pod.getName());
+       podResponse.setZoneId(pod.getDataCenterId());
+       podResponse.setZoneName(PodZoneConfig.getZoneName(pod.getDataCenterId()));
+       podResponse.setCidr(pod.getCidrAddress() +"/" + pod.getCidrSize());
+       podResponse.setStartIp(ipRange[0]);
+       podResponse.setEndIp(((ipRange.length > 1) && (ipRange[1] != null)) ? ipRange[1] : "");
+       podResponse.setGateway(pod.getGateway());
+       
+       return podResponse;
+   }
+   
+   public static ZoneResponse createZoneResponse (DataCenterVO dataCenter) {
+       Account account = (Account)UserContext.current().getAccount();
+       ZoneResponse zoneResponse = new ZoneResponse();
+       zoneResponse.setId(dataCenter.getId());
+       zoneResponse.setName(dataCenter.getName());
+
+       if ((dataCenter.getDescription() != null) && !dataCenter.getDescription().equalsIgnoreCase("null")) {
+           zoneResponse.setDescription(dataCenter.getDescription());
+       }
+
+       if ((account == null) || (account.getType() == Account.ACCOUNT_TYPE_ADMIN)) {
+           zoneResponse.setDns1(dataCenter.getDns1());
+           zoneResponse.setDns2(dataCenter.getDns2());
+           zoneResponse.setInternalDns1(dataCenter.getInternalDns1());
+           zoneResponse.setInternalDns2(dataCenter.getInternalDns2());
+           zoneResponse.setVlan(dataCenter.getVnet());
+           zoneResponse.setGuestCidrAddress(dataCenter.getGuestNetworkCidr());
+       }
+       
+       return zoneResponse;
+   }
+   
+   
    
 }

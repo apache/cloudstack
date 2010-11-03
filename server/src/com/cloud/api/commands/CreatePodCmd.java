@@ -21,7 +21,7 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -98,17 +98,7 @@ public class CreatePodCmd extends BaseCmd {
     @Override @SuppressWarnings("unchecked")
     public PodResponse getResponse() {
         HostPodVO pod = (HostPodVO)getResponseObject();
-
-        PodResponse response = new PodResponse();
-        response.setId(pod.getId());
-        response.setCidr(pod.getCidrAddress() + "/" + pod.getCidrSize());
-        response.setEndIp(endIp == null ? "" : endIp);
-        response.setStartIp(startIp);
-        response.setZoneName(ApiDBUtils.findZoneById(pod.getDataCenterId()).getName());
-        response.setGateway(pod.getGateway());
-        response.setName(pod.getName());
-        response.setZoneId(pod.getDataCenterId());
-
+        PodResponse response = ApiResponseHelper.createPodResponse(pod);
         response.setResponseName(getName());
         return response;
     }

@@ -21,6 +21,7 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -118,19 +119,8 @@ public class CreateZoneCmd extends BaseCmd {
     @Override @SuppressWarnings("unchecked")
     public ZoneResponse getResponse() {
         DataCenterVO zone = (DataCenterVO)getResponseObject();
-
-        ZoneResponse response = new ZoneResponse();
-        response.setId(zone.getId());
-        response.setName(zone.getName());
-        response.setDns1(zone.getDns1());
-        response.setDns2(zone.getDns2());
-        response.setInternalDns1(zone.getInternalDns1());
-        response.setInternalDns2(zone.getInternalDns2());
-        response.setVlan(zone.getVnet());
-        response.setGuestCidrAddress(zone.getGuestNetworkCidr());
-        response.setDomain(zone.getDomain());
+        ZoneResponse response = ApiResponseHelper.createZoneResponse(zone);
         response.setResponseName(getName());
-        response.setDomainId(zone.getDomainId());
         return response;
     }
 }

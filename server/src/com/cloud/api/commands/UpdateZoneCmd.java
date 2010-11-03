@@ -21,6 +21,7 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -127,26 +128,14 @@ public class UpdateZoneCmd extends BaseCmd {
 
     @Override @SuppressWarnings("unchecked")
     public ZoneResponse getResponse() {
-        ZoneResponse response = new ZoneResponse();
-
+       
         DataCenterVO responseObject = (DataCenterVO)getResponseObject();
         if (responseObject != null) {
-            response.setStatus("true");
-            response.setDisplayText("Successfully updated zone");
-            response.setId(responseObject.getId());
-            response.setGuestCidrAddress(responseObject.getGuestNetworkCidr());
-            response.setDns1(responseObject.getDns1());
-            response.setDns2(responseObject.getDns2());
-            response.setInternalDns1(responseObject.getInternalDns1());
-            response.setInternalDns2(responseObject.getInternalDns2());
-            response.setName(responseObject.getName());
-            response.setVlan(responseObject.getVnet());
-            response.setDomain(responseObject.getDomain());
+            ZoneResponse response = ApiResponseHelper.createZoneResponse(responseObject);
+            response.setResponseName(getName());
+            return response;
         } else {
         	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update zone; internal error.");
         }
-        
-        response.setResponseName(getName());
-        return response;
     }
 }

@@ -23,14 +23,13 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.ZoneResponse;
 import com.cloud.dc.DataCenterVO;
-import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @Implementation(method="listDataCenters")
 public class ListZonesByCmd extends BaseListCmd {
@@ -65,28 +64,11 @@ public class ListZonesByCmd extends BaseListCmd {
     @Override @SuppressWarnings("unchecked")
     public ListResponse<ZoneResponse> getResponse() {
         List<DataCenterVO> dataCenters = (List<DataCenterVO>)getResponseObject();
-        Account account = (Account)UserContext.current().getAccount();
 
         ListResponse<ZoneResponse> response = new ListResponse<ZoneResponse>();
         List<ZoneResponse> zoneResponses = new ArrayList<ZoneResponse>();
         for (DataCenterVO dataCenter : dataCenters) {
-            ZoneResponse zoneResponse = new ZoneResponse();
-            zoneResponse.setId(dataCenter.getId());
-            zoneResponse.setName(dataCenter.getName());
-
-            if ((dataCenter.getDescription() != null) && !dataCenter.getDescription().equalsIgnoreCase("null")) {
-                zoneResponse.setDescription(dataCenter.getDescription());
-            }
-
-            if ((account == null) || (account.getType() == Account.ACCOUNT_TYPE_ADMIN)) {
-                zoneResponse.setDns1(dataCenter.getDns1());
-                zoneResponse.setDns2(dataCenter.getDns2());
-                zoneResponse.setInternalDns1(dataCenter.getInternalDns1());
-                zoneResponse.setInternalDns2(dataCenter.getInternalDns2());
-                zoneResponse.setVlan(dataCenter.getVnet());
-                zoneResponse.setGuestCidrAddress(dataCenter.getGuestNetworkCidr());
-            }
-
+            ZoneResponse zoneResponse = ApiResponseHelper.createZoneResponse(dataCenter);
             zoneResponse.setResponseName("zone");
             zoneResponses.add(zoneResponse);
         }

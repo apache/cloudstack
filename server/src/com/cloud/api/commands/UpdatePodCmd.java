@@ -21,11 +21,13 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.response.SuccessResponse;
+import com.cloud.api.response.PodResponse;
 import com.cloud.configuration.ConfigurationManager;
+import com.cloud.dc.HostPodVO;
 
 @Implementation(method="editPod", manager=ConfigurationManager.class, description="Updates a Pod.")
 public class UpdatePodCmd extends BaseCmd {
@@ -91,28 +93,11 @@ public class UpdatePodCmd extends BaseCmd {
         return s_name;
     }
 
-	@Override @SuppressWarnings("unchecked")
-	public SuccessResponse getResponse() {
-	    /* Not sure why we aren't returning the Pod here, but I'll keep the old "success" response we used to have
+    @Override @SuppressWarnings("unchecked")
+    public PodResponse getResponse() {
         HostPodVO pod = (HostPodVO)getResponseObject();
-
-        PodResponse response = new PodResponse();
-        response.setId(pod.getId());
-        response.setCidr(pod.getCidrAddress() + "/" + pod.getCidrSize());
-        response.setEndIp(endIp == null ? "" : endIp);
-        response.setStartIp(startIp);
-        response.setZoneName(ApiDBUtils.findZoneById(pod.getDataCenterId()).getName());
-        response.setGateway(pod.getGateway());
-        response.setName(pod.getName());
-        response.setZoneId(pod.getDataCenterId());
-
+        PodResponse response = ApiResponseHelper.createPodResponse(pod);
         response.setResponseName(getName());
         return response;
-        */
-	    SuccessResponse response = new SuccessResponse();
-	    response.setSuccess(Boolean.TRUE);
-	    //response.setDisplayText("Successfully updated pod.");
-	    response.setResponseName(getName());
-	    return response;
-	}
+    }
 }

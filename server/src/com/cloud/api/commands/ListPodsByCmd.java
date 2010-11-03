@@ -24,13 +24,13 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.PodResponse;
 import com.cloud.dc.HostPodVO;
-import com.cloud.test.PodZoneConfig;
 
 @Implementation(method="searchForPods", description="Lists all Pods.")
 public class ListPodsByCmd extends BaseListCmd {
@@ -84,23 +84,7 @@ public class ListPodsByCmd extends BaseListCmd {
         ListResponse<PodResponse> response = new ListResponse<PodResponse>();
         List<PodResponse> podResponses = new ArrayList<PodResponse>();
         for (HostPodVO pod : pods) {
-            String[] ipRange = new String[2];
-            if (pod.getDescription() != null && pod.getDescription().length() > 0) {
-                ipRange = pod.getDescription().split("-");
-            } else {
-                ipRange[0] = pod.getDescription();
-            }
-
-            PodResponse podResponse = new PodResponse();
-            podResponse.setId(pod.getId());
-            podResponse.setName(pod.getName());
-            podResponse.setZoneId(pod.getDataCenterId());
-            podResponse.setZoneName(PodZoneConfig.getZoneName(pod.getDataCenterId()));
-            podResponse.setCidr(pod.getCidrAddress() +"/" + pod.getCidrSize());
-            podResponse.setStartIp(ipRange[0]);
-            podResponse.setEndIp(((ipRange.length > 1) && (ipRange[1] != null)) ? ipRange[1] : "");
-            podResponse.setGateway(pod.getGateway());
-
+            PodResponse podResponse = ApiResponseHelper.createPodResponse(pod);
             podResponse.setResponseName("pod");
             podResponses.add(podResponse);
         }
