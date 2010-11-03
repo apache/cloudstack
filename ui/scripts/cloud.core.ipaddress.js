@@ -857,8 +857,8 @@ function loadBalancerJsonToTemplate(jsonObj, $template) {
 						    } else {											    
 							    $("body").stopTime(timerKey);
 							    if (result.jobstatus == 1) { // Succeeded										        								        						        								    
-								    var items = result.loadbalancer;											         	
-                                    loadBalancerJsonToTemplate(items[0],$template); 
+								    var item = result.jobresult.updateloadbalancerruleresponse;							         	
+                                    loadBalancerJsonToTemplate(item,$template); 
                                     $spinningWheel.hide();                                   
                                     $rowContainerEdit.hide();  
                                     $rowContainer.show();                                                  
