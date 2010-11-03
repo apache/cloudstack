@@ -76,6 +76,8 @@ function primarystorageJsonToDetailsTab($midmenuItem1) {
     });	  
     var $actionMenu = $detailsTab.find("#action_link #action_menu");
     $actionMenu.find("#action_list").empty(); 
+    buildActionLinkForDetailsTab("Enable Maintenance Mode", primarystorageActionMap, $actionMenu, $midmenuItem1, $detailsTab);     
+    buildActionLinkForDetailsTab("Cancel Maintenance Mode", primarystorageActionMap, $actionMenu, $midmenuItem1, $detailsTab);     
     buildActionLinkForDetailsTab("Delete Primary Storage", primarystorageActionMap, $actionMenu, $midmenuItem1, $detailsTab);        
 }
        
@@ -99,6 +101,31 @@ function primarystorageJsonClearDetailsTab() {
 }
 
 var primarystorageActionMap = {
+    "Enable Maintenance Mode": {              
+        isAsyncJob: true,
+        asyncJobResponse: "prepareprimarystorageformaintenanceresponse",
+        dialogBeforeActionFn: doEnableMaintenanceModeForPrimaryStorage,
+        inProcessText: "Enabling Maintenance Mode....",
+        afterActionSeccessFn: function(json, $midmenuItem1, id) { 
+            //var item = json.queryasyncjobresultresponse.jobresult.prepareprimarystorageformaintenanceresponse; 
+            ////item is {success: "true"}, not an embedded object of primary storage. It should an embedded object instead. Comment out the 4 lines until Bug 6955 is fixed.            
+            //primarystorageToMidmenu(item, $midmenuItem1);
+            //primarystorageToRightPanel($midmenuItem1);            
+            $("#right_panel_content #after_action_info").text("We are actively enabling maintenance. Please refresh periodically for an updated status."); 
+        }
+    },
+    "Cancel Maintenance Mode": {              
+        isAsyncJob: true,
+        asyncJobResponse: "cancelprimarystoragemaintenanceresponse",
+        dialogBeforeActionFn: doCancelMaintenanceModeForPrimaryStorage,
+        inProcessText: "Cancelling Maintenance Mode....",
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {       
+            var item = json.queryasyncjobresultresponse.jobresult.cancelprimarystoragemaintenanceresponse;    
+            primarystorageToMidmenu(item, $midmenuItem1);
+            primarystorageToRightPanel($midmenuItem1);            
+            $("#right_panel_content #after_action_info").text("We are actively cancelling your scheduled maintenance.  Please refresh periodically for an updated status."); 
+        }
+    },
     "Delete Primary Storage": {              
         isAsyncJob: false,        
         dialogBeforeActionFn: doDeletePrimaryStorage,
@@ -110,6 +137,42 @@ var primarystorageActionMap = {
         }
     }
 }
+
+function doEnableMaintenanceModeForPrimaryStorage($actionLink, $detailsTab, $midmenuItem1){ 
+    var jsonObj = $detailsTab.data("jsonObj");
+       
+    $("#dialog_confirmation")
+    .text("Please confirm you want to enable maintenace")
+    .dialog("option", "buttons", {	                    
+         "OK": function() {
+             $(this).dialog("close");      
+             var id = jsonObj.id;
+             var apiCommand = "command=enableStorageMaintenance&id="+id;
+    	     doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);		
+         },
+         "Cancel": function() {	                         
+             $(this).dialog("close");
+         }
+    }).dialog("open");     
+} 
+
+function doCancelMaintenanceModeForPrimaryStorage($actionLink, $detailsTab, $midmenuItem1){ 
+    var jsonObj = $detailsTab.data("jsonObj");
+       
+    $("#dialog_confirmation")
+    .text("Please confirm you want to cancel maintenace")
+    .dialog("option", "buttons", {	                    
+         "OK": function() {
+             $(this).dialog("close");      
+             var id = jsonObj.id;
+             var apiCommand = "command=cancelStorageMaintenance&id="+id;
+    	     doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);		
+         },
+         "Cancel": function() {	                         
+             $(this).dialog("close");
+         }
+    }).dialog("open");     
+} 
 
 function doDeletePrimaryStorage($actionLink, $detailsTab, $midmenuItem1){ 
     var jsonObj = $detailsTab.data("jsonObj");
