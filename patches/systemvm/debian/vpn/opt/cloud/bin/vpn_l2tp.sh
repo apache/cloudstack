@@ -76,6 +76,11 @@ destroy_l2tp_ipsec_vpn_server() {
 remove_l2tp_ipsec_user() {
    local u=$1
    sed -i -e "/^$u .*$/d" /etc/ppp/chap-secrets
+   if [ -x /usr/bin/tdbdump ]; then
+      pid=$(tdbdump /var/run/pppd2.tdb | grep -w $u | awk -F';' '{print $4}' | awk -F= '{print $2}')
+      [ "$pid" != "" ] && kill -9 $pid
+   fi
+
 }
 
 add_l2tp_ipsec_user() {

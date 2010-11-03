@@ -28,7 +28,7 @@ import javax.persistence.SecondaryTable;
 import javax.persistence.Table;
 
 @Entity
-@Table(name=("vpn_user"))
+@Table(name=("vpn_users"))
 @SecondaryTable(name="account",
         pkJoinColumns={@PrimaryKeyJoinColumn(name="account_id", referencedColumnName="id")})
 public class VpnUserVO {
@@ -47,7 +47,7 @@ public class VpnUserVO {
     private long domainId;
 
     @Column(name="username")
-    private String userName;
+    private String username;
     
     @Column(name="password")
     private String password;
@@ -56,7 +56,7 @@ public class VpnUserVO {
 
     public VpnUserVO(long accountId, String userName, String password) {
         this.accountId = accountId;
-        this.userName = userName;
+        this.username = userName;
         this.password = password;
     }
 
@@ -72,15 +72,12 @@ public class VpnUserVO {
         return accountName;
     }
 
-
-
-
-	public String getUserName() {
-		return userName;
+	public String getUsername() {
+		return username;
 	}
 
-	public void setUserName(String userName) {
-		this.userName = userName;
+	public void setUsername(String userName) {
+		this.username = userName;
 	}
 
 	public String getPassword() {

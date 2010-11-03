@@ -2746,11 +2746,17 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
 	}
 	
 	@Override
-	public boolean addVpnUser(AddVpnUserCmd cmd) throws ConcurrentOperationException {
+	public boolean addVpnUser(AddVpnUserCmd cmd) throws ConcurrentOperationException, InvalidParameterValueException {
 		Long userId = UserContext.current().getUserId();
 		Account account = getAccountForApiCommand(cmd.getAccountName(), cmd.getDomainId());
 		EventUtils.saveStartedEvent(userId, account.getId(), EventTypes.EVENT_VPN_USER_ADD, "Add VPN user for account: " + account.getAccountName(), cmd.getStartEventId());
 
+		if (!cmd.getUserName().matches("^[a-zA-Z0-9][a-zA-Z0-9@._-]{2,15}$")) {
+			throw new InvalidParameterValueException("Username has to be 3-16 characters including alphabets, numbers and the set '@.-_'");
+		}
+		if (!cmd.getPassword().matches("^[a-zA-Z0-9][a-zA-Z0-9@#+=._-]{2,15}$")) {
+			throw new InvalidParameterValueException("Password has to be 3-16 characters including alphabets, numbers and the set '@#+=.-_'");
+		}
 		boolean added = addRemoveVpnUser(account, cmd.getUserName(), cmd.getPassword(), true);
 		if (added) {
 			EventUtils.saveEvent(userId, account.getId(), EventTypes.EVENT_VPN_USER_ADD, "Added a VPN user for account: " + account.getAccountName() + " username= " + cmd.getUserName());
@@ -2802,8 +2808,10 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
         	} else {
             	user = _vpnUsersDao.findByAccountAndUsername(account.getId(), username);
             	if (user == null) {
+            		s_logger.debug("Could not find vpn user " + username);
         			throw new InvalidParameterValueException("Could not find vpn user " + username);
         		}
+            	_vpnUsersDao.remove(user.getId());
             	removeVpnUsers.add(user);
         	}
         	for (RemoteAccessVpnVO vpn : vpnVOList) {
@@ -2812,9 +2820,9 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
         	return success;
         } finally {
         	if (success) {
-        		txn.rollback();
-        	} else {
         		txn.commit();
+        	} else {
+        		txn.rollback();
         	}
         	if (locked) {
         		_accountDao.releaseFromLockTable(account.getId());

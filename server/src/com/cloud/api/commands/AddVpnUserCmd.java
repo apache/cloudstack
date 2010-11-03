@@ -44,7 +44,7 @@ public class AddVpnUserCmd extends BaseAsyncCmd {
     @Parameter(name="username", type=CommandType.STRING, required=true, description="username for the vpn user")
     private String userName;
     
-    @Parameter(name="password", type=CommandType.STRING, required=false, description="password for the username")
+    @Parameter(name="password", type=CommandType.STRING, required=true, description="password for the username")
     private String password;
     
     @Parameter(name="account", type=CommandType.STRING, description="an optional account for the vpn user. Must be used with domainId.")

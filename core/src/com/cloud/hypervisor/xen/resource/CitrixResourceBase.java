@@ -1232,11 +1232,18 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     
     protected synchronized Answer execute(final VpnUsersCfgCommand cmd) {
         String args = cmd.getRouterPrivateIpAddress();
-       
-        String result = callHostPlugin("vmops", "lt2p_vpn", "args", args);
-    	if (result == null || result.isEmpty()) {
-    		return new Answer(cmd, false, "Configure VPN failed");
-    	}
+        for (VpnUsersCfgCommand.UsernamePassword userpwd: cmd.getUserpwds()) {
+        	if (!userpwd.isAdd()) {
+        		args += " -U " + userpwd.getUsername();
+        	} else {
+        		args += " -u " + userpwd.getUsernamePassword();
+        	}
+        	String result = callHostPlugin("vmops", "lt2p_vpn", "args", args);
+        	if (result == null || result.isEmpty()) {
+        		return new Answer(cmd, false, "Configure VPN user failed for user " + userpwd.getUsername());
+        	}
+        }
+        
     	return new Answer(cmd);
     }
 

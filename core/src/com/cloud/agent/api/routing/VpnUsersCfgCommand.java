@@ -60,6 +60,9 @@ public class VpnUsersCfgCommand extends RoutingCommand {
 		protected UsernamePassword() {
 			//for Gson
 		}
+		public String getUsernamePassword() {
+			return getUsername() + "," + getPassword();
+		}
 	}
 	String vpnAppliancePrivateIpAddress; //router private ip address typically
 	UsernamePassword [] userpwds;
@@ -73,10 +76,10 @@ public class VpnUsersCfgCommand extends RoutingCommand {
     	userpwds = new UsernamePassword[addUsers.size() + removeUsers.size()];
     	int i = 0;
     	for (VpnUserVO vpnUser: removeUsers) {
-    		userpwds[i++] = new UsernamePassword(vpnUser.getUserName(), vpnUser.getPassword(), false);
+    		userpwds[i++] = new UsernamePassword(vpnUser.getUsername(), vpnUser.getPassword(), false);
     	}
     	for (VpnUserVO vpnUser: addUsers) {
-    		userpwds[i++] = new UsernamePassword(vpnUser.getUserName(), vpnUser.getPassword(), true);
+    		userpwds[i++] = new UsernamePassword(vpnUser.getUsername(), vpnUser.getPassword(), true);
     	}
     }
 
@@ -85,6 +88,10 @@ public class VpnUsersCfgCommand extends RoutingCommand {
 		return true;
 	}
 	
+	public UsernamePassword[] getUserpwds() {
+		return userpwds;
+	}
+
 	public String getVpnAppliancePrivateIpAddress() {
 		return vpnAppliancePrivateIpAddress;
 	}

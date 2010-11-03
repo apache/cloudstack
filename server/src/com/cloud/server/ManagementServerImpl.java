@@ -6209,7 +6209,7 @@ public class ManagementServerImpl implements ManagementServer {
 
         SearchBuilder<VpnUserVO> sb = _vpnUsersDao.createSearchBuilder();
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("username", sb.entity().getUserName(), SearchCriteria.Op.EQ);
+        sb.and("username", sb.entity().getUsername(), SearchCriteria.Op.EQ);
         sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
 
         if ((accountId == null) && (domainId != null)) {

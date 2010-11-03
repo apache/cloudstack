@@ -41,7 +41,7 @@ public class VpnUserDaoImpl extends GenericDaoBase<VpnUserVO, Long> implements V
         
         AccountNameSearch = createSearchBuilder();
         AccountNameSearch.and("accountId", AccountNameSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
-        AccountNameSearch.and("userName", AccountNameSearch.entity().getUserName(), SearchCriteria.Op.EQ);
+        AccountNameSearch.and("username", AccountNameSearch.entity().getUsername(), SearchCriteria.Op.EQ);
         AccountNameSearch.done();
     }
 
@@ -54,9 +54,9 @@ public class VpnUserDaoImpl extends GenericDaoBase<VpnUserVO, Long> implements V
 
 	@Override
 	public VpnUserVO findByAccountAndUsername(Long accountId, String userName) {
-		SearchCriteria<VpnUserVO> sc = AccountSearch.create();
+		SearchCriteria<VpnUserVO> sc = AccountNameSearch.create();
         sc.setParameters("accountId", accountId);
-        sc.setParameters("userName", userName);
+        sc.setParameters("username", userName);
 
         return findOneBy(sc);
 	}

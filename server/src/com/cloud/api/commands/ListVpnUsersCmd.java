@@ -92,7 +92,7 @@ public class ListVpnUsersCmd extends BaseListCmd {
         for (VpnUserVO vpnUser : vpnUsers) {
         	VpnUsersResponse vpnResponse = new VpnUsersResponse();
             vpnResponse.setId(vpnUser.getId());
-            vpnResponse.setUsername(vpnUser.getUserName());
+            vpnResponse.setUsername(vpnUser.getUsername());
             vpnResponse.setAccountName(vpnUser.getAccountName());
             
             Account accountTemp = ApiDBUtils.findAccountById(vpnUser.getAccountId());
