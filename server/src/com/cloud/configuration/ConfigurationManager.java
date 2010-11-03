@@ -232,7 +232,7 @@ public interface ConfigurationManager extends Manager {
      * @param userId
      * @param zoneId
      */
-    void deleteZone(DeleteZoneCmd cmd);
+    boolean deleteZone(DeleteZoneCmd cmd);
 	
 	/**
 	 * Associates an ip address list to an account.  The list of ip addresses are all addresses associated with the given vlan id.

@@ -785,7 +785,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     
     @Override
     @DB
-    public void deleteZone(DeleteZoneCmd cmd) {
+    public boolean deleteZone(DeleteZoneCmd cmd) {
     	
     	Long userId = UserContext.current().getUserId();
     	Long zoneId = cmd.getId();
@@ -803,12 +803,23 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	
     	DataCenterVO zone = _zoneDao.findById(zoneId);
     	
-    	_zoneDao.expunge(zoneId);
+    	boolean success = _zoneDao.expunge(zoneId);
     	
-    	// Delete vNet
-        _zoneDao.deleteVnet(zoneId);
-        
-        saveConfigurationEvent(userId, null, EventTypes.EVENT_ZONE_DELETE, "Successfully deleted zone with name: " + zone.getName() + ".", "dcId=" + zoneId);
+    	try {
+    	    // Delete vNet
+            _zoneDao.deleteVnet(zoneId);
+    	} catch (Exception ex) {
+    	    s_logger.error("Failed to delete zone " + zoneId);
+    	    throw new CloudRuntimeException("Failed to delete zone " + zoneId);
+    	}
+    	
+        if (success){
+            saveConfigurationEvent(userId, null, EventTypes.EVENT_ZONE_DELETE, "Successfully deleted zone with name: " + zone.getName() + ".", "dcId=" + zoneId);
+            return true;
+        } else{
+            return false;
+        }
+            
     }
     
     @Override
