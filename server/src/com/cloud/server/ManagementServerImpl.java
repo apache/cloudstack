@@ -4420,7 +4420,7 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         if (id != null) {
-            sc.setParameters("id", SearchCriteria.Op.EQ, id);
+            sc.setParameters("id", id);
         }
 
         if (keyword != null) {
