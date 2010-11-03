@@ -127,6 +127,12 @@ deps = " ".join( Utils.to_list(
 	deps/cloud-libvirt-0.4.5.jar
 	deps/cloud-jna.jar
 	deps/cloud-cglib.jar
+	deps/cloud-commons-codec-1.4.jar
+	deps/cloud-commons-httpclient-3.1.jar
+	deps/cloud-commons-logging-1.1.1.jar
+	deps/cloud-commons-pool-1.4.jar
+	deps/cloud-ws-commons-util-1.0.2.jar
+	deps/cloud-commons-collections-3.2.1.jar
 	"""
 ) )
 thirdparties = " ".join( Utils.to_list(
