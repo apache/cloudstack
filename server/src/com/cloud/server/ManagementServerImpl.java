@@ -6004,7 +6004,7 @@ public class ManagementServerImpl implements ManagementServer {
 					return ("Updated:"+updatedCpIdList.size()+" out of:"+cpList.size()+" console proxies");
 				}else{
 					//failure case, if even one update fails
-					throw new ManagementServerException("Updated:"+updatedCpIdList.size()+" out of:"+cpList.size()+" console proxies with successfully updated console proxy ids being:"+updatedCpIdList.toString());
+					throw new ManagementServerException("Updated:"+updatedCpIdList.size()+" out of:"+cpList.size()+" console proxies with successfully updated console proxy ids being:"+(updatedCpIdList.size() > 0 ? updatedCpIdList.toString():""));
 				}
 			}
 			else
