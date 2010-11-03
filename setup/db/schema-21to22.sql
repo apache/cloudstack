@@ -25,6 +25,25 @@ CREATE TABLE `cloud`.`certificate` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `cloud`.`remote_access_vpn` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `account_id` bigint unsigned NOT NULL,
+  `zone_id` bigint unsigned NOT NULL,
+  `vpn_server_addr` varchar(15) UNIQUE NOT NULL,
+  `local_ip` varchar(15) NOT NULL,
+  `ip_range` varchar(32) NOT NULL,
+  `ipsec_psk` varchar(255) NOT NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`vpn_users` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `account_id` bigint unsigned NOT NULL,
+  `username` varchar(255) NOT NULL,
+  `password` varchar(255) NOT NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 ALTER TABLE `cloud`.`data_center` MODIFY COLUMN `guest_network_cidr` varchar(18); -- modify column width to 18 from 15
 
 ALTER TABLE `cloud`.`resource_count` ADD COLUMN `domain_id` bigint unsigned; -- add the new column

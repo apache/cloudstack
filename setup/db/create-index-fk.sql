@@ -262,6 +262,7 @@ ALTER TABLE `cloud`.`instance_group_vm_map` ADD CONSTRAINT `fk_instance_group_vm
 
 ALTER TABLE `cloud`.`remote_access_vpn` ADD CONSTRAINT `fk_remote_access_vpn___account_id` FOREIGN KEY `fk_remote_access_vpn__account_id` (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE;
 ALTER TABLE `cloud`.`remote_access_vpn` ADD CONSTRAINT `fk_remote_access_vpn__zone_id` FOREIGN KEY `fk_remote_access_vpn__zone_id` (`zone_id`) REFERENCES `data_center` (`id`);
+ALTER TABLE `cloud`.`remote_access_vpn` ADD CONSTRAINT `fk_remote_access_vpn__server_addr` FOREIGN KEY `fk_remote_access_vpn__server_addr` (`vpn_server_addr`) REFERENCES `user_ip_address` (`public_ip_address`);
 ALTER TABLE `cloud`.`remote_access_vpn` ADD INDEX `i_remote_access_vpn_addr`(`vpn_server_addr`);
 
 ALTER TABLE `cloud`.`vpn_users` ADD CONSTRAINT `fk_vpn_users___account_id` FOREIGN KEY `fk_vpn_users__account_id` (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE;

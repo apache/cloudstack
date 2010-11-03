@@ -22,16 +22,13 @@ import java.util.List;
 
 import javax.ejb.Local;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.network.VpnUserVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
-@Local(value={RemoteAccessVpnDao.class})
+@Local(value={VpnUserDao.class})
 public class VpnUserDaoImpl extends GenericDaoBase<VpnUserVO, Long> implements VpnUserDao {
-    private static final Logger s_logger = Logger.getLogger(VpnUserDaoImpl.class);
     private final SearchBuilder<VpnUserVO> AccountSearch;
     private final SearchBuilder<VpnUserVO> AccountNameSearch;
 

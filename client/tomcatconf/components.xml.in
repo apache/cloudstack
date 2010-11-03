@@ -115,6 +115,7 @@
         <dao name="InstanceGroupDao" class="com.cloud.vm.dao.InstanceGroupDaoImpl"/>
         <dao name="Instance Group to VM Mapping" class="com.cloud.vm.dao.InstanceGroupVMMapDaoImpl"/>
         <dao name="Remote Access VPN" class="com.cloud.network.dao.RemoteAccessVpnDaoImpl"/>
+        <dao name="VPN Users" class="com.cloud.network.dao.VpnUserDaoImpl"/>
 
         <adapters key="com.cloud.agent.manager.allocator.HostAllocator">
             <adapter name="FirstFitRouting" class="com.cloud.agent.manager.allocator.impl.RecreateHostAllocator"/>
