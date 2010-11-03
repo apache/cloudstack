@@ -210,7 +210,7 @@ public interface AgentManager extends Manager {
      * @return true if it was able to put the agent into maintenance mode.  false if not.
      */
     boolean maintain(long hostId) throws AgentUnavailableException;
-    boolean maintain(PrepareForMaintenanceCmd cmd) throws InvalidParameterValueException;
+    HostVO maintain(PrepareForMaintenanceCmd cmd) throws InvalidParameterValueException;
 
     boolean maintenanceFailed(long hostId);
     

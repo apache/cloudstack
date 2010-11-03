@@ -1560,7 +1560,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
     }
     
     @Override
-    public boolean maintain(PrepareForMaintenanceCmd cmd) throws InvalidParameterValueException {
+    public HostVO maintain(PrepareForMaintenanceCmd cmd) throws InvalidParameterValueException {
     	Long hostId = cmd.getId();
     	HostVO host = _hostDao.findById(hostId);
     	
@@ -1578,9 +1578,12 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         }
         
         try{
-        	return maintain(hostId);
+        	if (maintain(hostId))
+        	    return _hostDao.findById(hostId);
+        	else 
+        	    throw new CloudRuntimeException("Unable to prepare for maintenance host " + hostId);
         }catch (AgentUnavailableException e) {
-        	return false;
+            throw new CloudRuntimeException("Unable to prepare for maintenance host " + hostId);
         }
     }
 

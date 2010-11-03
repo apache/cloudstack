@@ -18,30 +18,17 @@
 
 package com.cloud.api.commands;
 
-import java.text.DecimalFormat;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.api.ApiConstants;
-import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.HostResponse;
-import com.cloud.dc.ClusterVO;
-import com.cloud.host.Host;
-import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
-import com.cloud.host.Status.Event;
-import com.cloud.offering.ServiceOffering;
-import com.cloud.storage.GuestOSCategoryVO;
-import com.cloud.vm.UserVmVO;
 
 @Implementation(method="updateHost", manager=AgentManager.class, description="Updates a host.")
 public class UpdateHostCmd extends BaseCmd {
@@ -85,98 +72,13 @@ public class UpdateHostCmd extends BaseCmd {
     
     @Override @SuppressWarnings("unchecked")
     public HostResponse getResponse() {
-        HostResponse hostResponse = new HostResponse();
         HostVO host = (HostVO)getResponseObject();
         if (host != null) {
-        	hostResponse.setId(host.getId());
-            hostResponse.setCapabilities(host.getCapabilities());
-            hostResponse.setClusterId(host.getClusterId());
-            hostResponse.setCpuNumber(host.getCpus());
-            hostResponse.setZoneId(host.getDataCenterId());
-            hostResponse.setDisconnectedOn(host.getDisconnectedOn());
-            hostResponse.setHypervisor(host.getHypervisorType());
-            hostResponse.setHostType(host.getType());
-            hostResponse.setLastPinged(new Date(host.getLastPinged()));
-            hostResponse.setManagementServerId(host.getManagementServerId());
-            hostResponse.setName(host.getName());
-            hostResponse.setPodId(host.getPodId());
-            hostResponse.setCreated(host.getCreated());
-            hostResponse.setRemoved(host.getRemoved());
-            hostResponse.setCpuSpeed(host.getSpeed());
-            hostResponse.setState(host.getStatus());
-            hostResponse.setIpAddress(host.getPrivateIpAddress());
-            hostResponse.setVersion(host.getVersion());
-
-            GuestOSCategoryVO guestOSCategory = ApiDBUtils.getHostGuestOSCategory(host.getId());
-            if (guestOSCategory != null) {
-                hostResponse.setOsCategoryId(guestOSCategory.getId());
-                hostResponse.setOsCategoryName(guestOSCategory.getName());
-            }
-            hostResponse.setZoneName(ApiDBUtils.findZoneById(host.getDataCenterId()).getName());
-            hostResponse.setPodName(ApiDBUtils.findPodById(host.getPodId()).getName());
-
-            // calculate cpu allocated by vm
-            int cpu = 0;
-            String cpuAlloc = null;
-            DecimalFormat decimalFormat = new DecimalFormat("#.##");
-            List<UserVmVO> instances = ApiDBUtils.listUserVMsByHostId(host.getId());
-            for (UserVmVO vm : instances) {
-                ServiceOffering so = ApiDBUtils.findServiceOfferingById(vm.getServiceOfferingId());
-                cpu += so.getCpu() * so.getSpeed();
-            }
-            cpuAlloc = decimalFormat.format(((float) cpu / (float) (host.getCpus() * host.getSpeed())) * 100f) + "%";
-            hostResponse.setCpuAllocated(cpuAlloc);
-
-            // calculate cpu utilized
-            String cpuUsed = null;
-            HostStats hostStats = ApiDBUtils.getHostStatistics(host.getId());
-            if (hostStats != null) {
-                float cpuUtil = (float) hostStats.getCpuUtilization();
-                cpuUsed = decimalFormat.format(cpuUtil) + "%";
-                hostResponse.setCpuUsed(cpuUsed);
-                hostResponse.setAverageLoad((long)hostStats.getAverageLoad());
-                hostResponse.setNetworkKbsRead((long)hostStats.getNetworkReadKBs());
-                hostResponse.setNetworkKbsWrite((long)hostStats.getNetworkWriteKBs());
-            }
-
-            if (host.getType() == Host.Type.Routing) {
-                hostResponse.setMemoryTotal(host.getTotalMemory());
-                
-                // calculate memory allocated by systemVM and userVm
-                long mem = ApiDBUtils.getMemoryUsagebyHost(host.getId());
-                hostResponse.setMemoryAllocated(mem);
-                hostResponse.setMemoryUsed(mem);
-            } else if (host.getType().toString().equals("Storage")) {
-                hostResponse.setDiskSizeTotal(host.getTotalSize());
-                hostResponse.setDiskSizeAllocated(0L);
-            }
-
-            if (host.getClusterId() != null) {
-                ClusterVO cluster = ApiDBUtils.findClusterById(host.getClusterId());
-                hostResponse.setClusterName(cluster.getName());
-            }
-
-            hostResponse.setLocalStorageActive(ApiDBUtils.isLocalStorageActiveOnHost(host));
-
-            Set<Event> possibleEvents = host.getStatus().getPossibleEvents();
-            if ((possibleEvents != null) && !possibleEvents.isEmpty()) {
-                String events = "";
-                Iterator<Event> iter = possibleEvents.iterator();
-                while (iter.hasNext()) {
-                    Event event = iter.next();
-                    events += event.toString();
-                    if (iter.hasNext()) {
-                        events += "; ";
-                    }
-                }
-                hostResponse.setEvents(events);
-            }
-
+            HostResponse hostResponse = ApiResponseHelper.createHostResponse(host);
+            hostResponse.setResponseName(getName());
+            return hostResponse;
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update host");
-        }
-
-        hostResponse.setResponseName(getName());
-        return hostResponse;
+        }   
     }
 }

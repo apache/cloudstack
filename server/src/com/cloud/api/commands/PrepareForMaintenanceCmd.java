@@ -21,11 +21,13 @@ import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.api.ApiConstants;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.response.SuccessResponse;
+import com.cloud.api.response.HostResponse;
 import com.cloud.event.EventTypes;
+import com.cloud.host.HostVO;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
@@ -83,12 +85,11 @@ public class PrepareForMaintenanceCmd extends BaseAsyncCmd {
         return  "preparing host: " + getId() + " for maintenance";
     }
 
-	@Override @SuppressWarnings("unchecked")
-	public SuccessResponse getResponse() {
-        Boolean success = (Boolean)getResponseObject();
-        SuccessResponse response = new SuccessResponse();
-        response.setSuccess(success);
+    @Override @SuppressWarnings("unchecked")
+    public HostResponse getResponse() {
+        HostVO host = (HostVO)getResponseObject();
+        HostResponse response = ApiResponseHelper.createHostResponse(host);
         response.setResponseName(getName());
         return response;
-	}
+    }
 }
