@@ -23,13 +23,12 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.InstanceGroupResponse;
 import com.cloud.api.response.ListResponse;
-import com.cloud.user.Account;
 import com.cloud.vm.InstanceGroupVO;
 
 @Implementation(method="searchForVmGroups")
@@ -90,19 +89,7 @@ public class ListVMGroupsCmd extends BaseListCmd {
         ListResponse<InstanceGroupResponse> response = new ListResponse<InstanceGroupResponse>();
         List<InstanceGroupResponse> responses = new ArrayList<InstanceGroupResponse>();
         for (InstanceGroupVO group : groups) {
-            InstanceGroupResponse groupResponse = new InstanceGroupResponse();
-
-            groupResponse.setId(group.getId());
-            groupResponse.setName(group.getName());
-            groupResponse.setCreated(group.getCreated());
-
-            Account accountTemp = ApiDBUtils.findAccountById(group.getAccountId());
-            if (accountTemp != null) {
-                groupResponse.setAccountName(accountTemp.getAccountName());
-                groupResponse.setDomainId(accountTemp.getDomainId());
-                groupResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
-            }
-
+            InstanceGroupResponse groupResponse = ApiResponseHelper.createInstanceGroupResponse(group);
             groupResponse.setResponseName("instancegroup");
             responses.add(groupResponse);
         }

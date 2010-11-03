@@ -310,10 +310,10 @@ public interface StorageManager extends Manager {
     /**
      * Enable maintenance for primary storage
      * @param cmd - the command specifying primaryStorageId
-     * @return success or failure
+     * @return the primary storage pool
      * @throws InvalidParameterValueException
      */
-    public boolean preparePrimaryStorageForMaintenance(PreparePrimaryStorageForMaintenanceCmd cmd);
+    public StoragePoolVO preparePrimaryStorageForMaintenance(PreparePrimaryStorageForMaintenanceCmd cmd) throws InvalidParameterValueException;
     
     /**
      * Complete maintenance for primary storage
@@ -321,7 +321,7 @@ public interface StorageManager extends Manager {
      * @return the primary storage pool
      * @throws InvalidParameterValueException
      */
-    public StoragePoolVO cancelPrimaryStorageForMaintenance(CancelPrimaryStorageMaintenanceCmd cmd);
+    public StoragePoolVO cancelPrimaryStorageForMaintenance(CancelPrimaryStorageMaintenanceCmd cmd) throws InvalidParameterValueException;
 
 	public StoragePoolVO updateStoragePool(UpdateStoragePoolCmd cmd) throws IllegalArgumentException;
     

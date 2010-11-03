@@ -21,15 +21,13 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.StoragePoolResponse;
-import com.cloud.dc.ClusterVO;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
-import com.cloud.storage.StorageStats;
 
 @Implementation(method="updateStoragePool", manager=StorageManager.class, description="Updates a storage pool.")
 public class UpdateStoragePoolCmd extends BaseCmd {
@@ -71,48 +69,7 @@ public class UpdateStoragePoolCmd extends BaseCmd {
     @Override @SuppressWarnings("unchecked")
     public StoragePoolResponse getResponse() {
         StoragePoolVO pool = (StoragePoolVO) getResponseObject();
-
-        StoragePoolResponse response = new StoragePoolResponse();
-        response.setId(pool.getId());
-        response.setZoneId(pool.getDataCenterId());
-        response.setZoneName(ApiDBUtils.findZoneById(pool.getDataCenterId()).getName());
-        if (pool.getPodId() != null) {
-            response.setPodId(pool.getPodId());
-            response.setPodName(ApiDBUtils.findPodById(pool.getPodId()).getName());
-        }
-        response.setName(pool.getName());
-        response.setIpAddress(pool.getHostAddress());
-        response.setPath(pool.getPath());
-        response.setCreated(pool.getCreated());
-
-        if (pool.getPoolType() != null) {
-            response.setType(pool.getPoolType().toString());
-        }
-
-        if (pool.getClusterId() != null) {
-            ClusterVO cluster = ApiDBUtils.findClusterById(pool.getClusterId());
-            response.setClusterId(cluster.getId());
-            response.setClusterName(cluster.getName());
-        }
-
-        StorageStats stats = ApiDBUtils.getStoragePoolStatistics(pool.getId());
-        long capacity = pool.getCapacityBytes();
-        long available = pool.getAvailableBytes();
-        long used = capacity - available;
-
-        if (stats != null) {
-            used = stats.getByteUsed();
-            available = capacity - used;
-        }
-
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Successfully recieved the storagePool statistics. TotalDiskSize - " + capacity + " AllocatedDiskSize - " + used);
-        }
-
-        response.setDiskSizeTotal(pool.getCapacityBytes());
-        response.setDiskSizeAllocated(used);
-        response.setTags(ApiDBUtils.getStoragePoolTags(pool.getId()));
-
+        StoragePoolResponse response = ApiResponseHelper.createStoragePoolResponse(pool);
         response.setResponseName(getName());
         return response;
     }

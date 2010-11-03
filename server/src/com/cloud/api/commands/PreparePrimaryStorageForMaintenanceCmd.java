@@ -20,12 +20,14 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.response.SuccessResponse;
+import com.cloud.api.response.StoragePoolResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.storage.StorageManager;
+import com.cloud.storage.StoragePoolVO;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
@@ -82,12 +84,11 @@ public class PreparePrimaryStorageForMaintenanceCmd extends BaseAsyncCmd {
         return  "preparing storage pool: " + getId() + " for maintenance";
     }
 
-	@Override @SuppressWarnings("unchecked")
-	public SuccessResponse getResponse() {
-        Boolean success = (Boolean)getResponseObject();
-        SuccessResponse response = new SuccessResponse();
-        response.setSuccess(success);
+    @Override @SuppressWarnings("unchecked")
+    public StoragePoolResponse getResponse() {
+        StoragePoolVO primaryStorage = (StoragePoolVO)getResponseObject();
+        StoragePoolResponse response = ApiResponseHelper.createStoragePoolResponse(primaryStorage);
         response.setResponseName(getName());
         return response;
-	}
+    }
 }

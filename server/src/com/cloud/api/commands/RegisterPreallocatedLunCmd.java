@@ -18,6 +18,7 @@
 package com.cloud.api.commands;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -94,17 +95,7 @@ public class RegisterPreallocatedLunCmd extends BaseCmd {
     @Override @SuppressWarnings("unchecked")
     public PreallocatedLunResponse getResponse() {
         PreallocatedLunVO preallocatedLun = (PreallocatedLunVO)getResponseObject();
-
-        PreallocatedLunResponse response = new PreallocatedLunResponse();
-        response.setId(preallocatedLun.getId());
-        response.setVolumeId(preallocatedLun.getVolumeId());
-        response.setZoneId(preallocatedLun.getDataCenterId());
-        response.setLun(preallocatedLun.getLun());
-        response.setPortal(preallocatedLun.getPortal());
-        response.setSize(preallocatedLun.getSize());
-        response.setTaken(preallocatedLun.getTaken());
-        response.setTargetIqn(preallocatedLun.getTargetIqn());
-
+        PreallocatedLunResponse response = ApiResponseHelper.createPreallocatedLunResponse(preallocatedLun);
         response.setResponseName(getName());
         return response;
     }

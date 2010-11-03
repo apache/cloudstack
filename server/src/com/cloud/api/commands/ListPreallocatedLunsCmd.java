@@ -24,6 +24,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -77,16 +78,8 @@ public class ListPreallocatedLunsCmd extends BaseListCmd {
         ListResponse<PreallocatedLunResponse> response = new ListResponse<PreallocatedLunResponse>();
         List<PreallocatedLunResponse> lunResponses = new ArrayList<PreallocatedLunResponse>();
         for (PreallocatedLunVO preallocatedLun : preallocatedLuns) {
-            PreallocatedLunResponse preallocLunResponse = new PreallocatedLunResponse();
-            preallocLunResponse.setId(preallocatedLun.getId());
-            preallocLunResponse.setVolumeId(preallocatedLun.getVolumeId());
-            preallocLunResponse.setZoneId(preallocatedLun.getDataCenterId());
-            preallocLunResponse.setLun(preallocatedLun.getLun());
-            preallocLunResponse.setPortal(preallocatedLun.getPortal());
-            preallocLunResponse.setSize(preallocatedLun.getSize());
-            preallocLunResponse.setTaken(preallocatedLun.getTaken());
-            preallocLunResponse.setTargetIqn(preallocatedLun.getTargetIqn());
-
+            PreallocatedLunResponse preallocLunResponse = ApiResponseHelper.createPreallocatedLunResponse(preallocatedLun);
+            
             preallocLunResponse.setResponseName("preallocatedlun");
             lunResponses.add(preallocLunResponse);
         }

@@ -20,12 +20,11 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.InstanceGroupResponse;
-import com.cloud.user.Account;
 import com.cloud.vm.InstanceGroupVO;
 import com.cloud.vm.UserVmManager;
 
@@ -76,19 +75,7 @@ public class CreateVMGroupCmd extends BaseCmd{
     @Override @SuppressWarnings("unchecked")
     public InstanceGroupResponse getResponse() {
         InstanceGroupVO group = (InstanceGroupVO)getResponseObject();
-
-        InstanceGroupResponse response = new InstanceGroupResponse();
-        response.setId(group.getId());
-        response.setName(group.getName());
-        response.setCreated(group.getCreated());
-
-        Account accountTemp = ApiDBUtils.findAccountById(group.getAccountId());
-        if (accountTemp != null) {
-            response.setAccountName(accountTemp.getAccountName());
-            response.setDomainId(accountTemp.getDomainId());
-            response.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
-        }
-
+        InstanceGroupResponse response = ApiResponseHelper.createInstanceGroupResponse(group);
         response.setResponseName(getName());
         return response;
     }

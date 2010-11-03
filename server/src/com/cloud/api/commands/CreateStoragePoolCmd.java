@@ -23,7 +23,7 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -31,7 +31,6 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.StoragePoolResponse;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
-import com.cloud.storage.StorageStats;
 
 @SuppressWarnings("rawtypes")
 @Implementation(method="createPool", manager=StorageManager.class, description="Creates a storage pool.")
@@ -111,27 +110,7 @@ public class CreateStoragePoolCmd extends BaseCmd {
         StoragePoolVO pool = (StoragePoolVO)getResponseObject();
 
         if (pool != null) {
-            StoragePoolResponse response = new StoragePoolResponse();
-            response.setClusterId(pool.getClusterId());
-            response.setClusterName(ApiDBUtils.findClusterById(pool.getClusterId()).getName());
-            response.setPodName(ApiDBUtils.findPodById(pool.getPodId()).getName());
-            response.setCreated(pool.getCreated());
-            response.setId(pool.getId());
-            response.setIpAddress(pool.getHostAddress());
-            response.setName(pool.getName());
-            response.setPath(pool.getPath());
-            response.setPodId(pool.getPodId());
-            response.setType(pool.getPoolType().toString());
-            response.setTags(ApiDBUtils.getStoragePoolTags(pool.getId()));
-
-            StorageStats stats = ApiDBUtils.getStoragePoolStatistics(pool.getId());
-            long used = pool.getCapacityBytes() - pool.getAvailableBytes();
-            if (stats != null) {
-                used = stats.getByteUsed();
-            }
-            response.setDiskSizeTotal(pool.getCapacityBytes());
-            response.setDiskSizeAllocated(used);
-
+            StoragePoolResponse response = ApiResponseHelper.createStoragePoolResponse(pool);
             response.setResponseName(getName());
             return response;
         } else {

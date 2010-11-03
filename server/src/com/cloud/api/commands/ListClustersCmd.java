@@ -24,15 +24,13 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.ClusterResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.dc.ClusterVO;
-import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.HostPodVO;
 
 @Implementation(method="searchForClusters", description="Lists clusters.")
 public class ListClustersCmd extends BaseListCmd {
@@ -93,16 +91,7 @@ public class ListClustersCmd extends BaseListCmd {
         ListResponse<ClusterResponse> response = new ListResponse<ClusterResponse>();
         List<ClusterResponse> clusterResponses = new ArrayList<ClusterResponse>();
         for (ClusterVO cluster : clusters) {
-            ClusterResponse clusterResponse = new ClusterResponse();
-            clusterResponse.setId(cluster.getId());
-            clusterResponse.setName(cluster.getName());
-            clusterResponse.setPodId(cluster.getPodId());
-            clusterResponse.setZoneId(cluster.getDataCenterId());
-            HostPodVO pod = ApiDBUtils.findPodById(cluster.getPodId());
-            clusterResponse.setPodName(pod.getName());
-            DataCenterVO zone = ApiDBUtils.findZoneById(cluster.getDataCenterId());
-            clusterResponse.setZoneName(zone.getName());
-
+            ClusterResponse clusterResponse = ApiResponseHelper.createClusterResponse(cluster);
             clusterResponse.setResponseName("cluster");
             clusterResponses.add(clusterResponse);
         }

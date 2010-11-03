@@ -21,16 +21,14 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.StoragePoolResponse;
-import com.cloud.dc.ClusterVO;
 import com.cloud.event.EventTypes;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
-import com.cloud.storage.StorageStats;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
@@ -93,44 +91,7 @@ public class CancelPrimaryStorageMaintenanceCmd extends BaseAsyncCmd {
 	@Override @SuppressWarnings("unchecked")
 	public StoragePoolResponse getResponse() {
 	    StoragePoolVO primaryStorage = (StoragePoolVO)getResponseObject();
-
-	    StoragePoolResponse response = new StoragePoolResponse();
-	    response.setId(primaryStorage.getId());
-	    response.setName(primaryStorage.getName());
-	    response.setType(primaryStorage.getPoolType().toString());
-	    response.setState(primaryStorage.getStatus().toString());
-	    response.setIpAddress(primaryStorage.getHostAddress());
-	    response.setZoneId(primaryStorage.getDataCenterId());
-	    response.setZoneName(ApiDBUtils.findZoneById(primaryStorage.getDataCenterId()).getName());
-
-        if (response.getPodId() != null && ApiDBUtils.findPodById(primaryStorage.getPodId()) != null) {
-            response.setPodId(primaryStorage.getPodId());
-            response.setPodName((ApiDBUtils.findPodById(primaryStorage.getPodId())).getName());
-        }
-
-        if (primaryStorage.getCreated() != null) {
-            response.setCreated(primaryStorage.getCreated());
-        }
-        response.setDiskSizeTotal(primaryStorage.getCapacityBytes());
-
-        StorageStats stats = ApiDBUtils.getStoragePoolStatistics(primaryStorage.getId());
-        long capacity = primaryStorage.getCapacityBytes();
-        long available = primaryStorage.getAvailableBytes() ;
-        long used = capacity - available;
-
-        if (stats != null) {
-            used = stats.getByteUsed();
-            available = capacity - used;
-        }
-
-        response.setDiskSizeAllocated(used);
-        if (primaryStorage.getClusterId() != null) {
-          ClusterVO cluster = ApiDBUtils.findClusterById(primaryStorage.getClusterId());
-          response.setClusterId(primaryStorage.getClusterId());
-          response.setClusterName(cluster.getName());
-        }
-
-        response.setTags(ApiDBUtils.getStoragePoolTags(primaryStorage.getId()));
+	    StoragePoolResponse response = ApiResponseHelper.createStoragePoolResponse(primaryStorage);
         response.setResponseName(getName());
 		return response;
 	}

@@ -24,15 +24,13 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.StoragePoolResponse;
-import com.cloud.dc.ClusterVO;
 import com.cloud.storage.StoragePoolVO;
-import com.cloud.storage.StorageStats;
 
 @Implementation(method="searchForStoragePools", description="Lists storage pools.")
 public class ListStoragePoolsCmd extends BaseListCmd {
@@ -106,45 +104,7 @@ public class ListStoragePoolsCmd extends BaseListCmd {
         ListResponse<StoragePoolResponse> response = new ListResponse<StoragePoolResponse>();
         List<StoragePoolResponse> poolResponses = new ArrayList<StoragePoolResponse>();
         for (StoragePoolVO pool : pools) {
-            StoragePoolResponse poolResponse = new StoragePoolResponse();
-            poolResponse.setId(pool.getId());
-            poolResponse.setName(pool.getName());
-            poolResponse.setPath(pool.getPath());
-            poolResponse.setIpAddress(pool.getHostAddress());
-            poolResponse.setZoneId(pool.getDataCenterId());
-            poolResponse.setZoneName(ApiDBUtils.findZoneById(pool.getDataCenterId()).getName());
-            if (pool.getPoolType() != null) {
-                poolResponse.setType(pool.getPoolType().toString());
-            }
-            if (pool.getPodId() != null) {
-                poolResponse.setPodId(pool.getPodId());
-                poolResponse.setPodName(ApiDBUtils.findPodById(pool.getPodId()).getName());
-            }
-            if (pool.getCreated() != null) {
-                poolResponse.setCreated(pool.getCreated());
-            }
-
-            StorageStats stats = ApiDBUtils.getStoragePoolStatistics(pool.getId());
-            long capacity = pool.getCapacityBytes();
-            long available = pool.getAvailableBytes() ;
-            long used = capacity - available;
-
-            if (stats != null) {
-                used = stats.getByteUsed();
-                available = capacity - used;
-            }
-
-            poolResponse.setDiskSizeTotal(pool.getCapacityBytes());
-            poolResponse.setDiskSizeAllocated(used);
-
-            if (pool.getClusterId() != null) {
-                ClusterVO cluster = ApiDBUtils.findClusterById(pool.getClusterId());
-                poolResponse.setClusterId(cluster.getId());
-                poolResponse.setClusterName(cluster.getName());
-            }           
-
-            poolResponse.setTags(ApiDBUtils.getStoragePoolTags(pool.getId()));
-
+            StoragePoolResponse poolResponse = ApiResponseHelper.createStoragePoolResponse(pool);
             poolResponse.setResponseName("storagepool");
             poolResponses.add(poolResponse);
         }

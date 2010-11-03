@@ -2140,7 +2140,7 @@ public class StorageManagerImpl implements StorageManager {
     }
     
     @Override @DB
-    public boolean preparePrimaryStorageForMaintenance(PreparePrimaryStorageForMaintenanceCmd cmd) {
+    public StoragePoolVO preparePrimaryStorageForMaintenance(PreparePrimaryStorageForMaintenanceCmd cmd) {
     	Long primaryStorageId = cmd.getId();
     	Long userId = UserContext.current().getUserId();
         boolean restart = true;
@@ -2152,7 +2152,7 @@ public class StorageManagerImpl implements StorageManager {
         	if(primaryStorage == null)
         	{
         		s_logger.warn("The primary storage does not exist");
-        		return false;
+        		throw new InvalidParameterValueException("Primary storage doesn't exist");
         	}	
         	
         	if (!primaryStorage.getStatus().equals(Status.Up)) {
@@ -2194,10 +2194,11 @@ public class StorageManagerImpl implements StorageManager {
         				//call the consoleproxymanager
         				if(!_consoleProxyMgr.stopProxy(vmInstance.getId(), eventId))
             			{
-            				s_logger.warn("There was an error stopping the console proxy id: "+vmInstance.getId()+" ,cannot enable storage maintenance");
+        				    String errorMsg = "There was an error stopping the console proxy id: "+vmInstance.getId()+" ,cannot enable storage maintenance";
+            				s_logger.warn(errorMsg);
                         	primaryStorage.setStatus(Status.ErrorInMaintenance);
                     		_storagePoolDao.persist(primaryStorage);
-                    		return false;
+                    		throw new CloudRuntimeException(errorMsg);
             			}
         				else if(restart)
         				{
@@ -2209,10 +2210,11 @@ public class StorageManagerImpl implements StorageManager {
     						
     						if(_consoleProxyMgr.startProxy(vmInstance.getId(), eventId1)==null)
     						{
-    							s_logger.warn("There was an error starting the console proxy id: "+vmInstance.getId()+" on another storage pool, cannot enable primary storage maintenance");
+    						    String errorMsg = "There was an error starting the console proxy id: "+vmInstance.getId()+" on another storage pool, cannot enable primary storage maintenance";
+    							s_logger.warn(errorMsg);
     			            	primaryStorage.setStatus(Status.ErrorInMaintenance);
     			        		_storagePoolDao.persist(primaryStorage);
-    							return false;				
+    			        		throw new CloudRuntimeException(errorMsg);				
     						}	  						
         				}
         			}
@@ -2225,10 +2227,11 @@ public class StorageManagerImpl implements StorageManager {
         				
         				if(!_userVmMgr.stopVirtualMachine(userId, vmInstance.getId(),eventId))
         				{
-        					s_logger.warn("There was an error stopping the user vm id: "+vmInstance.getId()+" ,cannot enable storage maintenance");
+        				    String errorMsg = "There was an error stopping the user vm id: "+vmInstance.getId()+" ,cannot enable storage maintenance";
+        					s_logger.warn(errorMsg);
         	            	primaryStorage.setStatus(Status.ErrorInMaintenance);
         	        		_storagePoolDao.persist(primaryStorage);
-        					return false;
+        	        		throw new CloudRuntimeException(errorMsg);
         				}
         			}
         			
@@ -2240,10 +2243,11 @@ public class StorageManagerImpl implements StorageManager {
 
         				if(!_secStorageMgr.stopSecStorageVm(vmInstance.getId(), eventId1))
         				{
-        					s_logger.warn("There was an error stopping the ssvm id: "+vmInstance.getId()+" ,cannot enable storage maintenance");
+        				    String errorMsg = "There was an error stopping the ssvm id: "+vmInstance.getId()+" ,cannot enable storage maintenance";
+        					s_logger.warn(errorMsg);
         	            	primaryStorage.setStatus(Status.ErrorInMaintenance);
         	        		_storagePoolDao.persist(primaryStorage);
-        					return false;
+        	        		throw new CloudRuntimeException(errorMsg);
         				}
         				else if(restart)
         				{
@@ -2251,10 +2255,11 @@ public class StorageManagerImpl implements StorageManager {
     						long eventId = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_SSVM_START, "starting ssvm with Id: "+vmInstance.getId());
     						if(_secStorageMgr.startSecStorageVm(vmInstance.getId(), eventId)==null)
     						{
-    							s_logger.warn("There was an error starting the ssvm id: "+vmInstance.getId()+" on another storage pool, cannot enable primary storage maintenance");
+    						    String errorMsg = "There was an error starting the ssvm id: "+vmInstance.getId()+" on another storage pool, cannot enable primary storage maintenance";
+    							s_logger.warn(errorMsg);
     			            	primaryStorage.setStatus(Status.ErrorInMaintenance);
     			        		_storagePoolDao.persist(primaryStorage);
-    							return false;
+    			        		throw new CloudRuntimeException(errorMsg);
     						}
         				}
         			}
@@ -2267,10 +2272,11 @@ public class StorageManagerImpl implements StorageManager {
 
         				if(!_networkMgr.stopRouter(vmInstance.getId(), eventId2))
         				{
-        					s_logger.warn("There was an error stopping the domain router id: "+vmInstance.getId()+" ,cannot enable primary storage maintenance");
+        				    String errorMsg = "There was an error stopping the domain router id: "+vmInstance.getId()+" ,cannot enable primary storage maintenance";
+        					s_logger.warn(errorMsg);
         	            	primaryStorage.setStatus(Status.ErrorInMaintenance);
         	        		_storagePoolDao.persist(primaryStorage);
-        					return false;
+        	        		throw new CloudRuntimeException(errorMsg);
         				}
            				else if(restart)
         				{
@@ -2278,10 +2284,11 @@ public class StorageManagerImpl implements StorageManager {
     						long eventId = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_START, "starting domr with Id: "+vmInstance.getId());
     						if(_networkMgr.startRouter(vmInstance.getId(), eventId)==null)
     						{
-    							s_logger.warn("There was an error starting the omr id: "+vmInstance.getId()+" on another storage pool, cannot enable primary storage maintenance");
+    						    String errorMsg = "There was an error starting the domain router id: "+vmInstance.getId()+" on another storage pool, cannot enable primary storage maintenance";
+    							s_logger.warn(errorMsg);
     			            	primaryStorage.setStatus(Status.ErrorInMaintenance);
     			        		_storagePoolDao.persist(primaryStorage);
-    							return false;
+    			        		throw new CloudRuntimeException(errorMsg);
     						}
         				}
         			}
@@ -2291,12 +2298,12 @@ public class StorageManagerImpl implements StorageManager {
         	//5. Update the status
         	primaryStorage.setStatus(Status.Maintenance);
         	_storagePoolDao.persist(primaryStorage);
+        	return _storagePoolDao.findById(primaryStorageId);
         	
-        } catch (Exception e) {
+        } catch (Exception e) { //FIXME - catch specific exceptions here
             s_logger.error("Exception in enabling primary storage maintenance:"+e);
+            throw new CloudRuntimeException("Exception in enabling primary storage maintenance:"+e);
         }
-        
-        return true;
     }
 
     private Long saveScheduledEvent(Long userId, Long accountId, String type, String description) 

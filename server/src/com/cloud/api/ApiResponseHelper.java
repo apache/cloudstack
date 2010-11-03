@@ -26,18 +26,22 @@ import java.util.Set;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.response.AccountResponse;
+import com.cloud.api.response.ClusterResponse;
 import com.cloud.api.response.ConfigurationResponse;
 import com.cloud.api.response.DiskOfferingResponse;
 import com.cloud.api.response.DomainResponse;
 import com.cloud.api.response.DomainRouterResponse;
 import com.cloud.api.response.HostResponse;
 import com.cloud.api.response.IPAddressResponse;
+import com.cloud.api.response.InstanceGroupResponse;
 import com.cloud.api.response.LoadBalancerResponse;
 import com.cloud.api.response.PodResponse;
+import com.cloud.api.response.PreallocatedLunResponse;
 import com.cloud.api.response.ResourceLimitResponse;
 import com.cloud.api.response.ServiceOfferingResponse;
 import com.cloud.api.response.SnapshotPolicyResponse;
 import com.cloud.api.response.SnapshotResponse;
+import com.cloud.api.response.StoragePoolResponse;
 import com.cloud.api.response.SystemVmResponse;
 import com.cloud.api.response.UserResponse;
 import com.cloud.api.response.UserVmResponse;
@@ -71,9 +75,11 @@ import com.cloud.storage.Snapshot;
 import com.cloud.storage.Snapshot.SnapshotType;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.StoragePoolVO;
+import com.cloud.storage.StorageStats;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.preallocatedlun.PreallocatedLunVO;
 import com.cloud.test.PodZoneConfig;
 import com.cloud.user.Account;
 import com.cloud.user.UserAccount;
@@ -768,7 +774,7 @@ public class ApiResponseHelper {
        return zoneResponse;
    }
    
-   public static VolumeResponse createVolumeResponse (VolumeVO volume) {
+   public static VolumeResponse createVolumeResponse(VolumeVO volume) {
        VolumeResponse volResponse = new VolumeResponse();
        volResponse.setId(volume.getId());
 
@@ -849,5 +855,92 @@ public class ApiResponseHelper {
        return volResponse;
    }
    
+   
+   public static InstanceGroupResponse createInstanceGroupResponse(InstanceGroupVO group) {
+       InstanceGroupResponse groupResponse = new InstanceGroupResponse();
+       groupResponse.setId(group.getId());
+       groupResponse.setName(group.getName());
+       groupResponse.setCreated(group.getCreated());
+
+       Account accountTemp = ApiDBUtils.findAccountById(group.getAccountId());
+       if (accountTemp != null) {
+           groupResponse.setAccountName(accountTemp.getAccountName());
+           groupResponse.setDomainId(accountTemp.getDomainId());
+           groupResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
+       }
+       
+       return groupResponse;
+   }
+   
+   public static PreallocatedLunResponse createPreallocatedLunResponse(PreallocatedLunVO preallocatedLun) {
+       PreallocatedLunResponse preallocLunResponse = new PreallocatedLunResponse();
+       preallocLunResponse.setId(preallocatedLun.getId());
+       preallocLunResponse.setVolumeId(preallocatedLun.getVolumeId());
+       preallocLunResponse.setZoneId(preallocatedLun.getDataCenterId());
+       preallocLunResponse.setLun(preallocatedLun.getLun());
+       preallocLunResponse.setPortal(preallocatedLun.getPortal());
+       preallocLunResponse.setSize(preallocatedLun.getSize());
+       preallocLunResponse.setTaken(preallocatedLun.getTaken());
+       preallocLunResponse.setTargetIqn(preallocatedLun.getTargetIqn());
+       
+       return preallocLunResponse;
+   }
+   
+   public static StoragePoolResponse createStoragePoolResponse(StoragePoolVO pool) {
+       StoragePoolResponse poolResponse = new StoragePoolResponse();
+       poolResponse.setId(pool.getId());
+       poolResponse.setName(pool.getName());
+       poolResponse.setPath(pool.getPath());
+       poolResponse.setIpAddress(pool.getHostAddress());
+       poolResponse.setZoneId(pool.getDataCenterId());
+       poolResponse.setZoneName(ApiDBUtils.findZoneById(pool.getDataCenterId()).getName());
+       if (pool.getPoolType() != null) {
+           poolResponse.setType(pool.getPoolType().toString());
+       }
+       if (pool.getPodId() != null) {
+           poolResponse.setPodId(pool.getPodId());
+           poolResponse.setPodName(ApiDBUtils.findPodById(pool.getPodId()).getName());
+       }
+       if (pool.getCreated() != null) {
+           poolResponse.setCreated(pool.getCreated());
+       }
+
+       StorageStats stats = ApiDBUtils.getStoragePoolStatistics(pool.getId());
+       long capacity = pool.getCapacityBytes();
+       long available = pool.getAvailableBytes() ;
+       long used = capacity - available;
+
+       if (stats != null) {
+           used = stats.getByteUsed();
+           available = capacity - used;
+       }
+
+       poolResponse.setDiskSizeTotal(pool.getCapacityBytes());
+       poolResponse.setDiskSizeAllocated(used);
+
+       if (pool.getClusterId() != null) {
+           ClusterVO cluster = ApiDBUtils.findClusterById(pool.getClusterId());
+           poolResponse.setClusterId(cluster.getId());
+           poolResponse.setClusterName(cluster.getName());
+       }           
+       poolResponse.setTags(ApiDBUtils.getStoragePoolTags(pool.getId()));
+       
+       return poolResponse;
+   }
+   
+   
+   public static ClusterResponse createClusterResponse(ClusterVO cluster) {
+       ClusterResponse clusterResponse = new ClusterResponse();
+       clusterResponse.setId(cluster.getId());
+       clusterResponse.setName(cluster.getName());
+       clusterResponse.setPodId(cluster.getPodId());
+       clusterResponse.setZoneId(cluster.getDataCenterId());
+       HostPodVO pod = ApiDBUtils.findPodById(cluster.getPodId());
+       clusterResponse.setPodName(pod.getName());
+       DataCenterVO zone = ApiDBUtils.findZoneById(cluster.getDataCenterId());
+       clusterResponse.setZoneName(zone.getName());
+       
+       return clusterResponse;
+   }
    
 }
