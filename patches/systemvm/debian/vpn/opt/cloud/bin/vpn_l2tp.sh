@@ -1,8 +1,12 @@
 #!/bin/bash
 
-set -x
+#set -x
 usage() {
-  printf "Usage: %s: \n" $(basename $0)
+  printf "Usage:\n"
+  printf "Create VPN     : %s -c -r <ip range for clients> -l <localip> -p <ipsec psk> -s <public ip> \n" $(basename $0)
+  printf "Delete VPN     : %s -d \n" $(basename $0)
+  printf "Add VPN User   : %s -u <username,password> \n" $(basename $0)
+  printf "Remote VPN User: %s -U <username \n" $(basename $0)
 }
 
 get_intf_ip() {
