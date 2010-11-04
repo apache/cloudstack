@@ -412,15 +412,12 @@ function doEditTemplate($actionLink, $detailsTab, $midmenuItem1) {
         return false;
     });
     $detailsTab.find("#save_button").unbind("click").bind("click", function(event){        
-        doEditTemplate2($actionLink, $detailsTab, $midmenuItem1);     
-        $editFields.hide();      
-        $readonlyFields.show();       
-        $("#save_button, #cancel_button").hide();       
+        doEditTemplate2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $editFields);   
         return false;
     });   
 }
 
-function doEditTemplate2($actionLink, $detailsTab, $midmenuItem1) {               
+function doEditTemplate2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $editFields) {               
     // validate values
     var isValid = true;					
     isValid &= validateString("Name", $detailsTab.find("#name_edit"), $detailsTab.find("#name_edit_errormsg"));
@@ -492,12 +489,17 @@ function doEditTemplate2($actionLink, $detailsTab, $midmenuItem1) {
 	$.ajax({
         data:createURL("command=listTemplates&templatefilter=self&id="+id),
         dataType: "json",
+        async: false,
         success: function(json) {            
             var jsonObj = json.listtemplatesresponse.template[0];           
             templateToMidmenu(jsonObj, $midmenuItem1);
             templateJsonToDetailsTab($midmenuItem1);              
         }
     });   
+        
+    $editFields.hide();      
+    $readonlyFields.show();       
+    $("#save_button, #cancel_button").hide();       
 }
 
 function doDeleteTemplate($actionLink, $detailsTab, $midmenuItem1) {   
