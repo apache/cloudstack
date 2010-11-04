@@ -57,7 +57,7 @@ public enum Config {
 	GuestNetmask("Network", AgentManager.class, String.class, "guest.netmask", "255.255.255.0", "The netmask of the guest virtual network.", "netmask"),
 	MulticastThrottlingRate("Network", ManagementServer.class, Integer.class, "multicast.throttling.rate", "10", "Default multicast rate in megabits per second allowed.", null),
 	NetworkThrottlingRate("Network", ManagementServer.class, Integer.class, "network.throttling.rate", "200", "Default data transfer rate in megabits per second allowed.", null),
-
+	GuestDomainSuffix("Network", AgentManager.class, String.class, "domain.suffix", "cloud-test.cloud.internal", "Default domain name for vms inside virtualized networks fronted by router", null),
 	
 	// Usage
 	
