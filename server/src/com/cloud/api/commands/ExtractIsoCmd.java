@@ -118,11 +118,12 @@ public class ExtractIsoCmd extends BaseAsyncCmd {
         response.setState(uploadInfo.getUploadState().toString());
         response.setAccountId(getAccountId());        
         //FIX ME - Need to set the url once the gson jar is upgraded since it is throwing an error right now due to a bug.
-        //response.setUrl(uploadInfo.getUploadUrl());         
+        //response.setUrl(uploadInfo.getUploadUrl()); 
+        response.setUrl(uploadInfo.getUploadUrl().replaceAll("/", "%2F"));
         return response;
     }
 
     public static String getStaticName() {
-        return "ExtractIso";
+        return s_name;
     }
 }

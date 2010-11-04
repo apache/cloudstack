@@ -30,6 +30,7 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
+import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
@@ -133,7 +134,7 @@ public class UploadMonitorImpl implements UploadMonitor {
 				
 	    start();		
 		UploadCommand ucmd = new UploadCommand(url, volume.getId(), volume.getSize(), installPath, Type.VOLUME);
-		UploadListener ul = new UploadListener(sserver, _timer, _uploadDao, uploadVolumeObj.getId(), this, ucmd, volume.getAccountId(), volume.getName(), Type.VOLUME, eventId, asyncJobId, asyncMgr);
+		UploadListener ul = new UploadListener(sserver, _timer, _uploadDao, uploadVolumeObj, this, ucmd, volume.getAccountId(), volume.getName(), Type.VOLUME, eventId, asyncJobId, asyncMgr);
 		_listenerMap.put(uploadVolumeObj, ul);
 
 		long result = send(sserver.getId(), ucmd, ul);	
@@ -146,7 +147,7 @@ public class UploadMonitorImpl implements UploadMonitor {
 	}
 
 	@Override
-	public void extractTemplate( VMTemplateVO template, String url,
+	public Long extractTemplate( VMTemplateVO template, String url,
 			VMTemplateHostVO vmTemplateHost,Long dataCenterId, long eventId, long asyncJobId, AsyncJobManager asyncMgr){
 
 		Type type = (template.getFormat() == ImageFormat.ISO) ? Type.ISO : Type.TEMPLATE ;
@@ -161,7 +162,7 @@ public class UploadMonitorImpl implements UploadMonitor {
 		if(vmTemplateHost != null) {
 		    start();
 			UploadCommand ucmd = new UploadCommand(template, url, vmTemplateHost);	
-			UploadListener ul = new UploadListener(sserver, _timer, _uploadDao, uploadTemplateObj.getId(), this, ucmd, template.getAccountId(), template.getName(), type, eventId, asyncJobId, asyncMgr);			
+			UploadListener ul = new UploadListener(sserver, _timer, _uploadDao, uploadTemplateObj, this, ucmd, template.getAccountId(), template.getName(), type, eventId, asyncJobId, asyncMgr);			
 			_listenerMap.put(uploadTemplateObj, ul);
 
 			long result = send(sserver.getId(), ucmd, ul);	
@@ -170,16 +171,16 @@ public class UploadMonitorImpl implements UploadMonitor {
 				ul.setDisconnected();
 				ul.scheduleStatusCheck(RequestType.GET_OR_RESTART);
 			}
-		}
-		
-	}
-	
-	
-	
+			return uploadTemplateObj.getId();
+		}		
+		return null;		
+	}	
 	
 	@Override
 	public UploadVO createEntityDownloadURL(VMTemplateVO template, VMTemplateHostVO vmTemplateHost, Long dataCenterId, long eventId) {
 	    
+	    String errorString = "";
+	    boolean success = false;
 	    List<HostVO> storageServers = _serverDao.listByTypeDataCenter(Host.Type.SecondaryStorage, dataCenterId);
 	    if(storageServers == null ) 
 	        throw new CloudRuntimeException("No Storage Server found at the datacenter - " +dataCenterId);
@@ -197,37 +198,45 @@ public class UploadMonitorImpl implements UploadMonitor {
 	                                                Status.DOWNLOAD_URL_NOT_CREATED, 0, type, Mode.HTTP_DOWNLOAD); 
 	    uploadTemplateObj.setInstallPath(vmTemplateHost.getInstallPath());	                                                
 	    _uploadDao.persist(uploadTemplateObj);
-	    
-	    // Create Symlink at ssvm
-	    CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(vmTemplateHost.getInstallPath());
-	    long result = send(sserver.getId(), cmd, null);
-	    if (result == -1){
-	        s_logger.warn("Unable to create a link for the template/iso ");
-	        throw new CloudRuntimeException("Unable to create a link at the SSVM");
+	    try{
+    	    // Create Symlink at ssvm
+    	    CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(vmTemplateHost.getInstallPath());
+    	    long result = send(sserver.getId(), cmd, null);
+    	    if (result == -1){
+    	        errorString = "Unable to create a link for " +type+ " id:"+template.getId();
+                s_logger.error(errorString);
+                throw new CloudRuntimeException(errorString);
+    	    }
+    	    
+    	    //Construct actual URL locally now that the symlink exists at SSVM
+    	    List<SecondaryStorageVmVO> ssVms = _secStorageVmDao.getSecStorageVmListInStates(dataCenterId, State.Running);
+            if (ssVms.size() > 0) {
+                SecondaryStorageVmVO ssVm = ssVms.get(0);
+                if (ssVm.getPublicIpAddress() == null) {
+                    errorString = "A running secondary storage vm has a null public ip?";
+                    s_logger.error(errorString);
+                    throw new CloudRuntimeException(errorString);
+                }
+                String extractURL = generateCopyUrl(ssVm.getPublicIpAddress(), vmTemplateHost.getInstallPath());
+                UploadVO vo = _uploadDao.createForUpdate();
+                vo.setLastUpdated(new Date());
+                vo.setUploadUrl(extractURL);
+                vo.setUploadState(Status.DOWNLOAD_URL_CREATED);
+                _uploadDao.update(uploadTemplateObj.getId(), vo);
+                success = true;
+                return _uploadDao.findById(uploadTemplateObj.getId(), true);
+            }
+            errorString = "Couldnt find a running SSVM in the zone" + dataCenterId+ ". Couldnt create the extraction URL.";
+            throw new CloudRuntimeException(errorString);
+	    }finally{
+           if(!success){
+                UploadVO uploadJob = _uploadDao.createForUpdate(uploadTemplateObj.getId());
+                uploadJob.setLastUpdated(new Date());
+                uploadJob.setErrorString(errorString);
+                uploadJob.setUploadState(Status.ERROR);
+                _uploadDao.update(uploadTemplateObj.getId(), uploadJob);
+            }
 	    }
-	    
-	    //Construct actual URL locally now that the symlink exists at SSVM
-	    List<SecondaryStorageVmVO> ssVms = _secStorageVmDao.getSecStorageVmListInStates(dataCenterId, State.Running);
-        if (ssVms.size() > 0) {
-            SecondaryStorageVmVO ssVm = ssVms.get(0);
-            if (ssVm.getPublicIpAddress() == null) {
-                s_logger.warn("A running secondary storage vm has a null public ip?");
-                throw new CloudRuntimeException("SSVM has null public IP - couldnt create the URL");
-            }
-            String extractURL = generateCopyUrl(ssVm.getPublicIpAddress(), vmTemplateHost.getInstallPath());
-            UploadVO vo = _uploadDao.createForUpdate();
-            vo.setLastUpdated(new Date());
-            vo.setUploadUrl(extractURL);
-            vo.setUploadState(Status.DOWNLOAD_URL_CREATED);
-            
-            if(extractURL == null){
-                vo.setUploadState(Status.ERROR);
-                vo.setErrorString("Could not create the download URL");
-            }
-            _uploadDao.update(uploadTemplateObj.getId(), vo);
-            return _uploadDao.findById(uploadTemplateObj.getId(), true);
-        }
-        throw new CloudRuntimeException("Couldnt find a running SSVM in the zone" + dataCenterId+ ". Couldnt create the extraction URL.");
 	    
 	}
 	
@@ -350,13 +359,12 @@ public class UploadMonitorImpl implements UploadMonitor {
 	
 	public String getEvent(Type type){
 					
-		if(type == Type.TEMPLATE) return EventTypes.EVENT_TEMPLATE_UPLOAD;
-		if(type == Type.ISO) return EventTypes.EVENT_ISO_UPLOAD;
-		if(type == Type.VOLUME) return EventTypes.EVENT_VOLUME_UPLOAD;			
+		if(type == Type.TEMPLATE) return EventTypes.EVENT_TEMPLATE_EXTRACT;
+		if(type == Type.ISO) return EventTypes.EVENT_ISO_EXTRACT;
+		if(type == Type.VOLUME) return EventTypes.EVENT_VOLUME_EXTRACT;			
 		
 		return null;
-	}
-	
+	}	
 	public void handleUploadEvent(HostVO host, Long accountId, String typeName, Type type, Long uploadId, com.cloud.storage.Upload.Status reason, long eventId) {
 		
 		if ((reason == Upload.Status.UPLOADED) || (reason==Upload.Status.ABANDONED)){

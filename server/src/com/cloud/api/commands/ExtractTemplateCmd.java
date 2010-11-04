@@ -83,7 +83,7 @@ public class ExtractTemplateCmd extends BaseAsyncCmd {
 	}
 	
     public static String getStaticName() {
-        return "ExtractTemplate";
+        return s_name;
     }
 
     @Override
@@ -124,6 +124,7 @@ public class ExtractTemplateCmd extends BaseAsyncCmd {
         response.setAccountId(getAccountId());        
         //FIX ME - Need to set the url once the gson jar is upgraded since it is throwing an error right now.
         //response.setUrl(uploadInfo.getUploadUrl());         
+        response.setUrl(uploadInfo.getUploadUrl().replaceAll("/", "%2F"));
         return response;
 	}
 }

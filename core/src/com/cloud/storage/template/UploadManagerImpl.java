@@ -542,8 +542,10 @@ public class UploadManagerImpl implements UploadManager {
         case ABORTED:
         case NOT_STARTED:
         case UNRECOVERABLE_ERROR:
-            // TODO
-            uj.cleanup();
+            // Delete the entity only if its a volume. TO DO - find a better way of finding it a volume.
+            if(uj.getTemplateUploader().getUploadLocalPath().indexOf("volume") > -1){
+                uj.cleanup();
+            }
             break;
         case UNKNOWN:
             return;
@@ -567,7 +569,10 @@ public class UploadManagerImpl implements UploadManager {
                 tu.setStatus(Status.POST_UPLOAD_FINISHED);
                 tu.setUploadError("Upload completed successfully at " + new SimpleDateFormat().format(new Date()));
             }
-            uj.cleanup();
+            // Delete the entity only if its a volume. TO DO - find a better way of finding it a volume.
+            if(uj.getTemplateUploader().getUploadLocalPath().indexOf("volume") > -1){
+                uj.cleanup();
+            }
             break;
         default:
             break;

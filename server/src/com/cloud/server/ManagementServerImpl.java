@@ -5725,6 +5725,9 @@ public class ManagementServerImpl implements ManagementServer {
         if (_dcDao.findById(zoneId) == null) {
             throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please specify a valid zone.");          
         }
+        if(volume.getPoolId() == null){
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, "The volume doesnt belong to a storage pool so cant extract it");
+        }
         //Extract activity only for detached volumes or for volumes whose instance is stopped
         if(volume.getInstanceId() != null && ApiDBUtils.findVMInstanceById(volume.getInstanceId()).getState() != State.Stopped ){
             s_logger.debug("Invalid state of the volume with ID: " + volumeId + ". It should be either detached or the VM should be in stopped state.");

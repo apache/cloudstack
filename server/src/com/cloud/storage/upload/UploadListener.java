@@ -1,6 +1,7 @@
 package com.cloud.storage.upload;
 
 
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -21,6 +22,10 @@ import com.cloud.agent.api.storage.UploadAnswer;
 import com.cloud.agent.api.storage.UploadCommand;
 import com.cloud.agent.api.storage.UploadProgressCommand;
 import com.cloud.agent.api.storage.UploadProgressCommand.RequestType;
+import com.cloud.api.commands.ExtractIsoCmd;
+import com.cloud.api.commands.ExtractTemplateCmd;
+import com.cloud.api.commands.ExtractVolumeCmd;
+import com.cloud.api.response.ExtractResponse;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobResult;
 import com.cloud.async.executor.ExtractJobResultObject;
@@ -75,6 +80,15 @@ public class UploadListener implements Listener {
 	public static final String UPLOAD_ERROR=Status.UPLOAD_ERROR.toString();
 	public static final String UPLOAD_IN_PROGRESS=Status.UPLOAD_IN_PROGRESS.toString();
 	public static final String UPLOAD_ABANDONED=Status.ABANDONED.toString();
+	public static final Map<String,String> responseNameMap; 
+	static{
+	    Map<String, String>tempMap = new HashMap<String, String>();
+        tempMap.put(Type.ISO.toString(), ExtractIsoCmd.getStaticName());
+        tempMap.put(Type.TEMPLATE.toString(), ExtractTemplateCmd.getStaticName());
+        tempMap.put(Type.VOLUME.toString(), ExtractVolumeCmd.getStaticName());
+        tempMap.put("DEFAULT","extractresponse");
+        responseNameMap = Collections.unmodifiableMap(tempMap);
+	}
 
 
 	private HostVO sserver;	
@@ -101,7 +115,7 @@ public class UploadListener implements Listener {
 	private long asyncJobId;
 	private long eventId;
 	private AsyncJobManager asyncMgr;
-	private ExtractJobResultObject resultObj;
+	private ExtractResponse resultObj;
 	
 	public AsyncJobManager getAsyncMgr() {
 		return asyncMgr;
@@ -131,13 +145,13 @@ public class UploadListener implements Listener {
 	private Long uploadId;	
 	
 	public UploadListener(HostVO host, Timer _timer, UploadDao uploadDao,
-			Long uploadId, UploadMonitorImpl uploadMonitor, UploadCommand cmd,
+			UploadVO uploadObj, UploadMonitorImpl uploadMonitor, UploadCommand cmd,
 			Long accountId, String typeName, Type type, long eventId, long asyncJobId, AsyncJobManager asyncMgr) {
 		this.sserver = host;				
 		this.uploadDao = uploadDao;
 		this.uploadMonitor = uploadMonitor;
 		this.cmd = cmd;
-		this.uploadId = uploadId;
+		this.uploadId = uploadObj.getId();
 		this.accountId = accountId;
 		this.typeName = typeName;
 		this.type = type;
@@ -149,7 +163,8 @@ public class UploadListener implements Listener {
 		this.eventId = eventId;
 		this.asyncJobId = asyncJobId;
 		this.asyncMgr = asyncMgr;
-		this.resultObj = new ExtractJobResultObject(accountId, typeName, Status.NOT_UPLOADED.toString(), 0, uploadId);
+		this.resultObj = new ExtractResponse(uploadObj.getTypeId(), typeName, accountId, Status.NOT_UPLOADED.toString(), uploadId);
+		resultObj.setResponseName(responseNameMap.get(type.toString()));
 		updateDatabase(Status.NOT_UPLOADED, cmd.getUrl(),"");
 	}
 	
@@ -322,7 +337,7 @@ public class UploadListener implements Listener {
 	}
 	
 	public void updateDatabase(Status state, String uploadErrorString) {
-		resultObj.setResult_string(uploadErrorString);
+		resultObj.setResultString(uploadErrorString);
 		resultObj.setState(state.toString());
 		asyncMgr.updateAsyncJobAttachment(asyncJobId, type.toString(), 1L);
 		asyncMgr.updateAsyncJobStatus(asyncJobId, AsyncJobResult.STATUS_IN_PROGRESS, resultObj);
@@ -335,7 +350,7 @@ public class UploadListener implements Listener {
 	}
 	
 	public void updateDatabase(Status state, String uploadUrl,String uploadErrorString) {
-		resultObj.setResult_string(uploadErrorString);
+		resultObj.setResultString(uploadErrorString);
 		resultObj.setState(state.toString());
 		asyncMgr.updateAsyncJobAttachment(asyncJobId, type.toString(), 1L);
 		asyncMgr.updateAsyncJobStatus(asyncJobId, AsyncJobResult.STATUS_IN_PROGRESS, resultObj);
@@ -359,9 +374,9 @@ public class UploadListener implements Listener {
 	public synchronized void updateDatabase(UploadAnswer answer) {		
 		
 	    if(answer.getErrorString().startsWith("553")){
-	        answer.setErrorString(answer.getErrorString().concat(". Please check if the file name already exists."));
+	        answer.setErrorString(answer.getErrorString().concat("Please check if the file name already exists."));
 	    }
-		resultObj.setResult_string(answer.getErrorString());
+		resultObj.setResultString(answer.getErrorString());
 		resultObj.setState(answer.getUploadStatus().toString());
 		resultObj.setUploadPercent(answer.getUploadPct());
 		
@@ -369,6 +384,7 @@ public class UploadListener implements Listener {
 			asyncMgr.updateAsyncJobAttachment(asyncJobId, type.toString(), 1L);
 			asyncMgr.updateAsyncJobStatus(asyncJobId, AsyncJobResult.STATUS_IN_PROGRESS, resultObj);
 		}else if(answer.getUploadStatus() == Status.UPLOADED){
+		    resultObj.setResultString("Success");
 			asyncMgr.completeAsyncJob(asyncJobId, AsyncJobResult.STATUS_SUCCEEDED, 1, resultObj);
 		}else{
 			asyncMgr.completeAsyncJob(asyncJobId, AsyncJobResult.STATUS_FAILED, 2, resultObj);

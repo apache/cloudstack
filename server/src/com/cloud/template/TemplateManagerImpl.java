@@ -443,8 +443,8 @@ public class TemplateManagerImpl implements TemplateManager {
         if (template == null) {
             throw new InvalidParameterValueException("Unable to find " +desc+ " with id " + templateId);
         }
-        if (template.getName().startsWith("xs-tools") ){
-            throw new InvalidParameterValueException("Unable to extract the ISO " + template.getName() + " It is not allowed");
+        if (template.getId() < 201 ){
+            throw new InvalidParameterValueException("Unable to extract the " + desc + " " + template.getName() + " since it is system created and is not available for download");
         }
         if (isISO) {
             if (template.getFormat() != ImageFormat.ISO ){
@@ -484,7 +484,7 @@ public class TemplateManagerImpl implements TemplateManager {
         
         Upload.Mode extractMode;
         if( mode == null || (!mode.equals(Upload.Mode.FTP_UPLOAD.toString()) && !mode.equals(Upload.Mode.HTTP_DOWNLOAD.toString())) ){
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please specify a valid extract Mode ");
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please specify a valid extract Mode "+Upload.Mode.values());
         }else{
             extractMode = mode.equals(Upload.Mode.FTP_UPLOAD.toString()) ? Upload.Mode.FTP_UPLOAD : Upload.Mode.HTTP_DOWNLOAD;
         }
@@ -499,7 +499,7 @@ public class TemplateManagerImpl implements TemplateManager {
                 if ((uri.getScheme() == null) || (!uri.getScheme().equalsIgnoreCase("ftp") )) {
                    throw new InvalidParameterValueException("Unsupported scheme for url: " + url);
                 }
-            } catch (URISyntaxException ex) {
+            } catch (Exception ex) {
                 throw new InvalidParameterValueException("Invalid url given: " + url);
             }
     
@@ -526,9 +526,8 @@ public class TemplateManagerImpl implements TemplateManager {
     //        String event = template.getFormat() == ImageFormat.ISO ? EventTypes.EVENT_ISO_UPLOAD : EventTypes.EVENT_TEMPLATE_UPLOAD;
     //        EventUtils.saveStartedEvent(template.getAccountId(), template.getAccountId(), event, "Starting upload of " +template.getName()+ " to " +url, cmd.getStartEventId());
            
-            EventUtils.saveStartedEvent(userId, accountId, event, "Starting extraction of " +template.getName()+ " mode= " +extractMode.toString(), eventId);
-            extract(template, url, tmpltHostRef, zoneId, eventId, job.getId(), mgr);
-            return 1L; //FIX ME
+            EventUtils.saveStartedEvent(userId, accountId, event, "Starting extraction of " +template.getName()+ " mode:" +extractMode.toString(), eventId);            
+            return _uploadMonitor.extractTemplate(template, url, tmpltHostRef, zoneId, eventId, job.getId(), mgr);            
         }
         
         EventUtils.saveStartedEvent(userId, accountId, event, "Starting extraction of " +template.getName()+ " in mode:" +extractMode.toString(), eventId);
@@ -543,12 +542,7 @@ public class TemplateManagerImpl implements TemplateManager {
             mgr.completeAsyncJob(job.getId(), AsyncJobResult.STATUS_FAILED, 2, null);
             return null;
         }
-    }
-
-    @Override
-    public void extract(VMTemplateVO template, String url, VMTemplateHostVO tmpltHostRef, Long zoneId, long eventId, long asyncJobId, AsyncJobManager asyncMgr){
-        _uploadMonitor.extractTemplate(template, url, tmpltHostRef, zoneId, eventId, asyncJobId, asyncMgr);
-    }
+    }    
     
     @Override @DB
     public VMTemplateStoragePoolVO prepareTemplateForCreate(VMTemplateVO template, StoragePool pool) {

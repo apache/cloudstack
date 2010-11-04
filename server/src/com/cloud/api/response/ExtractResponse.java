@@ -74,10 +74,10 @@ public class ExtractResponse extends BaseResponse {
     public ExtractResponse(){        
     }
     
-    public ExtractResponse(Long volumeId, String volName, long accountId,
+    public ExtractResponse(Long typeId, String typeName, long accountId,
             String state, Long uploadId) {
-        this.id = volumeId;
-        this.name = volName;
+        this.id = typeId;
+        this.name = typeName;
         this.accountId = accountId;
         this.state = state;
         this.uploadId = uploadId;        

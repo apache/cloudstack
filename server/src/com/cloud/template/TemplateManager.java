@@ -34,6 +34,7 @@ import com.cloud.api.commands.RegisterTemplateCmd;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.storage.Storage.ImageFormat;
@@ -190,7 +191,19 @@ public interface TemplateManager extends Manager {
      */
     boolean deleteIso(DeleteIsoCmd cmd);
 
-	void extract(VMTemplateVO template, String url, VMTemplateHostVO tmpltHostRef, Long zoneId, long eventId, long asyncJobId, AsyncJobManager asyncMgr);
-    Long extract(ExtractIsoCmd cmd);
-    Long extract(ExtractTemplateCmd cmd);
+    /**
+     * Extracts an ISO
+     * @param cmd - the command specifying the mode and id of the ISO
+     * @return extractId.
+     * @throws InvalidParameterValueException, InternalErrorException, PermissionDeniedException
+     */
+    Long extract(ExtractIsoCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, InternalErrorException;
+    
+    /**
+     * Extracts a Template
+     * @param cmd - the command specifying the mode and id of the template
+     * @return extractId.
+     * @throws InvalidParameterValueException, InternalErrorException, PermissionDeniedException
+     */
+    Long extract(ExtractTemplateCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, InternalErrorException;
 }
