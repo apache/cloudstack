@@ -2550,12 +2550,12 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         vm.removeFromOtherConfig(conn, "disks");
 
         if (!(guestOsTypeName.startsWith("Windows") || guestOsTypeName.startsWith("Citrix") || guestOsTypeName.startsWith("Other"))) {
-            if (cmd.getBootFromISO())
+            if (cmd.getBootFromISO()) {
                 vm.setPVBootloader(conn, "eliloader");
-            else
+                vm.addToOtherConfig(conn, "install-repository", "cdrom");
+            } else {
                 vm.setPVBootloader(conn, "pygrub");
-
-            vm.addToOtherConfig(conn, "install-repository", "cdrom");
+            }
         }
         return vm;
     }
@@ -2731,7 +2731,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         VM vm = null;
         SR isosr = null;
         List<Ternary<SR, VDI, VolumeVO>> mounts = null;
-        for (int retry = 0; retry < 2; retry++) {
             try {
                 synchronized (_vms) {
                     _vms.put(cmd.getVmName(), State.Starting);
@@ -2740,11 +2739,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 List<VolumeVO> vols = cmd.getVolumes();
 
                 mounts = mount(vols);
-                if (retry == 1) {
-                    // at the second time, try hvm
-                    cmd.setGuestOSDescription("Other install media");
-                }
-
                 vm = createVmFromTemplate(conn, cmd);
 
                 long memsize = cmd.getRamSize() * 1024L * 1024L;
@@ -2855,15 +2849,9 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             } catch (XenAPIException e) {
                 String errormsg = e.toString();
                 String msg = "Exception caught while starting VM due to message:" + errormsg + " (" + e.getClass().getName() + ")";
-                if (!errormsg.contains("Unable to find partition containing kernel") && !errormsg.contains("Unable to access a required file in the specified repository")) {
-                    s_logger.warn(msg, e);
-                    startvmfailhandle(vm, mounts);
-                    removeSR(isosr);
-                } else {
-                    startvmfailhandle(vm, mounts);
-                    removeSR(isosr);
-                    continue;
-                }
+                s_logger.warn(msg, e);
+                startvmfailhandle(vm, mounts);
+                removeSR(isosr);
                 state = State.Stopped;
                 return new StartAnswer(cmd, msg);
             } catch (Exception e) {
@@ -2879,9 +2867,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 }
 
             }
-        }
-        String msg = "Start VM failed";
-        return new StartAnswer(cmd, msg);
+
     }
     
     protected VIF createVIF(Connection conn, VM vm, String mac, int rate, String devNum, Network network) throws XenAPIException, XmlRpcException,
