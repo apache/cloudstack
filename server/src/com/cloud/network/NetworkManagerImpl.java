@@ -1965,7 +1965,7 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
             
             NetworkOfferingVO offering = _networkOfferingDao.findById(config.getNetworkOfferingId());
             
-            NetworkConfiguration result = guru.implement(config, offering, dest);
+            NetworkConfiguration result = guru.implement(config, offering, dest, context);
             config.setCidr(result.getCidr());
             config.setBroadcastUri(result.getBroadcastUri());
             config.setGateway(result.getGateway());
@@ -2015,7 +2015,7 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
                 URI isolationUri = nic.getIsolationUri();
                      
                 profile = new NicProfile(nic, config, broadcastUri, isolationUri);
-                String reservationId = concierge.reserve(profile, config, vmProfile, dest);
+                String reservationId = concierge.reserve(profile, config, vmProfile, dest, context);
                 nic.setIp4Address(profile.getIp4Address());
                 nic.setIp6Address(profile.getIp6Address());
                 nic.setMacAddress(profile.getMacAddress());

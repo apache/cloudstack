@@ -12,6 +12,7 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.utils.component.Adapter;
 import com.cloud.vm.NicProfile;
+import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
@@ -51,7 +52,7 @@ public interface NetworkGuru extends Adapter {
      * @param destination where were deploying to.
      * @return a fully implemented NetworkConfiguration.
      */
-    NetworkConfiguration implement(NetworkConfiguration config, NetworkOffering offering, DeployDestination destination);
+    NetworkConfiguration implement(NetworkConfiguration config, NetworkOffering offering, DeployDestination destination, ReservationContext context);
     
     /**
      * reserve a nic for this VM in this network.
@@ -63,9 +64,11 @@ public interface NetworkGuru extends Adapter {
      * @throws InsufficientVirtualNetworkCapcityException
      * @throws InsufficientAddressCapacityException
      */
-    String reserve(NicProfile nic, NetworkConfiguration config, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException;
+    String reserve(NicProfile nic, NetworkConfiguration config, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException;
 
     boolean release(String uniqueId);
+    
+    void deallocate(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm);
     
     void destroy(NetworkConfiguration config, NetworkOffering offering);
 }

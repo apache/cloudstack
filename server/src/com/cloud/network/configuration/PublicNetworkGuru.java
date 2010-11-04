@@ -31,6 +31,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
 import com.cloud.vm.NicProfile;
+import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
@@ -54,9 +55,29 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     protected PublicNetworkGuru() {
         super();
     }
+    
+    protected void getIp(NicProfile nic, DataCenter dc, VirtualMachineProfile<? extends VirtualMachine> vm) throws InsufficientVirtualNetworkCapcityException {
+        if (nic.getIp4Address() == null) {
+            Pair<String, VlanVO> ipAndVlan = _vlanDao.assignIpAddress(dc.getId(), vm.getVirtualMachine().getAccountId(), vm.getVirtualMachine().getDomainId(), VlanType.VirtualNetwork, true);
+            if (ipAndVlan == null) {
+                throw new InsufficientVirtualNetworkCapcityException("Unable to get public ip address in " + dc.getId());
+            }
+            VlanVO vlan = ipAndVlan.second();
+            nic.setIp4Address(ipAndVlan.first());
+            nic.setGateway(vlan.getVlanGateway());
+            nic.setNetmask(vlan.getVlanNetmask());
+            nic.setIsolationUri(IsolationType.Vlan.toUri(vlan.getVlanId()));
+            nic.setBroadcastType(BroadcastDomainType.Vlan);
+            nic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(vlan.getVlanId()));
+            nic.setFormat(AddressFormat.Ip4);
+            nic.setReservationId(Long.toString(vlan.getId()));
+        }
+        nic.setDns1(dc.getDns1());
+        nic.setDns2(dc.getDns2());
+    }
 
     @Override
-    public NicProfile allocate(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException,
+    public NicProfile allocate(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException {
         if (config.getTrafficType() != TrafficType.Public) {
             return null;
@@ -74,37 +95,23 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
         }
         nic.setMacAddress(mac);
         
+        DataCenter dc = _dcDao.findById(config.getId());
+        getIp(nic, dc, vm);
+        
         return nic;
     }
 
     @Override
-    public String reserve(NicProfile ch, NetworkConfiguration configuration, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
-        if (ch.getReservationId() != null) {
-            return ch.getReservationId();
+    public String reserve(NicProfile nic, NetworkConfiguration configuration, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
+        if (nic.getReservationId() != null) {
+            return nic.getReservationId();
         }
         
-        DataCenter dc = dest.getDataCenter();
-        long dcId = dc.getId();
-        
-        if (ch.getIp4Address() == null) {
-            Pair<String, VlanVO> ipAndVlan = _vlanDao.assignIpAddress(dcId, vm.getVirtualMachine().getAccountId(), vm.getVirtualMachine().getDomainId(), VlanType.VirtualNetwork, true);
-            if (ipAndVlan == null) {
-                throw new InsufficientVirtualNetworkCapcityException("Unable to get public ip address in " + dcId);
-            }
-            VlanVO vlan = ipAndVlan.second();
-            ch.setIp4Address(ipAndVlan.first());
-            ch.setGateway(vlan.getVlanGateway());
-            ch.setNetmask(vlan.getVlanNetmask());
-            ch.setIsolationUri(IsolationType.Vlan.toUri(vlan.getVlanId()));
-            ch.setBroadcastType(BroadcastDomainType.Vlan);
-            ch.setBroadcastUri(BroadcastDomainType.Vlan.toUri(vlan.getVlanId()));
-            ch.setFormat(AddressFormat.Ip4);
-            ch.setReservationId(Long.toString(vlan.getId()));
+        if (nic.getIp4Address() == null) {
+            getIp(nic, dest.getDataCenter(), vm);
         }
-        ch.setDns1(dc.getDns1());
-        ch.setDns2(dc.getDns2());
         
-        return ch.getReservationId();
+        return nic.getReservationId();
     }
 
     @Override
@@ -113,8 +120,12 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     @Override
-    public NetworkConfiguration implement(NetworkConfiguration config, NetworkOffering offering, DeployDestination destination) {
+    public NetworkConfiguration implement(NetworkConfiguration config, NetworkOffering offering, DeployDestination destination, ReservationContext context) {
         return config;
+    }
+    
+    @Override
+    public void deallocate(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) {
     }
     
     @Override
