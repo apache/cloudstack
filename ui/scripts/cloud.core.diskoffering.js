@@ -65,7 +65,7 @@ function afterLoadDiskOfferingJSP() {
 				    array1.push("&tags="+todb(tags));								
 				
 				$.ajax({
-				  data: createURL("command=createDiskOffering&isMirrored=false&response=json" + array1.join("")),
+				  data: createURL("command=createDiskOffering&isMirrored=false" + array1.join("")),
 					dataType: "json",
 					success: function(json) {						    
 					    var item = json.creatediskofferingresponse;							
@@ -199,6 +199,9 @@ function diskOfferingJsonToDetailsTab() {
     
     $thisTab.find("#disksize").text(convertBytes(jsonObj.disksize));
     $thisTab.find("#tags").text(fromdb(jsonObj.tags));   
+    
+    setBooleanReadField(jsonObj.isCustomized, $thisTab.find("#isCustomized"));	 
+    
     $thisTab.find("#domain").text(fromdb(jsonObj.domain));   
     
     //actions ***
