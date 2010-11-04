@@ -155,8 +155,15 @@
 					<label for="user_name">Description:</label>
 					<input class="text" type="text" name="add_disk_description" id="add_disk_description"/>
 					<div id="add_disk_description_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
-				</li>				
+				</li>	
 				<li>
+					<label>Custom disk size?:</label>
+					<select class="select" id="customized">						
+						<option value="false">No</option>
+						<option value="true">Yes</option>
+					</select>
+				</li>				
+				<li id="add_disk_disksize_container">
 					<label for="user_name">Disk size (in GB):</label>
 					<input class="text" type="text" name="add_disk_disksize" id="add_disk_disksize"/>
 					<div id="add_disk_disksize_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>

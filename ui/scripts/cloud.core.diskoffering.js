@@ -17,15 +17,30 @@
  */
 
 function afterLoadDiskOfferingJSP() {
-    var $detailsTab = $("#right_panel_content #tab_content_details"); 
-      
+    var $detailsTab = $("#right_panel_content #tab_content_details");      
+    initAddDiskOfferingButton($("#midmenu_add_link"));     
+}
+
+function initAddDiskOfferingButton($midmenuAddLink1) { 
     //dialogs
     initDialog("dialog_add_disk");
     
+    $dialogAddDisk = $("#dialog_add_disk");
+    $dialogAddDisk.find("#customized").bind("change", function(event) {     
+        if($(this).val() == "false") {
+            $dialogAddDisk.find("#add_disk_disksize_container").show();
+        }
+        else {
+            $dialogAddDisk.find("#add_disk_disksize_container").hide();   
+            $dialogAddDisk.find("#add_disk_disksize").val(""); 
+        }        
+        return false;
+    });
+    
     //add button ***
-    $("#midmenu_add_link").find("#label").text("Add Disk Offering"); 
-    $("#midmenu_add_link").show();     
-    $("#midmenu_add_link").unbind("click").bind("click", function(event) {    
+    $midmenuAddLink1.find("#label").text("Add Disk Offering"); 
+    $midmenuAddLink1.show();     
+    $midmenuAddLink1.unbind("click").bind("click", function(event) {    
 		var dialogAddDisk = $("#dialog_add_disk");
 		dialogAddDisk.find("#disk_name").val("");
 		dialogAddDisk.find("#disk_description").val("");
@@ -36,12 +51,15 @@ function afterLoadDiskOfferingJSP() {
 		.dialog('option', 'buttons', { 				
 			"Add": function() { 
 			    var thisDialog = $(this);
-								    		
+												    		
 				// validate values
 				var isValid = true;					
 				isValid &= validateString("Name", thisDialog.find("#add_disk_name"), thisDialog.find("#add_disk_name_errormsg"));
 				isValid &= validateString("Description", thisDialog.find("#add_disk_description"), thisDialog.find("#add_disk_description_errormsg"));
-				isValid &= validateNumber("Disk size", thisDialog.find("#add_disk_disksize"), thisDialog.find("#add_disk_disksize_errormsg"), 0, null, true); //optional
+				
+				if($("#add_disk_disksize_container").css("display") != "none")
+				    isValid &= validateNumber("Disk size", thisDialog.find("#add_disk_disksize"), thisDialog.find("#add_disk_disksize_errormsg"), 0, null, false); //required
+								
 				isValid &= validateString("Tags", thisDialog.find("#add_disk_tags"), thisDialog.find("#add_disk_tags_errormsg"), true);	//optional	
 				if (!isValid) 
 				    return;		
@@ -55,10 +73,14 @@ function afterLoadDiskOfferingJSP() {
 				
 				var description = trim(thisDialog.find("#add_disk_description").val());	
 				array1.push("&displaytext="+todb(description));
-							
-				var disksize = trim(thisDialog.find("#add_disk_disksize").val());
-				if(disksize != null && disksize.length > 0)
+				
+				var customized = thisDialog.find("#customized").val();				
+				array1.push("&customized="+customized);
+				
+				if($("#add_disk_disksize_container").css("display") != "none") {		
+				    var disksize = trim(thisDialog.find("#add_disk_disksize").val());
 				    array1.push("&disksize="+disksize);
+				}
 				
 				var tags = trim(thisDialog.find("#add_disk_tags").val());
 				if(tags != null && tags.length > 0)
