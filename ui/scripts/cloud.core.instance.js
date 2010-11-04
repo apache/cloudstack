@@ -1205,15 +1205,12 @@ function doEditVM($actionLink, $detailsTab, $midmenuItem1) {
         return false;
     });
     $detailsTab.find("#save_button").unbind("click").bind("click", function(event){        
-        doEditVM2($actionLink, $detailsTab, $midmenuItem1);     
-        $editFields.hide();      
-        $readonlyFields.show();       
-        $("#save_button, #cancel_button").hide();       
+        doEditVM2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $editFields);   
         return false;
     });   
 }
 
-function doEditVM2($actionLink, $detailsTab, $midmenuItem1) {   
+function doEditVM2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $editFields) {   
     // validate values
     var isValid = true;					
     isValid &= validateString("Name", $detailsTab.find("#name_edit"), $detailsTab.find("#name_edit_errormsg"), true);  //optional
@@ -1226,16 +1223,13 @@ function doEditVM2($actionLink, $detailsTab, $midmenuItem1) {
 	
 	var array1 = [];						
 	var name = trim($detailsTab.find("#vmname_edit").val());
-	array1.push("&displayName="+todb(name));
-	//var apiCommand = "command=updateVirtualMachine&id="+id+"&displayName="+todb(name);	
+	array1.push("&displayName="+todb(name));	
 	
 	var group = trim($detailsTab.find("#group_edit").val());
 	array1.push("&group="+todb(group));
-	//var apiCommand = "command=updateVirtualMachine&id="+id+"&group="+todb(group);  
 	
 	var haenable = $detailsTab.find("#haenable_edit").val();     
-	array1.push("&haenable="+haenable);
-	//var apiCommand = "command=updateVirtualMachine&id="+id+"&haenable=true";        
+	array1.push("&haenable="+haenable);   
 	
 	$.ajax({
 	    data: createURL("command=updateVirtualMachine&id="+id+array1.join("")),
@@ -1253,7 +1247,11 @@ function doEditVM2($actionLink, $detailsTab, $midmenuItem1) {
             });
          
             vmToMidmenu(jsonObj, $midmenuItem1);
-            vmToRightPanel($midmenuItem1);	     					
+            vmToRightPanel($midmenuItem1);	
+            
+            $editFields.hide();      
+            $readonlyFields.show();       
+            $("#save_button, #cancel_button").hide();          					
 		}
 	});
 } 
