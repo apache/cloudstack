@@ -78,6 +78,7 @@ import com.cloud.agent.api.CheckVirtualMachineAnswer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
+import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotAnswer;
 import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
 import com.cloud.agent.api.DeleteSnapshotBackupAnswer;
@@ -1181,8 +1182,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 return execute((DestroyCommand) cmd);
             } else if (cmd instanceof PrimaryStorageDownloadCommand) {
                 return execute((PrimaryStorageDownloadCommand) cmd);
-            } else if (cmd instanceof CreatePrivateTemplateCommand) {
-                return execute((CreatePrivateTemplateCommand) cmd);
+            } else if (cmd instanceof CreatePrivateTemplateFromVolumeCommand) {
+                return execute((CreatePrivateTemplateFromVolumeCommand) cmd);
             } else if (cmd instanceof GetStorageStatsCommand) {
                 return execute((GetStorageStatsCommand) cmd);
             } else if (cmd instanceof ManageSnapshotCommand) {
@@ -1535,7 +1536,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     		return new GetStorageStatsAnswer(cmd, e.toString());
     	}
     }
-    protected CreatePrivateTemplateAnswer execute(CreatePrivateTemplateCommand cmd) {
+    
+    protected CreatePrivateTemplateAnswer execute(CreatePrivateTemplateFromVolumeCommand cmd) {
     	 String secondaryStorageURL = cmd.getSecondaryStorageURL();
 
          StoragePool secondaryStorage = null;
@@ -1549,11 +1551,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         	 _storage.mkdirs(tmpltPath);
 
         	 Script command = new Script(_createTmplPath, _timeout, s_logger);
-        	 command.add("-f", cmd.getSnapshotPath());
-        	 command.add("-c", cmd.getSnapshotName());
+        	 command.add("-f", cmd.getVolumePath());
         	 command.add("-t", tmpltPath);
         	 command.add("-n", cmd.getUniqueName() + ".qcow2");
-        	 command.add("-s");
+        	
         	 String result = command.execute();
         	 
         	 if (result != null) {

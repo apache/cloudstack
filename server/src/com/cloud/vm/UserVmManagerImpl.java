@@ -2674,7 +2674,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
             if( !vmState.equals(State.Stopped) && !vmState.equals(State.Destroyed)) {
                 throw new CloudRuntimeException("Please put VM " + vm.getHostName() + " into Stopped state first");
             }
-
+                           
             cmd = new CreatePrivateTemplateFromVolumeCommand(secondaryStorageURL, templateId, volume.getAccountId(),
                     command.getTemplateName(), uniqueName, volume.getPath(), vmName);
 
