@@ -337,7 +337,7 @@ $(document).ready(function() {
 		
 		$.ajax({
 			type: "POST",
-		        data: createURL("command=login&response=json" + array1.join("")),
+		    data: createURL("command=login&response=json" + array1.join("")),
 			dataType: "json",
 			async: false,
 			success: function(json) {
@@ -376,18 +376,8 @@ $(document).ready(function() {
 				buildSecondLevelNavigation();
 				
 				$("#main_username").text(g_username);
-				$("#login_wrapper").hide();
-				if (isAdmin()) {				    
-				    $("#leftmenu_domain, #leftmenu_account, #leftmenu_system").show();
-					$("#launch_test").show();
-				} 
-				else if(isDomainAdmin()){				    
-				    $("#leftmenu_domain, #leftmenu_account").show();
-					$("#launch_test").hide();
-				}
-				else{  //isUser() == true
-					$("#launch_test").hide();
-				}
+				$("#login_wrapper").hide();				
+				showLeftNavigationBasedOnRole();				
 				$("#main").show();	
 				$("#leftmenu_dashboard").click();
 			},
@@ -466,18 +456,8 @@ $(document).ready(function() {
 		success: function(json) {
 			buildSecondLevelNavigation();
 			$("#main_username").text(g_username);
-			$("#leftmenu_dashboard").click();						
-			if (isAdmin()) {				    
-			    $("#leftmenu_domain, #leftmenu_account, #leftmenu_system").show();
-				$("#launch_test").show();
-			} 
-			else if(isDomainAdmin()){				    
-			    $("#leftmenu_domain, #leftmenu_account").show();
-				$("#launch_test").hide();
-			}
-			else{  //isUser() == true
-				$("#launch_test").hide();
-			}						
+			$("#leftmenu_dashboard").click();	
+			showLeftNavigationBasedOnRole();												
 			$("#main").show();
 		},
 		error: function(xmlHTTP) {

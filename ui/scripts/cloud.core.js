@@ -981,6 +981,21 @@ function handleErrorInDialog(XMLHttpResponse, $thisDialog) {
 	$infoContainer.show();
 }
 
+function showLeftNavigationBasedOnRole() {
+    if (isAdmin()) {				    
+	    $("#leftmenu_domain, #leftmenu_account, #leftmenu_system, #leftmenu_alert_container, #launch_test").show();					
+	} 
+	else if(isDomainAdmin()){				    
+	    $("#leftmenu_domain, #leftmenu_account").show();					
+	}
+	else{  //isUser() == true					
+	}
+}
+
+
+
+
+
 
 
 

@@ -631,7 +631,7 @@ long milliseconds = new Date().getTime();
                                 </div>
                             </div>
                         </div>
-                        <div class="leftmenu_expandedlist">
+                        <div class="leftmenu_expandedlist" id="leftmenu_alert_container" style="display: none">
                             <div class="leftmenu_content" id="leftmenu_alert">
                                 <div class="leftmenu_secondindent">
                                     <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
