@@ -171,7 +171,7 @@ def copyfile(fromFile, toFile, isISCSI):
     errMsg = ''
     if isISCSI:
         try:
-            cmd = ['dd', 'if=' + fromFile, 'of=' + toFile]
+            cmd = ['dd', 'if=' + fromFile, 'of=' + toFile, 'bs=1M']
             txt = util.pread2(cmd)
         except:
             txt = ''

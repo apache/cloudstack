@@ -5544,6 +5544,39 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         }
         return new CreatePrivateTemplateAnswer(cmd, result, details);
     }
+    
+    private boolean destroySnapshotOnPrimaryStorageExceptThis(String volumeUuid, String avoidSnapshotUuid){
+        try {
+            Connection conn = getConnection();
+            VDI volume = getVDIbyUuid(volumeUuid);
+            if (volume == null) {
+                throw new InternalErrorException("Could not destroy snapshot on volume " + volumeUuid + " due to can not find it");
+            }
+            Set<VDI> snapshots = volume.getSnapshots(conn);
+            for( VDI snapshot : snapshots ) {
+                    try {
+                            if(! snapshot.getUuid(conn).equals(avoidSnapshotUuid)) {
+                            snapshot.destroy(conn);
+                            }
+                } catch (Exception e) {
+                    String msg = "Destroying snapshot: " + snapshot+ " on primary storage failed due to " + e.toString();
+                    s_logger.warn(msg, e);
+                }
+            }
+            s_logger.debug("Successfully destroyed snapshot on volume: " + volumeUuid + " execept this current snapshot "+ avoidSnapshotUuid );
+            return true;
+        } catch (XenAPIException e) {
+            String msg = "Destroying snapshot on volume: " + volumeUuid + " execept this current snapshot "+ avoidSnapshotUuid + " failed due to " + e.toString();
+            s_logger.error(msg, e);
+        } catch (Exception e) {
+            String msg = "Destroying snapshot on volume: " + volumeUuid + " execept this current snapshot "+ avoidSnapshotUuid + " failed due to " + e.toString();
+            s_logger.warn(msg, e);
+        }
+
+        return false;
+    }
+
+    
 
     protected BackupSnapshotAnswer execute(final BackupSnapshotCommand cmd) {
         String primaryStorageNameLabel = cmd.getPrimaryStoragePoolNameLabel();
@@ -5617,7 +5650,9 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 // new one
                 // and muddle the vhd chain on the secondary storage.
 
-                    destroySnapshotOnPrimaryStorage(prevSnapshotUuid);
+                    String volumeUuid = cmd.getVolumePath();
+                    destroySnapshotOnPrimaryStorageExceptThis(volumeUuid, snapshotUuid);
+
                 }
             }
 
