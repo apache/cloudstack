@@ -20,65 +20,67 @@
         </p>
     </div>
     <div id="resource_page" style="display: block">
-    	<div class="grid_container" style="width:700px">
-            <div class="grid_header">
-                <div class="grid_header_cell" style="width: 60%; border: none;">
-                    <div class="grid_header_title">
-                        Resources</div>
+    	<div class="grid_container" style="width:480px; border:none;">
+            
+            <div class="dbrow even" style="border:1px solid #CCC;">
+                <div class="dbrow_cell" style="width: 64%; border: none;">
+                    <div class="resource_titlebox">
+                        <h2><span> # of </span> Zone</h2>
+					</div>
                 </div>
-                <div class="grid_header_cell" style="width: 40%; border: none;">
-                </div>
-            </div>
-            <div class="dbrow even" id="public_ip_address">
-                <div class="dbrow_cell" style="width: 50%;">
-                    <div class="dbgraph_titlebox">
-                        <h2><strong>Zone</strong></h2>
-                        
-                    </div>
-                </div>
-                <div class="dbrow_cell" style="width: 49%; border: none;">
+                <div class="dbrow_cell" style="width: 25%; border: none; background:#cacaca repeat top left; ">
                     <div class="resources_totalbg">
                     	<p>10</p>
                     </div>
                 </div>
-            </div>
-            <div class="dbrow odd" id="private_ip_address">
-                <div class="dbrow_cell" style="width: 50%;">
-                    <div class="dbgraph_titlebox">
-                        <h2><strong>Pods</strong></h2>
-                    </div>
+                <div class="dbrow_cell" style="width: 10%; border: none;">
                 </div>
-                <div class="dbrow_cell" style="width: 49%; border: none;">
+            </div>
+            <div class="dbrow odd" style="margin-top:10px; border:1px solid #CCC;">
+                <div class="dbrow_cell" style="width: 64%; border: none; ">
+                    <div class="resource_titlebox">
+                        <h2><span> # of </span> Pod</h2>
+					</div>
+                </div>
+                <div class="dbrow_cell" style="width: 25%; border: none; background:#cacaca repeat top left; ">
                      <div class="resources_totalbg">
                     	<p>120</p>
                     </div>
                 </div>
+                <div class="dbrow_cell" style="width: 10%; border: none;">
+                </div>
             </div>
-            <div class="dbrow even" id="memory_allocated">
-                <div class="dbrow_cell" style="width: 50%;">
-                    <div class="dbgraph_titlebox">
-                        <h2 style="width:auto;"> Cluster - <strong>Host</strong></h2>
-                         <div class="add_hostbutton"></div>
+            <div class="dbrow even" style="margin-top:10px; border:1px solid #CCC;">
+                <div class="dbrow_cell" style="width: 64%; border: none;">
+                     <div class="resource_titlebox">
+                        <h2><span> # of </span> Cluster - Host</h2>
+                         
                     </div>
                 </div>
-                <div class="dbrow_cell" style="width: 49%; border: none;">
+                <div class="dbrow_cell" style="width: 25%; border: none; background:#cacaca repeat top left; ">
                      <div class="resources_totalbg">
                     	<p>15</p>
                     </div>
                 </div>
+                <div class="dbrow_cell" style="width: 10%; border: none;">
+                	<div class="resadd_button"></div>
+                </div>
             </div>
             
-            <div class="dbrow odd" id="memory_allocated">
-                <div class="dbrow_cell" style="width: 50%;">
-                    <div class="dbgraph_titlebox">
-                        <h2 style="width:auto;"> Cluster - <strong> Primary Storage</strong></h2>
-                         <div class="add_primarystoragebutton"></div>
+            <div class="dbrow odd" style="margin-top:10px; border:1px solid #CCC;">
+                <div class="dbrow_cell" style="width: 64%; border: none;">
+                     <div class="resource_titlebox">
+                        <h2><span> # of </span> Cluster - Primary Storage</h2>
+                      
                     </div>
                 </div>
-                 <div class="dbrow_cell" style="width: 49%; border: none;">
+                 <div class="dbrow_cell" style="width: 25%; border: none; background:#cacaca repeat top left; ">
                      <div class="resources_totalbg">
                     	<p>12</p>
                     </div>
+                </div>
+                <div class="dbrow_cell" style="width: 10%; border: none;">
+                	<div class="resadd_button"></div>
                 </div>
             </div>
        

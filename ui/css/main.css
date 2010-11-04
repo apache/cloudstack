@@ -3299,6 +3299,10 @@ a:hover.search_button {
 	padding:0;
 }
 
+
+
+
+
 .dbgraph_title_usedbox {
 	width:187px;
 	height:16px;
@@ -3932,13 +3936,45 @@ a:hover.search_button {
 	padding:0;
 }
 
+.resource_titlebox {
+	width:95%;
+	height:auto;
+	float:left;
+	margin:5px 0 0 10px;
+	padding:0;
+}
+
+.resource_titlebox h2{
+	width:90%;
+	height:auto;
+	float:left;
+	color:#333;
+	font-size:15px;
+	font-weight:bold;
+	text-align:left;
+	margin:4px 0 0 0;
+	padding:0;
+}
+
+.resource_titlebox span{
+	width:auto;
+	height:auto;
+	float:left;
+	color:#999;
+	font-size:11px;
+	font-weight:bold;
+	text-align:left;
+	margin:3px 5px 0 0;
+	padding:0;
+}
 
 .resources_totalbg {
 	width:58px;
 	height:32px;
-	float:right;
+	float:left;
 	background:url(../images/resources_totalbg.png) no-repeat top left;
-	margin:6px 10px 0 0;
+	margin:6px 0 0 30px;
+	display:inline;
 	padding:0;
 }
 
@@ -3955,34 +3991,19 @@ a:hover.search_button {
 	display:inline;
 }
 
-.add_hostbutton {
-	width:60px;
-	height:15px;
+.resadd_button {
+	width:17px;
+	height:17px;
 	float:left;
-	background:url(../images/add_hostbutton.png) no-repeat top left;
-	margin:0 0 0 10px;
+	background:url(../images/add_button.png) no-repeat top left;
+	margin:13px 0 0 20px;
 	padding:0;
 	cursor:pointer;
 	cursor:hand;
 }
 
-.add_hostbutton:hover {
-	background:url(../images/add_hostbutton_hover.png) no-repeat top left;
-}
-
-.add_primarystoragebutton {
-	width:116px;
-	height:15px;
-	float:left;
-	background:url(../images/add_primarystoragebutton.png) no-repeat top left;
-	margin:0 0 0 10px;
-	padding:0;
-	cursor:pointer;
-	cursor:hand;
-}
-
-.add_primarystoragebutton:hover {
-	background:url(../images/add_primarystoragebutton_hover.png) no-repeat top left;
+.resadd_button:hover {
+	background:url(../images/add_button_hover.png) no-repeat top left;
 }
 
 /* 2010-10-10 */
