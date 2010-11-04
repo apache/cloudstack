@@ -287,31 +287,20 @@
 			<div class="grid_container">
 	        	<div class="grid_header">
 	            	<div id="grid_header_title" class="grid_header_title">VPN Users</div>
-	                <div class="grid_actionbox" id="action_link">
-	                    <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
+	                <div class="grid_actionbox" id="vpn_action_link">
+	                    <div class="grid_actionsdropdown_box" id="vpn_action_menu" style="display: none;">
 	                        <ul class="actionsdropdown_boxlist" id="action_list">
 	                            <li><%=t.t("no.available.actions")%></li>
 	                        </ul>
 	                    </div>
 	                </div>
-	                <div class="gridheader_loaderbox" id="spinning_wheel" style="border: 1px solid #999;
-	                display: none;">
-	                    <div class="gridheader_loader" id="icon">
-	                    </div>
-	                    <p id="description">
-	                        Adding User &hellip;</p>
+	                <div class="gridheader_loaderbox" id="spinning_wheel" style="border: 1px solid #999; display: none;">
+	                    <div class="gridheader_loader" id="icon"></div>
+	                    <p id="vpn_enable">Enable VPN &hellip;</p>
 	                </div>
 	            </div>
-	            <div class="grid_rows odd">
-	                <div class="grid_row_cell" style="width: 20%;">
-	                    <div class="row_celltitles">
-	                        Username:</div>
-	                </div>
-	                <div class="grid_row_cell" style="width: 79%;">
-	                    <div class="row_celltitles" id="username">
-	                    </div>
-	                </div>
-	            </div>
+				<div id="grid_content">
+	            </div> 
 	        </div>
         </div>    
 		<div id="vpn_disabled_msg" class="info_detailbox defaultbox" style="display:none;"> <p>VPN access is currently not enabled.  Please <a href="#" id="enable_vpn_link">click here</a> to enable VPN.</p></div>
@@ -514,11 +503,44 @@
 </div>
 <!-- Port Forwarding template (end) -->
 
+<!-- VPN Template (begin) -->
+<div class="grid_rows odd" id="vpn_template" style="display:none">
+	<div class="grid_row_cell" style="width: 20%;">
+		<div class="row_celltitles">
+			Username:</div>
+	</div>
+	<div class="grid_row_cell" style="width: 59%;">
+		<div class="row_celltitles" id="username"></div>
+	</div>
+	<div class="grid_row_cell" style="width: 20%;">
+		<div class="row_celltitles"><a href="#" id="vpn_delete_user">Delete</a></div>
+	</div>
+</div>
+<!-- VPN Template (end) -->
+
 <!--  dialogs (begin) -->
 <div id="dialog_confirmation_release_ip" title="Confirmation" style="display:none">
     <p>
         <%=t.t("please.confirm.you.want.to.release.this.IP.address")%>
     </p>
+</div>
+
+<div id="dialog_confirmation_remove_vpnuser" title="Confirmation" style="display:none">
+    <p>
+		Please confirm you want to remove VPN access from the following user: <span id="username"></span>
+    </p>
+	<!--Loading box-->
+	<div id="spinning_wheel" class="ui_dialog_loaderbox" style="display:none;">
+		<div class="ui_dialog_loader"></div>
+		<p>Removing User....</p>
+	</div>
+   
+	<!--Confirmation msg box-->
+	<!--Note: for error msg, just have to add error besides everything for eg. add error(class) next to ui_dialog_messagebox error, ui_dialog_msgicon error, ui_dialog_messagebox_text error.  -->
+	<div id="info_container" class="ui_dialog_messagebox error" style="display:none;">
+		<div id="icon" class="ui_dialog_msgicon error"></div>
+        <div id="info" class="ui_dialog_messagebox_text error">(info)</div>
+	</div>
 </div>
 
 <div id="dialog_enable_vpn" title="Enable VPN" style="display:none">
@@ -529,6 +551,24 @@
 	<div id="spinning_wheel" class="ui_dialog_loaderbox" style="display:none;">
 		<div class="ui_dialog_loader"></div>
 		<p>Enabling VPN Access....</p>
+	</div>
+   
+	<!--Confirmation msg box-->
+	<!--Note: for error msg, just have to add error besides everything for eg. add error(class) next to ui_dialog_messagebox error, ui_dialog_msgicon error, ui_dialog_messagebox_text error.  -->
+	<div id="info_container" class="ui_dialog_messagebox error" style="display:none;">
+		<div id="icon" class="ui_dialog_msgicon error"></div>
+        <div id="info" class="ui_dialog_messagebox_text error">(info)</div>
+	</div>
+</div>
+
+<div id="dialog_disable_vpn" title="Disable VPN" style="display:none">
+    <p>
+        Please confirm you want to disable VPN Access.
+    </p>
+	<!--Loading box-->
+	<div id="spinning_wheel" class="ui_dialog_loaderbox" style="display:none;">
+		<div class="ui_dialog_loader"></div>
+		<p>Disabling VPN Access....</p>
 	</div>
    
 	<!--Confirmation msg box-->
@@ -557,4 +597,40 @@
         </form>
     </div>
 </div>
+
+<!-- Create User for VPN (begin) -->
+<div id="dialog_add_vpnuser" title="Add VPN User" style="display:none">	
+	<p> 
+        Please enter a username and password of the user that you want to allow VPN access.
+    </p>
+	<div class="dialog_formcontent">
+		<form action="#" method="post" id="form5">
+			<ol>			   
+				<li>
+					<label><%=t.t("username")%>:</label>
+					<input class="text" type="text" id="username"/>
+					<div id="username_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div>
+				</li>
+				<li>
+					<label><%=t.t("password")%>:</label>
+					<input class="text" type="password" id="password"/>
+					<div id="password_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div>
+				</li>				
+			</ol>
+		</form>
+	</div>
+	<!--Loading box-->
+	<div id="spinning_wheel" class="ui_dialog_loaderbox" style="display:none;">
+		<div class="ui_dialog_loader"></div>
+		<p>Adding User....</p>
+	</div>
+   
+	<!--Confirmation msg box-->
+	<!--Note: for error msg, just have to add error besides everything for eg. add error(class) next to ui_dialog_messagebox error, ui_dialog_msgicon error, ui_dialog_messagebox_text error.  -->
+	<div id="info_container" class="ui_dialog_messagebox error" style="display:none;">
+		<div id="icon" class="ui_dialog_msgicon error"></div>
+        <div id="info" class="ui_dialog_messagebox_text error">(info)</div>
+	</div>
+</div>
+<!-- Create User for VPN (end) -->
 <!--  dialogs (end) -->

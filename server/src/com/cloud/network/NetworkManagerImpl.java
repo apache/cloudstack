@@ -2741,7 +2741,7 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
 	}
 	
 	@Override
-	public boolean addVpnUser(AddVpnUserCmd cmd) throws ConcurrentOperationException, InvalidParameterValueException {
+	public VpnUserVO addVpnUser(AddVpnUserCmd cmd) throws ConcurrentOperationException, InvalidParameterValueException {
 		Long userId = UserContext.current().getUserId();
 		Account account = getAccountForApiCommand(cmd.getAccountName(), cmd.getDomainId());
 		EventUtils.saveStartedEvent(userId, account.getId(), EventTypes.EVENT_VPN_USER_ADD, "Add VPN user for account: " + account.getAccountName(), cmd.getStartEventId());
@@ -2752,13 +2752,13 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
 		if (!cmd.getPassword().matches("^[a-zA-Z0-9][a-zA-Z0-9@#+=._-]{2,31}$")) {
 			throw new InvalidParameterValueException("Password has to be 3-32 characters including alphabets, numbers and the set '@#+=.-_'");
 		}
-		boolean added = addRemoveVpnUser(account, cmd.getUserName(), cmd.getPassword(), true);
-		if (added) {
+		VpnUserVO user = addRemoveVpnUser(account, cmd.getUserName(), cmd.getPassword(), true);
+		if (user != null) {
 			EventUtils.saveEvent(userId, account.getId(), EventTypes.EVENT_VPN_USER_ADD, "Added a VPN user for account: " + account.getAccountName() + " username= " + cmd.getUserName());
 		} else {
 			EventUtils.saveEvent(userId, account.getId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VPN_USER_ADD, "Unable to add VPN user for account: ", account.getAccountName() + " username= " + cmd.getUserName());
 		}
-		return added;
+		return user;
         
 	}
 	
@@ -2768,18 +2768,18 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
 		Account account = getAccountForApiCommand(cmd.getAccountName(), cmd.getDomainId());
 		EventUtils.saveStartedEvent(userId, account.getId(), EventTypes.EVENT_VPN_USER_REMOVE, "Remove VPN user for account: " + account.getAccountName(), cmd.getStartEventId());
 
-		boolean added = addRemoveVpnUser(account, cmd.getUserName(), null, false);
-		if (added) {
+		VpnUserVO user = addRemoveVpnUser(account, cmd.getUserName(), null, false);
+		if (user != null) {
 			EventUtils.saveEvent(userId, account.getId(), EventTypes.EVENT_VPN_USER_REMOVE, "Removed a VPN user for account: " + account.getAccountName() + " username= " + cmd.getUserName());
 		} else {
 			EventUtils.saveEvent(userId, account.getId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VPN_USER_ADD, "Unable to remove VPN user for account: ", account.getAccountName() + " username= " + cmd.getUserName());
 		}
-		return added;
+		return (user != null);
         
 	}
 	
 	@DB
-	protected boolean addRemoveVpnUser(Account account, String username, String password, boolean add) throws ConcurrentOperationException {
+	protected VpnUserVO addRemoveVpnUser(Account account, String username, String password, boolean add) throws ConcurrentOperationException {
 		List<RemoteAccessVpnVO> vpnVOList = _remoteAccessVpnDao.findByAccount(account.getId());
 
 		Transaction txn = Transaction.currentTxn();
@@ -2812,7 +2812,13 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
         	for (RemoteAccessVpnVO vpn : vpnVOList) {
         		success = success && _routerMgr.addRemoveVpnUsers(vpn, addVpnUsers, removeVpnUsers);
         	}
-        	return success;
+        	
+        	// Note: If the router was successfully updated, we then return the user.
+        	if (success) {
+        		return user;
+        	} else {
+        		return null;
+        	}
         } finally {
         	if (success) {
         		txn.commit();

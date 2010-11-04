@@ -345,7 +345,7 @@ public interface NetworkManager extends Manager {
      */
     public boolean destroyRemoteAccessVpn(DeleteRemoteAccessVpnCmd cmd) throws ConcurrentOperationException;
 
-	boolean addVpnUser(AddVpnUserCmd cmd) throws ConcurrentOperationException;
+    VpnUserVO addVpnUser(AddVpnUserCmd cmd) throws ConcurrentOperationException;
 
 	boolean removeVpnUser(RemoveVpnUserCmd cmd) throws ConcurrentOperationException;
 }

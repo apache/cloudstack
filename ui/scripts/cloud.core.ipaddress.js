@@ -28,6 +28,9 @@ function afterLoadIpJSP() {
     initDialog("dialog_acquire_public_ip", 325);
     initDialog("dialog_confirmation_release_ip");
 	initDialog("dialog_enable_vpn");
+	initDialog("dialog_disable_vpn");
+	initDialog("dialog_add_vpnuser");
+	initDialog("dialog_confirmation_remove_vpnuser");
     
     //*** Acquire New IP (begin) ***
 	$.ajax({
@@ -335,13 +338,15 @@ function showEnableVPNDialog($thisTab) {
 										return; //Job has not completed
 									} else {											                    
 										$("body").stopTime(timerKey);				                        
-										$spinningWheel.hide(); 
 																																	 
 										if (result.jobstatus == 1) { // Succeeded 	
+											showVpnUsers();
 											$thisDialog.dialog("close");
+											$spinningWheel.hide();
 											$thisTab.find("#tab_container").show();
 											$thisTab.find("#vpn_disabled_msg").hide();
 										} else if (result.jobstatus == 2) { // Failed	
+											$spinningWheel.hide(); 
 											var errorMsg = "We were unable to enable VPN access.  Please contact support.";
 											$thisDialog.find("#info_container").text(errorMsg).show();
 										}	
@@ -382,8 +387,8 @@ function ipJsonToVPNTab() {
         dataType: "json",
         success: function(json) {		                    
             var items = json.listremoteaccessvpnsresponse.remoteaccessvpn;  
-            if (items != null && items.length > 0) {				        			        
-				// List the VPN users
+            if (items != null && items.length > 0) {
+				showVpnUsers();
             } else {
 				showEnableVPNDialog($thisTab);
 			}
@@ -392,6 +397,259 @@ function ipJsonToVPNTab() {
 			$thisTab.find("#vpn_disabled_msg").hide();
         }
     });    
+}
+
+function showVpnUsers() {
+	var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");	
+	var ipObj = $midmenuItem1.data("jsonObj");
+	var $vpnTab = $("#right_panel_content #tab_content_vpn");
+	var $actionMenu = $vpnTab.find("#vpn_action_menu");
+    $actionMenu.find("#action_list").empty();
+	
+	var $listItemTemplate = $("#action_list_item");
+	var $listItem = $listItemTemplate.clone();
+	$listItem.find("#link").text("Disable VPN");
+	$listItem.bind("click", function(event) {
+		$actionMenu.hide();  
+		$("#dialog_disable_vpn")	
+		.dialog('option', 'buttons', { 						
+			"Disable": function() { 
+				var $thisDialog = $(this);
+				$spinningWheel = $thisDialog.find("#spinning_wheel").show();
+				$.ajax({
+					data: createURL("command=deleteRemoteAccessVpn&account="+ipObj.account+"&domainid="+ipObj.domainid+"&zoneid="+ipObj.zoneid),
+					dataType: "json",
+					success: function(json) {
+						var jobId = json.deleteremoteaccessvpnresponse.jobid;
+						var timerKey = "asyncJob_" + jobId;					                       
+						$("body").everyTime(
+							5000,
+							timerKey,
+							function() {
+								$.ajax({
+									data: createURL("command=queryAsyncJobResult&jobId="+jobId),
+									dataType: "json",									                    					                    
+									success: function(json) {		                                                     							                       
+										var result = json.queryasyncjobresultresponse;										                   
+										if (result.jobstatus == 0) {
+											return; //Job has not completed
+										} else {											                    
+											$("body").stopTime(timerKey);				                        
+											$spinningWheel.hide(); 
+																																		 
+											if (result.jobstatus == 1) { // Succeeded 	
+												$thisDialog.dialog("close");
+												$vpnTab.find("#enable_vpn_link").unbind("click").bind("click", function(event) {
+													showEnableVPNDialog($vpnTab);
+												});
+												$vpnTab.find("#tab_container").hide();
+												$vpnTab.find("#vpn_disabled_msg").show();
+											} else if (result.jobstatus == 2) { // Failed	
+												var errorMsg = "We were unable to disable VPN access.  Please contact support.";
+												$thisDialog.find("#info_container").text(errorMsg).show();
+											}	
+										}
+									},
+									error: function(XMLHttpResponse) {	                            
+										$("body").stopTime(timerKey);		                       		                        
+										handleErrorInDialog(XMLHttpResponse, $thisDialog); 		                                             
+									}
+								});
+							},
+							0
+						);
+					},
+					error: function(XMLHttpResponse) {
+						handleErrorInDialog(XMLHttpResponse, $thisDialog);			
+					}
+				});    
+			}, 
+			"Cancel": function() { 
+				$(this).dialog("close"); 
+			} 
+		}).dialog("open");
+		return false;
+	});
+	$actionMenu.find("#action_list").append($listItem.show()); 
+	
+	$listItem = $listItemTemplate.clone();
+	$listItem.find("#link").text("Add VPN User");
+	$listItem.bind("click", function(event) {
+		$actionMenu.hide();  
+		$("#dialog_add_vpnuser")	
+		.dialog('option', 'buttons', { 						
+			"Add": function() { 
+				var $thisDialog = $(this);
+				var isValid = true;		
+				isValid &= validateString("Username", $thisDialog.find("#username"), $thisDialog.find("#username_errormsg"));					    
+				isValid &= validateString("Password", $thisDialog.find("#password"), $thisDialog.find("#password_errormsg"));				
+				if (!isValid) return;	
+				
+				var username = todb($thisDialog.find("#username").val());
+				var password = todb($thisDialog.find("#username").val());
+				
+				$spinningWheel = $thisDialog.find("#spinning_wheel").show();
+				$.ajax({
+					data: createURL("command=addVpnUser&username="+username+"&password="+password),
+					dataType: "json",
+					success: function(json) {
+						var jobId = json.addvpnuserresponse.jobid;
+						var timerKey = "asyncJob_" + jobId;					                       
+						$("body").everyTime(
+							5000,
+							timerKey,
+							function() {
+								$.ajax({
+									data: createURL("command=queryAsyncJobResult&jobId="+jobId),
+									dataType: "json",									                    					                    
+									success: function(json) {		                                                     							                       
+										var result = json.queryasyncjobresultresponse;										                   
+										if (result.jobstatus == 0) {
+											return; //Job has not completed
+										} else {											                    
+											$("body").stopTime(timerKey);				                        
+											$spinningWheel.hide(); 
+																																		 
+											if (result.jobstatus == 1) { // Succeeded 	
+												$thisDialog.dialog("close");
+												$("#tab_content_vpn #grid_content").append(vpnUserJsonToTemplate(result.jobresult.addvpnuserresponse).fadeIn());
+											} else if (result.jobstatus == 2) { // Failed	
+												var errorMsg = "We were unable to add user access to your VPN.  Please contact support.";
+												$thisDialog.find("#info_container").text(errorMsg).show();
+											}	
+										}
+									},
+									error: function(XMLHttpResponse) {	                            
+										$("body").stopTime(timerKey);		                       		                        
+										handleErrorInDialog(XMLHttpResponse, $thisDialog); 		                                             
+									}
+								});
+							},
+							0
+						);
+					},
+					error: function(XMLHttpResponse) {
+						handleErrorInDialog(XMLHttpResponse, $thisDialog);			
+					}
+				});    
+			}, 
+			"Cancel": function() { 
+				$(this).dialog("close"); 
+			} 
+		}).dialog("open");
+		return false;
+	});
+	$actionMenu.find("#action_list").append($listItem.show()); 
+	
+	// Enable action menu for vpn
+	var $actionLink = $vpnTab.find("#vpn_action_link");		
+	$actionLink.unbind("mouseover").bind("mouseover", function(event) {
+		$(this).find("#vpn_action_menu").show();    
+		return false;
+	});
+	$actionLink.unbind("mouseout").bind("mouseout", function(event) {
+		$(this).find("#vpn_action_menu").hide();    
+		return false;
+	});		
+	
+	// List users
+	$.ajax({
+        data: createURL("command=listVpnUsers&account="+ipObj.account+"&domainid="+ipObj.domainid),
+        dataType: "json",
+        async: false,
+        success: function(json) {  
+            var items = json.listvpnusersresponse.vpnuser;
+            if(items != null && items.length > 0) {
+				var $gridContent = $("#tab_content_vpn #grid_content").empty();
+				for (var i = 0; i < items.length; i++) {
+					$gridContent.append(vpnUserJsonToTemplate(items[i]).show());
+				}
+				
+				//Enable delete user
+				$gridContent.bind("click", function(event) {
+					var target = $(event.target);
+					var targetId = target.attr("id");
+					if (targetId == "vpn_delete_user") {
+						var id = target.data("id");
+						var username = target.data("username");
+						var account = target.data("account");
+						var domainId = target.data("domainid");
+						var params = [];
+						params.push("&username="+username);
+						params.push("&account="+account);
+						params.push("&domainid="+domainId);
+						var $thisDialog = $("#dialog_confirmation_remove_vpnuser");
+						$thisDialog.find("#username").text(target.data("username"));
+						$thisDialog.dialog('option', 'buttons', { 						
+							"Ok": function() { 
+								$spinningWheel = $thisDialog.find("#spinning_wheel").show();
+								$.ajax({
+									data: createURL("command=removeVpnUser"+params.join("")),
+									dataType: "json",
+									success: function(json) {
+										var jobId = json.removevpnuserresponse.jobid;
+										var timerKey = "asyncJob_" + jobId;					                       
+										$("body").everyTime(
+											5000,
+											timerKey,
+											function() {
+												$.ajax({
+													data: createURL("command=queryAsyncJobResult&jobId="+jobId),
+													dataType: "json",									                    					                    
+													success: function(json) {		                                                     							                       
+														var result = json.queryasyncjobresultresponse;										                   
+														if (result.jobstatus == 0) {
+															return; //Job has not completed
+														} else {											                    
+															$("body").stopTime(timerKey);				                        
+															$spinningWheel.hide(); 
+																																						 
+															if (result.jobstatus == 1) { // Succeeded 	
+																$thisDialog.dialog("close");
+																
+																//remove user from grid
+																$vpnTab.find("#vpnuser"+id).slideUp();
+															} else if (result.jobstatus == 2) { // Failed	
+																var errorMsg = "We were unable to add user access to your VPN.  Please contact support.";
+																$thisDialog.find("#info_container").text(errorMsg).show();
+															}	
+														}
+													},
+													error: function(XMLHttpResponse) {	                            
+														$("body").stopTime(timerKey);		                       		                        
+														handleErrorInDialog(XMLHttpResponse, $thisDialog); 		                                             
+													}
+												});
+											},
+											0
+										);
+									},
+									error: function(XMLHttpResponse) {
+										handleErrorInDialog(XMLHttpResponse, $thisDialog);			
+									}
+								});    
+							}, 
+							"Cancel": function() { 
+								$(this).dialog("close"); 
+							} 
+						}).dialog("open");
+						
+					}
+					return false;
+				});
+			}
+        }
+    });  
+}
+
+var vpnItem = 1;
+function vpnUserJsonToTemplate(json) {
+	var $template = $("#vpn_template").clone();
+	if (vpnItem++ % 2 == 0) $template.removeClass("odd").addClass("even");
+	$template.find("#username").text(json.username);
+	$template.attr("id", "vpnuser"+json.id);
+	$template.find("#vpn_delete_user").data("id", json.id).data("username", json.username).data("account", json.account).data("domainid", json.domainid);
+	return $template;
 }
 
 function ipClearRightPanel() { 

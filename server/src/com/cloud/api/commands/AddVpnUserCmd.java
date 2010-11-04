@@ -24,11 +24,11 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.response.RemoteAccessVpnResponse;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.api.response.VpnUsersResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.network.NetworkManager;
-import com.cloud.network.RemoteAccessVpnVO;
+import com.cloud.network.VpnUserVO;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
@@ -93,12 +93,21 @@ public class AddVpnUserCmd extends BaseAsyncCmd {
     }
 
     @Override @SuppressWarnings("unchecked")
-    public SuccessResponse getResponse() {
-    	Boolean success = (Boolean)getResponseObject();
-        SuccessResponse response = new SuccessResponse();
-        response.setSuccess(success);
-        response.setResponseName(getName());
-        return response;
+    public VpnUsersResponse getResponse() {
+    	VpnUserVO vpnUser = (VpnUserVO)getResponseObject();
+        VpnUsersResponse vpnResponse = new VpnUsersResponse();
+        vpnResponse.setId(vpnUser.getId());
+        vpnResponse.setUsername(vpnUser.getUsername());
+        vpnResponse.setAccountName(vpnUser.getAccountName());
+        
+        Account accountTemp = ApiDBUtils.findAccountById(vpnUser.getAccountId());
+        if (accountTemp != null) {
+            vpnResponse.setDomainId(accountTemp.getDomainId());
+            vpnResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
+        }
+        
+        vpnResponse.setResponseName(getName());
+        return vpnResponse;
     }
 
 	@Override

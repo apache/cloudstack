@@ -27,7 +27,7 @@ public class RemoteAccessVpnResponse extends BaseResponse {
     @SerializedName("publicip") @Param(description="the public ip address of the vpn server")
     private String publicIp;
 
-    @SerializedName("ipRange") @Param(description="the range of ips to allocate to the clients")
+    @SerializedName("iprange") @Param(description="the range of ips to allocate to the clients")
     private String ipRange;
 
     @SerializedName("presharedkey") @Param(description="the ipsec preshared key")
