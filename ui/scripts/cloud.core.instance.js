@@ -894,8 +894,8 @@ function initVMWizard() {
 									            afterAddingMidMenuItem($midmenuItem1, true);
 									        }							                        
 									    } else if (result.jobstatus == 2) {
-										    // Failed
-										    afterAddingMidMenuItem($midmenuItem1, false, fromdb(result.jobresult));		
+										    // Failed										    
+										    afterAddingMidMenuItem($midmenuItem1, false, fromdb(result.jobresult.deployvirtualmachineresponse.errortext));		
 									    }
 								    }
 							    },
