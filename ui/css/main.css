@@ -15,6 +15,7 @@ html,body{
 	background:#00374e url(../images/login_bg.gif) repeat-x top left;
 	margin:0;
 	padding:0;
+	overflow-x:hidden;
 }
 
 <!--[if IE 6]>
