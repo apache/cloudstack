@@ -38,6 +38,7 @@ import com.google.gson.Gson;
  */
 public class SerializerHelper {
     public static final Logger s_logger = Logger.getLogger(SerializerHelper.class.getName());
+    public static String token = "/";
 	
 	public static String toSerializedStringOld(Object result) {
 		if(result != null) {
@@ -45,9 +46,9 @@ public class SerializerHelper {
 	    	Gson gson = GsonHelper.getBuilder().create();
 
 	    	if (result instanceof ResponseObject) {
-	            return clz.getName() + "/" + ((ResponseObject)result).getResponseName() + "/" + gson.toJson(result); 
+	            return clz.getName() + token + ((ResponseObject)result).getResponseName() + token + gson.toJson(result); 
 	    	} else {
-	            return clz.getName() + "/" + gson.toJson(result); 
+	            return clz.getName() + token + gson.toJson(result); 
 	    	}
 		} 
 		return null;
@@ -56,17 +57,12 @@ public class SerializerHelper {
 	public static Object fromSerializedString(String result) {
 		try {
 			if(result != null && !result.isEmpty()) {
-			    String[] serializedParts = result.split("/");
-//				int seperatorPos = result.indexOf('/');
-//				if(seperatorPos < 0)
-//					return null;
+			    
+			    String[] serializedParts = result.split(token);
 
 			    if (serializedParts.length < 2) {
 			        return null;
 			    }
-
-//				String clzName = result.substring(0, seperatorPos);
-//				String content = result.substring(seperatorPos + 1);
                 String clzName = serializedParts[0];
                 String nameField = null;
                 String content = null;
@@ -74,7 +70,8 @@ public class SerializerHelper {
                     content = serializedParts[1];
                 } else {
                     nameField = serializedParts[1];
-                    content = serializedParts[2];
+                    int index = result.indexOf(token + nameField + token);
+                    content = result.substring(index + nameField.length() + 2);
                 }
 
 				Class<?> clz;
