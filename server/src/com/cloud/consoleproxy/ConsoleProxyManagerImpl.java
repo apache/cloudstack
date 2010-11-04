@@ -2443,7 +2443,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
     }
     
     @Override
-    public boolean processDeploymentResult(Commands cmds, VirtualMachineProfile<ConsoleProxyVO> profile, DeployDestination dest, ReservationContext context) {
+    public boolean finalizeStart(Commands cmds, VirtualMachineProfile<ConsoleProxyVO> profile, DeployDestination dest, ReservationContext context) {
         CheckSshAnswer answer = (CheckSshAnswer)cmds.getAnswer("checkSsh");
         if (!answer.getResult()) {
             s_logger.warn("Unable to ssh to the VM: " + answer.getDetails());
@@ -2520,5 +2520,9 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
             return null;
         }
         return findById(VirtualMachineName.getConsoleProxyId(name));
+    }
+    
+    @Override
+    public void finalizeStop(VirtualMachineProfile<ConsoleProxyVO> profile, long hostId, String reservationId) {
     }
 }

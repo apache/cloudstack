@@ -57,7 +57,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         ServiceOffering offering = vmProfile.getServiceOffering();  
         VirtualMachine vm = vmProfile.getVirtualMachine();
         
-        VirtualMachineTO to = new VirtualMachineTO(vm.getId(), vm.getInstanceName(), vm.getType(), offering.getCpu(), offering.getSpeed(), offering.getRamSize() * 1024l * 1024l, offering.getRamSize() * 1024l * 1024l, null, vmProfile.getOs());
+        VirtualMachineTO to = new VirtualMachineTO(vm.getId(), vm.getInstanceName(), vm.getType(), offering.getCpu(), offering.getSpeed(), offering.getRamSize() * 1024l * 1024l, offering.getRamSize() * 1024l * 1024l, null, null);
         to.setBootArgs(vmProfile.getBootArgs());
         
         List<NicProfile> nicProfiles = vmProfile.getNics();

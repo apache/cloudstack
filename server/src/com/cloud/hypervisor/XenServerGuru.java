@@ -21,14 +21,18 @@ import javax.ejb.Local;
 
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.Storage;
+import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
+import com.cloud.utils.component.Inject;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value=HypervisorGuru.class)
 public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru {
+    @Inject GuestOSDao _guestOsDao;
 
     protected XenServerGuru() {
         super();
@@ -50,6 +54,10 @@ public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru 
         
         VirtualMachineTO to = toVirtualMachineTO(vm);
         to.setBootloader(bt);
+        
+        // Determine the VM's OS description
+        GuestOSVO guestOS = _guestOsDao.findById(vm.getVirtualMachine().getGuestOSId());
+        to.setOs(guestOS.getDisplayName());
         
         return to;
     }

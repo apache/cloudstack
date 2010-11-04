@@ -134,6 +134,9 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     @Column(name="service_offering_id")
     long serviceOfferingId;
     
+    @Column(name="reservation_id")
+    String reservationId;
+    
     public VMInstanceVO(long id,
                         long serviceOfferingId,
                         String name,
@@ -412,8 +415,20 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
 		this.mirroredVols = mirroredVols;
 	}
 	
+	public void setReservationId(String reservationId) {
+	    this.reservationId = reservationId;
+	}
+	
+	public String getReservationId() {
+	    return this.reservationId;
+	}
+
+	transient String toString;
     @Override
 	public String toString() {
-    	return new StringBuilder("[").append(type.toString()).append("|").append(instanceName).append("]").toString();
+        if (toString == null) {
+            toString = new StringBuilder("VM[").append(type.toString()).append("|").append(instanceName).append("]").toString();
+        }
+        return toString;
     }
 }

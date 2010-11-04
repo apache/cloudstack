@@ -616,6 +616,7 @@ CREATE TABLE  `cloud`.`vm_instance` (
   `account_id` bigint unsigned NOT NULL COMMENT 'user id of owner',
   `domain_id` bigint unsigned NOT NULL,
   `service_offering_id` bigint unsigned NOT NULL COMMENT 'service offering id',
+  `reservation_id` char(40) COMMENT 'reservation id',
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

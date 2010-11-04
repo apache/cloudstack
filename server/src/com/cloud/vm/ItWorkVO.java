@@ -32,7 +32,8 @@ import com.cloud.utils.db.GenericDao;
 @Table(name="op_it_work")
 public class ItWorkVO {
     enum Type {
-        Start;
+        Start,
+        Cleanup;
     }
     
     enum State {
@@ -88,6 +89,10 @@ public class ItWorkVO {
     
     public Type getType() {
         return type;
+    }
+    
+    public void setType(Type type) {
+        this.type = type;
     }
     
     public String getThreadName() {

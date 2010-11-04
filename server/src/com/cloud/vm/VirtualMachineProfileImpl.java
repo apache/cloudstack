@@ -47,13 +47,12 @@ public class VirtualMachineProfileImpl<T extends VMInstanceVO> implements Virtua
     List<NicProfile> _nics = new ArrayList<NicProfile>();
     List<VolumeTO> _disks = new ArrayList<VolumeTO>();
     StringBuilder _bootArgs = new StringBuilder();
-    String _guestOs;
     Account _owner;
     BootloaderType _bootloader;
     
     VirtualMachine.Type _type;
     
-    public VirtualMachineProfileImpl(T vm, String guestOs, VMTemplateVO template, ServiceOfferingVO offering, Account owner, Map<String, Object> params) {
+    public VirtualMachineProfileImpl(T vm, VMTemplateVO template, ServiceOfferingVO offering, Account owner, Map<String, Object> params) {
         _vm = vm;
         _template = template;
         _offering = offering;
@@ -62,27 +61,15 @@ public class VirtualMachineProfileImpl<T extends VMInstanceVO> implements Virtua
         if (_params == null) {
             _params = new HashMap<String, Object>();
         }
-        _guestOs = guestOs;
         _type = vm.getType();
+    }
+    
+    public VirtualMachineProfileImpl(T vm) {
+        this(vm, null, null, null, null);
     }
     
     public VirtualMachineProfileImpl(VirtualMachine.Type type) {
         _type = type;
-    }
-    
-    @Override
-    public String getOs() {
-        return _guestOs;
-    }
-    
-    @Override
-    public void setBootloader(BootloaderType bootloader) {
-        _bootloader = bootloader;
-    }
-    
-    @Override
-    public BootloaderType getBootloader() {
-        return _bootloader;
     }
     
     @Override
@@ -106,11 +93,6 @@ public class VirtualMachineProfileImpl<T extends VMInstanceVO> implements Virtua
     @Override
     public void setParameter(String name, Object value) {
         _params.put(name, value);
-    }
-    
-    @Override
-    public String getGuestOs() {
-        return _guestOs;
     }
     
     @Override

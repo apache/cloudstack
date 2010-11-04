@@ -23,7 +23,6 @@ import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.template.VirtualMachineTemplate;
-import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.user.Account;
 
 
@@ -67,11 +66,6 @@ public interface VirtualMachineProfile<T extends VirtualMachine> {
     HypervisorType getHypervisorType();
     
     /**
-     * @return os to be run on the virtual machine.
-     */
-    String getGuestOs();
-    
-    /**
      * @return template the virtual machine is based on.
      */
     VirtualMachineTemplate getTemplate();
@@ -108,11 +102,6 @@ public interface VirtualMachineProfile<T extends VirtualMachine> {
     void addNic(NicProfile nic);
     
     void addDisk(VolumeTO disk);
-    
-    void setBootloader(BootloaderType type);
-    BootloaderType getBootloader();
-    
-    String getOs();
     
     VirtualMachine.Type getType();
     

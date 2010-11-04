@@ -29,6 +29,7 @@ import com.cloud.api.commands.RecoverVMCmd;
 import com.cloud.api.commands.ResetVMPasswordCmd;
 import com.cloud.api.commands.StartVMCmd;
 import com.cloud.api.commands.StopVMCmd;
+import com.cloud.api.commands.StopVm2Cmd;
 import com.cloud.api.commands.UpdateVMCmd;
 import com.cloud.api.commands.UpgradeVMCmd;
 import com.cloud.async.executor.OperationResponse;
@@ -145,4 +146,6 @@ public interface UserVmService extends Manager {
      * @throws InvalidParameterValueException 
      */
     UserVm upgradeVirtualMachine(UpgradeVMCmd cmd);
+    
+    UserVm stopVirtualMachine(StopVm2Cmd cmd) throws ConcurrentOperationException;
 }

@@ -32,6 +32,8 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.AgentManager.OnError;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Start2Command;
+import com.cloud.agent.api.StopAnswer;
+import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.cluster.ClusterManager;
@@ -45,6 +47,8 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.event.EventTypes;
+import com.cloud.event.EventVO;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -59,12 +63,10 @@ import com.cloud.network.NetworkManager;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume.VolumeType;
-import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
 import com.cloud.user.User;
@@ -79,6 +81,7 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.ItWorkVO.Type;
 import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.dao.VMInstanceDao;
 
@@ -92,7 +95,6 @@ public class MauriceMoss implements VmManager, ClusterManagerListener {
     @Inject private AgentManager _agentMgr;
     @Inject private VMInstanceDao _vmDao;
     @Inject private ServiceOfferingDao _offeringDao;
-    @Inject private GuestOSDao _guestOsDao;
     @Inject private VMTemplateDao _templateDao;
     @Inject private UserDao _userDao;
     @Inject private AccountDao _accountDao;
@@ -130,9 +132,7 @@ public class MauriceMoss implements VmManager, ClusterManagerListener {
             s_logger.debug("Allocating entries for VM: " + vm);
         }
         
-        // Determine the VM's OS description
-        GuestOSVO guestOS = _guestOsDao.findById(vm.getGuestOSId());
-        VirtualMachineProfileImpl<T> vmProfile = new VirtualMachineProfileImpl<T>(vm, guestOS.getDisplayName(), template, serviceOffering, owner, params);
+        VirtualMachineProfileImpl<T> vmProfile = new VirtualMachineProfileImpl<T>(vm, template, serviceOffering, owner, params);
         
         vm.setDataCenterId(plan.getDataCenterId());
         if (plan.getPodId() != null) {
@@ -286,8 +286,8 @@ public class MauriceMoss implements VmManager, ClusterManagerListener {
         VirtualMachineGuru<T> vmGuru = (VirtualMachineGuru<T>)_vmGurus.get(vm.getType());
         
         
-        // Determine the VM's OS description
-        GuestOSVO guestOS = _guestOsDao.findById(vm.getGuestOSId());
+        vm.setReservationId(work.getId());
+        
         if (!_vmDao.updateIf(vm, Event.StartRequested, null)) {
             throw new ConcurrentOperationException("Unable to start vm "  + vm + " due to concurrent operations");
         }
@@ -295,7 +295,7 @@ public class MauriceMoss implements VmManager, ClusterManagerListener {
         ExcludeList avoids = new ExcludeList();
         int retry = _retry;
         while (retry-- != 0) { // It's != so that it can match -1.
-            VirtualMachineProfileImpl<T> vmProfile = new VirtualMachineProfileImpl<T>(vm, guestOS.getDisplayName(), template, offering, null, params);
+            VirtualMachineProfileImpl<T> vmProfile = new VirtualMachineProfileImpl<T>(vm, template, offering, null, params);
             DeployDestination dest = null;
             for (DeploymentPlanner planner : _planners) {
                 dest = planner.plan(vmProfile, plan, avoids);
@@ -334,7 +334,7 @@ public class MauriceMoss implements VmManager, ClusterManagerListener {
             vmGuru.finalizeDeployment(cmds, vmProfile, dest, context);
             try {
                 Answer[] answers = _agentMgr.send(dest.getHost().getId(), cmds);
-                if (answers[0].getResult() && vmGuru.processDeploymentResult(cmds, vmProfile, dest, context)) {
+                if (answers[0].getResult() && vmGuru.finalizeStart(cmds, vmProfile, dest, context)) {
                     if (!_vmDao.updateIf(vm, Event.OperationSucceeded, dest.getHost().getId())) {
                         throw new CloudRuntimeException("Unable to transition to a new state.");
                     }
@@ -358,9 +358,93 @@ public class MauriceMoss implements VmManager, ClusterManagerListener {
     }
 
     @Override
-    public <T extends VMInstanceVO> T stop(T vm, User user, Account account) throws AgentUnavailableException {
-        // TODO Auto-generated method stub
-        return null;
+    public <T extends VMInstanceVO> boolean stop(T vm, User user, Account account) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException {
+        State state = vm.getState();
+        if (state == State.Stopped) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("VM is already stopped: " + vm);
+            }
+            return true;
+        }
+        
+        if (state == State.Creating || state == State.Destroyed || state == State.Expunging) {
+            s_logger.warn("Stopped called on " + vm.toString() + " but the state is " + state.toString());
+            return true;
+        }
+        
+        if (!_vmDao.updateIf(vm, Event.StopRequested, vm.getHostId())) {
+            throw new ConcurrentOperationException("VM is being operated on by someone else.");
+        }
+        
+        if (vm.getHostId() == null) {
+            s_logger.debug("Host id is null so we can't stop it.  How did we get into here?");
+            return false;
+        }
+        
+        String reservationId = vm.getReservationId();
+
+        EventVO event = new EventVO();
+        event.setUserId(user.getId());
+        event.setAccountId(vm.getAccountId());
+        event.setType(EventTypes.EVENT_VM_STOP);
+        event.setStartId(1); // FIXME:
+        event.setParameters("id="+vm.getId() + "\n" + "vmName=" + vm.getHostName() + "\nsoId=" + vm.getServiceOfferingId() + "\ntId=" + vm.getTemplateId() + "\ndcId=" + vm.getDataCenterId());
+
+        StopCommand stop = new StopCommand(vm, vm.getInstanceName(), null);
+
+        boolean stopped = false;
+        try {
+            StopAnswer answer = (StopAnswer)_agentMgr.send(vm.getHostId(), stop);
+            stopped = answer.getResult();
+            if (!stopped) {
+                throw new CloudRuntimeException("Unable to stop the virtual machine due to " + answer.getDetails());
+            }
+        } finally {
+            if (!stopped) {
+                _vmDao.updateIf(vm, Event.OperationFailed, vm.getHostId());
+            }
+        }
+        
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug(vm + " is stopped on the host.  Proceeding to release resource held.");
+        }
+        
+        boolean cleanup = false;
+
+        VirtualMachineProfile<T> profile = new VirtualMachineProfileImpl<T>(vm);
+        try {
+            _networkMgr.release(profile);
+        } catch (Exception e) {
+            s_logger.warn("Unable to release some network resources.", e);
+            cleanup = true;
+        }
+        
+        try {
+            _storageMgr.release(profile);
+        } catch (Exception e) {
+            s_logger.warn("Unable to release storage resources.", e);
+            cleanup = true;
+        }
+         
+        @SuppressWarnings("unchecked")
+        VirtualMachineGuru<T> guru = (VirtualMachineGuru<T>)_vmGurus.get(vm.getType());
+        try {
+            guru.finalizeStop(profile, vm.getHostId(), vm.getReservationId());
+        } catch (Exception e) {
+            s_logger.warn("Guru " + guru.getClass() + " has trouble processing stop ");
+            cleanup = true;
+        }
+            
+        vm.setReservationId(null);
+        vm.setHostId(null);
+        _vmDao.updateIf(vm, Event.OperationSucceeded, null);
+
+        if (cleanup) {
+            ItWorkVO work = new ItWorkVO(reservationId, _nodeId, Type.Cleanup);
+            _workDao.persist(work);
+        }
+        
+        return stopped;
     }
     
     @Override

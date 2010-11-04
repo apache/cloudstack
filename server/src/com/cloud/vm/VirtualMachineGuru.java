@@ -47,7 +47,6 @@ public interface VirtualMachineGuru<T extends VirtualMachine> {
      */
     boolean finalizeDeployment(Commands cmds, VirtualMachineProfile<T> profile, DeployDestination dest, ReservationContext context);
     
-    
     /**
      * Check the deployment results.
      * @param cmds commands and answers that were sent.
@@ -55,5 +54,7 @@ public interface VirtualMachineGuru<T extends VirtualMachine> {
      * @param dest destination it was sent to.
      * @return true if deployment was fine; false if it didn't go well.
      */
-    boolean processDeploymentResult(Commands cmds, VirtualMachineProfile<T> profile, DeployDestination dest, ReservationContext context);
+    boolean finalizeStart(Commands cmds, VirtualMachineProfile<T> profile, DeployDestination dest, ReservationContext context);
+    
+    void finalizeStop(VirtualMachineProfile<T> profile, long hostId, String reservationId);
 }

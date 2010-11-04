@@ -22,7 +22,7 @@ import javax.ejb.Local;
 import com.cloud.utils.db.GenericDaoBase;
 
 @Local(value=ItWorkDao.class)
-public class ItWorkDaoImpl extends GenericDaoBase<ItWorkVO, Long> implements ItWorkDao {
+public class ItWorkDaoImpl extends GenericDaoBase<ItWorkVO, String> implements ItWorkDao {
     protected ItWorkDaoImpl() {
         super();
     }

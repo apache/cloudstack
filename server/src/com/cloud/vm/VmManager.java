@@ -24,6 +24,7 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.network.NetworkConfigurationVO;
@@ -68,7 +69,7 @@ public interface VmManager extends Manager {
     
     <T extends VMInstanceVO> T start(T vm, Map<String, Object> params, User caller, Account account) throws InsufficientCapacityException, StorageUnavailableException, ConcurrentOperationException, ResourceUnavailableException;
     
-    <T extends VMInstanceVO> T stop(T vm, User caller, Account account) throws AgentUnavailableException, ConcurrentOperationException;
+    <T extends VMInstanceVO> boolean stop(T vm, User caller, Account account) throws AgentUnavailableException, ConcurrentOperationException, OperationTimedoutException;
     
     void destroy();
     

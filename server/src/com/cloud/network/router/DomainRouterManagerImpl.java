@@ -2132,13 +2132,17 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
     }
 
     @Override
-    public boolean processDeploymentResult(Commands cmds, VirtualMachineProfile<DomainRouterVO> profile, DeployDestination dest, ReservationContext context) {
+    public boolean finalizeStart(Commands cmds, VirtualMachineProfile<DomainRouterVO> profile, DeployDestination dest, ReservationContext context) {
         CheckSshAnswer answer = (CheckSshAnswer)cmds.getAnswer("checkSsh");
         if (!answer.getResult()) {
             s_logger.warn("Unable to ssh to the VM: " + answer.getDetails());
             return false;
         }
         return true;
+    }
+    
+    @Override
+    public void finalizeStop(VirtualMachineProfile<DomainRouterVO> profile, long hostId, String reservationId) {
     }
 
 	@Override

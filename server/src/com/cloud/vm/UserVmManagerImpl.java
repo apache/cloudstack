@@ -77,6 +77,7 @@ import com.cloud.api.commands.RecoverVMCmd;
 import com.cloud.api.commands.ResetVMPasswordCmd;
 import com.cloud.api.commands.StartVMCmd;
 import com.cloud.api.commands.StopVMCmd;
+import com.cloud.api.commands.StopVm2Cmd;
 import com.cloud.api.commands.UpdateVMCmd;
 import com.cloud.api.commands.UpgradeVMCmd;
 import com.cloud.async.AsyncJobExecutor;
@@ -3745,7 +3746,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     }
 
     @Override
-    public boolean processDeploymentResult(Commands cmds, VirtualMachineProfile<UserVmVO> profile, DeployDestination dest, ReservationContext context) {
+    public boolean finalizeStart(Commands cmds, VirtualMachineProfile<UserVmVO> profile, DeployDestination dest, ReservationContext context) {
         return true;
     }
     
@@ -3766,4 +3767,41 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         }
         return findById(VirtualMachineName.getVmId(name));
     }
+
+    @Override
+    public UserVm stopVirtualMachine(StopVm2Cmd cmd) throws ConcurrentOperationException {
+        //Input validation
+        Account caller = UserContext.current().getAccount();
+        Long userId = UserContext.current().getUserId();
+        long id = cmd.getId();
+        
+        //if account is removed, return error
+        if (caller != null && caller.getRemoved() != null)
+            throw new PermissionDeniedException("The account " + caller.getId()+" is removed");
+                
+        UserVmVO vmInstance = _vmDao.findById(id);
+        if (vmInstance == null) {
+            throw new InvalidParameterValueException("unable to find a virtual machine with id " + id);
+        }
+        
+        long eventId = EventUtils.saveScheduledEvent(userId, vmInstance.getAccountId(), EventTypes.EVENT_VM_STOP, "stopping Vm with Id: "+id);
+        
+        userId = accountAndUserValidation(id, caller, userId, vmInstance);
+        UserVO user = _userDao.findById(userId);
+
+        try {
+            _itMgr.stop(vmInstance, user, caller);
+        } catch (AgentUnavailableException e) {
+            throw new CloudRuntimeException("Unable to contact the agent to stop the virtual machine " + vmInstance, e);
+        } catch (OperationTimedoutException e) {
+            throw new CloudRuntimeException("Waiting too long for agent to stop the virtual machine " + vmInstance, e);
+        } 
+        
+        return _vmDao.findById(id);
+    }
+    
+    @Override
+    public void finalizeStop(VirtualMachineProfile<UserVmVO> profile, long hostId, String reservationId) {
+    }
+    
 }
