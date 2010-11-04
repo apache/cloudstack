@@ -54,6 +54,9 @@ function primarystorageJsonToDetailsTab($midmenuItem1) {
     $detailsTab.find("#id").text(fromdb(jsonObj.id));
     $detailsTab.find("#grid_header_title").text(fromdb(jsonObj.name));
     $detailsTab.find("#name").text(fromdb(jsonObj.name));
+    
+    setHostStateInRightPanel(fromdb(jsonObj.state), $detailsTab.find("#state"));
+    
     $detailsTab.find("#zonename").text(fromdb(jsonObj.zonename));
     $detailsTab.find("#podname").text(fromdb(jsonObj.podname));
     $detailsTab.find("#clustername").text(fromdb(jsonObj.clustername));
@@ -110,7 +113,23 @@ var primarystorageActionMap = {
             //var item = json.queryasyncjobresultresponse.jobresult.prepareprimarystorageformaintenanceresponse; 
             ////item is {success: "true"}, not an embedded object of primary storage. It should an embedded object instead. Comment out the 4 lines until Bug 6955 is fixed.            
             //primarystorageToMidmenu(item, $midmenuItem1);
-            //primarystorageToRightPanel($midmenuItem1);            
+            //primarystorageToRightPanel($midmenuItem1);  
+            
+            //make extra API call before bug 6955 is fixed.(enableStorageMaintenance API should return an embedded object like cancelStorageMaintenance API does)
+            $.ajax({
+                data: createURL("command=listStoragePools&id="+id),
+                dataType: "json",
+                success: function(json) {
+                    debugger;
+                    var items = json.liststoragepoolsresponse.storagepool;
+                    if(items != null && items.length > 0) {
+                        item = items[0];
+                        primarystorageToMidmenu(item, $midmenuItem1);
+                        primarystorageToRightPanel($midmenuItem1);  
+                    }
+                }            
+            });   
+                      
             $("#right_panel_content #after_action_info").text("We are actively enabling maintenance. Please refresh periodically for an updated status."); 
         }
     },
