@@ -2349,7 +2349,7 @@ public class StorageManagerImpl implements StorageManager {
 
 	@Override
 	@DB
-	public synchronized StoragePoolVO cancelPrimaryStorageForMaintenance(CancelPrimaryStorageMaintenanceCmd cmd){
+	public synchronized StoragePoolVO cancelPrimaryStorageForMaintenance(CancelPrimaryStorageMaintenanceCmd cmd) throws ServerApiException{
 		Long primaryStorageId = cmd.getId();
 		Long userId = UserContext.current().getUserId();
 		StoragePoolVO primaryStorage = null;
@@ -2359,7 +2359,7 @@ public class StorageManagerImpl implements StorageManager {
         	primaryStorage = _storagePoolDao.acquireInLockTable(primaryStorageId);
         	
 			if(primaryStorage == null){
-				String msg = "Unable to obtain lock on the storage pool in preparePrimaryStorageForMaintenance()";
+				String msg = "Unable to obtain lock on the storage pool in cancelPrimaryStorageForMaintenance()";
 				s_logger.error(msg);
 				throw new ResourceUnavailableException(msg);
 			}
