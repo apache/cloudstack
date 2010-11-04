@@ -2349,7 +2349,7 @@ public class StorageManagerImpl implements StorageManager {
 
 	@Override
 	@DB
-	public synchronized StoragePoolVO cancelPrimaryStorageForMaintenance(CancelPrimaryStorageMaintenanceCmd cmd) throws InvalidParameterValueException{
+	public synchronized StoragePoolVO cancelPrimaryStorageForMaintenance(CancelPrimaryStorageMaintenanceCmd cmd){
 		Long primaryStorageId = cmd.getId();
 		Long userId = UserContext.current().getUserId();
 		StoragePoolVO primaryStorage = null;
@@ -2365,7 +2365,7 @@ public class StorageManagerImpl implements StorageManager {
 			}
 			
 			if (!primaryStorage.getStatus().equals(Status.Maintenance)) {
-				throw new InvalidParameterValueException("Primary storage with id " + primaryStorageId + " is not ready to complete migration, as the status is:" + primaryStorage.getStatus().toString());
+				throw new StorageUnavailableException("Primary storage with id " + primaryStorageId + " is not ready to complete migration, as the status is:" + primaryStorage.getStatus().toString()+".Re-run maintenance.");
 			}
 			
 			//2. Get a list of all the volumes within this storage pool
@@ -2476,6 +2476,10 @@ public class StorageManagerImpl implements StorageManager {
 			else if(e instanceof InvalidParameterValueException){
             	primaryStorage.setStatus(Status.ErrorInMaintenance);
         		_storagePoolDao.persist(primaryStorage);
+				throw new ServerApiException(BaseCmd.CANCEL_STORAGE_MAINTENANCE_ERROR, e.getMessage());
+			}
+			else if(e instanceof StorageUnavailableException){
+				//the ps was not in maintenance mode; dont reset state as maintenance did not begin
 				throw new ServerApiException(BaseCmd.CANCEL_STORAGE_MAINTENANCE_ERROR, e.getMessage());
 			}
 			else{//all other exceptions
