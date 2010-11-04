@@ -57,7 +57,8 @@ function afterLoadDiskOfferingJSP() {
 				array1.push("&displaytext="+todb(description));
 							
 				var disksize = trim(thisDialog.find("#add_disk_disksize").val());
-				array1.push("&disksize="+disksize);
+				if(disksize != null && disksize.length > 0)
+				    array1.push("&disksize="+disksize);
 				
 				var tags = trim(thisDialog.find("#add_disk_tags").val());
 				if(tags != null && tags.length > 0)
