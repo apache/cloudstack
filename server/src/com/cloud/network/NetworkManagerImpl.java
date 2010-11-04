@@ -17,6 +17,7 @@
  */
 package com.cloud.network;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -1759,9 +1760,7 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
     }
     
     @Override @DB
-    public List<NicProfile> allocate(VirtualMachineProfile<? extends VMInstanceVO> vm, List<Pair<NetworkConfigurationVO, NicProfile>> networks) throws InsufficientCapacityException {
-        List<NicProfile> nicProfiles = new ArrayList<NicProfile>(networks.size());
-        
+    public void allocate(VirtualMachineProfile<? extends VMInstanceVO> vm, List<Pair<NetworkConfigurationVO, NicProfile>> networks) throws InsufficientCapacityException {
         Transaction txn = Transaction.currentTxn();
         txn.start();
         
@@ -1809,7 +1808,7 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
             
             deviceIds[devId] = true;
             nics.add(vo);
-            nicProfiles.add(new NicProfile(vo, network.first(), vo.getBroadcastUri(), vo.getIsolationUri()));
+            vm.addNic(new NicProfile(vo, network.first(), vo.getBroadcastUri(), vo.getIsolationUri()));
         }
         
         if (defaultNic == null && nics.size() > 2) {
@@ -1819,8 +1818,6 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
         }
         
         txn.commit();
-        
-        return nicProfiles;
     }
     
     protected Integer applyProfileToNic(NicVO vo, NicProfile profile, Integer deviceId) {
@@ -1933,7 +1930,7 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
     }
     
     @Override
-    public List<NicProfile> prepare(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, DeployDestination dest, ReservationContext context) throws InsufficientNetworkCapacityException, ConcurrentOperationException, ResourceUnavailableException {
+    public void prepare(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, DeployDestination dest, ReservationContext context) throws InsufficientNetworkCapacityException, ConcurrentOperationException, ResourceUnavailableException {
         List<NicVO> nics = _nicDao.listBy(vmProfile.getId());
         for (NicVO nic : nics) {
             Pair<NetworkGuru, NetworkConfigurationVO> implemented = implementNetworkConfiguration(nic.getNetworkConfigurationId(), dest, context);
@@ -1943,7 +1940,14 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
             if (nic.getReservationStrategy() == ReservationStrategy.Start) {
                 nic.setState(Resource.State.Reserving);
                 _nicDao.update(nic.getId(), nic);
-                profile = toNicProfile(nic);
+                URI broadcastUri = nic.getBroadcastUri();
+                if (broadcastUri == null) {
+                    config.getBroadcastUri();
+                }
+                
+                URI isolationUri = nic.getIsolationUri();
+                     
+                profile = new NicProfile(nic, config, broadcastUri, isolationUri);
                 String reservationId = concierge.reserve(profile, config, vmProfile, dest);
                 nic.setIp4Address(profile.getIp4Address());
                 nic.setIp6Address(profile.getIp6Address());
@@ -1967,7 +1971,6 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
 
             vmProfile.addNic(profile);
         }
-        return vmProfile.getNics();
     }
     
     @Override
@@ -1982,12 +1985,6 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
                 concierge.release(nic.getReservationId());
             }
         }
-    }
-    
-    NicProfile toNicProfile(NicVO nic) {
-        NetworkConfiguration config = _networkConfigDao.findById(nic.getNetworkConfigurationId());
-        NicProfile profile = new NicProfile(nic, config, nic.getBroadcastUri(), nic.getIsolationUri());
-        return profile;
     }
     
     public void release(long vmId) {

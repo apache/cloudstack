@@ -71,6 +71,7 @@ public class ItWorkVO {
         this.managementServerId = managementServerId;
         this.type = type;
         this.threadName = Thread.currentThread().getName();
+        this.state = State.Working;
     }
 
     public String getId() {

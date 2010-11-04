@@ -25,6 +25,7 @@ import com.cloud.resource.Resource;
  * Nic represents one nic on the VM.
  */
 public interface Nic extends Resource {
+    boolean isDefaultNic();
 
     String getIp4Address();
     

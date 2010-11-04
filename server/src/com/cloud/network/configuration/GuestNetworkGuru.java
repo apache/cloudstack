@@ -140,7 +140,7 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     @Override
-    public NicProfile allocate(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile vm)
+    public NicProfile allocate(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm)
             throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
         if (config.getTrafficType() != TrafficType.Guest) {
             return null;

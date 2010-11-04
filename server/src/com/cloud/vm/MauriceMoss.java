@@ -150,8 +150,7 @@ public class MauriceMoss implements VmManager, ClusterManagerListener {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Allocating nics for " + vm);
         }
-        List<NicProfile> nics = _networkMgr.allocate(vmProfile, networks);
-        vmProfile.setNics(nics);
+        _networkMgr.allocate(vmProfile, networks);
 
         if (dataDiskOfferings == null) {
             dataDiskOfferings = new ArrayList<Pair<DiskOfferingVO, Long>>(0);
@@ -161,14 +160,13 @@ public class MauriceMoss implements VmManager, ClusterManagerListener {
             s_logger.debug("Allocaing disks for " + vm);
         }
         
-        List<DiskProfile> disks = new ArrayList<DiskProfile>(dataDiskOfferings.size() + 1);
         if (template.getFormat() == ImageFormat.ISO) {
-            disks.add(_storageMgr.allocateRawVolume(VolumeType.ROOT, "ROOT-" + vm.getId(), rootDiskOffering.first(), rootDiskOffering.second(), vm, owner));
+            _storageMgr.allocateRawVolume(VolumeType.ROOT, "ROOT-" + vm.getId(), rootDiskOffering.first(), rootDiskOffering.second(), vm, owner);
         } else {
-            disks.add(_storageMgr.allocateTemplatedVolume(VolumeType.ROOT, "ROOT-" + vm.getId(), rootDiskOffering.first(), template, vm, owner));
+            _storageMgr.allocateTemplatedVolume(VolumeType.ROOT, "ROOT-" + vm.getId(), rootDiskOffering.first(), template, vm, owner);
         }
         for (Pair<DiskOfferingVO, Long> offering : dataDiskOfferings) {
-            disks.add(_storageMgr.allocateRawVolume(VolumeType.DATADISK, "DATA-" + vm.getId(), offering.first(), offering.second(), vm, owner));
+            _storageMgr.allocateRawVolume(VolumeType.DATADISK, "DATA-" + vm.getId(), offering.first(), offering.second(), vm, owner);
         }
 
         _vmDao.updateIf(vm, Event.OperationSucceeded, null);
@@ -284,10 +282,12 @@ public class MauriceMoss implements VmManager, ClusterManagerListener {
         DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterId(), vm.getPodId(), null, null);
         
         HypervisorGuru hvGuru = _hvGurus.get(template.getHypervisorType());
+        @SuppressWarnings("unchecked")
+        VirtualMachineGuru<T> vmGuru = (VirtualMachineGuru<T>)_vmGurus.get(vm.getType());
+        
         
         // Determine the VM's OS description
         GuestOSVO guestOS = _guestOsDao.findById(vm.getGuestOSId());
-        VirtualMachineProfileImpl<T> vmProfile = new VirtualMachineProfileImpl<T>(vm, guestOS.getDisplayName(), template, offering, null, params);
         if (!_vmDao.updateIf(vm, Event.StartRequested, null)) {
             throw new ConcurrentOperationException("Unable to start vm "  + vm + " due to concurrent operations");
         }
@@ -295,6 +295,7 @@ public class MauriceMoss implements VmManager, ClusterManagerListener {
         ExcludeList avoids = new ExcludeList();
         int retry = _retry;
         while (retry-- != 0) { // It's != so that it can match -1.
+            VirtualMachineProfileImpl<T> vmProfile = new VirtualMachineProfileImpl<T>(vm, guestOS.getDisplayName(), template, offering, null, params);
             DeployDestination dest = null;
             for (DeploymentPlanner planner : _planners) {
                 dest = planner.plan(vmProfile, plan, avoids);
@@ -323,14 +324,12 @@ public class MauriceMoss implements VmManager, ClusterManagerListener {
             }
             _networkMgr.prepare(vmProfile, dest, context);
             
+            vmGuru.finalizeVirtualMachineProfile(vmProfile, dest, context);
             
             VirtualMachineTO vmTO = hvGuru.implement(vmProfile);
             
             Commands cmds = new Commands(OnError.Revert);
             cmds.addCommand(new Start2Command(vmTO));
-            
-            @SuppressWarnings("unchecked")
-            VirtualMachineGuru<T> vmGuru = (VirtualMachineGuru<T>)_vmGurus.get(vm.getType());
             
             vmGuru.finalizeDeployment(cmds, vmProfile, dest, context);
             try {
@@ -352,7 +351,7 @@ public class MauriceMoss implements VmManager, ClusterManagerListener {
         }
         
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Creation complete for VM " + vmProfile);
+            s_logger.debug("Creation complete for VM " + vm);
         }
         
         return null;

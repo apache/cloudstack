@@ -194,6 +194,10 @@ public class NicProfile {
         this.macAddress = nic.getMacAddress();
         this.reservationId = nic.getReservationId();
         this.strategy = nic.getReservationStrategy();
+        this.deviceId = nic.getDeviceId();
+        this.defaultNic = nic.isDefaultNic();
+        this.broadcastUri = broadcastUri;
+        this.isolationUri = isolationUri;
     }
 
     public NicProfile(long id, BroadcastDomainType type, Mode mode, long vmId) {

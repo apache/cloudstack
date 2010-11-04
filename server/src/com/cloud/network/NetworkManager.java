@@ -302,9 +302,9 @@ public interface NetworkManager extends Manager {
     
     List<NetworkOfferingVO> getSystemAccountNetworkOfferings(String... offeringNames);
     
-    List<NicProfile> allocate(VirtualMachineProfile<? extends VMInstanceVO> vm, List<Pair<NetworkConfigurationVO, NicProfile>> networks) throws InsufficientCapacityException;
+    void allocate(VirtualMachineProfile<? extends VMInstanceVO> vm, List<Pair<NetworkConfigurationVO, NicProfile>> networks) throws InsufficientCapacityException;
 
-    List<NicProfile> prepare(VirtualMachineProfile<? extends VMInstanceVO> profile, DeployDestination dest, ReservationContext context) throws InsufficientNetworkCapacityException, ConcurrentOperationException, ResourceUnavailableException;
+    void prepare(VirtualMachineProfile<? extends VMInstanceVO> profile, DeployDestination dest, ReservationContext context) throws InsufficientNetworkCapacityException, ConcurrentOperationException, ResourceUnavailableException;
     void release(VirtualMachineProfile<? extends VMInstanceVO> vmProfile);
     
     DomainRouter upgradeRouter(UpgradeRouterCmd cmd);

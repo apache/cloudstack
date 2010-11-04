@@ -86,7 +86,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
         DataCenter dc = dest.getDataCenter();
         long dcId = dc.getId();
         
-        if (ch.getIp4Address() != null) {
+        if (ch.getIp4Address() == null) {
             Pair<String, VlanVO> ipAndVlan = _vlanDao.assignIpAddress(dcId, vm.getVirtualMachine().getAccountId(), vm.getVirtualMachine().getDomainId(), VlanType.VirtualNetwork, true);
             if (ipAndVlan == null) {
                 throw new InsufficientVirtualNetworkCapcityException("Unable to get public ip address in " + dcId);
