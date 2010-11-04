@@ -157,9 +157,7 @@ function diskOfferingToMidmenu(jsonObj, $midmenuItem1) {
     $iconContainer.find("#icon").attr("src", "images/midmenuicon_system_diskoffering.png");	
     
     $midmenuItem1.find("#first_row").text(fromdb(jsonObj.name).substring(0,25)); 
-        
-    var diskSize = diskofferingGetDiskSize(jsonObj);    
-    $midmenuItem1.find("#second_row").text(diskSize);  
+    $midmenuItem1.find("#second_row").text(fromdb(jsonObj.displaytext).substring(0,25));  
 }
 
 function diskOfferingToRightPanel($midmenuItem1) {
@@ -218,7 +216,7 @@ function diskOfferingJsonToDetailsTab() {
 function diskofferingGetDiskSize(jsonObj) {
     var diskSize;
     if(jsonObj.disksize == 0 && jsonObj.isCustomized == true)
-        diskSize = "specify disk size during VM creation";
+        diskSize = "custom size (during VM creation or volume creation)";
     else
         diskSize = convertBytes(jsonObj.disksize * 1024 * 1024);    //unit of jsonObj.disksize is MB.
     return diskSize;
