@@ -1775,7 +1775,7 @@ public class StorageManagerImpl implements StorageManager {
         }
 
         // Cleanup secondary storage hosts
-        List<HostVO> secondaryStorageHosts = _hostDao.listSecondaryStorageHosts();
+/*        List<HostVO> secondaryStorageHosts = _hostDao.listSecondaryStorageHosts();
         for (HostVO secondaryStorageHost : secondaryStorageHosts) {
             try {
                 long hostId = secondaryStorageHost.getId();
@@ -1807,6 +1807,7 @@ public class StorageManagerImpl implements StorageManager {
                 s_logger.warn("problem cleaning up secondary storage " + secondaryStorageHost, e);
             }
         }
+*/
         
         List<VolumeVO> vols = _volsDao.listRemovedButNotDestroyed();
         for (VolumeVO vol : vols) {
