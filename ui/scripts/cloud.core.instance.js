@@ -396,21 +396,21 @@ function initVMWizard() {
 	            $t.find("input:radio").attr("name","data_disk_offering_radio");  
 	            $t.find("#name").text("no, thanks"); 		            
 	            $dataDiskOfferingContainer.append($t.show()); 
-		        
-		        //"custom" radio button			        
-		        var $t = $("#vm_popup_disk_offering_template_custom").clone();  			        
-		        $t.find("input:radio").attr("name","data_disk_offering_radio").removeAttr("checked");	
-		        $t.find("#name").text("custom:");	  			         
-		        $dataDiskOfferingContainer.append($t.show());	
-		        
-		        //existing disk offerings in database
+		        		        
+		        //disk offerings from database
 		        if (offerings != null && offerings.length > 0) {						    
 			        for (var i = 0; i < offerings.length; i++) {	
-				        var $t = $("#vm_popup_disk_offering_template_existing").clone(); 
-				        $t.find("input:radio").attr("name","data_disk_offering_radio").val(offerings[i].id).removeAttr("checked");	 	
-				        $t.find("#name").text(fromdb(offerings[i].name));
-				        $t.find("#description").text(fromdb(offerings[i].displaytext)); 	 
-				        $dataDiskOfferingContainer.append($t.show());	
+			            var $t;
+			            if(offerings[i].isCustomized == true) 			                       
+		                    $t = $("#vm_popup_disk_offering_template_custom").clone();  			            
+			            else 
+				            $t = $("#vm_popup_disk_offering_template_existing").clone(); 	
+				        
+				        $t.data("jsonObj", offerings[i]);				        
+				        $t.find("input:radio").attr("name","data_disk_offering_radio").val(fromdb(offerings[i].id)).removeAttr("checked");	 	
+			            $t.find("#name").text(fromdb(offerings[i].name));
+			            $t.find("#description").text(fromdb(offerings[i].displaytext)); 	 
+			            $dataDiskOfferingContainer.append($t.show());	
 			        }
 		        }
 		        
@@ -420,18 +420,17 @@ function initVMWizard() {
 		        //***** data disk offering: "no, thanks", "custom", existing disk offerings in database (end) *******************************************************
 		        		        	
 		        //***** root disk offering: "custom", existing disk offerings in database (begin) *******************************************************************
-		        //"custom" radio button			        
-		        var $t = $("#vm_popup_disk_offering_template_custom").clone();  			        
-		        $t.find("input:radio").attr("name","root_disk_offering_radio").val("custom");	
-		        if (offerings != null && offerings.length > 0) //default is the 1st existing disk offering. If there is no existing disk offering, default to "custom" radio button
-		            $t.find("input:radio").removeAttr("checked");	
-		        $t.find("#name").text("custom:");	  			         
-		        $rootDiskOfferingContainer.append($t.show());	
-		        
-		        //existing disk offerings in database
+		        		        
+		        //disk offerings from database
 		        if (offerings != null && offerings.length > 0) {						    
 			        for (var i = 0; i < offerings.length; i++) {	
-				        var $t = $("#vm_popup_disk_offering_template_existing").clone(); 
+			            var $t;
+			            if(offerings[i].isCustomized == true) 
+			                $t = $("#vm_popup_disk_offering_template_custom").clone();  
+			            else 
+				            $t = $("#vm_popup_disk_offering_template_existing").clone(); 	
+				        
+				        $t.data("jsonObj", offerings[i]);	
 				        $t.find("input:radio").attr("name","root_disk_offering_radio").val(offerings[i].id);	 
 				        if(i > 0) //default is the 1st existing disk offering. If there is no existing disk offering, default to "custom" radio button
 				            $t.find("input:radio").removeAttr("checked");	 	
@@ -771,40 +770,44 @@ function initVMWizard() {
             $thisPopup.find("#wizard_review_service_offering").text($thisPopup.find("input:radio[name=service_offering_radio]:checked").next().text());
 	    }			
 		
-	    if(currentStepInVmPopup ==3) { //disk offering	 
+	    if(currentStepInVmPopup ==3) { //disk offering	 	        
 	        if($selectedVmWizardTemplate.data("templateType") == "template") {	//*** template ***            
 	            var checkedRadioButton = $thisPopup.find("#data_disk_offering_container input[name=data_disk_offering_radio]:checked");			        
+		        var $diskOfferingElement = checkedRadioButton.parent();
 		        			    
 		        // validate values
 		        var isValid = true;		
-		        if(checkedRadioButton.parent().attr("id") == "vm_popup_disk_offering_template_custom")			    
-		            isValid &= validateNumber("Disk Size", $thisPopup.find("#custom_disk_size"), $thisPopup.find("#custom_disk_size_errormsg"), null, null, false);	//required	
+		        if($diskOfferingElement.find("#custom_disk_size").length > 0) 	    
+		            isValid &= validateNumber("Disk Size", $diskOfferingElement.find("#custom_disk_size"), $diskOfferingElement.find("#custom_disk_size_errormsg"), null, null, false);	//required	
 		        else
-		            isValid &= validateNumber("Disk Size", $thisPopup.find("#custom_disk_size"), $thisPopup.find("#custom_disk_size_errormsg"), null, null, true);	//optional		    		
+		            isValid &= validateNumber("Disk Size", $diskOfferingElement.find("#custom_disk_size"), $diskOfferingElement.find("#custom_disk_size_errormsg"), null, null, true);	//optional		    		
 		        if (!isValid) 
 		            return;
 		        
 		        $thisPopup.find("#wizard_review_disk_offering_label").text("Data Disk Offering:");
 		        
-		        var diskOfferingName = checkedRadioButton.next().text();
+		        var diskOfferingName = $diskOfferingElement.find("#name").text();
 		        if(checkedRadioButton.parent().attr("id") == "vm_popup_disk_offering_template_custom")
-		            diskOfferingName += (" " + $thisPopup.find("#data_disk_offering_container input[name=data_disk_offering_radio]:checked").next().next().next().val() + " MB");
+		            diskOfferingName += (" " + $diskOfferingElement.find("#custom_disk_size") + " MB");
 		        $thisPopup.find("#wizard_review_disk_offering").text(diskOfferingName);     	        
 	        }
 	        else {  //*** ISO ***
 	            var checkedRadioButton = $thisPopup.find("#root_disk_offering_container input[name=root_disk_offering_radio]:checked");		
+	            var $diskOfferingElement = checkedRadioButton.parent(); 
 	                     	    
 		        // validate values
 		        var isValid = true;		
-		        if(checkedRadioButton.parent().attr("id") == "vm_popup_disk_offering_template_custom")			    
-		            isValid &= validateNumber("Disk Size", $thisPopup.find("#custom_disk_size"), $thisPopup.find("#custom_disk_size_errormsg"), null, null, false);	//required	
+		        if($diskOfferingElement.find("#custom_disk_size").length > 0)     
+		            isValid &= validateNumber("Disk Size", $diskOfferingElement.find("#custom_disk_size"), $diskOfferingElement.find("#custom_disk_size_errormsg"), null, null, false);	//required	
 		        else
-		            isValid &= validateNumber("Disk Size", $thisPopup.find("#custom_disk_size"), $thisPopup.find("#custom_disk_size_errormsg"), null, null, true);	//optional		    		
+		            isValid &= validateNumber("Disk Size", $diskOfferingElement.find("#custom_disk_size"), $diskOfferingElement.find("#custom_disk_size_errormsg"), null, null, true);	//optional		    		
 		        if (!isValid) 
 		            return;
 	            
 	            $thisPopup.find("#wizard_review_disk_offering_label").text("Root Disk Offering:");
-		        $thisPopup.find("#wizard_review_disk_offering").text($thisPopup.find("#root_disk_offering_container input[name=root_disk_offering_radio]:checked").next().text());	
+	            
+	            var diskOfferingName = $diskOfferingElement.find("#name").text();
+		        $thisPopup.find("#wizard_review_disk_offering").text(diskOfferingName);	
 		    }
 	    }	
 	    	
@@ -828,17 +831,23 @@ function initVMWizard() {
 		    moreCriteria.push("&templateId="+$selectedVmWizardTemplate.data("templateId"));    							
 		    moreCriteria.push("&serviceOfferingId="+$thisPopup.find("input:radio[name=service_offering_radio]:checked").val());
 			
-			var diskOfferingId;    						
-		    if ($thisPopup.find("#wiz_blank").hasClass("rev_wizmid_selectedtempbut"))  //ISO
+			var diskOfferingId, $diskOfferingElement;    						
+		    if ($thisPopup.find("#wiz_blank").hasClass("rev_wizmid_selectedtempbut")) {  //ISO
 		        diskOfferingId = $thisPopup.find("#root_disk_offering_container input[name=root_disk_offering_radio]:checked").val();	
-		    else  //template
+		        $diskOfferingElement = $thisPopup.find("#root_disk_offering_container input[name=root_disk_offering_radio]:checked").parent();
+		    }
+		    else { //template
 		        diskOfferingId = $thisPopup.find("#data_disk_offering_container input[name=data_disk_offering_radio]:checked").val();	
-	        if(diskOfferingId != null && diskOfferingId != "" && diskOfferingId != "no" && diskOfferingId != "custom")
+		        $diskOfferingElement = $thisPopup.find("#data_disk_offering_container input[name=data_disk_offering_radio]:checked").parent();
+		    }
+	        if(diskOfferingId != null && diskOfferingId != "" && diskOfferingId != "no")
 		        moreCriteria.push("&diskOfferingId="+diskOfferingId);						 
-			    			
-			var customDiskSize = $thisPopup.find("#custom_disk_size").val(); //unit is MB
-			if(customDiskSize != null && customDiskSize.length > 0)
-			    moreCriteria.push("&size="+customDiskSize);	    
+								
+			if($diskOfferingElement.find("#custom_disk_size").length > 0) {    			
+			    var customDiskSize = $diskOfferingElement.find("#custom_disk_size").val(); //unit is MB
+			    if(customDiskSize != null && customDiskSize.length > 0)
+			        moreCriteria.push("&size="+customDiskSize);	    
+			}
 			
 			var name = trim($thisPopup.find("#wizard_vm_name").val());
 		    if (name != null && name.length > 0) 
