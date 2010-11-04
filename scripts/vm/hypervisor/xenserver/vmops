@@ -368,56 +368,6 @@ def deleteFile(session, args):
 
     return txt
 
-@echo
-def checkMount(session, args):
-    mountPath = args['mount']
-    mountPath = os.path.join(SR.MOUNT_BASE, mountPath)
-    status = "0"
-    try:
-        p = subprocess.Popen(["/bin/bash", "-c", "if [ -d " + mountPath + " ]; then echo 1; else echo 0;fi"], stdout=subprocess.PIPE)
-        cnt = 10
-        while cnt > 0:
-            if p.poll() == None:
-                time.sleep(1)
-                cnt = cnt -1
-            else:
-                cnt = -1
-        if cnt < 0:
-            status = p.communicate()[0].strip("\n") 
-        else:
-            subprocess.Popen(["/bin/bash", "-c", "kill -9 " + str(p.pid)])
-            status = "0"
-
-        if status == "0":
-            try:
-                cmd = ["umount", "-f",  "-l", mountPath]
-                txt = util.pread2(cmd)
-            except:
-                util.SMlog(" umount failed ")
-    except:
-        util.SMlog("failed to check")
-    return status
-
-@echo
-def checkIscsi(session, args):
-    scsiid = args['scsiid']
-    devpath = "/dev/disk/by-id/scsi-" + scsiid
-    status = "0"
-    try:
-        if util.pathexists(devpath) :
-            rdevpath = os.readlink(devpath)
-            rdevpath = rdevpath.replace(".", "")
-            rdevpath = rdevpath.replace("/", "")
-            rdevpath = "/block/" + rdevpath
-            cmd = ["scsi_id", "-g", "-u", "-s", rdevpath ]
-            txt = util.pread2(cmd)
-            txt = txt.replace("\n", "")
-            if scsiid == txt:
-               status = "1" 
-    except:
-        util.SMlog("failed to check Iscsi")
-
-    return status
 
 @echo
 def networkUsage(session, args):
@@ -1127,5 +1077,5 @@ def network_rules(session, args):
 
 
 if __name__ == "__main__":
-    XenAPIPlugin.dispatch({"pingtest": pingtest, "setup_iscsi":setup_iscsi, "gethostvmstats": gethostvmstats, "getvncport": getvncport, "getgateway": getgateway, "getnetwork": getnetwork, "preparemigration": preparemigration, "setIptables": setIptables, "patchdomr": patchdomr, "pingdomr": pingdomr, "pingxenserver": pingxenserver,  "ipassoc": ipassoc, "vm_data": vm_data, "savePassword": savePassword, "saveDhcpEntry": saveDhcpEntry, "setFirewallRule": setFirewallRule, "setLoadBalancerRule": setLoadBalancerRule, "createFile": createFile, "deleteFile": deleteFile, "checkMount": checkMount, "checkIscsi": checkIscsi, "networkUsage": networkUsage, "network_rules":network_rules, "can_bridge_firewall":can_bridge_firewall, "default_network_rules":default_network_rules, "destroy_network_rules_for_vm":destroy_network_rules_for_vm, "default_network_rules_systemvm":default_network_rules_systemvm, "get_rule_logs_for_vms":get_rule_logs_for_vms, "setLinkLocalIP":setLinkLocalIP, "lt2p_vpn":lt2p_vpn})
+    XenAPIPlugin.dispatch({"pingtest": pingtest, "setup_iscsi":setup_iscsi, "gethostvmstats": gethostvmstats, "getvncport": getvncport, "getgateway": getgateway, "getnetwork": getnetwork, "preparemigration": preparemigration, "setIptables": setIptables, "patchdomr": patchdomr, "pingdomr": pingdomr, "pingxenserver": pingxenserver,  "ipassoc": ipassoc, "vm_data": vm_data, "savePassword": savePassword, "saveDhcpEntry": saveDhcpEntry, "setFirewallRule": setFirewallRule, "setLoadBalancerRule": setLoadBalancerRule, "createFile": createFile, "deleteFile": deleteFile, "networkUsage": networkUsage, "network_rules":network_rules, "can_bridge_firewall":can_bridge_firewall, "default_network_rules":default_network_rules, "destroy_network_rules_for_vm":destroy_network_rules_for_vm, "default_network_rules_systemvm":default_network_rules_systemvm, "get_rule_logs_for_vms":get_rule_logs_for_vms, "setLinkLocalIP":setLinkLocalIP, "lt2p_vpn":lt2p_vpn})
 

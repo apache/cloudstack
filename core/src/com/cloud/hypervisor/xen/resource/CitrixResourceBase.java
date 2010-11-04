@@ -407,29 +407,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         return null;
     }
 
-    protected boolean currentlyAttached(SR sr, SR.Record rec, PBD pbd, PBD.Record pbdr) {
-        String status = null;
-        if (SRType.NFS.equals(rec.type)) {
-            status = callHostPlugin("vmops", "checkMount", "mount", rec.uuid);
-        } else if (SRType.LVMOISCSI.equals(rec.type) ) {
-            String scsiid = pbdr.deviceConfig.get("SCSIid");
-            if (scsiid.isEmpty()) {
-                return false;
-            }
-            status = callHostPlugin("vmops", "checkIscsi", "scsiid", scsiid);
-        } else {
-            return true;
-        }
-
-        if (status != null && status.equalsIgnoreCase("1")) {
-            s_logger.debug("currently attached " + pbdr.uuid);
-            return true;
-        } else {
-            s_logger.debug("currently not attached " + pbdr.uuid);
-            return false;
-        }
-    }
-
     protected boolean pingdomr(String host, String port) {
         String status;
         status = callHostPlugin("vmops", "pingdomr", "host", host, "port", port);
@@ -4404,7 +4381,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
         } catch (Exception e) {
             String msg = "checkSR failed host:" + _host.uuid + " due to " + e.toString();
-            s_logger.warn(msg);
+            s_logger.warn(msg, e);
             return false;
         }
         return true;
