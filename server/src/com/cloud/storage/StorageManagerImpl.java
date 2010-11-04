@@ -2141,7 +2141,7 @@ public class StorageManagerImpl implements StorageManager {
     }
     
     @Override @DB
-    public synchronized StoragePoolVO preparePrimaryStorageForMaintenance(PreparePrimaryStorageForMaintenanceCmd cmd) {
+    public synchronized StoragePoolVO preparePrimaryStorageForMaintenance(PreparePrimaryStorageForMaintenanceCmd cmd) throws ServerApiException{
     	Long primaryStorageId = cmd.getId();
     	Long userId = UserContext.current().getUserId();
         boolean restart = true;

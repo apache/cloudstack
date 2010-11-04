@@ -23,6 +23,7 @@ import java.util.List;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.manager.Commands;
+import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.CancelPrimaryStorageMaintenanceCmd;
 import com.cloud.api.commands.CreateStoragePoolCmd;
 import com.cloud.api.commands.CreateVolumeCmd;
@@ -311,17 +312,17 @@ public interface StorageManager extends Manager {
      * Enable maintenance for primary storage
      * @param cmd - the command specifying primaryStorageId
      * @return the primary storage pool
-     * @throws InvalidParameterValueException
+     * @throws ServerApiException
      */
-    public StoragePoolVO preparePrimaryStorageForMaintenance(PreparePrimaryStorageForMaintenanceCmd cmd) throws InvalidParameterValueException;
+    public StoragePoolVO preparePrimaryStorageForMaintenance(PreparePrimaryStorageForMaintenanceCmd cmd) throws ServerApiException;
     
     /**
      * Complete maintenance for primary storage
      * @param cmd - the command specifying primaryStorageId
      * @return the primary storage pool
-     * @throws InvalidParameterValueException
+     * @throws ServerApiException
      */
-    public StoragePoolVO cancelPrimaryStorageForMaintenance(CancelPrimaryStorageMaintenanceCmd cmd) throws InvalidParameterValueException;
+    public StoragePoolVO cancelPrimaryStorageForMaintenance(CancelPrimaryStorageMaintenanceCmd cmd) throws ServerApiException;
 
 	public StoragePoolVO updateStoragePool(UpdateStoragePoolCmd cmd) throws IllegalArgumentException;
     
