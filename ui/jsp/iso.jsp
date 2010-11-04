@@ -135,13 +135,11 @@
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="ispublic">                       
-	                    </div>
-	                    <!--  
+	                    </div>	                
 	                    <select class="select" id="ispublic_edit" style="width: 202px; display: none;">
 	                        <option value="true">Yes</option>
 							<option value="false">No</option>
-	                    </select>
-	                    -->
+	                    </select>	                 
 	                </div>
 	            </div>	 
 	            <div class="grid_rows odd">

@@ -249,7 +249,7 @@ function isoJsonToDetailsTab() {
     setBooleanReadField(jsonObj.bootable, $thisTab.find("#bootable"));	
     
     setBooleanReadField(jsonObj.ispublic, $thisTab.find("#ispublic"));	
-    //setBooleanEditField(jsonObj.ispublic, $thisTab.find("#ispublic_edit"));
+    setBooleanEditField(jsonObj.ispublic, $thisTab.find("#ispublic_edit"));
     
     setBooleanReadField(jsonObj.crossZones, $thisTab.find("#crossZones"));	     
     setDateField(jsonObj.created, $thisTab.find("#created"));	  
@@ -354,8 +354,8 @@ var isoActionMap = {
 
 function doEditISO($actionLink, $detailsTab, $midmenuItem1) {   
     //var $detailsTab = $("#right_panel_content #tab_content_details");  
-    var $readonlyFields  = $detailsTab.find("#name, #displaytext");
-    var $editFields = $detailsTab.find("#name_edit, #displaytext_edit"); 
+    var $readonlyFields  = $detailsTab.find("#name, #displaytext, #ispublic");
+    var $editFields = $detailsTab.find("#name_edit, #displaytext_edit, #ispublic_edit"); 
            
     $readonlyFields.hide();
     $editFields.show();  
@@ -395,18 +395,35 @@ function doEditISO2($actionLink, $detailsTab, $midmenuItem1) {
 	
 	var displaytext = $detailsTab.find("#displaytext_edit").val();
 	array1.push("&displayText="+todb(displaytext));
-	
-	//var isPublic = $detailsTab.find("#public_edit").val();	//???   
-	
+		
 	$.ajax({
 	    data: createURL("command=updateIso"+array1.join("")),
 		dataType: "json",
+		async: false,
 		success: function(json) {	
 		    var jsonObj = json.updateisoresponse;		    
 		    isoToMidmenu(jsonObj, $midmenuItem1); 
             isoJsonToDetailsTab($midmenuItem1);	    					
 		}
 	});
+	
+	//updateIsoPermissions
+	var array2 = [];	
+	var oldIsPublic = jsonObj.ispublic.toString();	
+	var newIsPublic = $detailsTab.find("#ispublic_edit").val();       
+	if(newIsPublic != oldIsPublic)
+	    array2.push("&ispublic="+newIsPublic);	    						
+								
+	if(array2.length > 0) {	
+	    $.ajax({
+		    data: createURL("command=updateIsoPermissions&id="+id+array2.join("")),
+		    dataType: "json",
+		    async: false,
+		    success: function(json) {			    	        						       					    
+		        //no embedded object is returned. (API needs to be fixed)		
+    		}
+	    });
+	}	
 }
 
 function doDeleteIso($actionLink, $detailsTab, $midmenuItem1) {   
