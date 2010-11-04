@@ -1988,7 +1988,7 @@ public class ManagementServerImpl implements ManagementServer {
     		//right now, we made the decision to only list zones associated with this domain
     		dcs  = _dcDao.findZonesByDomainId(domainId); //private zones
     	}
-    	else if((account.getType() ==  Account.ACCOUNT_TYPE_ADMIN)){
+    	else if((account == null || account.getType() ==  Account.ACCOUNT_TYPE_ADMIN)){
     		dcs = _dcDao.listAll(); //all zones
     	}else if(account.getType() ==  Account.ACCOUNT_TYPE_NORMAL){
     		//it was decided to return all zones for the user's domain, and everything above till root
