@@ -39,7 +39,7 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.DISK_SIZE, type=CommandType.LONG, description="disk size of the disk offering in GB")
+    @Parameter(name=ApiConstants.DISK_SIZE, type=CommandType.LONG, required=false, description="disk size of the disk offering in GB")
     private Long diskSize;
 
     @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, required=true, description="alternate display text of the disk offering")
