@@ -127,8 +127,24 @@
 	                    <div class="row_celltitles" id="bootable">                      
 	                    </div>
 	                </div>
-	            </div>
+	            </div>	            	            
 	            <div class="grid_rows even">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <%=t.t("Public")%>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="ispublic">                       
+	                    </div>
+	                    <!--  
+	                    <select class="select" id="ispublic_edit" style="width: 202px; display: none;">
+	                        <option value="true">Yes</option>
+							<option value="false">No</option>
+	                    </select>
+	                    -->
+	                </div>
+	            </div>	 
+	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <%=t.t("crossZones")%>:</div>
@@ -138,7 +154,7 @@
 	                    </div>
 	                </div>
 	            </div>
-	            <div class="grid_rows odd">
+	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <%=t.t("Account")%>:</div>
@@ -148,7 +164,7 @@
 	                    </div>
 	                </div>
 	            </div>
-	            <div class="grid_rows even">
+	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <%=t.t("Created")%>:</div>

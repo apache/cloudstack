@@ -247,6 +247,10 @@ function isoJsonToDetailsTab() {
 	    $thisTab.find("#size").text("");    
               
     setBooleanReadField(jsonObj.bootable, $thisTab.find("#bootable"));	
+    
+    setBooleanReadField(jsonObj.ispublic, $thisTab.find("#ispublic"));	
+    //setBooleanEditField(jsonObj.ispublic, $thisTab.find("#ispublic_edit"));
+    
     setBooleanReadField(jsonObj.crossZones, $thisTab.find("#crossZones"));	     
     setDateField(jsonObj.created, $thisTab.find("#created"));	  
     
