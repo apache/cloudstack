@@ -197,11 +197,14 @@ function diskOfferingJsonToDetailsTab() {
     $thisTab.find("#displaytext").text(fromdb(jsonObj.displaytext));
     $thisTab.find("#displaytext_edit").val(fromdb(jsonObj.displaytext));
     
-    $thisTab.find("#disksize").text(convertBytes(jsonObj.disksize));
-    $thisTab.find("#tags").text(fromdb(jsonObj.tags));   
+    var diskSize;
+    if(jsonObj.disksize == 0 && jsonObj.isCustomized == true)
+        diskSize = "will be specified during VM creation";
+    else
+        diskSize = convertBytes(jsonObj.disksize);    
+    $thisTab.find("#disksize").text(diskSize);    
     
-    setBooleanReadField(jsonObj.isCustomized, $thisTab.find("#isCustomized"));	 
-    
+    $thisTab.find("#tags").text(fromdb(jsonObj.tags));      
     $thisTab.find("#domain").text(fromdb(jsonObj.domain));   
     
     //actions ***
