@@ -74,7 +74,7 @@ add_nat_entry() {
    ssh -p 3922 -o StrictHostKeyChecking=no -i $cert root@$dRIp "\
       ip addr add dev $correctVif $pubIp
       iptables -t nat -I POSTROUTING   -j SNAT -o $correctVif --to-source $ipNoMask ;
-      /sbin/arping -c 3 -I $correctVif -A -U -s $ipNoMask $ipNoMask;
+      arping -c 3 -I $correctVif -A -U -s $ipNoMask $ipNoMask;
      "
   if [ $? -gt 0  -a $? -ne 2 ]
   then
@@ -112,7 +112,7 @@ add_an_ip () {
    ssh -p 3922 -o StrictHostKeyChecking=no -i $cert root@$dRIp "\
    	  ifconfig $correctVif up;
       ip addr add dev $correctVif $pubIp ;
-      /sbin/arping -c 3 -I $correctVif -A -U -s $ipNoMask $ipNoMask;
+      arping -c 3 -I $correctVif -A -U -s $ipNoMask $ipNoMask;
      "
    return $?
 }
