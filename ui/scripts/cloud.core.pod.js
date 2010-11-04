@@ -481,15 +481,12 @@ function doEditPod($actionLink, $detailsTab, $midmenuItem1) {
         return false;
     });
     $detailsTab.find("#save_button").unbind("click").bind("click", function(event){        
-        doEditPod2($actionLink, $detailsTab, $midmenuItem1);     
-        $editFields.hide();      
-        $readonlyFields.show();       
-        $("#save_button, #cancel_button").hide();       
+        doEditPod2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $editFields);              
         return false;
     });   
 }
 
-function doEditPod2($actionLink, $detailsTab, $midmenuItem1) {    
+function doEditPod2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $editFields) {    
     var jsonObj = $detailsTab.data("jsonObj");
     var id = jsonObj.id;		
 	var zoneid = jsonObj.zoneid;				
@@ -534,14 +531,16 @@ function doEditPod2($actionLink, $detailsTab, $midmenuItem1) {
 	    array1.push("&gateway="+encodeURIComponent(newGateway)); 	
 	
 	$.ajax({
-	  data: createURL("command=updatePod&response=json"+array1.join("")),
+	  data: createURL("command=updatePod"+array1.join("")),
 		dataType: "json",
-		success: function(json) {
-		    /*			   				    
-		    var item = json.updatepodresponse;	//should be an embedded object instead of only {success:true}	  
+		success: function(json) {		   	   				    
+		    var item = json.updatepodresponse;	
 		    $midmenuItem1.data("jsonObj", item);
-		    PodJsonToRightPanel($midmenuItem1);		
-		    */	
+		    podJsonToRightPanel($midmenuItem1);			    
+		    
+		    $editFields.hide();      
+            $readonlyFields.show();       
+            $("#save_button, #cancel_button").hide();      			
 		}
 	});	   
 }
