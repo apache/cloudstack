@@ -396,6 +396,7 @@ public class ManagementServerImpl implements ManagementServer {
     private final int _routerRamSize;
     private final int _proxyRamSize;
     private final int _ssRamSize;
+    private int _maxVolumeSizeInGb;
 
     private final Map<String, Boolean> _availableIdsMap;
 
@@ -513,6 +514,10 @@ public class ManagementServerImpl implements ManagementServer {
 		if ("true".equalsIgnoreCase(enabled)) {
 			_networkGroupsEnabled = true;
 		}
+		
+        String maxVolumeSizeInGbString = _configDao.getValue("max.volume.size.gb");
+        int maxVolumeSizeGb = NumbersUtil.parseInt(maxVolumeSizeInGbString, 2000);
+        _maxVolumeSizeInGb = maxVolumeSizeGb;
     }
     
     protected Map<String, String> getConfigs() {
@@ -1866,8 +1871,12 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         //if it is a custom disk offering,AND the size passed in here is <= 0; error out
-        if(diskOffering.isCustomized() && size <= 0){
+        if(diskOffering != null && diskOffering.isCustomized() && size <= 0){
         	throw new InvalidParameterValueException("Please specify a valid disk size for VM creation; custom disk offering has no size set");
+        }
+        
+        if(diskOffering != null && diskOffering.isCustomized() && size > _maxVolumeSizeInGb){
+        	throw new InvalidParameterValueException("Please specify a valid disk size for VM creation; custom disk offering max size is:"+_maxVolumeSizeInGb);
         }
         
         // validate that the template is usable by the account
