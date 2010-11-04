@@ -103,6 +103,7 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceInUseException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -2144,32 +2145,44 @@ public class StorageManagerImpl implements StorageManager {
     	Long primaryStorageId = cmd.getId();
     	Long userId = UserContext.current().getUserId();
         boolean restart = true;
+        StoragePoolVO primaryStorage = null;
         try 
         {
+        	Transaction.currentTxn();
         	//1. Get the primary storage record and perform validation check
-        	StoragePoolVO primaryStorage = _storagePoolDao.findById(primaryStorageId);
-        	
+        	primaryStorage = _storagePoolDao.acquireInLockTable(primaryStorageId);
+			
+			if(primaryStorage == null){
+				String msg = "Unable to obtain lock on the storage pool in preparePrimaryStorageForMaintenance()";
+				s_logger.error(msg);
+				throw new ResourceUnavailableException(msg);
+			}
+			
+        	primaryStorage = _storagePoolDao.findById(primaryStorageId);
         	if(primaryStorage == null)
         	{
         		s_logger.warn("The primary storage does not exist");
         		throw new InvalidParameterValueException("Primary storage doesn't exist");
         	}	
         	
-        	if (!primaryStorage.getStatus().equals(Status.Up)) {
-    			throw new InvalidParameterValueException("Primary storage with id " + primaryStorageId + " is not ready for migration, as the status is:" + primaryStorage.getStatus().toString());
-        	}
-        	
+//        	if (!primaryStorage.getStatus().equals(Status.Up)) {
+//    			throw new InvalidParameterValueException("Primary storage with id " + primaryStorageId + " is not ready for migration, as the status is:" + primaryStorage.getStatus().toString());
+//        	}        
+        	//set the pool state to prepare for maintenance
+        	primaryStorage.setStatus(Status.PrepareForMaintenance);
+        	_storagePoolDao.persist(primaryStorage);
+
         	//check to see if other ps exist
         	//if they do, then we can migrate over the system vms to them
         	//if they dont, then just stop all vms on this one
         	List<StoragePoolVO> upPools = _storagePoolDao.listPoolsByStatus(Status.Up);
         	
-        	if(upPools==null || upPools.size()==0)
+        	if(upPools == null || upPools.size() == 0)
         		restart = false;
         		
         	//2. Get a list of all the volumes within this storage pool
         	List<VolumeVO> allVolumes = _volsDao.findByPoolId(primaryStorageId);
-        	
+                	
         	//3. Each volume has an instance associated with it, stop the instance if running
         	for(VolumeVO volume : allVolumes)
         	{
@@ -2300,9 +2313,25 @@ public class StorageManagerImpl implements StorageManager {
         	_storagePoolDao.persist(primaryStorage);
         	return _storagePoolDao.findById(primaryStorageId);
         	
-        } catch (Exception e) { //FIXME - catch specific exceptions here
-            s_logger.error("Exception in enabling primary storage maintenance:"+e);
-            throw new CloudRuntimeException("Exception in enabling primary storage maintenance:"+e);
+        } catch (Exception e) { 
+        	if(e instanceof ResourceUnavailableException){
+                s_logger.error("Exception in enabling primary storage maintenance:",e);
+        		throw new ServerApiException(BaseCmd.PREPARE_STORAGE_MAINTENANCE_ERROR, e.getMessage());
+        	}
+        	if(e instanceof InvalidParameterValueException){
+                s_logger.error("Exception in enabling primary storage maintenance:",e);
+        		throw new ServerApiException(BaseCmd.PREPARE_STORAGE_MAINTENANCE_ERROR, e.getMessage());
+        	}
+        	if(e instanceof CloudRuntimeException){
+                s_logger.error("Exception in enabling primary storage maintenance:",e);
+        		throw new ServerApiException(BaseCmd.PREPARE_STORAGE_MAINTENANCE_ERROR, e.getMessage());
+        	}
+        	//for everything else
+        	s_logger.error("Exception in enabling primary storage maintenance:",e);
+        	throw new ServerApiException(BaseCmd.PREPARE_STORAGE_MAINTENANCE_ERROR, e.getMessage());
+        	
+        }finally{
+        	_storagePoolDao.releaseFromLockTable(primaryStorage.getId());					
         }
     }
 

@@ -81,6 +81,7 @@ public abstract class BaseCmd {
     public static final int NET_CONFLICT_LB_RULE_ERROR = 568;
     public static final int NET_LIST_ERROR = 570;
     public static final int CUSTOM_CERT_UPDATE_ERROR = 571;
+    public static final int PREPARE_STORAGE_MAINTENANCE_ERROR = 572;
     public static final int STORAGE_RESOURCE_IN_USE = 580;
 
     public static final DateFormat INPUT_FORMAT = new SimpleDateFormat("yyyy-MM-dd");

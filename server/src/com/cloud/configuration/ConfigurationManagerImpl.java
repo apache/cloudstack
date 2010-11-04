@@ -1023,12 +1023,16 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
         String guestCidr = cmd.getGuestCidrAddress();
         String domain = cmd.getDomain();
         Long domainId = cmd.getDomainId();
+        DomainVO domainVO = null;
         
         if (userId == null) {
             userId = User.UID_SYSTEM;
         }
 
-        return createZone(userId, zoneName, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr, domain, domainId);
+        if(domainId != null){
+        	domainVO = _domainDao.findById(domainId); 
+        }
+        return createZone(userId, zoneName, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr, domain != null ? domain : domainVO.getName(), domainId);
     }
 
     @Override
