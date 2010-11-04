@@ -97,6 +97,26 @@ function zoneJsonToDetailsTab($leftmenuItem1) {
         
     $detailsTab.find("#guestcidraddress").text(fromdb(jsonObj.guestcidraddress));   
     $detailsTab.find("#guestcidraddress_edit").val(fromdb(jsonObj.guestcidraddress));   
+        
+    $detailsTab.find("#domain").text(fromdb(jsonObj.domain)); 
+    //don't allow update domain
+    /*
+    $.ajax({
+        data: createURL("command=listDomains"),
+        dataType: "json",
+        success: function(json) {           
+            var items = json.listdomainsresponse.domain;
+            if(items != null && items.length > 0) {
+                for(var i=0; i<items.length; i++) {
+                    if(items[i].id == jsonObj.domainid)
+                        $detailsTab.find("#domain_edit").append("<option value='" + items[i].id + "' selected>" + fromdb(items[i].name) + "</option>"); 
+                    else
+                        $detailsTab.find("#domain_edit").append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>"); 
+                }		
+            }
+        }    
+    });    
+    */
     
     //actions ***   
     var $actionLink = $detailsTab.find("#action_link"); 
