@@ -788,7 +788,7 @@ function initVMWizard() {
 		        
 		        var diskOfferingName = $diskOfferingElement.find("#name").text();
 		        if(checkedRadioButton.parent().attr("id") == "vm_popup_disk_offering_template_custom")
-		            diskOfferingName += (" " + $diskOfferingElement.find("#custom_disk_size") + " MB");
+		            diskOfferingName += (" (Disk Size: " + $diskOfferingElement.find("#custom_disk_size").val() + " MB)");
 		        $thisPopup.find("#wizard_review_disk_offering").text(diskOfferingName);     	        
 	        }
 	        else {  //*** ISO ***
