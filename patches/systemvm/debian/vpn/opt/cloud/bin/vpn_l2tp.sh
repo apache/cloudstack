@@ -80,7 +80,7 @@ remove_l2tp_ipsec_user() {
       pid=$(tdbdump /var/run/pppd2.tdb | grep -w $u | awk -F';' '{print $4}' | awk -F= '{print $2}')
       [ "$pid" != "" ] && kill -9 $pid
    fi
-
+   return 0
 }
 
 add_l2tp_ipsec_user() {
