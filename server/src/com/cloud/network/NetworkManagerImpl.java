@@ -391,6 +391,7 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
             if(s_logger.isDebugEnabled())
                 s_logger.debug("lock account " + accountId + " is acquired");
             
+            boolean isAccountIP = false;
             List<IPAddressVO> addrs = listPublicIpAddressesInVirtualNetwork(account.getId(), dcId, true);            
             if (addrs.size() == 0) {
                 
