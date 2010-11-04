@@ -111,6 +111,7 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
         response.setDomainId(responseObj.getDomainId());
         response.setDomainName(ApiDBUtils.findDomainById(responseObj.getDomainId()).getName());
         response.setResponseName(getName());
+        response.setPresharedKey(responseObj.getIpsecPresharedKey());
         return response;
     }
 
