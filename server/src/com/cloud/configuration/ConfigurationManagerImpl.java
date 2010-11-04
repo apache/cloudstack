@@ -1021,7 +1021,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
         String internalDns2 = cmd.getInternalDns2();
         String vnetRange = cmd.getVlan();
         String guestCidr = cmd.getGuestCidrAddress();
-        String domain = cmd.getDomain();
+        String domain = cmd.getDomain();//we are not passing domain right now, always null
         Long domainId = cmd.getDomainId();
         DomainVO domainVO = null;
         
@@ -1032,7 +1032,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
         if(domainId != null){
         	domainVO = _domainDao.findById(domainId); 
         }
-        return createZone(userId, zoneName, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr, domain != null ? domain : domainVO.getName(), domainId);
+        return createZone(userId, zoneName, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr, domainVO != null ? domainVO.getName() : null, domainId);
     }
 
     @Override
