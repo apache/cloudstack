@@ -1700,8 +1700,11 @@ public class StorageManagerImpl implements StorageManager {
                 if ((diskOffering == null) || !DiskOfferingVO.Type.Disk.equals(diskOffering.getType())) {
                     throw new InvalidParameterValueException("Please specify a valid disk offering.");
                 }
-                size = (diskOffering.getDiskSize()*1024*1024);//the disk offering size is in MB, which needs to be converted into bytes
                 
+                if(diskOffering.getDiskSize() > 0)
+                	size = (diskOffering.getDiskSize()*1024*1024);//the disk offering size is in MB, which needs to be converted into bytes
+                else
+                	size = (size*1024*1024);//custom size made consistent with disk offering size which is in MB, to be converted to bytes
             }
         } else {
             Long snapshotId = cmd.getSnapshotId();
