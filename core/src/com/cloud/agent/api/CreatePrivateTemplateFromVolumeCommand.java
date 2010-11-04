@@ -19,6 +19,7 @@
 package com.cloud.agent.api;
 
 public class CreatePrivateTemplateFromVolumeCommand extends SnapshotCommand {
+	private String _vmName;
     private String _volumePath;
     private String _userSpecifiedName;
     private String _uniqueName;
@@ -30,14 +31,14 @@ public class CreatePrivateTemplateFromVolumeCommand extends SnapshotCommand {
 
     public CreatePrivateTemplateFromVolumeCommand() {}
 
-    public CreatePrivateTemplateFromVolumeCommand(String secondaryStorageURL, long templateId, long accountId, String userSpecifiedName, String uniqueName, String volumePath) {
+    public CreatePrivateTemplateFromVolumeCommand(String secondaryStorageURL, long templateId, long accountId, String userSpecifiedName, String uniqueName, String volumePath, String vmName) {
     	_secondaryStorageURL = secondaryStorageURL;
     	_templateId = templateId;
     	_accountId = accountId;
     	_userSpecifiedName = userSpecifiedName;
         _uniqueName = uniqueName;
         _volumePath = volumePath;
-
+        _vmName = vmName;
     }
 
     @Override
@@ -59,6 +60,10 @@ public class CreatePrivateTemplateFromVolumeCommand extends SnapshotCommand {
 
     public long getTemplateId() {
     	return _templateId;
+    }
+    
+    public String getVmName() {
+    	return _vmName;
     }
     
     public void setVolumePath(String _volumePath) {

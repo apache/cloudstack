@@ -2615,6 +2615,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         
         // The volume below could be destroyed or removed.
         VolumeVO volume = _volsDao.findById(volumeId);
+        String vmName = _storageMgr.getVmNameOnVolume(volume);
 
         // If private template is created from Volume, check that the volume will not be active when the private template is created
         if (snapshotId == null && !_storageMgr.volumeInactive(volume)) {
@@ -2675,7 +2676,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
             }
 
             cmd = new CreatePrivateTemplateFromVolumeCommand(secondaryStorageURL, templateId, volume.getAccountId(),
-                    command.getTemplateName(), uniqueName, volume.getPath());
+                    command.getTemplateName(), uniqueName, volume.getPath(), vmName);
 
         } else {
             throw new CloudRuntimeException("Creating private Template need to specify snapshotId or volumeId");

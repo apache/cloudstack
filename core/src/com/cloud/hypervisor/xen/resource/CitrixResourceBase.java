@@ -5480,7 +5480,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         return new CreatePrivateTemplateAnswer(cmd, result, details);
     }
 
-
     protected CreatePrivateTemplateAnswer execute(final CreatePrivateTemplateFromSnapshotCommand cmd) {
         String primaryStorageNameLabel = cmd.getPrimaryStoragePoolNameLabel();
         Long dcId = cmd.getDataCenterId();
