@@ -48,11 +48,11 @@ public class VpnUsersResponse extends BaseResponse {
 		this.id = id;
 	}
 
-	public String getUsername() {
+	public String getUserName() {
 		return userName;
 	}
 
-	public void setUsername(String name) {
+	public void setUserName(String name) {
 		this.userName = name;
 	}
 
@@ -78,5 +78,7 @@ public class VpnUsersResponse extends BaseResponse {
 		return domainName;
 	}
 
-    
+	public String toString() {
+    	return "id: " + getId() + ", username: " + getUserName() + ", account: " + getAccountName() + ", domainid: " + getDomainId();
+    }
 }

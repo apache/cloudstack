@@ -512,7 +512,7 @@ function showVpnUsers() {
 																																		 
 											if (result.jobstatus == 1) { // Succeeded 	
 												$thisDialog.dialog("close");
-												$("#tab_content_vpn #grid_content").append(vpnUserJsonToTemplate(result.jobresult.addvpnuserresponse).fadeIn());
+												$("#tab_content_vpn #grid_content").append(vpnUserJsonToTemplate(result.jobresult.vpnuser).fadeIn());
 											} else if (result.jobstatus == 2) { // Failed	
 												var errorMsg = "We were unable to add user access to your VPN.  Please contact support.";
 												$thisDialog.find("#info_container").text(errorMsg).show();
