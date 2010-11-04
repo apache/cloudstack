@@ -20,6 +20,8 @@ package com.cloud.network;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -35,6 +37,7 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.AgentManager.OnError;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
 import com.cloud.agent.api.routing.DhcpEntryCommand;
 import com.cloud.agent.api.routing.IPAssocCommand;
 import com.cloud.agent.api.routing.LoadBalancerCfgCommand;
@@ -101,6 +104,8 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network.TrafficType;
 import com.cloud.network.configuration.NetworkGuru;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.network.IpAddrAllocator.networkInfo;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
@@ -542,31 +547,48 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
     public boolean associateIP(final DomainRouterVO router, final List<String> ipAddrList, final boolean add, long vmId) {
         Commands cmds = new Commands(OnError.Continue);
         boolean sourceNat = false;
+        Map<VlanVO, ArrayList<IPAddressVO>> vlanIpMap = new HashMap<VlanVO, ArrayList<IPAddressVO>>();
         for (final String ipAddress: ipAddrList) {
-        	if (ipAddress.equalsIgnoreCase(router.getPublicIpAddress()))
-        		sourceNat=true;
-        	
         	IPAddressVO ip = _ipAddressDao.findById(ipAddress);
+        	
         	VlanVO vlan = _vlanDao.findById(ip.getVlanDbId());
-			String vlanId = vlan.getVlanId();
-			String vlanGateway = vlan.getVlanGateway();
-			String vlanNetmask = vlan.getVlanNetmask();
-        	boolean firstIP = (!sourceNat && (_ipAddressDao.countIPs(vlan.getDataCenterId(), router.getAccountId(), vlan.getVlanId(), vlan.getVlanGateway(), vlan.getVlanNetmask()) == 1));
-        				
-			String vifMacAddress = null;
-			if (firstIP) {
-				String[] macAddresses = _dcDao.getNextAvailableMacAddressPair(ip.getDataCenterId());
-            	vifMacAddress = macAddresses[1];
-			}
+        	ArrayList<IPAddressVO> ipList = vlanIpMap.get(vlan.getId());
+        	if (ipList == null) {
+        		ipList = new ArrayList<IPAddressVO>();
+        	}
+        	ipList.add(ip);
+        	vlanIpMap.put(vlan, ipList);
+        }
+        for (Map.Entry<VlanVO, ArrayList<IPAddressVO>> vlanAndIp: vlanIpMap.entrySet()) {
+        	boolean firstIP = true;
+        	ArrayList<IPAddressVO> ipList = vlanAndIp.getValue();
+        	Collections.sort(ipList, new Comparator<IPAddressVO>() {
+        		@Override
+        		public int compare(IPAddressVO o1, IPAddressVO o2) {
+        			return o1.getAddress().compareTo(o2.getAddress());
+        		} });
 
-			String vmGuestAddress = null;
-			if(vmId!=0){
-				vmGuestAddress = _vmDao.findById(vmId).getGuestIpAddress();
-			}
-			
-            cmds.addCommand(new IPAssocCommand(router.getInstanceName(), router.getPrivateIpAddress(), ipAddress, add, firstIP, sourceNat, vlanId, vlanGateway, vlanNetmask, vifMacAddress, vmGuestAddress));
-            
-            sourceNat = false;
+        	for (final IPAddressVO ip: ipList) {
+        		sourceNat = ip.getSourceNat();
+        		VlanVO vlan = vlanAndIp.getKey();
+        		String vlanId = vlan.getVlanId();
+        		String vlanGateway = vlan.getVlanGateway();
+        		String vlanNetmask = vlan.getVlanNetmask();
+
+        		String vifMacAddress = null;
+        		if (firstIP && add) {
+        			String[] macAddresses = _dcDao.getNextAvailableMacAddressPair(ip.getDataCenterId());
+        			vifMacAddress = macAddresses[1];
+        		}
+        		String vmGuestAddress = null;
+        		if(vmId!=0){
+        			vmGuestAddress = _vmDao.findById(vmId).getGuestIpAddress();
+        		}
+        		
+        		cmds.addCommand(new IPAssocCommand(router.getInstanceName(), router.getPrivateIpAddress(), ip.getAddress(), add, firstIP, sourceNat, vlanId, vlanGateway, vlanNetmask, vifMacAddress, vmGuestAddress));
+
+        		firstIP = false;
+        	}
         }
 
         Answer[] answers = null;
@@ -719,7 +741,7 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
             ipAddrs.add(ipAddress);
 
             if (router.getState() == State.Running) {
-                success = associateIP(router, ipAddrs, true, 0L);
+                success = associateIP(router, ipAddress, true, 0L);
                 if (!success) {
                     errorMsg = "Unable to assign public IP address.";
                 }
@@ -766,7 +788,50 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
                 s_logger.debug("Associate IP address lock released");
             }
         }
-        
+       
+    }
+
+    @Override
+    public boolean associateIP(final DomainRouterVO router, final String ipAddress, final boolean add, long vmId) {
+    	Commands cmds = new Commands(OnError.Continue);
+    	IPAddressVO ip = _ipAddressDao.findById(ipAddress);
+        VlanVO vlan = _vlanDao.findById(ip.getVlanDbId());
+        boolean sourceNat = ip.isSourceNat();
+        boolean firstIP = (!sourceNat && (_ipAddressDao.countIPs(vlan.getDataCenterId(), router.getAccountId(), vlan.getVlanId(), vlan.getVlanGateway(), vlan.getVlanNetmask()) == 1));
+        String vlanId = vlan.getVlanId();
+		String vlanGateway = vlan.getVlanGateway();
+		String vlanNetmask = vlan.getVlanNetmask();
+		String vifMacAddress = null;
+		if (firstIP && add) {
+			String[] macAddresses = _dcDao.getNextAvailableMacAddressPair(ip.getDataCenterId());
+			vifMacAddress = macAddresses[1];
+		}
+		String vmGuestAddress = null;
+		if(vmId!=0){
+			vmGuestAddress = _vmDao.findById(vmId).getGuestIpAddress();
+		}
+
+        IPAssocCommand cmd = new IPAssocCommand(router.getInstanceName(), router.getPrivateIpAddress(), ip.getAddress(), add, firstIP, sourceNat, vlanId, vlanGateway, vlanNetmask, vifMacAddress, vmGuestAddress);
+        cmds.addCommand(cmd);
+        Answer[] answers = null;
+        try {
+            answers = _agentMgr.send(router.getHostId(), cmds);
+        } catch (final AgentUnavailableException e) {
+            s_logger.warn("Agent unavailable", e);
+            return false;
+        } catch (final OperationTimedoutException e) {
+            s_logger.warn("Timed Out", e);
+            return false;
+        }
+
+        if (answers == null) {
+            return false;
+        }
+
+        if (answers.length != 1) {
+            return false;
+        }
+        return  answers[0].getResult();        
     }
 
     @Override
@@ -1521,7 +1586,7 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
                     s_logger.debug("Disassociate ip " + router.getHostName());
                 }
 
-                if (associateIP(router, ipAddrs, false, 0)) {
+                if (associateIP(router, ip.getAddress(), false, 0)) {
                     _ipAddressDao.unassignIpAddress(ipAddress);
                 } else {
                 	if (s_logger.isDebugEnabled()) {

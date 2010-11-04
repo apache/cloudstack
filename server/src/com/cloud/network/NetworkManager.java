@@ -245,6 +245,15 @@ public interface NetworkManager extends Manager {
      */
     IPAddressVO associateIP(AssociateIPAddrCmd cmd) throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException;    
     
+    /**
+     * Associates or disassociates a single IP address for a router.
+     * @param router router object to send the association to
+     * @param ipAddress  public IP addresses
+     * @param add true if associate, false if disassociate
+     * @return
+     */
+    boolean associateIP(DomainRouterVO router, String ipAddress, boolean add, long vmId) throws ResourceAllocationException;
+    
     boolean updateFirewallRule(FirewallRuleVO fwRule, String oldPrivateIP, String oldPrivatePort);
 
     /**
