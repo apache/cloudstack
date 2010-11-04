@@ -1183,6 +1183,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     		diskSize = numGibibytes * 1024;
     	}
     	
+    	if(diskSize == 0){
+    		isCustomized = true;
+    	}
+    	
         tags = cleanupTags(tags);
         DiskOfferingVO newDiskOffering = new DiskOfferingVO(domainId, name, description, diskSize,tags, isCustomized);
         return _diskOfferingDao.persist(newDiskOffering);

@@ -91,7 +91,7 @@ public class DiskOfferingVO implements DiskOffering {
     private boolean systemUse;
     
     @Column(name="customized")
-    private boolean customized;
+    private Boolean customized;
     
     public DiskOfferingVO() {
     }
@@ -126,11 +126,11 @@ public class DiskOfferingVO implements DiskOffering {
         return id;
     }
     
-    public boolean isCustomized() {
+    public Boolean isCustomized() {
 		return customized;
 	}
 
-	public void setCustomized(boolean customized) {
+	public void setCustomized(Boolean customized) {
 		this.customized = customized;
 	}
 
