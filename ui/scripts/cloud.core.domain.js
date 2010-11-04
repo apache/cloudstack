@@ -118,7 +118,7 @@ function clickExpandIcon(domainId) {
 
 function domainAccountJSONToTemplate(jsonObj, $template) {   
     $template.data("jsonObj", jsonObj);  
-    $template.find("#title").text(fromdb(jsonObj.name));
+    $template.find("#grid_header_title").text(fromdb(jsonObj.name));
     $template.find("#id").text(jsonObj.id);
     $template.find("#role").text(toRole(jsonObj.accounttype));
     $template.find("#account").text(fromdb(jsonObj.name));
@@ -157,7 +157,8 @@ function domainToRightPanel2(jsonObj) {
     $detailsTab.data("jsonObj", jsonObj);  
     var domainId = jsonObj.id;
     $detailsTab.find("#id").text(domainId);
-    $detailsTab.find("#name").text(jsonObj.name);		   
+    $detailsTab.find("#grid_header_title").text(fromdb(jsonObj.name));	
+    $detailsTab.find("#name").text(fromdb(jsonObj.name));	    	   
 			  	
   	$.ajax({
 	    cache: false,				
