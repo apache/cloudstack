@@ -486,7 +486,7 @@ function showVpnUsers() {
 				if (!isValid) return;	
 				
 				var username = todb($thisDialog.find("#username").val());
-				var password = todb($thisDialog.find("#username").val());
+				var password = todb($thisDialog.find("#password").val());
 				
 				$spinningWheel = $thisDialog.find("#spinning_wheel").show();
 				$.ajax({
