@@ -37,7 +37,6 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.AgentManager.OnError;
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.Command;
 import com.cloud.agent.api.routing.DhcpEntryCommand;
 import com.cloud.agent.api.routing.IPAssocCommand;
 import com.cloud.agent.api.routing.LoadBalancerCfgCommand;
@@ -104,8 +103,6 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network.TrafficType;
 import com.cloud.network.configuration.NetworkGuru;
-import com.cloud.hypervisor.Hypervisor;
-import com.cloud.network.IpAddrAllocator.networkInfo;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
@@ -394,7 +391,6 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
             if(s_logger.isDebugEnabled())
                 s_logger.debug("lock account " + accountId + " is acquired");
             
-            boolean isAccountIP = false;
             List<IPAddressVO> addrs = listPublicIpAddressesInVirtualNetwork(account.getId(), dcId, true);            
             if (addrs.size() == 0) {
                 
