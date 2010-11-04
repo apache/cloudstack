@@ -119,8 +119,7 @@ var primarystorageActionMap = {
             $.ajax({
                 data: createURL("command=listStoragePools&id="+id),
                 dataType: "json",
-                success: function(json) {
-                    debugger;
+                success: function(json) {          
                     var items = json.liststoragepoolsresponse.storagepool;
                     if(items != null && items.length > 0) {
                         item = items[0];
