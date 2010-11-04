@@ -782,7 +782,7 @@ function resetViewConsoleAction(jsonObj, $detailsTab) {
 	if (jsonObj.state == 'Running') {			
 		//console proxy image
 		var imgUrl = "console?cmd=thumbnail&vm=" + jsonObj.id + "&w=144&h=110";	
-		imgUrl = "http://localhost:8080/client/" + imgUrl;  //***** temporary hack. This line will be removed after new UI code (/ui/new/*) moves to /ui/*
+		//imgUrl = "http://localhost:8080/client/" + imgUrl;  //***** temporary hack. This line will be removed after new UI code (/ui/new/*) moves to /ui/*
 		
 		var time = new Date();							
 		$viewConsoleTemplate.find("#box1").hide().css("background", "url("+imgUrl+"&t="+time.getTime()+")");				
@@ -802,7 +802,7 @@ function resetViewConsoleAction(jsonObj, $detailsTab) {
 		//console proxy popup
 		$viewConsoleTemplate.data("proxyUrl", "console?cmd=access&vm=" + jsonObj.id).data("vmId",jsonObj.id).click(function(event) {				
 			var proxyUrl = $(this).data("proxyUrl");				
-			proxyUrl = "http://localhost:8080/client/" + proxyUrl;  //***** temporary hack. This line will be removed after new UI code (/ui/new/*) moves to /ui/*
+			//proxyUrl = "http://localhost:8080/client/" + proxyUrl;  //***** temporary hack. This line will be removed after new UI code (/ui/new/*) moves to /ui/*
 			var viewer = window.open(proxyUrl, $(this).data("vmId"),"width=820,height=640,resizable=yes,menubar=no,status=no,scrollbars=no,toolbar=no,location=no");
 			viewer.focus();
 			return false;
