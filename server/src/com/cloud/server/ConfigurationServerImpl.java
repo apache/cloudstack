@@ -643,7 +643,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         long diskSize = numGibibytes * 1024;
         tags = cleanupTags(tags);
 
-        DiskOfferingVO newDiskOffering = new DiskOfferingVO(domainId, name, description, diskSize,tags);
+        DiskOfferingVO newDiskOffering = new DiskOfferingVO(domainId, name, description, diskSize,tags,false);
         return _diskOfferingDao.persist(newDiskOffering);
     }
 

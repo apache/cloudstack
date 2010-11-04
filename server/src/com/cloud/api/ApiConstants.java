@@ -39,6 +39,7 @@ public class ApiConstants {
     public static final String CPU_NUMBER = "cpunumber";
     public static final String CPU_SPEED = "cpuspeed";
     public static final String CREATED = "created";
+    public static final String CUSTOMIZED = "customized";
     public static final String DESCRIPTION = "description";
     public static final String DESTINATION_ZONE_ID = "destzoneid";
     public static final String DETAILS = "details";

@@ -246,6 +246,7 @@ public class ApiResponseHelper {
            diskOfferingResponse.setDomainId(offering.getDomainId());
        }
        diskOfferingResponse.setTags(offering.getTags());
+       diskOfferingResponse.setCustomized(offering.isCustomized());
        return diskOfferingResponse;
    }
    

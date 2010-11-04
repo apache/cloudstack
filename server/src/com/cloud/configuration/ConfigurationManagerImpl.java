@@ -1171,16 +1171,20 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     }
 
     @Override
-    public DiskOfferingVO createDiskOffering(long domainId, String name, String description, int numGibibytes, String tags) throws InvalidParameterValueException {
-        if ((numGibibytes <= 0)) {
+    public DiskOfferingVO createDiskOffering(long domainId, String name, String description, Long numGibibytes, String tags, Boolean isCustomized) throws InvalidParameterValueException {
+        long diskSize = 0;//special case for custom disk offerings
+    	if (numGibibytes != null && (numGibibytes <= 0)) {
             throw new InvalidParameterValueException("Please specify a disk size of at least 1 Gb.");
-        } else if (numGibibytes > _maxVolumeSizeInGb) {
+        } else if (numGibibytes != null && (numGibibytes > _maxVolumeSizeInGb)) {
             throw new InvalidParameterValueException("The maximum size for a disk is " + _maxVolumeSizeInGb + " Gb.");
         }
 
-        long diskSize = numGibibytes * 1024;
+    	if(numGibibytes != null){
+    		diskSize = numGibibytes * 1024;
+    	}
+    	
         tags = cleanupTags(tags);
-        DiskOfferingVO newDiskOffering = new DiskOfferingVO(domainId, name, description, diskSize,tags);
+        DiskOfferingVO newDiskOffering = new DiskOfferingVO(domainId, name, description, diskSize,tags, isCustomized);
         return _diskOfferingDao.persist(newDiskOffering);
     }
 
@@ -1189,14 +1193,15 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
         Long domainId = cmd.getDomainId();
         String name = cmd.getOfferingName();
         String description = cmd.getDisplayText();
-        int numGibibytes = cmd.getDiskSize().intValue();
+        Long numGibibytes = cmd.getDiskSize();
+        Boolean isCustomized = cmd.isCustomized() != null ? cmd.isCustomized() : false; //false by default
         String tags = cmd.getTags();
 
         if (domainId == null) {
             domainId = Long.valueOf(DomainVO.ROOT_DOMAIN);
         }
 
-        return createDiskOffering(domainId, name, description, numGibibytes, tags);
+        return createDiskOffering(domainId, name, description, numGibibytes, tags, isCustomized);
     }
 
     @Override

@@ -887,6 +887,7 @@ CREATE TABLE `cloud`.`disk_offering` (
   `use_local_storage` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Indicates whether local storage pools should be used',
   `unique_name` varchar(32) UNIQUE COMMENT 'unique name',
   `system_use` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'is this offering for system used only',
+  `customized` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT '0 implies not customized by default',
   `removed` datetime COMMENT 'date removed',
   `created` datetime COMMENT 'date the disk offering was created',
   PRIMARY KEY  (`id`)

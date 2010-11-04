@@ -48,6 +48,9 @@ public class DiskOfferingResponse extends BaseResponse {
     @SerializedName("ismirrored")
     private Boolean mirrored;
 
+    @SerializedName("isCustomized")
+    private Boolean customized;
+    
     @SerializedName(ApiConstants.TAGS) @Param(description="the tags for the disk offering")
     private String tags;
 
@@ -122,4 +125,13 @@ public class DiskOfferingResponse extends BaseResponse {
     public void setTags(String tags) {
         this.tags = tags;
     }
+
+    public Boolean isCustomized() {
+        return customized;
+    }
+
+    public void setCustomized(Boolean customized) {
+        this.customized = customized;
+    }
+
 }

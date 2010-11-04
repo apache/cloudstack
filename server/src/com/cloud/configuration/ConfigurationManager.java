@@ -147,9 +147,10 @@ public interface ConfigurationManager extends Manager {
 	 * @param description
 	 * @param numGibibytes
 	 * @param tags
+	 * @param isCustomized
 	 * @return newly created disk offering
 	 */
-	DiskOfferingVO createDiskOffering(long domainId, String name, String description, int numGibibytes, String tags);
+	DiskOfferingVO createDiskOffering(long domainId, String name, String description, Long numGibibytes, String tags, Boolean isCustomized);
     
 	/**
 	 * Creates a new pod

@@ -90,10 +90,13 @@ public class DiskOfferingVO implements DiskOffering {
     @Column(name="system_use")
     private boolean systemUse;
     
+    @Column(name="customized")
+    private boolean customized;
+    
     public DiskOfferingVO() {
     }
 
-    public DiskOfferingVO(long domainId, String name, String displayText, long diskSize, String tags) {
+    public DiskOfferingVO(long domainId, String name, String displayText, long diskSize, String tags, Boolean isCustomized) {
         this.domainId = domainId;
         this.name = name;
         this.displayText = displayText;
@@ -102,9 +105,10 @@ public class DiskOfferingVO implements DiskOffering {
         this.recreatable = false;
         this.type = Type.Disk;
         this.useLocalStorage = false;
+        this.customized = isCustomized;
     }
     
-    public DiskOfferingVO(String name, String displayText, boolean mirrored, String tags, boolean recreatable, boolean useLocalStorage, boolean systemUse) {
+    public DiskOfferingVO(String name, String displayText, boolean mirrored, String tags, boolean recreatable, boolean useLocalStorage, boolean systemUse, boolean customized) {
         this.domainId = null;
         this.type = Type.Service;
         this.name = name;
@@ -114,6 +118,7 @@ public class DiskOfferingVO implements DiskOffering {
         this.recreatable = recreatable;
         this.useLocalStorage = useLocalStorage;
         this.systemUse = systemUse;
+        this.customized = customized;
     }
 
     @Override
@@ -121,7 +126,15 @@ public class DiskOfferingVO implements DiskOffering {
         return id;
     }
     
-    @Override
+    public boolean isCustomized() {
+		return customized;
+	}
+
+	public void setCustomized(boolean customized) {
+		this.customized = customized;
+	}
+
+	@Override
     public String getUniqueName() {
         return uniqueName;
     }

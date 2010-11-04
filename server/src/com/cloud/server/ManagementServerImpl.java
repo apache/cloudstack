@@ -1860,11 +1860,16 @@ public class ManagementServerImpl implements ManagementServer {
         if (diskOfferingId != null) {
         	diskOffering = _diskOfferingDao.findById(diskOfferingId);
         }
-
+ 
         if (isIso && diskOffering == null) {
         	throw new InvalidParameterValueException("Please specify a valid disk offering ID.");
         }
 
+        //if it is a custom disk offering,AND the size passed in here is <= 0; error out
+        if(diskOffering.isCustomized() && size <= 0){
+        	throw new InvalidParameterValueException("Please specify a valid disk size for VM creation; custom disk offering has no size set");
+        }
+        
         // validate that the template is usable by the account
         if (!template.isPublicTemplate()) {
             Long templateOwner = template.getAccountId();
