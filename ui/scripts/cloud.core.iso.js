@@ -368,15 +368,12 @@ function doEditISO($actionLink, $detailsTab, $midmenuItem1) {
         return false;
     });
     $detailsTab.find("#save_button").unbind("click").bind("click", function(event){        
-        doEditISO2($actionLink, $detailsTab, $midmenuItem1);     
-        $editFields.hide();      
-        $readonlyFields.show();       
-        $("#save_button, #cancel_button").hide();       
+        doEditISO2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $editFields);   
         return false;
     });   
 }
 
-function doEditISO2($actionLink, $detailsTab, $midmenuItem1) {     
+function doEditISO2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $editFields) {     
     // validate values
     var isValid = true;					
     isValid &= validateString("Name", $detailsTab.find("#name_edit"), $detailsTab.find("#name_edit_errormsg"));
@@ -424,6 +421,10 @@ function doEditISO2($actionLink, $detailsTab, $midmenuItem1) {
     		}
 	    });
 	}	
+			
+	$editFields.hide();      
+    $readonlyFields.show();       
+    $("#save_button, #cancel_button").hide();       
 }
 
 function doDeleteIso($actionLink, $detailsTab, $midmenuItem1) {   
