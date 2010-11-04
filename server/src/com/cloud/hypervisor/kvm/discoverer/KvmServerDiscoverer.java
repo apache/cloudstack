@@ -197,6 +197,12 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 			InetAddress ia = InetAddress.getByName(hostname);
 			agentIp = ia.getHostAddress();
 			String guid = UUID.nameUUIDFromBytes(agentIp.getBytes()).toString();
+			guid = guid + "-LibvirtComputingResource";/*tail added by agent.java*/
+			if (_hostDao.findByGuid(guid) != null) {
+				s_logger.debug("Skipping " + agentIp + " because " + guid + " is already in the database.");
+				return null;
+			}       
+			
 			sshConnection = new com.trilead.ssh2.Connection(agentIp, 22);
 
 			sshConnection.connect(null, 60000, 60000);
@@ -218,8 +224,7 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 			
 			KvmDummyResourceBase kvmResource = new KvmDummyResourceBase();
 			Map<String, Object> params = new HashMap<String, Object>();
-			
-			guid = guid + "-LibvirtComputingResource";/*tail added by agent.java*/
+						
 			params.put("zone", Long.toString(dcId));
 			params.put("pod", Long.toString(podId));
 			params.put("cluster",  Long.toString(clusterId));
