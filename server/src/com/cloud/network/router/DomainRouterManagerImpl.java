@@ -2153,13 +2153,13 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
 		}
 		Answer answer = cmds.getAnswer("users");
 		if (!answer.getResult()) {
-            s_logger.error("Unable to start vpn: unable add users to vpn in zone " + vpnVO.getZoneId() + " for account "+ vpnVO.getAccountId() +" on domR: " + router.getName() + " due to " + answer.getDetails());
-            throw new ResourceUnavailableException("Unable to start vpn: Unable to add users to vpn in zone " + vpnVO.getZoneId() + " for account "+ vpnVO.getAccountId() +" on domR: " + router.getName() + " due to " + answer.getDetails()); 
+            s_logger.error("Unable to start vpn: unable add users to vpn in zone " + vpnVO.getZoneId() + " for account "+ vpnVO.getAccountId() +" on domR: " + router.getInstanceName() + " due to " + answer.getDetails());
+            throw new ResourceUnavailableException("Unable to start vpn: Unable to add users to vpn in zone " + vpnVO.getZoneId() + " for account "+ vpnVO.getAccountId() +" on domR: " + router.getInstanceName() + " due to " + answer.getDetails()); 
         }
 		answer = cmds.getAnswer("startVpn");
 		if (!answer.getResult()) {
-            s_logger.error("Unable to start vpn in zone " + vpnVO.getZoneId() + " for account "+ vpnVO.getAccountId() +" on domR: " + router.getName() + " due to " + answer.getDetails());
-            throw new ResourceUnavailableException("Unable to start vpn in zone " + vpnVO.getZoneId() + " for account "+ vpnVO.getAccountId() +" on domR: " + router.getName() + " due to " + answer.getDetails()); 
+            s_logger.error("Unable to start vpn in zone " + vpnVO.getZoneId() + " for account "+ vpnVO.getAccountId() +" on domR: " + router.getInstanceName() + " due to " + answer.getDetails());
+            throw new ResourceUnavailableException("Unable to start vpn in zone " + vpnVO.getZoneId() + " for account "+ vpnVO.getAccountId() +" on domR: " + router.getInstanceName() + " due to " + answer.getDetails()); 
         }
 		return vpnVO;
 	}
