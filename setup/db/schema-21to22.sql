@@ -52,6 +52,7 @@ ALTER TABLE `cloud`.`storage_pool` add COLUMN STATUS varchar(32) not null; -- ne
 ALTER TABLE `cloud`.`volumes` ADD COLUMN `source_id` bigint unsigned;  -- id for the source
 ALTER TABLE `cloud`.`volumes` ADD COLUMN `source_type` varchar(32); --source from which the volume is created i.e. snapshot, diskoffering, template, blank
 ALTER TABLE `cloud`.`volumes` ADD COLUMN 'attached' datetime; --date and time the volume was attached
+ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `customized` tinyint(1) unsigned NOT NULL DEFAULT 0;-- 0 implies not customized by default 
 
 
 
