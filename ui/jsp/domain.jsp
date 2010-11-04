@@ -126,23 +126,12 @@
     
     <!-- Resource Limits tab (start)-->
     <div id="tab_content_resource_limits" style="display:none">
-    		<div class="rightpanel_mainloader_panel" style="display:none;">
-                  <div class="rightpanel_mainloaderbox">
-                       <div class="rightpanel_mainloader_animatedicon"></div>
-                       <p>Loading &hellip;</p>    
-                  </div>               
-            </div>
-        <div class="grid_actionpanel">            
-            <div class="grid_editbox" id="edit_button">
-            </div>
-            <div class="gridheader_loaderbox" id="spinning_wheel" style="border: 1px solid #999;
-                display: none;">
-                <div class="gridheader_loader" id="Div1">
-                </div>
-                <p id="description">
-                    Updating Resource Limits.... &hellip;</p>
-            </div>               
-        </div>    
+    	<div class="rightpanel_mainloader_panel" style="display:none;">
+              <div class="rightpanel_mainloaderbox">
+                   <div class="rightpanel_mainloader_animatedicon"></div>
+                   <p>Loading &hellip;</p>    
+              </div>               
+        </div>
         <div class="grid_container">                   
         
             <div class="grid_header">
@@ -163,7 +152,7 @@
                 </div>
             </div>        
                 
-            <div class="grid_rows even">
+            <div class="grid_rows odd">
                 <div class="grid_row_cell" style="width: 20%;">
                     <div class="row_celltitles">
                         <%=t.t("Instance.Limit")%>:</div>
@@ -187,7 +176,7 @@
                     <div id="limits_ip_edit_errormsg" style="display:none"></div>
                 </div>
             </div>            
-            <div class="grid_rows even">
+            <div class="grid_rows odd">
                 <div class="grid_row_cell" style="width: 20%;">
                     <div class="row_celltitles">
                         <%=t.t("Disk.Volume.Limit")%>:</div>
@@ -211,7 +200,7 @@
                     <div id="limits_snapshot_edit_errormsg" style="display:none"></div>
                 </div>
             </div>            
-            <div class="grid_rows even">
+            <div class="grid_rows odd">
                 <div class="grid_row_cell" style="width: 20%;">
                     <div class="row_celltitles">
                         <%=t.t("Template.Limit")%>:</div>

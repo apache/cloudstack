@@ -17,7 +17,7 @@
  */
 
 //***** actions for details tab in right panel (begin) ************************************************************************
-function buildActionLinkForDetailsTab(label, actionMap, $actionMenu, $midmenuItem1, $detailsTab) { 
+function buildActionLinkForDetailsTab(label, actionMap, $actionMenu, $midmenuItem1, $thisTab) { 
     var apiInfo = actionMap[label];
     var $listItem = $("#action_list_item").clone();
     $actionMenu.find("#action_list").append($listItem.show());
@@ -25,7 +25,7 @@ function buildActionLinkForDetailsTab(label, actionMap, $actionMenu, $midmenuIte
     $listItem.data("label", label);	  
     $listItem.data("apiInfo", apiInfo);	 
       
-    var id = $detailsTab.data("jsonObj").id;
+    var id = $thisTab.data("jsonObj").id;
     
     $listItem.bind("click", function(event) {   
         $actionMenu.hide();    	 
@@ -34,16 +34,16 @@ function buildActionLinkForDetailsTab(label, actionMap, $actionMenu, $midmenuIte
         var dialogBeforeActionFn = apiInfo.dialogBeforeActionFn;         
         if(dialogBeforeActionFn == null) {	 
             var apiCommand = "command="+apiInfo.api+"&id="+id;                      
-            doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab); 
+            doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $thisTab); 
         }
         else {
-            dialogBeforeActionFn($actionLink, $detailsTab, $midmenuItem1);	
+            dialogBeforeActionFn($actionLink, $thisTab, $midmenuItem1);	
         }               
         return false;
     });  
 } 
 
-function doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab) {  
+function doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $thisTab) {  
     var label = $actionLink.data("label");	
     var apiInfo = $actionLink.data("apiInfo");	
     
@@ -52,7 +52,7 @@ function doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detai
     var asyncJobResponse = apiInfo.asyncJobResponse;	
     var afterActionSeccessFn = apiInfo.afterActionSeccessFn;	    
             
-    var $spinningWheel = $detailsTab.find("#spinning_wheel");
+    var $spinningWheel = $thisTab.find("#spinning_wheel");
     $spinningWheel.find("#description").text(inProcessText);  
     $spinningWheel.show();  
         
@@ -101,7 +101,7 @@ function doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detai
 	                        },
 	                        error: function(XMLHttpResponse) {	                            
 		                        $("body").stopTime(timerKey);		                       		                        
-		                        handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label, $afterActionInfoContainer, $midmenuItem1); 		                                             
+		                        handleErrorInDetailsTab(XMLHttpResponse, $thisTab, label, $afterActionInfoContainer, $midmenuItem1); 		                                             
 	                        }
                         });
                     },
@@ -109,7 +109,7 @@ function doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detai
                 );
             },
             error: function(XMLHttpResponse) {	                 
-		        handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label, $afterActionInfoContainer, $midmenuItem1);  		        
+		        handleErrorInDetailsTab(XMLHttpResponse, $thisTab, label, $afterActionInfoContainer, $midmenuItem1);  		        
             }
         });     
     }     
@@ -131,14 +131,14 @@ function doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detai
 				afterActionSeccessFn(json, $midmenuItem1, id);				
 	        },
             error: function(XMLHttpResponse) {	                
-		        handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label, $afterActionInfoContainer, $midmenuItem1); 		       
+		        handleErrorInDetailsTab(XMLHttpResponse, $thisTab, label, $afterActionInfoContainer, $midmenuItem1); 		       
             }        
         });
     }
     //Sync job (end) *****
 }
 
-function handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label, $afterActionInfoContainer, $midmenuItem1) {     
+function handleErrorInDetailsTab(XMLHttpResponse, $thisTab, label, $afterActionInfoContainer, $midmenuItem1) {     
     var errorMsg = "";
     if(XMLHttpResponse.responseText != null & XMLHttpResponse.responseText.length > 0) {
         var start = XMLHttpResponse.responseText.indexOf("h1") + 3;
@@ -155,7 +155,7 @@ function handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label, $afterActi
     $afterActionInfoContainer.find("#after_action_info").text(afterActionInfo);         
     $afterActionInfoContainer.addClass("errorbox").show();
     
-    $detailsTab.find("#spinning_wheel").hide();  
+    $thisTab.find("#spinning_wheel").hide();  
     handleMidMenuItemAfterDetailsTabAction($midmenuItem1, false, afterActionInfo);	 	
 }  
 

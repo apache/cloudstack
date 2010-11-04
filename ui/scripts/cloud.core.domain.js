@@ -26,13 +26,7 @@ function afterLoadDomainJSP() {
     var tabArray = [$("#tab_details"), $("#tab_resource_limits"), $("#tab_admin_account")];
     var tabContentArray = [$("#tab_content_details"), $("#tab_content_resource_limits"), $("#tab_content_admin_account")];
     switchBetweenDifferentTabs(tabArray, tabContentArray);       
-    //***** switch between different tabs (end) **********************************************************************
-	    
-    //edit button ***    
-    var $resourceLimitsTab = $("#right_panel_content #tab_content_resource_limits");	
-    var $readonlyFields  =  $resourceLimitsTab.find("#limits_vm, #limits_ip, #limits_volume, #limits_snapshot, #limits_template");
-    var $editFields =  $resourceLimitsTab.find("#limits_vm_edit, #limits_ip_edit, #limits_volume_edit, #limits_snapshot_edit, #limits_template_edit");   
-    initializeEditFunction($readonlyFields, $editFields, doUpdateResourceLimitsForDomain);    
+    //***** switch between different tabs (end) **********************************************************************	
 }
 
 
@@ -130,29 +124,25 @@ function domainAccountJSONToTemplate(jsonObj, $template) {
     $template.find("#state").text(jsonObj.state);
 }
 
-function domainToRightPanel(jsonObj) {  
+function domainToRightPanel($leftmenuItem1) {  
     if($("#domain_grid_container").length == 0) { //domain.jsp is not loaded in right panel        
         $("#right_panel").load("jsp/domain.jsp", function(){         
             //switch between different tabs
             var tabArray = [$("#tab_details"), $("#tab_resource_limits"), $("#tab_admin_account")];
             var tabContentArray = [$("#tab_content_details"), $("#tab_content_resource_limits"), $("#tab_content_admin_account")];
             switchBetweenDifferentTabs(tabArray, tabContentArray);       
-              
-            //initiailize edit button 
-            var $resourceLimitsTab = $("#right_panel_content #tab_content_resource_limits");	
-            var $readonlyFields  =  $resourceLimitsTab.find("#limits_vm, #limits_ip, #limits_volume, #limits_snapshot, #limits_template");
-            var $editFields =  $resourceLimitsTab.find("#limits_vm_edit, #limits_ip_edit, #limits_volume_edit, #limits_snapshot_edit, #limits_template_edit");   
-            initializeEditFunction($readonlyFields, $editFields, doUpdateResourceLimitsForDomain);    
-                
-			domainToRightPanel2(jsonObj);       
+                           
+			domainToRightPanel2($leftmenuItem1);       
 		});        
     }
     else {        
-        domainToRightPanel2(jsonObj); 
+        domainToRightPanel2($leftmenuItem1); 
     }
 }
 
-function domainToRightPanel2(jsonObj) {
+function domainToRightPanel2($leftmenuItem1) {
+    $("#right_panel_content").data("$leftmenuItem1", $leftmenuItem1);
+    var jsonObj = $leftmenuItem1.data("jsonObj");    
     var $detailsTab = $("#right_panel_content #tab_content_details");
     $detailsTab.data("jsonObj", jsonObj);  
     var domainId = jsonObj.id;
@@ -244,12 +234,35 @@ function domainToRightPanel2(jsonObj) {
 				}						
 			}
 		});		
-			
+		
+		domainToResourceLimitsTab();	
 		$("#tab_resource_limits").show();	
 	} 
 	else {
 		$("#tab_resource_limits").hide();
 	}		 		 
+}
+
+function domainToResourceLimitsTab() {   
+    var $leftmenuItem1 = $("#right_panel_content").data("$leftmenuItem1");
+    var jsonObj = $leftmenuItem1.data("jsonObj");
+    var $thisTab = $("#right_panel_content #tab_content_resource_limits");  
+    $thisTab.data("jsonObj", jsonObj);
+
+    //actions ***
+    var $actionLink = $thisTab.find("#action_link"); 
+    $actionLink.bind("mouseover", function(event) {	    
+        $(this).find("#action_menu").show();    
+        return false;
+    });
+    $actionLink.bind("mouseout", function(event) {       
+        $(this).find("#action_menu").hide();    
+        return false;
+    });	  
+    
+    var $actionMenu = $thisTab.find("#action_link #action_menu");
+    $actionMenu.find("#action_list").empty();
+    buildActionLinkForDetailsTab("Edit Resource Limits", domainResourceLimitsActionMap, $actionMenu, $leftmenuItem1, $thisTab);		
 }
 
 function bindEventHandlerToDomainTreeNode() {
@@ -269,7 +282,7 @@ function bindEventHandlerToDomainTreeNode() {
                 $selectedDomainTreeNode.find("#domain_title_container_"+$selectedDomainTreeNode.data("jsonObj").id).removeClass("selected");      
             $thisNode.find("#domain_title_container_"+domainId).addClass("selected");
             $selectedDomainTreeNode = $thisNode;            
-            domainToRightPanel(jsonObj);                   
+            domainToRightPanel($thisNode);                   
 		}					
 		return false;
     });
@@ -279,6 +292,7 @@ function updateResourceLimitForDomain(domainId, type, max, $readonlyField) {
 	$.ajax({
 	    data: createURL("command=updateResourceLimit&domainid="+domainId+"&resourceType="+type+"&max="+max),
 		dataType: "json",
+		async: false,
 		success: function(json) {	
 		    $readonlyField.text(max);							    												
 		}
@@ -306,7 +320,34 @@ function listAdminAccounts(domainId) {
 	});		
 }		
 
-function doUpdateResourceLimitsForDomain() {
+var domainResourceLimitsActionMap = {  
+    "Edit Resource Limits": {
+        dialogBeforeActionFn: doEditResourceLimits
+    }
+}   
+
+function doEditResourceLimits($actionLink, $detailsTab, $midmenuItem1) {       
+    var $readonlyFields  = $detailsTab.find("#limits_vm, #limits_ip, #limits_volume, #limits_snapshot, #limits_template");
+    var $editFields = $detailsTab.find("#limits_vm_edit, #limits_ip_edit, #limits_volume_edit, #limits_snapshot_edit, #limits_template_edit"); 
+           
+    $readonlyFields.hide();
+    $editFields.show();  
+    $detailsTab.find("#cancel_button, #save_button").show();
+    
+    $detailsTab.find("#cancel_button").unbind("click").bind("click", function(event){    
+        $editFields.hide();
+        $readonlyFields.show();   
+        $("#save_button, #cancel_button").hide();       
+        return false;
+    });
+    $detailsTab.find("#save_button").unbind("click").bind("click", function(event){        
+        doEditResourceLimits2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $editFields);   
+        return false;
+    });   
+}
+
+function doEditResourceLimits2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $editFields) {  
+//function doUpdateResourceLimitsForDomain() {
     var $resourceLimitsTab = $("#right_panel_content #tab_content_resource_limits");
 
     var isValid = true;	        			
@@ -342,4 +383,8 @@ function doUpdateResourceLimitsForDomain() {
 	if (templateLimit != $resourceLimitsTab.find("#limits_template").text()) {
 		updateResourceLimitForDomain(domainId, 4, templateLimit, $resourceLimitsTab.find("#limits_template"));
 	}    
+	
+	$editFields.hide();      
+    $readonlyFields.show();       
+    $("#save_button, #cancel_button").hide();      
 }
