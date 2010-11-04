@@ -43,10 +43,19 @@ function podJsonToDetailsTab($leftmenuItem1) {
     $detailsTab.data("jsonObj", jsonObj);           
     $detailsTab.find("#id").text(fromdb(jsonObj.id));
     $detailsTab.find("#grid_header_title").text(fromdb(jsonObj.name));
+    
     $detailsTab.find("#name").text(fromdb(jsonObj.name));
-    $detailsTab.find("#cidr").text(fromdb(jsonObj.cidr));        
+    $detailsTab.find("#name_edit").val(fromdb(jsonObj.name));
+    
+    $detailsTab.find("#cidr").text(fromdb(jsonObj.cidr));   
+    $detailsTab.find("#cidr_edit").val(fromdb(jsonObj.cidr));   
+         
     $detailsTab.find("#ipRange").text(getIpRange(jsonObj.startip, jsonObj.endip));
+    $detailsTab.find("#startIpRange_edit").val(fromdb(jsonObj.startip));
+    $detailsTab.find("#endIpRange_edit").val(fromdb(jsonObj.endip));
+    
     $detailsTab.find("#gateway").text(fromdb(jsonObj.gateway));  
+    $detailsTab.find("#gateway_edit").val(fromdb(jsonObj.gateway));  
     
     //actions ***   
     var $actionLink = $detailsTab.find("#action_link"); 
@@ -60,6 +69,7 @@ function podJsonToDetailsTab($leftmenuItem1) {
     });	  
     var $actionMenu = $detailsTab.find("#action_link #action_menu");
     $actionMenu.find("#action_list").empty();   
+    buildActionLinkForDetailsTab("Edit Pod", podActionMap, $actionMenu, $leftmenuItem1, $detailsTab);  
     buildActionLinkForDetailsTab("Delete Pod", podActionMap, $actionMenu, $leftmenuItem1, $detailsTab);  
 }	
 
@@ -70,10 +80,19 @@ function podJsonClearRightPanel(jsonObj) {
 function podJsonClearDetailsTab(jsonObj) {	    
     var $detailsTab = $("#tab_content_details");       
     $detailsTab.find("#id").text("");
+    
     $detailsTab.find("#name").text("");
-    $detailsTab.find("#cidr").text("");        
+    $detailsTab.find("#name_edit").val("");
+    
+    $detailsTab.find("#cidr").text("");  
+    $detailsTab.find("#cidr_edit").val("");
+          
     $detailsTab.find("#ipRange").text("");
-    $detailsTab.find("#gateway").text("");  
+    $detailsTab.find("#startIpRange_edit").val("");
+    $detailsTab.find("#endIpRange_edit").val("");
+    
+    $detailsTab.find("#gateway").text(""); 
+    $detailsTab.find("#gateway_edit").val(""); 
     
     //if (getDirectAttachUntaggedEnabled() == "true") 
 	//	$("#submenu_content_zones #action_add_directip_vlan").data("type", "pod").data("id", obj.id).data("name", obj.name).data("zoneid", obj.zoneid).show();		
@@ -430,6 +449,9 @@ function bindEventHandlerToDialogAddPool() {
 }
 
 var podActionMap = {
+    "Edit Pod": {
+        dialogBeforeActionFn: doEditPod  
+    },
     "Delete Pod": {  
         api: "deletePod",            
         isAsyncJob: false,        
@@ -444,3 +466,82 @@ var podActionMap = {
     }
 }
 
+function doEditPod($actionLink, $detailsTab, $midmenuItem1) {       
+    var $readonlyFields  = $detailsTab.find("#name, #cidr, #ipRange, #gateway");
+    var $editFields = $detailsTab.find("#name_edit, #cidr_edit, #startIpRange_edit, #endIpRange_edit, #gateway_edit");
+           
+    $readonlyFields.hide();
+    $editFields.show();  
+    $detailsTab.find("#cancel_button, #save_button").show();
+    
+    $detailsTab.find("#cancel_button").unbind("click").bind("click", function(event){    
+        $editFields.hide();
+        $readonlyFields.show();   
+        $("#save_button, #cancel_button").hide();       
+        return false;
+    });
+    $detailsTab.find("#save_button").unbind("click").bind("click", function(event){        
+        doEditPod2($actionLink, $detailsTab, $midmenuItem1);     
+        $editFields.hide();      
+        $readonlyFields.show();       
+        $("#save_button, #cancel_button").hide();       
+        return false;
+    });   
+}
+
+function doEditPod2($actionLink, $detailsTab, $midmenuItem1) {    
+    var jsonObj = $detailsTab.data("jsonObj");
+    var id = jsonObj.id;		
+	var zoneid = jsonObj.zoneid;				
+	var oldName = jsonObj.name;	
+	var oldCidr = jsonObj.cidr;	
+	var oldStartip = jsonObj.startip;					
+	var oldEndip = jsonObj.endip;	
+	var oldGateway = jsonObj.gateway;
+	
+    // validate values
+	var isValid = true;			
+	isValid &= validateString("Name", $detailsTab.find("#name_edit"), $detailsTab.find("#name_edit_errormsg"));
+	isValid &= validateCIDR("CIDR", $detailsTab.find("#cidr_edit"), $detailsTab.find("#cidr_edit_errormsg"));	
+	isValid &= validateIp("Start IP Range", $detailsTab.find("#startIpRange_edit"), $detailsTab.find("#startIpRange_edit_errormsg"));  //required
+	isValid &= validateIp("End IP Range", $detailsTab.find("#endIpRange_edit"), $detailsTab.find("#endIpRange_edit_errormsg"), true);  //optional
+	isValid &= validateIp("Gateway", $detailsTab.find("#gateway_edit"), $detailsTab.find("#gateway_edit_errormsg"), true);  //optional when editing	
+	if (!isValid) 
+	    return;			
+  
+    var newName = trim($detailsTab.find("#name_edit").val());
+	var newCidr = trim($detailsTab.find("#cidr_edit").val());
+	var newStartip = trim($detailsTab.find("#startIpRange_edit").val());
+	var newEndip = trim($detailsTab.find("#endIpRange_edit").val());	
+	var newIpRange = getIpRange(newStartip, newEndip);	
+	var newGateway = trim($detailsTab.find("#gateway_edit").val());				
+        
+    var array1 = [];	
+    array1.push("&id="+id);
+    if(newName != oldName)
+        array1.push("&name="+todb(newName));
+    if(newCidr != oldCidr)
+        array1.push("&cidr="+encodeURIComponent(newCidr));
+    if(newStartip != oldStartip)
+        array1.push("&startIp="+encodeURIComponent(newStartip));    
+    if(newEndip != oldEndip && newEndip != null && newEndip.length > 0) { 
+        if(newStartip == oldStartip) {
+            array1.push("&startIp="+encodeURIComponent(newStartip));  //startIp needs to be passed to updatePod API when endIp is passed to updatePod API.
+        }
+		array1.push("&endIp="+encodeURIComponent(newEndip));	
+    }
+	if(newGateway != oldGateway && newGateway != null && newGateway.length > 0)				             
+	    array1.push("&gateway="+encodeURIComponent(newGateway)); 	
+	
+	$.ajax({
+	  data: createURL("command=updatePod&response=json"+array1.join("")),
+		dataType: "json",
+		success: function(json) {
+		    /*			   				    
+		    var item = json.updatepodresponse;	//should be an embedded object instead of only {success:true}	  
+		    $midmenuItem1.data("jsonObj", item);
+		    PodJsonToRightPanel($midmenuItem1);		
+		    */	
+		}
+	});	   
+}

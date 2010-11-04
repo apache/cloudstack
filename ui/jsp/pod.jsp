@@ -71,6 +71,8 @@
                 <div class="grid_row_cell" style="width: 79%;">
                     <div class="row_celltitles" id="name">
                     </div>
+                    <input class="text" id="name_edit" style="width: 200px; display: none;" type="text" />
+	                <div id="name_edit_errormsg" style="display:none"></div>
                 </div>
             </div>
             <div class="grid_rows odd">
@@ -81,6 +83,8 @@
                 <div class="grid_row_cell" style="width: 79%;">
                     <div class="row_celltitles" id="cidr">
                     </div>
+                    <input class="text" id="cidr_edit" style="width: 200px; display: none;" type="text" />
+	                <div id="cidr_edit_errormsg" style="display:none"></div>
                 </div>
             </div>
             <div class="grid_rows even">
@@ -90,7 +94,11 @@
                 </div>
                 <div class="grid_row_cell" style="width: 79%;">
                     <div class="row_celltitles" id="ipRange">
-                    </div>
+                    </div>                                        
+                    <input class="text" id="startIpRange_edit" style="width: 100px; display: none;" type="text" />
+	                <div id="startIpRange_edit_errormsg" style="display:none"></div>  	                    
+	                <input class="text" id="endIpRange_edit" style="width: 100px; display: none;" type="text" />
+	                <div id="endIpRange_edit_errormsg" style="display:none"></div>  
                 </div>
             </div>
             <div class="grid_rows odd">
@@ -101,9 +109,17 @@
                 <div class="grid_row_cell" style="width: 79%;">
                     <div class="row_celltitles" id="gateway">
                     </div>
+                    <input class="text" id="gateway_edit" style="width: 200px; display: none;" type="text" />
+	                <div id="gateway_edit_errormsg" style="display:none"></div>
                 </div>
             </div>
         </div>
+                
+        <div class="grid_botactionpanel">
+	        <div class="gridbot_buttons" id="save_button" style="display:none;">Save</div>
+	        <div class="gridbot_buttons" id="cancel_button" style="display:none;">Cancel</div>
+	    </div>         
+        
     </div>
     <!-- Details tab (end)-->
 </div>
