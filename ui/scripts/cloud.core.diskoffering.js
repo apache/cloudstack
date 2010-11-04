@@ -101,15 +101,12 @@ function doEditDiskOffering($actionLink, $detailsTab, $midmenuItem1) {
         return false;
     });
     $detailsTab.find("#save_button").unbind("click").bind("click", function(event){        
-        doEditDiskOffering2($actionLink, $detailsTab, $midmenuItem1);     
-        $editFields.hide();      
-        $readonlyFields.show();       
-        $("#save_button, #cancel_button").hide();       
+        doEditDiskOffering2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $editFields);   
         return false;
     });   
 }
 
-function doEditDiskOffering2($actionLink, $detailsTab, $midmenuItem1) { 
+function doEditDiskOffering2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $editFields) { 
     var $detailsTab = $("#right_panel_content #tab_content_details");   
     var jsonObj = $detailsTab.data("jsonObj");
     var id = jsonObj.id;
@@ -143,7 +140,11 @@ function doEditDiskOffering2($actionLink, $detailsTab, $midmenuItem1) {
 		    });		   
 		    var $midmenuItem1 = $("#"+getMidmenuId(jsonObj));		   
 		    diskOfferingToMidmenu(jsonObj, $midmenuItem1);
-		    diskOfferingToRightPanel($midmenuItem1);		  
+		    diskOfferingToRightPanel($midmenuItem1);	
+		    
+		    $editFields.hide();      
+            $readonlyFields.show();       
+            $("#save_button, #cancel_button").hide();     	  
 		}
 	});
 }

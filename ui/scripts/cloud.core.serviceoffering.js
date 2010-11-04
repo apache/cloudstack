@@ -124,15 +124,12 @@ function doEditServiceOffering($actionLink, $detailsTab, $midmenuItem1) {
         return false;
     });
     $detailsTab.find("#save_button").unbind("click").bind("click", function(event){        
-        doEditServiceOffering2($actionLink, $detailsTab, $midmenuItem1);     
-        $editFields.hide();      
-        $readonlyFields.show();       
-        $("#save_button, #cancel_button").hide();       
+        doEditServiceOffering2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $editFields);                 
         return false;
     });   
 }
 
-function doEditServiceOffering2($actionLink, $detailsTab, $midmenuItem1) { 
+function doEditServiceOffering2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $editFields) { 
     var $detailsTab = $("#right_panel_content #tab_content_details");   
     var jsonObj = $detailsTab.data("jsonObj");
     var id = jsonObj.id;
@@ -158,7 +155,11 @@ function doEditServiceOffering2($actionLink, $detailsTab, $midmenuItem1) {
 		success: function(json) {	  
 		    var jsonObj = json.updateserviceofferingresponse;	
 		    serviceOfferingToMidmenu(jsonObj, $midmenuItem1);
-		    serviceOfferingToRightPanel($midmenuItem1);		  
+		    serviceOfferingToRightPanel($midmenuItem1);		
+		    
+		    $editFields.hide();      
+            $readonlyFields.show();       
+            $("#save_button, #cancel_button").hide();     
 		}
 	});
 }
