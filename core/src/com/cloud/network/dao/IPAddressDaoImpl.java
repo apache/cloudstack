@@ -214,21 +214,19 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, String> implem
 	}
 	
 	@Override @DB
-	public int countIPs(long dcId, String vlanId, String vlanGateway, String vlanNetmask, boolean onlyCountAllocated) {
+	public int countIPs(long dcId, Long accountId, String vlanId, String vlanGateway, String vlanNetmask) {
 		Transaction txn = Transaction.currentTxn();
 		int ipCount = 0;
 		try {
-			String sql = "SELECT count(*) FROM user_ip_address u INNER JOIN vlan v on (u.vlan_db_id = v.id AND v.data_center_id = ? AND v.vlan_id = ? AND v.vlan_gateway = ? AND v.vlan_netmask = ?)";
+			String sql = "SELECT count(*) FROM user_ip_address u INNER JOIN vlan v on (u.vlan_db_id = v.id AND v.data_center_id = ? AND v.vlan_id = ? AND v.vlan_gateway = ? AND v.vlan_netmask = ? AND u.account_id = ?)";
 			
-			if (onlyCountAllocated) {
-				sql += " WHERE allocated IS NOT NULL";
-			}
 			
 			PreparedStatement pstmt = txn.prepareAutoCloseStatement(sql);
 			pstmt.setLong(1, dcId);
 			pstmt.setString(2, vlanId);
 			pstmt.setString(3, vlanGateway);
 			pstmt.setString(4, vlanNetmask);
+			pstmt.setLong(5, accountId);
 			ResultSet rs = pstmt.executeQuery();
 			
 			if (rs.next()) {

@@ -42,7 +42,7 @@ public interface IPAddressDao extends GenericDao<IPAddressVO, String> {
 	
 	public int countIPs(long dcId, long vlanDbId, boolean onlyCountAllocated);
 	
-	public int countIPs(long dcId, String vlanId, String vlanGateway, String vlanNetmask, boolean onlyCountAllocated);
+	public int countIPs(long dcId, Long accountId, String vlanId, String vlanGateway, String vlanNetmask);
 	
 	public boolean mark(long dcId, String ip);
 	

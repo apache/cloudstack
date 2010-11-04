@@ -551,7 +551,7 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
 			String vlanId = vlan.getVlanId();
 			String vlanGateway = vlan.getVlanGateway();
 			String vlanNetmask = vlan.getVlanNetmask();
-        	boolean firstIP = (!sourceNat && (_ipAddressDao.countIPs(vlan.getDataCenterId(), vlan.getVlanId(), vlan.getVlanGateway(), vlan.getVlanNetmask(), true) == 1));
+        	boolean firstIP = (!sourceNat && (_ipAddressDao.countIPs(vlan.getDataCenterId(), router.getAccountId(), vlan.getVlanId(), vlan.getVlanGateway(), vlan.getVlanNetmask()) == 1));
         				
 			String vifMacAddress = null;
 			if (firstIP) {
