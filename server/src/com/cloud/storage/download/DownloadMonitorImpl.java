@@ -135,7 +135,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
         final Map<String, String> configs = _configDao.getConfiguration("ManagementServer", params);
         _sslCopy = Boolean.parseBoolean(configs.get("secstorage.encrypt.copy"));
         
-        String cert = configs.get("secstorage.secure.copy.cert");
+        String cert = configs.get("secstorage.ssl.cert.domain");
         if (!"realhostip.com".equalsIgnoreCase(cert)) {
         	s_logger.warn("Only realhostip.com ssl cert is supported, ignoring self-signed and other certs");
         }
