@@ -83,15 +83,12 @@ function doEditGlobalSetting() {
         return false;
     });
     $detailsTab.find("#save_button").unbind("click").bind("click", function(event){        
-        doEditGlobalSetting2();     
-        $editFields.hide();      
-        $readonlyFields.show();       
-        $("#save_button, #cancel_button").hide();       
+        doEditGlobalSetting2($readonlyFields, $editFields);   
         return false;
     });   
 }
 
-function doEditGlobalSetting2() {        
+function doEditGlobalSetting2($readonlyFields, $editFields) {        
     $("#right_panel_content #tab_content_details").find("#globalsetting_template").each(function(index) {        
         var $thisRow =$(this);        
         if($thisRow.find("#value_edit").val() != $thisRow.find("#value").text()) {            
@@ -120,6 +117,10 @@ function doEditGlobalSetting2() {
 		                }
 		            });		
 		            globalsettingJSONToTemplate(jsonObj, $thisRow);  
+		            
+		            $editFields.hide();      
+                    $readonlyFields.show();       
+                    $("#save_button, #cancel_button").hide();   
         		    	    
 		            $("#dialog_alert_restart_management_server").dialog("open");
 	            }
