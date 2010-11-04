@@ -559,6 +559,7 @@ fi
 %defattr(0644,root,root,0755)
 %{_sysconfdir}/%{name}/management/catalina.policy
 %{_sysconfdir}/%{name}/management/*.properties
+%{_sysconfdir}/%{name}/management/resources/*.properties
 %{_sysconfdir}/%{name}/management/components.xml
 %{_sysconfdir}/%{name}/management/context.xml
 %config(noreplace) %attr(640,root,%{name}) %{_sysconfdir}/%{name}/management/db.properties

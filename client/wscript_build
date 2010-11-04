@@ -5,7 +5,7 @@ bld.install_files('${MSENVIRON}/webapps/client/WEB-INF',
 	start_path.ant_glob("**",src=True,bld=False,dir=False,flat=True),
 	cwd=start_path,relative_trick=True)
 
-bld.install_files("${MSCONF}",'WEB-INF/classes/resources/*.properties',chmod=0640)
+bld.install_files("${MSCONF}/resources",'WEB-INF/classes/resources/*.properties',chmod=0640)
 
 if not Options.options.PRESERVECONFIG:
 	bld.install_files_filtered("${MSCONF}","tomcatconf/*")
