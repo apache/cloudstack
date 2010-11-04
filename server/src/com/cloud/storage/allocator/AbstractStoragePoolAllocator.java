@@ -136,8 +136,12 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         if(dskCh.getType().equals(VolumeType.ROOT) && pool.getPoolType().equals(StoragePoolType.Iscsi)){
             return false;
         }
-            
-		
+        
+        //by default, all pools are up when successfully added
+		//don't return the pool if not up (if in maintenance/prepareformaintenance/errorinmaintenance)
+        if(!pool.getStatus().equals(com.cloud.host.Status.Up))
+        	return false;
+        
 		// Check that the pool type is correct
 		if (!poolIsCorrectType(dskCh, pool, vm)) {
 			return false;
