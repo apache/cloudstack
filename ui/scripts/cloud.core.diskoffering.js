@@ -157,7 +157,9 @@ function diskOfferingToMidmenu(jsonObj, $midmenuItem1) {
     $iconContainer.find("#icon").attr("src", "images/midmenuicon_system_diskoffering.png");	
     
     $midmenuItem1.find("#first_row").text(fromdb(jsonObj.name).substring(0,25)); 
-    $midmenuItem1.find("#second_row").text(convertBytes(jsonObj.disksize));  
+        
+    var diskSize = diskofferingGetDiskSize(jsonObj);    
+    $midmenuItem1.find("#second_row").text(diskSize);  
 }
 
 function diskOfferingToRightPanel($midmenuItem1) {
@@ -197,13 +199,9 @@ function diskOfferingJsonToDetailsTab() {
     $thisTab.find("#displaytext").text(fromdb(jsonObj.displaytext));
     $thisTab.find("#displaytext_edit").val(fromdb(jsonObj.displaytext));
     
-    var diskSize;
-    if(jsonObj.disksize == 0 && jsonObj.isCustomized == true)
-        diskSize = "will be specified during VM creation";
-    else
-        diskSize = convertBytes(jsonObj.disksize);    
+    var diskSize = diskofferingGetDiskSize(jsonObj);   
     $thisTab.find("#disksize").text(diskSize);    
-    
+        
     $thisTab.find("#tags").text(fromdb(jsonObj.tags));      
     $thisTab.find("#domain").text(fromdb(jsonObj.domain));   
     
@@ -216,6 +214,15 @@ function diskOfferingJsonToDetailsTab() {
     $thisTab.find("#tab_spinning_wheel").hide();    
     $thisTab.find("#tab_container").show();         
 }
+
+function diskofferingGetDiskSize(jsonObj) {
+    var diskSize;
+    if(jsonObj.disksize == 0 && jsonObj.isCustomized == true)
+        diskSize = "specify disk size during VM creation";
+    else
+        diskSize = convertBytes(jsonObj.disksize * 1024 * 1024);    //unit of jsonObj.disksize is MB.
+    return diskSize;
+}    
 
 function diskOfferingClearRightPanel() {
     diskOfferingClearDetailsTab();
