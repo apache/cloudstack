@@ -3932,7 +3932,57 @@ a:hover.search_button {
 }
 
 
+.resources_totalbg {
+	width:58px;
+	height:32px;
+	float:right;
+	background:url(../images/resources_totalbg.png) no-repeat top left;
+	margin:6px 10px 0 0;
+	padding:0;
+}
 
+.resources_totalbg p {
+	width:50px;
+	height:auto;
+	float:left;
+	text-align:center;
+	font-size:16px;
+	font-weight:bold;
+	color:#FFF;
+	margin:8px 0 0 4px;
+	padding:0;
+	display:inline;
+}
+
+.add_hostbutton {
+	width:60px;
+	height:15px;
+	float:left;
+	background:url(../images/add_hostbutton.png) no-repeat top left;
+	margin:0 0 0 10px;
+	padding:0;
+	cursor:pointer;
+	cursor:hand;
+}
+
+.add_hostbutton:hover {
+	background:url(../images/add_hostbutton_hover.png) no-repeat top left;
+}
+
+.add_primarystoragebutton {
+	width:116px;
+	height:15px;
+	float:left;
+	background:url(../images/add_primarystoragebutton.png) no-repeat top left;
+	margin:0 0 0 10px;
+	padding:0;
+	cursor:pointer;
+	cursor:hand;
+}
+
+.add_primarystoragebutton:hover {
+	background:url(../images/add_primarystoragebutton_hover.png) no-repeat top left;
+}
 
 /* 2010-10-10 */
 
