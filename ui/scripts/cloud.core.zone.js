@@ -683,15 +683,12 @@ function doEditZone($actionLink, $detailsTab, $midmenuItem1) {
         return false;
     });
     $detailsTab.find("#save_button").unbind("click").bind("click", function(event){        
-        doEditZone2($actionLink, $detailsTab, $midmenuItem1);     
-        $editFields.hide();      
-        $readonlyFields.show();       
-        $("#save_button, #cancel_button").hide();       
+        doEditZone2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $editFields);   
         return false;
     });   
 }
 
-function doEditZone2($actionLink, $detailsTab, $midmenuItem1) {    
+function doEditZone2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $editFields) {    
     // validate values
 	var isValid = true;			
 	isValid &= validateString("Name", $detailsTab.find("#name_edit"), $detailsTab.find("#name_edit_errormsg"));
@@ -750,7 +747,11 @@ function doEditZone2($actionLink, $detailsTab, $midmenuItem1) {
 		success: function(json) {		   
 		    var item = json.updatezoneresponse;		  
 		    $midmenuItem1.data("jsonObj", item);
-		    zoneJsonToRightPanel($midmenuItem1);		    
+		    zoneJsonToRightPanel($midmenuItem1);	
+		    
+		    $editFields.hide();      
+            $readonlyFields.show();       
+            $("#save_button, #cancel_button").hide();       	    
 		}
 	});   
 }
