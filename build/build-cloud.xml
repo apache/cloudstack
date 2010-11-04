@@ -525,8 +525,29 @@
 
   <target name="build-systemvm-patch" depends="-init">
     <mkdir dir="${dist.dir}" />
+    <mkdir dir="${dist.dir}/build-patch" />
+    <mkdir dir="${dist.dir}/build-patch/usr/sbin" />
+    <copy overwrite="true" todir="${dist.dir}/build-patch">
+      <fileset dir="${base.dir}/patches/systemvm/debian/config/" >
+        <include name="**/*"/>
+      </fileset>
+      <fileset dir="${base.dir}/patches/systemvm/debian/vpn/" >
+        <include name="**/*"/>
+      </fileset>
+      <fileset dir="${base.dir}/patches/systemvm/debian/xe/" >
+        <include name="**/*"/>
+        <exclude name="**/xe-*" />
+        <exclude name="**/xen-*" />
+      </fileset>
+    </copy>
+    <copy overwrite="true" todir="${dist.dir}/build-patch/usr/sbin/">
+      <fileset dir="${base.dir}/patches/systemvm/debian/xe/" >
+        <include name="**/xe-*" />
+        <include name="**/xen-*" />
+      </fileset>
+    </copy>
     <tar destfile="${dist.dir}/patch.tar">
-      <tarfileset dir="${base.dir}/patches/systemvm/debian/config/" filemode="755">
+      <tarfileset dir="${dist.dir}/build-patch/" filemode="755">
         <include name="**/*"/>
         <exclude name="**/.classpath" />
         <exclude name="**/.project" />
@@ -536,6 +557,7 @@
     <copy file="${base.dir}/patches/systemvm/debian/config/root/.ssh/authorized_keys" todir="${dist.dir}/"/>
     <gzip destfile="${dist.dir}/cloud-scripts.tgz" src="${dist.dir}/patch.tar"/>
     <delete file="${dist.dir}/patch.tar"/>
+    <delete dir="${dist.dir}/build-patch"/>
   </target>
 
   <target name="help">
