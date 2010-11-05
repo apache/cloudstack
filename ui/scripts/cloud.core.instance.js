@@ -113,7 +113,7 @@ function initStartVMButton() {
                     inProcessText: "Starting Instance....",
                     asyncJobResponse: "startvirtualmachineresponse",                  
                     afterActionSeccessFn: function(json, $midmenuItem1, id) {                    
-                        var jsonObj = json.queryasyncjobresultresponse.jobresult.startvirtualmachineresponse;      
+                        var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine;      
                         
                         vmToMidmenu(jsonObj, $midmenuItem1);                     
                         if( ($("#right_panel_content #tab_content_details").length > 0)
@@ -162,18 +162,8 @@ function initStopVMButton() {
                     isAsyncJob: true,
                     inProcessText: "Stopping Instance....",
                     asyncJobResponse: "stopvirtualmachineresponse",                 
-                    afterActionSeccessFn: function(json, $midmenuItem1, id) {  
-                        //call listVirtualMachine to get embedded object until bug 6486 ("StopVirtualMachine API should return an embedded object on success") is fixed.
-                        var jsonObj;
-                        $.ajax({
-                            data: createURL("command=listVirtualMachines&id="+id),
-                            dataType: "json",
-                            async: false,
-                            success: function(json) {                    
-                                jsonObj = json.listvirtualmachinesresponse.virtualmachine[0];                    
-                            }
-                        });                      
-                        
+                    afterActionSeccessFn: function(json, $midmenuItem1, id) {                         
+                        var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine;  
                         vmToMidmenu(jsonObj, $midmenuItem1);   
                         if( ($("#right_panel_content #tab_content_details").length > 0)
                           && ($("#right_panel_content #tab_content_details").data("jsonObj") != null )
@@ -222,17 +212,7 @@ function initRebootVMButton() {
                     inProcessText: "Rebooting Instance....",
                     asyncJobResponse: "rebootvirtualmachineresponse",                  
                     afterActionSeccessFn: function(json, $midmenuItem1, id) {  
-                        //call listVirtualMachine to get embedded object until Bug 6751("rebootVirtualMachine API should return an embedded object") is fixed.
-                        var jsonObj;
-                        $.ajax({
-                            data: createURL("command=listVirtualMachines&id="+id),
-                            dataType: "json",
-                            async: false,
-                            success: function(json) {                    
-                                jsonObj = json.listvirtualmachinesresponse.virtualmachine[0];                    
-                            }
-                        });                      
-                        
+                        var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine;  
                         vmToMidmenu(jsonObj, $midmenuItem1);    
                         if( ($("#right_panel_content #tab_content_details").length > 0)
                           && ($("#right_panel_content #tab_content_details").data("jsonObj") != null )
@@ -281,17 +261,7 @@ function initDestroyVMButton() {
                     inProcessText: "Destroying Instance....",
                     asyncJobResponse: "destroyvirtualmachineresponse",                 
                     afterActionSeccessFn: function(json, $midmenuItem1, id) {  
-                        //call listVirtualMachine to get embedded object until bug 6041 ("DestroyVirtualMachine API should return an embedded object on success") is fixed.
-                        var jsonObj;
-                        $.ajax({
-                            data: createURL("command=listVirtualMachines&id="+id),
-                            dataType: "json",
-                            async: false,
-                            success: function(json) {                    
-                                jsonObj = json.listvirtualmachinesresponse.virtualmachine[0];                    
-                            }
-                        });                      
-                        
+                        var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine; 
                         vmToMidmenu(jsonObj, $midmenuItem1);  
                         if( ($("#right_panel_content #tab_content_details").length > 0)
                           && ($("#right_panel_content #tab_content_details").data("jsonObj") != null )
@@ -924,7 +894,7 @@ var vmActionMap = {
         inProcessText: "Starting Instance....",
         dialogBeforeActionFn : doStartVM,
         afterActionSeccessFn: function(json, $midmenuItem1, id) { 
-            var jsonObj = json.queryasyncjobresultresponse.jobresult.startvirtualmachineresponse;      
+            var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine;      
             vmToMidmenu(jsonObj, $midmenuItem1);
             vmToRightPanel($midmenuItem1);
         }
@@ -935,17 +905,7 @@ var vmActionMap = {
         inProcessText: "Stopping Instance....",
         dialogBeforeActionFn : doStopVM,
         afterActionSeccessFn: function(json, $midmenuItem1, id) { 
-            //call listVirtualMachine to get embedded object until bug 6486 ("StopVirtualMachine API should return an embedded object on success") is fixed.
-            var jsonObj;
-            $.ajax({
-                data: createURL("command=listVirtualMachines&id="+id),
-                dataType: "json",
-                async: false,
-                success: function(json) {                    
-                    jsonObj = json.listvirtualmachinesresponse.virtualmachine[0];                    
-                }
-            });
-            
+            var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine;            
             vmToMidmenu(jsonObj, $midmenuItem1);
             vmToRightPanel($midmenuItem1);
         }
@@ -956,17 +916,7 @@ var vmActionMap = {
         inProcessText: "Rebooting Instance....",
         dialogBeforeActionFn : doRebootVM,
         afterActionSeccessFn: function(json, $midmenuItem1, id) { 
-            //call listVirtualMachine to get embedded object until Bug 6751("rebootVirtualMachine API should return an embedded object") is fixed.
-            var jsonObj;
-            $.ajax({
-                data: createURL("command=listVirtualMachines&id="+id),
-                dataType: "json",
-                async: false,
-                success: function(json) {                    
-                    jsonObj = json.listvirtualmachinesresponse.virtualmachine[0];                    
-                }
-            });
-                          
+            var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine;       
             vmToMidmenu(jsonObj, $midmenuItem1);
             vmToRightPanel($midmenuItem1);
         }
@@ -976,19 +926,8 @@ var vmActionMap = {
         asyncJobResponse: "destroyvirtualmachineresponse",
         inProcessText: "Destroying Instance....",
         dialogBeforeActionFn : doDestroyVM,
-        afterActionSeccessFn: function(json, $midmenuItem1, id) { 
-            //call listVirtualMachine to get embedded object until bug 6041 ("DestroyVirtualMachine API should return an embedded object on success") is fixed.
-            var id = $midmenuItem1.data("jsonObj").id; 
-            var jsonObj;
-            $.ajax({
-                data: createURL("command=listVirtualMachines&id="+id),
-                dataType: "json",
-                async: false,
-                success: function(json) {                    
-                    jsonObj = json.listvirtualmachinesresponse.virtualmachine[0];                    
-                }
-            });
-            
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {             
+            var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine; 
             vmToMidmenu(jsonObj, $midmenuItem1);
             vmToRightPanel($midmenuItem1);
         }
@@ -998,18 +937,7 @@ var vmActionMap = {
         inProcessText: "Restoring Instance....",
         dialogBeforeActionFn : doRestoreVM,
         afterActionSeccessFn: function(json, $midmenuItem1, id) { 
-            //call listVirtualMachine to get embedded object until bug 6037 ("RecoverVirtualMachine API should return an embedded object on success") is fixed.
-            var id = $midmenuItem1.data("jsonObj").id; 
-            var jsonObj;
-            $.ajax({
-                data: createURL("command=listVirtualMachines&id="+id),
-                dataType: "json",
-                async: false,
-                success: function(json) {                    
-                    jsonObj = json.listvirtualmachinesresponse.virtualmachine[0];                    
-                }
-            });
-            
+            var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine; 
             vmToMidmenu(jsonObj, $midmenuItem1);
             vmToRightPanel($midmenuItem1);
         }

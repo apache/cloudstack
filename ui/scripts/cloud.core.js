@@ -93,8 +93,8 @@ function doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $thisTab) {
                                         $afterActionInfoContainer.removeClass("errorbox").show();  
                                         afterActionSeccessFn(json, $midmenuItem1, id);     
 			                        } else if (result.jobstatus == 2) { // Failed	
-			                            handleMidMenuItemAfterDetailsTabAction($midmenuItem1, false, (label + " action failed. Reason: " + fromdb(result.jobresult)));		
-			                            $afterActionInfoContainer.find("#after_action_info").text(label + " action failed. Reason: " + fromdb(result.jobresult));
+			                            handleMidMenuItemAfterDetailsTabAction($midmenuItem1, false, (label + " action failed. Reason: " + fromdb(result.jobresult.errortext)));		
+			                            $afterActionInfoContainer.find("#after_action_info").text(label + " action failed. Reason: " + fromdb(result.jobresult.errortext));
                                         $afterActionInfoContainer.addClass("errorbox").show();     
 			                        }											                    
 		                        }
@@ -242,7 +242,7 @@ function doActionToSubgridItem(id, $actionLink, apiCommand, $subgridItem) {
                                         $subgridItem.find("#after_action_info_container").removeClass("error").addClass("success").show();  
 			                            afterActionSeccessFn(json, id, $subgridItem);	
 			                        } else if (result.jobstatus == 2) { // Failed
-			                            $subgridItem.find("#after_action_info").text(label + " action failed. Reason: " + fromdb(result.jobresult));
+			                            $subgridItem.find("#after_action_info").text(label + " action failed. Reason: " + fromdb(result.jobresult.errortext));
                                         $subgridItem.find("#after_action_info_container").removeClass("success").addClass("error").show();			                          
 			                        }											                    
 		                        }
@@ -397,7 +397,7 @@ function doActionToMidMenu(id, apiInfo, apiCommand) {
 			                            afterActionSeccessFn(json, $midmenuItem1, id);  			                            
 			                        } else if (result.jobstatus == 2) { // Failed	
 			                            $midmenuItem1.find("#info_icon").addClass("error").show();
-			                            $midmenuItem1.data("afterActionInfo", (label + " action failed. Reason: " + fromdb(result.jobresult)));    
+			                            $midmenuItem1.data("afterActionInfo", (label + " action failed. Reason: " + fromdb(result.jobresult.errortext)));    
 			                        }											                    
 		                        }
 	                        },
