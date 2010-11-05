@@ -63,7 +63,7 @@
                     </div>
                 </div>
                 <div class="dbrow_cell" style="width: 10%; border: none;">
-                	<div class="resadd_button"></div>
+                	<div class="resadd_button" title="Add Host"></div>
                 </div>
             </div>
             
@@ -80,7 +80,7 @@
                     </div>
                 </div>
                 <div class="dbrow_cell" style="width: 10%; border: none;">
-                	<div class="resadd_button"></div>
+                	<div class="resadd_button" title="Add Primary Storage"></div>
                 </div>
             </div>
        
