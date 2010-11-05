@@ -273,17 +273,17 @@
 				<li>
 					<label for="user_name">Name:</label>
 					<input class="text" type="text" name="add_template_name" id="add_template_name" style="width:250px"/>
-					<div id="add_template_name_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div>
+					<div id="add_template_name_errormsg" class="dialog_formcontent_errormsg" style="display:none; margin-left:0;"></div>
 				</li>
 				<li>
 					<label for="user_name">Display Text:</label>
 					<input class="text" type="text" name="add_template_display_text" id="add_template_display_text" style="width:250px"/>
-					<div id="add_template_display_text_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div>
+					<div id="add_template_display_text_errormsg" class="dialog_formcontent_errormsg" style="display:none; margin-left:0"></div>
 				</li>
 				<li>
 					<label for="user_name">URL:</label>
 					<input class="text" type="text" name="add_template_url" id="add_template_url" style="width:250px"/>
-					<div id="add_template_url_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div>
+					<div id="add_template_url_errormsg" class="dialog_formcontent_errormsg" style="display:none; margin-left:0"></div>
 				</li>
 				<li>
                     <label>Zone:</label>
