@@ -1727,6 +1727,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         } else {
             assert false : "Did someone add a new Startup command?";
         }
+        
+      
 
         Long id = null;
         HostVO server = _hostDao.findByGuid(startup.getGuid());
@@ -1976,9 +1978,26 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
 
         if (type == Host.Type.Routing) {
             StartupRoutingCommand scc = (StartupRoutingCommand) startup;
+           
             HypervisorType hypervisorType = scc.getHypervisorType();
             boolean doCidrCheck = true;
 
+
+            /*KVM:Enforcement that all the hosts in the cluster have the same os type, for migration*/
+            if (scc.getHypervisorType() == HypervisorType.KVM) {
+            	List<HostVO> hostsInCluster = _hostDao.listByCluster(clusterId);
+            	if (!hostsInCluster.isEmpty()) {
+            		HostVO oneHost = hostsInCluster.get(0);
+            		_hostDao.loadDetails(oneHost);
+            		String hostOsInCluster = oneHost.getDetail("Host.OS");
+            		String hostOs = scc.getHostDetails().get("Host.OS");
+            		if (!hostOsInCluster.equalsIgnoreCase(hostOs)) {
+            			throw new IllegalArgumentException("Can't add host: " + startup.getPrivateIpAddress() + " with hostOS: " + hostOs + " into a cluster," +
+            					"in which there are " + hostOsInCluster + " hosts added");
+            		}
+            	}
+            }
+   
             // If this command is from the agent simulator, don't do the CIDR
             // check
             if (scc.getAgentTag() != null && startup.getAgentTag().equalsIgnoreCase("vmops-simulator"))

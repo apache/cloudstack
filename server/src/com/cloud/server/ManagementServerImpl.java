@@ -1524,7 +1524,7 @@ public class ManagementServerImpl implements ManagementServer {
         return true;
     }
 
-    private UserVm deployVirtualMachineImpl(long userId, long accountId, long dataCenterId, long serviceOfferingId, long templateId, Long diskOfferingId,
+    private UserVm deployVirtualMachineImpl(long userId, long accountId, long dataCenterId, long serviceOfferingId, VMTemplateVO template, Long diskOfferingId,
             String domain, String password, String displayName, String group, String userData, String [] networkGroups, long startEventId, long size) throws ResourceAllocationException, 
             InsufficientStorageCapacityException, ExecutionException, StorageUnavailableException, ConcurrentOperationException {
 
@@ -1533,12 +1533,14 @@ public class ManagementServerImpl implements ManagementServer {
         AccountVO account = _accountDao.findById(accountId);
         DataCenterVO dc = _dcDao.findById(dataCenterId);
         ServiceOfferingVO offering = _offeringsDao.findById(serviceOfferingId);
-        VMTemplateVO template = _templateDao.findById(templateId);
-
+      
         // Make sure a valid template ID was specified
         if (template == null) {
             throw new InvalidParameterValueException("Please specify a valid template or ISO ID.");
         }
+        
+        long templateId = template.getId();
+        
         byte [] decodedUserData = null;
         if (userData != null) {
         	if (userData.length() >= 2* UserVmManager.MAX_USER_DATA_LENGTH_BYTES) {
@@ -1869,7 +1871,12 @@ public class ManagementServerImpl implements ManagementServer {
         if (isIso && diskOffering == null) {
         	throw new InvalidParameterValueException("Please specify a valid disk offering ID.");
         }
-
+        
+        if (isIso) {
+        	/*iso template doesn;t have hypervisor type, temporarily set it's type as user specified, pass it to storage allocator */
+        	template.setHypervisorType(HypervisorType.getType(cmd.getHypervisor()));
+        }
+        
         //if it is a custom disk offering,AND the size passed in here is <= 0; error out
         if(diskOffering != null && diskOffering.isCustomized() && size <= 0){
         	throw new InvalidParameterValueException("Please specify a valid disk size for VM creation; custom disk offering has no size set");
@@ -1891,6 +1898,8 @@ public class ManagementServerImpl implements ManagementServer {
                 }
             }
         }
+        
+      
 
         byte [] decodedUserData = null;
         if (userData != null) {
@@ -1930,7 +1939,7 @@ public class ManagementServerImpl implements ManagementServer {
 
         Long eventId = cmd.getStartEventId();
         try {
-            return deployVirtualMachineImpl(userId, accountId, dataCenterId, serviceOfferingId, templateId, diskOfferingId, domain, password, displayName, group, userData, networkGroups, eventId, size);
+            return deployVirtualMachineImpl(userId, accountId, dataCenterId, serviceOfferingId, template, diskOfferingId, domain, password, displayName, group, userData, networkGroups, eventId, size);
         } catch (ResourceAllocationException e) {
             if(s_logger.isDebugEnabled())
                 s_logger.debug("Unable to deploy VM: " + e.getMessage());

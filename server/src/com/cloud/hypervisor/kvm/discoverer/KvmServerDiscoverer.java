@@ -197,9 +197,9 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 			InetAddress ia = InetAddress.getByName(hostname);
 			agentIp = ia.getHostAddress();
 			String guid = UUID.nameUUIDFromBytes(agentIp.getBytes()).toString();
-			guid = guid + "-LibvirtComputingResource";/*tail added by agent.java*/
-			if (_hostDao.findByGuid(guid) != null) {
-				s_logger.debug("Skipping " + agentIp + " because " + guid + " is already in the database.");
+			String guidWithTail = guid + "-LibvirtComputingResource";/*tail added by agent.java*/
+			if (_hostDao.findByGuid(guidWithTail) != null) {
+				s_logger.debug("Skipping " + agentIp + " because " + guidWithTail + " is already in the database.");
 				return null;
 			}       
 			
@@ -233,11 +233,11 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 			kvmResource.configure("kvm agent", params);
 			resources.put(kvmResource, details);
 			
-			HostVO connectedHost = waitForHostConnect(dcId, podId, clusterId, guid);
+			HostVO connectedHost = waitForHostConnect(dcId, podId, clusterId, guidWithTail);
 			if (connectedHost == null)
 				return null;
 			
-			details.put("guid", guid);
+			details.put("guid", guidWithTail);
 			 /*set cluster hypervisor type to xenserver*/
             ClusterVO clu = _clusterDao.findById(clusterId);
             clu.setHypervisorType(HypervisorType.KVM.toString());
