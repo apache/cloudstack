@@ -2219,6 +2219,9 @@ a:hover.search_button {
 	height:auto;
 }
 
+.midmenu_content.addingfailed span{
+	height:auto;
+}
 
 
 
@@ -2900,6 +2903,26 @@ a:hover.search_button {
 	font-size:11px;
 	margin:10px;
 	padding:0;
+}
+
+
+.info_detailbox a {
+	color:#2c8bbc;
+	font-size:11px;
+	font-weight:normal;
+	text-align:left;
+	margin:0;
+	padding:0;
+	text-decoration:none;
+}
+
+.info_detailbox a:link, .info_detailbox a:visited {
+	text-decoration:none;
+	
+}
+
+.info_detailbox a:hover {
+	text-decoration:underline;
 }
 
 .info_detailbox.errorbox {
