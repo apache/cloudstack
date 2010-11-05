@@ -284,6 +284,12 @@
             </div>
         </div>        
         <div id="tab_container" style="display:none">
+			<div id="vpn_help" class="info_detailbox defaultbox" style="display:none;"> 
+				<p>
+					Your VPN access is currently enabled and can be accessed via the IP : <b><span id="vpn_ip"></span></b><br/>
+					Your IPSec pre-shared key is : <b><span id="vpn_key"></span></b><br/>
+				</p>
+			</div>
 			<div class="grid_container">
 	        	<div class="grid_header">
 	            	<div id="grid_header_title" class="grid_header_title">VPN Users</div>

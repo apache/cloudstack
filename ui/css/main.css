@@ -2908,8 +2908,9 @@ a:hover.search_button {
 }
 
 .info_detailbox.defaultbox {
-	background:FFF repeat-x top left;
-	color:#a90000;
+	background:#eaf2f6 repeat-x top left;
+	color:#333;
+	margin-top:10px;
 }
 
 

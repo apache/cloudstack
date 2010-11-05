@@ -388,6 +388,8 @@ function ipJsonToVPNTab() {
         success: function(json) {		                    
             var items = json.listremoteaccessvpnsresponse.remoteaccessvpn;  
             if (items != null && items.length > 0) {
+				$thisTab.find("#vpn_key").text(items[0].presharedkey);
+				$thisTab.find("#vpn_ip").text(items[0].publicip);
 				showVpnUsers();
             } else {
 				showEnableVPNDialog($thisTab);
@@ -439,6 +441,7 @@ function showVpnUsers() {
 																																		 
 											if (result.jobstatus == 1) { // Succeeded 	
 												$thisDialog.dialog("close");
+												$vpnTab.find("#vpn_help").hide();
 												$vpnTab.find("#enable_vpn_link").unbind("click").bind("click", function(event) {
 													showEnableVPNDialog($vpnTab);
 												});
@@ -551,6 +554,8 @@ function showVpnUsers() {
 		$(this).find("#vpn_action_menu").hide();    
 		return false;
 	});		
+	
+	$vpnTab.find("#vpn_help").show();
 	
 	// List users
 	$.ajax({
