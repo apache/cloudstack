@@ -1546,6 +1546,7 @@ a:hover {
 
 .leftmenu_arrows.expanded_close {
 	background:url(../images/leftmenu_white_closedarrow.png) no-repeat top left;
+	margin-top:1px;
 }
 
 .leftmenu_arrows.white_nonexpanded_close {
