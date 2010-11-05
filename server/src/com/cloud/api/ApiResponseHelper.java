@@ -130,6 +130,7 @@ public class ApiResponseHelper {
        accountResponse.setAccountType(account.getType());
        accountResponse.setDomainId(account.getDomainId());
        accountResponse.setDomainName(ApiDBUtils.findDomainById(account.getDomainId()).getName());
+       accountResponse.setState(account.getState());
 
        //get network stat
        List<UserStatisticsVO> stats = ApiDBUtils.listUserStatsBy(account.getId());

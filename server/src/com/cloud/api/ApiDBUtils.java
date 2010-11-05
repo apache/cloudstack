@@ -363,7 +363,7 @@ public class ApiDBUtils {
     }
 
     public static VMTemplateVO findTemplateById(Long templateId) {
-        return _templateDao.findById(templateId);
+        return _templateDao.findByIdIncludingRemoved(templateId);
     }
 
     public static VMTemplateHostVO findTemplateHostRef(long templateId, long zoneId) {
