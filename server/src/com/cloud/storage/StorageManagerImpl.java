@@ -2160,17 +2160,10 @@ public class StorageManagerImpl implements StorageManager {
 				s_logger.error(msg);
 				throw new ResourceUnavailableException(msg);
 			}
-			
-        	primaryStorage = _storagePoolDao.findById(primaryStorageId);
-        	if(primaryStorage == null)
-        	{
-        		s_logger.warn("The primary storage does not exist");
-        		throw new InvalidParameterValueException("Primary storage doesn't exist");
-        	}	
         	
-//        	if (!primaryStorage.getStatus().equals(Status.Up)) {
-//    			throw new InvalidParameterValueException("Primary storage with id " + primaryStorageId + " is not ready for migration, as the status is:" + primaryStorage.getStatus().toString());
-//        	}        
+        	if (!primaryStorage.getStatus().equals(Status.Up) && !primaryStorage.getStatus().equals(Status.ErrorInMaintenance)) {
+    			throw new InvalidParameterValueException("Primary storage with id " + primaryStorageId + " is not ready for migration, as the status is:" + primaryStorage.getStatus().toString());
+        	}        
         	//set the pool state to prepare for maintenance
         	primaryStorage.setStatus(Status.PrepareForMaintenance);
         	_storagePoolDao.persist(primaryStorage);
@@ -2195,7 +2188,7 @@ public class StorageManagerImpl implements StorageManager {
         			continue;
         		
         		//shut down the running vms
-        		if(vmInstance.getState().equals(State.Running) || vmInstance.getState().equals(State.Stopped) || vmInstance.getState().equals(State.Stopping) || vmInstance.getState().equals(State.Starting))
+        		if(vmInstance.getState().equals(State.Running) || vmInstance.getState().equals(State.Starting))
         		{
         			
         			//if the instance is of type consoleproxy, call the console proxy

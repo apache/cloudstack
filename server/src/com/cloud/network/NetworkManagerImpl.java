@@ -1180,8 +1180,13 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
         }
 
         DomainRouterVO syncObject = _routerMgr.getRouter(loadBalancer.getIpAddress());
-        cmd.synchronizeCommand("Router", syncObject.getId());
-
+        if(syncObject == null){
+        	throw new InvalidParameterValueException("Failed to assign to load balancer " + loadBalancerId + ", the domain router was not found at "+loadBalancer.getIpAddress());
+        }
+        else{
+        	cmd.synchronizeCommand("Router", syncObject.getId());
+        }
+        
         // Permission check...
         Account account = UserContext.current().getAccount();
         if (account != null) {
