@@ -77,8 +77,4 @@ public class VpnUsersResponse extends BaseResponse {
 	public String getDomainName() {
 		return domainName;
 	}
-
-	public String toString() {
-    	return "id: " + getId() + ", username: " + getUserName() + ", account: " + getAccountName() + ", domainid: " + getDomainId();
-    }
 }

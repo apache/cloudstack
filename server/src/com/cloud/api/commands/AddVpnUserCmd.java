@@ -36,7 +36,7 @@ import com.cloud.user.UserContext;
 public class AddVpnUserCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AddVpnUserCmd.class.getName());
 
-    private static final String s_name = "vpnuser";
+    private static final String s_name = "addvpnuserresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -106,7 +106,7 @@ public class AddVpnUserCmd extends BaseAsyncCmd {
             vpnResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
         }
         
-        vpnResponse.setResponseName(getName());
+        vpnResponse.setResponseName("vpnuser");
         return vpnResponse;
     }
 

@@ -151,6 +151,7 @@
       </classes>
       <lib dir="${jar.dir}">
         <include name="cloud-*.jar" />
+		<include name="vmware-*.jar" />
       </lib>
       <zipfileset dir="${scripts.target.dir}" prefix="WEB-INF/lib/scripts" filemode="555">
         <include name="**/*" />

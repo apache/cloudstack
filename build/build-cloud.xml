@@ -260,44 +260,10 @@
     <mkdir dir="${server.dist.dir}/lib" />
     <mkdir dir="${server.dist.dir}/conf" />
 
-    <copy todir="${server.dist.dir}/lib">
+    <copy todir="${jar.dir}">
       <fileset dir="${deps.dir}">
-        <include name="mysql-connector-java-5.1.7-bin.jar" />
-        <include name="cglib-nodep-2.2.jar" />
-        <include name="gson-1.3.jar" />
-        <include name="log4j-1.2.15.jar" />
-        <include name="apache-log4j-extras-1.0.jar" />
-        <include name="ehcache-1.5.0.jar" />
-        <include name="commons-logging-1.1.1.jar" />
-        <include name="commons-dbcp-1.2.2.jar" />
-        <include name="commons-pool-1.4.jar" />
-        <include name="commons-discovery.jar" />
-        <include name="backport-util-concurrent-3.0.jar" />
-        <include name="httpcore-4.0.jar" />
-        <include name="commons-httpclient-3.1.jar" />
-        <include name="commons-codec-1.4.jar" />
-        <include name="email.jar" />
-        <include name="xmlrpc-client-3.1.3.jar" />
-        <include name="xmlrpc-common-3.1.3.jar" />
-        <include name="xenserver-5.5.0-1.jar" />
-        <include name="ws-commons-util-1.0.2.jar" />
-        <include name="trilead-ssh2-build213.jar" />
-        <include name="vmware-apputils.jar" />
-        <include name="vmware-vim.jar" />
-        <include name="vmware-vim25.jar" />
-        <include name="vmware-lib-activation.jar" />
-        <include name="vmware-lib-axis.jar" />
-        <include name="vmware-lib-jaxen-core.jar" />
-        <include name="vmware-lib-jaxen-jdom.jar" />
-        <include name="vmware-lib-jaxrpc.jar" />
-        <include name="vmware-lib-jdom.jar" />
-        <include name="vmware-lib-mailapi.jar" />
-        <include name="vmware-lib-saxpath.jar" />
-        <include name="vmware-lib-smtp.jar" />
-        <include name="vmware-lib-wbem.jar" />
-        <include name="vmware-lib-xalan.jar" />
-        <include name="vmware-lib-xerces.jar" />
-        <include name="vmware-lib-xml-apis.jar" />
+		<include name="cloud-*.jar"/>
+		<include name="vmware-*.jar"/>
       </fileset>
     </copy>
 
@@ -351,7 +317,7 @@
       <fileset dir="${deps.dir}">
         <include name="log4j-1.2.15.jar" />
         <include name="apache-log4j-extras-1.0.jar" />
-        <include name="gson-1.3.jar" />
+        <include name="gson-1.5.jar" />
       </fileset>
     </copy>
 

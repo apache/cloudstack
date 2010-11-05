@@ -50,7 +50,15 @@ public class ResponseObjectTypeAdapter implements JsonSerializer<ResponseObject>
                             ResponseObject subObj = (ResponseObject)fieldValue;
                             obj.add(serializedName.value(), serialize(subObj, subObj.getClass(), ctx));
                         } else {
-                            obj.addProperty(serializedName.value(), fieldValue.toString());
+                        	if (fieldValue instanceof Number) {
+                        		obj.addProperty(serializedName.value(), (Number)fieldValue);
+                        	} else if (fieldValue instanceof Character) {
+                        		obj.addProperty(serializedName.value(), (Character)fieldValue);
+                        	} else if (fieldValue instanceof Boolean) {
+                        		obj.addProperty(serializedName.value(), (Boolean)fieldValue);
+                        	} else {
+                        		obj.addProperty(serializedName.value(), fieldValue.toString());
+                        	}
                         }
                     }
                 } catch (IllegalArgumentException e) {
