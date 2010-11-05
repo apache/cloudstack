@@ -1827,8 +1827,17 @@ public class ManagementServerImpl implements ManagementServer {
         		//do nothing (public zone case)
         	}
         	else{
-        		if(!_domainDao.isChildDomain(ctxAccount.getDomainId(), domainId)){
-        			throw new PermissionDeniedException("Failed to deploy VM, invalid domain id (" + domainId + ") given.");
+        		//check if this account has the permission to deploy a vm in this domain
+        		if(ctxAccount != null){
+        			if((ctxAccount.getType() == Account.ACCOUNT_TYPE_NORMAL) || ctxAccount.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN){
+        				if(domainId == ctxAccount.getDomainId()){
+        					//user in same domain as dedicated zone
+        				}
+        				else if ((!_domainDao.isChildDomain(domainId,ctxAccount.getDomainId()))){
+        					//may need to revisit domain admin case for leaves
+        					throw new PermissionDeniedException("Failed to deploy VM, user does not have permission to deploy a vm within this dedicated private zone under domain id:"+domainId);
+        				}
+        			}
         		}
         	}
         }
@@ -2038,7 +2047,6 @@ public class ManagementServerImpl implements ManagementServer {
     			DomainVO localParent = domainRecord;
     			DomainVO immediateChild = null;
     			while(true){
-    				dcs.addAll(_dcDao.findZonesByDomainId(localParent.getId()));
     				//find immediate child domain
     				immediateChild = _domainDao.findImmediateChildForParent(localParent.getId());
     				if(immediateChild != null){
