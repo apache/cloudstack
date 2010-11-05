@@ -866,13 +866,14 @@ function initVMWizard() {
 								    } else {
 									    $("body").stopTime(timerKey);										    
 									    if (result.jobstatus == 1) {
-										    // Succeeded						                        
-				                            vmToMidmenu(result.jobresult.deployvirtualmachineresponse, $midmenuItem1);
+										    // Succeeded	
+										    var item = result.jobresult.virtualmachine;					                        
+				                            vmToMidmenu(item, $midmenuItem1);
 				                            bindClickToMidMenu($midmenuItem1, vmToRightPanel, getMidmenuId);  
-				                            if (result.jobresult.deployvirtualmachineresponse.passwordenabled == 'true') {							                                									        
-										        var extraMessage = "New password: " + result.jobresult.deployvirtualmachineresponse.password;
+				                            if (item.passwordenabled == 'true') {							                                									        
+										        var extraMessage = "New password: " + item.password;
 										        afterAddingMidMenuItem($midmenuItem1, true, extraMessage);
-										        var afterActionInfo = "Your instance has been successfully created.  Your new password is : " + result.jobresult.deployvirtualmachineresponse.password;
+										        var afterActionInfo = "Your instance has been successfully created.  Your new password is : " + item.password;
 										        $midmenuItem1.data("afterActionInfo", afterActionInfo); 
 									        } 	
 									        else {
@@ -880,7 +881,7 @@ function initVMWizard() {
 									        }							                        
 									    } else if (result.jobstatus == 2) {
 										    // Failed										    
-										    afterAddingMidMenuItem($midmenuItem1, false, fromdb(result.jobresult.deployvirtualmachineresponse.errortext));		
+										    afterAddingMidMenuItem($midmenuItem1, false, fromdb(result.jobresult.errortext));		
 									    }
 								    }
 							    },
