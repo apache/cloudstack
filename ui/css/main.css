@@ -2216,6 +2216,7 @@ a:hover.search_button {
 .midmenu_content.addingfailed{
 	background:#ffe5e5 url(../images/errormsg_bg.gif) repeat-x top left;
 	color:#a90000;
+	height:auto;
 }
 
 
