@@ -52,11 +52,10 @@ function zoneJsonToRightPanel($leftmenuItem1) {
     zoneJsonToSecondaryStorageTab(jsonObj);
 }
 
-function zoneJsonClearRightPanel($leftmenuItem1) {
-    zoneJsonClearDetailsTab($leftmenuItem1);
-    var jsonObj = $leftmenuItem1.data("jsonObj");  
-    zoneJsonClearNetworkTab(jsonObj);				    
-    zoneJsonClearSecondaryStorageTab(jsonObj);
+function zoneJsonClearRightPanel() {
+    zoneJsonClearDetailsTab();   
+    zoneJsonClearNetworkTab();				    
+    zoneJsonClearSecondaryStorageTab();
 }
 
 function zoneJsonToDetailsTab($leftmenuItem1) {	 
@@ -134,7 +133,7 @@ function zoneJsonToDetailsTab($leftmenuItem1) {
     buildActionLinkForTab("Delete Zone", zoneActionMap, $actionMenu, $leftmenuItem1, $detailsTab);     
 }	  
 
-function zoneJsonClearDetailsTab(jsonObj) {	    
+function zoneJsonClearDetailsTab() {	    
     var $detailsTab = $("#tab_content_details");             
     $detailsTab.find("#id").text("");
     $detailsTab.find("#name").text("");
@@ -181,7 +180,7 @@ function zoneJsonToNetworkTab(jsonObj) {
 	});
 }	 
 
-function zoneJsonClearNetworkTab(jsonObj) {	    
+function zoneJsonClearNetworkTab() {	    
     var $networkTab = $("#tab_content_network");      
     $networkTab.find("#zone_cloud").find("#zone_name").text("");	 
     $networkTab.find("#zone_vlan").text("");   
@@ -209,7 +208,7 @@ function zoneJsonToSecondaryStorageTab(jsonObj) {
 	});     
 }
 
-function zoneJsonClearSecondaryStorageTab(jsonObj) {   
+function zoneJsonClearSecondaryStorageTab() {   
     $("#tab_content_secondarystorage").empty();	
 }
 
