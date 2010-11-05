@@ -37,9 +37,9 @@ import com.cloud.user.User;
 import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.InstanceGroupVO;
-import com.cloud.vm.UserVmManager;
+import com.cloud.vm.UserVmService;
 
-@Implementation(createMethod="createVirtualMachine", method="startVirtualMachine", manager=UserVmManager.class, description="Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.")
+@Implementation(createMethod="createVirtualMachine", method="startVirtualMachine", manager=UserVmService.class, description="Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.")
 public class DeployVm2Cmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(DeployVMCmd.class.getName());
     
