@@ -178,7 +178,8 @@ function populateForUpdateOSDialog(oscategoryid) {
 		dataType: "json",
 		success: function(json) {
 			var categories = json.listoscategoriesresponse.oscategory;
-			var select = $("#dialog_update_os #host_os");								
+			var select = $("#dialog_update_os #host_os").empty();	
+			select.append("<option value=''>None</option>"); 						
 			if (categories != null && categories.length > 0) {
 				for (var i = 0; i < categories.length; i++) {
 				    if(categories[i].id == oscategoryid) {				       
@@ -330,16 +331,15 @@ function doUpdateOSPreference($actionLink, $detailsTab, $midmenuItem1){
     $("#dialog_update_os")
     .dialog("option", "buttons", {	                    
         "Update": function() {
-            $(this).dialog("close");
-	        var osId = $("#dialog_update_os #host_os").val();
-	        var osName = $("#dialog_update_os #host_os option:selected").text();
-	        var category = "";
-	        if (osId.length > 0) {
-		        category = "&osCategoryId="+osId;
-	        }
-	        var id = jsonObj.id;
-    		    
-            var apiCommand = "command=updateHost&id="+id+category;
+            var $thisDialog = $(this);
+            $thisDialog.dialog("close");
+	        var osId = $thisDialog.find("#host_os").val();
+	        var osName =$thisDialog.find("#host_os option:selected").text();	        
+	        if (osId == null || osId.length == 0)
+	            return;	        
+	      
+	        var id = jsonObj.id;    		    
+            var apiCommand = "command=updateHost&id="+id+"&osCategoryId="+osId;
     	    doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);		
         },
         "Cancel": function() {	                         

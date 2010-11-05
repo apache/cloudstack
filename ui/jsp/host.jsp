@@ -356,12 +356,11 @@
             <li>
                 <label>
                     <%=t.t("OS.preference")%>:</label>
-                <select class="select" name="host_os" id="host_os">
-                    <option value="">
-                        <%=t.t("none")%></option>
+                <select class="select" name="host_os" id="host_os">                    
                 </select>
             </li>
         </ol>
         </form>
     </div>
 </div>
+
