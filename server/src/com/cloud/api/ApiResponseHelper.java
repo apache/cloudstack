@@ -429,8 +429,12 @@ public class ApiResponseHelper {
        VolumeVO rootVolume = ApiDBUtils.findRootVolume(userVm.getId());
        if (rootVolume != null) {
            userVmResponse.setRootDeviceId(rootVolume.getDeviceId());
-           StoragePoolVO storagePool = ApiDBUtils.findStoragePoolById(rootVolume.getPoolId());
-           userVmResponse.setRootDeviceType(storagePool.getPoolType().toString());
+           String rootDeviceType = "Not created";
+           if (rootVolume.getPoolId() != null){
+               StoragePoolVO storagePool = ApiDBUtils.findStoragePoolById(rootVolume.getPoolId());
+               rootDeviceType = storagePool.getPoolType().toString();
+           }
+           userVmResponse.setRootDeviceType(rootDeviceType);
        }
 
        //stats calculation
