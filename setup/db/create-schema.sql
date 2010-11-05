@@ -129,6 +129,7 @@ CREATE TABLE `cloud`.`network_configurations` (
   `dns2` varchar(255) COMMENT 'comma separated DNS list',
   `guru_data` varchar(1024) COMMENT 'data stored by the network guru that setup this network',
   `set_fields` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'which fields are set already',
+  `guest_type` char(32) COMMENT 'type of guest network',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -184,6 +185,7 @@ CREATE TABLE `cloud`.`network_offerings` (
   `traffic_type` varchar(32) NOT NULL COMMENT 'traffic type carried on this network',
   `tags` varchar(4096) COMMENT 'tags supported by this offering',
   `system_only` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Is this network offering for system use only',
+  `specify_vlan` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Should the user specify vlan',
   `service_offering_id` bigint unsigned UNIQUE COMMENT 'service offering id that this network offering is tied to',
   `created` datetime NOT NULL COMMENT 'time the entry was created',
   `removed` datetime DEFAULT NULL COMMENT 'time the entry was removed',

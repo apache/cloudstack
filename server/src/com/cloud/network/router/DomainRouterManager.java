@@ -37,7 +37,6 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.NetworkConfiguration;
 import com.cloud.network.RemoteAccessVpnVO;
 import com.cloud.network.VpnUserVO;
-import com.cloud.offering.NetworkOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
@@ -175,7 +174,7 @@ public interface DomainRouterManager extends Manager {
 	DomainRouterVO getRouter(long accountId, long zoneId);
 	DomainRouterVO getRouter(String publicIpAddress);
 	
-	DomainRouterVO deploy(NetworkConfiguration guestConfig, NetworkOffering offering, DeployDestination dest, Account owner) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException;
+	DomainRouterVO deploy(NetworkConfiguration guestConfig, DeployDestination dest, Account owner) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException;
 
 	RemoteAccessVpnVO startRemoteAccessVpn(RemoteAccessVpnVO vpnVO) throws ResourceUnavailableException;
 	
@@ -183,5 +182,5 @@ public interface DomainRouterManager extends Manager {
 
 	boolean deleteRemoteAccessVpn(RemoteAccessVpnVO vpnVO);
 	
-	DomainRouterVO addVirtualMachineIntoNetwork(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile<UserVm> vm, ReservationContext context) throws ConcurrentOperationException, InsufficientNetworkCapacityException, ResourceUnavailableException;
+	DomainRouterVO addVirtualMachineIntoNetwork(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile<UserVm> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientNetworkCapacityException, ResourceUnavailableException;
 }

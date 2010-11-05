@@ -4,6 +4,8 @@
 package com.cloud.offerings.dao;
 
 
+import java.util.List;
+
 import javax.ejb.Local;
 import javax.persistence.EntityExistsException;
 
@@ -22,8 +24,9 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
     
     private final static Logger s_logger = Logger.getLogger(NetworkOfferingDaoImpl.class);
     
-    SearchBuilder<NetworkOfferingVO> NameSearch;
-    SearchBuilder<NetworkOfferingVO> ServiceOfferingSearch;
+    final SearchBuilder<NetworkOfferingVO> NameSearch;
+    final SearchBuilder<NetworkOfferingVO> ServiceOfferingSearch;
+    final SearchBuilder<NetworkOfferingVO> SystemOfferingSearch;
     
     protected NetworkOfferingDaoImpl() {
         super();
@@ -33,8 +36,12 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
         NameSearch.done();
         
         ServiceOfferingSearch = createSearchBuilder();
-        ServiceOfferingSearch.and("serviceoffering", ServiceOfferingSearch.entity().getServiceOfferingId(), SearchCriteria.Op.EQ);
+        ServiceOfferingSearch.and("serviceoffering", ServiceOfferingSearch.entity().getGuestIpType(), SearchCriteria.Op.EQ);
         ServiceOfferingSearch.done();
+        
+        SystemOfferingSearch = createSearchBuilder();
+        SystemOfferingSearch.and("system", SystemOfferingSearch.entity().isSystemOnly(), SearchCriteria.Op.EQ);
+        SystemOfferingSearch.done();
     }
     
     @Override
@@ -48,7 +55,7 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
     }
     
     @Override
-    public NetworkOfferingVO persistSystemNetworkOffering(NetworkOfferingVO offering) {
+    public NetworkOfferingVO persistDefaultNetworkOffering(NetworkOfferingVO offering) {
         assert offering.getName() != null : "how are you going to find this later if you don't set it?";
         NetworkOfferingVO vo = findByName(offering.getName());
         if (vo != null) {
@@ -66,7 +73,7 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
     @Override
     public NetworkOfferingVO findByServiceOffering(ServiceOfferingVO offering) {
         SearchCriteria<NetworkOfferingVO> sc = ServiceOfferingSearch.create();
-        sc.setParameters("serviceoffering", offering.getId());
+        sc.setParameters("serviceoffering", offering.getGuestIpType());
 
         NetworkOfferingVO vo = findOneBy(sc);
         if (vo != null) {
@@ -85,5 +92,12 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
             
             throw new CloudRuntimeException("Unable to persist network offering", e);
         }
+    }
+    
+    @Override
+    public List<NetworkOfferingVO> listNonSystemNetworkOfferings() {
+        SearchCriteria<NetworkOfferingVO> sc = SystemOfferingSearch.create();
+        sc.setParameters("system", false);
+        return this.listIncludingRemovedBy(sc, null);
     }
 }

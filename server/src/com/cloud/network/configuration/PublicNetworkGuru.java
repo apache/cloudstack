@@ -49,7 +49,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
             return null;
         }
         
-        return new NetworkConfigurationVO(offering.getTrafficType(), Mode.Static, BroadcastDomainType.Vlan, offering.getId(), plan.getDataCenterId());
+        return new NetworkConfigurationVO(offering.getTrafficType(), offering.getGuestIpType(), Mode.Static, BroadcastDomainType.Vlan, offering.getId(), plan.getDataCenterId());
     }
     
     protected PublicNetworkGuru() {
@@ -95,7 +95,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
         }
         nic.setMacAddress(mac);
         
-        DataCenter dc = _dcDao.findById(config.getId());
+        DataCenter dc = _dcDao.findById(config.getDataCenterId());
         getIp(nic, dc, vm);
         
         return nic;

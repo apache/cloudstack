@@ -31,6 +31,7 @@ import javax.persistence.Transient;
 import com.cloud.network.Network.BroadcastDomainType;
 import com.cloud.network.Network.Mode;
 import com.cloud.network.Network.TrafficType;
+import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.net.NetUtils;
 
@@ -57,6 +58,9 @@ public class NetworkConfigurationVO implements NetworkConfiguration {
     @Column(name="traffic_type")
     @Enumerated(value=EnumType.STRING)
     TrafficType trafficType;
+    
+    @Column(name="guest_type")
+    GuestIpType guestType;
     
     @Column(name="broadcast_uri")
     URI broadcastUri; 
@@ -116,7 +120,7 @@ public class NetworkConfigurationVO implements NetworkConfiguration {
      * @param networkOfferingId
      * @param dataCenterId
      */
-    public NetworkConfigurationVO(TrafficType trafficType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId, long dataCenterId) {
+    public NetworkConfigurationVO(TrafficType trafficType, GuestIpType guestType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId, long dataCenterId) {
         this.trafficType = trafficType;
         this.mode = mode;
         this.broadcastDomainType = broadcastDomainType;
@@ -124,10 +128,11 @@ public class NetworkConfigurationVO implements NetworkConfiguration {
         this.dataCenterId = dataCenterId;
         this.state = State.Allocated;
         this.id = -1;
+        this.guestType = guestType;
     }
     
     public NetworkConfigurationVO(long id, NetworkConfiguration that, long offeringId, long dataCenterId, String guruName, long domainId, long accountId, long related) {
-        this(id, that.getTrafficType(), that.getMode(), that.getBroadcastDomainType(), offeringId, dataCenterId, domainId, accountId, related);
+        this(id, that.getTrafficType(), that.getGuestType(), that.getMode(), that.getBroadcastDomainType(), offeringId, dataCenterId, domainId, accountId, related);
         this.gateway = that.getGateway();
         this.dns1 = that.getDns1();
         this.dns2 = that.getDns2();
@@ -149,8 +154,8 @@ public class NetworkConfigurationVO implements NetworkConfiguration {
      * @param domainId
      * @param accountId
      */
-    public NetworkConfigurationVO(long id, TrafficType trafficType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId, long dataCenterId, long domainId, long accountId, long related) {
-        this(trafficType, mode, broadcastDomainType, networkOfferingId, dataCenterId);
+    public NetworkConfigurationVO(long id, TrafficType trafficType, GuestIpType guestType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId, long dataCenterId, long domainId, long accountId, long related) {
+        this(trafficType, guestType, mode, broadcastDomainType, networkOfferingId, dataCenterId);
         this.domainId = domainId;
         this.accountId = accountId;
         this.related = related;
@@ -174,6 +179,11 @@ public class NetworkConfigurationVO implements NetworkConfiguration {
     @Override
     public long getId() {
         return id;
+    }
+    
+    @Override
+    public GuestIpType getGuestType() {
+        return guestType;
     }
 
     @Override

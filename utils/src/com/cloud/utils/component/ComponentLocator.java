@@ -379,6 +379,8 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
                     instance = locator.getDao(fc);
                 } else if (Adapters.class.isAssignableFrom(fc)) {
                     instance = locator.getAdapters(inject.adapter());
+                } else {
+                    instance = locator.getManager(fc);
                 }
         
                 if (instance == null) {
@@ -690,16 +692,25 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
                 throw new CloudRuntimeException("Caught throwable: ", e);
             }
 
+            if (!interphace.isAssignableFrom(info.clazz)) {
+                throw new CloudRuntimeException("Class " + info.clazz.toString() + " does not implment " + interphace);
+            }
+            
             Local local = info.clazz.getAnnotation(Local.class);
             if (local == null) {
                 throw new CloudRuntimeException("Unable to find Local annotation for class " + clazzName);
             }
-
+            
             Class<?>[] classes = local.value();
             for (int i = 0; i < classes.length; i++) {
-            	if (findInterfaceInHierarchy(classes[i].getInterfaces(), interphace)) {
+                if (!classes[i].isInterface()) {
+                    throw new CloudRuntimeException(classes[i].getName() + " is not an interface");
+                }
+            	if (classes[i].isAssignableFrom(info.clazz)) {
                     info.keys.add(classes[i].getName());
-                    s_logger.info("Found component: " + interphace.getName() + " - " + clazzName + " - " + info.name);
+                    s_logger.info("Found component: " + classes[i].getName() + " in " + clazzName + " - " + info.name);
+                } else {
+                    throw new CloudRuntimeException(classes[i].getName() + " is not implemented by " + info.clazz.getName());
                 }
             }
             
@@ -752,6 +763,7 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
                 fillInfo(atts, Manager.class, info);
                 s_logger.info("Adding Manager: " + info.name);
                 for (String key : info.keys) {
+                    s_logger.info("Linking " + key + " to " + info.name);
                     managers.put(key, info);
                 }
                 currentInfo = info;

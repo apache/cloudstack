@@ -30,6 +30,10 @@ public interface NetworkOffering {
     	DirectSingle,
     	DirectDual
     }
+    
+    public final String DefaultVirtualizedNetworkOffering = "DefaultVirtualizedNetworkOffering";
+    public final String DefaultDirectNetworkOffering = "DefaultDirectNetworkOffering";
+    public final String DefaultDirectChooseVlanNetworkOffering = "DefaultDirectChooseVlanNetworkOffering";
 
     long getId();
 
@@ -64,4 +68,6 @@ public interface NetworkOffering {
     Integer getConcurrentConnections();
     
     TrafficType getTrafficType();
+    
+    boolean getSpecifyVlan();
 }

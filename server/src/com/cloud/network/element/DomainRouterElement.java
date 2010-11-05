@@ -65,7 +65,7 @@ public class DomainRouterElement extends AdapterBase implements NetworkElement {
             return false;
         }
         
-        DomainRouterVO router = _routerMgr.deploy(guestConfig, offering, dest, context.getAccount());
+        DomainRouterVO router = _routerMgr.deploy(guestConfig, dest, context.getAccount());
         if (router == null) {
             throw new ResourceUnavailableException("Unable to deploy the router for " + guestConfig);
         }
@@ -87,7 +87,7 @@ public class DomainRouterElement extends AdapterBase implements NetworkElement {
         @SuppressWarnings("unchecked")
         VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>)vm;
         
-        return _routerMgr.addVirtualMachineIntoNetwork(config, nic, uservm, context) != null;
+        return _routerMgr.addVirtualMachineIntoNetwork(config, nic, uservm, dest, context) != null;
     }
 
     @Override

@@ -104,6 +104,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.DomainRouterService;
 import com.cloud.network.FirewallRuleVO;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.Network.TrafficType;
@@ -122,7 +123,6 @@ import com.cloud.network.dao.NetworkRuleConfigDao;
 import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.dao.VpnUserDao;
 import com.cloud.offering.NetworkOffering;
-import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.service.ServiceOfferingVO;
@@ -180,8 +180,8 @@ import com.cloud.vm.dao.UserVmDao;
 /**
  * NetworkManagerImpl implements NetworkManager.
  */
-@Local(value={DomainRouterManager.class})
-public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMachineManager<DomainRouterVO>, VirtualMachineGuru<DomainRouterVO> {
+@Local(value={DomainRouterManager.class, DomainRouterService.class})
+public class DomainRouterManagerImpl implements DomainRouterManager, DomainRouterService, VirtualMachineManager<DomainRouterVO>, VirtualMachineGuru<DomainRouterVO> {
     private static final Logger s_logger = Logger.getLogger(DomainRouterManagerImpl.class);
 
     String _name;
@@ -2033,14 +2033,14 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
 	}
 	
 	@Override
-	public DomainRouterVO deploy(NetworkConfiguration guestConfig, NetworkOffering offering, DeployDestination dest, Account owner) throws InsufficientCapacityException, StorageUnavailableException, ConcurrentOperationException, ResourceUnavailableException {
+	public DomainRouterVO deploy(NetworkConfiguration guestConfig, DeployDestination dest, Account owner) throws InsufficientCapacityException, StorageUnavailableException, ConcurrentOperationException, ResourceUnavailableException {
 	    long dcId = dest.getDataCenter().getId();
 	    
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Starting a router for network configurations: virtual="  + guestConfig + " in " + dest);
         }
 	    assert guestConfig.getState() == NetworkConfiguration.State.Implemented : "Network is not yet fully implemented: " + guestConfig;
-	    assert offering.getGuestIpType() == GuestIpType.Virtualized;
+	    assert guestConfig.getTrafficType() == TrafficType.Guest;
 	    
         DataCenterDeployment plan = new DataCenterDeployment(dcId);
         
@@ -2221,10 +2221,10 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
 	}
 
     @Override
-    public DomainRouterVO addVirtualMachineIntoNetwork(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile<UserVm> profile, ReservationContext context) throws ConcurrentOperationException, InsufficientNetworkCapacityException, ResourceUnavailableException {
+    public DomainRouterVO addVirtualMachineIntoNetwork(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile<UserVm> profile, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientNetworkCapacityException, ResourceUnavailableException {
         DomainRouterVO router = _routerDao.findByNetworkConfiguration(config.getId());
         try {
-            router = start(router, context.getCaller(), context.getAccount());
+            router = this.deploy(config, dest, profile.getOwner());
         } catch (InsufficientNetworkCapacityException e) {
             throw e;
         } catch (InsufficientCapacityException e) {
@@ -2236,7 +2236,8 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
             throw new ResourceUnavailableException("Can't find a domain router to start " + profile + " in " + config);
         }
 
-        String password = null;
+        
+        String password = profile.getVirtualMachine().getPassword();
         String userData = profile.getVirtualMachine().getUserData();
         Commands cmds = new Commands(OnError.Stop);
         String routerPublicIpAddress = nic.getIp4Address();

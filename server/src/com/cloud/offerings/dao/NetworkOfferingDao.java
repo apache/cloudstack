@@ -3,6 +3,8 @@
  */
 package com.cloud.offerings.dao;
 
+import java.util.List;
+
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.utils.db.GenericDao;
@@ -28,7 +30,9 @@ public interface NetworkOfferingDao extends GenericDao<NetworkOfferingVO, Long> 
      * @param offering network offering to persist if not in the database.
      * @return NetworkOfferingVO backed by a row in the database
      */
-    NetworkOfferingVO persistSystemNetworkOffering(NetworkOfferingVO offering);
+    NetworkOfferingVO persistDefaultNetworkOffering(NetworkOfferingVO offering);
     
     NetworkOfferingVO findByServiceOffering(ServiceOfferingVO offering);
+    
+    List<NetworkOfferingVO> listNonSystemNetworkOfferings();
 }

@@ -15,10 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-package com.cloud.vm;
+package com.cloud.network;
 
-import com.cloud.utils.db.GenericDao;
+import java.util.List;
 
-public interface ItWorkDao extends GenericDao<ItWorkVO, String> {
+import com.cloud.offering.NetworkOffering;
 
+
+public interface NetworkService {
+    List<? extends NetworkOffering> listNetworkOfferings();
 }

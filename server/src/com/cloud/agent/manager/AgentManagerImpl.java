@@ -91,7 +91,7 @@ import com.cloud.dc.Pod;
 import com.cloud.dc.PodCluster;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.dc.dao.DataCenterIpAddressDaoImpl;
+import com.cloud.dc.dao.DataCenterIpAddressDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.event.dao.EventDao;
@@ -188,9 +188,9 @@ import com.cloud.vm.dao.VMInstanceDao;
 public class AgentManagerImpl implements AgentManager, HandlerFactory {
     private static final Logger s_logger = Logger.getLogger(AgentManagerImpl.class);
 
-    protected ConcurrentHashMap<Long, AgentAttache> _agents = new ConcurrentHashMap<Long, AgentAttache>(2047);
-    protected List<Pair<Integer, Listener>> _hostMonitors = new ArrayList<Pair<Integer, Listener>>(11);
-    protected List<Pair<Integer, Listener>> _cmdMonitors = new ArrayList<Pair<Integer, Listener>>(11);
+    protected ConcurrentHashMap<Long, AgentAttache> _agents = new ConcurrentHashMap<Long, AgentAttache>(10007);
+    protected List<Pair<Integer, Listener>> _hostMonitors = new ArrayList<Pair<Integer, Listener>>(17);
+    protected List<Pair<Integer, Listener>> _cmdMonitors = new ArrayList<Pair<Integer, Listener>>(17);
     protected int _monitorId = 0;
 
     protected NioServer _connection;
@@ -198,7 +198,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
     @Inject protected UserStatisticsDao _userStatsDao = null;
     @Inject protected DataCenterDao _dcDao = null;
     @Inject protected VlanDao _vlanDao = null;
-    @Inject protected DataCenterIpAddressDaoImpl _privateIPAddressDao = null;
+    @Inject protected DataCenterIpAddressDao _privateIPAddressDao = null;
     @Inject protected IPAddressDao _publicIPAddressDao = null;
     @Inject protected HostPodDao _podDao = null;
     protected Adapters<HostAllocator> _hostAllocators = null;

@@ -59,7 +59,7 @@ import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.dc.dao.DataCenterIpAddressDaoImpl;
+import com.cloud.dc.dao.DataCenterIpAddressDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
@@ -124,7 +124,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 	@Inject DiskOfferingDao _diskOfferingDao;
 	@Inject VlanDao _vlanDao;
 	@Inject IPAddressDao _publicIpAddressDao;
-	@Inject DataCenterIpAddressDaoImpl _privateIpAddressDao;
+	@Inject DataCenterIpAddressDao _privateIpAddressDao;
 	@Inject VMInstanceDao _vmInstanceDao;
 	@Inject AccountDao _accountDao;
 	@Inject EventDao _eventDao;

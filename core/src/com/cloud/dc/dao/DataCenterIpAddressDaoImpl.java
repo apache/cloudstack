@@ -27,7 +27,6 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenterIpAddressVO;
-import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -35,8 +34,8 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 
-@Local(value={DataCenterIpAddressDaoImpl.class})
-public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddressVO, Long> implements GenericDao<DataCenterIpAddressVO, Long> {
+@Local(value={DataCenterIpAddressDao.class})
+public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddressVO, Long> implements DataCenterIpAddressDao {
     private static final Logger s_logger = Logger.getLogger(DataCenterIpAddressDaoImpl.class);
     
 	private static final String COUNT_ALL_PRIVATE_IPS = "SELECT count(*) from `cloud`.`op_dc_ip_address_alloc` where pod_id = ? AND data_center_id = ?";

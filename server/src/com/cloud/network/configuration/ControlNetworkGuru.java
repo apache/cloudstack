@@ -49,7 +49,7 @@ public class ControlNetworkGuru extends AdapterBase implements NetworkGuru {
             return null;
         }
         
-        NetworkConfigurationVO config = new NetworkConfigurationVO(offering.getTrafficType(), Mode.Static, BroadcastDomainType.LinkLocal, offering.getId(), plan.getDataCenterId());
+        NetworkConfigurationVO config = new NetworkConfigurationVO(offering.getTrafficType(), offering.getGuestIpType(), Mode.Static, BroadcastDomainType.LinkLocal, offering.getId(), plan.getDataCenterId());
         config.setCidr(_cidr);
         config.setGateway(_gateway);
         

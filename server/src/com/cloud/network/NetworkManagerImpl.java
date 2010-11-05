@@ -66,6 +66,7 @@ import com.cloud.api.commands.UpdateLoadBalancerRuleCmd;
 import com.cloud.api.commands.UpgradeRouterCmd;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.capacity.dao.CapacityDao;
+import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -144,6 +145,7 @@ import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.Inject;
+import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.JoinBuilder.JoinType;
@@ -167,8 +169,8 @@ import com.cloud.vm.dao.UserVmDao;
 /**
  * NetworkManagerImpl implements NetworkManager.
  */
-@Local(value={NetworkManager.class, DomainRouterService.class})
-public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
+@Local(value={NetworkManager.class, NetworkService.class})
+public class NetworkManagerImpl implements NetworkManager, NetworkService, Manager {
     private static final Logger s_logger = Logger.getLogger(NetworkManagerImpl.class);
 
     String _name;
@@ -1670,22 +1672,39 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
         _name = name;
 
         final Map<String, String> configs = _configDao.getConfiguration("AgentManager", params);
-
+        
+        String value = configs.get(Config.NetworkThrottlingRate.key());
+        Integer rateMbps = null;
+        if (value != null) {
+            rateMbps = Integer.parseInt(value);
+        }
+        
+        Integer multicastRateMbps = null;
+        value = configs.get(Config.MulticastThrottlingRate.key());
+        if (value != null) {
+            multicastRateMbps = Integer.parseInt(value);
+        }
+        
         NetworkOfferingVO publicNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmPublicNetwork, TrafficType.Public, null);
-        publicNetworkOffering = _networkOfferingDao.persistSystemNetworkOffering(publicNetworkOffering);
+        publicNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(publicNetworkOffering);
         _systemNetworks.put(NetworkOfferingVO.SystemVmPublicNetwork, publicNetworkOffering);
         NetworkOfferingVO managementNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmManagementNetwork, TrafficType.Management, null);
-        managementNetworkOffering = _networkOfferingDao.persistSystemNetworkOffering(managementNetworkOffering);
+        managementNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(managementNetworkOffering);
         _systemNetworks.put(NetworkOfferingVO.SystemVmManagementNetwork, managementNetworkOffering);
         NetworkOfferingVO controlNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmControlNetwork, TrafficType.Control, null);
-        controlNetworkOffering = _networkOfferingDao.persistSystemNetworkOffering(controlNetworkOffering);
+        controlNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(controlNetworkOffering);
         _systemNetworks.put(NetworkOfferingVO.SystemVmControlNetwork, controlNetworkOffering);
-        NetworkOfferingVO guestNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmGuestNetwork, TrafficType.Guest, GuestIpType.Virtualized);
-        guestNetworkOffering = _networkOfferingDao.persistSystemNetworkOffering(guestNetworkOffering);
-        _systemNetworks.put(NetworkOfferingVO.SystemVmGuestNetwork, guestNetworkOffering);
+//        NetworkOfferingVO guestNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmGuestNetwork, TrafficType.Guest, GuestIpType.Virtualized);
+//        guestNetworkOffering = _networkOfferingDao.persistSystemNetworkOffering(guestNetworkOffering);
+//        _systemNetworks.put(NetworkOfferingVO.SystemVmGuestNetwork, guestNetworkOffering);
         NetworkOfferingVO storageNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmStorageNetwork, TrafficType.Storage, null);
-        storageNetworkOffering = _networkOfferingDao.persistSystemNetworkOffering(storageNetworkOffering);
-        _systemNetworks.put(NetworkOfferingVO.SystemVmGuestNetwork, storageNetworkOffering);
+        storageNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(storageNetworkOffering);
+        _systemNetworks.put(NetworkOfferingVO.SystemVmStorageNetwork, storageNetworkOffering);
+        
+        NetworkOfferingVO defaultGuestNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultVirtualizedNetworkOffering, "Virtual Vlan", TrafficType.Guest, GuestIpType.Virtualized, false, false, rateMbps, multicastRateMbps, null);
+        defaultGuestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestNetworkOffering);
+        NetworkOfferingVO defaultGuestDirectNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultDirectNetworkOffering, "Direct", TrafficType.Guest, GuestIpType.DirectSingle, false, false, rateMbps, multicastRateMbps, null);
+        defaultGuestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestDirectNetworkOffering);
         
         AccountsUsingNetworkConfigurationSearch = _accountDao.createSearchBuilder();
         SearchBuilder<NetworkAccountVO> networkAccountSearch = _networkConfigDao.createSearchBuilderForAccount();
@@ -1908,6 +1927,14 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
         vo.setMode(profile.getMode());
         vo.setNetmask(profile.getNetmask());
         vo.setGateway(profile.getGateway());
+        
+        if (profile.getBroadCastUri() != null) {
+            vo.setBroadcastUri(profile.getBroadCastUri());
+        }
+        
+        if (profile.getIsolationUri() != null) {
+            vo.setIsolationUri(profile.getIsolationUri());
+        }
         
         return deviceId;
     }
@@ -2898,6 +2925,9 @@ public class NetworkManagerImpl implements NetworkManager, DomainRouterService {
         }
 	}
 	
-	
+	@Override
+    public List<NetworkOfferingVO> listNetworkOfferings() {
+	    return _networkOfferingDao.listNonSystemNetworkOfferings();
+	}
     
 }

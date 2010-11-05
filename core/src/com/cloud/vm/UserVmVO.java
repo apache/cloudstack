@@ -63,7 +63,17 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
     
     @Column(name="display_name", updatable=true, nullable=true)
     private String displayName;
+    
+    transient String password;
 
+    public String getPassword() {
+        return password;
+    }
+    
+    public void setPassword(String password) {
+        this.password = password;
+    }
+    
     @Override
     public String getGuestIpAddress() {
 		return guestIpAddress;

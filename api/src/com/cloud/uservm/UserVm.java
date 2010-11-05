@@ -17,24 +17,24 @@
  */
 package com.cloud.uservm;
 
-import com.cloud.domain.PartOf;
-import com.cloud.user.OwnedBy;
+import com.cloud.acl.ControlledEntity;
 import com.cloud.vm.VirtualMachine;
 
 /**
  * This represents one running virtual machine instance.
  */
-public interface UserVm extends VirtualMachine, OwnedBy, PartOf {
+public interface UserVm extends VirtualMachine, ControlledEntity {
     
     /**
      * @return service offering id
      */
+    @Override
     long getServiceOfferingId();
     
     /**
      * @return the domain router associated with this vm.
-     */
     Long getDomainRouterId();
+     */
     
     /**
      * @return the vnet associated with this vm.
@@ -44,6 +44,7 @@ public interface UserVm extends VirtualMachine, OwnedBy, PartOf {
     /**
      * @return the domain this vm instance belongs to.
      */
+    @Override
     long getDomainId();
     
     /**
@@ -61,6 +62,10 @@ public interface UserVm extends VirtualMachine, OwnedBy, PartOf {
     String getDisplayName();
     
     String getUserData();
+    
+    String getPassword();
+    
+    Long getDomainRouterId();
     
     void setUserData(String userData);
 }

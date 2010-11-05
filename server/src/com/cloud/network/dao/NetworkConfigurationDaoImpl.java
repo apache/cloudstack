@@ -75,7 +75,7 @@ public class NetworkConfigurationDaoImpl extends GenericDaoBase<NetworkConfigura
         AccountSearch.done();
     
         OfferingSearch = createSearchBuilder();
-        OfferingSearch.and("offering", OfferingSearch.entity().getNetworkOfferingId(), SearchCriteria.Op.EQ);
+        OfferingSearch.and("guesttype", OfferingSearch.entity().getGuestType(), SearchCriteria.Op.EQ);
         OfferingSearch.and("datacenter", OfferingSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         
         RelatedConfigSearch = createSearchBuilder();

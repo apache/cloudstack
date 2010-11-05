@@ -32,7 +32,7 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
 
-@Local(value=DomainChecker.class)
+@Local(value=SecurityChecker.class)
 public class DomainChecker extends AdapterBase implements SecurityChecker {
     
     @Inject DomainDao _domainDao;

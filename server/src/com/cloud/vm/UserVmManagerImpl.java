@@ -76,6 +76,7 @@ import com.cloud.api.commands.RebootVMCmd;
 import com.cloud.api.commands.RecoverVMCmd;
 import com.cloud.api.commands.ResetVMPasswordCmd;
 import com.cloud.api.commands.StartVMCmd;
+import com.cloud.api.commands.StartVm2Cmd;
 import com.cloud.api.commands.StopVMCmd;
 import com.cloud.api.commands.StopVm2Cmd;
 import com.cloud.api.commands.UpdateVMCmd;
@@ -3726,13 +3727,27 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 	    long vmId = cmd.getId();
 	    UserVmVO vm = _vmDao.findById(vmId);
 	    
-	    long dcId = cmd.getZoneId();
+        // Check that the password was passed in and is valid
+        VMTemplateVO template = _templateDao.findById(vm.getTemplateId());
+        
+        String password = "saved_password";
+        if (template.getEnablePassword()) {
+            password = generateRandomPassword();
+        }
+
+        if (password == null || password.equals("") || (!validPassword(password))) {
+            throw new InvalidParameterValueException("A valid password for this virtual machine was not provided.");
+        }
+        vm.setPassword(password);
+        
 	    long userId = UserContext.current().getUserId();
 	    UserVO caller = _userDao.findById(userId);
 	    
 	    AccountVO owner = _accountDao.findById(vm.getAccountId());
 	    
-	    return _itMgr.start(vm, null, caller, owner);
+	    vm = _itMgr.start(vm, null, caller, owner);
+	    vm.setPassword(password);
+	    return vm;
 	}
 	
 	@Override
@@ -3802,6 +3817,35 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     
     @Override
     public void finalizeStop(VirtualMachineProfile<UserVmVO> profile, long hostId, String reservationId) {
+    }
+    
+    public String generateRandomPassword() {
+        return PasswordGenerator.generateRandomPassword(6);
+    }
+
+    
+    @Override
+    public UserVm startVirtualMachine(StartVm2Cmd cmd) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+        //Input validation
+        Account account = UserContext.current().getAccount();
+        Long userId = UserContext.current().getUserId();
+        Long id = cmd.getId();
+        
+        //if account is removed, return error
+        if(account!=null && account.getRemoved() != null)
+            throw new PermissionDeniedException("The account " + account.getId()+" is removed");
+                
+        UserVmVO vm = _vmDao.findById(id.longValue());
+        if (vm == null) {
+            throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + id);
+        }
+
+        long eventId = EventUtils.saveScheduledEvent(userId, vm.getAccountId(), EventTypes.EVENT_VM_START, "Starting Vm with Id: "+id);
+        
+        userId = accountAndUserValidation(id, account, userId, vm);
+        UserVO user = _userDao.findById(userId);
+        
+        return _itMgr.start(vm, null, user, account);
     }
     
 }

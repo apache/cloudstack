@@ -72,7 +72,7 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
         }
         DataCenterVO dc = _dcDao.findById(plan.getDataCenterId());
         
-        NetworkConfigurationVO config = new NetworkConfigurationVO(offering.getTrafficType(), mode, broadcastType, offering.getId(), plan.getDataCenterId());
+        NetworkConfigurationVO config = new NetworkConfigurationVO(offering.getTrafficType(), offering.getGuestIpType(), mode, broadcastType, offering.getId(), plan.getDataCenterId());
         if (userSpecified != null) {
             if ((userSpecified.getCidr() == null && userSpecified.getGateway() != null) ||
                 (userSpecified.getCidr() != null && userSpecified.getGateway() == null)) {
@@ -116,7 +116,7 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
         assert (config.getState() == State.Allocated) : "Why implement are we implementing " + config;
         
         long dcId = dest.getDataCenter().getId();
-        NetworkConfigurationVO implemented = new NetworkConfigurationVO(config.getTrafficType(), config.getMode(), config.getBroadcastDomainType(), config.getNetworkOfferingId(), config.getDataCenterId());
+        NetworkConfigurationVO implemented = new NetworkConfigurationVO(config.getTrafficType(), config.getGuestType(), config.getMode(), config.getBroadcastDomainType(), config.getNetworkOfferingId(), config.getDataCenterId());
         
         if (config.getBroadcastUri() == null) {
             String vnet = _dcDao.allocateVnet(dcId, config.getAccountId());

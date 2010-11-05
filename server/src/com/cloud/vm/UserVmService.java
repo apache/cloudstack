@@ -28,6 +28,7 @@ import com.cloud.api.commands.RebootVMCmd;
 import com.cloud.api.commands.RecoverVMCmd;
 import com.cloud.api.commands.ResetVMPasswordCmd;
 import com.cloud.api.commands.StartVMCmd;
+import com.cloud.api.commands.StartVm2Cmd;
 import com.cloud.api.commands.StopVMCmd;
 import com.cloud.api.commands.StopVm2Cmd;
 import com.cloud.api.commands.UpdateVMCmd;
@@ -148,4 +149,6 @@ public interface UserVmService extends Manager {
     UserVm upgradeVirtualMachine(UpgradeVMCmd cmd);
     
     UserVm stopVirtualMachine(StopVm2Cmd cmd) throws ConcurrentOperationException;
+    
+    UserVm startVirtualMachine(StartVm2Cmd cmd) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
 }

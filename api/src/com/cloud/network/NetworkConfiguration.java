@@ -11,6 +11,7 @@ import com.cloud.acl.ControlledEntity;
 import com.cloud.network.Network.BroadcastDomainType;
 import com.cloud.network.Network.Mode;
 import com.cloud.network.Network.TrafficType;
+import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.utils.fsm.FiniteState;
 import com.cloud.utils.fsm.StateMachine;
 
@@ -98,4 +99,6 @@ public interface NetworkConfiguration extends ControlledEntity {
     String getDns1();
     
     String getDns2();
+    
+    GuestIpType getGuestType();
 }

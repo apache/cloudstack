@@ -48,7 +48,7 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.dc.dao.DataCenterIpAddressDaoImpl;
+import com.cloud.dc.dao.DataCenterIpAddressDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -105,7 +105,7 @@ public class AlertManagerImpl implements AlertManager {
     @Inject private HostPodDao _podDao;
     @Inject private VolumeDao _volumeDao;
     @Inject private IPAddressDao _publicIPAddressDao;
-    @Inject private DataCenterIpAddressDaoImpl _privateIPAddressDao;
+    @Inject private DataCenterIpAddressDao _privateIPAddressDao;
     @Inject private StoragePoolDao _storagePoolDao;
     
     private Timer _timer = null;

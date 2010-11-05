@@ -36,11 +36,10 @@ import com.cloud.utils.db.GenericDao;
 @Entity
 @Table(name="network_offerings")
 public class NetworkOfferingVO implements NetworkOffering {
-    public final static String SystemVmPublicNetwork = "System-Vm-Public-Network";
-    public final static String SystemVmGuestNetwork = "System-Vm-Guest-Network";
-    public final static String SystemVmControlNetwork = "System-Vm-Control-Network";
-    public final static String SystemVmManagementNetwork = "System-Vm-Management-Network";
-    public final static String SystemVmStorageNetwork = "System-Vm-Storage-Network";
+    public final static String SystemVmPublicNetwork = "System-Public-Network";
+    public final static String SystemVmControlNetwork = "System-Control-Network";
+    public final static String SystemVmManagementNetwork = "System-Management-Network";
+    public final static String SystemVmStorageNetwork = "System-Storage-Network";
     
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -69,6 +68,9 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Column(name="traffic_type")
     @Enumerated(value=EnumType.STRING)
     TrafficType trafficType;
+    
+    @Column(name="specify_vlan")
+    boolean specifyVlan;
     
     @Column(name="system_only")
     boolean systemOnly;
@@ -195,12 +197,17 @@ public class NetworkOfferingVO implements NetworkOffering {
     public void setRemoved(Date removed) {
         this.removed = removed;
     }
+    
+    @Override
+    public boolean getSpecifyVlan() {
+        return specifyVlan;
+    }
 
     public void setCreated(Date created) {
         this.created = created;
     }
 
-    public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, GuestIpType type, boolean systemOnly, Integer rateMbps, Integer multicastRateMbps, Integer concurrentConnections) {
+    public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, GuestIpType type, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps, Integer concurrentConnections) {
         this.name = name;
         this.displayText = displayText;
         this.guestIpType = type;
@@ -209,10 +216,11 @@ public class NetworkOfferingVO implements NetworkOffering {
         this.concurrentConnections = concurrentConnections;
         this.trafficType = trafficType;
         this.systemOnly = systemOnly;
+        this.specifyVlan = specifyVlan;
     }
     
     public NetworkOfferingVO(ServiceOfferingVO offering) {
-        this("Network Offering for " + offering.getName(), "Network Offering for " + offering.getDisplayText(), TrafficType.Guest, offering.getGuestIpType(), false, offering.getRateMbps(), offering.getMulticastRateMbps(), null);
+        this("Network Offering for " + offering.getName(), "Network Offering for " + offering.getDisplayText(), TrafficType.Guest, offering.getGuestIpType(), false, false, offering.getRateMbps(), offering.getMulticastRateMbps(), null);
         this.serviceOfferingId = offering.getId();
     }
     
@@ -223,7 +231,7 @@ public class NetworkOfferingVO implements NetworkOffering {
      * @param type
      */
     public NetworkOfferingVO(String name, TrafficType trafficType, GuestIpType type) {
-        this(name, "System Offering for " + name, trafficType, type, true, null, null, null);
+        this(name, "System Offering for " + name, trafficType, type, true, false, null, null, null);
     }
     
     @Override

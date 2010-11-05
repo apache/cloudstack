@@ -15,10 +15,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-package com.cloud.vm;
+package com.cloud.dc.dao;
 
+import java.util.List;
+
+import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.utils.db.GenericDao;
 
-public interface ItWorkDao extends GenericDao<ItWorkVO, String> {
+public interface DataCenterIpAddressDao extends GenericDao<DataCenterIpAddressVO, Long> {
+    boolean mark(long dcId, long podId, String ip);
+    List<DataCenterIpAddressVO> listByPodIdDcIdIpAddress(long podId, long dcId, String ipAddress);
+    int countIPs(long podId, long dcId, boolean onlyCountAllocated);
+    boolean deleteIpAddressByPod(long podId);
 
 }

@@ -59,7 +59,6 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.Manager;
 import com.cloud.vm.DomainRouter;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
@@ -73,7 +72,7 @@ import com.cloud.vm.VirtualMachineProfile;
  * NetworkManager manages the network for the different end users.
  *
  */
-public interface NetworkManager extends Manager {
+public interface NetworkManager {
     public static final int DEFAULT_ROUTER_VM_RAMSIZE = 128;            // 128M
     public static final boolean USE_POD_VLAN = false;
     /**
