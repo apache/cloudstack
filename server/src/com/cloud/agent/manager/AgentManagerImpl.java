@@ -769,6 +769,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
             handleDisconnect(attache, Status.Event.Remove, false);
                             		
             //now delete the host
+            secStorageHost.setGuid(null);
+            _hostDao.update(secStorageHost.getId(), secStorageHost);
     		_hostDao.remove(secStorageHost.getId());
 
             //delete the templates associated with this host
