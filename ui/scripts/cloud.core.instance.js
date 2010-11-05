@@ -1534,25 +1534,24 @@ function vmJsonToStatisticsTab() {
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
     var jsonObj = $midmenuItem1.data("jsonObj");
     
-    var $c = $thisTab.find("#cpu_barchart");
-        
-    var spaceCharacter = "";	
-
-    var cpuNumber = ((jsonObj.cpunumber==null)? spaceCharacter:jsonObj.cpunumber.toString());
-    $c.find("#cpunumber").text(cpuNumber);
+    var $barChartContainer = $thisTab.find("#cpu_barchart");
+         
+    var cpuNumber = ((jsonObj.cpunumber==null)? "":jsonObj.cpunumber.toString());
+    $barChartContainer.find("#cpunumber").text(cpuNumber);
     
-    var cpuSpeed = ((jsonObj.cpuspeed==null)? spaceCharacter:convertHz(jsonObj.cpuspeed)) ;
-    $c.find("#cpuspeed").text(cpuSpeed);
+    var cpuSpeed = ((jsonObj.cpuspeed==null)? "":convertHz(jsonObj.cpuspeed)) ;
+    $barChartContainer.find("#cpuspeed").text(cpuSpeed);
     
-    //var cpuUsed = ((jsonObj.cpuused==null)? spaceCharacter:jsonObj.cpuused);  
+    $barChartContainer.find("#bar_chart").removeClass().addClass("db_barbox").css("width", "0%");    
+    $barChartContainer.find("#percentused").text("");   
     if(jsonObj.cpuused!=null)
-        drawBarChart($c, parseFloat(jsonObj.cpuused));		
+        drawBarChart($barChartContainer, parseFloat(jsonObj.cpuused));		
     
-    var networkKbsRead = ((jsonObj.networkkbsread==null)? spaceCharacter:convertBytes(jsonObj.networkkbsread * 1024));
-    $c.find("#networkkbsread").text(networkKbsRead);
+    var networkKbsRead = ((jsonObj.networkkbsread==null)? "":convertBytes(jsonObj.networkkbsread * 1024));
+    $thisTab.find("#networkkbsread").text(networkKbsRead);
     
-    var networkKbsWrite = ((jsonObj.networkkbswrite==null)? spaceCharacter:convertBytes(jsonObj.networkkbswrite * 1024));
-    $c.find("#networkkbswrite").text(networkKbsWrite);
+    var networkKbsWrite = ((jsonObj.networkkbswrite==null)? "":convertBytes(jsonObj.networkkbswrite * 1024));
+    $thisTab.find("#networkkbswrite").text(networkKbsWrite);
     
     $thisTab.find("#tab_spinning_wheel").hide();    
     $thisTab.find("#tab_container").show();  
