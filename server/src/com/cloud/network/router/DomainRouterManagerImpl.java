@@ -119,6 +119,7 @@ import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.dao.NetworkConfigurationDao;
 import com.cloud.network.dao.NetworkRuleConfigDao;
+import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.dao.VpnUserDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.GuestIpType;
@@ -227,6 +228,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
     @Inject NetworkManager _networkMgr;
     @Inject VmManager _itMgr;
     @Inject VpnUserDao _vpnUsersDao;
+    @Inject RemoteAccessVpnDao _remoteAccessVpnDao;
     
     long _routerTemplateId = -1;
     int _routerRamSize;
@@ -1144,7 +1146,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
 				return false;
 			}
 		}
-		return resendDhcpEntries(router);
+		return resendDhcpEntries(router) && resendVpnServerData(router);
       
     }
     
@@ -1220,6 +1222,21 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
         return true;
     }
     */
+    
+    private boolean resendVpnServerData(final DomainRouterVO router) {
+    	RemoteAccessVpnVO vpnVO = _remoteAccessVpnDao.findByAccountAndZone(router.getAccountId(), router.getDataCenterId());
+    	
+    	if (vpnVO != null) {
+    		try {
+				vpnVO =  startRemoteAccessVpn(vpnVO);
+			} catch (ResourceUnavailableException e) {
+				s_logger.warn("Unable to resend vpn server information to restarted router: " + router.getInstanceName());
+				return false;
+			}
+    		return (vpnVO  != null);
+    	}
+    	return true;
+    }
 
     @Override
     public boolean stopRouter(final long routerId, long eventId) {
@@ -1868,7 +1885,6 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
 	            }
 	        }
 	        String userData = vm.getUserData();
-	        int cmdsLength = (password == null ? 0:1) + 1;
 	        Commands cmds = new Commands(OnError.Stop);
 	        int cmdIndex = 0;
 	        int passwordIndex = -1;
@@ -2218,7 +2234,6 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
 
         String password = null;
         String userData = profile.getVirtualMachine().getUserData();
-        int cmdsLength = (password == null ? 0:1) + 1;
         Commands cmds = new Commands(OnError.Stop);
         String routerPublicIpAddress = nic.getIp4Address();
         String routerControlIpAddress = null;
