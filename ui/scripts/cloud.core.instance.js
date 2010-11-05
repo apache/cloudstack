@@ -62,7 +62,7 @@ function afterLoadInstanceJSP() {
     // switch between different tabs 
     var tabArray = [$("#tab_details"), $("#tab_volume"), $("#tab_statistics"), $("#tab_router")];
     var tabContentArray = [$("#tab_content_details"), $("#tab_content_volume"), $("#tab_content_statistics"), $("#tab_content_router")];
-    var afterSwitchFnArray = [vmJsonToDetailsTab, vmJsonToVolumeTab, null, vmJsonToRouterTab];
+    var afterSwitchFnArray = [vmJsonToDetailsTab, vmJsonToVolumeTab, vmJsonToStatisticsTab, vmJsonToRouterTab];
     switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray);       
     
     //initialize VM Wizard    
@@ -1525,8 +1525,38 @@ function vmJsonToVolumeTab() {
 		}
 	});          
 }
+ 
+function vmJsonToStatisticsTab() {
+    var $thisTab = $("#right_panel_content #tab_content_statistics");  
+	$thisTab.find("#tab_container").hide(); 
+    $thisTab.find("#tab_spinning_wheel").show();   
+
+    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
+    var jsonObj = $midmenuItem1.data("jsonObj");
     
-function vmJsonToRouterTab($midmenuItem1) {   
+    
+    var spaceCharacter = " ";	
+
+    var cpuNumber = ((jsonObj.cpunumber==null)? spaceCharacter:jsonObj.cpunumber.toString());
+    $thisTab.find("#cpunumber").text(cpuNumber);
+    
+    var cpuSpeed = ((jsonObj.cpuspeed==null)? spaceCharacter:convertHz(jsonObj.cpuspeed)) ;
+    $thisTab.find("#cpuspeed").text(cpuSpeed);
+    
+    var cpuUsed = ((jsonObj.cpuused==null)? spaceCharacter:jsonObj.cpuused);
+    $thisTab.find("#cpuused").text(cpuUsed);
+    
+    var networkKbsRead = ((jsonObj.networkkbsread==null)? spaceCharacter:convertBytes(jsonObj.networkkbsread * 1024));
+    $thisTab.find("#networkkbsread").text(networkKbsRead);
+    
+    var networkKbsWrite = ((jsonObj.networkkbswrite==null)? spaceCharacter:convertBytes(jsonObj.networkkbswrite * 1024));
+    $thisTab.find("#networkkbswrite").text(networkKbsWrite);
+    
+    $thisTab.find("#tab_spinning_wheel").hide();    
+    $thisTab.find("#tab_container").show();  
+}
+    
+function vmJsonToRouterTab() {   
     var $thisTab = $("#right_panel_content #tab_content_router");  
 	$thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();   

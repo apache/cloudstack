@@ -236,55 +236,59 @@
                    <p>Loading &hellip;</p>    
               </div>               
         </div>
-        <div class="grid_container">
-        	<div class="grid_header">
-            	<div id="grid_header_title" class="grid_header_title">(title)</div>
-            </div>
-            <div class="dbrow odd">
-                <div class="dbrow_cell" style="width: 40%;">
-                    <div class="dbgraph_titlebox">
-                        <h2>
-                            CPU</h2>
-                        <div class="dbgraph_title_usedbox">
-                            <p>
-                                Total: <span id="capacityused">1x500 MHZ</span>
-                            </p>
+        <div id="tab_container"> 
+            <div class="grid_container">
+        	    <div class="grid_header">
+            	    <div id="grid_header_title" class="grid_header_title"></div>
+                </div>
+                <div class="dbrow odd">
+                    <div class="dbrow_cell" style="width: 40%;">
+                        <div class="dbgraph_titlebox">
+                            <h2>
+                                CPU</h2>
+                            <div class="dbgraph_title_usedbox">
+                                <p>
+                                    Total: <span id="capacityused">
+	                                    <span id="cpunumber">M</span> 
+	                                    x 
+	                                    <span id="cpuspeed">N</span> 
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="dbrow_cell" style="width: 43%; border: none;">
+                        <div class="db_barbox low" id="bar_chart">
+                        </div>
+                    </div>
+                    <div class="dbrow_cell" style="width: 16%; border: none;">
+                        <div class="db_totaltitle" id="cpuused">
+                        K%
                         </div>
                     </div>
                 </div>
-                <div class="dbrow_cell" style="width: 43%; border: none;">
-                    <div class="db_barbox low" id="bar_chart">
+                <div class="grid_rows even">
+                    <div class="grid_row_cell" style="width: 20%;">
+                        <div class="row_celltitles">
+                            Network Read:</div>
+                    </div>
+                    <div class="grid_row_cell" style="width: 79%;">
+                        <div class="row_celltitles" id="networkkbsread">
+                        </div>
                     </div>
                 </div>
-                <div class="dbrow_cell" style="width: 16%; border: none;">
-                    <div class="db_totaltitle" id="percentused">
-                    0.2%
+                <div class="grid_rows odd">
+                    <div class="grid_row_cell" style="width: 20%;">
+                        <div class="row_celltitles">
+                            Network Write:</div>
                     </div>
-                </div>
+                    <div class="grid_row_cell" style="width: 79%;">
+                        <div class="row_celltitles" id="networkkbswrite">
+                        </div>
+                    </div>
+                </div>  
             </div>
-            <div class="grid_rows even">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        Network Read:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" >
-                    </div>
-                </div>
-            </div>
-            <div class="grid_rows odd">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        Network Write:</div>
-                </div>
-                <div class="grid_row_cell">
-                    <div class="row_celltitles" id="account">
-                    </div>
-                </div>
-            </div>
-            
-            
-        </div>
+        </div>   
     </div>
     <!--Statistics tab (start)-->
     <!--Routers tab (start)-->
