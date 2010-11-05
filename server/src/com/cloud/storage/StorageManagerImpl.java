@@ -2439,8 +2439,7 @@ public class StorageManagerImpl implements StorageManager {
 								s_logger.warn(msg,e);
 				        		throw new ResourceUnavailableException(msg);
 							}
-						}
-						    				
+						}    				
 					}
 				}
 			}
