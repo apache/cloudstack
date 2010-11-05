@@ -290,7 +290,7 @@ public class ApiDBUtils {
     }
 
     public static DiskOfferingVO findDiskOfferingById(Long diskOfferingId) {
-        return _diskOfferingDao.findById(diskOfferingId);
+        return _diskOfferingDao.findByIdIncludingRemoved(diskOfferingId);
     }
 
     public static DomainVO findDomainById(Long domainId) {
@@ -345,7 +345,7 @@ public class ApiDBUtils {
     }
 
     public static ServiceOffering findServiceOfferingById(Long serviceOfferingId) {
-        return _serviceOfferingDao.findById(serviceOfferingId);
+        return _serviceOfferingDao.findByIdIncludingRemoved(serviceOfferingId);
     }
 
     public static Snapshot findSnapshotById(long snapshotId) {
