@@ -2148,7 +2148,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, VirtualMach
 			s_logger.warn("Failed to start remote access VPN: no router found for account and zone");
 			return null;
 		}
-		if (router.getState() != State.Running) {
+		if (router.getState() != State.Running && router.getState() != State.Starting) {
 			s_logger.warn("Failed to start remote access VPN: router not in running state");
 			return null;
 		}
