@@ -265,7 +265,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
     private AsyncJobManager _asyncMgr;
     
     @Inject
-    private VmManager _vmMgr;
+    private VmManager _itMgr;
     
     @Inject
     private ClusterManager _clMgr;
@@ -551,7 +551,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
         ConsoleProxyVO proxy = _consoleProxyDao.findById(proxyVmId);
         AccountVO systemAcct = _accountMgr.getSystemAccount();
         UserVO systemUser = _accountMgr.getSystemUser();
-        return _vmMgr.start(proxy, null, systemUser, systemAcct);
+        return _itMgr.start(proxy, null, systemUser, systemAcct);
     }
 
     @Override
@@ -1078,7 +1078,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
         }
         ConsoleProxyVO proxy = new ConsoleProxyVO(id, _serviceOffering.getId(), name, _template.getId(), _template.getGuestOSId(), dataCenterId, systemAcct.getDomainId(), systemAcct.getId(), 0);
         try {
-            VirtualMachineProfile<ConsoleProxyVO> vmProfile = _vmMgr.allocate(proxy, _template, _serviceOffering, networks, plan, systemAcct);
+            proxy = _itMgr.allocate(proxy, _template, _serviceOffering, networks, plan, systemAcct);
         } catch (InsufficientCapacityException e) {
             s_logger.warn("InsufficientCapacity", e);
             throw new CloudRuntimeException("Insufficient capacity exception", e);
@@ -2344,7 +2344,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
         if (haMgr != null) {
             haMgr.registerHandler(VirtualMachine.Type.ConsoleProxy, this);
         }
-        _vmMgr.registerGuru(VirtualMachine.Type.ConsoleProxy, this);
+        _itMgr.registerGuru(VirtualMachine.Type.ConsoleProxy, this);
 
         boolean useLocalStorage = Boolean.parseBoolean(configs.get(Config.SystemVMUseLocalStorage.key()));
         String networkRateStr = _configDao.getValue("network.throttling.rate");

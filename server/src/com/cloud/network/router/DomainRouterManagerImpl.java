@@ -2056,7 +2056,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
                 s_logger.debug("Creating the router " + id);
             }
             
-            String sourceNatIp = _networkMgr.assignSourceNatIpAddress(owner, dest.getDataCenter());
+            //String sourceNatIp = _networkMgr.assignSourceNatIpAddress(owner, dest.getDataCenter());
         
             List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemVmControlNetwork);
             NetworkOfferingVO controlOffering = offerings.get(0);
@@ -2067,7 +2067,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
             List<NetworkConfigurationVO> publicConfigs = _networkMgr.setupNetworkConfiguration(_systemAcct, publicOffering, plan);
             NicProfile defaultNic = new NicProfile();
             defaultNic.setDefaultNic(true);
-            defaultNic.setIp4Address(sourceNatIp);
+            //defaultNic.setIp4Address(sourceNatIp);
             defaultNic.setDeviceId(2);
             networks.add(new Pair<NetworkConfigurationVO, NicProfile>(publicConfigs.get(0), defaultNic));
             NicProfile gatewayNic = new NicProfile();
@@ -2081,7 +2081,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
             networks.add(new Pair<NetworkConfigurationVO, NicProfile>(controlConfig, null));
             
             router = new DomainRouterVO(id, _offering.getId(), VirtualMachineName.getRouterName(id, _instance), _template.getId(), _template.getGuestOSId(), owner.getDomainId(), owner.getId(), guestConfig.getId(), _offering.getOfferHA());
-    	    _itMgr.allocate(router, _template, _offering, networks, plan, owner);
+    	    router = _itMgr.allocate(router, _template, _offering, networks, plan, owner);
         }
         
         return _itMgr.start(router, null, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
@@ -2089,7 +2089,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
 	
 	@Override
     public boolean finalizeVirtualMachineProfile(VirtualMachineProfile<DomainRouterVO> profile, DeployDestination dest, ReservationContext context) {
-        StringBuilder buf = new StringBuilder();
+        StringBuilder buf = profile.getBootArgsBuilder();
         buf.append(" template=domP type=router");
         buf.append(" name=").append(profile.getHostName());
         NicProfile controlNic = null;

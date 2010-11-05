@@ -187,6 +187,7 @@ import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
+import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
@@ -204,7 +205,7 @@ import com.cloud.vm.dao.InstanceGroupVMMapDao;
 import com.cloud.vm.dao.UserVmDao;
 
 @Local(value={UserVmManager.class, UserVmService.class})
-public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualMachineGuru<UserVmVO> {
+public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualMachineGuru<UserVmVO>, Manager, VirtualMachineManager<UserVmVO> {
     private static final Logger s_logger = Logger.getLogger(UserVmManagerImpl.class);
 	private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 3; 	// 3 seconds
 

@@ -37,7 +37,6 @@ import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.AccountVO;
 import com.cloud.uservm.UserVm;
-import com.cloud.utils.component.Manager;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.vm.VirtualMachine.Event;
 
@@ -46,7 +45,7 @@ import com.cloud.vm.VirtualMachine.Event;
  * UserVmManager contains all of the code to work with user VMs.
  * 
  */
-public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> {
+public interface UserVmManager extends VirtualMachineManager<UserVmVO> {
 
 	static final int MAX_USER_DATA_LENGTH_BYTES = 2048;
     /**

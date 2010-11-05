@@ -119,7 +119,7 @@ public class MauriceMoss implements VmManager, ClusterManagerListener {
     }
     
     @Override @DB
-    public <T extends VMInstanceVO> VirtualMachineProfile<T> allocate(T vm,
+    public <T extends VMInstanceVO> T allocate(T vm,
             VMTemplateVO template,
             ServiceOfferingVO serviceOffering,
             Pair<? extends DiskOfferingVO, Long> rootDiskOffering,
@@ -175,11 +175,11 @@ public class MauriceMoss implements VmManager, ClusterManagerListener {
             s_logger.debug("Allocation completed for VM: " + vm);
         }
         
-        return vmProfile;
+        return vm;
     }
     
     @Override
-    public <T extends VMInstanceVO> VirtualMachineProfile<T> allocate(T vm,
+    public <T extends VMInstanceVO> T allocate(T vm,
             VMTemplateVO template,
             ServiceOfferingVO serviceOffering,
             Long rootSize,
@@ -195,7 +195,7 @@ public class MauriceMoss implements VmManager, ClusterManagerListener {
     }
     
     @Override
-    public <T extends VMInstanceVO> VirtualMachineProfile<T> allocate(T vm,
+    public <T extends VMInstanceVO> T allocate(T vm,
             VMTemplateVO template,
             ServiceOfferingVO serviceOffering,
             List<Pair<NetworkConfigurationVO, NicProfile>> networks,

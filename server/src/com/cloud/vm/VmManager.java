@@ -41,7 +41,7 @@ import com.cloud.utils.component.Manager;
  */
 public interface VmManager extends Manager {
     
-    <T extends VMInstanceVO> VirtualMachineProfile<T> allocate(T vm,
+    <T extends VMInstanceVO> T allocate(T vm,
             VMTemplateVO template,
             ServiceOfferingVO serviceOffering,
             Pair<? extends DiskOfferingVO, Long> rootDiskOffering,
@@ -51,7 +51,7 @@ public interface VmManager extends Manager {
             DeploymentPlan plan,
             Account owner) throws InsufficientCapacityException, StorageUnavailableException;
     
-    <T extends VMInstanceVO> VirtualMachineProfile<T> allocate(T vm,
+    <T extends VMInstanceVO> T allocate(T vm,
             VMTemplateVO template,
             ServiceOfferingVO serviceOffering,
             Long rootSize,
@@ -60,7 +60,7 @@ public interface VmManager extends Manager {
             DeploymentPlan plan,
             Account owner) throws InsufficientCapacityException, StorageUnavailableException;
     
-    <T extends VMInstanceVO> VirtualMachineProfile<T> allocate(T vm,
+    <T extends VMInstanceVO> T allocate(T vm,
             VMTemplateVO template,
             ServiceOfferingVO serviceOffering,
             List<Pair<NetworkConfigurationVO, NicProfile>> networkProfiles,

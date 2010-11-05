@@ -46,10 +46,9 @@ import com.cloud.exception.StorageUnavailableException;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.uservm.UserVm;
-import com.cloud.utils.component.Manager;
 import com.cloud.utils.exception.ExecutionException;
 
-public interface UserVmService extends Manager {
+public interface UserVmService {
     /**
      * Destroys one virtual machine
      * @param userId the id of the user performing the action
