@@ -116,7 +116,7 @@ public class CreateSnapshotInternalCmd extends BaseAsyncCmd {
         response.setCreated(snapshot.getCreated());
         response.setName(snapshot.getName());
 
-        response.setResponseName(getName());
+        response.setResponseName("snapshot");
         return response;
     }
 }

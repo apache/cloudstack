@@ -238,7 +238,7 @@ public class AuthorizeNetworkGroupIngressCmd extends BaseAsyncCmd {
             response.setResponses(responses);
         }
 
-        response.setResponseName(getName());
+        response.setResponseName("networkgroup");
 		return response;
 	}
 }

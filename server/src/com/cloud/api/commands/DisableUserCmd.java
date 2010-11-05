@@ -83,7 +83,7 @@ public class DisableUserCmd extends BaseAsyncCmd {
 	public UserResponse getResponse() {
         UserAccount user = (UserAccount)getResponseObject();
         UserResponse response = ApiResponseHelper.createUserResponse(user);
-        response.setResponseName(getName());
+        response.setResponseName("user");
         return response;
 	}
 }

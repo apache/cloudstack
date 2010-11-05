@@ -196,7 +196,7 @@ public class DeployVMCmd extends BaseAsyncCmd {
 //        if (templatePasswordEnabled) { 
 //            response.setPassword(getPassword());
 //        } 
-        response.setResponseName(getName());
+        response.setResponseName("virtualmachine");
         return response;
     }
 }

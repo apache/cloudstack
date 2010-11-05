@@ -99,7 +99,7 @@ public class AssignToLoadBalancerRuleCmd extends BaseAsyncCmd {
     public SuccessResponse getResponse() {
         SuccessResponse response = new SuccessResponse();
         response.setSuccess(Boolean.TRUE);
-        response.setResponseName(getName());
+        response.setResponseName("success");
         return response;
     }
 }

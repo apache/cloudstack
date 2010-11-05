@@ -87,7 +87,7 @@ public class StopRouterCmd extends BaseAsyncCmd {
     public DomainRouterResponse getResponse() {
         DomainRouter router = (DomainRouter)getResponseObject();
         DomainRouterResponse response =ApiResponseHelper.createDomainRouterResponse(router);
-        response.setResponseName(getName());
+        response.setResponseName("router");
         return response;
     }
 }

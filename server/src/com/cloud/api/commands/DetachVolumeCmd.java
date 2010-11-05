@@ -120,7 +120,7 @@ public class DetachVolumeCmd extends BaseAsyncCmd {
     public VolumeResponse getResponse() {
         VolumeVO volume = (VolumeVO)getResponseObject();
         VolumeResponse response = ApiResponseHelper.createVolumeResponse(volume);
-        response.setResponseName(getName());
+        response.setResponseName("volume");
         return response;
     }
 }

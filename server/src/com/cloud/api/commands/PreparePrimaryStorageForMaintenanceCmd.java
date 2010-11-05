@@ -88,7 +88,7 @@ public class PreparePrimaryStorageForMaintenanceCmd extends BaseAsyncCmd {
     public StoragePoolResponse getResponse() {
         StoragePoolVO primaryStorage = (StoragePoolVO)getResponseObject();
         StoragePoolResponse response = ApiResponseHelper.createStoragePoolResponse(primaryStorage);
-        response.setResponseName(getName());
+        response.setResponseName("storagepool");
         return response;
     }
 }

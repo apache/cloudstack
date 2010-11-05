@@ -211,7 +211,7 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
             response.setZoneName(zone.getName());
         }
 
-        response.setResponseName(getName());
+        response.setResponseName("template");
         return response;
     }
 }

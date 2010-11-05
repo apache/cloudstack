@@ -111,7 +111,7 @@ public class UpdateLoadBalancerRuleCmd extends BaseAsyncCmd {
 	public LoadBalancerResponse getResponse() {
 	    LoadBalancerVO loadBalancer = (LoadBalancerVO)getResponseObject();
 	    LoadBalancerResponse response = ApiResponseHelper.createLoadBalancerResponse(loadBalancer);
-        response.setResponseName(getName());
+        response.setResponseName("loadbalancerrule");
         return response;
 	}
 }

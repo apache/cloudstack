@@ -89,7 +89,7 @@ public class StartVMCmd extends BaseAsyncCmd {
     public UserVmResponse getResponse() {
         UserVm userVm = (UserVm)getResponseObject();
         UserVmResponse recoverVmResponse = ApiResponseHelper.createUserVmResponse(userVm);
-        recoverVmResponse.setResponseName(getName());
+        recoverVmResponse.setResponseName("virtualmachine");
         return recoverVmResponse;
 	}
 }

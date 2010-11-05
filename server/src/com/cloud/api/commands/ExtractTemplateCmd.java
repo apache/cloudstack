@@ -113,7 +113,7 @@ public class ExtractTemplateCmd extends BaseAsyncCmd {
         UploadVO uploadInfo = ApiDBUtils.findUploadById(uploadId);
         
         ExtractResponse response = new ExtractResponse();
-        response.setResponseName(getName());
+        response.setResponseName("template");
         response.setId(id);
         response.setName(ApiDBUtils.findTemplateById(id).getName());        
         response.setZoneId(zoneId);

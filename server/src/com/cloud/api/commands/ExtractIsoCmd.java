@@ -108,7 +108,7 @@ public class ExtractIsoCmd extends BaseAsyncCmd {
         UploadVO uploadInfo = ApiDBUtils.findUploadById(uploadId);
         
         ExtractResponse response = new ExtractResponse();
-        response.setResponseName(getName());
+        response.setResponseName("iso");
         response.setId(id);
         response.setName(ApiDBUtils.findTemplateById(id).getName());        
         response.setZoneId(zoneId);

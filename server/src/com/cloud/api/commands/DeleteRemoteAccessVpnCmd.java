@@ -82,7 +82,7 @@ public class DeleteRemoteAccessVpnCmd extends BaseAsyncCmd {
     	Boolean success = (Boolean)getResponseObject();
         SuccessResponse response = new SuccessResponse();
         response.setSuccess(success);
-        response.setResponseName(getName());
+        response.setResponseName("success");
         return response;
     }
 

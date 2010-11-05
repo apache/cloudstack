@@ -89,7 +89,7 @@ public class PrepareForMaintenanceCmd extends BaseAsyncCmd {
     public HostResponse getResponse() {
         HostVO host = (HostVO)getResponseObject();
         HostResponse response = ApiResponseHelper.createHostResponse(host);
-        response.setResponseName(getName());
+        response.setResponseName("host");
         return response;
     }
 }

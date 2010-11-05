@@ -23,7 +23,6 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.CustomCertificateResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
@@ -45,7 +44,7 @@ public class UploadCustomCertificateCmd extends BaseAsyncCmd {
     public CustomCertificateResponse getResponse() {
         String updatedCpIdList = (String)getResponseObject();
         CustomCertificateResponse response = new CustomCertificateResponse();
-        response.setResponseName(s_name);
+        response.setResponseName("customcertificate");
         response.setUpdatedConsoleProxyIdList(updatedCpIdList);
         return response;
     }

@@ -108,7 +108,7 @@ public class AttachIsoCmd extends BaseAsyncCmd {
             response.setVirtualMachineId(virtualMachineId);
             response.setVirtualMachineName(vmInstance.getHostName());
             response.setVirtualMachineState(vmInstance.getState().toString());            
-            response.setResponseName(getName());
+            response.setResponseName("iso");
             return response;
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to attach iso");

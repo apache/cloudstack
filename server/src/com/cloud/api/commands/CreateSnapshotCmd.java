@@ -109,7 +109,7 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
 
         if (snapshot != null) {
             SnapshotResponse response = ApiResponseHelper.createSnapshotResponse(snapshot);
-            response.setResponseName(getName());
+            response.setResponseName("snapshot");
             return response;
         }
 

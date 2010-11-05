@@ -86,7 +86,7 @@ public class RebootSystemVmCmd extends BaseAsyncCmd {
 	public SystemVmResponse getResponse() {
         VMInstanceVO instance = (VMInstanceVO)getResponseObject();
         SystemVmResponse response = ApiResponseHelper.createSystemVmResponse(instance);
-        response.setResponseName(getName());
+        response.setResponseName("systemvm");
         return response;
 	}
 }

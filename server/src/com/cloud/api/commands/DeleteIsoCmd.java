@@ -84,7 +84,7 @@ public class DeleteIsoCmd extends BaseAsyncCmd {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete iso");
         }
 
-        response.setResponseName(getName());
+        response.setResponseName("success");
         return response;
     }
 

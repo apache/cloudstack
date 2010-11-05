@@ -51,28 +51,29 @@ public class ApiResponseSerializer {
  * If the old style (2.1.x) async job responses are desired, uncomment the following code.  Note:  Many of the commands will need to set the response name to
  * something like "getResultObjectName()" [see StopVMCmd for an example] in order to truly reinstate the old behavior.  The current response names are based
  * on the new style.  Also, this is done for JSON, so the XML Serializer will need to be fixed up to compensate, but the following code can be used to guide
- * the changes to XML serializer.
-            } else if (result instanceof AsyncJobResponse) {
-                // this code is in here to preserve old behavior for the async job result response
-                AsyncJobResponse asyncResponse = (AsyncJobResponse)result;
-                if ("object".equalsIgnoreCase(asyncResponse.getJobResultType())) {
-                    // we require special handling for object, otherwise we serialize it the standard way
-                    ResponseObject subResponse = asyncResponse.getJobResult();
-                    asyncResponse.setJobResult(null);
-                    String jsonStr = gson.toJson(result);
-                    int index = jsonStr.lastIndexOf('}');
-                    sb.append(jsonStr.substring(0, index));
-                    String subRespJson = gson.toJson(subResponse);
-                    sb.append(", \"" + subResponse.getResponseName() + "\" : [ " + subRespJson + " ] }");
-                } else {
-                    String jsonStr = gson.toJson(result);
-                    if ((jsonStr != null) && !"".equals(jsonStr)) {
-                        sb.append(jsonStr);
-                    } else {
-                        sb.append("{ }");
-                    }
-                }
-*/
+ * the changes to XML serializer. */
+//            } else if (result instanceof AsyncJobResponse) {
+//                // this code is in here to preserve old behavior for the async job result response
+//                AsyncJobResponse asyncResponse = (AsyncJobResponse)result;
+//                if ("object".equalsIgnoreCase(asyncResponse.getJobResultType())) {
+//                    // we require special handling for object, otherwise we serialize it the standard way
+//                    ResponseObject subResponse = asyncResponse.getJobResult();
+//                    asyncResponse.setJobResult(null);
+//                    String jsonStr = gson.toJson(result);
+//                    int index = jsonStr.lastIndexOf('}');
+//                    sb.append(jsonStr.substring(0, index));
+//                    String subRespJson = gson.toJson(subResponse);
+//                    sb.append(", \"" + subResponse.getResponseName() + "\" : [ " + subRespJson + " ] }");
+//                } else {
+//                    String jsonStr = gson.toJson(result);
+//                    if ((jsonStr != null) && !"".equals(jsonStr)) {
+//                        sb.append(jsonStr);
+//                    } else {
+//                        sb.append("{ }");
+//                    }
+//                }
+
+
             } else {
                 String jsonStr = gson.toJson(result);
                 if ((jsonStr != null) && !"".equals(jsonStr)) {
@@ -108,12 +109,18 @@ public class ApiResponseSerializer {
     }
 
     private static void serializeResponseObjXML(StringBuilder sb, ResponseObject obj) {
-        sb.append("<" + obj.getResponseName() + ">");
+        if (!(obj instanceof SuccessResponse)&& !(obj instanceof ExceptionResponse))
+            sb.append("<" + obj.getResponseName() + ">");
         serializeResponseObjFieldsXML(sb, obj);
-        sb.append("</" + obj.getResponseName() + ">");
+        if (!(obj instanceof SuccessResponse) && !(obj instanceof ExceptionResponse))
+            sb.append("</" + obj.getResponseName() + ">");
     }
 
     private static void serializeResponseObjFieldsXML(StringBuilder sb, ResponseObject obj) {
+        boolean isAsync = false;
+        if (obj instanceof AsyncJobResponse)
+            isAsync = true;
+        
         Field[] fields = obj.getClass().getDeclaredFields();
         for (Field field : fields) {
             if ((field.getModifiers() & Modifier.TRANSIENT) != 0) {
@@ -133,7 +140,13 @@ public class ApiResponseSerializer {
                     if (fieldValue != null) {
                         if (fieldValue instanceof ResponseObject) {
                             ResponseObject subObj = (ResponseObject)fieldValue;
+                            if (isAsync) {
+                                sb.append("<jobresult>");
+                            }
                             serializeResponseObjXML(sb, subObj);
+                            if (isAsync) {
+                                sb.append("</jobresult>");
+                            }
                         } else if (fieldValue instanceof Date) {
                             sb.append("<" + serializedName.value() + ">" + BaseCmd.getDateString((Date)fieldValue) + "</" + serializedName.value() + ">");
                         } else {
