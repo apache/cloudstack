@@ -953,10 +953,10 @@ public class TemplateManagerImpl implements TemplateManager {
 		List<VMTemplateStoragePoolVO> allTemplatesInPool = _tmpltPoolDao.listByPoolId(pool.getId());
 		
 		for (VMTemplateStoragePoolVO templatePoolVO : allTemplatesInPool) {
-			VMTemplateVO template = _tmpltDao.findById(templatePoolVO.getTemplateId());
-			
+			VMTemplateVO template = _tmpltDao.findByIdIncludingRemoved(templatePoolVO.getTemplateId());			
+		
 			// If this is a routing template, consider it in use
-			if (template.getUniqueName().equals("routing")) {
+			if (template.getTemplateType() == TemplateType.SYSTEM) {
 				continue;
 			}
 			
@@ -976,7 +976,7 @@ public class TemplateManagerImpl implements TemplateManager {
     @Override
     public void evictTemplateFromStoragePool(VMTemplateStoragePoolVO templatePoolVO) {
 		StoragePoolVO pool = _poolDao.findById(templatePoolVO.getPoolId());
-		VMTemplateVO template = _tmpltDao.findById(templatePoolVO.getTemplateId());
+		VMTemplateVO template = _tmpltDao.findByIdIncludingRemoved(templatePoolVO.getTemplateId());
 		
 		long hostId;
 		List<StoragePoolHostVO> poolHostVOs = _poolHostDao.listByPoolId(pool.getId());
@@ -1096,7 +1096,7 @@ public class TemplateManagerImpl implements TemplateManager {
 	
 	@Override
     public boolean templateIsDeleteable(VMTemplateHostVO templateHostRef) {
-		VMTemplateVO template = _tmpltDao.findById(templateHostRef.getTemplateId());
+		VMTemplateVO template = _tmpltDao.findByIdIncludingRemoved(templateHostRef.getTemplateId());
 		long templateId = template.getId();
 		HostVO secondaryStorageHost = _hostDao.findById(templateHostRef.getHostId());
 		long zoneId = secondaryStorageHost.getDataCenterId();
@@ -1284,7 +1284,7 @@ public class TemplateManagerImpl implements TemplateManager {
     		throw new InvalidParameterValueException("Please specify a valid template.");
     	}
     	
-    	if (template.getUniqueName().equals("routing")) {
+    	if (template.getTemplateType() == TemplateType.SYSTEM) {
     		throw new InvalidParameterValueException("The DomR template cannot be deleted.");
     	}
     	

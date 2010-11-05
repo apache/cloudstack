@@ -80,8 +80,8 @@ public class Storage {
     }
     
     public static enum TemplateType {
-    	SYSTEM,
-    	BUILTIN
+    	SYSTEM, /*routing, system vm template*/
+    	BUILTIN /*buildin template*/
     }
     
     public static enum StoragePoolType {

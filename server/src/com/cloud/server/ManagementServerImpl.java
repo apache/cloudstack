@@ -231,6 +231,7 @@ import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolVO;
@@ -3723,7 +3724,7 @@ public class ManagementServerImpl implements ManagementServer {
         for(VolumeVO v:allVolumes)
         {
         	VMTemplateVO template = _templateDao.findById(v.getTemplateId());
-        	if(template!=null && template.getUniqueName().startsWith("routing"))
+        	if(template!=null && (template.getTemplateType() == TemplateType.SYSTEM))
         	{
         		//do nothing
         	}
