@@ -28,6 +28,7 @@ public class CopyVolumeCommand extends Command {
 	StoragePoolVO pool;
 	String secondaryStorageURL;
 	boolean toSecondaryStorage;
+	String vmName;
 	
 	public CopyVolumeCommand() {		
 	}
@@ -63,5 +64,9 @@ public class CopyVolumeCommand extends Command {
 	
 	public boolean toSecondaryStorage() {
 		return toSecondaryStorage;
+	}
+	
+	public String getVmName() {
+		return vmName;
 	}
 }
