@@ -751,32 +751,44 @@ function updateHostStateInMidMenu(jsonObj, $midmenuItem1) {
     
     $midmenuItem1.find("#icon_container").show();
 } 
+
+function enableConsoleHover($viewConsoleTemplate) {
+    var imgUrl = $viewConsoleTemplate.data("imgUrl");		
+    var time = new Date();	
+	$viewConsoleTemplate.find("#box1").hide().css("background", "url("+imgUrl+"&t="+time.getTime()+")");				
+	var index = 0;
+	$viewConsoleTemplate.everyTime(2000, function() {
+		var time = new Date();	
+		if ((index % 2) == 0) {
+			$viewConsoleTemplate.find("#box0").hide().css("background", "url("+imgUrl+"&t="+time.getTime()+")");
+			$viewConsoleTemplate.find("#box1").show();
+		} else {
+			$viewConsoleTemplate.find("#box1").hide().css("background", "url("+imgUrl+"&t="+time.getTime()+")");
+			$viewConsoleTemplate.find("#box0").show();
+		}
+		index++;
+	}, 0);	
+} 
+  
+function disableConsoleHover($viewConsoleTemplate) {
+    $viewConsoleTemplate.stopTime();		  
+} 
   
 function resetViewConsoleAction(jsonObj, $detailsTab) {
     var $viewConsoleContainer = $detailsTab.find("#view_console_container").empty(); //reset view console panel
     var $viewConsoleTemplate = $("#view_console_template").clone();
-    $viewConsoleContainer.append($viewConsoleTemplate.show());    
-    
-	if (jsonObj.state == 'Running') {			
-		//console proxy image
-		var imgUrl = "console?cmd=thumbnail&vm=" + jsonObj.id + "&w=144&h=110";	
-		//imgUrl = "http://localhost:8080/client/" + imgUrl;  //***** temporary hack. This line will be removed after new UI code (/ui/new/*) moves to /ui/*
-		
-		var time = new Date();							
-		$viewConsoleTemplate.find("#box1").hide().css("background", "url("+imgUrl+"&t="+time.getTime()+")");				
-		var index = 0;
-		$detailsTab.everyTime(2000, function() {
-			var time = new Date();	
-			if ((index % 2) == 0) {
-				$viewConsoleTemplate.find("#box0").hide().css("background", "url("+imgUrl+"&t="+time.getTime()+")");
-				$viewConsoleTemplate.find("#box1").show();
-			} else {
-				$viewConsoleTemplate.find("#box1").hide().css("background", "url("+imgUrl+"&t="+time.getTime()+")");
-				$viewConsoleTemplate.find("#box0").show();
-			}
-			index++;
-		}, 0);	
-
+    $viewConsoleContainer.append($viewConsoleTemplate.show());       
+	if (jsonObj.state == 'Running') {	
+	    //console proxy thumbnail
+	    var imgUrl = "console?cmd=thumbnail&vm=" + jsonObj.id + "&w=144&h=110";		
+		$viewConsoleTemplate.data("imgUrl", imgUrl);
+		$viewConsoleTemplate.bind("mouseover", function(event) {
+		    enableConsoleHover($(this));
+	    });
+	    $viewConsoleTemplate.bind("mouseout", function(event) {
+		    disableConsoleHover($(this));		      
+	    });
+				
 		//console proxy popup
 		$viewConsoleTemplate.data("proxyUrl", "console?cmd=access&vm=" + jsonObj.id).data("vmId",jsonObj.id).click(function(event) {				
 			var proxyUrl = $(this).data("proxyUrl");				
