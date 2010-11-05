@@ -11,6 +11,7 @@ HOSTNAME=systemvm
 SIZE=2000
 DEBIAN_MIRROR=ftp.us.debian.org/debian
 MINIMIZE=true
+CLOUDSTACK_RELEASE=2.2
 
 baseimage() {
   mkdir -p $LOCATION
@@ -424,7 +425,9 @@ cleanup() {
 }
 
 signature() {
-  (cd ${scriptdir}/config;  tar czf ${MOUNTPOINT}/usr/share/cloud/cloud-scripts.tgz *)
+  (cd ${scriptdir}/config;  tar cvf ${MOUNTPOINT}/usr/share/cloud/cloud-scripts.tar *)
+  (cd ${scriptdir}/vpn;  tar rvf ${MOUNTPOINT}/usr/share/cloud/cloud-scripts.tar *)
+  gzip -c ${MOUNTPOINT}/usr/share/cloud/cloud-scripts.tar  > ${MOUNTPOINT}/usr/share/cloud/cloud-scripts.tgz
   md5sum ${MOUNTPOINT}/usr/share/cloud/cloud-scripts.tgz |awk '{print $1}'  > ${MOUNTPOINT}/var/cache/cloud/cloud-scripts-signature
   echo "Cloudstack Release 2.2 $(date)" > ${MOUNTPOINT}/etc/cloudstack-release
 }
