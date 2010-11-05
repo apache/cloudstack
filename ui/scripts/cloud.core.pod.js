@@ -69,8 +69,8 @@ function podJsonToDetailsTab($leftmenuItem1) {
     });	  
     var $actionMenu = $detailsTab.find("#action_link #action_menu");
     $actionMenu.find("#action_list").empty();   
-    buildActionLinkForDetailsTab("Edit Pod", podActionMap, $actionMenu, $leftmenuItem1, $detailsTab);  
-    buildActionLinkForDetailsTab("Delete Pod", podActionMap, $actionMenu, $leftmenuItem1, $detailsTab);  
+    buildActionLinkForTab("Edit Pod", podActionMap, $actionMenu, $leftmenuItem1, $detailsTab);  
+    buildActionLinkForTab("Delete Pod", podActionMap, $actionMenu, $leftmenuItem1, $detailsTab);  
 }	
 
 function podJsonClearRightPanel(jsonObj) {	 

@@ -79,9 +79,9 @@ function primarystorageJsonToDetailsTab($midmenuItem1) {
     });	  
     var $actionMenu = $detailsTab.find("#action_link #action_menu");
     $actionMenu.find("#action_list").empty(); 
-    buildActionLinkForDetailsTab("Enable Maintenance Mode", primarystorageActionMap, $actionMenu, $midmenuItem1, $detailsTab);     
-    buildActionLinkForDetailsTab("Cancel Maintenance Mode", primarystorageActionMap, $actionMenu, $midmenuItem1, $detailsTab);     
-    buildActionLinkForDetailsTab("Delete Primary Storage", primarystorageActionMap, $actionMenu, $midmenuItem1, $detailsTab);        
+    buildActionLinkForTab("Enable Maintenance Mode", primarystorageActionMap, $actionMenu, $midmenuItem1, $detailsTab);     
+    buildActionLinkForTab("Cancel Maintenance Mode", primarystorageActionMap, $actionMenu, $midmenuItem1, $detailsTab);     
+    buildActionLinkForTab("Delete Primary Storage", primarystorageActionMap, $actionMenu, $midmenuItem1, $detailsTab);        
 }
        
 function primarystorageClearRigntPanel() {  
@@ -150,7 +150,7 @@ function doEnableMaintenanceModeForPrimaryStorage($actionLink, $detailsTab, $mid
              $(this).dialog("close");      
              var id = jsonObj.id;
              var apiCommand = "command=enableStorageMaintenance&id="+id;
-    	     doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);		
+    	     doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);		
          },
          "Cancel": function() {	                         
              $(this).dialog("close");
@@ -168,7 +168,7 @@ function doCancelMaintenanceModeForPrimaryStorage($actionLink, $detailsTab, $mid
              $(this).dialog("close");      
              var id = jsonObj.id;
              var apiCommand = "command=cancelStorageMaintenance&id="+id;
-    	     doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);		
+    	     doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);		
          },
          "Cancel": function() {	                         
              $(this).dialog("close");
@@ -185,7 +185,7 @@ function doDeletePrimaryStorage($actionLink, $detailsTab, $midmenuItem1){
              $(this).dialog("close");      
              var id = jsonObj.id;
              var apiCommand = "command=deleteStoragePool&id="+id;
-    	     doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);		
+    	     doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);		
          },
          "Cancel": function() {	                         
              $(this).dialog("close");

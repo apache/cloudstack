@@ -262,7 +262,7 @@ function domainToResourceLimitsTab() {
     
     var $actionMenu = $thisTab.find("#action_link #action_menu");
     $actionMenu.find("#action_list").empty();
-    buildActionLinkForDetailsTab("Edit Resource Limits", domainResourceLimitsActionMap, $actionMenu, $leftmenuItem1, $thisTab);		
+    buildActionLinkForTab("Edit Resource Limits", domainResourceLimitsActionMap, $actionMenu, $leftmenuItem1, $thisTab);		
 }
 
 function bindEventHandlerToDomainTreeNode() {

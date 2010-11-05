@@ -16,8 +16,8 @@
  * 
  */
 
-//***** actions for details tab in right panel (begin) ************************************************************************
-function buildActionLinkForDetailsTab(label, actionMap, $actionMenu, $midmenuItem1, $thisTab) { 
+//***** actions for a tab in right panel (begin) ************************************************************************
+function buildActionLinkForTab(label, actionMap, $actionMenu, $midmenuItem1, $thisTab) { 
     var apiInfo = actionMap[label];
     var $listItem = $("#action_list_item").clone();
     $actionMenu.find("#action_list").append($listItem.show());
@@ -34,7 +34,7 @@ function buildActionLinkForDetailsTab(label, actionMap, $actionMenu, $midmenuIte
         var dialogBeforeActionFn = apiInfo.dialogBeforeActionFn;         
         if(dialogBeforeActionFn == null) {	 
             var apiCommand = "command="+apiInfo.api+"&id="+id;                      
-            doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $thisTab); 
+            doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $thisTab); 
         }
         else {
             dialogBeforeActionFn($actionLink, $thisTab, $midmenuItem1);	
@@ -43,7 +43,7 @@ function buildActionLinkForDetailsTab(label, actionMap, $actionMenu, $midmenuIte
     });  
 } 
 
-function doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $thisTab) {  
+function doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $thisTab) {  
     var label = $actionLink.data("label");	
     var apiInfo = $actionLink.data("apiInfo");	
     
@@ -172,7 +172,7 @@ function handleMidMenuItemAfterDetailsTabAction($midmenuItem1, isSuccessful, aft
 	    $infoIcon.addClass("error");	    
 }
   	                
-//***** actions for details tab in right panel (end) **************************************************************************
+//***** actions for a tab in right panel (end) **************************************************************************
 
 //***** actions for a subgrid item in right panel (begin) ************************************************************************
 function buildActionLinkForSubgridItem(label, actionMap, $actionMenu, $subgridItem) {

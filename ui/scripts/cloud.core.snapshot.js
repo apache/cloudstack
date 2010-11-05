@@ -88,9 +88,9 @@ function snapshotJsonToDetailsTab() {
     //actions ***
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty();  
-    buildActionLinkForDetailsTab("Create Volume"  , snapshotActionMap, $actionMenu, $midmenuItem1, $thisTab);		
-    buildActionLinkForDetailsTab("Delete Snapshot", snapshotActionMap, $actionMenu, $midmenuItem1, $thisTab);	
-    buildActionLinkForDetailsTab("Create Template", snapshotActionMap, $actionMenu, $midmenuItem1, $thisTab);	
+    buildActionLinkForTab("Create Volume"  , snapshotActionMap, $actionMenu, $midmenuItem1, $thisTab);		
+    buildActionLinkForTab("Delete Snapshot", snapshotActionMap, $actionMenu, $midmenuItem1, $thisTab);	
+    buildActionLinkForTab("Create Template", snapshotActionMap, $actionMenu, $midmenuItem1, $thisTab);	
     
     $thisTab.find("#tab_spinning_wheel").hide();    
     $thisTab.find("#tab_container").show();     				
@@ -159,7 +159,7 @@ function doCreateVolumeFromSnapshotInSnapshotPage($actionLink, $detailsTab, $mid
          
          var id = jsonObj.id;
          var apiCommand = "command=createVolume&snapshotid="+id+"&name="+name;
-    	 doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);		
+    	 doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);		
      },
      "Cancel": function() {	                         
          $(this).dialog("close");
@@ -188,7 +188,7 @@ function doCreateTemplateFromSnapshotInSnapshotPage($actionLink, $detailsTab, $m
        
          var id = jsonObj.id;
          var apiCommand = "command=createTemplate&snapshotid="+id+"&name="+name+"&displaytext="+displayText+"&ostypeid="+osTypeId+"&passwordEnabled="+password;
-    	 doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);		
+    	 doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);		
      },
      "Cancel": function() {	                         
          $(this).dialog("close");

@@ -65,11 +65,11 @@ function systemvmJsonToDetailsTab($leftmenuItem1) {
     $actionMenu.find("#action_list").empty();   
     		
 	if (jsonObj.state == 'Running') {	//Show "Stop System VM", "Reboot System VM"
-	    buildActionLinkForDetailsTab("Stop System VM", systemVmActionMap, $actionMenu, $leftmenuItem1, $detailsTab);     
-        buildActionLinkForDetailsTab("Reboot System VM", systemVmActionMap, $actionMenu, $leftmenuItem1, $detailsTab);   
+	    buildActionLinkForTab("Stop System VM", systemVmActionMap, $actionMenu, $leftmenuItem1, $detailsTab);     
+        buildActionLinkForTab("Reboot System VM", systemVmActionMap, $actionMenu, $leftmenuItem1, $detailsTab);   
 	} 
 	else if (jsonObj.state == 'Stopped') { //show "Start System VM"	    
-	    buildActionLinkForDetailsTab("Start System VM", systemVmActionMap, $actionMenu, $leftmenuItem1, $detailsTab); 
+	    buildActionLinkForTab("Start System VM", systemVmActionMap, $actionMenu, $leftmenuItem1, $detailsTab); 
 	}     
 }
 
@@ -155,7 +155,7 @@ function doStartSystemVM($actionLink, $detailsTab, $midmenuItem1) {
 		    var jsonObj = $midmenuItem1.data("jsonObj");
 		    var id = jsonObj.id;
 		    var apiCommand = "command=startSystemVm&id="+id;              
-            doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab); 			   			   	                         					    
+            doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab); 			   			   	                         					    
 	    }, 
 	    "Cancel": function() { 
 		    $(this).dialog("close"); 
@@ -173,7 +173,7 @@ function doStopSystemVM($actionLink, $detailsTab, $midmenuItem1) {
 		    var jsonObj = $midmenuItem1.data("jsonObj");
 		    var id = jsonObj.id;
 		    var apiCommand = "command=stopSystemVm&id="+id;  
-            doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab); 			   	                         					    
+            doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab); 			   	                         					    
 	    }, 
 	    "Cancel": function() { 
 		    $(this).dialog("close"); 
@@ -191,7 +191,7 @@ function doRebootSystemVM($actionLink, $detailsTab, $midmenuItem1) {
 		    var jsonObj = $midmenuItem1.data("jsonObj");
 		    var id = jsonObj.id;
 		    var apiCommand = "command=rebootSystemVm&id="+id;              
-            doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab); 		   			   	                         					    
+            doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab); 		   			   	                         					    
 	    }, 
 	    "Cancel": function() { 
 		    $(this).dialog("close"); 

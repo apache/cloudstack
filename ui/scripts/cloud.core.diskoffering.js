@@ -228,8 +228,8 @@ function diskOfferingJsonToDetailsTab() {
     //actions ***
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty();    
-    buildActionLinkForDetailsTab("Edit Disk Offering", diskOfferingActionMap, $actionMenu, $midmenuItem1, $thisTab);	  
-    buildActionLinkForDetailsTab("Delete Disk Offering", diskOfferingActionMap, $actionMenu, $midmenuItem1, $thisTab);	  
+    buildActionLinkForTab("Edit Disk Offering", diskOfferingActionMap, $actionMenu, $midmenuItem1, $thisTab);	  
+    buildActionLinkForTab("Delete Disk Offering", diskOfferingActionMap, $actionMenu, $midmenuItem1, $thisTab);	  
     
     $thisTab.find("#tab_spinning_wheel").hide();    
     $thisTab.find("#tab_container").show();         

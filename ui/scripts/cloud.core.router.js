@@ -64,12 +64,12 @@ function routerJsonToDetailsTab($midmenuItem1) {
     var noAvailableActions = true;
    
     if (jsonObj.state == 'Running') {   
-        buildActionLinkForDetailsTab("Stop Router", routerActionMap, $actionMenu, $midmenuItem1, $detailsTab);	
-        buildActionLinkForDetailsTab("Reboot Router", routerActionMap, $actionMenu, $midmenuItem1, $detailsTab);	  
+        buildActionLinkForTab("Stop Router", routerActionMap, $actionMenu, $midmenuItem1, $detailsTab);	
+        buildActionLinkForTab("Reboot Router", routerActionMap, $actionMenu, $midmenuItem1, $detailsTab);	  
         noAvailableActions = false;      
     }
     else if (jsonObj.state == 'Stopped') {        
-        buildActionLinkForDetailsTab("Start Router", routerActionMap, $actionMenu, $midmenuItem1, $detailsTab);	
+        buildActionLinkForTab("Start Router", routerActionMap, $actionMenu, $midmenuItem1, $detailsTab);	
         noAvailableActions = false;
     }  
     

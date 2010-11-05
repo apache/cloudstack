@@ -130,8 +130,8 @@ function zoneJsonToDetailsTab($leftmenuItem1) {
     });	  
     var $actionMenu = $detailsTab.find("#action_link #action_menu");
     $actionMenu.find("#action_list").empty();      
-    buildActionLinkForDetailsTab("Edit Zone", zoneActionMap, $actionMenu, $leftmenuItem1, $detailsTab);    
-    buildActionLinkForDetailsTab("Delete Zone", zoneActionMap, $actionMenu, $leftmenuItem1, $detailsTab);     
+    buildActionLinkForTab("Edit Zone", zoneActionMap, $actionMenu, $leftmenuItem1, $detailsTab);    
+    buildActionLinkForTab("Delete Zone", zoneActionMap, $actionMenu, $leftmenuItem1, $detailsTab);     
 }	  
 
 function zoneJsonClearDetailsTab(jsonObj) {	    

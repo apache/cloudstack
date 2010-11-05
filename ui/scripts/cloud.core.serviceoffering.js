@@ -227,8 +227,8 @@ function serviceOfferingJsonToDetailsTab() {
     //actions ***
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty();      
-    buildActionLinkForDetailsTab("Edit Service Offering", serviceOfferingActionMap, $actionMenu, $midmenuItem1, $thisTab);	
-    buildActionLinkForDetailsTab("Delete Service Offering", serviceOfferingActionMap, $actionMenu, $midmenuItem1, $thisTab);
+    buildActionLinkForTab("Edit Service Offering", serviceOfferingActionMap, $actionMenu, $midmenuItem1, $thisTab);	
+    buildActionLinkForTab("Delete Service Offering", serviceOfferingActionMap, $actionMenu, $midmenuItem1, $thisTab);
     
     $thisTab.find("#tab_spinning_wheel").hide();    
     $thisTab.find("#tab_container").show();    	

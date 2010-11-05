@@ -1094,7 +1094,7 @@ function doStartVM($actionLink, $detailsTab, $midmenuItem1) {
 		    var jsonObj = $midmenuItem1.data("jsonObj");
 		    var id = jsonObj.id;
 		    var apiCommand = "command=startVirtualMachine&id="+id;  
-            doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);				   	                         					    
+            doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);				   	                         					    
 	    }, 
 	    "Cancel": function() { 
 		    $(this).dialog("close"); 
@@ -1112,7 +1112,7 @@ function doStopVM($actionLink, $detailsTab, $midmenuItem1) {
 		    var jsonObj = $midmenuItem1.data("jsonObj");
 		    var id = jsonObj.id;
 		    var apiCommand = "command=stopVirtualMachine&id="+id;  
-            doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);				   	                         					    
+            doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);				   	                         					    
 	    }, 
 	    "Cancel": function() { 
 		    $(this).dialog("close"); 
@@ -1130,7 +1130,7 @@ function doRebootVM($actionLink, $detailsTab, $midmenuItem1) {
 		    var jsonObj = $midmenuItem1.data("jsonObj");
 		    var id = jsonObj.id;
 		    var apiCommand = "command=rebootVirtualMachine&id="+id;  
-            doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);				   	                         					    
+            doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);				   	                         					    
 	    }, 
 	    "Cancel": function() { 
 		    $(this).dialog("close"); 
@@ -1148,7 +1148,7 @@ function doDestroyVM($actionLink, $detailsTab, $midmenuItem1) {
 		    var jsonObj = $midmenuItem1.data("jsonObj");
 		    var id = jsonObj.id;
 		    var apiCommand = "command=destroyVirtualMachine&id="+id;  
-            doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);				   	                         					    
+            doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);				   	                         					    
 	    }, 
 	    "Cancel": function() { 
 		    $(this).dialog("close"); 
@@ -1166,7 +1166,7 @@ function doRestoreVM($actionLink, $detailsTab, $midmenuItem1) {
 		    var jsonObj = $midmenuItem1.data("jsonObj");
 		    var id = jsonObj.id;
 		    var apiCommand = "command=recoverVirtualMachine&id="+id;  
-            doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);				   	                         					    
+            doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);				   	                         					    
 	    }, 
 	    "Cancel": function() { 
 		    $(this).dialog("close"); 
@@ -1275,7 +1275,7 @@ function doAttachISO($actionLink, $detailsTab, $midmenuItem1) {
 			var jsonObj = $midmenuItem1.data("jsonObj");
 			var id = jsonObj.id;
 			var apiCommand = "command=attachIso&virtualmachineid="+id+"&id="+isoId;
-            doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);						
+            doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);						
 		}, 
 		"Cancel": function() { 
 			$(this).dialog("close"); 			
@@ -1292,7 +1292,7 @@ function doDetachISO($actionLink, $detailsTab, $midmenuItem1) {
 			var jsonObj = $midmenuItem1.data("jsonObj");
 			var id = jsonObj.id;
 			var apiCommand = "command=detachIso&virtualmachineid="+id;
-            doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);							
+            doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);							
 		}, 
 		"Cancel": function() { 
 			$(this).dialog("close"); 			
@@ -1316,7 +1316,7 @@ function doResetPassword($actionLink, $detailsTab, $midmenuItem1) {
 			
 			var id = jsonObj.id;
 			var apiCommand = "command=resetPasswordForVirtualMachine&id="+id;    
-            doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);				
+            doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);				
 		}, 
 		"No": function() { 
 			$(this).dialog("close"); 			
@@ -1363,7 +1363,7 @@ function doChangeService($actionLink, $detailsTab, $midmenuItem1) {
                 $midmenuItem1.data("afterActionInfo", ($actionLink.data("label") + " action failed. Reason: virtual instance needs to be stopped before you can change its service."));  
 	        }
             var apiCommand = "command=changeServiceForVirtualMachine&id="+id+"&serviceOfferingId="+serviceOfferingId;	     
-            doActionToDetailsTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);				
+            doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);				
 		}, 
 		"Cancel": function() { 
 			$(this).dialog("close"); 			
@@ -1451,42 +1451,42 @@ function vmJsonToDetailsTab(){
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty();              
 	  
-	buildActionLinkForDetailsTab("Edit Instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab); 
+	buildActionLinkForTab("Edit Instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab); 
 	           
     // Show State of the VM
 	if (jsonObj.state == 'Destroyed') {
-		buildActionLinkForDetailsTab("Restore Instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
+		buildActionLinkForTab("Restore Instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
 		//to hide view console in details tab....(to-do)
 		//to hide volume tab....(to-do)	
 	} 
 	else if (jsonObj.state == 'Running') {
 		//instanceTemplate.find("#vm_action_start, #vm_action_reset_password, #vm_action_change_service").removeClass().addClass("vmaction_links_off");
-		buildActionLinkForDetailsTab("Stop Instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
-		buildActionLinkForDetailsTab("Reboot Instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
-		buildActionLinkForDetailsTab("Destroy Instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
+		buildActionLinkForTab("Stop Instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
+		buildActionLinkForTab("Reboot Instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
+		buildActionLinkForTab("Destroy Instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
 		
 		if (jsonObj.isoid == null)	
-	        buildActionLinkForDetailsTab("Attach ISO", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
+	        buildActionLinkForTab("Attach ISO", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
 	    else 		
-	        buildActionLinkForDetailsTab("Detach ISO", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);	
+	        buildActionLinkForTab("Detach ISO", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);	
 	} 
 	else {	    
 		if (jsonObj.state == 'Stopped') {
 			//instanceTemplate.find("#vm_action_stop, #vm_action_reboot").removeClass().addClass("vmaction_links_off");
-			buildActionLinkForDetailsTab("Start Instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);		    
-		    buildActionLinkForDetailsTab("Destroy Instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
+			buildActionLinkForTab("Start Instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);		    
+		    buildActionLinkForTab("Destroy Instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
 		    
 		    if (jsonObj.isoid == null)	
-		        buildActionLinkForDetailsTab("Attach ISO", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
+		        buildActionLinkForTab("Attach ISO", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
 		    else 		
-		       buildActionLinkForDetailsTab("Detach ISO", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);				    
+		       buildActionLinkForTab("Detach ISO", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);				    
 		    
-		    buildActionLinkForDetailsTab("Reset Password", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
-		    buildActionLinkForDetailsTab("Change Service", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);			    					
+		    buildActionLinkForTab("Reset Password", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
+		    buildActionLinkForTab("Change Service", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);			    					
 		} 
 		else { //jsonObj.state == "Starting", "Creating", ~~~ 	
 			if(jsonObj.state != 'Creating')
-			    buildActionLinkForDetailsTab("Destroy Instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
+			    buildActionLinkForTab("Destroy Instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
 			    
 			//instanceTemplate.find("#vm_action_start, #vm_action_stop, #vm_action_reboot, #vm_action_attach_iso, #vm_action_detach_iso, #vm_action_reset_password, #vm_action_change_service").removeClass().addClass("vmaction_links_off");
 	    }
