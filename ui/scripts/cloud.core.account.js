@@ -66,13 +66,19 @@ function accountJsonToDetailsTab($midmenuItem1) {
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty(); 
     var noAvailableActions = true;
-        
-    if(jsonObj.id != systemAccountId && jsonObj.id != adminAccountId) {
+  
+    if(jsonObj.id != systemAccountId && jsonObj.id != adminAccountId) {        
         if (jsonObj.accounttype == roleTypeUser || jsonObj.accounttype == roleTypeDomainAdmin) {
             buildActionLinkForTab("Resource limits", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);	
             noAvailableActions = false;	
         }
-        
+                
+        //show action link no matter what state the account is in before bug 7085 is fixed ("account-related API should return "state" property")
+        buildActionLinkForTab("Disable account", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);  
+        buildActionLinkForTab("Lock account", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);
+        buildActionLinkForTab("Enable account", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);    
+        noAvailableActions = false;	  
+        /*    
         if(jsonObj.state == "enabled") {
             buildActionLinkForTab("Disable account", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);  
             buildActionLinkForTab("Lock account", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);
@@ -81,7 +87,8 @@ function accountJsonToDetailsTab($midmenuItem1) {
         else if(jsonObj.state == "disabled" || jsonObj.state == "locked") {
             buildActionLinkForTab("Enable account", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);   
             noAvailableActions = false;	
-        }           
+        } 
+        */          
     }  
     
     // no available actions 
@@ -101,18 +108,8 @@ var accountActionMap = {
         dialogBeforeActionFn : doDisableAccount,
         inProcessText: "Disabling account....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) { 
-            //Get embedded object from listVolume API until bug 6482("enableAccount, disableAccount, lockAccount should return an embedded object") is fixed.
-            var jsonObj;           
-            $.ajax({
-                data: createURL("command=listAccounts&id="+id),
-                dataType: "json",
-                async: false,
-                success: function(json) { 
-                    jsonObj = json.listaccountsresponse.account[0];
-                }            
-            });           
-                
-            accountToMidmenu(jsonObj, $midmenuItem1);           
+            var item = json.queryasyncjobresultresponse.jobresult.account;
+            accountToMidmenu(item, $midmenuItem1);           
             accountJsonToDetailsTab($midmenuItem1);
         }
     }    
@@ -122,18 +119,8 @@ var accountActionMap = {
         dialogBeforeActionFn : doLockAccount,
         inProcessText: "Locking account....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {  
-            //Get embedded object from listVolume API until bug 6482("enableAccount, disableAccount, lockAccount should return an embedded object") is fixed.
-            var jsonObj;           
-            $.ajax({
-                data: createURL("command=listAccounts&id="+id),
-                dataType: "json",
-                async: false,
-                success: function(json) {    
-                    jsonObj = json.listaccountsresponse.account[0];
-                }            
-            });       
-                  
-            accountToMidmenu(jsonObj, $midmenuItem1);           
+            var item = json.lockaccountresponse;            
+            accountToMidmenu(item, $midmenuItem1);           
             accountJsonToDetailsTab($midmenuItem1);
         }
     }    
@@ -143,18 +130,8 @@ var accountActionMap = {
         dialogBeforeActionFn : doEnableAccount,
         inProcessText: "Enabling account....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {   
-            //Get embedded object from listVolume API until bug 6482("enableAccount, disableAccount, lockAccount should return an embedded object") is fixed.
-            var jsonObj;           
-            $.ajax({
-                data: createURL("command=listAccounts&id="+id),
-                dataType: "json",
-                async: false,
-                success: function(json) {  
-                    jsonObj = json.listaccountsresponse.account[0];
-                }            
-            });       
-                
-            accountToMidmenu(jsonObj, $midmenuItem1);           
+            var item = json.enableaccountresponse;                  
+            accountToMidmenu(item, $midmenuItem1);           
             accountJsonToDetailsTab($midmenuItem1);
         }
     }    
