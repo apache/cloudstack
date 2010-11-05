@@ -221,7 +221,7 @@ function vlanJsonToTemplate(jsonObj, $template1) {
         var $target = $(event.target);
         var targetId = $target.attr("id");     
         switch(targetId) {
-            case "info_icon":   
+            case "info_icon": //show info dropdown 
                 var vlanName = jsonObj.id;
 		        var vlanDisplayName = vlanName;
 		        if (jsonObj.description != null) {
@@ -259,8 +259,20 @@ function vlanJsonToTemplate(jsonObj, $template1) {
                 $infoDropdown.show();
                 break;
                 
-            case "close_link":                
+            case "close_link":  //hide info dropdown              
                 $target.parent().parent().hide();
+                break;
+            
+            case "delete_vlan": //delete VLAN               
+                $.ajax({
+                    data: createURL("command=deleteVlanIpRange&id="+jsonObj.id),
+                    dataType: "json",
+                    success: function(json) {                        
+                        $template1.slideUp("slow", function() {
+                            $(this).remove();
+                        });
+                    }
+                });
                 break;
         }
         

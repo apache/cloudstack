@@ -451,7 +451,7 @@
 <!-- VLAN Template (begin) -->
 <div class="networkswitch_vlanpanel" id="vlan_template" style="display: none;">
     <div class="networkswitch_vlanconnect">
-        <div class="networkswitch_closeicon">
+        <div class="networkswitch_closeicon" id="delete_vlan">
         </div>
         <div id="info_icon" class="networkswitch_vlan_infoicon">
         </div>
