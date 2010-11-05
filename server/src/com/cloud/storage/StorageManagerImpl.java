@@ -2360,8 +2360,8 @@ public class StorageManagerImpl implements StorageManager {
 				throw new ResourceUnavailableException(msg);
 			}
 			
-			if (!primaryStorage.getStatus().equals(Status.Maintenance)) {
-				throw new StorageUnavailableException("Primary storage with id " + primaryStorageId + " is not ready to complete migration, as the status is:" + primaryStorage.getStatus().toString()+".Re-run maintenance.");
+			if (primaryStorage.getStatus().equals(Status.Up)) {
+				throw new StorageUnavailableException("Primary storage with id " + primaryStorageId + " is not ready to complete migration, as the status is:" + primaryStorage.getStatus().toString());
 			}
 			
 			//2. Get a list of all the volumes within this storage pool
@@ -2370,7 +2370,7 @@ public class StorageManagerImpl implements StorageManager {
 			//3. If the volume is not removed AND not destroyed, start the vm corresponding to it
 			for(VolumeVO volume: allVolumes)
 			{
-				if((!volume.destroyed) && (volume.removed==null))
+				if((!volume.destroyed) && (volume.removed == null))
 				{
 					VMInstanceVO vmInstance = _vmInstanceDao.findById(volume.getInstanceId());
 				
@@ -2383,7 +2383,7 @@ public class StorageManagerImpl implements StorageManager {
 							//create a dummy event
 							long eventId = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_START, "starting console proxy with Id: "+vmInstance.getId());
 							
-							if(_consoleProxyMgr.startProxy(vmInstance.getId(), eventId)==null)
+							if(_consoleProxyMgr.startProxy(vmInstance.getId(), eventId) == null)
 							{
 								String msg = "There was an error starting the console proxy id: "+vmInstance.getId()+" on storage pool, cannot complete primary storage maintenance";
 								s_logger.warn(msg);
@@ -2398,7 +2398,7 @@ public class StorageManagerImpl implements StorageManager {
 							//create a dummy event
 							long eventId = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_SSVM_START, "starting ssvm with Id: "+vmInstance.getId());
 							
-							if(_secStorageMgr.startSecStorageVm(vmInstance.getId(), eventId)==null)
+							if(_secStorageMgr.startSecStorageVm(vmInstance.getId(), eventId) == null)
 							{
 								String msg = "There was an error starting the ssvm id: "+vmInstance.getId()+" on storage pool, cannot complete primary storage maintenance";
 								s_logger.warn(msg);
@@ -2414,7 +2414,7 @@ public class StorageManagerImpl implements StorageManager {
 							long eventId = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_VM_START, "starting ssvm with Id: "+vmInstance.getId());
 							
 							try {
-								if(_userVmMgr.start(vmInstance.getId(), eventId)==null)
+								if(_userVmMgr.start(vmInstance.getId(), eventId) == null)
 								{
 									String msg = "There was an error starting the ssvm id: "+vmInstance.getId()+" on storage pool, cannot complete primary storage maintenance";
 									s_logger.warn(msg);
