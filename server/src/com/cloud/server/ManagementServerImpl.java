@@ -238,6 +238,7 @@ import com.cloud.storage.StorageStats;
 import com.cloud.storage.Upload;
 import com.cloud.storage.Upload.Mode;
 import com.cloud.storage.Upload.Type;
+import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
@@ -5429,7 +5430,7 @@ public class ManagementServerImpl implements ManagementServer {
 	@Override
 	public VMInstanceVO startSystemVM(StartSystemVMCmd cmd) {
 		
-		//verify inputf
+		//verify input
 		Long id = cmd.getId();
 
 		VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(id, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
@@ -5439,11 +5440,50 @@ public class ManagementServerImpl implements ManagementServer {
 		
 		if (systemVm.getType().equals(VirtualMachine.Type.ConsoleProxy)){
 			long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_START, "Starting console proxy with Id: "+id);
+	        try {
+				checkIfStoragePoolAvailable(id);
+			} catch (StorageUnavailableException e) {
+				s_logger.warn(e.getMessage());
+				return null;
+			} catch (Exception e){
+				//unforseen exceptions
+				s_logger.warn(e.getMessage());
+				return null;
+			}
 			return startConsoleProxy(id, eventId);
 		} else {
 			long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_SSVM_START, "Starting secondary storage Vm Id: "+id);
+	        try {
+				checkIfStoragePoolAvailable(id);
+			} catch (StorageUnavailableException e) {
+				s_logger.warn(e.getMessage());
+				return null;
+			} catch (Exception e){
+				//unforseen exceptions
+				s_logger.warn(e.getMessage());
+				return null;
+			}
 			return startSecondaryStorageVm(id, eventId);
 		}
+	}
+
+	private void checkIfStoragePoolAvailable(Long id) throws StorageUnavailableException {
+		//check if the sp is up before starting
+        List<VolumeVO> rootVolList = _volumeDao.findByInstanceAndType(id, VolumeType.ROOT); 
+        if(rootVolList == null || rootVolList.size() == 0){
+        	throw new StorageUnavailableException("Could not find the root disk for this vm to verify if the pool on which it exists is Up or not");
+        }else{
+        	Long poolId = rootVolList.get(0).getPoolId();//each vm has 1 root vol
+        	StoragePoolVO sp = _poolDao.findById(poolId);
+        	if(sp == null){
+        		throw new StorageUnavailableException("Could not find the pool for the root disk of vm"+id+", to confirm if it is Up or not");
+        	}else{
+        		//found pool
+        		if(!sp.getStatus().equals(com.cloud.host.Status.Up)){
+        			throw new StorageUnavailableException("Could not start the vm; the associated storage pool is in:"+sp.getStatus().toString()+" state");
+        		}
+        	}
+        }
 	}
 
 	@Override

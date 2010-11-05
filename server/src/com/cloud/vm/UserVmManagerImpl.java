@@ -823,6 +823,23 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
             return null;
         }
         
+        //check if the sp is up before starting
+        List<VolumeVO> rootVolList = _volsDao.findByInstanceAndType(vmId, VolumeType.ROOT); 
+        if(rootVolList == null || rootVolList.size() == 0){
+        	throw new StorageUnavailableException("Could not find the root disk for this vm to verify if the pool on which it exists is Up or not");
+        }else{
+        	Long poolId = rootVolList.get(0).getPoolId();//each vm has 1 root vol
+        	StoragePoolVO sp = _storagePoolDao.findById(poolId);
+        	if(sp == null){
+        		throw new StorageUnavailableException("Could not find the pool for the root disk of vm"+vmId+", to confirm if it is Up or not");
+        	}else{
+        		//found pool
+        		if(!sp.getStatus().equals(com.cloud.host.Status.Up)){
+        			throw new StorageUnavailableException("Could not start the vm; the associated storage pool is in:"+sp.getStatus().toString()+" state");
+        		}
+        	}
+        }
+        
         EventVO event = new EventVO();
         event.setType(EventTypes.EVENT_VM_START);
         event.setUserId(userId);
