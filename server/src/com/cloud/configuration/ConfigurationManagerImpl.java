@@ -73,6 +73,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.dao.IPAddressDao;
@@ -1387,6 +1388,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	DataCenterVO zone;
     	if (zoneId == null || ((zone = _zoneDao.findById(zoneId)) == null)) {
 			throw new InvalidParameterValueException("Please specify a valid zone.");
+		}
+    	
+    	//check if the account's domain is a child of the zone's domain, for adding vlan ip ranges
+		if(domainId != null && !_domainDao.isChildDomain(zone.getDomainId(), domainId)){
+			//this is for account specific case, as domainId != null
+			throw new PermissionDeniedException("The account associated with specific domain id:"+domainId+" doesn't have permissions to add vlan ip ranges for the zone:"+zone.getId());
 		}
 
     	boolean associateIpRangeToAccount = false;
