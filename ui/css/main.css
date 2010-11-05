@@ -2185,7 +2185,7 @@ a:hover.search_button {
 
 .midmenu_content{
 	width:220px;
-	height:35px;
+	height:auto;
 	float:left;
 	color:#333;
 	text-align:left;
@@ -2217,6 +2217,7 @@ a:hover.search_button {
 	background:#ffe5e5 url(../images/errormsg_bg.gif) repeat-x top left;
 	color:#a90000;
 	height:auto;
+	border-bottom:1px dashed #999;
 }
 
 .midmenu_content.addingfailed span{
