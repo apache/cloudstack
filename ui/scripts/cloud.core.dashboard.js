@@ -318,7 +318,7 @@ function capacityBarChart($capacity, percentused) { // e.g. percentused == "51.2
     var percentused2 = (percentused + "%");
     $capacity.find("#percentused").text(percentused2);
     
-    var percentusedFloat = parseFloat(percentused);   
+    var percentusedFloat = parseFloat(percentused); // e.g. percentusedFloat == 51.27  
     if (percentusedFloat <= 60)
         $capacity.find("#bar_chart").removeClass().addClass("db_barbox low").css("width", percentused2); 
     else if (percentusedFloat > 60 && percentusedFloat <= 80 )
