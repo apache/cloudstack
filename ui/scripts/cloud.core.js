@@ -1588,6 +1588,24 @@ function validateCIDR(label, field, errMsgField, isOptional) {
 	return isValid;
 }
 
+function validateFilename(label, field, errMsgField, isOptional) {  
+    if(validateString(label, field, errMsgField, isOptional) == false)
+        return;        
+    var isValid = true;
+    var errMsg = "";
+    var value = field.val();     
+    if(value!=null && value.length>0) {
+        myregexp = /[^a-zA-Z0-9_\-\.]/;	   
+        var isMatch = myregexp.test(value);
+        if(isMatch) {
+            errMsg = "Only alphanumeric, dot, dashes and underscore characters allowed";	   
+	        isValid = false;		
+	    }
+	}	
+	showError(isValid, field, errMsgField, errMsg);	
+	return isValid;
+}
+
 function validatePath(label, field, errMsgField, isOptional) {  
     if(validateString(label, field, errMsgField, isOptional) == false)
         return;

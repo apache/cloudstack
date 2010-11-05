@@ -33,7 +33,7 @@ function afterLoadIsoJSP() {
     				
 			    // validate values
 			    var isValid = true;					
-			    isValid &= validateString("Name", thisDialog.find("#add_iso_name"), thisDialog.find("#add_iso_name_errormsg"));
+			    isValid &= validateFilename("Name", thisDialog.find("#add_iso_name"), thisDialog.find("#add_iso_name_errormsg"));
 			    isValid &= validateString("Display Text", thisDialog.find("#add_iso_display_text"), thisDialog.find("#add_iso_display_text_errormsg"));
 			    isValid &= validateString("URL", thisDialog.find("#add_iso_url"), thisDialog.find("#add_iso_url_errormsg"));			
 			    if (!isValid) 

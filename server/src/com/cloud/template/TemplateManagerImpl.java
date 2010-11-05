@@ -319,7 +319,7 @@ public class TemplateManagerImpl implements TemplateManager {
             }
             	
             if (!name.matches("^[\\p{Alnum} ._-]+")) {
-                throw new InvalidParameterValueException("Only alphanumeric, space, dot, dashes and underscore characters allowed");
+                throw new InvalidParameterValueException("Only alphanumeric, dot, dashes and underscore characters allowed for the parameter 'name'");
             }
         	
             ImageFormat imgfmt = ImageFormat.valueOf(format.toUpperCase());

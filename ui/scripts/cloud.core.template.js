@@ -62,7 +62,7 @@ function afterLoadTemplateJSP() {
 													
 				// validate values
 				var isValid = true;					
-				isValid &= validateString("Name", thisDialog.find("#add_template_name"), thisDialog.find("#add_template_name_errormsg"));
+				isValid &= validateFilename("Name", thisDialog.find("#add_template_name"), thisDialog.find("#add_template_name_errormsg"));
 				isValid &= validateString("Display Text", thisDialog.find("#add_template_display_text"), thisDialog.find("#add_template_display_text_errormsg"));
 				isValid &= validateString("URL", thisDialog.find("#add_template_url"), thisDialog.find("#add_template_url_errormsg"));			
 				if (!isValid) return;		
