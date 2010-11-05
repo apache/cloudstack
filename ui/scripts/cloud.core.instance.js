@@ -1545,7 +1545,7 @@ function vmJsonToStatisticsTab() {
     $barChartContainer.find("#bar_chart").removeClass().addClass("db_barbox").css("width", "0%");    
     $barChartContainer.find("#percentused").text("");   
     if(jsonObj.cpuused!=null)
-        drawBarChart($barChartContainer, parseFloat(jsonObj.cpuused));		
+        drawBarChart($barChartContainer, jsonObj.cpuused);		
     
     var networkKbsRead = ((jsonObj.networkkbsread==null)? "":convertBytes(jsonObj.networkkbsread * 1024));
     $thisTab.find("#networkkbsread").text(networkKbsRead);
@@ -1556,6 +1556,27 @@ function vmJsonToStatisticsTab() {
     $thisTab.find("#tab_spinning_wheel").hide();    
     $thisTab.find("#tab_container").show();  
 }
+   
+function drawBarChart($capacity, percentused) { //percentused == "0.01%" (having % inside)    
+    $capacity.find("#percentused").text(percentused);
+    
+    var percentusedFloat; 
+    if(percentused.indexOf("%") != -1) {
+        percentused = percentused.replace("%", "");
+        percentusedFloat = parseFloat(percentused);
+        percentusedFloat = percentusedFloat * 0.01;   //because % is removed
+    }
+    else {
+        percentusedFloat = parseFloat(percentused);
+    }
+      
+    if (percentusedFloat <= 60)
+        $capacity.find("#bar_chart").removeClass().addClass("db_barbox low").css("width", percentused); 
+    else if (percentusedFloat > 60 && percentusedFloat <= 80 )
+        $capacity.find("#bar_chart").removeClass().addClass("db_barbox mid").css("width", percentused);
+    else if (percentusedFloat > 80 )
+        $capacity.find("#bar_chart").removeClass().addClass("db_barbox high").css("width", percentused);
+}   
     
 function vmJsonToRouterTab() {   
     var $thisTab = $("#right_panel_content #tab_content_router");  

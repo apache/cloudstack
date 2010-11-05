@@ -103,7 +103,7 @@ function afterLoadDashboardJSP() {
 						    var $c = $capacityContainer.find("#public_ip_address");
 						    $c.find("#capacityused").text(capacity.capacityused);
 						    $c.find("#capacitytotal").text(capacity.capacitytotal);						    
-						    drawBarChart($c, (parseFloat(capacity.percentused))*0.01);							
+						    capacityBarChart($c, capacity.percentused);							
 						} 						
 						
 						// ***** Secondary Storage Used *****
@@ -111,7 +111,7 @@ function afterLoadDashboardJSP() {
 						    var $c = $capacityContainer.find("#secondary_storage_used");
 						    $c.find("#capacityused").text(convertBytes(parseInt(capacity.capacityused)));
 						    $c.find("#capacitytotal").text(convertBytes(parseInt(capacity.capacitytotal)));						    
-						    drawBarChart($c, (parseFloat(capacity.percentused))*0.01);						    
+						    capacityBarChart($c, capacity.percentused);						    
 						} 
 						
 						else {						    
@@ -121,7 +121,7 @@ function afterLoadDashboardJSP() {
 								    var $c = $capacityContainer.find("#memory_allocated");
 						            $c.find("#capacityused").text(convertBytes(parseInt(capacity.capacityused)));
 						            $c.find("#capacitytotal").text(convertBytes(parseInt(capacity.capacitytotal)));						            
-								    drawBarChart($c, (parseFloat(capacity.percentused))*0.01);								    
+								    capacityBarChart($c, capacity.percentused);								    
 								} 
 																
 								// ***** CPU *****
@@ -129,7 +129,7 @@ function afterLoadDashboardJSP() {
 								    var $c = $capacityContainer.find("#cpu");
 						            $c.find("#capacityused").text(convertHz(parseInt(capacity.capacityused)));
 						            $c.find("#capacitytotal").text(convertHz(parseInt(capacity.capacitytotal)));						            
-								    drawBarChart($c, (parseFloat(capacity.percentused))*0.01);								    						
+								    capacityBarChart($c, capacity.percentused);								    						
 								} 
 																
 								// ***** Primary Storage Used *****
@@ -137,7 +137,7 @@ function afterLoadDashboardJSP() {
 								    var $c = $capacityContainer.find("#primary_storage_used");
 						            $c.find("#capacityused").text(convertBytes(parseInt(capacity.capacityused)));
 						            $c.find("#capacitytotal").text(convertBytes(parseInt(capacity.capacitytotal)));						            
-						            drawBarChart($c, (parseFloat(capacity.percentused))*0.01);								   
+						            capacityBarChart($c, capacity.percentused);								   
 								} 
 																
 								// ***** Primary Storage Allocated *****
@@ -145,7 +145,7 @@ function afterLoadDashboardJSP() {
 								    var $c = $capacityContainer.find("#primary_storage_allocated");
 						            $c.find("#capacityused").text(convertBytes(parseInt(capacity.capacityused)));
 						            $c.find("#capacitytotal").text(convertBytes(parseInt(capacity.capacitytotal)));						            
-						            drawBarChart($c, (parseFloat(capacity.percentused))*0.01);								   
+						            capacityBarChart($c, capacity.percentused);								   
 								} 
 																
 								// ***** Private IP Addresses *****
@@ -153,7 +153,7 @@ function afterLoadDashboardJSP() {
 								    var $c = $capacityContainer.find("#private_ip_address");
 						            $c.find("#capacityused").text(capacity.capacityused);
 						            $c.find("#capacitytotal").text(capacity.capacitytotal);						            
-								    drawBarChart($c, (parseFloat(capacity.percentused))*0.01);								    							
+								    capacityBarChart($c, capacity.percentused);								    							
 								}	
 							}
 						}
@@ -314,18 +314,17 @@ function showDashboard(dashboardToShow) {
 }
 
 //*** dashboard admin (begin) ***
-function drawBarChart($barChartContainer, percentused) { //e.g. percentused == 55%, 70%, 85%
-    //var percentused2 = (percentused + "%");
-    var percentused2 = ((percentused*100) + "%");
-    //$barChartContainer.find("#percentused").text(percentused2);
-    $barChartContainer.find("#percentused").text(percentused2);
-
-    if (percentused <= 0.6)
-        $barChartContainer.find("#bar_chart").removeClass().addClass("db_barbox low").css("width", percentused2); 
-    else if (percentused > 0.6 && percentused <= 0.8)
-        $barChartContainer.find("#bar_chart").removeClass().addClass("db_barbox mid").css("width", percentused2);
-    else if (percentused > 0.8)
-        $barChartContainer.find("#bar_chart").removeClass().addClass("db_barbox high").css("width", percentused2);
+function capacityBarChart($capacity, percentused) { // e.g. percentused == "51.27" (no % inside)
+    var percentused2 = (percentused + "%");
+    $capacity.find("#percentused").text(percentused2);
+    
+    var percentusedFloat = parseFloat(percentused);   
+    if (percentusedFloat <= 60)
+        $capacity.find("#bar_chart").removeClass().addClass("db_barbox low").css("width", percentused2); 
+    else if (percentusedFloat > 60 && percentusedFloat <= 80 )
+        $capacity.find("#bar_chart").removeClass().addClass("db_barbox mid").css("width", percentused2);
+    else if (percentusedFloat > 80 )
+        $capacity.find("#bar_chart").removeClass().addClass("db_barbox high").css("width", percentused2);
 }
 //*** dashboard admin (end) ***
 
