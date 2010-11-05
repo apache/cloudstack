@@ -241,7 +241,9 @@
         	    <div class="grid_header">
             	    <div id="grid_header_title" class="grid_header_title"></div>
                 </div>
-                <div class="dbrow odd">
+                
+                
+                <div class="dbrow odd" id="cpu_barchart">
                     <div class="dbrow_cell" style="width: 40%;">
                         <div class="dbgraph_titlebox">
                             <h2>
@@ -262,11 +264,13 @@
                         </div>
                     </div>
                     <div class="dbrow_cell" style="width: 16%; border: none;">
-                        <div class="db_totaltitle" id="cpuused">
+                        <div class="db_totaltitle" id="percentused">
                         K%
                         </div>
                     </div>
                 </div>
+                
+                
                 <div class="grid_rows even">
                     <div class="grid_row_cell" style="width: 20%;">
                         <div class="row_celltitles">
