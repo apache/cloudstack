@@ -436,7 +436,6 @@ public class MauriceMoss implements VmManager, ClusterManagerListener {
         }
             
         vm.setReservationId(null);
-        vm.setHostId(null);
         _vmDao.updateIf(vm, Event.OperationSucceeded, null);
 
         if (cleanup) {
