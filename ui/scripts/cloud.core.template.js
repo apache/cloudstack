@@ -457,7 +457,8 @@ function doEditTemplate2($actionLink, $detailsTab, $midmenuItem1, $readonlyField
 		    dataType: "json",
 		    async: false,
 		    success: function(json) {		        
-		        //embedded object (json.updatetemplateresponse) is returned, but the embedded object doesn't include all properties.(API needs to be fixed)		
+		        //do not update UI here. i.e. do not call templateToMidmenu(), templateJsonToDetailsTab() here. 
+		        //Otherwise, value of $("#ispublic_edit") and $("#isfeatured_edit") will be reverted.	
 		    }
 	    });
 	}
@@ -480,12 +481,11 @@ function doEditTemplate2($actionLink, $detailsTab, $midmenuItem1, $readonlyField
 		    dataType: "json",
 		    async: false,
 		    success: function(json) {			        						       					    
-		        //no embedded object is returned. (API needs to be fixed)		
+		        //do not update UI here. i.e. do not call templateToMidmenu(), templateJsonToDetailsTab() here. 
     		}
 	    });
 	}	
 	
-	//since embedded object is not returned (updateTemplatePermissions API) or embedded object doesn't include all properties (updateTemplate API), call listTemplates API again.	
 	$.ajax({
         data:createURL("command=listTemplates&templatefilter=self&id="+id),
         dataType: "json",

@@ -398,9 +398,8 @@ function doEditISO2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $e
 		dataType: "json",
 		async: false,
 		success: function(json) {	
-		    var jsonObj = json.updateisoresponse;		    
-		    isoToMidmenu(jsonObj, $midmenuItem1); 
-            isoJsonToDetailsTab($midmenuItem1);	    					
+		    //do not update UI here. i.e. do not call isoToMidmenu(), isoJsonToDetailsTab() here. 
+		    //Otherwise, value of $("#ispublic_edit") will be reverted.       					
 		}
 	});
 	
@@ -417,10 +416,21 @@ function doEditISO2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $e
 		    dataType: "json",
 		    async: false,
 		    success: function(json) {			    	        						       					    
-		        //no embedded object is returned. (API needs to be fixed)		
+		        //do not update UI here. i.e. do not call isoToMidmenu(), isoJsonToDetailsTab() here.	
     		}
 	    });
 	}	
+		
+	$.ajax({
+        data:createURL("command=listIsos&isofilter=self&id="+id),
+        dataType: "json",
+        async: false,
+        success: function(json) {  
+            var jsonObj = json.listisosresponse.iso[0];           
+            isoToMidmenu(jsonObj, $midmenuItem1);
+            isoJsonToDetailsTab($midmenuItem1);              
+        }
+    });   
 			
 	$editFields.hide();      
     $readonlyFields.show();       
