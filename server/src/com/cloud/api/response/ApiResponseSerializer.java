@@ -47,6 +47,8 @@ public class ApiResponseSerializer {
                 } else {
                     sb.append("{ }");
                 }
+            } else if (result instanceof SuccessResponse) {
+            	sb.append("{ \"success\" : \""+((SuccessResponse)result).getSuccess()+"\"} ");
             } else {
                 String jsonStr = gson.toJson(result);
                 if ((jsonStr != null) && !"".equals(jsonStr)) {

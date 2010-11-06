@@ -24,8 +24,10 @@ import org.apache.log4j.Logger;
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.network.LoadBalancerVO;
@@ -97,9 +99,10 @@ public class AssignToLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     @Override @SuppressWarnings("unchecked")
     public SuccessResponse getResponse() {
-        SuccessResponse response = new SuccessResponse();
-        response.setSuccess(Boolean.TRUE);
-        response.setResponseName("success");
-        return response;
+    	if (getResponseObject() == null || (Boolean)getResponseObject()) {
+	    	return new SuccessResponse(getName());
+	    } else {
+	    	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to assign to load balancer");
+	    }
     }
 }

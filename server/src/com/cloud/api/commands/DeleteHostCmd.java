@@ -63,15 +63,10 @@ public class DeleteHostCmd extends BaseCmd {
     
     @Override@SuppressWarnings("unchecked")
     public SuccessResponse getResponse() {
-        SuccessResponse response = new SuccessResponse();
-        Boolean responseObject = (Boolean)getResponseObject();
-      
-        if (responseObject != null) {
-        	response.setSuccess(responseObject);
-        } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete host");
-        }
-
-        return response;
+    	if (getResponseObject() == null || (Boolean)getResponseObject()) {
+	    	return new SuccessResponse(getName());
+	    } else {
+	    	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete host");
+	    }
     }
 }

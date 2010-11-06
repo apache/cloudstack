@@ -90,16 +90,10 @@ public class DeleteDomainCmd extends BaseAsyncCmd {
 
     @Override @SuppressWarnings("unchecked")
     public SuccessResponse getResponse() {
-        Boolean responseObject = (Boolean)getResponseObject();
-
-        SuccessResponse response = new SuccessResponse();
-        
-        if (responseObject != null) {
-        	response.setSuccess(responseObject);
-        } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete host");
-        }
-
-        return response;
+    	if (getResponseObject() == null || (Boolean)getResponseObject()) {
+	    	return new SuccessResponse(getName());
+	    } else {
+	    	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete delete domain");
+	    }
     }
 }

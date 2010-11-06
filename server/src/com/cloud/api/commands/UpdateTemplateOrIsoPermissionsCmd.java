@@ -81,8 +81,8 @@ public abstract class UpdateTemplateOrIsoPermissionsCmd extends BaseCmd {
     
     @Override @SuppressWarnings("unchecked")
     public SuccessResponse getResponse() {
-    	if ((Boolean)getResponseObject()) {
-	    	return new SuccessResponse();
+    	if (getResponseObject() == null || (Boolean)getResponseObject()) {
+	    	return new SuccessResponse(getName());
 	    } else {
 	    	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update template permissions");
 	    }
