@@ -31,6 +31,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotScheduleVO;
 import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.utils.component.Manager;
 
@@ -52,13 +53,6 @@ public interface SnapshotManager extends Manager {
      * @return the Snapshot that was created
      */
     SnapshotVO createSnapshotImpl(long volumeId, long policyId) throws ResourceAllocationException;
-
-    /**
-     * Create a snapshot of a volume
-     * @param cmd the API command wrapping the parameters for creating the snapshot (mainly volumeId) 
-     * @return the Snapshot that was created
-     */
-    SnapshotVO createSnapshotDB(CreateSnapshotCmd cmd) throws ResourceAllocationException;
 
     /**
      * Create a snapshot of a volume
@@ -181,4 +175,11 @@ public interface SnapshotManager extends Manager {
     SnapshotPolicyVO getPolicyForVolume(long volumeId);
 
     boolean destroySnapshotBackUp(long userId, long snapshotId, long policyId);
+
+    /**
+     * Create a snapshot of a volume
+     * @param cmd the API command wrapping the parameters for creating the snapshot (mainly volumeId) 
+     * @return the Snapshot that was created
+     */
+	SnapshotVO createSnapshotOnPrimary(VolumeVO volume) throws ResourceAllocationException;
 }

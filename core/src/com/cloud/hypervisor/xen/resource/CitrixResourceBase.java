@@ -5604,7 +5604,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         Long volumeId = cmd.getVolumeId();
         String secondaryStoragePoolURL = cmd.getSecondaryStoragePoolURL();
         String snapshotUuid = cmd.getSnapshotUuid(); // not null: Precondition.
-        String prevSnapshotUuid = cmd.getPrevSnapshotUuid();
         String prevBackupUuid = cmd.getPrevBackupUuid();
         // By default assume failure
         String details = null;
@@ -5647,32 +5646,16 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 }
             } else {
                     snapshotBackupUuid = backupSnapshot(primaryStorageSRUuid, dcId, accountId, volumeId, secondaryStorageMountPath, 
-                            snapshotUuid, prevSnapshotUuid, prevBackupUuid, isISCSI);
+                            snapshotUuid, prevBackupUuid, isISCSI);
                     success = (snapshotBackupUuid != null);
             }
 
             if (success) {
                 details = "Successfully backedUp the snapshotUuid: " + snapshotUuid + " to secondary storage.";
                 
-                // Mark the snapshot as removed in the database.
-                // When the next snapshot is taken, it will be
-                // 1) deleted from the DB 2) The snapshotUuid will be deleted from the primary
-                // 3) the snapshotBackupUuid will be copied to secondary
-                // 4) if possible it will be coalesced with the next snapshot.
+                String volumeUuid = cmd.getVolumePath();
+                destroySnapshotOnPrimaryStorageExceptThis(volumeUuid, snapshotUuid);
 
-                if (prevSnapshotUuid != null) {
-                // Destroy the previous snapshot, if it exists.
-                // We destroy the previous snapshot only if the current snapshot
-                // backup succeeds.
-                // The aim is to keep the VDI of the last 'successful' snapshot
-                // so that it doesn't get merged with the
-                // new one
-                // and muddle the vhd chain on the secondary storage.
-
-                    String volumeUuid = cmd.getVolumePath();
-                    destroySnapshotOnPrimaryStorageExceptThis(volumeUuid, snapshotUuid);
-
-                }
             }
 
         } catch (XenAPIException e) {
@@ -6028,21 +6011,18 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     // Each argument is put in a separate line for readability.
     // Using more lines does not harm the environment.
     protected String backupSnapshot(String primaryStorageSRUuid, Long dcId, Long accountId, Long volumeId, String secondaryStorageMountPath,
-            String snapshotUuid, String prevSnapshotUuid, String prevBackupUuid, Boolean isISCSI) {
+            String snapshotUuid, String prevBackupUuid, Boolean isISCSI) {
         String backupSnapshotUuid = null;
 
-        if (prevSnapshotUuid == null) {
-            prevSnapshotUuid = "";
-        }
         if (prevBackupUuid == null) {
             prevBackupUuid = "";
         }
 
         // Each argument is put in a separate line for readability.
         // Using more lines does not harm the environment.
-        String results = callHostPluginWithTimeOut("vmopsSnapshot", "backupSnapshot", 110*60, "primaryStorageSRUuid", primaryStorageSRUuid, "dcId", dcId.toString(), "accountId", accountId.toString(), "volumeId",
-                volumeId.toString(), "secondaryStorageMountPath", secondaryStorageMountPath, "snapshotUuid", snapshotUuid, "prevSnapshotUuid", prevSnapshotUuid, "prevBackupUuid",
-                prevBackupUuid, "isISCSI", isISCSI.toString());
+        String results = callHostPluginWithTimeOut("vmopsSnapshot", "backupSnapshot", 110*60, "primaryStorageSRUuid", primaryStorageSRUuid, "dcId", 
+                dcId.toString(), "accountId", accountId.toString(), "volumeId", volumeId.toString(), "secondaryStorageMountPath", 
+                secondaryStorageMountPath, "snapshotUuid", snapshotUuid, "prevBackupUuid", prevBackupUuid, "isISCSI", isISCSI.toString());
 
         if (results == null || results.isEmpty()) {
             // errString is already logged.

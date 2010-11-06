@@ -206,11 +206,8 @@ public class SnapshotManagerImpl implements SnapshotManager {
     }
 
     @Override
-    public SnapshotVO createSnapshotDB(CreateSnapshotCmd cmd) throws ResourceAllocationException {
-        // FIXME:  When a valid snapshot is returned, the snapshot must have been created on the storage server side so that the caller
-        //         knows it is safe to once again resume normal operations on the volume in question.
-        Long volumeId = cmd.getVolumeId();
-        VolumeVO volume = _volsDao.findById(volumeId); // not null, precondition.
+    public SnapshotVO createSnapshotOnPrimary(VolumeVO volume) throws ResourceAllocationException {
+    	Long volumeId = volume.getId();
         if (volume.getStatus() != AsyncInstanceCreateStatus.Created) {
             throw new InvalidParameterValueException("VolumeId: " + volumeId + " is not in Created state but " + volume.getStatus() + ". Cannot take snapshot.");
         }
@@ -230,7 +227,6 @@ public class SnapshotManagerImpl implements SnapshotManager {
                 throw new InvalidParameterValueException("Snapshots of volumes attached to System or router VM are not allowed");
             }
         }
-
         return createSnapshotImpl(volumeId, Snapshot.MANUAL_POLICY_ID);
     }
 
@@ -365,57 +361,54 @@ public class SnapshotManagerImpl implements SnapshotManager {
 
         return createdSnapshot;
     }
+    
 
-    @Override
-    public SnapshotVO createSnapshot(CreateSnapshotCmd cmd) throws ResourceAllocationException {
-        SnapshotVO snapshot = _snapshotDao.findById(cmd.getId());
-        Long snapshotId = null;
-        boolean backedUp = false;
-        if (snapshot != null) {
-            if (snapshot.getStatus() == Snapshot.Status.CreatedOnPrimary) {
-                snapshotId = snapshot.getId();
-                backedUp = backupSnapshotToSecondaryStorage(snapshot, cmd.getStartEventId());
-                if (!backedUp) {
-                    throw new CloudRuntimeException("Created snapshot: " + snapshotId + " on primary but failed to backup on secondary");
-                }
+    public SnapshotVO createSnapshotPublic(Long volumeId, Long policyId, Long startEventId) throws ResourceAllocationException {    
+        VolumeVO volume = _volsDao.acquireInLockTable(volumeId, 10);       
+        if( volume == null ) {
+            volume = _volsDao.findById(volumeId);
+            if( volume == null ){
+                throw new CloudRuntimeException("Creating snapshot failed due to volume:" + volumeId + " doesn't exist");
+            } else {
+                throw new CloudRuntimeException("Creating snapshot failed due to volume:" + volumeId + " is being used, try it later ");
             }
-
+        }
+        SnapshotVO snapshot = null;
+        boolean backedUp = false;
+        Long snapshotId = null;
+        try {
+	    	snapshot = createSnapshotOnPrimary( volume);
+	        if (snapshot != null && snapshot.getStatus() == Snapshot.Status.CreatedOnPrimary ) {
+                snapshotId = snapshot.getId();
+	            backedUp = backupSnapshotToSecondaryStorage(snapshot, startEventId);
+	            if (!backedUp) {
+	                throw new CloudRuntimeException("Created snapshot: " + snapshotId + " on primary but failed to backup on secondary");
+	            }
+	        }
+        } finally {
             // Cleanup jobs to do after the snapshot has been created.
-            postCreateSnapshot(cmd.getVolumeId(), snapshotId, Snapshot.MANUAL_POLICY_ID, backedUp);
+            postCreateSnapshot(volumeId, snapshotId, policyId, backedUp);
+        	_volsDao.releaseFromLockTable(volumeId);
         }
 
         return snapshot;
+    }
+
+    @Override
+    public SnapshotVO createSnapshot(CreateSnapshotCmd cmd) throws ResourceAllocationException {
+        Long volumeId = cmd.getVolumeId();
+        Long policyId = Snapshot.MANUAL_POLICY_ID ;
+        Long startEventId = cmd.getStartEventId();
+        return createSnapshotPublic(volumeId, policyId, startEventId);
     }
 
     @Override
     public SnapshotVO createSnapshotInternal(CreateSnapshotInternalCmd cmd) throws ResourceAllocationException {
         Long volumeId = cmd.getVolumeId();
         Long policyId = cmd.getPolicyId();
-        SnapshotVO snapshot = null;
-        Long snapshotId = null;
-        try {
-            snapshot = createSnapshotImpl(volumeId, policyId);
-        } catch (InvalidParameterValueException ex) {
-            s_logger.warn("Received invalid parameter exception creating a recurring snapshot that should've already had validated params: " + ex.getMessage());
-        }
-
-        boolean backedUp = false;
-        if (snapshot != null && snapshot.getStatus() == Snapshot.Status.CreatedOnPrimary) {
-            snapshotId = snapshot.getId();
-            backedUp = backupSnapshotToSecondaryStorage(snapshot, cmd.getStartEventId());
-            if (!backedUp) {
-                throw new CloudRuntimeException("Created snapshot: " + snapshotId + " on primary but failed to backup on secondary");
-            }
-        } else {
-            // if the snapshot wasn't created properly, just return now and avoid problems in the postCreate step
-            return snapshot;
-        }
-
-        // Cleanup jobs to do after the snapshot has been created.
-        postCreateSnapshot(cmd.getVolumeId(), snapshotId, policyId, backedUp);
-
-        return snapshot;
-    }
+        Long startEventId = cmd.getStartEventId();
+        return createSnapshotPublic(volumeId, policyId, startEventId);
+     }
 
     private SnapshotVO updateDBOnCreate(Long id, String snapshotPath, long preSnapshotId) {
         SnapshotVO createdSnapshot = _snapshotDao.findById(id);
@@ -487,7 +480,6 @@ public class SnapshotManagerImpl implements SnapshotManager {
                 prevBackupUuid = prevSnapshot.getBackupSnapshotId();
             }
 
-            String firstBackupUuid = volume.getFirstSnapshotBackupUuid();
             boolean isVolumeInactive = _storageMgr.volumeInactive(volume);
             String vmName = _storageMgr.getVmNameOnVolume(volume);
             BackupSnapshotCommand backupSnapshotCommand =
@@ -501,7 +493,6 @@ public class SnapshotManagerImpl implements SnapshotManager {
                                           snapshot.getName(),
                                           prevSnapshotUuid,
                                           prevBackupUuid,
-                                          firstBackupUuid,
                                           isVolumeInactive,
                                           vmName);
             
@@ -737,30 +728,39 @@ public class SnapshotManagerImpl implements SnapshotManager {
 	    SnapshotVO lastSnapshot = null;
         _snapshotDao.remove(snapshotId);
         long lastId = snapshotId;
+        boolean destroy = false;
         while( true ) {
             lastSnapshot = _snapshotDao.findNextSnapshot(lastId);
             // prevsnapshotId equal 0, means it is a full snapshot
-            if( lastSnapshot == null || lastSnapshot.getPrevSnapshotId() == 0)
+            if( lastSnapshot == null ) {
+            	break;
+            }
+            if( lastSnapshot.getPrevSnapshotId() == 0) {
+            	// have another full snapshot, then we may delete previous delta snapshots 
+            	destroy = true;
                 break;
+            }
             lastId = lastSnapshot.getId();
         }
-        lastSnapshot = _snapshotDao.findByIdIncludingRemoved(lastId);
-        while( lastSnapshot.getRemoved() != null ) {
-            String BackupSnapshotId = lastSnapshot.getBackupSnapshotId();
-            if( BackupSnapshotId != null ) {
-                if( destroySnapshotBackUp(userId, lastId, policyId) ) {
+        if (destroy) {
+            lastSnapshot = _snapshotDao.findByIdIncludingRemoved(lastId);
+            while (lastSnapshot.getRemoved() != null) {
+                String BackupSnapshotId = lastSnapshot.getBackupSnapshotId();
+                if (BackupSnapshotId != null) {
+                    if (destroySnapshotBackUp(userId, lastId, policyId)) {
 
-                } else {
-                    s_logger.debug("Destroying snapshot backup failed " + lastSnapshot);
+                    } else {
+                        s_logger.debug("Destroying snapshot backup failed " + lastSnapshot);
+                        break;
+                    }
+                }
+                postDeleteSnapshot(userId, lastId, policyId);
+                lastId = lastSnapshot.getPrevSnapshotId();
+                if (lastId == 0) {
                     break;
                 }
+                lastSnapshot = _snapshotDao.findById(lastId);
             }
-            postDeleteSnapshot(userId, lastId, policyId);
-            lastId = lastSnapshot.getPrevSnapshotId();
-            if( lastId == 0 ) {
-                break;
-            }
-            lastSnapshot = _snapshotDao.findById(lastId);
         }
         return true;
 	}

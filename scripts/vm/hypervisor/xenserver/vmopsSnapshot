@@ -463,7 +463,6 @@ def backupSnapshot(session, args):
     volumeId                  = args['volumeId']
     secondaryStorageMountPath = args['secondaryStorageMountPath']
     snapshotUuid              = args['snapshotUuid']
-    prevSnapshotUuid          = args['prevSnapshotUuid']
     prevBackupUuid            = args['prevBackupUuid']
     isISCSI                   = getIsTrueString(args['isISCSI']) 
 
@@ -475,22 +474,12 @@ def backupSnapshot(session, args):
     baseCopyPath = os.path.join(primarySRPath, baseCopyVHD)
     util.SMlog("Base copy path: " + baseCopyPath)
 
-    prevBaseCopyUuid = ''
-    if prevSnapshotUuid:
-        prevBaseCopyUuid = getParentOfSnapshot(prevSnapshotUuid, primarySRPath, isISCSI)
 
     # Mount secondary storage mount path on XenServer along the path
     # /var/run/sr-mount/<dcId>/snapshots/ and create <accountId>/<volumeId> dir
     # on it.
     backupsDir = mountSnapshotsDir(secondaryStorageMountPath, "snapshots", dcId, accountId, volumeId)
     util.SMlog("Backups dir " + backupsDir)
-
-    if baseCopyUuid == prevBaseCopyUuid:
-        # There has been no change since the last snapshot so no need to backup 
-        util.SMlog("There has been no change since the last snapshot with backup: " + prevBaseCopyUuid) 
-        # Set the uuid of the current backup to that of last backup
-        txt = "1#" + prevBaseCopyUuid
-        return txt
 
     # Check existence of snapshot on primary storage 
     isfile(baseCopyPath, isISCSI)
@@ -505,9 +494,6 @@ def backupSnapshot(session, args):
     # Now set the availability of the snapshotPath and the baseCopyPath to false
     makeUnavailable(snapshotUuid, primarySRPath, isISCSI)
     manageAvailability(baseCopyPath, '-an')
-    if prevSnapshotUuid:
-        makeUnavailable(prevSnapshotUuid, primarySRPath, isISCSI)
-        makeUnavailable(prevBaseCopyUuid, primarySRPath, isISCSI)
 
     # Because the primary storage is always scanned, the parent of this base copy is always the first base copy.
     # We don't want that, we want a chain of VHDs each of which is a delta from the previous.
