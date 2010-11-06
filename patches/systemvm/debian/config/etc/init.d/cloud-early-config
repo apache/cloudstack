@@ -43,7 +43,7 @@ patch() {
     privkey=/var/cache/cloud/authorized_keys
   	umount $EXTRA_MOUNT
   elif [ -e /dev/cdrom1 ]; then
-    vmware-guestd --cmd 'machine.id.get' > /var/cache/cloud/cmdline 
+    vmtoolsd --cmd 'machine.id.get' > /var/cache/cloud/cmdline 
   else
     cat /proc/cmdline > /var/cache/cloud/cmdline
   fi

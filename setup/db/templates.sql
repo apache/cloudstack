@@ -10,10 +10,10 @@ INSERT INTO `cloud`.`vm_template` (id, unique_name, name, public, created, type,
     VALUES (4, 'centos55-x86_64', 'CentOS 5.5(x86_64) no GUI', 1, now(), 'builtin', 0, 64, 1, 'http://download.cloud.com/templates/builtin/eec2209b-9875-3c8d-92be-c001bd8a0faf.qcow2.bz2', '1da20ae69b54f761f3f733dce97adcc0', 'CentOS 5.5(x86_64) no GUI', 0, 'QCOW2', 112, 1, 1, 'KVM');
 
 INSERT INTO `cloud`.`vm_template` (id, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text,  format, guest_os_id, featured, cross_zones, hypervisor_type)
-    VALUES (7, 'centos53-x64', 'centos53-x64', 1, now(), 'builtin', 0, 64, 1, 'http://nfs1.lab.vmops.com/templates/vmware/CentOS5.3-x86_64.ova.bz2', '', 0, 'centos53-x64', 'OVA', 12, 1, 1, 'VMware');
+    VALUES (7, 'centos53-x64', 'centos53-x64', 1, now(), 'builtin', 0, 64, 1, 'http://nfs1.lab.vmops.com/templates/vmware/CentOS5.3-x86_64.ova', '', 0, 'centos53-x64', 'OVA', 12, 1, 1, 'VMware');
 
 INSERT INTO `cloud`.`vm_template` (id, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text, format, guest_os_id, featured, cross_zones, hypervisor_type)
-    VALUES (8, 'routing-8', 'SystemVM Template (VMWare)', 0, now(), 'system', 0, 32, 1, 'http://nfs1.lab.vmops.com/templates/vmware/systemvm.ova.bz2', '9bc05e1cabb4597063957f1a3f1bfa95', 0, 'SystemVM Template VMWare', 'OVA', 15, 0, 1, 'VMware');
+    VALUES (8, 'routing-8', 'SystemVM Template (VMWare)', 0, now(), 'system', 0, 32, 1, 'http://nfs1.lab.vmops.com/templates/routing/latest/systemvm.ova', '9bc05e1cabb4597063957f1a3f1bfa95', 0, 'SystemVM Template VMWare', 'OVA', 15, 0, 1, 'VMware');
 
 INSERT INTO `cloud`.`guest_os_category` (id, name) VALUES (1, 'CentOS');
 INSERT INTO `cloud`.`guest_os_category` (id, name) VALUES (2, 'Debian');
