@@ -1000,12 +1000,11 @@ var vmActionMap = {
         }
     },       
     "Change Service": {
-        isAsyncJob: true,
-        asyncJobResponse: "changeserviceforvirtualmachineresponse",
+        isAsyncJob: false,        
         inProcessText: "Changing Service....",
         dialogBeforeActionFn : doChangeService,
-        afterActionSeccessFn: function(json, $midmenuItem1, id) {             
-            var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine;   
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {                 
+            var jsonObj = json.changeserviceforvirtualmachineresponse;   
             vmToMidmenu(jsonObj, $midmenuItem1);
             vmToRightPanel($midmenuItem1);
         }
