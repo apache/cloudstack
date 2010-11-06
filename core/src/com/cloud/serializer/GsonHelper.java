@@ -25,8 +25,6 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.transport.ArrayTypeAdaptor;
 import com.cloud.agent.transport.VolListTypeAdaptor;
-import com.cloud.api.ResponseObject;
-import com.cloud.api.ResponseObjectTypeAdapter;
 import com.cloud.storage.VolumeVO;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
@@ -40,7 +38,6 @@ public class GsonHelper {
         s_gBuilder.registerTypeAdapter(Answer[].class, new ArrayTypeAdaptor<Answer>());
         Type listType = new TypeToken<List<VolumeVO>>() {}.getType();
         s_gBuilder.registerTypeAdapter(listType, new VolListTypeAdaptor());
-        s_gBuilder.registerTypeAdapter(ResponseObject.class, new ResponseObjectTypeAdapter());
 	}
 	
 	public static GsonBuilder getBuilder() {

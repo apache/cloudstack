@@ -25,16 +25,12 @@ import org.apache.log4j.Logger;
 
 import junit.framework.Assert;
 
-import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
-import com.cloud.async.dao.AsyncJobDao;
-import com.cloud.async.dao.AsyncJobDaoImpl;
 import com.cloud.maid.StackMaid;
 import com.cloud.maid.StackMaidVO;
 import com.cloud.maid.dao.StackMaidDao;
 import com.cloud.maid.dao.StackMaidDaoImpl;
 import com.cloud.serializer.Param;
-import com.cloud.serializer.SerializerHelper;
 import com.cloud.utils.ActionDelegate;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.Transaction;

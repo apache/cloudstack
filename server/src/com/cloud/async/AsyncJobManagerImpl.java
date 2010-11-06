@@ -35,6 +35,8 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 
 import com.cloud.api.ApiDispatcher;
+import com.cloud.api.ApiGsonHelper;
+import com.cloud.api.ApiSerializerHelper;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
@@ -43,7 +45,6 @@ import com.cloud.async.dao.AsyncJobDao;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.maid.StackMaid;
-import com.cloud.serializer.GsonHelper;
 import com.cloud.serializer.SerializerHelper;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
@@ -154,7 +155,7 @@ public class AsyncJobManagerImpl implements AsyncJobManager {
     		job.setInstanceId(null);
 
     		if (resultObject != null) {
-                job.setResult(SerializerHelper.toSerializedStringOld(resultObject));
+                job.setResult(ApiSerializerHelper.toSerializedStringOld(resultObject));
     		}
 
     		job.setLastUpdated(DateUtil.currentGMTTime());
@@ -186,7 +187,7 @@ public class AsyncJobManagerImpl implements AsyncJobManager {
     		
     		job.setProcessStatus(processStatus);
     		if(resultObject != null)
-    			job.setResult(SerializerHelper.toSerializedStringOld(resultObject));
+    			job.setResult(ApiSerializerHelper.toSerializedStringOld(resultObject));
     		job.setLastUpdated(DateUtil.currentGMTTime());
     		_jobDao.update(jobId, job);
     		txt.commit();
@@ -340,7 +341,7 @@ public class AsyncJobManagerImpl implements AsyncJobManager {
                     cmdObj.setJob(job);
 
                     Type mapType = new TypeToken<Map<String, String>>() {}.getType();
-                    Gson gson = GsonHelper.getBuilder().create();
+                    Gson gson = ApiGsonHelper.getBuilder().create();
                     Map<String, String> params = gson.fromJson(job.getCmdInfo(), mapType);
 
                     // whenever we deserialize, the UserContext needs to be updated

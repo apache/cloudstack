@@ -88,7 +88,6 @@ import com.cloud.domain.DomainVO;
 import com.cloud.event.EventUtils;
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.maid.StackMaid;
-import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
 import com.cloud.user.User;
@@ -390,7 +389,7 @@ public class ApiServer implements HttpRequestHandler {
                 job.setAccountId(1L);
             }
             job.setCmd(cmdObj.getClass().getName());
-            job.setCmdInfo(GsonHelper.getBuilder().create().toJson(params));
+            job.setCmdInfo(ApiGsonHelper.getBuilder().create().toJson(params));
 
             long jobId = _asyncMgr.submitAsyncJob(job);
             if (objectId != null) {

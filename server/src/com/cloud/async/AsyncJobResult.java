@@ -18,7 +18,7 @@
 
 package com.cloud.async;
 
-import com.cloud.serializer.SerializerHelper;
+import com.cloud.api.ApiSerializerHelper;
 
 public class AsyncJobResult {
 	public static final int STATUS_IN_PROGRESS = 0;
@@ -89,11 +89,11 @@ public class AsyncJobResult {
 	}
 	
 	public Object getResultObject() {
-		return SerializerHelper.fromSerializedString(result);
+		return ApiSerializerHelper.fromSerializedString(result);
 	}
 	
 	public void setResultObject(Object result) {
-		this.result = SerializerHelper.toSerializedStringOld(result);
+		this.result = ApiSerializerHelper.toSerializedStringOld(result);
 	}
 	
 	public String toString() {

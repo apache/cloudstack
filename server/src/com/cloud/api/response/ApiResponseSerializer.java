@@ -10,9 +10,9 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiGsonHelper;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ResponseObject;
-import com.cloud.serializer.GsonHelper;
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
 
@@ -29,7 +29,7 @@ public class ApiResponseSerializer {
 
     private static String toJSONSerializedString(ResponseObject result) {
         if (result != null) {
-            Gson gson = GsonHelper.getBuilder().excludeFieldsWithModifiers(Modifier.TRANSIENT).setDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").create();
+            Gson gson = ApiGsonHelper.getBuilder().excludeFieldsWithModifiers(Modifier.TRANSIENT).setDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").create();
             StringBuilder sb = new StringBuilder();
 
             sb.append("{ \"" + result.getResponseName() + "\" : ");
@@ -47,33 +47,6 @@ public class ApiResponseSerializer {
                 } else {
                     sb.append("{ }");
                 }
-/*
- * If the old style (2.1.x) async job responses are desired, uncomment the following code.  Note:  Many of the commands will need to set the response name to
- * something like "getResultObjectName()" [see StopVMCmd for an example] in order to truly reinstate the old behavior.  The current response names are based
- * on the new style.  Also, this is done for JSON, so the XML Serializer will need to be fixed up to compensate, but the following code can be used to guide
- * the changes to XML serializer. */
-//            } else if (result instanceof AsyncJobResponse) {
-//                // this code is in here to preserve old behavior for the async job result response
-//                AsyncJobResponse asyncResponse = (AsyncJobResponse)result;
-//                if ("object".equalsIgnoreCase(asyncResponse.getJobResultType())) {
-//                    // we require special handling for object, otherwise we serialize it the standard way
-//                    ResponseObject subResponse = asyncResponse.getJobResult();
-//                    asyncResponse.setJobResult(null);
-//                    String jsonStr = gson.toJson(result);
-//                    int index = jsonStr.lastIndexOf('}');
-//                    sb.append(jsonStr.substring(0, index));
-//                    String subRespJson = gson.toJson(subResponse);
-//                    sb.append(", \"" + subResponse.getResponseName() + "\" : [ " + subRespJson + " ] }");
-//                } else {
-//                    String jsonStr = gson.toJson(result);
-//                    if ((jsonStr != null) && !"".equals(jsonStr)) {
-//                        sb.append(jsonStr);
-//                    } else {
-//                        sb.append("{ }");
-//                    }
-//                }
-
-
             } else {
                 String jsonStr = gson.toJson(result);
                 if ((jsonStr != null) && !"".equals(jsonStr)) {

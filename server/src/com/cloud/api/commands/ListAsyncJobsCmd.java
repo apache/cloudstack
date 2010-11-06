@@ -22,6 +22,7 @@ import java.util.Date;
 import java.util.List;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.ApiSerializerHelper;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -29,7 +30,6 @@ import com.cloud.api.ResponseObject;
 import com.cloud.api.response.AsyncJobResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.async.AsyncJobVO;
-import com.cloud.serializer.SerializerHelper;
 
 @Implementation(method="searchForAsyncJobs", description="Lists all pending asynchronous jobs for the account.")
 public class ListAsyncJobsCmd extends BaseListCmd {
@@ -89,7 +89,7 @@ public class ListAsyncJobsCmd extends BaseListCmd {
             jobResponse.setJobInstanceId(job.getInstanceId());
             jobResponse.setJobInstanceType(job.getInstanceType());
             jobResponse.setJobProcStatus(job.getProcessStatus());
-            jobResponse.setJobResult((ResponseObject)SerializerHelper.fromSerializedString(job.getResult()));
+            jobResponse.setJobResult((ResponseObject)ApiSerializerHelper.fromSerializedString(job.getResult()));
             jobResponse.setJobResultCode(job.getResultCode());
             jobResponse.setJobStatus(job.getStatus());
             jobResponse.setUserId(job.getUserId());

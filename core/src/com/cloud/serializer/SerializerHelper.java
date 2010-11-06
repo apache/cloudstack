@@ -28,7 +28,6 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.ResponseObject;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
 import com.google.gson.Gson;
@@ -44,12 +43,7 @@ public class SerializerHelper {
 		if(result != null) {
 			Class<?> clz = result.getClass();
 	    	Gson gson = GsonHelper.getBuilder().create();
-
-	    	if (result instanceof ResponseObject) {
-	            return clz.getName() + token + ((ResponseObject)result).getResponseName() + token + gson.toJson(result); 
-	    	} else {
-	            return clz.getName() + token + gson.toJson(result); 
-	    	}
+	    	return clz.getName() + token + gson.toJson(result); 
 		} 
 		return null;
 	}
@@ -83,9 +77,6 @@ public class SerializerHelper {
 				
 		    	Gson gson = GsonHelper.getBuilder().create();
 		    	Object obj = gson.fromJson(content, clz);
-		    	if (nameField != null) {
-		    	    ((ResponseObject)obj).setResponseName(nameField);
-		    	}
 		    	return obj;
 			}
 			return null;
