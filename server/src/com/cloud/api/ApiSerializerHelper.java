@@ -15,7 +15,7 @@ public class ApiSerializerHelper {
 	    	Gson gson = ApiGsonHelper.getBuilder().create();
 
 	    	if (result instanceof ResponseObject) {
-	            return clz.getName() + token + ((ResponseObject)result).getResponseName() + token + gson.toJson(result); 
+	            return clz.getName() + token + ((ResponseObject)result).getObjectName() + token + gson.toJson(result); 
 	    	} else {
 	            return clz.getName() + token + gson.toJson(result); 
 	    	}

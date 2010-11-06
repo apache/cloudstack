@@ -399,7 +399,7 @@ function initAddPrimaryStorageButton($midmenuAddLink2, currentPageInRightPanel) 
 					        
 					        var $midmenuItem1 = $("#midmenu_item").clone();
                             $container.append($midmenuItem1.fadeIn("slow"));
-				            var item = json.createstoragepoolresponse;				            			      										   
+				            var item = json.createstoragepoolresponse.storagepool;				            			      										   
 					        primarystorageToMidmenu(item, $midmenuItem1);
 	                        bindClickToMidMenu($midmenuItem1, primarystorageToRightPanel, primarystorageGetMidmenuId);  
 	                    }

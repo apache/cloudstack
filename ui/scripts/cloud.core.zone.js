@@ -457,7 +457,7 @@ function initAddSecondaryStorageButton($addButton) {
 				        $thisDialog.dialog("close");
 					
 					    var $subgridItem = $("#secondary_storage_tab_template").clone(true);	                        
-				        secondaryStorageJSONToTemplate(json.addsecondarystorageresponse.secondarystorage[0], $subgridItem);	
+				        secondaryStorageJSONToTemplate(json.addsecondarystorageresponse.secondarystorage, $subgridItem);	
 	                    $subgridItem.find("#after_action_info").text("Secondary storage was added successfully.");
                         $subgridItem.find("#after_action_info_container").removeClass("error").addClass("success").show();  
                         $("#tab_content_secondarystorage").append($subgridItem.show());  
