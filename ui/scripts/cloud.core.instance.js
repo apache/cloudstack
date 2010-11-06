@@ -1148,18 +1148,8 @@ function doEditVM2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $ed
 	$.ajax({
 	    data: createURL("command=updateVirtualMachine&id="+id+array1.join("")),
 		dataType: "json",
-		success: function(json) {	
-		    //call listVirtualMachine to get embedded object until bug 6489 ("updateVirtualMachine API should return an embedded object on success") is fixed.
-            var jsonObj;         
-            $.ajax({
-                data: createURL("command=listVirtualMachines&id="+id),
-                dataType: "json",
-                async: false,
-                success: function(json) {                                
-                    jsonObj = json.listvirtualmachinesresponse.virtualmachine[0];                    
-                }
-            });
-         
+		success: function(json) {
+		    var jsonObj = json.updatevirtualmachineresponse;
             vmToMidmenu(jsonObj, $midmenuItem1);
             vmToRightPanel($midmenuItem1);	
             
