@@ -423,7 +423,7 @@ function volumeJsonToDetailsTab(){
     if(jsonObj.state != "Creating" && jsonObj.state != "Corrupted" && jsonObj.name != "attaching") {
         if(jsonObj.type=="ROOT") {
             if (jsonObj.vmstate == "Stopped") { 
-                //buildActionLinkForTab("Create Template", volumeActionMap, $actionMenu, $midmenuItem1, $thisTab);	//backend of CreateTemplateFromVolume is not working. Hide the option from UI until backend is fixed.
+                buildActionLinkForTab("Create Template", volumeActionMap, $actionMenu, $midmenuItem1, $thisTab);
             }
         } 
         else { 
