@@ -950,9 +950,8 @@ var vmActionMap = {
         asyncJobResponse: "attachisoresponse",    
         inProcessText: "Attaching ISO....",        
         dialogBeforeActionFn : doAttachISO,
-        afterActionSeccessFn: function(json, $midmenuItem1, id) { 
-            //call listVirtualMachine to get embedded object until bug 6487 ("AttachISO API should return an embedded object on success") is fixed.
-            var id = $midmenuItem1.data("jsonObj").id; 
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {       
+            //call listVirtualMachine to get embedded object until Bug 7101 is fixed ("Bug 7101 - DetachISO API and AttachISO API should return an embedded object of virtualmachine, not an embedded object of ISO")
             var jsonObj;
             $.ajax({
                 data: createURL("command=listVirtualMachines&id="+id),
@@ -973,8 +972,7 @@ var vmActionMap = {
         inProcessText: "Detaching ISO....",       
         dialogBeforeActionFn : doDetachISO,
         afterActionSeccessFn: function(json, $midmenuItem1, id) { 
-             //call listVirtualMachine to get embedded object until bug 6488 ("Detach ISO API should return an embedded object on success") is fixed.
-            var id = $midmenuItem1.data("jsonObj").id; 
+            //call listVirtualMachine to get embedded object until Bug 7101 is fixed ("Bug 7101 - DetachISO API and AttachISO API should return an embedded object of virtualmachine, not an embedded object of ISO")
             var jsonObj;
             $.ajax({
                 data: createURL("command=listVirtualMachines&id="+id),
@@ -994,10 +992,10 @@ var vmActionMap = {
         asyncJobResponse: "resetpasswordforvirtualmachineresponse", 
         inProcessText: "Resetting Password....",  
         dialogBeforeActionFn : doResetPassword,
-        afterActionSeccessFn: function(json, $midmenuItem1, id) { 
-            var item = json.queryasyncjobresultresponse.jobresult.resetpasswordforvirtualmachineresponse;            
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {      
+            var item = json.queryasyncjobresultresponse.jobresult.virtualmachine;            
             var $afterActionInfoContainer = $("#right_panel_content #after_action_info_container_on_top");
-		    $afterActionInfoContainer.find("#after_action_info").html("New password is <b>" + item.password + "</b>");  
+		    $afterActionInfoContainer.find("#after_action_info").html("New password is <b>" + fromdb(item.password) + "</b>");  
 		    $afterActionInfoContainer.removeClass("errorbox").show();            
         }
     },       
@@ -1006,8 +1004,8 @@ var vmActionMap = {
         asyncJobResponse: "changeserviceforvirtualmachineresponse",
         inProcessText: "Changing Service....",
         dialogBeforeActionFn : doChangeService,
-        afterActionSeccessFn: function(json, $midmenuItem1, id) { 
-            var jsonObj = json.queryasyncjobresultresponse.virtualmachine[0];
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {             
+            var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine;   
             vmToMidmenu(jsonObj, $midmenuItem1);
             vmToRightPanel($midmenuItem1);
         }
