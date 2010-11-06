@@ -994,8 +994,12 @@ var vmActionMap = {
         dialogBeforeActionFn : doResetPassword,
         afterActionSeccessFn: function(json, $midmenuItem1, id) {      
             var item = json.queryasyncjobresultresponse.jobresult.virtualmachine;            
-            var $afterActionInfoContainer = $("#right_panel_content #after_action_info_container_on_top");
-		    $afterActionInfoContainer.find("#after_action_info").html("New password is <b>" + fromdb(item.password) + "</b>");  
+            var $afterActionInfoContainer = $("#right_panel_content #after_action_info_container_on_top");            
+            
+            var afterActionInfo = "New password is " + fromdb(item.password);
+		    $afterActionInfoContainer.find("#after_action_info").text(afterActionInfo);  
+            handleMidMenuItemAfterDetailsTabAction($midmenuItem1, true, afterActionInfo); //override default afterActionInfo("Reset Password action succeeded")		    
+		    
 		    $afterActionInfoContainer.removeClass("errorbox").show();            
         }
     },       
