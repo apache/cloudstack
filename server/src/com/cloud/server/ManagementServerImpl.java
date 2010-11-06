@@ -4105,6 +4105,7 @@ public class ManagementServerImpl implements ManagementServer {
         Object keyword = cmd.getKeyword();
 
         SearchBuilder<DomainVO> sb = _domainDao.createSearchBuilder();
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
         sb.and("level", sb.entity().getLevel(), SearchCriteria.Op.EQ);
         sb.and("path", sb.entity().getPath(), SearchCriteria.Op.LIKE);
@@ -4126,11 +4127,8 @@ public class ManagementServerImpl implements ManagementServer {
             sc.setParameters("level", level);
         }
 
-        if ((domainName == null) && (level == null) && (domainId != null)) {
-            DomainVO domain = _domainDao.findById(domainId);
-            if (domain != null) {
-                sc.setParameters("path", domain.getPath() + "%");
-            }
+        if (domainId != null) {
+            sc.setParameters("id", domainId);
         }
 
         return _domainDao.search(sc, searchFilter);

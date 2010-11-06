@@ -18,8 +18,6 @@
 
 package com.cloud.domain.dao;
 
-import java.util.List;
-
 import com.cloud.domain.DomainVO;
 import com.cloud.utils.db.GenericDao;
 
