@@ -341,7 +341,7 @@ function initUpdateConsoleCertButton($midMenuAddLink2) {
 												$thisDialog.dialog("close");
 												// TODO: Add a confirmation message
 											} else if (result.jobstatus == 2) { // Failed	
-												var errorMsg = result.jobresult.uploadcustomcertificateresponse.errortext;
+												var errorMsg = result.jobresult.errortext;
 												$thisDialog.find("#info_container").text(errorMsg).show();
 											}	
 										}
@@ -472,7 +472,7 @@ function initAddZoneButton($midmenuAddLink1) {
 			            $zoneTree.prepend(template);	
 	                    template.fadeIn("slow");				        
 				    
-					    var item = json.createzoneresponse;					    
+					    var item = json.createzoneresponse.zone;					    
 					    zoneJSONToTreeNode(item, template);						    	        
 				    },
 			        error: function(XMLHttpResponse) {

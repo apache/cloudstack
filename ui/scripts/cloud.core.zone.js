@@ -402,7 +402,7 @@ function initAddVLANButton($addButton) {
 				        else  //virtual
 				  	        $template1.find("#vlan_type_icon").removeClass("direct").addClass("virtual");	
         				
-        				vlanJsonToTemplate(json.createvlaniprangeresponse, $template1);	
+        				vlanJsonToTemplate(json.createvlaniprangeresponse.vlaniprange, $template1);	
 				        $vlanContainer.prepend($template1);	
 				        $template1.fadeIn("slow");
 					},
@@ -523,7 +523,7 @@ function initAddPodButton($midmenuAddLink1) {
 			            $thisDialog.find("#spinning_wheel").hide();
 			            $thisDialog.dialog("close");
 			            
-			            var item = json.createpodresponse; 			            		            				    
+			            var item = json.createpodresponse.pod; 			            		            				    
 		                var template = $("#leftmenu_pod_node_template").clone(true);
 		                podJSONToTreeNode(item, template);	
 		                var $zoneNode = $("#leftmenu_zone_tree").find("#tree_container").find("#zone_" + zoneObj.id);	                   				
@@ -784,7 +784,7 @@ function doEditZone2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $
 	  data: createURL("command=updateZone"+moreCriteria.join("")),
 		dataType: "json",
 		success: function(json) {		   
-		    var item = json.updatezoneresponse;		  
+		    var item = json.updatezoneresponse.zone;		  
 		    $midmenuItem1.data("jsonObj", item);
 		    zoneJsonToRightPanel($midmenuItem1);	
 		    

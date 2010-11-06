@@ -90,7 +90,7 @@ function initAddDiskOfferingButton($midmenuAddLink1) {
 				  data: createURL("command=createDiskOffering&isMirrored=false" + array1.join("")),
 					dataType: "json",
 					success: function(json) {						    
-					    var item = json.creatediskofferingresponse;							
+					    var item = json.creatediskofferingresponse.diskoffering;							
 						diskOfferingToMidmenu(item, $midmenuItem1);	
 						bindClickToMidMenu($midmenuItem1, diskOfferingToRightPanel, getMidmenuId);  
 						afterAddingMidMenuItem($midmenuItem1, true);						
@@ -150,17 +150,7 @@ function doEditDiskOffering2($actionLink, $detailsTab, $midmenuItem1, $readonlyF
 	    data: createURL("command=updateDiskOffering&id="+id+array1.join("")),
 		dataType: "json",
 		success: function(json) {	
-		    //call listDiskOffering before bug 6502(What updateDiskOffering API returns should include an embedded object) is fixed.
-		    var jsonObj;		   
-		    $.ajax({
-		        data: createURL("command=listDiskOfferings&id="+id),
-		        dataType: "json",
-		        async: false,
-		        success: function(json) {		            
-		            jsonObj = json.listdiskofferingsresponse.diskoffering[0];
-		        }
-		    });		   
-		    var $midmenuItem1 = $("#"+getMidmenuId(jsonObj));		   
+		    var $midmenuItem1 = $("#"+getMidmenuId(json.updatediskofferingresponse.diskoffering));		   
 		    diskOfferingToMidmenu(jsonObj, $midmenuItem1);
 		    diskOfferingToRightPanel($midmenuItem1);	
 		    

@@ -90,7 +90,7 @@ function afterLoadServiceOfferingJSP() {
 				  data: createURL("command=createServiceOffering"+array1.join("")+"&response=json"),
 					dataType: "json",
 					success: function(json) {					    				
-						var item = json.createserviceofferingresponse;							
+						var item = json.createserviceofferingresponse.serviceoffering;							
 						serviceOfferingToMidmenu(item, $midmenuItem1);	
 						bindClickToMidMenu($midmenuItem1, serviceOfferingToRightPanel, getMidmenuId);  
 						afterAddingMidMenuItem($midmenuItem1, true);						
@@ -153,7 +153,7 @@ function doEditServiceOffering2($actionLink, $detailsTab, $midmenuItem1, $readon
 	    data: createURL("command=updateServiceOffering&id="+id+array1.join("")),
 		dataType: "json",
 		success: function(json) {	  
-		    var jsonObj = json.updateserviceofferingresponse;	
+		    var jsonObj = json.updateserviceofferingresponse.serviceoffering;	
 		    serviceOfferingToMidmenu(jsonObj, $midmenuItem1);
 		    serviceOfferingToRightPanel($midmenuItem1);		
 		    

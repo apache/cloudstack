@@ -534,7 +534,7 @@ function doEditPod2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $e
 	  data: createURL("command=updatePod"+array1.join("")),
 		dataType: "json",
 		success: function(json) {		   	   				    
-		    var item = json.updatepodresponse;	
+		    var item = json.updatepodresponse.pod;	
 		    $midmenuItem1.data("jsonObj", item);
 		    podJsonToRightPanel($midmenuItem1);			    
 		    
