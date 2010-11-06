@@ -83,7 +83,7 @@ public class ListServiceOfferingsCmd extends BaseListCmd {
         List<ServiceOfferingResponse> offeringResponses = new ArrayList<ServiceOfferingResponse>();
         for (ServiceOfferingVO offering : offerings) {
             ServiceOfferingResponse offeringResponse = ApiResponseHelper.createServiceOfferingResponse(offering);
-            offeringResponse.setResponseName("serviceoffering");
+            offeringResponse.setObjectName("serviceoffering");
             offeringResponses.add(offeringResponse);
         }
 

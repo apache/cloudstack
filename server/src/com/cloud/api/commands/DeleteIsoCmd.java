@@ -75,17 +75,11 @@ public class DeleteIsoCmd extends BaseAsyncCmd {
     
     @Override @SuppressWarnings("unchecked")
     public SuccessResponse getResponse() {
-        SuccessResponse response = new SuccessResponse();
-        Boolean responseObject = (Boolean)getResponseObject();
-      
-        if (responseObject != null) {
-        	response.setSuccess(responseObject);
-        } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete iso");
-        }
-
-        response.setResponseName("success");
-        return response;
+    	if ((Boolean)getResponseObject()) {
+	    	return new SuccessResponse();
+	    } else {
+	    	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete iso");
+	    }
     }
 
     @Override

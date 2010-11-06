@@ -105,7 +105,7 @@ public class ListUsersCmd extends BaseListCmd {
         List<UserResponse> userResponses = new ArrayList<UserResponse>();
         for (UserAccountVO user : users) {
             UserResponse userResponse = ApiResponseHelper.createUserResponse(user);
-            userResponse.setResponseName("user");
+            userResponse.setObjectName("user");
             userResponses.add(userResponse);
         }
         response.setResponses(userResponses);

@@ -111,7 +111,8 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
         UploadVO uploadInfo = ApiDBUtils.findUploadById(uploadId);
         
         ExtractResponse response = new ExtractResponse();
-        response.setResponseName("volume");
+        response.setResponseName(getName());
+        response.setObjectName("volume");
         response.setId(id);
         response.setName(ApiDBUtils.findVolumeById(id).getName());        
         response.setZoneId(zoneId);

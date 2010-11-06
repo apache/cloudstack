@@ -274,7 +274,7 @@ public class ListIsosCmd extends BaseListCmd {
                     isoResponse.setJobStatus(asyncJob.getStatus());
                 }
 
-                isoResponse.setResponseName("iso");
+                isoResponse.setObjectName("iso");
                 isoResponses.add(isoResponse);
             }
         }

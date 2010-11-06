@@ -92,7 +92,7 @@ public class CancelPrimaryStorageMaintenanceCmd extends BaseAsyncCmd {
 	public StoragePoolResponse getResponse() {
 	    StoragePoolVO primaryStorage = (StoragePoolVO)getResponseObject();
 	    StoragePoolResponse response = ApiResponseHelper.createStoragePoolResponse(primaryStorage);
-        response.setResponseName("storagepool");
+        response.setResponseName(getName());
 		return response;
 	}
 }

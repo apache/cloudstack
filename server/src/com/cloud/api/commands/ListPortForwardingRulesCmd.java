@@ -70,7 +70,7 @@ public class ListPortForwardingRulesCmd extends BaseListCmd {
         
         for (FirewallRuleVO fwRule : firewallRules) {
             FirewallRuleResponse ruleData = ApiResponseHelper.createFirewallRuleResponse(fwRule);
-            ruleData.setResponseName("portforwardingrule");
+            ruleData.setObjectName("portforwardingrule");
             fwResponses.add(ruleData);
         }
 

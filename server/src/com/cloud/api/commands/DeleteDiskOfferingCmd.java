@@ -69,7 +69,6 @@ public class DeleteDiskOfferingCmd extends BaseCmd {
              throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete disk offering");
          }
 
-         response.setResponseName(getName());
          return response;
     }
 }

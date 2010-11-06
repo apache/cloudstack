@@ -110,7 +110,7 @@ public class AttachVolumeCmd extends BaseAsyncCmd {
     public VolumeResponse getResponse() {
         VolumeVO volume = (VolumeVO)getResponseObject();
         VolumeResponse response = ApiResponseHelper.createVolumeResponse(volume);
-        response.setResponseName("volume");
+        response.setResponseName(getName());
         return response;
     }
 }

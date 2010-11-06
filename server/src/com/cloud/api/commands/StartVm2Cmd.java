@@ -186,7 +186,7 @@ public class StartVm2Cmd extends BaseAsyncCmd {
 
         //Network groups
         response.setNetworkGroupList(ApiDBUtils.getNetworkGroupsNamesForVm(vm.getId()));
-
+        response.setObjectName("virtualmachine");
         response.setResponseName(getName());
         //response.setResponseName(getResultObjectName());
         return response;

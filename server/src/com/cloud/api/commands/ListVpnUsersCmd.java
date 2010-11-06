@@ -101,7 +101,7 @@ public class ListVpnUsersCmd extends BaseListCmd {
                 vpnResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
             }
 
-            vpnResponse.setResponseName("vpnuser");
+            vpnResponse.setObjectName("vpnuser");
             vpnResponses.add(vpnResponse);
         }
 

@@ -90,7 +90,7 @@ public class ListVMGroupsCmd extends BaseListCmd {
         List<InstanceGroupResponse> responses = new ArrayList<InstanceGroupResponse>();
         for (InstanceGroupVO group : groups) {
             InstanceGroupResponse groupResponse = ApiResponseHelper.createInstanceGroupResponse(group);
-            groupResponse.setResponseName("instancegroup");
+            groupResponse.setObjectName("instancegroup");
             responses.add(groupResponse);
         }
 

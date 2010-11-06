@@ -71,24 +71,20 @@ public class AddSecondaryStorageCmd extends BaseCmd {
     }
     
     @Override @SuppressWarnings("unchecked")
-    public ListResponse<HostResponse> getResponse() {
+    public HostResponse getResponse() {
 		List<HostVO> hosts = (List<HostVO>)getResponseObject();
-		
-        ListResponse<HostResponse> response = new ListResponse<HostResponse>();
-		List<HostResponse> hostResponses = new ArrayList<HostResponse>();
-	    if (hosts != null) {
+		HostResponse hostResponse = null;
+	    if (hosts != null && hosts.size() > 0) {
 	        for (HostVO host : hosts) {
-	        	HostResponse hostResponse = ApiResponseHelper.createHostResponse(host);
-	            hostResponse.setResponseName("secondarystorage");
-	            hostResponses.add(hostResponse);
+	        	// There should only be one secondary storage host per add
+	        	hostResponse = ApiResponseHelper.createHostResponse(host);
+	            hostResponse.setResponseName(getName());
+	            hostResponse.setObjectName("secondarystorage");
+	            return hostResponse;
 	        }
 	    } else {
 	        throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add secondary storage");
 	    }
-
-	    response.setResponses(hostResponses);
-	    response.setResponseName(getName());
-	    return response;
-	    //return ApiResponseSerializer.toSerializedString(response);
+	    return hostResponse;
     }
 }

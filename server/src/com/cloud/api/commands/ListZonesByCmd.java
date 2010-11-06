@@ -75,7 +75,7 @@ public class ListZonesByCmd extends BaseListCmd {
         List<ZoneResponse> zoneResponses = new ArrayList<ZoneResponse>();
         for (DataCenterVO dataCenter : dataCenters) {
             ZoneResponse zoneResponse = ApiResponseHelper.createZoneResponse(dataCenter);
-            zoneResponse.setResponseName("zone");
+            zoneResponse.setObjectName("zone");
             zoneResponses.add(zoneResponse);
         }
 

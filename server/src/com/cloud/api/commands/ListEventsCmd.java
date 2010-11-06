@@ -135,7 +135,7 @@ public class ListEventsCmd extends BaseListCmd {
                 responseEvent.setUsername(user.getUsername());
             }
 
-            responseEvent.setResponseName("event");
+            responseEvent.setObjectName("event");
             eventResponses.add(responseEvent);
         }
 

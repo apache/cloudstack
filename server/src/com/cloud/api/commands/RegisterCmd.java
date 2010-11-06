@@ -63,7 +63,7 @@ public class RegisterCmd extends BaseCmd {
 	    RegisterResponse response = new RegisterResponse();
 	    response.setApiKey(keys[0]);
         response.setSecretKey(keys[1]);
-
+        response.setObjectName("userkeys");
         response.setResponseName(getName());
         return response;
 	}

@@ -94,7 +94,7 @@ public class ListAsyncJobsCmd extends BaseListCmd {
             jobResponse.setJobStatus(job.getStatus());
             jobResponse.setUserId(job.getUserId());
 
-            jobResponse.setResponseName("asyncjobs");
+            jobResponse.setObjectName("asyncjobs");
             jobResponses.add(jobResponse);
         }
 

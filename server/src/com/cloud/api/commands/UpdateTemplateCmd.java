@@ -62,6 +62,7 @@ public class UpdateTemplateCmd extends UpdateTemplateOrIsoCmd {
             response.setOsTypeId(responseObject.getGuestOSId());
             response.setPasswordEnabled(responseObject.getEnablePassword());
             response.setCrossZones(responseObject.isCrossZones());
+            response.setObjectName("template");
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update template");
         }

@@ -114,7 +114,7 @@ public class ListHostsCmd extends BaseListCmd {
         List<HostResponse> hostResponses = new ArrayList<HostResponse>();
         for (HostVO host : hosts) {
             HostResponse hostResponse = ApiResponseHelper.createHostResponse(host);
-            hostResponse.setResponseName("host");
+            hostResponse.setObjectName("host");
             hostResponses.add(hostResponse);
         }
 

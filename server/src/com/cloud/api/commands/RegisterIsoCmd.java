@@ -157,7 +157,7 @@ public class RegisterIsoCmd extends BaseCmd {
 
             templateResponse.setZoneId(zone.getId());
             templateResponse.setZoneName(zone.getName());
-            templateResponse.setResponseName("iso");
+            templateResponse.setObjectName("iso");
 
             responses.add(templateResponse);
 	    }

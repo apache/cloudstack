@@ -113,7 +113,7 @@ public class ListAccountsCmd extends BaseListCmd {
         List<AccountResponse> accountResponses = new ArrayList<AccountResponse>();
         for (AccountVO account : accounts) {
             AccountResponse acctResponse = ApiResponseHelper.createAccountResponse(account);
-            acctResponse.setResponseName("account");
+            acctResponse.setObjectName("account");
             accountResponses.add(acctResponse);
         }
 

@@ -65,7 +65,7 @@ public class UpdateIsoCmd extends UpdateTemplateOrIsoCmd {
             response.setFormat(responseObject.getFormat());
             response.setOsTypeId(responseObject.getGuestOSId());
             response.setBootable(responseObject.isBootable());
-            
+            response.setObjectName("iso");
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update iso");
         }

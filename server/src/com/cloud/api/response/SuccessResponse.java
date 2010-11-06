@@ -5,7 +5,7 @@ import com.google.gson.annotations.SerializedName;
 
 public class SuccessResponse extends BaseResponse {
 	 @SerializedName("success") @Param(description="true if operation is executed successfully")
-	 private Boolean success;
+	 private Boolean success = true;
 	 
      @SerializedName("displaytext") @Param(description="any text associated with the success or failure")
      private String displayText;

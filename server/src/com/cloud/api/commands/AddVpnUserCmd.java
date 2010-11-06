@@ -106,7 +106,8 @@ public class AddVpnUserCmd extends BaseAsyncCmd {
             vpnResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
         }
         
-        vpnResponse.setResponseName("vpnuser");
+        vpnResponse.setResponseName(getName());
+        vpnResponse.setObjectName("vpnuser");
         return vpnResponse;
     }
 

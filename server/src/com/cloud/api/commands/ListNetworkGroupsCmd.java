@@ -126,12 +126,12 @@ public class ListNetworkGroupsCmd extends BaseListCmd {
                         ingressData.setCidr(ingressRule.getAllowedSourceIpCidr());
                     }
 
-                    ingressData.setResponseName("ingressrule");
+                    ingressData.setObjectName("ingressrule");
                     ingressRulesResponse.add(ingressData);
                 }
                 netGrpResponse.setIngressRules(ingressRulesResponse);
             }
-            netGrpResponse.setResponseName("networkgroup");
+            netGrpResponse.setObjectName("securitygroup");
             netGrpResponses.add(netGrpResponse);
         }
 

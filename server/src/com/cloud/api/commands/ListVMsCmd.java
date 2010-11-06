@@ -126,7 +126,7 @@ public class ListVMsCmd extends BaseListCmd {
         for (UserVm userVm : userVms) {
             UserVmResponse userVmResponse = ApiResponseHelper.createUserVmResponse(userVm);
             if (userVmResponse != null) {
-                userVmResponse.setResponseName("virtualmachine");
+                userVmResponse.setObjectName("virtualmachine");
                 vmResponses.add(userVmResponse);
             }
         }

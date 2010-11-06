@@ -44,8 +44,9 @@ public class UploadCustomCertificateCmd extends BaseAsyncCmd {
     public CustomCertificateResponse getResponse() {
         String updatedCpIdList = (String)getResponseObject();
         CustomCertificateResponse response = new CustomCertificateResponse();
-        response.setResponseName("customcertificate");
+        response.setResponseName(getName());
         response.setUpdatedConsoleProxyIdList(updatedCpIdList);
+        response.setObjectName("customcertificate");
         return response;
     }
 

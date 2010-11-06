@@ -80,7 +80,7 @@ public class ListPreallocatedLunsCmd extends BaseListCmd {
         for (PreallocatedLunVO preallocatedLun : preallocatedLuns) {
             PreallocatedLunResponse preallocLunResponse = ApiResponseHelper.createPreallocatedLunResponse(preallocatedLun);
             
-            preallocLunResponse.setResponseName("preallocatedlun");
+            preallocLunResponse.setObjectName("preallocatedlun");
             lunResponses.add(preallocLunResponse);
         }
 

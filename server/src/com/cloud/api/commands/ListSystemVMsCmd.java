@@ -110,7 +110,7 @@ public class ListSystemVMsCmd extends BaseListCmd {
         List<SystemVmResponse> vmResponses = new ArrayList<SystemVmResponse>();
         for (VMInstanceVO systemVM : systemVMs) {
             SystemVmResponse vmResponse = ApiResponseHelper.createSystemVmResponse(systemVM);
-            vmResponse.setResponseName("systemvm");
+            vmResponse.setObjectName("systemvm");
             vmResponses.add(vmResponse);
         }
 

@@ -85,7 +85,7 @@ public class ListSnapshotPoliciesCmd extends BaseListCmd {
         List<SnapshotPolicyResponse> policyResponses = new ArrayList<SnapshotPolicyResponse>();
         for (SnapshotPolicyVO policy : policies) {
             SnapshotPolicyResponse policyResponse = ApiResponseHelper.createSnapshotPolicyResponse(policy);
-            policyResponse.setResponseName("snapshotpolicy");
+            policyResponse.setObjectName("snapshotpolicy");
             policyResponses.add(policyResponse);
         }
 

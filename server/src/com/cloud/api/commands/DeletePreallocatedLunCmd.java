@@ -21,6 +21,7 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 
 @Implementation(method="unregisterPreallocatedLun")
@@ -53,12 +54,10 @@ public class DeletePreallocatedLunCmd extends BaseCmd {
 
     @Override @SuppressWarnings("unchecked")
     public SuccessResponse getResponse() {
-        Boolean result = (Boolean)getResponseObject();
-
-        SuccessResponse response = new SuccessResponse();
-        response.setSuccess(result);
-
-        response.setResponseName(getName());
-        return response;
+    	if ((Boolean)getResponseObject()) {
+	    	return new SuccessResponse();
+	    } else {
+	    	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete preallocated lun");
+	    }
     }
 }

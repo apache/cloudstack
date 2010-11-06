@@ -104,7 +104,7 @@ public class UpdateIPForwardingRuleCmd extends BaseAsyncCmd {
 	public FirewallRuleResponse getResponse() {
 	    FirewallRuleVO fwRule = (FirewallRuleVO)getResponseObject();
 	    FirewallRuleResponse response = ApiResponseHelper.createFirewallRuleResponse(fwRule);
-	    response.setResponseName("portforwardingrule");
+	    response.setResponseName(getName());
 	    return response;
 	}
 }

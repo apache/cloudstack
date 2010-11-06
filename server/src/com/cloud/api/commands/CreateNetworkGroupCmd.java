@@ -32,7 +32,7 @@ import com.cloud.network.security.NetworkGroupVO;
 public class CreateNetworkGroupCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateNetworkGroupCmd.class.getName());
 
-    private static final String s_name = "createnetworkgroupresponse";
+    private static final String s_name = "createsecuritygroupresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -93,6 +93,7 @@ public class CreateNetworkGroupCmd extends BaseCmd {
         response.setName(group.getName());
 
         response.setResponseName(getName());
+        response.setObjectName("securitygroup");
         return response;
     }
 }

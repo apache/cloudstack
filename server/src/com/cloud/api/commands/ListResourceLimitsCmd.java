@@ -96,7 +96,7 @@ public class ListResourceLimitsCmd extends BaseListCmd {
         List<ResourceLimitResponse> limitResponses = new ArrayList<ResourceLimitResponse>();
         for (ResourceLimitVO limit : limits) {
             ResourceLimitResponse resourceLimitResponse = ApiResponseHelper.createResourceLimitResponse(limit);
-            resourceLimitResponse.setResponseName("resourcelimit");
+            resourceLimitResponse.setObjectName("resourcelimit");
             limitResponses.add(resourceLimitResponse);
         }
 

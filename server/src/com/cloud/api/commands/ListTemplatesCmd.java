@@ -240,7 +240,7 @@ public class ListTemplatesCmd extends BaseListCmd {
                     templateResponse.setJobStatus(asyncJob.getStatus());
                 }
 
-                templateResponse.setResponseName("template");
+                templateResponse.setObjectName("template");
                 templateResponses.add(templateResponse);
             }
         }

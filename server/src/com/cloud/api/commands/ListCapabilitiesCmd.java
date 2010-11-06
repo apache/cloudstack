@@ -43,6 +43,7 @@ public class ListCapabilitiesCmd extends BaseCmd {
         CapabilitiesResponse response = new CapabilitiesResponse();
         response.setNetworkGroupsEnabled(capabilities.get("networkGroupsEnabled"));
         response.setCloudStackVersion(capabilities.get("cloudStackVersion"));
+        response.setObjectName("capability");
         response.setResponseName(getName());
 
         return response;

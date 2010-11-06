@@ -6,6 +6,7 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.network.security.NetworkGroupManager;
 
@@ -56,9 +57,10 @@ public class DeleteNetworkGroupCmd extends BaseCmd {
 
 	@Override @SuppressWarnings("unchecked")
 	public SuccessResponse getResponse() {
-        SuccessResponse response = new SuccessResponse();
-        response.setSuccess(Boolean.TRUE);
-        response.setResponseName(getName());
-        return response;
+		if ((Boolean)getResponseObject()) {
+	    	return new SuccessResponse();
+	    } else {
+	    	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete security group");
+	    }
 	}
 }

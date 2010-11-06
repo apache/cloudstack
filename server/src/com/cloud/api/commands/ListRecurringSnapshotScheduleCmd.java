@@ -78,7 +78,7 @@ public class ListRecurringSnapshotScheduleCmd extends BaseListCmd {
             snapSchedResponse.setSnapshotPolicyId(snapshotSchedule.getPolicyId());
             snapSchedResponse.setScheduled(snapshotSchedule.getScheduledTimestamp());
 
-            snapSchedResponse.setResponseName("snapshot");
+            snapSchedResponse.setObjectName("snapshot");
             snapshotScheduleResponses.add(snapSchedResponse);
         }
 

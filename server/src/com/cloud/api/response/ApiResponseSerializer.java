@@ -38,7 +38,7 @@ public class ApiResponseSerializer {
                 if ((responses != null) && !responses.isEmpty()) {
                     int count = responses.size();
                     String jsonStr = gson.toJson(responses.get(0));
-                    sb.append("{ \"" + responses.get(0).getResponseName() + "\" : [  " + jsonStr);
+                    sb.append("{ \"" + responses.get(0).getObjectName() + "\" : [  " + jsonStr);
                     for (int i = 1; i < count; i++) {
                         jsonStr = gson.toJson(responses.get(i));
                         sb.append(", " + jsonStr);
@@ -50,7 +50,11 @@ public class ApiResponseSerializer {
             } else {
                 String jsonStr = gson.toJson(result);
                 if ((jsonStr != null) && !"".equals(jsonStr)) {
-                    sb.append(jsonStr);
+                	if (result instanceof AsyncJobResponse) {
+                		sb.append(jsonStr);
+                	} else {
+                		sb.append(" { \"" + result.getObjectName() + "\" : " + jsonStr + " } ");
+                	}
                 } else {
                     sb.append("{ }");
                 }

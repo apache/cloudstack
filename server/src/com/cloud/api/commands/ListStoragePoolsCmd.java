@@ -105,7 +105,7 @@ public class ListStoragePoolsCmd extends BaseListCmd {
         List<StoragePoolResponse> poolResponses = new ArrayList<StoragePoolResponse>();
         for (StoragePoolVO pool : pools) {
             StoragePoolResponse poolResponse = ApiResponseHelper.createStoragePoolResponse(pool);
-            poolResponse.setResponseName("storagepool");
+            poolResponse.setObjectName("storagepool");
             poolResponses.add(poolResponse);
         }
 

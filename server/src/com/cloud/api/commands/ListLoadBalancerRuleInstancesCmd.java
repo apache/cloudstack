@@ -76,7 +76,7 @@ public class ListLoadBalancerRuleInstancesCmd extends BaseListCmd {
         List<UserVmResponse> vmResponses = new ArrayList<UserVmResponse>();
         for (UserVmVO instance : instances) {
             UserVmResponse userVmResponse = ApiResponseHelper.createUserVmResponse(instance);
-            userVmResponse.setResponseName("loadbalancerruleinstance");
+            userVmResponse.setObjectName("loadbalancerruleinstance");
             vmResponses.add(userVmResponse);
         }
 

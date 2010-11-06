@@ -104,7 +104,7 @@ public class ResetVMPasswordCmd extends BaseAsyncCmd {
 //        if (templatePasswordEnabled) {
 //            response.setPassword(getPassword());
 //        } 
-        response.setResponseName("virtualmachine");
+        response.setResponseName(getName());
         return response;
 	}
 }

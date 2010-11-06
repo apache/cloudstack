@@ -92,7 +92,7 @@ public class CancelMaintenanceCmd extends BaseAsyncCmd  {
 	public HostResponse getResponse() {
         HostVO host = (HostVO)getResponseObject();
         HostResponse response = ApiResponseHelper.createHostResponse(host);
-        response.setResponseName("success");
+        response.setResponseName(getName());
 		return response;
 	}
 }

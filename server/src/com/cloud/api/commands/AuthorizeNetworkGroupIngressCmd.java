@@ -232,13 +232,13 @@ public class AuthorizeNetworkGroupIngressCmd extends BaseAsyncCmd {
                     ingressData.setCidr(ingressRule.getAllowedSourceIpCidr());
                 }
 
-                ingressData.setResponseName("ingressrule");
+                ingressData.setObjectName("ingressrule");
                 responses.add(ingressData);
             }
             response.setResponses(responses);
         }
 
-        response.setResponseName("networkgroup");
+        response.setResponseName("securitygroupingressrule");
 		return response;
 	}
 }

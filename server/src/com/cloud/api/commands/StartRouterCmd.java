@@ -92,7 +92,7 @@ public class StartRouterCmd extends BaseAsyncCmd {
 	public DomainRouterResponse getResponse() {
 	    DomainRouter router = (DomainRouter)getResponseObject();
         DomainRouterResponse routerResponse = ApiResponseHelper.createDomainRouterResponse(router);
-        routerResponse.setResponseName("router");
+        routerResponse.setResponseName(getName());
         return routerResponse;
 	}
 }

@@ -115,7 +115,6 @@ public class AddHostCmd extends BaseCmd {
         if (hosts != null) {
             for (HostVO host : hosts) {
 	        	HostResponse hostResponse = ApiResponseHelper.createHostResponse(host);
-	            hostResponse.setResponseName("host");
 	            hostResponses.add(hostResponse);
             }
         } else {

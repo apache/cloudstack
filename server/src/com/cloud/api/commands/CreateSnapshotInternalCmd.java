@@ -115,8 +115,8 @@ public class CreateSnapshotInternalCmd extends BaseAsyncCmd {
         response.setVolumeType(volume.getVolumeType().toString());
         response.setCreated(snapshot.getCreated());
         response.setName(snapshot.getName());
-
-        response.setResponseName("snapshot");
+        response.setObjectName("snapshot");
+        response.setResponseName(getName());
         return response;
     }
 }

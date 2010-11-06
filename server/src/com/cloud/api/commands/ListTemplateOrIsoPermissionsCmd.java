@@ -34,7 +34,7 @@ import com.cloud.user.UserContext;
 @Implementation(method="listTemplatePermissions", description="List template visibility and all accounts that have permissions to view this template.")
 public class ListTemplateOrIsoPermissionsCmd extends BaseListCmd {
 	public Logger s_logger = getLogger();
-    protected String s_name = getResponseName();
+    protected String s_name = "listtemplatepermissionsresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -97,17 +97,13 @@ public class ListTemplateOrIsoPermissionsCmd extends BaseListCmd {
         }
 
         response.setAccountNames(accountNames);
-
+        response.setObjectName("templatepermission");
         response.setResponseName(getName());
         return response;
     }
     
     protected boolean templateIsCorrectType(VMTemplateVO template) {
     	return true;
-    }
-    
-    protected String getResponseName() {
-    	return "updatetemplateorisopermissionsresponse";
     }
     
     public String getMediaType() {

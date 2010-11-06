@@ -112,7 +112,7 @@ public class ListSnapshotsCmd extends BaseListCmd {
         List<SnapshotResponse> snapshotResponses = new ArrayList<SnapshotResponse>();
         for (Snapshot snapshot : snapshots) {
             SnapshotResponse snapshotResponse = ApiResponseHelper.createSnapshotResponse(snapshot);
-            snapshotResponse.setResponseName("snapshot");
+            snapshotResponse.setObjectName("snapshot");
             snapshotResponses.add(snapshotResponse);
         }
 

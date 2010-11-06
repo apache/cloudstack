@@ -104,7 +104,7 @@ public class ListVlanIpRangesCmd extends BaseListCmd {
         List<VlanIpRangeResponse> vlanResponses = new ArrayList<VlanIpRangeResponse>();
         for (VlanVO vlan : vlans) {  
             VlanIpRangeResponse vlanResponse = ApiResponseHelper.createVlanIpRangeResponse(vlan);
-            vlanResponse.setResponseName("vlaniprange");
+            vlanResponse.setObjectName("vlaniprange");
             vlanResponses.add(vlanResponse);
         }
 

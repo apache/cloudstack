@@ -83,7 +83,7 @@ public class ListDiskOfferingsCmd extends BaseListCmd {
         List<DiskOfferingResponse> diskOfferingResponses = new ArrayList<DiskOfferingResponse>();
         for (DiskOfferingVO offering : offerings) {
             DiskOfferingResponse diskOffResp = ApiResponseHelper.createDiskOfferingResponse(offering);
-            diskOffResp.setResponseName("diskoffering");
+            diskOffResp.setObjectName("diskoffering");
             diskOfferingResponses.add(diskOffResp);
         }
 

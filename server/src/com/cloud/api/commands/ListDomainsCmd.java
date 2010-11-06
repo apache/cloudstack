@@ -83,7 +83,7 @@ public class ListDomainsCmd extends BaseListCmd {
         List<DomainResponse> domainResponses = new ArrayList<DomainResponse>();
         for (DomainVO domain : domains) {
             DomainResponse domainResponse = ApiResponseHelper.createDomainResponse(domain);
-            domainResponse.setResponseName("domain");
+            domainResponse.setObjectName("domain");
             domainResponses.add(domainResponse);
         }
 

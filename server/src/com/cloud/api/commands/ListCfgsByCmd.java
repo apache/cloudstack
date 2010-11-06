@@ -79,7 +79,7 @@ public class ListCfgsByCmd extends BaseListCmd {
         List<ConfigurationResponse> configResponses = new ArrayList<ConfigurationResponse>();
         for (ConfigurationVO cfg : configurations) {
             ConfigurationResponse cfgResponse = ApiResponseHelper.createConfigurationResponse(cfg);
-            cfgResponse.setResponseName("configuration");
+            cfgResponse.setObjectName("configuration");
             configResponses.add(cfgResponse);
         }
 

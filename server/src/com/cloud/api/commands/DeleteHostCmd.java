@@ -72,7 +72,6 @@ public class DeleteHostCmd extends BaseCmd {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete host");
         }
 
-        response.setResponseName(getName());
         return response;
     }
 }

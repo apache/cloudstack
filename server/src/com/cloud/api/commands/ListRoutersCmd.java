@@ -111,7 +111,7 @@ public class ListRoutersCmd extends BaseListCmd {
         List<DomainRouterResponse> routerResponses = new ArrayList<DomainRouterResponse>();
         for (DomainRouter router : routers) {
             DomainRouterResponse routerResponse = ApiResponseHelper.createDomainRouterResponse(router);
-            routerResponse.setResponseName("router");
+            routerResponse.setObjectName("router");
             routerResponses.add(routerResponse);
         }
 

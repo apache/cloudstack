@@ -92,7 +92,7 @@ public class ListClustersCmd extends BaseListCmd {
         List<ClusterResponse> clusterResponses = new ArrayList<ClusterResponse>();
         for (ClusterVO cluster : clusters) {
             ClusterResponse clusterResponse = ApiResponseHelper.createClusterResponse(cluster);
-            clusterResponse.setResponseName("cluster");
+            clusterResponse.setObjectName("cluster");
             clusterResponses.add(clusterResponse);
         }
 

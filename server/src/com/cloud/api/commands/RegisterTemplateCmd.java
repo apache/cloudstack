@@ -197,7 +197,7 @@ public class RegisterTemplateCmd extends BaseCmd {
             templateResponse.setZoneId(zone.getId());
             templateResponse.setZoneName(zone.getName());
             templateResponse.setHypervisor(template.getHypervisorType().toString());
-            templateResponse.setResponseName("template");
+            templateResponse.setObjectName("template");
 
             responses.add(templateResponse);
         }

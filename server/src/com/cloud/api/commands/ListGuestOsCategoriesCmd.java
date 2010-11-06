@@ -74,7 +74,7 @@ public class ListGuestOsCategoriesCmd extends BaseListCmd {
             categoryResponse.setId(osCategory.getId());
             categoryResponse.setName(osCategory.getName());
 
-            categoryResponse.setResponseName("oscategory");
+            categoryResponse.setObjectName("oscategory");
             osCatResponses.add(categoryResponse);
         }
 

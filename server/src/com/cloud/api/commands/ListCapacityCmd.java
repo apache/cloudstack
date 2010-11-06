@@ -134,7 +134,7 @@ public class ListCapacityCmd extends BaseListCmd {
                 capacityResponse.setPercentUsed(s_percentFormat.format(0L));
             }
 
-            capacityResponse.setResponseName("capacity");
+            capacityResponse.setObjectName("capacity");
             capacityResponses.add(capacityResponse);
         }
 

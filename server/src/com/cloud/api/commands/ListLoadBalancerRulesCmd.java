@@ -105,7 +105,7 @@ public class ListLoadBalancerRulesCmd extends BaseListCmd {
         List<LoadBalancerResponse> lbResponses = new ArrayList<LoadBalancerResponse>();
         for (LoadBalancerVO loadBalancer : loadBalancers) {
             LoadBalancerResponse lbResponse = ApiResponseHelper.createLoadBalancerResponse(loadBalancer);
-            lbResponse.setResponseName("loadbalancerrule");
+            lbResponse.setObjectName("loadbalancerrule");
             lbResponses.add(lbResponse);
         }
 

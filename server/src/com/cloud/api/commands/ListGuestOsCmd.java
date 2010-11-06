@@ -92,7 +92,7 @@ public class ListGuestOsCmd extends BaseListCmd {
             guestOSResponse.setId(guestOS.getId());
             guestOSResponse.setOsCategoryId(guestOS.getCategoryId());
 
-            guestOSResponse.setResponseName("ostype");
+            guestOSResponse.setObjectName("ostype");
             osResponses.add(guestOSResponse);
         }
 

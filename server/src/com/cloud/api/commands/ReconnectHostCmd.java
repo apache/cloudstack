@@ -90,7 +90,7 @@ public class ReconnectHostCmd extends BaseAsyncCmd {
 	public HostResponse getResponse() {
 	    HostVO host = (HostVO)getResponseObject();
 	    HostResponse response = ApiResponseHelper.createHostResponse(host);
-        response.setResponseName("host");
+        response.setResponseName(getName());
 
 		return response;
 	}

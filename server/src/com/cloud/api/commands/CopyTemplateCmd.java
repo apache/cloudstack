@@ -178,7 +178,8 @@ public class CopyTemplateCmd extends BaseAsyncCmd {
         	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to copy template");
         }
         
-        templateResponse.setResponseName("template");
+        templateResponse.setResponseName(getName());
+        templateResponse.setObjectName("template");
         return templateResponse;
 	}
 }

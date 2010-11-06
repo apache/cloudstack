@@ -71,6 +71,7 @@ public class GetCloudIdentifierCmd extends BaseCmd {
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add config");
         }
+        response.setObjectName("cloudidentifier");
         response.setResponseName(getName());
         return response;
     }

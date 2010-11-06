@@ -146,7 +146,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
         VolumeResponse response = ApiResponseHelper.createVolumeResponse(volume);
         //FIXME - have to be moved to ApiResponseHelper
         response.setSnapshotId(getSnapshotId());  // if the volume was created from a snapshot, snapshotId will be set so we pass it back in the response
-        response.setResponseName("volume");
+        response.setResponseName(getName());
         return response;
     }
 }

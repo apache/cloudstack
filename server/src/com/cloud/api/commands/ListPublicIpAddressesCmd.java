@@ -112,7 +112,7 @@ public class ListPublicIpAddressesCmd extends BaseListCmd {
         List<IPAddressResponse> ipAddrResponses = new ArrayList<IPAddressResponse>();
         for (IPAddressVO ipAddress : ipAddresses) {
             IPAddressResponse ipResponse = ApiResponseHelper.createIPAddressResponse(ipAddress);
-            ipResponse.setResponseName("publicipaddress");
+            ipResponse.setObjectName("publicipaddress");
             ipAddrResponses.add(ipResponse);
         }
 

@@ -91,7 +91,7 @@ public class DisableAccountCmd extends BaseAsyncCmd {
     public AccountResponse getResponse() {
         AccountVO account = (AccountVO)getResponseObject();
         AccountResponse response = ApiResponseHelper.createAccountResponse(account);
-        response.setResponseName("account");
+        response.setResponseName(getName());
         return response;
     }
 }

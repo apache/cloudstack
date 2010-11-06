@@ -85,7 +85,7 @@ public class ListPodsByCmd extends BaseListCmd {
         List<PodResponse> podResponses = new ArrayList<PodResponse>();
         for (HostPodVO pod : pods) {
             PodResponse podResponse = ApiResponseHelper.createPodResponse(pod);
-            podResponse.setResponseName("pod");
+            podResponse.setObjectName("pod");
             podResponses.add(podResponse);
         }
 

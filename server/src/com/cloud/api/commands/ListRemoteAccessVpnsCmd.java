@@ -118,7 +118,7 @@ public class ListRemoteAccessVpnsCmd extends BaseListCmd {
                 vpnResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
             }
 
-            vpnResponse.setResponseName("remoteaccessvpn");
+            vpnResponse.setObjectName("remoteaccessvpn");
             vpnResponses.add(vpnResponse);
         }
 

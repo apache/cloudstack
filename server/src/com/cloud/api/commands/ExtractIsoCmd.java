@@ -108,7 +108,6 @@ public class ExtractIsoCmd extends BaseAsyncCmd {
         UploadVO uploadInfo = ApiDBUtils.findUploadById(uploadId);
         
         ExtractResponse response = new ExtractResponse();
-        response.setResponseName("iso");
         response.setId(id);
         response.setName(ApiDBUtils.findTemplateById(id).getName());        
         response.setZoneId(zoneId);
@@ -120,6 +119,8 @@ public class ExtractIsoCmd extends BaseAsyncCmd {
         //FIX ME - Need to set the url once the gson jar is upgraded since it is throwing an error right now due to a bug.
         //response.setUrl(uploadInfo.getUploadUrl()); 
         response.setUrl(uploadInfo.getUploadUrl().replaceAll("/", "%2F"));
+        response.setResponseName(getName());
+        response.setObjectName("iso");
         return response;
     }
 

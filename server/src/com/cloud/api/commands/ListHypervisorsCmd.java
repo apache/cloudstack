@@ -45,7 +45,7 @@ public class ListHypervisorsCmd extends BaseCmd {
 		for (String hypervisor : hypervisorList) {
 		    HypervisorResponse hypervisorResponse = new HypervisorResponse();
 		    hypervisorResponse.setName(hypervisor);
-		    hypervisorResponse.setResponseName("hypervisor");
+		    hypervisorResponse.setObjectName("hypervisor");
 		    responses.add(hypervisorResponse);
         }
 

@@ -100,7 +100,6 @@ public class DeleteDomainCmd extends BaseAsyncCmd {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete host");
         }
 
-        response.setResponseName("success");
         return response;
     }
 }

@@ -118,6 +118,7 @@ public class ApiResponseHelper {
         userResponse.setUsername(user.getUsername());
         userResponse.setApiKey(user.getApiKey());
         userResponse.setSecretKey(user.getSecretKey());
+        userResponse.setObjectName("user");
         
         return userResponse;
     }
@@ -216,6 +217,7 @@ public class ApiResponseHelper {
 
        accountResponse.setVmStopped(vmStopped);
        accountResponse.setVmRunning(vmRunning);
+       accountResponse.setObjectName("account");
         
        return accountResponse;
     }
@@ -232,6 +234,7 @@ public class ApiResponseHelper {
        if (domain.getChildCount() > 0) {
            domainResponse.setHasChild(true);
        }
+       domainResponse.setObjectName("domain");
        return domainResponse;
    }
    
@@ -248,6 +251,7 @@ public class ApiResponseHelper {
        }
        diskOfferingResponse.setTags(offering.getTags());
        diskOfferingResponse.setCustomized(offering.isCustomized());
+       diskOfferingResponse.setObjectName("diskoffering");
        return diskOfferingResponse;
    }
    
@@ -268,6 +272,7 @@ public class ApiResponseHelper {
        }
        resourceLimitResponse.setResourceType(Integer.valueOf(limit.getType().ordinal()).toString());
        resourceLimitResponse.setMax(limit.getMax());
+       resourceLimitResponse.setObjectName("resourcelimit");
        
        return resourceLimitResponse;
    }
@@ -286,6 +291,7 @@ public class ApiResponseHelper {
        offeringResponse.setOfferHa(offering.getOfferHA());
        offeringResponse.setUseVirtualNetwork(offering.getGuestIpType().equals(GuestIpType.Virtualized));
        offeringResponse.setTags(offering.getTags());
+       offeringResponse.setObjectName("serviceoffering");
        
        return offeringResponse;
    }
@@ -296,6 +302,7 @@ public class ApiResponseHelper {
        cfgResponse.setDescription(cfg.getDescription());
        cfgResponse.setName(cfg.getName());
        cfgResponse.setValue(cfg.getValue());
+       cfgResponse.setObjectName("configuration");
        
        return cfgResponse;
    }
@@ -325,6 +332,7 @@ public class ApiResponseHelper {
            snapshotResponse.setJobId(asyncJob.getId());
            snapshotResponse.setJobStatus(asyncJob.getStatus());
        }
+       snapshotResponse.setObjectName("snapshot");
        return snapshotResponse;
    }
    
@@ -337,6 +345,7 @@ public class ApiResponseHelper {
        policyResponse.setIntervalType(policy.getInterval());
        policyResponse.setMaxSnaps(policy.getMaxSnaps());
        policyResponse.setTimezone(policy.getTimezone());
+       policyResponse.setObjectName("snapshotpolicy");
        
        return policyResponse;
    }
@@ -456,7 +465,7 @@ public class ApiResponseHelper {
        userVmResponse.setGuestOsId(userVm.getGuestOSId());
        //network groups
        userVmResponse.setNetworkGroupList(ApiDBUtils.getNetworkGroupsNamesForVm(userVm.getId()));
-       
+       userVmResponse.setObjectName("virtualmachine");
        return userVmResponse;
    }
    
@@ -510,6 +519,7 @@ public class ApiResponseHelper {
            ConsoleProxyVO proxy = (ConsoleProxyVO)systemVM;
            vmResponse.setActiveViewerSessions(proxy.getActiveSession());
        }
+       vmResponse.setObjectName("systemvm");
        return vmResponse;
    }
    
@@ -557,7 +567,7 @@ public class ApiResponseHelper {
            routerResponse.setDomainId(accountTemp.getDomainId());
            routerResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
        }
-       
+       routerResponse.setObjectName("domainrouter");
        return routerResponse;
    }
    
@@ -652,6 +662,7 @@ public class ApiResponseHelper {
            }
            hostResponse.setEvents(events);
        }
+       hostResponse.setObjectName("host");
        
        return hostResponse;
    }
@@ -682,6 +693,7 @@ public class ApiResponseHelper {
        vlanResponse.setGateway(vlan.getVlanGateway());
        vlanResponse.setNetmask(vlan.getVlanNetmask());
        vlanResponse.setDescription(vlan.getIpRange());
+       vlanResponse.setObjectName("vlan");
        
        return vlanResponse;
    }
@@ -715,7 +727,7 @@ public class ApiResponseHelper {
            ipResponse.setVlanId(ipAddress.getVlanDbId());
            ipResponse.setVlanName(ApiDBUtils.findVlanById(ipAddress.getVlanDbId()).getVlanId());
        }
-       
+       ipResponse.setObjectName("ipaddress");
        return ipResponse;
    }
    
@@ -735,7 +747,7 @@ public class ApiResponseHelper {
            lbResponse.setDomainId(accountTemp.getDomainId());
            lbResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
        }
-       
+       lbResponse.setObjectName("loadbalancer");
        return lbResponse;
    }
    
@@ -756,7 +768,7 @@ public class ApiResponseHelper {
        podResponse.setStartIp(ipRange[0]);
        podResponse.setEndIp(((ipRange.length > 1) && (ipRange[1] != null)) ? ipRange[1] : "");
        podResponse.setGateway(pod.getGateway());
-       
+       podResponse.setObjectName("pod");
        return podResponse;
    }
    
@@ -781,7 +793,7 @@ public class ApiResponseHelper {
        
        zoneResponse.setDomain(dataCenter.getDomain());
        zoneResponse.setDomainId(dataCenter.getDomainId());
-       
+       zoneResponse.setObjectName("zone");
        return zoneResponse;
    }
    
@@ -862,7 +874,7 @@ public class ApiResponseHelper {
        }
        volResponse.setHypervisor(ApiDBUtils.getVolumeHyperType(volume.getId()).toString());
        volResponse.setAttached(volume.getAttached());
-       
+       volResponse.setObjectName("volume");
        return volResponse;
    }
    
@@ -879,7 +891,7 @@ public class ApiResponseHelper {
            groupResponse.setDomainId(accountTemp.getDomainId());
            groupResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
        }
-       
+       groupResponse.setObjectName("instancegroup");
        return groupResponse;
    }
    
@@ -893,7 +905,7 @@ public class ApiResponseHelper {
        preallocLunResponse.setSize(preallocatedLun.getSize());
        preallocLunResponse.setTaken(preallocatedLun.getTaken());
        preallocLunResponse.setTargetIqn(preallocatedLun.getTargetIqn());
-       
+       preallocLunResponse.setObjectName("preallocatedlun");
        return preallocLunResponse;
    }
    
@@ -936,7 +948,7 @@ public class ApiResponseHelper {
            poolResponse.setClusterName(cluster.getName());
        }           
        poolResponse.setTags(ApiDBUtils.getStoragePoolTags(pool.getId()));
-       
+       poolResponse.setObjectName("storagepool");
        return poolResponse;
    }
    
@@ -951,7 +963,7 @@ public class ApiResponseHelper {
        clusterResponse.setPodName(pod.getName());
        DataCenterVO zone = ApiDBUtils.findZoneById(cluster.getDataCenterId());
        clusterResponse.setZoneName(zone.getName());
-       
+       clusterResponse.setObjectName("cluster");
        return clusterResponse;
    }
    
@@ -966,7 +978,7 @@ public class ApiResponseHelper {
            response.setVirtualMachineId(vm.getId());
            response.setVirtualMachineName(vm.getHostName());
        }
-
+       response.setObjectName("portforwardingrule");
        return response;
    }
    

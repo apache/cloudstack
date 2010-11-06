@@ -125,7 +125,7 @@ public class ListVolumesCmd extends BaseListCmd {
         List<VolumeResponse> volResponses = new ArrayList<VolumeResponse>();
         for (VolumeVO volume : volumes) {
             VolumeResponse volResponse = ApiResponseHelper.createVolumeResponse(volume);
-            volResponse.setResponseName("volume");
+            volResponse.setObjectName("volume");
             volResponses.add(volResponse);
         }
 

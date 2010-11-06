@@ -295,6 +295,7 @@ public class DeployVm2Cmd extends BaseAsyncCreateCmd {
         response.setNetworkGroupList(ApiDBUtils.getNetworkGroupsNamesForVm(userVm.getId()));
 
         response.setResponseName(getName());
+        response.setObjectName("virtualmachine");
         return response;
     }
 }

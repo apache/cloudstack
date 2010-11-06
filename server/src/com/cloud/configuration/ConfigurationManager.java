@@ -19,7 +19,7 @@ package com.cloud.configuration;
 
 import java.util.List;
 
-import com.cloud.api.commands.AddConfigCmd;
+import com.cloud.api.commands.CreateCfgCmd;
 import com.cloud.api.commands.CreateDiskOfferingCmd;
 import com.cloud.api.commands.CreatePodCmd;
 import com.cloud.api.commands.CreateServiceOfferingCmd;
@@ -302,5 +302,5 @@ public interface ConfigurationManager extends Manager {
 	 * Persists a config value via the API call
 	 * @return newly created Config object
 	 */
-	ConfigurationVO addConfig(AddConfigCmd cmd);
+	ConfigurationVO addConfig(CreateCfgCmd cmd);
 }

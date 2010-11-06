@@ -86,7 +86,7 @@ public class StopSystemVmCmd extends BaseAsyncCmd {
 	public SystemVmResponse getResponse() {
         VMInstanceVO instance = (VMInstanceVO)getResponseObject();
         SystemVmResponse response = ApiResponseHelper.createSystemVmResponse(instance);
-        response.setResponseName("systemvm");
+        response.setResponseName(getName());
         return response;
 	}
 }

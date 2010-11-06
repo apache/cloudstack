@@ -32,7 +32,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.commands.AddConfigCmd;
+import com.cloud.api.commands.CreateCfgCmd;
 import com.cloud.api.commands.CreateDiskOfferingCmd;
 import com.cloud.api.commands.CreatePodCmd;
 import com.cloud.api.commands.CreateServiceOfferingCmd;
@@ -2178,7 +2178,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     }
 
 	@Override
-	public ConfigurationVO addConfig(AddConfigCmd cmd){
+	public ConfigurationVO addConfig(CreateCfgCmd cmd){
 		String category = cmd.getCategory();
 		String instance = cmd.getInstance();
 		String component = cmd.getComponent();

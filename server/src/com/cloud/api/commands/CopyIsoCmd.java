@@ -175,7 +175,8 @@ public class CopyIsoCmd extends BaseAsyncCmd {
         	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to copy iso");
         }
 
-        isoResponse.setResponseName("iso");
+        isoResponse.setResponseName(getName());
+        isoResponse.setObjectName("iso");
         return isoResponse;
 	}
 

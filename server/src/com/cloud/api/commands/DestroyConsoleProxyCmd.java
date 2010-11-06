@@ -22,8 +22,10 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.event.EventTypes;
@@ -84,10 +86,10 @@ public class DestroyConsoleProxyCmd extends BaseAsyncCmd {
 
 	@Override @SuppressWarnings("unchecked")
 	public SuccessResponse getResponse() {
-        Boolean success = (Boolean)getResponseObject();
-        SuccessResponse response = new SuccessResponse();
-        response.setSuccess(success);
-        response.setResponseName("success");
-        return response;
+		if ((Boolean)getResponseObject()) {
+	    	return new SuccessResponse();
+	    } else {
+	    	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete console proxy");
+	    }
 	}
 }

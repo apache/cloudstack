@@ -17,8 +17,7 @@ import com.google.gson.JsonSerializer;
 import com.google.gson.annotations.SerializedName;
 
 public class ResponseObjectTypeAdapter implements JsonSerializer<ResponseObject> {
-	public static final Logger s_logger = Logger
-			.getLogger(ResponseObjectTypeAdapter.class.getName());
+	public static final Logger s_logger = Logger.getLogger(ResponseObjectTypeAdapter.class.getName());
 
 	@Override
     public JsonElement serialize(ResponseObject responseObj, Type typeOfResponseObj, JsonSerializationContext ctx) {
@@ -76,7 +75,7 @@ public class ResponseObjectTypeAdapter implements JsonSerializer<ResponseObject>
 	            }
 	        }
 	        JsonObject response = new JsonObject();
-	        response.add(responseObj.getResponseName(), obj);
+	        response.add(responseObj.getObjectName(), obj);
 	        return response;
         }
     }

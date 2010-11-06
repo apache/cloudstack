@@ -13,7 +13,7 @@ import com.cloud.storage.StorageManager;
 @Implementation(method="deletePool", manager=StorageManager.class, description="Deletes a storage pool.")
 public class DeletePoolCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeletePoolCmd.class.getName());
-    private static final String s_name = "deletepoolresponse";
+    private static final String s_name = "deletestoragepoolresponse";
     
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -43,16 +43,10 @@ public class DeletePoolCmd extends BaseCmd {
     
     @Override @SuppressWarnings("unchecked")
     public SuccessResponse getResponse() {
-        SuccessResponse response = new SuccessResponse();
-        Boolean responseObject = (Boolean)getResponseObject();
-      
-        if (responseObject != null) {
-        	response.setSuccess(responseObject);
-        } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete pool");
-        }
-
-        response.setResponseName(getName());
-        return response;
+    	if ((Boolean)getResponseObject()) {
+	    	return new SuccessResponse();
+	    } else {
+	    	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete storage pool");
+	    }
     }
 }
