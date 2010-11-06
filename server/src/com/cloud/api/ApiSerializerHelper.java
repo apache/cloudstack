@@ -53,7 +53,7 @@ public class ApiSerializerHelper {
 		    	Gson gson = ApiGsonHelper.getBuilder().create();
 		    	Object obj = gson.fromJson(content, clz);
 		    	if (nameField != null) {
-		    	    ((ResponseObject)obj).setResponseName(nameField);
+		    	    ((ResponseObject)obj).setObjectName(nameField);
 		    	}
 		    	return obj;
 			}
