@@ -26,6 +26,8 @@ public class SuccessResponse extends BaseResponse {
         this.displayText = displayText;
     }
     
+    public SuccessResponse() {}
+    
     public SuccessResponse(String responseName) {
     	super.setResponseName(responseName);
     }

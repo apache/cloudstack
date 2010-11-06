@@ -52,7 +52,7 @@ public class ApiResponseSerializer {
             } else {
                 String jsonStr = gson.toJson(result);
                 if ((jsonStr != null) && !"".equals(jsonStr)) {
-                	if (result instanceof AsyncJobResponse) {
+                	if (result instanceof AsyncJobResponse || result instanceof CreateCmdResponse) {
                 		sb.append(jsonStr);
                 	} else {
                 		sb.append(" { \"" + result.getObjectName() + "\" : " + jsonStr + " } ");
