@@ -2851,6 +2851,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 			EventUtils.saveEvent(userId, account.getId(), EventTypes.EVENT_VPN_USER_ADD, "Added a VPN user for account: " + account.getAccountName() + " username= " + cmd.getUserName());
 		} else {
 			EventUtils.saveEvent(userId, account.getId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VPN_USER_ADD, "Unable to add VPN user for account: ", account.getAccountName() + " username= " + cmd.getUserName());
+			throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to add VPN user for account: "+ account.getAccountName() + " username= " + cmd.getUserName());
 		}
 		return user;
         
