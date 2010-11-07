@@ -235,6 +235,7 @@ function isoJsonToDetailsTab() {
     $thisTab.find("#displaytext_edit").val(fromdb(jsonObj.displaytext));
     
     $thisTab.find("#account").text(fromdb(jsonObj.account));
+	$thisTab.find("#domain").text(fromdb(jsonObj.domain));
                       
     var status = "Ready";
 	if (jsonObj.isready == "false")

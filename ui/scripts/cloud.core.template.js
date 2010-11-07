@@ -274,7 +274,7 @@ function templateJsonToDetailsTab() {
     $thisTab.find("#ostypename_edit").val(jsonObj.ostypeid);    
     
     $thisTab.find("#account").text(fromdb(jsonObj.account));   
-    
+    $thisTab.find("#domain").text(fromdb(jsonObj.domain)); 
     setDateField(jsonObj.created, $thisTab.find("#created"));	
     
     //actions ***
