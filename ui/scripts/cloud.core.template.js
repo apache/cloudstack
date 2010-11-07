@@ -456,9 +456,11 @@ function doEditTemplate2($actionLink, $detailsTab, $midmenuItem1, $readonlyField
 		    data: createURL("command=updateTemplate&id="+id+array1.join("")),
 		    dataType: "json",
 		    async: false,
-		    success: function(json) {		        
-		        //do not update UI here. i.e. do not call templateToMidmenu(), templateJsonToDetailsTab() here. 
-		        //Otherwise, value of $("#ispublic_edit") and $("#isfeatured_edit") will be reverted.	
+		    success: function(json) {				       
+		        $detailsTab.find("#name").text(newName);
+		        $detailsTab.find("#displaytext").text(newDesc);
+		        setBooleanReadField(newPasswordEnabled, $detailsTab.find("#passwordenabled"));		        
+		        $detailsTab.find("#ostypename").text($detailsTab.find("#ostypename_edit option:selected").text());		        
 		    }
 	    });
 	}
@@ -480,30 +482,19 @@ function doEditTemplate2($actionLink, $detailsTab, $midmenuItem1, $readonlyField
 		    data: createURL("command=updateTemplatePermissions&id="+id+array2.join("")),
 		    dataType: "json",
 		    async: false,
-		    success: function(json) {			        						       					    
-		        //do not update UI here. i.e. do not call templateToMidmenu(), templateJsonToDetailsTab() here. 
+		    success: function(json) {			        	        						       					    
+		        setBooleanReadField(newIsPublic, $detailsTab.find("#ispublic"));
+		        setBooleanReadField(newIsFeatured, $detailsTab.find("#isfeatured"));
     		}
 	    });
 	}	
-	
-	$.ajax({
-        data:createURL("command=listTemplates&templatefilter=self&id="+id),
-        dataType: "json",
-        async: false,
-        success: function(json) {            
-            var jsonObj = json.listtemplatesresponse.template[0];           
-            templateToMidmenu(jsonObj, $midmenuItem1);
-            templateJsonToDetailsTab($midmenuItem1);              
-        }
-    });   
-        
+	        
     $editFields.hide();      
     $readonlyFields.show();       
     $("#save_button, #cancel_button").hide();       
 }
 
 function doDeleteTemplate($actionLink, $detailsTab, $midmenuItem1) {   
-    //var $detailsTab = $("#right_panel_content #tab_content_details"); 
     var jsonObj = $detailsTab.data("jsonObj");
 	var id = jsonObj.id;
 	var name = jsonObj.name;			
