@@ -69,7 +69,7 @@ function snapshotJsonToDetailsTab() {
         dataType: "json",
         async: false,
         success: function(json) {  
-            var items = json.listvirtualmachinesresponse.virtualmachine;
+            var items = json.listsnapshotsresponse.snapshot;
             if(items != null && items.length > 0)
                 jsonObj = items[0];
         }
