@@ -1637,6 +1637,7 @@ function vmRouterJSONToTemplate(jsonObj, $template) {
     $template.find("#hostname").text(fromdb(jsonObj.hostname));
     $template.find("#networkdomain").text(fromdb(jsonObj.networkdomain));
     $template.find("#account").text(fromdb(jsonObj.account));  
+	$template.find("#domain").text(fromdb(jsonObj.domain));
     setDateField(jsonObj.created, $template.find("#created"));	
     
     //***** actions (begin) *****
