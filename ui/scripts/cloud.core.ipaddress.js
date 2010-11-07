@@ -919,7 +919,7 @@ function portForwardingJsonToTemplate(jsonObj, $template) {
                                     $rowContainer.show();                                                      
 							    } else if (result.jobstatus == 2) { //Fail
 							        $spinningWheel.hide(); 		
-						            $("#dialog_alert").text(fromdb(result.jobresult)).dialog("open");											    					    
+						            $("#dialog_alert").text(fromdb(result.jobresult.errortext)).dialog("open");											    					    
 							    }
 						    }
 					    },
@@ -1139,7 +1139,7 @@ function loadBalancerJsonToTemplate(jsonObj, $template) {
 							        $spinningWheel.hide();                                   
                                     $rowContainerEdit.hide();  
                                     $rowContainer.show(); 
-								    $("#dialog_alert").text(fromdb(result.jobresult)).dialog("open");											    					    
+								    $("#dialog_alert").text(fromdb(result.jobresult.errortext)).dialog("open");											    					    
 							    }
 						    }
 					    },
@@ -1204,7 +1204,7 @@ function loadBalancerJsonToTemplate(jsonObj, $template) {
 		                                $spinningWheel.hide();   
 									} else if (result.jobstatus == 2) { // Failed
 										//fail reason ("jobresult") is not returned any more after API refactor....
-										//$("#dialog_error").text(fromdb(result.jobresult)).dialog("open");  
+										//$("#dialog_error").text(fromdb(result.jobresult.errortext)).dialog("open");  
 										$("#dialog_error").text("Assigning instance to load balancer rule failed").dialog("open");  								
 										$spinningWheel.hide();   
 									}
@@ -1271,7 +1271,7 @@ function lbVmObjToTemplate(obj, $template) {
 											$(this).remove();
 										});
 									} else if (result.jobstatus == 2) { // Failed													
-										$("#dialog_error").text(fromdb(result.jobresult)).dialog("open");
+										$("#dialog_error").text(fromdb(result.jobresult.errortext)).dialog("open");
 										$spinningWheel.hide();   										
 									}
 								}

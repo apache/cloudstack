@@ -665,6 +665,13 @@ function afterAddingMidMenuItem($midmenuItem1, isSuccessful, extraMessage) {
     if(isSuccessful == true) {
         $midmenuItem1.find("#info_icon").removeClass("error").show();
 	    $midmenuItem1.data("afterActionInfo", ("Adding succeeded.")); 
+	    
+		var $noItemsAvailable = $("#midmenu_container").find("#midmenu_container_no_items_available");
+        if($noItemsAvailable.length > 0) {
+            $noItemsAvailable.slideUp("slow", function() {
+                $(this).remove();
+            });
+        }		   
 	}
 	else {	
 	    $midmenuItem1.find("#content").addClass("addingfailed");
