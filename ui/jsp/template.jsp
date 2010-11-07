@@ -203,7 +203,7 @@
 						</div>
 					</div>
 				</div>
-	            <div class="grid_rows odd">
+	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <%=t.t("Created")%>:</div>

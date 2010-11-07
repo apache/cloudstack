@@ -233,7 +233,8 @@ function isoJsonToDetailsTab() {
     
     $thisTab.find("#displaytext").text(fromdb(jsonObj.displaytext));
     $thisTab.find("#displaytext_edit").val(fromdb(jsonObj.displaytext));
-    
+    $thisTab.find("#ostypename").text(fromdb(jsonObj.ostypename));
+    $thisTab.find("#ostypename_edit").val(jsonObj.ostypeid);    
     $thisTab.find("#account").text(fromdb(jsonObj.account));
 	$thisTab.find("#domain").text(fromdb(jsonObj.domain));
                       
@@ -313,7 +314,9 @@ function isoClearDetailsTab() {
     $thisTab.find("#displaytext").text("");
     $thisTab.find("#displaytext_edit").val("");
     
-    $thisTab.find("#account").text("");    
+    $thisTab.find("#account").text("");  
+	$thisTab.find("#domain").text("");
+	$thisTab.find("#ostypename_edit").val(null);   
     $thisTab.find("#size").text("");  
 	$thisTab.find("#status").text(""); 
 	$thisTab.find("#bootable").text("");
@@ -355,8 +358,8 @@ var isoActionMap = {
 
 function doEditISO($actionLink, $detailsTab, $midmenuItem1) {   
     //var $detailsTab = $("#right_panel_content #tab_content_details");  
-    var $readonlyFields  = $detailsTab.find("#name, #displaytext, #ispublic");
-    var $editFields = $detailsTab.find("#name_edit, #displaytext_edit, #ispublic_edit"); 
+    var $readonlyFields  = $detailsTab.find("#name, #displaytext, #ispublic, #ostypename");
+    var $editFields = $detailsTab.find("#name_edit, #displaytext_edit, #ispublic_edit, #ostypename_edit"); 
            
     $readonlyFields.hide();
     $editFields.show();  
@@ -390,6 +393,11 @@ function doEditISO2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $e
 							
 	var name = $detailsTab.find("#name_edit").val();
 	array1.push("&name="+todb(name));
+	
+	var oldOsTypeId = jsonObj.ostypeid;
+	var newOsTypeId = $detailsTab.find("#ostypename_edit").val();
+	if(newOsTypeId != oldOsTypeId)
+	    array1.push("&ostypeid="+newOsTypeId);
 	
 	var displaytext = $detailsTab.find("#displaytext_edit").val();
 	array1.push("&displayText="+todb(displaytext));
