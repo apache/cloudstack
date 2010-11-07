@@ -27,9 +27,15 @@ import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ServerApiException;
 import com.cloud.api.response.DomainResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.domain.DomainVO;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 
 @Implementation(method="searchForDomainChildren", description="Lists all children domains belonging to a specified domain")
 public class ListDomainChildrenCmd extends BaseListCmd {
@@ -90,5 +96,11 @@ public class ListDomainChildrenCmd extends BaseListCmd {
         response.setResponses(domainResponses);
         response.setResponseName(getName());
         return response;
+    }
+    
+    @Override
+    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        List<DomainVO> result = _mgr.searchForDomainChildren(this);
+        return result;
     }
 }

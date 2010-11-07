@@ -28,6 +28,11 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.IsoVmResponse;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
@@ -114,6 +119,11 @@ public class AttachIsoCmd extends BaseAsyncCmd {
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to attach iso");
         }
-        
+    }
+    
+    @Override
+    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        boolean result = _templateMgr.attachIso(this);
+        return result;
     }
 }

@@ -28,7 +28,13 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.ZoneResponse;
 import com.cloud.configuration.ConfigurationManager;
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 
 @Implementation(method="editZone", manager=ConfigurationManager.class, description="Updates a Zone.")
 public class UpdateZoneCmd extends BaseCmd {
@@ -121,6 +127,7 @@ public class UpdateZoneCmd extends BaseCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
+
     @Override
     public String getName() {
         return s_name;
@@ -137,5 +144,11 @@ public class UpdateZoneCmd extends BaseCmd {
         } else {
         	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update zone; internal error.");
         }
+    }
+    
+    @Override
+    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        DataCenter result = _configService.editZone(this);
+        return result;
     }
 }

@@ -27,6 +27,12 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.FirewallRuleResponse;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.NetworkRuleConflictException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.FirewallRuleVO;
 import com.cloud.network.NetworkManager;
 
@@ -101,4 +107,15 @@ public class CreateIPForwardingRuleCmd extends BaseCmd {
 
         throw new ServerApiException(NET_CREATE_IPFW_RULE_ERROR, "An existing rule for ipAddress / port / protocol of " + ipAddress + " / " + publicPort + " / " + protocol + " exits.");
     }
+    
+    @Override
+    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        try {
+            FirewallRuleVO result = _networkMgr.createPortForwardingRule(this);
+            return result;
+        } catch (NetworkRuleConflictException ex) {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
+        }
+    }
+
 }

@@ -17,6 +17,7 @@
  */
 package com.cloud.api.commands;
 
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,9 +28,17 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ServerApiException;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.TemplateResponse;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
@@ -205,4 +214,16 @@ public class RegisterTemplateCmd extends BaseCmd {
         response.setResponses(responses);
         return response;
 	}
+	
+    @Override
+    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException{
+        try {
+            VMTemplateVO result = _templateMgr.registerTemplate(this);
+            return result;
+        } catch (ResourceAllocationException ex) {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
+        } catch (URISyntaxException ex1) {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex1.getMessage());
+        }
+    }
 }

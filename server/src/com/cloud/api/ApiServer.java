@@ -79,7 +79,6 @@ import org.apache.http.protocol.ResponseServer;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.response.ApiResponseSerializer;
-import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -110,7 +109,7 @@ public class ApiServer implements HttpRequestHandler {
     private static final short READ_ONLY_ADMIN_COMMAND = 4;
     private static final short USER_COMMAND = 8;
     private Properties _apiCommands = null;
-    private AsyncJobManager _asyncMgr;
+    //private AsyncJobManager _asyncMgr;
     private ApiDispatcher _dispatcher;
     private ManagementServer _ms = null;
 
@@ -187,7 +186,7 @@ public class ApiServer implements HttpRequestHandler {
 
         _ms = (ManagementServer)ComponentLocator.getComponent(ManagementServer.Name);
         ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
-        _asyncMgr = locator.getManager(AsyncJobManager.class);
+        //_asyncMgr = locator.getManager(AsyncJobManager.class);
         _dispatcher = ApiDispatcher.getInstance();
 
         int apiPort = 8096; // default port
@@ -351,8 +350,9 @@ public class ApiServer implements HttpRequestHandler {
             Long objectId = null;
             if (cmdObj instanceof BaseAsyncCreateCmd) {
                 BaseAsyncCreateCmd createCmd = (BaseAsyncCreateCmd)cmdObj;
-                objectId = _dispatcher.dispatchCreateCmd(createCmd, params);
-                createCmd.setId(objectId);
+                _dispatcher.dispatchCreateCmd(createCmd, params);
+                objectId = createCmd.getId();
+                //createCmd.setId(objectId);
                 params.put("id", objectId.toString());
             } else {
                 ApiDispatcher.setupParameters(cmdObj, params);
@@ -391,7 +391,7 @@ public class ApiServer implements HttpRequestHandler {
             job.setCmd(cmdObj.getClass().getName());
             job.setCmdInfo(ApiGsonHelper.getBuilder().create().toJson(params));
 
-            long jobId = _asyncMgr.submitAsyncJob(job);
+            long jobId = BaseCmd._asyncMgr.submitAsyncJob(job);
             if (objectId != null) {
                 return ((BaseAsyncCreateCmd)asyncCmd).getResponse(jobId, objectId);
             }

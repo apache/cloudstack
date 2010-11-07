@@ -26,7 +26,13 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ServerApiException;
 import com.cloud.api.response.TemplatePermissionsResponse;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
@@ -112,5 +118,11 @@ public class ListTemplateOrIsoPermissionsCmd extends BaseListCmd {
     
     protected Logger getLogger() {
     	return Logger.getLogger(UpdateTemplateOrIsoPermissionsCmd.class.getName());    
+    }
+    
+    @Override
+    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        List<String> result = _mgr.listTemplatePermissions(this);
+        return result;
     }
 }

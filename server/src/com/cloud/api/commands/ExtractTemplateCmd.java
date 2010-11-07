@@ -22,10 +22,19 @@ import org.apache.log4j.Logger;
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ServerApiException;
 import com.cloud.api.response.ExtractResponse;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InternalErrorException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.template.TemplateManager;
@@ -128,4 +137,14 @@ public class ExtractTemplateCmd extends BaseAsyncCmd {
         response.setUrl(uploadInfo.getUploadUrl().replaceAll("/", "%2F"));
         return response;
 	}
+	
+    @Override
+    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException{
+        try {
+            Long result = _templateMgr.extract(this);
+            return result;
+        } catch (InternalErrorException ex) {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
+        }
+    }
 }

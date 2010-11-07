@@ -28,6 +28,11 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
@@ -90,4 +95,10 @@ public class DetachIsoCmd extends BaseAsyncCmd {
 	    	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to detach iso");
 	    }
 	}
+	
+    @Override
+    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        boolean result = _templateMgr.detachIso(this);
+        return result;
+    }
 }

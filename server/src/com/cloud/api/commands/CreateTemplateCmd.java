@@ -25,9 +25,16 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ServerApiException;
 import com.cloud.api.response.TemplateResponse;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.VMTemplateHostVO;
@@ -214,5 +221,18 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
         response.setObjectName("template");
         response.setResponseName(getName());
         return response;
+    }
+    
+    @Override
+    public void callCreate() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException{
+        VMTemplateVO template = _userVmService.createPrivateTemplateRecord(this);
+        if (template != null)
+            this.setId(template.getId());
+    }
+    
+    @Override
+    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        VMTemplateVO result = _userVmService.createPrivateTemplate(this);
+        return result;
     }
 }

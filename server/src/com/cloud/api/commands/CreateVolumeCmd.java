@@ -26,15 +26,21 @@ import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ServerApiException;
 import com.cloud.api.response.VolumeResponse;
 import com.cloud.event.EventTypes;
-import com.cloud.storage.StorageManager;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(createMethod="allocVolume", method="createVolume", manager=StorageManager.class, description="Creates a disk volume from a disk offering. " +
-																				  "This disk volume must still be attached to a virtual machine to make use of it.")
+@Implementation(description="Creates a disk volume from a disk offering. This disk volume must still be attached to a virtual machine to make use of it.")
 public class CreateVolumeCmd extends BaseAsyncCreateCmd {
 	public static final Logger s_logger = Logger.getLogger(CreateVolumeCmd.class.getName());
     private static final String s_name = "createvolumeresponse";
@@ -101,7 +107,6 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
     @Override
     public String getName() {
         return s_name;
@@ -139,7 +144,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     public String getEventDescription() {
         return  "creating volume: " + getVolumeName() + ((getSnapshotId() == null) ? "" : " from snapshot: " + getSnapshotId());
     }
-
+    
     @Override @SuppressWarnings("unchecked")
     public VolumeResponse getResponse() {
         VolumeVO volume = (VolumeVO)getResponseObject();
@@ -148,5 +153,19 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
         response.setSnapshotId(getSnapshotId());  // if the volume was created from a snapshot, snapshotId will be set so we pass it back in the response
         response.setResponseName(getName());
         return response;
+    }
+    
+    @Override
+    public void callCreate() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException{
+        Volume volume = _storageMgr.allocVolume(this);
+        if (volume != null) {
+            this.setId(volume.getId());
+        }
+    }
+    
+    @Override
+    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        Volume volume = _storageMgr.createVolume(this);
+        return volume;
     }
 }

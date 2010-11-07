@@ -26,8 +26,14 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.ConfigurationResponse;
+import com.cloud.configuration.Configuration;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ConfigurationVO;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 
 @Implementation(method="addConfig", manager=ConfigurationManager.class)
 public class CreateCfgCmd extends BaseCmd {
@@ -91,7 +97,6 @@ public class CreateCfgCmd extends BaseCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-
     @Override
     public String getName() {
         return s_name;
@@ -107,5 +112,11 @@ public class CreateCfgCmd extends BaseCmd {
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add config");
         }
+    }
+    
+    @Override
+    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        Configuration result = _configService.addConfig(this);
+        return result;
     }
 }

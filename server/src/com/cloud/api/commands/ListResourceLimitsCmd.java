@@ -28,9 +28,16 @@ import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ServerApiException;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.ResourceLimitResponse;
+import com.cloud.configuration.ResourceLimit;
 import com.cloud.configuration.ResourceLimitVO;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.AccountManager;
 
 @Implementation(method="searchForLimits", manager=AccountManager.class, description="Lists resource limits.")
@@ -82,7 +89,7 @@ public class ListResourceLimitsCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
+    
     @Override
     public String getName() {
         return s_name;
@@ -90,11 +97,11 @@ public class ListResourceLimitsCmd extends BaseListCmd {
 
     @Override @SuppressWarnings("unchecked")
     public ListResponse<ResourceLimitResponse> getResponse() {
-        List<ResourceLimitVO> limits = (List<ResourceLimitVO>)getResponseObject();
+        List<ResourceLimit> limits = (List<ResourceLimit>)getResponseObject();
 
         ListResponse<ResourceLimitResponse> response = new ListResponse<ResourceLimitResponse>();
         List<ResourceLimitResponse> limitResponses = new ArrayList<ResourceLimitResponse>();
-        for (ResourceLimitVO limit : limits) {
+        for (ResourceLimit limit : limits) {
             ResourceLimitResponse resourceLimitResponse = ApiResponseHelper.createResourceLimitResponse(limit);
             resourceLimitResponse.setObjectName("resourcelimit");
             limitResponses.add(resourceLimitResponse);
@@ -103,5 +110,11 @@ public class ListResourceLimitsCmd extends BaseListCmd {
         response.setResponses(limitResponses);
         response.setResponseName(getName());
         return response;
+    }
+    
+    @Override
+    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        List<ResourceLimitVO> result = _accountService.searchForLimits(this);
+        return result;
     }
 }

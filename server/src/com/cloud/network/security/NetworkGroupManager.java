@@ -63,7 +63,7 @@ public interface NetworkGroupManager extends Manager {
 
 	boolean revokeNetworkGroupIngress(RevokeNetworkGroupIngressCmd cmd);
 	
-	public void deleteNetworkGroup(DeleteNetworkGroupCmd cmd) throws ResourceInUseException, PermissionDeniedException, InvalidParameterValueException;
+	boolean deleteNetworkGroup(DeleteNetworkGroupCmd cmd) throws ResourceInUseException, PermissionDeniedException, InvalidParameterValueException;
 
     /**
      * Search for network groups and associated ingress rules for the given account, domain, group name, and/or keyword.

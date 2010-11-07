@@ -24,8 +24,14 @@ import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ServerApiException;
 import com.cloud.api.response.UserResponse;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.Account;
 import com.cloud.user.UserAccount;
 import com.cloud.user.UserContext;
@@ -86,4 +92,10 @@ public class DisableUserCmd extends BaseAsyncCmd {
         response.setResponseName(getName());
         return response;
 	}
+	
+    @Override
+    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        UserAccount result = _accountService.disableUser(this);
+        return result;
+    }
 }

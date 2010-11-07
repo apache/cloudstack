@@ -1161,7 +1161,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override @DB
-    public void assignToLoadBalancer(AssignToLoadBalancerRuleCmd cmd)  throws NetworkRuleConflictException {
+    public boolean assignToLoadBalancer(AssignToLoadBalancerRuleCmd cmd)  throws NetworkRuleConflictException {
         Long loadBalancerId = cmd.getLoadBalancerId();
         Long instanceIdParam = cmd.getVirtualMachineId();
         List<Long> instanceIds = cmd.getVirtualMachineIds();
@@ -1312,7 +1312,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         // if there's no work to do, bail out early rather than reconfiguring the proxy with the existing rules
         if (firewallRulesToApply.isEmpty()) {
-            return;
+            return true;
         }
 
         IPAddressVO ipAddr = _ipAddressDao.findById(loadBalancer.getIpAddress());
@@ -1391,6 +1391,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 _loadBalancerDao.releaseFromLockTable(loadBalancerId);
             }
         }
+        return true;
     }
 
     @Override @DB

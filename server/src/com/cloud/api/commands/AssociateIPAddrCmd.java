@@ -24,7 +24,14 @@ import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ServerApiException;
 import com.cloud.api.response.IPAddressResponse;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.NetworkManager;
 
@@ -68,6 +75,7 @@ public class AssociateIPAddrCmd extends BaseCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
+
     public String getName() {
         return s_name;
     }
@@ -82,5 +90,16 @@ public class AssociateIPAddrCmd extends BaseCmd {
         IPAddressResponse ipResponse = ApiResponseHelper.createIPAddressResponse(ipAddress);
         ipResponse.setResponseName(getName());
         return ipResponse;
+    }
+    
+    @Override
+    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        try {
+            IPAddressVO result = _networkMgr.associateIP(this);
+            return result;
+        } catch (ResourceAllocationException ex) {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
+        }
+
     }
 }

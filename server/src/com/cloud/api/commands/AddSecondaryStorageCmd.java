@@ -18,7 +18,6 @@
 
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.log4j.Logger;
@@ -31,7 +30,12 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.HostResponse;
-import com.cloud.api.response.ListResponse;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.DiscoveryException;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.HostVO;
 
 @Implementation(method="discoverHosts", manager=AgentManager.class, description="Adds secondary storage.")
@@ -86,5 +90,15 @@ public class AddSecondaryStorageCmd extends BaseCmd {
 	        throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add secondary storage");
 	    }
 	    return hostResponse;
+    }
+    
+    @Override
+    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        try {
+            List<HostVO> result = _agentMgr.discoverHosts(this);
+            return result;
+        } catch (DiscoveryException ex) {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
+        }
     }
 }

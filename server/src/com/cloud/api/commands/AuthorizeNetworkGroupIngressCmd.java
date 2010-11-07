@@ -32,9 +32,15 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ServerApiException;
 import com.cloud.api.response.IngressRuleResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.security.IngressRuleVO;
 import com.cloud.network.security.NetworkGroupManager;
 import com.cloud.user.Account;
@@ -241,4 +247,12 @@ public class AuthorizeNetworkGroupIngressCmd extends BaseAsyncCmd {
         response.setResponseName("securitygroupingressrule");
 		return response;
 	}
+	
+    @Override
+    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        List<IngressRuleVO> result = _networkGroupMgr.authorizeNetworkGroupIngress(this);
+        return result;
+    }
+	
+	
 }

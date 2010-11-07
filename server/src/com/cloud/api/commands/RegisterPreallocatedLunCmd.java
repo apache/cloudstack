@@ -22,7 +22,13 @@ import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ServerApiException;
 import com.cloud.api.response.PreallocatedLunResponse;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.storage.preallocatedlun.PreallocatedLunVO;
 
 @Implementation(method="registerPreallocatedLun")
@@ -98,5 +104,11 @@ public class RegisterPreallocatedLunCmd extends BaseCmd {
         PreallocatedLunResponse response = ApiResponseHelper.createPreallocatedLunResponse(preallocatedLun);
         response.setResponseName(getName());
         return response;
+    }
+    
+    @Override
+    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        PreallocatedLunVO result = _mgr.registerPreallocatedLun(this);
+        return result;
     }
 }

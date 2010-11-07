@@ -40,12 +40,13 @@ import com.cloud.api.ApiSerializerHelper;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.commands.QueryAsyncJobResultCmd;
 import com.cloud.api.response.ExceptionResponse;
 import com.cloud.async.dao.AsyncJobDao;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.maid.StackMaid;
-import com.cloud.serializer.SerializerHelper;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
@@ -256,6 +257,11 @@ public class AsyncJobManagerImpl implements AsyncJobManager {
 		} else {
 		    throw new AsyncCommandQueued(queue, "job-" + job.getId() + " queued");
 		}
+    }
+    
+    @Override
+    public AsyncJobResult queryAsyncJobResult(QueryAsyncJobResultCmd cmd) throws PermissionDeniedException {
+        return queryAsyncJobResult(cmd.getId());
     }
 
     @Override @DB

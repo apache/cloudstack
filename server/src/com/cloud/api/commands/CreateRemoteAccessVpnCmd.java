@@ -22,10 +22,18 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCreateCmd;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ServerApiException;
 import com.cloud.api.response.RemoteAccessVpnResponse;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.RemoteAccessVpnVO;
 import com.cloud.user.Account;
@@ -58,6 +66,7 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
+    
     public String getPublicIp() {
 		return publicIp;
 	}
@@ -144,7 +153,23 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
 	public String getEventType() {
 		return EventTypes.EVENT_REMOTE_ACCESS_VPN_CREATE;
 	}
+	
+    @Override
+    public void callCreate() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException{
+        RemoteAccessVpnVO vpn = _networkMgr.createRemoteAccessVpn(this);
+        if (vpn != null) {
+            this.setId(vpn.getId());
+        }
+    }
 
-
+    @Override
+    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        try {
+        RemoteAccessVpnVO result = _networkMgr.startRemoteAccessVpn(this);
+        return result;
+        } catch (ResourceUnavailableException ex) {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
+        }
+    }
 	
 }

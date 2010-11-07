@@ -763,7 +763,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
 	    //verify parameters
         DomainRouterVO router = _routerDao.findById(routerId);
         if (router == null) {
-        	throw new PermissionDeniedException ("Unable to start router with id " + routerId + ". Permisssion denied");
+        	throw new InvalidParameterValueException ("Unable to find router with id " + routerId);
         }
         if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), router.getDomainId())) {
             throw new PermissionDeniedException ("Unable to start router with id " + routerId + ". Permission denied.");
@@ -1265,7 +1265,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
 	    // verify parameters
         DomainRouterVO router = _routerDao.findById(routerId);
         if (router == null) {
-        	throw new PermissionDeniedException ("Unable to stop router with id " + routerId + ". Permission denied.");
+        	throw new InvalidParameterValueException ("Unable to find router with id " + routerId);
         }
 
         if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), router.getDomainId())) {
@@ -1413,7 +1413,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         //verify parameters
         DomainRouterVO router = _routerDao.findById(routerId);
         if (router == null) {
-        	throw new PermissionDeniedException("Unable to reboot domain router with id " + routerId + ". Permission denied");
+        	throw new InvalidParameterValueException("Unable to find domain router with id " + routerId + ".");
         }
 
         if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), router.getDomainId())) {

@@ -25,7 +25,7 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name="configuration")
-public class ConfigurationVO {
+public class ConfigurationVO implements Configuration{
 	@Column(name="instance")
     private String instance;
 

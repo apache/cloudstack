@@ -1111,14 +1111,14 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
 
 	@DB
 	@Override
-	public void deleteNetworkGroup(DeleteNetworkGroupCmd cmd) throws ResourceInUseException, PermissionDeniedException, InvalidParameterValueException{
-		String name = cmd.getName();
+	public boolean deleteNetworkGroup(DeleteNetworkGroupCmd cmd) throws ResourceInUseException, PermissionDeniedException, InvalidParameterValueException{
+		String name = cmd.getNetworkGroupName();
 		String accountName = cmd.getAccountName();
 		Long domainId = cmd.getDomainId();
 		Account account = (Account)UserContext.current().getAccount();
 		
 		if (!_enabled) {
-			return ;
+			return true;
 		}
 		
 		//Verify input parameters
@@ -1168,7 +1168,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
 		final NetworkGroupVO group = _networkGroupDao.lockRow(groupId, true);
 		if (group == null) {
 			s_logger.info("Not deleting group -- cannot find id " + groupId);
-			return;
+			return false;
 		}
 		
 		if (group.getName().equalsIgnoreCase(NetworkGroupManager.DEFAULT_GROUP_NAME)) {
@@ -1189,6 +1189,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
 		}
         _networkGroupDao.expunge(groupId);
         txn.commit();
+        return true;
 	}
 
     @Override

@@ -258,7 +258,7 @@ public interface NetworkManager {
     /**
      * Assign a virtual machine, or list of virtual machines, to a load balancer.
      */
-    void assignToLoadBalancer(AssignToLoadBalancerRuleCmd cmd)  throws NetworkRuleConflictException;
+    boolean assignToLoadBalancer(AssignToLoadBalancerRuleCmd cmd)  throws NetworkRuleConflictException;
 
     public boolean removeFromLoadBalancer(RemoveFromLoadBalancerRuleCmd cmd);
     

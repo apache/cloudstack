@@ -29,6 +29,11 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.domain.DomainVO;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.Account;
 
 @Implementation(method="deleteDomain", description="Deletes a specified domain")
@@ -95,5 +100,11 @@ public class DeleteDomainCmd extends BaseAsyncCmd {
 	    } else {
 	    	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete delete domain");
 	    }
+    }
+    
+    @Override
+    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        boolean result = _mgr.deleteDomain(this);
+        return result;
     }
 }

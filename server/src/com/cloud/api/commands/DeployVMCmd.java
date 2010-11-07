@@ -26,13 +26,23 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ServerApiException;
 import com.cloud.api.response.UserVmResponse;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.StorageUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.exception.ExecutionException;
 
 @Implementation(method="deployVirtualMachine", description="Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.")
 public class DeployVMCmd extends BaseAsyncCmd {
@@ -148,7 +158,7 @@ public class DeployVMCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
+    
     @Override
     public String getName() {
         return s_name;
@@ -198,5 +208,17 @@ public class DeployVMCmd extends BaseAsyncCmd {
 //        } 
         response.setResponseName(getName());
         return response;
+    }
+    
+    @Override
+    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, StorageUnavailableException{
+        try {
+            UserVm result = _mgr.deployVirtualMachine(this);
+            return result;
+        } catch (ResourceAllocationException ex) {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
+        } catch (ExecutionException ex1) {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex1.getMessage());
+        }
     }
 }

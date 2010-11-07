@@ -18,6 +18,7 @@
 
 package com.cloud.async;
 
+import com.cloud.api.commands.QueryAsyncJobResultCmd;
 import com.cloud.utils.component.Manager;
 
 public interface AsyncJobManager extends Manager {
@@ -28,11 +29,19 @@ public interface AsyncJobManager extends Manager {
 	
 	public long submitAsyncJob(AsyncJobVO job);
 	public long submitAsyncJob(AsyncJobVO job, boolean scheduleJobExecutionInContext);
-	public AsyncJobResult queryAsyncJobResult(long jobId);
+	public AsyncJobResult queryAsyncJobResult(long jobId);    
+	
     public void completeAsyncJob(long jobId, int jobStatus, int resultCode, Object resultObject);
     public void updateAsyncJobStatus(long jobId, int processStatus, Object resultObject);
     public void updateAsyncJobAttachment(long jobId, String instanceType, Long instanceId);
     
     public void syncAsyncJobExecution(AsyncJobVO job, String syncObjType, long syncObjId);
     public void releaseSyncSource(AsyncJobExecutor executor);
+    
+    /**
+     * Queries for the status or final result of an async job.
+     * @param cmd the command that specifies the job id
+     * @return an async-call result object
+     */
+    public AsyncJobResult queryAsyncJobResult(QueryAsyncJobResultCmd cmd);
 }

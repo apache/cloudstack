@@ -18,8 +18,6 @@
 package com.cloud.api;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -30,11 +28,16 @@ import java.util.StringTokenizer;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd.CommandType;
-import com.cloud.async.AsyncCommandQueued;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.server.ManagementServer;
+import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -58,116 +61,85 @@ public class ApiDispatcher {
         _locator = ComponentLocator.getLocator(ManagementServer.Name);
     }
 
-    public Long dispatchCreateCmd(BaseAsyncCreateCmd cmd, Map<String, String> params) {
+    public void dispatchCreateCmd(BaseAsyncCreateCmd cmd, Map<String, String> params) {
         setupParameters(cmd, params);
 
-        Implementation impl = cmd.getClass().getAnnotation(Implementation.class);
-        if (impl == null) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to execute create command " + cmd.getClass().getName() + ", no implementation specified.");
-        }
-
-        String methodName = impl.createMethod();
-        Class<?> mgrClass = impl.manager();
-        Object mgr = null;
-        if (mgrClass.equals(ManagementServer.class)) {
-            mgr = ComponentLocator.getComponent(ManagementServer.Name);
-        } else {
-            mgr = _locator.getManager(impl.manager());
-        }
-
-        if (mgr == null) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to execute method " + methodName + " for command " + cmd.getClass().getSimpleName() + ", unable to find manager " + impl.manager() + " to execute method " + methodName);
-        }
-
         try {
-            Method method = mgr.getClass().getMethod(methodName, cmd.getClass());
-            Object dbObject = method.invoke(mgr, cmd);
-
-            if (dbObject == null) {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Create method " + methodName + " in class " + cmd.getClass().getSimpleName() + " failed to create an object.");
-            }
-
-            Method getIdMethod = dbObject.getClass().getMethod("getId");
-            Object id = getIdMethod.invoke(dbObject);
-            
-            return (Long)id;
-        } catch (NoSuchMethodException nsme) {
-            s_logger.warn("Exception executing method " + methodName + " for command " + cmd.getClass().getSimpleName(), nsme);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to execute method " + methodName + " for command " + cmd.getClass().getSimpleName() + ", unable to find implementation.");
-        } catch (InvocationTargetException ite) {
-            Throwable cause = ite.getCause();
-            if (cause instanceof InvalidParameterValueException) {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, cause.getMessage());
-            } else if (cause instanceof IllegalArgumentException) {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, cause.getMessage());
-            } else if (cause instanceof PermissionDeniedException) {
-                throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, cause.getMessage());
-            } else if (cause instanceof ResourceAllocationException){
-            	throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, cause.getMessage());
-            } else if (cause instanceof ServerApiException) {
-                throw (ServerApiException)cause;
-            }
-            s_logger.warn("Exception executing method " + methodName + " for command " + cmd.getClass().getSimpleName(), ite);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to execute method " + methodName + " for command " + cmd.getClass().getSimpleName() + ", internal error in the implementation.");
-        } catch (IllegalAccessException iae) {
-            s_logger.warn("Exception executing method " + methodName + " for command " + cmd.getClass().getSimpleName(), iae);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to execute method " + methodName + " for command " + cmd.getClass().getSimpleName() + ", internal error in the implementation.");
-        } catch (IllegalArgumentException iArgEx) {
-            s_logger.warn("Exception executing method " + methodName + " for command " + cmd.getClass().getSimpleName(), iArgEx);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to execute method " + methodName + " for command " + cmd.getClass().getSimpleName() + ", internal error in the implementation.");
+            cmd.callCreate();
+        } catch (InvalidParameterValueException e1) {
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, e1.getMessage());
+        } catch (IllegalArgumentException e2) {
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, e2.getMessage());
+        } catch (PermissionDeniedException e3) {
+            throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, e3.getMessage());
+        } catch (InsufficientAddressCapacityException e4) {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e4.getMessage());
+        } catch (InsufficientCapacityException e5) {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e5.getMessage());
+        } catch (ConcurrentOperationException e6) {
+            s_logger.error("Exception while executing " + cmd.getName() + ":", e6);
+            if (UserContext.current().getAccount() == null || UserContext.current().getAccount().getType() == Account.ACCOUNT_TYPE_ADMIN)
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e6.getMessage());
+            else
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, BaseCmd.USER_ERROR_MESSAGE);
+        } catch (ResourceUnavailableException e7) {
+            s_logger.error("Exception while executing " + cmd.getName() + ":", e7);
+            if (UserContext.current().getAccount() == null || UserContext.current().getAccount().getType() == Account.ACCOUNT_TYPE_ADMIN)
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e7.getMessage());
+            else
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, BaseCmd.USER_ERROR_MESSAGE);
+        } catch (ResourceAllocationException e8) {
+            s_logger.error("Exception while executing " + cmd.getName() + ":", e8);
+            if (UserContext.current().getAccount() == null || UserContext.current().getAccount().getType() == Account.ACCOUNT_TYPE_ADMIN)
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e8.getMessage());
+            else
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, BaseCmd.USER_ERROR_MESSAGE);
+        } catch (CloudRuntimeException e9) {
+            s_logger.error("Exception while executing " + cmd.getName() + ":", e9);
+            if (UserContext.current().getAccount() == null || UserContext.current().getAccount().getType() == Account.ACCOUNT_TYPE_ADMIN)
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e9.getMessage());
+            else
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, BaseCmd.USER_ERROR_MESSAGE);
         }
     }
 
     public void dispatch(BaseCmd cmd, Map<String, String> params) {
         setupParameters(cmd, params);
 
-        Implementation impl = cmd.getClass().getAnnotation(Implementation.class);
-        if (impl == null) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to execute command " + cmd.getClass().getName() + ", no implementation specified.");
-        }
-
-        String methodName = impl.method();
-        Class<?> mgrClass = impl.manager();
-        Object mgr = null;
-        if (mgrClass.equals(ManagementServer.class)) {
-            mgr = ComponentLocator.getComponent(ManagementServer.Name);
-        } else {
-            mgr = _locator.getManager(impl.manager());
-        }
-
-        if (mgr == null) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to execute method " + methodName + " for command " + cmd.getClass().getSimpleName() + ", unable to find manager " + impl.manager() + " to execute method " + methodName);
-        }
-
         try {
-            Method method = mgr.getClass().getMethod(methodName, cmd.getClass());
-            Object result = method.invoke(mgr, cmd);
-            cmd.setResponseObject(result);
-        } catch (NoSuchMethodException nsme) {
-            s_logger.warn("Exception executing method " + methodName + " for command " + cmd.getClass().getSimpleName(), nsme);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to execute method " + methodName + " for command " + cmd.getClass().getSimpleName() + ", unable to find implementation.");
-        } catch (InvocationTargetException ite) {
-            Throwable cause = ite.getCause();
-            if (cause instanceof AsyncCommandQueued) {
-                throw (AsyncCommandQueued)cause;
-            }
-            if (cause instanceof InvalidParameterValueException) {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, cause.getMessage());
-            } else if (cause instanceof IllegalArgumentException) {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, cause.getMessage());
-            } else if (cause instanceof PermissionDeniedException) {
-                throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, cause.getMessage());
-            } else if (cause instanceof ServerApiException) {
-                throw (ServerApiException)cause;
-            }
-            s_logger.warn("Exception executing method " + methodName + " for command " + cmd.getClass().getSimpleName(), ite);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to execute method " + methodName + " for command " + cmd.getClass().getSimpleName() + ", internal error in the implementation.");
-        } catch (IllegalAccessException iae) {
-            s_logger.warn("Exception executing method " + methodName + " for command " + cmd.getClass().getSimpleName(), iae);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to execute method " + methodName + " for command " + cmd.getClass().getSimpleName() + ", internal error in the implementation.");
-        } catch (IllegalArgumentException iArgEx) {
-            s_logger.warn("Exception executing method " + methodName + " for command " + cmd.getClass().getSimpleName(), iArgEx);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to execute method " + methodName + " for command " + cmd.getClass().getSimpleName() + ", internal error in the implementation.");
+            Object result = cmd.execute();
+            if (!(result instanceof ResponseObject)) {
+                cmd.setResponseObject(result);
+            }        
+           
+        } catch (InvalidParameterValueException e1) {
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, e1.getMessage());
+        } catch (IllegalArgumentException e2) {
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, e2.getMessage());
+        } catch (PermissionDeniedException e3) {
+            throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, e3.getMessage());
+        } catch (InsufficientAddressCapacityException e4) {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e4.getMessage());
+        } catch (InsufficientCapacityException e5) {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e5.getMessage());
+        } catch (ConcurrentOperationException e6) {
+            s_logger.error("Exception while executing " + cmd.getName() + ":", e6);
+            if (UserContext.current().getAccount() == null || UserContext.current().getAccount().getType() == Account.ACCOUNT_TYPE_ADMIN)
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e6.getMessage());
+            else
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, BaseCmd.USER_ERROR_MESSAGE);
+        } catch (ResourceUnavailableException e7) {
+            s_logger.error("Exception while executing " + cmd.getName() + ":", e7);
+            if (UserContext.current().getAccount() == null || UserContext.current().getAccount().getType() == Account.ACCOUNT_TYPE_ADMIN)
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e7.getMessage());
+            else
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, BaseCmd.USER_ERROR_MESSAGE);
+        } catch (CloudRuntimeException e8) {
+            s_logger.error("Exception while executing " + cmd.getName() + ":", e8);
+            if (UserContext.current().getAccount() == null || UserContext.current().getAccount().getType() == Account.ACCOUNT_TYPE_ADMIN)
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e8.getMessage());
+            else
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, BaseCmd.USER_ERROR_MESSAGE);
         }
     }
 
@@ -214,14 +186,15 @@ public class ApiDispatcher {
                 }
                 throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to parse date " + paramObj + " for command " + cmd.getName() + ", please pass dates in the format yyyy-MM-dd");
             } catch (CloudRuntimeException cloudEx) {
-                // FIXME:  Better error message?  This only happens if the API command is not executable, which typically means there was
-                //         and IllegalAccessException setting one of the parameters.
+                // FIXME: Better error message? This only happens if the API command is not executable, which typically means
+                // there was
+                // and IllegalAccessException setting one of the parameters.
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Internal error executing API command " + cmd.getName());
             }
         }
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     private static void setFieldValue(Field field, BaseCmd cmdObj, Object paramObj, Parameter annotation) throws IllegalArgumentException, ParseException {
         try {
             field.setAccessible(true);

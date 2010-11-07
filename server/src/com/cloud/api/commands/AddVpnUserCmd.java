@@ -24,9 +24,14 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.response.SuccessResponse;
+import com.cloud.api.ServerApiException;
 import com.cloud.api.response.VpnUsersResponse;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.VpnUserVO;
 import com.cloud.user.Account;
@@ -86,8 +91,6 @@ public class AddVpnUserCmd extends BaseAsyncCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-   
-
 	public String getName() {
         return s_name;
     }
@@ -142,6 +145,10 @@ public class AddVpnUserCmd extends BaseAsyncCmd {
 		return EventTypes.EVENT_VPN_USER_ADD;
 	}
 
-
+    @Override
+    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        VpnUserVO result = _networkMgr.addVpnUser(this);
+        return result;
+    }
 	
 }

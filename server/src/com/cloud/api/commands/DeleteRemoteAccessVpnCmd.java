@@ -28,6 +28,11 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.NetworkManager;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
@@ -74,7 +79,6 @@ public class DeleteRemoteAccessVpnCmd extends BaseAsyncCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-
 	public String getName() {
         return s_name;
     }
@@ -117,6 +121,10 @@ public class DeleteRemoteAccessVpnCmd extends BaseAsyncCmd {
 		return EventTypes.EVENT_REMOTE_ACCESS_VPN_DESTROY;
 	}
 
-
+    @Override
+    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        boolean result = _networkMgr.destroyRemoteAccessVpn(this);
+        return result;
+    }
 	
 }

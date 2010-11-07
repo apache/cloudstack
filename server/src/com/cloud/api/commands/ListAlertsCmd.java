@@ -27,8 +27,14 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ServerApiException;
 import com.cloud.api.response.AlertResponse;
 import com.cloud.api.response.ListResponse;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 
 @Implementation(method="searchForAlerts", description="Lists all alerts.")
 public class ListAlertsCmd extends BaseListCmd {
@@ -81,5 +87,11 @@ public class ListAlertsCmd extends BaseListCmd {
         response.setResponses(alertResponseList);
         response.setResponseName(getName());
         return response;
+    }
+    
+    @Override
+    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        List<AlertVO> result = _mgr.searchForAlerts(this);
+        return result;
     }
 }

@@ -52,7 +52,7 @@ import com.cloud.api.response.ZoneResponse;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.ResourceCount.ResourceType;
-import com.cloud.configuration.ResourceLimitVO;
+import com.cloud.configuration.ResourceLimit;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
@@ -255,7 +255,7 @@ public class ApiResponseHelper {
        return diskOfferingResponse;
    }
    
-   public static ResourceLimitResponse createResourceLimitResponse (ResourceLimitVO limit) {
+   public static ResourceLimitResponse createResourceLimitResponse (ResourceLimit limit) {
        ResourceLimitResponse resourceLimitResponse = new ResourceLimitResponse();
        if (limit.getDomainId() != null) {
            resourceLimitResponse.setDomainId(limit.getDomainId());
@@ -351,8 +351,7 @@ public class ApiResponseHelper {
    }
    
    public static UserVmResponse createUserVmResponse (UserVm userVm) {
-       UserVmResponse userVmResponse = new UserVmResponse();
-       
+       UserVmResponse userVmResponse = new UserVmResponse();  
        Account acct = ApiDBUtils.findAccountById(Long.valueOf(userVm.getAccountId()));
        //FIXME - this check should be done in searchForUserVm method in ManagementServerImpl; 
        //otherwise the number of vms returned is not going to match pageSize request parameter

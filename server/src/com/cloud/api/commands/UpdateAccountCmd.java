@@ -24,8 +24,15 @@ import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ServerApiException;
 import com.cloud.api.response.AccountResponse;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.server.ManagementServer;
+import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 
 @Implementation(method="updateAccount", manager=ManagementServer.class, description="Updates account information for the authenticated user")
@@ -77,5 +84,11 @@ public class UpdateAccountCmd extends BaseCmd{
         AccountResponse response = ApiResponseHelper.createAccountResponse(account);
         response.setResponseName(getName());
         return response;
+    }
+    
+    @Override
+    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        Account result = _accountService.updateAccount(this);
+        return result;
     }
 }

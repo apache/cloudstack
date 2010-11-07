@@ -21,14 +21,11 @@ package com.cloud.user;
 import java.util.List;
 
 import com.cloud.acl.ControlledEntity;
-import com.cloud.api.commands.ListResourceLimitsCmd;
-import com.cloud.api.commands.UpdateResourceLimitCmd;
 import com.cloud.configuration.ResourceCount;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.server.Criteria;
 import com.cloud.utils.component.Manager;
@@ -99,23 +96,6 @@ public interface AccountManager extends Manager {
 	
 	List<ResourceLimitVO> searchForLimits(Criteria c);
 
-	/**
-	 * Search for resource limits for the given id and/or account and/or type and/or domain.
-	 * @param cmd the command wrapping the id, type, account, and domain
-	 * @return a list of limits that match the criteria
-	 * @throws InvalidParameterValueException
-	 * @throws PermissionDeniedException
-	 */
-	List<ResourceLimitVO> searchForLimits(ListResourceLimitsCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
-
-    /**
-     * Updates an existing resource limit with the specified details. If a limit doesn't exist, will create one.
-     * @param cmd the command that wraps the domainId, accountId, type, and max parameters
-     * @return the updated/created resource limit
-     * @throws InvalidParameterValueException
-     */
-	ResourceLimitVO updateResourceLimit(UpdateResourceLimitCmd cmd) throws InvalidParameterValueException;
-	
 	void checkAccess(Account account, Domain domain) throws PermissionDeniedException;
 	
 	void checkAccess(Account account, ControlledEntity... entities) throws PermissionDeniedException;
@@ -123,4 +103,15 @@ public interface AccountManager extends Manager {
 	AccountVO getSystemAccount();
 	
 	UserVO getSystemUser();
+	
+    /**
+     * Disables an account by accountId
+     * @param accountId
+     * @return true if disable was successful, false otherwise
+     */
+    boolean disableAccount(long accountId);
+    
+    boolean deleteAccount(AccountVO account);
+    
+    boolean deleteUserInternal(long userId);
 }

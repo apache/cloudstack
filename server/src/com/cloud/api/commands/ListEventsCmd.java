@@ -28,9 +28,15 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ServerApiException;
 import com.cloud.api.response.EventResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.event.EventVO;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.User;
 
 @Implementation(method="searchForEvents", description="A command to list events.")
@@ -142,5 +148,11 @@ public class ListEventsCmd extends BaseListCmd {
         response.setResponses(eventResponses);
         response.setResponseName(getName());
         return response;
+    }
+    
+    @Override
+    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        List<EventVO> result = _mgr.searchForEvents(this);
+        return result;
     }
 }

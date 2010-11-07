@@ -1,5 +1,4 @@
 /**
- *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
  * 
  * This software is licensed under the GNU General Public License v3 or later.
  * 
@@ -51,8 +50,10 @@ import com.cloud.api.commands.UpdateZoneCmd;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.AccountVlanMapVO;
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
+import com.cloud.dc.Pod;
 import com.cloud.dc.PodVlanMapVO;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
@@ -77,8 +78,10 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.GuestIpType;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
@@ -108,8 +111,8 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
-@Local(value={ConfigurationManager.class})
-public class ConfigurationManagerImpl implements ConfigurationManager {
+@Local(value={ConfigurationManager.class, ConfigurationService.class})
+public class ConfigurationManagerImpl implements ConfigurationManager, ConfigurationService {
     public static final Logger s_logger = Logger.getLogger(ConfigurationManagerImpl.class.getName());
 
 	String _name;
@@ -185,7 +188,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     }
     
     @Override
-    public ConfigurationVO updateConfiguration(UpdateCfgCmd cmd) throws InvalidParameterValueException{
+    public Configuration updateConfiguration(UpdateCfgCmd cmd) throws InvalidParameterValueException{
     	Long userId = UserContext.current().getUserId();
     	String name = cmd.getCfgName();
     	String value = cmd.getValue();
@@ -201,7 +204,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	if (_configDao.getValue(name).equalsIgnoreCase(value))
     		return _configDao.findByName(name);
     	else 
-    		throw new CloudRuntimeException("Unable to update configuration parameter" + name);
+    		throw new CloudRuntimeException("Unable to update configuration parameter " + name);
     }
     
     
@@ -442,7 +445,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 
     @Override
     @DB
-    public HostPodVO editPod(UpdatePodCmd cmd)  
+    public Pod editPod(UpdatePodCmd cmd)  
     {
     	
     	//Input validation
@@ -554,7 +557,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     }
 
     @Override
-    public HostPodVO createPod(CreatePodCmd cmd)  {
+    public Pod createPod(CreatePodCmd cmd)  {
         String cidr = cmd.getCidr();
         String endIp = cmd.getEndIp();
         String gateway = cmd.getGateway();
@@ -824,7 +827,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     }
     
     @Override
-    public DataCenterVO editZone(UpdateZoneCmd cmd) {
+    public DataCenter editZone(UpdateZoneCmd cmd) {
     	//Parameter validation as from execute() method in V1
     	Long zoneId = cmd.getId();
     	String zoneName = cmd.getZoneName();
@@ -1012,7 +1015,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     }
 
     @Override
-    public DataCenterVO createZone(CreateZoneCmd cmd)  {
+    public DataCenter createZone(CreateZoneCmd cmd)  {
         // grab parameters from the command
         Long userId = UserContext.current().getUserId();
         String zoneName = cmd.getZoneName();
@@ -1037,7 +1040,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     }
 
     @Override
-    public ServiceOfferingVO createServiceOffering(CreateServiceOfferingCmd cmd) throws InvalidParameterValueException {
+    public ServiceOffering createServiceOffering(CreateServiceOfferingCmd cmd) throws InvalidParameterValueException {
         Long userId = UserContext.current().getUserId();
         if (userId == null) {
             userId = User.UID_SYSTEM;
@@ -1114,7 +1117,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     }
 
     @Override
-    public ServiceOfferingVO updateServiceOffering(UpdateServiceOfferingCmd cmd) {
+    public ServiceOffering updateServiceOffering(UpdateServiceOfferingCmd cmd) {
     	String displayText = cmd.getDisplayText();
     	Long id = cmd.getId();
     	String name = cmd.getServiceOfferingName();
@@ -1198,7 +1201,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     }
 
     @Override
-    public DiskOfferingVO createDiskOffering(CreateDiskOfferingCmd cmd) throws InvalidParameterValueException {        
+    public DiskOffering createDiskOffering(CreateDiskOfferingCmd cmd) throws InvalidParameterValueException {
         String name = cmd.getOfferingName();
         String description = cmd.getDisplayText();
         Long numGibibytes = cmd.getDiskSize();
@@ -1210,7 +1213,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     }
 
     @Override
-    public DiskOfferingVO updateDiskOffering(UpdateDiskOfferingCmd cmd) throws InvalidParameterValueException{
+    public DiskOffering updateDiskOffering(UpdateDiskOfferingCmd cmd) throws InvalidParameterValueException{
     	Long diskOfferingId = cmd.getId();
     	String name = cmd.getDiskOfferingName();
     	String displayText = cmd.getDisplayText();
@@ -1319,7 +1322,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     }
 
     @Override
-    public VlanVO createVlanAndPublicIpRange(CreateVlanIpRangeCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException {
+    public Vlan createVlanAndPublicIpRange(CreateVlanIpRangeCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException {
         Long userId = UserContext.current().getUserId();
         if (userId == null) {
             userId = Long.valueOf(User.UID_SYSTEM);
@@ -2174,7 +2177,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     }
 
 	@Override
-	public ConfigurationVO addConfig(CreateCfgCmd cmd){
+	public Configuration addConfig(CreateCfgCmd cmd){
 		String category = cmd.getCategory();
 		String instance = cmd.getInstance();
 		String component = cmd.getComponent();
@@ -2191,7 +2194,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 		catch(Exception ex)
 		{
 			s_logger.error("Unable to add the new config entry:",ex);
-			throw new CloudRuntimeException("Unable to add configuration parameter" + name);
+			throw new CloudRuntimeException("Unable to add configuration parameter " + name);
 		}
 	}
 

@@ -25,9 +25,16 @@ import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ServerApiException;
 import com.cloud.api.response.VlanIpRangeResponse;
 import com.cloud.configuration.ConfigurationManager;
+import com.cloud.dc.Vlan;
 import com.cloud.dc.VlanVO;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 
 @Implementation(method="createVlanAndPublicIpRange", manager=ConfigurationManager.class, description="Creates a VLAN IP range.")
 public class CreateVlanIpRangeCmd extends BaseCmd {
@@ -129,5 +136,11 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
         VlanIpRangeResponse response = ApiResponseHelper.createVlanIpRangeResponse(vlan);
         response.setResponseName(getName());
         return response;
+    }
+    
+    @Override
+    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        Vlan result = _configService.createVlanAndPublicIpRange(this);
+        return result;
     }
 }

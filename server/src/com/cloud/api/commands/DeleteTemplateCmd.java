@@ -29,6 +29,11 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
@@ -65,7 +70,7 @@ public class DeleteTemplateCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
+    
     @Override
     public String getName() {
         return s_name;
@@ -102,5 +107,11 @@ public class DeleteTemplateCmd extends BaseAsyncCmd {
     @Override
     public String getEventDescription() {
         return "Deleting template " + getId();
+    }
+    
+    @Override
+    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        boolean result = _templateMgr.deleteTemplate(this);
+        return result;
     }
 }

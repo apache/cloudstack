@@ -23,7 +23,13 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
+import com.cloud.api.ServerApiException;
 import com.cloud.api.response.CapabilitiesResponse;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 
 @Implementation(method="listCapabilities")
 public class ListCapabilitiesCmd extends BaseCmd {
@@ -47,5 +53,11 @@ public class ListCapabilitiesCmd extends BaseCmd {
         response.setResponseName(getName());
 
         return response;
+    }
+    
+    @Override
+    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        Map<String, String> result = _mgr.listCapabilities(this);
+        return result;
     }
 }

@@ -23,12 +23,21 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ServerApiException;
 import com.cloud.api.response.UserVmResponse;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.StorageUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.exception.ExecutionException;
 import com.cloud.vm.UserVmManager;
 
 @Implementation(method="startVirtualMachine", manager=UserVmManager.class, description="Starts a virtual machine.")
@@ -92,4 +101,14 @@ public class StartVMCmd extends BaseAsyncCmd {
         recoverVmResponse.setResponseName(getName());
         return recoverVmResponse;
 	}
+    
+    @Override
+    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, StorageUnavailableException{
+        try {
+            UserVm result = _userVmService.startVirtualMachine(this);
+            return result;
+        } catch (ExecutionException ex) {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
+        }
+    }
 }

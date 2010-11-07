@@ -31,7 +31,6 @@ import com.cloud.api.commands.ExtractIsoCmd;
 import com.cloud.api.commands.ExtractTemplateCmd;
 import com.cloud.api.commands.RegisterIsoCmd;
 import com.cloud.api.commands.RegisterTemplateCmd;
-import com.cloud.async.AsyncJobManager;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;

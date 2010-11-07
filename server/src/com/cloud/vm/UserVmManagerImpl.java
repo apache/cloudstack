@@ -1314,6 +1314,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
                 return false;
             }
         } else {
+            s_logger.error("Vm id=" + vmId + " is not in Running state, failed to reboot");
             return false;
         }
     }
@@ -3325,8 +3326,15 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         
         userId = accountAndUserValidation(id, account, userId, vmInstance);
         
-        return startVirtualMachine(userId, id, null, null, eventId);
-		
+        UserVmVO vm = startVirtualMachine(userId, id, null, null, eventId);;
+        
+        if (vm != null) {
+            return vm;
+        }
+        else {
+            throw new CloudRuntimeException("Internal error starting virtual machine id " + cmd.getId());
+        }
+
 	}
 
 	@Override
@@ -3394,6 +3402,10 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         String accountName = cmd.getAccountName();
         Long accountId = null;
         String groupName = cmd.getGroupName();
+        
+        if (account == null) {
+            account = _accountDao.findById(1L);
+        }
 
         if (account != null) {
             if (isAdmin(account.getType())) {

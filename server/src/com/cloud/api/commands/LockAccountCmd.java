@@ -24,8 +24,15 @@ import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ServerApiException;
 import com.cloud.api.response.AccountResponse;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.server.ManagementServer;
+import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 
 @Implementation(method="lockAccount", manager=ManagementServer.class, description="Locks an account")
@@ -59,7 +66,7 @@ public class LockAccountCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
+    
     @Override
     public String getName() {
         return s_name;
@@ -72,4 +79,10 @@ public class LockAccountCmd extends BaseCmd {
         response.setResponseName(getName());
         return response;
 	}
+	
+    @Override
+    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        Account result = _accountService.lockAccount(this);
+        return result;
+    }
 }

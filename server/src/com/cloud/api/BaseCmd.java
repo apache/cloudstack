@@ -27,11 +27,32 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.AgentManager;
+import com.cloud.async.AsyncJobManager;
+import com.cloud.configuration.ConfigurationService;
+import com.cloud.consoleproxy.ConsoleProxyManager;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.NetworkManager;
+import com.cloud.network.security.NetworkGroupManager;
+import com.cloud.server.ManagementServer;
+import com.cloud.storage.StorageManager;
+import com.cloud.storage.snapshot.SnapshotManager;
+import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
+import com.cloud.user.AccountService;
 import com.cloud.utils.Pair;
+import com.cloud.utils.component.ComponentLocator;
+import com.cloud.vm.UserVmService;
 
 public abstract class BaseCmd {
     private static final Logger s_logger = Logger.getLogger(BaseCmd.class.getName());
+    
+    public static final String USER_ERROR_MESSAGE = "Internal error executing command, please contact your system administrator";
     public static final int PROGRESS_INSTANCE_CREATED = 1;
     
     public static final String RESPONSE_TYPE_XML = "xml";
@@ -87,12 +108,49 @@ public abstract class BaseCmd {
 
     public static final DateFormat INPUT_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
     private static final DateFormat _outputFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+    
+    public static final ComponentLocator s_locator = getComponents();
+    
+    public static ConfigurationService _configService;
+    public static AccountService _accountService;
+    public static UserVmService _userVmService;
+    public static ManagementServer _mgr;
+    public static AsyncJobManager _asyncMgr;
+    public static StorageManager _storageMgr;
+    public static AgentManager _agentMgr;
+    public static NetworkManager _networkMgr;
+    public static TemplateManager _templateMgr;
+    public static NetworkGroupManager _networkGroupMgr;
+    public static SnapshotManager _snapshotMgr;
+    public static ConsoleProxyManager _consoleProxyMgr;
+    
+
 
     private Object _responseObject = null;
 
     @Parameter(name="response", type=CommandType.STRING)
     private String responseType;
-
+   
+    
+    private static ComponentLocator getComponents(){
+        ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
+        _accountService = locator.getManager(AccountService.class);
+        _configService = locator.getManager(ConfigurationService.class);
+        _userVmService = locator.getManager(UserVmService.class);
+        _mgr = (ManagementServer)locator.getComponent("management-server");
+        _asyncMgr = locator.getManager(AsyncJobManager.class);
+        _storageMgr = locator.getManager(StorageManager.class);
+        _agentMgr = locator.getManager(AgentManager.class);
+        _networkMgr = locator.getManager(NetworkManager.class);
+        _templateMgr = locator.getManager(TemplateManager.class);
+        _networkGroupMgr = locator.getManager(NetworkGroupManager.class);
+        _snapshotMgr = locator.getManager(SnapshotManager.class);
+        _consoleProxyMgr = locator.getManager(ConsoleProxyManager.class);
+        return locator;
+    }
+    
+    public abstract Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ResourceUnavailableException,  ConcurrentOperationException;
+    
     public String getResponseType() {
         if (responseType == null) {
             return RESPONSE_TYPE_XML;

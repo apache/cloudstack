@@ -47,27 +47,27 @@ public class DisableAccountExecutor extends BaseAsyncJobExecutor {
 		ManagementServer managementServer = asyncMgr.getExecutorContext().getManagementServer();
 		Long param = gson.fromJson(job.getCmdInfo(), Long.class);
 		
-		SyncQueueItemVO syncItem = getSyncSource();
-		if(syncItem == null) {
-			initialSchedule(managementServer, param.longValue());
-		} else {
-			if(allRouterOperationCeased(job)) {
-				if(s_logger.isInfoEnabled())
-					s_logger.info("All previous router operations have ceased, we can now disable account " + param);
-				
-				if(managementServer.disableAccount(param.longValue())) {
-					asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_SUCCEEDED, 0, 
-						"success");
-				} else {
-					asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR, 
-						"failed");
-				}
-			} else {
-				if(s_logger.isInfoEnabled())
-					s_logger.info("Previous operation on router " + syncItem.getContentId() 
-						+ " has ceased, still more to go to disable account " + param);
-			}
-		}
+//		SyncQueueItemVO syncItem = getSyncSource();
+//		if(syncItem == null) {
+//			initialSchedule(managementServer, param.longValue());
+//		} else {
+//			if(allRouterOperationCeased(job)) {
+//				if(s_logger.isInfoEnabled())
+//					s_logger.info("All previous router operations have ceased, we can now disable account " + param);
+//				
+//				if(managementServer.disableAccount(param.longValue())) {
+//					asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_SUCCEEDED, 0, 
+//						"success");
+//				} else {
+//					asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR, 
+//						"failed");
+//				}
+//			} else {
+//				if(s_logger.isInfoEnabled())
+//					s_logger.info("Previous operation on router " + syncItem.getContentId() 
+//						+ " has ceased, still more to go to disable account " + param);
+//			}
+//		}
 		return true;
 	}
 	
@@ -83,29 +83,29 @@ public class DisableAccountExecutor extends BaseAsyncJobExecutor {
 			return;
 		}
 		
-		try {
-	        List<DomainRouterVO> routers = asyncMgr.getExecutorContext().getRouterDao().listBy(accountId);
-	        if(routers.size() > 0) {
-	        	scheduleOperationAfterAllRouterOperations(managementServer, accountId, routers);
-	        } else {
-	        	if(s_logger.isInfoEnabled())
-	        		s_logger.info("Account " + accountId + " does not have running router, disable the account directly");
-	        	
-				if(managementServer.disableAccount(accountId)) {
-					asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_SUCCEEDED, 0, 
-						"success");
-				} else {
-					asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR, 
-						"failed");
-				}
-	        }
-		} catch (Exception e) {
-			s_logger.warn("Unable to disable account: " + e.getMessage(), e);
-			asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR, 
-				e.getMessage());
-		} finally {
-			asyncMgr.getExecutorContext().getAccountDao().releaseFromLockTable(accountId);
-		}
+//		try {
+//	        List<DomainRouterVO> routers = asyncMgr.getExecutorContext().getRouterDao().listBy(accountId);
+//	        if(routers.size() > 0) {
+//	        	scheduleOperationAfterAllRouterOperations(managementServer, accountId, routers);
+//	        } else {
+//	        	if(s_logger.isInfoEnabled())
+//	        		s_logger.info("Account " + accountId + " does not have running router, disable the account directly");
+//	        	
+//				if(managementServer.disableAccount(accountId)) {
+//					asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_SUCCEEDED, 0, 
+//						"success");
+//				} else {
+//					asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR, 
+//						"failed");
+//				}
+//	        }
+//		} catch (Exception e) {
+//			s_logger.warn("Unable to disable account: " + e.getMessage(), e);
+//			asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR, 
+//				e.getMessage());
+//		} finally {
+//			asyncMgr.getExecutorContext().getAccountDao().releaseFromLockTable(accountId);
+//		}
 	}
 	
 	@DB

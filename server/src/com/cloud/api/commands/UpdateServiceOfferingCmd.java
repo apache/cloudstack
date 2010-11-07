@@ -24,8 +24,15 @@ import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ServerApiException;
 import com.cloud.api.response.ServiceOfferingResponse;
 import com.cloud.configuration.ConfigurationManager;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 
 @Implementation(method="updateServiceOffering", manager=ConfigurationManager.class, description="Updates a service offering.")
@@ -86,7 +93,7 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
+    
     @Override
     public String getName() {
         return s_name;
@@ -98,5 +105,11 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
         ServiceOfferingResponse response = ApiResponseHelper.createServiceOfferingResponse(offering);
         response.setResponseName(getName());
         return response;
+    }
+    
+    @Override
+    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        ServiceOffering result = _configService.updateServiceOffering(this);
+        return result;
     }
 }

@@ -27,9 +27,15 @@ import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ServerApiException;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.VlanIpRangeResponse;
 import com.cloud.dc.VlanVO;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 
 @Implementation(method="searchForVlans", description="Lists all VLAN IP ranges.")
 public class ListVlanIpRangesCmd extends BaseListCmd {
@@ -111,5 +117,11 @@ public class ListVlanIpRangesCmd extends BaseListCmd {
         response.setResponses(vlanResponses);
         response.setResponseName(getName());
         return response;
+    }
+    
+    @Override
+    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        List<VlanVO> result = _mgr.searchForVlans(this);
+        return result;
     }
 }

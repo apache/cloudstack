@@ -49,7 +49,7 @@ public class TestAsyncJobManager extends ComponentTestCase {
     volatile long s_count = 0;
 
 	public void asyncCall() {
-		ManagementServer mgr = (ManagementServer)ComponentLocator.getComponent("management-server");
+	    ManagementServer mgr = (ManagementServer)ComponentLocator.getComponent("management-server");
 
 //		long jobId = mgr.rebootVirtualMachineAsync(1, 1);
         long jobId = 0L;

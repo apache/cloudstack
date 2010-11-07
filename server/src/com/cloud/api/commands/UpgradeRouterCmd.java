@@ -24,7 +24,13 @@ import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ServerApiException;
 import com.cloud.api.response.DomainRouterResponse;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.NetworkManager;
 import com.cloud.vm.DomainRouter;
 
@@ -70,5 +76,11 @@ public class UpgradeRouterCmd extends BaseCmd {
         DomainRouterResponse routerResponse = ApiResponseHelper.createDomainRouterResponse(router);
         routerResponse.setResponseName(getName());
         return routerResponse;
+    }
+	
+    @Override
+    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        DomainRouter result = _networkMgr.upgradeRouter(this);
+        return result;
     }
 }

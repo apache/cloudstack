@@ -28,8 +28,14 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ResponseObject;
+import com.cloud.api.ServerApiException;
 import com.cloud.api.response.AsyncJobResponse;
 import com.cloud.async.AsyncJobResult;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 
 @Implementation(method="queryAsyncJobResult", description="Retrieves the current status of asynchronous job.")
 public class QueryAsyncJobResultCmd extends BaseCmd {
@@ -84,5 +90,11 @@ public class QueryAsyncJobResultCmd extends BaseCmd {
 
         response.setResponseName(getName());
         return response;
+    }
+    
+    @Override
+    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        AsyncJobResult result = _asyncMgr.queryAsyncJobResult(this);
+        return result;
     }
 }

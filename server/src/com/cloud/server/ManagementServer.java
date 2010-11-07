@@ -26,15 +26,9 @@ import java.util.Map;
 import com.cloud.alert.AlertVO;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.CreateDomainCmd;
-import com.cloud.api.commands.CreateUserCmd;
 import com.cloud.api.commands.DeleteDomainCmd;
 import com.cloud.api.commands.DeletePreallocatedLunCmd;
-import com.cloud.api.commands.DeleteUserCmd;
 import com.cloud.api.commands.DeployVMCmd;
-import com.cloud.api.commands.DisableAccountCmd;
-import com.cloud.api.commands.DisableUserCmd;
-import com.cloud.api.commands.EnableAccountCmd;
-import com.cloud.api.commands.EnableUserCmd;
 import com.cloud.api.commands.ExtractVolumeCmd;
 import com.cloud.api.commands.GetCloudIdentifierCmd;
 import com.cloud.api.commands.ListAccountsCmd;
@@ -73,22 +67,17 @@ import com.cloud.api.commands.ListVlanIpRangesCmd;
 import com.cloud.api.commands.ListVolumesCmd;
 import com.cloud.api.commands.ListVpnUsersCmd;
 import com.cloud.api.commands.ListZonesByCmd;
-import com.cloud.api.commands.LockAccountCmd;
-import com.cloud.api.commands.LockUserCmd;
-import com.cloud.api.commands.QueryAsyncJobResultCmd;
 import com.cloud.api.commands.RebootSystemVmCmd;
 import com.cloud.api.commands.RegisterCmd;
 import com.cloud.api.commands.RegisterPreallocatedLunCmd;
 import com.cloud.api.commands.StartSystemVMCmd;
 import com.cloud.api.commands.StopSystemVmCmd;
-import com.cloud.api.commands.UpdateAccountCmd;
 import com.cloud.api.commands.UpdateDomainCmd;
 import com.cloud.api.commands.UpdateIPForwardingRuleCmd;
 import com.cloud.api.commands.UpdateIsoCmd;
 import com.cloud.api.commands.UpdateIsoPermissionsCmd;
 import com.cloud.api.commands.UpdateTemplateCmd;
 import com.cloud.api.commands.UpdateTemplatePermissionsCmd;
-import com.cloud.api.commands.UpdateUserCmd;
 import com.cloud.api.commands.UpdateVMGroupCmd;
 import com.cloud.api.commands.UploadCustomCertificateCmd;
 import com.cloud.async.AsyncJobResult;
@@ -156,12 +145,6 @@ import com.cloud.vm.VirtualMachine;
 public interface ManagementServer {
     static final String Name = "management-server";
     
-    /**
-     * Creates a new user, stores the password as is so encrypted passwords are recommended.
-     * @param cmd the create command that has the username, email, password, account name, domain, timezone, etc. for creating the user.
-     * @return the user if created successfully, null otherwise
-     */
-    UserAccount createUser(CreateUserCmd cmd);
 
     List<ClusterVO> listClusterByPodId(long podId);
 
@@ -192,74 +175,7 @@ public interface ManagementServer {
      */
     UserAccount authenticateUser(String username, String password, Long domainId, Map<String, Object[]> requestParameters);
 
-    /**
-     * Deletes a user by userId
-     * @param cmd - the delete command defining the id of the user to be deleted.
-     * @return true if delete was successful, false otherwise
-     */
-    boolean deleteUser(DeleteUserCmd cmd);
-
-    /**
-     * Disables a user by userId
-     * @param cmd the command wrapping the userId parameter
-     * @return UserAccount object
-     * @throws InvalidParameterValueException, PermissionDeniedException
-     */
-    UserAccount disableUser(DisableUserCmd cmd);
-
-    /**
-     * Disables an account by accountId
-     * @param accountId
-     * @return true if disable was successful, false otherwise
-     */
-    boolean disableAccount(long accountId);
-
-    /**
-     * Disables an account by accountName and domainId
-     * @param disabled account if success
-     * @return true if disable was successful, false otherwise
-     * @throws InvalidParameterValueException, PermissionDeniedException
-     */
-    AccountVO disableAccount(DisableAccountCmd cmd);
-
-    /**
-     * Enables an account by accountId
-     * @param cmd - the enableAccount command defining the accountId to be deleted.
-     * @return account object
-     * @throws InvalidParameterValueException, PermissionDeniedException
-     */
-    AccountVO enableAccount(EnableAccountCmd cmd);
-
-    /**
-     * Locks an account by accountId.  A locked account cannot access the API, but will still have running VMs/IP addresses allocated/etc.
-     * @param cmd - the LockAccount command defining the accountId to be locked.
-     * @return account object
-     */
-    AccountVO lockAccount(LockAccountCmd cmd);
-
-    /**
-     * Updates an account name
-     * @param cmd - the parameter containing accountId
-     * @return updated account object
-     * @throws InvalidParameterValueException, PermissionDeniedException
-     */
-    
-    AccountVO updateAccount(UpdateAccountCmd cmd);
-
-    /**
-     * Enables a user
-     * @param cmd - the command containing userId
-     * @return UserAccount object
-     * @throws InvalidParameterValueException, PermissionDeniedException
-     */
-    UserAccount enableUser(EnableUserCmd cmd);
-
-    /**
-     * Locks a user by userId.  A locked user cannot access the API, but will still have running VMs/IP addresses allocated/etc.
-     * @param userId
-     * @return UserAccount object
-     */
-    UserAccount lockUser(LockUserCmd cmd);
+ 
     
     /**
      * registerPreallocatedLun registers a preallocated lun in our database.
@@ -986,13 +902,6 @@ public interface ManagementServer {
      */
     AsyncJobResult queryAsyncJobResult(long jobId);
 
-    /**
-     * Queries for the status or final result of an async job.
-     * @param cmd the command that specifies the job id
-     * @return an async-call result object
-     * @throws PermissionDeniedException
-     */
-    AsyncJobResult queryAsyncJobResult(QueryAsyncJobResultCmd cmd);
 
     AsyncJobVO findAsyncJobById(long jobId);
 
@@ -1078,7 +987,6 @@ public interface ManagementServer {
 
 	boolean checkLocalStorageConfigVal(); 
 
-	UserAccount updateUser(UpdateUserCmd cmd);
 	boolean updateTemplatePermissions(UpdateTemplatePermissionsCmd cmd);
     boolean updateTemplatePermissions(UpdateIsoPermissionsCmd cmd);
 	String[] createApiKeyAndSecretKey(RegisterCmd cmd);

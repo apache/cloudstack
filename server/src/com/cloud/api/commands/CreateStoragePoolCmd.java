@@ -18,6 +18,7 @@
 
 package com.cloud.api.commands;
 
+import java.net.UnknownHostException;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
@@ -29,6 +30,13 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.StoragePoolResponse;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceInUseException;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
 
@@ -99,7 +107,7 @@ public class CreateStoragePoolCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
+    
     @Override
     public String getName() {
         return s_name;
@@ -115,6 +123,20 @@ public class CreateStoragePoolCmd extends BaseCmd {
             return response;
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add host");
+        }
+    }
+    
+    @Override
+    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        try {
+            StoragePoolVO result = _storageMgr.createPool(this);
+            return result;
+        } catch (ResourceAllocationException ex1) {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex1.getMessage());
+        }catch (ResourceInUseException ex2) {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex2.getMessage());
+        } catch (UnknownHostException ex3) {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex3.getMessage());
         }
     }
 }

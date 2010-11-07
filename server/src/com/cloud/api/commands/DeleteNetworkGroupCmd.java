@@ -8,6 +8,12 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.ResourceInUseException;
 import com.cloud.network.security.NetworkGroupManager;
 
 @Implementation(method="deleteNetworkGroup", manager=NetworkGroupManager.class)
@@ -63,4 +69,14 @@ public class DeleteNetworkGroupCmd extends BaseCmd {
 	    	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete security group");
 	    }
 	}
+	
+    @Override
+    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        try{
+            boolean result = _networkGroupMgr.deleteNetworkGroup(this);
+            return result;
+        } catch (ResourceInUseException ex) {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
+        }
+    }
 }

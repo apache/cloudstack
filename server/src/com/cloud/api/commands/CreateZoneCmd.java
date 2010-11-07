@@ -25,9 +25,16 @@ import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ServerApiException;
 import com.cloud.api.response.ZoneResponse;
 import com.cloud.configuration.ConfigurationManager;
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 
 @Implementation(method="createZone", manager=ConfigurationManager.class, description="Creates a Zone.")
 public class CreateZoneCmd extends BaseCmd {
@@ -109,7 +116,6 @@ public class CreateZoneCmd extends BaseCmd {
     
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
 
     @Override
     public String getName() {
@@ -122,5 +128,11 @@ public class CreateZoneCmd extends BaseCmd {
         ZoneResponse response = ApiResponseHelper.createZoneResponse(zone);
         response.setResponseName(getName());
         return response;
+    }
+    
+    @Override
+    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        DataCenter result = _configService.createZone(this);
+        return result;
     }
 }

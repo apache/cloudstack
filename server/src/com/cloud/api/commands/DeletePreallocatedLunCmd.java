@@ -23,6 +23,11 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 
 @Implementation(method="unregisterPreallocatedLun")
 public class DeletePreallocatedLunCmd extends BaseCmd {
@@ -59,5 +64,11 @@ public class DeletePreallocatedLunCmd extends BaseCmd {
 	    } else {
 	    	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete preallocated lun");
 	    }
+    }
+    
+    @Override
+    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        boolean result = _mgr.unregisterPreallocatedLun(this);
+        return result;
     }
 }
