@@ -3980,7 +3980,7 @@ a:hover.search_button {
 	font-size:15px;
 	font-weight:bold;
 	text-align:left;
-	margin:4px 0 0 0;
+	margin:6px 0 0 0;
 	padding:0;
 }
 
@@ -3992,7 +3992,7 @@ a:hover.search_button {
 	font-size:11px;
 	font-weight:bold;
 	text-align:left;
-	margin:3px 5px 0 0;
+	margin:4px 5px 0 0;
 	padding:0;
 }
 
@@ -4014,7 +4014,7 @@ a:hover.search_button {
 	font-size:16px;
 	font-weight:bold;
 	color:#FFF;
-	margin:8px 0 0 4px;
+	margin:7px 0 0 4px;
 	padding:0;
 	display:inline;
 }
@@ -4024,7 +4024,7 @@ a:hover.search_button {
 	height:17px;
 	float:left;
 	background:url(../images/add_button.png) no-repeat top left;
-	margin:13px 0 0 20px;
+	margin:13px 0 0 19px;
 	padding:0;
 	cursor:pointer;
 	cursor:hand;
