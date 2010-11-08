@@ -1150,7 +1150,7 @@ function doEditVM2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $ed
 	    data: createURL("command=updateVirtualMachine&id="+id+array1.join("")),
 		dataType: "json",
 		success: function(json) {
-		    var jsonObj = json.updatevirtualmachineresponse;
+		    var jsonObj = json.updatevirtualmachineresponse.virtualmachine;		
             vmToMidmenu(jsonObj, $midmenuItem1);
             vmToRightPanel($midmenuItem1);	
             
