@@ -1198,17 +1198,13 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     }
 
     @Override
-    public DiskOfferingVO createDiskOffering(CreateDiskOfferingCmd cmd) throws InvalidParameterValueException {
-        Long domainId = cmd.getDomainId();
+    public DiskOfferingVO createDiskOffering(CreateDiskOfferingCmd cmd) throws InvalidParameterValueException {        
         String name = cmd.getOfferingName();
         String description = cmd.getDisplayText();
         Long numGibibytes = cmd.getDiskSize();
         Boolean isCustomized = cmd.isCustomized() != null ? cmd.isCustomized() : false; //false by default
-        String tags = cmd.getTags();
-
-        if (domainId == null) {
-            domainId = Long.valueOf(DomainVO.ROOT_DOMAIN);
-        }
+        String tags = cmd.getTags();        
+        Long domainId = Long.valueOf(DomainVO.ROOT_DOMAIN); // disk offering always gets created under the root domain.Bug # 6055        
 
         return createDiskOffering(domainId, name, description, numGibibytes, tags, isCustomized);
     }
