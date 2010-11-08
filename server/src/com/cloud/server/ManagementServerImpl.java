@@ -1369,18 +1369,29 @@ public class ManagementServerImpl implements ManagementServer {
     		}
     		//this covers till leaf
     		if(domainRecord != null){
-    			DomainVO localParent = domainRecord;
-    			DomainVO immediateChild = null;
-    			while(true){
-    				//find immediate child domain
-    				immediateChild = _domainDao.findImmediateChildForParent(localParent.getId());
-    				if(immediateChild != null){
-    					dcs.addAll(_dcDao.findZonesByDomainId(immediateChild.getId()));
-    					localParent = immediateChild;//traverse down the list
-    				}else{
-    					break;
-    				}
+//    			DomainVO localParent = domainRecord;
+//    			DomainVO immediateChild = null;
+//    			while(true){
+//    				//find immediate child domain
+//    				immediateChild = _domainDao.findImmediateChildForParent(localParent.getId());
+//    				if(immediateChild != null){
+//    					dcs.addAll(_dcDao.findZonesByDomainId(immediateChild.getId()));
+//    					localParent = immediateChild;//traverse down the list
+//    				}else{
+//    					break;
+//    				}
+//    			}
+    			
+    			//find all children for this domain based on a like search by path
+    			List<DomainVO> allChildDomains = _domainDao.findAllChildren(domainRecord.getPath());
+    			List<Long> allChildDomainIds = new ArrayList<Long>();
+    			//create list of domainIds for search 
+    			for(DomainVO domain : allChildDomains){
+    				allChildDomainIds.add(domain.getId());
     			}
+    			//now make a search for zones based on this
+    			List<DataCenterVO> childZones = _dcDao.findChildZones((allChildDomainIds.toArray()));
+    			dcs.addAll(childZones);
     		}   		
     		//add all public zones too
     		dcs.addAll(_dcDao.listPublicZones());

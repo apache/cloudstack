@@ -42,6 +42,7 @@ public class DomainDaoImpl extends GenericDaoBase<DomainVO, Long> implements Dom
 	protected SearchBuilder<DomainVO> ParentDomainNameLikeSearch;
 	protected SearchBuilder<DomainVO> DomainPairSearch;
 	protected SearchBuilder<DomainVO> ImmediateChildDomainSearch;
+	protected SearchBuilder<DomainVO> FindAllChildrenSearch;
 	
 	public DomainDaoImpl () {
 		DomainNameLikeSearch = createSearchBuilder();
@@ -60,6 +61,10 @@ public class DomainDaoImpl extends GenericDaoBase<DomainVO, Long> implements Dom
 		ImmediateChildDomainSearch = createSearchBuilder();
 		ImmediateChildDomainSearch.and("parent", ImmediateChildDomainSearch.entity().getParent(), SearchCriteria.Op.EQ);
 		ImmediateChildDomainSearch.done();
+		
+		FindAllChildrenSearch = createSearchBuilder();
+		FindAllChildrenSearch.and("path", FindAllChildrenSearch.entity().getPath(), SearchCriteria.Op.LIKE);
+		FindAllChildrenSearch.done();
 	}
 	
     public void update(Long id, String domainName) {
@@ -201,6 +206,13 @@ public class DomainDaoImpl extends GenericDaoBase<DomainVO, Long> implements Dom
         SearchCriteria<DomainVO> sc = ImmediateChildDomainSearch.create();
     	sc.setParameters("parent", parentId);
     	return (listBy(sc).size() > 0 ? listBy(sc).get(0) : null);//may need to revisit for multiple children case
+    }
+    
+    @Override
+    public List<DomainVO> findAllChildren(String path){
+    	SearchCriteria<DomainVO> sc = FindAllChildrenSearch.create();
+    	sc.setParameters("path", path);
+    	return listBy(sc);
     }
     
     @Override

@@ -55,6 +55,7 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     protected SearchBuilder<DataCenterVO> NameSearch;
     protected SearchBuilder<DataCenterVO> ListZonesByDomainIdSearch;
     protected SearchBuilder<DataCenterVO> PublicZonesSearch;
+    protected SearchBuilder<DataCenterVO> ChildZonesSearch;
 
     protected static final DataCenterIpAddressDaoImpl _ipAllocDao = ComponentLocator.inject(DataCenterIpAddressDaoImpl.class);
     protected static final DataCenterLinkLocalIpAddressDaoImpl _LinkLocalIpAllocDao = ComponentLocator.inject(DataCenterLinkLocalIpAddressDaoImpl.class);
@@ -76,6 +77,13 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     	SearchCriteria<DataCenterVO> sc = ListZonesByDomainIdSearch.create();
     	sc.setParameters("domainId", domainId);
         return listBy(sc);    	
+    }
+    
+    @Override
+    public List<DataCenterVO> findChildZones(Object[] ids){
+    	SearchCriteria<DataCenterVO> sc = ChildZonesSearch.create();
+    	sc.setParameters("domainid", ids);
+        return listBy(sc);  
     }
     
     @Override
@@ -238,6 +246,10 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
         PublicZonesSearch = createSearchBuilder();
         PublicZonesSearch.and("domainId", PublicZonesSearch.entity().getDomainId(), SearchCriteria.Op.NULL);
         PublicZonesSearch.done();        
+        
+        ChildZonesSearch = createSearchBuilder();
+        ChildZonesSearch.and("domainid", ChildZonesSearch.entity().getDomainId(), SearchCriteria.Op.IN);
+        ChildZonesSearch.done();
         
         _tgMacAddress = _tgs.get("macAddress");
         assert _tgMacAddress != null : "Couldn't get mac address table generator";

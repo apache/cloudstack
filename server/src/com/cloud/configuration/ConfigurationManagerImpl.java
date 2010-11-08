@@ -1209,6 +1209,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String tags = cmd.getTags();        
         Long domainId = Long.valueOf(DomainVO.ROOT_DOMAIN); // disk offering always gets created under the root domain.Bug # 6055        
 
+        if(!isCustomized && numGibibytes == null){
+        	throw new InvalidParameterValueException("Disksize is required for non-customized disk offering");
+        }
+        
         return createDiskOffering(domainId, name, description, numGibibytes, tags, isCustomized);
     }
 
