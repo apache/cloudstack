@@ -912,8 +912,8 @@ function portForwardingJsonToTemplate(jsonObj, $template) {
 							    return; //Job has not completed
 						    } else {											    
 							    $("body").stopTime(timerKey);
-							    if (result.jobstatus == 1) { // Succeeded	
-							        var item = result.jobresult.updateportforwardingruleresponse;           	
+							    if (result.jobstatus == 1) { // Succeeded							
+							        var item = result.jobresult.portforwardingrule;    	
                                     portForwardingJsonToTemplate(item,$template);
                                     $spinningWheel.hide(); 	     
                                     $rowContainerEdit.hide();
