@@ -166,7 +166,7 @@ public class DataCenterLinkLocalIpAddressDaoImpl extends GenericDaoBase<DataCent
         AllIpCount.done();
         
         AllAllocatedIpCount = createSearchBuilder(Integer.class);
-        AllAllocatedIpCount.select(null, Func.COUNT, AllIpCount.entity().getId());
+        AllAllocatedIpCount.select(null, Func.COUNT, AllAllocatedIpCount.entity().getId());
         AllAllocatedIpCount.and("pod", AllAllocatedIpCount.entity().getPodId(), SearchCriteria.Op.EQ);
         AllAllocatedIpCount.and("removed", AllAllocatedIpCount.entity().getTakenAt(), SearchCriteria.Op.NNULL);
         AllAllocatedIpCount.done();
