@@ -317,10 +317,6 @@ public class TemplateManagerImpl implements TemplateManager {
             {
                 throw new InvalidParameterValueException("Template name should be less than 32 characters");
             }
-            	
-            if (!name.matches("^[\\p{Alnum} ._-]+")) {
-                throw new InvalidParameterValueException("Only alphanumeric, dot, dashes and underscore characters allowed for the parameter 'name'");
-            }
         	
             ImageFormat imgfmt = ImageFormat.valueOf(format.toUpperCase());
             if (imgfmt == null) {
@@ -1241,7 +1237,7 @@ public class TemplateManagerImpl implements TemplateManager {
     	        // FIXME:  if template/ISO owner is null we probably need to throw some kind of exception
     	        
     	        if (template != null) {
-    	        	Account templateOwner = _accountDao.findById(template.getId());
+    	        	Account templateOwner = _accountDao.findById(template.getAccountId());
 	    	        if ((templateOwner != null) && !_domainDao.isChildDomain(account.getDomainId(), templateOwner.getDomainId())) {
 	                    throw new PermissionDeniedException(msg + ". Permission denied.");
 	    	        }

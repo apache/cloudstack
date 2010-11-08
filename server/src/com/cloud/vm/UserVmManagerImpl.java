@@ -2532,10 +2532,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         if ((name == null) || (name.length() > 32)) {
             throw new InvalidParameterValueException("Template name cannot be null and should be less than 32 characters");
         }
-
-        if (!name.matches("^[\\p{Alnum} ._-]+")) {
-            throw new InvalidParameterValueException("Only alphanumeric, space, dot, dashes and underscore characters allowed");
-        }
+        
         String uniqueName = Long.valueOf((userId == null)?1:userId).toString() + Long.valueOf(volumeId).toString() + UUID.nameUUIDFromBytes(name.getBytes()).toString();
 
         VMTemplateVO existingTemplate = _templateDao.findByTemplateNameAccountId(name, volume.getAccountId());
