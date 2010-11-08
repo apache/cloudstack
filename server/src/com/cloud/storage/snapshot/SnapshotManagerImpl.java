@@ -439,9 +439,12 @@ public class SnapshotManagerImpl implements SnapshotManager {
     public boolean backupSnapshotToSecondaryStorage(SnapshotVO ss, long startEventId) {
         Long userId = UserContext.current().getUserId();
         long snapshotId = ss.getId();
-        SnapshotVO snapshot = null;
+        SnapshotVO snapshot = _snapshotDao.acquireInLockTable(snapshotId);
+        if( snapshot == null) {
+            throw new CloudRuntimeException("Can not acquire lock for snapshot: " + ss);
+        }
         try {
-            snapshot = _snapshotDao.acquireInLockTable(snapshotId);
+
             snapshot.setStatus(Snapshot.Status.BackingUp);
             _snapshotDao.update(snapshot.getId(), snapshot);
             
@@ -499,74 +502,31 @@ public class SnapshotManagerImpl implements SnapshotManager {
                 backedUpSnapshotUuid = answer.getBackupSnapshotName();
                 if (backedUpSnapshotUuid != null) {
                     backedUp = true;
-                    // is there a snap to be deleted?
-                    // clean now
-                    if(prevSnapshot != null && backedUpSnapshotUuid.equalsIgnoreCase(prevSnapshot.getBackupSnapshotId())) {
-                        //if new snapshot is same as previous snapshot , delete previous snapshot
-                        s_logger.debug("Delete duplicate Snapshot id: " + prevSnapshotId);
-                        long pprevSnapshotId = prevSnapshot.getPrevSnapshotId();
-                        snapshot.setPrevSnapshotId(pprevSnapshotId);
-                        _snapshotDao.update(snapshot.getId(), snapshot);
-                        _snapshotDao.expunge(prevSnapshot.getId());
-                        
-                        EventVO event = new EventVO();
-                        String eventParams = "id=" + prevSnapshot.getId() + "\nssName=" + prevSnapshot.getName();
-                        event.setType(EventTypes.EVENT_SNAPSHOT_DELETE);
-                        event.setState(EventState.Completed);
-                        event.setDescription("Delete snapshot id: " + prevSnapshot.getId() + " due to new snapshot is same as this one");
-                        event.setLevel(EventVO.LEVEL_INFO);
-                        event.setParameters(eventParams);
-                        _eventDao.persist(event);
-                        
-                        prevSnapshotId = pprevSnapshotId;
-                        if( prevSnapshotId == 0 ) {
-                            prevSnapshot = null;
-                            prevSnapshotUuid = null;
-                            prevBackupUuid = null;
-                        } else {
-                            prevSnapshot = _snapshotDao.findById(prevSnapshotId);
-                            prevSnapshotUuid = prevSnapshot.getPath();
-                            prevBackupUuid = prevSnapshot.getBackupSnapshotId();
-                        }
-                         
-                    }
-
                 }
-            }
-            else if (answer != null) {
+            } else if (answer != null) {
                 s_logger.error(answer.getDetails());
             }
             // Update the status in all cases.
             Transaction txn = Transaction.currentTxn();
             txn.start();
-            
-            SnapshotVO snapshotVO = _snapshotDao.findById(snapshotId);
-            snapshotVO.setBackupSnapshotId(backedUpSnapshotUuid);
-            if (volume.getFirstSnapshotBackupUuid() == null) {
-                // This is the first ever snapshot taken for the volume.
-                // Set the first snapshot backup uuid once and for all.
-                // XXX: This will get set to non-null only if we were able to backup the first snapshot
-                // successfully. If we didn't backup the first snapshot, the volume is essentially
-                // screwed as far as snapshots are concerned.
-                volume.setFirstSnapshotBackupUuid(backedUpSnapshotUuid);
-                _volsDao.update(volumeId, volume);
-            }
-            
+                       
             // Create an event
             EventVO event = new EventVO();
             event.setUserId(userId);
             event.setAccountId(volume.getAccountId());
             event.setType(EventTypes.EVENT_SNAPSHOT_CREATE);
-            String snapshotName = snapshotVO.getName();
+            String snapshotName = snapshot.getName();
             
             if (backedUp) {
-                snapshotVO.setStatus(Snapshot.Status.BackedUp);
+                snapshot.setBackupSnapshotId(backedUpSnapshotUuid);
+                snapshot.setStatus(Snapshot.Status.BackedUp);
+                _snapshotDao.update(snapshotId, snapshot);
                 String eventParams = "id=" + snapshotId + "\nssName=" + snapshotName +"\nsize=" + volume.getSize()+"\ndcId=" + volume.getDataCenterId();
                 event.setDescription("Backed up snapshot id: " + snapshotId + " to secondary for volume " + volumeId);
                 event.setLevel(EventVO.LEVEL_INFO);
                 event.setStartId(startEventId);
                 event.setParameters(eventParams);
-                _snapshotDao.update(snapshotId, snapshotVO);
+
             }
             else {
                 // Just mark it as removed in the database. When the next snapshot it taken,
