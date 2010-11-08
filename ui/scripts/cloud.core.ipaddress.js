@@ -117,7 +117,7 @@ function afterLoadIpJSP() {
 	        data: createURL("command=createPortForwardingRule"+array1.join("")),
 	        dataType: "json",
 	        success: function(json) {		                      
-	            var item = json.createportforwardingruleresponse;	  	        	
+	            var item = json.createportforwardingruleresponse.portforwardingrule;		       	        	
 	            portForwardingJsonToTemplate(item,$template);
 	            $spinningWheel.hide();   
 	            refreshCreatePortForwardingRow();			   						
