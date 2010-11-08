@@ -29,7 +29,7 @@ listDomainChildren=com.cloud.api.commands.ListDomainChildrenCmd;7
 getCloudIdentifier=com.cloud.api.commands.GetCloudIdentifierCmd;15
 
 #### Limit commands
-updateResourceLimit=com.cloud.api.commands.UpdateResourceLimitCmd;3
+updateResourceLimit=com.cloud.api.commands.UpdateResourceLimitCmd;1
 listResourceLimits=com.cloud.api.commands.ListResourceLimitsCmd;15
 
 #### VM commands
