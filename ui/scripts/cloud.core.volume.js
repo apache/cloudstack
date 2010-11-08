@@ -111,7 +111,7 @@ function afterLoadVolumeJSP() {
 									    $("body").stopTime(timerKey);
 									    if (result.jobstatus == 1) {
 										    // Succeeded										   
-										    volumeToMidmenu(result.volume[0], $midmenuItem1);
+										    volumeToMidmenu(result.jobresult.volume, $midmenuItem1);
 						                    bindClickToMidMenu($midmenuItem1, volumeToRightPanel, getMidmenuId);  
 						                    afterAddingMidMenuItem($midmenuItem1, true);	         
 									    } else if (result.jobstatus == 2) {
