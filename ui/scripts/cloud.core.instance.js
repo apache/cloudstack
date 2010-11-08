@@ -937,7 +937,7 @@ var vmActionMap = {
         inProcessText: "Restoring Instance....",
         dialogBeforeActionFn : doRestoreVM,
         afterActionSeccessFn: function(json, $midmenuItem1, id) { 
-            var jsonObj = json.recovervirtualmachineresponse; 
+            var jsonObj = json.recovervirtualmachineresponse.virtualmachine;
             vmToMidmenu(jsonObj, $midmenuItem1);
             vmToRightPanel($midmenuItem1);
         }
