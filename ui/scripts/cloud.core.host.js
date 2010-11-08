@@ -224,7 +224,7 @@ var hostActionMap = {
         dialogBeforeActionFn: doForceReconnect,
         inProcessText: "Reconnecting....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {
-            hostToMidmenu(json.queryasyncjobresultresponse.host[0], $midmenuItem1);
+            hostToMidmenu(json.queryasyncjobresultresponse.jobresult.host, $midmenuItem1);
             hostToRightPanel($midmenuItem1);            
             $("#right_panel_content #after_action_info").text("We are actively reconnecting your host.  Please refresh periodically for an updated status."); 
         }
