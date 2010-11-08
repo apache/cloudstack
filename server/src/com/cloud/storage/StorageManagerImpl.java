@@ -113,6 +113,7 @@ import com.cloud.storage.snapshot.SnapshotScheduler;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -1574,9 +1575,13 @@ public class StorageManagerImpl implements StorageManager {
         _volsDao.destroyVolume(volumeId);
         
         String eventParams = "id=" + volumeId;
+        Long userId = UserContext.current().getUserId();
+        if (userId == null) {
+            userId = 1L;
+        }
         EventVO event = new EventVO();
         event.setAccountId(volume.getAccountId());
-        event.setUserId(1L);
+        event.setUserId(userId);
         event.setType(EventTypes.EVENT_VOLUME_DELETE);
         event.setParameters(eventParams);
         event.setDescription("Volume " +volume.getName()+ " deleted");
