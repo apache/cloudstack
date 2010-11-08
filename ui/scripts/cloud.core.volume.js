@@ -303,7 +303,7 @@ function afterLoadVolumeJSP() {
 	                            topPanel.find("#read_hourly_minute").text(minute);
 								topPanel.find("#read_hourly_timezone").text("("+timezones[timezone]+")");
                                 topPanel.find("#read_hourly_max").text(max);                                                                        
-                                topPanel.find("#hourly_edit_link, #hourly_delete_link").data("intervalType", "hourly").data("snapshotPolicyId", json.createsnapshotpolicyresponse.id).data("max",max).data("timezone",timezone).data("minute", minute);                                                                   
+                                topPanel.find("#hourly_edit_link, #hourly_delete_link").data("intervalType", "hourly").data("snapshotPolicyId", json.createsnapshotpolicyresponse.snapshotpolicy.id).data("max",max).data("timezone",timezone).data("minute", minute);                                                                   
 	                            break;
 	                        case "daily":
 								topPanel.find("#dialog_snapshot_daily_info_unset").hide();
@@ -313,7 +313,7 @@ function afterLoadVolumeJSP() {
 	                            topPanel.find("#read_daily_meridiem").text(meridiem);
 								topPanel.find("#read_daily_timezone").text("("+timezones[timezone]+")");
                                 topPanel.find("#read_daily_max").text(max);                                                                       
-                                topPanel.find("#daily_edit_link, #daily_delete_link").data("intervalType", "daily").data("snapshotPolicyId", json.createsnapshotpolicyresponse.id).data("max",max).data("timezone",timezone).data("minute", minute).data("hour12", hour12).data("meridiem", meridiem);                                 
+                                topPanel.find("#daily_edit_link, #daily_delete_link").data("intervalType", "daily").data("snapshotPolicyId", json.createsnapshotpolicyresponse.snapshotpolicy.id).data("max",max).data("timezone",timezone).data("minute", minute).data("hour12", hour12).data("meridiem", meridiem);                                 
                                 break;
 	                        case "weekly":
 								topPanel.find("#dialog_snapshot_weekly_info_unset").hide();
@@ -324,7 +324,7 @@ function afterLoadVolumeJSP() {
 								topPanel.find("#read_weekly_timezone").text("("+timezones[timezone]+")");
 	                            topPanel.find("#read_weekly_day_of_week").text(dayOfWeekString);
                                 topPanel.find("#read_weekly_max").text(max);	                                                                         
-                                topPanel.find("#weekly_edit_link, #weekly_delete_link").data("intervalType", "weekly").data("snapshotPolicyId", json.createsnapshotpolicyresponse.id).data("max",max).data("timezone",timezone).data("minute", minute).data("hour12", hour12).data("meridiem", meridiem).data("dayOfWeek",dayOfWeek);                                       
+                                topPanel.find("#weekly_edit_link, #weekly_delete_link").data("intervalType", "weekly").data("snapshotPolicyId", json.createsnapshotpolicyresponse.snapshotpolicy.id).data("max",max).data("timezone",timezone).data("minute", minute).data("hour12", hour12).data("meridiem", meridiem).data("dayOfWeek",dayOfWeek);                                       
 	                            break;
 	                        case "monthly":
 								topPanel.find("#dialog_snapshot_monthly_info_unset").hide();
@@ -335,7 +335,7 @@ function afterLoadVolumeJSP() {
 								topPanel.find("#read_monthly_timezone").text("("+timezones[timezone]+")");
 	                            topPanel.find("#read_monthly_day_of_month").text(toDayOfMonthDesp(dayOfMonth));
                                 topPanel.find("#read_monthly_max").text(max);	                                                                          
-                                topPanel.find("#monthly_edit_link, #monthly_delete_link").data("intervalType", "monthly").data("snapshotPolicyId", json.createsnapshotpolicyresponse.id).data("max",max).data("timezone",timezone).data("minute", minute).data("hour12", hour12).data("meridiem", meridiem).data("dayOfMonth",dayOfMonth);                                         
+                                topPanel.find("#monthly_edit_link, #monthly_delete_link").data("intervalType", "monthly").data("snapshotPolicyId", json.createsnapshotpolicyresponse.snapshotpolicy.id).data("max",max).data("timezone",timezone).data("minute", minute).data("hour12", hour12).data("meridiem", meridiem).data("dayOfMonth",dayOfMonth);                                         
 	                            break;
 	                    }	                      
                         	    						
