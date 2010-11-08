@@ -214,6 +214,7 @@ public class ListIsosCmd extends BaseListCmd {
                 isoResponse.setBootable(iso.isBootable());
                 isoResponse.setFeatured(iso.isFeatured());
                 isoResponse.setCrossZones(iso.isCrossZones());
+                isoResponse.setPublic(iso.isPublicTemplate());
 
                 // TODO:  implement
                 GuestOS os = ApiDBUtils.findGuestOSById(iso.getGuestOSId());
