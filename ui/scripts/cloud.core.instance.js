@@ -1008,7 +1008,7 @@ var vmActionMap = {
         inProcessText: "Changing Service....",
         dialogBeforeActionFn : doChangeService,
         afterActionSeccessFn: function(json, $midmenuItem1, id) {                 
-            var jsonObj = json.changeserviceforvirtualmachineresponse;   
+            var jsonObj = json.changeserviceforvirtualmachineresponse.virtualmachine;       
             vmToMidmenu(jsonObj, $midmenuItem1);
             vmToRightPanel($midmenuItem1);
         }
