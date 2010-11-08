@@ -340,7 +340,9 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
         // reschedule all policies after management restart
         List<SnapshotPolicyVO> policyInstances = _snapshotPolicyDao.listAll();
         for( SnapshotPolicyVO policyInstance : policyInstances) {
-            scheduleNextSnapshotJob(policyInstance);
+            if( policyInstance.getId() != Snapshot.MANUAL_POLICY_ID ) {
+                scheduleNextSnapshotJob(policyInstance);
+            }
         }
         if (_testTimerTask != null) {
             _testClockTimer = new Timer("TestClock");
