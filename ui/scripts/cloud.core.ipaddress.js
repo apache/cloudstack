@@ -64,8 +64,7 @@ function afterLoadIpJSP() {
 				    data: createURL("command=associateIpAddress&zoneid="+zoneid),
 					dataType: "json",
 					success: function(json) {						   
-					    var item = json.associateipaddressresponse;	
-					    //$("#dialog_info").html("<p>The IP address <b>"+items[0].ipaddress+"</b> has been assigned to your account</p>").dialog("open");	
+					    var item = json.associateipaddressresponse.ipaddress;					 
 					    ipToMidmenu(item, $midmenuItem1);
 						bindClickToMidMenu($midmenuItem1, ipToRightPanel, ipGetMidmenuId);  
 						afterAddingMidMenuItem($midmenuItem1, true);	
