@@ -71,6 +71,8 @@ import com.cloud.api.commands.RebootSystemVmCmd;
 import com.cloud.api.commands.RegisterCmd;
 import com.cloud.api.commands.RegisterPreallocatedLunCmd;
 import com.cloud.api.commands.StartSystemVMCmd;
+import com.cloud.api.commands.StartSystemVm2Cmd;
+import com.cloud.api.commands.StopSystemVm2Cmd;
 import com.cloud.api.commands.StopSystemVmCmd;
 import com.cloud.api.commands.UpdateDomainCmd;
 import com.cloud.api.commands.UpdateIPForwardingRuleCmd;
@@ -144,6 +146,7 @@ import com.cloud.vm.VirtualMachine;
  */
 public interface ManagementServer {
     static final String Name = "management-server";
+
     
 
     List<ClusterVO> listClusterByPodId(long podId);
@@ -679,6 +682,9 @@ public interface ManagementServer {
 	VMInstanceVO stopSystemVM(StopSystemVmCmd cmd);
 	VMInstanceVO startSystemVM(StartSystemVMCmd cmd);
 	VMInstanceVO rebootSystemVM(RebootSystemVmCmd cmd);
+	
+	VirtualMachine startSystemVm(StartSystemVm2Cmd cmd);
+	VirtualMachine stopSystemVm(StopSystemVm2Cmd cmd);
 
 	/**
 	 * Returns a configuration value with the specified name

@@ -121,6 +121,8 @@ import com.cloud.api.commands.RebootSystemVmCmd;
 import com.cloud.api.commands.RegisterCmd;
 import com.cloud.api.commands.RegisterPreallocatedLunCmd;
 import com.cloud.api.commands.StartSystemVMCmd;
+import com.cloud.api.commands.StartSystemVm2Cmd;
+import com.cloud.api.commands.StopSystemVm2Cmd;
 import com.cloud.api.commands.StopSystemVmCmd;
 import com.cloud.api.commands.UpdateDomainCmd;
 import com.cloud.api.commands.UpdateIPForwardingRuleCmd;
@@ -4796,6 +4798,76 @@ public class ManagementServerImpl implements ManagementServer {
 		}
 	}
 
+    @Override
+    public VirtualMachine startSystemVm(StartSystemVm2Cmd cmd) {
+        UserContext context = UserContext.current();
+        long callerId = context.getUserId();
+        long callerAccountId = context.getAccountId(); 
+        
+        //verify input
+        Long id = cmd.getId();
+
+        VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(id, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
+        if (systemVm == null) {
+            throw new InvalidParameterValueException("unable to find a system vm with id " + id);
+        }
+        
+        if (systemVm.getType() == VirtualMachine.Type.ConsoleProxy) {
+            long eventId = EventUtils.saveScheduledEvent(callerId, callerAccountId, EventTypes.EVENT_PROXY_START, "Starting console proxy with Id: "+id);
+            try {
+                checkIfStoragePoolAvailable(id);
+            } catch (StorageUnavailableException e) {
+                s_logger.warn(e.getMessage());
+                return null;
+            } catch (Exception e){
+                //unforseen exceptions
+                s_logger.warn(e.getMessage());
+                return null;
+            }
+            return startConsoleProxy(id, eventId);
+        } else if (systemVm.getType() == VirtualMachine.Type.SecondaryStorageVm) {
+            long eventId = EventUtils.saveScheduledEvent(callerId, callerAccountId, EventTypes.EVENT_SSVM_START, "Starting secondary storage Vm Id: "+id);
+            try {
+                checkIfStoragePoolAvailable(id);
+            } catch (StorageUnavailableException e) {
+                s_logger.warn(e.getMessage());
+                return null;
+            } catch (Exception e){
+                //unforseen exceptions
+                s_logger.warn(e.getMessage());
+                return null;
+            }
+            return startSecondaryStorageVm(id, eventId);
+        } else {
+            throw new InvalidParameterValueException("Unable to find a system vm: " + id);
+        }
+    }
+    
+    @Override
+    public VirtualMachine stopSystemVm(StopSystemVm2Cmd cmd) {
+        UserContext context = UserContext.current();
+        
+        long callerId = context.getUserId();
+        long callerAccountId = context.getAccountId();
+        
+        Long id = cmd.getId();
+        
+        // verify parameters      
+        VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(id, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
+        if (systemVm == null) {
+            throw new ServerApiException (BaseCmd.PARAM_ERROR, "unable to find a system vm with id " + id);
+        }
+
+        // FIXME: We need to return the system VM from this method, so what do we do with the boolean response from stopConsoleProxy and stopSecondaryStorageVm?
+        if (systemVm.getType().equals(VirtualMachine.Type.ConsoleProxy)){
+            long eventId = EventUtils.saveScheduledEvent(callerId, callerAccountId, EventTypes.EVENT_PROXY_STOP, "stopping console proxy with Id: "+id);
+            return stopConsoleProxy(id, eventId);
+        } else {
+            long eventId = EventUtils.saveScheduledEvent(callerId, callerAccountId, EventTypes.EVENT_SSVM_STOP, "stopping secondary storage Vm Id: "+id);
+            return stopSecondaryStorageVm(id, eventId);
+        }
+    }
+    
 	private void checkIfStoragePoolAvailable(Long id) throws StorageUnavailableException {
 		//check if the sp is up before starting
         List<VolumeVO> rootVolList = _volumeDao.findByInstanceAndType(id, VolumeType.ROOT); 

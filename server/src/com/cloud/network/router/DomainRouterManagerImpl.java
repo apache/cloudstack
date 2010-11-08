@@ -2371,7 +2371,11 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
     @Override
     public DomainRouter stopRouter(StopRouter2Cmd cmd) throws ResourceUnavailableException, ConcurrentOperationException {
         Long routerId = cmd.getId();
-        Account account = UserContext.current().getAccount();
+        UserContext context = UserContext.current();
+        Account account = context.getAccount();
+        long accountId = context.getAccountId();
+        long userId = context.getUserId();
+        
 
         // verify parameters
         DomainRouterVO router = _routerDao.findById(routerId);
@@ -2381,9 +2385,9 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
 
         _accountMgr.checkAccess(account, router);
         
-        long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_ROUTER_STOP, "stopping Router with Id: "+routerId);
+        long eventId = EventUtils.saveScheduledEvent(userId, accountId, EventTypes.EVENT_ROUTER_STOP, "stopping Router with Id: "+routerId);
         
-        UserVO user = _userDao.findById(UserContext.current().getUserId());
+        UserVO user = _userDao.findById(context.getUserId());
 
         try {
             if (!_itMgr.stop(router, user, account)) {
