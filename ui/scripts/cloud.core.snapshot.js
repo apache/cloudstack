@@ -19,7 +19,8 @@
 function afterLoadSnapshotJSP() {
     //initialize dialog
     initDialog("dialog_add_volume_from_snapshot");       
-    initDialog("dialog_create_template_from_snapshot", 400);    
+    initDialog("dialog_create_template_from_snapshot", 400);  
+	initDialog("dialog_confirmation_delete_snapshot");	
     
     //populate dropdown
     $.ajax({
@@ -123,7 +124,8 @@ var snapshotActionMap = {
     "Delete Snapshot": {              
         api: "deleteSnapshot",     
         isAsyncJob: true,
-        asyncJobResponse: "deletesnapshotresponse",        
+        asyncJobResponse: "deletesnapshotresponse",    
+		dialogBeforeActionFn : doSnapshotDelete,
         inProcessText: "Deleting snapshot....",
         afterActionSeccessFn: function(json, $midmenuItem1, id){            
             $midmenuItem1.remove();
@@ -140,6 +142,22 @@ var snapshotActionMap = {
         afterActionSeccessFn: function(json, $midmenuItem1, id){}
     }
 }   
+
+function doSnapshotDelete($actionLink, $thisTab, $midmenuItem1) {
+	$("#dialog_confirmation_delete_snapshot")	
+    .dialog('option', 'buttons', { 						
+	    "Confirm": function() { 
+		    $(this).dialog("close"); 	
+			var id = $thisTab.data("jsonObj").id;
+			var apiCommand = "command=deleteSnapshot&id="+id;                      
+            doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $thisTab); 
+	    }, 
+	    "Cancel": function() { 
+		    $(this).dialog("close"); 
+			
+	    } 
+    }).dialog("open");
+}
 
 function doCreateVolumeFromSnapshotInSnapshotPage($actionLink, $detailsTab, $midmenuItem1){ 
     var jsonObj = $detailsTab.data("jsonObj");

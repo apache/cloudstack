@@ -144,6 +144,12 @@
 </div>
 <!-- Add Volume Dialog from Snapshot (end) -->
 
+<!-- snapshot confirmation dialog (begin) -->
+<div id="dialog_confirmation_delete_snapshot" title="Confirmation" style="display:none">
+    <p>Please confirm you want to delete the snapshot.</p>   
+</div>
+<!-- snapshot confirmation dialog (end) -->
+
 <!-- Create template from snapshot (begin) -->
 <div id="dialog_create_template_from_snapshot" title="Create Template from Snapshot" style="display:none">	
 	<div class="dialog_formcontent">

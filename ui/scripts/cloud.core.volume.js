@@ -24,6 +24,7 @@ function afterLoadVolumeJSP() {
     initDialog("dialog_attach_volume");	
     initDialog("dialog_add_volume_from_snapshot");	
     initDialog("dialog_create_template_from_snapshot", 400);    
+	initDialog("dialog_confirmation_delete_snapshot");
 	        
     $.ajax({
         data: createURL("command=listOsTypes"),
@@ -888,7 +889,8 @@ var volumeSnapshotActionMap = {
     "Delete Snapshot": {              
         api: "deleteSnapshot",     
         isAsyncJob: true,
-        asyncJobResponse: "deletesnapshotresponse",        
+        asyncJobResponse: "deletesnapshotresponse",
+		dialogBeforeActionFn : doSnapshotDelete,
         inProcessText: "Deleting snapshot....",
         afterActionSeccessFn: function(json, id, $subgridItem) {                 
             $subgridItem.slideUp("slow", function() {
@@ -905,6 +907,22 @@ var volumeSnapshotActionMap = {
         afterActionSeccessFn: function(json, id, $subgridItem) {}            
     }
 }  
+
+function doSnapshotDelete($actionLink, $subgridItem) {
+	$("#dialog_confirmation_delete_snapshot")	
+    .dialog('option', 'buttons', { 						
+	    "Confirm": function() { 
+		    $(this).dialog("close"); 	
+			var id = $subgridItem.data("jsonObj").id;
+			var apiCommand = "command=deleteSnapshot&id="+id;                      
+            doActionToSubgridItem(id, $actionLink, apiCommand, $subgridItem); 
+	    }, 
+	    "Cancel": function() { 
+		    $(this).dialog("close"); 
+			
+	    } 
+    }).dialog("open");
+}
                                               
 function doCreateVolumeFromSnapshotInVolumePage($actionLink, $subgridItem) { 
     var jsonObj = $subgridItem.data("jsonObj");

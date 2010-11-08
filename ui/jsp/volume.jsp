@@ -242,6 +242,12 @@
 </div>
 <!-- Create Snapshot Dialog (end) -->
 
+<!-- snapshot confirmation dialog (begin) -->
+<div id="dialog_confirmation_delete_snapshot" title="Confirmation" style="display:none">
+    <p>Please confirm you want to delete the snapshot.</p>   
+</div>
+<!-- snapshot confirmation dialog (end) -->
+
 <!-- Recurring Snapshots Dialog (begin) -->
 <div id="dialog_recurring_snapshot" title="Recurring Snapshot" style="display:none;">
     <div class="dialog_snapshotcontainer">
