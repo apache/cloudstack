@@ -2400,8 +2400,10 @@ a:hover.search_button {
 .rightpanel_mainloaderbox {
 	width:134px;
 	height:22px;
-	background:url(../images/right_loadingbg.png) no-repeat top left;
-	margin:0 auto;
+	background:#fffbe6 url(../images/infomsg_bg.gif) no-repeat top left;
+	border:1px solid #CCC;
+	float:left;
+	margin:0;
 	padding:0;
 }
 
@@ -3992,7 +3994,7 @@ a:hover.search_button {
 	font-size:11px;
 	font-weight:bold;
 	text-align:left;
-	margin:4px 5px 0 0;
+	margin:3px 5px 0 0;
 	padding:0;
 }
 

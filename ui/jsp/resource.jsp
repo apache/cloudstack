@@ -25,7 +25,7 @@
             <div class="dbrow even" style="border:1px solid #CCC;">
                 <div class="dbrow_cell" style="width: 64%; border: none;">
                     <div class="resource_titlebox">
-                        <h2><span> # of </span> Zone</h2>
+                        <h2><span> # of </span> Zones</h2>
 					</div>
                 </div>
                 <div class="dbrow_cell" style="width: 25%; border: none; background:#cacaca repeat top left; ">
@@ -34,12 +34,13 @@
                     </div>
                 </div>
                 <div class="dbrow_cell" style="width: 10%; border: none;">
+                	<div class="resadd_button" title="Add Zone"></div>
                 </div>
             </div>
             <div class="dbrow odd" style="margin-top:10px; border:1px solid #CCC;">
                 <div class="dbrow_cell" style="width: 64%; border: none; ">
                     <div class="resource_titlebox">
-                        <h2><span> # of </span> Pod</h2>
+                        <h2><span> # of </span> Pods</h2>
 					</div>
                 </div>
                 <div class="dbrow_cell" style="width: 25%; border: none; background:#cacaca repeat top left; ">
@@ -48,6 +49,7 @@
                     </div>
                 </div>
                 <div class="dbrow_cell" style="width: 10%; border: none;">
+                	<div class="resadd_button" title="Add Pod"></div>
                 </div>
             </div>
             <div class="dbrow even" style="margin-top:10px; border:1px solid #CCC;">
