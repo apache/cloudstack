@@ -37,6 +37,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.DomainRouterService;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.security.NetworkGroupManager;
 import com.cloud.server.ManagementServer;
@@ -123,7 +124,7 @@ public abstract class BaseCmd {
     public static NetworkGroupManager _networkGroupMgr;
     public static SnapshotManager _snapshotMgr;
     public static ConsoleProxyManager _consoleProxyMgr;
-    
+    public static DomainRouterService _routerMgr;
 
 
     private Object _responseObject = null;
@@ -146,6 +147,7 @@ public abstract class BaseCmd {
         _networkGroupMgr = locator.getManager(NetworkGroupManager.class);
         _snapshotMgr = locator.getManager(SnapshotManager.class);
         _consoleProxyMgr = locator.getManager(ConsoleProxyManager.class);
+        _routerMgr = locator.getManager(DomainRouterService.class);
         return locator;
     }
     

@@ -26,10 +26,9 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.utils.component.Manager;
 import com.cloud.vm.DomainRouter;
 
-public interface DomainRouterService extends Manager {
+public interface DomainRouterService {
     /**
      * Starts domain router
      * @param cmd the command specifying router's id

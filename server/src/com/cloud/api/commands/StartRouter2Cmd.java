@@ -26,8 +26,14 @@ import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ServerApiException;
 import com.cloud.api.response.DomainRouterResponse;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.DomainRouterService;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
@@ -86,6 +92,11 @@ public class StartRouter2Cmd extends BaseAsyncCmd {
     @Override
     public String getEventDescription() {
         return  "starting router: " + getId();
+    }
+    
+    @Override
+    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
+        return _routerMgr.startRouter(this);
     }
 
     @Override @SuppressWarnings("unchecked")

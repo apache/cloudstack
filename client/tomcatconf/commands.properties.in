@@ -132,7 +132,7 @@ listSystemVms=com.cloud.api.commands.ListSystemVMsCmd;1
 #### configuration commands
 updateConfiguration=com.cloud.api.commands.UpdateCfgCmd;1
 listConfigurations=com.cloud.api.commands.ListCfgsByCmd;1
-createConfiguration=com.cloud.api.commands.CreateCfgCmd;1
+addConfig=com.cloud.api.commands.AddConfigCmd;15
 listCapabilities=com.cloud.api.commands.ListCapabilitiesCmd;15
 
 #### pod commands
@@ -195,11 +195,11 @@ enableStorageMaintenance=com.cloud.api.commands.PreparePrimaryStorageForMaintena
 cancelStorageMaintenance=com.cloud.api.commands.CancelPrimaryStorageMaintenanceCmd;1
 
 #### network group commands
-createSecurityGroup=com.cloud.api.commands.CreateNetworkGroupCmd;11
-deleteSecurityGroup=com.cloud.api.commands.DeleteNetworkGroupCmd;11
-authorizeSecurityGroupIngress=com.cloud.api.commands.AuthorizeNetworkGroupIngressCmd;11
-revokeSecurityGroupIngress=com.cloud.api.commands.RevokeNetworkGroupIngressCmd;11
-listSecurityGroups=com.cloud.api.commands.ListNetworkGroupsCmd;11
+createNetworkGroup=com.cloud.api.commands.CreateNetworkGroupCmd;11
+deleteNetworkGroup=com.cloud.api.commands.DeleteNetworkGroupCmd;11
+authorizeNetworkGroupIngress=com.cloud.api.commands.AuthorizeNetworkGroupIngressCmd;11
+revokeNetworkGroupIngress=com.cloud.api.commands.RevokeNetworkGroupIngressCmd;11
+listNetworkGroups=com.cloud.api.commands.ListNetworkGroupsCmd;11
 
 registerPreallocatedLun=com.cloud.api.commands.RegisterPreallocatedLunCmd;1
 deletePreallocatedLun=com.cloud.api.commands.DeletePreallocatedLunCmd;1
