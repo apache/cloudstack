@@ -88,7 +88,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             
             return true;
         } else {
-            return false;
+            return true;
         }
     }
 

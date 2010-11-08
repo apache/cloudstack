@@ -2131,7 +2131,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
             if ((vm.getDomainRouterId() != null) && _vmDao.listBy(vm.getDomainRouterId(), State.Starting, State.Running).size() == 0) {
             	DomainRouterVO router = _routerDao.findById(vm.getDomainRouterId());
             	if (router.getState().equals(State.Stopped)) {
-            		_dcDao.releaseVnet(vnet, router.getDataCenterId(), router.getAccountId());
+            		_dcDao.releaseVnet(vnet, router.getDataCenterId(), router.getAccountId(), null);
             	}
             }
             

@@ -23,6 +23,7 @@ import java.util.Date;
 import java.util.List;
 
 import com.cloud.dc.DataCenterVnetVO;
+import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -34,6 +35,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
  * DataCenterVnetDaoImpl maintains the one-to-many relationship between
  * data center and the vnet that appears within its network.
  */
+@DB(txn=false)
 public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long> implements GenericDao<DataCenterVnetVO, Long> {
     private final SearchBuilder<DataCenterVnetVO> FreeVnetSearch;
     private final SearchBuilder<DataCenterVnetVO> VnetDcSearch;
@@ -53,6 +55,7 @@ public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long
     	return listBy(sc);
     }
     
+    @DB
     public void add(long dcId, int start, int end) {
         String insertVnet = "INSERT INTO `cloud`.`op_dc_vnet_alloc` (vnet, data_center_id) VALUES ( ?, ?)";
         
@@ -73,46 +76,38 @@ public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long
     }
     
     public void delete(long dcId) {
-    	String deleteVnet = "DELETE FROM `cloud`.`op_dc_vnet_alloc` WHERE data_center_id = ?";
-
-        Transaction txn = Transaction.currentTxn();
-        try {
-            PreparedStatement stmt = txn.prepareAutoCloseStatement(deleteVnet);
-            stmt.setLong(1, dcId);
-            stmt.executeUpdate();
-        } catch (SQLException e) {
-        	throw new CloudRuntimeException("Exception caught deleting vnet ", e);
-        }
+        SearchCriteria<DataCenterVnetVO> sc = VnetDcSearch.create();
+        sc.setParameters("dc", dcId);
+        
+        remove(sc);
     }
 
-    public DataCenterVnetVO take(long dcId, long accountId) {
+    @DB
+    public DataCenterVnetVO take(long dcId, long accountId, String reservationId) {
         SearchCriteria<DataCenterVnetVO> sc = FreeVnetSearch.create();
         sc.setParameters("dc", dcId);
         Date now = new Date();
         Transaction txn = Transaction.currentTxn();
-        try {
-            txn.start();
-            DataCenterVnetVO vo = lockOneRandomRow(sc, true);
-            if (vo == null) {
-                return null;
-            }
-
-            vo.setTakenAt(now);
-            vo.setAccountId(accountId);
-            update(vo.getId(), vo);
-            txn.commit();
-            return vo;
-
-        } catch (Exception e) {
-            throw new CloudRuntimeException("Caught Exception ", e);
+        txn.start();
+        DataCenterVnetVO vo = lockOneRandomRow(sc, true);
+        if (vo == null) {
+            return null;
         }
+
+        vo.setTakenAt(now);
+        vo.setAccountId(accountId);
+        vo.setReservationId(reservationId);
+        update(vo.getId(), vo);
+        txn.commit();
+        return vo;
     }
 
-    public void release(String vnet, long dcId, long accountId) {
+    public void release(String vnet, long dcId, long accountId, String reservationId) {
         SearchCriteria<DataCenterVnetVO> sc = VnetDcSearchAllocated.create();
         sc.setParameters("vnet", vnet);
         sc.setParameters("dc", dcId);
         sc.setParameters("account", accountId);
+        sc.setParameters("reservation", reservationId);
 
         DataCenterVnetVO vo = findOneIncludingRemovedBy(sc);
         if (vo == null) {
@@ -121,6 +116,7 @@ public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long
 
         vo.setTakenAt(null);
         vo.setAccountId(null);
+        vo.setReservationId(null);
         update(vo.getId(), vo);
     }
 
@@ -146,6 +142,7 @@ public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long
         VnetDcSearchAllocated.and("dc", VnetDcSearchAllocated.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         VnetDcSearchAllocated.and("taken", VnetDcSearchAllocated.entity().getTakenAt(), SearchCriteria.Op.NNULL);
         VnetDcSearchAllocated.and("account", VnetDcSearchAllocated.entity().getAccountId(), SearchCriteria.Op.EQ);
+        VnetDcSearchAllocated.and("reservation", VnetDcSearchAllocated.entity().getReservationId(), SearchCriteria.Op.EQ);
         VnetDcSearchAllocated.done();
     }
 }

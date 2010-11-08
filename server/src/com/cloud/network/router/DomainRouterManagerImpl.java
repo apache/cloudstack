@@ -59,7 +59,9 @@ import com.cloud.agent.api.routing.VpnUsersCfgCommand;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.commands.RebootRouterCmd;
+import com.cloud.api.commands.StartRouter2Cmd;
 import com.cloud.api.commands.StartRouterCmd;
+import com.cloud.api.commands.StopRouter2Cmd;
 import com.cloud.api.commands.StopRouterCmd;
 import com.cloud.api.commands.UpgradeRouterCmd;
 import com.cloud.async.AsyncJobExecutor;
@@ -144,6 +146,7 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
 import com.cloud.user.UserStatisticsVO;
+import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserStatisticsDao;
@@ -878,7 +881,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
 	                if(USE_POD_VLAN){
 	                    vnet = _dcDao.allocatePodVlan(router.getPodId(), router.getAccountId());
 	                } else {
-	                    vnet = _dcDao.allocateVnet(router.getDataCenterId(), router.getAccountId());
+	                    vnet = _dcDao.allocateVnet(router.getDataCenterId(), router.getAccountId(), null);
 	                }
 	                vnetAllocated = true;
 	                if(vnet != null){
@@ -1063,7 +1066,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
                 Transaction txn = Transaction.currentTxn();
                 txn.start();
                 if (vnetAllocated == true && vnet != null) {
-                    _dcDao.releaseVnet(vnet, router.getDataCenterId(), router.getAccountId());
+                    _dcDao.releaseVnet(vnet, router.getDataCenterId(), router.getAccountId(), null);
                 }
 
                 router.setVnet(null);
@@ -1562,7 +1565,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         try {
             txn.start();
             if (_vmDao.listBy(routerId, State.Starting, State.Running).size() == 0) {
-                _dcDao.releaseVnet(router.getVnet(), router.getDataCenterId(), router.getAccountId());
+                _dcDao.releaseVnet(router.getVnet(), router.getDataCenterId(), router.getAccountId(), null);
             }
 
             router.setVnet(null);
@@ -1955,7 +1958,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
 
     @Override
     public String createZoneVlan(DomainRouterVO router) {
-        String zoneVlan = _dcDao.allocateVnet(router.getDataCenterId(), router.getAccountId());
+        String zoneVlan = _dcDao.allocateVnet(router.getDataCenterId(), router.getAccountId(), null);
         final DataCenterVO dc = _dcDao.findById(router.getDataCenterId());
         router.setZoneVlan(zoneVlan);
         router.setGuestZoneMacAddress(getRouterMacForZoneVlan(dc, zoneVlan));
@@ -2337,5 +2340,61 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         }
         
         return _routerDao.findById(VirtualMachineName.getRouterId(name));
+    }
+    
+    @Override
+    public DomainRouter startRouter(StartRouter2Cmd cmd) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException {
+        Long routerId = cmd.getId();
+        Account account = UserContext.current().getAccount();
+        
+        //verify parameters
+        DomainRouterVO router = _routerDao.findById(routerId);
+        if (router == null) {
+            throw new PermissionDeniedException ("Unable to start router with id " + routerId + ". Permisssion denied");
+        }
+        _accountMgr.checkAccess(account, router);
+        
+        long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_ROUTER_START, "starting Router with Id: "+routerId);
+        UserVO user = _userDao.findById(UserContext.current().getUserId());
+        return this.start(router, user, account);
+    }
+    
+    /**
+     * Stops domain router
+     * @param cmd the command specifying router's id
+     * @return router if successful, null otherwise
+     * @throws OperationTimedoutException 
+     * @throws ConcurrentOperationException 
+     * @throws ResourceUnavailableException 
+     * @throws InvalidParameterValueException, PermissionDeniedException
+     */
+    @Override
+    public DomainRouter stopRouter(StopRouter2Cmd cmd) throws ResourceUnavailableException, ConcurrentOperationException {
+        Long routerId = cmd.getId();
+        Account account = UserContext.current().getAccount();
+
+        // verify parameters
+        DomainRouterVO router = _routerDao.findById(routerId);
+        if (router == null) {
+            throw new PermissionDeniedException ("Unable to stop router with id " + routerId + ". Permission denied.");
+        }
+
+        _accountMgr.checkAccess(account, router);
+        
+        long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_ROUTER_STOP, "stopping Router with Id: "+routerId);
+        
+        UserVO user = _userDao.findById(UserContext.current().getUserId());
+
+        try {
+            if (!_itMgr.stop(router, user, account)) {
+                return null;
+            }
+        } catch (AgentUnavailableException e) {
+            throw new ResourceUnavailableException("Unable to reach the server to stop the vm", e);
+        } catch (OperationTimedoutException e) {
+            throw new ResourceUnavailableException("Stop operation timed out", e);
+        }
+        
+        return router;
     }
 }

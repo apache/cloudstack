@@ -393,6 +393,7 @@ CREATE TABLE `cloud`.`op_dc_ip_address_alloc` (
   `data_center_id` bigint unsigned NOT NULL COMMENT 'data center it belongs to',
   `pod_id` bigint unsigned NOT NULL COMMENT 'pod it belongs to',
   `instance_id` bigint unsigned NULL COMMENT 'instance id',
+  `reservation_id` char(40) NULL COMMENT 'reservation id',
   `taken` datetime COMMENT 'Date taken',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -424,6 +425,7 @@ CREATE TABLE `cloud`.`op_dc_vnet_alloc` (
     `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'primary id',
     `vnet` varchar(18) NOT NULL COMMENT 'vnet',
     `data_center_id` bigint unsigned NOT NULL COMMENT 'data center the vnet belongs to',
+    `reservation_id` char(40) NULL COMMENT 'reservation id',
     `account_id` bigint unsigned NULL COMMENT 'account the vnet belongs to right now',
     `taken` datetime COMMENT 'Date taken',
     PRIMARY KEY (`id`)

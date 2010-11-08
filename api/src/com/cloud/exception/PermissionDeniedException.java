@@ -17,6 +17,10 @@
  */
 package com.cloud.exception;
 
+import java.util.List;
+
+import com.cloud.acl.ControlledEntity;
+import com.cloud.user.Account;
 import com.cloud.utils.SerialVersionUID;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -35,5 +39,30 @@ public class PermissionDeniedException extends CloudRuntimeException {
 	protected PermissionDeniedException() {
 	    super();
 	}
-
+	
+	List<? extends ControlledEntity> violations;
+	Account account;
+	
+	public PermissionDeniedException(String message, Account account, List<? extends ControlledEntity> violations) {
+	    super(message);
+	    this.violations = violations;
+	    this.account = account;
+	}
+	
+	public Account getAccount() {
+	    return account;
+	}
+	
+	public List<? extends ControlledEntity> getEntitiesInViolation() {
+	    return violations;
+	}
+	
+	public void addDetails(Account account, List<? extends ControlledEntity> violations) {
+	    this.account = account;
+	    this.violations = violations;
+	}
+	
+	public void addViolations(List<? extends ControlledEntity> violations) {
+	    this.violations = violations;
+	}
 }

@@ -35,7 +35,7 @@ public class DataCenterVnetVO {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
-    Long id;
+    long id;
     
     @Column(name="taken", nullable=true)
     @Temporal(value=TemporalType.TIMESTAMP)
@@ -49,6 +49,9 @@ public class DataCenterVnetVO {
 
     @Column(name="account_id")
     protected Long accountId;
+    
+    @Column(name="reservation_id")
+    protected String reservationId;
     
     public Date getTakenAt() {
         return takenAt;
@@ -64,12 +67,20 @@ public class DataCenterVnetVO {
         this.takenAt = null;
     }
     
-    public Long getId() {
+    public long getId() {
         return id;
     }
     
     public String getVnet() {
         return vnet;
+    }
+    
+    public String getReservationId() {
+        return reservationId;
+    }
+    
+    public void setReservationId(String reservationId) {
+        this.reservationId = reservationId;
     }
     
     public Long getAccountId() {

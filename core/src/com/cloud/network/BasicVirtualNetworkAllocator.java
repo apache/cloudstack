@@ -39,12 +39,12 @@ public class BasicVirtualNetworkAllocator implements VirtualNetworkAllocator {
 
     @Override
     public String allocateTag(AccountVO account, HostVO host, VMInstanceVO vm, ServiceOfferingVO so) {
-        return _dcDao.allocateVnet(host.getDataCenterId(), account.getId());
+        return _dcDao.allocateVnet(host.getDataCenterId(), account.getId(), null);
     }
 
     @Override
     public void releaseTag(String tag, HostVO host, AccountVO account, VMInstanceVO vm) {
-        _dcDao.releaseVnet(tag, host.getDataCenterId(), account.getId());
+        _dcDao.releaseVnet(tag, host.getDataCenterId(), account.getId(), null);
     }
 
     @Override

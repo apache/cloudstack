@@ -35,9 +35,9 @@ public interface DataCenterDao extends GenericDao<DataCenterVO, Long> {
     String[] getNextAvailableMacAddressPair(long id, long mask);
     String allocatePrivateIpAddress(long id, long podId, long instanceId, String reservationId);
     String allocateLinkLocalIpAddress(long id, long podId, long instanceId, String reservationId);
-    String allocateVnet(long dcId, long accountId);
+    String allocateVnet(long dcId, long accountId, String reservationId);
     
-    void releaseVnet(String vnet, long dcId, long accountId);
+    void releaseVnet(String vnet, long dcId, long accountId, String reservationId);
     void releasePrivateIpAddress(String ipAddress, long dcId, Long instanceId);
     void releasePrivateIpAddress(long nicId, String reservationId);
     void releaseLinkLocalIpAddress(String ipAddress, long dcId, Long instanceId);

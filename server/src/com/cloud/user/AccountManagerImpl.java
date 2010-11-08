@@ -19,6 +19,7 @@
 package com.cloud.user;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -664,7 +665,14 @@ public class AccountManagerImpl implements AccountManager, AccountService {
     
     @Override
     public void checkAccess(Account caller, ControlledEntity... entities) {
+        HashMap<Long, List<ControlledEntity>> domains = new HashMap<Long, List<ControlledEntity>>();
+        
         for (ControlledEntity entity : entities) {
+            List<ControlledEntity> toBeChecked = domains.get(entity.getDomainId());
+            if (toBeChecked == null) {
+                toBeChecked = new ArrayList<ControlledEntity>();
+            }
+            toBeChecked.add(entity);
             boolean granted = false;
             for (SecurityChecker checker : _securityCheckers) {
                 if (checker.checkAccess(caller, entity)) {
@@ -679,6 +687,21 @@ public class AccountManagerImpl implements AccountManager, AccountService {
             if (!granted) {
                 assert false : "How can all of the security checkers pass on checking this check: " + entity;
                 throw new PermissionDeniedException("There's no way to confirm " + caller + " has access to " + entity);
+            }
+        }
+        
+        for (Map.Entry<Long, List<ControlledEntity>> domain : domains.entrySet()) {
+            for (SecurityChecker checker : _securityCheckers) {
+                Domain d = _domainDao.findById(domain.getKey());
+                if (d == null || d.getRemoved() != null) {
+                    throw new PermissionDeniedException("Domain is not found.", caller, domain.getValue());
+                }
+                try {
+                    checker.checkAccess(caller, d);
+                } catch (PermissionDeniedException e) {
+                    e.addDetails(caller, domain.getValue());
+                    throw e;
+                }
             }
         }
     }

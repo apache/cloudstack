@@ -133,7 +133,7 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
         NetworkConfigurationVO implemented = new NetworkConfigurationVO(config.getTrafficType(), config.getGuestType(), config.getMode(), config.getBroadcastDomainType(), config.getNetworkOfferingId(), config.getDataCenterId());
         
         if (config.getBroadcastUri() == null) {
-            String vnet = _dcDao.allocateVnet(dcId, config.getAccountId());
+            String vnet = _dcDao.allocateVnet(dcId, config.getAccountId(), context.getReservationId());
             implemented.setBroadcastUri(BroadcastDomainType.Vlan.toUri(vnet));
         } else {
             implemented.setBroadcastUri(config.getBroadcastUri());

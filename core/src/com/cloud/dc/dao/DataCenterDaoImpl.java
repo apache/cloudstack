@@ -94,8 +94,8 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     }
 
     @Override
-    public void releaseVnet(String vnet, long dcId, long accountId) {
-        _vnetAllocDao.release(vnet, dcId, accountId);
+    public void releaseVnet(String vnet, long dcId, long accountId, String reservationId) {
+        _vnetAllocDao.release(vnet, dcId, accountId, reservationId);
     }
     
     @Override
@@ -134,8 +134,8 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     }
 
     @Override
-    public String allocateVnet(long dataCenterId, long accountId) {
-        DataCenterVnetVO vo = _vnetAllocDao.take(dataCenterId, accountId);
+    public String allocateVnet(long dataCenterId, long accountId, String reservationId) {
+        DataCenterVnetVO vo = _vnetAllocDao.take(dataCenterId, accountId, reservationId);
         if (vo == null) {
             return null;
         }
