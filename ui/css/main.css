@@ -2578,7 +2578,7 @@ a:hover.search_button {
 }
 
 .row_celltitles {
-	width:auto;
+	width:95%;
 	height:auto;
 	float:left;
 	color:#333;

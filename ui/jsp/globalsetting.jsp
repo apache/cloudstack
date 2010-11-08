@@ -72,19 +72,19 @@
 </div>
 <!-- global setting grid template (begin) -->
 
-    <div id="globalsetting_template" class="grid_rows even" style="display:none">
-        <div class="grid_row_cell" style="width: 35%;">
+    <div id="globalsetting_template" class="grid_rows even" style="display:none; position:none;">
+        <div class="grid_row_cell" style="width: 35%; border:none;">
             <div class="row_celltitles" id="name">
             </div>
         </div>
-        <div class="grid_row_cell" style="width: 23%;">
+        <div class="grid_row_cell" style="width: 23%; border:none;">
             <div class="row_celltitles" id="value">
             </div>
-            <input class="text" id="value_edit" style="width: 200px; display: none;" type="text" />
-            <div id="value_edit_errormsg" style="display: none">
+            <input class="text" id="value_edit" style="width: 120px; display: none;" type="text" />
+            <div id="value_edit_errormsg">
             </div>
         </div>
-        <div class="grid_row_cell" style="width: 40%;">
+        <div class="grid_row_cell" style="width: 40%; border:none;">
             <div class="row_celltitles" id="description">description
             </div>
         </div>
