@@ -2,7 +2,6 @@ package com.cloud.api;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.serializer.GsonHelper;
 import com.google.gson.Gson;
 
 public class ApiSerializerHelper {

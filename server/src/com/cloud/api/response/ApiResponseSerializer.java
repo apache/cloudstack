@@ -80,7 +80,11 @@ public class ApiResponseSerializer {
                 }
             }
         } else {
-            serializeResponseObjFieldsXML(sb, result);
+            if (result instanceof CreateCmdResponse || result instanceof AsyncJobResponse) {
+                serializeResponseObjFieldsXML(sb, result);
+            } else {
+                serializeResponseObjXML(sb, result);
+            }   
         }
         
         sb.append("</" + result.getResponseName() + ">");
@@ -89,10 +93,10 @@ public class ApiResponseSerializer {
 
     private static void serializeResponseObjXML(StringBuilder sb, ResponseObject obj) {
         if (!(obj instanceof SuccessResponse)&& !(obj instanceof ExceptionResponse))
-            sb.append("<" + obj.getResponseName() + ">");
+            sb.append("<" + obj.getObjectName() + ">");
         serializeResponseObjFieldsXML(sb, obj);
         if (!(obj instanceof SuccessResponse) && !(obj instanceof ExceptionResponse))
-            sb.append("</" + obj.getResponseName() + ">");
+            sb.append("</" + obj.getObjectName() + ">");
     }
 
     private static void serializeResponseObjFieldsXML(StringBuilder sb, ResponseObject obj) {
