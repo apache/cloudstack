@@ -169,8 +169,8 @@ function afterLoadIpJSP() {
         $.ajax({
 	        data: createURL("command=createLoadBalancerRule"+array1.join("")),
 			dataType: "json",
-			success: function(json) {					    	    
-				var item = json.createloadbalancerruleresponse;						
+			success: function(json) {	
+				var item = json.createloadbalancerruleresponse.loadbalancer;				
 	            loadBalancerJsonToTemplate(item, $template);
 	            $spinningWheel.hide();   
 	            refreshCreateLoadBalancerRow();	            	
