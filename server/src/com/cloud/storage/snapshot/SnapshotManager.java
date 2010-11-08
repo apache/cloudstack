@@ -46,6 +46,7 @@ public interface SnapshotManager extends Manager {
 	public static final int DAILYMAX = 8;
 	public static final int WEEKLYMAX = 8;
 	public static final int MONTHLYMAX = 8;
+	public static final int DELTAMAX = 16;
 	
     /**
      * Create a snapshot of a volume

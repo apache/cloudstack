@@ -129,6 +129,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
     String _name;
     private int _totalRetries;
     private int _pauseInterval;
+    private int _deltaSnapshotMax;
 
     protected SearchBuilder<SnapshotVO> PolicySnapshotSearch;
     protected SearchBuilder<SnapshotPolicyVO> PoliciesForSnapSearch;
@@ -297,27 +298,15 @@ public class SnapshotManagerImpl implements SnapshotManager {
                 createdSnapshot =  _snapshotDao.findById(id);
                 // delete from the snapshots table
                 _snapshotDao.expunge(id);
-
-                createdSnapshot.setStatus(Status.EmptySnapshot);
+                throw new CloudRuntimeException("There is no change for volume " + volumeId + " since last snapshot, please use last snapshot instead.");
 
             } else {
                 long preSnapshotId = 0;
                 if( preSnapshotVO != null && preSnapshotVO.getBackupSnapshotId() != null) {
                     preSnapshotId = preId;
-                    // default delta snap number is 4
-                    int deltaSnap = 4;
-                    if( policyId != Snapshot.MANUAL_POLICY_ID ) {
-                        SnapshotPolicyVO snapshotPolicy = _snapshotPolicyDao.findById(policyId);
-                        int maxSnap = snapshotPolicy.getMaxSnaps();
-                        deltaSnap = (maxSnap + 1) >> 1;
-                    } else {
-                        // check if there are policy for this volume
-                        SnapshotPolicyVO snapshotPolicy = _snapshotPolicyDao.findOneByVolume(volumeId);
-                        if( snapshotPolicy != null ) {
-                            int maxSnap = snapshotPolicy.getMaxSnaps();
-                            deltaSnap = (maxSnap + 1) >> 1;
-                        }
-                    }
+                    // default delta snap number is 16
+                    int deltaSnap = _deltaSnapshotMax;
+
                     int i;
                     for (i = 1; i < deltaSnap; i++) {
                         String prevBackupUuid = preSnapshotVO.getBackupSnapshotId();
@@ -347,7 +336,6 @@ public class SnapshotManagerImpl implements SnapshotManager {
                     _snapshotScheduleDao.update(snapshotSchedule.getId(), snapshotSchedule);
                 }
             }
-
         } else {
             if (answer != null) {
                 s_logger.error(answer.getDetails());
@@ -355,8 +343,8 @@ public class SnapshotManagerImpl implements SnapshotManager {
             // The snapshot was not successfully created
             createdSnapshot =  _snapshotDao.findById(id);
             // delete from the snapshots table
-            _snapshotDao.expunge(id);
-
+            _snapshotDao.expunge(id);                
+            throw new CloudRuntimeException("Creating snapshot for volume " + volumeId + " on primary storage failed.");
         }
 
         return createdSnapshot;
@@ -1150,6 +1138,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
         DateUtil.IntervalType.DAILY.setMax(NumbersUtil.parseInt(configDao.getValue("snapshot.max.daily"), DAILYMAX));
         DateUtil.IntervalType.WEEKLY.setMax(NumbersUtil.parseInt(configDao.getValue("snapshot.max.weekly"), WEEKLYMAX));
         DateUtil.IntervalType.MONTHLY.setMax(NumbersUtil.parseInt(configDao.getValue("snapshot.max.monthly"), MONTHLYMAX));
+        _deltaSnapshotMax = NumbersUtil.parseInt(configDao.getValue("snapshot.delta.max"), DELTAMAX);
         _totalRetries = NumbersUtil.parseInt(configDao.getValue("total.retries"), 4);
         _pauseInterval = 2*NumbersUtil.parseInt(configDao.getValue("ping.interval"), 60);
 

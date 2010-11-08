@@ -39,8 +39,7 @@ public interface Snapshot {
         Creating,
         CreatedOnPrimary,
         BackingUp,
-        BackedUp,
-        EmptySnapshot;
+        BackedUp;
         
         public String toString() {
             return this.name();

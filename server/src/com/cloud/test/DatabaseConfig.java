@@ -199,6 +199,11 @@ public class DatabaseConfig {
         s_configurationDescriptions.put("use.local.storage", "Indicates whether to use local storage pools or shared storage pools for user VMs");
         s_configurationDescriptions.put("use.local.storage", "Indicates whether to use local storage pools or shared storage pools for system VMs.");
         s_configurationDescriptions.put("snapshot.poll.interval", "The time interval in seconds when the management server polls for snapshots to be scheduled.");
+        s_configurationDescriptions.put("snapshot.max.hourly", "Maximum hourly snapshots for a volume");
+        s_configurationDescriptions.put("snapshot.max.daily", "Maximum dalily snapshots for a volume");
+        s_configurationDescriptions.put("snapshot.max.weekly", "Maximum hourly snapshots for a volume");
+        s_configurationDescriptions.put("snapshot.max.monthly", "Maximum hourly snapshots for a volume");
+        s_configurationDescriptions.put("snapshot.delta.max",  "max delta snapshots between two full snapshots.");
         s_configurationDescriptions.put("snapshot.recurring.test", "Flag for testing recurring snapshots");
         s_configurationDescriptions.put("snapshot.test.minutes.per.hour", "Set it to a smaller value to take more recurring snapshots");
         s_configurationDescriptions.put("snapshot.test.hours.per.day", "Set it to a smaller value to take more recurring snapshots");
@@ -272,6 +277,11 @@ public class DatabaseConfig {
         s_configurationComponents.put("system.vm.use.local.storage", "ManagementServer");
         s_configurationComponents.put("use.local.storage", "ManagementServer");
         s_configurationComponents.put("snapshot.poll.interval", "SnapshotManager");
+        s_configurationComponents.put("snapshot.max.hourly", "SnapshotManager");
+        s_configurationComponents.put("snapshot.max.daily", "SnapshotManager");
+        s_configurationComponents.put("snapshot.max.weekly", "SnapshotManager");
+        s_configurationComponents.put("snapshot.max.monthly", "SnapshotManager");
+        s_configurationComponents.put("snapshot.delta.max", "SnapshotManager");
         s_configurationComponents.put("snapshot.recurring.test", "SnapshotManager");
         s_configurationComponents.put("snapshot.test.minutes.per.hour", "SnapshotManager");
         s_configurationComponents.put("snapshot.test.hours.per.day", "SnapshotManager");
@@ -297,6 +307,11 @@ public class DatabaseConfig {
         s_defaultConfigurationValues.put("ping.timeout", "2.5");
         s_defaultConfigurationValues.put("ping.interval", "60");
         s_defaultConfigurationValues.put("snapshot.poll.interval", "300");
+        s_defaultConfigurationValues.put("snapshot.max.hourly", "8");
+        s_defaultConfigurationValues.put("snapshot.max.daily", "8");
+        s_defaultConfigurationValues.put("snapshot.max.weekly", "8");
+        s_defaultConfigurationValues.put("snapshot.max.monthly", "8");
+        s_defaultConfigurationValues.put("snapshot.delta.max", "16");
         s_defaultConfigurationValues.put("snapshot.recurring.test", "false");
         s_defaultConfigurationValues.put("snapshot.test.minutes.per.hour", "60");
         s_defaultConfigurationValues.put("snapshot.test.hours.per.day", "24");

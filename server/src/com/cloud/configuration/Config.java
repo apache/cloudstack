@@ -93,11 +93,12 @@ public enum Config {
 	// ConsoleProxyURLPort("Console Proxy", ManagementServer.class, Integer.class, "consoleproxy.url.port", "80", "Console proxy port for AJAX viewer", null),
 	
 	// Snapshots
-    SnapshotHourlyMax("Snapshots", SnapshotManager.class, String.class, "snapshot.max.hourly", "8", "Maximum hourly snapshots for a volume", null),
-    SnapshotDailyMax("Snapshots", SnapshotManager.class, String.class, "snapshot.max.daily", "8", "Maximum dalily snapshots for a volume", null),
-    SnapshotWeeklyMax("Snapshots", SnapshotManager.class, String.class, "snapshot.max.weekly", "8", "Maximum hourly snapshots for a volume", null),
-    SnapshotMonthlyMax("Snapshots", SnapshotManager.class, String.class, "snapshot.max.monthly", "8", "Maximum hourly snapshots for a volume", null),
-    SnapshotPollInterval("Snapshots", SnapshotManager.class, Boolean.class, "snapshot.poll.interval", "300", "The time interval in seconds when the management server polls for snapshots to be scheduled.", null),
+    SnapshotHourlyMax("Snapshots", SnapshotManager.class, Integer.class, "snapshot.max.hourly", "8", "Maximum hourly snapshots for a volume", null),
+    SnapshotDailyMax("Snapshots", SnapshotManager.class, Integer.class, "snapshot.max.daily", "8", "Maximum dalily snapshots for a volume", null),
+    SnapshotWeeklyMax("Snapshots", SnapshotManager.class, Integer.class, "snapshot.max.weekly", "8", "Maximum hourly snapshots for a volume", null),
+    SnapshotMonthlyMax("Snapshots", SnapshotManager.class, Integer.class, "snapshot.max.monthly", "8", "Maximum hourly snapshots for a volume", null),
+    SnapshotPollInterval("Snapshots", SnapshotManager.class, Integer.class, "snapshot.poll.interval", "300", "The time interval in seconds when the management server polls for snapshots to be scheduled.", null),
+    SnapshotDeltaMax("Snapshots", SnapshotManager.class, Integer.class, "snapshot.delta.max", "16", "max delta snapshots between two full snapshots.", null),
     
 	// Advanced
     JobExpireMinutes("Advanced", ManagementServer.class, String.class, "job.expire.minutes", "1440", "Time (in minutes) for async-jobs to be kept in system", null),
