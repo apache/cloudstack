@@ -64,6 +64,7 @@ public class DomainDaoImpl extends GenericDaoBase<DomainVO, Long> implements Dom
 		
 		FindAllChildrenSearch = createSearchBuilder();
 		FindAllChildrenSearch.and("path", FindAllChildrenSearch.entity().getPath(), SearchCriteria.Op.LIKE);
+		FindAllChildrenSearch.and("id", FindAllChildrenSearch.entity().getId(), SearchCriteria.Op.NEQ);
 		FindAllChildrenSearch.done();
 	}
 	
@@ -209,9 +210,10 @@ public class DomainDaoImpl extends GenericDaoBase<DomainVO, Long> implements Dom
     }
     
     @Override
-    public List<DomainVO> findAllChildren(String path){
+    public List<DomainVO> findAllChildren(String path, Long parentId){
     	SearchCriteria<DomainVO> sc = FindAllChildrenSearch.create();
-    	sc.setParameters("path", path);
+    	sc.setParameters("path", "%"+path+"%");
+    	sc.setParameters("id", parentId);
     	return listBy(sc);
     }
     

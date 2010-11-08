@@ -1369,21 +1369,8 @@ public class ManagementServerImpl implements ManagementServer {
     		}
     		//this covers till leaf
     		if(domainRecord != null){
-//    			DomainVO localParent = domainRecord;
-//    			DomainVO immediateChild = null;
-//    			while(true){
-//    				//find immediate child domain
-//    				immediateChild = _domainDao.findImmediateChildForParent(localParent.getId());
-//    				if(immediateChild != null){
-//    					dcs.addAll(_dcDao.findZonesByDomainId(immediateChild.getId()));
-//    					localParent = immediateChild;//traverse down the list
-//    				}else{
-//    					break;
-//    				}
-//    			}
-    			
     			//find all children for this domain based on a like search by path
-    			List<DomainVO> allChildDomains = _domainDao.findAllChildren(domainRecord.getPath());
+    			List<DomainVO> allChildDomains = _domainDao.findAllChildren(domainRecord.getPath(), domainRecord.getId());
     			List<Long> allChildDomainIds = new ArrayList<Long>();
     			//create list of domainIds for search 
     			for(DomainVO domain : allChildDomains){
@@ -3422,13 +3409,18 @@ public class ManagementServerImpl implements ManagementServer {
     public List<DomainVO> searchForDomains(ListDomainsCmd cmd) throws PermissionDeniedException {
         Long domainId = cmd.getId();
         Account account = UserContext.current().getAccount();
+        
+        if(account == null || account.getType() == Account.ACCOUNT_TYPE_ADMIN){
+        	return _domainDao.listAll();
+        }
+        
         if (account != null) {
             if (domainId != null) {
                 if (!_domainDao.isChildDomain(account.getDomainId(), domainId)) {
                     throw new PermissionDeniedException("Unable to list domains for domain id " + domainId + ", permission denied.");
                 }
-            } else {
-                domainId = account.getDomainId();
+            }else {
+            	domainId = account.getDomainId();
             }
         }
 
@@ -3464,7 +3456,7 @@ public class ManagementServerImpl implements ManagementServer {
             sc.setParameters("id", domainId);
         }
 
-        return _domainDao.search(sc, searchFilter);
+       	return _domainDao.search(sc, searchFilter);
     }
 
     @Override
@@ -3485,7 +3477,13 @@ public class ManagementServerImpl implements ManagementServer {
             }
         }
 
-        SearchCriteria<DomainVO> sc = _domainDao.createSearchCriteria();
+        return searchForDomainChildren(searchFilter, domainId, domainName,
+				keyword);
+	}
+
+	private List<DomainVO> searchForDomainChildren(Filter searchFilter,
+			Long domainId, String domainName, Object keyword) {
+		SearchCriteria<DomainVO> sc = _domainDao.createSearchCriteria();
 
         if (keyword != null) {
             SearchCriteria<DomainVO> ssc = _domainDao.createSearchCriteria();
