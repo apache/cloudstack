@@ -127,8 +127,10 @@ var snapshotActionMap = {
         asyncJobResponse: "deletesnapshotresponse",    
 		dialogBeforeActionFn : doSnapshotDelete,
         inProcessText: "Deleting snapshot....",
-        afterActionSeccessFn: function(json, $midmenuItem1, id){            
-            $midmenuItem1.remove();
+        afterActionSeccessFn: function(json, $midmenuItem1, id){   
+            $midmenuItem1.slideUp("slow", function() {
+                $(this).remove();
+            });     
             clearRightPanel();
             snapshotClearRightPanel();
         }
