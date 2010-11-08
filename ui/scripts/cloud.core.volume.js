@@ -528,18 +528,8 @@ var volumeActionMap = {
         asyncJobResponse: "attachvolumeresponse",            
         dialogBeforeActionFn : doAttachDisk,
         inProcessText: "Attaching disk....",
-        afterActionSeccessFn: function(json, $midmenuItem1, id) {              
-            //var jsonObj = json.queryasyncjobresultresponse.virtualmachine[0];
-            //Get embedded object from lsitVolume API until Bug 6481(embedded object returned by attachVolume API should include "type" property) is fixed.
-            var jsonObj;           
-            $.ajax({
-                data: createURL("command=listVolumes&id="+id),
-                dataType: "json",
-                async: false,
-                success: function(json) {                    
-                    jsonObj = json.listvolumesresponse.volume[0];
-                }            
-            });           
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {                
+            var jsonObj = json.queryasyncjobresultresponse.jobresult.volume;  
             volumeToMidmenu(jsonObj, $midmenuItem1);
             volumeJsonToDetailsTab($midmenuItem1);   
         }
@@ -549,18 +539,8 @@ var volumeActionMap = {
         isAsyncJob: true,
         asyncJobResponse: "detachvolumeresponse",
         inProcessText: "Detaching disk....",
-        afterActionSeccessFn: function(json, $midmenuItem1, id){                
-            //var jsonObj = json.queryasyncjobresultresponse.virtualmachine[0];
-            //Get embedded object from lsitVolume API until Bug 6480(detachVolume API should return embedded object, like attachVolume API does.) is fixed.
-            var jsonObj;            
-            $.ajax({
-                data: createURL("command=listVolumes&id="+id),
-                dataType: "json",
-                async: false,
-                success: function(json) {                    
-                    jsonObj = json.listvolumesresponse.volume[0];
-                }            
-            });            
+        afterActionSeccessFn: function(json, $midmenuItem1, id){   
+            var jsonObj = json.queryasyncjobresultresponse.jobresult.volume;     
             volumeToMidmenu(jsonObj,  $midmenuItem1);
             volumeJsonToDetailsTab($midmenuItem1);   
         }
