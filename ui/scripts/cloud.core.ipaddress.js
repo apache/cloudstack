@@ -765,8 +765,10 @@ var ipActionMap = {
         isAsyncJob: false,        
         dialogBeforeActionFn : doReleaseIp,
         inProcessText: "Releasing IP....",
-        afterActionSeccessFn: function(json, $midmenuItem1, id) {       
-            $midmenuItem1.remove();
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {   
+            $midmenuItem1.slideUp("slow", function(){
+                $(this).remove();
+            });  
             clearRightPanel();
             ipClearRightPanel();
         }
