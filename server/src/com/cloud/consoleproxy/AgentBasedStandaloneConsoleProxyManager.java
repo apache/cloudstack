@@ -26,25 +26,28 @@ import org.apache.log4j.Logger;
 
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
+import com.cloud.utils.component.Inject;
 import com.cloud.vm.ConsoleProxyVO;
-import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value={ConsoleProxyManager.class})
 public class AgentBasedStandaloneConsoleProxyManager extends
 AgentBasedConsoleProxyManager {
+	@Inject private VMInstanceDao _instanceDao;
 	private static final Logger s_logger = Logger.getLogger(AgentBasedStandaloneConsoleProxyManager.class);
 
 	@Override
-	public ConsoleProxyVO assignProxy(long dataCenterId, long userVmId) {
-		UserVmVO userVm = _userVmDao.findById(userVmId);
-		if (userVm == null) {
-			s_logger.warn("User VM " + userVmId
-					+ " no longer exists, return a null proxy for user vm:"
-					+ userVmId);
+	public ConsoleProxyVO assignProxy(long dataCenterId, long vmId) {
+		VMInstanceVO vm = _instanceDao.findById(vmId);
+		if (vm == null) {
+			s_logger.warn("VM " + vmId
+					+ " no longer exists, return a null proxy for vm:"
+					+ vmId);
 			return null;
 		}
 
-		HostVO host = findHost(userVm);
+		HostVO host = findHost(vm);
 		if(host != null) {
 			HostVO allocatedHost = null;
 			/*Is there a consoleproxy agent running on the same machine?*/
@@ -66,11 +69,11 @@ AgentBasedConsoleProxyManager {
 			}
 			if (allocatedHost == null) {
 				if(s_logger.isDebugEnabled())
-					s_logger.debug("Failed to find a console proxy at host: " + host.getName() + " and in the pod: " + host.getPodId() + " to user vm " + userVmId);
+					s_logger.debug("Failed to find a console proxy at host: " + host.getName() + " and in the pod: " + host.getPodId() + " to vm " + vmId);
 				return null;
 			}
 			if(s_logger.isDebugEnabled())
-				s_logger.debug("Assign standalone console proxy running at " + allocatedHost.getName() + " to user vm " + userVmId + " with public IP " + allocatedHost.getPublicIpAddress());
+				s_logger.debug("Assign standalone console proxy running at " + allocatedHost.getName() + " to user vm " + vmId + " with public IP " + allocatedHost.getPublicIpAddress());
 
 			// only private IP, public IP, host id have meaningful values, rest of all are place-holder values
 			String publicIp = allocatedHost.getPublicIpAddress();
@@ -91,7 +94,7 @@ AgentBasedConsoleProxyManager {
 			proxy.setSslEnabled(_sslEnabled);
 			return proxy;
 		} else {
-			s_logger.warn("Host that VM is running is no longer available, console access to VM " + userVmId + " will be temporarily unavailable.");
+			s_logger.warn("Host that VM is running is no longer available, console access to VM " + vmId + " will be temporarily unavailable.");
 		}
 		return null;
 	}
