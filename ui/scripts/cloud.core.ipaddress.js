@@ -1130,8 +1130,8 @@ function loadBalancerJsonToTemplate(jsonObj, $template) {
 							    return; //Job has not completed
 						    } else {											    
 							    $("body").stopTime(timerKey);
-							    if (result.jobstatus == 1) { // Succeeded										        								        						        								    
-								    var item = result.jobresult.updateloadbalancerruleresponse;							         	
+							    if (result.jobstatus == 1) { // Succeeded														        								        						        								    
+								    var item = result.jobresult.loadbalancer;			         	
                                     loadBalancerJsonToTemplate(item,$template); 
                                     $spinningWheel.hide();                                   
                                     $rowContainerEdit.hide();  
