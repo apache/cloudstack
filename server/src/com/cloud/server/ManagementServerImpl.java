@@ -3626,13 +3626,12 @@ public class ManagementServerImpl implements ManagementServer {
         Long vmInstanceId = cmd.getVirtualMachineId();
         Object name = cmd.getVolumeName();
         Object keyword = cmd.getKeyword();
+        Object type = cmd.getType();
 
-        Object type = null;
         Object zone = null;
         Object pod = null;
         //Object host = null; TODO
-        if (isAdmin) {
-            type = cmd.getType();
+        if (isAdmin) {            
             zone = cmd.getZoneId();
             pod = cmd.getPodId();
             // host = cmd.getHostId(); TODO
