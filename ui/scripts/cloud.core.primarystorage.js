@@ -60,7 +60,9 @@ function primarystorageJsonToDetailsTab($midmenuItem1) {
     $detailsTab.find("#zonename").text(fromdb(jsonObj.zonename));
     $detailsTab.find("#podname").text(fromdb(jsonObj.podname));
     $detailsTab.find("#clustername").text(fromdb(jsonObj.clustername));
-    $detailsTab.find("#type").text(fromdb(jsonObj.type));
+	var storageType = "ISCSI Share";
+	if (jsonObj.type == 'NetworkFilesystem') storageType = "NFS Share";
+    $detailsTab.find("#type").text(storageType);
     $detailsTab.find("#ipaddress").text(fromdb(jsonObj.ipaddress));
     $detailsTab.find("#path").text(fromdb(jsonObj.path));                
 	$detailsTab.find("#disksizetotal").text(convertBytes(jsonObj.disksizetotal));
