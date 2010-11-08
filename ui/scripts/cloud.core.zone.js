@@ -317,27 +317,43 @@ function initAddVLANButton($addButton) {
 			});
 			
 			var domainSelect = dialogAddVlanForZone.find("#add_publicip_vlan_domain").empty();	
-			domainSelect.append("<option value='" + zoneObj.domainid + "'>" + fromdb(zoneObj.domain) + "</option>"); 	
-									
-			function populateDomainDropdown(id) {					        
-                $.ajax({
-	                data: createURL("command=listDomainChildren&id="+id+"&pageSize=-1"),
-	                dataType: "json",
-	                async: false,
-	                success: function(json) {					        
-	                    var domains = json.listdomainchildrenresponse.domain;		                  		        	    
-		                if (domains != null && domains.length > 0) {					    
-			                for (var i = 0; i < domains.length; i++) {	
-				                domainSelect.append("<option value='" + domains[i].id + "'>" + fromdb(domains[i].name) + "</option>"); 	
-				                if(domains[i].haschild == true) 
-		                            populateDomainDropdown(domains[i].id);				   
-			                }
-		                }				
-	                }
-                }); 
-            }	
-                           
-            populateDomainDropdown(zoneObj.domainid);
+			if(zoneObj.domainid != null) { //list only domains under zoneObj.domainid
+			    domainSelect.append("<option value='" + zoneObj.domainid + "'>" + fromdb(zoneObj.domain) + "</option>"); 	
+			        									
+			    function populateDomainDropdown(id) {					        
+                    $.ajax({
+	                    data: createURL("command=listDomainChildren&id="+id+"&pageSize=-1"),
+	                    dataType: "json",
+	                    async: false,
+	                    success: function(json) {					        
+	                        var domains = json.listdomainchildrenresponse.domain;		                  		        	    
+		                    if (domains != null && domains.length > 0) {					    
+			                    for (var i = 0; i < domains.length; i++) {	
+				                    domainSelect.append("<option value='" + domains[i].id + "'>" + fromdb(domains[i].name) + "</option>"); 	
+				                    if(domains[i].haschild == true) 
+		                                populateDomainDropdown(domains[i].id);				   
+			                    }
+		                    }				
+	                    }
+                    }); 
+                }	
+                
+                populateDomainDropdown(zoneObj.domainid);
+            }
+            else { //list all domains            
+                 $.ajax({
+                    data: createURL("command=listDomains"),
+                    dataType: "json",
+                    success: function(json) {           
+                        var items = json.listdomainsresponse.domain;
+                        if(items != null && items.length > 0) {
+                            for(var i=0; i<items.length; i++) {
+                                domainSelect.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>"); 
+                            }		
+                        }
+                    }    
+                });  
+            }   
 		}
 
 		dialogAddVlanForZone
