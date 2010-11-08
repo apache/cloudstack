@@ -2942,6 +2942,7 @@ a:hover.search_button {
 	width:100%;
 	height:20px;
 	float:left;
+	position:relative;
 	background:url(../images/grid_headerbg.gif) repeat-x top left;
 	margin:0;
 	padding:0;
