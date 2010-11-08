@@ -64,7 +64,7 @@ public interface VMTemplateDao extends GenericDao<VMTemplateVO, Long> {
 	public List<VMTemplateVO> findIsosByIdAndPath(Long domainId, Long accountId, String path);
 	public List<VMTemplateVO> listReadyTemplates();
 	public List<VMTemplateVO> listByAccountId(long accountId);
-	public List<VMTemplateVO> searchTemplates(String name, String keyword, TemplateFilter templateFilter, boolean isIso, Boolean bootable, Account account, DomainVO domain, Integer pageSize, Long startIndex, Long zoneId, HypervisorType hyperType);
+	public List<VMTemplateVO> searchTemplates(String name, String keyword, TemplateFilter templateFilter, boolean isIso, Boolean bootable, Account account, DomainVO domain, Long pageSize, Long startIndex, Long zoneId, HypervisorType hyperType);
 	
 	public long addTemplateToZone(VMTemplateVO tmplt, long zoneId);
 	public List<VMTemplateVO> listAllInZone(long dataCenterId);	

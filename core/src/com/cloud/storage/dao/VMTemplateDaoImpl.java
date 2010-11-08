@@ -217,7 +217,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 	}
 
 	@Override
-	public List<VMTemplateVO> searchTemplates(String name, String keyword, TemplateFilter templateFilter, boolean isIso, Boolean bootable, Account account, DomainVO domain, Integer pageSize, Long startIndex, Long zoneId, HypervisorType hyperType) {
+	public List<VMTemplateVO> searchTemplates(String name, String keyword, TemplateFilter templateFilter, boolean isIso, Boolean bootable, Account account, DomainVO domain, Long pageSize, Long startIndex, Long zoneId, HypervisorType hyperType) {
         Transaction txn = Transaction.currentTxn();
         txn.start();
         List<VMTemplateVO> templates = new ArrayList<VMTemplateVO>();
@@ -338,7 +338,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         return sql;
 	}
 
-	private String getOrderByLimit(Integer pageSize, Long startIndex) {
+	private String getOrderByLimit(Long pageSize, Long startIndex) {
         String sql = " ORDER BY t.created DESC";
         if ((pageSize != null) && (startIndex != null)) {
             sql += " LIMIT " + startIndex.toString() + "," + pageSize.toString();

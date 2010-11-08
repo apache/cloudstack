@@ -1953,7 +1953,7 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
-        return listTemplates(cmd.getId(), cmd.getIsoName(), cmd.getKeyword(), isoFilter, true, cmd.isBootable(), accountId, cmd.getPageSizeVal().intValue(), cmd.getStartIndex(), cmd.getZoneId(), hypervisorType);
+        return listTemplates(cmd.getId(), cmd.getIsoName(), cmd.getKeyword(), isoFilter, true, cmd.isBootable(), accountId, cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), hypervisorType);
     }
 
     @Override
@@ -1984,10 +1984,10 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
-        return listTemplates(cmd.getId(), cmd.getTemplateName(), cmd.getKeyword(), templateFilter, false, null, accountId, (cmd.getPageSizeVal() != null) ? cmd.getPageSizeVal().intValue() : null, cmd.getStartIndex(), cmd.getZoneId(), hypervisorType);
+        return listTemplates(cmd.getId(), cmd.getTemplateName(), cmd.getKeyword(), templateFilter, false, null, accountId, cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), hypervisorType);
     }
 
-    private List<VMTemplateVO> listTemplates(Long templateId, String name, String keyword, TemplateFilter templateFilter, boolean isIso, Boolean bootable, Long accountId, Integer pageSize, Long startIndex, Long zoneId, HypervisorType hyperType) throws InvalidParameterValueException {
+    private List<VMTemplateVO> listTemplates(Long templateId, String name, String keyword, TemplateFilter templateFilter, boolean isIso, Boolean bootable, Long accountId, Long pageSize, Long startIndex, Long zoneId, HypervisorType hyperType) throws InvalidParameterValueException {
         VMTemplateVO template = null;
     	if (templateId != null) {
     		template = _templateDao.findById(templateId);
