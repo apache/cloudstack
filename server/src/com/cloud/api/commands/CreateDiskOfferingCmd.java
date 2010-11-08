@@ -45,9 +45,6 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, required=true, description="alternate display text of the disk offering")
     private String displayText;
 
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="domain ID where disk offering is going to be created")
-    private Long domainId;
-
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="name of the disk offering")
     private String offeringName;
 
@@ -66,10 +63,6 @@ public class CreateDiskOfferingCmd extends BaseCmd {
 
     public String getDisplayText() {
         return displayText;
-    }
-
-    public Long getDomainId() {
-        return domainId;
     }
 
     public String getOfferingName() {
