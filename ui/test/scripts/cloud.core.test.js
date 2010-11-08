@@ -322,7 +322,7 @@ $(document).ready(function() {
 							dataType: "json",
 							async: false,
 							success: function(json) {								    					
-								userJSONToTemplate(json.createuserresponse, template);	
+								userJSONToTemplate(json.createuserresponse.user, template);	
 								loadingImg.hide();  
                                 rowContainer.show();    				
 							},			
@@ -552,7 +552,7 @@ $(document).ready(function() {
 							dataType: "json",
 							async: false,
 							success: function(json) {	   															       
-								domainJSONToTemplate(json.createdomainresponse, template);	
+								domainJSONToTemplate(json.createdomainresponse.domain, template);	
 								loadingImg.hide();  
                                 rowContainer.show();    				
 							},			
