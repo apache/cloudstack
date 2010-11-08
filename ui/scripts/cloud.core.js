@@ -1791,9 +1791,9 @@ function toDayOfWeekDesp(dayOfWeek) {
 }
 
 function toBooleanText(booleanValue) {
-    if(booleanValue == "true")
+    if(booleanValue == true || booleanValue == "true")
         return "Yes";
-    else if(booleanValue == "false")
+    else if(booleanValue == false ||booleanValue == "false")
         return "No";
 }
 

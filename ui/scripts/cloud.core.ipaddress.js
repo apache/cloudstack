@@ -711,7 +711,7 @@ function ipJsonToDetailsTab() {
     $actionMenu.find("#action_list").empty();
     var noAvailableActions = true;
       
-    if(isIpManageable(ipObj.domainid, ipObj.account) == true && ipObj.issourcenat != "true") {     
+    if(isIpManageable(ipObj.domainid, ipObj.account) == true && ipObj.issourcenat != true) {     
         buildActionLinkForTab("Release IP", ipActionMap, $actionMenu, $midmenuItem1, $thisTab);		
         noAvailableActions = false;
     }
@@ -744,18 +744,18 @@ function ipClearDetailsTab() {
 }
 
 function setSourceNatField(value, $field) {
-    if(value == "true")
+    if(value == true)
         $field.text("Yes");
-    else if(value == "false")
+    else if(value == false)
         $field.text("No");
     else
         $field.text("");
 }
 
-function setNetworkTypeField(value, $field) {
-    if(value == "true")
+function setNetworkTypeField(value, $field) {  
+    if(value == true)
         $field.text("Public");
-    else if(value == "false")
+    else if(value == false)
         $field.text("Direct");
     else
         $field.text("");

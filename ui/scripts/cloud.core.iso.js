@@ -239,8 +239,8 @@ function isoJsonToDetailsTab() {
 	$thisTab.find("#domain").text(fromdb(jsonObj.domain));
                       
     var status = "Ready";
-	if (jsonObj.isready == "false")
-		status = fromdb(jsonObj.isostatus);		
+	if (jsonObj.isready == false)
+		status = fromdb(jsonObj.status);		
 	setTemplateStateInRightPanel(status, $thisTab.find("#status"));
 	
 	if(jsonObj.size != null)
@@ -261,9 +261,9 @@ function isoJsonToDetailsTab() {
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty();
     var noAvailableActions = true;
-    
+
     // "Edit", "Copy", "Create VM" 
-	if ((isUser() && jsonObj.ispublic == "true" && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) || jsonObj.isready == "false") {		
+	if ((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) || jsonObj.isready == false) {		
 		//$("#edit_button").hide();
     }
     else {        
@@ -274,7 +274,7 @@ function isoJsonToDetailsTab() {
     }
 		
 	// "Create VM" 
-	if (((isUser() && jsonObj.ispublic == "true" && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) || jsonObj.isready == "false") || (jsonObj.bootable == "false")) {
+	if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) || jsonObj.isready == false) || (jsonObj.bootable == false)) {
 	}
     else {        
         buildActionLinkForTab("Create VM", isoActionMap, $actionMenu, $midmenuItem1, $thisTab);	
@@ -282,7 +282,7 @@ function isoJsonToDetailsTab() {
     }
     
 	// "Delete" 
-	if (((isUser() && jsonObj.ispublic == "true" && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account))) || (jsonObj.isready == "false" && jsonObj.isostatus != null && jsonObj.isostatus.indexOf("% Downloaded") != -1)) {
+	if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account))) || (jsonObj.isready == false && jsonObj.isostatus != null && jsonObj.isostatus.indexOf("% Downloaded") != -1)) {
 	}
 	else {	    
 	    buildActionLinkForTab("Delete ISO", isoActionMap, $actionMenu, $midmenuItem1, $thisTab);	
@@ -458,7 +458,7 @@ function doDeleteIso($actionLink, $detailsTab, $midmenuItem1) {
 		moreCriteria.push("&zoneid="+zoneId);	
 	
 	var $dialog1;
-	if(jsonObj.crossZones == "true")
+	if(jsonObj.crossZones == true)
 	    $dialog1 = $("#dialog_confirmation_delete_iso_all_zones");
 	else
 	    $dialog1 = $("#dialog_confirmation_delete_iso");	

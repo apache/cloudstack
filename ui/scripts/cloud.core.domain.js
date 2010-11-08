@@ -89,7 +89,7 @@ function drawTree(id, level, container) {
 		    if (domains != null && domains.length > 0) {					    
 			    for (var i = 0; i < domains.length; i++) {						    
 				    drawNode(domains[i], level, container);	
-				    if(domains[i].haschild == true || domains[i].haschild == "true") //After API refactor, returned boolean value is true/false instead of "true"/"false". For testing convenience (Some people might not have backend update-to-date), check both true and "true".
+				    if(domains[i].haschild == true) 
 		                drawTree(domains[i].id, (level+1), $("#domain_children_container_"+domains[i].id));				   
 			    }
 		    }				

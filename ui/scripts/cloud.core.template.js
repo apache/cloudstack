@@ -247,8 +247,8 @@ function templateJsonToDetailsTab() {
     $thisTab.find("#displaytext_edit").val(fromdb(jsonObj.displaytext));
     
     var status = "Ready";
-	if (jsonObj.isready == "false") 
-		status = fromdb(jsonObj.templatestatus);	 
+	if (jsonObj.isready == false) 
+		status = fromdb(jsonObj.status);	 
     setTemplateStateInRightPanel(status, $thisTab.find("#status"));
     
     if(jsonObj.size != null)
@@ -281,9 +281,9 @@ function templateJsonToDetailsTab() {
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty();
     var noAvailableActions = true;
-        
+
     // action Edit, Copy, Create VM 			
-	if ((isUser() && jsonObj.ispublic == "true" && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) || jsonObj.id==DomRTemplateId || jsonObj.isready == "false") {
+	if ((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) || jsonObj.id==DomRTemplateId || jsonObj.isready == false) {
 		//$("#edit_button").hide();		
     }
     else {
@@ -295,7 +295,7 @@ function templateJsonToDetailsTab() {
     }
 	
 	// action Delete 			
-	if (((isUser() && jsonObj.ispublic == "true" && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) || jsonObj.id==DomRTemplateId) || (jsonObj.isready == "false" && jsonObj.templatestatus != null && jsonObj.templatestatus.indexOf("% Downloaded") != -1)) {
+	if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) || jsonObj.id==DomRTemplateId) || (jsonObj.isready == false && jsonObj.templatestatus != null && jsonObj.templatestatus.indexOf("% Downloaded") != -1)) {
 		//template.find("#template_delete_container").hide();
     }
     else {
@@ -505,7 +505,7 @@ function doDeleteTemplate($actionLink, $detailsTab, $midmenuItem1) {
 		moreCriteria.push("&zoneid="+zoneId);	
 	
 	var $dialog1;
-	if(jsonObj.crossZones == "true")
+	if(jsonObj.crossZones == true)
 	    $dialog1 = $("#dialog_confirmation_delete_template_all_zones");
 	else
 	    $dialog1 = $("#dialog_confirmation_delete_template");	
