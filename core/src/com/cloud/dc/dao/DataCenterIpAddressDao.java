@@ -23,6 +23,7 @@ import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface DataCenterIpAddressDao extends GenericDao<DataCenterIpAddressVO, Long> {
+    
     boolean mark(long dcId, long podId, String ip);
     List<DataCenterIpAddressVO> listByPodIdDcIdIpAddress(long podId, long dcId, String ipAddress);
     int countIPs(long podId, long dcId, boolean onlyCountAllocated);

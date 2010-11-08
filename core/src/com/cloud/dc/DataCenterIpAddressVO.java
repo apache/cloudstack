@@ -50,12 +50,23 @@ public class DataCenterIpAddressVO {
     @Column(name="pod_id", updatable=false, nullable=false)
     private long podId;
     
+    @Column(name="reservation_id")
+    String reservationId;
+    
     @Column(name="instance_id")
     private Long instanceId;
     
     protected DataCenterIpAddressVO() {
     }
     
+    public String getReservationId() {
+        return reservationId;
+    }
+
+    public void setReservationId(String reservationId) {
+        this.reservationId = reservationId;
+    }
+
     public DataCenterIpAddressVO(String ipAddress, long dataCenterId, long podId) {
         this.ipAddress = ipAddress;
         this.dataCenterId = dataCenterId;

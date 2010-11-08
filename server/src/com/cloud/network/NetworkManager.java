@@ -356,4 +356,6 @@ public interface NetworkManager {
     VpnUserVO addVpnUser(AddVpnUserCmd cmd) throws ConcurrentOperationException;
 
 	boolean removeVpnUser(RemoveVpnUserCmd cmd) throws ConcurrentOperationException;
+	
+	String getNextAvailableMacAddressInNetwork(long networkConfigurationId);
 }

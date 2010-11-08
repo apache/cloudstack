@@ -625,7 +625,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
             if (linkLocalIpRanges == null) {
                 throw new InvalidParameterValueException("The linkLocalIp.nums: " + nums + "may be wrong, should be 1~16");
             } else {
-                _zoneDao.addLinkLocalPrivateIpAddress(zoneId, pod.getId(), linkLocalIpRanges[0], linkLocalIpRanges[1]);
+                _zoneDao.addLinkLocalIpAddress(zoneId, pod.getId(), linkLocalIpRanges[0], linkLocalIpRanges[1]);
             }
 
             txn.commit();

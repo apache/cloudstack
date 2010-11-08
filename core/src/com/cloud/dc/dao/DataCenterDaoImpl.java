@@ -109,17 +109,17 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     }
     
     @Override
-    public void releasePrivateIpAddress(long nicId) {
-        _ipAllocDao.releaseIpAddress(nicId);
+    public void releasePrivateIpAddress(long nicId, String reservationId) {
+        _ipAllocDao.releaseIpAddress(nicId, reservationId);
     }
     
     @Override
-    public void releaseLinkLocalPrivateIpAddress(long nicId) {
-        _LinkLocalIpAllocDao.releaseIpAddress(nicId);
+    public void releaseLinkLocalIpAddress(long nicId, String reservationId) {
+        _LinkLocalIpAllocDao.releaseIpAddress(nicId, reservationId);
     }
     
     @Override
-    public void releaseLinkLocalPrivateIpAddress(String ipAddress, long dcId, Long instanceId) {
+    public void releaseLinkLocalIpAddress(String ipAddress, long dcId, Long instanceId) {
     	_LinkLocalIpAllocDao.releaseIpAddress(ipAddress, dcId, instanceId);
     }
     
@@ -129,7 +129,7 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     }
     
     @Override
-    public boolean deleteLinkLocalPrivateIpAddressByPod(long podId) {
+    public boolean deleteLinkLocalIpAddressByPod(long podId) {
     	return _LinkLocalIpAllocDao.deleteIpAddressByPod(podId);
     }
 
@@ -172,8 +172,8 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     }
 
     @Override
-    public String allocatePrivateIpAddress(long dcId, long podId, long instanceId) {
-        DataCenterIpAddressVO vo = _ipAllocDao.takeIpAddress(dcId, podId, instanceId);
+    public String allocatePrivateIpAddress(long dcId, long podId, long instanceId, String reservationId) {
+        DataCenterIpAddressVO vo = _ipAllocDao.takeIpAddress(dcId, podId, instanceId, reservationId);
         if (vo == null) {
             return null;
         }
@@ -181,8 +181,8 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     }
     
     @Override
-    public String allocateLinkLocalPrivateIpAddress(long dcId, long podId, long instanceId) {
-    	DataCenterLinkLocalIpAddressVO vo = _LinkLocalIpAllocDao.takeIpAddress(dcId, podId, instanceId);
+    public String allocateLinkLocalIpAddress(long dcId, long podId, long instanceId, String reservationId) {
+    	DataCenterLinkLocalIpAddressVO vo = _LinkLocalIpAllocDao.takeIpAddress(dcId, podId, instanceId, reservationId);
         if (vo == null) {
             return null;
         }
@@ -210,7 +210,7 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     }
     
     @Override
-    public void addLinkLocalPrivateIpAddress(long dcId,long podId, String start, String end) {
+    public void addLinkLocalIpAddress(long dcId,long podId, String start, String end) {
     	_LinkLocalIpAllocDao.addIpRange(dcId, podId, start, end);
     }
 

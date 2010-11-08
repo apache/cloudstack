@@ -33,21 +33,21 @@ public interface DataCenterDao extends GenericDao<DataCenterVO, Long> {
      */
     String[] getNextAvailableMacAddressPair(long id);
     String[] getNextAvailableMacAddressPair(long id, long mask);
-    String allocatePrivateIpAddress(long id, long podId, long instanceId);
-    String allocateLinkLocalPrivateIpAddress(long id, long podId, long instanceId);
+    String allocatePrivateIpAddress(long id, long podId, long instanceId, String reservationId);
+    String allocateLinkLocalIpAddress(long id, long podId, long instanceId, String reservationId);
     String allocateVnet(long dcId, long accountId);
     
     void releaseVnet(String vnet, long dcId, long accountId);
     void releasePrivateIpAddress(String ipAddress, long dcId, Long instanceId);
-    void releasePrivateIpAddress(long nicId);
-    void releaseLinkLocalPrivateIpAddress(String ipAddress, long dcId, Long instanceId);
-    void releaseLinkLocalPrivateIpAddress(long nicId);
+    void releasePrivateIpAddress(long nicId, String reservationId);
+    void releaseLinkLocalIpAddress(String ipAddress, long dcId, Long instanceId);
+    void releaseLinkLocalIpAddress(long nicId, String reservationId);
     
     boolean deletePrivateIpAddressByPod(long podId);
-    boolean deleteLinkLocalPrivateIpAddressByPod(long podId);
+    boolean deleteLinkLocalIpAddressByPod(long podId);
     
     void addPrivateIpAddress(long dcId,long podId, String start, String end);
-    void addLinkLocalPrivateIpAddress(long dcId,long podId, String start, String end);
+    void addLinkLocalIpAddress(long dcId,long podId, String start, String end);
     
     List<DataCenterVnetVO> findVnet(long dcId, String vnet);
     

@@ -662,7 +662,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
                     }
 
                     proxy.setPrivateIpAddress(privateIpAddress);
-                    String guestIpAddress = _dcDao.allocateLinkLocalPrivateIpAddress(proxy.getDataCenterId(), routingHost.getPodId(), proxy.getId());
+                    String guestIpAddress = _dcDao.allocateLinkLocalIpAddress(proxy.getDataCenterId(), routingHost.getPodId(), proxy.getId(), null);
                     proxy.setGuestIpAddress(guestIpAddress);
 
                     _consoleProxyDao.updateIf(proxy, Event.OperationRetry, routingHost.getId());
@@ -745,7 +745,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
                     proxy.setPrivateIpAddress(null);
                     freePrivateIpAddress(privateIpAddress, proxy.getDataCenterId(), proxy.getId());
                     proxy.setGuestIpAddress(null);
-                    _dcDao.releaseLinkLocalPrivateIpAddress(guestIpAddress, proxy.getDataCenterId(), proxy.getId());
+                    _dcDao.releaseLinkLocalIpAddress(guestIpAddress, proxy.getDataCenterId(), proxy.getId());
                     _storageMgr.unshare(proxy, vols, routingHost);
                 } while (--retry > 0
                         && (routingHost = (HostVO) _agentMgr
@@ -1163,7 +1163,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
         if (_IpAllocator != null && _IpAllocator.exteralIpAddressAllocatorEnabled()) {
             return _IpAllocator.getPrivateIpAddress(macAddr, dcId, podId).ipaddr;
         } else {
-            return _dcDao.allocatePrivateIpAddress(dcId, podId, proxyId);
+            return _dcDao.allocatePrivateIpAddress(dcId, podId, proxyId, null);
         }
     }
 
@@ -1804,7 +1804,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
             String guestIpAddress = proxy.getGuestIpAddress();
             if (guestIpAddress != null) {
                 proxy.setGuestIpAddress(null);
-                _dcDao.releaseLinkLocalPrivateIpAddress(guestIpAddress, proxy.getDataCenterId(), proxy.getId());
+                _dcDao.releaseLinkLocalIpAddress(guestIpAddress, proxy.getDataCenterId(), proxy.getId());
             }
 
             if (!_consoleProxyDao.updateIf(proxy, ev, null)) {

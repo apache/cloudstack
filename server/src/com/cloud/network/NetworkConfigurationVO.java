@@ -328,8 +328,8 @@ public class NetworkConfigurationVO implements NetworkConfiguration {
     
     @Override
     public String toString() {
-        StringBuilder buf = new StringBuilder("NtwkCfg:");
-        buf.append(id).append("-").append(trafficType.toString()).append("-").append(networkOfferingId);
+        StringBuilder buf = new StringBuilder("NtwkCfg[");
+        buf.append(id).append("|").append(trafficType.toString()).append("|").append(networkOfferingId).append("]");
         return buf.toString();
     }
 }

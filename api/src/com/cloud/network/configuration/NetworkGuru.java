@@ -64,9 +64,9 @@ public interface NetworkGuru extends Adapter {
      * @throws InsufficientVirtualNetworkCapcityException
      * @throws InsufficientAddressCapacityException
      */
-    String reserve(NicProfile nic, NetworkConfiguration config, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException;
+    void reserve(NicProfile nic, NetworkConfiguration config, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException;
 
-    boolean release(String uniqueId);
+    boolean release(NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, String reservationId);
     
     void deallocate(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm);
     

@@ -1,4 +1,18 @@
 /**
+ *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
+ * 
+ * This software is licensed under the GNU General Public License v3 or later.
+ * 
+ * It is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
 package com.cloud.network.configuration;
@@ -24,7 +38,7 @@ import com.cloud.network.Network.TrafficType;
 import com.cloud.network.NetworkConfiguration;
 import com.cloud.network.NetworkConfiguration.State;
 import com.cloud.network.NetworkConfigurationVO;
-import com.cloud.network.dao.NetworkConfigurationDao;
+import com.cloud.network.NetworkManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.resource.Resource.ReservationStrategy;
@@ -41,7 +55,7 @@ import com.cloud.vm.dao.NicDao;
 
 @Local(value=NetworkGuru.class)
 public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
-    @Inject protected NetworkConfigurationDao _networkConfigDao;
+    @Inject protected NetworkManager _networkMgr;
     @Inject protected DataCenterDao _dcDao;
     @Inject protected VlanDao _vlanDao;
     @Inject protected NicDao _nicDao;
@@ -158,7 +172,7 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
         }
         
         if (nic.getMacAddress() == null) {
-            nic.setMacAddress(_networkConfigDao.getNextAvailableMacAddress(config.getId()));
+            nic.setMacAddress(_networkMgr.getNextAvailableMacAddressInNetwork(config.getId()));
             if (nic.getMacAddress() == null) {
                 throw new InsufficientAddressCapacityException("Unable to allocate more mac addresses");
             }
@@ -187,7 +201,7 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
      }
 
     @Override
-    public String reserve(NicProfile nic, NetworkConfiguration config, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException,
+    public void reserve(NicProfile nic, NetworkConfiguration config, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException {
         assert (nic.getReservationStrategy() == ReservationStrategy.Start) : "What can I do for nics that are not allocated at start? ";
 
@@ -198,11 +212,12 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
         nic.setNetmask(NetUtils.cidr2Netmask(config.getCidr()));
         nic.setDns1(config.getDns1());
         nic.setDns2(config.getDns2());
-        return "ABCD";
     }
 
     @Override
-    public boolean release(String uniqueId) {
+    public boolean release(NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, String reservationId) {
+        nic.setBroadcastUri(null);
+        nic.setIsolationUri(null);
         return true;
     }
 

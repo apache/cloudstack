@@ -53,6 +53,9 @@ public class DataCenterLinkLocalIpAddressVO {
     @Column(name="instance_id")
     private Long instanceId;
     
+    @Column(name="reservation_id")
+    private String reservationId;
+    
     protected DataCenterLinkLocalIpAddressVO() {
     }
     
@@ -80,6 +83,14 @@ public class DataCenterLinkLocalIpAddressVO {
 
     public void setTakenAt(Date takenDate) {
         this.takenAt = takenDate;
+    }
+    
+    public void setReservationId(String reservationId) {
+        this.reservationId = reservationId;
+    }
+    
+    public String getReservationId() {
+        return reservationId;
     }
 
     public String getIpAddress() {

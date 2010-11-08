@@ -7,7 +7,6 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.dc.DataCenter;
 import com.cloud.dc.Pod;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
@@ -20,6 +19,7 @@ import com.cloud.network.Network.Mode;
 import com.cloud.network.Network.TrafficType;
 import com.cloud.network.NetworkConfiguration;
 import com.cloud.network.NetworkConfigurationVO;
+import com.cloud.network.NetworkManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.resource.Resource.ReservationStrategy;
 import com.cloud.user.Account;
@@ -35,6 +35,7 @@ import com.cloud.vm.VirtualMachineProfile;
 public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
     private static final Logger s_logger = Logger.getLogger(PodBasedNetworkGuru.class);
     @Inject DataCenterDao _dcDao;
+    @Inject NetworkManager _networkMgr;
 
     @Override
     public NetworkConfiguration design(NetworkOffering offering, DeploymentPlan plan, NetworkConfiguration userSpecified, Account owner) {
@@ -61,9 +62,7 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
     public NicProfile allocate(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException {
         TrafficType trafficType = config.getTrafficType();
-        if (trafficType != TrafficType.Storage && trafficType != TrafficType.Management) {
-            return null;
-        }
+        assert (trafficType == TrafficType.Storage || trafficType == TrafficType.Management) : "Well, I can't take care of this config now can I? " + config; 
         
         if (nic != null) {
             nic.setStrategy(ReservationStrategy.Start);
@@ -71,35 +70,33 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
             nic  = new NicProfile(ReservationStrategy.Start, null, null, null, null);
         } 
         
+        String mac = _networkMgr.getNextAvailableMacAddressInNetwork(config.getId());
+        nic.setMacAddress(mac);
+        
         return nic;
     }
 
     @Override
-    public String reserve(NicProfile nic, NetworkConfiguration config, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException,
+    public void reserve(NicProfile nic, NetworkConfiguration config, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException {
-        DataCenter dc = dest.getDataCenter();
         Pod pod = dest.getPod();
         
-        String ip = _dcDao.allocatePrivateIpAddress(dest.getDataCenter().getId(), dest.getPod().getId(), nic.getId());
+        String ip = _dcDao.allocatePrivateIpAddress(dest.getDataCenter().getId(), dest.getPod().getId(), nic.getId(), context.getReservationId());
         if (ip == null) {
             throw new InsufficientAddressCapacityException("Unable to get a management ip address");
         }
         
-        String[] macs = _dcDao.getNextAvailableMacAddressPair(dc.getId());
-        
         nic.setIp4Address(ip);
         nic.setGateway(pod.getGateway());
-        nic.setMacAddress(macs[0]);
         nic.setFormat(AddressFormat.Ip4);
         String netmask = NetUtils.getCidrSubNet(pod.getCidrAddress(), pod.getCidrSize());
         nic.setNetmask(netmask);
-        
-        return Long.toString(nic.getId());
     }
 
     @Override
-    public boolean release(String uniqueId) {
-        _dcDao.releasePrivateIpAddress(Long.parseLong(uniqueId));
+    public boolean release(NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, String reservationId) {
+        _dcDao.releasePrivateIpAddress(nic.getId(), reservationId);
+        
         return true;
     }
 

@@ -61,30 +61,6 @@ public class ControlNetworkGuru extends AdapterBase implements NetworkGuru {
     }
     
     @Override
-    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        super.configure(name, params);
-        
-        ComponentLocator locator = ComponentLocator.getCurrentLocator();
-        
-        ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
-        Map<String, String> dbParams = configDao.getConfiguration(params);
-        
-        _cidr = dbParams.get(Config.ControlCidr);
-        if (_cidr == null) {
-            _cidr = "169.254.0.0/16";
-        }
-        
-        _gateway = dbParams.get(Config.ControlGateway);
-        if (_gateway == null) {
-            _gateway = "169.254.0.1";
-        }
-        
-        s_logger.info("Control network setup: cidr=" + _cidr + "; gateway = " + _gateway);
-        
-        return true;
-    }
-
-    @Override
     public NicProfile allocate(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException {
         if (config.getTrafficType() != TrafficType.Control) {
@@ -103,29 +79,65 @@ public class ControlNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     @Override
-    public String reserve(NicProfile nic, NetworkConfiguration config, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException,
+    public void reserve(NicProfile nic, NetworkConfiguration config, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException {
-        String ip = _dcDao.allocateLinkLocalPrivateIpAddress(dest.getDataCenter().getId(), dest.getPod().getId(), vm.getId());
+        assert nic.getTrafficType() == TrafficType.Control;
+        
+        String ip = _dcDao.allocateLinkLocalIpAddress(dest.getDataCenter().getId(), dest.getPod().getId(), vm.getId(), context.getReservationId());
         nic.setIp4Address(ip);
         nic.setMacAddress(NetUtils.long2Mac(NetUtils.ip2Long(ip) | (14l << 40)));
         nic.setNetmask("255.255.0.0");
         nic.setFormat(AddressFormat.Ip4);
-        
-        return Long.toString(nic.getId());
+        nic.setGateway(NetUtils.getLinkLocalGateway());
     }
 
     @Override
-    public boolean release(String uniqueId) {
-        _dcDao.releaseLinkLocalPrivateIpAddress(Long.parseLong(uniqueId));
+    public boolean release(NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, String reservationId) {
+        assert nic.getTrafficType() == TrafficType.Control;
+        
+        _dcDao.releaseLinkLocalIpAddress(nic.getId(), reservationId);
+        nic.setIp4Address(null);
+        nic.setMacAddress(null);
+        nic.setNetmask(null);
+        nic.setFormat(null);
+        nic.setGateway(null);
+        
         return true;
     }
 
     @Override
     public NetworkConfiguration implement(NetworkConfiguration config, NetworkOffering offering, DeployDestination destination, ReservationContext context) {
+        assert config.getTrafficType() == TrafficType.Control : "Why are you sending this configuration to me " + config;
         return config;
     }
     
     @Override
     public void destroy(NetworkConfiguration config, NetworkOffering offering) {
+        assert false : "Destroying a link local...Either you're out of your mind or something has changed.";
     }
+    
+    @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        super.configure(name, params);
+        
+        ComponentLocator locator = ComponentLocator.getCurrentLocator();
+        
+        ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
+        Map<String, String> dbParams = configDao.getConfiguration(params);
+        
+        _cidr = dbParams.get(Config.ControlCidr);
+        if (_cidr == null) {
+            _cidr = "169.254.0.0/16";
+        }
+        
+        _gateway = dbParams.get(Config.ControlGateway);
+        if (_gateway == null) {
+            _gateway = NetUtils.getLinkLocalGateway();
+        }
+        
+        s_logger.info("Control network setup: cidr=" + _cidr + "; gateway = " + _gateway);
+        
+        return true;
+    }
+
 }

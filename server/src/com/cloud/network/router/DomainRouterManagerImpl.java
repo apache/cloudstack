@@ -914,10 +914,10 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
 	                String privateNetMask = null;
 	                
 	                if(_defaultHypervisorType == null || !_defaultHypervisorType.equalsIgnoreCase(Hypervisor.HypervisorType.VmWare.toString())) {
-	                	privateIpAddress = _dcDao.allocateLinkLocalPrivateIpAddress(router.getDataCenterId(), routingHost.getPodId(), router.getId());
+	                	privateIpAddress = _dcDao.allocateLinkLocalIpAddress(router.getDataCenterId(), routingHost.getPodId(), router.getId(), null);
 	                	privateNetMask = NetUtils.getLinkLocalNetMask();
 	                } else {
-	                	privateIpAddress = _dcDao.allocatePrivateIpAddress(router.getDataCenterId(), routingHost.getPodId(), router.getId());
+	                	privateIpAddress = _dcDao.allocatePrivateIpAddress(router.getDataCenterId(), routingHost.getPodId(), router.getId(), null);
 	                	privateNetMask = NetUtils.getCidrNetmask(pod.getCidrSize());
 	                }
 	                
@@ -1023,7 +1023,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
 	                router.setPrivateIpAddress(null);
 	                
 	                if(_defaultHypervisorType == null || !_defaultHypervisorType.equalsIgnoreCase(Hypervisor.HypervisorType.VmWare.toString()))
-	                	_dcDao.releaseLinkLocalPrivateIpAddress(privateIpAddress, router.getDataCenterId(), router.getId());
+	                	_dcDao.releaseLinkLocalIpAddress(privateIpAddress, router.getDataCenterId(), router.getId());
 	                else
 	                	_dcDao.releasePrivateIpAddress(privateIpAddress, router.getDataCenterId(), router.getId());
 	
@@ -1571,7 +1571,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
             
             if (privateIpAddress != null) {
             	if(_defaultHypervisorType == null || !_defaultHypervisorType.equalsIgnoreCase(Hypervisor.HypervisorType.VmWare.toString()))
-            		_dcDao.releaseLinkLocalPrivateIpAddress(privateIpAddress, router.getDataCenterId(), router.getId());
+            		_dcDao.releaseLinkLocalIpAddress(privateIpAddress, router.getDataCenterId(), router.getId());
             	else
             		_dcDao.releasePrivateIpAddress(privateIpAddress, router.getDataCenterId(), router.getId());
             }

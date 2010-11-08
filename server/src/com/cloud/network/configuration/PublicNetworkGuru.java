@@ -23,7 +23,8 @@ import com.cloud.network.Network.Mode;
 import com.cloud.network.Network.TrafficType;
 import com.cloud.network.NetworkConfiguration;
 import com.cloud.network.NetworkConfigurationVO;
-import com.cloud.network.dao.NetworkConfigurationDao;
+import com.cloud.network.NetworkManager;
+import com.cloud.network.dao.IPAddressDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.resource.Resource.ReservationStrategy;
 import com.cloud.user.Account;
@@ -41,7 +42,8 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     
     @Inject DataCenterDao _dcDao;
     @Inject VlanDao _vlanDao;
-    @Inject NetworkConfigurationDao _networkConfigDao;
+    @Inject NetworkManager _networkMgr;
+    @Inject IPAddressDao _ipAddressDao;
 
     @Override
     public NetworkConfiguration design(NetworkOffering offering, DeploymentPlan plan, NetworkConfiguration config, Account owner) {
@@ -89,7 +91,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
             nic.setStrategy(ReservationStrategy.Create);
         }
         
-        String mac = _networkConfigDao.getNextAvailableMacAddress(config.getId());
+        String mac = _networkMgr.getNextAvailableMacAddressInNetwork(config.getId());
         if (mac == null) {
             throw new InsufficientAddressCapacityException("Not enough mac addresses");
         }
@@ -102,21 +104,16 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     @Override
-    public String reserve(NicProfile nic, NetworkConfiguration configuration, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
-        if (nic.getReservationId() != null) {
-            return nic.getReservationId();
-        }
-        
+    public void reserve(NicProfile nic, NetworkConfiguration configuration, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
         if (nic.getIp4Address() == null) {
             getIp(nic, dest.getDataCenter(), vm);
         }
-        
-        return nic.getReservationId();
     }
 
     @Override
-    public boolean release(String uniqueId) {
-        return _vlanDao.releaseFromLockTable(Long.parseLong(uniqueId));
+    public boolean release(NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, String reservationId) {
+        _ipAddressDao.unassignIpAddress(reservationId);
+        return true;
     }
 
     @Override

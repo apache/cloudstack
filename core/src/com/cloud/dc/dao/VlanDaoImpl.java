@@ -31,8 +31,8 @@ import javax.naming.ConfigurationException;
 import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.PodVlanMapVO;
 import com.cloud.dc.Vlan;
-import com.cloud.dc.VlanVO;
 import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.VlanVO;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
@@ -69,10 +69,10 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
     }
     
     @Override
-    public List<VlanVO> findByZone(long zoneId) {
+    public List<VlanVO> listByZone(long zoneId) {
     	SearchCriteria<VlanVO> sc = ZoneSearch.create();
     	sc.setParameters("zoneId", zoneId);
-    	return listIncludingRemovedBy(sc);
+    	return listBy(sc);
     }
 	
     public VlanDaoImpl() {
@@ -106,7 +106,7 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
 		SearchCriteria<VlanVO> sc = ZoneTypeSearch.create();
     	sc.setParameters("zoneId", zoneId);
     	sc.setParameters("vlanType", vlanType);
-        return listIncludingRemovedBy(sc);
+        return listBy(sc);
 	}
 
 	@Override

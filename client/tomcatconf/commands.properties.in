@@ -117,9 +117,9 @@ listLoadBalancerRules=com.cloud.api.commands.ListLoadBalancerRulesCmd;15
 listLoadBalancerRuleInstances=com.cloud.api.commands.ListLoadBalancerRuleInstancesCmd;15
 
 #### router commands
-startRouter=com.cloud.api.commands.StartRouterCmd;3
+startRouter=com.cloud.api.commands.StartRouter2Cmd;3
 rebootRouter=com.cloud.api.commands.RebootRouterCmd;3
-stopRouter=com.cloud.api.commands.StopRouterCmd;3
+stopRouter=com.cloud.api.commands.StopRouter2Cmd;3
 changeServiceForRouter=com.cloud.api.commands.UpgradeRouterCmd;3
 listRouters=com.cloud.api.commands.ListRoutersCmd;7
 

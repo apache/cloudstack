@@ -623,7 +623,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 			
 			String[] linkLocalIpRanges = getLinkLocalIPRange();
 			if (linkLocalIpRanges != null) {
-				_zoneDao.addLinkLocalPrivateIpAddress(zoneId, pod.getId(), linkLocalIpRanges[0], linkLocalIpRanges[1]);
+				_zoneDao.addLinkLocalIpAddress(zoneId, pod.getId(), linkLocalIpRanges[0], linkLocalIpRanges[1]);
 			}
 
 			txn.commit();
@@ -1495,7 +1495,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 		// 1. Another VLAN in the same zone has a different tag but the same subnet as the new VLAN
 		// 2. Another VLAN in the same zone that has the same tag and subnet as the new VLAN has IPs that overlap with the IPs being added
 		// 3. Another VLAN in the same zone that has the same tag and subnet as the new VLAN has a different gateway than the new VLAN
-		List<VlanVO> vlans = _vlanDao.findByZone(zone.getId());
+		List<VlanVO> vlans = _vlanDao.listByZone(zone.getId());
 		for (VlanVO vlan : vlans) {
 			String otherVlanGateway = vlan.getVlanGateway();
 			String otherVlanSubnet = NetUtils.getSubNet(vlan.getVlanGateway(), vlan.getVlanNetmask());

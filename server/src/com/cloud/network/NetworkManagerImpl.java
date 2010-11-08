@@ -372,9 +372,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override @DB
     public String assignSourceNatIpAddress(Account account, DataCenter dc) throws InsufficientAddressCapacityException {
         final long dcId = dc.getId();
+        final long accountId = account.getId();
         String sourceNat = null;
 
-        final long accountId = account.getId();
         
         Transaction txn = Transaction.currentTxn();
         try {
@@ -2043,13 +2043,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 URI isolationUri = nic.getIsolationUri();
                      
                 profile = new NicProfile(nic, config, broadcastUri, isolationUri);
-                String reservationId = concierge.reserve(profile, config, vmProfile, dest, context);
+                concierge.reserve(profile, config, vmProfile, dest, context);
                 nic.setIp4Address(profile.getIp4Address());
                 nic.setIp6Address(profile.getIp6Address());
                 nic.setMacAddress(profile.getMacAddress());
                 nic.setIsolationUri(profile.getIsolationUri());
                 nic.setBroadcastUri(profile.getBroadCastUri());
-                nic.setReservationId(reservationId);
                 nic.setReserver(concierge.getName());
                 nic.setState(Resource.State.Reserved);
                 nic.setNetmask(profile.getNetmask());
@@ -2077,23 +2076,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 NetworkGuru concierge = _networkGurus.get(config.getGuruName());
                 nic.setState(Resource.State.Releasing);
                 _nicDao.update(nic.getId(), nic);
-                concierge.release(nic.getReservationId());
+                NicProfile profile = new NicProfile(nic, config, null, null);
+                if (!concierge.release(profile, vmProfile, nic.getReservationId())) {
+                    nic.setState(Resource.State.Allocated);
+                    _nicDao.update(nic.getId(), nic);
+                }
             }
-        }
-    }
-    
-    public void release(long vmId) {
-        List<NicVO> nics = _nicDao.listBy(vmId);
-        
-        for (NicVO nic : nics) {
-            nic.setState(Resource.State.Releasing);
-            _nicDao.update(nic.getId(), nic);
-            NetworkGuru concierge = _networkGurus.get(nic.getReserver());
-            if (!concierge.release(nic.getReservationId())) {
-                s_logger.warn("Unable to release " + nic + " using " + concierge.getName());
-            }
-            nic.setState(Resource.State.Allocated);
-            _nicDao.update(nic.getId(), nic);
         }
     }
     
@@ -2931,5 +2919,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     public List<NetworkOfferingVO> listNetworkOfferings() {
 	    return _networkOfferingDao.listNonSystemNetworkOfferings();
 	}
-    
+	
+	@Override
+    public String getNextAvailableMacAddressInNetwork(long networkConfigurationId) {
+	    return _networkConfigDao.getNextAvailableMacAddress(networkConfigurationId);
+	}
 }

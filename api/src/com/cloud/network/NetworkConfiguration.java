@@ -22,12 +22,15 @@ import com.cloud.utils.fsm.StateMachine;
 public interface NetworkConfiguration extends ControlledEntity {
     enum Event {
         ImplementNetwork,
-        DestroyNetwork;
+        DestroyNetwork,
+        OperationSucceeded,
+        OperationFailed;
     }
     
     enum State implements FiniteState<State, Event> {
         Allocated("Indicates the network configuration is in allocated but not setup"),
         Setup("Indicates the network configuration is setup"),
+        Implementing("Indicates the network configuration is being implemented"),
         Implemented("Indicates the network configuration is in use"),
         Destroying("Indicates the network configuration is being destroyed");
 
@@ -64,12 +67,14 @@ public interface NetworkConfiguration extends ControlledEntity {
         
         private static StateMachine<State, Event> s_fsm = new StateMachine<State, Event>();
         static {
-            s_fsm.addTransition(State.Allocated, Event.ImplementNetwork, State.Implemented);
+            s_fsm.addTransition(State.Allocated, Event.ImplementNetwork, State.Implementing);
+            s_fsm.addTransition(State.Implementing, Event.OperationSucceeded, State.Implemented);
+            s_fsm.addTransition(State.Implementing, Event.OperationFailed, State.Destroying);
             s_fsm.addTransition(State.Implemented, Event.DestroyNetwork, State.Destroying);
+            s_fsm.addTransition(State.Destroying, Event.OperationSucceeded, State.Allocated);
+            s_fsm.addTransition(State.Destroying, Event.OperationFailed, State.Implemented);
         }
-        
     }
-    
     
     /**
      * @return id of the network profile.  Null means the network profile is not from the database.

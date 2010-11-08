@@ -363,7 +363,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 					}
 
 					secStorageVm.setPrivateIpAddress(privateIpAddress);
-					String guestIpAddress = _dcDao.allocateLinkLocalPrivateIpAddress(secStorageVm.getDataCenterId(), routingHost.getPodId(), secStorageVm.getId());
+					String guestIpAddress = _dcDao.allocateLinkLocalIpAddress(secStorageVm.getDataCenterId(), routingHost.getPodId(), secStorageVm.getId(), null);
 					secStorageVm.setGuestIpAddress(guestIpAddress);
 					_secStorageVmDao.updateIf(secStorageVm, Event.OperationRetry, routingHost.getId());
 					secStorageVm = _secStorageVmDao.findById(secStorageVm.getId());
@@ -452,7 +452,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 					freePrivateIpAddress(privateIpAddress, secStorageVm
 							.getDataCenterId(), secStorageVm.getId());
 					secStorageVm.setGuestIpAddress(null);
-					_dcDao.releaseLinkLocalPrivateIpAddress(guestIpAddress, secStorageVm.getDataCenterId(), secStorageVm.getId());
+					_dcDao.releaseLinkLocalIpAddress(guestIpAddress, secStorageVm.getDataCenterId(), secStorageVm.getId());
 					_storageMgr.unshare(secStorageVm, vols, routingHost);
 				} while (--retry > 0 && (routingHost = (HostVO) _agentMgr.findHost(
 								Host.Type.Routing, dc, pod, sp, _serviceOffering, _template,
@@ -859,7 +859,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 		if (_IpAllocator != null && _IpAllocator.exteralIpAddressAllocatorEnabled()) {
 			return _IpAllocator.getPrivateIpAddress(macAddr, dcId, podId).ipaddr;
 		} else {
-		return _dcDao.allocatePrivateIpAddress(dcId, podId, proxyId);
+		return _dcDao.allocatePrivateIpAddress(dcId, podId, proxyId, null);
 		}
 	}
 	
@@ -1447,7 +1447,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 			String guestIpAddress = secStorageVm.getGuestIpAddress();
 			if (guestIpAddress != null) {
 				secStorageVm.setGuestIpAddress(null);
-				_dcDao.releaseLinkLocalPrivateIpAddress(guestIpAddress, secStorageVm.getDataCenterId(), secStorageVm.getId());
+				_dcDao.releaseLinkLocalIpAddress(guestIpAddress, secStorageVm.getDataCenterId(), secStorageVm.getId());
 			}
 			if (!_secStorageVmDao.updateIf(secStorageVm, ev, null)) {
 				s_logger.debug("Unable to update the secondary storage vm");

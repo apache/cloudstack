@@ -179,7 +179,7 @@ public class Db20to21MigrationUtil {
 		    	
 		    	/*local link ip address starts from 169.254.0.2 - 169.254.(nums)*/
 		    	String[] ipRanges = NetUtils.getLinkLocalIPRange(nums);
-				_dcDao.addLinkLocalPrivateIpAddress(zoneId, pod.getId(), ipRanges[0], ipRanges[1]);
+				_dcDao.addLinkLocalIpAddress(zoneId, pod.getId(), ipRanges[0], ipRanges[1]);
 			}
 		}
 	}
@@ -568,7 +568,7 @@ public class Db20to21MigrationUtil {
 				proxy.setState(State.Stopping);
 			}
 			
-			String guestIpAddress = _dcDao.allocateLinkLocalPrivateIpAddress(proxy.getDataCenterId(), proxy.getPodId(), proxy.getId());
+			String guestIpAddress = _dcDao.allocateLinkLocalIpAddress(proxy.getDataCenterId(), proxy.getPodId(), proxy.getId(), null);
 			proxy.setGuestIpAddress(guestIpAddress);
 			proxy.setGuestNetmask("255.255.0.0");
 			
@@ -595,7 +595,7 @@ public class Db20to21MigrationUtil {
 				secStorageVm.setState(State.Stopping);
 			}
 			
-			String guestIpAddress = _dcDao.allocateLinkLocalPrivateIpAddress(secStorageVm.getDataCenterId(), secStorageVm.getPodId(), secStorageVm.getId());
+			String guestIpAddress = _dcDao.allocateLinkLocalIpAddress(secStorageVm.getDataCenterId(), secStorageVm.getPodId(), secStorageVm.getId(), null);
 			secStorageVm.setGuestIpAddress(guestIpAddress);
 			secStorageVm.setGuestNetmask("255.255.0.0");
 			
