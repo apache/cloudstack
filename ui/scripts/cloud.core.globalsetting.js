@@ -105,17 +105,8 @@ function doEditGlobalSetting2($readonlyFields, $editFields) {
               data: createURL("command=updateConfiguration&name="+todb(name)+"&value="+todb(value)),
 	            dataType: "json",
 	            async: false,
-	            success: function(json) {	
-	                //call listConfigurations before bug 6506("What updateConfiguration API returns should include an embedded object") is fixed.	           
-		            var jsonObj;		   
-		            $.ajax({
-		                data: createURL("command=listConfigurations&name="+name),
-		                dataType: "json",
-		                async: false,
-		                success: function(json) {			                      
-		                    jsonObj = json.listconfigurationsresponse.configuration[0];
-		                }
-		            });		
+	            success: function(json) {		              	           
+		            var jsonObj = json.updateconfigurationresponse.configuration;	
 		            globalsettingJSONToTemplate(jsonObj, $thisRow);  
 		            
 		            $editFields.hide();      
