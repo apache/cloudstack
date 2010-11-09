@@ -339,8 +339,8 @@
         <div class="grid_row_cell" style="width: 29%;">
             <div class="row_celltitles">
                 <a id="manage_link" href="#" style="float:left;">Manage</a>
-                <a id="delete_link" href="#" style="float:left; margin-left:15px;" >Delete</a>
                 <a id="edit_link" href="#" style="float:left; margin-left:15px;">Edit</a>
+                <a id="delete_link" href="#" style="float:left; margin-left:15px;" >Delete</a>
             </div>
         </div>       
         <div class="gridrow_loaderbox" style="display: none;" id="spinning_wheel">
