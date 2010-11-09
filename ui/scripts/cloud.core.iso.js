@@ -196,37 +196,10 @@ function isoJsonToDetailsTab() {
     $thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();        
     
-    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    
-    
-    var jsonObj = $midmenuItem1.data("jsonObj");
-    
-    //listIsos API has a bug => it returns nothing when id is 200(xs-tools.iso) and zoneid is specified. So, comment the following code before the bug is fixed.
-    /*
-    var array1 = [];
-    var id = $midmenuItem1.data("jsonObj").id;
-    array1.push("&id="+id);
-    
-    var zoneid = $midmenuItem1.data("jsonObj").zoneid;
-    if(zoneid != null)
-        array1.push("&zoneid="+zoneid);
-        
-    var jsonObj;     
-    $.ajax({
-        data: createURL("command=listIsos&isofilter=self"+array1.join("")),
-        dataType: "json",
-        async: false,
-        success: function(json) {            
-            var items = json.listisosresponse.iso;  
-            if(items != null && items.length > 0)
-                jsonObj = items[0];
-        }
-    });   
-    */   
-    
+    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");  
+    var jsonObj = $midmenuItem1.data("jsonObj");       
     $thisTab.data("jsonObj", jsonObj);    
-    $midmenuItem1.data("jsonObj", jsonObj);   
-    
+        
     $thisTab.find("#id").text(fromdb(jsonObj.id));
     $thisTab.find("#zonename").text(fromdb(jsonObj.zonename));
     

@@ -20,6 +20,12 @@ function afterLoadRouterJSP() {
     
 }
 
+function routerAfterDetailsTabAction(json, $midmenuItem1, id) {        
+    var jsonObj = json.queryasyncjobresultresponse.jobresult.domainrouter;    
+    routerToMidmenu(jsonObj, $midmenuItem1);  
+    routerJsonToDetailsTab($midmenuItem1);   
+}
+
 function routerToMidmenu(jsonObj, $midmenuItem1) {
     $midmenuItem1.attr("id", getMidmenuId(jsonObj));  
     $midmenuItem1.data("jsonObj", jsonObj); 
@@ -29,15 +35,10 @@ function routerToMidmenu(jsonObj, $midmenuItem1) {
     updateVmStateInMidMenu(jsonObj, $midmenuItem1);       
 }
 
-function routerAfterDetailsTabAction(json, $midmenuItem1, id) {        
-    var jsonObj = json.queryasyncjobresultresponse.router[0];    
-    routerToMidmenu(jsonObj, $midmenuItem1);  
-    routerJsonToDetailsTab($midmenuItem1);   
-}
-
 function routerToRightPanel($midmenuItem1) { 
     copyActionInfoFromMidMenuToRightPanel($midmenuItem1);
-    routerJsonToDetailsTab($midmenuItem1);   
+    $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);
+    routerJsonToDetailsTab();   
 }
 
 function routerJsonToDetailsTab($midmenuItem1) {   
@@ -45,22 +46,23 @@ function routerJsonToDetailsTab($midmenuItem1) {
     $thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();   
 
-    var jsonObj = $midmenuItem1.data("jsonObj"); 
-    var $detailsTab = $("#right_panel_content #tab_content_details");    
-    $detailsTab.data("jsonObj", jsonObj);         
-    setVmStateInRightPanel(jsonObj.state, $detailsTab.find("#state"));  
-    $detailsTab.find("#ipAddress").text(jsonObj.publicip);
-    $detailsTab.find("#zonename").text(fromdb(jsonObj.zonename));
-    $detailsTab.find("#name").text(fromdb(jsonObj.name));
-    $detailsTab.find("#publicip").text(fromdb(jsonObj.publicip));
-    $detailsTab.find("#privateip").text(fromdb(jsonObj.privateip));
-    $detailsTab.find("#guestipaddress").text(fromdb(jsonObj.guestipaddress));
-    $detailsTab.find("#hostname").text(fromdb(jsonObj.hostname));
-    $detailsTab.find("#networkdomain").text(fromdb(jsonObj.networkdomain));
-    $detailsTab.find("#account").text(fromdb(jsonObj.account));  
-    setDateField(jsonObj.created, $detailsTab.find("#created"));	 
+    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");  
+    var jsonObj = $midmenuItem1.data("jsonObj");       
+    $thisTab.data("jsonObj", jsonObj);
+            
+    setVmStateInRightPanel(jsonObj.state, $thisTab.find("#state"));  
+    $thisTab.find("#ipAddress").text(jsonObj.publicip);
+    $thisTab.find("#zonename").text(fromdb(jsonObj.zonename));
+    $thisTab.find("#name").text(fromdb(jsonObj.name));
+    $thisTab.find("#publicip").text(fromdb(jsonObj.publicip));
+    $thisTab.find("#privateip").text(fromdb(jsonObj.privateip));
+    $thisTab.find("#guestipaddress").text(fromdb(jsonObj.guestipaddress));
+    $thisTab.find("#hostname").text(fromdb(jsonObj.hostname));
+    $thisTab.find("#networkdomain").text(fromdb(jsonObj.networkdomain));
+    $thisTab.find("#account").text(fromdb(jsonObj.account));  
+    setDateField(jsonObj.created, $thisTab.find("#created"));	 
     
-    resetViewConsoleAction(jsonObj, $detailsTab);   
+    resetViewConsoleAction(jsonObj, $thisTab);   
     
     //***** actions (begin) *****    
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
@@ -68,12 +70,12 @@ function routerJsonToDetailsTab($midmenuItem1) {
     var noAvailableActions = true;
    
     if (jsonObj.state == 'Running') {   
-        buildActionLinkForTab("Stop Router", routerActionMap, $actionMenu, $midmenuItem1, $detailsTab);	
-        buildActionLinkForTab("Reboot Router", routerActionMap, $actionMenu, $midmenuItem1, $detailsTab);	  
+        buildActionLinkForTab("Stop Router", routerActionMap, $actionMenu, $midmenuItem1, $thisTab);	
+        buildActionLinkForTab("Reboot Router", routerActionMap, $actionMenu, $midmenuItem1, $thisTab);	  
         noAvailableActions = false;      
     }
     else if (jsonObj.state == 'Stopped') {        
-        buildActionLinkForTab("Start Router", routerActionMap, $actionMenu, $midmenuItem1, $detailsTab);	
+        buildActionLinkForTab("Start Router", routerActionMap, $actionMenu, $midmenuItem1, $thisTab);	
         noAvailableActions = false;
     }  
     
