@@ -692,7 +692,7 @@ long milliseconds = new Date().getTime();
                         <div class="leftmenu_firstindent">
                             <div class="leftmenu_arrows_firstlevel_open" id="expandable_first_level_arrow" style="display:none;"></div>
                             <div class="leftmenu_list_icons">
-                                <img src="images/configuration_leftmenuicon.png" alt="resources" /></div>
+                                <img src="images/resource_leftmenuicon.png" alt="resources" /></div>
                             <%=t.t("resources")%>
                         </div>
                     </div>
