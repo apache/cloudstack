@@ -91,6 +91,112 @@
 </div>
 
 
+<!-- Zone wizard (begin)-->
+<div class="ui-widget-overlay" style="display:none;"></div>
+<div class="zonepopup_container" style="display: none">
+    <div id="step1" style="display: block;">
+        <div class="zonepopup_container_top">
+            <div class="vmpopup_steps" style="color: #FFF; background: url(images/step1_bg.png) no-repeat top left">
+                Step 1</div>
+            <div class="vmpopup_steps" style="background: url(images/step2_bg.gif) no-repeat top left">
+                Step 2</div>
+            <div class="vmpopup_steps" style="background: url(images/othersteps_bg.gif) no-repeat top left">
+                Step 3</div>
+            <div class="vmpopup_steps" style="background: url(images/laststep_bg.gif) no-repeat top left">
+            </div>
+            <div class="vmpopup_container_closebutton" id="close_button">
+            </div>
+        </div>
+        <div class="zonepopup_container_mid">
+            <div class="vmpopup_maincontentarea">
+                <div class="vmpopup_titlebox">
+                    <h2>
+                        Step 1: <strong>Select a Network</strong></h2>
+                    <p>
+                        Please select a template for your new virtual instance. You can also choose to select
+                        a blank template from which an ISO image can be installed onto.
+                    </p>
+                </div>
+                <div class="vmpopup_contentpanel">
+                    <div class="rev_tempsearchpanel">
+                        <label for="wizard_zone">
+                            Availability Zone:</label>
+                        <select class="select" id="wizard_zone" name="zone">
+                        </select>
+                        
+                                        
+                        
+                        <div class="rev_tempsearchbox">
+                            <form method="post" action="#">
+                            <ol>
+                                <li>
+                                    <input id="search_input" class="text" type="text" name="search_input" />
+                            </ol>
+                            </form>
+                            <div id="search_button" class="rev_searchbutton">
+                                Search</div>
+                        </div>
+                    </div>
+                    <div class="rev_wizformarea">
+                        <div class="revwiz_message_container" style="display: none;" id="wiz_message">
+                            <div class="revwiz_message_top">
+                                <p id="wiz_message_text">
+                                    Please select a template or ISO to continue</p>
+                            </div>
+                            <div class="revwiz_message_bottom">
+                                <div class="revwizcontinue_button" id="wiz_message_continue">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="rev_wizmid_tempbox">
+                            <div class="revwiz_loadingbox" id="wiz_template_loading" style="display: none">
+                                <div class="loading_gridanimation">
+                                </div>
+                                <p>
+                                    Loading...</p>
+                            </div>
+                            <div class="rev_wizmid_tempbox_left" id="wiz_template_filter">
+                                <div class="rev_wizmid_selectedtempbut" id="wiz_featured">
+                                    Featured Template</div>
+                                <div class="rev_wizmid_nonselectedtempbut" id="wiz_my">
+                                    My Template</div>
+                                <div class="rev_wizmid_nonselectedtempbut" id="wiz_community">
+                                    Community Template</div>
+                                <div class="rev_wizmid_nonselectedtempbut" id="wiz_blank">
+                                    Blank Template</div>
+                            </div>
+                            <div class="rev_wizmid_tempbox_right">
+                                <div class="rev_wiztemplistpanel" id="template_container">  
+                                    
+                                </div>
+                                <div class="rev_wiztemplistactions">
+                                    <div class="rev_wiztemplist_actionsbox">
+                                        <a href="#" id="prev_page">Prev</a> <a href="#" id="next_page">Next</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="vmpopup_navigationpanel">
+                    <div class="vmpop_prevbutton" id="prev_step" style="display: none;">
+                    </div>
+                    <div class="vmpop_nextbutton" id="next_step">
+                        Go to Step 2</div>
+                </div>
+            </div>
+        </div>
+        <div class="zonepopup_container_bot">
+        </div>
+    </div>
+    
+    
+    
+    
+</div>
+<!-- Zone wizard (end)-->
+
+
 <!-- Add Zone Dialog -->
 <div id="dialog_add_zone" title="Add Zone" style="display:none">
 	<p>Please enter the following info to add a new zone:</p>
