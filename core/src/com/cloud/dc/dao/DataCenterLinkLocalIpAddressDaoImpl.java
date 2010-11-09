@@ -94,6 +94,7 @@ public class DataCenterLinkLocalIpAddressDaoImpl extends GenericDaoBase<DataCent
                     stmt.setLong(3, podId);
                     stmt.addBatch();
             }
+            stmt.executeBatch();
             txn.commit();
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to insert", e);

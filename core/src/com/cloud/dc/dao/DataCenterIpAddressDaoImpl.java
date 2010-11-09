@@ -55,6 +55,7 @@ public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddre
         txn.start();
         DataCenterIpAddressVO  vo = lockOneRandomRow(sc, true);
         if (vo == null) {
+            txn.rollback();
             return null;
         }
         vo.setTakenAt(new Date());
@@ -102,10 +103,11 @@ public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddre
                 stmt.setLong(3, podId);
                 stmt.addBatch();
             }
+            stmt.executeBatch();
             txn.commit();
         } catch (SQLException ex) {
             throw new CloudRuntimeException("Unable to persist ip address range ", ex);
-        }
+        } 
     }
     
     public void releaseIpAddress(String ipAddress, long dcId, Long instanceId) {
