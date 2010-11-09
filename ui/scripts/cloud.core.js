@@ -999,7 +999,6 @@ function bindAndListMidMenuItems($leftmenu, commandString, jsonResponse1, jsonRe
 }
 
 function handleErrorInDialog(XMLHttpResponse, $thisDialog) {
-	handleError(XMLHttpResponse);
     var start = XMLHttpResponse.responseText.indexOf("h1") + 3;
 	var end = XMLHttpResponse.responseText.indexOf("</h1");
 	var errorMsg = XMLHttpResponse.responseText.substring(start, end);
