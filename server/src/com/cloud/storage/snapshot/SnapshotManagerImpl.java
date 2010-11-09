@@ -54,6 +54,7 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.EventTypes;
+import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.exception.InvalidParameterValueException;
@@ -418,6 +419,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
             String primaryStoragePoolNameLabel = _storageMgr.getPrimaryStorageNameLabel(volume);
             Long dcId                          = volume.getDataCenterId();
             Long accountId                     = volume.getAccountId();
+            EventUtils.saveStartedEvent(userId, accountId, EventTypes.EVENT_SNAPSHOT_CREATE, "Start creating snapshot for volume:"+volumeId, startEventId);
             
             String secondaryStoragePoolUrl = _storageMgr.getSecondaryStorageURL(volume.getDataCenterId());
             String snapshotUuid = snapshot.getPath();
@@ -479,6 +481,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
             event.setUserId(userId);
             event.setAccountId(volume.getAccountId());
             event.setType(EventTypes.EVENT_SNAPSHOT_CREATE);
+            event.setStartId(startEventId);
             String snapshotName = snapshot.getName();
             
             if (backedUp) {
@@ -486,9 +489,8 @@ public class SnapshotManagerImpl implements SnapshotManager {
                 snapshot.setStatus(Snapshot.Status.BackedUp);
                 _snapshotDao.update(snapshotId, snapshot);
                 String eventParams = "id=" + snapshotId + "\nssName=" + snapshotName +"\nsize=" + volume.getSize()+"\ndcId=" + volume.getDataCenterId();
-                event.setDescription("Backed up snapshot id: " + snapshotId + " to secondary for volume " + volumeId);
-                event.setLevel(EventVO.LEVEL_INFO);
-                event.setStartId(startEventId);
+                event.setDescription("Backed up snapshot id: " + snapshotId + " to secondary for volume:" + volumeId);
+                event.setLevel(EventVO.LEVEL_INFO);                
                 event.setParameters(eventParams);
 
             }
@@ -502,7 +504,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
                 // will take care of cleaning up the state of this snapshot
                 _snapshotDao.remove(snapshotId);
                 event.setLevel(EventVO.LEVEL_ERROR);
-                event.setDescription("Failed to backup snapshot id: " + snapshotId + " to secondary for volume " + volumeId);
+                event.setDescription("Failed to backup snapshot id: " + snapshotId + " to secondary for volume:" + volumeId);
             }
             // Save the event
             _eventDao.persist(event);
