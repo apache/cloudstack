@@ -704,6 +704,41 @@ long milliseconds = new Date().getTime();
                         </div>
                     </div>
                 </div>
+                
+                
+                <div class="leftmenu_list">
+                    <div class="leftmenu_content_flevel" id="leftmenu_resources" style="display: none">
+                        <div class="leftmenu_firstindent">
+                            <div class="leftmenu_arrows_firstlevel_open" id="expandable_first_level_arrow" style="display:none;"></div>
+                            <div class="leftmenu_list_icons">
+                                <img src="images/configuration_leftmenuicon.png" alt="resources" /></div>
+                            <%=t.t("resources")%>
+                        </div>
+                    </div>
+                    <div class="leftmenu_expandedbox" style="display: none">
+                        <div class="leftmenu_expandedlist">
+                            <div class="leftmenu_content" id="leftmenu_physical_resource">
+                                <div class="leftmenu_secondindent">
+                                    <div class="leftmenu_arrows expanded_close" id="physical_resource_arrow">
+                                    </div>
+                                   
+                                    <%=t.t("physical.resources")%>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="leftmenu_zone_tree">
+                        	<div id="loading_container" class="leftmenu_loadingbox" style="display:none;">
+                                <div class="leftmenu_loader"></div>
+                                <p> Loading &hellip; </p>
+                            </div>
+						    <div id="tree_container"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                
+                
             </div>
         </div>
     </div>

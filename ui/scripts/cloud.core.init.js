@@ -35,7 +35,16 @@ $(document).ready(function() {
 				$("#leftmenu_resource").click(); //if resource menu is open (i.e. zonetree is shown), empty zonetree and close resource menu.
 		}
 		return false;
-	});				
+	});	
+	
+	$("#leftmenu_resources").bind("click", function(event) {
+		if (selectLeftMenu($(this), true)) {
+			if($("#leftmenu_physical_resource").find("#physical_resource_arrow").hasClass("expanded_open") == true)
+				$("#leftmenu_physical_resource").click(); //if resource menu is open (i.e. zonetree is shown), empty zonetree and close resource menu.
+		}
+		return false;
+	});		
+				
 	$("#leftmenu_domain").bind("click", function(event) {
 		if (selectLeftMenu($(this), true)) {
 			hideMiddleMenu();		
