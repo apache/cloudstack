@@ -1460,28 +1460,7 @@ function vmJsonToStatisticsTab() {
     $thisTab.find("#tab_spinning_wheel").hide();    
     $thisTab.find("#tab_container").show();  
 }
-   
-function drawBarChart($capacity, percentused) { //percentused == "0.01%" (having % inside)    
-    $capacity.find("#percentused").text(percentused);
-    
-    var percentusedFloat; 
-    if(percentused.indexOf("%") != -1) {
-        percentused = percentused.replace("%", "");
-        percentusedFloat = parseFloat(percentused);
-        percentusedFloat = percentusedFloat * 0.01;   //because % is removed.  percentusedFloat == 0.0001
-    }
-    else {
-        percentusedFloat = parseFloat(percentused);
-    }
-      
-    if (percentusedFloat <= 0.6)
-        $capacity.find("#bar_chart").removeClass().addClass("db_barbox low").css("width", percentused); 
-    else if (percentusedFloat > 0.6 && percentusedFloat <= 0.8 )
-        $capacity.find("#bar_chart").removeClass().addClass("db_barbox mid").css("width", percentused);
-    else if (percentusedFloat > 0.8 )
-        $capacity.find("#bar_chart").removeClass().addClass("db_barbox high").css("width", percentused);
-}   
-    
+
 function vmJsonToRouterTab() {   
     var $thisTab = $("#right_panel_content #tab_content_router");  
 	$thisTab.find("#tab_container").hide(); 
