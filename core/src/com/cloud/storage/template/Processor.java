@@ -47,5 +47,6 @@ public interface Processor extends Adapter {
         public long size;
         public long virtualSize;
         public String filename;
+        public boolean isCorrupted;
     }
 }

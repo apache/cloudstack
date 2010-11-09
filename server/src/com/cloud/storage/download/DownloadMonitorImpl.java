@@ -38,6 +38,7 @@ import com.cloud.agent.api.storage.DownloadCommand;
 import com.cloud.agent.api.storage.DownloadProgressCommand;
 import com.cloud.agent.api.storage.DownloadProgressCommand.RequestType;
 import com.cloud.agent.AgentManager;
+import com.cloud.alert.AlertManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
@@ -88,7 +89,8 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
     StoragePoolHostDao _poolHostDao;
     @Inject
     SecondaryStorageVmDao _secStorageVmDao;
-
+    @Inject
+    AlertManager _alertMgr;
     
     @Inject
     HostDao _serverDao = null;
@@ -408,7 +410,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 	}
 
 	@Override
-	public void handleTemplateSync(long sserverId, Map<String, TemplateInfo> templateInfo) {
+	public void handleTemplateSync(long sserverId, Map<String, TemplateInfo> templateInfos) {
 		HostVO storageHost = _serverDao.findById(sserverId);
 		if (storageHost == null) {
 			s_logger.warn("Huh? Agent id " + sserverId + " does not correspond to a row in hosts table?");
@@ -446,25 +448,41 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 		for (VMTemplateVO tmplt: allTemplates) {
 			String uniqueName = tmplt.getUniqueName();
 			VMTemplateHostVO tmpltHost = _vmTemplateHostDao.findByHostTemplate(sserverId, tmplt.getId());
-			if (templateInfo.containsKey(uniqueName)) {
+			if (templateInfos.containsKey(uniqueName)) {
+			    TemplateInfo tmpltInfo = templateInfos.remove(uniqueName);
 				toBeDownloaded.remove(tmplt);
 				if (tmpltHost != null) {
 					s_logger.info("Template Sync found " + uniqueName + " already in the template host table");
                     if (tmpltHost.getDownloadState() != Status.DOWNLOADED) {
                     	tmpltHost.setErrorString("");
                     }
-                    tmpltHost.setDownloadPercent(100);
-                    tmpltHost.setDownloadState(Status.DOWNLOADED);
-                    tmpltHost.setInstallPath(templateInfo.get(uniqueName).getInstallPath());
-                    tmpltHost.setSize(templateInfo.get(uniqueName).getSize());
-                    tmpltHost.setLastUpdated(new Date());
+                    if( tmpltInfo.isCorrupted() ) {
+                        tmpltHost.setDownloadState(Status.DOWNLOAD_ERROR);
+                        tmpltHost.setErrorString("This template is corrupted");
+                        toBeDownloaded.add(tmplt);
+                        s_logger.info("Template (" + tmplt +") is corrupted");
+                        if( tmplt.getUrl() == null) {
+                            String msg = "Private Template (" + tmplt +") with install path "  + tmpltInfo.getInstallPath() + 
+                            "is corrupted, please check in secondary storage: " + tmpltHost.getHostId();
+                            s_logger.warn(msg);
+                        } else {
+                            toBeDownloaded.add(tmplt);
+                        }
+
+                    } else {
+                        tmpltHost.setDownloadPercent(100);
+                        tmpltHost.setDownloadState(Status.DOWNLOADED);
+                        tmpltHost.setInstallPath(tmpltInfo.getInstallPath());
+                        tmpltHost.setSize(tmpltInfo.getSize());
+                        tmpltHost.setLastUpdated(new Date());
+                    }
 					_vmTemplateHostDao.update(tmpltHost.getId(), tmpltHost);
 				} else {
-				    tmpltHost = new VMTemplateHostVO(sserverId, tmplt.getId(), new Date(), 100, Status.DOWNLOADED, null, null, null, templateInfo.get(uniqueName).getInstallPath(), tmplt.getUrl());
-					tmpltHost.setSize(templateInfo.get(uniqueName).getSize());
+				    tmpltHost = new VMTemplateHostVO(sserverId, tmplt.getId(), new Date(), 100, Status.DOWNLOADED, null, null, null, tmpltInfo.getInstallPath(), tmplt.getUrl());
+					tmpltHost.setSize(tmpltInfo.getSize());
 					_vmTemplateHostDao.persist(tmpltHost);
 				}
-				templateInfo.remove(uniqueName);
+
 				continue;
 			}
 			if (tmpltHost != null && tmpltHost.getDownloadState() != Status.DOWNLOADED) {
@@ -489,8 +507,8 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 			}
 		}
 		
-		for (String uniqueName: templateInfo.keySet()) {
-			TemplateInfo tInfo = templateInfo.get(uniqueName);
+		for (String uniqueName: templateInfos.keySet()) {
+			TemplateInfo tInfo = templateInfos.get(uniqueName);
 			DeleteTemplateCommand dtCommand = new DeleteTemplateCommand(tInfo.getInstallPath());
 			long result = send(sserverId, dtCommand, null);
 			if (result == -1 ){

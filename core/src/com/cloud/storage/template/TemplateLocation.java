@@ -38,6 +38,7 @@ public class TemplateLocation {
     
     StorageLayer _storage;
     String _templatePath;
+    boolean _isCorrupted;
     
     File _file;
     Properties _props;
@@ -53,6 +54,7 @@ public class TemplateLocation {
         _formats = new ArrayList<FormatInfo>(5);
         _props = new Properties();
         _file = _storage.getFile(_templatePath + Filename);
+        _isCorrupted = false;
     }
     
     public boolean create(long id, boolean isPublic, String uniqueName) throws IOException {
@@ -100,15 +102,18 @@ public class TemplateLocation {
                 FormatInfo info = new FormatInfo();
                 info.format = format;
                 info.filename = _props.getProperty(format.getFileExtension() + ".filename");
+                if( info.filename == null ) {
+                    continue;
+                }
                 info.size = NumbersUtil.parseLong(_props.getProperty(format.getFileExtension() + ".size"), -1);
                 info.virtualSize = NumbersUtil.parseLong(_props.getProperty(format.getFileExtension() + ".virtualsize"), -1);
                 
-                _formats.add(info);
+                _formats.add(info);               
                 
                 if (!checkFormatValidity(info)) {
+                    _isCorrupted = true;
                     s_logger.warn("Cleaning up inconsistent information for " + format);
-                    cleanup(format);
-                }
+                } 
             }
         }
         
@@ -116,7 +121,7 @@ public class TemplateLocation {
             return false;
         }
         
-        return _formats.size() > 0;
+        return (_formats.size() > 0);
     }
     
     public boolean save() {
@@ -148,10 +153,10 @@ public class TemplateLocation {
     public TemplateInfo getTemplateInfo() {
         TemplateInfo tmplInfo = new TemplateInfo();
         
-        String[] tokens = _templatePath.split(File.separator);
         tmplInfo.id = Long.parseLong(_props.getProperty("id"));
         tmplInfo.installPath = _templatePath + File.separator + _props.getProperty("filename");
         tmplInfo.installPath = tmplInfo.installPath.substring(tmplInfo.installPath.indexOf("template"));
+        tmplInfo.isCorrupted = _isCorrupted;
         tmplInfo.isPublic = Boolean.parseBoolean(_props.getProperty("public"));
         tmplInfo.templateName = _props.getProperty("uniquename");
         tmplInfo.size = Long.parseLong(_props.getProperty("virtualsize"));
@@ -159,16 +164,7 @@ public class TemplateLocation {
         return tmplInfo;
     }
     
-    protected void cleanup(ImageFormat format) {
-        FormatInfo info = deleteFormat(format);
-        if (info != null && info.filename != null) {
-            boolean r = _storage.delete(_templatePath + info.filename);
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug((r ? "R" : "Unable to r") + "emove " + _templatePath + info.filename);
-            }
-        }
-    }
-    
+   
     public FormatInfo getFormat(ImageFormat format) {
         for (FormatInfo info : _formats) {
             if (info.format == format) {

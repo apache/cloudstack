@@ -177,7 +177,7 @@ public class DummySecondaryStorageResource extends ServerResourceBase implements
 	        Map<String, TemplateInfo> tmpltInfo = new HashMap<String, TemplateInfo>();
 	        if (tmplts != null) {
 	        	for (VMTemplateVO tmplt : tmplts) {
-	        		TemplateInfo routingInfo = new TemplateInfo(tmplt.getUniqueName(), TemplateConstants.DEFAULT_SYSTEM_VM_TEMPLATE_PATH + tmplt.getId() + File.separator, false);
+	        		TemplateInfo routingInfo = new TemplateInfo(tmplt.getUniqueName(), TemplateConstants.DEFAULT_SYSTEM_VM_TEMPLATE_PATH + tmplt.getId() + File.separator, false, false);
 	        		tmpltInfo.put(tmplt.getUniqueName(), routingInfo);
 	        	}
 	        }

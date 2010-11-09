@@ -3872,7 +3872,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             VDI pvISO = vids.iterator().next();
             String uuid = pvISO.getUuid(conn);
             Map<String, TemplateInfo> pvISOtmlt = new HashMap<String, TemplateInfo>();
-            TemplateInfo tmplt = new TemplateInfo("xs-tools.iso", uuid, pvISO.getVirtualSize(conn), true);
+            TemplateInfo tmplt = new TemplateInfo("xs-tools.iso", uuid, pvISO.getVirtualSize(conn), true, false);
             pvISOtmlt.put("xs-tools", tmplt);
             sscmd.setTemplateInfo(pvISOtmlt);
         } catch (XenAPIException e) {
