@@ -198,7 +198,7 @@ function showAccountsTab(domainId) {
 	    
 	    template.find("#account_enable, #account_disable").data("accountId", accountId);		  
 	    		    		    
-		if (json.accounttype == roleTypeUser || json.accounttype == roleTypeDomainAdmin) {
+		if (isAdmin() && (json.accounttype == roleTypeUser || json.accounttype == roleTypeDomainAdmin)) {
 		    template.find("#account_resource_limits_container").show();
 		    var that = template;
 			template.find("#account_resource_limits").bind("click", function() {
