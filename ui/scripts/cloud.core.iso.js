@@ -395,22 +395,23 @@ function doEditISO2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $e
 							
 	var name = $detailsTab.find("#name_edit").val();
 	array1.push("&name="+todb(name));
+		
+	var displaytext = $detailsTab.find("#displaytext_edit").val();
+	array1.push("&displayText="+todb(displaytext));
 	
 	var oldOsTypeId = jsonObj.ostypeid;
 	var newOsTypeId = $detailsTab.find("#ostypename_edit").val();
 	if(newOsTypeId != oldOsTypeId)
 	    array1.push("&ostypeid="+newOsTypeId);
-	
-	var displaytext = $detailsTab.find("#displaytext_edit").val();
-	array1.push("&displayText="+todb(displaytext));
 		
 	$.ajax({
 	    data: createURL("command=updateIso"+array1.join("")),
 		dataType: "json",
 		async: false,
 		success: function(json) {	
-		    //do not update UI here. i.e. do not call isoToMidmenu(), isoJsonToDetailsTab() here. 
-		    //Otherwise, value of $("#ispublic_edit") will be reverted.       					
+		    $detailsTab.find("#name").text(name);
+		    $detailsTab.find("#displaytext").text(displaytext);		           
+		    $detailsTab.find("#ostypename").text($detailsTab.find("#ostypename_edit option:selected").text());		   					
 		}
 	});
 	
@@ -427,22 +428,11 @@ function doEditISO2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $e
 		    dataType: "json",
 		    async: false,
 		    success: function(json) {			    	        						       					    
-		        //do not update UI here. i.e. do not call isoToMidmenu(), isoJsonToDetailsTab() here.	
+		        setBooleanReadField(newIsPublic, $detailsTab.find("#ispublic"));
     		}
 	    });
 	}	
-		
-	$.ajax({
-        data:createURL("command=listIsos&isofilter=self&id="+id),
-        dataType: "json",
-        async: false,
-        success: function(json) {  
-            var jsonObj = json.listisosresponse.iso[0];           
-            isoToMidmenu(jsonObj, $midmenuItem1);
-            isoJsonToDetailsTab($midmenuItem1);              
-        }
-    });   
-			
+	
 	$editFields.hide();      
     $readonlyFields.show();       
     $("#save_button, #cancel_button").hide();       
