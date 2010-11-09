@@ -1196,17 +1196,15 @@ function loadBalancerJsonToTemplate(jsonObj, $template) {
 									return; //Job has not completed
 								} else {
 									$("body").stopTime(timerKey);
-									if (result.jobstatus == 1) { // Succeeded											    
+									if (result.jobstatus == 1) { // Succeeded																		    
 									    var $lbVmTemplate = $("#load_balancer_vm_template").clone();											    											    											    
 									    var obj = {"loadBalancerId": loadBalancerId, "vmId": vmId, "vmName": vmName, "vmPrivateIp": vmPrivateIp};	
 									    lbVmObjToTemplate(obj, $lbVmTemplate);		
 									    $template.find("#management_area #subgrid_content").append($lbVmTemplate.show());	
 									    refreshLbVmSelect($template, loadBalancerId);											    
 		                                $spinningWheel.hide();   
-									} else if (result.jobstatus == 2) { // Failed
-										//fail reason ("jobresult") is not returned any more after API refactor....
-										//$("#dialog_error").text(fromdb(result.jobresult.errortext)).dialog("open");  
-										$("#dialog_error").text("Assigning instance to load balancer rule failed").dialog("open");  								
+									} else if (result.jobstatus == 2) { // Failed										
+										$("#dialog_error").text(fromdb(result.jobresult.errortext)).dialog("open");  																
 										$spinningWheel.hide();   
 									}
 								}
