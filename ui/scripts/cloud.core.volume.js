@@ -122,13 +122,17 @@ function afterLoadVolumeJSP() {
 							    },
 							    error: function(XMLHttpResponse) {
 								    $("body").stopTime(timerKey);
-								    afterAddingMidMenuItem($midmenuItem1, false);	
+									handleError(XMLHttpResponse, function() {
+										afterAddingMidMenuItem($midmenuItem1, false);
+									});
 							    }
 						    });
 					    }, 0);						    					
 				    },
-				    error: function(XMLHttpResponse) {							    
-						afterAddingMidMenuItem($midmenuItem1, false);	
+				    error: function(XMLHttpResponse) {
+						handleError(XMLHttpResponse, function() {
+							afterAddingMidMenuItem($midmenuItem1, false);	
+						});
 				    }
 			    });
 		    }, 

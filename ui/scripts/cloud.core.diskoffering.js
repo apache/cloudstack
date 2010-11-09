@@ -95,8 +95,10 @@ function initAddDiskOfferingButton($midmenuAddLink1) {
 						bindClickToMidMenu($midmenuItem1, diskOfferingToRightPanel, getMidmenuId);  
 						afterAddingMidMenuItem($midmenuItem1, true);						
 					},			
-                    error: function(XMLHttpResponse) {		                   
-	                    handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1);								    
+                    error: function(XMLHttpResponse) {
+						handleError(XMLHttpResponse, function() {
+							handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1);	
+						});
                     }	
 				});
 			}, 

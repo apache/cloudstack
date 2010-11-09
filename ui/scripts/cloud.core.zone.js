@@ -417,14 +417,15 @@ function initAddVLANButton($addButton) {
 				            $template1.find("#vlan_type_icon").removeClass("virtual").addClass("direct");
 				        else  //virtual
 				  	        $template1.find("#vlan_type_icon").removeClass("direct").addClass("virtual");	
-        				        		
-        				var item = json.createvlaniprangeresponse.vlan;
-        				vlanJsonToTemplate(item, $template1);	
+        				
+        				vlanJsonToTemplate(json.createvlaniprangeresponse.vlaniprange, $template1);	
 				        $vlanContainer.prepend($template1);	
 				        $template1.fadeIn("slow");
 					},
 				    error: function(XMLHttpResponse) {
-				        handleErrorInDialog(XMLHttpResponse, $thisDialog);					         
+						handleError(XMLHttpResponse, function() {
+							handleErrorInDialog(XMLHttpResponse, $thisDialog);	
+						});
 				    }
 				});
 				
@@ -480,7 +481,9 @@ function initAddSecondaryStorageButton($addButton) {
                         $("#tab_content_secondarystorage").append($subgridItem.show());  
 				    },			
                     error: function(XMLHttpResponse) {	
-                        handleErrorInDialog(XMLHttpResponse, $thisDialog);		 
+						handleError(XMLHttpResponse, function() {
+							handleErrorInDialog(XMLHttpResponse, $thisDialog);
+						});
                     }					    			    
 			    });
 		    }, 
@@ -562,7 +565,9 @@ function initAddPodButton($midmenuAddLink1) {
 				        }
 			        },
 		            error: function(XMLHttpResponse) {	
-		                handleErrorInDialog(XMLHttpResponse, $thisDialog);			
+						handleError(XMLHttpResponse, function() {
+							handleErrorInDialog(XMLHttpResponse, $thisDialog);	
+						});
 		            }
 		        });					
 	        }, 

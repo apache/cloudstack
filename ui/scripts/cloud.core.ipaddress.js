@@ -70,8 +70,10 @@ function afterLoadIpJSP() {
 						afterAddingMidMenuItem($midmenuItem1, true);	
 	            				
 					},
-					error: function(XMLHttpResponse) {					    
-                        handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1);	
+					error: function(XMLHttpResponse) {
+						handleError(XMLHttpResponse, function() {
+							handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1);
+						});
 					}						
 				});
 			},
@@ -123,9 +125,10 @@ function afterLoadIpJSP() {
 	            refreshCreatePortForwardingRow();			   						
 	        },
 		    error: function(XMLHttpResponse) {				    
-			    handleError(XMLHttpResponse);
-			    $template.slideUp("slow", function() {
-					$(this).remove();
+			    handleError(XMLHttpResponse, function() {
+					$template.slideUp("slow", function() {
+						$(this).remove();
+					});
 				});
 		    }	
         });	    
@@ -176,9 +179,10 @@ function afterLoadIpJSP() {
 	            refreshCreateLoadBalancerRow();	            	
 			},
 		    error: function(XMLHttpResponse) {				    
-			    handleError(XMLHttpResponse);
-			    $template.slideUp("slow", function() {
-					$(this).remove();
+			    handleError(XMLHttpResponse, function() {
+					$template.slideUp("slow", function() {
+						$(this).remove();
+					});
 				});
 		    }			
 		});  	    
@@ -352,8 +356,10 @@ function showEnableVPNDialog($thisTab) {
 									}
 								},
 								error: function(XMLHttpResponse) {	                            
-									$("body").stopTime(timerKey);		                       		                        
-									handleErrorInDialog(XMLHttpResponse, $thisDialog); 		                                             
+									$("body").stopTime(timerKey);	
+									handleError(XMLHttpResponse, function() {
+										handleErrorInDialog(XMLHttpResponse, $thisDialog); 	
+									});
 								}
 							});
 						},
@@ -361,7 +367,9 @@ function showEnableVPNDialog($thisTab) {
 					);
 				},
 				error: function(XMLHttpResponse) {
-					handleErrorInDialog(XMLHttpResponse, $thisDialog);			
+					handleError(XMLHttpResponse, function() {
+						handleErrorInDialog(XMLHttpResponse, $thisDialog);	
+					});
 				}
 			});    
 		}, 
@@ -454,8 +462,10 @@ function showVpnUsers(presharedkey, publicip) {
 										}
 									},
 									error: function(XMLHttpResponse) {	                            
-										$("body").stopTime(timerKey);		                       		                        
-										handleErrorInDialog(XMLHttpResponse, $thisDialog); 		                                             
+										$("body").stopTime(timerKey);
+										handleError(XMLHttpResponse, function() {										
+											handleErrorInDialog(XMLHttpResponse, $thisDialog); 		
+										});
 									}
 								});
 							},
@@ -463,7 +473,9 @@ function showVpnUsers(presharedkey, publicip) {
 						);
 					},
 					error: function(XMLHttpResponse) {
-						handleErrorInDialog(XMLHttpResponse, $thisDialog);			
+						handleError(XMLHttpResponse, function() {
+							handleErrorInDialog(XMLHttpResponse, $thisDialog);	
+						});
 					}
 				});    
 			}, 
@@ -527,8 +539,10 @@ function showVpnUsers(presharedkey, publicip) {
 										}
 									},
 									error: function(XMLHttpResponse) {	                            
-										$("body").stopTime(timerKey);		                       		                        
-										handleErrorInDialog(XMLHttpResponse, $thisDialog); 		                                             
+										$("body").stopTime(timerKey);	
+										handleError(XMLHttpResponse, function() {
+											handleErrorInDialog(XMLHttpResponse, $thisDialog); 	
+										});
 									}
 								});
 							},
@@ -536,7 +550,9 @@ function showVpnUsers(presharedkey, publicip) {
 						);
 					},
 					error: function(XMLHttpResponse) {
-						handleErrorInDialog(XMLHttpResponse, $thisDialog);			
+						handleError(XMLHttpResponse, function() {
+							handleErrorInDialog(XMLHttpResponse, $thisDialog);	
+						});
 					}
 				});    
 			}, 
@@ -632,8 +648,10 @@ function enableDeleteUser() {
 											}
 										},
 										error: function(XMLHttpResponse) {	                            
-											$("body").stopTime(timerKey);		                       		                        
-											handleErrorInDialog(XMLHttpResponse, $thisDialog); 		                                             
+											$("body").stopTime(timerKey);
+											handleError(XMLHttpResponse, function() {
+												handleErrorInDialog(XMLHttpResponse, $thisDialog);
+											});
 										}
 									});
 								},
@@ -641,7 +659,9 @@ function enableDeleteUser() {
 							);
 						},
 						error: function(XMLHttpResponse) {
-							handleErrorInDialog(XMLHttpResponse, $thisDialog);			
+							handleError(XMLHttpResponse, function() {
+								handleErrorInDialog(XMLHttpResponse, $thisDialog);
+							});
 						}
 					});    
 				}, 

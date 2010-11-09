@@ -347,8 +347,10 @@ function initUpdateConsoleCertButton($midMenuAddLink2) {
 										}
 									},
 									error: function(XMLHttpResponse) {	                            
-										$("body").stopTime(timerKey);		                       		                        
-										handleErrorInDialog(XMLHttpResponse, $thisDialog); 		                                             
+										$("body").stopTime(timerKey);
+										handleError(XMLHttpResponse, function() {
+											handleErrorInDialog(XMLHttpResponse, $thisDialog); 	
+										});
 									}
 								});
 							},
@@ -356,7 +358,9 @@ function initUpdateConsoleCertButton($midMenuAddLink2) {
 						);
 				    },
 			        error: function(XMLHttpResponse) {
-			            handleErrorInDialog(XMLHttpResponse, $thisDialog);			
+						handleError(XMLHttpResponse, function() {
+							handleErrorInDialog(XMLHttpResponse, $thisDialog);	
+						});
 			        }
 			    });
 			},
@@ -476,7 +480,9 @@ function initAddZoneButton($midmenuAddLink1) {
 					    zoneJSONToTreeNode(item, template);						    	        
 				    },
 			        error: function(XMLHttpResponse) {
-			            handleErrorInDialog(XMLHttpResponse, $thisDialog);			
+						handleError(XMLHttpResponse, function() {
+							handleErrorInDialog(XMLHttpResponse, $thisDialog);	
+						});
 			        }
 			    });
 			}, 

@@ -96,8 +96,10 @@ function afterLoadServiceOfferingJSP() {
 						afterAddingMidMenuItem($midmenuItem1, true);						
 						
 					},			
-                    error: function(XMLHttpResponse) {		                   
-	                    handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1);							    
+                    error: function(XMLHttpResponse) {
+						handleError(XMLHttpResponse, function() {
+							handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1);
+						});
                     }							
 				});
 			}, 

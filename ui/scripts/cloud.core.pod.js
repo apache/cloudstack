@@ -244,8 +244,10 @@ function initAddHostButton($midmenuAddLink1, currentPageInRightPanel) {
                         clickClusterNodeAfterAddHost(clusterRadio, podId, newClusterName, existingClusterId, $thisDialog);                                  
 			        },			
                     error: function(XMLHttpResponse) {	
-                        clickClusterNodeAfterAddHost(clusterRadio, podId, newClusterName, existingClusterId, $thisDialog);                                  
-                        handleErrorInDialog(XMLHttpResponse, $thisDialog);					    
+						handleError(XMLHttpResponse, function() {
+							clickClusterNodeAfterAddHost(clusterRadio, podId, newClusterName, existingClusterId, $thisDialog);                                  
+							handleErrorInDialog(XMLHttpResponse, $thisDialog);
+						});
                     }				
 		        });
 	        }, 
@@ -405,8 +407,10 @@ function initAddPrimaryStorageButton($midmenuAddLink2, currentPageInRightPanel) 
 	                    }
 	                                                                 
 				    },			
-                    error: function(XMLHttpResponse) {	                                 
-                        handleErrorInDialog(XMLHttpResponse, $thisDialog);	                        					    
+                    error: function(XMLHttpResponse) {	  
+						handleError(XMLHttpResponse, function() {
+							handleErrorInDialog(XMLHttpResponse, $thisDialog);	
+						});
                     }							    
 			    });
 		    }, 

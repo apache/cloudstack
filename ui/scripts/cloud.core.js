@@ -100,16 +100,20 @@ function doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $thisTab) {
 		                        }
 	                        },
 	                        error: function(XMLHttpResponse) {	                            
-		                        $("body").stopTime(timerKey);		                       		                        
-		                        handleErrorInDetailsTab(XMLHttpResponse, $thisTab, label, $afterActionInfoContainer, $midmenuItem1); 		                                             
+		                        $("body").stopTime(timerKey);	
+								handleError(XMLHttpResponse, function() {
+									handleErrorInDetailsTab(XMLHttpResponse, $thisTab, label, $afterActionInfoContainer, $midmenuItem1); 		
+								});
 	                        }
                         });
                     },
                     0
                 );
             },
-            error: function(XMLHttpResponse) {	                 
-		        handleErrorInDetailsTab(XMLHttpResponse, $thisTab, label, $afterActionInfoContainer, $midmenuItem1);  		        
+            error: function(XMLHttpResponse) {
+				handleError(XMLHttpResponse, function() {
+					handleErrorInDetailsTab(XMLHttpResponse, $thisTab, label, $afterActionInfoContainer, $midmenuItem1); 
+				});
             }
         });     
     }     
@@ -130,8 +134,10 @@ function doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $thisTab) {
                                  				
 				afterActionSeccessFn(json, $midmenuItem1, id);				
 	        },
-            error: function(XMLHttpResponse) {	                
-		        handleErrorInDetailsTab(XMLHttpResponse, $thisTab, label, $afterActionInfoContainer, $midmenuItem1); 		       
+            error: function(XMLHttpResponse) {
+				handleError(XMLHttpResponse, function() {
+					handleErrorInDetailsTab(XMLHttpResponse, $thisTab, label, $afterActionInfoContainer, $midmenuItem1); 
+				});
             }        
         });
     }
@@ -248,8 +254,10 @@ function doActionToSubgridItem(id, $actionLink, apiCommand, $subgridItem) {
 		                        }
 	                        },
 	                        error: function(XMLHttpResponse) {	                  
-		                        $("body").stopTime(timerKey);		                       		                        
-		                        handleErrorInSubgridItem(XMLHttpResponse, $subgridItem, label); 		                        
+		                        $("body").stopTime(timerKey);
+								handleError(XMLHttpResponse, function() { 
+									handleErrorInSubgridItem(XMLHttpResponse, $subgridItem, label); 
+								});
 	                        }
                         });
                     },
@@ -257,7 +265,9 @@ function doActionToSubgridItem(id, $actionLink, apiCommand, $subgridItem) {
                 );
             },
             error: function(XMLHttpResponse) {	 
-		        handleErrorInSubgridItem(XMLHttpResponse, $subgridItem, label);    
+				handleError(XMLHttpResponse, function() {
+					handleErrorInSubgridItem(XMLHttpResponse, $subgridItem, label);
+				});
             }
         });     
     }     
@@ -275,8 +285,10 @@ function doActionToSubgridItem(id, $actionLink, apiCommand, $subgridItem) {
                 $subgridItem.find("#after_action_info_container").removeClass("error").addClass("success").show();  
                 afterActionSeccessFn(json, id, $subgridItem);    
 	        },
-            error: function(XMLHttpResponse) {	             
-		        handleErrorInSubgridItem(XMLHttpResponse, $subgridItem, label);    
+            error: function(XMLHttpResponse) {
+				handleError(XMLHttpResponse, function() {
+					handleErrorInSubgridItem(XMLHttpResponse, $subgridItem, label);    
+				});
             }        
         });
     }
@@ -410,7 +422,8 @@ function doActionToMidMenu(id, apiInfo, apiCommand) {
                     0
                 );
             },
-            error: function(XMLHttpResponse) {	
+            error: function(XMLHttpResponse) {
+				handleError(XMLHttpResponse);
 		        handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1, id, inProcessText);    
             }
         });     
@@ -986,6 +999,7 @@ function bindAndListMidMenuItems($leftmenu, commandString, jsonResponse1, jsonRe
 }
 
 function handleErrorInDialog(XMLHttpResponse, $thisDialog) {
+	handleError(XMLHttpResponse);
     var start = XMLHttpResponse.responseText.indexOf("h1") + 3;
 	var end = XMLHttpResponse.responseText.indexOf("</h1");
 	var errorMsg = XMLHttpResponse.responseText.substring(start, end);
