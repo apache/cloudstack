@@ -146,7 +146,7 @@ function doEnableMaintenanceModeForPrimaryStorage($actionLink, $detailsTab, $mid
     var jsonObj = $detailsTab.data("jsonObj");
        
     $("#dialog_confirmation")
-    .text("Please confirm you want to enable maintenace")
+    .text("Warning: placing the primary storage into maintenance mode will cause all VMs using volumes from it to be stopped.  Do you want to continue?")
     .dialog("option", "buttons", {	                    
          "OK": function() {
              $(this).dialog("close");      
