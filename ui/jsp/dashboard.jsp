@@ -413,13 +413,13 @@
         <div class="row_celltitles">
             <img src="images/alert_icon.png" /></div>
     </div>
-    <div class="grid_row_cell" style="width: 70%;">
+    <div class="grid_row_cell" style="width: 63%;">
         <div class="row_celltitles alert" id="type">
         </div>
         <div class="row_celltitles alertdetails" id="description">
         </div>
     </div>
-    <div class="grid_row_cell" style="width: 19%;">
+    <div class="grid_row_cell" style="width: 26%;">
         <div class="row_celltitles" id="date">
         </div>
     </div>

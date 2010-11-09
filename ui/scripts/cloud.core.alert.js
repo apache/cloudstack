@@ -27,8 +27,8 @@ function alertToMidmenu(jsonObj, $midmenuItem1) {
     var $iconContainer = $midmenuItem1.find("#icon_container").show();   
     $iconContainer.find("#icon").attr("src", "images/midmenuicon_alerts.png");	
     
-    $midmenuItem1.find("#first_row").text(jsonObj.description.substring(0,25)); 
-    $midmenuItem1.find("#second_row").text(jsonObj.type.substring(0,25)); 
+    setDateField(jsonObj.sent, $midmenuItem1.find("#second_row"));
+    $midmenuItem1.find("#first_row").text(toAlertType(jsonObj.type)); 
 }
 
 function alertToRightPanel($midmenuItem1) {   
