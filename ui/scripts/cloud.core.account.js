@@ -72,13 +72,7 @@ function accountJsonToDetailsTab($midmenuItem1) {
             buildActionLinkForTab("Resource limits", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);	
             noAvailableActions = false;	
         }
-                
-        //show action link no matter what state the account is in before bug 7085 is fixed ("account-related API should return "state" property")
-        buildActionLinkForTab("Disable account", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);  
-        buildActionLinkForTab("Lock account", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);
-        buildActionLinkForTab("Enable account", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);    
-        noAvailableActions = false;	  
-        /*    
+         
         if(jsonObj.state == "enabled") {
             buildActionLinkForTab("Disable account", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);  
             buildActionLinkForTab("Lock account", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);
@@ -87,8 +81,7 @@ function accountJsonToDetailsTab($midmenuItem1) {
         else if(jsonObj.state == "disabled" || jsonObj.state == "locked") {
             buildActionLinkForTab("Enable account", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);   
             noAvailableActions = false;	
-        } 
-        */          
+        }                
     }  
     
     // no available actions 
@@ -119,7 +112,7 @@ var accountActionMap = {
         dialogBeforeActionFn : doLockAccount,
         inProcessText: "Locking account....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {  
-            var item = json.lockaccountresponse;            
+            var item = json.lockaccountresponse.account;            
             accountToMidmenu(item, $midmenuItem1);           
             accountJsonToDetailsTab($midmenuItem1);
         }
@@ -130,7 +123,7 @@ var accountActionMap = {
         dialogBeforeActionFn : doEnableAccount,
         inProcessText: "Enabling account....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {   
-            var item = json.enableaccountresponse;                  
+            var item = json.enableaccountresponse.account;                  
             accountToMidmenu(item, $midmenuItem1);           
             accountJsonToDetailsTab($midmenuItem1);
         }
