@@ -338,11 +338,10 @@
         </div>
         <div class="grid_row_cell" style="width: 29%;">
             <div class="row_celltitles">
-                <a id="manage_link" href="#">Manage</a></div>
-            <div class="row_celltitles">
-                <a id="delete_link" href="#">Delete</a></div>
-            <div class="row_celltitles">
-                <a id="edit_link" href="#">Edit</a></div>
+                <a id="manage_link" href="#" style="float:left;">Manage</a>
+                <a id="delete_link" href="#" style="float:left; margin-left:15px;" >Delete</a>
+                <a id="edit_link" href="#" style="float:left; margin-left:15px;">Edit</a>
+            </div>
         </div>       
         <div class="gridrow_loaderbox" style="display: none;" id="spinning_wheel">
             <div class="gridrow_loader">
@@ -460,10 +459,8 @@
         </div>       
         <div class="grid_row_cell" style="width: 15%;">
             <div class="row_celltitles">
-                <a id="edit_link" href="#">Edit</a>
-            </div>
-            <div class="row_celltitles">
-                <a id="delete_link" href="#">Delete</a>
+                <a id="edit_link" href="#" style="float:left;">Edit</a>
+                <a id="delete_link" href="#" style="float:left; margin-left:15px;">Delete</a>
             </div>
         </div>
         <div class="gridrow_loaderbox" style="display: none;" id="spinning_wheel">
