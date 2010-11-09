@@ -147,12 +147,12 @@ $(document).ready(function() {
 		    return false;
 		});
 		
-		$("#leftmenu_resource").bind("click", function(event) {
+		$("#leftmenu_physical_resource").bind("click", function(event) {
 			showMiddleMenu();
 			disableMultipleSelectionInMidMenu();  
 			clearMiddleMenu();
 		   
-			$arrowIcon = $(this).find("#resource_arrow");
+			$arrowIcon = $(this).find("#physical_resource_arrow");
 			if($arrowIcon.hasClass("expanded_close") == true) {
 				$arrowIcon.removeClass("expanded_close").addClass("expanded_open");
 				buildZoneTree();

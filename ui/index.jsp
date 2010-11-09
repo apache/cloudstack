@@ -652,26 +652,7 @@ long milliseconds = new Date().getTime();
                             <%=t.t("system")%>
                         </div>
                     </div>
-                    <div class="leftmenu_expandedbox" style="display: none">
-                        <div class="leftmenu_expandedlist">
-                            <div class="leftmenu_content" id="leftmenu_resource">
-                                <div class="leftmenu_secondindent">
-                                    <div class="leftmenu_arrows expanded_close" id="resource_arrow">
-                                    </div>
-                                   
-                                    <%=t.t("resources")%>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div id="leftmenu_zone_tree">
-                        	<div id="loading_container" class="leftmenu_loadingbox" style="display:none;">
-                                <div class="leftmenu_loader"></div>
-                                <p> Loading &hellip; </p>
-                            </div>
-						    <div id="tree_container"></div>
-                        </div>
-                                                                    
+                    <div class="leftmenu_expandedbox" style="display: none">                                                          
                         <div class="leftmenu_expandedlist">
                             <div class="leftmenu_content" style="border-bottom: 1px dashed b4c8d6;" id="leftmenu_service_offering">
                                 <div class="leftmenu_secondindent">
