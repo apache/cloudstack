@@ -1391,6 +1391,8 @@ function vmJsonToDetailsTab(){
 	        buildActionLinkForTab("Attach ISO", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
 	    else 		
 	        buildActionLinkForTab("Detach ISO", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);	
+	        
+	    buildActionLinkForTab("Reset Password", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
 	} 
 	else {	    
 		if (jsonObj.state == 'Stopped') {
