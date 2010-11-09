@@ -25,6 +25,8 @@ public class SetFirewallRuleCommand extends RoutingCommand {
     String routerIpAddress;
     String oldPrivateIP = null;
     String oldPrivatePort = null;
+    String guestIp = null;
+    String portRange = null;
     
     protected SetFirewallRuleCommand() {
     }
@@ -37,10 +39,12 @@ public class SetFirewallRuleCommand extends RoutingCommand {
     	this.oldPrivatePort = oldPrivatePort;
     }
     
-    public SetFirewallRuleCommand(String routerName, String routerIpAddress, FirewallRuleVO rule) {
+    public SetFirewallRuleCommand(String routerName, String routerIpAddress, String guestIp, FirewallRuleVO rule, String portRange) {
     	this.routerName = routerName;
     	this.routerIpAddress = routerIpAddress;
+    	this.guestIp = guestIp;
     	this.rule = rule;
+    	this.portRange = portRange;
     }
     
     @Override
@@ -94,6 +98,14 @@ public class SetFirewallRuleCommand extends RoutingCommand {
     
     public String getOldPrivatePort() {
     	return this.oldPrivatePort;
+    }
+    
+    public String getPortRange(){
+    	return this.portRange;
+    }
+    
+    public String getGuestIp(){
+    	return this.guestIp;
     }
     
 }

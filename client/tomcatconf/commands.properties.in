@@ -103,9 +103,9 @@ listPublicIpAddresses=com.cloud.api.commands.ListPublicIpAddressesCmd;15
 
 #### firewall commands
 listPortForwardingRules=com.cloud.api.commands.ListPortForwardingRulesCmd;15
-createPortForwardingRule=com.cloud.api.commands.CreateIPForwardingRuleCmd;15
-deletePortForwardingRule=com.cloud.api.commands.DeleteIPForwardingRuleCmd;15
-updatePortForwardingRule=com.cloud.api.commands.UpdateIPForwardingRuleCmd;15
+createPortForwardingRule=com.cloud.api.commands.CreatePortForwardingRuleCmd;15
+deletePortForwardingRule=com.cloud.api.commands.DeletePortForwardingRuleCmd;15
+updatePortForwardingRule=com.cloud.api.commands.UpdatePortForwardingRuleCmd;15
 
 #### load balancer commands
 createLoadBalancerRule=com.cloud.api.commands.CreateLoadBalancerRuleCmd;15

@@ -23,10 +23,11 @@ import java.util.Map;
 import com.cloud.api.commands.AddVpnUserCmd;
 import com.cloud.api.commands.AssignToLoadBalancerRuleCmd;
 import com.cloud.api.commands.AssociateIPAddrCmd;
-import com.cloud.api.commands.CreateIPForwardingRuleCmd;
+import com.cloud.api.commands.CreateIpForwardingRuleCmd;
+import com.cloud.api.commands.CreatePortForwardingRuleCmd;
 import com.cloud.api.commands.CreateLoadBalancerRuleCmd;
 import com.cloud.api.commands.CreateRemoteAccessVpnCmd;
-import com.cloud.api.commands.DeleteIPForwardingRuleCmd;
+import com.cloud.api.commands.DeletePortForwardingRuleCmd;
 import com.cloud.api.commands.DeleteLoadBalancerRuleCmd;
 import com.cloud.api.commands.DeleteRemoteAccessVpnCmd;
 import com.cloud.api.commands.DisassociateIPAddrCmd;
@@ -211,7 +212,7 @@ public interface NetworkManager {
      * @param cmd the command specifying the ip address, public port, protocol, private port, and virtual machine id.
      * @return the newly created FirewallRuleVO if successful, null otherwise.
      */
-    public FirewallRuleVO createPortForwardingRule(CreateIPForwardingRuleCmd cmd) throws NetworkRuleConflictException;
+    public FirewallRuleVO createPortForwardingRule(CreatePortForwardingRuleCmd cmd) throws NetworkRuleConflictException;
 
     /**
      * List port forwarding rules assigned to an ip address
@@ -304,7 +305,7 @@ public interface NetworkManager {
     
     public boolean disassociateIpAddress(DisassociateIPAddrCmd cmd);
     
-    public boolean deleteIpForwardingRule(DeleteIPForwardingRuleCmd cmd);
+    public boolean deleteIpForwardingRule(DeletePortForwardingRuleCmd cmd);
 
     List<NetworkConfigurationVO> setupNetworkConfiguration(Account owner, NetworkOfferingVO offering, DeploymentPlan plan);
     List<NetworkConfigurationVO> setupNetworkConfiguration(Account owner, NetworkOfferingVO offering, NetworkConfiguration predefined, DeploymentPlan plan);
@@ -360,4 +361,7 @@ public interface NetworkManager {
 	
 	NetworkConfiguration getNetworkConfiguration(long id);
 	String getNextAvailableMacAddressInNetwork(long networkConfigurationId) throws InsufficientAddressCapacityException;
+	String getNextAvailableMacAddressInNetwork(long networkConfigurationId);
+
+	FirewallRuleVO createIpForwardingRule(CreateIpForwardingRuleCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, NetworkRuleConflictException;
 }

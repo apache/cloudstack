@@ -75,7 +75,7 @@ import com.cloud.api.commands.StartSystemVm2Cmd;
 import com.cloud.api.commands.StopSystemVm2Cmd;
 import com.cloud.api.commands.StopSystemVmCmd;
 import com.cloud.api.commands.UpdateDomainCmd;
-import com.cloud.api.commands.UpdateIPForwardingRuleCmd;
+import com.cloud.api.commands.UpdatePortForwardingRuleCmd;
 import com.cloud.api.commands.UpdateIsoCmd;
 import com.cloud.api.commands.UpdateIsoPermissionsCmd;
 import com.cloud.api.commands.UpdateTemplateCmd;
@@ -552,10 +552,10 @@ public interface ManagementServer {
 
     /**
      * Update an existing port forwarding rule on the given public IP / public port for the given protocol
-     * @param cmd - the UpdateIPForwardingRuleCmd command that wraps publicIp, privateIp, publicPort, privatePort, protocol of the rule to update
+     * @param cmd - the UpdatePortForwardingRuleCmd command that wraps publicIp, privateIp, publicPort, privatePort, protocol of the rule to update
      * @return the new firewall rule if updated, null if no rule on public IP / public port of that protocol could be found
      */
-    FirewallRuleVO updatePortForwardingRule(UpdateIPForwardingRuleCmd cmd);
+    FirewallRuleVO updatePortForwardingRule(UpdatePortForwardingRuleCmd cmd);
 
     /**
      * Find a firewall rule by rule id
