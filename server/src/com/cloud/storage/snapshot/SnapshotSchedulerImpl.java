@@ -385,6 +385,14 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
 
     @Override @DB
     public boolean start() {
+
+        //reschedule all policies after management restart
+        List<SnapshotPolicyVO> policyInstances = _snapshotPolicyDao.listAll();
+        for( SnapshotPolicyVO policyInstance : policyInstances) {
+            if( policyInstance.getId() != Snapshot.MANUAL_POLICY_ID ) {
+                scheduleNextSnapshotJob(policyInstance);
+	    }
+        }
         if (_testTimerTask != null) {
             _testClockTimer = new Timer("TestClock");
             // Run the test clock every 60s. Because every tick is counted as 1 minute.
