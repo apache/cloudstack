@@ -230,6 +230,11 @@
                     </select>
                 </li>	
 				<li>
+					<label for="add_iso_os_type"><%=t.t("os.type")%>:</label>
+					<select class="select" name="add_iso_os_type" id="add_iso_os_type">
+					</select>
+				</li>
+				<li>
 					<label for="add_iso_public"><%=t.t("bootable")%>:</label>
 					<select class="select" name="add_iso_bootable" id="add_iso_bootable">
 						<option value="true">Yes</option>
@@ -243,11 +248,6 @@
 						<option value="true">Yes</option>						
 					</select>
 				</li>	
-				<li>
-					<label for="add_iso_os_type"><%=t.t("os.type")%>:</label>
-					<select class="select" name="add_iso_os_type" id="add_iso_os_type">
-					</select>
-				</li>
 			</ol>
 		</form>
 	</div>
