@@ -267,8 +267,10 @@ var serviceOfferingActionMap = {
         api: "deleteServiceOffering",     
         isAsyncJob: false,           
         inProcessText: "Deleting service offering....",
-        afterActionSeccessFn: function(json, $midmenuItem1, id) {              
-            $midmenuItem1.remove();
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {
+            $midmenuItem1.slideUp("slow", function() {
+                $(this).remove();
+            });            
             clearRightPanel();
             serviceOfferingClearRightPanel();
         }
