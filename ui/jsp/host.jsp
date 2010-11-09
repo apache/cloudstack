@@ -211,6 +211,49 @@
                     </div>
                 </div>
                 
+                <div class="grid_rows even">
+                    <div class="grid_row_cell" style="width: 20%;">
+                        <div class="row_celltitles">
+                            CPU Allocated:</div>
+                    </div>
+                    <div class="grid_row_cell" style="width: 79%;">
+                        <div class="row_celltitles" id="cpuallocated">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="grid_rows odd">
+                    <div class="grid_row_cell" style="width: 20%;">
+                        <div class="row_celltitles">
+                            Memory Total:</div>
+                    </div>
+                    <div class="grid_row_cell" style="width: 79%;">
+                        <div class="row_celltitles" id="memorytotal">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="grid_rows even">
+                    <div class="grid_row_cell" style="width: 20%;">
+                        <div class="row_celltitles">
+                            Memory Allocated:</div>
+                    </div>
+                    <div class="grid_row_cell" style="width: 79%;">
+                        <div class="row_celltitles" id="memoryallocated">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="grid_rows odd">
+                    <div class="grid_row_cell" style="width: 20%;">
+                        <div class="row_celltitles">
+                            Memory Used:</div>
+                    </div>
+                    <div class="grid_row_cell" style="width: 79%;">
+                        <div class="row_celltitles" id="memoryused">
+                        </div>
+                    </div>
+                </div>                
                 
                 <div class="grid_rows even">
                     <div class="grid_row_cell" style="width: 20%;">

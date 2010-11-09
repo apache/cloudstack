@@ -178,6 +178,18 @@ function hostJsonToStatisticsTab() {
     if(jsonObj.cpuused!=null)
         drawBarChart($barChartContainer, jsonObj.cpuused);		
     
+    var cpuAllocated = ((jsonObj.cpuallocated==null)? "":jsonObj.cpuallocated);
+    $thisTab.find("#cpuallocated").text(cpuAllocated);    
+    
+    var memoryTotal = ((jsonObj.cpuallocated==null)? "":convertBytes(jsonObj.memorytotal));
+    $thisTab.find("#memorytotal").text(memoryTotal);
+    
+    var memoryAllocated = ((jsonObj.cpuallocated==null)? "":convertBytes(jsonObj.memoryallocated));
+    $thisTab.find("#memoryallocated").text(memoryAllocated);
+    
+    var memoryUsed = ((jsonObj.memoryused==null)? "":convertBytes(jsonObj.memoryused));
+    $thisTab.find("#memoryused").text(memoryUsed);
+        
     var networkKbsRead = ((jsonObj.networkkbsread==null)? "":convertBytes(jsonObj.networkkbsread * 1024));
     $thisTab.find("#networkkbsread").text(networkKbsRead);
     
