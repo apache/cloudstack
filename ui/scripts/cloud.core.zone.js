@@ -417,8 +417,9 @@ function initAddVLANButton($addButton) {
 				            $template1.find("#vlan_type_icon").removeClass("virtual").addClass("direct");
 				        else  //virtual
 				  	        $template1.find("#vlan_type_icon").removeClass("direct").addClass("virtual");	
-        				
-        				vlanJsonToTemplate(json.createvlaniprangeresponse.vlaniprange, $template1);	
+        				        		
+        				var item = json.createvlaniprangeresponse.vlan;
+        				vlanJsonToTemplate(item, $template1);	
 				        $vlanContainer.prepend($template1);	
 				        $template1.fadeIn("slow");
 					},
