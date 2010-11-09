@@ -714,12 +714,45 @@ long milliseconds = new Date().getTime();
                                 <p> Loading &hellip; </p>
                             </div>
 						    <div id="tree_container"></div>
+                        </div>              
+
+						<div>
+                            <div class="leftmenu_content">
+                                <div class="leftmenu_secondindent">
+                                    <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
+                                    </div>
+                                    
+                                    <%=t.t("virtual.resources")%>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="leftmenu_expandedlist">
+                                    <div class="leftmenu_content" id="leftmenu_submenu_virtual_router">
+                                        <div class="leftmenu_thirdindent">
+                                            <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
+                                            </div>
+                                            
+                                            <div>
+                                                <%=t.t("virtual.router")%></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="leftmenu_expandedlist">
+                                    <div class="leftmenu_content" id="leftmenu_submenu_systemvm">
+                                        <div class="leftmenu_thirdindent">
+                                            <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
+                                            </div>
+                                          
+                                            <div>
+                                                <%=t.t("system.VM")%></div>
+                                        </div>
+                                    </div>
+                                </div>                                
+                            </div>
                         </div>
+                        
                     </div>
-                </div>
-                
-                
-                
+                </div>   
             </div>
         </div>
     </div>

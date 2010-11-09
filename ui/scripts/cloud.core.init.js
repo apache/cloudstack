@@ -125,6 +125,8 @@ $(document).ready(function() {
 		bindAndListMidMenuItems($("#leftmenu_service_offering"), "listServiceOfferings", "listserviceofferingsresponse", "serviceoffering", "jsp/serviceoffering.jsp", afterLoadServiceOfferingJSP, serviceOfferingToMidmenu, serviceOfferingToRightPanel, getMidmenuId, false); 
 		bindAndListMidMenuItems($("#leftmenu_disk_offering"), "listDiskOfferings", "listdiskofferingsresponse", "diskoffering", "jsp/diskoffering.jsp", afterLoadDiskOfferingJSP, diskOfferingToMidmenu, diskOfferingToRightPanel, getMidmenuId, false); 
 		
+		bindAndListMidMenuItems($("#leftmenu_submenu_virtual_router"), "listRouters", "listroutersresponse", "router", "jsp/router.jsp", afterLoadRouterJSP, routerToMidmenu, routerToRightPanel, getMidmenuId, false);
+		
 		$("#leftmenu_global_setting").bind("click", function(event) {
 		    selectLeftSubMenu($(this));		
 		    hideMiddleMenu();	
