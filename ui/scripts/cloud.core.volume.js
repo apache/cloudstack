@@ -859,14 +859,14 @@ var volumeSnapshotActionMap = {
         asyncJobResponse: "createvolumeresponse",
         dialogBeforeActionFn : doCreateVolumeFromSnapshotInVolumePage,
         inProcessText: "Creating Volume....",
-        afterActionSeccessFn: function(json, id, $subgridItem) {           
-            //var jsonObj = ???  
-            /*              
-            var $midmenuItem1 = $("#midmenu_item").clone();
-            $("#midmenu_container").append($midmenuItem1.show());
-            volumeToMidmenu(jsonObj, $midmenuItem1);
-			bindClickToMidMenu($midmenuItem1, volumeToRightPanel);  
-			*/
+        afterActionSeccessFn: function(json, id, $subgridItem) {   
+            var $midmenuItem1 = $("#midmenu_item").clone();		        
+            var item = json.queryasyncjobresultresponse.jobresult.volume;		   
+			volumeToMidmenu(item, $midmenuItem1);
+			bindClickToMidMenu($midmenuItem1, volumeToRightPanel, getMidmenuId);  						                    
+			$midmenuItem1.find("#info_icon").removeClass("error").show();
+	        $midmenuItem1.data("afterActionInfo", ("Creating volume from snapshot succeeded.")); 	
+            $("#midmenu_container").append($midmenuItem1.fadeIn("slow"));	           
         }
     }   
     , 
