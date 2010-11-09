@@ -53,7 +53,6 @@ import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.dao.DomainDao;
-import com.cloud.event.EventState;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
@@ -185,29 +184,9 @@ public class SnapshotManagerImpl implements SnapshotManager {
         return format;
     }
 
-    private boolean shouldRunSnapshot(long userId, VolumeVO volume, long policyId)
-            throws ResourceAllocationException {
-        boolean runSnap = isVolumeDirty(volume.getId(), policyId);
-
-        /*
-         * // Check if the resource limit for snapshots has been exceeded
-         * //UserVO user = _userDao.findById(userId); //AccountVO account =
-         * _accountDao.findById(user.getAccountId()); AccountVO account =
-         * _accountDao.findById(volume.getAccountId()); if
-         * (_accountMgr.resourceLimitExceeded(account, ResourceType.snapshot)) {
-         * throw newResourceAllocationException(
-         * "The maximum number of snapshots for account " +
-         * account.getAccountName() + " has been exceeded."); }
-         */
-        if (!runSnap) {
-            s_logger.warn("Snapshot for volume " + volume.getId() + " not created. No policy assigned currently.");
-        }
-
-        return runSnap;
-    }
-
     @Override
-    public SnapshotVO createSnapshotOnPrimary(VolumeVO volume) throws ResourceAllocationException {
+    public SnapshotVO createSnapshotOnPrimary(VolumeVO volume, Long policyId) throws ResourceAllocationException {
+        SnapshotVO createdSnapshot = null;
     	Long volumeId = volume.getId();
         if (volume.getStatus() != AsyncInstanceCreateStatus.Created) {
             throw new InvalidParameterValueException("VolumeId: " + volumeId + " is not in Created state but " + volume.getStatus() + ". Cannot take snapshot.");
@@ -220,31 +199,8 @@ public class SnapshotManagerImpl implements SnapshotManager {
             throw new InvalidParameterValueException("Cannot create a snapshot from a volume residing on a local storage pool, poolId: " + volume.getPoolId());
         }
 
-        Long instanceId = volume.getInstanceId();
-        if (instanceId != null) {
-            // It is not detached, but attached to a VM
-            if (_vmDao.findById(instanceId) == null) {
-                // It is not a UserVM but a SystemVM or DomR
-                throw new InvalidParameterValueException("Snapshots of volumes attached to System or router VM are not allowed");
-            }
-        }
-        return createSnapshotImpl(volumeId, Snapshot.MANUAL_POLICY_ID);
-    }
-
-    @Override @DB
-    public SnapshotVO createSnapshotImpl(long volumeId, long policyId) throws ResourceAllocationException {
-        Long userId = UserContext.current().getUserId();
-        SnapshotVO createdSnapshot = null;
-
-        VolumeVO volume = _volsDao.lockRow(volumeId, true);
-        if (volume == null) {
-            throw new CloudRuntimeException("Failed to lock volume " + volumeId + " for creating a snapshot.");
-        }
-
-        if (!shouldRunSnapshot(userId, volume, policyId)) {
-            // A null snapshot is interpreted as snapshot creation failed which
-            // is what we want to indicate
-            return null;
+        if (!isVolumeDirty(volumeId, policyId)) {
+            throw new CloudRuntimeException("There is no change for volume " + volumeId + " since last snapshot, please use the last snapshot instead.");           
         }
 
         Long id = null;
@@ -275,8 +231,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
         long  preId = _snapshotDao.getLastSnapshot(volumeId, id);
 
         String preSnapshotPath = null;
-        // half of maxsnaps are delta snapshot
-        // when there are half of maxsnaps or presnapshot has not backed up , create a full snapshot
+
         SnapshotVO preSnapshotVO = null;
         if( preId != 0) {
             preSnapshotVO = _snapshotDao.findById(preId);
@@ -348,10 +303,17 @@ public class SnapshotManagerImpl implements SnapshotManager {
         }
 
         return createdSnapshot;
+        
+
+    }
+
+
+    public SnapshotVO createSnapshotImpl(long volumeId, long policyId) throws ResourceAllocationException {
+        return null;
     }
     
-
-    public SnapshotVO createSnapshotPublic(Long volumeId, Long policyId, Long startEventId) throws ResourceAllocationException {    
+    @Override @DB
+    public SnapshotVO createSnapshotImpl(Long volumeId, Long policyId, Long startEventId) throws ResourceAllocationException {    
         VolumeVO volume = _volsDao.acquireInLockTable(volumeId, 10);       
         if( volume == null ) {
             volume = _volsDao.findById(volumeId);
@@ -365,7 +327,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
         boolean backedUp = false;
         Long snapshotId = null;
         try {
-	    	snapshot = createSnapshotOnPrimary( volume);
+	    	snapshot = createSnapshotOnPrimary(volume, policyId);
 	        if (snapshot != null && snapshot.getStatus() == Snapshot.Status.CreatedOnPrimary ) {
                 snapshotId = snapshot.getId();
 	            backedUp = backupSnapshotToSecondaryStorage(snapshot, startEventId);
@@ -373,6 +335,8 @@ public class SnapshotManagerImpl implements SnapshotManager {
 	                throw new CloudRuntimeException("Created snapshot: " + snapshotId + " on primary but failed to backup on secondary");
 	            }
 	        }
+        } catch (Exception e){
+            throw new CloudRuntimeException("Creating snapshot failed due to " + e.toString());
         } finally {
             // Cleanup jobs to do after the snapshot has been created.
             postCreateSnapshot(volumeId, snapshotId, policyId, backedUp);
@@ -387,7 +351,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
         Long volumeId = cmd.getVolumeId();
         Long policyId = Snapshot.MANUAL_POLICY_ID ;
         Long startEventId = cmd.getStartEventId();
-        return createSnapshotPublic(volumeId, policyId, startEventId);
+        return createSnapshotImpl(volumeId, policyId, startEventId);
     }
 
     @Override
@@ -395,7 +359,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
         Long volumeId = cmd.getVolumeId();
         Long policyId = cmd.getPolicyId();
         Long startEventId = cmd.getStartEventId();
-        return createSnapshotPublic(volumeId, policyId, startEventId);
+        return createSnapshotImpl(volumeId, policyId, startEventId);
      }
 
     private SnapshotVO updateDBOnCreate(Long id, String snapshotPath, long preSnapshotId) {
@@ -437,7 +401,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
 
     @Override @DB
     public boolean backupSnapshotToSecondaryStorage(SnapshotVO ss, long startEventId) {
-        Long userId = UserContext.current().getUserId();
+        Long userId = getSnapshotUserId();
         long snapshotId = ss.getId();
         SnapshotVO snapshot = _snapshotDao.acquireInLockTable(snapshotId);
         if( snapshot == null) {
@@ -552,11 +516,18 @@ public class SnapshotManagerImpl implements SnapshotManager {
         }
         
     }
-
+    private Long getSnapshotUserId(){
+        Long userId = UserContext.current().getUserId();
+        if(userId == null ) {
+            return User.UID_SYSTEM;
+        }
+        return userId;
+    }
+    
     @Override
     @DB
     public void postCreateSnapshot(long volumeId, long snapshotId, long policyId, boolean backedUp) {
-        Long userId = UserContext.current().getUserId();
+        Long userId = getSnapshotUserId();
         // Update the snapshot_policy_ref table with the created snapshot
         // Get the list of policies for this snapshot
         Transaction txn = Transaction.currentTxn();
@@ -623,7 +594,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
 
     @Override @DB
     public boolean deleteSnapshot(DeleteSnapshotCmd cmd) {
-    	Long userId = UserContext.current().getUserId();
+    	Long userId = getSnapshotUserId();
     	Long snapshotId = cmd.getId();
     	
         //Verify parameters
@@ -638,11 +609,6 @@ public class SnapshotManagerImpl implements SnapshotManager {
             throw new ServerApiException(BaseCmd.SNAPSHOT_INVALID_PARAM_ERROR, "Snapshot id " + snapshotId + " does not have a valid account");
         }
         checkAccountPermissions(snapshotOwner.getId(), snapshotOwner.getDomainId(), "snapshot", snapshotId);
-        
-        //If command is executed via 8096 port, set userId to the id of System account (1)
-        if (userId == null) {
-            userId = Long.valueOf(1);
-        }
 
         boolean status = true; 
         if (SnapshotType.MANUAL.ordinal() == snapshotCheck.getSnapshotType()) {
@@ -892,12 +858,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
         }
         
         Long accountId = volume.getAccountId();
-        Long userId = UserContext.current().getUserId();
-
-        // If command is executed via 8096 port, set userId to the id of System account (1)
-        if (userId == null) {
-            userId = User.UID_SYSTEM;
-        }
+        Long userId = getSnapshotUserId();
 
         IntervalType type =  DateUtil.IntervalType.getIntervalType(cmd.getIntervalType());
         if (type == null) {
@@ -1126,12 +1087,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
 	public boolean deleteSnapshotPolicies(DeleteSnapshotPoliciesCmd cmd) throws InvalidParameterValueException {
     	Long policyId = cmd.getId();
         List<Long> policyIds = cmd.getIds();
-        Long userId = UserContext.current().getUserId();
-
-        // If command is executed via 8096 port, set userId to the id of System account (1)
-        if (userId == null) {
-            userId = Long.valueOf(1);
-        }
+        Long userId = getSnapshotUserId();
 
         if ((policyId == null) && (policyIds == null)) {
             throw new ServerApiException(BaseCmd.PARAM_ERROR, "No policy id (or list off ids) specified.");

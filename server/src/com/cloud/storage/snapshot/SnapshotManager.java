@@ -53,7 +53,7 @@ public interface SnapshotManager extends Manager {
      * @param cmd the API command wrapping the parameters for creating the snapshot (mainly volumeId) 
      * @return the Snapshot that was created
      */
-    SnapshotVO createSnapshotImpl(long volumeId, long policyId) throws ResourceAllocationException;
+    SnapshotVO createSnapshotImpl(Long volumeId, Long policyId, Long startEventId) throws ResourceAllocationException;
 
     /**
      * Create a snapshot of a volume
@@ -182,5 +182,5 @@ public interface SnapshotManager extends Manager {
      * @param cmd the API command wrapping the parameters for creating the snapshot (mainly volumeId) 
      * @return the Snapshot that was created
      */
-	SnapshotVO createSnapshotOnPrimary(VolumeVO volume) throws ResourceAllocationException;
+	SnapshotVO createSnapshotOnPrimary(VolumeVO volume, Long polocyId) throws ResourceAllocationException;
 }
