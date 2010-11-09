@@ -41,6 +41,10 @@ function routerToRightPanel($midmenuItem1) {
 }
 
 function routerJsonToDetailsTab($midmenuItem1) {   
+    var $thisTab = $("#right_panel_content #tab_content_details");  
+    $thisTab.find("#tab_container").hide(); 
+    $thisTab.find("#tab_spinning_wheel").show();   
+
     var jsonObj = $midmenuItem1.data("jsonObj"); 
     var $detailsTab = $("#right_panel_content #tab_content_details");    
     $detailsTab.data("jsonObj", jsonObj);         
@@ -77,7 +81,10 @@ function routerJsonToDetailsTab($midmenuItem1) {
 	if(noAvailableActions == true) {
 	    $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());
 	}	   
-    //***** actions (end) *****		    
+    //***** actions (end) *****	
+    
+    $thisTab.find("#tab_spinning_wheel").hide();    
+    $thisTab.find("#tab_container").show();     		    
 }        
   
 var routerActionMap = {  
