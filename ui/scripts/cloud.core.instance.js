@@ -607,27 +607,7 @@ function initVMWizard() {
             return false;
         });
 	}		
-	
-	/*		
-    $vmPopup.find("#template_container").bind("click", function(event) {
-	    var container = $(this);
-	    var target = $(event.target);
-	   
-	    var parent = target.parent();
-	    if (parent.hasClass("rev_wiztemplistbox_selected") || parent.hasClass("rev_wiztemplistbox")) {
-		    target = parent;
-	    }
-	    if (target.attr("id") != "-2") {
-		    if (target.hasClass("rev_wiztemplistbox")) {
-			    container.find(".rev_wiztemplistbox_selected").removeClass().addClass("rev_wiztemplistbox");
-			    target.removeClass().addClass("rev_wiztemplistbox_selected");
-		    } else if (target.hasClass("rev_wiztemplistbox_selected")) {
-			    target.removeClass().addClass("rev_wiztemplistbox");
-		    }
-	    }
-    });
-    */
-             
+	             
     $vmPopup.find("#wizard_zone").bind("change", function(event) {       
         var selectedZone = $(this).val();   
         if(selectedZone != null && selectedZone.length > 0)

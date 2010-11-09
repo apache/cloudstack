@@ -121,15 +121,8 @@ function buildZoneTree() {
 			    selectRowInZoneTree(target.parent().parent());
 			    var $leftmenuItem1 = target.parent().parent().parent().parent();	
 			    resourceLoadPage("jsp/cluster.jsp", $leftmenuItem1);
-			    break;								
-						
-			case "systemvm_name_label" :
-			case "systemvm_name" :		
-			    selectRowInZoneTree(target.parent().parent());	
-			    var $leftmenuItem1 = target.parent().parent().parent().parent();	
-			    resourceLoadPage("jsp/systemvm.jsp", $leftmenuItem1);
-				break;			
-			
+			    break;	
+			    
 			default:
 				break;
 		}
@@ -189,8 +182,7 @@ function zoneJSONToTreeNode(json, $zoneNode) {
     $zoneNode.data("id", zoneid).data("name", fromdb(json.name));
     var zoneName = $zoneNode.find("#zone_name").text(fromdb(json.name));	    
     zoneName.data("jsonObj", json);	    
-	
-	var zoneArrowExpandable = false;
+		
 	$.ajax({
         data: createURL("command=listPods&zoneid="+zoneid+maxPageSize),
 	    dataType: "json",
@@ -198,29 +190,11 @@ function zoneJSONToTreeNode(json, $zoneNode) {
 	    success: function(json) {
 		    var items = json.listpodsresponse.pod;	
 		    if (items != null && items.length > 0) {					    
-			    zoneArrowExpandable = true;  
+			    $zoneNode.find("#zone_arrow").removeClass("white_nonexpanded_close").addClass("expanded_close"); 
 			    forceLogout = false;  // We don't force a logout if pod(s) exit.	
 			}	    		    
 	    }
-    });
-	
-	if(zoneArrowExpandable == false) {
-	    $.ajax({
-            data: createURL("command=listSystemVms&zoneid="+zoneid+maxPageSize),
-	        dataType: "json",
-	        async: false,
-	        success: function(json) {
-		        var items = json.listsystemvmsresponse.systemvm;		        
-		        if (items != null && items.length > 0) {				    
-			        zoneArrowExpandable = true;  
-			    } 		        
-	        }
-        });
-	}
-	
-	if(zoneArrowExpandable == true) {
-	    $zoneNode.find("#zone_arrow").removeClass("white_nonexpanded_close").addClass("expanded_close");
-	}
+    });	
 }
 
 function podJSONToTreeNode(json, $podNode) {	
@@ -234,15 +208,6 @@ function podJSONToTreeNode(json, $podNode) {
 		
     refreshClusterUnderPod($podNode);            
 }
-	
-function systemvmJSONToTreeNode(json, $systemvmNode) {	
-    var systemvmid = json.id;	
-    $systemvmNode.attr("id", "systemvm_"+systemvmid);
-    $systemvmNode.data("jsonObj", json);	    
-    $systemvmNode.data("id", systemvmid).data("name", json.name);	     
-    var systeymvmName = $systemvmNode.find("#systemvm_name").text(json.name);	    
-    systeymvmName.data("jsonObj", json);	    		
-}
 		
 function clusterJSONToTreeNode(json, $clusterNode) {
     $clusterNode.attr("id", "cluster_"+json.id);
@@ -255,20 +220,27 @@ function clusterJSONToTreeNode(json, $clusterNode) {
 function resourceLoadPage(pageToShow, $midmenuItem1) {   //$midmenuItem1 is either $leftmenuItem1 or $midmenuItem1    
     clearAddButtonsOnTop();  
     $("#right_panel").load(pageToShow, function(){       
-	    if(pageToShow == "jsp/resource.jsp")
+	    if(pageToShow == "jsp/resource.jsp") {
             afterLoadResourceJSP($midmenuItem1); 
-        else if(pageToShow == "jsp/zone.jsp")
+        }
+        else if(pageToShow == "jsp/zone.jsp") {
             afterLoadZoneJSP($midmenuItem1); 
-        else if(pageToShow == "jsp/pod.jsp")
+        }
+        else if(pageToShow == "jsp/pod.jsp") {
             afterLoadPodJSP($midmenuItem1); 
-        else if(pageToShow == "jsp/cluster.jsp")
+        }
+        else if(pageToShow == "jsp/cluster.jsp") {
             afterLoadClusterJSP($midmenuItem1); 
-        else if(pageToShow == "jsp/host.jsp")
+        }
+        else if(pageToShow == "jsp/host.jsp") {
             afterLoadHostJSP($midmenuItem1); 
-        else if(pageToShow == "jsp/primarystorage.jsp")
-            afterLoadPrimaryStorageJSP($midmenuItem1); 
-        else if(pageToShow == "jsp/systemvm.jsp")
-            afterLoadSystemVmJSP($midmenuItem1); 	    
+            copyActionInfoFromMidMenuToRightPanel($midmenuItem1);                   
+            $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);
+            $("#tab_details").click();     
+        }
+        else if(pageToShow == "jsp/primarystorage.jsp") {
+            afterLoadPrimaryStorageJSP($midmenuItem1);    
+        }         
     });    
 }
 

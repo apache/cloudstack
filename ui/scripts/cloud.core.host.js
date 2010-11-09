@@ -27,8 +27,12 @@ function afterLoadHostJSP($midmenuItem1) {
     initDialog("dialog_confirmation_force_reconnect");
     initDialog("dialog_confirmation_remove_host");
     initDialog("dialog_update_os");
-        
-    hostJsonToDetailsTab($midmenuItem1);    
+         
+    // switch between different tabs 
+    var tabArray = [$("#tab_details"), $("#tab_statistics")];
+    var tabContentArray = [$("#tab_content_details"), $("#tab_content_statistics")];
+    var afterSwitchFnArray = [hostJsonToDetailsTab, hostJsonToStatisticsTab];
+    switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray);         
 }
 
 
@@ -49,34 +53,38 @@ function hostToMidmenu(jsonObj, $midmenuItem1) {
     updateHostStateInMidMenu(jsonObj, $midmenuItem1);   
 }
 
-function hostToRightPanel($midmenuItem1) { 
-    copyActionInfoFromMidMenuToRightPanel($midmenuItem1);       
-    resourceLoadPage("jsp/host.jsp", $midmenuItem1);
+function hostToRightPanel($midmenuItem1) {     
+    resourceLoadPage("jsp/host.jsp", $midmenuItem1);   
 }
 
-function hostJsonToDetailsTab($midmenuItem1) {
-    var jsonObj = $midmenuItem1.data("jsonObj");	    
-    var $detailsTab = $("#tab_content_details");   
-    $detailsTab.data("jsonObj", jsonObj);           
-    $detailsTab.find("#id").text(fromdb(jsonObj.id));
-    $detailsTab.find("#grid_header_title").text(fromdb(jsonObj.name));
-    $detailsTab.find("#name").text(fromdb(jsonObj.name));
-        
-    setHostStateInRightPanel(fromdb(jsonObj.state), $detailsTab.find("#state"));
+function hostJsonToDetailsTab() {    
+    var $thisTab = $("#right_panel_content #tab_content_details");  
+    $thisTab.find("#tab_container").hide(); 
+    $thisTab.find("#tab_spinning_wheel").show();        
     
-    $detailsTab.find("#type").text(fromdb(jsonObj.type));      
-    $detailsTab.find("#zonename").text(fromdb(jsonObj.zonename)); 
-    $detailsTab.find("#podname").text(fromdb(jsonObj.podname));   
-    $detailsTab.find("#clustername").text(fromdb(jsonObj.clustername));        
-    $detailsTab.find("#ipaddress").text(fromdb(jsonObj.ipaddress)); 
-    $detailsTab.find("#version").text(fromdb(jsonObj.version));  
-    $detailsTab.find("#oscategoryname").text(fromdb(jsonObj.oscategoryname));        
-    $detailsTab.find("#disconnected").text(fromdb(jsonObj.disconnected));  
+    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
+    var jsonObj = $midmenuItem1.data("jsonObj");	    
+    
+    $thisTab.data("jsonObj", jsonObj);           
+    $thisTab.find("#id").text(fromdb(jsonObj.id));
+    $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));
+    $thisTab.find("#name").text(fromdb(jsonObj.name));
+        
+    setHostStateInRightPanel(fromdb(jsonObj.state), $thisTab.find("#state"));
+    
+    $thisTab.find("#type").text(fromdb(jsonObj.type));      
+    $thisTab.find("#zonename").text(fromdb(jsonObj.zonename)); 
+    $thisTab.find("#podname").text(fromdb(jsonObj.podname));   
+    $thisTab.find("#clustername").text(fromdb(jsonObj.clustername));        
+    $thisTab.find("#ipaddress").text(fromdb(jsonObj.ipaddress)); 
+    $thisTab.find("#version").text(fromdb(jsonObj.version));  
+    $thisTab.find("#oscategoryname").text(fromdb(jsonObj.oscategoryname));        
+    $thisTab.find("#disconnected").text(fromdb(jsonObj.disconnected));  
     
     populateForUpdateOSDialog(jsonObj.oscategoryid);
     
     //actions ***   
-    var $actionLink = $detailsTab.find("#action_link"); 
+    var $actionLink = $thisTab.find("#action_link"); 
     $actionLink.bind("mouseover", function(event) {	    
         $(this).find("#action_menu").show();    
         return false;
@@ -85,20 +93,20 @@ function hostJsonToDetailsTab($midmenuItem1) {
         $(this).find("#action_menu").hide();    
         return false;
     });	  
-    var $actionMenu = $detailsTab.find("#action_link #action_menu");
+    var $actionMenu = $thisTab.find("#action_link #action_menu");
     $actionMenu.find("#action_list").empty();
     var noAvailableActions = true;
     
     if (jsonObj.state == 'Up' || jsonObj.state == "Connecting") {
-		buildActionLinkForTab("Enable Maintenance Mode", hostActionMap, $actionMenu, $midmenuItem1, $detailsTab);  
-	    buildActionLinkForTab("Force Reconnect", hostActionMap, $actionMenu, $midmenuItem1, $detailsTab);   
-	    buildActionLinkForTab("Update OS Preference", hostActionMap, $actionMenu, $midmenuItem1, $detailsTab);   
+		buildActionLinkForTab("Enable Maintenance Mode", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  
+	    buildActionLinkForTab("Force Reconnect", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);   
+	    buildActionLinkForTab("Update OS Preference", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);   
 	    noAvailableActions = false;
 	} 
 	else if(jsonObj.state == 'Down') {
-	    buildActionLinkForTab("Enable Maintenance Mode", hostActionMap, $actionMenu, $midmenuItem1, $detailsTab);  
-	    buildActionLinkForTab("Update OS Preference", hostActionMap, $actionMenu, $midmenuItem1, $detailsTab);  	    
-        buildActionLinkForTab("Remove Host", hostActionMap, $actionMenu, $midmenuItem1, $detailsTab);  
+	    buildActionLinkForTab("Enable Maintenance Mode", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  
+	    buildActionLinkForTab("Update OS Preference", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  	    
+        buildActionLinkForTab("Remove Host", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  
         noAvailableActions = false;
     }	
 	else if(jsonObj.state == "Alert") {
@@ -149,6 +157,36 @@ function hostJsonToDetailsTab($midmenuItem1) {
 	}	       
 }
 
+function hostJsonToStatisticsTab() {
+    var $thisTab = $("#right_panel_content #tab_content_statistics");  
+	$thisTab.find("#tab_container").hide(); 
+    $thisTab.find("#tab_spinning_wheel").show();   
+
+    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
+    var jsonObj = $midmenuItem1.data("jsonObj");
+    
+    var $barChartContainer = $thisTab.find("#cpu_barchart");
+         
+    var cpuNumber = ((jsonObj.cpunumber==null)? "":jsonObj.cpunumber.toString());
+    $barChartContainer.find("#cpunumber").text(cpuNumber);
+    
+    var cpuSpeed = ((jsonObj.cpuspeed==null)? "":convertHz(jsonObj.cpuspeed)) ;
+    $barChartContainer.find("#cpuspeed").text(cpuSpeed);
+    
+    $barChartContainer.find("#bar_chart").removeClass().addClass("db_barbox").css("width", "0%");    
+    $barChartContainer.find("#percentused").text("");   
+    if(jsonObj.cpuused!=null)
+        drawBarChart($barChartContainer, jsonObj.cpuused);		
+    
+    var networkKbsRead = ((jsonObj.networkkbsread==null)? "":convertBytes(jsonObj.networkkbsread * 1024));
+    $thisTab.find("#networkkbsread").text(networkKbsRead);
+    
+    var networkKbsWrite = ((jsonObj.networkkbswrite==null)? "":convertBytes(jsonObj.networkkbswrite * 1024));
+    $thisTab.find("#networkkbswrite").text(networkKbsWrite);
+    
+    $thisTab.find("#tab_spinning_wheel").hide();    
+    $thisTab.find("#tab_container").show();  
+}
 
 function hostClearRightPanel() {
     hostClearDetailsTab(); 

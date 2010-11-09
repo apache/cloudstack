@@ -294,7 +294,7 @@
             </div>
         </div>   
     </div>
-    <!--Statistics tab (start)-->
+    <!--Statistics tab (end)-->
     <!--Routers tab (start)-->
     <div style="display: none;" id="tab_content_router">
         <div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display:none;">
@@ -306,7 +306,7 @@
         <div id="tab_container">
         </div>
     </div>
-    <!--Routers tab (start)-->
+    <!--Routers tab (end)-->
 </div>
 <!-- VM detail panel (end) -->
 <!-- VM wizard (begin)-->

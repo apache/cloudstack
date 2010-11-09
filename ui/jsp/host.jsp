@@ -22,6 +22,8 @@
     <div class="tabbox" style="margin-top: 15px;">
         <div class="content_tabs on" id="tab_details">
             <%=t.t("details")%></div>
+        <div class="content_tabs off" id="tab_statistics">
+            <%=t.t("Statistics")%></div>
     </div>
     <!-- Details tab (start)-->
     <div id="tab_content_details">
@@ -166,6 +168,75 @@
         </div>
     </div>
     <!-- Details tab (end)-->
+    
+    <!--Statistics tab (start)-->
+    <div style="display: none;" id="tab_content_statistics">
+        <div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display:none;">
+              <div class="rightpanel_mainloaderbox">
+                   <div class="rightpanel_mainloader_animatedicon"></div>
+                   <p>Loading &hellip;</p>    
+              </div>               
+        </div>
+        <div id="tab_container"> 
+            <div class="grid_container">
+        	    <div class="grid_header">
+            	    <div id="grid_header_title" class="grid_header_title"></div>
+                </div>
+                
+                
+                <div class="dbrow odd" id="cpu_barchart">
+                    <div class="dbrow_cell" style="width: 40%;">
+                        <div class="dbgraph_titlebox">
+                            <h2>
+                                CPU</h2>
+                            <div class="dbgraph_title_usedbox">
+                                <p>
+                                    Total: <span id="capacityused">
+	                                    <span id="cpunumber">M</span> 
+	                                    x 
+	                                    <span id="cpuspeed">N</span> 
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="dbrow_cell" style="width: 43%; border: none;">
+                        <div class="db_barbox low" id="bar_chart">
+                        </div>
+                    </div>
+                    <div class="dbrow_cell" style="width: 16%; border: none;">
+                        <div class="db_totaltitle" id="percentused">
+                        K%
+                        </div>
+                    </div>
+                </div>
+                
+                
+                <div class="grid_rows even">
+                    <div class="grid_row_cell" style="width: 20%;">
+                        <div class="row_celltitles">
+                            Network Read:</div>
+                    </div>
+                    <div class="grid_row_cell" style="width: 79%;">
+                        <div class="row_celltitles" id="networkkbsread">
+                        </div>
+                    </div>
+                </div>
+                <div class="grid_rows odd">
+                    <div class="grid_row_cell" style="width: 20%;">
+                        <div class="row_celltitles">
+                            Network Write:</div>
+                    </div>
+                    <div class="grid_row_cell" style="width: 79%;">
+                        <div class="row_celltitles" id="networkkbswrite">
+                        </div>
+                    </div>
+                </div>  
+            </div>
+        </div>   
+    </div>
+    <!--Statistics tab (end)-->
+    
 </div>
 
 <!-- Add Host Dialog -->
