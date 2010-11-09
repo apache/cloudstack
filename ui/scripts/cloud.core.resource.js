@@ -72,7 +72,7 @@ function buildZoneTree() {
 		                    }		    
 	                    }
                     });
-                    
+                    /*
                     $.ajax({
                         data: createURL("command=listSystemVms&zoneid="+zoneObj.id+maxPageSize),
 	                    dataType: "json",
@@ -88,7 +88,8 @@ function buildZoneTree() {
 			                    }
 		                    }
 	                    }
-                    });					
+                    });	
+                    */				
 				} 
 				else if(target.hasClass("expanded_open")) {					
 					target.removeClass("expanded_open").addClass("expanded_close");					
