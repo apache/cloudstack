@@ -90,8 +90,8 @@ var systemVmActionMap = {
         asyncJobResponse: "startsystemvmresponse",
         inProcessText: "Starting System VM....",
         dialogBeforeActionFn : doStartSystemVM,
-        afterActionSeccessFn: function(json, $leftmenuItem1, id) {
-            var item = json.queryasyncjobresultresponse.jobresult.startsystemvmresponse; 
+        afterActionSeccessFn: function(json, $leftmenuItem1, id) {        
+            var item = json.queryasyncjobresultresponse.jobresult.systemvm;   
             $leftmenuItem1.data("jsonObj", item);
             systemvmJsonToRightPanel($leftmenuItem1);            
         }
@@ -102,20 +102,7 @@ var systemVmActionMap = {
         inProcessText: "Stopping System VM....",
         dialogBeforeActionFn : doStopSystemVM,
         afterActionSeccessFn: function(json, $leftmenuItem1, id) {
-            //var item = json.queryasyncjobresultresponse.jobresult.stopsystemvmresponse; //waiting for Bug 6859 to be fixed ("The embedded object returned by StopSystemVM on success is not up-to-date. "state" property in the embedded object should be "Stopped" instead of "Running")
-            var item;           
-            $.ajax({
-                data: createURL("command=listSystemVms&id="+id),
-                dataType: "json",
-                async: false,
-                success: function(json) {
-                    var items = json.listsystemvmsresponse.systemvm;                                       
-                    if (items != null && items.length > 0) {					    
-	                    item = items[0];
-                    }
-                }
-            });				
-                        
+            var item = json.queryasyncjobresultresponse.jobresult.systemvm;   
             $leftmenuItem1.data("jsonObj", item);
             systemvmJsonToRightPanel($leftmenuItem1);      
         }
@@ -126,20 +113,7 @@ var systemVmActionMap = {
         inProcessText: "Rebooting System VM....",
         dialogBeforeActionFn : doRebootSystemVM,
         afterActionSeccessFn: function(json, $leftmenuItem1, id) {
-            //var item = json.queryasyncjobresultresponse.jobresult.rebootsystemvmresponse;  //waiting for Bug 6860 to be fixed ("RebootSystemVM should return an embedded object on success")
-            var item;           
-            $.ajax({
-                data: createURL("command=listSystemVms&id="+id),
-                dataType: "json",
-                async: false,
-                success: function(json) {
-                    var items = json.listsystemvmsresponse.systemvm;                                       
-                    if (items != null && items.length > 0) {					    
-	                    item = items[0];
-                    }
-                }
-            });			
-            
+            var item = json.queryasyncjobresultresponse.jobresult.systemvm;   
             $leftmenuItem1.data("jsonObj", item);
             systemvmJsonToRightPanel($leftmenuItem1);      
         }
