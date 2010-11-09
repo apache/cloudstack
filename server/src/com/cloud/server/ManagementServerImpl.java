@@ -4012,7 +4012,8 @@ public class ManagementServerImpl implements ManagementServer {
         
         _templateDao.update(template.getId(), updatedTemplate);
 
-        Long domainId = account.getDomainId();
+        Long domainId;
+        domainId =  (null == account) ?  DomainVO.ROOT_DOMAIN : account.getDomainId(); // Account == null for 8096 and so its safe for domainid = ROOT
         if ("add".equalsIgnoreCase(operation)) {
             txn.start();
             for (String accountName : accountNames) {
