@@ -71,31 +71,12 @@ function buildZoneTree() {
 			                    }			                    
 		                    }		    
 	                    }
-                    });
-                    /*
-                    $.ajax({
-                        data: createURL("command=listSystemVms&zoneid="+zoneObj.id+maxPageSize),
-	                    dataType: "json",
-	                    async: false,
-	                    success: function(json) {
-		                    var items = json.listsystemvmsresponse.systemvm;
-		                    var $container = $zoneContent.find("#systemvms_container").empty();		                    
-		                    if (items != null && items.length > 0) {					    
-			                    for (var i = 0; i < items.length; i++) {
-				                    var $systemvmNode = $("#leftmenu_systemvm_node_template").clone(true);
-				                    systemvmJSONToTreeNode(items[i], $systemvmNode);
-				                    $container.append($systemvmNode.show());
-			                    }
-		                    }
-	                    }
-                    });	
-                    */				
+                    });                    
 				} 
 				else if(target.hasClass("expanded_open")) {					
 					target.removeClass("expanded_open").addClass("expanded_close");					
 					$zoneContent.hide();
-					$zoneContent.find("#pods_container").empty();		
-					$zoneContent.find("#systemvms_container").empty();							
+					$zoneContent.find("#pods_container").empty();	
 				}				
 				break;
 											    

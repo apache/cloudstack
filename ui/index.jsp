@@ -643,50 +643,7 @@ long milliseconds = new Date().getTime();
                         </div>
                     </div>
                 </div>
-                <div class="leftmenu_list">
-                    <div class="leftmenu_content_flevel" id="leftmenu_system" style="display: none">
-                        <div class="leftmenu_firstindent">
-                            <div class="leftmenu_arrows_firstlevel_open" id="expandable_first_level_arrow" style="display:none;"></div>
-                            <div class="leftmenu_list_icons">
-                                <img src="images/configuration_leftmenuicon.png" alt="System" /></div>
-                            <%=t.t("system")%>
-                        </div>
-                    </div>
-                    <div class="leftmenu_expandedbox" style="display: none">                                                          
-                        <div class="leftmenu_expandedlist">
-                            <div class="leftmenu_content" style="border-bottom: 1px dashed b4c8d6;" id="leftmenu_service_offering">
-                                <div class="leftmenu_secondindent">
-                                    <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
-                                    </div>
-                                    
-                                    <%=t.t("service.offerings")%>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="leftmenu_expandedlist">
-                            <div class="leftmenu_content" id="leftmenu_disk_offering">
-                                <div class="leftmenu_secondindent">
-                                    <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
-                                    </div>
-                                    
-                                    <%=t.t("disk.offerings")%>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="leftmenu_expandedlist">
-                            <div class="leftmenu_content" id="leftmenu_global_setting">
-                                <div class="leftmenu_secondindent">
-                                    <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
-                                    </div>
-                                    
-                                    <%=t.t("global.settings")%>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                
+                             
                 <div class="leftmenu_list">
                     <div class="leftmenu_content_flevel" id="leftmenu_resources" style="display: none">
                         <div class="leftmenu_firstindent">
@@ -749,10 +706,53 @@ long milliseconds = new Date().getTime();
                                     </div>
                                 </div>                                
                             </div>
-                        </div>
-                        
+                        </div>                        
                     </div>
                 </div>   
+                                
+                <div class="leftmenu_list">
+                    <div class="leftmenu_content_flevel" id="leftmenu_system" style="display: none">
+                        <div class="leftmenu_firstindent">
+                            <div class="leftmenu_arrows_firstlevel_open" id="expandable_first_level_arrow" style="display:none;"></div>
+                            <div class="leftmenu_list_icons">
+                                <img src="images/configuration_leftmenuicon.png" alt="System" /></div>
+                            <%=t.t("system")%>
+                        </div>
+                    </div>
+                    <div class="leftmenu_expandedbox" style="display: none">                                                          
+                        <div class="leftmenu_expandedlist">
+                            <div class="leftmenu_content" style="border-bottom: 1px dashed b4c8d6;" id="leftmenu_service_offering">
+                                <div class="leftmenu_secondindent">
+                                    <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
+                                    </div>
+                                    
+                                    <%=t.t("service.offerings")%>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="leftmenu_expandedlist">
+                            <div class="leftmenu_content" id="leftmenu_disk_offering">
+                                <div class="leftmenu_secondindent">
+                                    <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
+                                    </div>
+                                    
+                                    <%=t.t("disk.offerings")%>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="leftmenu_expandedlist">
+                            <div class="leftmenu_content" id="leftmenu_global_setting">
+                                <div class="leftmenu_secondindent">
+                                    <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
+                                    </div>
+                                    
+                                    <%=t.t("global.settings")%>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                                                
             </div>
         </div>
     </div>
@@ -866,9 +866,7 @@ long milliseconds = new Date().getTime();
 	        </div>			
             <div id="zone_content" style="display: none">
 	            <div id="pods_container">
-	            </div>
-	            <div id="systemvms_container">
-	            </div>
+	            </div>	            
 	        </div>
 		</div>
     </div>
@@ -918,21 +916,7 @@ long milliseconds = new Date().getTime();
 	        </div>
 	    </div>
     </div> 
-    <!-- Cluster Template (end) -->
-    <!-- SystemVM Template (begin) -->
-    <div class="leftmenu_expandedlist" id="leftmenu_systemvm_node_template" style="display:none">
-    	<div id="row_container">
-	        <div class="leftmenu_content" id="header">
-	            <div class="leftmenu_fourthindent">
-	                <div class="leftmenu_arrows white_nonexpanded_close" id="systemvm_arrow">
-	                </div>	             
-	                <span id="systemvm_name_label">System VM: </span>
-	                <span id="systemvm_name"></span>
-	            </div>
-	        </div>
-        </div>
-    </div> 
-    <!-- SystemVM Template (end) -->    
+    <!-- Cluster Template (end) -->   
     <!-- domain tree node template (begin) -->
     <div id="domain_tree_node_template" style="display:none">    	
                 
