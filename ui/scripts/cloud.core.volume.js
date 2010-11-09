@@ -484,7 +484,7 @@ function  volumeJsonToSnapshotTab() {
 function volumeSnapshotJSONToTemplate(jsonObj, template) {
     template.data("jsonObj", jsonObj);     
     template.attr("id", "volume_snapshot_"+jsonObj.id).data("volumeSnapshotId", jsonObj.id);    
-    template.find("#title").text(fromdb(jsonObj.name));			   
+    template.find("#grid_header_title").text(fromdb(jsonObj.name));			   
     template.find("#id").text(jsonObj.id);
     template.find("#name").text(fromdb(jsonObj.name));			      
     template.find("#volumename").text(fromdb(jsonObj.volumename));	

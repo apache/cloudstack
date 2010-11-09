@@ -29,9 +29,9 @@ function afterLoadHostJSP($midmenuItem1) {
     initDialog("dialog_update_os");
          
     // switch between different tabs 
-    var tabArray = [$("#tab_details"), $("#tab_statistics")];
-    var tabContentArray = [$("#tab_content_details"), $("#tab_content_statistics")];
-    var afterSwitchFnArray = [hostJsonToDetailsTab, hostJsonToStatisticsTab];
+    var tabArray = [$("#tab_details"), $("#tab_statistics"), $("#tab_instance")];
+    var tabContentArray = [$("#tab_content_details"), $("#tab_content_statistics"), $("#tab_content_instance")];
+    var afterSwitchFnArray = [hostJsonToDetailsTab, hostJsonToStatisticsTab, hostJsonToInstanceTab];
     switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray);         
 }
 
@@ -139,18 +139,7 @@ function hostJsonToDetailsTab() {
 	else {
 	    alert("Unsupported Host State: " + jsonObj.state);
 	} 
-    
-    //temporary for testing (begin) *****
-    /*
-    buildActionLinkForTab("Enable Maintenance Mode", hostActionMap, $actionMenu, $midmenuItem1, $detailsTab);  
-    buildActionLinkForTab("Cancel Maintenance Mode", hostActionMap, $actionMenu, $midmenuItem1, $detailsTab);  
-    buildActionLinkForTab("Force Reconnect", hostActionMap, $actionMenu, $midmenuItem1, $detailsTab);  
-    buildActionLinkForTab("Remove Host", hostActionMap, $actionMenu, $midmenuItem1, $detailsTab);  
-    buildActionLinkForTab("Update OS Preference", hostActionMap, $actionMenu, $midmenuItem1, $detailsTab);
-    noAvailableActions = false; 	  
-    */  
-    //temporary for testing (begin) *****
-    
+        
     // no available actions 
 	if(noAvailableActions == true) {
 	    $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());
@@ -199,6 +188,47 @@ function hostJsonToStatisticsTab() {
     $thisTab.find("#tab_spinning_wheel").hide();    
     $thisTab.find("#tab_container").show();  
 }
+
+function  hostJsonToInstanceTab() {   
+    var $thisTab = $("#right_panel_content #tab_content_instance");
+	$thisTab.find("#tab_container").hide(); 
+    $thisTab.find("#tab_spinning_wheel").show(); 
+    		
+	var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");	
+	var jsonObj = $midmenuItem1.data("jsonObj");	
+    
+    $.ajax({
+		cache: false,
+		data: createURL("command=listVirtualMachines&hostid="+jsonObj.id),
+		dataType: "json",
+		success: function(json) {							    
+			var items = json.listvirtualmachinesresponse.virtualmachine;																						
+			if (items != null && items.length > 0) {
+			    var $container = $thisTab.find("#tab_container").empty();
+				var template = $("#instance_tab_template");				
+				for (var i = 0; i < items.length; i++) {
+					var newTemplate = template.clone(true);	               
+	                hostInstanceJSONToTemplate(items[i], newTemplate); 
+	                $container.append(newTemplate.show());	
+				}			
+			}	
+			$thisTab.find("#tab_spinning_wheel").hide();    
+            $thisTab.find("#tab_container").show();    			
+		}
+	});
+} 
+
+function hostInstanceJSONToTemplate(jsonObj, template) {
+    template.data("jsonObj", jsonObj);     
+    template.attr("id", "host_instance_"+jsonObj.id).data("hostInstanceId", jsonObj.id);    
+    template.find("#grid_header_title").text(fromdb(jsonObj.name));			   
+    template.find("#id").text(jsonObj.id);
+    template.find("#name").text(fromdb(jsonObj.name));	  
+    template.find("#ipaddress").text(fromdb(jsonObj.ipaddress));
+    template.find("#serviceOfferingName").text(fromdb(jsonObj.serviceofferingname));	
+    template.find("#account").text(fromdb(jsonObj.account));
+    setDateField(jsonObj.created, template.find("#created"));	 		
+} 
 
 function hostClearRightPanel() {
     hostClearDetailsTab(); 

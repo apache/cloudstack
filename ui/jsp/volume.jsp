@@ -183,6 +183,7 @@
         <div id="tab_container">
         </div>
     </div> 
+    <!--Snapshot tab (end)-->
 </div>
 <!-- volume detail panel (end) -->
 <!-- Create Template Dialog -->
@@ -616,7 +617,7 @@
 <!--  Snapshot tab template (begin) -->
 <div class="grid_container" id="snapshot_tab_template" style="display: none">
     <div class="grid_header">
-        <div class="grid_header_title" id="title">
+        <div class="grid_header_title" id="grid_header_title">
         </div>
         <div class="grid_actionbox" id="snapshot_action_link">
             <div class="grid_actionsdropdown_box" id="snapshot_action_menu" style="display: none;">

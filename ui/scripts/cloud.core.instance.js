@@ -1334,14 +1334,15 @@ function vmJsonToDetailsTab(){
     $thisTab.find("#ipaddress").text(fromdb(jsonObj.ipaddress));
     
     $thisTab.find("#templateName").text(fromdb(jsonObj.templatename));
-    $thisTab.find("#serviceOfferingName").text(fromdb(jsonObj.serviceofferingname));		
-    $thisTab.find("#created").text(jsonObj.created);
+    $thisTab.find("#serviceOfferingName").text(fromdb(jsonObj.serviceofferingname));	
     $thisTab.find("#account").text(fromdb(jsonObj.account));
     $thisTab.find("#domain").text(fromdb(jsonObj.domain));
     $thisTab.find("#hostName").text(fromdb(jsonObj.hostname));
     
     $thisTab.find("#group").text(fromdb(jsonObj.group));	
     $thisTab.find("#group_edit").val(fromdb(jsonObj.group));	
+    
+    setDateField(jsonObj.created, $thisTab.find("#created"));	 		
     
     setBooleanReadField(jsonObj.haenable, $thisTab.find("#haenable"));
     setBooleanEditField(jsonObj.haenable, $thisTab.find("#haenable_edit"));
