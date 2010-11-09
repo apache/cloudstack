@@ -20,12 +20,6 @@ function afterLoadRouterJSP() {
     
 }
 
-function routerAfterDetailsTabAction(json, $midmenuItem1, id) {        
-    var jsonObj = json.queryasyncjobresultresponse.jobresult.domainrouter;    
-    routerToMidmenu(jsonObj, $midmenuItem1);  
-    routerJsonToDetailsTab($midmenuItem1);   
-}
-
 function routerToMidmenu(jsonObj, $midmenuItem1) {
     $midmenuItem1.attr("id", getMidmenuId(jsonObj));  
     $midmenuItem1.data("jsonObj", jsonObj); 
@@ -91,26 +85,95 @@ function routerJsonToDetailsTab($midmenuItem1) {
     $thisTab.find("#tab_container").show();     		    
 }        
   
-var routerActionMap = {  
-    "Stop Router": {
-        api: "stopRouter",            
-        isAsyncJob: true,
-        asyncJobResponse: "stoprouterresponse",
-        inProcessText: "Stopping Router....",
-        afterActionSeccessFn: routerAfterDetailsTabAction
-    },
-    "Start Router": {
-        api: "startRouter",            
+function doStopRouter($actionLink, $detailsTab, $midmenuItem1) {     
+    $("#dialog_confirmation")
+    .text("Please confirm you want to stop router")	
+    .dialog('option', 'buttons', { 						
+	    "Confirm": function() { 
+		    $(this).dialog("close"); 			
+		    
+		    var jsonObj = $midmenuItem1.data("jsonObj");
+		    var id = jsonObj.id;
+		    var apiCommand = "command=stopRouter&id="+id;  
+            doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab); 			   	                         					    
+	    }, 
+	    "Cancel": function() { 
+		    $(this).dialog("close"); 
+			
+	    } 
+    }).dialog("open");
+}   
+   
+function doStartRouter($actionLink, $detailsTab, $midmenuItem1) {     
+    $("#dialog_confirmation")
+    .text("Please confirm you want to start router")	
+    .dialog('option', 'buttons', { 						
+	    "Confirm": function() { 
+		    $(this).dialog("close"); 			
+		    
+		    var jsonObj = $midmenuItem1.data("jsonObj");
+		    var id = jsonObj.id;
+		    var apiCommand = "command=startRouter&id="+id;  
+            doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab); 			   	                         					    
+	    }, 
+	    "Cancel": function() { 
+		    $(this).dialog("close"); 
+			
+	    } 
+    }).dialog("open");
+}  
+
+function doRebootRouter($actionLink, $detailsTab, $midmenuItem1) {     
+    $("#dialog_confirmation")
+    .text("Please confirm you want to reboot router")	
+    .dialog('option', 'buttons', { 						
+	    "Confirm": function() { 
+		    $(this).dialog("close"); 			
+		    
+		    var jsonObj = $midmenuItem1.data("jsonObj");
+		    var id = jsonObj.id;
+		    var apiCommand = "command=rebootRouter&id="+id;  
+            doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab); 			   	                         					    
+	    }, 
+	    "Cancel": function() { 
+		    $(this).dialog("close"); 
+			
+	    } 
+    }).dialog("open");
+}     
+  
+var routerActionMap = {      
+    "Start Router": {        
         isAsyncJob: true,
         asyncJobResponse: "startrouterresponse",
         inProcessText: "Starting Router....",
-        afterActionSeccessFn: routerAfterDetailsTabAction
+        dialogBeforeActionFn : doStartRouter,
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {
+            var item = json.queryasyncjobresultresponse.jobresult.domainrouter;    
+            routerToMidmenu(item, $midmenuItem1);  
+            routerJsonToDetailsTab($midmenuItem1);   
+        }
     },
-    "Reboot Router": {
-        api: "rebootRouter",           
+    "Stop Router": {          
+        isAsyncJob: true,
+        asyncJobResponse: "stoprouterresponse",
+        inProcessText: "Stopping Router....",
+        dialogBeforeActionFn : doStopRouter,
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {
+            var item = json.queryasyncjobresultresponse.jobresult.domainrouter;    
+            routerToMidmenu(item, $midmenuItem1);  
+            routerJsonToDetailsTab($midmenuItem1);   
+        }
+    },
+    "Reboot Router": {           
         isAsyncJob: true,
         asyncJobResponse: "rebootrouterresponse",
         inProcessText: "Rebooting Router....",
-        afterActionSeccessFn: routerAfterDetailsTabAction
+        dialogBeforeActionFn : doRebootRouter,
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {
+            var item = json.queryasyncjobresultresponse.jobresult.domainrouter;    
+            routerToMidmenu(item, $midmenuItem1);  
+            routerJsonToDetailsTab($midmenuItem1);    
+        }
     }
 }   
