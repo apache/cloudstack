@@ -37,11 +37,10 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.LoadBalancerVO;
-import com.cloud.network.NetworkManager;
 import com.cloud.user.Account;
 import com.cloud.utils.StringUtils;
 
-@Implementation(method="removeFromLoadBalancer", manager=NetworkManager.class, description="Removes a virtual machine or a list of virtual machines from a load balancer rule.")
+@Implementation(description="Removes a virtual machine or a list of virtual machines from a load balancer rule.")
 public class RemoveFromLoadBalancerRuleCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RemoveFromLoadBalancerRuleCmd.class.getName());
 
@@ -110,18 +109,14 @@ public class RemoveFromLoadBalancerRuleCmd extends BaseAsyncCmd {
         return  "removing instances from load balancer: " + getId() + " (ids: " + StringUtils.join(vmIds, ",") + ")";
     }
 
-	@Override @SuppressWarnings("unchecked")
-	public SuccessResponse getResponse() {
-		if (getResponseObject() == null || (Boolean)getResponseObject()) {
-	    	return new SuccessResponse(getName());
-	    } else {
-	    	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to remove instance from load balancer rule");
-	    }
-	}
-	
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         boolean result = _networkMgr.removeFromLoadBalancer(this);
-        return result;
+        if (result) {
+            SuccessResponse response = new SuccessResponse(getName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to remove instance from load balancer rule");
+        }
     }
 }

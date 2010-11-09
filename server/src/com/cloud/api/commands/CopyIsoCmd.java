@@ -39,11 +39,10 @@ import com.cloud.storage.GuestOS;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(method="copyIso", manager=TemplateManager.class, description="Copies an ISO file.")
+@Implementation(description="Copies an ISO file.")
 public class CopyIsoCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(CopyIsoCmd.class.getName());
     private static final String s_name = "copyisoresponse";
@@ -110,90 +109,82 @@ public class CopyIsoCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  "copying ISO: " + getId() + " from zone: " + getSourceZoneId() + " to zone: " + getDestinationZoneId();
     }
-
-	@Override @SuppressWarnings("unchecked")
-	public TemplateResponse getResponse() {
-        TemplateResponse isoResponse = new TemplateResponse();
-        VMTemplateVO iso = (VMTemplateVO)getResponseObject();
-        
-        if (iso != null) {
-            isoResponse.setId(iso.getId());
-            isoResponse.setName(iso.getName());
-            isoResponse.setDisplayText(iso.getDisplayText());
-            isoResponse.setPublic(iso.isPublicTemplate());
-            isoResponse.setBootable(iso.isBootable());
-            isoResponse.setFeatured(iso.isFeatured());
-            isoResponse.setCrossZones(iso.isCrossZones());
-            isoResponse.setCreated(iso.getCreated());
-            isoResponse.setZoneId(destZoneId);
-            isoResponse.setZoneName(ApiDBUtils.findZoneById(destZoneId).getName());
-             
-            GuestOS os = ApiDBUtils.findGuestOSById(iso.getGuestOSId());
-            if (os != null) {
-                isoResponse.setOsTypeId(os.getId());
-                isoResponse.setOsTypeName(os.getDisplayName());
-            } else {
-                isoResponse.setOsTypeId(-1L);
-                isoResponse.setOsTypeName("");
-            }
-                
-            // add account ID and name
-            Account owner = ApiDBUtils.findAccountById(iso.getAccountId());
-            if (owner != null) {
-                isoResponse.setAccount(owner.getAccountName());
-                isoResponse.setDomainId(owner.getDomainId());
-                isoResponse.setDomainName(ApiDBUtils.findDomainById(owner.getDomainId()).getName());
-            }
-            
-            //set status 
-            Account account = (Account)UserContext.current().getAccount();
-            boolean isAdmin = false;
-            if ((account == null) || (account.getType() == Account.ACCOUNT_TYPE_ADMIN) || (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)) {
-                isAdmin = true;
-            }
-    		
-    		//Return download status for admin users
-            VMTemplateHostVO templateHostRef = ApiDBUtils.findTemplateHostRef(iso.getId(), destZoneId);
-            
-    		if (isAdmin || iso.getAccountId() == account.getId()) {
-                if (templateHostRef.getDownloadState()!=Status.DOWNLOADED) {
-                    String templateStatus = "Processing";
-                    if (templateHostRef.getDownloadState() == VMTemplateHostVO.Status.DOWNLOAD_IN_PROGRESS) {
-                        if (templateHostRef.getDownloadPercent() == 100) {
-                            templateStatus = "Installing Template";
-                        } else {
-                            templateStatus = templateHostRef.getDownloadPercent() + "% Downloaded";
-                        }
-                    } else {
-                        templateStatus = templateHostRef.getErrorString();
-                    }
-                    isoResponse.setStatus(templateStatus);
-                } else if (templateHostRef.getDownloadState() == VMTemplateHostVO.Status.DOWNLOADED) {
-                	isoResponse.setStatus("Download Complete");
-                } else {
-                	isoResponse.setStatus("Successfully Installed");
-                }
-            }
-    		
-    		isoResponse.setReady(templateHostRef.getDownloadState() == VMTemplateHostVO.Status.DOWNLOADED);
-            
-        } else {
-        	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to copy iso");
-        }
-
-        isoResponse.setResponseName(getName());
-        isoResponse.setObjectName("iso");
-        return isoResponse;
-	}
 	
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         try {
-            VMTemplateVO result = _templateMgr.copyIso(this);
-            return result;
+            VMTemplateVO iso = _templateMgr.copyIso(this);
+            TemplateResponse isoResponse = new TemplateResponse();
+            if (iso != null) {
+                isoResponse.setId(iso.getId());
+                isoResponse.setName(iso.getName());
+                isoResponse.setDisplayText(iso.getDisplayText());
+                isoResponse.setPublic(iso.isPublicTemplate());
+                isoResponse.setBootable(iso.isBootable());
+                isoResponse.setFeatured(iso.isFeatured());
+                isoResponse.setCrossZones(iso.isCrossZones());
+                isoResponse.setCreated(iso.getCreated());
+                isoResponse.setZoneId(destZoneId);
+                isoResponse.setZoneName(ApiDBUtils.findZoneById(destZoneId).getName());
+                 
+                GuestOS os = ApiDBUtils.findGuestOSById(iso.getGuestOSId());
+                if (os != null) {
+                    isoResponse.setOsTypeId(os.getId());
+                    isoResponse.setOsTypeName(os.getDisplayName());
+                } else {
+                    isoResponse.setOsTypeId(-1L);
+                    isoResponse.setOsTypeName("");
+                }
+                    
+                // add account ID and name
+                Account owner = ApiDBUtils.findAccountById(iso.getAccountId());
+                if (owner != null) {
+                    isoResponse.setAccount(owner.getAccountName());
+                    isoResponse.setDomainId(owner.getDomainId());
+                    isoResponse.setDomainName(ApiDBUtils.findDomainById(owner.getDomainId()).getName());
+                }
+                
+                //set status 
+                Account account = (Account)UserContext.current().getAccount();
+                boolean isAdmin = false;
+                if ((account == null) || (account.getType() == Account.ACCOUNT_TYPE_ADMIN) || (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)) {
+                    isAdmin = true;
+                }
+                
+                //Return download status for admin users
+                VMTemplateHostVO templateHostRef = ApiDBUtils.findTemplateHostRef(iso.getId(), destZoneId);
+                
+                if (isAdmin || iso.getAccountId() == account.getId()) {
+                    if (templateHostRef.getDownloadState()!=Status.DOWNLOADED) {
+                        String templateStatus = "Processing";
+                        if (templateHostRef.getDownloadState() == VMTemplateHostVO.Status.DOWNLOAD_IN_PROGRESS) {
+                            if (templateHostRef.getDownloadPercent() == 100) {
+                                templateStatus = "Installing Template";
+                            } else {
+                                templateStatus = templateHostRef.getDownloadPercent() + "% Downloaded";
+                            }
+                        } else {
+                            templateStatus = templateHostRef.getErrorString();
+                        }
+                        isoResponse.setStatus(templateStatus);
+                    } else if (templateHostRef.getDownloadState() == VMTemplateHostVO.Status.DOWNLOADED) {
+                        isoResponse.setStatus("Download Complete");
+                    } else {
+                        isoResponse.setStatus("Successfully Installed");
+                    }
+                }
+                
+                isoResponse.setReady(templateHostRef.getDownloadState() == VMTemplateHostVO.Status.DOWNLOADED);
+                
+            } else {
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to copy iso");
+            }
+
+            isoResponse.setResponseName(getName());
+            isoResponse.setObjectName("iso");
+            this.setResponseObject(isoResponse);
         } catch (StorageUnavailableException ex) {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
         }
     }
-
 }

@@ -35,9 +35,8 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
-import com.cloud.vm.UserVmService;
 
-@Implementation(method="stopVirtualMachine", manager=UserVmService.class, description="Stops a virtual machine.")
+@Implementation(description="Stops a virtual machine.")
 public class StopVm2Cmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(StopVMCmd.class.getName());
 
@@ -62,9 +61,11 @@ public class StopVm2Cmd extends BaseAsyncCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        //TODO - put method stub here
-        return null;
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        UserVm userVm = _userVmService.stopVirtualMachine(this);
+        UserVmResponse response = ApiResponseHelper.createUserVmResponse(userVm);
+        response.setResponseName(getName());
+        this.setResponseObject(response);
     }
 
     @Override
@@ -94,13 +95,5 @@ public class StopVm2Cmd extends BaseAsyncCmd {
     @Override
     public String getEventDescription() {
         return  "stopping user vm: " + getId();
-    }
-
-    @Override @SuppressWarnings("unchecked")
-    public UserVmResponse getResponse() {
-        UserVm userVm = (UserVm)getResponseObject();
-        UserVmResponse recoverVmResponse = ApiResponseHelper.createUserVmResponse(userVm);
-        recoverVmResponse.setResponseName(getName());
-        return recoverVmResponse;
     }
 }

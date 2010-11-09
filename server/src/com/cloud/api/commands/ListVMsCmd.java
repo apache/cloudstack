@@ -38,7 +38,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.UserVmVO;
 
-@Implementation(method="searchForUserVMs", description="List the virtual machines owned by the account.")
+@Implementation(description="List the virtual machines owned by the account.")
 public class ListVMsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListVMsCmd.class.getName());
 
@@ -123,14 +123,13 @@ public class ListVMsCmd extends BaseListCmd {
 	public String getName() {
         return s_name;
     }
-
-    @Override @SuppressWarnings("unchecked")
-	public ListResponse<UserVmResponse> getResponse() {
-        List<UserVm> userVms = (List<UserVm>)getResponseObject();
-
+    
+    @Override
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        List<UserVmVO> result = _mgr.searchForUserVMs(this);
         ListResponse<UserVmResponse> response = new ListResponse<UserVmResponse>();
         List<UserVmResponse> vmResponses = new ArrayList<UserVmResponse>();
-        for (UserVm userVm : userVms) {
+        for (UserVm userVm : result) {
             UserVmResponse userVmResponse = ApiResponseHelper.createUserVmResponse(userVm);
             if (userVmResponse != null) {
                 userVmResponse.setObjectName("virtualmachine");
@@ -139,13 +138,7 @@ public class ListVMsCmd extends BaseListCmd {
         }
         response.setResponses(vmResponses);
         response.setResponseName(getName());
-        return response;
-    }
-    
-    @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<UserVmVO> result = _mgr.searchForUserVMs(this);
-        return result;
+        this.setResponseObject(response);
     }
     
 }

@@ -27,7 +27,6 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.VlanIpRangeResponse;
-import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.VlanVO;
 import com.cloud.exception.ConcurrentOperationException;
@@ -36,7 +35,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 
-@Implementation(method="createVlanAndPublicIpRange", manager=ConfigurationManager.class, description="Creates a VLAN IP range.")
+@Implementation(description="Creates a VLAN IP range.")
 public class CreateVlanIpRangeCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(CreateVlanIpRangeCmd.class.getName());
 
@@ -129,18 +128,12 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
     public String getName() {
         return s_name;
     }
-
-    @Override @SuppressWarnings("unchecked")
-    public VlanIpRangeResponse getResponse() {
-        VlanVO vlan = (VlanVO)getResponseObject();
-        VlanIpRangeResponse response = ApiResponseHelper.createVlanIpRangeResponse(vlan);
-        response.setResponseName(getName());
-        return response;
-    }
     
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         Vlan result = _configService.createVlanAndPublicIpRange(this);
-        return result;
+        VlanIpRangeResponse response = ApiResponseHelper.createVlanIpRangeResponse((VlanVO)result);
+        response.setResponseName(getName());
+        this.setResponseObject(response);
     }
 }

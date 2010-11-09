@@ -21,12 +21,11 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.network.security.NetworkGroupManager;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
 @SuppressWarnings("rawtypes")
-@Implementation(method="revokeNetworkGroupIngress", manager=NetworkGroupManager.class)
+@Implementation()
 public class RevokeNetworkGroupIngressCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(RevokeNetworkGroupIngressCmd.class.getName());
 
@@ -184,19 +183,15 @@ public class RevokeNetworkGroupIngressCmd extends BaseAsyncCmd {
 
         return  "revoking ingress from group: " + getNetworkGroupName() + " for " + sb.toString();
     }
-
-    @Override @SuppressWarnings("unchecked")
-	public SuccessResponse getResponse() {
-    	if (getResponseObject() == null || (Boolean)getResponseObject()) {
-	    	return new SuccessResponse(getName());
-	    } else {
-	    	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to revoke security group ingress rule");
-	    }
-	}
     
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         boolean result = _networkGroupMgr.revokeNetworkGroupIngress(this);
-        return result;
+        if (result) {
+            SuccessResponse response = new SuccessResponse(getName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to revoke security group ingress rule");
+        }
     }
 }

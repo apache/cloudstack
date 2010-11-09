@@ -37,7 +37,7 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(method="listTemplatePermissions", description="List template visibility and all accounts that have permissions to view this template.")
+@Implementation(description="List template visibility and all accounts that have permissions to view this template.")
 public class ListTemplateOrIsoPermissionsCmd extends BaseListCmd {
 	public Logger s_logger = getLogger();
     protected String s_name = "listtemplatepermissionsresponse";
@@ -79,10 +79,22 @@ public class ListTemplateOrIsoPermissionsCmd extends BaseListCmd {
     public String getName() {
         return s_name;
     }
-
-    @Override @SuppressWarnings("unchecked")
-    public TemplatePermissionsResponse getResponse() {
-        List<String> accountNames = (List<String>)getResponseObject();
+    
+    protected boolean templateIsCorrectType(VMTemplateVO template) {
+    	return true;
+    }
+    
+    public String getMediaType() {
+    	return "templateOrIso";
+    }
+    
+    protected Logger getLogger() {
+    	return Logger.getLogger(UpdateTemplateOrIsoPermissionsCmd.class.getName());    
+    }
+    
+    @Override
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        List<String> accountNames = _mgr.listTemplatePermissions(this);
         Account account = (Account)UserContext.current().getAccount();
         boolean isAdmin = ((account == null) || isAdmin(account.getType()));
         Long templateOwnerDomain = null;
@@ -105,24 +117,6 @@ public class ListTemplateOrIsoPermissionsCmd extends BaseListCmd {
         response.setAccountNames(accountNames);
         response.setObjectName("templatepermission");
         response.setResponseName(getName());
-        return response;
-    }
-    
-    protected boolean templateIsCorrectType(VMTemplateVO template) {
-    	return true;
-    }
-    
-    public String getMediaType() {
-    	return "templateOrIso";
-    }
-    
-    protected Logger getLogger() {
-    	return Logger.getLogger(UpdateTemplateOrIsoPermissionsCmd.class.getName());    
-    }
-    
-    @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<String> result = _mgr.listTemplatePermissions(this);
-        return result;
+        this.setResponseObject(response);
     }
 }

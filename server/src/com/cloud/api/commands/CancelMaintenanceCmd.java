@@ -20,7 +20,6 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.AgentManager;
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseAsyncCmd;
@@ -38,7 +37,7 @@ import com.cloud.host.HostVO;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(method="cancelMaintenance", manager=AgentManager.class, description="Cancels host maintenance.")
+@Implementation(description="Cancels host maintenance.")
 public class CancelMaintenanceCmd extends BaseAsyncCmd  {
     public static final Logger s_logger = Logger.getLogger(CancelMaintenanceCmd.class.getName());
 
@@ -93,18 +92,12 @@ public class CancelMaintenanceCmd extends BaseAsyncCmd  {
     public String getEventDescription() {
         return  "canceling maintenance for host: " + getId();
     }
-
-	@Override @SuppressWarnings("unchecked")
-	public HostResponse getResponse() {
-        HostVO host = (HostVO)getResponseObject();
-        HostResponse response = ApiResponseHelper.createHostResponse(host);
-        response.setResponseName(getName());
-		return response;
-	}
 	
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         HostVO result = _agentMgr.cancelMaintenance(this);
-        return result;
+        HostResponse response = ApiResponseHelper.createHostResponse(result);
+        response.setResponseName(getName());
+        this.setResponseObject(response);
     }
 }

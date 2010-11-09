@@ -32,7 +32,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 
-@Implementation(method="getHypervisors")
+@Implementation(description="List hypervisors")
 public class ListHypervisorsCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(UpgradeRouterCmd.class.getName());
 	private static final String s_name = "listhypervisorsresponse";
@@ -41,28 +41,21 @@ public class ListHypervisorsCmd extends BaseCmd {
 	public String getName() {
 		return s_name;
 	}
-
-	@Override @SuppressWarnings("unchecked")
-	public ListResponse<HypervisorResponse> getResponse() {
-		String[] hypervisorList = (String[])getResponseObject();
-
-		ListResponse<HypervisorResponse> response = new ListResponse<HypervisorResponse>();
-		ArrayList<HypervisorResponse> responses = new ArrayList<HypervisorResponse>();
-		for (String hypervisor : hypervisorList) {
-		    HypervisorResponse hypervisorResponse = new HypervisorResponse();
-		    hypervisorResponse.setName(hypervisor);
-		    hypervisorResponse.setObjectName("hypervisor");
-		    responses.add(hypervisorResponse);
-        }
-
-		response.setResponses(responses);
-		response.setResponseName(getName());
-		return response;
-	}
 	
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         String[] result = _mgr.getHypervisors(this);
-        return result;
+        ListResponse<HypervisorResponse> response = new ListResponse<HypervisorResponse>();
+        ArrayList<HypervisorResponse> responses = new ArrayList<HypervisorResponse>();
+        for (String hypervisor : result) {
+            HypervisorResponse hypervisorResponse = new HypervisorResponse();
+            hypervisorResponse.setName(hypervisor);
+            hypervisorResponse.setObjectName("hypervisor");
+            responses.add(hypervisorResponse);
+        }
+
+        response.setResponses(responses);
+        response.setResponseName(getName());
+        this.setResponseObject(response);
     }
 }

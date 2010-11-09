@@ -35,9 +35,8 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.uservm.UserVm;
-import com.cloud.vm.UserVmManager;
 
-@Implementation(method="recoverVirtualMachine", manager=UserVmManager.class, description="Recovers a virtual machine.")
+@Implementation(description="Recovers a virtual machine.")
 public class RecoverVMCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(RecoverVMCmd.class.getName());
 
@@ -66,20 +65,14 @@ public class RecoverVMCmd extends BaseCmd {
     public String getName() {
         return s_name;
     }
-
-    @Override @SuppressWarnings("unchecked")
-    public UserVmResponse getResponse() {
-        UserVm userVm = (UserVm)getResponseObject();
-        UserVmResponse recoverVmResponse = ApiResponseHelper.createUserVmResponse(userVm);
-        recoverVmResponse.setResponseName(getName());
-        return recoverVmResponse;
-    }
     
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, StorageUnavailableException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, StorageUnavailableException{
         try {
             UserVm result = _userVmService.recoverVirtualMachine(this);
-            return result;
+            UserVmResponse recoverVmResponse = ApiResponseHelper.createUserVmResponse(result);
+            recoverVmResponse.setResponseName(getName());
+            this.setResponseObject(recoverVmResponse);
         } catch (ResourceAllocationException ex) {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
         }

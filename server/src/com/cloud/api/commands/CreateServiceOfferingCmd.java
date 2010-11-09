@@ -27,7 +27,6 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.ServiceOfferingResponse;
-import com.cloud.configuration.ConfigurationManager;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -36,7 +35,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 
-@Implementation(method="createServiceOffering", manager=ConfigurationManager.class, description="Creates a service offering.")
+@Implementation(description="Creates a service offering.")
 public class CreateServiceOfferingCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(CreateServiceOfferingCmd.class.getName());
 	private static final String _name = "createserviceofferingresponse";
@@ -121,17 +120,11 @@ public class CreateServiceOfferingCmd extends BaseCmd {
 		return _name;
 	}
 
-	@Override @SuppressWarnings("unchecked")
-    public ServiceOfferingResponse getResponse() {
-	    ServiceOfferingVO offering = (ServiceOfferingVO)getResponseObject();
-	    ServiceOfferingResponse response = ApiResponseHelper.createServiceOfferingResponse(offering);
-        response.setResponseName(getName());
-        return response;
-	}
-	
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         ServiceOffering result = _configService.createServiceOffering(this);
-        return result;
+        ServiceOfferingResponse response = ApiResponseHelper.createServiceOfferingResponse((ServiceOfferingVO)result);
+        response.setResponseName(getName());
+        this.setResponseObject(response);
     }
 }

@@ -36,7 +36,7 @@ import com.cloud.user.Account;
 import com.cloud.user.UserAccount;
 import com.cloud.user.UserContext;
 
-@Implementation(method="disableUser", description="Disables a user account")
+@Implementation(description="Disables a user account")
 public class DisableUserCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(DisableUserCmd.class.getName());
     private static final String s_name = "disableuserresponse";
@@ -85,17 +85,12 @@ public class DisableUserCmd extends BaseAsyncCmd {
         return  "disabling user: " + getId();
     }
 
-	@Override @SuppressWarnings("unchecked")
-	public UserResponse getResponse() {
-        UserAccount user = (UserAccount)getResponseObject();
-        UserResponse response = ApiResponseHelper.createUserResponse(user);
-        response.setResponseName(getName());
-        return response;
-	}
 	
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        UserAccount result = _accountService.disableUser(this);
-        return result;
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        UserAccount user = _accountService.disableUser(this);
+        UserResponse response = ApiResponseHelper.createUserResponse(user);
+        response.setResponseName(getName()); 
+        this.setResponseObject(response);
     }
 }

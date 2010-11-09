@@ -33,7 +33,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 
-@Implementation(method="createDomain", description="Creates a domain")
+@Implementation(description="Creates a domain")
 public class CreateDomainCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateDomainCmd.class.getName());
 
@@ -71,23 +71,16 @@ public class CreateDomainCmd extends BaseCmd {
     public String getName() {
         return s_name;
     }
-
-    @Override @SuppressWarnings("unchecked")
-    public DomainResponse getResponse() {
-        DomainVO domain = (DomainVO)getResponseObject();
+    
+    @Override
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        DomainVO domain = _mgr.createDomain(this);
         if (domain != null) {
             DomainResponse response = ApiResponseHelper.createDomainResponse(domain);
             response.setResponseName(getName());
-            return response;
+            this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create domain");
         }
-    }
-    
-    @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        DomainVO domain = _mgr.createDomain(this);
-        return domain;
-        //set response object here; change return type to void
     }
 }

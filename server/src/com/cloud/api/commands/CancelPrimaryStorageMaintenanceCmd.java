@@ -33,12 +33,11 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(method="cancelPrimaryStorageForMaintenance", manager=StorageManager.class)
+@Implementation(description="Cancels maintenance for primary storage")
 public class CancelPrimaryStorageMaintenanceCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(CancelPrimaryStorageMaintenanceCmd.class.getName());
 	
@@ -93,18 +92,12 @@ public class CancelPrimaryStorageMaintenanceCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  "canceling maintenance for primary storage pool: " + getId();
     }
-
-	@Override @SuppressWarnings("unchecked")
-	public StoragePoolResponse getResponse() {
-	    StoragePoolVO primaryStorage = (StoragePoolVO)getResponseObject();
-	    StoragePoolResponse response = ApiResponseHelper.createStoragePoolResponse(primaryStorage);
-        response.setResponseName(getName());
-		return response;
-	}
 	
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         StoragePoolVO result = _storageMgr.cancelPrimaryStorageForMaintenance(this);
-        return result;
+        StoragePoolResponse response = ApiResponseHelper.createStoragePoolResponse(result);
+        response.setResponseName(getName());
+        this.setResponseObject(response);
     }
 }

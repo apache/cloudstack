@@ -37,7 +37,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.service.ServiceOfferingVO;
 
-@Implementation(method="searchForServiceOfferings", description="Lists all available service offerings.")
+@Implementation(description="Lists all available service offerings.")
 public class ListServiceOfferingsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListServiceOfferingsCmd.class.getName());
 
@@ -80,11 +80,10 @@ public class ListServiceOfferingsCmd extends BaseListCmd {
     public String getName() {
         return s_name;
     }
-
-    @Override @SuppressWarnings("unchecked")
-    public ListResponse<ServiceOfferingResponse> getResponse() {
-        List<ServiceOfferingVO> offerings = (List<ServiceOfferingVO>)getResponseObject();
-
+    
+    @Override
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        List<ServiceOfferingVO> offerings = _mgr.searchForServiceOfferings(this);
         ListResponse<ServiceOfferingResponse> response = new ListResponse<ServiceOfferingResponse>();
         List<ServiceOfferingResponse> offeringResponses = new ArrayList<ServiceOfferingResponse>();
         for (ServiceOfferingVO offering : offerings) {
@@ -95,12 +94,6 @@ public class ListServiceOfferingsCmd extends BaseListCmd {
 
         response.setResponses(offeringResponses);
         response.setResponseName(getName());
-        return response;
-    }
-    
-    @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<ServiceOfferingVO> result = _mgr.searchForServiceOfferings(this);
-        return result;
+        this.setResponseObject(response);
     }
 }

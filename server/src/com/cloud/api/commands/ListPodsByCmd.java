@@ -38,7 +38,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 
-@Implementation(method="searchForPods", description="Lists all Pods.")
+@Implementation(description="Lists all Pods.")
 public class ListPodsByCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListPodsByCmd.class.getName());
 
@@ -83,13 +83,12 @@ public class ListPodsByCmd extends BaseListCmd {
         return s_name;
     }
 
-    @Override @SuppressWarnings("unchecked")
-    public ListResponse<PodResponse> getResponse() {
-        List<HostPodVO> pods = (List<HostPodVO>)getResponseObject();
-
+    @Override
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        List<HostPodVO> result = _mgr.searchForPods(this);
         ListResponse<PodResponse> response = new ListResponse<PodResponse>();
         List<PodResponse> podResponses = new ArrayList<PodResponse>();
-        for (HostPodVO pod : pods) {
+        for (HostPodVO pod : result) {
             PodResponse podResponse = ApiResponseHelper.createPodResponse(pod);
             podResponse.setObjectName("pod");
             podResponses.add(podResponse);
@@ -97,12 +96,6 @@ public class ListPodsByCmd extends BaseListCmd {
 
         response.setResponses(podResponses);
         response.setResponseName(getName());
-        return response;
-    }
-    
-    @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<HostPodVO> result = _mgr.searchForPods(this);
-        return result;
+        this.setResponseObject(response);
     }
 }

@@ -44,7 +44,7 @@ import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.exception.ExecutionException;
 
-@Implementation(method="deployVirtualMachine", description="Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.")
+@Implementation(description="Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.")
 public class DeployVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeployVMCmd.class.getName());
     
@@ -196,25 +196,19 @@ public class DeployVMCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  "deploying Vm";
     }
-
-    @Override @SuppressWarnings("unchecked")
-    public UserVmResponse getResponse() {
-        UserVm userVm = (UserVm)getResponseObject();
-        UserVmResponse response = ApiResponseHelper.createUserVmResponse(userVm);
-        
-        // FIXME:  where will the password come from in this case?
-//        if (templatePasswordEnabled) { 
-//            response.setPassword(getPassword());
-//        } 
-        response.setResponseName(getName());
-        return response;
-    }
     
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, StorageUnavailableException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, StorageUnavailableException{
         try {
             UserVm result = _mgr.deployVirtualMachine(this);
-            return result;
+            UserVmResponse response = ApiResponseHelper.createUserVmResponse(result);
+            
+            // FIXME:  where will the password come from in this case?
+//            if (templatePasswordEnabled) { 
+//                response.setPassword(getPassword());
+//            } 
+            response.setResponseName(getName());
+            this.setResponseObject(response);
         } catch (ResourceAllocationException ex) {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
         } catch (ExecutionException ex1) {

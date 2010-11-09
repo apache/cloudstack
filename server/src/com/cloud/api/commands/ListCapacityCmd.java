@@ -47,7 +47,7 @@ import com.cloud.server.Criteria;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePoolVO;
 
-@Implementation(method="listCapacities", description="Lists capacity.")
+@Implementation(description="Lists capacity.")
 public class ListCapacityCmd extends BaseListCmd {
 
     public static final Logger s_logger = Logger.getLogger(ListCapacityCmd.class.getName());
@@ -109,44 +109,6 @@ public class ListCapacityCmd extends BaseListCmd {
             pageSizeVal = pageSize.longValue();
         }
         return pageSizeVal;
-    }
-
-    @Override @SuppressWarnings("unchecked")
-    public ListResponse<CapacityResponse> getResponse() {
-        List<CapacityVO> capacities = (List<CapacityVO>)getResponseObject();
-
-        ListResponse<CapacityResponse> response = new ListResponse<CapacityResponse>();
-        List<CapacityResponse> capacityResponses = new ArrayList<CapacityResponse>();
-        List<CapacityVO> summedCapacities = sumCapacities(capacities);
-        for (CapacityVO summedCapacity : summedCapacities) {
-            CapacityResponse capacityResponse = new CapacityResponse();
-            capacityResponse.setCapacityTotal(summedCapacity.getTotalCapacity());
-            capacityResponse.setCapacityType(summedCapacity.getCapacityType());
-            capacityResponse.setCapacityUsed(summedCapacity.getUsedCapacity());
-            if (summedCapacity.getPodId() != null) {
-                capacityResponse.setPodId(summedCapacity.getPodId());
-                if (summedCapacity.getPodId() > 0) {
-                    capacityResponse.setPodName(ApiDBUtils.findPodById(summedCapacity.getPodId()).getName());
-                } else {
-                	capacityResponse.setPodName("All");
-                }
-            }
-            capacityResponse.setZoneId(summedCapacity.getDataCenterId());
-            capacityResponse.setZoneName(ApiDBUtils.findZoneById(summedCapacity.getDataCenterId()).getName());
-            if (summedCapacity.getTotalCapacity() != 0) {
-            	float computed = ((float)summedCapacity.getUsedCapacity() / (float)summedCapacity.getTotalCapacity() * 100f);
-                capacityResponse.setPercentUsed(s_percentFormat.format((float)summedCapacity.getUsedCapacity() / (float)summedCapacity.getTotalCapacity() * 100f));
-            } else {
-                capacityResponse.setPercentUsed(s_percentFormat.format(0L));
-            }
-
-            capacityResponse.setObjectName("capacity");
-            capacityResponses.add(capacityResponse);
-        }
-
-        response.setResponses(capacityResponses);
-        response.setResponseName(getName());
-        return response;
     }
 
     private List<CapacityVO> sumCapacities(List<CapacityVO> hostCapacities) {	        
@@ -238,8 +200,39 @@ public class ListCapacityCmd extends BaseListCmd {
     }
     
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         List<CapacityVO> result = _mgr.listCapacities(this);
-        return result;
+        ListResponse<CapacityResponse> response = new ListResponse<CapacityResponse>();
+        List<CapacityResponse> capacityResponses = new ArrayList<CapacityResponse>();
+        List<CapacityVO> summedCapacities = sumCapacities(result);
+        for (CapacityVO summedCapacity : summedCapacities) {
+            CapacityResponse capacityResponse = new CapacityResponse();
+            capacityResponse.setCapacityTotal(summedCapacity.getTotalCapacity());
+            capacityResponse.setCapacityType(summedCapacity.getCapacityType());
+            capacityResponse.setCapacityUsed(summedCapacity.getUsedCapacity());
+            if (summedCapacity.getPodId() != null) {
+                capacityResponse.setPodId(summedCapacity.getPodId());
+                if (summedCapacity.getPodId() > 0) {
+                    capacityResponse.setPodName(ApiDBUtils.findPodById(summedCapacity.getPodId()).getName());
+                } else {
+                    capacityResponse.setPodName("All");
+                }
+            }
+            capacityResponse.setZoneId(summedCapacity.getDataCenterId());
+            capacityResponse.setZoneName(ApiDBUtils.findZoneById(summedCapacity.getDataCenterId()).getName());
+            if (summedCapacity.getTotalCapacity() != 0) {
+                float computed = ((float)summedCapacity.getUsedCapacity() / (float)summedCapacity.getTotalCapacity() * 100f);
+                capacityResponse.setPercentUsed(s_percentFormat.format((float)summedCapacity.getUsedCapacity() / (float)summedCapacity.getTotalCapacity() * 100f));
+            } else {
+                capacityResponse.setPercentUsed(s_percentFormat.format(0L));
+            }
+
+            capacityResponse.setObjectName("capacity");
+            capacityResponses.add(capacityResponse);
+        }
+
+        response.setResponses(capacityResponses);
+        response.setResponseName(getName());
+        this.setResponseObject(response);
     }
 }

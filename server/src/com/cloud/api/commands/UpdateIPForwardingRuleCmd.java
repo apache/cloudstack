@@ -18,10 +18,9 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.FirewallRuleVO;
 import com.cloud.network.IPAddressVO;
-import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
 
-@Implementation(method="updatePortForwardingRule", manager=ManagementServer.class, description="Updates a port forwarding rule.  Only the private port and the virtual machine can be updated.")
+@Implementation(description="Updates a port forwarding rule.  Only the private port and the virtual machine can be updated.")
 public class UpdateIPForwardingRuleCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateIPForwardingRuleCmd.class.getName());
     private static final String s_name = "updateportforwardingruleresponse";
@@ -106,17 +105,11 @@ public class UpdateIPForwardingRuleCmd extends BaseAsyncCmd {
         return  "updating port forwarding rule";
     }
 
-	@Override @SuppressWarnings("unchecked")
-	public FirewallRuleResponse getResponse() {
-	    FirewallRuleVO fwRule = (FirewallRuleVO)getResponseObject();
-	    FirewallRuleResponse response = ApiResponseHelper.createFirewallRuleResponse(fwRule);
-	    response.setResponseName(getName());
-	    return response;
-	}
-	
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         FirewallRuleVO result = _mgr.updatePortForwardingRule(this);
-        return result;
+        FirewallRuleResponse response = ApiResponseHelper.createFirewallRuleResponse(result);
+        response.setResponseName(getName());
+        this.setResponseObject(response);
     }
 }

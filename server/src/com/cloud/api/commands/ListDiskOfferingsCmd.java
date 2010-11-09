@@ -37,7 +37,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.storage.DiskOfferingVO;
 
-@Implementation(method="searchForDiskOfferings", description="Lists all available disk offerings.")
+@Implementation(description="Lists all available disk offerings.")
 public class ListDiskOfferingsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListDiskOfferingsCmd.class.getName());
 
@@ -81,13 +81,12 @@ public class ListDiskOfferingsCmd extends BaseListCmd {
         return s_name;
     }
 
-    @Override @SuppressWarnings("unchecked")
-    public ListResponse<DiskOfferingResponse> getResponse() {
-        List<DiskOfferingVO> offerings = (List<DiskOfferingVO>)getResponseObject();
-
+    @Override
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        List<DiskOfferingVO> result = _mgr.searchForDiskOfferings(this);
         ListResponse<DiskOfferingResponse> response = new ListResponse<DiskOfferingResponse>();
         List<DiskOfferingResponse> diskOfferingResponses = new ArrayList<DiskOfferingResponse>();
-        for (DiskOfferingVO offering : offerings) {
+        for (DiskOfferingVO offering : result) {
             DiskOfferingResponse diskOffResp = ApiResponseHelper.createDiskOfferingResponse(offering);
             diskOffResp.setObjectName("diskoffering");
             diskOfferingResponses.add(diskOffResp);
@@ -95,12 +94,6 @@ public class ListDiskOfferingsCmd extends BaseListCmd {
 
         response.setResponses(diskOfferingResponses);
         response.setResponseName(getName());
-        return response;
-    }
-    
-    @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<DiskOfferingVO> result = _mgr.searchForDiskOfferings(this);
-        return result;
+        this.setResponseObject(response);
     }
 }

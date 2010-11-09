@@ -31,7 +31,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.storage.preallocatedlun.PreallocatedLunVO;
 
-@Implementation(method="registerPreallocatedLun")
+@Implementation()
 public class RegisterPreallocatedLunCmd extends BaseCmd {
     private static final String s_name = "registerPreallocatedLunsResponse";
 
@@ -98,17 +98,11 @@ public class RegisterPreallocatedLunCmd extends BaseCmd {
         return s_name;
     }
 
-    @Override @SuppressWarnings("unchecked")
-    public PreallocatedLunResponse getResponse() {
-        PreallocatedLunVO preallocatedLun = (PreallocatedLunVO)getResponseObject();
-        PreallocatedLunResponse response = ApiResponseHelper.createPreallocatedLunResponse(preallocatedLun);
-        response.setResponseName(getName());
-        return response;
-    }
-    
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         PreallocatedLunVO result = _mgr.registerPreallocatedLun(this);
-        return result;
+        PreallocatedLunResponse response = ApiResponseHelper.createPreallocatedLunResponse(result);
+        response.setResponseName(getName());
+        this.setResponseObject(response);
     }
 }

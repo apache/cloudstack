@@ -37,10 +37,9 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 
-@Implementation(method="extract", manager=TemplateManager.class)
+@Implementation(description="Extracts an ISO")
 public class ExtractIsoCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(ExtractIsoCmd.class.getName());
 
@@ -111,37 +110,30 @@ public class ExtractIsoCmd extends BaseAsyncCmd {
         return  "Extraction job";
     }
 
-    @Override @SuppressWarnings("unchecked")
-    public ExtractResponse getResponse() {
-        Long uploadId = (Long)getResponseObject();
-        UploadVO uploadInfo = ApiDBUtils.findUploadById(uploadId);
-        
-        ExtractResponse response = new ExtractResponse();
-        response.setId(id);
-        response.setName(ApiDBUtils.findTemplateById(id).getName());        
-        response.setZoneId(zoneId);
-        response.setZoneName(ApiDBUtils.findZoneById(zoneId).getName());
-        response.setMode(mode);
-        response.setUploadId(uploadId);
-        response.setState(uploadInfo.getUploadState().toString());
-        response.setAccountId(getAccountId());        
-        //FIX ME - Need to set the url once the gson jar is upgraded since it is throwing an error right now due to a bug.
-        //response.setUrl(uploadInfo.getUploadUrl()); 
-        response.setUrl(uploadInfo.getUploadUrl().replaceAll("/", "%2F"));
-        response.setResponseName(getName());
-        response.setObjectName("iso");
-        return response;
-    }
-
     public static String getStaticName() {
         return s_name;
     }
     
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException{
         try {
-            Long result = _templateMgr.extract(this);
-            return result;
+            Long uploadId = _templateMgr.extract(this);
+            UploadVO uploadInfo = ApiDBUtils.findUploadById(uploadId); 
+            ExtractResponse response = new ExtractResponse();
+            response.setId(id);
+            response.setName(ApiDBUtils.findTemplateById(id).getName());        
+            response.setZoneId(zoneId);
+            response.setZoneName(ApiDBUtils.findZoneById(zoneId).getName());
+            response.setMode(mode);
+            response.setUploadId(uploadId);
+            response.setState(uploadInfo.getUploadState().toString());
+            response.setAccountId(getAccountId());        
+            //FIX ME - Need to set the url once the gson jar is upgraded since it is throwing an error right now due to a bug.
+            //response.setUrl(uploadInfo.getUploadUrl()); 
+            response.setUrl(uploadInfo.getUploadUrl().replaceAll("/", "%2F"));
+            response.setResponseName(getName());
+            response.setObjectName("iso");
+            this.setResponseObject(response);
         } catch (InternalErrorException ex) {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
         }

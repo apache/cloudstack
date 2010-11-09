@@ -37,7 +37,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 
-@Implementation(method="searchForAsyncJobs", description="Lists all pending asynchronous jobs for the account.")
+@Implementation(description="Lists all pending asynchronous jobs for the account.")
 public class ListAsyncJobsCmd extends BaseListCmd {
     private static final String s_name = "listasyncjobsresponse";
 
@@ -79,13 +79,12 @@ public class ListAsyncJobsCmd extends BaseListCmd {
         return s_name;
     }
 
-    @Override @SuppressWarnings("unchecked")
-    public ListResponse<AsyncJobResponse> getResponse() {
-        List<AsyncJobVO> jobs = (List<AsyncJobVO>)getResponseObject();
-
+    @Override
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        List<AsyncJobVO> result = _mgr.searchForAsyncJobs(this);
         ListResponse<AsyncJobResponse> response = new ListResponse<AsyncJobResponse>();
         List<AsyncJobResponse> jobResponses = new ArrayList<AsyncJobResponse>();
-        for (AsyncJobVO job : jobs) {
+        for (AsyncJobVO job : result) {
             AsyncJobResponse jobResponse = new AsyncJobResponse();
             jobResponse.setAccountId(job.getAccountId());
             jobResponse.setCmd(job.getCmd());
@@ -105,12 +104,6 @@ public class ListAsyncJobsCmd extends BaseListCmd {
 
         response.setResponses(jobResponses);
         response.setResponseName(getName());
-        return response;
-    }
-    
-    @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<AsyncJobVO> result = _mgr.searchForAsyncJobs(this);
-        return result;
+        this.setResponseObject(response);
     }
 }

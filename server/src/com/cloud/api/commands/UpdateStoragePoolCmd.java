@@ -32,10 +32,9 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
 
-@Implementation(method="updateStoragePool", manager=StorageManager.class, description="Updates a storage pool.")
+@Implementation(description="Updates a storage pool.")
 public class UpdateStoragePoolCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateStoragePoolCmd.class.getName());
 
@@ -71,18 +70,12 @@ public class UpdateStoragePoolCmd extends BaseCmd {
     public String getName() {
         return s_name;
     }
-
-    @Override @SuppressWarnings("unchecked")
-    public StoragePoolResponse getResponse() {
-        StoragePoolVO pool = (StoragePoolVO) getResponseObject();
-        StoragePoolResponse response = ApiResponseHelper.createStoragePoolResponse(pool);
-        response.setResponseName(getName());
-        return response;
-    }
     
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         StoragePoolVO result = _storageMgr.updateStoragePool(this);
-        return result;
+        StoragePoolResponse response = ApiResponseHelper.createStoragePoolResponse(result);
+        response.setResponseName(getName());
+        this.setResponseObject(response);
     }
 }

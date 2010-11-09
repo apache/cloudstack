@@ -38,10 +38,9 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.user.Account;
 
-@Implementation(method="createSnapshot", manager=SnapshotManager.class, description="Creates an instant snapshot of a volume.")
+@Implementation(description="Creates an instant snapshot of a volume.")
 public class CreateSnapshotCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(CreateSnapshotCmd.class.getName());
 	private static final String s_name = "createsnapshotresponse";
@@ -109,24 +108,16 @@ public class CreateSnapshotCmd extends BaseAsyncCmd {
         return  "creating snapshot for volume: " + getVolumeId();
     }
 
-    @Override @SuppressWarnings("unchecked")
-    public SnapshotResponse getResponse() {
-        SnapshotVO snapshot = (SnapshotVO)getResponseObject();
-
-        if (snapshot != null) {
-            SnapshotResponse response = ApiResponseHelper.createSnapshotResponse(snapshot);
-            response.setResponseName(getName());
-            return response;
-        }
-
-        throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create snapshot due to an internal error creating snapshot for volume " + volumeId);
-    }
-    
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         try {
             SnapshotVO snapshot = _snapshotMgr.createSnapshot(this);
-            return snapshot;
+            if (snapshot != null) {
+                SnapshotResponse response = ApiResponseHelper.createSnapshotResponse(snapshot);
+                response.setResponseName(getName());
+                this.setResponseObject(response);
+            }
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create snapshot due to an internal error creating snapshot for volume " + volumeId);
         } catch (ResourceAllocationException ex) {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
         }

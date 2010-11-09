@@ -29,10 +29,9 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.server.ManagementServer;
 import com.cloud.storage.VMTemplateVO;
 
-@Implementation(method="updateTemplate", manager=ManagementServer.class, description="Updates attributes of a template.")
+@Implementation(description="Updates attributes of a template.")
 public class UpdateTemplateCmd extends UpdateTemplateOrIsoCmd {
 	public static final Logger s_logger = Logger.getLogger(UpdateTemplateCmd.class.getName());
     private static final String s_name = "updatetemplateresponse";
@@ -56,30 +55,29 @@ public class UpdateTemplateCmd extends UpdateTemplateOrIsoCmd {
     
     @SuppressWarnings("unchecked")
     public TemplateResponse getResponse() {
-        TemplateResponse response = new TemplateResponse();
-        VMTemplateVO responseObject = (VMTemplateVO)getResponseObject();
-        if (responseObject != null) {
-            response.setId(responseObject.getId());
-            response.setName(responseObject.getName());
-            response.setDisplayText(responseObject.getDisplayText());
-            response.setPublic(responseObject.isPublicTemplate());
-            response.setCreated(responseObject.getCreated());
-            response.setFormat(responseObject.getFormat());
-            response.setOsTypeId(responseObject.getGuestOSId());
-            response.setPasswordEnabled(responseObject.getEnablePassword());
-            response.setCrossZones(responseObject.isCrossZones());
-            response.setObjectName("template");
-        } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update template");
-        }
-
-        response.setResponseName(getName());
-        return response;
+       return null;
     }
     
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException{
         VMTemplateVO result = _mgr.updateTemplate(this);
-        return result;
+        TemplateResponse response = new TemplateResponse();
+        if (result != null) {
+            response.setId(result.getId());
+            response.setName(result.getName());
+            response.setDisplayText(result.getDisplayText());
+            response.setPublic(result.isPublicTemplate());
+            response.setCreated(result.getCreated());
+            response.setFormat(result.getFormat());
+            response.setOsTypeId(result.getGuestOSId());
+            response.setPasswordEnabled(result.getEnablePassword());
+            response.setCrossZones(result.isCrossZones());
+            response.setObjectName("template");
+            response.setResponseName(getName());
+            
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update template");
+        }
     }
 }

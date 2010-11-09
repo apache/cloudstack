@@ -37,10 +37,9 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.Snapshot.SnapshotType;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.user.Account;
 
-@Implementation(method="createSnapshotInternal", manager=SnapshotManager.class, description="Creates an instant snapshot of a volume.")
+@Implementation(description="Creates an instant snapshot of a volume.")
 public class CreateSnapshotInternalCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(CreateSnapshotInternalCmd.class.getName());
     private static final String s_name = "createsnapshotresponse";
@@ -101,38 +100,31 @@ public class CreateSnapshotInternalCmd extends BaseAsyncCmd {
         return  "creating snapshot for volume: " + getVolumeId();
     }
 
-    @Override @SuppressWarnings("unchecked")
-    public SnapshotResponse getResponse() {
-        SnapshotVO snapshot = (SnapshotVO)getResponseObject();
-
-        SnapshotResponse response = new SnapshotResponse();
-        response.setId(snapshot.getId());
-
-        Account account = ApiDBUtils.findAccountById(snapshot.getAccountId());
-        if (account != null) {
-            response.setAccountName(account.getAccountName());
-            response.setDomainId(account.getDomainId());
-            response.setDomainName(ApiDBUtils.findDomainById(account.getDomainId()).getName());
-        }
-
-        VolumeVO volume = ApiDBUtils.findVolumeById(snapshot.getVolumeId());
-        String snapshotTypeStr = SnapshotType.values()[snapshot.getSnapshotType()].name();
-        response.setSnapshotType(snapshotTypeStr);
-        response.setVolumeId(snapshot.getVolumeId());
-        response.setVolumeName(volume.getName());
-        response.setVolumeType(volume.getVolumeType().toString());
-        response.setCreated(snapshot.getCreated());
-        response.setName(snapshot.getName());
-        response.setObjectName("snapshot");
-        response.setResponseName(getName());
-        return response;
-    }
-    
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         try {
             SnapshotVO snapshot = _snapshotMgr.createSnapshotInternal(this);
-            return snapshot;
+            SnapshotResponse response = new SnapshotResponse();
+            response.setId(snapshot.getId());
+
+            Account account = ApiDBUtils.findAccountById(snapshot.getAccountId());
+            if (account != null) {
+                response.setAccountName(account.getAccountName());
+                response.setDomainId(account.getDomainId());
+                response.setDomainName(ApiDBUtils.findDomainById(account.getDomainId()).getName());
+            }
+
+            VolumeVO volume = ApiDBUtils.findVolumeById(snapshot.getVolumeId());
+            String snapshotTypeStr = SnapshotType.values()[snapshot.getSnapshotType()].name();
+            response.setSnapshotType(snapshotTypeStr);
+            response.setVolumeId(snapshot.getVolumeId());
+            response.setVolumeName(volume.getName());
+            response.setVolumeType(volume.getVolumeType().toString());
+            response.setCreated(snapshot.getCreated());
+            response.setName(snapshot.getName());
+            response.setObjectName("snapshot");
+            response.setResponseName(getName());
+            this.setResponseObject(response);
         } catch (ResourceAllocationException ex) {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
         }

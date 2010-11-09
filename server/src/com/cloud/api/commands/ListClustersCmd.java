@@ -38,7 +38,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 
-@Implementation(method="searchForClusters", description="Lists clusters.")
+@Implementation(description="Lists clusters.")
 public class ListClustersCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListServiceOfferingsCmd.class.getName());
 
@@ -89,14 +89,13 @@ public class ListClustersCmd extends BaseListCmd {
     public String getName() {
         return s_name;
     }
-
-    @Override @SuppressWarnings("unchecked")
-    public ListResponse<ClusterResponse> getResponse() {
-        List<ClusterVO> clusters = (List<ClusterVO>)getResponseObject();
-
+    
+    @Override
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        List<ClusterVO> result = _mgr.searchForClusters(this);
         ListResponse<ClusterResponse> response = new ListResponse<ClusterResponse>();
         List<ClusterResponse> clusterResponses = new ArrayList<ClusterResponse>();
-        for (ClusterVO cluster : clusters) {
+        for (ClusterVO cluster : result) {
             ClusterResponse clusterResponse = ApiResponseHelper.createClusterResponse(cluster);
             clusterResponse.setObjectName("cluster");
             clusterResponses.add(clusterResponse);
@@ -104,12 +103,6 @@ public class ListClustersCmd extends BaseListCmd {
 
         response.setResponses(clusterResponses);
         response.setResponseName(getName());
-        return response;
-    }
-    
-    @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<ClusterVO> result = _mgr.searchForClusters(this);
-        return result;
+        this.setResponseObject(response);
     }
 }

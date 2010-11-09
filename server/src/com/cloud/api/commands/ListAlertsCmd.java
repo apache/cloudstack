@@ -36,7 +36,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 
-@Implementation(method="searchForAlerts", description="Lists all alerts.")
+@Implementation(description="Lists all alerts.")
 public class ListAlertsCmd extends BaseListCmd {
 
     public static final Logger s_logger = Logger.getLogger(ListAlertsCmd.class.getName());
@@ -66,14 +66,13 @@ public class ListAlertsCmd extends BaseListCmd {
     public String getName() {
         return s_name;
     }
-
-    @Override @SuppressWarnings("unchecked")
-    public ListResponse<AlertResponse> getResponse() {
-        List<AlertVO> alertList = (List<AlertVO>)getResponseObject();
-
+    
+    @Override
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        List<AlertVO> result = _mgr.searchForAlerts(this);
         ListResponse<AlertResponse> response = new ListResponse<AlertResponse>();
         List<AlertResponse> alertResponseList = new ArrayList<AlertResponse>();
-        for (AlertVO alert : alertList) {
+        for (AlertVO alert : result) {
             AlertResponse alertResponse = new AlertResponse();
             alertResponse.setId(alert.getId());
             alertResponse.setAlertType(alert.getType());
@@ -86,12 +85,6 @@ public class ListAlertsCmd extends BaseListCmd {
 
         response.setResponses(alertResponseList);
         response.setResponseName(getName());
-        return response;
-    }
-    
-    @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<AlertVO> result = _mgr.searchForAlerts(this);
-        return result;
+        this.setResponseObject(response);
     }
 }

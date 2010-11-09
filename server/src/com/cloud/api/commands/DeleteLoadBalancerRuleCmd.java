@@ -34,10 +34,9 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.LoadBalancerVO;
-import com.cloud.network.NetworkManager;
 import com.cloud.user.Account;
 
-@Implementation(method="deleteLoadBalancerRule", manager=NetworkManager.class, description="Deletes a load balancer rule.")
+@Implementation(description="Deletes a load balancer rule.")
 public class DeleteLoadBalancerRuleCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteLoadBalancerRuleCmd.class.getName());
     private static final String s_name = "deleteloadbalancerruleresponse";
@@ -85,19 +84,15 @@ public class DeleteLoadBalancerRuleCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  "deleting load balancer: " + getId();
     }
-
-	@Override @SuppressWarnings("unchecked")
-	public SuccessResponse getResponse() {
-		if (getResponseObject() == null || (Boolean)getResponseObject()) {
-	    	return new SuccessResponse(getName());
-	    } else {
-	    	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete load balancer rule");
-	    }
-	}
 	
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         boolean result = _networkMgr.deleteLoadBalancerRule(this);
-        return result;
+        if (result) {
+            SuccessResponse response = new SuccessResponse(getName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete load balancer");
+        }
     }
 }

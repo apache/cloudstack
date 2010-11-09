@@ -37,7 +37,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.storage.GuestOSVO;
 
-@Implementation(method="listGuestOSByCriteria", description="Lists all supported OS types for this cloud.")
+@Implementation(description="Lists all supported OS types for this cloud.")
 public class ListGuestOsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListIsosCmd.class.getName());
 
@@ -85,14 +85,13 @@ public class ListGuestOsCmd extends BaseListCmd {
     public String getName() {
         return s_name;
     }
-
-    @Override @SuppressWarnings("unchecked")
-    public ListResponse<GuestOSResponse> getResponse() {
-        List<GuestOSVO> guestOSList = (List<GuestOSVO>)getResponseObject();
-
+    
+    @Override
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        List<GuestOSVO> result = _mgr.listGuestOSByCriteria(this);
         ListResponse<GuestOSResponse> response = new ListResponse<GuestOSResponse>();
         List<GuestOSResponse> osResponses = new ArrayList<GuestOSResponse>();
-        for (GuestOSVO guestOS : guestOSList) {
+        for (GuestOSVO guestOS : result) {
             GuestOSResponse guestOSResponse = new GuestOSResponse();
             guestOSResponse.setDescription(guestOS.getDisplayName());
             guestOSResponse.setId(guestOS.getId());
@@ -104,12 +103,6 @@ public class ListGuestOsCmd extends BaseListCmd {
 
         response.setResponses(osResponses);
         response.setResponseName(getName());
-        return response;
-    }
-    
-    @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<GuestOSVO> result = _mgr.listGuestOSByCriteria(this);
-        return result;
+        this.setResponseObject(response);
     }
 }

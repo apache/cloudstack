@@ -38,7 +38,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.storage.preallocatedlun.PreallocatedLunVO;
 
-@Implementation(method="getPreAllocatedLuns")
+@Implementation()
 public class ListPreallocatedLunsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListPreallocatedLunsCmd.class.getName());
 
@@ -77,10 +77,9 @@ public class ListPreallocatedLunsCmd extends BaseListCmd {
         return s_name;
     }
 
-    @Override @SuppressWarnings("unchecked")
-    public ListResponse<PreallocatedLunResponse> getResponse() {
-        List<PreallocatedLunVO> preallocatedLuns = (List<PreallocatedLunVO>)getResponseObject();
-
+    @Override
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        List<PreallocatedLunVO> preallocatedLuns = _mgr.getPreAllocatedLuns(this);
         ListResponse<PreallocatedLunResponse> response = new ListResponse<PreallocatedLunResponse>();
         List<PreallocatedLunResponse> lunResponses = new ArrayList<PreallocatedLunResponse>();
         for (PreallocatedLunVO preallocatedLun : preallocatedLuns) {
@@ -92,12 +91,6 @@ public class ListPreallocatedLunsCmd extends BaseListCmd {
 
         response.setResponses(lunResponses);
         response.setResponseName(getName());
-        return response;
-    }
-    
-    @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<PreallocatedLunVO> result = _mgr.getPreAllocatedLuns(this);
-        return result;
+        this.setResponseObject(response);
     }
 }

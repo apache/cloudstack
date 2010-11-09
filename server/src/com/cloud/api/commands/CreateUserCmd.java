@@ -34,7 +34,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.UserAccount;
 
-@Implementation(method="createUser", description="Creates a user account")
+@Implementation(description="Creates a user account")
 public class CreateUserCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateUserCmd.class.getName());
 
@@ -126,18 +126,12 @@ public class CreateUserCmd extends BaseCmd {
     public String getName() {
         return s_name;
     }
-
-    @Override @SuppressWarnings("unchecked")
-    public UserResponse getResponse() {
-        UserAccount user = (UserAccount)getResponseObject();
-        UserResponse response = ApiResponseHelper.createUserResponse(user);
-        response.setResponseName(getName());
-        return response;
-    }
     
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        UserAccount result = _accountService.createUser(this);
-        return result;
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        UserAccount user = _accountService.createUser(this);  
+        UserResponse response = ApiResponseHelper.createUserResponse(user);
+        response.setResponseName(getName());
+        this.setResponseObject(response);
     }
 }

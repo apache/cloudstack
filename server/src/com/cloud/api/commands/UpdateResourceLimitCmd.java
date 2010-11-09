@@ -28,15 +28,13 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.ResourceLimitResponse;
 import com.cloud.configuration.ResourceLimit;
-import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.user.AccountManager;
 
-@Implementation(method="updateResourceLimit", manager=AccountManager.class, description="Updates resource limits for an account or domain.")
+@Implementation(description="Updates resource limits for an account or domain.")
 public class UpdateResourceLimitCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateResourceLimitCmd.class.getName());
 
@@ -92,17 +90,11 @@ public class UpdateResourceLimitCmd extends BaseCmd {
         return s_name;
     }
 
-    @Override @SuppressWarnings("unchecked")
-    public ResourceLimitResponse getResponse() {
-        ResourceLimitVO limit = (ResourceLimitVO) getResponseObject();
-        ResourceLimitResponse response = ApiResponseHelper.createResourceLimitResponse(limit);
-        response.setResponseName(getName());
-        return response;
-    }
-    
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         ResourceLimit result = _accountService.updateResourceLimit(this);
-        return result;
+        ResourceLimitResponse response = ApiResponseHelper.createResourceLimitResponse(result);
+        response.setResponseName(getName());
+        this.setResponseObject(response);
     }
 }

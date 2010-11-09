@@ -24,9 +24,8 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.server.ManagementServer;
 
-@Implementation(method="updateTemplate", manager=ManagementServer.class)
+@Implementation()
 public abstract class UpdateTemplateOrIsoCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateIsoCmd.class.getName());
 

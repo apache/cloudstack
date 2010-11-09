@@ -34,9 +34,8 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.FirewallRuleVO;
-import com.cloud.network.NetworkManager;
 
-@Implementation(method="createPortForwardingRule", manager=NetworkManager.class, description="Creates a port forwarding rule")
+@Implementation(description="Creates a port forwarding rule")
 public class CreateIPForwardingRuleCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateIPForwardingRuleCmd.class.getName());
 
@@ -95,24 +94,18 @@ public class CreateIPForwardingRuleCmd extends BaseCmd {
     public String getName() {
         return s_name;
     }
-
-    @Override @SuppressWarnings("unchecked")
-    public FirewallRuleResponse getResponse() {
-        FirewallRuleVO fwRule = (FirewallRuleVO)getResponseObject();
-        if (fwRule != null) {
-            FirewallRuleResponse fwResponse = ApiResponseHelper.createFirewallRuleResponse(fwRule);
-            fwResponse.setResponseName(getName());
-            return fwResponse;
-        }
-
-        throw new ServerApiException(NET_CREATE_IPFW_RULE_ERROR, "An existing rule for ipAddress / port / protocol of " + ipAddress + " / " + publicPort + " / " + protocol + " exits.");
-    }
     
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         try {
             FirewallRuleVO result = _networkMgr.createPortForwardingRule(this);
-            return result;
+            if (result != null) {
+                FirewallRuleResponse fwResponse = ApiResponseHelper.createFirewallRuleResponse(result);
+                fwResponse.setResponseName(getName());
+                this.setResponseObject(fwResponse);
+            } else {
+                throw new ServerApiException(NET_CREATE_IPFW_RULE_ERROR, "An existing rule for ipAddress / port / protocol of " + ipAddress + " / " + publicPort + " / " + protocol + " exits.");
+            }
         } catch (NetworkRuleConflictException ex) {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
         }

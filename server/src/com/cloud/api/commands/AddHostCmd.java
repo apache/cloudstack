@@ -22,7 +22,6 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.AgentManager;
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseCmd;
@@ -39,7 +38,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.HostVO;
 
-@Implementation(method="discoverHosts", manager=AgentManager.class, description="Adds a new host.")
+@Implementation(description="Adds a new host.")
 public class AddHostCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddHostCmd.class.getName());
 
@@ -111,32 +110,26 @@ public class AddHostCmd extends BaseCmd {
     public String getName() {
     	return s_name;
     }
-
-    @Override @SuppressWarnings("unchecked")
-    public ListResponse<HostResponse> getResponse() {
-    	List<HostVO> hosts = (List<HostVO>)getResponseObject();
-
-    	ListResponse<HostResponse> response = new ListResponse<HostResponse>();
-        List<HostResponse> hostResponses = new ArrayList<HostResponse>();
-        if (hosts != null) {
-            for (HostVO host : hosts) {
-	        	HostResponse hostResponse = ApiResponseHelper.createHostResponse(host);
-	            hostResponses.add(hostResponse);
-            }
-        } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add host");
-        }
-
-        response.setResponses(hostResponses);
-        response.setResponseName(getName());
-        return response;
-    }
     
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         try {
             List<HostVO> result = _agentMgr.discoverHosts(this);
-            return result;
+            ListResponse<HostResponse> response = new ListResponse<HostResponse>();
+            List<HostResponse> hostResponses = new ArrayList<HostResponse>();
+            if (result != null) {
+                for (HostVO host : result) {
+                    HostResponse hostResponse = ApiResponseHelper.createHostResponse(host);
+                    hostResponses.add(hostResponse);
+                }
+            } else {
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add host");
+            }
+
+            response.setResponses(hostResponses);
+            response.setResponseName(getName());
+            
+            this.setResponseObject(response);
         } catch (DiscoveryException ex) {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
         }

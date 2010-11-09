@@ -91,4 +91,5 @@ public abstract class BaseAsyncCmd extends BaseCmd {
     public void setStartEventId(Long startEventId) {
         this.startEventId = startEventId;
     }
+
 }

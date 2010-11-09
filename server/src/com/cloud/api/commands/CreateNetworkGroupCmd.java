@@ -31,10 +31,10 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.network.security.NetworkGroupManager;
 import com.cloud.network.security.NetworkGroupVO;
 
-@Implementation(method="createNetworkGroup", manager=NetworkGroupManager.class)
+//TODO - add description to implementation
+@Implementation()
 public class CreateNetworkGroupCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateNetworkGroupCmd.class.getName());
 
@@ -85,11 +85,10 @@ public class CreateNetworkGroupCmd extends BaseCmd {
     public String getName() {
         return s_name;
     }
-
-    @Override @SuppressWarnings("unchecked")
-    public NetworkGroupResponse getResponse() {
-        NetworkGroupVO group = (NetworkGroupVO)getResponseObject();
-
+    
+    @Override
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        NetworkGroupVO group = _networkGroupMgr.createNetworkGroup(this);
         NetworkGroupResponse response = new NetworkGroupResponse();
         response.setAccountName(group.getAccountName());
         response.setDescription(group.getDescription());
@@ -100,12 +99,6 @@ public class CreateNetworkGroupCmd extends BaseCmd {
 
         response.setResponseName(getName());
         response.setObjectName("securitygroup");
-        return response;
-    }
-    
-    @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        NetworkGroupVO result = _networkGroupMgr.createNetworkGroup(this);
-        return result;
+        this.setResponseObject(response);
     }
 }

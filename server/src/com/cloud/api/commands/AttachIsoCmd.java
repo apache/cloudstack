@@ -34,11 +34,10 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.vm.VMInstanceVO;
 
-@Implementation(method="attachIso", manager=TemplateManager.class, description="Attaches an ISO to a virtual machine.")
+@Implementation(description="Attaches an ISO to a virtual machine.")
 public class AttachIsoCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AttachIsoCmd.class.getName());
 
@@ -95,12 +94,11 @@ public class AttachIsoCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  "attaching ISO: " + getId() + " to vm: " + getVirtualMachineId();
     }
-
-    @Override @SuppressWarnings("unchecked")
-    public IsoVmResponse getResponse() {
-        Boolean responseObject = (Boolean)getResponseObject();
-      
-        if (responseObject != null && responseObject != false) {
+    
+    @Override
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        boolean result = _templateMgr.attachIso(this);
+        if (result) {
             IsoVmResponse response = new IsoVmResponse();
             VMTemplateVO iso = ApiDBUtils.findTemplateById(id);
             VMInstanceVO vmInstance = ApiDBUtils.findVMInstanceById(virtualMachineId);
@@ -115,15 +113,10 @@ public class AttachIsoCmd extends BaseAsyncCmd {
             response.setVirtualMachineState(vmInstance.getState().toString());            
             response.setResponseName(getName());
             response.setObjectName("iso");
-            return response;
+            
+            this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to attach iso");
         }
-    }
-    
-    @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        boolean result = _templateMgr.attachIso(this);
-        return result;
     }
 }

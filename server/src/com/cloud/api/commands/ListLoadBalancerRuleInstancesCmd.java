@@ -37,7 +37,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.vm.UserVmVO;
 
-@Implementation(method="listLoadBalancerInstances", description="List all virtual machine instances that are assigned to a load balancer rule.")
+@Implementation(description="List all virtual machine instances that are assigned to a load balancer rule.")
 public class ListLoadBalancerRuleInstancesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger (ListLoadBalancerRuleInstancesCmd.class.getName());
 
@@ -73,14 +73,13 @@ public class ListLoadBalancerRuleInstancesCmd extends BaseListCmd {
     public String getName() {
         return s_name;
     }
-
-    @Override @SuppressWarnings("unchecked")
-    public ListResponse<UserVmResponse> getResponse() {
-        List<UserVmVO> instances = (List<UserVmVO>)getResponseObject();
-
+    
+    @Override
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        List<UserVmVO> result = _mgr.listLoadBalancerInstances(this);
         ListResponse<UserVmResponse> response = new ListResponse<UserVmResponse>();
         List<UserVmResponse> vmResponses = new ArrayList<UserVmResponse>();
-        for (UserVmVO instance : instances) {
+        for (UserVmVO instance : result) {
             UserVmResponse userVmResponse = ApiResponseHelper.createUserVmResponse(instance);
             userVmResponse.setObjectName("loadbalancerruleinstance");
             vmResponses.add(userVmResponse);
@@ -88,12 +87,6 @@ public class ListLoadBalancerRuleInstancesCmd extends BaseListCmd {
 
         response.setResponses(vmResponses);
         response.setResponseName(getName());
-        return response;
-    }
-    
-    @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<UserVmVO> result = _mgr.listLoadBalancerInstances(this);
-        return result;
+        this.setResponseObject(response);
     }
 }

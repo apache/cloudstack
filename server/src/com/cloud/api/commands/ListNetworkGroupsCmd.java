@@ -38,10 +38,9 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.network.security.NetworkGroupManager;
 import com.cloud.network.security.NetworkGroupRulesVO;
 
-@Implementation(method="searchForNetworkGroupRules", manager=NetworkGroupManager.class)
+@Implementation(description="Lists network groups")
 public class ListNetworkGroupsCmd extends BaseListCmd {
 	public static final Logger s_logger = Logger.getLogger(ListNetworkGroupsCmd.class.getName());
 
@@ -92,9 +91,9 @@ public class ListNetworkGroupsCmd extends BaseListCmd {
         return s_name;
     }
 
-    @Override @SuppressWarnings("unchecked")
-    public ListResponse<NetworkGroupResponse> getResponse() {
-        List<NetworkGroupRulesVO> networkGroups = (List<NetworkGroupRulesVO>)getResponseObject();
+    @Override
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        List<NetworkGroupRulesVO> networkGroups = _networkGroupMgr.searchForNetworkGroupRules(this);
         List<NetworkGroupResultObject> groupResultObjs = NetworkGroupResultObject.transposeNetworkGroups(networkGroups);
 
         ListResponse<NetworkGroupResponse> response = new ListResponse<NetworkGroupResponse>();
@@ -143,12 +142,6 @@ public class ListNetworkGroupsCmd extends BaseListCmd {
 
         response.setResponses(netGrpResponses);
         response.setResponseName(getName());
-        return response;
-    }
-    
-    @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<NetworkGroupRulesVO> result = _networkGroupMgr.searchForNetworkGroupRules(this);
-        return result;
+        this.setResponseObject(response);
     }
 }

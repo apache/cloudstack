@@ -38,9 +38,8 @@ import com.cloud.exception.StorageUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.exception.ExecutionException;
-import com.cloud.vm.UserVmManager;
 
-@Implementation(method="startVirtualMachine", manager=UserVmManager.class, description="Starts a virtual machine.")
+@Implementation(description="Starts a virtual machine.")
 public class StartVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(StartVMCmd.class.getName());
 
@@ -93,20 +92,14 @@ public class StartVMCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  "starting user vm: " + getId();
     }
-
-    @Override @SuppressWarnings("unchecked")
-    public UserVmResponse getResponse() {
-        UserVm userVm = (UserVm)getResponseObject();
-        UserVmResponse recoverVmResponse = ApiResponseHelper.createUserVmResponse(userVm);
-        recoverVmResponse.setResponseName(getName());
-        return recoverVmResponse;
-	}
     
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, StorageUnavailableException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, StorageUnavailableException{
         try {
             UserVm result = _userVmService.startVirtualMachine(this);
-            return result;
+            UserVmResponse response = ApiResponseHelper.createUserVmResponse(result);
+            response.setResponseName(getName());
+            this.setResponseObject(response);
         } catch (ExecutionException ex) {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
         }

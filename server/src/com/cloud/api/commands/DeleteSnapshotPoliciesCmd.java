@@ -33,9 +33,8 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.storage.snapshot.SnapshotManager;
 
-@Implementation(method="deleteSnapshotPolicies", manager=SnapshotManager.class, description="Deletes snapshot policies for the account.")
+@Implementation(description="Deletes snapshot policies for the account.")
 public class DeleteSnapshotPoliciesCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteSnapshotPoliciesCmd.class.getName());
 
@@ -88,18 +87,14 @@ public class DeleteSnapshotPoliciesCmd extends BaseCmd {
         return s_name;
     }
 
-	@Override @SuppressWarnings("unchecked")
-	public SuccessResponse getResponse() {
-		if (getResponseObject() == null || (Boolean)getResponseObject()) {
-	    	return new SuccessResponse(getName());
-	    } else {
-	    	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete snapshot policy");
-	    }
-	}
-	
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         boolean result = _snapshotMgr.deleteSnapshotPolicies(this);
-        return result;
+        if (result) {
+            SuccessResponse response = new SuccessResponse(getName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete snapshot policy");
+        }
     }
 }

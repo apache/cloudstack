@@ -48,7 +48,7 @@ import com.cloud.storage.dao.VMTemplateDao.TemplateFilter;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(method="listTemplates", description="List all public, private, and privileged templates.")
+@Implementation(description="List all public, private, and privileged templates.")
 public class ListTemplatesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListTemplatesCmd.class.getName());
 
@@ -123,9 +123,10 @@ public class ListTemplatesCmd extends BaseListCmd {
     public String getName() {
         return s_name;
     }
-
-    @Override @SuppressWarnings("unchecked")
-    public ListResponse<TemplateResponse> getResponse() {
+    
+    @Override
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        List<VMTemplateVO> templates = _mgr.listTemplates(this);
         TemplateFilter templateFilterObj;
         try {
             templateFilterObj = TemplateFilter.valueOf(templateFilter);
@@ -152,8 +153,6 @@ public class ListTemplatesCmd extends BaseListCmd {
 
         boolean showDomr = (templateFilterObj != TemplateFilter.selfexecutable);
 
-        // get the response
-        List<VMTemplateVO> templates = (List<VMTemplateVO>)getResponseObject();
         ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
         List<TemplateResponse> templateResponses = new ArrayList<TemplateResponse>();
 
@@ -253,12 +252,6 @@ public class ListTemplatesCmd extends BaseListCmd {
 
         response.setResponses(templateResponses);
         response.setResponseName(getName());
-        return response;
-    }
-    
-    @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<VMTemplateVO> result = _mgr.listTemplates(this);
-        return result;
+        this.setResponseObject(response);
     }
 }

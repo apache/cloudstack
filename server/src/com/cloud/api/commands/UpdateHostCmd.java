@@ -20,7 +20,6 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.AgentManager;
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseCmd;
@@ -35,7 +34,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.HostVO;
 
-@Implementation(method="updateHost", manager=AgentManager.class, description="Updates a host.")
+@Implementation(description="Updates a host.")
 public class UpdateHostCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateHostCmd.class.getName());
     private static final String s_name = "updatehostresponse";
@@ -75,21 +74,15 @@ public class UpdateHostCmd extends BaseCmd {
     	return "updatehost";
     }
     
-    @Override @SuppressWarnings("unchecked")
-    public HostResponse getResponse() {
-        HostVO host = (HostVO)getResponseObject();
-        if (host != null) {
-            HostResponse hostResponse = ApiResponseHelper.createHostResponse(host);
+    @Override
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        HostVO result = _agentMgr.updateHost(this);
+        if (result != null) {
+            HostResponse hostResponse = ApiResponseHelper.createHostResponse(result);
             hostResponse.setResponseName(getName());
-            return hostResponse;
+            this.setResponseObject(hostResponse);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update host");
         }   
-    }
-    
-    @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        HostVO result = _agentMgr.updateHost(this);
-        return result;
     }
 }

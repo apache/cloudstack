@@ -37,10 +37,9 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.LoadBalancerVO;
-import com.cloud.network.NetworkManager;
 import com.cloud.user.Account;
 
-@Implementation(method="assignToLoadBalancer", manager=NetworkManager.class, description="Assigns virtual machine or a list of virtual machines to a load balancer rule.")
+@Implementation(description="Assigns virtual machine or a list of virtual machines to a load balancer rule.")
 public class AssignToLoadBalancerRuleCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AssignToLoadBalancerRuleCmd.class.getName());
 
@@ -102,21 +101,17 @@ public class AssignToLoadBalancerRuleCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return "applying port forwarding service for vm with id: " + getVirtualMachineId();
     }
-
-    @Override @SuppressWarnings("unchecked")
-    public SuccessResponse getResponse() {
-    	if (getResponseObject() == null || (Boolean)getResponseObject()) {
-	    	return new SuccessResponse(getName());
-	    } else {
-	    	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to assign to load balancer");
-	    }
-    }
     
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         try {
             boolean result = _networkMgr.assignToLoadBalancer(this);
-            return result;
+            if (result) {
+                SuccessResponse response = new SuccessResponse(getName());
+                this.setResponseObject(response);
+            } else {
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to assign load balancer rule");
+            }
         } catch (NetworkRuleConflictException ex) {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
         }

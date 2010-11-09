@@ -42,12 +42,12 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.security.IngressRuleVO;
-import com.cloud.network.security.NetworkGroupManager;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.utils.StringUtils;
 
-@Implementation(method="authorizeNetworkGroupIngress", manager=NetworkGroupManager.class) @SuppressWarnings("rawtypes")
+//FIXME - add description
+@Implementation() @SuppressWarnings("rawtypes")
 public class AuthorizeNetworkGroupIngressCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(AuthorizeNetworkGroupIngressCmd.class.getName());
 
@@ -210,12 +210,11 @@ public class AuthorizeNetworkGroupIngressCmd extends BaseAsyncCmd {
 
         return  "authorizing ingress to group: " + getNetworkGroupName() + " to " + sb.toString();
     }
-
-	@Override @SuppressWarnings("unchecked")
-	public ListResponse<IngressRuleResponse> getResponse() {
-	    List<IngressRuleVO> ingressRules = (List<IngressRuleVO>)getResponseObject();
-
-	    ListResponse<IngressRuleResponse> response = new ListResponse<IngressRuleResponse>();
+	
+    @Override
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        List<IngressRuleVO> ingressRules = _networkGroupMgr.authorizeNetworkGroupIngress(this);
+        ListResponse<IngressRuleResponse> response = new ListResponse<IngressRuleResponse>();
         if ((ingressRules != null) && !ingressRules.isEmpty()) {
             List<IngressRuleResponse> responses = new ArrayList<IngressRuleResponse>();
             for (IngressRuleVO ingressRule : ingressRules) {
@@ -243,16 +242,7 @@ public class AuthorizeNetworkGroupIngressCmd extends BaseAsyncCmd {
             }
             response.setResponses(responses);
         }
-
         response.setResponseName("securitygroupingressrule");
-		return response;
-	}
-	
-    @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<IngressRuleVO> result = _networkGroupMgr.authorizeNetworkGroupIngress(this);
-        return result;
+        this.setResponseObject(response);
     }
-	
-	
 }

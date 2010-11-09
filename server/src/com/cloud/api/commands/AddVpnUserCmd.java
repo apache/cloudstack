@@ -32,12 +32,11 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.network.NetworkManager;
 import com.cloud.network.VpnUserVO;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation( method="addVpnUser", manager=NetworkManager.class, description="Adds vpn users")
+@Implementation(description="Adds vpn users")
 public class AddVpnUserCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AddVpnUserCmd.class.getName());
 
@@ -95,25 +94,6 @@ public class AddVpnUserCmd extends BaseAsyncCmd {
         return s_name;
     }
 
-    @Override @SuppressWarnings("unchecked")
-    public VpnUsersResponse getResponse() {
-    	VpnUserVO vpnUser = (VpnUserVO)getResponseObject();
-        VpnUsersResponse vpnResponse = new VpnUsersResponse();
-        vpnResponse.setId(vpnUser.getId());
-        vpnResponse.setUserName(vpnUser.getUsername());
-        vpnResponse.setAccountName(vpnUser.getAccountName());
-        
-        Account accountTemp = ApiDBUtils.findAccountById(vpnUser.getAccountId());
-        if (accountTemp != null) {
-            vpnResponse.setDomainId(accountTemp.getDomainId());
-            vpnResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
-        }
-        
-        vpnResponse.setResponseName(getName());
-        vpnResponse.setObjectName("vpnuser");
-        return vpnResponse;
-    }
-
 	@Override
 	public long getAccountId() {
 		Account account = (Account)UserContext.current().getAccount();
@@ -146,9 +126,21 @@ public class AddVpnUserCmd extends BaseAsyncCmd {
 	}
 
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        VpnUserVO result = _networkMgr.addVpnUser(this);
-        return result;
-    }
-	
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        VpnUserVO vpnUser = _networkMgr.addVpnUser(this);
+        VpnUsersResponse vpnResponse = new VpnUsersResponse();
+        vpnResponse.setId(vpnUser.getId());
+        vpnResponse.setUserName(vpnUser.getUsername());
+        vpnResponse.setAccountName(vpnUser.getAccountName());
+        
+        Account accountTemp = ApiDBUtils.findAccountById(vpnUser.getAccountId());
+        if (accountTemp != null) {
+            vpnResponse.setDomainId(accountTemp.getDomainId());
+            vpnResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
+        }
+        
+        vpnResponse.setResponseName(getName());
+        vpnResponse.setObjectName("vpnuser");
+        this.setResponseObject(vpnResponse);
+    }	
 }

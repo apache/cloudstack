@@ -9,16 +9,14 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.response.SuccessResponse;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.server.ManagementServer;
 
-@Implementation(method="updateTemplatePermissions", manager=ManagementServer.class)
+@Implementation()
 public abstract class UpdateTemplateOrIsoPermissionsCmd extends BaseCmd {
 	public Logger s_logger = getLogger();
     protected String s_name = getResponseName();
@@ -85,18 +83,8 @@ public abstract class UpdateTemplateOrIsoPermissionsCmd extends BaseCmd {
     	return Logger.getLogger(UpdateTemplateOrIsoPermissionsCmd.class.getName());    
     }
     
-    @Override @SuppressWarnings("unchecked")
-    public SuccessResponse getResponse() {
-    	if (getResponseObject() == null || (Boolean)getResponseObject()) {
-	    	return new SuccessResponse(getName());
-	    } else {
-	    	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update template permissions");
-	    }
-    }
-    
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException{
         //method is implemented in updateTemplate/updateIsoPermissions
-        return null;
     }
 }

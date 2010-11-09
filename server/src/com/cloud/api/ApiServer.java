@@ -79,6 +79,7 @@ import org.apache.http.protocol.ResponseServer;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.response.ListResponse;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -352,7 +353,6 @@ public class ApiServer implements HttpRequestHandler {
                 BaseAsyncCreateCmd createCmd = (BaseAsyncCreateCmd)cmdObj;
                 _dispatcher.dispatchCreateCmd(createCmd, params);
                 objectId = createCmd.getId();
-                //createCmd.setId(objectId);
                 params.put("id", objectId.toString());
             } else {
                 ApiDispatcher.setupParameters(cmdObj, params);
@@ -398,7 +398,7 @@ public class ApiServer implements HttpRequestHandler {
             return ApiResponseSerializer.toSerializedString(asyncCmd.getResponse(jobId), asyncCmd.getResponseType());
         } else {
             _dispatcher.dispatch(cmdObj, params);
-            return ApiResponseSerializer.toSerializedString(cmdObj.getResponse(), cmdObj.getResponseType());
+            return ApiResponseSerializer.toSerializedString((ResponseObject)cmdObj.getResponseObject(), cmdObj.getResponseType());    
         }
     }
      

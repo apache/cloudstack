@@ -26,7 +26,6 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.ServiceOfferingResponse;
-import com.cloud.configuration.ConfigurationManager;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -35,7 +34,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 
-@Implementation(method="updateServiceOffering", manager=ConfigurationManager.class, description="Updates a service offering.")
+@Implementation(description="Updates a service offering.")
 public class UpdateServiceOfferingCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateServiceOfferingCmd.class.getName());
     private static final String s_name = "updateserviceofferingresponse";
@@ -99,17 +98,11 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
         return s_name;
     }
 
-    @Override @SuppressWarnings("unchecked")
-    public ServiceOfferingResponse getResponse() {
-        ServiceOfferingVO offering = (ServiceOfferingVO) getResponseObject();
-        ServiceOfferingResponse response = ApiResponseHelper.createServiceOfferingResponse(offering);
-        response.setResponseName(getName());
-        return response;
-    }
-    
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         ServiceOffering result = _configService.updateServiceOffering(this);
-        return result;
+        ServiceOfferingResponse response = ApiResponseHelper.createServiceOfferingResponse((ServiceOfferingVO)result);
+        response.setResponseName(getName());
+        this.setResponseObject(response);
     }
 }

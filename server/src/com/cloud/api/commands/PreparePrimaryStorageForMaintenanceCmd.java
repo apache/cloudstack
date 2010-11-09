@@ -32,12 +32,11 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(method="preparePrimaryStorageForMaintenance", manager=StorageManager.class)
+@Implementation(description="Puts storage pool into maintenance state")
 public class PreparePrimaryStorageForMaintenanceCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(PreparePrimaryStorageForMaintenanceCmd.class.getName());	
     private static final String s_name = "prepareprimarystorageformaintenanceresponse";
@@ -90,17 +89,11 @@ public class PreparePrimaryStorageForMaintenanceCmd extends BaseAsyncCmd {
         return  "preparing storage pool: " + getId() + " for maintenance";
     }
 
-    @Override @SuppressWarnings("unchecked")
-    public StoragePoolResponse getResponse() {
-        StoragePoolVO primaryStorage = (StoragePoolVO)getResponseObject();
-        StoragePoolResponse response = ApiResponseHelper.createStoragePoolResponse(primaryStorage);
-        response.setResponseName("storagepool");
-        return response;
-    }
-    
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         StoragePoolVO result = _storageMgr.preparePrimaryStorageForMaintenance(this);
-        return result;
+        StoragePoolResponse response = ApiResponseHelper.createStoragePoolResponse(result);
+        response.setResponseName("storagepool");
+        this.setResponseObject(response);
     }
 }

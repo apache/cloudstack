@@ -36,7 +36,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.Account;
 
-@Implementation(method="deleteDomain", description="Deletes a specified domain")
+@Implementation(description="Deletes a specified domain")
 public class DeleteDomainCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteDomainCmd.class.getName());
     private static final String s_name = "deletedomainresponse";
@@ -92,19 +92,15 @@ public class DeleteDomainCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  "deleting domain: " + getId();
     }
-
-    @Override @SuppressWarnings("unchecked")
-    public SuccessResponse getResponse() {
-    	if (getResponseObject() == null || (Boolean)getResponseObject()) {
-	    	return new SuccessResponse(getName());
-	    } else {
-	    	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete delete domain");
-	    }
-    }
     
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         boolean result = _mgr.deleteDomain(this);
-        return result;
+        if (result) {
+            SuccessResponse response = new SuccessResponse(getName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete domain");
+        }
     }
 }

@@ -20,7 +20,6 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.AgentManager;
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseAsyncCmd;
@@ -40,7 +39,7 @@ import com.cloud.host.HostVO;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(method="reconnectHost", manager=AgentManager.class, description="Reconnects a host.")
+@Implementation(description="Reconnects a host.")
 public class ReconnectHostCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(ReconnectHostCmd.class.getName());
 
@@ -93,21 +92,14 @@ public class ReconnectHostCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  "reconnecting host: " + getId();
     }
-
-	@Override @SuppressWarnings("unchecked")
-	public HostResponse getResponse() {
-	    HostVO host = (HostVO)getResponseObject();
-	    HostResponse response = ApiResponseHelper.createHostResponse(host);
-        response.setResponseName(getName());
-
-		return response;
-	}
 	
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         try {
             HostVO result = _agentMgr.reconnectHost(this);
-            return result;
+            HostResponse response = ApiResponseHelper.createHostResponse(result);
+            response.setResponseName(getName());
+            this.setResponseObject(response);
         } catch (AgentUnavailableException ex) {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
         }

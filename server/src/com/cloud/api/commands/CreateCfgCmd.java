@@ -27,7 +27,6 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.ConfigurationResponse;
 import com.cloud.configuration.Configuration;
-import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ConfigurationVO;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
@@ -35,7 +34,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 
-@Implementation(method="addConfig", manager=ConfigurationManager.class)
+@Implementation(description="Adds configuration value")
 public class CreateCfgCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateCfgCmd.class.getName());
     private static final String s_name = "addconfigresponse";
@@ -102,21 +101,15 @@ public class CreateCfgCmd extends BaseCmd {
         return s_name;
     }
     
-    @Override @SuppressWarnings("unchecked")
-    public ConfigurationResponse getResponse() {
-        ConfigurationVO cfg = (ConfigurationVO)getResponseObject();
+    @Override
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        Configuration cfg = _configService.addConfig(this);
         if (cfg != null) {
-            ConfigurationResponse response = ApiResponseHelper.createConfigurationResponse(cfg);
+            ConfigurationResponse response = ApiResponseHelper.createConfigurationResponse((ConfigurationVO)cfg);
             response.setResponseName(getName());
-            return response;
+            this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add config");
         }
-    }
-    
-    @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        Configuration result = _configService.addConfig(this);
-        return result;
     }
 }

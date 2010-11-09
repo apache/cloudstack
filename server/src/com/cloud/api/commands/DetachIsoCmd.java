@@ -33,11 +33,10 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
-@Implementation(method="detachIso", manager=TemplateManager.class, description="Detaches any ISO file (if any) currently attached to a virtual machine.")
+@Implementation(description="Detaches any ISO file (if any) currently attached to a virtual machine.")
 public class DetachIsoCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DetachIsoCmd.class.getName());
 
@@ -86,19 +85,15 @@ public class DetachIsoCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  "detaching ISO from vm: " + getVirtualMachineId();
     }
-
-	@Override @SuppressWarnings("unchecked")
-	public SuccessResponse getResponse() {
-		if (getResponseObject() == null || (Boolean)getResponseObject()) {
-	    	return new SuccessResponse(getName());
-	    } else {
-	    	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to detach iso");
-	    }
-	}
 	
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         boolean result = _templateMgr.detachIso(this);
-        return result;
+        if (result) {
+            SuccessResponse response = new SuccessResponse(getName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to detach iso");
+        }
     }
 }

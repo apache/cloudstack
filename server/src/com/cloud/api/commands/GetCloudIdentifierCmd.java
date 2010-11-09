@@ -33,9 +33,8 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.server.ManagementServer;
 
-@Implementation(method="getCloudIdentifierResponse", manager=ManagementServer.class, description="Retrieves a cloud identifier.")
+@Implementation(description="Retrieves a cloud identifier.")
 public class GetCloudIdentifierCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(GetCloudIdentifierCmd.class.getName());
     private static final String s_name = "getcloudidentifierresponse";
@@ -65,25 +64,19 @@ public class GetCloudIdentifierCmd extends BaseCmd {
         return s_name;
     }
     
-    @Override @SuppressWarnings("unchecked")
-    public CloudIdentifierResponse getResponse() {
+    @Override
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        ArrayList<String> result = _mgr.getCloudIdentifierResponse(this);
         CloudIdentifierResponse response = new CloudIdentifierResponse();
-        ArrayList<String> responseObject = (ArrayList<String>)getResponseObject();
-        if (responseObject != null) {
-            response.setCloudIdentifier(responseObject.get(0));
-            response.setSignature(responseObject.get(1));
+        if (result != null) {
+            response.setCloudIdentifier(result.get(0));
+            response.setSignature(result.get(1));
 
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add config");
         }
         response.setObjectName("cloudidentifier");
         response.setResponseName(getName());
-        return response;
-    }
-    
-    @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        ArrayList<String> result = _mgr.getCloudIdentifierResponse(this);
-        return result;
+        this.setResponseObject(response);
     }
 }

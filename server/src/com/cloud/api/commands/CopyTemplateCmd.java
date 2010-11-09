@@ -39,11 +39,10 @@ import com.cloud.storage.GuestOS;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(method="copyTemplate", manager=TemplateManager.class, description="Copies a template from one zone to another.")
+@Implementation(description="Copies a template from one zone to another.")
 public class CopyTemplateCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(CopyTemplateCmd.class.getName());
     private static final String s_name = "copytemplateresponse";
@@ -112,92 +111,85 @@ public class CopyTemplateCmd extends BaseAsyncCmd {
         return  "copying template: " + getId() + " from zone: " + getSourceZoneId() + " to zone: " + getDestinationZoneId();
     }
 
-	@Override @SuppressWarnings("unchecked")
-	public TemplateResponse getResponse() {
-        TemplateResponse templateResponse = new TemplateResponse();
-        VMTemplateVO template = (VMTemplateVO)getResponseObject();
-        
-        if (template != null) {
-            templateResponse.setId(template.getId());
-            templateResponse.setName(template.getName());
-            templateResponse.setDisplayText(template.getDisplayText());
-            templateResponse.setPublic(template.isPublicTemplate());
-            templateResponse.setBootable(template.isBootable());
-            templateResponse.setFeatured(template.isFeatured());
-            templateResponse.setCrossZones(template.isCrossZones());
-            templateResponse.setCreated(template.getCreated());
-            templateResponse.setFormat(template.getFormat());
-            templateResponse.setPasswordEnabled(template.getEnablePassword());
-            templateResponse.setZoneId(destZoneId);
-            templateResponse.setZoneName(ApiDBUtils.findZoneById(destZoneId).getName());
-             
-            GuestOS os = ApiDBUtils.findGuestOSById(template.getGuestOSId());
-            if (os != null) {
-                templateResponse.setOsTypeId(os.getId());
-                templateResponse.setOsTypeName(os.getDisplayName());
-            } else {
-                templateResponse.setOsTypeId(-1L);
-                templateResponse.setOsTypeName("");
-            }
-                
-            // add account ID and name
-            Account owner = ApiDBUtils.findAccountById(template.getAccountId());
-            if (owner != null) {
-                templateResponse.setAccount(owner.getAccountName());
-                templateResponse.setDomainId(owner.getDomainId());
-                templateResponse.setDomainName(ApiDBUtils.findDomainById(owner.getDomainId()).getName());
-            }
-            
-            //set status 
-            Account account = (Account)UserContext.current().getAccount();
-            boolean isAdmin = false;
-            if ((account == null) || (account.getType() == Account.ACCOUNT_TYPE_ADMIN) || (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)) {
-                isAdmin = true;
-            }
-    		
-    		//Return download status for admin users
-            VMTemplateHostVO templateHostRef = ApiDBUtils.findTemplateHostRef(template.getId(), destZoneId);
-            
-    		if (isAdmin || template.getAccountId() == account.getId()) {
-                if (templateHostRef.getDownloadState()!=Status.DOWNLOADED) {
-                    String templateStatus = "Processing";
-                    if (templateHostRef.getDownloadState() == VMTemplateHostVO.Status.DOWNLOAD_IN_PROGRESS) {
-                        if (templateHostRef.getDownloadPercent() == 100) {
-                            templateStatus = "Installing Template";
-                        } else {
-                            templateStatus = templateHostRef.getDownloadPercent() + "% Downloaded";
-                        }
-                    } else {
-                        templateStatus = templateHostRef.getErrorString();
-                    }
-                    templateResponse.setStatus(templateStatus);
-                } else if (templateHostRef.getDownloadState() == VMTemplateHostVO.Status.DOWNLOADED) {
-                	templateResponse.setStatus("Download Complete");
-                } else {
-                	templateResponse.setStatus("Successfully Installed");
-                }
-            }
-    		
-    		templateResponse.setReady(templateHostRef != null && templateHostRef.getDownloadState() == VMTemplateHostVO.Status.DOWNLOADED);
-            
-        } else {
-        	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to copy template");
-        }
-        
-        templateResponse.setResponseName(getName());
-        templateResponse.setObjectName("template");
-        return templateResponse;
-	}
-	
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         try {
-            VMTemplateVO result = _templateMgr.copyTemplate(this);
-            return result;
+            VMTemplateVO template = _templateMgr.copyTemplate(this);
+            TemplateResponse templateResponse = new TemplateResponse();
+            if (template != null) {
+                templateResponse.setId(template.getId());
+                templateResponse.setName(template.getName());
+                templateResponse.setDisplayText(template.getDisplayText());
+                templateResponse.setPublic(template.isPublicTemplate());
+                templateResponse.setBootable(template.isBootable());
+                templateResponse.setFeatured(template.isFeatured());
+                templateResponse.setCrossZones(template.isCrossZones());
+                templateResponse.setCreated(template.getCreated());
+                templateResponse.setFormat(template.getFormat());
+                templateResponse.setPasswordEnabled(template.getEnablePassword());
+                templateResponse.setZoneId(destZoneId);
+                templateResponse.setZoneName(ApiDBUtils.findZoneById(destZoneId).getName());
+                 
+                GuestOS os = ApiDBUtils.findGuestOSById(template.getGuestOSId());
+                if (os != null) {
+                    templateResponse.setOsTypeId(os.getId());
+                    templateResponse.setOsTypeName(os.getDisplayName());
+                } else {
+                    templateResponse.setOsTypeId(-1L);
+                    templateResponse.setOsTypeName("");
+                }
+                    
+                // add account ID and name
+                Account owner = ApiDBUtils.findAccountById(template.getAccountId());
+                if (owner != null) {
+                    templateResponse.setAccount(owner.getAccountName());
+                    templateResponse.setDomainId(owner.getDomainId());
+                    templateResponse.setDomainName(ApiDBUtils.findDomainById(owner.getDomainId()).getName());
+                }
+                
+                //set status 
+                Account account = (Account)UserContext.current().getAccount();
+                boolean isAdmin = false;
+                if ((account == null) || (account.getType() == Account.ACCOUNT_TYPE_ADMIN) || (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)) {
+                    isAdmin = true;
+                }
+                
+                //Return download status for admin users
+                VMTemplateHostVO templateHostRef = ApiDBUtils.findTemplateHostRef(template.getId(), destZoneId);
+                
+                if (isAdmin || template.getAccountId() == account.getId()) {
+                    if (templateHostRef.getDownloadState()!=Status.DOWNLOADED) {
+                        String templateStatus = "Processing";
+                        if (templateHostRef.getDownloadState() == VMTemplateHostVO.Status.DOWNLOAD_IN_PROGRESS) {
+                            if (templateHostRef.getDownloadPercent() == 100) {
+                                templateStatus = "Installing Template";
+                            } else {
+                                templateStatus = templateHostRef.getDownloadPercent() + "% Downloaded";
+                            }
+                        } else {
+                            templateStatus = templateHostRef.getErrorString();
+                        }
+                        templateResponse.setStatus(templateStatus);
+                    } else if (templateHostRef.getDownloadState() == VMTemplateHostVO.Status.DOWNLOADED) {
+                        templateResponse.setStatus("Download Complete");
+                    } else {
+                        templateResponse.setStatus("Successfully Installed");
+                    }
+                }
+                
+                templateResponse.setReady(templateHostRef != null && templateHostRef.getDownloadState() == VMTemplateHostVO.Status.DOWNLOADED);
+                
+            } else {
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to copy template");
+            }
+            
+            templateResponse.setResponseName(getName());
+            templateResponse.setObjectName("template");
+            
+            this.setResponseObject(templateResponse);
         } catch (StorageUnavailableException ex) {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
         }
     }
-
 }
 

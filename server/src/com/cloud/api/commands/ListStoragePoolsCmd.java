@@ -38,7 +38,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.storage.StoragePoolVO;
 
-@Implementation(method="searchForStoragePools", description="Lists storage pools.")
+@Implementation(description="Lists storage pools.")
 public class ListStoragePoolsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListStoragePoolsCmd.class.getName());
 
@@ -103,10 +103,9 @@ public class ListStoragePoolsCmd extends BaseListCmd {
         return s_name;
     }
 
-    @Override @SuppressWarnings("unchecked")
-    public ListResponse<StoragePoolResponse> getResponse() {
-        List<? extends StoragePoolVO> pools = (List<? extends StoragePoolVO>)getResponseObject();
-
+    @Override
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        List<? extends StoragePoolVO> pools = _mgr.searchForStoragePools(this);
         ListResponse<StoragePoolResponse> response = new ListResponse<StoragePoolResponse>();
         List<StoragePoolResponse> poolResponses = new ArrayList<StoragePoolResponse>();
         for (StoragePoolVO pool : pools) {
@@ -117,12 +116,6 @@ public class ListStoragePoolsCmd extends BaseListCmd {
 
         response.setResponses(poolResponses);
         response.setResponseName(getName());
-        return response;
-    }
-    
-    @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<? extends StoragePoolVO> result = _mgr.searchForStoragePools(this);
-        return result;
+        this.setResponseObject(response);
     }
 }

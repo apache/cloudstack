@@ -13,9 +13,8 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.storage.StorageManager;
 
-@Implementation(method="deletePool", manager=StorageManager.class, description="Deletes a storage pool.")
+@Implementation(description="Deletes a storage pool.")
 public class DeletePoolCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeletePoolCmd.class.getName());
     private static final String s_name = "deletestoragepoolresponse";
@@ -46,18 +45,14 @@ public class DeletePoolCmd extends BaseCmd {
         return s_name;
     }
     
-    @Override @SuppressWarnings("unchecked")
-    public SuccessResponse getResponse() {
-    	if ((Boolean)getResponseObject() == null || (Boolean)getResponseObject()) {
-	    	return new SuccessResponse(getName());
-	    } else {
-	    	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete storage pool");
-	    }
-    }
-    
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         boolean result = _storageMgr.deletePool(this);
-        return result;
+        if (result) {
+            SuccessResponse response = new SuccessResponse(getName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete storage pool");
+        }
     }
 }

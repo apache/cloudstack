@@ -34,12 +34,11 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.NetworkManager;
 import com.cloud.network.RemoteAccessVpnVO;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(createMethod="createRemoteAccessVpn", method="startRemoteAccessVpn", manager=NetworkManager.class, description="Creates a l2tp/ipsec remote access vpn")
+@Implementation(description="Creates a l2tp/ipsec remote access vpn")
 public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateRemoteAccessVpnCmd.class.getName());
 
@@ -108,23 +107,6 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
         return s_name;
     }
 
-    @Override @SuppressWarnings("unchecked")
-    public RemoteAccessVpnResponse getResponse() {
-        RemoteAccessVpnVO responseObj = (RemoteAccessVpnVO)getResponseObject();
-
-        RemoteAccessVpnResponse response = new RemoteAccessVpnResponse();
-        response.setId(responseObj.getId());
-        response.setPublicIp(responseObj.getVpnServerAddress());
-        response.setIpRange(responseObj.getIpRange());
-        response.setAccountName(responseObj.getAccountName());
-        response.setDomainId(responseObj.getDomainId());
-        response.setDomainName(ApiDBUtils.findDomainById(responseObj.getDomainId()).getName());
-        response.setObjectName("remoteaccessvpn");
-        response.setResponseName(getName());
-        response.setPresharedKey(responseObj.getIpsecPresharedKey());
-        return response;
-    }
-
 	@Override
 	public long getAccountId() {
 		Account account = (Account)UserContext.current().getAccount();
@@ -163,13 +145,22 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
     }
 
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         try {
         RemoteAccessVpnVO result = _networkMgr.startRemoteAccessVpn(this);
-        return result;
+        RemoteAccessVpnResponse response = new RemoteAccessVpnResponse();
+        response.setId(result.getId());
+        response.setPublicIp(result.getVpnServerAddress());
+        response.setIpRange(result.getIpRange());
+        response.setAccountName(result.getAccountName());
+        response.setDomainId(result.getDomainId());
+        response.setDomainName(ApiDBUtils.findDomainById(result.getDomainId()).getName());
+        response.setObjectName("remoteaccessvpn");
+        response.setResponseName(getName());
+        response.setPresharedKey(result.getIpsecPresharedKey());
+        this.setResponseObject(response);
         } catch (ResourceUnavailableException ex) {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
         }
     }
-	
 }

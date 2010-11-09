@@ -33,12 +33,11 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.vm.VMInstanceVO;
 
-@Implementation(method="startSystemVM", manager=ManagementServer.class, description="Starts a system virtual machine.")
+@Implementation(description="Starts a system virtual machine.")
 public class StartSystemVMCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(StartSystemVMCmd.class.getName());
 
@@ -91,18 +90,12 @@ public class StartSystemVMCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  "starting system vm: " + getId();
     }
-
-	@Override @SuppressWarnings("unchecked")
-	public SystemVmResponse getResponse() {
-	    VMInstanceVO instance = (VMInstanceVO)getResponseObject();
-	    SystemVmResponse response = ApiResponseHelper.createSystemVmResponse(instance);
-        response.setResponseName(getName());
-        return response;
-	}
 	
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        VMInstanceVO result = _mgr.startSystemVM(this);
-        return result;
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        VMInstanceVO instance = _mgr.startSystemVM(this);
+        SystemVmResponse response = ApiResponseHelper.createSystemVmResponse(instance);
+        response.setResponseName(getName());
+        this.setResponseObject(response);
     }
 }

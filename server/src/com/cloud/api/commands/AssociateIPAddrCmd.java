@@ -33,9 +33,8 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.IPAddressVO;
-import com.cloud.network.NetworkManager;
 
-@Implementation(method="associateIP", manager=NetworkManager.class, description="Acquires and associates a public IP to an account.")
+@Implementation(description="Acquires and associates a public IP to an account.")
 public class AssociateIPAddrCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AssociateIPAddrCmd.class.getName());
     private static final String s_name = "associateipaddressresponse";
@@ -84,22 +83,15 @@ public class AssociateIPAddrCmd extends BaseCmd {
     	return "addressinfo";
     }
     
-    @SuppressWarnings("unchecked")
-    public IPAddressResponse getResponse() {
-    	IPAddressVO ipAddress = (IPAddressVO)getResponseObject();
-        IPAddressResponse ipResponse = ApiResponseHelper.createIPAddressResponse(ipAddress);
-        ipResponse.setResponseName(getName());
-        return ipResponse;
-    }
-    
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         try {
             IPAddressVO result = _networkMgr.associateIP(this);
-            return result;
+            IPAddressResponse ipResponse = ApiResponseHelper.createIPAddressResponse(result);
+            ipResponse.setResponseName(getName());
+            this.setResponseObject(ipResponse);
         } catch (ResourceAllocationException ex) {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
         }
-
     }
 }

@@ -20,7 +20,6 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.AgentManager;
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
@@ -34,7 +33,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 
 
-@Implementation(method="deleteHost", manager=AgentManager.class, description="Deletes a host.")
+@Implementation(description="Deletes a host.")
 public class DeleteHostCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteHostCmd.class.getName());
 
@@ -66,18 +65,14 @@ public class DeleteHostCmd extends BaseCmd {
         return s_name;
     }
     
-    @Override@SuppressWarnings("unchecked")
-    public SuccessResponse getResponse() {
-    	if (getResponseObject() == null || (Boolean)getResponseObject()) {
-	    	return new SuccessResponse(getName());
-	    } else {
-	    	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete host");
-	    }
-    }
-    
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         boolean result = _agentMgr.deleteHost(this);
-        return result;
+        if (result) {
+            SuccessResponse response = new SuccessResponse(getName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete host");
+        }
     }
 }

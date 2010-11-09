@@ -37,7 +37,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.storage.GuestOSCategoryVO;
 
-@Implementation(method="listGuestOSCategoriesByCriteria", description="Lists all supported OS categories for this cloud.")
+@Implementation(description="Lists all supported OS categories for this cloud.")
 public class ListGuestOsCategoriesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListIsosCmd.class.getName());
 
@@ -68,14 +68,13 @@ public class ListGuestOsCategoriesCmd extends BaseListCmd {
     public String getName() {
         return s_name;
     }
-
-    @Override @SuppressWarnings("unchecked")
-    public ListResponse<GuestOSCategoryResponse> getResponse() {
-        List<GuestOSCategoryVO> osCategories = (List<GuestOSCategoryVO>)getResponseObject();
-
+    
+    @Override
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        List<GuestOSCategoryVO> result = _mgr.listGuestOSCategoriesByCriteria(this);
         ListResponse<GuestOSCategoryResponse> response = new ListResponse<GuestOSCategoryResponse>();
         List<GuestOSCategoryResponse> osCatResponses = new ArrayList<GuestOSCategoryResponse>();
-        for (GuestOSCategoryVO osCategory : osCategories) {
+        for (GuestOSCategoryVO osCategory : result) {
             GuestOSCategoryResponse categoryResponse = new GuestOSCategoryResponse();
             categoryResponse.setId(osCategory.getId());
             categoryResponse.setName(osCategory.getName());
@@ -86,12 +85,6 @@ public class ListGuestOsCategoriesCmd extends BaseListCmd {
 
         response.setResponses(osCatResponses);
         response.setResponseName(getName());
-        return response;
-    }
-    
-    @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<GuestOSCategoryVO> result = _mgr.listGuestOSCategoriesByCriteria(this);
-        return result;
+        this.setResponseObject(response);
     }
 }

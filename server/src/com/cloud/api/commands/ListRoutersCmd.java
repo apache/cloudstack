@@ -39,7 +39,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.vm.DomainRouter;
 import com.cloud.vm.DomainRouterVO;
 
-@Implementation(method="searchForRouters", description="List routers.")
+@Implementation(description="List routers.")
 public class ListRoutersCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListRoutersCmd.class.getName());
 
@@ -111,12 +111,12 @@ public class ListRoutersCmd extends BaseListCmd {
         return s_name;
     }
 
-    @Override @SuppressWarnings("unchecked")
-    public ListResponse<DomainRouterResponse> getResponse() {
-        List<DomainRouter> routers = (List<DomainRouter>)getResponseObject();
+    @Override
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        List<DomainRouterVO> result = _mgr.searchForRouters(this);
         ListResponse<DomainRouterResponse> response = new ListResponse<DomainRouterResponse>();
         List<DomainRouterResponse> routerResponses = new ArrayList<DomainRouterResponse>();
-        for (DomainRouter router : routers) {
+        for (DomainRouter router : result) {
             DomainRouterResponse routerResponse = ApiResponseHelper.createDomainRouterResponse(router);
             routerResponse.setObjectName("router");
             routerResponses.add(routerResponse);
@@ -124,12 +124,6 @@ public class ListRoutersCmd extends BaseListCmd {
 
         response.setResponses(routerResponses);
         response.setResponseName(getName());
-        return response;
-    }
-    
-    @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<DomainRouterVO> result = _mgr.searchForRouters(this);
-        return result;
+        this.setResponseObject(response);
     }
 }

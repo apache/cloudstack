@@ -32,9 +32,8 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.vm.InstanceGroupVO;
-import com.cloud.vm.UserVmManager;
 
-@Implementation(method="createVmGroup", manager=UserVmManager.class)
+@Implementation(description="Creates a vm group")
 public class CreateVMGroupCmd extends BaseCmd{
     public static final Logger s_logger = Logger.getLogger(CreateVMGroupCmd.class.getName());
 
@@ -77,18 +76,12 @@ public class CreateVMGroupCmd extends BaseCmd{
     public String getName() {
         return s_name;
     }
-
-    @Override @SuppressWarnings("unchecked")
-    public InstanceGroupResponse getResponse() {
-        InstanceGroupVO group = (InstanceGroupVO)getResponseObject();
-        InstanceGroupResponse response = ApiResponseHelper.createInstanceGroupResponse(group);
-        response.setResponseName(getName());
-        return response;
-    }
     
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         InstanceGroupVO result = _userVmService.createVmGroup(this);
-        return result;
+        InstanceGroupResponse response = ApiResponseHelper.createInstanceGroupResponse(result);
+        response.setResponseName(getName());
+        this.setResponseObject(response);
     }
 }

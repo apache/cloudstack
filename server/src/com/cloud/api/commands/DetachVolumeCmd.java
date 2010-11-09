@@ -37,9 +37,8 @@ import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
-import com.cloud.vm.UserVmManager;
 
-@Implementation(method="detachVolumeFromVM", manager=UserVmManager.class, description="Detaches a disk volume from a virtual machine.")
+@Implementation(description="Detaches a disk volume from a virtual machine.")
 public class DetachVolumeCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(DetachVolumeCmd.class.getName());
     private static final String s_name = "detachvolumeresponse";
@@ -123,17 +122,11 @@ public class DetachVolumeCmd extends BaseAsyncCmd {
         return  "detaching volume" + sb.toString();
     }
 
-    @Override @SuppressWarnings("unchecked")
-    public VolumeResponse getResponse() {
-        VolumeVO volume = (VolumeVO)getResponseObject();
-        VolumeResponse response = ApiResponseHelper.createVolumeResponse(volume);
-        response.setResponseName("volume");
-        return response;
-    }
-    
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         Volume result = _userVmService.detachVolumeFromVM(this);
-        return result;
+        VolumeResponse response = ApiResponseHelper.createVolumeResponse((VolumeVO)result);
+        response.setResponseName("volume");
+        this.setResponseObject(response);
     }
 }

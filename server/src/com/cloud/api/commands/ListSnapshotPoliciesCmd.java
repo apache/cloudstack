@@ -37,9 +37,8 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.storage.SnapshotPolicyVO;
-import com.cloud.storage.snapshot.SnapshotManager;
 
-@Implementation(method="listPoliciesforVolume", manager=SnapshotManager.class, description="Lists snapshot policies.")
+@Implementation(description="Lists snapshot policies.")
 public class ListSnapshotPoliciesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListSnapshotPoliciesCmd.class.getName());
 
@@ -83,26 +82,18 @@ public class ListSnapshotPoliciesCmd extends BaseListCmd {
         return s_name;
     }
 
-    @Override @SuppressWarnings("unchecked")
-    public ListResponse<SnapshotPolicyResponse> getResponse() {
-        List<SnapshotPolicyVO> policies = (List<SnapshotPolicyVO>)getResponseObject();
-
+    @Override
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        List<SnapshotPolicyVO> result = _snapshotMgr.listPoliciesforVolume(this);
         ListResponse<SnapshotPolicyResponse> response = new ListResponse<SnapshotPolicyResponse>();
         List<SnapshotPolicyResponse> policyResponses = new ArrayList<SnapshotPolicyResponse>();
-        for (SnapshotPolicyVO policy : policies) {
+        for (SnapshotPolicyVO policy : result) {
             SnapshotPolicyResponse policyResponse = ApiResponseHelper.createSnapshotPolicyResponse(policy);
             policyResponse.setObjectName("snapshotpolicy");
             policyResponses.add(policyResponse);
         }
-
         response.setResponses(policyResponses);
-        response.setResponseName(getName());
-        return response;
-    }
-    
-    @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<SnapshotPolicyVO> result = _snapshotMgr.listPoliciesforVolume(this);
-        return result;
+        response.setResponseName(getName());   
+        this.setResponseObject(response);
     }
 }

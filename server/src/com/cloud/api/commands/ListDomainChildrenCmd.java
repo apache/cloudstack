@@ -37,7 +37,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 
-@Implementation(method="searchForDomainChildren", description="Lists all children domains belonging to a specified domain")
+@Implementation(description="Lists all children domains belonging to a specified domain")
 public class ListDomainChildrenCmd extends BaseListCmd {
 	public static final Logger s_logger = Logger.getLogger(ListDomainChildrenCmd.class.getName());
 
@@ -80,14 +80,13 @@ public class ListDomainChildrenCmd extends BaseListCmd {
     public String getName() {
         return s_name;
     }
-
-    @Override @SuppressWarnings("unchecked")
-    public ListResponse<DomainResponse> getResponse() {
-        List<DomainVO> domains = (List<DomainVO>)getResponseObject();
-
+    
+    @Override
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        List<DomainVO> result = _mgr.searchForDomainChildren(this);
         ListResponse<DomainResponse> response = new ListResponse<DomainResponse>();
         List<DomainResponse> domainResponses = new ArrayList<DomainResponse>();
-        for (DomainVO domain : domains) {
+        for (DomainVO domain : result) {
             DomainResponse domainResponse = ApiResponseHelper.createDomainResponse(domain);
             domainResponse.setObjectName("domain");
             domainResponses.add(domainResponse);
@@ -95,12 +94,6 @@ public class ListDomainChildrenCmd extends BaseListCmd {
 
         response.setResponses(domainResponses);
         response.setResponseName(getName());
-        return response;
-    }
-    
-    @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<DomainVO> result = _mgr.searchForDomainChildren(this);
-        return result;
+        this.setResponseObject(response);
     }
 }

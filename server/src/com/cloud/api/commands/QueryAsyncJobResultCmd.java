@@ -37,7 +37,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 
-@Implementation(method="queryAsyncJobResult", description="Retrieves the current status of asynchronous job.")
+@Implementation(description="Retrieves the current status of asynchronous job.")
 public class QueryAsyncJobResultCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(QueryAsyncJobResultCmd.class.getName());
 
@@ -67,10 +67,9 @@ public class QueryAsyncJobResultCmd extends BaseCmd {
         return s_name;
     }
     
-    @Override @SuppressWarnings("unchecked")
-    public AsyncJobResponse getResponse() {
-        AsyncJobResult result = (AsyncJobResult)getResponseObject();
-
+    @Override
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        AsyncJobResult result = _asyncMgr.queryAsyncJobResult(this);
         AsyncJobResponse response = new AsyncJobResponse();
         response.setId(result.getJobId());
         response.setJobStatus(result.getJobStatus());
@@ -89,12 +88,6 @@ public class QueryAsyncJobResultCmd extends BaseCmd {
         }
 
         response.setResponseName(getName());
-        return response;
-    }
-    
-    @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        AsyncJobResult result = _asyncMgr.queryAsyncJobResult(this);
-        return result;
+        this.setResponseObject(response);
     }
 }

@@ -145,16 +145,6 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
         return  "creating volume: " + getVolumeName() + ((getSnapshotId() == null) ? "" : " from snapshot: " + getSnapshotId());
     }
     
-    @Override @SuppressWarnings("unchecked")
-    public VolumeResponse getResponse() {
-        VolumeVO volume = (VolumeVO)getResponseObject();
-        VolumeResponse response = ApiResponseHelper.createVolumeResponse(volume);
-        //FIXME - have to be moved to ApiResponseHelper
-        response.setSnapshotId(getSnapshotId());  // if the volume was created from a snapshot, snapshotId will be set so we pass it back in the response
-        response.setResponseName(getName());
-        return response;
-    }
-    
     @Override
     public void callCreate() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException{
         Volume volume = _storageMgr.allocVolume(this);
@@ -164,8 +154,12 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     }
     
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         Volume volume = _storageMgr.createVolume(this);
-        return volume;
+        VolumeResponse response = ApiResponseHelper.createVolumeResponse((VolumeVO)volume);
+        //FIXME - have to be moved to ApiResponseHelper
+        response.setSnapshotId(getSnapshotId());  // if the volume was created from a snapshot, snapshotId will be set so we pass it back in the response
+        response.setResponseName(getName());
+        this.setResponseObject(response);
     }
 }

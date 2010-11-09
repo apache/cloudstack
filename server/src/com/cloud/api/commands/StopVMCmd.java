@@ -36,9 +36,8 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
-import com.cloud.vm.UserVmManager;
 
-@Implementation(method="stopVirtualMachine", manager=UserVmManager.class, description="Stops a virtual machine.")
+@Implementation(description="Stops a virtual machine.")
 public class StopVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(StopVMCmd.class.getName());
 
@@ -92,17 +91,11 @@ public class StopVMCmd extends BaseAsyncCmd {
         return  "stopping user vm: " + getId();
     }
 
-    @Override @SuppressWarnings("unchecked")
-    public UserVmResponse getResponse() {
-        UserVm userVm = (UserVm)getResponseObject();
-        UserVmResponse recoverVmResponse = ApiResponseHelper.createUserVmResponse(userVm);
-        recoverVmResponse.setResponseName(getName());
-        return recoverVmResponse;
-    }
-    
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, StorageUnavailableException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, StorageUnavailableException{
         UserVm result = _userVmService.stopVirtualMachine(this);
-        return result;
+        UserVmResponse response = ApiResponseHelper.createUserVmResponse(result);
+        response.setResponseName(getName());
+        this.setResponseObject(response);
     }
 }

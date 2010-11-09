@@ -34,13 +34,12 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.network.DomainRouterService;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.DomainRouter;
 
 
-@Implementation(method="startRouter", manager=DomainRouterService.class, description="Starts a router.")
+@Implementation(description="Starts a router.")
 public class StartRouterCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(StartRouterCmd.class.getName());
     private static final String s_name = "startrouterresponse";
@@ -93,18 +92,12 @@ public class StartRouterCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  "starting router: " + getId();
     }
-
-	@Override @SuppressWarnings("unchecked")
-	public DomainRouterResponse getResponse() {
-	    DomainRouter router = (DomainRouter)getResponseObject();
-        DomainRouterResponse routerResponse = ApiResponseHelper.createDomainRouterResponse(router);
-        routerResponse.setResponseName(getName());
-        return routerResponse;
-	}
 	
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        DomainRouter result = _networkMgr.startRouter(this);
-        return result;
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        DomainRouter result = _routerMgr.startRouter(this);
+        DomainRouterResponse routerResponse = ApiResponseHelper.createDomainRouterResponse(result);
+        routerResponse.setResponseName(getName());
+        this.setResponseObject(routerResponse);
     }
 }

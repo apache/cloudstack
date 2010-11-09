@@ -22,7 +22,6 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.AgentManager;
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseCmd;
@@ -38,7 +37,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.HostVO;
 
-@Implementation(method="discoverHosts", manager=AgentManager.class, description="Adds secondary storage.")
+@Implementation(description="Adds secondary storage.")
 public class AddSecondaryStorageCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddSecondaryStorageCmd.class.getName());
     private static final String s_name = "addsecondarystorageresponse";
@@ -74,29 +73,22 @@ public class AddSecondaryStorageCmd extends BaseCmd {
     	return s_name;
     }
     
-    @Override @SuppressWarnings("unchecked")
-    public HostResponse getResponse() {
-		List<HostVO> hosts = (List<HostVO>)getResponseObject();
-		HostResponse hostResponse = null;
-	    if (hosts != null && hosts.size() > 0) {
-	        for (HostVO host : hosts) {
-	        	// There should only be one secondary storage host per add
-	        	hostResponse = ApiResponseHelper.createHostResponse(host);
-	            hostResponse.setResponseName(getName());
-	            hostResponse.setObjectName("secondarystorage");
-	            return hostResponse;
-	        }
-	    } else {
-	        throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add secondary storage");
-	    }
-	    return hostResponse;
-    }
-    
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         try {
             List<HostVO> result = _agentMgr.discoverHosts(this);
-            return result;
+            HostResponse hostResponse = null;
+            if (result != null && result.size() > 0) {
+                for (HostVO host : result) {
+                    // There should only be one secondary storage host per add
+                    hostResponse = ApiResponseHelper.createHostResponse(host);
+                    hostResponse.setResponseName(getName());
+                    hostResponse.setObjectName("secondarystorage");
+                    this.setResponseObject(hostResponse);
+                }
+            } else {
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add secondary storage");
+            }
         } catch (DiscoveryException ex) {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
         }

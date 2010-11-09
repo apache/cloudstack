@@ -33,11 +33,10 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.network.NetworkManager;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(method="destroyRemoteAccessVpn",  manager=NetworkManager.class, description="Destroys a l2tp/ipsec remote access vpn")
+@Implementation(description="Destroys a l2tp/ipsec remote access vpn")
 public class DeleteRemoteAccessVpnCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteRemoteAccessVpnCmd.class.getName());
 
@@ -83,15 +82,6 @@ public class DeleteRemoteAccessVpnCmd extends BaseAsyncCmd {
         return s_name;
     }
 
-    @Override @SuppressWarnings("unchecked")
-    public SuccessResponse getResponse() {
-    	if ((Boolean)getResponseObject() == null || (Boolean)getResponseObject()) {
-	    	return new SuccessResponse(getName());
-	    } else {
-	    	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete remote access vpn");
-	    }
-    }
-
 	@Override
 	public long getAccountId() {
 		Account account = (Account)UserContext.current().getAccount();
@@ -122,9 +112,14 @@ public class DeleteRemoteAccessVpnCmd extends BaseAsyncCmd {
 	}
 
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         boolean result = _networkMgr.destroyRemoteAccessVpn(this);
-        return result;
+        if (result) {
+            SuccessResponse response = new SuccessResponse(getName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete remote access vpn");
+        }
     }
 	
 }

@@ -35,13 +35,12 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.DomainRouterService;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.DomainRouter;
 
 
-@Implementation(method="stopRouter", manager=DomainRouterService.class, description="Stops a router.")
+@Implementation(description="Stops a router.")
 public class StopRouter2Cmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(StopRouter2Cmd.class.getName());
     private static final String s_name = "stoprouterresponse";
@@ -90,17 +89,11 @@ public class StopRouter2Cmd extends BaseAsyncCmd {
         return  "stopping router: " + getId();
     }
 
-    @Override @SuppressWarnings("unchecked")
-    public DomainRouterResponse getResponse() {
-        DomainRouter router = (DomainRouter)getResponseObject();
+    @Override
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException{
+        DomainRouter router = _routerMgr.stopRouter(this);
         DomainRouterResponse response =ApiResponseHelper.createDomainRouterResponse(router);
         response.setResponseName(getName());
-        return response;
-    }
-    
-    @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException{
-        DomainRouter result = _routerMgr.stopRouter(this);
-        return result;
+        this.setResponseObject(response);
     }
 }

@@ -49,7 +49,7 @@ import com.cloud.storage.dao.VMTemplateDao.TemplateFilter;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(method="listIsos", description="Lists all available ISO files.")
+@Implementation(description="Lists all available ISO files.")
 public class ListIsosCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListIsosCmd.class.getName());
 
@@ -145,9 +145,10 @@ public class ListIsosCmd extends BaseListCmd {
     public String getName() {
         return s_name;
     }
-
-    @Override @SuppressWarnings("unchecked")
-    public ListResponse<TemplateResponse> getResponse() {
+    
+    @Override
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        List<VMTemplateVO> isos = _mgr.listIsos(this);
         TemplateFilter isoFilterObj = null;
 
         try {
@@ -177,7 +178,6 @@ public class ListIsosCmd extends BaseListCmd {
                             (isoFilterObj == TemplateFilter.executable && isAccountSpecific) ||
                             (isoFilterObj == TemplateFilter.community);
 
-        List<VMTemplateVO> isos = (List<VMTemplateVO>)getResponseObject();
 
         Map<Long, List<VMTemplateHostVO>> isoHostsMap = new HashMap<Long, List<VMTemplateHostVO>>();
         for (VMTemplateVO iso : isos) {
@@ -288,12 +288,6 @@ public class ListIsosCmd extends BaseListCmd {
 
         response.setResponses(isoResponses);
         response.setResponseName(getName());
-        return response;
-    }
-    
-    @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<VMTemplateVO> result = _mgr.listIsos(this);
-        return result;
+        this.setResponseObject(response);
     }
 }

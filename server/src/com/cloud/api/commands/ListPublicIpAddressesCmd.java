@@ -38,7 +38,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.IPAddressVO;
 
-@Implementation(method="searchForIPAddresses", description="Lists all public ip addresses")
+@Implementation(description="Lists all public ip addresses")
 public class ListPublicIpAddressesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListPublicIpAddressesCmd.class.getName());
 
@@ -109,14 +109,13 @@ public class ListPublicIpAddressesCmd extends BaseListCmd {
     public String getName() {
         return s_name;
     }
-
-    @Override @SuppressWarnings("unchecked")
-    public ListResponse<IPAddressResponse> getResponse() {
-        List<IPAddressVO> ipAddresses = (List<IPAddressVO>)getResponseObject();
-
+    
+    @Override
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        List<IPAddressVO> result = _mgr.searchForIPAddresses(this);
         ListResponse<IPAddressResponse> response = new ListResponse<IPAddressResponse>();
         List<IPAddressResponse> ipAddrResponses = new ArrayList<IPAddressResponse>();
-        for (IPAddressVO ipAddress : ipAddresses) {
+        for (IPAddressVO ipAddress : result) {
             IPAddressResponse ipResponse = ApiResponseHelper.createIPAddressResponse(ipAddress);
             ipResponse.setObjectName("publicipaddress");
             ipAddrResponses.add(ipResponse);
@@ -124,12 +123,6 @@ public class ListPublicIpAddressesCmd extends BaseListCmd {
 
         response.setResponses(ipAddrResponses);
         response.setResponseName(getName());
-        return response;
-    }
-    
-    @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<IPAddressVO> result = _mgr.searchForIPAddresses(this);
-        return result;
+        this.setResponseObject(response);
     }
 }

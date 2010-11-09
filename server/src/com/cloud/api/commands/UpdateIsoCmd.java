@@ -29,10 +29,9 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.server.ManagementServer;
 import com.cloud.storage.VMTemplateVO;
 
-@Implementation(method="updateTemplate", manager=ManagementServer.class, description="Updates an ISO file.")
+@Implementation(description="Updates an ISO file.")
 public class UpdateIsoCmd extends UpdateTemplateOrIsoCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateIsoCmd.class.getName());
     private static final String s_name = "updateisoresponse";
@@ -58,31 +57,24 @@ public class UpdateIsoCmd extends UpdateTemplateOrIsoCmd {
         return s_name;
     }
     
-    @SuppressWarnings("unchecked")
-    public TemplateResponse getResponse() {
+    @Override
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException{
+        VMTemplateVO result = _mgr.updateTemplate(this);
         TemplateResponse response = new TemplateResponse();
-        VMTemplateVO responseObject = (VMTemplateVO)getResponseObject();
-        if (responseObject != null) {
-            response.setId(responseObject.getId());
-            response.setName(responseObject.getName());
-            response.setDisplayText(responseObject.getDisplayText());
-            response.setPublic(responseObject.isPublicTemplate());
-            response.setCreated(responseObject.getCreated());
-            response.setFormat(responseObject.getFormat());
-            response.setOsTypeId(responseObject.getGuestOSId());
-            response.setBootable(responseObject.isBootable());
+        if (result != null) {
+            response.setId(result.getId());
+            response.setName(result.getName());
+            response.setDisplayText(result.getDisplayText());
+            response.setPublic(result.isPublicTemplate());
+            response.setCreated(result.getCreated());
+            response.setFormat(result.getFormat());
+            response.setOsTypeId(result.getGuestOSId());
+            response.setBootable(result.isBootable());
             response.setObjectName("iso");
+            response.setResponseName(getName());
+            this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update iso");
         }
-
-        response.setResponseName(getName());
-        return response;
-    }
-    
-    @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException{
-        VMTemplateVO result = _mgr.updateTemplate(this);
-        return result;
     }
 }

@@ -33,12 +33,11 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.vm.VMInstanceVO;
 
-@Implementation(method="rebootSystemVM", manager=ManagementServer.class, description="Reboots a system VM.")
+@Implementation(description="Reboots a system VM.")
 public class RebootSystemVmCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(RebootSystemVmCmd.class.getName());
 
@@ -87,18 +86,12 @@ public class RebootSystemVmCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  "rebooting system vm: " + getId();
     }
-
-    @Override @SuppressWarnings("unchecked")
-	public SystemVmResponse getResponse() {
-        VMInstanceVO instance = (VMInstanceVO)getResponseObject();
-        SystemVmResponse response = ApiResponseHelper.createSystemVmResponse(instance);
-        response.setResponseName(getName());
-        return response;
-	}
     
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         VMInstanceVO result = _mgr.rebootSystemVM(this);
-        return result;
+        SystemVmResponse response = ApiResponseHelper.createSystemVmResponse(result);
+        response.setResponseName(getName());
+        this.setResponseObject(response);
     }
 }

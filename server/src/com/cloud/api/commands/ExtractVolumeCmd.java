@@ -40,7 +40,7 @@ import com.cloud.storage.UploadVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.user.Account;
 
-@Implementation(method="extractVolume")
+@Implementation(description="Extracts volume")
 public class ExtractVolumeCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(ExtractVolumeCmd.class.getName());
 
@@ -93,6 +93,10 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
 	public String getName() {
 		return s_name;
 	}
+    
+    public static String getStaticName() {
+        return s_name;
+    }
 
     @Override
     public long getAccountId() {
@@ -114,37 +118,27 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  "Extraction job";
     }
-
-	@Override @SuppressWarnings("unchecked")
-	public ExtractResponse getResponse() {
-        Long uploadId = (Long)getResponseObject();
-        UploadVO uploadInfo = ApiDBUtils.findUploadById(uploadId);
-        
-        ExtractResponse response = new ExtractResponse();
-        response.setResponseName(getName());
-        response.setObjectName("volume");
-        response.setId(id);
-        response.setName(ApiDBUtils.findVolumeById(id).getName());        
-        response.setZoneId(zoneId);
-        response.setZoneName(ApiDBUtils.findZoneById(zoneId).getName());
-        response.setMode(mode);
-        response.setUploadId(uploadId);
-        response.setState(uploadInfo.getUploadState().toString());
-        response.setAccountId(getAccountId());        
-        //FIX ME - Need to set the url once the gson jar is upgraded since it is throwing an error right now.
-        response.setUrl(uploadInfo.getUploadUrl().replaceAll("/", "%2F"));
-        return response;
-	}
-
-	public static String getStaticName() {
-		return s_name;
-	}
 	
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException{
         try {
-            Long result = _mgr.extractVolume(this);
-            return result;
+            Long uploadId = _mgr.extractVolume(this);
+            UploadVO uploadInfo = ApiDBUtils.findUploadById(uploadId);
+            
+            ExtractResponse response = new ExtractResponse();
+            response.setResponseName(getName());
+            response.setObjectName("volume");
+            response.setId(id);
+            response.setName(ApiDBUtils.findVolumeById(id).getName());        
+            response.setZoneId(zoneId);
+            response.setZoneName(ApiDBUtils.findZoneById(zoneId).getName());
+            response.setMode(mode);
+            response.setUploadId(uploadId);
+            response.setState(uploadInfo.getUploadState().toString());
+            response.setAccountId(getAccountId());        
+            //FIX ME - Need to set the url once the gson jar is upgraded since it is throwing an error right now.
+            response.setUrl(uploadInfo.getUploadUrl().replaceAll("/", "%2F"));
+            this.setResponseObject(response);
         } catch (URISyntaxException ex) {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
         }

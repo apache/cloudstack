@@ -27,7 +27,6 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.ZoneResponse;
-import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.exception.ConcurrentOperationException;
@@ -36,7 +35,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 
-@Implementation(method="editZone", manager=ConfigurationManager.class, description="Updates a Zone.")
+@Implementation(description="Updates a Zone.")
 public class UpdateZoneCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateZoneCmd.class.getName());
 
@@ -132,23 +131,16 @@ public class UpdateZoneCmd extends BaseCmd {
     public String getName() {
         return s_name;
     }
-
-    @Override @SuppressWarnings("unchecked")
-    public ZoneResponse getResponse() {
-       
-        DataCenterVO responseObject = (DataCenterVO)getResponseObject();
-        if (responseObject != null) {
-            ZoneResponse response = ApiResponseHelper.createZoneResponse(responseObject);
-            response.setResponseName(getName());
-            return response;
-        } else {
-        	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update zone; internal error.");
-        }
-    }
     
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         DataCenter result = _configService.editZone(this);
-        return result;
+        if (result != null) {
+            ZoneResponse response = ApiResponseHelper.createZoneResponse((DataCenterVO)result);
+            response.setResponseName(getName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update zone; internal error.");
+        }
     }
 }

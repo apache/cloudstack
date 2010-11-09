@@ -30,9 +30,8 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.network.NetworkManager;
 
-@Implementation(method="deleteIpForwardingRule", manager=NetworkManager.class, description="Deletes a port forwarding rule")
+@Implementation(description="Deletes a port forwarding rule")
 public class DeleteIPForwardingRuleCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteIPForwardingRuleCmd.class.getName());
     private static final String s_name = "deleteportforwardingruleresponse";
@@ -61,20 +60,15 @@ public class DeleteIPForwardingRuleCmd extends BaseCmd {
     public String getName() {
         return s_name;
     }
-
-	@Override @SuppressWarnings("unchecked")
-	public SuccessResponse getResponse() {
-		if (getResponseObject() == null || (Boolean)getResponseObject()) {
-	    	return new SuccessResponse(getName());
-	    } else {
-	    	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete port forwarding rule");
-	    }
-	}
 	
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         boolean result = _networkMgr.deleteIpForwardingRule(this);
-        return result;
+        if (result) {
+            SuccessResponse response = new SuccessResponse(getName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete port forwarding rule");
+        }
     }
-
 }

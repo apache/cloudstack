@@ -37,7 +37,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 
-@Implementation(method="searchForVlans", description="Lists all VLAN IP ranges.")
+@Implementation(description="Lists all VLAN IP ranges.")
 public class ListVlanIpRangesCmd extends BaseListCmd {
 	public static final Logger s_logger = Logger.getLogger(ListVlanIpRangesCmd.class.getName());
 
@@ -101,11 +101,10 @@ public class ListVlanIpRangesCmd extends BaseListCmd {
     public String getName() {
         return s_name;
     }
-
-    @Override @SuppressWarnings("unchecked")
-    public ListResponse<VlanIpRangeResponse> getResponse() {
-        List<VlanVO> vlans = (List<VlanVO>)getResponseObject();
-
+    
+    @Override
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        List<VlanVO> vlans = _mgr.searchForVlans(this);
         ListResponse<VlanIpRangeResponse> response = new ListResponse<VlanIpRangeResponse>();
         List<VlanIpRangeResponse> vlanResponses = new ArrayList<VlanIpRangeResponse>();
         for (VlanVO vlan : vlans) {  
@@ -116,12 +115,6 @@ public class ListVlanIpRangesCmd extends BaseListCmd {
 
         response.setResponses(vlanResponses);
         response.setResponseName(getName());
-        return response;
-    }
-    
-    @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<VlanVO> result = _mgr.searchForVlans(this);
-        return result;
+        this.setResponseObject(response);
     }
 }

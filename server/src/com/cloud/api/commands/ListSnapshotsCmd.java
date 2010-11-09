@@ -38,7 +38,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 
-@Implementation(method="listSnapshots", description="Lists all available snapshots for the account.")
+@Implementation(description="Lists all available snapshots for the account.")
 public class ListSnapshotsCmd extends BaseListCmd {
 	public static final Logger s_logger = Logger.getLogger(ListSnapshotsCmd.class.getName());
 
@@ -110,26 +110,19 @@ public class ListSnapshotsCmd extends BaseListCmd {
         return s_name;
     }
 
-    @Override @SuppressWarnings("unchecked")
-    public ListResponse<SnapshotResponse> getResponse() {
-        List<SnapshotVO> snapshots = (List<SnapshotVO>)getResponseObject();
-
+    @Override
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        List<SnapshotVO> result = _mgr.listSnapshots(this);
         ListResponse<SnapshotResponse> response = new ListResponse<SnapshotResponse>();
         List<SnapshotResponse> snapshotResponses = new ArrayList<SnapshotResponse>();
-        for (Snapshot snapshot : snapshots) {
+        for (Snapshot snapshot : result) {
             SnapshotResponse snapshotResponse = ApiResponseHelper.createSnapshotResponse(snapshot);
             snapshotResponse.setObjectName("snapshot");
             snapshotResponses.add(snapshotResponse);
         }
-
         response.setResponses(snapshotResponses);
         response.setResponseName(getName());
-        return response;
-    }
-    
-    @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<SnapshotVO> result = _mgr.listSnapshots(this);
-        return result;
+        
+        this.setResponseObject(response);
     }
 }

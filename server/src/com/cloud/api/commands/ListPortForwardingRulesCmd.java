@@ -36,9 +36,8 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.FirewallRuleVO;
-import com.cloud.network.NetworkManager;
 
-@Implementation(method="listPortForwardingRules", manager=NetworkManager.class, description="Lists all port forwarding rules for an IP address.")
+@Implementation(description="Lists all port forwarding rules for an IP address.")
 public class ListPortForwardingRulesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListPortForwardingRulesCmd.class.getName());
 
@@ -67,27 +66,20 @@ public class ListPortForwardingRulesCmd extends BaseListCmd {
     public String getName() {
         return s_name;
     }
-
-    @Override @SuppressWarnings("unchecked")
-    public ListResponse<FirewallRuleResponse> getResponse() {
-        List<FirewallRuleVO> firewallRules = (List<FirewallRuleVO>)getResponseObject();        
+    
+    @Override
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        List<FirewallRuleVO> result = _networkMgr.listPortForwardingRules(this);
         ListResponse<FirewallRuleResponse> response = new ListResponse<FirewallRuleResponse>();
         List<FirewallRuleResponse> fwResponses = new ArrayList<FirewallRuleResponse>();
         
-        for (FirewallRuleVO fwRule : firewallRules) {
+        for (FirewallRuleVO fwRule : result) {
             FirewallRuleResponse ruleData = ApiResponseHelper.createFirewallRuleResponse(fwRule);
             ruleData.setObjectName("portforwardingrule");
             fwResponses.add(ruleData);
         }
-
         response.setResponses(fwResponses);
         response.setResponseName(getName());
-        return response;
-    }
-    
-    @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<FirewallRuleVO> result = _networkMgr.listPortForwardingRules(this);
-        return result;
+        this.setResponseObject(response); 
     }
 }

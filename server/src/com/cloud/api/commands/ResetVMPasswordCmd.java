@@ -36,9 +36,8 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
-import com.cloud.vm.UserVmManager;
 
-@Implementation(method="resetVMPassword", manager=UserVmManager.class, description="Resets the password for virtual machine. " +
+@Implementation(description="Resets the password for virtual machine. " +
 																					"The virtual machine must be in a \"Stopped\" state and the template must already " +
 																					"support this feature for this command to take effect. [async]")
 public class ResetVMPasswordCmd extends BaseAsyncCmd {
@@ -101,23 +100,17 @@ public class ResetVMPasswordCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  "resetting password for vm: " + getId();
     }
-
-	@Override @SuppressWarnings("unchecked")
-	public UserVmResponse getResponse() {
-        UserVm userVm = (UserVm)getResponseObject();
-        UserVmResponse response = ApiResponseHelper.createUserVmResponse(userVm);
+	
+    @Override
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, StorageUnavailableException{
+        UserVm result = _userVmService.resetVMPassword(this);
+        UserVmResponse response = ApiResponseHelper.createUserVmResponse(result);
         
         // FIXME:  where will the password come from in this case?
 //        if (templatePasswordEnabled) {
 //            response.setPassword(getPassword());
 //        } 
         response.setResponseName(getName());
-        return response;
-	}
-	
-    @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, StorageUnavailableException{
-        UserVm result = _userVmService.resetVMPassword(this);
-        return result;
+        this.setResponseObject(response);
     }
 }

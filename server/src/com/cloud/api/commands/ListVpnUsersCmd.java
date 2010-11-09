@@ -38,7 +38,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.VpnUserVO;
 import com.cloud.user.Account;
 
-@Implementation(method="searchForVpnUsers", description="Lists vpn users")
+@Implementation(description="Lists vpn users")
 public class ListVpnUsersCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger (ListVpnUsersCmd.class.getName());
 
@@ -88,15 +88,15 @@ public class ListVpnUsersCmd extends BaseListCmd {
     public String getName() {
         return s_name;
     }
-
-    @Override @SuppressWarnings("unchecked")
-    public ListResponse<VpnUsersResponse> getResponse() {
-        List<VpnUserVO> vpnUsers = (List<VpnUserVO>)getResponseObject();
+    
+    @Override
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        List<VpnUserVO> vpnUsers = _mgr.searchForVpnUsers(this);
 
         ListResponse<VpnUsersResponse> response = new ListResponse<VpnUsersResponse>();
         List<VpnUsersResponse> vpnResponses = new ArrayList<VpnUsersResponse>();
         for (VpnUserVO vpnUser : vpnUsers) {
-        	VpnUsersResponse vpnResponse = new VpnUsersResponse();
+            VpnUsersResponse vpnResponse = new VpnUsersResponse();
             vpnResponse.setId(vpnUser.getId());
             vpnResponse.setUserName(vpnUser.getUsername());
             vpnResponse.setAccountName(vpnUser.getAccountName());
@@ -113,12 +113,6 @@ public class ListVpnUsersCmd extends BaseListCmd {
 
         response.setResponses(vpnResponses);
         response.setResponseName(getName());
-        return response;
-    }
-    
-    @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<VpnUserVO> result = _mgr.searchForVpnUsers(this);
-        return result;
+        this.setResponseObject(response);
     }
 }

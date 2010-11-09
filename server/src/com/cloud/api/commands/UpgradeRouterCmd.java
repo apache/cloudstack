@@ -31,10 +31,9 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.network.NetworkManager;
 import com.cloud.vm.DomainRouter;
 
-@Implementation(method="upgradeRouter", manager=NetworkManager.class)
+@Implementation(description="Upgrades domain router to a new service offering")
 public class UpgradeRouterCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(UpgradeRouterCmd.class.getName());
 	private static final String s_name = "changeserviceforrouterresponse";
@@ -69,18 +68,12 @@ public class UpgradeRouterCmd extends BaseCmd {
 	public String getName() {
 		 return s_name;
 	}
-
-	@Override @SuppressWarnings("unchecked")
-    public DomainRouterResponse getResponse() {
-        DomainRouter router = (DomainRouter)getResponseObject();
-        DomainRouterResponse routerResponse = ApiResponseHelper.createDomainRouterResponse(router);
-        routerResponse.setResponseName(getName());
-        return routerResponse;
-    }
 	
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        DomainRouter result = _networkMgr.upgradeRouter(this);
-        return result;
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        DomainRouter router = _networkMgr.upgradeRouter(this);
+        DomainRouterResponse routerResponse = ApiResponseHelper.createDomainRouterResponse(router);
+        routerResponse.setResponseName(getName());
+        this.setResponseObject(routerResponse);
     }
 }

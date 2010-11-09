@@ -42,9 +42,8 @@ import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.user.Account;
-import com.cloud.vm.UserVmManager;
 
-@Implementation(method="createPrivateTemplate", createMethod="createPrivateTemplateRecord", manager=UserVmManager.class, description="Creates a template of a virtual machine. " +
+@Implementation(description="Creates a template of a virtual machine. " +
 																															"The virtual machine must be in a STOPPED state. " +
 																															"A template created from this command is automatically designated as a private template visible to the account that created it.")
 public class CreateTemplateCmd extends BaseAsyncCreateCmd {
@@ -172,9 +171,16 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
         return  "creating template: " + getTemplateName();
     }
 
-    @Override @SuppressWarnings("unchecked")
-    public TemplateResponse getResponse() {
-        VMTemplateVO template = (VMTemplateVO)getResponseObject();
+    @Override
+    public void callCreate() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException{
+        VMTemplateVO template = _userVmService.createPrivateTemplateRecord(this);
+        if (template != null)
+            this.setId(template.getId());
+    }
+    
+    @Override
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        VMTemplateVO template = _userVmService.createPrivateTemplate(this);
 
         TemplateResponse response = new TemplateResponse();
         response.setId(template.getId());
@@ -220,19 +226,7 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
 
         response.setObjectName("template");
         response.setResponseName(getName());
-        return response;
-    }
-    
-    @Override
-    public void callCreate() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException{
-        VMTemplateVO template = _userVmService.createPrivateTemplateRecord(this);
-        if (template != null)
-            this.setId(template.getId());
-    }
-    
-    @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        VMTemplateVO result = _userVmService.createPrivateTemplate(this);
-        return result;
+        
+        this.setResponseObject(response);
     }
 }

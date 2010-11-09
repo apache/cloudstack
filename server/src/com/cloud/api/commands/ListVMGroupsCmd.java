@@ -37,7 +37,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.vm.InstanceGroupVO;
 
-@Implementation(method="searchForVmGroups")
+@Implementation(description="Lists vm groups")
 public class ListVMGroupsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListVMGroupsCmd.class.getName());
 
@@ -88,10 +88,9 @@ public class ListVMGroupsCmd extends BaseListCmd {
         return s_name;
     }
 
-    @Override @SuppressWarnings("unchecked")
-	public ListResponse<InstanceGroupResponse> getResponse() {
-        List<InstanceGroupVO> groups = (List<InstanceGroupVO>)getResponseObject();
-
+    @Override
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        List<InstanceGroupVO> groups = _mgr.searchForVmGroups(this);
         ListResponse<InstanceGroupResponse> response = new ListResponse<InstanceGroupResponse>();
         List<InstanceGroupResponse> responses = new ArrayList<InstanceGroupResponse>();
         for (InstanceGroupVO group : groups) {
@@ -102,12 +101,6 @@ public class ListVMGroupsCmd extends BaseListCmd {
 
         response.setResponses(responses);
         response.setResponseName(getName());
-        return response;
-    }
-    
-    @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<InstanceGroupVO> result = _mgr.searchForVmGroups(this);
-        return result;
+        this.setResponseObject(response);
     }
 }

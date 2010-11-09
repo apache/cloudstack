@@ -37,9 +37,8 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.user.Account;
-import com.cloud.vm.UserVmManager;
 
-@Implementation(method="attachVolumeToVM", manager=UserVmManager.class, description="Attaches a disk volume to a virtual machine.")
+@Implementation(description="Attaches a disk volume to a virtual machine.")
 public class AttachVolumeCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(AttachVolumeCmd.class.getName());
     private static final String s_name = "attachvolumeresponse";
@@ -112,18 +111,12 @@ public class AttachVolumeCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  "attaching volume: " + getId() + " to vm: " + getVirtualMachineId();
     }
-
-    @Override @SuppressWarnings("unchecked")
-    public VolumeResponse getResponse() {
-        VolumeVO volume = (VolumeVO)getResponseObject();
-        VolumeResponse response = ApiResponseHelper.createVolumeResponse(volume);
-        response.setResponseName(getName());
-        return response;
-    }
     
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         Volume result = _userVmService.attachVolumeToVM(this);
-        return result;
+        VolumeResponse response = ApiResponseHelper.createVolumeResponse((VolumeVO)result);
+        response.setResponseName(getName());
+        this.setResponseObject(response);
     }
 }

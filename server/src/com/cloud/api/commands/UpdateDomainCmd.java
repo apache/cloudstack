@@ -32,9 +32,8 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.server.ManagementServer;
 
-@Implementation(method="updateDomain", manager=ManagementServer.class, description="Updates a domain with a new name")
+@Implementation(description="Updates a domain with a new name")
 public class UpdateDomainCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateDomainCmd.class.getName());
     private static final String s_name = "updatedomainresponse";
@@ -70,21 +69,15 @@ public class UpdateDomainCmd extends BaseCmd {
         return s_name;
     }
     
-    @Override @SuppressWarnings("unchecked")
-        public DomainResponse getResponse() {
-        DomainVO domain = (DomainVO)getResponseObject();
+    @Override
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        DomainVO domain = _mgr.updateDomain(this);
         if (domain != null) {
             DomainResponse response = ApiResponseHelper.createDomainResponse(domain);
             response.setResponseName(getName());
-            return response;
+            this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update domain");
         }
-    }
-    
-    @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        DomainVO domain = _mgr.updateDomain(this);
-        return domain;
     }
 }

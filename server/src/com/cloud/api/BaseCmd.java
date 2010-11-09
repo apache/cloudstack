@@ -151,7 +151,7 @@ public abstract class BaseCmd {
         return locator;
     }
     
-    public abstract Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ResourceUnavailableException,  ConcurrentOperationException;
+    public abstract void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ResourceUnavailableException,  ConcurrentOperationException;
     
     public String getResponseType() {
         if (responseType == null) {
@@ -165,7 +165,6 @@ public abstract class BaseCmd {
     }
 
     public abstract String getName();
-    public abstract <T extends ResponseObject> T getResponse();
 
     public Object getResponseObject() {
         return _responseObject;

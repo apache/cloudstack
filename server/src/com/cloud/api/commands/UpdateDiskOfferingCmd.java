@@ -26,7 +26,6 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.DiskOfferingResponse;
-import com.cloud.configuration.ConfigurationManager;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -35,7 +34,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.offering.DiskOffering;
 import com.cloud.storage.DiskOfferingVO;
 
-@Implementation(method="updateDiskOffering", manager=ConfigurationManager.class, description="Updates a disk offering.")
+@Implementation(description="Updates a disk offering.")
 public class UpdateDiskOfferingCmd extends BaseCmd{
     public static final Logger s_logger = Logger.getLogger(UpdateDiskOfferingCmd.class.getName());
     private static final String s_name = "updatediskofferingresponse";
@@ -85,17 +84,11 @@ public class UpdateDiskOfferingCmd extends BaseCmd{
         return s_name;
     }
     
-    @Override @SuppressWarnings("unchecked")
-    public DiskOfferingResponse getResponse() {
-        DiskOfferingVO offering = (DiskOfferingVO) getResponseObject();
-        DiskOfferingResponse response = ApiResponseHelper.createDiskOfferingResponse(offering);
-        response.setResponseName(getName());
-        return response;
-    }
-    
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         DiskOffering result = _configService.updateDiskOffering(this);
-        return result;
+        DiskOfferingResponse response = ApiResponseHelper.createDiskOfferingResponse((DiskOfferingVO)result);
+        response.setResponseName(getName());
+        this.setResponseObject(response);
     }
 }

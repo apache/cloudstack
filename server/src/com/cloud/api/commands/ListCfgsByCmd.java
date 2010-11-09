@@ -38,7 +38,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 
-@Implementation(method="searchForConfigurations", description="Lists all configurations.")
+@Implementation(description="Lists all configurations.")
 public class ListCfgsByCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListCfgsByCmd.class.getName());
 
@@ -76,14 +76,13 @@ public class ListCfgsByCmd extends BaseListCmd {
     public String getName() {
         return s_name;
     }
-
-    @Override @SuppressWarnings("unchecked")
-    public ListResponse<ConfigurationResponse> getResponse() {
-        List<ConfigurationVO> configurations = (List<ConfigurationVO>)getResponseObject();
-
+    
+    @Override
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        List<ConfigurationVO> result = _mgr.searchForConfigurations(this);
         ListResponse<ConfigurationResponse> response = new ListResponse<ConfigurationResponse>();
         List<ConfigurationResponse> configResponses = new ArrayList<ConfigurationResponse>();
-        for (ConfigurationVO cfg : configurations) {
+        for (ConfigurationVO cfg : result) {
             ConfigurationResponse cfgResponse = ApiResponseHelper.createConfigurationResponse(cfg);
             cfgResponse.setObjectName("configuration");
             configResponses.add(cfgResponse);
@@ -91,12 +90,6 @@ public class ListCfgsByCmd extends BaseListCmd {
 
         response.setResponses(configResponses);
         response.setResponseName(getName());
-        return response;
-    }
-    
-    @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<ConfigurationVO> result = _mgr.searchForConfigurations(this);
-        return result;
+        this.setResponseObject(response);
     }
 }

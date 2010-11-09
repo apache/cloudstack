@@ -37,7 +37,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.vm.VMInstanceVO;
 
-@Implementation(method="searchForSystemVm", description="List system virtual machines.")
+@Implementation(description="List system virtual machines.")
 public class ListSystemVMsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListSystemVMsCmd.class.getName());
 
@@ -109,9 +109,9 @@ public class ListSystemVMsCmd extends BaseListCmd {
         return s_name;
     }
     
-    @Override @SuppressWarnings("unchecked")
-    public ListResponse<SystemVmResponse> getResponse() {
-        List<? extends VMInstanceVO> systemVMs = (List<? extends VMInstanceVO>)getResponseObject();
+    @Override
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        List<? extends VMInstanceVO> systemVMs = _mgr.searchForSystemVm(this);
         ListResponse<SystemVmResponse> response = new ListResponse<SystemVmResponse>();
         List<SystemVmResponse> vmResponses = new ArrayList<SystemVmResponse>();
         for (VMInstanceVO systemVM : systemVMs) {
@@ -122,12 +122,6 @@ public class ListSystemVMsCmd extends BaseListCmd {
 
         response.setResponses(vmResponses);
         response.setResponseName(getName());
-        return response;
-    }
-    
-    @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<? extends VMInstanceVO> result = _mgr.searchForSystemVm(this);
-        return result;
+        this.setResponseObject(response);
     }
 }

@@ -27,7 +27,6 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
-import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
@@ -37,7 +36,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(method="destroyConsoleProxy", manager=ConsoleProxyManager.class)
+@Implementation(description="Destroys console proxy")
 public class DestroyConsoleProxyCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(DestroyConsoleProxyCmd.class.getName());
 
@@ -88,19 +87,15 @@ public class DestroyConsoleProxyCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  "destroying console proxy: " + getId();
     }
-
-	@Override @SuppressWarnings("unchecked")
-	public SuccessResponse getResponse() {
-		if (getResponseObject() == null || (Boolean)getResponseObject()) {
-	    	return new SuccessResponse(getName());
-	    } else {
-	    	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete console proxy");
-	    }
-	}
 	
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         boolean result = _consoleProxyMgr.destroyConsoleProxy(this);
-        return result;
+        if (result) {
+            SuccessResponse response = new SuccessResponse(getName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to destroy console proxy");
+        }
     }
 }

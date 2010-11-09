@@ -39,6 +39,7 @@ import com.cloud.api.ApiGsonHelper;
 import com.cloud.api.ApiSerializerHelper;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.ResponseObject;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.QueryAsyncJobResultCmd;
 import com.cloud.api.response.ExceptionResponse;
@@ -370,7 +371,7 @@ public class AsyncJobManagerImpl implements AsyncJobManager {
                     _dispatcher.dispatch(cmdObj, params);
 
                     // serialize this to the async job table
-                    completeAsyncJob(jobId, AsyncJobResult.STATUS_SUCCEEDED, 0, cmdObj.getResponse());
+                    completeAsyncJob(jobId, AsyncJobResult.STATUS_SUCCEEDED, 0, cmdObj.getResponseObject());
 
                     // commands might need to be queued as part of synchronization here, so they just have to be re-dispatched from the queue mechanism...
                     if (job.getSyncSource() != null) {

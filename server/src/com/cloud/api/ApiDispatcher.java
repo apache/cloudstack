@@ -107,11 +107,7 @@ public class ApiDispatcher {
         setupParameters(cmd, params);
 
         try {
-            Object result = cmd.execute();
-            if (!(result instanceof ResponseObject)) {
-                cmd.setResponseObject(result);
-            }        
-           
+            cmd.execute();
         } catch (InvalidParameterValueException e1) {
             throw new ServerApiException(BaseCmd.PARAM_ERROR, e1.getMessage());
         } catch (IllegalArgumentException e2) {

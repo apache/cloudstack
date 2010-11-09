@@ -35,10 +35,9 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.server.ManagementServer;
 import com.cloud.user.AccountVO;
 
-@Implementation(method="searchForAccounts",manager=ManagementServer.class,description="Lists accounts and provides detailed account information for listed accounts")
+@Implementation(description="Lists accounts and provides detailed account information for listed accounts")
 public class ListAccountsCmd extends BaseListCmd {
 	public static final Logger s_logger = Logger.getLogger(ListAccountsCmd.class.getName());
     private static final String s_name = "listaccountsresponse";
@@ -110,12 +109,10 @@ public class ListAccountsCmd extends BaseListCmd {
         return s_name;
     }
 
-    @Override @SuppressWarnings("unchecked")
-    public ListResponse<AccountResponse> getResponse() {
-        List<AccountVO> accounts = (List<AccountVO>)getResponseObject();
-
+    @Override
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        List<AccountVO> accounts = _mgr.searchForAccounts(this);
         ListResponse<AccountResponse> response = new ListResponse<AccountResponse>();
-
         List<AccountResponse> accountResponses = new ArrayList<AccountResponse>();
         for (AccountVO account : accounts) {
             AccountResponse acctResponse = ApiResponseHelper.createAccountResponse(account);
@@ -125,12 +122,7 @@ public class ListAccountsCmd extends BaseListCmd {
 
         response.setResponses(accountResponses);
         response.setResponseName(getName());
-        return response;
-    }
-    
-    @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<AccountVO> result = _mgr.searchForAccounts(this);
-        return result;
+        
+        this.setResponseObject(response);
     }
 }

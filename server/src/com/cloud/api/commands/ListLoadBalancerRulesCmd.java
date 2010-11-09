@@ -38,7 +38,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.LoadBalancerVO;
 
-@Implementation(method="searchForLoadBalancers", description="Lists load balancer rules.")
+@Implementation(description="Lists load balancer rules.")
 public class ListLoadBalancerRulesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger (ListLoadBalancerRulesCmd.class.getName());
 
@@ -103,10 +103,9 @@ public class ListLoadBalancerRulesCmd extends BaseListCmd {
         return s_name;
     }
 
-    @Override @SuppressWarnings("unchecked")
-    public ListResponse<LoadBalancerResponse> getResponse() {
-        List<LoadBalancerVO> loadBalancers = (List<LoadBalancerVO>)getResponseObject();
-
+    @Override
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        List<LoadBalancerVO> loadBalancers = _mgr.searchForLoadBalancers(this);
         ListResponse<LoadBalancerResponse> response = new ListResponse<LoadBalancerResponse>();
         List<LoadBalancerResponse> lbResponses = new ArrayList<LoadBalancerResponse>();
         for (LoadBalancerVO loadBalancer : loadBalancers) {
@@ -117,12 +116,6 @@ public class ListLoadBalancerRulesCmd extends BaseListCmd {
 
         response.setResponses(lbResponses);
         response.setResponseName(getName());
-        return response;
-    }
-    
-    @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<LoadBalancerVO> result = _mgr.searchForLoadBalancers(this);
-        return result;
+        this.setResponseObject(response);
     }
 }

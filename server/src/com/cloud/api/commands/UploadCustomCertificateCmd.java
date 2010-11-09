@@ -33,7 +33,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.Account;
 
-@Implementation(method="uploadCertificate")
+@Implementation(description="Uploads custom certificate")
 public class UploadCustomCertificateCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UploadCustomCertificateCmd.class.getName());
 
@@ -44,16 +44,6 @@ public class UploadCustomCertificateCmd extends BaseAsyncCmd {
 
     public String getCertificate() {
         return certificate;
-    }
-
-    @Override @SuppressWarnings("unchecked")
-    public CustomCertificateResponse getResponse() {
-        String updatedCpIdList = (String)getResponseObject();
-        CustomCertificateResponse response = new CustomCertificateResponse();
-        response.setResponseName(getName());
-        response.setUpdatedConsoleProxyIdList(updatedCpIdList);
-        response.setObjectName("customcertificate");
-        return response;
     }
 
     @Override
@@ -81,9 +71,13 @@ public class UploadCustomCertificateCmd extends BaseAsyncCmd {
     }
     
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         String result = _mgr.uploadCertificate(this);
-        return result;
+        CustomCertificateResponse response = new CustomCertificateResponse();
+        response.setResponseName(getName());
+        response.setUpdatedConsoleProxyIdList(result);
+        response.setObjectName("customcertificate");
+        this.setResponseObject(response);
     }
 
 }

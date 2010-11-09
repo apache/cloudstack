@@ -32,12 +32,10 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
-import com.cloud.user.AccountVO;
 import com.cloud.user.UserContext;
 
-@Implementation(method="disableAccount", manager=ManagementServer.class, description="Disables an account")
+@Implementation(description="Disables an account")
 public class DisableAccountCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(DisableAccountCmd.class.getName());
     private static final String s_name = "disableaccountresponse";
@@ -93,17 +91,11 @@ public class DisableAccountCmd extends BaseAsyncCmd {
         return  "disabling account: " + getAccountName() + " in domain: " + getDomainId();
     }
 
-    @Override @SuppressWarnings("unchecked")
-    public AccountResponse getResponse() {
-        AccountVO account = (AccountVO)getResponseObject();
-        AccountResponse response = ApiResponseHelper.createAccountResponse(account);
-        response.setResponseName(getName());
-        return response;
-    }
-    
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         Account result = _accountService.disableAccount(this);
-        return result;
+        AccountResponse response = ApiResponseHelper.createAccountResponse(result);
+        response.setResponseName(getName());
+        this.setResponseObject(response);
     }
 }

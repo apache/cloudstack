@@ -34,13 +34,12 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.DomainRouterService;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.DomainRouter;
 
 
-@Implementation(method="startRouter", manager=DomainRouterService.class, description="Starts a router.")
+@Implementation(description="Starts a router.")
 public class StartRouter2Cmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(StartRouter2Cmd.class.getName());
     private static final String s_name = "startrouterresponse";
@@ -95,15 +94,11 @@ public class StartRouter2Cmd extends BaseAsyncCmd {
     }
     
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
-        return _routerMgr.startRouter(this);
-    }
-
-    @Override @SuppressWarnings("unchecked")
-    public DomainRouterResponse getResponse() {
-        DomainRouter router = (DomainRouter)getResponseObject();
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
+        DomainRouter router = _routerMgr.startRouter(this);
         DomainRouterResponse routerResponse = ApiResponseHelper.createDomainRouterResponse(router);
         routerResponse.setResponseName(getName());
-        return routerResponse;
+        this.setResponseObject(routerResponse);
     }
+
 }

@@ -34,12 +34,11 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
 
-@Implementation(method="deleteUser", manager=ManagementServer.class, description="Deletes a user account")
+@Implementation(description="Deletes a user account")
 public class DeleteUserCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(DeleteUserCmd.class.getName());
 	private static final String s_name = "deleteuserresponse";
@@ -94,19 +93,15 @@ public class DeleteUserCmd extends BaseAsyncCmd {
         User user = ApiDBUtils.findUserById(getId());
         return (user != null ? ("User " + user.getUsername() + " (id: " + user.getId() + ") and accountId = " + user.getAccountId()) : "user delete, but this user does not exist in the system");
     }
-
-	@Override @SuppressWarnings("unchecked")
-	public SuccessResponse getResponse() {
-		if (getResponseObject() == null || (Boolean)getResponseObject()) {
-	    	return new SuccessResponse(getName());
-	    } else {
-	    	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete user");
-	    }
-	}
 	
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         boolean result = _accountService.deleteUser(this);
-        return result;
+        if (result) {
+            SuccessResponse response = new SuccessResponse(getName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete user");
+        }
     }
 }

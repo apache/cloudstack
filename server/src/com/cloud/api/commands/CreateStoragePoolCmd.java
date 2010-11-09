@@ -37,11 +37,10 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceInUseException;
-import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
 
 @SuppressWarnings("rawtypes")
-@Implementation(method="createPool", manager=StorageManager.class, description="Creates a storage pool.")
+@Implementation(description="Creates a storage pool.")
 public class CreateStoragePoolCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateStoragePoolCmd.class.getName());
 
@@ -113,24 +112,17 @@ public class CreateStoragePoolCmd extends BaseCmd {
         return s_name;
     }
 
-    @Override @SuppressWarnings("unchecked")
-    public StoragePoolResponse getResponse() {
-        StoragePoolVO pool = (StoragePoolVO)getResponseObject();
-
-        if (pool != null) {
-            StoragePoolResponse response = ApiResponseHelper.createStoragePoolResponse(pool);
-            response.setResponseName(getName());
-            return response;
-        } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add host");
-        }
-    }
-    
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         try {
             StoragePoolVO result = _storageMgr.createPool(this);
-            return result;
+            if (result != null) {
+                StoragePoolResponse response = ApiResponseHelper.createStoragePoolResponse(result);
+                response.setResponseName(getName());
+                this.setResponseObject(response);
+            } else {
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add host");
+            }
         } catch (ResourceAllocationException ex1) {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex1.getMessage());
         }catch (ResourceInUseException ex2) {

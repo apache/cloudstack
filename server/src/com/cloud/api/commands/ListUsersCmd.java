@@ -36,10 +36,9 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.server.ManagementServer;
 import com.cloud.user.UserAccountVO;
 
-@Implementation(method="searchForUsers", description="Lists user accounts")
+@Implementation(description="Lists user accounts")
 public class ListUsersCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListUsersCmd.class.getName());
 
@@ -103,26 +102,19 @@ public class ListUsersCmd extends BaseListCmd {
     public String getName() {
         return s_name;
     }
-
-    @Override @SuppressWarnings("unchecked")
-    public ListResponse<UserResponse> getResponse() {
-        List<UserAccountVO> users = (List<UserAccountVO>)getResponseObject();
-
+    
+    @Override
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        List<UserAccountVO> result = _mgr.searchForUsers(this);
         ListResponse<UserResponse> response = new ListResponse<UserResponse>();
         List<UserResponse> userResponses = new ArrayList<UserResponse>();
-        for (UserAccountVO user : users) {
+        for (UserAccountVO user : result) {
             UserResponse userResponse = ApiResponseHelper.createUserResponse(user);
             userResponse.setObjectName("user");
             userResponses.add(userResponse);
         }
         response.setResponses(userResponses);
         response.setResponseName(getName());
-        return response;
-    }
-    
-    @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<UserAccountVO> result = _mgr.searchForUsers(this);
-        return result;
+        this.setResponseObject(response);
     }
 }

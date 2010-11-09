@@ -37,7 +37,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 
-@Implementation(method="listDataCenters")
+@Implementation(description="Lists zones")
 public class ListZonesByCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListZonesByCmd.class.getName());
 
@@ -73,10 +73,9 @@ public class ListZonesByCmd extends BaseListCmd {
         return s_name;
     }
 
-    @Override @SuppressWarnings("unchecked")
-    public ListResponse<ZoneResponse> getResponse() {
-        List<DataCenterVO> dataCenters = (List<DataCenterVO>)getResponseObject();
-
+    @Override
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        List<DataCenterVO> dataCenters = _mgr.listDataCenters(this);
         ListResponse<ZoneResponse> response = new ListResponse<ZoneResponse>();
         List<ZoneResponse> zoneResponses = new ArrayList<ZoneResponse>();
         for (DataCenterVO dataCenter : dataCenters) {
@@ -87,12 +86,6 @@ public class ListZonesByCmd extends BaseListCmd {
 
         response.setResponses(zoneResponses);
         response.setResponseName(getName());
-        return response;
-    }
-    
-    @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<DataCenterVO> result = _mgr.listDataCenters(this);
-        return result;
+        this.setResponseObject(response);
     }
 }

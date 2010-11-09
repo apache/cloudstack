@@ -38,7 +38,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.HostVO;
 
-@Implementation(method="searchForServers", description="Lists hosts.")
+@Implementation(description="Lists hosts.")
 public class ListHostsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListHostsCmd.class.getName());
 
@@ -112,13 +112,13 @@ public class ListHostsCmd extends BaseListCmd {
         return s_name;
     }
 
-    @Override @SuppressWarnings("unchecked")
-    public ListResponse<HostResponse> getResponse() {
-        List<HostVO> hosts = (List<HostVO>)getResponseObject();
+    @Override
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        List<HostVO> result = _mgr.searchForServers(this);
 
         ListResponse<HostResponse> response = new ListResponse<HostResponse>();
         List<HostResponse> hostResponses = new ArrayList<HostResponse>();
-        for (HostVO host : hosts) {
+        for (HostVO host : result) {
             HostResponse hostResponse = ApiResponseHelper.createHostResponse(host);
             hostResponse.setObjectName("host");
             hostResponses.add(hostResponse);
@@ -126,12 +126,6 @@ public class ListHostsCmd extends BaseListCmd {
 
         response.setResponses(hostResponses);
         response.setResponseName(getName());
-        return response;
-    }
-    
-    @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<HostVO> result = _mgr.searchForServers(this);
-        return result;
+        this.setResponseObject(response);
     }
 }

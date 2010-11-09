@@ -37,7 +37,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.storage.VolumeVO;
 
-@Implementation(method="searchForVolumes", description="Lists all volumes.")
+@Implementation(description="Lists all volumes.")
 public class ListVolumesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListVolumesCmd.class.getName());
 
@@ -122,10 +122,10 @@ public class ListVolumesCmd extends BaseListCmd {
     public String getName() {
         return s_name;
     }
-
-    @Override @SuppressWarnings("unchecked")
-    public ListResponse<VolumeResponse> getResponse() {
-        List<VolumeVO> volumes = (List<VolumeVO>)getResponseObject();
+    
+    @Override
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        List<VolumeVO> volumes = _mgr.searchForVolumes(this);
 
         ListResponse<VolumeResponse> response = new ListResponse<VolumeResponse>();
         List<VolumeResponse> volResponses = new ArrayList<VolumeResponse>();
@@ -137,12 +137,6 @@ public class ListVolumesCmd extends BaseListCmd {
 
         response.setResponses(volResponses);
         response.setResponseName(getName());
-        return response;
-    }
-    
-    @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<VolumeVO> result = _mgr.searchForVolumes(this);
-        return result;
+        this.setResponseObject(response);
     }
 }

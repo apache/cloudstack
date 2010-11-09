@@ -37,6 +37,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
@@ -44,9 +45,8 @@ import com.cloud.user.User;
 import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.InstanceGroupVO;
-import com.cloud.vm.UserVmService;
 
-@Implementation(createMethod="createVirtualMachine", method="startVirtualMachine", manager=UserVmService.class, description="Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.")
+@Implementation(description="Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.")
 public class DeployVm2Cmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(DeployVMCmd.class.getName());
     
@@ -161,57 +161,9 @@ public class DeployVm2Cmd extends BaseAsyncCreateCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
     @Override
-    public Object execute() {
-        //TODO - method stub should be here
-        return null;
-    }
-    
-    @Override
-    public void callCreate() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException{
-    }
-
-
-    @Override
-    public String getName() {
-        return s_name;
-    }
-    
-    public static String getResultObjectName() {
-        return "virtualmachine";
-    }
-    
-    @Override
-    public long getAccountId() {
-        Account account = UserContext.current().getAccount();
-        if ((account == null) || isAdmin(account.getType())) {
-            if ((domainId != null) && (accountName != null)) {
-                Account userAccount = ApiDBUtils.findAccountByNameDomain(accountName, domainId);
-                if (userAccount != null) {
-                    return userAccount.getId();
-                }
-            }
-        }
-
-        if (account != null) {
-            return account.getId();
-        }
-
-        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
-    }
-
-    @Override
-    public String getEventType() {
-        return EventTypes.EVENT_VM_CREATE;
-    }
-
-    @Override
-    public String getEventDescription() {
-        return  "deploying Vm";
-    }
-
-    @Override @SuppressWarnings("unchecked")
-    public UserVmResponse getResponse() {
-        UserVm userVm = (UserVm)getResponseObject();
+    public void execute() {
+        try {
+        UserVm userVm = _userVmService.startVirtualMachine(this);
 
         UserVmResponse response = new UserVmResponse();
         response.setId(userVm.getId());
@@ -313,6 +265,61 @@ public class DeployVm2Cmd extends BaseAsyncCreateCmd {
 
         response.setResponseName(getName());
         response.setObjectName("virtualmachine");
-        return response;
+        this.setResponseObject(response);
+        } catch (Exception ex) {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to deploy virtual machine");
+        }
+    }
+    
+    @Override
+    public void callCreate() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException{
+        try {
+            UserVm vm = _userVmService.createVirtualMachine(this);
+            if (vm != null) {
+                this.setId(vm.getId());
+            }
+        } catch (ResourceUnavailableException ex) {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create a vm");
+        }
+        
+    }
+
+
+    @Override
+    public String getName() {
+        return s_name;
+    }
+    
+    public static String getResultObjectName() {
+        return "virtualmachine";
+    }
+    
+    @Override
+    public long getAccountId() {
+        Account account = UserContext.current().getAccount();
+        if ((account == null) || isAdmin(account.getType())) {
+            if ((domainId != null) && (accountName != null)) {
+                Account userAccount = ApiDBUtils.findAccountByNameDomain(accountName, domainId);
+                if (userAccount != null) {
+                    return userAccount.getId();
+                }
+            }
+        }
+
+        if (account != null) {
+            return account.getId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_VM_CREATE;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  "deploying Vm";
     }
 }

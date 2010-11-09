@@ -39,7 +39,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.User;
 
-@Implementation(method="searchForEvents", description="A command to list events.")
+@Implementation(description="A command to list events.")
 public class ListEventsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListEventsCmd.class.getName());
 
@@ -118,13 +118,12 @@ public class ListEventsCmd extends BaseListCmd {
         return s_name;
     }
 
-    @Override @SuppressWarnings("unchecked")
-    public ListResponse<EventResponse> getResponse() {
-        List<EventVO> events = (List<EventVO>)getResponseObject();
-
+    @Override
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        List<EventVO> result = _mgr.searchForEvents(this);
         ListResponse<EventResponse> response = new ListResponse<EventResponse>();
         List<EventResponse> eventResponses = new ArrayList<EventResponse>();
-        for (EventVO event : events) {
+        for (EventVO event : result) {
             EventResponse responseEvent = new EventResponse();
             responseEvent.setAccountName(event.getAccountName());
             responseEvent.setCreated(event.getCreateDate());
@@ -147,12 +146,6 @@ public class ListEventsCmd extends BaseListCmd {
 
         response.setResponses(eventResponses);
         response.setResponseName(getName());
-        return response;
-    }
-    
-    @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<EventVO> result = _mgr.searchForEvents(this);
-        return result;
+        this.setResponseObject(response);
     }
 }

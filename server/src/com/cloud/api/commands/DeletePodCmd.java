@@ -26,14 +26,13 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
-import com.cloud.configuration.ConfigurationManager;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 
-@Implementation(method="deletePod", manager=ConfigurationManager.class, description="Deletes a Pod.")
+@Implementation(description="Deletes a Pod.")
 public class DeletePodCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeletePodCmd.class.getName());
 
@@ -62,19 +61,15 @@ public class DeletePodCmd extends BaseCmd {
     public String getName() {
         return s_name;
     }
-    
-    @Override @SuppressWarnings("unchecked")
-    public SuccessResponse getResponse() {
-    	if (getResponseObject() == null || (Boolean)getResponseObject()) {
-	    	return new SuccessResponse(getName());
-	    } else {
-	    	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete pod");
-	    }
-    }
-    
+
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         boolean result = _configService.deletePod(this);
-        return result;
+        if (result) {
+            SuccessResponse response = new SuccessResponse(getName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete pod");
+        }
     }
 }

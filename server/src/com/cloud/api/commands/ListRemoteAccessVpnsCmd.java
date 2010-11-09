@@ -38,7 +38,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.RemoteAccessVpnVO;
 import com.cloud.user.Account;
 
-@Implementation(method="searchForRemoteAccessVpns", description="Lists remote access vpns")
+@Implementation(description="Lists remote access vpns")
 public class ListRemoteAccessVpnsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger (ListRemoteAccessVpnsCmd.class.getName());
 
@@ -102,14 +102,13 @@ public class ListRemoteAccessVpnsCmd extends BaseListCmd {
         return s_name;
     }
 
-    @Override @SuppressWarnings("unchecked")
-    public ListResponse<RemoteAccessVpnResponse> getResponse() {
-        List<RemoteAccessVpnVO> vpns = (List<RemoteAccessVpnVO>)getResponseObject();
-
+    @Override
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        List<RemoteAccessVpnVO> vpns = _mgr.searchForRemoteAccessVpns(this);
         ListResponse<RemoteAccessVpnResponse> response = new ListResponse<RemoteAccessVpnResponse>();
         List<RemoteAccessVpnResponse> vpnResponses = new ArrayList<RemoteAccessVpnResponse>();
         for (RemoteAccessVpnVO vpn : vpns) {
-        	RemoteAccessVpnResponse vpnResponse = new RemoteAccessVpnResponse();
+            RemoteAccessVpnResponse vpnResponse = new RemoteAccessVpnResponse();
             vpnResponse.setId(vpn.getId());
             vpnResponse.setPublicIp(vpn.getVpnServerAddress());
             vpnResponse.setIpRange(vpn.getIpRange());
@@ -128,12 +127,6 @@ public class ListRemoteAccessVpnsCmd extends BaseListCmd {
 
         response.setResponses(vpnResponses);
         response.setResponseName(getName());
-        return response;
-    }
-    
-    @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<RemoteAccessVpnVO> result = _mgr.searchForRemoteAccessVpns(this);
-        return result;
+        this.setResponseObject(response);
     }
 }
