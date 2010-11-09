@@ -1669,11 +1669,16 @@ public class StorageManagerImpl implements StorageManager {
             rae.setResourceType("volume");
             throw rae;
         }
-
+        
         Long zoneId = null;
         Long diskOfferingId = null;
         Long size = null;
+        
         // validate input parameters before creating the volume
+        if(cmd.getSnapshotId() == null && cmd.getDiskOfferingId() == null){
+        	throw new InvalidParameterValueException("Either disk Offering Id or snapshot Id must be passed whilst creating volume");
+        }
+        
         if (cmd.getSnapshotId() == null) {
             zoneId = cmd.getZoneId();
             if ((zoneId == null)) {
