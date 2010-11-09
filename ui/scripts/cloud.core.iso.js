@@ -199,6 +199,8 @@ function isoJsonToDetailsTab() {
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");  
     var jsonObj = $midmenuItem1.data("jsonObj");       
     $thisTab.data("jsonObj", jsonObj);    
+     
+    $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));
         
     $thisTab.find("#id").text(fromdb(jsonObj.id));
     $thisTab.find("#zonename").text(fromdb(jsonObj.zonename));

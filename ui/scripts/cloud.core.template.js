@@ -238,6 +238,8 @@ function templateJsonToDetailsTab() {
     
     $thisTab.data("jsonObj", jsonObj);    
     $midmenuItem1.data("jsonObj", jsonObj);    
+    
+    $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name)); 
      
     $thisTab.find("#id").text(fromdb(jsonObj.id));
     $thisTab.find("#zonename").text(fromdb(jsonObj.zonename));
