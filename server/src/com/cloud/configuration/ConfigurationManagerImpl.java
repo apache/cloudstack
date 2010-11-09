@@ -29,6 +29,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.acl.SecurityChecker;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.CreateCfgCmd;
@@ -56,8 +57,8 @@ import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Pod;
 import com.cloud.dc.PodVlanMapVO;
 import com.cloud.dc.Vlan;
-import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
+import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterIpAddressDao;
@@ -80,8 +81,8 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
-import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
@@ -95,6 +96,7 @@ import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
@@ -136,6 +138,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 	@Inject SecondaryStorageVmDao _secStorageDao;
     @Inject AccountManager _accountMgr;
     @Inject NetworkManager _networkMgr;
+	@Inject(adapter=SecurityChecker.class)
+    Adapters<SecurityChecker> _secChecker;
 
     private int _maxVolumeSizeInGb;
 
@@ -1363,7 +1367,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String vlanGateway = cmd.getGateway();
         String vlanNetmask = cmd.getNetmask();
 
-		//check for hypervisor type to be xenserver
+        //check for hypervisor type to be xenserver
 		String hypervisorType = _configDao.getValue("hypervisor.type");
 				
 		if(hypervisorType.equalsIgnoreCase("xenserver")) {
@@ -1393,11 +1397,13 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 			throw new InvalidParameterValueException("Please specify a valid zone.");
 		}
     	
-    	//check if the account's domain is a child of the zone's domain, for adding vlan ip ranges
-		if(domainId != null && !_domainDao.isChildDomain(zone.getDomainId(), domainId)){
-			//this is for account specific case, as domainId != null
-			throw new PermissionDeniedException("The account associated with specific domain id:"+domainId+" doesn't have permissions to add vlan ip ranges for the zone:"+zone.getId());
-		}
+//    	//check if the account's domain is a child of the zone's domain, for adding vlan ip ranges
+//		if(domainId != null && !_domainDao.isChildDomain(zone.getDomainId(), domainId)){
+//			//this is for account specific case, as domainId != null
+//			throw new PermissionDeniedException("The account associated with specific domain id:"+domainId+" doesn't have permissions to add vlan ip ranges for the zone:"+zone.getId());
+//		}
+        //ACL check
+        checkAccess(account, zone);
 
     	boolean associateIpRangeToAccount = false;
     	if (vlanType.equals(VlanType.VirtualNetwork)) {
@@ -2215,4 +2221,21 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     	return deleteVlanAndPublicIpRange(userId, vlanDbId);
 		
 	}   
+	
+	@Override
+    public void checkAccess(Account caller, DataCenter zone) throws PermissionDeniedException {
+        for (SecurityChecker checker : _secChecker) {
+            if (checker.checkAccess(caller, zone)) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Access granted to " + caller + " to zone:" + zone.getId() + " by " + checker.getName());
+                }
+                return;
+            }else{
+            	throw new PermissionDeniedException("Access denied to "+caller+" by "+checker.getName());
+            }
+        }
+        
+        assert false : "How can all of the security checkers pass on checking this caller?";
+        throw new PermissionDeniedException("There's no way to confirm " + caller + " has access to zone:" + zone.getId());
+    }
 }

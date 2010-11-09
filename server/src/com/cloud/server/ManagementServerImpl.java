@@ -60,6 +60,8 @@ import javax.crypto.spec.SecretKeySpec;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
+import com.cloud.acl.DomainChecker;
+import com.cloud.acl.SecurityChecker;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.GetVncPortAnswer;
@@ -150,6 +152,7 @@ import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.ClusterVO;
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
@@ -163,6 +166,7 @@ import com.cloud.dc.dao.DataCenterIpAddressDaoImpl;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.EventState;
@@ -272,6 +276,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.component.Inject;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
@@ -393,7 +398,7 @@ public class ManagementServerImpl implements ManagementServer {
 	private boolean _networkGroupsEnabled = false;
 
     private boolean _isHypervisorSnapshotCapable = false;
-
+    
     protected ManagementServerImpl() {
         ComponentLocator locator = ComponentLocator.getLocator(Name);
         _lunDao = locator.getDao(PreallocatedLunDao.class);
@@ -461,7 +466,7 @@ public class ManagementServerImpl implements ManagementServer {
         _snapMgr = locator.getManager(SnapshotManager.class);
         _networkGroupMgr = locator.getManager(NetworkGroupManager.class);
         _uploadMonitor = locator.getManager(UploadMonitor.class);        
-        
+    	
         _userAuthenticators = locator.getAdapters(UserAuthenticator.class);
         if (_userAuthenticators == null || !_userAuthenticators.isSet()) {
             s_logger.error("Unable to find an user authenticator.");
@@ -1116,7 +1121,8 @@ public class ManagementServerImpl implements ManagementServer {
         String[] networkGroups = null;
         Long sizeObj = cmd.getSize();
         long size = (sizeObj == null) ? 0 : sizeObj;
-
+        Account userAccount = null;
+        
         DataCenterVO dc = _dcDao.findById(dataCenterId);
         if (dc == null) {
             throw new InvalidParameterValueException("Unable to find zone: " + dataCenterId);
@@ -1128,7 +1134,7 @@ public class ManagementServerImpl implements ManagementServer {
                     throw new PermissionDeniedException("Failed to deploy VM, invalid domain id (" + domainId + ") given.");
                 }
                 if (accountName != null) {
-                    Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
+                    userAccount = _accountDao.findActiveAccount(accountName, domainId);
                     if (userAccount == null) {
                         throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
                     }
@@ -1147,25 +1153,18 @@ public class ManagementServerImpl implements ManagementServer {
 
         if(domainId == null){
         	domainId = dc.getDomainId(); //get the domain id from zone
-        	
-        	if(domainId == null){
-        		//do nothing (public zone case)
-        	}
-        	else{
-        		//check if this account has the permission to deploy a vm in this domain
-        		if(ctxAccount != null){
-        			if((ctxAccount.getType() == Account.ACCOUNT_TYPE_NORMAL) || ctxAccount.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN){
-        				if(domainId == ctxAccount.getDomainId()){
-        					//user in same domain as dedicated zone
-        				}
-        				else if ((!_domainDao.isChildDomain(domainId,ctxAccount.getDomainId()))){
-        					//may need to revisit domain admin case for leaves
-        					throw new PermissionDeniedException("Failed to deploy VM, user does not have permission to deploy a vm within this dedicated private zone under domain id:"+domainId);
-        				}
-        			}
-        		}
-        	}
         }
+  
+    	if(domainId == null){
+    		//do nothing (public zone case)
+    	}
+    	else{
+    		if(userAccount != null){
+    			_configMgr.checkAccess(userAccount, dc);//user deploying his own vm
+    		}else{
+    			_configMgr.checkAccess(ctxAccount, dc);
+    		}
+    	}        	
 
         List<String> netGrpList = cmd.getNetworkGroupList();
         if ((netGrpList != null) && !netGrpList.isEmpty()) {

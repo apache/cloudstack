@@ -19,12 +19,15 @@ package com.cloud.configuration;
 
 import java.util.List;
 
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.user.Account;
 import com.cloud.utils.component.Manager;
 
 /**
@@ -144,5 +147,8 @@ public interface ConfigurationManager extends Manager {
 	 * @return String containing a comma separated list of tags
 	 */
 	String listToCsvTags(List<String> tags);
+
+	void checkAccess(Account caller, DataCenter zone)
+			throws PermissionDeniedException;
 	
 }

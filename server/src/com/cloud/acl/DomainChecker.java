@@ -20,7 +20,9 @@ package com.cloud.acl;
 import javax.ejb.Local;
 
 import com.cloud.api.BaseCmd;
+import com.cloud.dc.DataCenter;
 import com.cloud.domain.Domain;
+import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.storage.LaunchPermissionVO;
@@ -97,4 +99,71 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
         Account account = _accountDao.findById(user.getAccountId());
         return checkAccess(account, entity);
     }
+
+	@Override
+	public boolean checkAccess(Account account, DataCenter zone) throws PermissionDeniedException {
+		if(account == null || zone.getDomainId() == null){//public zone
+			return true;
+		}else{
+			//admin has all permissions
+			if(account.getType() == Account.ACCOUNT_TYPE_ADMIN){
+				return true;
+			}		
+			//if account is normal user
+			//check if account's domain is a child of zone's domain
+			else if(account.getType() == Account.ACCOUNT_TYPE_NORMAL){
+				if(account.getDomainId() == zone.getDomainId()){
+					return true; //zone and account at exact node
+				}else{
+		    		DomainVO domainRecord = _domainDao.findById(account.getDomainId());
+		    		if(domainRecord != null)
+		    		{
+		    			while(true){
+		    				if(domainRecord.getId() == zone.getDomainId()){
+		    					//found as a child
+		    					return true;
+		    				}
+		    				if(domainRecord.getParent() != null)
+		    					domainRecord = _domainDao.findById(domainRecord.getParent());
+		    				else
+		    					break;
+		    			}
+		    		}
+				}
+				//not found
+				return false;
+			}
+			//if account is domain admin
+			//check if the account's domain is either child of zone's domain, or if zone's domain is child of account's domain
+			else if(account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN){
+				if(account.getDomainId() == zone.getDomainId()){
+					return true; //zone and account at exact node
+				}else{
+					DomainVO zoneDomainRecord = _domainDao.findById(zone.getDomainId());
+		    		DomainVO accountDomainRecord = _domainDao.findById(account.getDomainId());
+		    		if(accountDomainRecord != null)
+		    		{
+		    			DomainVO localRecord = accountDomainRecord;
+		    			while(true){
+		    				if(localRecord.getId() == zone.getDomainId()){
+		    					//found as a child
+		    					return true;
+		    				}
+		    				if(localRecord.getParent() != null)
+		    					localRecord = _domainDao.findById(localRecord.getParent());
+		    				else
+		    					break;
+		    			}
+		    		}
+		    		//didn't find in upper tree
+		    		if(zoneDomainRecord.getPath().contains(accountDomainRecord.getPath())){
+		    			return true;
+		    		}
+				}
+				//not found
+				return false;
+			}
+		}
+		return false;
+	}
 }

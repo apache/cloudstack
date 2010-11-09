@@ -3,6 +3,7 @@
  */
 package com.cloud.acl;
 
+import com.cloud.dc.DataCenter;
 import com.cloud.domain.Domain;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.Account;
@@ -53,6 +54,8 @@ public interface SecurityChecker extends Adapter {
      * @throws PermissionDeniedException if this adapter is suppose to authenticate ownership and the check failed.
      */
     boolean checkAccess(User user, ControlledEntity entity) throws PermissionDeniedException;
+    
+    boolean checkAccess(Account account, DataCenter zone) throws PermissionDeniedException;
 
 // We should be able to use this method to check against commands.  For example, we can
 // annotate the command with access annotations and this method can use it to extract
