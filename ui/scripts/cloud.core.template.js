@@ -220,21 +220,8 @@ function templateJsonToDetailsTab() {
     $thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();        
     
-    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    var id = $midmenuItem1.data("jsonObj").id;
-    var zoneid = $midmenuItem1.data("jsonObj").zoneid;
-        
-    var jsonObj;   
-    $.ajax({
-        data: createURL("command=listTemplates&templatefilter=self&id="+id+"&zoneid="+zoneid),
-        dataType: "json",
-        async: false,
-        success: function(json) {             
-            var items = json.listtemplatesresponse.template;            
-            if(items != null && items.length > 0)
-                jsonObj = items[0];
-        }
-    });      
+    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");    
+    var jsonObj = $midmenuItem1.data("jsonObj");   
     
     $thisTab.data("jsonObj", jsonObj);    
     $midmenuItem1.data("jsonObj", jsonObj);    

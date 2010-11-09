@@ -112,7 +112,7 @@ var primarystorageActionMap = {
         dialogBeforeActionFn: doEnableMaintenanceModeForPrimaryStorage,
         inProcessText: "Enabling Maintenance Mode....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {             
-            var item = json.queryasyncjobresultresponse.jobresult.prepareprimarystorageformaintenanceresponse; 
+            var item = json.queryasyncjobresultresponse.jobresult.storagepool; 
             primarystorageToMidmenu(item, $midmenuItem1);
             primarystorageToRightPanel($midmenuItem1);                        
             $("#right_panel_content #after_action_info").text("We are actively enabling maintenance. Please refresh periodically for an updated status."); 
@@ -124,7 +124,7 @@ var primarystorageActionMap = {
         dialogBeforeActionFn: doCancelMaintenanceModeForPrimaryStorage,
         inProcessText: "Cancelling Maintenance Mode....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {       
-            var item = json.queryasyncjobresultresponse.jobresult.cancelprimarystoragemaintenanceresponse;    
+            var item = json.queryasyncjobresultresponse.jobresult.storagepool;    
             primarystorageToMidmenu(item, $midmenuItem1);
             primarystorageToRightPanel($midmenuItem1);            
             $("#right_panel_content #after_action_info").text("We are actively cancelling your scheduled maintenance.  Please refresh periodically for an updated status."); 
@@ -135,7 +135,9 @@ var primarystorageActionMap = {
         dialogBeforeActionFn: doDeletePrimaryStorage,
         inProcessText: "Deleting Primary Storage....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {   
-            $midmenuItem1.remove();
+            $midmenuItem1.slideUp("slow", function() {
+                $(this).remove();
+            });   
             clearRightPanel();
             primarystorageClearRightPanel();
         }

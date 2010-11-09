@@ -202,7 +202,8 @@ var hostActionMap = {
         dialogBeforeActionFn: doEnableMaintenanceMode,
         inProcessText: "Enabling Maintenance Mode....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {            
-            hostToMidmenu(json.queryasyncjobresultresponse.host[0], $midmenuItem1);
+            var item = json.queryasyncjobresultresponse.jobresult.host;
+            hostToMidmenu(item, $midmenuItem1);
             hostToRightPanel($midmenuItem1);            
             $("#right_panel_content #after_action_info").text("We are actively enabling maintenance on your host. Please refresh periodically for an updated status."); 
         }
@@ -213,7 +214,8 @@ var hostActionMap = {
         dialogBeforeActionFn: doCancelMaintenanceMode,
         inProcessText: "Cancelling Maintenance Mode....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {            
-            hostToMidmenu(json.queryasyncjobresultresponse.host[0], $midmenuItem1);
+            var item = json.queryasyncjobresultresponse.jobresult.host;  
+            hostToMidmenu(item, $midmenuItem1);  
             hostToRightPanel($midmenuItem1);            
             $("#right_panel_content #after_action_info").text("We are actively cancelling your scheduled maintenance.  Please refresh periodically for an updated status."); 
         }
@@ -224,7 +226,8 @@ var hostActionMap = {
         dialogBeforeActionFn: doForceReconnect,
         inProcessText: "Reconnecting....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {
-            hostToMidmenu(json.queryasyncjobresultresponse.jobresult.host, $midmenuItem1);
+            var item = json.queryasyncjobresultresponse.jobresult.host;
+            hostToMidmenu(item, $midmenuItem1);  
             hostToRightPanel($midmenuItem1);            
             $("#right_panel_content #after_action_info").text("We are actively reconnecting your host.  Please refresh periodically for an updated status."); 
         }
@@ -234,7 +237,9 @@ var hostActionMap = {
         dialogBeforeActionFn: doRemoveHost,
         inProcessText: "Removing Host....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {    
-            $midmenuItem1.remove();
+            $midmenuItem1.slideUp("slow", function() {
+               $(this).remove();
+            });   
             clearRightPanel();
             hostClearRightPanel();
         }
@@ -244,15 +249,9 @@ var hostActionMap = {
         dialogBeforeActionFn: doUpdateOSPreference,
         inProcessText: "Updating OS Preference....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {     
-            //call listHosts API before bug 6650 ("updateHost API should return an embedded object like what listHosts API does") is fixed.
-            $.ajax({
-                data: createURL("command=listHosts&id="+id),
-                dataType: "json",
-                success: function(json) {  
-                    hostToMidmenu(json.listhostsresponse.host[0], $midmenuItem1);      
-                    hostToRightPanel($midmenuItem1);                     
-                }
-            });            
+            var item = json.updatehostresponse.host;
+            hostToMidmenu(item, $midmenuItem1);      
+            hostToRightPanel($midmenuItem1);         
         }
     }          
 } 
