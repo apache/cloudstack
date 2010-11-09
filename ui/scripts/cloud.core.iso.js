@@ -334,7 +334,9 @@ var isoActionMap = {
         dialogBeforeActionFn: doDeleteIso,
         inProcessText: "Deleting ISO....",
         afterActionSeccessFn: function(json, $midmenuItem1, id){    
-            $midmenuItem1.remove();
+            $midmenuItem1.slideUp("slow", function() {
+                $(this).remove();
+            });            
             clearRightPanel();
             isoClearRightPanel();
         }        
