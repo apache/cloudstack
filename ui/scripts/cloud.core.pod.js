@@ -457,7 +457,7 @@ var podActionMap = {
         isAsyncJob: false,        
         inProcessText: "Deleting Pod....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {       
-            $midmenuItem1.slideUp(function() {
+            $midmenuItem1.slideUp("slow", function() {
                 $(this).remove();
             });
             clearRightPanel();
