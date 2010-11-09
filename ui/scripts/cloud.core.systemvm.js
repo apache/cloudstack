@@ -17,42 +17,62 @@
  */
  
  function afterLoadSystemVmJSP($midmenuItem1) {
-    hideMiddleMenu();			
-    systemvmJsonToRightPanel($midmenuItem1);		
+    //hideMiddleMenu();			
+    //systemvmToRightPanel($midmenuItem1);		
     
     initDialog("dialog_confirmation_start_systemVM");
     initDialog("dialog_confirmation_stop_systemVM");
     initDialog("dialog_confirmation_reboot_systemVM");
 }
 
-function systemvmJsonToRightPanel($leftmenuItem1) {
-    systemvmJsonToDetailsTab($leftmenuItem1);
+function systemvmToMidmenu(jsonObj, $midmenuItem1) {
+    $midmenuItem1.attr("id", getMidmenuId(jsonObj));  
+    $midmenuItem1.data("jsonObj", jsonObj); 
+    
+    var $iconContainer = $midmenuItem1.find("#icon_container").show();   
+    $iconContainer.find("#icon").attr("src", "images/midmenuicon_resource_systemvm.png");		
+    
+    $midmenuItem1.find("#first_row").text(fromdb(jsonObj.name).substring(0,25)); 
+    $midmenuItem1.find("#second_row").text(fromdb(jsonObj.publicip));  
+    
+    updateVmStateInMidMenu(jsonObj, $midmenuItem1);      
 }
 
-function systemvmJsonToDetailsTab($leftmenuItem1) {	   
-    var jsonObj = $leftmenuItem1.data("jsonObj"); 
-    var $detailsTab = $("#tab_content_details");   
-    $detailsTab.data("jsonObj", jsonObj);   
-    $detailsTab.find("#grid_header_title").text(fromdb(jsonObj.name));  
-     
-    resetViewConsoleAction(jsonObj, $detailsTab);         
-    setVmStateInRightPanel(jsonObj.state, $detailsTab.find("#state"));		
-    $detailsTab.find("#ipAddress").text(jsonObj.publicip);
+function systemvmToRightPanel($midmenuItem1) {    
+    copyActionInfoFromMidMenuToRightPanel($midmenuItem1);
+    $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);
+    systemvmJsonToDetailsTab();
+}
+
+function systemvmJsonToDetailsTab() {	
+    var $thisTab = $("#right_panel_content #tab_content_details");  
+    $thisTab.find("#tab_container").hide(); 
+    $thisTab.find("#tab_spinning_wheel").show();   
+
+    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");  
+    var jsonObj = $midmenuItem1.data("jsonObj");       
+    $thisTab.data("jsonObj", jsonObj);
+    
+    $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));
+       
+    resetViewConsoleAction(jsonObj, $thisTab);         
+    setVmStateInRightPanel(jsonObj.state, $thisTab.find("#state"));		
+    $thisTab.find("#ipAddress").text(jsonObj.publicip);
         
-    $detailsTab.find("#state").text(jsonObj.state);     
-    $detailsTab.find("#systemvmtype").text(toSystemVMTypeText(jsonObj.systemvmtype));    
-    $detailsTab.find("#zonename").text(fromdb(jsonObj.zonename)); 
-    $detailsTab.find("#id").text(fromdb(jsonObj.id));  
-    $detailsTab.find("#name").text(fromdb(jsonObj.name));   
-    $detailsTab.find("#activeviewersessions").text(fromdb(jsonObj.activeviewersessions)); 
-    $detailsTab.find("#publicip").text(fromdb(jsonObj.publicip)); 
-    $detailsTab.find("#privateip").text(fromdb(jsonObj.privateip)); 
-    $detailsTab.find("#hostname").text(fromdb(jsonObj.hostname));
-    $detailsTab.find("#gateway").text(fromdb(jsonObj.gateway)); 
-    $detailsTab.find("#created").text(fromdb(jsonObj.created));   
+    $thisTab.find("#state").text(jsonObj.state);     
+    $thisTab.find("#systemvmtype").text(toSystemVMTypeText(jsonObj.systemvmtype));    
+    $thisTab.find("#zonename").text(fromdb(jsonObj.zonename)); 
+    $thisTab.find("#id").text(fromdb(jsonObj.id));  
+    $thisTab.find("#name").text(fromdb(jsonObj.name));   
+    $thisTab.find("#activeviewersessions").text(fromdb(jsonObj.activeviewersessions)); 
+    $thisTab.find("#publicip").text(fromdb(jsonObj.publicip)); 
+    $thisTab.find("#privateip").text(fromdb(jsonObj.privateip)); 
+    $thisTab.find("#hostname").text(fromdb(jsonObj.hostname));
+    $thisTab.find("#gateway").text(fromdb(jsonObj.gateway)); 
+    $thisTab.find("#created").text(fromdb(jsonObj.created));   
         
     //actions ***
-    var $actionLink = $detailsTab.find("#action_link"); 
+    var $actionLink = $thisTab.find("#action_link"); 
     $actionLink.bind("mouseover", function(event) {	    
         $(this).find("#action_menu").show();    
         return false;
@@ -63,14 +83,17 @@ function systemvmJsonToDetailsTab($leftmenuItem1) {
     });	  
     var $actionMenu = $actionLink.find("#action_menu");
     $actionMenu.find("#action_list").empty();   
-    		
+	
 	if (jsonObj.state == 'Running') {	//Show "Stop System VM", "Reboot System VM"
-	    buildActionLinkForTab("Stop System VM", systemVmActionMap, $actionMenu, $leftmenuItem1, $detailsTab);     
-        buildActionLinkForTab("Reboot System VM", systemVmActionMap, $actionMenu, $leftmenuItem1, $detailsTab);   
+	    buildActionLinkForTab("Stop System VM", systemVmActionMap, $actionMenu, $midmenuItem1, $thisTab);     
+        buildActionLinkForTab("Reboot System VM", systemVmActionMap, $actionMenu, $midmenuItem1, $thisTab);   
 	} 
 	else if (jsonObj.state == 'Stopped') { //show "Start System VM"	    
-	    buildActionLinkForTab("Start System VM", systemVmActionMap, $actionMenu, $leftmenuItem1, $detailsTab); 
-	}     
+	    buildActionLinkForTab("Start System VM", systemVmActionMap, $actionMenu, $midmenuItem1, $thisTab); 
+	}  
+	
+	$thisTab.find("#tab_spinning_wheel").hide();    
+    $thisTab.find("#tab_container").show();      
 }
 
 function toSystemVMTypeText(value) {
@@ -90,10 +113,10 @@ var systemVmActionMap = {
         asyncJobResponse: "startsystemvmresponse",
         inProcessText: "Starting System VM....",
         dialogBeforeActionFn : doStartSystemVM,
-        afterActionSeccessFn: function(json, $leftmenuItem1, id) {
-            var item = json.queryasyncjobresultresponse.jobresult.startsystemvmresponse; 
-            $leftmenuItem1.data("jsonObj", item);
-            systemvmJsonToRightPanel($leftmenuItem1);            
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {            
+            var jsonObj = json.queryasyncjobresultresponse.jobresult.systemvm;  
+            systemvmToMidmenu(jsonObj, $midmenuItem1);
+            systemvmToRightPanel($midmenuItem1);            
         }
     },
     "Stop System VM": {            
@@ -101,23 +124,10 @@ var systemVmActionMap = {
         asyncJobResponse: "stopsystemvmresponse",
         inProcessText: "Stopping System VM....",
         dialogBeforeActionFn : doStopSystemVM,
-        afterActionSeccessFn: function(json, $leftmenuItem1, id) {
-            //var item = json.queryasyncjobresultresponse.jobresult.stopsystemvmresponse; //waiting for Bug 6859 to be fixed ("The embedded object returned by StopSystemVM on success is not up-to-date. "state" property in the embedded object should be "Stopped" instead of "Running")
-            var item;           
-            $.ajax({
-                data: createURL("command=listSystemVms&id="+id),
-                dataType: "json",
-                async: false,
-                success: function(json) {
-                    var items = json.listsystemvmsresponse.systemvm;                                       
-                    if (items != null && items.length > 0) {					    
-	                    item = items[0];
-                    }
-                }
-            });				
-                        
-            $leftmenuItem1.data("jsonObj", item);
-            systemvmJsonToRightPanel($leftmenuItem1);      
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {           
+            var jsonObj = json.queryasyncjobresultresponse.jobresult.systemvm;                  	
+            systemvmToMidmenu(jsonObj, $midmenuItem1);
+            systemvmToRightPanel($midmenuItem1);      
         }
     },
     "Reboot System VM": {        
@@ -125,23 +135,10 @@ var systemVmActionMap = {
         asyncJobResponse: "rebootsystemvmresponse",
         inProcessText: "Rebooting System VM....",
         dialogBeforeActionFn : doRebootSystemVM,
-        afterActionSeccessFn: function(json, $leftmenuItem1, id) {
-            //var item = json.queryasyncjobresultresponse.jobresult.rebootsystemvmresponse;  //waiting for Bug 6860 to be fixed ("RebootSystemVM should return an embedded object on success")
-            var item;           
-            $.ajax({
-                data: createURL("command=listSystemVms&id="+id),
-                dataType: "json",
-                async: false,
-                success: function(json) {
-                    var items = json.listsystemvmsresponse.systemvm;                                       
-                    if (items != null && items.length > 0) {					    
-	                    item = items[0];
-                    }
-                }
-            });			
-            
-            $leftmenuItem1.data("jsonObj", item);
-            systemvmJsonToRightPanel($leftmenuItem1);      
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {            
+            var jsonObj = json.queryasyncjobresultresponse.jobresult.systemvm;              
+            systemvmToMidmenu(jsonObj, $midmenuItem1);
+            systemvmToRightPanel($midmenuItem1);      
         }
     }
 }   

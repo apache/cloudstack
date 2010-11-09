@@ -937,7 +937,7 @@ function listMidMenuItems2(commandString, jsonResponse1, jsonResponse2, toMidmen
             var items = json[jsonResponse1][jsonResponse2];      
             if(items != null && items.length > 0) {
                 for(var i=0; i<items.length;i++) { 
-                    var $midmenuItem1 = $("#midmenu_item").clone();  
+                    var $midmenuItem1 = $("#midmenu_item").clone();                      
                     $midmenuItem1.data("toRightPanelFn", toRightPanelFn);                             
                     toMidmenuFn(items[i], $midmenuItem1);    
                     bindClickToMidMenu($midmenuItem1, toRightPanelFn, getMidmenuIdFn);             
@@ -946,8 +946,8 @@ function listMidMenuItems2(commandString, jsonResponse1, jsonResponse2, toMidmen
                         $midMenuContainer = $("#midmenu_container");
                         
                     $midMenuContainer.append($midmenuItem1.show());   
-                    if(clickFirstItem == true && i == 0)  { //click the 1st item in middle menu as default 
-                        $midmenuItem1.click();       
+                    if(clickFirstItem == true && i == 0)  { //click the 1st item in middle menu as default                        
+                        $midmenuItem1.click();                           
                         if(isMultipleSelectionInMidMenu == true) {                           
                             $midmenuItem1.addClass("ui-selected");  //because instance page is using JQuery selectable widget to do multiple-selection
                             selectedItemsInMidMenu[items[i].id] = $midmenuItem1; //because instance page is using JQuery selectable widget to do multiple-selection                        

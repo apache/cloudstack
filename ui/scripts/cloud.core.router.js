@@ -35,7 +35,7 @@ function routerToRightPanel($midmenuItem1) {
     routerJsonToDetailsTab();   
 }
 
-function routerJsonToDetailsTab($midmenuItem1) {   
+function routerJsonToDetailsTab() {   
     var $thisTab = $("#right_panel_content #tab_content_details");  
     $thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();   
