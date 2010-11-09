@@ -262,8 +262,10 @@ var diskOfferingActionMap = {
         api: "deleteDiskOffering",     
         isAsyncJob: false,           
         inProcessText: "Deleting disk offering....",
-        afterActionSeccessFn: function(json, $midmenuItem1, id) {        
-            $midmenuItem1.remove();
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {   
+            $midmenuItem1.slideUp("slow", function() {
+                $(this).remove();
+            });    
             clearRightPanel();
             diskOfferingClearRightPanel();
         }
