@@ -61,7 +61,7 @@ public interface UserVmService {
      * @param cmd - the command specifying vmId, password
      * @return the VM if reset worked successfully, null otherwise
      */
-    UserVm resetVMPassword(ResetVMPasswordCmd cmd);
+    UserVm resetVMPassword(ResetVMPasswordCmd cmd, String password);
     
     /**
      * Attaches the specified volume to the specified VM

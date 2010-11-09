@@ -301,7 +301,7 @@ public interface ManagementServer {
      * @throws StorageUnavailableException
      * @throws ConcurrentOperationException
      */
-    UserVm deployVirtualMachine(DeployVMCmd cmd) throws ResourceAllocationException, InsufficientStorageCapacityException, ExecutionException, StorageUnavailableException, ConcurrentOperationException;
+    UserVm deployVirtualMachine(DeployVMCmd cmd, String password) throws ResourceAllocationException, InsufficientStorageCapacityException, ExecutionException, StorageUnavailableException, ConcurrentOperationException;
 
     /**
      * Finds a domain router by user and data center

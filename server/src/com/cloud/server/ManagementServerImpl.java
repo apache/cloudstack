@@ -1101,7 +1101,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public UserVm deployVirtualMachine(DeployVMCmd cmd) throws ResourceAllocationException,
+    public UserVm deployVirtualMachine(DeployVMCmd cmd, String password) throws ResourceAllocationException,
                                                                InsufficientStorageCapacityException, ExecutionException,
                                                                StorageUnavailableException, ConcurrentOperationException {
         Account ctxAccount = UserContext.current().getAccount();
@@ -1114,7 +1114,6 @@ public class ManagementServerImpl implements ManagementServer {
         long templateId = cmd.getTemplateId();
         Long diskOfferingId = cmd.getDiskOfferingId();
         String domain = null; // FIXME:  this was hardcoded to null in DeployVMCmd in the old framework, do we need it?
-        String password = generateRandomPassword();
         String displayName = cmd.getDisplayName();
         String group = cmd.getGroup();
         String userData = cmd.getUserData();

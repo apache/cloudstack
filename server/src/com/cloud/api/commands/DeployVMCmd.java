@@ -39,6 +39,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
@@ -200,13 +201,17 @@ public class DeployVMCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, StorageUnavailableException{
         try {
-            UserVm result = _mgr.deployVirtualMachine(this);
-            UserVmResponse response = ApiResponseHelper.createUserVmResponse(result);
             
-            // FIXME:  where will the password come from in this case?
-//            if (templatePasswordEnabled) { 
-//                response.setPassword(getPassword());
-//            } 
+            String password = null;
+            if (templateId != null ) {
+                VMTemplateVO template = ApiDBUtils.findTemplateById(templateId);
+                if (template.getEnablePassword()) { 
+                    password = _mgr.generateRandomPassword();
+                } 
+            }
+            UserVm result = _mgr.deployVirtualMachine(this, password);
+            UserVmResponse response = ApiResponseHelper.createUserVmResponse(result);
+            response.setPassword(password);
             response.setResponseName(getName());
             this.setResponseObject(response);
         } catch (ResourceAllocationException ex) {

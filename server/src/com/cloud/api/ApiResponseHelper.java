@@ -416,6 +416,10 @@ public class ApiResponseHelper {
            userVmResponse.setTemplateDisplayText("ISO Boot");
            userVmResponse.setPasswordEnabled(false);
        }
+       
+       if (userVm.getPassword() != null) {
+           userVmResponse.setPassword(userVm.getPassword());
+       }
 
        // ISO Info
        if (userVm.getIsoId() != null) {

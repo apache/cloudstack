@@ -284,62 +284,53 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     }
 
     @Override
-    public UserVm resetVMPassword(ResetVMPasswordCmd cmd){
-    	
+    public UserVm resetVMPassword(ResetVMPasswordCmd cmd, String password){
+        Account account = UserContext.current().getAccount();
     	Long userId = UserContext.current().getUserId();
-    	boolean result = resetVMPasswordInternal(cmd);
-
-        // Log event
-        UserVmVO userVm = _vmDao.findById(cmd.getId());
-        if (userVm != null) {
-            if (result) {
-            	EventUtils.saveEvent(userId, userVm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_RESETPASSWORD, "successfully reset password for VM : " + userVm.getHostName(), null);
-            } else {
-            	EventUtils.saveEvent(userId, userVm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_RESETPASSWORD, "unable to reset password for VM : " + userVm.getHostName(), null);
-            }
+    	Long vmId = cmd.getId();
+    	UserVmVO userVm = _vmDao.findById(cmd.getId());
+    	
+    	//Do parameters input validation
+    	if (userVm == null) {
+    	    throw new InvalidParameterValueException("unable to find a virtual machine with id " + cmd.getId());
+    	}
+    	
+    	VMTemplateVO template = _templateDao.findById(userVm.getTemplateId());
+    	if (template == null || !template.getEnablePassword()) {
+    	    throw new InvalidParameterValueException("Fail to reset password for the virtual machine, the template is not password enabled");
+    	}
+    	
+    	userId = accountAndUserValidation(vmId, account, userId, userVm);
+        
+    	boolean result = resetVMPasswordInternal(cmd, password);
+       
+        if (result) {
+            userVm.setPassword(password);
+        	EventUtils.saveEvent(userId, userVm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_RESETPASSWORD, "successfully reset password for VM : " + userVm.getHostName(), null);
         } else {
-            s_logger.warn("Unable to find vm = " + cmd.getId()+ " to reset password");
+        	EventUtils.saveEvent(userId, userVm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_RESETPASSWORD, "unable to reset password for VM : " + userVm.getHostName(), null);
         }
-
+      
         return userVm;
     }
 
-    private boolean resetVMPasswordInternal(ResetVMPasswordCmd cmd) {    	
-    	//Input validation
-    	Account account = UserContext.current().getAccount();
-    	Long userId = UserContext.current().getUserId();
-    	Long id = cmd.getId();
-
-        String password = null;
-
-        //Verify input parameters
-        UserVmVO vmInstance = _vmDao.findById(id.longValue());
-        if (vmInstance == null) {
-        	throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + id);
-        }
-
-        userId = accountAndUserValidation(id, account, userId, vmInstance);
-
-    	VMTemplateVO template = _templateDao.findById(vmInstance.getTemplateId());
-    	if (template.getEnablePassword()) {
-            password = PasswordGenerator.generateRandomPassword(6);;
-    	} else {
-    		password = "saved_password";
-    	}
+    private boolean resetVMPasswordInternal(ResetVMPasswordCmd cmd, String password) {    	
+        Long vmId = cmd.getId();
+        Long userId = UserContext.current().getUserId();
+        UserVmVO vmInstance = _vmDao.findById(vmId);
 
         if (password == null || password.equals("")) {
             return false;
-        } else {
-            cmd.setPassword(password);
         }
 
+        VMTemplateVO template = _templateDao.findById(vmInstance.getTemplateId());
         if (template.getEnablePassword()) {
         	if (vmInstance.getDomainRouterId() == null)
         		/*TODO: add it for external dhcp mode*/
         		return true;
 	        if (_networkMgr.savePasswordToRouter(vmInstance.getDomainRouterId(), vmInstance.getPrivateIpAddress(), password)) {
 	            // Need to reboot the virtual machine so that the password gets redownloaded from the DomR, and reset on the VM
-	        	if (!rebootVirtualMachine(userId, id)) {
+	        	if (!rebootVirtualMachine(userId, vmId)) {
 	        		if (vmInstance.getState() == State.Stopped) {
 	        			return true;
 	        		}
