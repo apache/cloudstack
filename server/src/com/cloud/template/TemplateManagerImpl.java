@@ -159,7 +159,7 @@ public class TemplateManagerImpl implements TemplateManager {
     
     @Override
     public VMTemplateVO registerIso(RegisterIsoCmd cmd) throws ResourceAllocationException{
-        Account account = UserContext.current().getAccount();
+        Account ctxAccount = UserContext.current().getAccount();
         Long userId = UserContext.current().getUserId();
         String name = cmd.getIsoName();
         String displayText = cmd.getDisplayText();
@@ -169,28 +169,50 @@ public class TemplateManagerImpl implements TemplateManager {
         Long guestOSId = cmd.getOsTypeId();
         Boolean bootable = cmd.isBootable();
         Long zoneId = cmd.getZoneId();
-
+        String accountName = cmd.getAccountName();
+        Long domainId = cmd.getDomainId();
+        Account resourceAccount = null;
+        Long accountId = null;
+        
         if (isPublic == null) {
             isPublic = Boolean.FALSE;
         }
         
         if (zoneId.longValue() == -1) {
         	zoneId = null;
+        }        
+        
+        if ( (accountName == null) ^ (domainId == null) ){// XOR - Both have to be passed or don't pass any of them 
+        	throw new InvalidParameterValueException("Please specify both account and domainId or dont specify any of them");
         }
         
-        long accountId = 1L; // default to system account
-        if (account != null) {
-            accountId = account.getId();
-        }
-        
-        Account accountObj;
-        if (account == null) {
-        	accountObj = _accountDao.findById(accountId);
+        if ((ctxAccount == null) || isAdmin(ctxAccount.getType())) {
+            if (domainId != null) {
+                if ((ctxAccount != null) && !_domainDao.isChildDomain(ctxAccount.getDomainId(), domainId)) {
+                    throw new PermissionDeniedException("Failed to register ISO, invalid domain id (" + domainId + ") given.");
+                }
+                if (accountName != null) {
+                	resourceAccount = _accountDao.findActiveAccount(accountName, domainId);
+                    if (resourceAccount == null) {
+                        throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
+                    }
+                    accountId = resourceAccount.getId();
+                }
+            } else {
+                accountId = ((ctxAccount != null) ? ctxAccount.getId() : null);
+            }
         } else {
-        	accountObj = account;
+            accountId = ctxAccount.getId();
         }
         
-        boolean isAdmin = (accountObj.getType() == Account.ACCOUNT_TYPE_ADMIN);
+        if (null == accountId && null == accountName && null == domainId && null == ctxAccount){
+        	accountId = 1L;
+        }
+        if (accountId == null) {
+            throw new InvalidParameterValueException("No valid account specified for registering an ISO.");
+        }
+        
+        boolean isAdmin = _accountDao.findById(accountId).getType() == Account.ACCOUNT_TYPE_ADMIN;
         
         if (!isAdmin && zoneId == null) {
         	throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please specify a valid zone Id.");
@@ -224,13 +246,13 @@ public class TemplateManagerImpl implements TemplateManager {
         	throw new ServerApiException(BaseCmd.PARAM_ERROR, "File:// type urls are currently unsupported");
         }
         
-        return createTemplateOrIso(userId, zoneId, name, displayText, isPublic.booleanValue(), featured.booleanValue(), ImageFormat.ISO.toString(), null, url, null, true, 64 /*bits*/, false, guestOSId, bootable, HypervisorType.None);
+        return createTemplateOrIso(userId, accountId, zoneId, name, displayText, isPublic.booleanValue(), featured.booleanValue(), ImageFormat.ISO.toString(), null, url, null, true, 64 /*bits*/, false, guestOSId, bootable, HypervisorType.None);
     }
 
     @Override
     public VMTemplateVO registerTemplate(RegisterTemplateCmd cmd) throws URISyntaxException, ResourceAllocationException{
     	
-        Account account = UserContext.current().getAccount();
+        Account ctxAccount = UserContext.current().getAccount();
         Long userId = UserContext.current().getUserId();
         String name = cmd.getTemplateName();
         String displayText = cmd.getDisplayText(); 
@@ -244,6 +266,10 @@ public class TemplateManagerImpl implements TemplateManager {
         Long guestOSId = cmd.getOsTypeId();
         Long zoneId = cmd.getZoneId();
         HypervisorType hypervisorType = HypervisorType.valueOf(cmd.getHypervisor());
+        String accountName = cmd.getAccountName();
+        Long domainId = cmd.getDomainId();
+        Account resourceAccount = null;
+        Long accountId = null;
 
         //parameters verification
         if (bits == null) {
@@ -262,20 +288,39 @@ public class TemplateManagerImpl implements TemplateManager {
         if (zoneId.longValue() == -1) {
         	zoneId = null;
         }
-                
-        long accountId = 1L; // default to system account
-        if (account != null) {
-            accountId = account.getId();
+        
+        if ( (accountName == null) ^ (domainId == null) ){// XOR - Both have to be passed or don't pass any of them 
+        	throw new InvalidParameterValueException("Please specify both account and domainId or dont specify any of them");
         }
         
-        Account accountObj;
-        if (account == null) {
-        	accountObj = _accountDao.findById(accountId);
+        // This complex logic is just for figuring out the template owning account because a user can register templates on other account's behalf.
+        if ((ctxAccount == null) || isAdmin(ctxAccount.getType())) {
+            if (domainId != null) {
+                if ((ctxAccount != null) && !_domainDao.isChildDomain(ctxAccount.getDomainId(), domainId)) {
+                    throw new PermissionDeniedException("Failed to register template, invalid domain id (" + domainId + ") given.");
+                }
+                if (accountName != null) {
+                	resourceAccount = _accountDao.findActiveAccount(accountName, domainId);
+                    if (resourceAccount == null) {
+                        throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
+                    }
+                    accountId = resourceAccount.getId();
+                }
+            } else {
+                accountId = ((ctxAccount != null) ? ctxAccount.getId() : null);
+            }
         } else {
-        	accountObj = account;
+            accountId = ctxAccount.getId();
         }
         
-        boolean isAdmin = (accountObj.getType() == Account.ACCOUNT_TYPE_ADMIN);
+        if (null == accountId && null == accountName && null == domainId && null == ctxAccount){
+        	accountId = 1L;
+        }
+        if (null == accountId) {
+            throw new InvalidParameterValueException("No valid account specified for registering template.");
+        }
+        
+        boolean isAdmin = _accountDao.findById(accountId).getType() == Account.ACCOUNT_TYPE_ADMIN;
         
         if (!isAdmin && zoneId == null) {
         	throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please specify a valid zone Id.");
@@ -306,11 +351,11 @@ public class TemplateManagerImpl implements TemplateManager {
             userId = Long.valueOf(1);
         }
         
-        return createTemplateOrIso(userId, zoneId, name, displayText, isPublic, featured, format, "ext3", url, null, requiresHVM, bits, passwordEnabled, guestOSId, true, hypervisorType);
+        return createTemplateOrIso(userId, accountId, zoneId, name, displayText, isPublic, featured, format, "ext3", url, null, requiresHVM, bits, passwordEnabled, guestOSId, true, hypervisorType);
     	
     }
     
-    private VMTemplateVO createTemplateOrIso(long userId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, String format, String diskType, String url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable, HypervisorType hypervisorType) throws IllegalArgumentException, ResourceAllocationException {
+    private VMTemplateVO createTemplateOrIso(long userId, Long accountId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, String format, String diskType, String url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable, HypervisorType hypervisorType) throws IllegalArgumentException, ResourceAllocationException {
         try
         {
             if (name.length() > 32)
@@ -354,7 +399,7 @@ public class TemplateManagerImpl implements TemplateManager {
             if (user == null) {
                 throw new IllegalArgumentException("Unable to find user with id " + userId);
             }
-        	AccountVO account = _accountDao.findById(user.getAccountId());
+        	AccountVO account = _accountDao.findById(accountId);
             if (_accountMgr.resourceLimitExceeded(account, ResourceType.template)) {
             	ResourceAllocationException rae = new ResourceAllocationException("Maximum number of templates and ISOs for account: " + account.getAccountName() + " has been exceeded.");
             	rae.setResourceType("template");
@@ -372,7 +417,7 @@ public class TemplateManagerImpl implements TemplateManager {
             	throw new IllegalArgumentException("Cannot use reserved names for templates");
             }
             
-            return create(userId, account.getId(), zoneId, name, displayText, isPublic, featured, imgfmt, null, uri, chksum, requiresHvm, bits, enablePassword, guestOSId, bootable, hypervisorType);
+            return create(userId, accountId, zoneId, name, displayText, isPublic, featured, imgfmt, null, uri, chksum, requiresHvm, bits, enablePassword, guestOSId, bootable, hypervisorType);
         } catch (URISyntaxException e) {
             throw new IllegalArgumentException("Invalid URL " + url);
         }

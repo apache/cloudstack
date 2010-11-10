@@ -28,6 +28,7 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.TemplateResponse;
 import com.cloud.dc.DataCenterVO;
@@ -75,8 +76,14 @@ public class RegisterIsoCmd extends BaseCmd {
     private String url;
 
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="the ID of the zone you wish to register the ISO to.")
-    private Long zoneId;
+    private Long zoneId;        
+    
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="an optional domainId. If the account parameter is used, domainId must also be used.")
+    private Long domainId;
 
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="an optional account name. Must be used with domainId.")
+    private String accountName;
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -113,11 +120,19 @@ public class RegisterIsoCmd extends BaseCmd {
         return zoneId;
     }
 
+    public Long getDomainId() {
+		return domainId;
+	}
+
+	public String getAccountName() {
+		return accountName;
+	}
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-    @Override
+	@Override
     public String getName() {
         return s_name;
     }
