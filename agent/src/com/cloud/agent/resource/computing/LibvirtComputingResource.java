@@ -46,6 +46,9 @@ import java.util.SortedMap;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
@@ -85,6 +88,8 @@ import com.cloud.agent.api.DeleteSnapshotBackupAnswer;
 import com.cloud.agent.api.DeleteSnapshotBackupCommand;
 import com.cloud.agent.api.DeleteSnapshotsDirCommand;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
+import com.cloud.agent.api.FenceAnswer;
+import com.cloud.agent.api.FenceCommand;
 import com.cloud.agent.api.GetHostStatsAnswer;
 import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.GetStorageStatsAnswer;
@@ -142,6 +147,8 @@ import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VolumeTO;
+import com.cloud.agent.resource.computing.KVMHABase.NfsStoragePool;
+import com.cloud.agent.resource.computing.KVMHABase.PoolType;
 import com.cloud.agent.resource.computing.LibvirtStoragePoolDef.poolType;
 import com.cloud.agent.resource.computing.LibvirtStorageVolumeDef.volFormat;
 import com.cloud.agent.resource.computing.LibvirtVMDef.consoleDef;
@@ -191,6 +198,7 @@ import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.State;
 import com.cloud.vm.VirtualMachineName;
 
+
 /**
  * LibvirtComputingResource execute requests on the computing/routing host using the libvirt API
  * 
@@ -222,11 +230,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private String _createvmPath;
     private String _manageSnapshotPath;
     private String _createTmplPath;
+    private String _heartBeatPath;
     private String _host;
     private String _dcId;
     private String _pod;
     private String _clusterId;
+    private String _premium;
     private long _hvVersion;
+    private KVMHAMonitor _monitor;
     private final String _SSHKEYSPATH = "/root/.ssh";
     private final String _SSHPRVKEYPATH = _SSHKEYSPATH + File.separator + "id_rsa.cloud";
     private final String _SSHPUBKEYPATH = _SSHKEYSPATH + File.separator + "id_rsa.pub.cloud";
@@ -595,6 +606,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         	throw new ConfigurationException("Unable to find rundomrpre.sh");
         }
         
+        _heartBeatPath = Script.findScript(kvmScriptsDir, "kvmheartbeat.sh");
+        if (_heartBeatPath == null) {
+        	throw new ConfigurationException("Unable to find kvmheartbeat.sh");
+        }
+        
         _createvmPath = Script.findScript(storageScriptsDir, "createvm.sh");
         if (_createvmPath == null) {
             throw new ConfigurationException("Unable to find the createvm.sh");
@@ -717,6 +733,18 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			_hvVersion = (_hvVersion % 1000000) / 1000;
 		} catch (LibvirtException e) {
 			
+		}
+		
+		_premium = (String)params.get("premium");
+		if (_premium == null) {
+			_premium = "false";
+		}
+		
+		if (_premium.equalsIgnoreCase("true")) {
+			String[] info = NetUtils.getNetworkParams(_privateNic);
+			_monitor = new KVMHAMonitor(null, _conn, info[0], _heartBeatPath);
+			Thread ha = new Thread(_monitor);
+			ha.start();
 		}
 		
 		 try {
@@ -1204,6 +1232,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 return execute((NetworkIngressRulesCmd) cmd);
             } else if (cmd instanceof DeleteStoragePoolCommand) {
                 return execute((DeleteStoragePoolCommand) cmd);
+            } else if (cmd instanceof FenceCommand ) {
+            	return execute((FenceCommand) cmd);
             } else if (cmd instanceof RoutingCommand) {
             	return _virtRouterResource.executeRequest(cmd);
             } else {
@@ -1221,10 +1251,42 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			StoragePool pool = _conn.storagePoolLookupByUUIDString(cmd.getPool().getUuid());
 			pool.destroy();
 			pool.undefine();
+			
+			if (_premium.equalsIgnoreCase("true")) {
+				KVMHABase.NfsStoragePool sp = new KVMHABase.NfsStoragePool(cmd.getPool().getUuid(),
+						cmd.getPool().getHostAddress(),
+						cmd.getPool().getPath(),
+						_mountPoint + File.separator + cmd.getPool().getUuid(),
+						PoolType.PrimaryStorage);
+				_monitor.removeStoragePool(sp);
+			}
+			
 			return new Answer(cmd);
 		} catch (LibvirtException e) {
 			return new Answer(cmd, false, e.toString());
 		}
+	}
+	
+	protected FenceAnswer execute(FenceCommand cmd) {
+		 ExecutorService executors =  Executors.newSingleThreadExecutor();
+		 List<NfsStoragePool> pools = _monitor.getStoragePools();
+		 KVMHAChecker ha = new KVMHAChecker(pools, _conn, cmd.getHostIp());
+		 Future<Boolean> future = executors.submit(ha);
+		 try {
+			Boolean result = future.get();
+			if (result) {
+				return new FenceAnswer(cmd, false, "Heart is still beating...");
+			} else {
+				return new FenceAnswer(cmd);
+			}
+		} catch (InterruptedException e) {
+			s_logger.warn("Unable to fence", e);
+            return new FenceAnswer(cmd, false, e.getMessage());
+		} catch (ExecutionException e) {
+			s_logger.warn("Unable to fence", e);
+            return new FenceAnswer(cmd, false, e.getMessage());
+		}
+		 
 	}
 	
 	protected Storage.StorageResourceType getStorageResourceType() {
@@ -1841,6 +1903,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                                                                      spi.capacity,
                                                                      spi.allocation,
                                                                      tInfo);
+        if (_premium.equalsIgnoreCase("true")) {
+        	KVMHABase.NfsStoragePool pool = new KVMHABase.NfsStoragePool(cmd.getPool().getUuid(),
+        			cmd.getPool().getHostAddress(),
+        			cmd.getPool().getPath(),
+        			_mountPoint + File.separator + cmd.getPool().getUuid(),
+        			PoolType.PrimaryStorage);
+        	_monitor.addStoragePool(pool);
+        }
         try {
         	storagePool.free();
         } catch (LibvirtException e) {
@@ -2097,8 +2167,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         if (computingHostIp != null) {
             result = doPingTest(computingHostIp);
-        } else {
+        } else if (cmd.getRouterIp() != null && cmd.getPrivateIp() != null){
             result = doPingTest(cmd.getRouterIp(), cmd.getPrivateIp());
+        } else {
+        	return new Answer(cmd, false, "routerip and private ip is null");
         }
 
         if (result != null) {
