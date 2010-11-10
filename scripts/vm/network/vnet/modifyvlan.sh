@@ -22,8 +22,12 @@ addVlan() {
 		
 		if [ $? -gt 0 ]
 		then
-			printf "Failed to create vlan $vlanId on pif: $pif."
-			return 1
+                        # race condition that someone already creates the vlan 
+			if [ ! -d /sys/class/net/$vlanDev ]
+                        then
+			   printf "Failed to create vlan $vlanId on pif: $pif."
+			   return 1
+                        fi
 		fi
 	fi
 	
@@ -40,8 +44,11 @@ addVlan() {
 	
 		if [ $? -gt 0 ]
 		then
-			printf "Failed to create br: $vlanBr"
-			return 2
+			if [ ! -d /sys/class/net/$vlanBr ]
+			then
+				printf "Failed to create br: $vlanBr"
+				return 2
+			fi
 		fi
 	fi
 	
@@ -52,8 +59,12 @@ addVlan() {
 		brctl addif $vlanBr $vlanDev > /dev/null
 		if [ $? -gt 0 ]
 		then
-			printf "Failed to add vlan: $vlanDev to $vlanBr"
-			return 3
+			ls /sys/class/net/$vlanBr/brif/ |grep -w "$vlanDev" > /dev/null 
+			if [ $? -gt 0 ]
+			then
+				printf "Failed to add vlan: $vlanDev to $vlanBr"
+				return 3
+			fi
 		fi
 	fi
 	# is vlanBr up?

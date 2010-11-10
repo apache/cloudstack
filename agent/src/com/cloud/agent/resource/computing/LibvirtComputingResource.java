@@ -859,8 +859,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 	boolean isDirectAttachedNetwork(String type) {
 		if ("untagged".equalsIgnoreCase(type))
 			return true;
-		else
+		else {
+			try {
+				Long vnetId = Long.valueOf(type);
+			} catch (NumberFormatException e) {
+				return true;
+			}
 			return false;
+		}
 	}
 	
 	protected synchronized String startDomainRouter(StartRouterCommand cmd) {
@@ -2231,7 +2237,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		return new MigrateAnswer(cmd, result == null, result, null);
 	}
 
-	private Answer execute(PrepareForMigrationCommand cmd) {
+	private synchronized Answer execute(PrepareForMigrationCommand cmd) {
 		final String vmName = cmd.getVmName();
 		String result = null;
 		
