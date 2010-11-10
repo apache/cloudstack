@@ -63,13 +63,28 @@ function afterLoadVolumeJSP() {
 	        var offerings = json.listdiskofferingsresponse.diskoffering;								
 		    var volumeDiskOfferingSelect = $("#dialog_add_volume").find("#volume_diskoffering").empty();	
 		    if (offerings != null && offerings.length > 0) {								
-		        if (offerings != null && offerings.length > 0) {
-		            for (var i = 0; i < offerings.length; i++) 				
-			            volumeDiskOfferingSelect.append("<option value='" + offerings[i].id + "'>" + fromdb(offerings[i].displaytext) + "</option>"); 		
+		        if (offerings != null && offerings.length > 0) {		            
+		            for (var i = 0; i < offerings.length; i++) {		
+		                var $option = $("<option value='" + offerings[i].id + "'>" + fromdb(offerings[i].displaytext) + "</option>");	
+		                $option.data("jsonObj", offerings[i]);	
+			            volumeDiskOfferingSelect.append($option); 
+			        }	
+			        $("#dialog_add_volume").find("#volume_diskoffering").change();	
 			    }	
 			}	
 	    }
-    });	   
+    });	 
+    
+    $("#dialog_add_volume").find("#volume_diskoffering").bind("change", function(event) {        
+        var jsonObj = $(this).find("option:selected").data("jsonObj");
+        if(jsonObj.isCustomized == true) {
+            $("#dialog_add_volume").find("#size_container").show();
+        }
+        else {
+            $("#dialog_add_volume").find("#size_container").hide();  
+            $("#dialog_add_volume").find("#size").val("");
+        }      
+    });  
       
     //add button ***
     $("#midmenu_add_link").find("#label").text("Add Volume"); 
@@ -82,19 +97,33 @@ function afterLoadVolumeJSP() {
 		    			            										
 		        // validate values							
 			    var isValid = true;									
-			    isValid &= validateString("Name", thisDialog.find("#add_volume_name"), thisDialog.find("#add_volume_name_errormsg"));					
+			    isValid &= validateString("Name", thisDialog.find("#add_volume_name"), thisDialog.find("#add_volume_name_errormsg"));					    
+			    if(thisDialog.find("#size_container").css("display") != "none")
+			        isValid &= validateNumber("Size", thisDialog.find("#size"), thisDialog.find("#size_errormsg"));				    			
 			    if (!isValid) return;
 			    
 			    thisDialog.dialog("close");		
 				
-				var name = trim(thisDialog.find("#add_volume_name").val());					
-			    var zoneId = thisDialog.find("#volume_zone").val();					    				
+				var array1 = [];
+				
+				var name = thisDialog.find("#add_volume_name").val();	
+				array1.push("&name="+todb(name));
+								
+			    var zoneId = thisDialog.find("#volume_zone").val();	
+			    array1.push("&zoneId="+zoneId);
+			    				    				
 			    var diskofferingId = thisDialog.find("#volume_diskoffering").val();	
+			    array1.push("&diskOfferingId="+diskofferingId);
+			    
+			    if(thisDialog.find("#size_container").css("display") != "none") {
+			        var size = thisDialog.find("#size").val()
+			        array1.push("&size="+size);
+			    }
 				
 				var $midmenuItem1 = beforeAddingMidMenuItem() ;
 				    					
 			    $.ajax({
-				    data: createURL("command=createVolume&zoneId="+zoneId+"&name="+todb(name)+"&diskOfferingId="+diskofferingId+"&accountId="+"1"), 
+				    data: createURL("command=createVolume"+array1.join("")), 
 				    dataType: "json",
 				    success: function(json) {						        
 				        var jobId = json.createvolumeresponse.jobid;				        
