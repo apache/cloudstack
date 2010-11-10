@@ -64,6 +64,7 @@ import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.domain.DomainVO;
 import com.cloud.event.EventState;
 import com.cloud.event.EventTypes;
@@ -73,6 +74,7 @@ import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.OperationTimedoutException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.ha.dao.HighAvailabilityDao;
@@ -83,10 +85,12 @@ import com.cloud.info.RunningHostCountInfo;
 import com.cloud.info.RunningHostInfoAgregator;
 import com.cloud.info.RunningHostInfoAgregator.ZoneHostInfo;
 import com.cloud.network.IpAddrAllocator;
+import com.cloud.network.NetworkConfigurationVO;
 import com.cloud.network.IpAddrAllocator.networkInfo;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.GuestOSVO;
@@ -107,6 +111,7 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
+import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
@@ -122,9 +127,12 @@ import com.cloud.utils.events.SubscriptionMgr;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.ConsoleProxyVO;
+import com.cloud.vm.NicProfile;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.State;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VmManager;
 import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
@@ -208,6 +216,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     @Inject private ServiceOfferingDao _offeringDao;
     @Inject private AccountManager _accountMgr;
     @Inject GuestOSDao _guestOSDao = null;
+    @Inject private VmManager _itMgr;
     
     private IpAddrAllocator _IpAllocator;
     
@@ -251,6 +260,13 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 			s_logger.warn("Exception while trying to start secondary storage vm", e);
 			return null;
 		}
+	}
+	
+	public SecondaryStorageVmVO start2(long secStorageVmId, long startEventId) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException {
+		SecondaryStorageVmVO secStorageVm = _secStorageVmDao.findById(secStorageVmId);
+		AccountVO systemAcct = _accountMgr.getSystemAccount();
+		UserVO systemUser = _accountMgr.getSystemUser();
+		return _itMgr.start(secStorageVm, null, systemUser, systemAcct);
 	}
 
 	@Override @DB
@@ -688,6 +704,46 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 		}
 		return null;
 	}
+	
+	 protected Map<String, Object> createSecStorageVmInstance2(long dataCenterId) {
+
+	        long id = _secStorageVmDao.getNextInSequence(Long.class, "id");
+	        String name = VirtualMachineName.getSystemVmName(id, _instance, "s").intern();
+	        DataCenterVO dc = _dcDao.findById(dataCenterId);
+	        AccountVO systemAcct = _accountMgr.getSystemAccount();
+	        
+	        DataCenterDeployment plan = new DataCenterDeployment(dataCenterId);
+
+	        List<NetworkOfferingVO> defaultOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemVmPublicNetwork);
+	        List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemVmControlNetwork, NetworkOfferingVO.SystemVmManagementNetwork);
+	        List<Pair<NetworkConfigurationVO, NicProfile>> networks = new ArrayList<Pair<NetworkConfigurationVO, NicProfile>>(offerings.size() + 1);
+	        NicProfile defaultNic = new NicProfile();
+	        defaultNic.setDefaultNic(true);
+	        defaultNic.setDeviceId(2);
+	        networks.add(new Pair<NetworkConfigurationVO, NicProfile>(_networkMgr.setupNetworkConfiguration(systemAcct, defaultOffering.get(0), plan).get(0), defaultNic));
+	        for (NetworkOfferingVO offering : offerings) {
+	            networks.add(new Pair<NetworkConfigurationVO, NicProfile>(_networkMgr.setupNetworkConfiguration(systemAcct, offering, plan).get(0), null));
+	        }
+	        SecondaryStorageVmVO proxy = new SecondaryStorageVmVO(id, _serviceOffering.getId(), name, _template.getId(), _template.getGuestOSId(), dataCenterId, systemAcct.getDomainId(), systemAcct.getId(), 0);
+	        try {
+	            proxy = _itMgr.allocate(proxy, _template, _serviceOffering, networks, plan, systemAcct);
+	        } catch (InsufficientCapacityException e) {
+	            s_logger.warn("InsufficientCapacity", e);
+	            throw new CloudRuntimeException("Insufficient capacity exception", e);
+	        } catch (StorageUnavailableException e) {
+	            s_logger.warn("Unable to contact storage", e);
+	            throw new CloudRuntimeException("Unable to contact storage", e);
+	        }
+	        
+	        Map<String, Object> context = new HashMap<String, Object>();
+	        context.put("dc", dc);
+//	        context.put("publicIpAddress", publicIpAndVlan._ipAddr);
+	        HostPodVO pod = _podDao.findById(proxy.getPodId());
+	        context.put("pod", pod);
+	        context.put("proxyVmId", proxy.getId());
+
+	        return context;
+	    }
 
 	@DB
 	protected Map<String, Object> createSecStorageVmInstance(long dataCenterId) {
