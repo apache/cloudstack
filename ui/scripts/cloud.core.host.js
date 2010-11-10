@@ -29,9 +29,9 @@ function afterLoadHostJSP($midmenuItem1) {
     initDialog("dialog_update_os");
          
     // switch between different tabs 
-    var tabArray = [$("#tab_details"), $("#tab_statistics"), $("#tab_instance"), $("#tab_router")];
-    var tabContentArray = [$("#tab_content_details"), $("#tab_content_statistics"), $("#tab_content_instance"), $("#tab_content_router")];
-    var afterSwitchFnArray = [hostJsonToDetailsTab, hostJsonToStatisticsTab, hostJsonToInstanceTab, hostJsonToRouterTab];
+    var tabArray = [$("#tab_details"), $("#tab_statistics"), $("#tab_instance"), $("#tab_router"), $("#tab_systemvm")];
+    var tabContentArray = [$("#tab_content_details"), $("#tab_content_statistics"), $("#tab_content_instance"), $("#tab_content_router"), $("#tab_content_systemvm")];
+    var afterSwitchFnArray = [hostJsonToDetailsTab, hostJsonToStatisticsTab, hostJsonToInstanceTab, hostJsonToRouterTab, hostJsonToSystemvmTab];
     switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray);         
 }
 
@@ -269,6 +269,46 @@ function hostRouterJSONToTemplate(jsonObj, template) {
     template.find("#privateip").text(fromdb(jsonObj.privateip));
     template.find("#guestipaddress").text(fromdb(jsonObj.guestipaddress)); 
     template.find("#account").text(fromdb(jsonObj.account));
+    setDateField(jsonObj.created, template.find("#created"));	 		
+}  
+
+function  hostJsonToSystemvmTab() {   
+    var $thisTab = $("#right_panel_content #tab_content_systemvm");
+	$thisTab.find("#tab_container").hide(); 
+    $thisTab.find("#tab_spinning_wheel").show(); 
+    		
+	var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");	
+	var jsonObj = $midmenuItem1.data("jsonObj");	
+    
+    $.ajax({
+		cache: false,
+		data: createURL("command=listSystemVms&hostid="+jsonObj.id),
+		dataType: "json",
+		success: function(json) {							    
+			var items = json.listsystemvmsresponse.systemvm;																						
+			if (items != null && items.length > 0) {
+			    var $container = $thisTab.find("#tab_container").empty();
+				var template = $("#systemvm_tab_template");				
+				for (var i = 0; i < items.length; i++) {
+					var newTemplate = template.clone(true);	               
+	                hostSystemvmJSONToTemplate(items[i], newTemplate); 
+	                $container.append(newTemplate.show());	
+				}			
+			}	
+			$thisTab.find("#tab_spinning_wheel").hide();    
+            $thisTab.find("#tab_container").show();    			
+		}
+	});
+} 
+
+function hostSystemvmJSONToTemplate(jsonObj, template) {
+    template.data("jsonObj", jsonObj);     
+    template.attr("id", "host_systemvm_"+jsonObj.id).data("hostSystemvmId", jsonObj.id);    
+    template.find("#grid_header_title").text(fromdb(jsonObj.name));			   
+    template.find("#id").text(jsonObj.id);
+    template.find("#name").text(fromdb(jsonObj.name));	  
+    template.find("#publicip").text(fromdb(jsonObj.publicip));    
+    template.find("#privateip").text(fromdb(jsonObj.privateip));  
     setDateField(jsonObj.created, template.find("#created"));	 		
 }  
 

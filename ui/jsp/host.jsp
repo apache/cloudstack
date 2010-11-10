@@ -28,6 +28,8 @@
             <%=t.t("instance")%></div>
         <div class="content_tabs off" id="tab_router">
             <%=t.t("router")%></div>
+        <div class="content_tabs off" id="tab_systemvm">
+            <%=t.t("system.VM")%></div>
     </div>
     <!-- Details tab (start)-->
     <div id="tab_content_details">
@@ -309,6 +311,19 @@
         </div>
     </div> 
     <!--router tab (end)-->
+    
+    <!--systemvm tab (start)-->
+    <div style="display: none;" id="tab_content_systemvm">
+    	<div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display:none;">
+              <div class="rightpanel_mainloaderbox">
+                   <div class="rightpanel_mainloader_animatedicon"></div>
+                   <p>Loading &hellip;</p>    
+              </div>               
+        </div>
+        <div id="tab_container">
+        </div>
+    </div> 
+    <!--systemvm tab (end)-->
 </div>
 
 <!--  instance tab template (begin) -->
@@ -500,6 +515,86 @@
     </div>  
 </div>
 <!--  router tab template (end) -->
+
+<!--  systemvm tab template (begin) -->
+<div class="grid_container" id="systemvm_tab_template" style="display: none">
+    <div class="grid_header">
+        <div class="grid_header_title" id="grid_header_title">
+        </div>
+        <div class="grid_actionbox" id="snapshot_action_link" style="display: none;">
+            <div class="grid_actionsdropdown_box" id="snapshot_action_menu" style="display: none;">
+                <ul class="actionsdropdown_boxlist" id="action_list">
+                </ul>
+            </div>
+        </div>
+        <div class="gridheader_loaderbox" id="spinning_wheel" style="display: none; height: 18px;">
+            <div class="gridheader_loader" id="icon">
+            </div>
+            <p id="description">
+                Waiting &hellip;
+            </p>
+        </div>       
+    </div>
+    
+    <div class="grid_rows" id="after_action_info_container" style="display:none">
+        <div class="grid_row_cell" style="width: 90%; border: none;">
+            <div class="row_celltitles">
+                <strong id="after_action_info">Message will appear here</strong></div>
+        </div>
+    </div>
+        
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                ID:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="id">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows odd">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                Name:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="name">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                Public IP:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="publicip">
+            </div>
+        </div>
+    </div>   
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                Private IP:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="privateip">
+            </div>
+        </div>
+    </div>   
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                Created:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="created">
+            </div>
+        </div>
+    </div>   
+</div>
+<!--  systemvm tab template (end) -->
 
 <!-- Add Host Dialog -->
 <div id="dialog_add_host" title="Add Host" style="display: none">
