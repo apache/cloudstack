@@ -845,7 +845,7 @@ function portForwardingJsonToTemplate(jsonObj, $template) {
     var IpAccount = ipObj.account;    
     	    
     $.ajax({
-	    data: createURL("command=listVirtualMachines&domainid="+IpDomainid+"&account="+IpAccount+maxPageSize),
+	    data: createURL("command=listVirtualMachines&domainid="+IpDomainid+"&account="+IpAccount),
 	    dataType: "json",
 	    success: function(json) {			    
 		    var instances = json.listvirtualmachinesresponse.virtualmachine;			   
@@ -972,7 +972,7 @@ function refreshCreatePortForwardingRow() {
     var IpAccount = jsonObj.account;
 
     $.ajax({
-	    data: createURL("command=listVirtualMachines&domainid="+IpDomainid+"&account="+IpAccount+maxPageSize),
+	    data: createURL("command=listVirtualMachines&domainid="+IpDomainid+"&account="+IpAccount),
 	    dataType: "json",
 	    success: function(json) {			    
 		    var instances = json.listvirtualmachinesresponse.virtualmachine;
