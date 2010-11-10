@@ -3718,23 +3718,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         return vlanNetwork;
     }
     
-    protected void disableVlanNetwork(Network network) throws InternalErrorException {
-        try {
-            Connection conn = getConnection();
-            if (network.getVIFs(conn).isEmpty()) {
-                Iterator<PIF> pifs = network.getPIFs(conn).iterator();
-                while (pifs.hasNext()) {
-                    PIF pif = pifs.next();
-                    pif.unplug(conn);
-                }
-            }
-        } catch (XenAPIException e) {
-            String msg = "Unable to disable VLAN network due to " + e.toString();
-            s_logger.warn(msg, e);
-        } catch (Exception e) {
-            String msg = "Unable to disable VLAN network due to " + e.getMessage();
-            s_logger.warn(msg, e);
-        }
+    protected void disableVlanNetwork(Network network) {
     }
 
     protected SR getLocalLVMSR() {
