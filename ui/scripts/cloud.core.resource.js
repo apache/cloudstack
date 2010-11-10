@@ -250,6 +250,52 @@ function afterLoadResourceJSP($midmenuItem1) {
 	initUpdateConsoleCertButton($("#midmenu_add2_link"));
     initDialog("dialog_add_zone");
 	initDialog("dialog_update_cert", 450);
+		
+	$.ajax({
+	    data: createURL("command=listZones&available=true"),
+	    dataType: "json",
+	    success: function(json) {
+	        var items = json.listzonesresponse.zone;			
+			if (items != null) {			   			    
+			    $("#zone_total").text(items.length.toString());
+			}	
+	    }
+	});
+	
+	$.ajax({
+	    data: createURL("command=listPods&available=true"),
+	    dataType: "json",
+	    success: function(json) {
+	        var items = json.listpodsresponse.pod;			    			
+			if (items != null) {			   			    
+			    $("#pod_total").text(items.length.toString());
+			}	
+	    }
+	});
+	
+	$.ajax({
+        data: createURL("command=listHosts&type=Routing"),
+        dataType: "json",
+        async: false,
+        success: function(json) {
+            var items = json.listhostsresponse.host;	
+            if (items != null) {					    
+                $("#host_total").text(items.length.toString());		                    
+            }		    
+        }
+    });  
+    
+    $.ajax({
+        data: createURL("command=listStoragePools"),
+        dataType: "json",
+        async: false,
+        success: function(json) {
+            var items = json.liststoragepoolsresponse.storagepool;	
+            if (items != null) {					    
+                $("#primarystorage_total").text(items.length.toString());		                    
+            }		    
+        }
+    });       
 }
 
 function initUpdateConsoleCertButton($midMenuAddLink2) {

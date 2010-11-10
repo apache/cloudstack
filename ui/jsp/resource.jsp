@@ -30,7 +30,7 @@
                 </div>
                 <div class="dbrow_cell" style="width: 25%; border: none; background:#cacaca repeat top left; ">
                     <div class="resources_totalbg">
-                    	<p>10</p>
+                    	<p id="zone_total">N</p>
                     </div>
                 </div>
                 <div class="dbrow_cell" style="width: 10%; border: none;">
@@ -45,23 +45,24 @@
                 </div>
                 <div class="dbrow_cell" style="width: 25%; border: none; background:#cacaca repeat top left; ">
                      <div class="resources_totalbg">
-                    	<p>120</p>
+                    	<p id="pod_total">N</p>
                     </div>
                 </div>
                 <div class="dbrow_cell" style="width: 10%; border: none;">
                 	<div class="resadd_button" title="Add Pod"></div>
                 </div>
             </div>
+            
             <div class="dbrow even" style="margin-top:10px; border:1px solid #CCC;">
                 <div class="dbrow_cell" style="width: 64%; border: none;">
                      <div class="resource_titlebox">
-                        <h2><span> # of </span> Cluster - Host</h2>
+                        <h2><span> # of </span> Host</h2>
                          
                     </div>
                 </div>
                 <div class="dbrow_cell" style="width: 25%; border: none; background:#cacaca repeat top left; ">
                      <div class="resources_totalbg">
-                    	<p>15</p>
+                    	<p id="host_total">N</p>
                     </div>
                 </div>
                 <div class="dbrow_cell" style="width: 10%; border: none;">
@@ -72,13 +73,13 @@
             <div class="dbrow odd" style="margin-top:10px; border:1px solid #CCC;">
                 <div class="dbrow_cell" style="width: 64%; border: none;">
                      <div class="resource_titlebox">
-                        <h2><span> # of </span> Cluster - Primary Storage</h2>
+                        <h2><span> # of </span> Primary Storage</h2>
                       
                     </div>
                 </div>
                  <div class="dbrow_cell" style="width: 25%; border: none; background:#cacaca repeat top left; ">
                      <div class="resources_totalbg">
-                    	<p>12</p>
+                    	<p id="primarystorage_total">N</p>
                     </div>
                 </div>
                 <div class="dbrow_cell" style="width: 10%; border: none;">
