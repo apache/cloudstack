@@ -299,7 +299,14 @@
                     <label><%=t.t("disk.offering")%>:</label>
                     <select class="select" id="disk_offering">
                     </select>
-                </li>	
+                </li>
+                <li id="size_container">
+                    <label>
+                        <%=t.t("size")%>:</label>
+                    <input class="text" type="text" id="size" />
+                    <div id="size_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                    </div>
+                </li>    		
                 <li>
                     <label><%=t.t("hypervisor")%>:</label>
                     <select class="select" id="hypervisor">
