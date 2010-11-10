@@ -249,8 +249,12 @@ function afterLoadResourceJSP($midmenuItem1) {
     initAddZoneButton($("#midmenu_add_link")); 
 	initUpdateConsoleCertButton($("#midmenu_add2_link"));
     initDialog("dialog_add_zone");
-	initDialog("dialog_update_cert", 450);
-		
+	initDialog("dialog_update_cert", 450);	
+	resourceCountTotal();
+	initAddZoneShortcut();     
+}
+
+function resourceCountTotal() {		
 	$.ajax({
 	    data: createURL("command=listZones&available=true"),
 	    dataType: "json",
@@ -295,7 +299,67 @@ function afterLoadResourceJSP($midmenuItem1) {
                 $("#primarystorage_total").text(items.length.toString());		                    
             }		    
         }
-    });       
+    });  
+}
+
+function refreshAddZoneWizard() {
+    $("#add_zone_wizard").find("#step2, #step3, #after_submit_screen").hide();
+    $("#add_zone_wizard").find("#step1").show();
+}
+
+function openAddZoneWizard() {
+    refreshAddZoneWizard();
+    $("#add_zone_wizard").show();
+    $("#wizard_overlay").show();
+}
+
+function closeAddZoneWizard() {
+    $("#add_zone_wizard").hide();
+    $("#wizard_overlay").hide();
+}
+
+function initAddZoneShortcut() {
+    $("#add_zone_shortcut").unbind("click").bind("click", function(event) {
+        openAddZoneWizard();
+        return false;
+    });
+          
+    $("#add_zone_wizard").unbind("click").bind("click", function(event) {  
+        var $thisWizard = $(this);
+        var $target = $(event.target);
+        switch($target.attr("id")) {
+            case "close_button":
+                closeAddZoneWizard();
+                break;
+            
+            case "go_to_step_2": //step 1 => step 2
+                $thisWizard.find("#step1").hide();
+                $thisWizard.find("#step2").show();
+                break;    
+                
+            case "go_to_step_3": //step 2 => step 3
+                $thisWizard.find("#step2").hide();
+                $thisWizard.find("#step3").show();
+                break;   
+                
+            case "submit_button": //step 3 => spinning wheel
+                $thisWizard.find("#step3").hide();
+                $thisWizard.find("#after_submit_screen").show();
+                break;  
+           
+            case "back_to_step_2": //step 3 => step 2
+                $thisWizard.find("#step3").hide();
+                $thisWizard.find("#step2").show();
+                break;    
+                
+            case "back_to_step_1": //step 2 => step 1
+                $thisWizard.find("#step2").hide();
+                $thisWizard.find("#step1").show();
+                break;        
+        }   
+        
+        return false;
+    }); 
 }
 
 function initUpdateConsoleCertButton($midMenuAddLink2) {
