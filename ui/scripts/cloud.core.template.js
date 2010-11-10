@@ -178,12 +178,27 @@ function afterLoadTemplateJSP() {
 	        if(items != null && items.length > 0 ) {
 	            var diskOfferingField = $("#dialog_create_vm_from_template #disk_offering").empty();
 	            diskOfferingField.append("<option value=''>No disk offering</option>");
-	            for(var i = 0; i < items.length; i++)		        
-	                diskOfferingField.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");
+	            for(var i = 0; i < items.length; i++) {		
+	                var $option = $("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");	
+		            $option.data("jsonObj", items[i]);			                              
+	                diskOfferingField.append($option);
+	            }
+	            $("#dialog_create_vm_from_template").find("#disk_offering").change();
 	        }		  
 	        
 	    }
 	});		
+		
+	$("#dialog_create_vm_from_template").find("#disk_offering").bind("change", function(event) {  	         
+        var jsonObj = $(this).find("option:selected").data("jsonObj");
+        if(jsonObj != null && jsonObj.isCustomized == true) { //jsonObj is null when "<option value=''>No disk offering</option>" is selected
+            $("#dialog_create_vm_from_template").find("#size_container").show();
+        }
+        else {
+            $("#dialog_create_vm_from_template").find("#size_container").hide();  
+            $("#dialog_create_vm_from_template").find("#size").val("");
+        }      
+    });
 	
 	//initialize dialog box ***
 	initDialog("dialog_confirmation_delete_template_all_zones");
@@ -575,13 +590,17 @@ function doCreateVMFromTemplate($actionLink, $detailsTab, $midmenuItem1) {
 	.dialog('option', 'buttons', {			    
 	    "Create": function() {
 	        var thisDialog = $(this);	
-	        thisDialog.dialog("close");
-	        			        
+	        	        			        
 	        // validate values
 		    var isValid = true;		
 		    isValid &= validateString("Name", thisDialog.find("#name"), thisDialog.find("#name_errormsg"), true);
-		    isValid &= validateString("Group", thisDialog.find("#group"), thisDialog.find("#group_errormsg"), true);				
-		    if (!isValid) return;	       
+		    isValid &= validateString("Group", thisDialog.find("#group"), thisDialog.find("#group_errormsg"), true);			    
+		    if(thisDialog.find("#size_container").css("display") != "none")
+			    isValid &= validateNumber("Size", thisDialog.find("#size"), thisDialog.find("#size_errormsg"));				    			
+		    if (!isValid) 
+		        return;	   
+		        
+		    thisDialog.dialog("close");    
 	        
 	        var array1 = [];      
 	        var name = trim(thisDialog.find("#name").val());	
@@ -596,6 +615,11 @@ function doCreateVMFromTemplate($actionLink, $detailsTab, $midmenuItem1) {
 	        var diskOfferingId = thisDialog.find("#disk_offering").val();
 	        if(diskOfferingId != null && diskOfferingId.length > 0)
 	            array1.push("&diskOfferingId="+diskOfferingId);	 		    	        
+	        
+	        if(thisDialog.find("#size_container").css("display") != "none") {
+	            var size = thisDialog.find("#size").val()
+			    array1.push("&size="+size);
+	        }
 	        
 		    var apiCommand = "command=deployVirtualMachine&zoneId="+zoneId+"&templateId="+id+array1.join("");
     	    doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);		

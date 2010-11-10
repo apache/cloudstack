@@ -267,7 +267,14 @@
                     <label>Disk Offering:</label>
                     <select class="select" id="disk_offering">
                     </select>
-                </li>					
+                </li>	  
+                <li id="size_container">
+                    <label>
+                        Size:</label>
+                    <input class="text" type="text" id="size" />
+                    <div id="size_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                    </div>
+                </li>    		
 			</ol>
 		</form>
 	</div>
