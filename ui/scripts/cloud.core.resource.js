@@ -327,12 +327,21 @@ function initAddZoneShortcut() {
     $("#add_zone_wizard").unbind("click").bind("click", function(event) {  
         var $thisWizard = $(this);
         var $target = $(event.target);
+      
         switch($target.attr("id")) {
             case "close_button":
                 closeAddZoneWizard();
                 break;
             
-            case "go_to_step_2": //step 1 => step 2
+            case "basic_mode":            
+                return true;
+                break;
+                
+            case "advanced_mode":            
+                return true;
+                break;
+            
+            case "go_to_step_2": //step 1 => step 2   
                 $thisWizard.find("#step1").hide();
                 $thisWizard.find("#step2").show();
                 break;    

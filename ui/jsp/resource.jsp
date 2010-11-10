@@ -123,7 +123,7 @@
                     <div class="zonepopup_selectionpanel">
                       
                         <div class="zonepopup_selectionbox">
-                            <input type="radio" name="radiogroup" class="radio" />
+                            <input type="radio" name="basic_advanced" value="basic_mode" id="basic_mode" class="radio" checked />
                             <label class="label">
                                 Basic Mode</label>
                             <div class="zonepopup_selectiondescriptionbox">
@@ -136,9 +136,9 @@
                             </div>
                         </div>
                         <div class="zonepopup_selectionbox">
-                            <input type="radio" name="radiogroup" class="radio" />
+                            <input type="radio" name="basic_advanced" value="advanced_mode" id="advanced_mode" class="radio" />
                             <label class="label">
-                               Advance Mode</label>
+                               Advanced Mode</label>
                             <div class="zonepopup_selectiondescriptionbox">
                                 <div class="zonepopup_selectiondescriptionbox_top">
                                 </div>
