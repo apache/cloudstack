@@ -1868,20 +1868,20 @@ a:hover.search_button {
 	width:auto;
 	height:auto;
 	color:#FFF;
-	font-size:11px;
+	font-size:10px;
 	font-weight:normal;
 	text-decoration:none;
 	float:left;
-	margin:7px 15px 0 7px;
+	margin:7px 15px 0 5px;
 	padding:0;
 }
 
 
 .actionpanel_button_icons {
-	width:30px;
-	height:20px;
+	width:25px;
+	height:18px;
 	float:left;
-	margin:3px 0 0 8px;
+	margin:5px 0 0 7px;
 	padding:0;
 }
 
