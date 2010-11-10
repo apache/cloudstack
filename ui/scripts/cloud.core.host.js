@@ -29,9 +29,9 @@ function afterLoadHostJSP($midmenuItem1) {
     initDialog("dialog_update_os");
          
     // switch between different tabs 
-    var tabArray = [$("#tab_details"), $("#tab_statistics"), $("#tab_instance")];
-    var tabContentArray = [$("#tab_content_details"), $("#tab_content_statistics"), $("#tab_content_instance")];
-    var afterSwitchFnArray = [hostJsonToDetailsTab, hostJsonToStatisticsTab, hostJsonToInstanceTab];
+    var tabArray = [$("#tab_details"), $("#tab_statistics"), $("#tab_instance"), $("#tab_router")];
+    var tabContentArray = [$("#tab_content_details"), $("#tab_content_statistics"), $("#tab_content_instance"), $("#tab_content_router")];
+    var afterSwitchFnArray = [hostJsonToDetailsTab, hostJsonToStatisticsTab, hostJsonToInstanceTab, hostJsonToRouterTab];
     switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray);         
 }
 
@@ -229,6 +229,48 @@ function hostInstanceJSONToTemplate(jsonObj, template) {
     template.find("#account").text(fromdb(jsonObj.account));
     setDateField(jsonObj.created, template.find("#created"));	 		
 } 
+
+function  hostJsonToRouterTab() {   
+    var $thisTab = $("#right_panel_content #tab_content_router");
+	$thisTab.find("#tab_container").hide(); 
+    $thisTab.find("#tab_spinning_wheel").show(); 
+    		
+	var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");	
+	var jsonObj = $midmenuItem1.data("jsonObj");	
+    
+    $.ajax({
+		cache: false,
+		data: createURL("command=listRouters&hostid="+jsonObj.id),
+		dataType: "json",
+		success: function(json) {							    
+			var items = json.listroutersresponse.router;																						
+			if (items != null && items.length > 0) {
+			    var $container = $thisTab.find("#tab_container").empty();
+				var template = $("#router_tab_template");				
+				for (var i = 0; i < items.length; i++) {
+					var newTemplate = template.clone(true);	               
+	                hostRouterJSONToTemplate(items[i], newTemplate); 
+	                $container.append(newTemplate.show());	
+				}			
+			}	
+			$thisTab.find("#tab_spinning_wheel").hide();    
+            $thisTab.find("#tab_container").show();    			
+		}
+	});
+} 
+
+function hostRouterJSONToTemplate(jsonObj, template) {
+    template.data("jsonObj", jsonObj);     
+    template.attr("id", "host_router_"+jsonObj.id).data("hostRouterId", jsonObj.id);    
+    template.find("#grid_header_title").text(fromdb(jsonObj.name));			   
+    template.find("#id").text(jsonObj.id);
+    template.find("#name").text(fromdb(jsonObj.name));	  
+    template.find("#publicip").text(fromdb(jsonObj.publicip));   
+    template.find("#privateip").text(fromdb(jsonObj.privateip));
+    template.find("#guestipaddress").text(fromdb(jsonObj.guestipaddress)); 
+    template.find("#account").text(fromdb(jsonObj.account));
+    setDateField(jsonObj.created, template.find("#created"));	 		
+}  
 
 function hostClearRightPanel() {
     hostClearDetailsTab(); 
