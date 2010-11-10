@@ -56,6 +56,7 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
     protected SearchBuilder<FirewallRuleVO> RulesExcludingPubIpPort;
     protected SearchBuilder<FirewallRuleVO> FWByGroupId;
     protected SearchBuilder<FirewallRuleVO> FWByGroupAndPrivateIp;
+    protected SearchBuilder<FirewallRuleVO> FWByPrivateIpPrivatePortPublicIpPublicPortSearch;
 
     protected FirewallRulesDaoImpl() {
     }
@@ -124,6 +125,13 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
         FWByGroupAndPrivateIp.and("forwarding", FWByGroupAndPrivateIp.entity().isForwarding(), SearchCriteria.Op.EQ);
         FWByGroupAndPrivateIp.done();
 
+        FWByPrivateIpPrivatePortPublicIpPublicPortSearch = createSearchBuilder();
+        FWByPrivateIpPrivatePortPublicIpPublicPortSearch.and("publicIpAddress", FWByPrivateIpPrivatePortPublicIpPublicPortSearch.entity().getPublicIpAddress(), SearchCriteria.Op.EQ);
+        FWByPrivateIpPrivatePortPublicIpPublicPortSearch.and("privateIpAddress", FWByPrivateIpPrivatePortPublicIpPublicPortSearch.entity().getPrivateIpAddress(), SearchCriteria.Op.EQ);
+        FWByPrivateIpPrivatePortPublicIpPublicPortSearch.and("privatePort", FWByPrivateIpPrivatePortPublicIpPublicPortSearch.entity().getPrivatePort(), SearchCriteria.Op.NULL);
+        FWByPrivateIpPrivatePortPublicIpPublicPortSearch.and("publicPort", FWByPrivateIpPrivatePortPublicIpPublicPortSearch.entity().getPublicPort(), SearchCriteria.Op.NULL);
+        FWByPrivateIpPrivatePortPublicIpPublicPortSearch.done();
+        
         return true;
     }
 
@@ -306,5 +314,13 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
         sc.setParameters("forwarding", forwarding);
         return findOneBy(sc);
         
+    }
+    
+    @Override
+    public List<FirewallRuleVO> findByPublicIpPrivateIpForNatRule(String publicIp, String privateIp){
+    	SearchCriteria<FirewallRuleVO> sc = FWByPrivateIpPrivatePortPublicIpPublicPortSearch.create();
+    	sc.setParameters("publicIpAddress", publicIp);
+    	sc.setParameters("privateIpAddress", privateIp);
+    	return listBy(sc);
     }
 }

@@ -21,8 +21,8 @@ import com.cloud.network.IPAddressVO;
 import com.cloud.user.Account;
 
 @Implementation(description="Updates a port forwarding rule.  Only the private port and the virtual machine can be updated.")
-public class UpdateIPForwardingRuleCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(UpdateIPForwardingRuleCmd.class.getName());
+public class UpdatePortForwardingRuleCmd extends BaseAsyncCmd {
+    public static final Logger s_logger = Logger.getLogger(UpdatePortForwardingRuleCmd.class.getName());
     private static final String s_name = "updateportforwardingruleresponse";
 
     /////////////////////////////////////////////////////

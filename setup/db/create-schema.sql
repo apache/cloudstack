@@ -445,6 +445,15 @@ CREATE TABLE  `cloud`.`ip_forwarding` (
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
+CREATE TABLE `cloud`.`iprule_portrange_map`(
+  `id` bigint unsigned NOT NULL auto_increment,
+  `fwrule_id` bigint unsigned NOT NULL,
+  `start_port` varchar(10) default NULL,
+  `end_port` varchar(10) default NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+
+
 CREATE TABLE  `cloud`.`host` (
   `id` bigint unsigned NOT NULL auto_increment,
   `name` varchar(255) NOT NULL,

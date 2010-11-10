@@ -35,29 +35,20 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.FirewallRuleVO;
 
-@Implementation(description="Creates a port forwarding rule")
-public class CreatePortForwardingRuleCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(CreatePortForwardingRuleCmd.class.getName());
+@Implementation(description="Creates an ip forwarding rule")
+public class CreateIpForwardingRuleCmd extends BaseCmd {
+    public static final Logger s_logger = Logger.getLogger(CreateIpForwardingRuleCmd.class.getName());
 
-    private static final String s_name = "createportforwardingruleresponse";
+    private static final String s_name = "createipforwardingruleresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, required=true, description="the IP address of the port forwarding rule")
+    @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, required=true, description="the public IP address of the forwarding rule, already associated via associateIp")
     private String ipAddress;
 
-    @Parameter(name=ApiConstants.PRIVATE_PORT, type=CommandType.STRING, required=true, description="the private port of the port forwarding rule")
-    private String privatePort;
-
-    @Parameter(name=ApiConstants.PROTOCOL, type=CommandType.STRING, required=true, description="the protocol for the port fowarding rule. Valid values are TCP or UDP.")
-    private String protocol;
-
-    @Parameter(name=ApiConstants.PUBLIC_PORT, type=CommandType.STRING, required=true, description="	the public port of the port forwarding rule")
-    private String publicPort;
-
-    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, required=true, description="the ID of the virtual machine for the port forwarding rule")
+    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, required=true, description="the ID of the virtual machine for the forwarding rule")
     private Long virtualMachineId;
 
 
@@ -67,18 +58,6 @@ public class CreatePortForwardingRuleCmd extends BaseCmd {
 
     public String getIpAddress() {
         return ipAddress;
-    }
-
-    public String getPrivatePort() {
-        return privatePort;
-    }
-
-    public String getProtocol() {
-        return protocol;
-    }
-
-    public String getPublicPort() {
-        return publicPort;
     }
 
     public Long getVirtualMachineId() {
@@ -94,17 +73,17 @@ public class CreatePortForwardingRuleCmd extends BaseCmd {
     public String getName() {
         return s_name;
     }
-    
+
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         try {
-            FirewallRuleVO result = _networkMgr.createPortForwardingRule(this);
+            FirewallRuleVO result = _networkMgr.createIpForwardingRule(this);
             if (result != null) {
                 FirewallRuleResponse fwResponse = ApiResponseHelper.createFirewallRuleResponse(result);
                 fwResponse.setResponseName(getName());
                 this.setResponseObject(fwResponse);
             } else {
-                throw new ServerApiException(NET_CREATE_IPFW_RULE_ERROR, "An existing rule for ipAddress / port / protocol of " + ipAddress + " / " + publicPort + " / " + protocol + " exits.");
+                //throw new ServerApiException(NET_CREATE_IPFW_RULE_ERROR, "An existing rule for ipAddress / port / protocol of " + ipAddress + " / " + publicPort + " / " + protocol + " exits.");
             }
         } catch (NetworkRuleConflictException ex) {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());

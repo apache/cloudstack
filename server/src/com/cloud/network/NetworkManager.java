@@ -27,6 +27,7 @@ import com.cloud.api.commands.CreateIpForwardingRuleCmd;
 import com.cloud.api.commands.CreatePortForwardingRuleCmd;
 import com.cloud.api.commands.CreateLoadBalancerRuleCmd;
 import com.cloud.api.commands.CreateRemoteAccessVpnCmd;
+import com.cloud.api.commands.DeleteIpForwardingRuleCmd;
 import com.cloud.api.commands.DeletePortForwardingRuleCmd;
 import com.cloud.api.commands.DeleteLoadBalancerRuleCmd;
 import com.cloud.api.commands.DeleteRemoteAccessVpnCmd;
@@ -304,8 +305,6 @@ public interface NetworkManager {
     List<IPAddressVO> listPublicIpAddressesInVirtualNetwork(long accountId, long dcId, Boolean sourceNat);	
     
     public boolean disassociateIpAddress(DisassociateIPAddrCmd cmd);
-    
-    public boolean deleteIpForwardingRule(DeletePortForwardingRuleCmd cmd);
 
     List<NetworkConfigurationVO> setupNetworkConfiguration(Account owner, NetworkOfferingVO offering, DeploymentPlan plan);
     List<NetworkConfigurationVO> setupNetworkConfiguration(Account owner, NetworkOfferingVO offering, NetworkConfiguration predefined, DeploymentPlan plan);
@@ -364,4 +363,8 @@ public interface NetworkManager {
 	String getNextAvailableMacAddressInNetwork(long networkConfigurationId);
 
 	FirewallRuleVO createIpForwardingRule(CreateIpForwardingRuleCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, NetworkRuleConflictException;
+
+	public boolean deletePortForwardingRule(DeletePortForwardingRuleCmd cmd);
+
+	public boolean deleteIpForwardingRule(DeleteIpForwardingRuleCmd cmd);
 }
