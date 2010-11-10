@@ -57,6 +57,10 @@ public class Filter {
         _orderBy = " ORDER BY RAND() LIMIT " + limit;
     }
     
+    public Filter(long limit, boolean random) {
+    	_orderBy = (random ? " ORDER BY RAND() " : "") + "LIMIT " + limit;  
+    }
+    
     /**
      * Note that this copy constructor does not copy offset and limit.
      * @param that filter
