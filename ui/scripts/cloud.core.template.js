@@ -286,7 +286,8 @@ function templateJsonToDetailsTab() {
     }
 	
 	// action Delete 			
-	if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) || jsonObj.id==DomRTemplateId) || (jsonObj.isready == false && jsonObj.templatestatus != null && jsonObj.templatestatus.indexOf("% Downloaded") != -1)) {
+	if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account))) 
+		|| (jsonObj.isready == false && jsonObj.templatestatus != null && jsonObj.templatestatus.indexOf("% Downloaded") != -1) || jsonObj.templatetype == "SYSTEM") {
 		//template.find("#template_delete_container").hide();
     }
     else {
