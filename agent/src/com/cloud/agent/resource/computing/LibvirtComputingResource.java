@@ -235,7 +235,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private String _dcId;
     private String _pod;
     private String _clusterId;
-    private String _premium;
     private long _hvVersion;
     private KVMHAMonitor _monitor;
     private final String _SSHKEYSPATH = "/root/.ssh";
@@ -735,17 +734,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			
 		}
 		
-		_premium = (String)params.get("premium");
-		if (_premium == null) {
-			_premium = "false";
-		}
-		
-		if (_premium.equalsIgnoreCase("true")) {
-			String[] info = NetUtils.getNetworkParams(_privateNic);
-			_monitor = new KVMHAMonitor(null, _conn, info[0], _heartBeatPath);
-			Thread ha = new Thread(_monitor);
-			ha.start();
-		}
+
+		String[] info = NetUtils.getNetworkParams(_privateNic);
+		_monitor = new KVMHAMonitor(null, _conn, info[0], _heartBeatPath);
+		Thread ha = new Thread(_monitor);
+		ha.start();
+
 		
 		 try {
              Class<?> clazz = Class.forName("com.cloud.storage.JavaStorageLayer");
@@ -1252,14 +1246,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			pool.destroy();
 			pool.undefine();
 			
-			if (_premium.equalsIgnoreCase("true")) {
-				KVMHABase.NfsStoragePool sp = new KVMHABase.NfsStoragePool(cmd.getPool().getUuid(),
-						cmd.getPool().getHostAddress(),
-						cmd.getPool().getPath(),
-						_mountPoint + File.separator + cmd.getPool().getUuid(),
-						PoolType.PrimaryStorage);
-				_monitor.removeStoragePool(sp);
-			}
+
+			KVMHABase.NfsStoragePool sp = new KVMHABase.NfsStoragePool(cmd.getPool().getUuid(),
+					cmd.getPool().getHostAddress(),
+					cmd.getPool().getPath(),
+					_mountPoint + File.separator + cmd.getPool().getUuid(),
+					PoolType.PrimaryStorage);
+			_monitor.removeStoragePool(sp);
+			
 			
 			return new Answer(cmd);
 		} catch (LibvirtException e) {
@@ -1903,14 +1897,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                                                                      spi.capacity,
                                                                      spi.allocation,
                                                                      tInfo);
-        if (_premium.equalsIgnoreCase("true")) {
-        	KVMHABase.NfsStoragePool pool = new KVMHABase.NfsStoragePool(cmd.getPool().getUuid(),
-        			cmd.getPool().getHostAddress(),
-        			cmd.getPool().getPath(),
-        			_mountPoint + File.separator + cmd.getPool().getUuid(),
-        			PoolType.PrimaryStorage);
-        	_monitor.addStoragePool(pool);
-        }
+       
+        KVMHABase.NfsStoragePool pool = new KVMHABase.NfsStoragePool(cmd.getPool().getUuid(),
+        		cmd.getPool().getHostAddress(),
+        		cmd.getPool().getPath(),
+        		_mountPoint + File.separator + cmd.getPool().getUuid(),
+        		PoolType.PrimaryStorage);
+        _monitor.addStoragePool(pool);
+       
         try {
         	storagePool.free();
         } catch (LibvirtException e) {
