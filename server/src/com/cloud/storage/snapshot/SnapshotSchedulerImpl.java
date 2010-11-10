@@ -327,6 +327,7 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
     public Date scheduleNextSnapshotJob(SnapshotPolicyVO policyInstance) {
         long policyId = policyInstance.getId();
         Date nextSnapshotTimestamp = getNextScheduledTime(policyId, _currentTimestamp);
+        
         SnapshotScheduleVO snapshotScheduleVO = new SnapshotScheduleVO(policyInstance.getVolumeId(), policyId, nextSnapshotTimestamp);
         _snapshotScheduleDao.persist(snapshotScheduleVO);
         return nextSnapshotTimestamp;
@@ -386,12 +387,16 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
     @Override @DB
     public boolean start() {
 
-        //reschedule all policies after management restart
+        // reschedule all policies after management restart
+        List<SnapshotScheduleVO> snapshotSchedules = _snapshotScheduleDao.listAll();
+        for (SnapshotScheduleVO snapshotSchedule : snapshotSchedules) {
+            _snapshotScheduleDao.delete(snapshotSchedule.getId());
+        }
         List<SnapshotPolicyVO> policyInstances = _snapshotPolicyDao.listAll();
-        for( SnapshotPolicyVO policyInstance : policyInstances) {
-            if( policyInstance.getId() != Snapshot.MANUAL_POLICY_ID ) {
+        for (SnapshotPolicyVO policyInstance : policyInstances) {
+            if (policyInstance.getId() != Snapshot.MANUAL_POLICY_ID) {
                 scheduleNextSnapshotJob(policyInstance);
-	    }
+            }
         }
         if (_testTimerTask != null) {
             _testClockTimer = new Timer("TestClock");
