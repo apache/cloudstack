@@ -359,7 +359,7 @@
                         <p> Adding Zone to Physical Resources</p>
                     </div>
                     
-                    <div id="confirmation_message" class="zonepoup_msgbox"> Confirmation msg will appear here</div>
+                    <div id="after_action_message" class="zonepoup_msgbox"></div>
                 </div>
                 <div class="zonepopup_navigationpanel">                    
                     <div class="vmpop_nextbutton" id="close_button">
