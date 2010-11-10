@@ -30,7 +30,6 @@ def vm_data(args):
                 cmd.append("-d")
                 cmd.append(tmp_path)
             except:
-                util.SMlog("  vmdata failed to write tempfile "  )
                 os.close(fd)
                 os.remove(tmp_path)
                 return ''
