@@ -357,7 +357,10 @@ function initAddZoneButton($midmenuAddLink1) {
 		}
 	});   
        
-    $midmenuAddLink1.unbind("click").bind("click", function(event) {  
+    $midmenuAddLink1.unbind("click").bind("click", function(event) {         
+        if($("#leftmenu_physical_resource").find("#physical_resource_arrow").hasClass("expanded_close") == true)
+			$("#leftmenu_physical_resource").click(); //if Physical Resource arrow shows closed (i.e. zonetree is hidden), expand and show zonetree.     
+        
         $("#dialog_add_zone").find("#info_container").hide();				
     
         $("#dialog_add_zone")

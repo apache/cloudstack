@@ -30,10 +30,7 @@ $(document).ready(function() {
 
 	// Setup first level navigation
 	$("#leftmenu_system").bind("click", function(event) {
-		if (selectLeftMenu($(this), true)) {
-			if($("#leftmenu_resource").find("#resource_arrow").hasClass("expanded_open") == true)
-				$("#leftmenu_resource").click(); //if resource menu is open (i.e. zonetree is shown), empty zonetree and close resource menu.
-		}
+		selectLeftMenu($(this), true);		
 		return false;
 	});	
 	
