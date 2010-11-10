@@ -4305,7 +4305,7 @@ a:hover.search_button {
 
 .zonepopup_container {
 	width:500px;
-	height:505px;
+	height:342px;
 	float:left;
 	position:absolute;
 	top:200px;
@@ -4319,7 +4319,7 @@ a:hover.search_button {
 	width:500px;
 	height:30px;
 	float:left;
-	background:url(../images/vmpopup_top.png) no-repeat top left;
+	background:url(../images/zonepopup_top.png) no-repeat top left;
 	margin:0;
 	padding:0;
 	overflow:hidden;
@@ -4338,8 +4338,8 @@ a:hover.search_button {
 }
 
 .zonepopup_maincontentarea {
-	width:500px;
-	height:340px;
+	width:460px;
+	height:270px;
 	float:left;
 	margin:20px 0 0 19px;
 	display:inline;
@@ -4347,7 +4347,7 @@ a:hover.search_button {
 }
 
 .zonepopup_titlebox {
-	width:500px;
+	width:450px;
 	height:auto;
 	float:left;
 	margin:0;
@@ -4379,15 +4379,15 @@ a:hover.search_button {
 }
 
 .zonepopup_contentpanel {
-	width:500px;
-	height:240px;
+	width:460px;
+	height:225px;
 	float:left;
-	margin:15px 0 0 0;
+	margin:8px 0 0 0;
 	padding:0;
 }
 
 .zonepopup_contentpanel h3 {
-	width:500px;
+	width:420px;
 	height:auto;
 	color:#003a52;
 	font-size:12px;
@@ -4398,10 +4398,155 @@ a:hover.search_button {
 
 .zonepopup_container_mid {
 	width:500px;
-	height:260px;
+	height:340px;
 	float:left;
-	background:url(../images/vmpopup_mid.gif) repeat-y top left;
+	background:url(../images/zonepopup_mid.gif) repeat-y top left;
 	margin:0;
+	padding:0;
+}
+
+.zonepopup_navigationpanel {
+	width:460px;
+	height:29px;
+	float:left;
+	margin:15px 0 0 0;
+	padding:0;
+}
+
+.zonepopup_selectionpanel{
+	width:450px;
+	height:220px;
+	float:left;
+	margin:0 0 0 0;
+	padding:0;
+	overflow-y:scroll;
+	overflow-y:auto;
+	overflow-x:hidden;
+}
+
+.zonepopup_selectionbox {
+	width:440px;
+	height:auto;
+	float:left;
+	border:1px solid #c0c0c0;
+	background:#efefef url(../images/offeringbox_bg.gif) repeat-x top left;
+	margin:7px 0 0 0;
+	padding:0 0 5px 0;
+}
+
+.zonepopup_selectionbox .radio {
+	width:13px;
+	height:13px;
+	float:left;
+	margin:5px 0 0 10px;
+	display:inline;
+	padding:0;
+	
+}
+
+.zonepopup_selectionbox .text {
+	width:80px;
+	height:15px;
+	float:left;
+	color:#333;
+	font-size:11px;
+	font-weight:normal;
+	background:#FFF;
+	border:1px solid #999;
+	margin:4px 0 0 8px;
+	display:inline;
+	padding:0;
+}
+
+.zonepopup_selectionbox .error_text {
+	width:80px;
+	height:15px;
+	float:left;
+	color:#333;
+	font-size:11px;
+	font-weight:normal;
+	background:#ffe5e5;
+	border:1px solid #999;
+	margin:4px 0 0 8px;
+	display:inline;
+	padding:0;
+}
+
+.zonepopup_selectionbox .label {
+	width:auto;
+	height:13px;
+	float:left;
+	color:#333;
+	font-size:12px;
+	font-weight:bold;
+	margin:5px 0 0 10px;
+	display:inline;
+	padding:0;
+}
+
+.zonepopup_selectionbox .label1 {
+	width:auto;
+	height:auto;
+	float:left;
+	color:#333;
+	font-size:11px;
+	font-weight:normal;
+	margin:8px 0 0 10px;
+	display:inline;
+	padding:0;
+}
+
+.zonepopup_selectionbox span {
+	width:auto;
+	height:auto;
+	float:left;
+	color:#666;
+	font-size:10px;
+	font-weight:normal;
+	margin:7px 0 0 3px;
+	display:inline;
+	padding:0;
+}
+
+.zonepopup_selectiondescriptionbox {
+	width:380px;
+	height:auto;
+	float:left;
+	margin:2px 0 0 35px;
+	padding:0;
+}
+
+.zonepopup_selectiondescriptionbox_top {
+	width:380px;
+	height:5px;
+	float:left;
+	background:url(../images/offeringbox_destop.gif) no-repeat top left;
+	margin:0 0 0 0;
+	padding:0;
+}
+
+.zonepopup_selectiondescriptionbox_bot {
+	width:380px;
+	height:auto;
+	float:left;
+	background:#FFF repeat top left;
+	border-left:1px solid #d7d7d7;
+	border-right:1px solid #d7d7d7;
+	border-bottom:1px solid #d7d7d7;
+	margin:0;
+	padding:0 0 3px 0;
+}
+
+.zonepopup_selectiondescriptionbox_bot p {
+	width:360px;
+	height:auto;
+	float:left;
+	color:#666;
+	text-align:left;
+	font-size:11px;
+	font-weight:normal;
+	margin:5px 0 0 10px;
+	display:inline;
 	padding:0;
 }
 
@@ -4409,10 +4554,38 @@ a:hover.search_button {
 	width:500px;
 	height:12px;
 	float:left;
-	background:url(../images/vmpopup_bot.png) no-repeat top left;
+	background:url(../images/zonepopup_bot.png) no-repeat top left;
 	margin:0;
 	padding:0;
 }
+
+.zonepoup_formcontent{ width:auto; height:auto; float:left; margin-top:10px; padding:0; color:#FFF; font-size:11px; margin-left:0; display:inline;}
+.zonepoup_formcontent ol { width:auto; height:auto; color:#333; float:left; font-family:Arial, Helvetica, sans-serif; font-size:11px; list-style:none; margin:0; padding:0;}
+.zonepoup_formcontent li { width:auto; height:auto; float:left; padding-bottom: 4px; color:#FFF; font-size:12px; font-weight:normal; text-align:left; margin:0 0 0 0;}
+.zonepoup_formcontent label { width:100px; float:left; text-align:left; font-weight:bold; margin:0px 15px 5px 5px; color:#333; font-size:11px; font-weight:normal;}
+.zonepoup_formcontent p{ width:auto; float:left; text-align:left; font-weight:bold; margin:0; color:#333; font-size:11px; font-weight:normal;}
+.zonepoup_formcontent .radio { width:15px; height:15px; float:left; margin:0 10px 0 0; padding:0;}
+.zonepoup_formcontent .checkbox { width:12px; height:12px; float:left; margin:0 10px 0 0; padding:0;}
+.zonepoup_formcontent .text { background-color: #f4f2f2; font: normal 11px Arial, Helvetica, sans-serif; float:left; border: 1px solid #999; height: 16px; width: 200px; margin:0 5px 3px 0; padding:0; color:#666;}
+.zonepoup_formcontent .text2 { background-color: #f4f2f2; font: normal 11px Arial, Helvetica, sans-serif; float:left; border: 1px solid #999; height: 14px; width: auto; margin:0 0 0 0; padding:0; color:#666;}
+.zonepoup_formcontent .smalltext { background-color: #f4f2f2; font: normal 11px Arial, Helvetica, sans-serif; float:left; border: 1px solid #999; height: 14px; width: 90px; margin:0 5px 3px 0 padding:0; color:#666;}
+.zonepoup_formcontent .error_smalltext { background-color: #fbabb3; font: normal 11px Arial, Helvetica, sans-serif; float:left; border: 1px solid #999; height: 14px; width: 90px; margin:0 5px 3px 0; padding:0; color:#666;}
+.zonepoup_formcontent_errormsg {font: normal 10px Arial, Helvetica, sans-serif; float:left; height: auto; width: 160px; margin:0 10px 2px 110px; padding:0; color:#F00; display:inline;}
+.zonepoup_formcontent_errormsg_long {font: normal 10px Arial, Helvetica, sans-serif; float:left; height: auto; width: 250px; margin:2px 10px 2px 0;  padding:0; color:#F00; display:inline;}
+.zonepoup_formcontent .select { background-color: #f4f2f2; font: normal 11px Arial, Helvetica, sans-serif; float:left; border: 1px solid #999; height: auto; min-width: 203px; padding:0; color:#666; margin:0 10px 3px 0;}
+.zonepoup_formcontent .snapselect { background-color: #f4f2f2; font: normal 11px Arial, Helvetica, sans-serif; float:left; border: 1px solid #999; height: auto; width: 70px; padding:0; color:#666; margin:0 0 0 0;}
+.zonepoup_formcontent .error_text { background-color: #fbabb3; font: normal 11px Arial, Helvetica, sans-serif; float:left; border: 1px solid #999; height: 14px; width: 200px; margin:0 10px 0 0; padding:0; color:#666;} 
+.zonepoup_formcontent .error_text2 { background-color: #fbabb3; font: normal 11px Arial, Helvetica, sans-serif; float:left; border: 1px solid #999; height: 14px; width: auto; margin:0 0 0 0; padding:0; color:#666;} 
+.zonepoup_formcontent .error_icon { width:15px; height:12px; float:left; background:url(images/alert_icon.png) no-repeat top left; margin:2px 0 0 3px; padding:0;}
+.zonepoup_formcontent span {font-family:Arial, Helvetica, sans-serif; font-size:11px; text-align:left; color:#333; font-weight:normal; float:left; margin:0 5px 0 0; padding:0;}
+.zonepoup_formcontent a { color:#2c8bbc; font-size:11px; font-weight:normal; text-align:left; text-decoration:underline; float:left; margin:0; padding:0;}
+.zonepoup_formcontent a:link .dialog_formcontent a:visited { text-decoration:underline;}
+.zonepoup_formcontent a:hover { text-decoration:none;}
+.zonepoup_loadingbox {width:440px; height:auto; float:left; margin:55px 0 0 0; padding:0 0 10px 0; background:#FFF repeat top left; border:1px solid #CCC;}
+.zonepoup_loader {width:16px; height:16px; float:left; background:url(../images/zone_popuploader.gif) no-repeat top left; margin:7px 0 0 7px; display:inline; padding:0;}
+.zonepoup_loadingbox p {width: 400px; height:auto; float:left; font-size:12px; text-align:left; color:#333; font-weight:normal; margin:10px 0 0 10px; display:inline; padding:0;}
+.zonepoup_msgbox {width:420px; height:auto; float:left; margin:55px 0 0 0; padding:10px; background:#fff4c1 repeat top left; border:1px solid #CCC; color:#333; font-size:12px; text-align:left; font-weight:normal;}
+.zonepoup_msgbox.error { background:#ffe5e5 repeat top left; color:#ae0000; }
 
 
 /* customized jquery css */
@@ -4531,7 +4704,7 @@ a:hover.search_button {
 .dialog_formcontent span {font-family:Arial, Helvetica, sans-serif; font-size:11px; text-align:left; color:#333; font-weight:normal; float:left; margin:0 5px 0 0; padding:0;}
 .dialog_formcontent a { color:#2c8bbc; font-size:11px; font-weight:normal; text-align:left; text-decoration:underline; float:left; margin:0; padding:0;}
 .dialog_formcontent a:link .dialog_formcontent a:visited { text-decoration:underline;}
-dialog_formcontent a:hover { text-decoration:none;}
+.dialog_formcontent a:hover { text-decoration:none;}
 
 /* Snapshots in dialog
 ----------------------------------*/

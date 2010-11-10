@@ -108,77 +108,46 @@
             </div>
         </div>
         <div class="zonepopup_container_mid">
-            <div class="vmpopup_maincontentarea">
-                <div class="vmpopup_titlebox">
+            <div class="zonepopup_maincontentarea">
+                <div class="zonepopup_titlebox">
                     <h2>
                         Step 1: <strong>Select a Network</strong></h2>
                     <p>
-                        Please select a template for your new virtual instance. You can also choose to select
-                        a blank template from which an ISO image can be installed onto.
+                        Please select a Network for your new zone. 
                     </p>
                 </div>
-                <div class="vmpopup_contentpanel">
-                    <div class="rev_tempsearchpanel">
-                        <label for="wizard_zone">
-                            Availability Zone:</label>
-                        <select class="select" id="wizard_zone" name="zone">
-                        </select>
-                        
-                                        
-                        
-                        <div class="rev_tempsearchbox">
-                            <form method="post" action="#">
-                            <ol>
-                                <li>
-                                    <input id="search_input" class="text" type="text" name="search_input" />
-                            </ol>
-                            </form>
-                            <div id="search_button" class="rev_searchbutton">
-                                Search</div>
-                        </div>
-                    </div>
-                    <div class="rev_wizformarea">
-                        <div class="revwiz_message_container" style="display: none;" id="wiz_message">
-                            <div class="revwiz_message_top">
-                                <p id="wiz_message_text">
-                                    Please select a template or ISO to continue</p>
-                            </div>
-                            <div class="revwiz_message_bottom">
-                                <div class="revwizcontinue_button" id="wiz_message_continue">
+                <div class="zonepopup_contentpanel">
+                    <div class="zonepopup_selectionpanel">
+                      
+                        <div class="zonepopup_selectionbox">
+                            <input type="radio" name="radiogroup" class="radio" />
+                            <label class="label">
+                                Basic Mode</label>
+                            <div class="zonepopup_selectiondescriptionbox">
+                                <div class="zonepopup_selectiondescriptionbox_top">
+                                </div>
+                                <div class="zonepopup_selectiondescriptionbox_bot">
+                                    <p>
+                                        Some decription about Basic Mode will appear here.. Some decription about Basic Mode will appear here.. Some decription about Basic Mode will appear here.. Some decription about Basic Mode will appear here.. Some decription about Basic Mode will appear here.. Some decription about Basic Mode will appear here..</p>
                                 </div>
                             </div>
                         </div>
-                        <div class="rev_wizmid_tempbox">
-                            <div class="revwiz_loadingbox" id="wiz_template_loading" style="display: none">
-                                <div class="loading_gridanimation">
+                        <div class="zonepopup_selectionbox">
+                            <input type="radio" name="radiogroup" class="radio" />
+                            <label class="label">
+                               Advance Mode</label>
+                            <div class="zonepopup_selectiondescriptionbox">
+                                <div class="zonepopup_selectiondescriptionbox_top">
                                 </div>
-                                <p>
-                                    Loading...</p>
-                            </div>
-                            <div class="rev_wizmid_tempbox_left" id="wiz_template_filter">
-                                <div class="rev_wizmid_selectedtempbut" id="wiz_featured">
-                                    Featured Template</div>
-                                <div class="rev_wizmid_nonselectedtempbut" id="wiz_my">
-                                    My Template</div>
-                                <div class="rev_wizmid_nonselectedtempbut" id="wiz_community">
-                                    Community Template</div>
-                                <div class="rev_wizmid_nonselectedtempbut" id="wiz_blank">
-                                    Blank Template</div>
-                            </div>
-                            <div class="rev_wizmid_tempbox_right">
-                                <div class="rev_wiztemplistpanel" id="template_container">  
-                                    
-                                </div>
-                                <div class="rev_wiztemplistactions">
-                                    <div class="rev_wiztemplist_actionsbox">
-                                        <a href="#" id="prev_page">Prev</a> <a href="#" id="next_page">Next</a>
-                                    </div>
+                                <div class="zonepopup_selectiondescriptionbox_bot">
+                                    <p>
+                                        Some decription about Advance Mode will appear here.. Some decription about Advance Mode will appear here.. Some decription about Advance Mode will appear here.. Some decription about Advance Mode will appear here.. Some decription about Advance Mode will appear here.. </p>
                                 </div>
                             </div>
                         </div>
-                    </div>
+	                 </div>
                 </div>
-                <div class="vmpopup_navigationpanel">
+                <div class="zonepopup_navigationpanel">
                     <div class="vmpop_prevbutton" id="prev_step" style="display: none;">
                     </div>
                     <div class="vmpop_nextbutton" id="next_step">
@@ -191,7 +160,215 @@
     </div>
     
     
+    <div id="step2" style="display: none;">
+        <div class="zonepopup_container_top">
+           <div class="vmpopup_steps" style="background: url(images/step1_bg_unselected.png) no-repeat top left">
+                Step 1</div>
+            <div class="vmpopup_steps" style="color: #FFF; background: url(images/step2_selected.gif) no-repeat top left">
+                Step 2</div>
+            <div class="vmpopup_steps" style="background: url(images/step2_bg.gif) no-repeat top left">
+                Step 3</div>
+            <div class="vmpopup_steps" style="background: url(images/laststep_bg.gif) no-repeat top left">
+            </div>
+            <div class="vmpopup_container_closebutton" id="close_button">
+            </div>
+        </div>
+        <div class="zonepopup_container_mid">
+            <div class="zonepopup_maincontentarea">
+                <div class="zonepopup_titlebox">
+                    <h2>
+                        Step 2: <strong>Add a Zone</strong></h2>
+                    <p>
+                        Please enter the following info to add a new zone 
+                    </p>
+                </div>
+                <div class="zonepopup_contentpanel">
+                    <div class="zonepoup_formcontent">
+                        <form action="#" method="post" id="form_acquire">
+                            <ol>
+                                <li>
+                                    <label>Name:</label>
+                                    <input class="text" type="text" name="add_zone_name" id="add_zone_name"/>
+                                    <div id="add_zone_name_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+                                </li>
+                                <li>
+                                    <label>DNS 1:</label>
+                                    <input class="text" type="text" name="add_zone_dns1" id="add_zone_dns1"/>
+                                    <div id="add_zone_dns1_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+                                </li>
+                                <li>
+                                    <label>DNS 2:</label>
+                                    <input class="text" type="text" name="add_zone_dns2" id="add_zone_dns2"/>
+                                    <div id="add_zone_dns2_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+                                </li>
+                                <li>
+                                    <label>Internal DNS 1:</label>
+                                    <input class="text" type="text" id="add_zone_internaldns1"/>
+                                    <div id="add_zone_internaldns1_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+                                </li>
+                                <li>
+                                    <label>Internal DNS 2:</label>
+                                    <input class="text" type="text" id="add_zone_internaldns2"/>
+                                    <div id="add_zone_internaldns2_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+                                </li>
+                                <li id="add_zone_container">
+                                    <label>Zone VLAN Range:</label>
+                                    <input class="text" style="width:92px" type="text" name="add_zone_startvlan" id="add_zone_startvlan"/><span>-</span>
+                                   <input class="text" style="width:92px" type="text" name="add_zone_endvlan" id="add_zone_endvlan"/>
+                                    <div id="add_zone_startvlan_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+                                    <div id="add_zone_endvlan_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+                                </li>
+                                <li>
+                                    <label for="add_zone_guestcidraddress">Guest CIDR:</label>
+                                    <input class="text" type="text" id="add_zone_guestcidraddress" value="10.1.1.0/24"/>
+                                    <div id="add_zone_guestcidraddress_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+                                </li>				
+                                <li>
+                                    <label>Public?:</label>
+                                    <select class="select" id="add_zone_public">
+                                        <option value="true">Yes</option>		
+                                        <option value="false">No</option>										
+                                    </select>
+                                </li>	
+                                
+                                
+                                <li id="domain_dropdown_container" style="display:none">
+                                    <label>Domain:</label>
+                                    <select class="select" id="domain_dropdown">					
+                                    </select>
+                                </li>
+                                
+                                
+                            </ol>
+                        </form>
+                    </div>
+                </div>
+                <div class="zonepopup_navigationpanel">
+                    <div class="vmpop_prevbutton" id="prev_step" style="display: block;">
+                    Back
+                    </div>
+                    <div class="vmpop_nextbutton" id="next_step">
+                        Go to Step 3</div>
+                </div>
+            </div>
+        </div>
+        <div class="zonepopup_container_bot">
+        </div>
+    </div>
     
+    
+    
+    <div id="step3" style="display: none;">
+        <div class="zonepopup_container_top">
+           <div class="vmpopup_steps" style="background: url(images/step1_bg_unselected.png) no-repeat top left">
+                Step 1</div>
+            <div class="vmpopup_steps" style="background: url(images/othersteps_bg.gif) no-repeat top left">
+                Step 2</div>
+            <div class="vmpopup_steps" style="color: #FFF; background: url(images/step2_selected.gif) no-repeat top left">
+                Step 3</div>
+            <div class="vmpopup_steps" style="background: url(images/laststep_slectedbg.gif) no-repeat top left">
+            </div>
+            <div class="vmpopup_container_closebutton" id="close_button">
+            </div>
+        </div>
+        <div class="zonepopup_container_mid">
+            <div class="zonepopup_maincontentarea">
+                <div class="zonepopup_titlebox">
+                    <h2>
+                        Step 3: <strong>Add a Pod</strong></h2>
+                    <p>
+                        Please enter the following info to add a new pod 
+                    </p>
+                </div>
+                <div class="zonepopup_contentpanel">
+                    <div class="zonepoup_formcontent">
+                        <form action="#" method="post" id="form_acquire">
+                        <ol>
+                            <li>
+                                <label for="user_name" style="width: 115px;">
+                                    Name:</label>
+                                <input class="text" type="text" name="add_pod_name" id="add_pod_name" />
+                                <div id="add_pod_name_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                                </div>
+                            </li>
+                            <li>
+                                <label for="add_pod_gateway" style="width: 115px;">
+                                    Gateway:</label>
+                                <input class="text" type="text" id="add_pod_gateway" />
+                                <div id="add_pod_gateway_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                                </div>
+                            </li>
+                            <li>
+                                <label for="user_name" style="width: 115px;">
+                                    CIDR:</label>
+                                <input class="text" type="text" name="add_pod_cidr" id="add_pod_cidr" />
+                                <div id="add_pod_cidr_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                                </div>
+                            </li>
+                            <li>
+                                <label for="user_name" style="width: 115px;">
+                                    Private IP Range:</label>
+                                <input class="text" style="width: 92px" type="text" name="add_pod_startip" id="add_pod_startip" /><span>-</span>
+                                <input class="text" style="width: 92px" type="text" name="add_pod_endip" id="add_pod_endip" />
+                                <div id="add_pod_startip_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                                </div>
+                                <div id="add_pod_endip_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                                </div>
+                            </li>
+                        </ol>
+                        </form>
+                    </div>
+                </div>
+                <div class="zonepopup_navigationpanel">
+                    <div class="vmpop_prevbutton" id="prev_step" style="display: block;">
+                   Back
+                    </div>
+                    <div class="vmpop_nextbutton" id="next_step">
+                        Submit</div>
+                </div>
+            </div>
+        </div>
+        <div class="zonepopup_container_bot">
+        </div>
+    </div>
+    
+    
+    <div id="step4" style="display: none;">
+        <div class="zonepopup_container_top">
+           <div class="vmpopup_steps" style="background: url(images/step1_bg_unselected.png) no-repeat top left">
+                Step 1</div>
+            <div class="vmpopup_steps" style="background: url(images/othersteps_bg.gif) no-repeat top left">
+                Step 2</div>
+            <div class="vmpopup_steps" style="color: #FFF; background: url(images/step2_selected.gif) no-repeat top left">
+                Step 3</div>
+            <div class="vmpopup_steps" style="background: url(images/laststep_slectedbg.gif) no-repeat top left">
+            </div>
+            <div class="vmpopup_container_closebutton" id="close_button">
+            </div>
+        </div>
+        <div class="zonepopup_container_mid">
+            <div class="zonepopup_maincontentarea">
+                
+                <div class="zonepopup_contentpanel">
+                	<div class="zonepoup_loadingbox" style="display:none;">
+                    	<div class="zonepoup_loader"></div>
+                        <p> Adding Zone to Physical Resources</p>
+                    </div>
+                    
+                    <div class="zonepoup_msgbox"> Confirmation msg will appear here</div>
+                </div>
+                <div class="zonepopup_navigationpanel">
+                    <div class="vmpop_prevbutton" id="prev_step" style="display: block;">
+                    Cancel
+                    </div>
+                    <div class="vmpop_nextbutton" id="next_step">
+                        OK</div>
+                </div>
+            </div>
+        </div>
+        <div class="zonepopup_container_bot">
+        </div>
+    </div>
     
 </div>
 <!-- Zone wizard (end)-->
