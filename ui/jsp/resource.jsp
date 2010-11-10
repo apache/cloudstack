@@ -213,7 +213,7 @@
                                     <input class="text" type="text" id="add_zone_internaldns2"/>
                                     <div id="add_zone_internaldns2_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
                                 </li>
-                                <li id="add_zone_container">
+                                <li id="add_zone_vlan_container">
                                     <label>Zone VLAN Range:</label>
                                     <input class="text" style="width:92px" type="text" name="add_zone_startvlan" id="add_zone_startvlan"/><span>-</span>
                                    <input class="text" style="width:92px" type="text" name="add_zone_endvlan" id="add_zone_endvlan"/>
@@ -309,7 +309,7 @@
                             </li>
                             <li>
                                 <label for="user_name" style="width: 115px;">
-                                    Private IP Range:</label>
+                                    Reserved System IP:</label>
                                 <input class="text" style="width: 92px" type="text" name="add_pod_startip" id="add_pod_startip" /><span>-</span>
                                 <input class="text" style="width: 92px" type="text" name="add_pod_endip" id="add_pod_endip" />
                                 <div id="add_pod_startip_errormsg" class="dialog_formcontent_errormsg" style="display: none;">

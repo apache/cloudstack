@@ -365,11 +365,15 @@ function initAddZoneShortcut() {
                 closeAddZoneWizard();
                 break;
             
-            case "basic_mode":            
+            case "basic_mode":  //create VLAN in pod-level      
+                //hide Zone VLAN Range in Add Zone(step 2), show Guest IP Range in Add Pod(step3) 
+                $thisWizard.find("#step2").find("#add_zone_vlan_container").hide();
                 return true;
                 break;
                 
-            case "advanced_mode":            
+            case "advanced_mode":  //create VLAN in zone-level 
+                //show Zone VLAN Range in Add Zone(step 2), hide Guest IP Range in Add Pod(step3) 
+                $thisWizard.find("#step2").find("#add_zone_vlan_container").show();     
                 return true;
                 break;
             
@@ -379,6 +383,9 @@ function initAddZoneShortcut() {
                 break;    
                 
             case "go_to_step_3": //step 2 => step 3
+                var isValid = addZoneWizardValidateZond($thisWizard);
+                if (!isValid) 
+	                return;	
                 $thisWizard.find("#step2").hide();
                 $thisWizard.find("#step3").show();
                 break;   
@@ -396,7 +403,7 @@ function initAddZoneShortcut() {
             case "submit_button": //step 3 => spinning wheel
                 $thisWizard.find("#step3").hide();
                 $thisWizard.find("#after_submit_screen").show();
-                AddZoneWizardSubmit($thisWizard);
+                addZoneWizardSubmit($thisWizard);
                 break;       
         }   
         
@@ -404,9 +411,7 @@ function initAddZoneShortcut() {
     }); 
 }
 
-
-function AddZoneWizardSubmit($thisWizard) {
-    // validate values
+function addZoneWizardValidateZond($thisWizard) {    
 	var isValid = true;					
 	isValid &= validateString("Name", $thisWizard.find("#add_zone_name"), $thisWizard.find("#add_zone_name_errormsg"));
 	isValid &= validateIp("DNS 1", $thisWizard.find("#add_zone_dns1"), $thisWizard.find("#add_zone_dns1_errormsg"), false); //required
@@ -418,9 +423,10 @@ function AddZoneWizardSubmit($thisWizard) {
 		isValid &= validateString("Zone - End VLAN Range", $thisWizard.find("#add_zone_endvlan"), $thisWizard.find("#add_zone_endvlan_errormsg"), true);        //optional
 	}
 	isValid &= validateCIDR("Guest CIDR", $thisWizard.find("#add_zone_guestcidraddress"), $thisWizard.find("#add_zone_guestcidraddress_errormsg"), false); //required
-	if (!isValid) 
-	    return;							
-	
+	return isValid;
+}
+
+function addZoneWizardSubmit($thisWizard) {
 	$thisWizard.find("#spinning_wheel").show();
 	
 	var moreCriteria = [];	
