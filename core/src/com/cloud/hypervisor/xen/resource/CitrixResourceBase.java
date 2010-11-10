@@ -4126,7 +4126,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             return null;
         }
 
-        destroyStoppedVm();
         StartupRoutingCommand cmd = new StartupRoutingCommand();
         fillHostInfo(cmd);
 
