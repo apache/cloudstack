@@ -3775,9 +3775,9 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         }
 
         setupLinkLocalNetwork();
-
-        destroyStoppedVm();
+        
         StartupRoutingCommand cmd = new StartupRoutingCommand();
+        
         fillHostInfo(cmd);
 
         cleanupDiskMounts();
