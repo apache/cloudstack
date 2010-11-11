@@ -485,9 +485,9 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 		
 		for (String uniqueName: templateInfo.keySet()) {
 			TemplateInfo tInfo = templateInfo.get(uniqueName);
-			DeleteTemplateCommand dtCommand = new DeleteTemplateCommand(tInfo.getInstallPath());
-			long result = send(sserverId, dtCommand, null);
-			s_logger.info("Deleted template " + tInfo.getTemplateName() + " on secondary storage " + sserverId + " since it isn't in the database, result=" + result);
+			//DeleteTemplateCommand dtCommand = new DeleteTemplateCommand(tInfo.getInstallPath());
+			//long result = send(sserverId, dtCommand, null);
+			s_logger.info("Template " + tInfo.getTemplateName() + " is removed in DB, but we still keep it in Secondary Storage in case snapshot will use it");
 
 		}
 
