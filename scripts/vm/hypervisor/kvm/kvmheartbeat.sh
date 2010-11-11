@@ -77,6 +77,7 @@ then
    mount $NfsSvrIP:$NfsSvrPath $MountPoint -o sync,soft,proto=tcp,acregmin=0,acregmax=0,acdirmin=0,acdirmax=0,noac,timeo=133,retrans=10 &> /dev/null
    if [ $? -gt 0 ]
    then
+      printf "Failed to remount $NfsSvrIP:$NfsSvrPath under $MountPoint" 
       exit 1
    fi
    if [ "$rflag" == "0" ]
@@ -98,6 +99,7 @@ write_hbLog() {
      touch $hbFile &> /dev/null
      if [ $? -gt 0 ]
      then
+ 	printf "Failed to create $hbFile"
         return 2
      fi
   fi

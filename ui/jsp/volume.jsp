@@ -252,83 +252,22 @@
 <!-- Recurring Snapshots Dialog (begin) -->
 <div id="dialog_recurring_snapshot" title="Recurring Snapshot" style="display:none;">
     <div class="dialog_snapshotcontainer">
-        <div class="dialog_snapshotleft" id="dialog_snapshotleft">
-            
-                <div class="dialog_snapshotleft_list">
-                    <div class="dialog_snapshotleft_label">
-                        Hourly:</div>
-					<div class="dialog_snapshotleft_info" id="dialog_snapshot_hourly_info_unset">                        
-						<p><i>&nbsp;Please click <b>'Edit'</b> to set your <b>hourly</b> recurring snapshot schedule</i></p>
-                    </div>
-                    <div class="dialog_snapshotleft_info" id="dialog_snapshot_hourly_info_set" style="display:none">                        
-                        <span id="read_hourly_minute">mm</span></span><span> Minute(s) Past the Hour</span><span id="read_hourly_timezone"></span>            
-                    </div>
-                    <div class="dialog_snapshotleft_max">
-                        <p>Keeping:</p>
-                        <span id="read_hourly_max">N/A</span></div>
-                    <div class="dialog_snapshotleft_actions">
-                        <a id="hourly_edit_link" href="#">Edit</a> | <a id="hourly_delete_link" href="#">&nbsp;Delete</a></div>
-                </div>
-                <div class="dialog_snapshotleft_list">
-                    <div class="dialog_snapshotleft_label">
-                        Daily:</div>
-					<div class="dialog_snapshotleft_info" id="dialog_snapshot_daily_info_unset">                        
-						<p><i>&nbsp;Please click <b>'Edit'</b> to set your  <b>daily</b> recurring snapshot schedule</i></p>
-                    </div>
-                    <div class="dialog_snapshotleft_info" id="dialog_snapshot_daily_info_set" style="display:none">                       
-                        <span id="read_daily_hour">hh</span><span>:</span><span id="read_daily_minute">mm</span>
-                        <span id="read_daily_meridiem">AM</span><span id="read_daily_timezone"></span>
-                    </div>
-                    <div class="dialog_snapshotleft_max">
-                        <p>
-                            Keeping:</p>
-                        <span id="read_daily_max">N/A</span></div>
-                    <div class="dialog_snapshotleft_actions">
-                        <a id="daily_edit_link" href="#">Edit</a> | <a id="daily_delete_link" href="#">&nbsp;Delete</a></div>
-                </div>
-                <div class="dialog_snapshotleft_list">
-                    <div class="dialog_snapshotleft_label">
-                        Weekly:</div>
-					<div class="dialog_snapshotleft_info" id="dialog_snapshot_weekly_info_unset">                        
-						<p><i>&nbsp;Please click <b>'Edit'</b> to set your  <b>weekly</b> recurring snapshot schedule</i></p>
-                    </div>
-                    <div class="dialog_snapshotleft_info" id="dialog_snapshot_weekly_info_set" style="display:none">                       
-                        <span id="read_weekly_hour">hh</span><span>:</span><span id="read_weekly_minute">mm</span>
-                        <span id="read_weekly_meridiem">AM</span><span id="read_weekly_timezone"></span>
-                        <span id="read_weekly_day_of_week">day-of-week</span>
-                    </div>
-                    <div class="dialog_snapshotleft_max">
-                        <p>Keeping:</p>
-                        <span id="read_weekly_max">N/A</span></div>
-                    <div class="dialog_snapshotleft_actions">
-                        <a id="weekly_edit_link" href="#">Edit</a> | <a id="weekly_delete_link" href="#">&nbsp;Delete</a></div>
-                </div>        
-                <div class="dialog_snapshotleft_list">
-                    <div class="dialog_snapshotleft_label">
-                        Monthly:</div>
-					<div class="dialog_snapshotleft_info" id="dialog_snapshot_monthly_info_unset">                        
-						<p><i>&nbsp;Please click <b>'Edit'</b> to set your  <b>monthly</b> recurring snapshot schedule</i></p>
-                    </div>
-                    <div class="dialog_snapshotleft_info" id="dialog_snapshot_monthly_info_set" style="display:none">                       
-                        <span id="read_monthly_hour">hh</span><span>:</span><span id="read_monthly_minute">mm</span>
-                        <span id="read_monthly_meridiem">AM</span><span id="read_monthly_timezone"></span>
-                        <span id="read_monthly_day_of_month">day-of-month</span>
-                    </div>
-                    <div class="dialog_snapshotleft_max">
-                        <p>Keeping:</p>
-                        <span id="read_monthly_max">N/A</span></div>
-                    <div class="dialog_snapshotleft_actions">
-                        <a id="monthly_edit_link" href="#">Edit</a> | <a id="monthly_delete_link" href="#">&nbsp;Delete</a></div>
-                </div>             
-              </div>
+        <div class="dialog_snapshotleft" id="dialog_snapshotleft" >
+			<p>Your snapshot schedule is currently set to:<br/><br/></p>
+        </div>
         <div class="dialog_snapshotright" id="dialog_snapshotright">
-        	<div class="dialog_snapshotright_infotext" style="display:none"> Cick Edit to Schedule</div>
             <div class="dialog_snapshots_editcontent" style="display:block;">
                 <div class="dialog_snapshots_editcontent_title">
-                    <p>&nbsp;Edit:</p>
-                    <span id="edit_interval_type" style="text-decoration:underline">Interval Type</span>
+					<div class="dialog_snapshotleft_label" style="width:120px">&nbsp;Snapshot Schedule: &nbsp;&nbsp;</div>
+                    <select class="snapselect" id="snapshot_interval">
+						<option value="-1">Disabled</option>
+						<option value="0">Hourly</option>
+						<option value="1">Weekly</option>
+						<option value="2">Daily</option>
+						<option value="3">Monthly</option>
+					</select>
                 </div>
-                <div class="dialog_formcontent">
+                <div class="dialog_formcontent" id="snapshot_form">
                     <form action="#" method="post" id="form4">
                     <ol>
                         <li>
@@ -338,7 +277,6 @@
                             <span id="edit_hour_container">
                             	
                                 <select class="snapselect" id="edit_hour">
-                                    <option value="00">00</option>
                                     <option value="01">01</option>
                                     <option value="02">02</option>
                                     <option value="03">03</option>
@@ -349,7 +287,8 @@
                                     <option value="08">08</option>
                                     <option value="09">09</option>
                                     <option value="10">10</option>
-                                    <option value="11">11</option>                                    
+                                    <option value="11">11</option>  
+									<option value="00">12</option>
                                 </select>                               
                             </span>                            
                             
@@ -549,7 +488,6 @@
                             <div id="edit_max_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div>                             
                         </li>  						
                     </ol>
-                    <input class="ui-state-default" type="submit" id="apply_button" value="Apply Schedule" style="background-color:Yellow; width: 150px; height:20px; margin:15px 0 0 0;"/>
                     </form>
                 </div>
             </div>

@@ -1868,20 +1868,20 @@ a:hover.search_button {
 	width:auto;
 	height:auto;
 	color:#FFF;
-	font-size:11px;
+	font-size:10px;
 	font-weight:normal;
 	text-decoration:none;
 	float:left;
-	margin:7px 15px 0 7px;
+	margin:7px 11px 0 5px;
 	padding:0;
 }
 
 
 .actionpanel_button_icons {
-	width:30px;
-	height:20px;
+	width:25px;
+	height:18px;
 	float:left;
-	margin:3px 0 0 8px;
+	margin:5px 0 0 7px;
 	padding:0;
 }
 
@@ -1917,18 +1917,21 @@ a:hover.search_button {
 	width:380px;
 	height:auto;
 	float:left;
-	margin:8px 0 0 10px;
-	padding:0;
+	background:#eef2f4 repeat top left;
+	border:1px solid #CCC;
+	margin:5px 0 0 10px;
+	padding:4px 0;
 }
 
 .help_dropdown_box_titlebox h2 {
 	width:auto;
 	height:auto;
 	float:left;
-	color:#999;
+	color:#333;
 	text-align:left;
 	font-size:14px;
-	margin:0;
+	margin:0 0 0 10px;
+	display:inline;
 	padding:0;
 }
 
@@ -1938,7 +1941,7 @@ a:hover.search_button {
 	font-size:10px;
 	font-weight:normal;
 	text-align:left;
-	margin:0;
+	margin:0 10px 0 0;
 	padding:0;
 	text-decoration:none;
 }
@@ -4710,7 +4713,7 @@ a:hover.search_button {
 ----------------------------------*/
 .dialog_snapshotbox {width:auto; height:auto; float:left; display:block;  margin:0; padding:0;}
 .dialog_snapshotcontainer {width:auto height:auto; display:block; float:left; margin:0; padding:0;}
-.dialog_snapshotleft {width:500px; height:135px; float:left;display:block;  margin:0; padding:0;}
+.dialog_snapshotleft {width:400px; height:10px; float:left;display:block;  margin:0; padding:0;}
 .dialog_snapshotleft_list {width:705px; height:auto; float:left; margin:0 0 10px 0; padding:0;  color:#333; font-size:11px;}
 .dialog_snapshotleft_info {width:470px; height:auto; float:left; margin:0 0 10px 0; padding:0;  color:#333; font-size:11px;}
 .dialog_snapshotleft_info p {width:auto; height:auto; float:left; color:#333; font-size:11px; font-weight:normal; margin:0; padding:0;}
@@ -4723,7 +4726,7 @@ a:hover.search_button {
 .dialog_snapshotleft_actions a:link {width:auto; height:auto; margin:0 5px 0 0; padding:0;  color:#2c8bbc; text-decoration:none; font-size:11px;}
 .dialog_snapshotleft_actions a:visited {width:auto; height:auto; margin:0 5px 0 0; padding:0;  color:#2c8bbc; text-decoration:none; font-size:11px;}
 .dialog_snapshotleft_actions a:hover {width:auto; height:auto; margin:0 5px 0 0; padding:0;  color:#2c8bbc; text-decoration:underline; font-size:11px;}
-.dialog_snapshotright {width:705px; height:0px; float:left; display:none;  margin:0; padding:15px 0 0 0;  border-top:1px solid #666;}
+.dialog_snapshotright {width:400px; height:150px; float:left;  margin:0; padding:15px 0 0 0; }
 .dialog_snapshotright_infotext{width:360px; height:160px; float:left; display:none;  margin:0; padding:0; font-size:15px; font-family:Arial, Helvetica, sans-serif; font-size:normal; text-align:left; margin:10px; color:#333;}
 .dialog_snapshots_editcontent {width:350px; height:auto; float:left; margin:0; padding:0;}
 .dialog_snapshots_editcontent_title {width:280px; height:auto; float:left; margin:0; padding:0;}

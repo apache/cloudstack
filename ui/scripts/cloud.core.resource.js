@@ -249,8 +249,12 @@ function afterLoadResourceJSP($midmenuItem1) {
     initAddZoneButton($("#midmenu_add_link")); 
 	initUpdateConsoleCertButton($("#midmenu_add2_link"));
     initDialog("dialog_add_zone");
-	initDialog("dialog_update_cert", 450);
-		
+	initDialog("dialog_update_cert", 450);	
+	resourceCountTotal();
+	initAddZoneShortcut();     
+}
+
+function resourceCountTotal() {		
 	$.ajax({
 	    data: createURL("command=listZones&available=true"),
 	    dataType: "json",
@@ -295,7 +299,317 @@ function afterLoadResourceJSP($midmenuItem1) {
                 $("#primarystorage_total").text(items.length.toString());		                    
             }		    
         }
-    });       
+    });  
+}
+
+function refreshAddZoneWizard() {
+    var $addZoneWizard = $("#add_zone_wizard");
+    $addZoneWizard.find("#step2, #step3, #after_submit_screen").hide();
+    $addZoneWizard.find("#step1").show();
+    $addZoneWizard.find("#basic_mode").click();
+}
+
+function openAddZoneWizard() {
+    refreshAddZoneWizard();
+    $("#add_zone_wizard").show();
+    $("#wizard_overlay").show();
+}
+
+function closeAddZoneWizard() {
+    $("#add_zone_wizard").hide();
+    $("#wizard_overlay").hide();
+}
+
+function initAddZoneShortcut() {    
+    var $addZoneWizard = $("#add_zone_wizard");
+    $addZoneWizard.find("#add_zone_public").unbind("change").bind("change", function(event) {        
+        if($(this).val() == "true") {  //public zone
+            $addZoneWizard.find("#domain_dropdown_container").hide();  
+        }
+        else {  //private zone
+            $addZoneWizard.find("#domain_dropdown_container").show();  
+        }
+        return false;
+    });
+         
+    var domainDropdown = $addZoneWizard.find("#domain_dropdown").empty();	
+	$.ajax({
+	  data: createURL("command=listDomains"+maxPageSize),
+		dataType: "json",
+		async: false,
+		success: function(json) {
+			var domains = json.listdomainsresponse.domain;						
+			if (domains != null && domains.length > 0) {
+				for (var i = 0; i < domains.length; i++) {
+					domainDropdown.append("<option value='" + domains[i].id + "'>" + fromdb(domains[i].name) + "</option>"); 
+				}
+			} 
+		}
+	});    
+    
+    $("#add_zone_shortcut").unbind("click").bind("click", function(event) {  
+        /*      
+        if($("#leftmenu_physical_resource").find("#physical_resource_arrow").hasClass("expanded_close") == true)
+			$("#leftmenu_physical_resource").click(); //if Physical Resource arrow shows closed (i.e. zonetree is hidden), expand and show zonetree.     
+        */
+        
+        //$addZoneWizard.find("#info_container").hide();	
+        openAddZoneWizard();
+        return false;
+    });    
+          
+    $addZoneWizard.unbind("click").bind("click", function(event) {  
+        var $thisWizard = $(this);
+        var $target = $(event.target);
+    
+        switch($target.attr("id")) {
+            case "close_button":
+                closeAddZoneWizard();
+                break;
+            
+            case "basic_mode":  //create VLAN in pod-level      
+                //hide Zone VLAN Range in Add Zone(step 2), show Guest IP Range in Add Pod(step3)                 
+                $thisWizard.find("#step2").find("#add_zone_vlan_container").hide();
+                $thisWizard.find("#step3").find("#guestip_container, #guestnetmask_container").show();
+                return true;
+                break;
+                
+            case "advanced_mode":  //create VLAN in zone-level 
+                //show Zone VLAN Range in Add Zone(step 2), hide Guest IP Range in Add Pod(step3) 
+                $thisWizard.find("#step2").find("#add_zone_vlan_container").show();  
+                $thisWizard.find("#step3").find("#guestip_container, #guestnetmask_container").hide();   
+                return true;
+                break;
+            
+            case "go_to_step_2": //step 1 => step 2   
+                $thisWizard.find("#step1").hide();
+                $thisWizard.find("#step2").show();
+                break;    
+                
+            case "go_to_step_3": //step 2 => step 3
+                var isValid = addZoneWizardValidateZond($thisWizard);
+                if (!isValid) 
+	                return;	
+                $thisWizard.find("#step2").hide();
+                $thisWizard.find("#step3").show();
+                break;   
+           
+            case "back_to_step_2": //step 3 => step 2
+                $thisWizard.find("#step3").hide();
+                $thisWizard.find("#step2").show();
+                break;    
+                
+            case "back_to_step_1": //step 2 => step 1
+                $thisWizard.find("#step2").hide();
+                $thisWizard.find("#step1").show();
+                break; 
+                
+            case "submit_button": //step 3 => make API call
+                var isValid = addZoneWizardValidatePod($thisWizard);
+                if($thisWizard.find("#step3").find("#guestip_container").css("display") != "none")
+                    isValid &= addZoneWizardValidateGuestIPRange($thisWizard);
+                if (!isValid) 
+	                return;	
+            
+                $thisWizard.find("#step3").hide();
+                $thisWizard.find("#after_submit_screen").show();
+                addZoneWizardSubmit($thisWizard);
+                break;       
+        }   
+        
+        return false;
+    }); 
+}
+
+function addZoneWizardValidateZond($thisWizard) {    
+	var isValid = true;					
+	isValid &= validateString("Name", $thisWizard.find("#add_zone_name"), $thisWizard.find("#add_zone_name_errormsg"));
+	isValid &= validateIp("DNS 1", $thisWizard.find("#add_zone_dns1"), $thisWizard.find("#add_zone_dns1_errormsg"), false); //required
+	isValid &= validateIp("DNS 2", $thisWizard.find("#add_zone_dns2"), $thisWizard.find("#add_zone_dns2_errormsg"), true);  //optional	
+	isValid &= validateIp("Internal DNS 1", $thisWizard.find("#add_zone_internaldns1"), $thisWizard.find("#add_zone_internaldns1_errormsg"), false); //required
+	isValid &= validateIp("Internal DNS 2", $thisWizard.find("#add_zone_internaldns2"), $thisWizard.find("#add_zone_internaldns2_errormsg"), true);  //optional	
+	if($thisWizard.find("#step2").find("#add_zone_vlan_container").css("display") != "none") {
+		isValid &= validateString("VLAN Range", $thisWizard.find("#add_zone_startvlan"), $thisWizard.find("#add_zone_startvlan_errormsg"), false); //required
+		isValid &= validateString("VLAN Range", $thisWizard.find("#add_zone_endvlan"), $thisWizard.find("#add_zone_endvlan_errormsg"), true);        //optional
+	}	
+	isValid &= validateCIDR("Guest CIDR", $thisWizard.find("#add_zone_guestcidraddress"), $thisWizard.find("#add_zone_guestcidraddress_errormsg"), false); //required
+	return isValid;
+}
+
+function addZoneWizardValidatePod($thisWizard) {   
+    var isValid = true;					
+    isValid &= validateString("Name", $thisWizard.find("#add_pod_name"), $thisWizard.find("#add_pod_name_errormsg"));
+    isValid &= validateCIDR("CIDR", $thisWizard.find("#add_pod_cidr"), $thisWizard.find("#add_pod_cidr_errormsg"));	
+    isValid &= validateIp("Reserved System IP", $thisWizard.find("#add_pod_startip"), $thisWizard.find("#add_pod_startip_errormsg"));  //required
+    isValid &= validateIp("Reserved System IP", $thisWizard.find("#add_pod_endip"), $thisWizard.find("#add_pod_endip_errormsg"), true);  //optional    
+    return isValid;			
+}
+
+function addZoneWizardValidateGuestIPRange($thisWizard) {   
+    var isValid = true;	
+    isValid &= validateIp("Guest IP Range", $thisWizard.find("#startguestip"), $thisWizard.find("#startguestip_errormsg"));  //required
+    isValid &= validateIp("Guest IP Range", $thisWizard.find("#endguestip"), $thisWizard.find("#endguestip_errormsg"), true);  //optional
+    isValid &= validateIp("Guest Gateway", $thisWizard.find("#guestnetmask"), $thisWizard.find("#guestnetmask_errormsg"));  //required when creating
+    return isValid;			
+}
+
+function addZoneWizardSubmit($thisWizard) {
+	$thisWizard.find("#spinning_wheel").show();
+	
+	var moreCriteria = [];	
+	
+	var name = trim($thisWizard.find("#add_zone_name").val());
+	moreCriteria.push("&name="+todb(name));
+	
+	var dns1 = trim($thisWizard.find("#add_zone_dns1").val());
+	moreCriteria.push("&dns1="+encodeURIComponent(dns1));
+	
+	var dns2 = trim($thisWizard.find("#add_zone_dns2").val());
+	if (dns2 != null && dns2.length > 0) 
+	    moreCriteria.push("&dns2="+encodeURIComponent(dns2));						
+						
+	var internaldns1 = trim($thisWizard.find("#add_zone_internaldns1").val());
+	moreCriteria.push("&internaldns1="+encodeURIComponent(internaldns1));
+	
+	var internaldns2 = trim($thisWizard.find("#add_zone_internaldns2").val());
+	if (internaldns2 != null && internaldns2.length > 0) 
+	    moreCriteria.push("&internaldns2="+encodeURIComponent(internaldns2));						
+	 											
+    if($thisWizard.find("#step2").find("#add_zone_vlan_container").css("display") != "none") {
+		var vlanStart = trim($thisWizard.find("#add_zone_startvlan").val());	
+		var vlanEnd = trim($thisWizard.find("#add_zone_endvlan").val());						
+		if (vlanEnd != null && vlanEnd.length > 0) 
+		    moreCriteria.push("&vlan=" + encodeURIComponent(vlanStart + "-" + vlanEnd));									
+		else 							
+			moreCriteria.push("&vlan=" + encodeURIComponent(vlanStart));		
+	}	
+	else { 
+	    moreCriteria.push("&vlan=30"); //temporary hacking before bug 7143 is fixed ("VLAN parameter in CreateZone shouldn't be required") 
+	} 			
+	
+	var guestcidraddress = trim($thisWizard.find("#add_zone_guestcidraddress").val());
+	moreCriteria.push("&guestcidraddress="+encodeURIComponent(guestcidraddress));	
+					
+	if($thisWizard.find("#domain_dropdown_container").css("display") != "none") {
+	    var domainId = trim($thisWizard.find("#domain_dropdown").val());
+	    moreCriteria.push("&domainid="+domainId);	
+	}
+	
+	var zoneId, podId, vlanId, $zoneNode, $podNode, gateway;	
+	var afterActionMsg = "";						
+    $.ajax({
+        data: createURL("command=createZone"+moreCriteria.join("")),
+	    dataType: "json",
+	    async: false,
+	    success: function(json) {	
+	        afterActionMsg += "Zone was created successfully<br>";	     	 
+	        $thisWizard.find("#spinning_wheel").hide();
+	        	        			        
+	        $zoneNode = $("#leftmenu_zone_node_template").clone(true); 			            			   
+            var $zoneTree = $("#leftmenu_zone_tree").find("#tree_container");		     			
+            $zoneTree.prepend($zoneNode);	
+            $zoneNode.fadeIn("slow");				        
+	    
+		    var item = json.createzoneresponse.zone;					    
+		    zoneJSONToTreeNode(item, $zoneNode);		
+		    
+		    zoneId = item.id;			           
+	    },
+        error: function(XMLHttpResponse) {            
+			handleError(XMLHttpResponse, function() {
+				afterActionMsg += ("Failed to create zone. " + parseXMLHttpResponse(XMLHttpResponse) + "<br>");
+				$thisWizard.find("#spinning_wheel").hide();
+			});
+        }
+    });
+    
+    if(zoneId != null) {        
+        var name = trim($thisWizard.find("#add_pod_name").val());
+        var cidr = trim($thisWizard.find("#add_pod_cidr").val());
+        var startip = trim($thisWizard.find("#add_pod_startip").val());
+        var endip = trim($thisWizard.find("#add_pod_endip").val());	    //optional
+        gateway = trim($thisWizard.find("#add_pod_gateway").val());			
+
+        var array1 = [];
+        array1.push("&zoneId="+zoneId);
+        array1.push("&name="+todb(name));
+        array1.push("&cidr="+encodeURIComponent(cidr));
+        array1.push("&startIp="+encodeURIComponent(startip));
+        if (endip != null && endip.length > 0)
+            array1.push("&endIp="+encodeURIComponent(endip));
+        array1.push("&gateway="+encodeURIComponent(gateway));			
+						
+        $.ajax({
+            data: createURL("command=createPod"+array1.join("")), 
+	        dataType: "json",
+	        async: false,
+	        success: function(json) {
+	            afterActionMsg += "Pod was created successfully<br>";
+	            $thisWizard.find("#spinning_wheel").hide();
+	            	            
+	            var item = json.createpodresponse.pod; 	
+	            podId = item.id;		            		            				    
+                $podNode = $("#leftmenu_pod_node_template").clone(true);
+                podJSONToTreeNode(item, $podNode);                                				
+                $zoneNode.find("#zone_content").show();	
+                $zoneNode.find("#pods_container").prepend($podNode.show());						
+                $zoneNode.find("#zone_arrow").removeClass("white_nonexpanded_close").addClass("expanded_open");	
+                $podNode.fadeIn("slow");
+	                                    
+                forceLogout = false;  // We don't force a logout if pod(s) exit.
+		        if (forceLogout) {
+			        $("#dialog_confirmation")
+				        .html("<p>You have successfully added your first Zone and Pod.  After clicking 'OK', this UI will automatically refresh to give you access to the rest of cloud features.</p>")
+				        .dialog('option', 'buttons', { 
+					        "OK": function() { 	
+						        window.location.reload();
+					        } 
+				        }).dialog("open");
+		        }
+	        },
+            error: function(XMLHttpResponse) {	
+				handleError(XMLHttpResponse, function() {
+					afterActionMsg += ("Failed to create Pod. " + parseXMLHttpResponse(XMLHttpResponse) + "<br>");
+					$thisWizard.find("#spinning_wheel").hide();
+				});
+            }
+        });	
+    } 
+    
+    if(podId != null && $thisWizard.find("#step3").find("#guestip_container").css("display") != "none") {        
+		var netmask = $thisWizard.find("#step3").find("#guestnetmask").val();
+		var startip = $thisWizard.find("#step3").find("#startguestip").val();
+		var endip = $thisWizard.find("#step3").find("#endguestip").val();	
+				
+		var array1 = [];
+		array1.push("&vlan=untagged");	
+		array1.push("&zoneid=" + zoneId);
+		array1.push("&podId=" + podId);	
+		array1.push("&forVirtualNetwork=false"); //direct VLAN	
+		array1.push("&gateway="+encodeURIComponent(gateway));
+		array1.push("&netmask="+encodeURIComponent(netmask));	
+		array1.push("&startip="+encodeURIComponent(startip));
+		if(endip != null && endip.length > 0)
+		    array1.push("&endip="+encodeURIComponent(endip));
+        
+        $.ajax({
+		    data: createURL("command=createVlanIpRange" + array1.join("")),
+			dataType: "json",
+			success: function(json) { 
+			    afterActionMsg += "Guest IP range was created successfully<br>";   
+				var item = json.createvlaniprangeresponse.vlan;
+				vlanId = item.id;				
+			},		   
+		    error: function(XMLHttpResponse) {	
+				handleError(XMLHttpResponse, function() {
+					afterActionMsg += ("Failed to create Guest IP range. " + parseXMLHttpResponse(XMLHttpResponse) + "<br>");
+					$thisWizard.find("#spinning_wheel").hide();
+				});
+            }
+		});		
+    }
+        
+    $thisWizard.find("#after_action_message").html(afterActionMsg);	
 }
 
 function initUpdateConsoleCertButton($midMenuAddLink2) {
@@ -375,20 +689,22 @@ function initUpdateConsoleCertButton($midMenuAddLink2) {
 
 function initAddZoneButton($midmenuAddLink1) {
     $midmenuAddLink1.find("#label").text("Add Zone");     
-    $midmenuAddLink1.show();  
-        
-    var $dialogAddZone = $("#dialog_add_zone");
-    $dialogAddZone.find("#add_zone_public").unbind("change").bind("change", function(event) {        
+    $midmenuAddLink1.show(); 
+    initAddZoneDialog($("#dialog_add_zone"), $midmenuAddLink1); 
+}
+
+function initAddZoneDialog($addZoneDialog, $addZoneLink) { 
+    $addZoneDialog.find("#add_zone_public").unbind("change").bind("change", function(event) {        
         if($(this).val() == "true") {  //public zone
-            $dialogAddZone.find("#domain_dropdown_container").hide();  
+            $addZoneDialog.find("#domain_dropdown_container").hide();  
         }
         else {  //private zone
-            $dialogAddZone.find("#domain_dropdown_container").show();  
+            $addZoneDialog.find("#domain_dropdown_container").show();  
         }
         return false;
     });
          
-    var domainDropdown = $dialogAddZone.find("#domain_dropdown").empty();	
+    var domainDropdown = $addZoneDialog.find("#domain_dropdown").empty();	
 	$.ajax({
 	  data: createURL("command=listDomains"+maxPageSize),
 		dataType: "json",
@@ -403,13 +719,13 @@ function initAddZoneButton($midmenuAddLink1) {
 		}
 	});   
        
-    $midmenuAddLink1.unbind("click").bind("click", function(event) {         
+    $addZoneLink.unbind("click").bind("click", function(event) {         
         if($("#leftmenu_physical_resource").find("#physical_resource_arrow").hasClass("expanded_close") == true)
 			$("#leftmenu_physical_resource").click(); //if Physical Resource arrow shows closed (i.e. zonetree is hidden), expand and show zonetree.     
         
-        $("#dialog_add_zone").find("#info_container").hide();				
+        $addZoneDialog.find("#info_container").hide();				
     
-        $("#dialog_add_zone")
+        $addZoneDialog
 		.dialog('option', 'buttons', { 				
 			"Add": function() { 
 			    var $thisDialog = $(this);

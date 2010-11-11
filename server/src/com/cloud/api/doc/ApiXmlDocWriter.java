@@ -154,30 +154,30 @@ public class ApiXmlDocWriter {
 					}
 				}
 	            
-	            //Get response parameters
-	            Method getResponseMethod = clas.getMethod("getResponse");
-	            Class responseClas = (Class)getResponseMethod.getReturnType();
-	            Type returnType = getResponseMethod.getGenericReturnType();
-
-	            if(returnType != null && returnType instanceof ParameterizedType){
-	                ParameterizedType type = (ParameterizedType) returnType;
-	                Type[] typeArguments = type.getActualTypeArguments();
-	                responseClas = (Class)typeArguments[0];
-	            }
-				
-				//Get response parameters
-				Field[] responseFields = responseClas.getDeclaredFields();
-				for (Field responseField : responseFields) {
-					SerializedName nameAnnotation = responseField.getAnnotation(SerializedName.class);
-					Param descAnnotation = responseField.getAnnotation(Param.class);
-					Argument respArg = new Argument(nameAnnotation.value());
-					if (descAnnotation != null)
-						respArg.setDescription(descAnnotation.description());
-					response.add(respArg);
-				}
+//	            //Get response parameters
+//	            Method getResponseMethod = clas.getMethod("getResponse");
+//	            Class responseClas = (Class)getResponseMethod.getReturnType();
+//	            Type returnType = getResponseMethod.getGenericReturnType();
+//
+//	            if(returnType != null && returnType instanceof ParameterizedType){
+//	                ParameterizedType type = (ParameterizedType) returnType;
+//	                Type[] typeArguments = type.getActualTypeArguments();
+//	                responseClas = (Class)typeArguments[0];
+//	            }
+//				
+//				//Get response parameters
+//				Field[] responseFields = responseClas.getDeclaredFields();
+//				for (Field responseField : responseFields) {
+//					SerializedName nameAnnotation = responseField.getAnnotation(SerializedName.class);
+//					Param descAnnotation = responseField.getAnnotation(Param.class);
+//					Argument respArg = new Argument(nameAnnotation.value());
+//					if (descAnnotation != null)
+//						respArg.setDescription(descAnnotation.description());
+//					response.add(respArg);
+//				}
 	            
 	            apiCommand.setRequest(request);
-	            apiCommand.setResponse(response);
+	            //apiCommand.setResponse(response);
 	            commands.add(apiCommand);
 	            
 	            //Write command to xml file
