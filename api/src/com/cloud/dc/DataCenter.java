@@ -13,5 +13,6 @@ public interface DataCenter extends Grouping {
     String getDns1();
     String getDns2();
     String getGuestNetworkCidr();
+    String getName();
     Long getDomainId();
 }

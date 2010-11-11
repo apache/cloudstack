@@ -156,12 +156,14 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DomainRouter;
 import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.State;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
@@ -2086,7 +2088,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
     
     @Override
-    public List<NicVO> getNics(VMInstanceVO vm) {
+    public List<? extends Nic> getNics(VirtualMachine vm) {
         return _nicDao.listBy(vm.getId());
     }
     
@@ -2923,5 +2925,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 	@Override
     public String getNextAvailableMacAddressInNetwork(long networkConfigurationId) {
 	    return _networkConfigDao.getNextAvailableMacAddress(networkConfigurationId);
+	}
+	
+	@Override
+	public NetworkConfiguration getNetworkConfiguration(long id) {
+	        return _networkConfigDao.findById(id);
 	}
 }

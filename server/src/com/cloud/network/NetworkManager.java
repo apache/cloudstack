@@ -61,11 +61,12 @@ import com.cloud.user.AccountVO;
 import com.cloud.utils.Pair;
 import com.cloud.vm.DomainRouter;
 import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
-import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 /**
@@ -316,7 +317,7 @@ public interface NetworkManager {
     void release(VirtualMachineProfile<? extends VMInstanceVO> vmProfile);
     
     DomainRouter upgradeRouter(UpgradeRouterCmd cmd);
-    List<NicVO> getNics(VMInstanceVO vm);
+    List<? extends Nic> getNics (VirtualMachine vm);
 	
     List<AccountVO> getAccountsUsingNetworkConfiguration(long configurationId);    
     AccountVO getNetworkConfigurationOwner(long configurationId);
@@ -358,4 +359,6 @@ public interface NetworkManager {
 	boolean removeVpnUser(RemoveVpnUserCmd cmd) throws ConcurrentOperationException;
 	
 	String getNextAvailableMacAddressInNetwork(long networkConfigurationId);
+	
+	NetworkConfiguration getNetworkConfiguration(long id);
 }
