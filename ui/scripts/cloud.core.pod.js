@@ -175,7 +175,10 @@ function initAddHostButton($midmenuAddLink1, currentPageInRightPanel) {
 		        var isValid = true;									
 		        isValid &= validateString("Host name", $thisDialog.find("#host_hostname"), $thisDialog.find("#host_hostname_errormsg"));
 		        isValid &= validateString("User name", $thisDialog.find("#host_username"), $thisDialog.find("#host_username_errormsg"));
-		        isValid &= validateString("Password", $thisDialog.find("#host_password"), $thisDialog.find("#host_password_errormsg"));						
+		        isValid &= validateString("Password", $thisDialog.find("#host_password"), $thisDialog.find("#host_password_errormsg"));	
+				if(clusterRadio == "new_cluster_radio") {
+					isValid &= validateString("Cluster Name", $thisDialog.find("#new_cluster_name"), $thisDialog.find("#new_cluster_name_errormsg"));
+				}
 		        if (!isValid) 
 		            return;
 		            
