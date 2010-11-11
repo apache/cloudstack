@@ -233,8 +233,8 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         		accountType = Account.ACCOUNT_TYPE_ADMIN;
         	}
         	
-        	String guestOSJoin = "";
-        	if (isIso) {
+        	String guestOSJoin = "";        	
+        	if (isIso && !hyperType.equals(HypervisorType.None)) { 
         		guestOSJoin = " INNER JOIN guest_os guestOS on (guestOS.id = t.guest_os_id) INNER JOIN guest_os_hypervisor goh on ( goh.guest_os_id = guestOS.id) ";
         	}
         	
@@ -316,7 +316,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         }
 
         if (isIso) {
-            sql += " t.format = 'ISO'";
+            sql += " t.format = 'ISO'";            
             if (!hyperType.equals(HypervisorType.None)) {
             	sql += " AND goh.hypervisor_type = '" + hyperType.toString() + "'";
             }
