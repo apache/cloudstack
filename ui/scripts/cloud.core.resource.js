@@ -368,14 +368,16 @@ function initAddZoneShortcut() {
                 break;
             
             case "basic_mode":  //create VLAN in pod-level      
-                //hide Zone VLAN Range in Add Zone(step 2), show Guest IP Range in Add Pod(step3) 
+                //hide Zone VLAN Range in Add Zone(step 2), show Guest IP Range in Add Pod(step3)                 
                 $thisWizard.find("#step2").find("#add_zone_vlan_container").hide();
+                $thisWizard.find("#step3").find("#guestip_container, #guestnetmask_container").show();
                 return true;
                 break;
                 
             case "advanced_mode":  //create VLAN in zone-level 
                 //show Zone VLAN Range in Add Zone(step 2), hide Guest IP Range in Add Pod(step3) 
-                $thisWizard.find("#step2").find("#add_zone_vlan_container").show();     
+                $thisWizard.find("#step2").find("#add_zone_vlan_container").show();  
+                $thisWizard.find("#step3").find("#guestip_container, #guestnetmask_container").hide();   
                 return true;
                 break;
             
@@ -404,6 +406,8 @@ function initAddZoneShortcut() {
                 
             case "submit_button": //step 3 => make API call
                 var isValid = addZoneWizardValidatePod($thisWizard);
+                if($thisWizard.find("#step3").find("#guestip_container").css("display") != "none")
+                    isValid &= addZoneWizardValidateGuestIPRange($thisWizard);
                 if (!isValid) 
 	                return;	
             
@@ -425,8 +429,8 @@ function addZoneWizardValidateZond($thisWizard) {
 	isValid &= validateIp("Internal DNS 1", $thisWizard.find("#add_zone_internaldns1"), $thisWizard.find("#add_zone_internaldns1_errormsg"), false); //required
 	isValid &= validateIp("Internal DNS 2", $thisWizard.find("#add_zone_internaldns2"), $thisWizard.find("#add_zone_internaldns2_errormsg"), true);  //optional	
 	if($thisWizard.find("#step2").find("#add_zone_vlan_container").css("display") != "none") {
-		isValid &= validateString("Zone - Start VLAN Range", $thisWizard.find("#add_zone_startvlan"), $thisWizard.find("#add_zone_startvlan_errormsg"), false); //required
-		isValid &= validateString("Zone - End VLAN Range", $thisWizard.find("#add_zone_endvlan"), $thisWizard.find("#add_zone_endvlan_errormsg"), true);        //optional
+		isValid &= validateString("VLAN Range", $thisWizard.find("#add_zone_startvlan"), $thisWizard.find("#add_zone_startvlan_errormsg"), false); //required
+		isValid &= validateString("VLAN Range", $thisWizard.find("#add_zone_endvlan"), $thisWizard.find("#add_zone_endvlan_errormsg"), true);        //optional
 	}	
 	isValid &= validateCIDR("Guest CIDR", $thisWizard.find("#add_zone_guestcidraddress"), $thisWizard.find("#add_zone_guestcidraddress_errormsg"), false); //required
 	return isValid;
@@ -436,9 +440,16 @@ function addZoneWizardValidatePod($thisWizard) {
     var isValid = true;					
     isValid &= validateString("Name", $thisWizard.find("#add_pod_name"), $thisWizard.find("#add_pod_name_errormsg"));
     isValid &= validateCIDR("CIDR", $thisWizard.find("#add_pod_cidr"), $thisWizard.find("#add_pod_cidr_errormsg"));	
-    isValid &= validateIp("Start IP Range", $thisWizard.find("#add_pod_startip"), $thisWizard.find("#add_pod_startip_errormsg"));  //required
-    isValid &= validateIp("End IP Range", $thisWizard.find("#add_pod_endip"), $thisWizard.find("#add_pod_endip_errormsg"), true);  //optional
-    isValid &= validateIp("Gateway", $thisWizard.find("#add_pod_gateway"), $thisWizard.find("#add_pod_gateway_errormsg"));  //required when creating
+    isValid &= validateIp("Reserved System IP", $thisWizard.find("#add_pod_startip"), $thisWizard.find("#add_pod_startip_errormsg"));  //required
+    isValid &= validateIp("Reserved System IP", $thisWizard.find("#add_pod_endip"), $thisWizard.find("#add_pod_endip_errormsg"), true);  //optional    
+    return isValid;			
+}
+
+function addZoneWizardValidateGuestIPRange($thisWizard) {   
+    var isValid = true;	
+    isValid &= validateIp("Guest IP Range", $thisWizard.find("#startguestip"), $thisWizard.find("#startguestip_errormsg"));  //required
+    isValid &= validateIp("Guest IP Range", $thisWizard.find("#endguestip"), $thisWizard.find("#endguestip_errormsg"), true);  //optional
+    isValid &= validateIp("Guest Gateway", $thisWizard.find("#guestnetmask"), $thisWizard.find("#guestnetmask_errormsg"));  //required when creating
     return isValid;			
 }
 
@@ -471,7 +482,10 @@ function addZoneWizardSubmit($thisWizard) {
 		    moreCriteria.push("&vlan=" + encodeURIComponent(vlanStart + "-" + vlanEnd));									
 		else 							
 			moreCriteria.push("&vlan=" + encodeURIComponent(vlanStart));		
-	}					
+	}	
+	else { 
+	    moreCriteria.push("&vlan=30"); //temporary hacking before bug 7143 is fixed ("VLAN parameter in CreateZone shouldn't be required") 
+	} 			
 	
 	var guestcidraddress = trim($thisWizard.find("#add_zone_guestcidraddress").val());
 	moreCriteria.push("&guestcidraddress="+encodeURIComponent(guestcidraddress));	
@@ -481,14 +495,14 @@ function addZoneWizardSubmit($thisWizard) {
 	    moreCriteria.push("&domainid="+domainId);	
 	}
 	
-	var zoneId, $zoneNode, $podNode;
-	var addZoneSuccessful=false, addPodSuccessful=false, addVLANSuccessful=false;								
+	var zoneId, podId, vlanId, $zoneNode, $podNode, gateway;
+	var createZoneSuccessful = false, createPodSuccessful = false, createVLANSuccessful = false;							
     $.ajax({
         data: createURL("command=createZone"+moreCriteria.join("")),
 	    dataType: "json",
 	    async: false,
-	    success: function(json) {
-	        addZoneSuccessful = true;	        
+	    success: function(json) {	
+	        createZoneSuccessful = true;         
 	        $thisWizard.find("#spinning_wheel").hide();
 	        	        			        
 	        $zoneNode = $("#leftmenu_zone_node_template").clone(true); 			            			   
@@ -513,7 +527,7 @@ function addZoneWizardSubmit($thisWizard) {
         var cidr = trim($thisWizard.find("#add_pod_cidr").val());
         var startip = trim($thisWizard.find("#add_pod_startip").val());
         var endip = trim($thisWizard.find("#add_pod_endip").val());	    //optional
-        var gateway = trim($thisWizard.find("#add_pod_gateway").val());			
+        gateway = trim($thisWizard.find("#add_pod_gateway").val());			
 
         var array1 = [];
         array1.push("&zoneId="+zoneId);
@@ -525,13 +539,15 @@ function addZoneWizardSubmit($thisWizard) {
         array1.push("&gateway="+encodeURIComponent(gateway));			
 						
         $.ajax({
-          data: createURL("command=createPod"+array1.join("")), 
+            data: createURL("command=createPod"+array1.join("")), 
 	        dataType: "json",
-	        success: function(json) {
-	            addPodSuccessful = true;	        
+	        async: false,
+	        success: function(json) {	
+	            createPodSuccessful = true;                   
 	            $thisWizard.find("#spinning_wheel").hide();
 	            	            
-	            var item = json.createpodresponse.pod; 			            		            				    
+	            var item = json.createpodresponse.pod; 	
+	            podId = item.id;		            		            				    
                 $podNode = $("#leftmenu_pod_node_template").clone(true);
                 podJSONToTreeNode(item, $podNode);                                				
                 $zoneNode.find("#zone_content").show();	
@@ -558,15 +574,56 @@ function addZoneWizardSubmit($thisWizard) {
         });	
     } 
     
+    if(podId != null && $thisWizard.find("#step3").find("#guestip_container").css("display") != "none") {        
+		var netmask = $thisWizard.find("#step3").find("#guestnetmask").val();
+		var startip = $thisWizard.find("#step3").find("#startguestip").val();
+		var endip = $thisWizard.find("#step3").find("#endguestip").val();	
+				
+		var array1 = [];
+		array1.push("&vlan=untagged");	
+		array1.push("&zoneid=" + zoneId);
+		array1.push("&podId=" + podId);	
+		array1.push("&forVirtualNetwork=false"); //direct VLAN	
+		array1.push("&gateway="+encodeURIComponent(gateway));
+		array1.push("&netmask="+encodeURIComponent(netmask));	
+		array1.push("&startip="+encodeURIComponent(startip));
+		if(endip != null && endip.length > 0)
+		    array1.push("&endip="+encodeURIComponent(endip));
+        
+        $.ajax({
+		    data: createURL("command=createVlanIpRange" + array1.join("")),
+			dataType: "json",
+			success: function(json) {	
+			    createVLANSuccessful = true;			    			    
+				var item = json.createvlaniprangeresponse.vlan;
+				vlanId = item.id;				
+			},		   
+		    error: function(XMLHttpResponse) {	
+				handleError(XMLHttpResponse, function() {
+					handleErrorInDialog(XMLHttpResponse, $thisWizard);	
+				});
+            }
+		});		
+    }
+    
     var afterActionMsg = "";
-    if(addZoneSuccessful = true)
-        afterActionMsg += "Zone was adding successfully<br>";
+    if(createZoneSuccessful)
+        afterActionMsg += "Zone was created successfully<br>";
     else
-        afterActionMsg += "failed to add zone<br>";
-    if(addPodSuccessful = true)
-        afterActionMsg += "Pod was adding successfully<br>";
+        afterActionMsg += "failed to create zone<br>";
+        
+    if(createPodSuccessful)
+        afterActionMsg += "Pod was created successfully<br>";
     else
-        afterActionMsg += "failed to add pod<br>";
+        afterActionMsg += "failed to create pod<br>";
+    
+    if($thisWizard.find("#step3").find("#guestip_container").css("display") != "none") { 
+        if(createVLANSuccessful)
+            afterActionMsg += "Guest IP range was created successfully<br>";   
+        else 
+            afterActionMsg += "failed to create Guest IP range<br>";   
+    }
+            
     $thisWizard.find("#after_action_message").html(afterActionMsg);	
 }
 

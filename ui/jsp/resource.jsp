@@ -123,7 +123,7 @@
                     <div class="zonepopup_selectionpanel">
                       
                         <div class="zonepopup_selectionbox">
-                            <input type="radio" name="basic_advanced" value="basic_mode" id="basic_mode" class="radio" />
+                            <input type="radio" name="basic_advanced" value="basic_mode" id="basic_mode" class="radio" checked />
                             <label class="label">
                                 Basic Mode</label>
                             <div class="zonepopup_selectiondescriptionbox">
@@ -131,12 +131,13 @@
                                 </div>
                                 <div class="zonepopup_selectiondescriptionbox_bot">
                                     <p>
-                                        Some decription about Basic Mode will appear here.. Some decription about Basic Mode will appear here.. Some decription about Basic Mode will appear here.. Some decription about Basic Mode will appear here.. Some decription about Basic Mode will appear here.. Some decription about Basic Mode will appear here..</p>
+                                        Create VLAN when adding a pod    
+                                    </p>
                                 </div>
                             </div>
                         </div>
                         <div class="zonepopup_selectionbox">
-                            <input type="radio" name="basic_advanced" value="advanced_mode" id="advanced_mode" class="radio" checked />
+                            <input type="radio" name="basic_advanced" value="advanced_mode" id="advanced_mode" class="radio" />
                             <label class="label">
                                Advanced Mode</label>
                             <div class="zonepopup_selectiondescriptionbox">
@@ -144,7 +145,8 @@
                                 </div>
                                 <div class="zonepopup_selectiondescriptionbox_bot">
                                     <p>
-                                        Some decription about Advance Mode will appear here.. Some decription about Advance Mode will appear here.. Some decription about Advance Mode will appear here.. Some decription about Advance Mode will appear here.. Some decription about Advance Mode will appear here.. </p>
+                                        Create VLAN when add a zone  
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -214,7 +216,7 @@
                                     <div id="add_zone_internaldns2_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
                                 </li>
                                 <li id="add_zone_vlan_container">
-                                    <label>Zone VLAN Range:</label>
+                                    <label>VLAN Range:</label>
                                     <input class="text" style="width:92px" type="text" name="add_zone_startvlan" id="add_zone_startvlan"/><span>-</span>
                                    <input class="text" style="width:92px" type="text" name="add_zone_endvlan" id="add_zone_endvlan"/>
                                     <div id="add_zone_startvlan_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
@@ -317,6 +319,23 @@
                                 <div id="add_pod_endip_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                                 </div>
                             </li>
+                            <li id="guestip_container">
+                                <label style="width: 115px;">
+                                    Guest IP Range:</label>
+                                <input class="text" style="width: 92px" type="text" id="startguestip" /><span>-</span>
+                                <input class="text" style="width: 92px" type="text" id="endguestip" />
+                                <div id="startguestip_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                                </div>
+                                <div id="endguestip_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                                </div>
+                            </li>  
+							<li id="guestnetmask_container">
+                                <label style="width: 115px;">
+                                    Guest Netmask:</label>
+                                <input class="text" type="text" id="guestnetmask" />
+                                <div id="guestnetmask_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                                </div>
+                            </li>	
                         </ol>
                         </form>
                     </div>
@@ -356,7 +375,7 @@
                 <div class="zonepopup_contentpanel">
                 	<div id="spinning_wheel" class="zonepoup_loadingbox" style="display:none;">
                     	<div class="zonepoup_loader"></div>
-                        <p> Adding Zone to Physical Resources</p>
+                        <p> Adding zone and pod....</p>
                     </div>
                     
                     <div id="after_action_message" class="zonepoup_msgbox"></div>
