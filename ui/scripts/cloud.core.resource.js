@@ -495,14 +495,14 @@ function addZoneWizardSubmit($thisWizard) {
 	    moreCriteria.push("&domainid="+domainId);	
 	}
 	
-	var zoneId, podId, vlanId, $zoneNode, $podNode, gateway;
-	var createZoneSuccessful = false, createPodSuccessful = false, createVLANSuccessful = false;							
+	var zoneId, podId, vlanId, $zoneNode, $podNode, gateway;	
+	var afterActionMsg = "";						
     $.ajax({
         data: createURL("command=createZone"+moreCriteria.join("")),
 	    dataType: "json",
 	    async: false,
 	    success: function(json) {	
-	        createZoneSuccessful = true;         
+	        afterActionMsg += "Zone was created successfully<br>";	     	 
 	        $thisWizard.find("#spinning_wheel").hide();
 	        	        			        
 	        $zoneNode = $("#leftmenu_zone_node_template").clone(true); 			            			   
@@ -513,11 +513,12 @@ function addZoneWizardSubmit($thisWizard) {
 		    var item = json.createzoneresponse.zone;					    
 		    zoneJSONToTreeNode(item, $zoneNode);		
 		    
-		    zoneId = item.id;		     	        
+		    zoneId = item.id;			           
 	    },
         error: function(XMLHttpResponse) {            
 			handleError(XMLHttpResponse, function() {
-				handleErrorInDialog(XMLHttpResponse, $thisWizard);	
+				afterActionMsg += ("Failed to create zone. " + parseXMLHttpResponse(XMLHttpResponse) + "<br>");
+				$thisWizard.find("#spinning_wheel").hide();
 			});
         }
     });
@@ -542,8 +543,8 @@ function addZoneWizardSubmit($thisWizard) {
             data: createURL("command=createPod"+array1.join("")), 
 	        dataType: "json",
 	        async: false,
-	        success: function(json) {	
-	            createPodSuccessful = true;                   
+	        success: function(json) {
+	            afterActionMsg += "Pod was created successfully<br>";
 	            $thisWizard.find("#spinning_wheel").hide();
 	            	            
 	            var item = json.createpodresponse.pod; 	
@@ -568,7 +569,8 @@ function addZoneWizardSubmit($thisWizard) {
 	        },
             error: function(XMLHttpResponse) {	
 				handleError(XMLHttpResponse, function() {
-					handleErrorInDialog(XMLHttpResponse, $thisWizard);	
+					afterActionMsg += ("Failed to create Pod. " + parseXMLHttpResponse(XMLHttpResponse) + "<br>");
+					$thisWizard.find("#spinning_wheel").hide();
 				});
             }
         });	
@@ -593,37 +595,20 @@ function addZoneWizardSubmit($thisWizard) {
         $.ajax({
 		    data: createURL("command=createVlanIpRange" + array1.join("")),
 			dataType: "json",
-			success: function(json) {	
-			    createVLANSuccessful = true;			    			    
+			success: function(json) { 
+			    afterActionMsg += "Guest IP range was created successfully<br>";   
 				var item = json.createvlaniprangeresponse.vlan;
 				vlanId = item.id;				
 			},		   
 		    error: function(XMLHttpResponse) {	
 				handleError(XMLHttpResponse, function() {
-					handleErrorInDialog(XMLHttpResponse, $thisWizard);	
+					afterActionMsg += ("Failed to create Guest IP range. " + parseXMLHttpResponse(XMLHttpResponse) + "<br>");
+					$thisWizard.find("#spinning_wheel").hide();
 				});
             }
 		});		
     }
-    
-    var afterActionMsg = "";
-    if(createZoneSuccessful)
-        afterActionMsg += "Zone was created successfully<br>";
-    else
-        afterActionMsg += "failed to create zone<br>";
         
-    if(createPodSuccessful)
-        afterActionMsg += "Pod was created successfully<br>";
-    else
-        afterActionMsg += "failed to create pod<br>";
-    
-    if($thisWizard.find("#step3").find("#guestip_container").css("display") != "none") { 
-        if(createVLANSuccessful)
-            afterActionMsg += "Guest IP range was created successfully<br>";   
-        else 
-            afterActionMsg += "failed to create Guest IP range<br>";   
-    }
-            
     $thisWizard.find("#after_action_message").html(afterActionMsg);	
 }
 

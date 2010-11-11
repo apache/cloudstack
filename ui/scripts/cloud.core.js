@@ -1013,6 +1013,13 @@ function handleErrorInDialog(XMLHttpResponse, $thisDialog) {
 	$infoContainer.show();
 }
 
+function parseXMLHttpResponse(XMLHttpResponse) {
+    var start = XMLHttpResponse.responseText.indexOf("h1") + 3;
+	var end = XMLHttpResponse.responseText.indexOf("</h1");
+	var errorMsg = XMLHttpResponse.responseText.substring(start, end);
+	return fromdb(errorMsg);	
+}
+
 function showLeftNavigationBasedOnRole() {
     if (isAdmin()) {				    
 	    $("#leftmenu_domain, #leftmenu_account, #leftmenu_system, #leftmenu_resources, #leftmenu_alert_container, #launch_test").show();					
