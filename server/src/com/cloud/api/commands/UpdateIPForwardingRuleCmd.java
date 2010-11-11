@@ -38,7 +38,7 @@ public class UpdateIPForwardingRuleCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.PROTOCOL, type=CommandType.STRING, required=true, description="the protocol for the port fowarding rule. Valid values are TCP or UDP.")
     private String protocol;
 
-    @Parameter(name=ApiConstants.PUBLIC_IP, type=CommandType.STRING, required=true, description="the public IP address of the port forwarding rule")
+    @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, required=true, description="the IP address of the port forwarding rule")
     private String publicIp;
 
     @Parameter(name=ApiConstants.PUBLIC_PORT, type=CommandType.STRING, required=true, description="the public port of the port forwarding rule")
