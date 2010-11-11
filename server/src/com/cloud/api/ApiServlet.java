@@ -101,7 +101,9 @@ public class ApiServlet extends HttpServlet {
                         if (userId != null) {
                             _apiServer.logoutUser(userId);
                         }
-                        session.invalidate();
+                        try {
+                            session.invalidate();
+                        }catch (IllegalStateException ise) {}
                     }
                     auditTrailSb.append("command=logout");
                     auditTrailSb.append(" " +HttpServletResponse.SC_OK);
@@ -110,7 +112,11 @@ public class ApiServlet extends HttpServlet {
                 } else if ("login".equalsIgnoreCase(command)) {
                     auditTrailSb.append("command=login");
                     // if this is a login, authenticate the user and return
-                    if (session != null) session.invalidate();
+                    if (session != null) {
+                        try {
+                            session.invalidate();
+                        }catch (IllegalStateException ise) {}
+                    }
                 	session = req.getSession(true);
                     String[] username = (String[])params.get("username");
                     String[] password = (String[])params.get("password");
@@ -160,7 +166,9 @@ public class ApiServlet extends HttpServlet {
                             return;
                         } catch (CloudAuthenticationException ex) {
                             // TODO:  fall through to API key, or just fail here w/ auth error? (HTTP 401)
-                            session.invalidate();
+                            try {
+                                session.invalidate();
+                            }catch (IllegalStateException ise) {}
                             auditTrailSb.append(" " + HttpServletResponse.SC_UNAUTHORIZED + " " + "failed to authenticated user, check username/password are correct");
                             resp.sendError(HttpServletResponse.SC_UNAUTHORIZED, "failed to authenticated user, check username/password are correct");
                             return;
@@ -185,7 +193,9 @@ public class ApiServlet extends HttpServlet {
                 String sessionKey = (String)session.getAttribute("sessionkey");
                 String[] sessionKeyParam = (String[])params.get("sessionkey");
                 if ((sessionKeyParam == null) || (sessionKey == null) || !sessionKey.equals(sessionKeyParam[0])) {
-                    session.invalidate();
+                    try {
+                        session.invalidate();
+                    }catch (IllegalStateException ise) {}
                     auditTrailSb.append(" " + HttpServletResponse.SC_UNAUTHORIZED +  " " + "unable to verify user credentials");
                     resp.sendError(HttpServletResponse.SC_UNAUTHORIZED, "unable to verify user credentials");
                     return;
@@ -204,7 +214,9 @@ public class ApiServlet extends HttpServlet {
                 } else {
                     // Invalidate the session to ensure we won't allow a request across management server restarts if the userId was serialized to the
                     // stored session
-                    session.invalidate();
+                    try {
+                        session.invalidate();
+                    }catch (IllegalStateException ise) {}
                     auditTrailSb.append(" " + HttpServletResponse.SC_UNAUTHORIZED + " " + "unable to verify user credentials");
                     resp.sendError(HttpServletResponse.SC_UNAUTHORIZED, "unable to verify user credentials");
                     return;
@@ -242,7 +254,9 @@ public class ApiServlet extends HttpServlet {
             	}
             } else {
                 if (session != null) {
-                    session.invalidate();
+                    try {
+                        session.invalidate();
+                    }catch (IllegalStateException ise) {}
                 }
                 auditTrailSb.append(" " + HttpServletResponse.SC_UNAUTHORIZED +  " " + "unable to verify user credentials and/or request signature");
                 resp.sendError(HttpServletResponse.SC_UNAUTHORIZED, "unable to verify user credentials and/or request signature");

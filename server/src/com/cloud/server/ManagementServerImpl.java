@@ -3464,7 +3464,13 @@ public class ManagementServerImpl implements ManagementServer {
         Filter searchFilter = new Filter(DomainVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         Long domainId = cmd.getId();
         String domainName = cmd.getDomainName();
+        Boolean isRecursive = cmd.isRecursive();
         Object keyword = cmd.getKeyword();
+        List <DomainVO> domainList = null;
+        
+        if (isRecursive == null) {
+            isRecursive = false;
+        }
 
         Account account = UserContext.current().getAccount();
         if (account != null) {
@@ -3477,12 +3483,24 @@ public class ManagementServerImpl implements ManagementServer {
             }
         }
 
-        return searchForDomainChildren(searchFilter, domainId, domainName,
-				keyword);
+        domainList = searchForDomainChildren(searchFilter, domainId, domainName,
+				keyword, null);
+        
+        if (isRecursive) {
+            List<DomainVO> childDomains = new ArrayList<DomainVO>();
+            for (DomainVO domain : domainList) {
+                String path = domain.getPath();
+                 childDomains.addAll(searchForDomainChildren(searchFilter, null, null,
+                        null, path));
+            }
+            return childDomains;
+        } else {
+            return domainList;
+        }
 	}
 
 	private List<DomainVO> searchForDomainChildren(Filter searchFilter,
-			Long domainId, String domainName, Object keyword) {
+			Long domainId, String domainName, Object keyword, String path) {
 		SearchCriteria<DomainVO> sc = _domainDao.createSearchCriteria();
 
         if (keyword != null) {
@@ -3498,6 +3516,10 @@ public class ManagementServerImpl implements ManagementServer {
 
         if (domainName != null) {
             sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + domainName + "%");
+        }
+        
+        if (path != null) {
+            sc.addAnd("path", SearchCriteria.Op.LIKE, path + "%");
         }
 
         return _domainDao.search(sc, searchFilter);
