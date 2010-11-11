@@ -87,31 +87,6 @@ icmp_entry() {
   		
 }
 
-
-#Add 1:1 NAT entry
-add_one_to_one_nat_entry() {
-  local guestIp=$1
-  local publicIp=$2  
-  local dIp=$3
-  local portRange=$4
-  local op=$5
-  ssh -p 3922 -o StrictHostKeyChecking=no -i $cert root@$dIp "\  
-  iptables -t nat $op PREROUTING -i eth2 -d $publicIp -j DNAT --to-destination $guestIp
-  iptables -t nat $op POSTROUTING -o eth2 -s $guestIp -j SNAT --to-source $publicIp":"$portRange
-  if [ "$op" == "-A" ]
-  then
-    iptables -P FORWARD DROP
-  else
-    iptables -P FORWARD ACCEPT
-  fi
-  iptables $op FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
-  iptables $op FORWARD -i eth2 -o eth0 -d $guestIp -m state --state NEW -j ACCEPT
-  iptables $op FORWARD -i eth0 -o eth2 -s $guestIp -m state --state NEW -j ACCEPT
-  "
-  
-  return $?
-}
-
 reverse_op() {
 	local op=$1
 	
@@ -135,13 +110,11 @@ wflag=
 xflag=
 nflag=
 Nflag=
-Gflag=
-Rflag=
 op=""
 oldPrivateIP=""
 oldPrivatePort=""
 
-while getopts 'ADr:i:P:p:t:l:d:w:x:n:N:G:R:' OPTION
+while getopts 'ADr:i:P:p:t:l:d:w:x:n:N:' OPTION
 do
   case $OPTION in
   A)	Aflag=1
@@ -183,11 +156,6 @@ do
   N)	Nflag=1
   		netmask="$OPTARG"
   		;;
-  G)    Gflag=1
-  		guestIp="$OPTARG"
-  		;;
-  R)    Rflag=1
-        portRange="$OPTARG"  		
   ?)	usage
 		exit 2
 		;;
@@ -222,14 +190,6 @@ if [ "$pflag$dflag" != 11 -a "$pflag$dflag" != "" ]
 then
  usage
  exit 2
-fi
-
-#1:1 NAT
-if [ "$Gflag$Rflag" == "11" ]
-  then
-    add_one_to_one_nat_entry $guestIp $publicIp $domRIp $portRange $op
-  fi
-  exit $?
 fi
 
 reverseOp=$(reverse_op $op)

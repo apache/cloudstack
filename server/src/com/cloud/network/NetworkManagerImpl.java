@@ -108,7 +108,6 @@ import com.cloud.network.Network.TrafficType;
 import com.cloud.network.configuration.NetworkGuru;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
-import com.cloud.network.dao.IprulePortrangeMapDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.dao.NetworkConfigurationDao;
@@ -220,7 +219,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Inject RemoteAccessVpnDao _remoteAccessVpnDao = null;
     @Inject VpnUserDao _vpnUsersDao = null;
     @Inject DomainRouterManager _routerMgr;
-    @Inject IprulePortrangeMapDao _iprulePortrangeMapDao = null;
     
     @Inject(adapter=NetworkGuru.class)
     Adapters<NetworkGuru> _networkGurus;
@@ -898,7 +896,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
             if (rule.isForwarding()) {
                 fwdRules.add(rule);
-                final SetFirewallRuleCommand cmd = new SetFirewallRuleCommand(routerName, routerIp, null, rule, null);
+                final SetFirewallRuleCommand cmd = new SetFirewallRuleCommand(routerName, routerIp, false, rule, false);
                 cmds.addCommand(cmd);
             } else {
                 lbRules.add(rule);
@@ -977,7 +975,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         	rule.setVlanNetmask(vlanNetmask);
             if (rule.isForwarding()) {
                 fwdRules.add(rule);
-                final SetFirewallRuleCommand cmd = new SetFirewallRuleCommand(router.getInstanceName(), router.getPrivateIpAddress(), null, rule, null);
+                final SetFirewallRuleCommand cmd = new SetFirewallRuleCommand(router.getInstanceName(), router.getPrivateIpAddress(), false, rule, false);
                 cmds.addCommand(cmd);
             }
         }
@@ -2948,6 +2946,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     	UserVmVO userVM = null;
         FirewallRuleVO newFwRule = null;
         boolean locked = false;
+        boolean success = false;
 		try {
 			// validate IP Address exists
 			IPAddressVO ipAddress = _ipAddressDao.findById(cmd.getIpAddress());
@@ -2999,7 +2998,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 			if(existingNatRules.size() > 0){
 				throw new NetworkRuleConflictException("The specified rule for public ip:"+cmd.getIpAddress()+" vm id:"+cmd.getVirtualMachineId()+" already exists");
 			}
-				
+			
 			newFwRule = new FirewallRuleVO();
 			newFwRule.setEnabled(true);
 			newFwRule.setForwarding(true);
@@ -3009,6 +3008,15 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 			newFwRule.setPublicIpAddress(ipAddress.getAddress());
 			newFwRule.setPrivateIpAddress(userVM.getGuestIpAddress());
 			newFwRule.setGroupId(null);
+			
+			//get the domain router object
+	        final DomainRouterVO router = _routerMgr.getRouter(ipAddress.getAccountId(), ipAddress.getDataCenterId());
+			success = createOrDeleteIpForwardingRuleOnDomr(newFwRule,router,userVM.getGuestIpAddress(),true); //true +> create
+			
+			if(!success){
+				throw new PermissionDeniedException("Cannot create ip forwarding rule on domr");
+			}
+			
 			_rulesDao.persist(newFwRule);
 
 			// Save and create the event
@@ -3025,6 +3033,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 		} catch (Exception e) {
 			s_logger.warn("Unable to create new firewall rule for 1:1 NAT");
 			txn.rollback();
+			throw new ServerApiException(BaseCmd.IP_ALLOCATION_ERROR,"Unable to create new firewall rule for 1:1 NAT:"+e.getMessage());
 		}finally{
 			if(locked)
 				_vmDao.releaseFromLockTable(userVM.getId());
@@ -3085,14 +3094,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
             locked = true;
             txn.start();
-            //if there is an open port range associated with the rule, don't allow deletion
-            List<IprulePortrangeMapVO> portRecordsForRule = _iprulePortrangeMapDao.listPortRecordsForRule(ruleId);
-
-            if (portRecordsForRule != null && portRecordsForRule.size() > 0) {
-                throw new InvalidParameterValueException("Cannot delete rule as port mappings for this rule exist; please delete those mappings first");
-            } 
             
-            success = _firewallRulesDao.remove(ruleId);
+	        final DomainRouterVO router = _routerMgr.getRouter(ipAddress.getAccountId(), ipAddress.getDataCenterId());
+            success = createOrDeleteIpForwardingRuleOnDomr(rule, router, rule.getPrivateIpAddress(), false);
+            _firewallRulesDao.remove(ruleId);
             
             String description;
             String type = EventTypes.EVENT_NET_RULE_DELETE;
@@ -3120,5 +3125,25 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         	txn.close();
         }
         return success;
+    }
+    
+    private boolean  createOrDeleteIpForwardingRuleOnDomr(FirewallRuleVO fwRule, DomainRouterVO router, String guestIp, boolean create){
+    	
+        Commands cmds = new Commands(OnError.Continue);
+        final SetFirewallRuleCommand cmd = new SetFirewallRuleCommand(router.getInstanceName(), router.getPrivateIpAddress(), true, fwRule, create);
+        cmds.addCommand(cmd);       
+        try {
+            _agentMgr.send(router.getHostId(), cmds);
+        } catch (final AgentUnavailableException e) {
+            s_logger.warn("agent unavailable", e);
+        } catch (final OperationTimedoutException e) {
+            s_logger.warn("Timed Out", e);
+        }
+        Answer[] answers = cmds.getAnswers();
+        if (answers == null || answers[0].getResult() == false ){
+            return false;
+        }else{
+        	return true;
+        }
     }
 }
