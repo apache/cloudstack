@@ -3991,16 +3991,15 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
         try {
             Connection conn = getConnection();
-            SR.Record srr = sr.getRecord(conn);
-            Set<PBD> pbds = sr.getPBDs(conn);
+            SR.Record srRec = sr.getRecord(conn);
+            Set<PBD> pbds = srRec.PBDs;
             if (pbds.size() == 0) {
-                String msg = "There is no PBDs for this SR: " + srr.nameLabel + " on host:" + _host.uuid;
+                String msg = "There is no PBDs for this SR: " + srRec.nameLabel + " on host:" + _host.uuid;
                 s_logger.warn(msg);
                 return false;
             }
-            Set<Host> hosts = null;
-            if (srr.shared) {
-                hosts = Host.getAll(conn);
+            if (srRec.shared) {           	
+                Set<Host> hosts = Host.getAll(conn);
 
                 for (Host host : hosts) {
                     boolean found = false;
@@ -4016,7 +4015,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                         }
                     }
                     if (!found) {
-                        PBD.Record pbdr = srr.PBDs.iterator().next().getRecord(conn);
+                        PBD.Record pbdr = srRec.PBDs.iterator().next().getRecord(conn);
                         pbdr.host = host;
                         pbdr.uuid = "";
                         PBD pbd = PBD.create(conn, pbdr);
@@ -4591,16 +4590,18 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             String server = pool.getHost();
             String serverpath = pool.getPath();
             serverpath = serverpath.replace("//", "/");
-            Set<SR> srs = SR.getAll(conn);
-            for (SR sr : srs) {
-                if (!SRType.NFS.equals(sr.getType(conn)))
+            Map<SR, SR.Record> srMaps = SR.getAllRecords(conn);
+            for (Map.Entry<SR, SR.Record> entry : srMaps.entrySet()) {
+                SR sr = entry.getKey();
+                SR.Record srRec = entry.getValue();
+            	
+                if (!SRType.NFS.equals(srRec.type))
                     continue;
 
-                Set<PBD> pbds = sr.getPBDs(conn);
-                if (pbds.isEmpty())
+                if (srRec.PBDs.isEmpty())
                     continue;
 
-                PBD pbd = pbds.iterator().next();
+                PBD pbd = srRec.PBDs.iterator().next();
 
                 Map<String, String> dc = pbd.getDeviceConfig(conn);
 
