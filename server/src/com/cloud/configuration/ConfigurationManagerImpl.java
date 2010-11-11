@@ -57,8 +57,8 @@ import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Pod;
 import com.cloud.dc.PodVlanMapVO;
 import com.cloud.dc.Vlan;
-import com.cloud.dc.VlanVO;
 import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterIpAddressDao;
@@ -81,8 +81,8 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
-import com.cloud.offering.ServiceOffering;
 import com.cloud.offering.NetworkOffering.GuestIpType;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
@@ -974,7 +974,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
     @Override @DB
     public DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String vnetRange, String guestCidr, String domain, Long domainId)  {
-        int vnetStart, vnetEnd;
+        int vnetStart = -1;
+        int vnetEnd = -1;
         if (vnetRange != null) {
             String[] tokens = vnetRange.split("-");
             
@@ -993,9 +994,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             if (networkType != null && networkType.equals("vnet")) {
                 vnetStart = 1000;
                 vnetEnd = 2000;
-            } else {
-                throw new InvalidParameterValueException("Please specify a vlan range.");
-            }
+            } 
         }
 
         //checking the following params outside checkzoneparams method as we do not use these params for updatezone
@@ -1011,8 +1010,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         zone = _zoneDao.persist(zone);
 
         // Add vnet entries for the new zone
-        _zoneDao.addVnet(zone.getId(), vnetStart, vnetEnd);
-
+        if (vnetStart != -1 && vnetEnd != -1) {
+            _zoneDao.addVnet(zone.getId(), vnetStart, vnetEnd);
+        }
         saveConfigurationEvent(userId, null, EventTypes.EVENT_ZONE_CREATE, "Successfully created new zone with name: " + zoneName + ".", "dcId=" + zone.getId(), "dns1=" + dns1, "dns2=" + dns2, "internalDns1=" + internalDns1, "internalDns2=" + internalDns2, "vnetRange=" + vnetRange, "guestCidr=" + guestCidr);
 
         return zone;
