@@ -1378,6 +1378,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                         EventUtils.saveEvent(UserContext.current().getUserId(), loadBalancer.getAccountId(), level, type, description);
                     }
                 }
+                return true;
             } else {
                 // Remove the instanceIds from the load balancer since there was a failure.  Make sure to commit the
                 // transaction here, otherwise the act of throwing the internal error exception will cause this
@@ -1393,7 +1394,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 _loadBalancerDao.releaseFromLockTable(loadBalancerId);
             }
         }
-        return true;
     }
 
     @Override @DB
