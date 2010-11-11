@@ -86,14 +86,15 @@ function primarystorageJsonToDetailsTab($midmenuItem1) {
     buildActionLinkForTab("Delete Primary Storage", primarystorageActionMap, $actionMenu, $midmenuItem1, $detailsTab);        
 }
        
-function primarystorageClearRigntPanel() {  
-    primarystorageJsonClearDetailsTab(jsonObj);  
+function primarystorageClearRightPanel() {  
+    primarystorageJsonClearDetailsTab();  
 }
 
 function primarystorageJsonClearDetailsTab() {	    
     var $detailsTab = $("#tab_content_details");   
     $detailsTab.find("#id").text("");
     $detailsTab.find("#name").text("");
+	$detailsTab.find("#state").text("");
     $detailsTab.find("#zonename").text("");
     $detailsTab.find("#podname").text("");
     $detailsTab.find("#clustername").text("");
