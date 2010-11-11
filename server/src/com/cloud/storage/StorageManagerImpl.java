@@ -716,6 +716,9 @@ public class StorageManagerImpl implements StorageManager {
         StoragePoolVO pool = null;
         final HashSet<StoragePool> avoidPools = new HashSet<StoragePool>(avoids);
        
+        if(diskOffering != null && diskOffering.isCustomized()){
+        	diskOffering.setDiskSize(size);
+        }
         DiskProfile dskCh = null;
         if (volume.getVolumeType() == VolumeType.ROOT && Storage.ImageFormat.ISO != template.getFormat()) {
             dskCh = createDiskCharacteristics(volume, template, dc, offering);
@@ -842,7 +845,7 @@ public class StorageManagerImpl implements StorageManager {
             rootVol.setDeviceId(0l);
             rootVol = _volsDao.persist(rootVol);
             
-            if (diskOffering != null && diskOffering.getDiskSizeInBytes() > 0) {
+            if ((diskOffering != null && diskOffering.getDiskSizeInBytes() > 0)) {
                 dataVol = new VolumeVO(VolumeType.DATADISK, vm.getId(), vm.getInstanceName() + "-DATA", dc.getId(), pod.getId(), account.getId(), account.getDomainId(), (size>0)? size : diskOffering.getDiskSizeInBytes());
                 
                 createStartedEvent(account, dataVol);

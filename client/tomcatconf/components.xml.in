@@ -123,8 +123,8 @@
         </adapters>
         <adapters key="com.cloud.storage.allocator.StoragePoolAllocator">
             <adapter name="LocalStorage" class="com.cloud.storage.allocator.LocalStoragePoolAllocator"/>
-            <!-- adapter name="Storage" class="com.cloud.storage.allocator.FirstFitStoragePoolAllocator"/ -->
-            <!--adapter name="Storage" class="com.cloud.storage.allocator.RandomStoragePoolAllocator"/-->
+            < adapter name="Storage" class="com.cloud.storage.allocator.FirstFitStoragePoolAllocator"/ >
+            <adapter name="Storage" class="com.cloud.storage.allocator.RandomStoragePoolAllocator"/>
             <adapter name="GarbageCollecting" class="com.cloud.storage.allocator.GarbageCollectingStoragePoolAllocator"/>
         </adapters>
         <adapters key="com.cloud.agent.manager.allocator.PodAllocator">
