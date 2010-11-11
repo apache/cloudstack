@@ -22,21 +22,24 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiResponseHelper;
-import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.FirewallRuleResponse;
+import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.FirewallRuleVO;
+import com.cloud.user.Account;
 
 @Implementation(description="Creates an ip forwarding rule")
-public class CreateIpForwardingRuleCmd extends BaseCmd {
+public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateIpForwardingRuleCmd.class.getName());
 
     private static final String s_name = "createipforwardingruleresponse";
@@ -75,19 +78,37 @@ public class CreateIpForwardingRuleCmd extends BaseCmd {
     }
 
     @Override
-    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        try {
-            FirewallRuleVO result = _networkMgr.createIpForwardingRule(this);
-            if (result != null) {
-                FirewallRuleResponse fwResponse = ApiResponseHelper.createFirewallRuleResponse(result);
-                fwResponse.setResponseName(getName());
-                this.setResponseObject(fwResponse);
-            } else {
-                //throw new ServerApiException(NET_CREATE_IPFW_RULE_ERROR, "An existing rule for ipAddress / port / protocol of " + ipAddress + " / " + publicPort + " / " + protocol + " exits.");
-            }
-        } catch (NetworkRuleConflictException ex) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{ 
+        FirewallRuleVO result = _networkMgr.createIpForwardingRuleOnDomr(this.getId());
+        if (result != null) {
+            FirewallRuleResponse fwResponse = ApiResponseHelper.createFirewallRuleResponse(result);
+            fwResponse.setResponseName(getName());
+            this.setResponseObject(fwResponse);
+        } else {
+            throw new ServerApiException(NET_CREATE_IPFW_RULE_ERROR, "Error in creating ip forwarding rule on the domr");
         }
+       
+    }
+
+	@Override
+	public void callCreate() throws ServerApiException,InvalidParameterValueException, PermissionDeniedException,InsufficientAddressCapacityException,InsufficientCapacityException, ResourceUnavailableException,ConcurrentOperationException, ResourceAllocationException{
+		FirewallRuleVO rule = _networkMgr.createIpForwardingRuleInDb(ipAddress,virtualMachineId);
+        this.setId(rule.getId());
+	}
+
+    @Override
+    public long getAccountId() {
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_NET_RULE_ADD;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  ("Creating an ipforwarding 1:1 NAT rule for "+ipAddress+" with virtual machine:"+virtualMachineId);
     }
 
 }

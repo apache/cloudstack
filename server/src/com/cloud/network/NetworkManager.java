@@ -20,6 +20,7 @@ package com.cloud.network;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.AddVpnUserCmd;
 import com.cloud.api.commands.AssignToLoadBalancerRuleCmd;
 import com.cloud.api.commands.AssociateIPAddrCmd;
@@ -362,9 +363,11 @@ public interface NetworkManager {
 	String getNextAvailableMacAddressInNetwork(long networkConfigurationId) throws InsufficientAddressCapacityException;
 	String getNextAvailableMacAddressInNetwork(long networkConfigurationId);
 
-	FirewallRuleVO createIpForwardingRule(CreateIpForwardingRuleCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, NetworkRuleConflictException;
+	FirewallRuleVO createIpForwardingRuleInDb(String ipAddr, Long virtualMachineId) throws ServerApiException;
 
 	public boolean deletePortForwardingRule(DeletePortForwardingRuleCmd cmd);
 
-	public boolean deleteIpForwardingRule(DeleteIpForwardingRuleCmd cmd);
+	FirewallRuleVO createIpForwardingRuleOnDomr(Long ruleId);
+
+	boolean deleteIpForwardingRule(Long id);
 }

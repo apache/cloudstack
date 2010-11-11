@@ -77,7 +77,16 @@ add_one_to_one_nat_entry() {
   local publicIp=$2  
   local dIp=$3
   local op=$4 
-  iptables -t nat $op PREROUTING -i eth2 -d $publicIp -j DNAT --to-destination $guestIp
+  if [ "$op" == "-D" ]
+  then
+  	iptables -t nat $op PREROUTING -i eth2 -d $publicIp -j DNAT --to-destination $guestIp
+  	if [ $? -gt 0 ]
+  	then
+  	  return 0
+  	fi
+  else
+  	iptables -t nat $op PREROUTING -i eth2 -d $publicIp -j DNAT --to-destination $guestIp
+  fi
   iptables -t nat $op POSTROUTING -o eth2 -s $guestIp -j SNAT --to-source $publicIp
   if [ "$op" == "-A" ]
   then
