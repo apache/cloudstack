@@ -39,7 +39,9 @@ function primarystorageToMidmenu(jsonObj, $midmenuItem1) {
     $iconContainer.find("#icon").attr("src", "images/midmenuicon_primarystorage.png");    
       
     $midmenuItem1.find("#first_row").text(fromdb(jsonObj.name).substring(0,25)); 
-    $midmenuItem1.find("#second_row").text(jsonObj.ipaddress.substring(0,25));          
+    $midmenuItem1.find("#second_row").text(jsonObj.ipaddress.substring(0,25));  
+     
+    updateHostStateInMidMenu(jsonObj, $midmenuItem1);           
 }
 
 function primarystorageToRightPanel($midmenuItem1) {  
