@@ -355,6 +355,9 @@ public class ApiResponseHelper {
    }
    
    public static UserVmResponse createUserVmResponse (UserVm userVm) {
+       if (userVm.getPrivateIpAddress() == null) {
+           return createUserVm2Response(userVm);
+       }
        UserVmResponse userVmResponse = new UserVmResponse();  
        Account acct = ApiDBUtils.findAccountById(Long.valueOf(userVm.getAccountId()));
        //FIXME - this check should be done in searchForUserVm method in ManagementServerImpl; 
@@ -476,6 +479,9 @@ public class ApiResponseHelper {
    }
    
    public static SystemVmResponse createSystemVmResponse (VMInstanceVO systemVM) {
+       if (systemVM.getPrivateIpAddress() == null) {
+           return createSystemVm2Response(systemVM);
+       }
        SystemVmResponse vmResponse = new SystemVmResponse();
        if (systemVM instanceof SystemVm) {
            SystemVm vm = (SystemVm)systemVM;
@@ -531,6 +537,9 @@ public class ApiResponseHelper {
    
    
    public static DomainRouterResponse createDomainRouterResponse (DomainRouter router) {
+       if (router.getPrivateIpAddress() == null) {
+           return createDomainRouter2Response(router);
+       }
        DomainRouterResponse routerResponse = new DomainRouterResponse();
        routerResponse.setId(router.getId());
 
