@@ -19,7 +19,7 @@
 function afterLoadVolumeJSP() {
     initDialog("dialog_create_template", 400); 
     initDialog("dialog_create_snapshot");        
-    initDialog("dialog_recurring_snapshot", 735);	    
+    initDialog("dialog_recurring_snapshot", 420);	    
     initDialog("dialog_add_volume");	
     initDialog("dialog_attach_volume");	
     initDialog("dialog_add_volume_from_snapshot");	
@@ -173,216 +173,109 @@ function afterLoadVolumeJSP() {
         return false;
     });  
        
-    // *** recurring snapshot dialog - event binding (begin) ******************************		
-	$("#dialog_recurring_snapshot").bind("click", function(event) {		
-	    event.preventDefault();
-	    event.stopPropagation();
-	    
-	    var target = event.target;
-	    var targetId = target.id;
-	    var thisDialog = $(this);		   
-	    var volumeId = thisDialog.data("volumeId");
-	    var topPanel = thisDialog.find("#dialog_snapshotleft");
-		var bottomPanel = thisDialog.find("#dialog_snapshotright");
-			    
-	    if(targetId.indexOf("_edit_link")!=-1) {
-			clearBottomPanel();						
-			bottomPanel.animate({
-				height: 200
-				}, 1000, function() {}
-		    );	
-	    }	
-	    else if(targetId.indexOf("_delete_link")!=-1) {  		       
-	        clearBottomPanel();
-	        var snapshotPolicyId = $("#"+targetId).data("snapshotPolicyId");			                 
-	        if(snapshotPolicyId == null || snapshotPolicyId.length==0)
-	            return;
-            $.ajax({
-	            data: createURL("command=deleteSnapshotPolicies&id="+snapshotPolicyId),
-                dataType: "json",                        
-                success: function(json) {                              
-                    clearTopPanel($("#"+targetId).data("intervalType"));                        
-                },
-                error: function(XMLHttpResponse) {                                                   					
-                    handleError(XMLHttpResponse);					
-                }
-            });	              
-	    }
-	    
-	    var thisLink;
-	    switch(targetId) {
-	        case "hourly_edit_link": 
-	            $("#edit_interval_type").text("Hourly");
-	            $("#edit_time_colon, #edit_hour_container, #edit_meridiem_container, #edit_day_of_week_container, #edit_day_of_month_container").hide(); 
-	            $("#edit_past_the_hour, #edit_minute_container").show();		            	
-	            thisLink = thisDialog.find("#hourly_edit_link");           
-	            thisDialog.find("#edit_minute").val(thisLink.data("minute"));            
-	            thisDialog.find("#edit_max").val(thisLink.data("max")); 
-	            thisDialog.find("#edit_timezone").val(thisLink.data("timezone")); 
+	$("#snapshot_interval").change(function(event) {
+		var thisElement = $(this);
+		var snapshotInterval = thisElement.val();
+		var jsonObj = thisElement.data("jsonObj");
+		var $dialog = $("#dialog_recurring_snapshot");
+		switch (snapshotInterval) {
+			case "-1":
+			    $dialog.find("#snapshot_form").hide();
+				break;
+			case "0": 
+	            $dialog.find("#edit_time_colon, #edit_hour_container, #edit_meridiem_container, #edit_day_of_week_container, #edit_day_of_month_container").hide(); 
+	            $dialog.find("#edit_past_the_hour, #edit_minute_container").show();	
+				if (jsonObj != null) {
+					$dialog.find("#edit_minute").val(jsonObj.schedule);            
+					$dialog.find("#edit_max").val(jsonObj.maxsnaps); 
+					$dialog.find("#edit_timezone").val(jsonObj.timezone);
+				}
+				$dialog.find("#snapshot_form").show();
 	            break;
-	        case "daily_edit_link":
-	            $("#edit_interval_type").text("Daily");
-	            $("#edit_past_the_hour, #edit_day_of_week_container, #edit_day_of_month_container").hide(); 
-	            $("#edit_minute_container, #edit_hour_container, #edit_meridiem_container").show();		           
-	            thisLink = thisDialog.find("#daily_edit_link");           
-	            thisDialog.find("#edit_minute").val(thisLink.data("minute"));
-	            thisDialog.find("#edit_hour").val(thisLink.data("hour12")); 
-	            thisDialog.find("#edit_meridiem").val(thisLink.data("meridiem"));          
-	            thisDialog.find("#edit_max").val(thisLink.data("max")); 
-	            thisDialog.find("#edit_timezone").val(thisLink.data("timezone")); 
+	        case "1":
+	            $dialog.find("#edit_past_the_hour, #edit_day_of_week_container, #edit_day_of_month_container").hide(); 
+	            $dialog.find("#edit_minute_container, #edit_hour_container, #edit_meridiem_container").show();	
+				
+				if (jsonObj != null) {
+					var parts = jsonObj.schedule.split(":");
+					var hour12, meridiem;
+					var hour24 = parts[1];                                            
+					if(hour24 < 12) {
+						hour12 = hour24;
+						meridiem = "AM";                                               
+					}   
+					else {
+						hour12 = hour24 - 12;
+						meridiem = "PM"
+					}											
+					if (hour12 < 10 && hour12.toString().length==1) 
+						hour12 = "0"+hour12.toString();
+									
+					$dialog.find("#edit_minute").val(parts[0]);
+					$dialog.find("#edit_hour").val(hour12); 
+					$dialog.find("#edit_meridiem").val(meridiem);          
+					$dialog.find("#edit_max").val(jsonObj.maxsnaps); 
+					$dialog.find("#edit_timezone").val(jsonObj.timezone); 
+				}
+				$dialog.find("#snapshot_form").show();
 	            break;
-	        case "weekly_edit_link":
-	            $("#edit_interval_type").text("Weekly");
-	            $("#edit_past_the_hour, #edit_day_of_month_container").hide(); 
-	            $("#edit_minute_container, #edit_hour_container, #edit_meridiem_container, #edit_day_of_week_container").show();		           
-	            thisLink = thisDialog.find("#weekly_edit_link");           
-	            thisDialog.find("#edit_minute").val(thisLink.data("minute"));
-	            thisDialog.find("#edit_hour").val(thisLink.data("hour12")); 
-	            thisDialog.find("#edit_meridiem").val(thisLink.data("meridiem")); 	
-	            thisDialog.find("#edit_day_of_week").val(thisLink.data("dayOfWeek"));         
-	            thisDialog.find("#edit_max").val(thisLink.data("max")); 
-	            thisDialog.find("#edit_timezone").val(thisLink.data("timezone")); 
-	            break;
-	        case "monthly_edit_link":
-	            $("#edit_interval_type").text("Monthly");
-	            $("#edit_past_the_hour, #edit_day_of_week_container").hide(); 
-	            $("#edit_minute_container, #edit_hour_container, #edit_meridiem_container, #edit_day_of_month_container").show();		           
-	            thisLink = thisDialog.find("#monthly_edit_link");           
-	            thisDialog.find("#edit_minute").val(thisLink.data("minute"));
-	            thisDialog.find("#edit_hour").val(thisLink.data("hour12")); 
-	            thisDialog.find("#edit_meridiem").val(thisLink.data("meridiem")); 	
-	            thisDialog.find("#edit_day_of_month").val(thisLink.data("dayOfMonth"));         
-	            thisDialog.find("#edit_max").val(thisLink.data("max")); 
-	            thisDialog.find("#edit_timezone").val(thisLink.data("timezone")); 
-	            break;  
-	        case "apply_button":		            
-	            var intervalType = bottomPanel.find("#edit_interval_type").text().toLowerCase();
-	            var minute, hour12, hour24, meridiem, dayOfWeek, dayOfWeekString, dayOfMonth, schedule, max, timezone;   			                   
-	            switch(intervalType) {
-	                 case "hourly":
-	                     var isValid = true;	 
-	                     isValid &= validateNumber("Keep # of snapshots", bottomPanel.find("#edit_max"), bottomPanel.find("#edit_max_errormsg"));	    	
-				         if (!isValid) return;
-	                 
-	                     minute = bottomPanel.find("#edit_minute").val();		                     
-	                     schedule = minute;		                    
-	                     max = bottomPanel.find("#edit_max").val();	
-	                     timezone = bottomPanel.find("#edit_timezone").val();			                                                      
-	                     break;
-	                     
-	                 case "daily":
-	                     var isValid = true;	 
-	                     isValid &= validateNumber("Keep # of snapshots", bottomPanel.find("#edit_max"), bottomPanel.find("#edit_max_errormsg"));	    	
-				         if (!isValid) return;
-	                     
-	                     minute = bottomPanel.find("#edit_minute").val();		
-	                     hour12 = bottomPanel.find("#edit_hour").val();
-	                     meridiem = bottomPanel.find("#edit_meridiem").val();			                    
-	                     if(meridiem=="AM")	 
-	                         hour24 = hour12;
-	                     else //meridiem=="PM"	 
-	                         hour24 = (parseInt(hour12)+12).toString();                
-	                     schedule = minute + ":" + hour24;		                    
-	                     max = bottomPanel.find("#edit_max").val();	
-	                     timezone = bottomPanel.find("#edit_timezone").val();		
-	                     break;
-	                     
-	                 case "weekly":
-	                     var isValid = true;	 
-	                     isValid &= validateNumber("Keep # of snapshots", bottomPanel.find("#edit_max"), bottomPanel.find("#edit_max_errormsg"));	    	
-				         if (!isValid) return;
-	                 
-	                     minute = bottomPanel.find("#edit_minute").val();		
-	                     hour12 = bottomPanel.find("#edit_hour").val();
-	                     meridiem = bottomPanel.find("#edit_meridiem").val();			                    
-	                     if(meridiem=="AM")	 
-	                         hour24 = hour12;
-	                     else //meridiem=="PM"	 
-	                         hour24 = (parseInt(hour12)+12).toString();    
-	                     dayOfWeek = bottomPanel.find("#edit_day_of_week").val();  
-	                     dayOfWeekString = bottomPanel.find("#edit_day_of_week option:selected").text();
-	                     schedule = minute + ":" + hour24 + ":" + dayOfWeek;		                    
-	                     max = bottomPanel.find("#edit_max").val();	
-	                     timezone = bottomPanel.find("#edit_timezone").val();	
-	                     break;
-	                     
-	                 case "monthly":
-	                     var isValid = true;	 
-	                     isValid &= validateNumber("Keep # of snapshots", bottomPanel.find("#edit_max"), bottomPanel.find("#edit_max_errormsg"));	    	
-				         if (!isValid) return;
-				         
-	                     minute = bottomPanel.find("#edit_minute").val();		
-	                     hour12 = bottomPanel.find("#edit_hour").val();
-	                     meridiem = bottomPanel.find("#edit_meridiem").val();			                    
-	                     if(meridiem=="AM")	 
-	                         hour24 = hour12;
-	                     else //meridiem=="PM"	 
-	                         hour24 = (parseInt(hour12)+12).toString();    
-	                     dayOfMonth = bottomPanel.find("#edit_day_of_month").val();  		                     
-	                     schedule = minute + ":" + hour24 + ":" + dayOfMonth;		                    
-	                     max = bottomPanel.find("#edit_max").val();	
-	                     timezone = bottomPanel.find("#edit_timezone").val();			                    
-	                     break;		                
-	            }	
+	        case "2":
+	            $dialog.find("#edit_past_the_hour, #edit_day_of_month_container").hide(); 
+	            $dialog.find("#edit_minute_container, #edit_hour_container, #edit_meridiem_container, #edit_day_of_week_container").show();		           
 	            
-	            var thisLink;
-	            $.ajax({
-		            data: createURL("command=createSnapshotPolicy&intervaltype="+intervalType+"&schedule="+schedule+"&volumeid="+volumeId+"&maxsnaps="+max+"&timezone="+encodeURIComponent(timezone)),
-                    dataType: "json",                        
-                    success: function(json) {	                                                                              
-                        switch(intervalType) {
-	                        case "hourly":
-								topPanel.find("#dialog_snapshot_hourly_info_unset").hide();
-								topPanel.find("#dialog_snapshot_hourly_info_set").show();
-	                            topPanel.find("#read_hourly_minute").text(minute);
-								topPanel.find("#read_hourly_timezone").text("("+timezones[timezone]+")");
-                                topPanel.find("#read_hourly_max").text(max);                                                                        
-                                topPanel.find("#hourly_edit_link, #hourly_delete_link").data("intervalType", "hourly").data("snapshotPolicyId", json.createsnapshotpolicyresponse.snapshotpolicy.id).data("max",max).data("timezone",timezone).data("minute", minute);                                                                   
-	                            break;
-	                        case "daily":
-								topPanel.find("#dialog_snapshot_daily_info_unset").hide();
-								topPanel.find("#dialog_snapshot_daily_info_set").show();
-	                            topPanel.find("#read_daily_minute").text(minute);
-	                            topPanel.find("#read_daily_hour").text(hour12);
-	                            topPanel.find("#read_daily_meridiem").text(meridiem);
-								topPanel.find("#read_daily_timezone").text("("+timezones[timezone]+")");
-                                topPanel.find("#read_daily_max").text(max);                                                                       
-                                topPanel.find("#daily_edit_link, #daily_delete_link").data("intervalType", "daily").data("snapshotPolicyId", json.createsnapshotpolicyresponse.snapshotpolicy.id).data("max",max).data("timezone",timezone).data("minute", minute).data("hour12", hour12).data("meridiem", meridiem);                                 
-                                break;
-	                        case "weekly":
-								topPanel.find("#dialog_snapshot_weekly_info_unset").hide();
-								topPanel.find("#dialog_snapshot_weekly_info_set").show();
-	                            topPanel.find("#read_weekly_minute").text(minute);
-	                            topPanel.find("#read_weekly_hour").text(hour12);
-	                            topPanel.find("#read_weekly_meridiem").text(meridiem);
-								topPanel.find("#read_weekly_timezone").text("("+timezones[timezone]+")");
-	                            topPanel.find("#read_weekly_day_of_week").text(dayOfWeekString);
-                                topPanel.find("#read_weekly_max").text(max);	                                                                         
-                                topPanel.find("#weekly_edit_link, #weekly_delete_link").data("intervalType", "weekly").data("snapshotPolicyId", json.createsnapshotpolicyresponse.snapshotpolicy.id).data("max",max).data("timezone",timezone).data("minute", minute).data("hour12", hour12).data("meridiem", meridiem).data("dayOfWeek",dayOfWeek);                                       
-	                            break;
-	                        case "monthly":
-								topPanel.find("#dialog_snapshot_monthly_info_unset").hide();
-								topPanel.find("#dialog_snapshot_monthly_info_set").show();
-	                            topPanel.find("#read_monthly_minute").text(minute);
-	                            topPanel.find("#read_monthly_hour").text(hour12);
-	                            topPanel.find("#read_monthly_meridiem").text(meridiem);
-								topPanel.find("#read_monthly_timezone").text("("+timezones[timezone]+")");
-	                            topPanel.find("#read_monthly_day_of_month").text(toDayOfMonthDesp(dayOfMonth));
-                                topPanel.find("#read_monthly_max").text(max);	                                                                          
-                                topPanel.find("#monthly_edit_link, #monthly_delete_link").data("intervalType", "monthly").data("snapshotPolicyId", json.createsnapshotpolicyresponse.snapshotpolicy.id).data("max",max).data("timezone",timezone).data("minute", minute).data("hour12", hour12).data("meridiem", meridiem).data("dayOfMonth",dayOfMonth);                                         
-	                            break;
-	                    }	                      
-                        	    						
-                    },
-                    error: function(XMLHttpResponse) {                            					
-                        handleError(XMLHttpResponse);					
-                    }
-                });	           
-	                        
-	            break;		            
-	       
-	    }		    
-	});	
+				if (jsonObj != null) {
+					var parts = jsonObj.schedule.split(":");
+					var hour12, meridiem;
+					var hour24 = parts[1];
+					if(hour24 < 12) {
+						hour12 = hour24;  
+						meridiem = "AM";                                               
+					}   
+					else {
+						hour12 = hour24 - 12;
+						meridiem = "PM"
+					}
+					if (hour12 < 10 && hour12.toString().length==1) 
+						hour12 = "0"+hour12.toString();
+						
+					$dialog.find("#edit_minute").val(parts[0]);
+					$dialog.find("#edit_hour").val(hour12); 
+					$dialog.find("#edit_meridiem").val(meridiem); 	
+					$dialog.find("#edit_day_of_week").val(parts[2]);         
+					$dialog.find("#edit_max").val(jsonObj.maxsnaps); 
+					$dialog.find("#edit_timezone").val(jsonObj.timezone); 
+				}
+				$dialog.find("#snapshot_form").show();
+	            break;
+	        case "3":
+	            $dialog.find("#edit_past_the_hour, #edit_day_of_week_container").hide(); 
+	            $dialog.find("#edit_minute_container, #edit_hour_container, #edit_meridiem_container, #edit_day_of_month_container").show();		           
+	            
+				if (jsonObj != null) {
+					var parts = jsonObj.schedule.split(":");
+					var hour12, meridiem;
+					var hour24 = parts[1];
+					if(hour24 < 12) {
+						hour12 = hour24;  
+						meridiem = "AM";                                               
+					}   
+					else {
+						hour12 = hour24 - 12;
+						meridiem = "PM"
+					}
+					if (hour12 < 10 && hour12.toString().length==1) 
+						hour12 = "0"+hour12.toString();
+					$dialog.find("#edit_minute").val(parts[0]);
+					$dialog.find("#edit_hour").val(hour12); 
+					$dialog.find("#edit_meridiem").val(meridiem); 	
+					$dialog.find("#edit_day_of_month").val(parts[2]);         
+					$dialog.find("#edit_max").val(jsonObj.maxsnaps); 
+					$dialog.find("#edit_timezone").val(jsonObj.timezone); 
+				}
+				$dialog.find("#snapshot_form").show();
+	            break;
+		}
+	});
 	// *** recurring snapshot dialog - event binding (end) ******************************	    
          
     //***** switch between different tabs (begin) ********************************************************************
@@ -722,105 +615,145 @@ function doRecurringSnapshot($actionLink, $detailsTab, $midmenuItem1) {
         async: false,
         success: function(json) {								
             var items = json.listsnapshotpoliciesresponse.snapshotpolicy;
+			var $snapInterval = dialogBox.find("#snapshot_interval");
             if(items!=null && items.length>0) {
-                for(var i=0; i<items.length; i++) {
-                    var item = items[i];                           
-                    switch(item.intervaltype) {
-                        case "0": //hourly    
-							dialogBox.find("#dialog_snapshot_hourly_info_unset").hide();
-							dialogBox.find("#dialog_snapshot_hourly_info_set").show();
-                            dialogBox.find("#read_hourly_max").text(item.maxsnaps);
-                            dialogBox.find("#read_hourly_minute").text(item.schedule);
-							dialogBox.find("#read_hourly_timezone").text("("+timezones[item.timezone]+")");
-                            dialogBox.find("#hourly_edit_link, #hourly_delete_link").data("intervalType", "hourly").data("snapshotPolicyId", item.id).data("max",item.maxsnaps).data("timezone",item.timezone).data("minute", item.schedule); 
-                            break;
-                        case "1": //daily
-							dialogBox.find("#dialog_snapshot_daily_info_unset").hide();
-							dialogBox.find("#dialog_snapshot_daily_info_set").show();
-                            dialogBox.find("#read_daily_max").text(item.maxsnaps);
-                            var parts = item.schedule.split(":");
-                            dialogBox.find("#read_daily_minute").text(parts[0]);
-                            var hour12, meridiem;
-                            var hour24 = parts[1];                                            
-                            if(hour24 < 12) {
-                                hour12 = hour24;
-                                meridiem = "AM";                                               
-                            }   
-                            else {
-                                hour12 = hour24 - 12;
-                                meridiem = "PM"
-                            }											
-							if (hour12 < 10 && hour12.toString().length==1) 
-							    hour12 = "0"+hour12.toString();											
-                            dialogBox.find("#read_daily_hour").text(hour12);       
-                            dialogBox.find("#read_daily_meridiem").text(meridiem);
-							dialogBox.find("#read_daily_timezone").text("("+timezones[item.timezone]+")");
-                            dialogBox.find("#daily_edit_link, #daily_delete_link").data("intervalType", "daily").data("snapshotPolicyId", item.id).data("max",item.maxsnaps).data("timezone",item.timezone).data("minute", parts[0]).data("hour12", hour12).data("meridiem", meridiem);                                   
-                            break;
-                        case "2": //weekly
-							dialogBox.find("#dialog_snapshot_weekly_info_unset").hide();
-							dialogBox.find("#dialog_snapshot_weekly_info_set").show();
-                            dialogBox.find("#read_weekly_max").text(item.maxsnaps);
-                            var parts = item.schedule.split(":");
-                            dialogBox.find("#read_weekly_minute").text(parts[0]);
-                            var hour12, meridiem;
-                            var hour24 = parts[1];
-                            if(hour24 < 12) {
-                                hour12 = hour24;  
-                                meridiem = "AM";                                               
-                            }   
-                            else {
-                                hour12 = hour24 - 12;
-                                meridiem = "PM"
-                            }
-							if (hour12 < 10 && hour12.toString().length==1) 
-							    hour12 = "0"+hour12.toString();		
-                            dialogBox.find("#read_weekly_hour").text(hour12);       
-                            dialogBox.find("#read_weekly_meridiem").text(meridiem);    
-							dialogBox.find("#read_weekly_timezone").text("("+timezones[item.timezone]+")");
-                            dialogBox.find("#read_weekly_day_of_week").text(toDayOfWeekDesp(parts[2]));  
-                            dialogBox.find("#weekly_edit_link, #weekly_delete_link").data("intervalType", "weekly").data("snapshotPolicyId", item.id).data("max",item.maxsnaps).data("timezone",item.timezone).data("minute", parts[0]).data("hour12", hour12).data("meridiem", meridiem).data("dayOfWeek",parts[2]);     
-                            break;
-                        case "3": //monthly
-							dialogBox.find("#dialog_snapshot_monthly_info_unset").hide();
-							dialogBox.find("#dialog_snapshot_monthly_info_set").show();
-                            dialogBox.find("#read_monthly_max").text(item.maxsnaps);                                           
-                            var parts = item.schedule.split(":");
-                            dialogBox.find("#read_monthly_minute").text(parts[0]);
-                            var hour12, meridiem;
-                            var hour24 = parts[1];
-                            if(hour24 < 12) {
-                                hour12 = hour24;  
-                                meridiem = "AM";                                               
-                            }   
-                            else {
-                                hour12 = hour24 - 12;
-                                meridiem = "PM"
-                            }
-							if (hour12 < 10 && hour12.toString().length==1) 
-							    hour12 = "0"+hour12.toString();		
-                            dialogBox.find("#read_monthly_hour").text(hour12);       
-                            dialogBox.find("#read_monthly_meridiem").text(meridiem);  
-							dialogBox.find("#read_monthly_timezone").text("("+timezones[item.timezone]+")");
-                            dialogBox.find("#read_monthly_day_of_month").text(toDayOfMonthDesp(parts[2])); 
-                            dialogBox.find("#monthly_edit_link, #monthly_delete_link").data("intervalType", "monthly").data("snapshotPolicyId", item.id).data("max",item.maxsnaps).data("timezone",item.timezone).data("minute", parts[0]).data("hour12", hour12).data("meridiem", meridiem).data("dayOfMonth",parts[2]);     
-                            break;
-                    }
-                }    
-            }                                 		    						
+				var item = items[0]; // We only expect a single policy.
+				$snapInterval.val(item.intervaltype).data("jsonObj", item);
+            } else {
+				$snapInterval.val("-1").data("jsonObj", null);
+			}
+			clearBottomPanel();
+			$snapInterval.change();
+			
+			dialogBox.dialog('option', 'buttons', { 
+				"Apply": function() {
+					var thisDialog = $(this);		   
+					var volumeId = thisDialog.data("volumeId");
+					var bottomPanel = thisDialog.find("#dialog_snapshotright");
+				
+					var intervalType = thisDialog.find("#snapshot_interval").val();
+					var minute, hour12, hour24, meridiem, dayOfWeek, dayOfWeekString, dayOfMonth, schedule, max, timezone;   			                   
+					switch(intervalType) {
+						 case "-1":
+							var $snapshotInterval = $(this).find("#snapshot_interval");
+							var jsonObj = $snapshotInterval.data("jsonObj");                 
+							if(jsonObj != null) {
+								$.ajax({
+									data: createURL("command=deleteSnapshotPolicies&id="+jsonObj.id),
+									dataType: "json",                        
+									success: function(json) {        
+										$snapshotInterval.val("-1");
+									},
+									error: function(XMLHttpResponse) {                                                   					
+										handleError(XMLHttpResponse);					
+									}
+								});	 
+							}
+							thisDialog.dialog("close");
+							return false;
+						 case "0":
+							 var isValid = true;	 
+							 isValid &= validateNumber("Keep # of snapshots", bottomPanel.find("#edit_max"), bottomPanel.find("#edit_max_errormsg"));	    	
+							 if (!isValid) return;
+							 intervalType = "hourly";
+							 minute = bottomPanel.find("#edit_minute").val();		                     
+							 schedule = minute;		                    
+							 max = bottomPanel.find("#edit_max").val();	
+							 timezone = bottomPanel.find("#edit_timezone").val();			                                                      
+							 break;
+							 
+						 case "1":
+							 var isValid = true;	 
+							 isValid &= validateNumber("Keep # of snapshots", bottomPanel.find("#edit_max"), bottomPanel.find("#edit_max_errormsg"));	    	
+							 if (!isValid) return;
+							 intervalType = "daily";
+							 minute = bottomPanel.find("#edit_minute").val();		
+							 hour12 = bottomPanel.find("#edit_hour").val();
+							 meridiem = bottomPanel.find("#edit_meridiem").val();			                    
+							 if(meridiem=="AM")	 
+								 hour24 = hour12;
+							 else //meridiem=="PM"	 
+								 hour24 = (parseInt(hour12)+12).toString();                
+							 schedule = minute + ":" + hour24;		                    
+							 max = bottomPanel.find("#edit_max").val();	
+							 timezone = bottomPanel.find("#edit_timezone").val();		
+							 break;
+							 
+						 case "2":
+							 var isValid = true;	 
+							 isValid &= validateNumber("Keep # of snapshots", bottomPanel.find("#edit_max"), bottomPanel.find("#edit_max_errormsg"));	    	
+							 if (!isValid) return;
+							 intervalType = "weekly";
+							 minute = bottomPanel.find("#edit_minute").val();		
+							 hour12 = bottomPanel.find("#edit_hour").val();
+							 meridiem = bottomPanel.find("#edit_meridiem").val();			                    
+							 if(meridiem=="AM")	 
+								 hour24 = hour12;
+							 else //meridiem=="PM"	 
+								 hour24 = (parseInt(hour12)+12).toString();    
+							 dayOfWeek = bottomPanel.find("#edit_day_of_week").val();  
+							 dayOfWeekString = bottomPanel.find("#edit_day_of_week option:selected").text();
+							 schedule = minute + ":" + hour24 + ":" + dayOfWeek;		                    
+							 max = bottomPanel.find("#edit_max").val();	
+							 timezone = bottomPanel.find("#edit_timezone").val();	
+							 break;
+							 
+						 case "3":
+							 var isValid = true;	 
+							 isValid &= validateNumber("Keep # of snapshots", bottomPanel.find("#edit_max"), bottomPanel.find("#edit_max_errormsg"));	    	
+							 if (!isValid) return;
+							 intervalType = "monthly";
+							 minute = bottomPanel.find("#edit_minute").val();		
+							 hour12 = bottomPanel.find("#edit_hour").val();
+							 meridiem = bottomPanel.find("#edit_meridiem").val();			                    
+							 if(meridiem=="AM")	 
+								 hour24 = hour12;
+							 else //meridiem=="PM"	 
+								 hour24 = (parseInt(hour12)+12).toString();    
+							 dayOfMonth = bottomPanel.find("#edit_day_of_month").val();  		                     
+							 schedule = minute + ":" + hour24 + ":" + dayOfMonth;		                    
+							 max = bottomPanel.find("#edit_max").val();	
+							 timezone = bottomPanel.find("#edit_timezone").val();			                    
+							 break;		                
+					}	
+					var thisLink;
+					$.ajax({
+						data: createURL("command=createSnapshotPolicy&intervaltype="+intervalType+"&schedule="+schedule+"&volumeid="+volumeId+"&maxsnaps="+max+"&timezone="+encodeURIComponent(timezone)),
+						dataType: "json",                        
+						success: function(json) {	
+							thisDialog.dialog("close");								
+						},
+						error: function(XMLHttpResponse) {                            					
+							handleError(XMLHttpResponse);					
+						}
+					});	 
+				},
+				"Disable": function() {
+					var $snapshotInterval = $(this).find("#snapshot_interval");
+					var jsonObj = $snapshotInterval.data("jsonObj");                 
+					if(jsonObj != null) {
+						$.ajax({
+							data: createURL("command=deleteSnapshotPolicies&id="+jsonObj.id),
+							dataType: "json",                        
+							success: function(json) {        
+								$snapshotInterval.val("-1");
+							},
+							error: function(XMLHttpResponse) {                                                   					
+								handleError(XMLHttpResponse);					
+							}
+						});	 
+					}
+					$(this).dialog("close"); 
+				},
+				"Close": function() { 
+					$(this).dialog("close"); 
+				}
+			}).dialog("open").data("volumeId", volumeId);
         },
         error: function(XMLHttpResponse) {			                   					
             handleError(XMLHttpResponse);					
         }
     });   	    
-   	           			        
-    dialogBox
-	.dialog('option', 'buttons', { 
-		"Close": function() { 
-			$("#dialog_snapshotright").hide(0, function() { $(this).height("0px");});
-			$(this).dialog("close"); 
-		}
-	}).dialog("open").data("volumeId", volumeId);
 }	
 
 function populateVirtualMachineField(domainId, account, zoneId) {        

@@ -884,7 +884,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
             throw new InvalidParameterValueException("maxSnaps exceeds limit: " + intervalMaxSnaps + " for interval type: " + cmd.getIntervalType());
         }
 
-        SnapshotPolicyVO policy = new SnapshotPolicyVO(volumeId, cmd.getSchedule(), timezoneId, (short)type.ordinal(), intervalMaxSnaps);
+        SnapshotPolicyVO policy = new SnapshotPolicyVO(volumeId, cmd.getSchedule(), timezoneId, (short)type.ordinal(), cmd.getMaxSnaps());
         // Create an event
         EventVO event = new EventVO();
         try{
@@ -898,7 +898,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
                 policy.setSchedule(cmd.getSchedule());
                 policy.setTimezone(timezoneId);
                 policy.setInterval((short)type.ordinal());
-                policy.setMaxSnaps(intervalMaxSnaps);
+                policy.setMaxSnaps(cmd.getMaxSnaps());
                 policy.setActive(true);
                 _snapshotPolicyDao.update(policy.getId(), policy);
             } finally {
@@ -921,13 +921,12 @@ public class SnapshotManagerImpl implements SnapshotManager {
     public boolean deletePolicy(long userId, long policyId) {
         SnapshotPolicyVO snapshotPolicy = _snapshotPolicyDao.findById(policyId);
         VolumeVO volume = _volsDao.findById(snapshotPolicy.getVolumeId());
-        snapshotPolicy.setActive(false);
         _snapSchedMgr.removeSchedule(snapshotPolicy.getVolumeId(), snapshotPolicy.getId());
         EventVO event = new EventVO();
         event.setAccountId(volume.getAccountId());
         event.setUserId(userId);
         event.setType(EventTypes.EVENT_SNAPSHOT_POLICY_DELETE);
-        boolean success = _snapshotPolicyDao.update(policyId, snapshotPolicy);
+        boolean success = _snapshotPolicyDao.remove(policyId);
         if(success){
             event.setLevel(EventVO.LEVEL_INFO);
             event.setDescription("Successfully deleted snapshot policy with Id: "+policyId);
@@ -1092,13 +1091,16 @@ public class SnapshotManagerImpl implements SnapshotManager {
         Long userId = getSnapshotUserId();
 
         if ((policyId == null) && (policyIds == null)) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "No policy id (or list off ids) specified.");
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, "No policy id (or list of ids) specified.");
         }
         
-        if(policyIds.size()<=0){
+        if (policyIds == null) {
+        	policyIds = new ArrayList<Long>();
+        	policyIds.add(policyId);
+        } else if(policyIds.size()<=0){
+        	// Not even sure how this is even possible
         	throw new ServerApiException(BaseCmd.INTERNAL_ERROR,"There are no policy ids");
         }
-        	
         
         for (Long policy : policyIds) {
             SnapshotPolicyVO snapshotPolicyVO = _snapshotPolicyDao.findById(policy);
