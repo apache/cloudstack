@@ -128,7 +128,7 @@ changeServiceForRouter=com.cloud.api.commands.UpgradeRouterCmd;3
 listRouters=com.cloud.api.commands.ListRoutersCmd;7
 
 #### system vm commands
-startSystemVm=com.cloud.api.commands.StartSystemVmCmd;1
+startSystemVm=com.cloud.api.commands.StartSystemVMCmd;1
 rebootSystemVm=com.cloud.api.commands.RebootSystemVmCmd;1
 stopSystemVm=com.cloud.api.commands.StopSystemVmCmd;1
 listSystemVms=com.cloud.api.commands.ListSystemVMsCmd;1
