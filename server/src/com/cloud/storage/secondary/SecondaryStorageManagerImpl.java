@@ -249,7 +249,9 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 	@Override
 	public SecondaryStorageVmVO startSecStorageVm(long secStorageVmId, long startEventId) {
 		try {
-			return start(secStorageVmId, startEventId);
+
+			return start2(secStorageVmId, startEventId);
+
 		} catch (StorageUnavailableException e) {
 			s_logger.warn("Exception while trying to start secondary storage vm", e);
 			return null;
@@ -258,6 +260,8 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 			return null;
 		} catch (ConcurrentOperationException e) {
 			s_logger.warn("Exception while trying to start secondary storage vm", e);
+			return null;
+		} catch (ResourceUnavailableException e) {
 			return null;
 		}
 	}
@@ -668,7 +672,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 		if (s_logger.isDebugEnabled())
 			s_logger.debug("Assign secondary storage vm from a newly started instance for request from data center : " + dataCenterId);
 
-		Map<String, Object> context = createSecStorageVmInstance(dataCenterId);
+		Map<String, Object> context = createSecStorageVmInstance2(dataCenterId);
 
 		long secStorageVmId = (Long) context.get("secStorageVmId");
 		if (secStorageVmId == 0) {
@@ -709,7 +713,6 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 
 	        long id = _secStorageVmDao.getNextInSequence(Long.class, "id");
 	        String name = VirtualMachineName.getSystemVmName(id, _instance, "s").intern();
-	        DataCenterVO dc = _dcDao.findById(dataCenterId);
 	        AccountVO systemAcct = _accountMgr.getSystemAccount();
 	        
 	        DataCenterDeployment plan = new DataCenterDeployment(dataCenterId);
@@ -724,9 +727,10 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 	        for (NetworkOfferingVO offering : offerings) {
 	            networks.add(new Pair<NetworkConfigurationVO, NicProfile>(_networkMgr.setupNetworkConfiguration(systemAcct, offering, plan).get(0), null));
 	        }
-	        SecondaryStorageVmVO proxy = new SecondaryStorageVmVO(id, _serviceOffering.getId(), name, _template.getId(), _template.getGuestOSId(), dataCenterId, systemAcct.getDomainId(), systemAcct.getId(), 0);
+	        SecondaryStorageVmVO secStorageVm = new SecondaryStorageVmVO(id, _serviceOffering.getId(), name, _template.getId(), 
+	        															 _template.getGuestOSId(), dataCenterId, systemAcct.getDomainId(), systemAcct.getId());
 	        try {
-	            proxy = _itMgr.allocate(proxy, _template, _serviceOffering, networks, plan, systemAcct);
+	        	secStorageVm = _itMgr.allocate(secStorageVm, _template, _serviceOffering, networks, plan, systemAcct);
 	        } catch (InsufficientCapacityException e) {
 	            s_logger.warn("InsufficientCapacity", e);
 	            throw new CloudRuntimeException("Insufficient capacity exception", e);
@@ -736,12 +740,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 	        }
 	        
 	        Map<String, Object> context = new HashMap<String, Object>();
-	        context.put("dc", dc);
-//	        context.put("publicIpAddress", publicIpAndVlan._ipAddr);
-	        HostPodVO pod = _podDao.findById(proxy.getPodId());
-	        context.put("pod", pod);
-	        context.put("proxyVmId", proxy.getId());
-
+	        context.put("secStorageVmId", secStorageVm.getId());
 	        return context;
 	    }
 

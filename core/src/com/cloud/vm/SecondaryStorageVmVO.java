@@ -27,6 +27,8 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
+import com.cloud.vm.VirtualMachine.Type;
+
 /**
  * SecondaryStorageVmVO domain object
  */
@@ -87,6 +89,9 @@ public class SecondaryStorageVmVO extends VMInstanceVO implements SecondaryStora
     @Column(name="last_update", updatable=true, nullable=true)
     private Date lastUpdateTime;
     
+    public SecondaryStorageVmVO(long id, long serviceOfferingId, String name, long templateId, long guestOSId, long dataCenterId, long domainId, long accountId) {
+	    super(id, serviceOfferingId, name, name, Type.SecondaryStorageVm, templateId, guestOSId, domainId, accountId, true);
+	}
     
     public SecondaryStorageVmVO(
     		long id,
