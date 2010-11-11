@@ -93,17 +93,11 @@ public class StartSystemVm2Cmd extends BaseAsyncCmd {
         return  "starting system vm: " + getId();
     }
 
-	@Override @SuppressWarnings("unchecked")
-	public SystemVmResponse getResponse() {
-	    VMInstanceVO instance = (VMInstanceVO)getResponseObject();
-	    SystemVmResponse response = ApiResponseHelper.createSystemVmResponse(instance);
-        response.setResponseName(getName());
-        return response;
-	}
-	
     @Override
-    public Object execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        VirtualMachine result = _mgr.startSystemVm(this);
-        return result;
-    }
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+        VirtualMachine instance = _mgr.startSystemVm(this);
+        SystemVmResponse response = ApiResponseHelper.createSystemVmResponse((VMInstanceVO)instance);
+        response.setResponseName(getName());
+        this.setResponseObject(response);    
+     }
 }
