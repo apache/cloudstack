@@ -483,9 +483,6 @@ function addZoneWizardSubmit($thisWizard) {
 		else 							
 			moreCriteria.push("&vlan=" + encodeURIComponent(vlanStart));		
 	}	
-	else { 
-	    moreCriteria.push("&vlan=30"); //temporary hacking before bug 7143 is fixed ("VLAN parameter in CreateZone shouldn't be required") 
-	} 			
 	
 	var guestcidraddress = trim($thisWizard.find("#add_zone_guestcidraddress").val());
 	moreCriteria.push("&guestcidraddress="+encodeURIComponent(guestcidraddress));	
