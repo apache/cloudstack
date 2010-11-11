@@ -26,7 +26,7 @@ public class InsufficientNetworkCapacityException extends InsufficientCapacityEx
         super();
     }
     
-    public InsufficientNetworkCapacityException(String msg) {
-        super(msg);
+    public InsufficientNetworkCapacityException(String msg, Class<?> scope, Long id) {
+        super(msg, scope, id);
     }
 }

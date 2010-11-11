@@ -17,12 +17,17 @@
  */
 package com.cloud.exception;
 
+import com.cloud.dc.Pod;
 import com.cloud.utils.SerialVersionUID;
 
 public class InsufficientVirtualNetworkCapcityException extends InsufficientNetworkCapacityException {
     private static final long serialVersionUID = SerialVersionUID.InsufficientVirtualNetworkCapacityException;
     
-    public InsufficientVirtualNetworkCapcityException(String msg) {
-        super(msg);
+    public InsufficientVirtualNetworkCapcityException(String msg, Class<?> scope, Long id) {
+        super(msg, scope, id);
+    }
+    
+    public InsufficientVirtualNetworkCapcityException(String msg, long id) {
+        this(msg, Pod.class, id);
     }
 }

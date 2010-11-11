@@ -83,7 +83,7 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
         
         String ip = _dcDao.allocatePrivateIpAddress(dest.getDataCenter().getId(), dest.getPod().getId(), nic.getId(), context.getReservationId());
         if (ip == null) {
-            throw new InsufficientAddressCapacityException("Unable to get a management ip address");
+            throw new InsufficientAddressCapacityException("Unable to get a management ip address", Pod.class, pod.getId());
         }
         
         nic.setIp4Address(ip);
@@ -107,5 +107,10 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
     
     @Override
     public void destroy(NetworkConfiguration config, NetworkOffering offering) {
+    }
+    
+    @Override
+    public boolean trash(NetworkConfiguration config, NetworkOffering offering, Account owner) {
+        return true;
     }
 }

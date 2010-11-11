@@ -729,7 +729,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             Pair<String, VlanVO> ipAndVlan = _vlanDao.assignIpAddress(zoneId, accountId, domainId, VlanType.VirtualNetwork, false);
             
             if (ipAndVlan == null) {
-                throw new InsufficientAddressCapacityException("Unable to find available public IP addresses");
+                throw new InsufficientAddressCapacityException("Unable to find available public IP addresses", DataCenter.class, zoneId);
             } else {
             	ipAddress = ipAndVlan.first();
             	_accountMgr.incrementResourceCount(accountId, ResourceType.public_ip);
@@ -2923,8 +2923,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 	}
 	
 	@Override
-    public String getNextAvailableMacAddressInNetwork(long networkConfigurationId) {
-	    return _networkConfigDao.getNextAvailableMacAddress(networkConfigurationId);
+    public String getNextAvailableMacAddressInNetwork(long networkConfigurationId) throws InsufficientAddressCapacityException {
+	    String mac = _networkConfigDao.getNextAvailableMacAddress(networkConfigurationId);
+	    if (mac == null) {
+	        throw new InsufficientAddressCapacityException("Unable to create another mac address", NetworkConfiguration.class, networkConfigurationId);
+	    }
+	    return mac;
 	}
 	
 	@Override

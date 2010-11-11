@@ -6,9 +6,15 @@ package com.cloud.deploy;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.Pod;
+import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.host.Host;
+import com.cloud.org.Cluster;
+import com.cloud.storage.StoragePool;
 import com.cloud.utils.component.Adapter;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 /**
@@ -23,7 +29,7 @@ public interface DeploymentPlanner extends Adapter {
      * @param avoid avoid these data centers, pods, clusters, or hosts.
      * @return DeployDestination for that virtual machine.
      */
-    DeployDestination plan(VirtualMachineProfile vm, DeploymentPlan plan, ExcludeList avoid) throws InsufficientServerCapacityException;
+    DeployDestination plan(VirtualMachineProfile<? extends VirtualMachine> vm, DeploymentPlan plan, ExcludeList avoid) throws InsufficientServerCapacityException;
     
     /**
      * check() is called right before the virtual machine starts to make sure
@@ -35,15 +41,40 @@ public interface DeploymentPlanner extends Adapter {
      * @param avoid what to avoid.
      * @return true if it's okay to start; false if not.  If false, the exclude list will include what should be excluded.
      */
-    boolean check(VirtualMachineProfile vm, DeploymentPlan plan, DeployDestination dest, ExcludeList exclude);
+    boolean check(VirtualMachineProfile<? extends VirtualMachine> vm, DeploymentPlan plan, DeployDestination dest, ExcludeList exclude);
     
     public static class ExcludeList {
         Set<Long> _dcIds;
         Set<Long> _podIds;
         Set<Long> _clusterIds;
         Set<Long> _hostIds;
+        Set<Long> _poolIds;
         
-        public void adddDataCenter(long dataCenterId) {
+        public void add(InsufficientCapacityException e) {
+            Class<?> scope = e.getScope();
+            
+            if (scope == null) {
+                return;
+            }
+            
+            if (Host.class.isAssignableFrom(scope)) {
+                addHost(e.getId());
+            } else if (Pod.class.isAssignableFrom(scope)) {
+                addPod(e.getId());
+            } else if (DataCenter.class.isAssignableFrom(scope)) {
+                addDataCenter(e.getId());
+            } else if (Cluster.class.isAssignableFrom(scope)) {
+                addCluster(e.getId());
+            } else if (StoragePool.class.isAssignableFrom(scope)) {
+                addPool(e.getId());
+            }
+        }
+        
+        public void addPool(long poolId) {
+            _poolIds.add(poolId);
+        }
+        
+        public void addDataCenter(long dataCenterId) {
             if (_dcIds == null) {
                 _dcIds = new HashSet<Long>();
             }

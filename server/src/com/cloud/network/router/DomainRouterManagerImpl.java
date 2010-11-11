@@ -2131,6 +2131,8 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
     public boolean finalizeDeployment(Commands cmds, VirtualMachineProfile<DomainRouterVO> profile, DeployDestination dest, ReservationContext context) {
         NicProfile controlNic = (NicProfile)profile.getParameter("control.nic");
         cmds.addCommand("checkSsh", new CheckSshCommand(profile.getInstanceName(), controlNic.getIp4Address(), 3922, 5, 20));
+        
+        
         return true;
     }
 
@@ -2400,5 +2402,74 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         }
         
         return router;
+    }
+    
+    private boolean resendRouterState(NetworkConfiguration config, DomainRouterVO router, Commands cmds) {
+        if (router.getRole() == Role.DHCP_FIREWALL_LB_PASSWD_USERDATA) {
+            //source NAT address is stored in /proc/cmdline of the domR and gets
+            //reassigned upon powerup. Source NAT rule gets configured in StartRouter command
+            List<IPAddressVO> ipAddrs = _networkMgr.listPublicIpAddressesInVirtualNetwork(router.getAccountId(), router.getDataCenterId(), null);
+            List<String> ipAddrList = new ArrayList<String>();
+            for (final IPAddressVO ipVO : ipAddrs) {
+                ipAddrList.add(ipVO.getAddress());
+            }
+            if (!ipAddrList.isEmpty()) {
+                try {
+                    final boolean success = _networkMgr.associateIP(router, ipAddrList, true, 0);
+                    if (!success) {
+                        return false;
+                    }
+                } catch (ConcurrentOperationException e) {
+                    s_logger.warn("unable to associate ip due to ", e);
+                    return false;
+                }
+            }
+            final List<FirewallRuleVO> fwRules = new ArrayList<FirewallRuleVO>();
+            for (final IPAddressVO ipVO : ipAddrs) {
+                fwRules.addAll(_rulesDao.listIPForwarding(ipVO.getAddress()));
+            }
+            final List<FirewallRuleVO> result = _networkMgr.updateFirewallRules(router
+                    .getPublicIpAddress(), fwRules, router);
+            if (result.size() != fwRules.size()) {
+                return false;
+            }
+        }
+        return resendDhcpEntries(router) && resendVpnServerData(router);
+      
+    }
+    
+    private boolean resendDhcpEntries(NetworkConfiguration config, DomainRouterVO router, Commands cmd){
+        final List<UserVmVO> vms = _vmDao.listBy(router.getId(), State.Creating, State.Starting, State.Running, State.Stopping, State.Stopped, State.Migrating);
+        Commands cmds = new Commands(OnError.Continue);
+        for (UserVmVO vm: vms) {
+            if (vm.getGuestIpAddress() == null || vm.getGuestMacAddress() == null || vm.getHostName() == null)
+                continue;
+            DhcpEntryCommand decmd = new DhcpEntryCommand(vm.getGuestMacAddress(), vm.getGuestIpAddress(), router.getPrivateIpAddress(), vm.getHostName());
+            cmds.addCommand(decmd);
+        }
+        if (cmds.size() > 0) {
+            try {
+                _agentMgr.send(router.getHostId(), cmds);
+            } catch (final AgentUnavailableException e) {
+                s_logger.warn("agent unavailable", e);
+            } catch (final OperationTimedoutException e) {
+                s_logger.warn("Timed Out", e);
+            }
+            Answer[] answers = cmds.getAnswers();
+            if (answers == null ){
+                return false;
+            }
+            int i=0;
+            while (i < cmds.size()) {
+                Answer ans = answers[i];
+                i++;
+                if ((ans != null) && (ans.getResult())) {
+                    continue;
+                } else {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 }

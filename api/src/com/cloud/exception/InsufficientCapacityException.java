@@ -26,10 +26,32 @@ import com.cloud.utils.SerialVersionUID;
 public abstract class InsufficientCapacityException extends Exception {
     private static final long serialVersionUID = SerialVersionUID.InsufficientCapacityException;
     
+    Long id;
+    Class<?> scope;
+
     protected InsufficientCapacityException() {
+        super();
     }
     
-    public InsufficientCapacityException(String msg) {
+    public InsufficientCapacityException(String msg, Class<?> type, Long id) {
         super(msg);
+    }
+    
+    /**
+     * @return scope where we are insufficient.  The possible classes are
+     *         Host, StoragePool, Cluster, Pod, DataCenter, NetworkConfiguration.
+     */
+    public Class<?> getScope() {
+        return scope;
+    }
+    
+    /**
+     * @return the id of the object that it is insufficient in.  Note that this method is
+     *         marked such that if the id is not set, then it will throw NullPointerException.
+     *         This is intended as you should check to see if the Scope is present before 
+     *         accessing this method.
+     */
+    public long getId() {
+        return id;
     }
 }

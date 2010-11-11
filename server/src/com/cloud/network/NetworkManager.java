@@ -358,7 +358,6 @@ public interface NetworkManager {
 
 	boolean removeVpnUser(RemoveVpnUserCmd cmd) throws ConcurrentOperationException;
 	
-	String getNextAvailableMacAddressInNetwork(long networkConfigurationId);
-	
 	NetworkConfiguration getNetworkConfiguration(long id);
+	String getNextAvailableMacAddressInNetwork(long networkConfigurationId) throws InsufficientAddressCapacityException;
 }

@@ -140,4 +140,9 @@ public class ControlNetworkGuru extends AdapterBase implements NetworkGuru {
         return true;
     }
 
+    @Override
+    public boolean trash(NetworkConfiguration config, NetworkOffering offering, Account owner) {
+        return true;
+    }
+
 }
