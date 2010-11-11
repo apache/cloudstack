@@ -361,7 +361,6 @@ public interface NetworkManager {
 	
 	NetworkConfiguration getNetworkConfiguration(long id);
 	String getNextAvailableMacAddressInNetwork(long networkConfigurationId) throws InsufficientAddressCapacityException;
-	String getNextAvailableMacAddressInNetwork(long networkConfigurationId);
 
 	FirewallRuleVO createIpForwardingRuleInDb(String ipAddr, Long virtualMachineId) throws ServerApiException;
 
