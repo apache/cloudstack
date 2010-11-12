@@ -69,6 +69,34 @@ function podJsonToDetailsTab() {
     $thisTab.find("#gateway").text(fromdb(jsonObj.gateway));  
     $thisTab.find("#gateway_edit").val(fromdb(jsonObj.gateway));  
     
+    
+    // hide network tab upon zone vlan
+    var zoneVlan;  
+    $.ajax({
+	    data: createURL("command=listZones&id="+jsonObj.zoneid),
+		dataType: "json",	
+		async: false,	
+		success: function(json) {
+			var items = json.listzonesresponse.zone;						
+			if (items != null && items.length > 0) {					    
+				//zoneVlan = items[0].vlan;  //comment this one out until bug 7162 is fixed ("listZones API should take in id parameter")
+				
+				//temporary code before bug 7162 is fixed ********(begin)***********		
+				for(var i=0; i<items.length; i++) {				   		    
+				    if(items[i].name == jsonObj.zonename) {
+				        zoneVlan = items[i].vlan; 
+				    }
+				}	
+				//temporary code before bug 7162 is fixed ********(end)*************	
+			}				
+		}
+	});	
+    if(zoneVlan == null) //basic network (VLAN in pod-level)
+        $("#tab_network").show();  
+    else //advanced network (VLAN in zone-level)
+        $("#tab_network").hide();
+    
+    
     //actions ***   
     var $actionLink = $thisTab.find("#action_link"); 
     $actionLink.bind("mouseover", function(event) {	    
