@@ -723,7 +723,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
             DomainRouterVO router = _routerMgr.getRouter(accountId, zoneId);
             if (router == null) {
-                throw new InvalidParameterValueException("No router found for account: " + accountToLock.getAccountName() + ".");
+                throw new InvalidParameterValueException("No router found for account: " + accountToLock.getAccountName() + ". Please create a VM before acquiring an IP");
             }
 
             txn.start();
