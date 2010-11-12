@@ -2180,5 +2180,6 @@ public interface ManagementServer {
 	SnapshotVO createTemplateSnapshot(Long userId, long volumeId);
 	boolean destroyTemplateSnapshot(Long userId, long snapshotId);
 	String getHyperType();
-
+	
+	String getHashKey();
 }

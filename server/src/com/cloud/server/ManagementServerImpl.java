@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -367,7 +368,8 @@ public class ManagementServerImpl implements ManagementServer {
 	private boolean _networkGroupsEnabled = false;
 
     private boolean _isHypervisorSnapshotCapable = false;
-
+    
+    private String _hashKey = null;
 
     protected ManagementServerImpl() {
         ComponentLocator locator = ComponentLocator.getLocator(Name);
@@ -8329,9 +8331,17 @@ public class ManagementServerImpl implements ManagementServer {
 	@Override
 	public String getNetworkGroupsNamesForVm(long vmId) 
 	{
-
 		return _networkGroupMgr.getNetworkGroupsNamesForVm(vmId);
 	}
-	    
+	
+	@Override
+	public String getHashKey() {
+		// although we may have race conditioning here, database transaction serialization should
+		// give us the same key
+		if(_hashKey == null) {
+			_hashKey = _configDao.getValueAndInitIfNotExist(Config.HashKey.key(), UUID.randomUUID().toString()); 
+		}
+		return _hashKey;
+	}
 }
 

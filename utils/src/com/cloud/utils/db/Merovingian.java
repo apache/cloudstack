@@ -288,7 +288,6 @@ public class Merovingian {
         			return false;
         		}
         		
-        		
                 if (s_logger.isDebugEnabled() && !_locks.keySet().iterator().next().equals(key)) {
                     s_logger.trace("Lock: Releasing out of order for " + key);
                 }

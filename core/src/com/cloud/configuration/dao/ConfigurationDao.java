@@ -58,6 +58,13 @@ public interface ConfigurationDao extends GenericDao<ConfigurationVO, String> {
      * @return value
      */
     public String getValue(String name);
-    
-    
+
+    /**
+     * Gets the value for the specified configuration name, if the record does not exist, initiate it with
+     * specified value initValue
+     * @param name
+     * @param initValue
+     * @return
+     */
+    public String getValueAndInitIfNotExist(String name, String initValue);
 }
