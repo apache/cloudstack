@@ -22,107 +22,206 @@
     <div class="tabbox" style="margin-top: 15px;">
         <div class="content_tabs on" id="tab_details">
             <%=t.t("details")%></div>
+        <div class="content_tabs off" id="tab_network">
+            <%=t.t("network")%></div>
     </div>
+    
     <!-- Details tab (start)-->
     <div id="tab_content_details">
-        <div class="rightpanel_mainloader_panel" style="display: none;">
+        <div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display: none;">
             <div class="rightpanel_mainloaderbox">
                 <div class="rightpanel_mainloader_animatedicon">
                 </div>
                 <p>
                     Loading &hellip;</p>
             </div>
-        </div>
-        <div class="grid_container">
-            <div class="grid_header">
-                <div id="grid_header_title" class="grid_header_title">
-                    (title)</div>
-                <div class="grid_actionbox" id="action_link">
-                    <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
-                        <ul class="actionsdropdown_boxlist" id="action_list">
-                            <li>
-                                <%=t.t("no.available.actions")%></li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="gridheader_loaderbox" id="spinning_wheel" style="border: 1px solid #999;
-                    display: none;">
-                    <div class="gridheader_loader" id="icon">
-                    </div>
-                    <p id="description">
-                        Waiting &hellip;</p>
-                </div>
-            </div>
-            <div class="grid_rows odd">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        <%=t.t("ID")%>:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="id">
-                    </div>
-                </div>
-            </div>
-            <div class="grid_rows even">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        <%=t.t("name")%>:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="name">
-                    </div>
-                    <input class="text" id="name_edit" style="width: 200px; display: none;" type="text" />
-	                <div id="name_edit_errormsg" style="display:none"></div>
-                </div>
-            </div>
-            <div class="grid_rows odd">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        <%=t.t("private.cidr")%>:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="cidr">
-                    </div>
-                    <input class="text" id="cidr_edit" style="width: 200px; display: none;" type="text" />
-	                <div id="cidr_edit_errormsg" style="display:none"></div>
-                </div>
-            </div>
-            <div class="grid_rows even">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        <%=t.t("private.ip.range")%>:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="ipRange">
-                    </div>                                        
-                    <input class="text" id="startIpRange_edit" style="width: 100px; display: none;" type="text" />
-	                <div id="startIpRange_edit_errormsg" style="display:none"></div>  	                    
-	                <input class="text" id="endIpRange_edit" style="width: 100px; display: none;" type="text" />
-	                <div id="endIpRange_edit_errormsg" style="display:none"></div>  
-                </div>
-            </div>
-            <div class="grid_rows odd">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        <%=t.t("gateway")%>:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="gateway">
-                    </div>
-                    <input class="text" id="gateway_edit" style="width: 200px; display: none;" type="text" />
-	                <div id="gateway_edit_errormsg" style="display:none"></div>
-                </div>
-            </div>
-        </div>
-                
-        <div class="grid_botactionpanel">
-	        <div class="gridbot_buttons" id="save_button" style="display:none;">Save</div>
-	        <div class="gridbot_buttons" id="cancel_button" style="display:none;">Cancel</div>
-	    </div>         
-        
+        </div>        
+        <div id="tab_container">
+	        <div class="grid_container">
+	            <div class="grid_header">
+	                <div id="grid_header_title" class="grid_header_title">
+	                    (title)</div>
+	                <div class="grid_actionbox" id="action_link">
+	                    <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
+	                        <ul class="actionsdropdown_boxlist" id="action_list">
+	                            <li>
+	                                <%=t.t("no.available.actions")%></li>
+	                        </ul>
+	                    </div>
+	                </div>
+	                <div class="gridheader_loaderbox" id="spinning_wheel" style="border: 1px solid #999;
+	                    display: none;">
+	                    <div class="gridheader_loader" id="icon">
+	                    </div>
+	                    <p id="description">
+	                        Waiting &hellip;</p>
+	                </div>
+	            </div>
+	            <div class="grid_rows odd">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <%=t.t("ID")%>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="id">
+	                    </div>
+	                </div>
+	            </div>
+	            <div class="grid_rows even">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <%=t.t("name")%>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="name">
+	                    </div>
+	                    <input class="text" id="name_edit" style="width: 200px; display: none;" type="text" />
+		                <div id="name_edit_errormsg" style="display:none"></div>
+	                </div>
+	            </div>
+	            <div class="grid_rows odd">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <%=t.t("private.cidr")%>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="cidr">
+	                    </div>
+	                    <input class="text" id="cidr_edit" style="width: 200px; display: none;" type="text" />
+		                <div id="cidr_edit_errormsg" style="display:none"></div>
+	                </div>
+	            </div>
+	            <div class="grid_rows even">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <%=t.t("private.ip.range")%>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="ipRange">
+	                    </div>                                        
+	                    <input class="text" id="startIpRange_edit" style="width: 100px; display: none;" type="text" />
+		                <div id="startIpRange_edit_errormsg" style="display:none"></div>  	                    
+		                <input class="text" id="endIpRange_edit" style="width: 100px; display: none;" type="text" />
+		                <div id="endIpRange_edit_errormsg" style="display:none"></div>  
+	                </div>
+	            </div>
+	            <div class="grid_rows odd">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <%=t.t("gateway")%>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="gateway">
+	                    </div>
+	                    <input class="text" id="gateway_edit" style="width: 200px; display: none;" type="text" />
+		                <div id="gateway_edit_errormsg" style="display:none"></div>
+	                </div>
+	            </div>
+	        </div>                
+	        <div class="grid_botactionpanel">
+		        <div class="gridbot_buttons" id="save_button" style="display:none;">Save</div>
+		        <div class="gridbot_buttons" id="cancel_button" style="display:none;">Cancel</div>
+		    </div>     
+	    </div>           
     </div>
     <!-- Details tab (end)-->
+        
+ 	<!-- Network tab (start)-->
+    <div style="display: none;" id="tab_content_network">
+    	<div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display:none;">
+              <div class="rightpanel_mainloaderbox">
+                   <div class="rightpanel_mainloader_animatedicon"></div>
+                   <p>Loading &hellip;</p>    
+              </div>               
+        </div>
+        <div id="tab_container">
+        </div>
+    </div> 
+    <!-- Network tab (end)-->
+
 </div>
+
+
+<!--  Network tab template (begin) -->
+<div class="grid_container" id="network_tab_template" style="display: none">
+    <div class="grid_header">
+        <div class="grid_header_title" id="grid_header_title">
+        </div>
+        <div class="grid_actionbox" id="network_action_link" style="display: none;">
+            <div class="grid_actionsdropdown_box" id="network_action_menu" style="display: none;">
+                <ul class="actionsdropdown_boxlist" id="action_list">
+                </ul>
+            </div>
+        </div>
+        <div class="gridheader_loaderbox" id="spinning_wheel" style="display: none; height: 18px;">
+            <div class="gridheader_loader" id="icon">
+            </div>
+            <p id="description">
+                Waiting &hellip;
+            </p>
+        </div>       
+    </div>
+    
+    <div class="grid_rows" id="after_action_info_container" style="display:none">
+        <div class="grid_row_cell" style="width: 90%; border: none;">
+            <div class="row_celltitles">
+                <strong id="after_action_info">Message will appear here</strong></div>
+        </div>
+    </div>
+        
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                ID:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="id">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows odd">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                Guest IP Range:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="iprange">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                Guest Netmask:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="netmask">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows odd">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                Gateway:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="gateway">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                Pod:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="podname">
+            </div>
+        </div>
+    </div>   
+</div>
+<!--  Network tab template (end) -->
+
 
 <!-- ***** dialogs (begin) ***** -->
 <!-- Add Host Dialog -->
