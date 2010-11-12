@@ -614,13 +614,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
 
             DataCenterVO dc = _dcDao.findById(proxy.getDataCenterId());
             HostPodVO pod = _podDao.findById(proxy.getPodId());
-            List<StoragePoolVO> sps = _storageMgr.getStoragePoolsForVm(proxy.getId());
-            if(sps.size() < 1) {
-            	s_logger.info("Storage pool is not ready for console proxy: " + proxy.getId());
-            	return null;
-            }
-            
-            StoragePoolVO sp = sps.get(0); // FIXME
+            StoragePoolVO sp = _storageMgr.getStoragePoolForVm(proxy.getId());
 
             HashSet<Host> avoid = new HashSet<Host>();
             HostVO routingHost = (HostVO) _agentMgr.findHost(Host.Type.Routing, dc, pod, sp, _serviceOffering, _template, proxy, null, avoid);
@@ -2170,8 +2164,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
         boolean mirroredVols = proxy.isMirroredVols();
         DataCenterVO dc = _dcDao.findById(proxy.getDataCenterId());
         HostPodVO pod = _podDao.findById(proxy.getPodId());
-        List<StoragePoolVO> sps = _storageMgr.getStoragePoolsForVm(proxy.getId());
-        StoragePoolVO sp = sps.get(0); // FIXME
+        StoragePoolVO sp = _storageMgr.getStoragePoolForVm(proxy.getId());
 
         List<VolumeVO> vols = _volsDao.findCreatedByInstance(routerId);
 

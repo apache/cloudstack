@@ -837,8 +837,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
             final VMTemplateVO template = _templateDao.findById(router.getTemplateId());
             final DataCenterVO dc = _dcDao.findById(router.getDataCenterId());
             ServiceOfferingVO offering = _serviceOfferingDao.findById(router.getServiceOfferingId());
-            List<StoragePoolVO> sps = _storageMgr.getStoragePoolsForVm(router.getId());
-            StoragePoolVO sp = sps.get(0); // FIXME
+            StoragePoolVO sp = _storageMgr.getStoragePoolForVm(router.getId());
             
 	        HostVO routingHost = (HostVO)_agentMgr.findHost(Host.Type.Routing, dc, pod, sp, offering, template, router, null, avoid);
 
@@ -1738,8 +1737,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         final DataCenterVO dc = _dcDao.findById(router.getDataCenterId());
         final HostPodVO pod = _podDao.findById(router.getPodId());
         final ServiceOfferingVO offering = _serviceOfferingDao.findById(router.getServiceOfferingId());
-        List<StoragePoolVO> sps = _storageMgr.getStoragePoolsForVm(router.getId());
-        StoragePoolVO sp = sps.get(0); // FIXME
+        StoragePoolVO sp = _storageMgr.getStoragePoolForVm(router.getId());
 
         final List<VolumeVO> vols = _volsDao.findCreatedByInstance(routerId);
 

@@ -862,8 +862,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         
         DataCenterVO dc = _dcDao.findById(vm.getDataCenterId());
         HostPodVO pod = _podDao.findById(vm.getPodId());
-        List<StoragePoolVO> sps = _storageMgr.getStoragePoolsForVm(vm.getId());
-        StoragePoolVO sp = sps.get(0); // FIXME
+        StoragePoolVO sp = _storageMgr.getStoragePoolForVm(vm.getId());
 
         VMTemplateVO template = _templateDao.findById(vm.getTemplateId());
         ServiceOffering offering = _offeringDao.findById(vm.getServiceOfferingId());
@@ -2263,9 +2262,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         HostPodVO pod = _podDao.findById(vm.getPodId());
         ServiceOfferingVO offering = _offeringDao.findById(vm.getServiceOfferingId());
         VMTemplateVO template = _templateDao.findById(vm.getTemplateId());
-        List<StoragePoolVO> sps = _storageMgr.getStoragePoolsForVm(vm.getId());
-        StoragePoolVO sp = sps.get(0); // FIXME
-       
+        StoragePoolVO sp = _storageMgr.getStoragePoolForVm(vm.getId());
 
         List<VolumeVO> vols = _volsDao.findCreatedByInstance(vmId);
 

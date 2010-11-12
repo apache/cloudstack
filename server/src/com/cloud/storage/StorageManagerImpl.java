@@ -728,28 +728,22 @@ public class StorageManagerImpl implements StorageManager {
 
         dskCh.setHyperType(hyperType);
 
-        Transaction txn = Transaction.currentTxn();
 
         VolumeTO created = null;
         int retry = _retry;
         while (--retry >= 0) {
             created = null;
             
-            txn.start();
-            
             long podId = pod.getId();
-            pod = _podDao.lockRow(podId, true);
+            pod = _podDao.findById(podId);
             if (pod == null) {
-                txn.rollback();
-                volume.setStatus(AsyncInstanceCreateStatus.Failed);
-                volume.setDestroyed(true);
-                _volsDao.persist(volume);
-                throw new CloudRuntimeException("Unable to acquire lock on the pod " + podId);
+                s_logger.warn("Unable to find pod " + podId + " when create volume " + volume.getName());
+                break;
             }
             
             pool = findStoragePool(dskCh, dc, pod, clusterId, offering, vm, template, avoidPools);
             if (pool == null) {
-                txn.rollback();
+                s_logger.warn("Unable to find storage poll when create volume " + volume.getName());
                 break;
             }
             
@@ -758,11 +752,6 @@ public class StorageManagerImpl implements StorageManager {
                 s_logger.debug("Trying to create " + volume + " on " + pool);
             }
 
-            volume.setPoolId(pool.getId());
-            _volsDao.persist(volume);
-            
-            txn.commit();
-            
             CreateCommand cmd = null;
             VMTemplateStoragePoolVO tmpltStoredOn = null;
             if (volume.getVolumeType() == VolumeType.ROOT && Storage.ImageFormat.ISO != template.getFormat()) {
@@ -780,13 +769,12 @@ public class StorageManagerImpl implements StorageManager {
                 created = ((CreateAnswer)answer).getVolume();
                 break;
             }
-            
-            volume.setPoolId(null);
-            _volsDao.persist(volume);
-            
+           
             s_logger.debug("Retrying the create because it failed on pool " + pool);
         }
 
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
         if (created == null) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Unable to create a volume for " + volume);
@@ -794,18 +782,20 @@ public class StorageManagerImpl implements StorageManager {
             volume.setStatus(AsyncInstanceCreateStatus.Failed);
             volume.setDestroyed(true);
             _volsDao.persist(volume);
+            _volsDao.remove(volume.getId());
+            volume = null;
 
-            return null;
+        } else {
+            volume.setStatus(AsyncInstanceCreateStatus.Created);
+            volume.setFolder(pool.getPath());
+            volume.setPath(created.getPath());
+            volume.setSize(created.getSize());
+            volume.setPoolType(pool.getPoolType());
+            volume.setPoolId(pool.getId());
+            volume.setPodId(pod.getId());
+            _volsDao.persist(volume);
         }
-
-        volume.setStatus(AsyncInstanceCreateStatus.Created);
-        volume.setFolder(pool.getPath());
-        volume.setPath(created.getPath());
-        volume.setSize(created.getSize());
-        volume.setPoolType(pool.getPoolType());
-        volume.setPodId(pod.getId());
-        volume.setState(Volume.State.Ready);
-        _volsDao.persist(volume);
+        txn.commit();
         return volume;
     }
     
@@ -1087,6 +1077,7 @@ public class StorageManagerImpl implements StorageManager {
         SearchBuilder<VolumeVO> volSearch = _volsDao.createSearchBuilder();
         PoolsUsedByVmSearch.join("volumes", volSearch, volSearch.entity().getPoolId(), PoolsUsedByVmSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         volSearch.and("vm", volSearch.entity().getInstanceId(), SearchCriteria.Op.EQ);
+        volSearch.and("status", volSearch.entity().getStatus(), SearchCriteria.Op.EQ);
         volSearch.done();
         PoolsUsedByVmSearch.done();
         
@@ -2137,11 +2128,24 @@ public class StorageManagerImpl implements StorageManager {
     }
     
     @Override
-    public List<StoragePoolVO> getStoragePoolsForVm(long vmId) {
+    public StoragePoolVO getStoragePoolForVm(long vmId) {
         SearchCriteria<StoragePoolVO> sc = PoolsUsedByVmSearch.create();
         sc.setJoinParameters("volumes", "vm", vmId);
-        
-        return _storagePoolDao.search(sc, null);
+        sc.setJoinParameters("volumes", "status", AsyncInstanceCreateStatus.Created.toString());
+        List<StoragePoolVO> sps= _storagePoolDao.search(sc, null);
+        if( sps.size() == 0 ) {
+            throw new RuntimeException("Volume is not created for VM " + vmId);
+        }
+        StoragePoolVO sp = sps.get(0);
+        for (StoragePoolVO tsp: sps ) {
+            // use the local storage pool to choose host,
+            // shared storage pool should be in the same cluster as local storage pool
+            if( tsp.isLocal()) {
+                sp = tsp;
+                break;
+            }
+        }
+        return sp;
     }
     
     @Override

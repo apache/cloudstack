@@ -304,7 +304,7 @@ public interface StorageManager extends Manager {
 	 * @param vmId id of the vm.
 	 * @return List of StoragePoolVO
 	 */
-	List<StoragePoolVO> getStoragePoolsForVm(long vmId);
+	StoragePoolVO getStoragePoolForVm(long vmId);
 	
     String getPrimaryStorageNameLabel(VolumeVO volume);
 
