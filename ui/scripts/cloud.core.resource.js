@@ -442,9 +442,8 @@ function initAddPodShortcut() {
 					isValid &= validateString("Cluster Name", $thisDialog.find("#new_cluster_name"), $thisDialog.find("#new_cluster_name_errormsg"));
 				}
 		        if (!isValid) 
-		            return;
-		            
-				//$thisDialog.dialog("close");   //only close dialog when this action succeeds		
+		            return;		            			
+					
 				$thisDialog.find("#spinning_wheel").show() 				
 				
 		        var array1 = [];    
@@ -452,6 +451,12 @@ function initAddPodShortcut() {
 		        var zoneId = $thisDialog.find("#zone_dropdown").val();
 		        array1.push("&zoneid="+zoneId);
 		        
+		        //expand zone in left menu tree (to show pod, cluster under the zone) ???
+				var $zoneNode = $("#leftmenu_zone_tree").find("#tree_container").find("#zone_" + zoneId);
+							
+				if($zoneNode.find("#zone_arrow").hasClass("expanded_close"))
+				    $zoneNode.find("#zone_arrow").click();
+										             
 		        var podId = $thisDialog.find("#pod_dropdown").val();
 		        array1.push("&podid="+podId);
 						      
@@ -513,8 +518,8 @@ function initAddPodShortcut() {
                         clickClusterNodeAfterAddHost(clusterRadio, podId, newClusterName, existingClusterId, $thisDialog);                                  
 			        },			
                     error: function(XMLHttpResponse) {	
-						handleError(XMLHttpResponse, function() {
-							clickClusterNodeAfterAddHost(clusterRadio, podId, newClusterName, existingClusterId, $thisDialog);                                  
+						handleError(XMLHttpResponse, function() {					
+							clickClusterNodeAfterAddHost(clusterRadio, podId, newClusterName, existingClusterId, $thisDialog);                         
 							handleErrorInDialog(XMLHttpResponse, $thisDialog);
 						});
                     }				
