@@ -742,32 +742,37 @@ public class AccountManagerImpl implements AccountManager, AccountService {
         return success;
     }
     
-    public boolean deleteUserInternal(long userId) {
+    public boolean deleteUserInternal(long userId, long startEventId) {
         UserAccount userAccount = null;
         Long accountId = null;
         String username = null;
-        try {
+        boolean result = false;
+        
+        try {        	
             UserVO user = _userDao.findById(userId);
+            accountId =  user != null ? user.getAccountId() : 1L;// We cant set it to null.            
+            EventUtils.saveStartedEvent(UserContext.current().getUserId(), accountId, EventTypes.EVENT_USER_DELETE, "Start deleting the user id:" +userId, startEventId);
             if (user == null || user.getRemoved() != null) {
-                return true;
+            	result = true;
+                return result;
             }
             username = user.getUsername();
-            boolean result = _userDao.remove(userId);
+            result = _userDao.remove(userId);
             if (!result) {
-                s_logger.error("Unable to remove the user with id: " + userId + "; username: " + user.getUsername());
-                return false;
+                s_logger.error("Unable to remove the user with id: " + userId + "; username: " + user.getUsername());            
+                return result;
             }
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("User is removed, id: " + userId + "; username: " + user.getUsername());
             }
-
-            accountId = user.getAccountId();
+            
             userAccount = _userAccountDao.findByIdIncludingRemoved(userId);
 
             List<UserVO> users = _userDao.listByAccount(accountId);
             if (users.size() != 0) {
                 s_logger.debug("User (" + userId + "/" + user.getUsername() + ") is deleted but there's still other users in the account so not deleting account.");
-                return true;
+                result = true;
+                return result;
             }
 
             result = _accountDao.remove(accountId);
@@ -781,17 +786,21 @@ public class AccountManagerImpl implements AccountManager, AccountService {
 
             AccountVO account = _accountDao.findByIdIncludingRemoved(accountId);
             deleteAccount(account);
-            EventUtils.saveEvent(Long.valueOf(1), Long.valueOf(1), EventVO.LEVEL_INFO, EventTypes.EVENT_USER_DELETE, "User " + username + " (id: " + userId
-                    + ") for accountId = " + accountId + " and domainId = " + userAccount.getDomainId() + " was deleted.");
-            return true;
+            result = true;
+            return result;
         } catch (Exception e) {
-            s_logger.error("exception deleting user: " + userId, e);
+            s_logger.error("exception deleting user: " + userId, e);            
+            return false;
+        }finally{
             long domainId = 0L;
             if (userAccount != null)
                 domainId = userAccount.getDomainId();
-            EventUtils.saveEvent(Long.valueOf(1), Long.valueOf(1), EventVO.LEVEL_INFO, EventTypes.EVENT_USER_DELETE, "Error deleting user " + username + " (id: " + userId
-                    + ") for accountId = " + accountId + " and domainId = " + domainId);
-            return false;
+            String description = "User " + username + " (id: " + userId + ") for accountId = " + accountId + " and domainId = " + domainId;
+            if(result){
+            	EventUtils.saveEvent(UserContext.current().getUserId(), accountId, EventVO.LEVEL_INFO, EventTypes.EVENT_USER_DELETE, "Successfully deleted " +description, startEventId);
+            }else{
+            	EventUtils.saveEvent(UserContext.current().getUserId(), accountId, EventVO.LEVEL_ERROR, EventTypes.EVENT_USER_DELETE, "Error deleting " +description, startEventId);
+            }
         }
     }
     
@@ -1296,7 +1305,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
             throw new InvalidParameterValueException("user id : " + userId + " is a system account, delete is not allowed");
         }
         
-        return deleteUserInternal(userId);
+        return deleteUserInternal(userId, cmd.getStartEventId());
     }
     
     

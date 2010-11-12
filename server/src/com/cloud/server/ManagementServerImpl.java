@@ -3613,7 +3613,7 @@ public class ManagementServerImpl implements ManagementServer {
                 userSc.addAnd("accountId", SearchCriteria.Op.EQ, account.getId());
                 List<UserVO> users = _userDao.search(userSc, null);
                 for (UserVO user : users) {
-                    success = (success && _accountMgr.deleteUserInternal(user.getId()));
+                    success = (success && _accountMgr.deleteUserInternal(user.getId(), 0));
                 }
             }
         }

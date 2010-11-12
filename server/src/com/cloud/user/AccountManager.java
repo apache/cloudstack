@@ -113,5 +113,5 @@ public interface AccountManager extends Manager {
     
     boolean deleteAccount(AccountVO account);
     
-    boolean deleteUserInternal(long userId);
+    boolean deleteUserInternal(long userId, long startEventId);
 }
