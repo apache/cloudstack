@@ -1825,11 +1825,25 @@ public class StorageManagerImpl implements StorageManager {
     }
     
     @Override
-    public List<StoragePoolVO> getStoragePoolsForVm(long vmId) {
+    public StoragePoolVO getStoragePoolForVm(long vmId) {
         SearchCriteria sc = PoolsUsedByVmSearch.create();
         sc.setJoinParameters("volumes", "vm", vmId);
         sc.setJoinParameters("volumes", "status", AsyncInstanceCreateStatus.Created.toString());
-        return _storagePoolDao.search(sc, null);
+        List<StoragePoolVO> sps = _storagePoolDao.search(sc, null);
+        if (sps.size() == 0) {
+            throw new RuntimeException("Volume is not created for VM " + vmId);
+        }
+        StoragePoolVO sp = sps.get(0);
+        for (StoragePoolVO tsp : sps) {
+            // use the local storage pool to choose host,
+            // shared storage pool should be in the same cluster as local
+            // storage pool
+            if (tsp.isLocal()) {
+                sp = tsp;
+                break;
+            }
+        }
+        return sp;
     }
     
     @Override

@@ -258,12 +258,12 @@ public interface StorageManager extends Manager {
     StoragePoolVO updateStoragePool(long poolId, String tags) throws IllegalArgumentException;
 
 	/**
-	 * Find all of the storage pools needed for this vm.
+	 * Find the storage pool, from which MS will choose host.
 	 * 
 	 * @param vmId id of the vm.
-	 * @return List of StoragePoolVO
+	 * @return StoragePoolVO
 	 */
-	List<StoragePoolVO> getStoragePoolsForVm(long vmId);
+	StoragePoolVO getStoragePoolForVm(long vmId);
 	
     String getPrimaryStorageNameLabel(VolumeVO volume);
     

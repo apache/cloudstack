@@ -308,8 +308,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 
 			DataCenterVO dc = _dcDao.findById(secStorageVm.getDataCenterId());
 			HostPodVO pod = _podDao.findById(secStorageVm.getPodId());
-			List<StoragePoolVO> sps = _storageMgr.getStoragePoolsForVm(secStorageVm.getId());
-			StoragePoolVO sp = sps.get(0); // FIXME
+			StoragePoolVO sp = _storageMgr.getStoragePoolForVm(secStorageVm.getId());
 
 			HashSet<Host> avoid = new HashSet<Host>();
 			HostVO routingHost = (HostVO) _agentMgr.findHost(Host.Type.Routing, dc, pod, sp, _serviceOffering, _template, secStorageVm, null, avoid);
@@ -1782,8 +1781,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 		boolean mirroredVols = secStorageVm.isMirroredVols();
 		DataCenterVO dc = _dcDao.findById(secStorageVm.getDataCenterId());
 		HostPodVO pod = _podDao.findById(secStorageVm.getPodId());
-        List<StoragePoolVO> sps = _storageMgr.getStoragePoolsForVm(secStorageVm.getId());
-        StoragePoolVO sp = sps.get(0); // FIXME
+		StoragePoolVO sp = _storageMgr.getStoragePoolForVm(secStorageVm.getId());
 
 		List<VolumeVO> vols = _volsDao.findCreatedByInstance(routerId);
 

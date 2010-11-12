@@ -814,9 +814,8 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
             final HashSet<Host> avoid = new HashSet<Host>();
             final VMTemplateVO template = _templateDao.findById(router.getTemplateId());
             final DataCenterVO dc = _dcDao.findById(router.getDataCenterId());
-            List<StoragePoolVO> sps = _storageMgr.getStoragePoolsForVm(router.getId());
-            StoragePoolVO sp = sps.get(0); // FIXME
-            
+            StoragePoolVO sp = _storageMgr.getStoragePoolForVm(router.getId());
+
 	        HostVO routingHost = (HostVO)_agentMgr.findHost(Host.Type.Routing, dc, pod, sp, _offering, template, router, null, avoid);
 
 	        if (routingHost == null) {
@@ -2229,8 +2228,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         final boolean mirroredVols = router.isMirroredVols();
         final DataCenterVO dc = _dcDao.findById(router.getDataCenterId());
         final HostPodVO pod = _podDao.findById(router.getPodId());
-        List<StoragePoolVO> sps = _storageMgr.getStoragePoolsForVm(router.getId());
-        StoragePoolVO sp = sps.get(0); // FIXME
+        StoragePoolVO sp = _storageMgr.getStoragePoolForVm(router.getId());
 
         final List<VolumeVO> vols = _volsDao.findCreatedByInstance(routerId);
 
