@@ -254,10 +254,109 @@ function afterLoadResourceJSP($midmenuItem1) {
 	initAddZoneLinks();	 
     
 	initUpdateConsoleCertButton($("#midmenu_add2_link"));
-    initDialog("dialog_add_zone");
 	initDialog("dialog_update_cert", 450);	
+		
+	initAddPodShortcut();
+	
 	resourceCountTotal();	  
 }
+
+function initAddPodShortcut() {
+    initDialog("dialog_add_pod", 320); 	
+
+    var $zoneDropdown = $("#dialog_add_pod").find("#zone_dropdown");
+    $.ajax({
+	    data: createURL("command=listZones&available=true"),
+	    dataType: "json",
+	    success: function(json) {
+	        var items = json.listzonesresponse.zone;			
+			if (items != null && items.length > 0) {	
+			    for(var i=0; i<items.length; i++)		   			    
+			        $zoneDropdown.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");
+			}	
+	    }
+	});    
+
+    $("#add_pod_shortcut").unbind("click").bind("click", function(event) {           
+        $("#dialog_add_pod").find("#info_container").hide();	
+        $("#dialog_add_pod #add_pod_name, #dialog_add_pod #add_pod_cidr, #dialog_add_pod #add_pod_startip, #dialog_add_pod #add_pod_endip, #add_pod_gateway").val("");
+		
+        $("#dialog_add_pod")
+        .dialog('option', 'buttons', { 				
+	        "Add": function() {		
+	            var $thisDialog = $(this);
+						
+		        // validate values
+		        var isValid = true;	
+		        isValid &= validateDropDownBox("Zone", $thisDialog.find("#zone_dropdown"), $thisDialog.find("#zone_dropdown_errormsg"));			
+		        isValid &= validateString("Name", $thisDialog.find("#add_pod_name"), $thisDialog.find("#add_pod_name_errormsg"));
+		        isValid &= validateCIDR("CIDR", $thisDialog.find("#add_pod_cidr"), $thisDialog.find("#add_pod_cidr_errormsg"));	
+		        isValid &= validateIp("Start IP Range", $thisDialog.find("#add_pod_startip"), $thisDialog.find("#add_pod_startip_errormsg"));  //required
+		        isValid &= validateIp("End IP Range", $thisDialog.find("#add_pod_endip"), $thisDialog.find("#add_pod_endip_errormsg"), true);  //optional
+		        isValid &= validateIp("Gateway", $thisDialog.find("#add_pod_gateway"), $thisDialog.find("#add_pod_gateway_errormsg"));  //required when creating
+		        if (!isValid) 
+		            return;			
+                
+                $thisDialog.find("#spinning_wheel").show()
+                 
+                var zoneId = $thisDialog.find("#zone_dropdown").val(); 
+                var name = trim($thisDialog.find("#add_pod_name").val());
+		        var cidr = trim($thisDialog.find("#add_pod_cidr").val());
+		        var startip = trim($thisDialog.find("#add_pod_startip").val());
+		        var endip = trim($thisDialog.find("#add_pod_endip").val());	    //optional
+		        var gateway = trim($thisDialog.find("#add_pod_gateway").val());			
+
+                var array1 = [];
+                array1.push("&zoneId="+zoneId);
+                array1.push("&name="+todb(name));
+                array1.push("&cidr="+encodeURIComponent(cidr));
+                array1.push("&startIp="+encodeURIComponent(startip));
+                if (endip != null && endip.length > 0)
+                    array1.push("&endIp="+encodeURIComponent(endip));
+                array1.push("&gateway="+encodeURIComponent(gateway));			
+								
+		        $.ajax({
+		          data: createURL("command=createPod"+array1.join("")), 
+			        dataType: "json",
+			        success: function(json) {			            
+			            $thisDialog.find("#spinning_wheel").hide();
+			            $thisDialog.dialog("close");
+			            
+			            var item = json.createpodresponse.pod; 			            		            				    
+		                var template = $("#leftmenu_pod_node_template").clone(true);
+		                podJSONToTreeNode(item, template);	
+		                var $zoneNode = $("#leftmenu_zone_tree").find("#tree_container").find("#zone_" + zoneId);	                   				
+		                $zoneNode.find("#zone_content").show();	
+		                $zoneNode.find("#pods_container").prepend(template.show());						
+		                $zoneNode.find("#zone_arrow").removeClass("white_nonexpanded_close").addClass("expanded_open");	
+                        template.fadeIn("slow");
+			                                    
+                        forceLogout = false;  // We don't force a logout if pod(s) exit.
+				        if (forceLogout) {
+					        $("#dialog_confirmation")
+						        .html("<p>You have successfully added your first Zone and Pod.  After clicking 'OK', this UI will automatically refresh to give you access to the rest of cloud features.</p>")
+						        .dialog('option', 'buttons', { 
+							        "OK": function() { 											
+								        $(this).dialog("close");
+								        window.location.reload();
+							        } 
+						        }).dialog("open");
+				        }
+			        },
+		            error: function(XMLHttpResponse) {	
+						handleError(XMLHttpResponse, function() {
+							handleErrorInDialog(XMLHttpResponse, $thisDialog);	
+						});
+		            }
+		        });					
+	        }, 
+	        "Cancel": function() { 
+		        $(this).dialog("close"); 
+	        } 
+        }).dialog("open");        
+        return false;
+    });        
+}    
 
 function initAddZoneLinks() {     
     $("#add_zone_shortcut,#midmenu_add_link").unbind("click").bind("click", function(event) {              
