@@ -246,12 +246,27 @@ function resourceLoadPage(pageToShow, $midmenuItem1) {   //$midmenuItem1 is eith
 
 function afterLoadResourceJSP($midmenuItem1) {
     hideMiddleMenu();        
-    initAddZoneButton($("#midmenu_add_link")); 
+    
+    //initAddZoneButton($("#midmenu_add_link")); 
+    $("#midmenu_add_link").show().find("#label").text("Add Zone");   
+    
+    initAddZoneWizard();  
+	initAddZoneLinks();	 
+    
 	initUpdateConsoleCertButton($("#midmenu_add2_link"));
     initDialog("dialog_add_zone");
 	initDialog("dialog_update_cert", 450);	
-	resourceCountTotal();
-	initAddZoneShortcut();     
+	resourceCountTotal();	  
+}
+
+function initAddZoneLinks() {     
+    $("#add_zone_shortcut,#midmenu_add_link").unbind("click").bind("click", function(event) {              
+        if($("#leftmenu_physical_resource").find("#physical_resource_arrow").hasClass("expanded_close") == true)
+			expandOrCollapseZoneTree(); //if Physical Resource arrow shows closed (i.e. zonetree is hidden), expand and show zonetree.    
+			       
+        openAddZoneWizard();
+        return false;
+    });            
 }
 
 function resourceCountTotal() {		
@@ -320,7 +335,7 @@ function closeAddZoneWizard() {
     $("#wizard_overlay").hide();
 }
 
-function initAddZoneShortcut() {    
+function initAddZoneWizard() {    
     var $addZoneWizard = $("#add_zone_wizard");
     $addZoneWizard.find("#add_zone_public").unbind("change").bind("change", function(event) {        
         if($(this).val() == "true") {  //public zone
@@ -346,15 +361,7 @@ function initAddZoneShortcut() {
 			} 
 		}
 	});    
-    
-    $("#add_zone_shortcut").unbind("click").bind("click", function(event) {              
-        if($("#leftmenu_physical_resource").find("#physical_resource_arrow").hasClass("expanded_close") == true)
-			expandOrCollapseZoneTree(); //if Physical Resource arrow shows closed (i.e. zonetree is hidden), expand and show zonetree.    
-       
-        openAddZoneWizard();
-        return false;
-    });    
-          
+     
     $addZoneWizard.unbind("click").bind("click", function(event) {  
         var $thisWizard = $(this);
         var $target = $(event.target);
