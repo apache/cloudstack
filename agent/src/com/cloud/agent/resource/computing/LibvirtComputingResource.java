@@ -121,6 +121,8 @@ import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
+import com.cloud.agent.api.Start2Answer;
+import com.cloud.agent.api.Start2Command;
 import com.cloud.agent.api.StartAnswer;
 import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StartConsoleProxyAnswer;
@@ -134,6 +136,8 @@ import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.VmStatsEntry;
+import com.cloud.agent.api.check.CheckSshAnswer;
+import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.ConsoleProxyLoadAnswer;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
@@ -145,28 +149,34 @@ import com.cloud.agent.api.storage.CreatePrivateTemplateCommand;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
+import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.StorageFilerTO;
+import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VolumeTO;
+import com.cloud.agent.api.to.VirtualMachineTO.Monitor;
+import com.cloud.agent.api.to.VirtualMachineTO.SshMonitor;
 import com.cloud.agent.resource.computing.KVMHABase.NfsStoragePool;
 import com.cloud.agent.resource.computing.KVMHABase.PoolType;
 import com.cloud.agent.resource.computing.LibvirtStoragePoolDef.poolType;
 import com.cloud.agent.resource.computing.LibvirtStorageVolumeDef.volFormat;
-import com.cloud.agent.resource.computing.LibvirtVMDef.consoleDef;
-import com.cloud.agent.resource.computing.LibvirtVMDef.devicesDef;
-import com.cloud.agent.resource.computing.LibvirtVMDef.diskDef;
-import com.cloud.agent.resource.computing.LibvirtVMDef.featuresDef;
-import com.cloud.agent.resource.computing.LibvirtVMDef.graphicDef;
-import com.cloud.agent.resource.computing.LibvirtVMDef.guestDef;
-import com.cloud.agent.resource.computing.LibvirtVMDef.guestResourceDef;
-import com.cloud.agent.resource.computing.LibvirtVMDef.inputDef;
-import com.cloud.agent.resource.computing.LibvirtVMDef.interfaceDef;
-import com.cloud.agent.resource.computing.LibvirtVMDef.interfaceDef.hostNicType;
-import com.cloud.agent.resource.computing.LibvirtVMDef.serialDef;
-import com.cloud.agent.resource.computing.LibvirtVMDef.termPolicy;
+import com.cloud.agent.resource.computing.LibvirtVMDef.ConsoleDef;
+import com.cloud.agent.resource.computing.LibvirtVMDef.DevicesDef;
+import com.cloud.agent.resource.computing.LibvirtVMDef.DiskDef;
+import com.cloud.agent.resource.computing.LibvirtVMDef.FeaturesDef;
+import com.cloud.agent.resource.computing.LibvirtVMDef.GraphicDef;
+import com.cloud.agent.resource.computing.LibvirtVMDef.GuestDef;
+import com.cloud.agent.resource.computing.LibvirtVMDef.GuestResourceDef;
+import com.cloud.agent.resource.computing.LibvirtVMDef.InputDef;
+import com.cloud.agent.resource.computing.LibvirtVMDef.InterfaceDef;
+import com.cloud.agent.resource.computing.LibvirtVMDef.InterfaceDef.hostNicType;
+import com.cloud.agent.resource.computing.LibvirtVMDef.SerialDef;
+import com.cloud.agent.resource.computing.LibvirtVMDef.TermPolicy;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.Network.BroadcastDomainType;
+import com.cloud.network.Network.TrafficType;
 import com.cloud.network.NetworkEnums.RouterPrivateIpStrategy;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.ServerResourceBase;
@@ -196,6 +206,7 @@ import com.cloud.vm.DiskProfile;
 import com.cloud.vm.DomainRouter;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.State;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineName;
 
 
@@ -871,14 +882,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 	
 	protected synchronized String startDomainRouter(StartRouterCommand cmd) {
 		DomainRouter router = cmd.getRouter();
-		List<interfaceDef> nics = null;
+		List<InterfaceDef> nics = null;
 		try {
 			nics = createRouterVMNetworks(cmd);
 
-			List<diskDef> disks = createSystemVMDisk(cmd.getVolumes());
+			List<DiskDef> disks = createSystemVMDisk(cmd.getVolumes());
 			
 			String dataDiskPath = null;
-			for (diskDef disk : disks) {
+			for (DiskDef disk : disks) {
 				if (disk.getDiskLabel().equalsIgnoreCase("vdb")) {
 					dataDiskPath = disk.getDiskPath();
 				}
@@ -894,7 +905,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
 			startDomain(vmName, domXML);
 
-			for (interfaceDef nic : nics) {
+			for (InterfaceDef nic : nics) {
 				if (nic.getHostNetType() == hostNicType.VNET) {
 					disableBridgeForwardding(nic.getBrName());
 				}
@@ -920,14 +931,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 	
 	protected synchronized String startConsoleProxy(StartConsoleProxyCommand cmd) {
 		ConsoleProxyVO console = cmd.getProxy();
-		List<interfaceDef> nics = null;
+		List<InterfaceDef> nics = null;
 		try {
 			nics = createSysVMNetworks(console.getGuestMacAddress(), console.getPrivateMacAddress(), console.getPublicMacAddress(), console.getVlanId());
 
-			List<diskDef> disks = createSystemVMDisk(cmd.getVolumes());
+			List<DiskDef> disks = createSystemVMDisk(cmd.getVolumes());
 			
 			String dataDiskPath = null;
-			for (diskDef disk : disks) {
+			for (DiskDef disk : disks) {
 				if (disk.getDiskLabel().equalsIgnoreCase("vdb")) {
 					dataDiskPath = disk.getDiskPath();
 				}
@@ -959,14 +970,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 	
 	 protected String startSecStorageVM(StartSecStorageVmCommand cmd) {
 		 SecondaryStorageVmVO secVm = cmd.getSecondaryStorageVmVO();
-			List<interfaceDef> nics = null;
+			List<InterfaceDef> nics = null;
 			try {
 				nics = createSysVMNetworks(secVm.getGuestMacAddress(), secVm.getPrivateMacAddress(), secVm.getPublicMacAddress(), secVm.getVlanId());
 
-				List<diskDef> disks = createSystemVMDisk(cmd.getVolumes());
+				List<DiskDef> disks = createSystemVMDisk(cmd.getVolumes());
 				
 				String dataDiskPath = null;
-				for (diskDef disk : disks) {
+				for (DiskDef disk : disks) {
 					if (disk.getDiskLabel().equalsIgnoreCase("vdb")) {
 						dataDiskPath = disk.getDiskPath();
 					}
@@ -995,61 +1006,61 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			return null;
 	 }
 	
-	private String defineVMXML(String vmName, String uuid, int memSize, int cpus, String arch, List<interfaceDef> nics, List<diskDef> disks, String vncPaswd,  String guestOSType) {
+	private String defineVMXML(String vmName, String uuid, int memSize, int cpus, String arch, List<InterfaceDef> nics, List<DiskDef> disks, String vncPaswd,  String guestOSType) {
 		LibvirtVMDef vm = new LibvirtVMDef();
 		vm.setHvsType(_hypervisorType);
 		vm.setDomainName(vmName);
 		vm.setDomUUID(uuid);
 		vm.setDomDescription(KVMGuestOsMapper.getGuestOsName(guestOSType));
 		
-		guestDef guest = new guestDef();
-		guest.setGuestType(guestDef.guestType.KVM);
+		GuestDef guest = new GuestDef();
+		guest.setGuestType(GuestDef.guestType.KVM);
 		guest.setGuestArch(arch);
 		guest.setMachineType("pc");
-		guest.setBootOrder(guestDef.bootOrder.CDROM);
-		guest.setBootOrder(guestDef.bootOrder.HARDISK);
+		guest.setBootOrder(GuestDef.bootOrder.CDROM);
+		guest.setBootOrder(GuestDef.bootOrder.HARDISK);
 			
 		vm.addComp(guest);
 
-		guestResourceDef grd = new guestResourceDef();
+		GuestResourceDef grd = new GuestResourceDef();
 		grd.setMemorySize(memSize*1024);
 		grd.setVcpuNum(cpus);
 		vm.addComp(grd);
 
-		featuresDef features = new featuresDef();
+		FeaturesDef features = new FeaturesDef();
 		features.addFeatures("pae");
 		features.addFeatures("apic");
 		features.addFeatures("acpi");
 		vm.addComp(features);
 
-		termPolicy term = new termPolicy();
+		TermPolicy term = new TermPolicy();
 		term.setCrashPolicy("destroy");
 		term.setPowerOffPolicy("destroy");
 		term.setRebootPolicy("restart");
 		vm.addComp(term);
 
-		devicesDef devices = new devicesDef();
+		DevicesDef devices = new DevicesDef();
 		devices.setEmulatorPath(_hypervisorPath);
 
-		for (interfaceDef nic : nics) {
+		for (InterfaceDef nic : nics) {
 			devices.addDevice(nic);
 		}
 		
-		for (diskDef disk : disks) {
+		for (DiskDef disk : disks) {
 			if (!disk.isAttachDeferred())
 				devices.addDevice(disk);
 		}
 
-		serialDef serial = new serialDef("pty", null, (short)0);
+		SerialDef serial = new SerialDef("pty", null, (short)0);
 		devices.addDevice(serial);
 
-		consoleDef console = new consoleDef("pty", null, null, (short)0);
+		ConsoleDef console = new ConsoleDef("pty", null, null, (short)0);
 		devices.addDevice(console);
 
-		graphicDef	grap = new graphicDef("vnc", (short)0, true, null, null, null);
+		GraphicDef	grap = new GraphicDef("vnc", (short)0, true, null, null, null);
 		devices.addDevice(grap);
 
-		inputDef input = new inputDef("tablet", "usb");
+		InputDef input = new InputDef("tablet", "usb");
 		devices.addDevice(input);
 
 		vm.addComp(devices);
@@ -1234,8 +1245,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 return execute((DeleteStoragePoolCommand) cmd);
             } else if (cmd instanceof FenceCommand ) {
             	return execute((FenceCommand) cmd);
+            } else if (cmd instanceof Start2Command ) {
+            	return execute((Start2Command) cmd);
             } else if (cmd instanceof RoutingCommand) {
             	return _virtRouterResource.executeRequest(cmd);
+            } else if (cmd instanceof CheckSshCommand) {
+            	return execute((CheckSshCommand) cmd);
             } else {
         		s_logger.warn("Unsupported command ");
                 return Answer.createUnsupportedCommandAnswer(cmd);
@@ -2553,14 +2568,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 	}
 
 	protected synchronized String startVM(StartCommand cmd) {
-		List<interfaceDef> nics = null;
+		List<InterfaceDef> nics = null;
 		try {
 				
 			String uuid = UUID.nameUUIDFromBytes(cmd.getVmName().getBytes()).toString();
 			
 			nics = createUserVMNetworks(cmd);
 			
-			List<diskDef> disks = createVMDisk(cmd.getVolumes(), cmd.getGuestOSDescription(), cmd.getISOPath());
+			List<DiskDef> disks = createVMDisk(cmd.getVolumes(), cmd.getGuestOSDescription(), cmd.getISOPath());
 			
 
 
@@ -2574,7 +2589,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			startDomain(cmd.getVmName(), vmDomainXML);
 
 			// Attach each data volume to the VM, if there is a deferred attached disk
-			for (diskDef disk : disks) {
+			for (DiskDef disk : disks) {
 				if (disk.isAttachDeferred()) {
 					 attachOrDetachDisk(true, cmd.getVmName(), disk.getDiskPath());
 				}
@@ -2602,6 +2617,282 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		}
 	}
 	
+	
+	private void handleVmStartFailure(String vmName, LibvirtVMDef vm) {
+		if (vm != null && vm.getDevices() != null)
+			cleanupVMNetworks(vm.getDevices().getInterfaces());
+	}
+
+	private LibvirtVMDef createVMFromSpec(VirtualMachineTO vmTO) {
+		LibvirtVMDef vm = new LibvirtVMDef();
+		vm.setHvsType(_hypervisorType);
+		vm.setDomainName(vmTO.getName());
+		vm.setDomUUID(UUID.nameUUIDFromBytes(vmTO.getName().getBytes()).toString());
+		vm.setDomDescription(KVMGuestOsMapper.getGuestOsName(vmTO.getOs()));
+		
+		GuestDef guest = new GuestDef();
+		guest.setGuestType(GuestDef.guestType.KVM);
+		guest.setGuestArch(vmTO.getArch());
+		guest.setMachineType("pc");
+		guest.setBootOrder(GuestDef.bootOrder.CDROM);
+		guest.setBootOrder(GuestDef.bootOrder.HARDISK);
+			
+		vm.addComp(guest);
+
+		GuestResourceDef grd = new GuestResourceDef();
+		grd.setMemorySize(vmTO.getMinRam()/1024);
+		grd.setVcpuNum(vmTO.getCpus());
+		vm.addComp(grd);
+
+		FeaturesDef features = new FeaturesDef();
+		features.addFeatures("pae");
+		features.addFeatures("apic");
+		features.addFeatures("acpi");
+		vm.addComp(features);
+
+		TermPolicy term = new TermPolicy();
+		term.setCrashPolicy("destroy");
+		term.setPowerOffPolicy("destroy");
+		term.setRebootPolicy("restart");
+		vm.addComp(term);
+
+		DevicesDef devices = new DevicesDef();
+		devices.setEmulatorPath(_hypervisorPath);
+
+
+		SerialDef serial = new SerialDef("pty", null, (short)0);
+		devices.addDevice(serial);
+
+		ConsoleDef console = new ConsoleDef("pty", null, null, (short)0);
+		devices.addDevice(console);
+
+		GraphicDef	grap = new GraphicDef("vnc", (short)0, true, null, null, null);
+		devices.addDevice(grap);
+
+		InputDef input = new InputDef("tablet", "usb");
+		devices.addDevice(input);
+
+		vm.addComp(devices);
+		
+		return vm;
+	}
+	
+	private void createVifs(VirtualMachineTO vmSpec, LibvirtVMDef vm) throws InternalErrorException {
+		NicTO[] nics = vmSpec.getNics();
+		for (int i = 0; i < nics.length; i++) {
+			for (NicTO nic : vmSpec.getNics()) {
+				if (nic.getDeviceId() == i)
+					createVif(vm, nic);
+			}
+		}
+	}
+	
+
+	protected Start2Answer execute(Start2Command cmd) {
+		VirtualMachineTO vmSpec = cmd.getVirtualMachine();
+		String vmName = vmSpec.getName();
+		LibvirtVMDef vm = null;
+
+		State state = State.Stopped;
+
+		try {
+
+			synchronized (_vms) {
+				_vms.put(vmName, State.Starting);
+			}
+
+			vm = createVMFromSpec(vmSpec);
+
+			createVbd(vmSpec, vmName, vm);
+			
+			createVifs(vmSpec, vm);
+
+			s_logger.debug("starting " + vmName + ": " + vm.toString());
+			startDomain(vmName, vm.toString());
+
+			Monitor monitor = vmSpec.getMonitor();
+			if (monitor != null && monitor instanceof SshMonitor) {
+				SshMonitor sshMon = (SshMonitor)monitor;
+				String privateIp = sshMon.getIp();
+				int cmdPort = sshMon.getPort();
+
+				if (s_logger.isDebugEnabled()) {
+					s_logger.debug("Ping command port, " + privateIp + ":" + cmdPort);
+				}
+
+				String result = _virtRouterResource.connect(privateIp, cmdPort);
+				if (result != null) {
+					throw new CloudRuntimeException("Can not ping System vm " + vmName + "due to:" + result);
+				}
+				if (s_logger.isDebugEnabled()) {
+					s_logger.debug("Ping command port succeeded for vm " + vmName);
+				}
+			}
+
+			// Attach each data volume to the VM, if there is a deferred attached disk
+			for (DiskDef disk : vm.getDevices().getDisks()) {
+				if (disk.isAttachDeferred()) {
+					attachOrDetachDisk(true, vmName, disk.getDiskPath());
+				}
+			}
+			state = State.Running;
+			return new Start2Answer(cmd);
+		} catch (Exception e) {
+			s_logger.warn("Exception ", e);
+			handleVmStartFailure(vmName, vm);
+			return new Start2Answer(cmd, e.getMessage());
+		} finally {
+			synchronized (_vms) {
+				if (state != State.Stopped) {
+					_vms.put(vmName, state);
+				} else {
+					_vms.remove(vmName);
+				}
+			}
+		}
+	}
+	
+	private String getVolumePath(VolumeTO volume) throws LibvirtException, URISyntaxException {
+		if (volume.getType() == Volume.VolumeType.ISO) {
+			StorageVol vol = getVolume(_conn, volume.getPath());
+			return vol.getPath();
+		} else {
+			return volume.getPath();
+		}
+	}
+
+	private void createVbd(VirtualMachineTO vmSpec, String vmName, LibvirtVMDef vm) throws InternalErrorException, LibvirtException, URISyntaxException{
+		boolean foundISO = false;
+		for (VolumeTO volume : vmSpec.getDisks()) {
+			String volPath = getVolumePath(volume);
+
+			DiskDef.diskBus diskBusType = getGuestDiskModel(vmSpec.getOs());
+			DiskDef disk = new DiskDef();
+			if (volume.getType() == VolumeType.ISO) {
+				foundISO = true;
+				disk.defISODisk(volPath);
+			} else {
+				int devId = 0;
+				if (volume.getType() == VolumeType.ROOT) {
+					devId = 0;
+				} else {
+					devId = 1;
+				}
+				disk.defFileBasedDisk(volume.getPath(), devId, diskBusType, DiskDef.diskFmtType.QCOW2);
+			}
+
+			//Centos doesn't support scsi hotplug. For other host OSes, we attach the disk after the vm is running, so that we can hotplug it.
+			if (volume.getType() == VolumeType.DATADISK &&  diskBusType != DiskDef.diskBus.VIRTIO) {
+				disk.setAttachDeferred(true);
+			}
+
+			if (!disk.isAttachDeferred()) {
+				vm.getDevices().addDevice(disk);
+			}
+		}
+		
+		if (vmSpec.getType() == VirtualMachine.Type.User) {
+			if (!foundISO) {
+				/*Add iso as placeholder*/
+				DiskDef iso = new DiskDef();
+				iso.defISODisk(null);
+				vm.getDevices().addDevice(iso);
+			}
+		} else {
+			DiskDef iso = new DiskDef();
+			iso.defISODisk(_sysvmISOPath);
+			vm.getDevices().addDevice(iso);
+			
+			createPatchVbd(vmName, vm, vmSpec);
+		}
+	}
+
+	private void createPatchVbd(String vmName, LibvirtVMDef vm, VirtualMachineTO vmSpec) throws LibvirtException, InternalErrorException {
+		
+		List<DiskDef> disks = vm.getDevices().getDisks();
+		DiskDef rootDisk = disks.get(0);
+	
+		StorageVol tmplVol = createTmplDataDisk(rootDisk.getDiskPath(), 10L * 1024 * 1024);
+		String datadiskPath = tmplVol.getKey();
+		
+		/*add patch disk*/
+		DiskDef patchDisk = new DiskDef();
+		patchDisk.defFileBasedDisk(rootDisk.getDiskPath(), 1, rootDisk.getBusType(), DiskDef.diskFmtType.RAW);
+		disks.add(patchDisk);
+		patchDisk.setDiskPath(datadiskPath);
+
+		String bootArgs = vmSpec.getBootArgs();
+
+		patchSystemVm(bootArgs, datadiskPath, vmName);
+				
+	}
+
+	private String createVlanBr(String vlanId, String nic) throws InternalErrorException{
+		String brName = setVnetBrName(vlanId);
+		createVnet(vlanId, nic);
+		return brName;
+	}
+
+	private InterfaceDef createVif(LibvirtVMDef vm, NicTO nic) throws InternalErrorException {
+		InterfaceDef intf = new InterfaceDef();
+
+		String vlanId = null;
+		if (nic.getBroadcastType() == BroadcastDomainType.Vlan) {
+			URI broadcastUri = nic.getBroadcastUri();
+			vlanId = broadcastUri.getHost();
+			s_logger.debug("vlanId: " + vlanId);
+		}
+
+		if (nic.getType() == TrafficType.Guest) {
+			if (nic.getBroadcastType() == BroadcastDomainType.Vlan && !vlanId.equalsIgnoreCase("untagged")){
+				String brName = createVlanBr(vlanId, _pifs.first());
+				intf.defBridgeNet(brName, null, nic.getMac(), InterfaceDef.nicModel.VIRTIO);
+			} else {
+				intf.defBridgeNet(_privBridgeName, null,  nic.getMac(), InterfaceDef.nicModel.VIRTIO);
+			}
+		} else if (nic.getType() == TrafficType.Control) {
+			intf.defPrivateNet(_privNwName, null, nic.getMac(), InterfaceDef.nicModel.VIRTIO);
+		} else if (nic.getType() == TrafficType.Public) {
+			if (nic.getBroadcastType() == BroadcastDomainType.Vlan && !vlanId.equalsIgnoreCase("untagged")) {
+				String brName = createVlanBr(vlanId, _pifs.second());
+				intf.defBridgeNet(brName, null, nic.getMac(), InterfaceDef.nicModel.VIRTIO);
+			} else {
+				intf.defBridgeNet(_publicBridgeName, null, nic.getMac(), InterfaceDef.nicModel.VIRTIO);
+			}
+		} else if (nic.getType() == TrafficType.Management) {
+			intf.defBridgeNet(_privBridgeName, null, nic.getMac(), InterfaceDef.nicModel.VIRTIO);
+		}
+
+		vm.getDevices().addDevice(intf);
+		return intf;
+	}
+	
+	
+	 protected CheckSshAnswer execute(CheckSshCommand cmd) {
+	        String vmName = cmd.getName();
+	        String privateIp = cmd.getIp();
+	        int cmdPort = cmd.getPort();
+	        
+	        if (s_logger.isDebugEnabled()) {
+	            s_logger.debug("Ping command port, " + privateIp + ":" + cmdPort);
+	        }
+
+	        try {
+	            String result = _virtRouterResource.connect(privateIp, cmdPort);
+	            if (result != null) {
+	                return new CheckSshAnswer(cmd, "Can not ping System vm " + vmName + "due to:" + result);
+	            } 
+	        } catch (Exception e) {
+	            return new CheckSshAnswer(cmd, e);
+	        }
+	        
+	        if (s_logger.isDebugEnabled()) {
+	            s_logger.debug("Ping command port succeeded for vm " + vmName);
+	        }
+	        
+	        return new CheckSshAnswer(cmd);
+	    }
+	
 	protected synchronized String attachOrDetachISO(String vmName, String isoPath, boolean isAttach) throws LibvirtException, URISyntaxException {
 		String isoXml = null;
 		if (isoPath != null && isAttach) {
@@ -2609,14 +2900,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
 			isoPath = isoVol.getPath();
 		
-			diskDef iso = new diskDef();
-			iso.defFileBasedDisk(isoPath, "hdc", diskDef.diskBus.IDE, diskDef.diskFmtType.RAW);
-			iso.setDeviceType(diskDef.deviceType.CDROM);
+			DiskDef iso = new DiskDef();
+			iso.defFileBasedDisk(isoPath, "hdc", DiskDef.diskBus.IDE, DiskDef.diskFmtType.RAW);
+			iso.setDeviceType(DiskDef.deviceType.CDROM);
 			isoXml = iso.toString();
 		} else {
-			diskDef iso = new diskDef();
-			iso.defFileBasedDisk(null, "hdc", diskDef.diskBus.IDE,  diskDef.diskFmtType.RAW);
-			iso.setDeviceType(diskDef.deviceType.CDROM);
+			DiskDef iso = new DiskDef();
+			iso.defFileBasedDisk(null, "hdc", DiskDef.diskBus.IDE,  DiskDef.diskFmtType.RAW);
+			iso.setDeviceType(DiskDef.deviceType.CDROM);
 			isoXml = iso.toString();
 		}
 		
@@ -2664,12 +2955,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			s_logger.warn("Can't get disk dev");
 			return "Can't get disk dev";
 		}
-		diskDef disk = new diskDef();
+		DiskDef disk = new DiskDef();
 		String guestOSType = getGuestType(vmName);
 		if (isGuestPVEnabled(guestOSType)) {
-			disk.defFileBasedDisk(sourceFile, diskDev, diskDef.diskBus.VIRTIO, diskDef.diskFmtType.QCOW2);
+			disk.defFileBasedDisk(sourceFile, diskDev, DiskDef.diskBus.VIRTIO, DiskDef.diskFmtType.QCOW2);
 		} else {
-			disk.defFileBasedDisk(sourceFile, diskDev, diskDef.diskBus.SCSI, diskDef.diskFmtType.QCOW2);
+			disk.defFileBasedDisk(sourceFile, diskDev, DiskDef.diskBus.SCSI, DiskDef.diskFmtType.QCOW2);
 		}
 		String xml = disk.toString();
 		return attachOrDetachDevice(attach, vmName, xml);
@@ -3320,19 +3611,19 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     	return dataVol;
     }
     
-    private interfaceDef.nicModel getGuestNicModel(String guestOSType) {
+    private InterfaceDef.nicModel getGuestNicModel(String guestOSType) {
     	if (isGuestPVEnabled(guestOSType) && !isCentosHost()) {
-    		return interfaceDef.nicModel.VIRTIO;
+    		return InterfaceDef.nicModel.VIRTIO;
     	} else {
-    		return interfaceDef.nicModel.E1000;
+    		return InterfaceDef.nicModel.E1000;
     	}
     }
     
-    private diskDef.diskBus getGuestDiskModel(String guestOSType) {
+    private DiskDef.diskBus getGuestDiskModel(String guestOSType) {
     	if (isGuestPVEnabled(guestOSType) && !isCentosHost()) {
-    		return diskDef.diskBus.VIRTIO;
+    		return DiskDef.diskBus.VIRTIO;
     	} else {
-    		return diskDef.diskBus.IDE;
+    		return DiskDef.diskBus.IDE;
     	}
     }
     
@@ -3342,12 +3633,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private String getVnetIdFromBrName(String vnetBrName) {
     	return vnetBrName.replaceAll("cloudVirBr", "");
     }
-    private List<interfaceDef> createUserVMNetworks(StartCommand cmd) throws InternalErrorException {
-    	List<interfaceDef> nics = new ArrayList<interfaceDef>();
-    	interfaceDef.nicModel nicModel = getGuestNicModel(cmd.getGuestOSDescription());
+    private List<InterfaceDef> createUserVMNetworks(StartCommand cmd) throws InternalErrorException {
+    	List<InterfaceDef> nics = new ArrayList<InterfaceDef>();
+    	InterfaceDef.nicModel nicModel = getGuestNicModel(cmd.getGuestOSDescription());
     	String guestMac = cmd.getGuestMacAddress();
     	String brName;
-    	interfaceDef pubNic = new interfaceDef();
+    	InterfaceDef pubNic = new InterfaceDef();
     	if (cmd.getGuestIpAddress() == null) {
     		/*guest network is direct attached without external DHCP server*/
     		brName = _privBridgeName;
@@ -3368,89 +3659,89 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		return nics;
     }
     
-    private List<interfaceDef> createRouterVMNetworks(StartRouterCommand cmd) throws InternalErrorException {
-    	List<interfaceDef> nics = new ArrayList<interfaceDef>();
+    private List<InterfaceDef> createRouterVMNetworks(StartRouterCommand cmd) throws InternalErrorException {
+    	List<InterfaceDef> nics = new ArrayList<InterfaceDef>();
     	DomainRouter router = cmd.getRouter();
     	String guestMac = router.getGuestMacAddress();
     	String privateMac = router.getPrivateMacAddress();
     	String pubMac = router.getPublicMacAddress();
     	String brName;
-    	interfaceDef pubNic = new interfaceDef();
-    	interfaceDef privNic = new interfaceDef();
-    	interfaceDef vnetNic = new interfaceDef();
+    	InterfaceDef pubNic = new InterfaceDef();
+    	InterfaceDef privNic = new InterfaceDef();
+    	InterfaceDef vnetNic = new InterfaceDef();
     	
     	/*nic 0, guest network*/
     	if ("untagged".equalsIgnoreCase(router.getVnet())){
-    		vnetNic.defBridgeNet(_privBridgeName, null, guestMac, interfaceDef.nicModel.VIRTIO);
+    		vnetNic.defBridgeNet(_privBridgeName, null, guestMac, InterfaceDef.nicModel.VIRTIO);
     			
     	} else {
     		String vnetId = getVnetId(router.getVnet());
     		brName = setVnetBrName(vnetId);
     		String vnetDev = "vtap" + vnetId;
     		createVnet(vnetId, _pifs.first());
-    		vnetNic.defBridgeNet(brName, null, guestMac, interfaceDef.nicModel.VIRTIO);
+    		vnetNic.defBridgeNet(brName, null, guestMac, InterfaceDef.nicModel.VIRTIO);
     	}
     	nics.add(vnetNic);    	
     	
     	/*nic 1: link local*/
-    	privNic.defPrivateNet(_privNwName, null, privateMac, interfaceDef.nicModel.VIRTIO);
+    	privNic.defPrivateNet(_privNwName, null, privateMac, InterfaceDef.nicModel.VIRTIO);
 		nics.add(privNic);
     	
     	/*nic 2: public */
 		if ("untagged".equalsIgnoreCase(router.getVlanId())) {
-			pubNic.defBridgeNet(_publicBridgeName, null, pubMac, interfaceDef.nicModel.VIRTIO);
+			pubNic.defBridgeNet(_publicBridgeName, null, pubMac, InterfaceDef.nicModel.VIRTIO);
 		} else {
 			String vnetId = getVnetId(router.getVlanId());
     		brName = setVnetBrName(vnetId);
     		String vnetDev = "vtap" + vnetId;
     		createVnet(vnetId, _pifs.second());
-    		pubNic.defBridgeNet(brName, null, pubMac, interfaceDef.nicModel.VIRTIO); 		
+    		pubNic.defBridgeNet(brName, null, pubMac, InterfaceDef.nicModel.VIRTIO); 		
     	}
 		nics.add(pubNic);
 		return nics;
     }
     
-    private List<interfaceDef> createSysVMNetworks(String guestMac, String privMac, String pubMac, String vlanId) throws InternalErrorException {
-    	List<interfaceDef> nics = new ArrayList<interfaceDef>();
+    private List<InterfaceDef> createSysVMNetworks(String guestMac, String privMac, String pubMac, String vlanId) throws InternalErrorException {
+    	List<InterfaceDef> nics = new ArrayList<InterfaceDef>();
     	String brName;
-    	interfaceDef pubNic = new interfaceDef();
-    	interfaceDef privNic = new interfaceDef();
-    	interfaceDef vnetNic = new interfaceDef();
+    	InterfaceDef pubNic = new InterfaceDef();
+    	InterfaceDef privNic = new InterfaceDef();
+    	InterfaceDef vnetNic = new InterfaceDef();
     	
     	/*nic 0: link local*/
-    	privNic.defPrivateNet(_privNwName, null, guestMac, interfaceDef.nicModel.VIRTIO);
+    	privNic.defPrivateNet(_privNwName, null, guestMac, InterfaceDef.nicModel.VIRTIO);
 		nics.add(privNic);
 		
     	/*nic 1, priv network*/
     	
-    	vnetNic.defBridgeNet(_privBridgeName, null, privMac, interfaceDef.nicModel.VIRTIO);
+    	vnetNic.defBridgeNet(_privBridgeName, null, privMac, InterfaceDef.nicModel.VIRTIO);
     	nics.add(vnetNic);    	
     	
     	/*nic 2: public */
 		if ("untagged".equalsIgnoreCase(vlanId)) {
-			pubNic.defBridgeNet(_publicBridgeName, null, pubMac, interfaceDef.nicModel.VIRTIO);
+			pubNic.defBridgeNet(_publicBridgeName, null, pubMac, InterfaceDef.nicModel.VIRTIO);
 		} else {
 			String vnetId = getVnetId(vlanId);
     		brName = setVnetBrName(vnetId);
     		String vnetDev = "vtap" + vnetId;
     		createVnet(vnetId, _pifs.second());
-    		pubNic.defBridgeNet(brName, null, pubMac, interfaceDef.nicModel.VIRTIO); 		
+    		pubNic.defBridgeNet(brName, null, pubMac, InterfaceDef.nicModel.VIRTIO); 		
     	}
 		nics.add(pubNic);
 		
 		return nics;
     }
     
-    private void cleanupVMNetworks(List<interfaceDef> nics) {
-    	for (interfaceDef nic : nics) {
+    private void cleanupVMNetworks(List<InterfaceDef> nics) {
+    	for (InterfaceDef nic : nics) {
     		if (nic.getHostNetType() == hostNicType.VNET) {
     			cleanupVnet(getVnetIdFromBrName(nic.getBrName()));
     		}
     	}
     }
     
-    private List<diskDef> createSystemVMDisk(List<VolumeVO> vols) throws InternalErrorException, LibvirtException{
-    	List<diskDef> disks = new ArrayList<diskDef>();
+    private List<DiskDef> createSystemVMDisk(List<VolumeVO> vols) throws InternalErrorException, LibvirtException{
+    	List<DiskDef> disks = new ArrayList<DiskDef>();
     	// Get the root volume
 		List<VolumeVO> rootVolumes = findVolumes(vols, VolumeType.ROOT, true);
         
@@ -3464,24 +3755,24 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
          StorageVol tmplVol = createTmplDataDisk(rootkPath, 10L * 1024 * 1024);
          String datadiskPath = tmplVol.getKey();
 	
-		diskDef hda = new diskDef();
-		hda.defFileBasedDisk(rootkPath, "vda", diskDef.diskBus.VIRTIO,  diskDef.diskFmtType.QCOW2);
+         DiskDef hda = new DiskDef();
+		hda.defFileBasedDisk(rootkPath, "vda", DiskDef.diskBus.VIRTIO,  DiskDef.diskFmtType.QCOW2);
 		disks.add(hda);
 		
-		diskDef hdb = new diskDef();
-		hdb.defFileBasedDisk(datadiskPath, "vdb",  diskDef.diskBus.VIRTIO, diskDef.diskFmtType.RAW);
+		DiskDef hdb = new DiskDef();
+		hdb.defFileBasedDisk(datadiskPath, "vdb",  DiskDef.diskBus.VIRTIO, DiskDef.diskFmtType.RAW);
 		disks.add(hdb);
 		
-		diskDef hdc = new diskDef();
-		hdc.defFileBasedDisk(_sysvmISOPath, "hdc",  diskDef.diskBus.IDE, diskDef.diskFmtType.RAW);
-		hdc.setDeviceType(diskDef.deviceType.CDROM);
+		DiskDef hdc = new DiskDef();
+		hdc.defFileBasedDisk(_sysvmISOPath, "hdc",  DiskDef.diskBus.IDE, DiskDef.diskFmtType.RAW);
+		hdc.setDeviceType(DiskDef.deviceType.CDROM);
 		disks.add(hdc);
 		
 		return disks;
     }
     
-    private List<diskDef> createVMDisk(List<VolumeVO> vols, String guestOSType, String isoURI) throws InternalErrorException, LibvirtException, URISyntaxException{
-    	List<diskDef> disks = new ArrayList<diskDef>();
+    private List<DiskDef> createVMDisk(List<VolumeVO> vols, String guestOSType, String isoURI) throws InternalErrorException, LibvirtException, URISyntaxException{
+    	List<DiskDef> disks = new ArrayList<DiskDef>();
     	// Get the root volume
 		List<VolumeVO> rootVolumes = findVolumes(vols, VolumeType.ROOT, true);
         
@@ -3505,17 +3796,17 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		if (dataVolumes.size() > 0)
 			dataVolume = dataVolumes.get(0);
 		
-		diskDef.diskBus diskBusType = getGuestDiskModel(guestOSType);
+		DiskDef.diskBus diskBusType = getGuestDiskModel(guestOSType);
 		
 		
-		diskDef hda = new diskDef();
-		hda.defFileBasedDisk(rootVolume.getPath(), "vda", diskBusType, diskDef.diskFmtType.QCOW2);
+		DiskDef hda = new DiskDef();
+		hda.defFileBasedDisk(rootVolume.getPath(), "vda", diskBusType, DiskDef.diskFmtType.QCOW2);
 		disks.add(hda);
 		
 		/*Centos doesn't support scsi hotplug. For other host OSes, we attach the disk after the vm is running, so that we can hotplug it.*/
 		if (dataVolume != null) {
-			diskDef hdb = new diskDef();
-			hdb.defFileBasedDisk(dataVolume.getPath(), "vdb", diskBusType, diskDef.diskFmtType.QCOW2);
+			DiskDef hdb = new DiskDef();
+			hdb.defFileBasedDisk(dataVolume.getPath(), "vdb", diskBusType, DiskDef.diskFmtType.QCOW2);
 			if (!isCentosHost()) {
 				hdb.setAttachDeferred(true);
 			}
@@ -3523,9 +3814,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		}
 		
 		/*Add a placeholder for iso, even if there is no iso attached*/
-		diskDef hdc = new diskDef();
-		hdc.defFileBasedDisk(isoPath, "hdc", diskDef.diskBus.IDE, diskDef.diskFmtType.RAW);
-		hdc.setDeviceType(diskDef.deviceType.CDROM);
+		DiskDef hdc = new DiskDef();
+		hdc.defFileBasedDisk(isoPath, "hdc", DiskDef.diskBus.IDE, DiskDef.diskFmtType.RAW);
+		hdc.setDeviceType(DiskDef.deviceType.CDROM);
 		disks.add(hdc);
 
 		return disks;

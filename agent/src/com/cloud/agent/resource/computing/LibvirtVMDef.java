@@ -19,7 +19,10 @@
 package com.cloud.agent.resource.computing;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public class LibvirtVMDef {
@@ -27,9 +30,9 @@ public class LibvirtVMDef {
 	private String _domName;
 	private String _domUUID;
 	private String _desc;
-	private final List<Object> components = new ArrayList<Object>();
+	private final Map<String, Object> components = new HashMap<String,Object>();
 	
-	public static class guestDef {
+	public static class GuestDef {
 		enum guestType {
 			KVM,
 			XEN,
@@ -104,12 +107,12 @@ public class LibvirtVMDef {
 		}
 	}
 	
-	public static class guestResourceDef {
-		private int _mem;
+	public static class GuestResourceDef {
+		private long _mem;
 		private int _currentMem = -1;
 		private String _memBacking;
 		private int _vcpu = -1;
-		public void setMemorySize(int mem) {
+		public void setMemorySize(long mem) {
 			_mem = mem;
 		}
 		public void setCurrentMem(int currMem) {
@@ -138,7 +141,7 @@ public class LibvirtVMDef {
 		}
 	}
 	
-	public static class featuresDef {
+	public static class FeaturesDef {
 		private final List<String> _features = new ArrayList<String>();
 		public void addFeatures(String feature) {
 			_features.add(feature);
@@ -154,11 +157,11 @@ public class LibvirtVMDef {
 			return feaBuilder.toString();
 		}
 	}
-	public static class termPolicy {
+	public static class TermPolicy {
 		private String _reboot;
 		private String _powerOff;
 		private String _crash;
-		public termPolicy() {
+		public TermPolicy() {
 			_reboot = _powerOff = _crash = "destroy";
 		}
 		public void setRebootPolicy(String rbPolicy) {
@@ -180,11 +183,20 @@ public class LibvirtVMDef {
 		}
 	}
 	
-	public static class devicesDef {
+	public static class DevicesDef {
 		private String _emulator;
-		private final List<Object> devices = new ArrayList<Object>();
+		private final Map<String, List<?>> devices = new HashMap<String, List<?>>();
 		public boolean addDevice(Object device) {
-			return devices.add(device);
+			Object dev = devices.get(device.getClass().toString());
+			if (dev == null) { 
+				List<Object> devs = new ArrayList<Object>();
+				devs.add(device);
+				devices.put(device.getClass().toString(), devs);
+			} else {
+				List<Object> devs = (List<Object>)dev;
+				devs.add(device);
+			}
+			return true;
 		}
 		public void setEmulatorPath(String emulator) {
 			_emulator = emulator;
@@ -196,15 +208,24 @@ public class LibvirtVMDef {
 			if (_emulator != null) {
 				devicesBuilder.append("<emulator>" + _emulator + "</emulator>\n");
 			}
-			for (Object o : devices) {
-				devicesBuilder.append(o.toString());
+		
+			for (List<?> devs : devices.values()) {
+				for (Object dev : devs) {
+					devicesBuilder.append(dev.toString());
+				}
 			}
 			devicesBuilder.append("</devices>\n");
 			return devicesBuilder.toString();
 		}
+		public List<DiskDef> getDisks() {
+			return (List<DiskDef>)devices.get(DiskDef.class.toString());
+		}
+		public List<InterfaceDef> getInterfaces() {
+			return (List<InterfaceDef>)devices.get(InterfaceDef.class.toString());
+		}
 		
 	}
-	public static class diskDef {
+	public static class DiskDef {
 		enum deviceType {
 			FLOOPY("floopy"),
 			DISK("disk"),
@@ -282,6 +303,33 @@ public class LibvirtVMDef {
 			_bus = bus;
 
 		}
+		private String getDevLabel(int devId, diskBus bus) {
+			char suffix = (char)('a' + devId);
+			if (bus == diskBus.SCSI) {
+				return "sd" + suffix;
+			} else if (bus == diskBus.VIRTIO) {
+				return "vd" + suffix;
+			}
+			return "hd" + suffix;
+		}
+		public void defFileBasedDisk(String filePath, int devId, diskBus bus, diskFmtType diskFmtType) {
+			
+			_diskType = diskType.FILE;
+			_deviceType = deviceType.DISK;
+			_sourcePath = filePath;
+			_diskLabel = getDevLabel(devId, bus);
+			_diskFmtType = diskFmtType;
+			_bus = bus;
+
+		}
+		public void defISODisk(String volPath) {
+			_diskType = diskType.FILE;
+			_deviceType = deviceType.CDROM;
+			_sourcePath = volPath;
+			_diskLabel = "hdc";
+			_diskFmtType = diskFmtType.RAW;
+			_bus = diskBus.IDE;
+		}
 		public void defBlockBasedDisk(String diskName, String diskLabel, diskBus bus) {
 			_diskType = diskType.BLOCK;
 			_deviceType = deviceType.DISK;
@@ -306,6 +354,19 @@ public class LibvirtVMDef {
 		}
 		public String getDiskLabel() {
 			return _diskLabel;
+		}
+		public deviceType getDeviceType() {
+			return _deviceType;
+		}
+		public void setDiskPath(String volPath) {
+			this._sourcePath = volPath;
+		}
+		public diskBus getBusType() {
+			return _bus;
+		}
+		public int getDiskSeq() {
+			char suffix = this._diskLabel.charAt(this._diskLabel.length() - 1);
+			return suffix - 'a';
 		}
 		@Override
         public String toString() {
@@ -342,7 +403,7 @@ public class LibvirtVMDef {
 		}
 	}
 	
-	public static class interfaceDef {
+	public static class InterfaceDef {
 		enum guestNetType {
 			BRIDGE("bridge"),
 			NETWORK("network"),
@@ -415,6 +476,7 @@ public class LibvirtVMDef {
 		public guestNetType getNetType() {
 			return _netType;
 		}
+		
 		@Override
         public String toString() {
 			StringBuilder netBuilder = new StringBuilder();
@@ -437,12 +499,12 @@ public class LibvirtVMDef {
 			return netBuilder.toString();
 		}
 	}
-	public static class consoleDef {
+	public static class ConsoleDef {
 		private final String _ttyPath;
 		private final String _type;
 		private final String _source;
 		private short _port = -1;
-		public consoleDef(String type, String path, String source, short port) {
+		public ConsoleDef(String type, String path, String source, short port) {
 			_type = type;
 			_ttyPath = path;
 			_source = source;
@@ -467,11 +529,11 @@ public class LibvirtVMDef {
 			return consoleBuilder.toString();
 		}
 	}
-	public static class serialDef {
+	public static class SerialDef {
 		private final String _type;
 		private final String _source;
 		private short _port = -1;
-		public serialDef(String type, String source, short port) {
+		public SerialDef(String type, String source, short port) {
 			_type = type;
 			_source = source;
 			_port = port;
@@ -490,14 +552,14 @@ public class LibvirtVMDef {
 			return serialBuidler.toString();
 		}
 	}
-	public  static class graphicDef {
+	public  static class GraphicDef {
 		private final String _type;
 		private short _port = -2;
 		private boolean _autoPort = false;
 		private final String _listenAddr;
 		private final String _passwd;
 		private final String _keyMap;
-		public graphicDef(String type, short port, boolean auotPort, String listenAddr, String passwd, String keyMap) {
+		public GraphicDef(String type, short port, boolean auotPort, String listenAddr, String passwd, String keyMap) {
 			_type = type;
 			_port = port;
 			_autoPort = auotPort;
@@ -528,10 +590,10 @@ public class LibvirtVMDef {
 			return graphicBuilder.toString();
 		}
 	}
-	public  static class inputDef {
+	public  static class InputDef {
 		private final String _type; /*tablet, mouse*/
 		private final String _bus; /*ps2, usb, xen*/
-		public inputDef(String type, String bus) {
+		public InputDef(String type, String bus) {
 			_type = type;
 			_bus = bus;
 		}
@@ -558,8 +620,18 @@ public class LibvirtVMDef {
 	public void setDomDescription(String desc) {
 		_desc = desc;
 	}
-	public boolean addComp(Object comp) {
-		return components.add(comp);
+	public String getGuestOSType() {
+		return _desc;
+	}
+	public void addComp(Object comp) {
+		components.put(comp.getClass().toString(), comp);
+	}
+	public DevicesDef getDevices() {
+		Object o = components.get(DevicesDef.class.toString());
+		if (o != null) {
+			return (DevicesDef)o;
+		}
+		return null;
 	}
 	@Override
     public String toString() {
@@ -572,7 +644,7 @@ public class LibvirtVMDef {
 		if (_desc != null ) {
 			vmBuilder.append("<description>" + _desc + "</description>\n");
 		}
-		for (Object o : components) {
+		for (Object o : components.values()) {
 			vmBuilder.append(o.toString());
 		}
 		vmBuilder.append("</domain>\n");
@@ -586,63 +658,63 @@ public class LibvirtVMDef {
 		vm.setDomainName("testing");
 		vm.setDomUUID(UUID.randomUUID().toString());
 		
-		guestDef guest = new guestDef();
-		guest.setGuestType(guestDef.guestType.KVM);
+		GuestDef guest = new GuestDef();
+		guest.setGuestType(GuestDef.guestType.KVM);
 		guest.setGuestArch("x86_64");
 		guest.setMachineType("pc-0.11");
-		guest.setBootOrder(guestDef.bootOrder.HARDISK);
+		guest.setBootOrder(GuestDef.bootOrder.HARDISK);
 		vm.addComp(guest);
 		
-		guestResourceDef grd = new guestResourceDef();
+		GuestResourceDef grd = new GuestResourceDef();
 		grd.setMemorySize(512*1024);
 		grd.setVcpuNum(1);
 		vm.addComp(grd);
 		
-		featuresDef features = new featuresDef();
+		FeaturesDef features = new FeaturesDef();
 		features.addFeatures("pae");
 		features.addFeatures("apic");
 		features.addFeatures("acpi");
 		vm.addComp(features);
 		
-		termPolicy term = new termPolicy();
+		TermPolicy term = new TermPolicy();
 		term.setCrashPolicy("destroy");
 		term.setPowerOffPolicy("destroy");
 		term.setRebootPolicy("destroy");
 		vm.addComp(term);
 		
-		devicesDef devices = new devicesDef();
+		DevicesDef devices = new DevicesDef();
 		devices.setEmulatorPath("/usr/bin/cloud-qemu-system-x86_64");
 		
-		diskDef hda = new diskDef();
-		hda.defFileBasedDisk("/path/to/hda1", "hda", diskDef.diskBus.IDE, diskDef.diskFmtType.QCOW2);
+		DiskDef hda = new DiskDef();
+		hda.defFileBasedDisk("/path/to/hda1", 0, DiskDef.diskBus.VIRTIO, DiskDef.diskFmtType.QCOW2);
 		devices.addDevice(hda);
 		
-		diskDef hdb = new diskDef();
-		hdb.defFileBasedDisk("/path/to/hda2", "hdb",  diskDef.diskBus.IDE, diskDef.diskFmtType.QCOW2);
+		DiskDef hdb = new DiskDef();
+		hdb.defFileBasedDisk("/path/to/hda2", 1,  DiskDef.diskBus.VIRTIO, DiskDef.diskFmtType.QCOW2);
 		devices.addDevice(hdb);
 		
-		interfaceDef pubNic = new interfaceDef();
-		pubNic.defBridgeNet("cloudbr0", "vnet1", "00:16:3e:77:e2:a1", interfaceDef.nicModel.VIRTIO);
+		InterfaceDef pubNic = new InterfaceDef();
+		pubNic.defBridgeNet("cloudbr0", "vnet1", "00:16:3e:77:e2:a1", InterfaceDef.nicModel.VIRTIO);
 		devices.addDevice(pubNic);
 		
-		interfaceDef privNic = new interfaceDef();
-		privNic.defPrivateNet("cloud-private", null, "00:16:3e:77:e2:a2", interfaceDef.nicModel.VIRTIO);
+		InterfaceDef privNic = new InterfaceDef();
+		privNic.defPrivateNet("cloud-private", null, "00:16:3e:77:e2:a2", InterfaceDef.nicModel.VIRTIO);
 		devices.addDevice(privNic);
 		
-		interfaceDef vlanNic = new interfaceDef();
-		vlanNic.defBridgeNet("vnbr1000", "tap1", "00:16:3e:77:e2:a2", interfaceDef.nicModel.VIRTIO);
+		InterfaceDef vlanNic = new InterfaceDef();
+		vlanNic.defBridgeNet("vnbr1000", "tap1", "00:16:3e:77:e2:a2", InterfaceDef.nicModel.VIRTIO);
 		devices.addDevice(vlanNic);
 		
-		serialDef serial = new serialDef("pty", null, (short)0);
+		SerialDef serial = new SerialDef("pty", null, (short)0);
 		devices.addDevice(serial);
 		
-		consoleDef console = new consoleDef("pty", null, null, (short)0);
+		ConsoleDef console = new ConsoleDef("pty", null, null, (short)0);
 		devices.addDevice(console);
 		
-		graphicDef grap = new graphicDef("vnc", (short)0, true, null, null, null);
+		GraphicDef grap = new GraphicDef("vnc", (short)0, true, null, null, null);
 		devices.addDevice(grap);
 		
-		inputDef input = new inputDef("tablet", "usb");
+		InputDef input = new InputDef("tablet", "usb");
 		devices.addDevice(input);
 		
 		vm.addComp(devices);

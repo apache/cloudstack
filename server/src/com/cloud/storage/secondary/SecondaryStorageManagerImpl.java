@@ -17,6 +17,7 @@
  */
 package com.cloud.storage.secondary;
 
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
@@ -49,6 +50,9 @@ import com.cloud.agent.api.StartSecStorageVmCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
+import com.cloud.agent.api.check.CheckSshAnswer;
+import com.cloud.agent.api.check.CheckSshCommand;
+import com.cloud.agent.manager.Commands;
 import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
@@ -65,6 +69,7 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
+import com.cloud.deploy.DeployDestination;
 import com.cloud.domain.DomainVO;
 import com.cloud.event.EventState;
 import com.cloud.event.EventTypes;
@@ -87,6 +92,7 @@ import com.cloud.info.RunningHostInfoAgregator.ZoneHostInfo;
 import com.cloud.network.IpAddrAllocator;
 import com.cloud.network.NetworkConfigurationVO;
 import com.cloud.network.IpAddrAllocator.networkInfo;
+import com.cloud.network.Network.TrafficType;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.offering.NetworkOffering;
@@ -127,11 +133,15 @@ import com.cloud.utils.events.SubscriptionMgr;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.utils.net.NfsUtils;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.NicProfile;
+import com.cloud.vm.ReservationContext;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.State;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineGuru;
+import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VmManager;
 import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachineManager;
@@ -159,7 +169,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 // because sooner or later, it will be driven into Running state
 //
 @Local(value={SecondaryStorageVmManager.class})
-public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, VirtualMachineManager<SecondaryStorageVmVO> {
+public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, VirtualMachineManager<SecondaryStorageVmVO>, VirtualMachineGuru<SecondaryStorageVmVO> {
 	private static final Logger s_logger = Logger.getLogger(SecondaryStorageManagerImpl.class);
 
 	private static final int DEFAULT_FIND_HOST_RETRY_COUNT = 2;
@@ -236,6 +246,8 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 	private String _instance;
 	private boolean _useLocalStorage;
 	private boolean _useSSlCopy;
+	private String _secHostUuid;
+	private String _nfsShare;
 	private String _allowedInternalSites;
 
 	
@@ -686,7 +698,8 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 			return null;
 		}
 
-		SecondaryStorageVmVO secStorageVm = allocSecStorageVmStorage(dataCenterId, secStorageVmId);
+		SecondaryStorageVmVO secStorageVm = _secStorageVmDao.findById(secStorageVmId); 
+		//SecondaryStorageVmVO secStorageVm = allocSecStorageVmStorage(dataCenterId, secStorageVmId);
 		if (secStorageVm != null) {
 			SubscriptionMgr.getInstance().notifySubscribers(ALERT_SUBJECT, this,
 				new SecStorageVmAlertEventArgs(
@@ -710,7 +723,18 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 	}
 	
 	 protected Map<String, Object> createSecStorageVmInstance2(long dataCenterId) {
-
+		 long startEventId = saveStartedEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_SSVM_CREATE, "Creating secondary storage Vm in zone : "+dataCenterId, 0);
+		 HostVO secHost = _hostDao.findSecondaryStorageHost(dataCenterId);
+	        if (secHost == null) {
+				String msg = "No secondary storage available in zone " + dataCenterId + ", cannot create secondary storage vm";
+				s_logger.warn(msg);
+				saveFailedEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_SSVM_CREATE, msg, startEventId);
+	        	throw new CloudRuntimeException(msg);
+	        }
+	        
+	        _secHostUuid = secHost.getGuid();
+	        _nfsShare = secHost.getStorageUrl();
+	        
 	        long id = _secStorageVmDao.getNextInSequence(Long.class, "id");
 	        String name = VirtualMachineName.getSystemVmName(id, _instance, "s").intern();
 	        AccountVO systemAcct = _accountMgr.getSystemAccount();
@@ -1434,11 +1458,14 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 			haMgr.registerHandler(VirtualMachine.Type.SecondaryStorageVm, this);
 		}
 
+		 _itMgr.registerGuru(VirtualMachine.Type.SecondaryStorageVm, this);
+		 
 		Adapters<IpAddrAllocator> ipAllocators = locator.getAdapters(IpAddrAllocator.class);
 		if (ipAllocators != null && ipAllocators.isSet()) {
 			Enumeration<IpAddrAllocator> it = ipAllocators.enumeration();
 			_IpAllocator = it.nextElement();
 		}
+		
 		
 	boolean useLocalStorage = Boolean.parseBoolean(configs.get(Config.SystemVMUseLocalStorage.key()));
         String networkRateStr = _configDao.getValue("network.throttling.rate");
@@ -1963,4 +1990,110 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         _eventDao.persist(event);
         return;
     }
+
+	@Override
+	public SecondaryStorageVmVO findByName(String name) {
+		if (!VirtualMachineName.isValidSecStorageVmName(name, null)) {
+			return null;
+		}
+		return findById(VirtualMachineName.getSystemVmId(name));
+	}
+
+	@Override
+	public SecondaryStorageVmVO findById(long id) {
+		return _secStorageVmDao.findById(id);
+	}
+
+	@Override
+	public SecondaryStorageVmVO persist(SecondaryStorageVmVO vm) {
+		return _secStorageVmDao.persist(vm);
+	}
+
+	@Override
+	public boolean finalizeVirtualMachineProfile(
+			VirtualMachineProfile<SecondaryStorageVmVO> profile,
+			DeployDestination dest, ReservationContext context) {
+		
+		StringBuilder buf = profile.getBootArgsBuilder();
+		buf.append(" template=domP type=secstorage");
+		buf.append(" host=").append(_mgmt_host);
+		buf.append(" port=").append(_mgmt_port);
+		buf.append(" name=").append(profile.getVirtualMachine().getHostName());
+
+		buf.append(" zone=").append(dest.getDataCenter().getId());
+		buf.append(" pod=").append(dest.getPod().getId());
+		buf.append(" guid=").append(_secHostUuid);
+		buf.append(" mount.path=").append(_nfsShare);
+		buf.append(" resource=com.cloud.storage.resource.NfsSecondaryStorageResource");
+		buf.append(" instance=SecStorage");
+		buf.append(" sslcopy=").append(Boolean.toString(_useSSlCopy));
+
+		NicProfile controlNic = null;
+		for (NicProfile nic : profile.getNics()) {
+			int deviceId = nic.getDeviceId();
+			if (nic.getIp4Address() == null) {
+				/*External DHCP mode*/
+				buf.append(" eth").append(deviceId).append("ip=").append("0.0.0.0");
+				buf.append(" bootproto=dhcp");
+			} else {
+				buf.append(" eth").append(deviceId).append("ip=").append(nic.getIp4Address());
+			}
+			
+			buf.append(" eth").append(deviceId).append("mask=").append(nic.getNetmask());
+			if (nic.isDefaultNic()) {
+				buf.append(" gateway=").append(nic.getGateway());
+				buf.append(" dns1=").append(nic.getDns1());
+				if (nic.getDns2() != null) {
+					buf.append(" dns2=").append(nic.getDns2());
+				}
+			}
+			if (nic.getTrafficType() == TrafficType.Management) {
+				buf.append(" localgw=").append(dest.getPod().getGateway());
+			} else if (nic.getTrafficType() == TrafficType.Control) {
+				controlNic = nic;
+			}
+
+		}
+
+		String bootArgs = buf.toString();
+		if (s_logger.isDebugEnabled()) {
+			s_logger.debug("Boot Args for " + profile + ": " + bootArgs);
+		}
+
+		if (controlNic == null) {
+			throw new CloudRuntimeException("Didn't start a control port");
+		}
+
+		profile.setParameter("control.nic", controlNic);
+		
+		return true;
+	}
+
+	@Override
+	public boolean finalizeDeployment(Commands cmds,
+			VirtualMachineProfile<SecondaryStorageVmVO> profile,
+			DeployDestination dest, ReservationContext context) {
+		NicProfile controlNic = (NicProfile)profile.getParameter("control.nic");
+        CheckSshCommand check = new CheckSshCommand(profile.getInstanceName(), controlNic.getIp4Address(), 3922, 5, 20);
+        cmds.addCommand("checkSsh", check);
+        return true;
+	}
+
+	@Override
+	public boolean finalizeStart(Commands cmds,
+			VirtualMachineProfile<SecondaryStorageVmVO> profile,
+			DeployDestination dest, ReservationContext context) {
+		CheckSshAnswer answer = (CheckSshAnswer)cmds.getAnswer("checkSsh");
+		if (!answer.getResult()) {
+			s_logger.warn("Unable to ssh to the VM: " + answer.getDetails());
+			return false;
+		}
+		return true;
+	}
+
+	@Override
+	public void finalizeStop(
+			VirtualMachineProfile<SecondaryStorageVmVO> profile, long hostId,
+			String reservationId) {
+	}
 }
