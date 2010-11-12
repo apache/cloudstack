@@ -18,7 +18,7 @@ import com.cloud.vm.VirtualMachineProfile;
 
 /**
  * NetworkGuru takes a network offering requested and figures
- * out what is the correct network configuration that are needed to add
+ * out the correct network configuration needed to add
  * to the account in order to support this network. 
  *
  */
@@ -71,4 +71,13 @@ public interface NetworkGuru extends Adapter {
     void deallocate(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm);
     
     void destroy(NetworkConfiguration config, NetworkOffering offering);
+    
+    /**
+     * Throw away the design.
+     * @param config
+     * @param offering
+     * @param owner
+     * @return
+     */
+    boolean trash(NetworkConfiguration config, NetworkOffering offering, Account owner);
 }

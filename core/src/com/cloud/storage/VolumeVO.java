@@ -238,7 +238,6 @@ public class VolumeVO implements Volume {
     }
 
     
-    
     public boolean isRecreatable() {
         return recreatable;
     }

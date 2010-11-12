@@ -41,6 +41,7 @@ import com.cloud.cluster.ClusterManagerListener;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.dc.DataCenter;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
@@ -307,7 +308,7 @@ public class MauriceMoss implements VmManager, ClusterManagerListener {
             }
             
             if (dest == null) {
-                throw new InsufficientServerCapacityException("Unable to create a deployment for " + vmProfile);
+                throw new InsufficientServerCapacityException("Unable to create a deployment for " + vmProfile, DataCenter.class, plan.getDataCenterId());
             }
             
             vm.setDataCenterId(dest.getDataCenter().getId());

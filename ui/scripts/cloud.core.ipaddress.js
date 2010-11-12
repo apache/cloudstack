@@ -909,7 +909,7 @@ function portForwardingJsonToTemplate(jsonObj, $template) {
         var virtualMachineId = $rowContainerEdit.find("#vm").val();		   
 	    		    
         var array1 = [];
-        array1.push("&publicip="+ipAddress);    
+        array1.push("&ipaddress="+ipAddress);    
         array1.push("&privateport="+privatePort);
         array1.push("&publicport="+publicPort);
         array1.push("&protocol="+protocol);

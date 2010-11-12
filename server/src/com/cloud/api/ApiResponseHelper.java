@@ -54,6 +54,7 @@ import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.ResourceLimit;
 import com.cloud.dc.ClusterVO;
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Vlan.VlanType;
@@ -67,6 +68,8 @@ import com.cloud.host.Status.Event;
 import com.cloud.network.FirewallRuleVO;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.LoadBalancerVO;
+import com.cloud.network.Network.TrafficType;
+import com.cloud.network.NetworkConfiguration;
 import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.server.Criteria;
@@ -91,6 +94,7 @@ import com.cloud.uservm.UserVm;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouter;
 import com.cloud.vm.InstanceGroupVO;
+import com.cloud.vm.Nic;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.State;
 import com.cloud.vm.SystemVm;
@@ -351,6 +355,9 @@ public class ApiResponseHelper {
    }
    
    public static UserVmResponse createUserVmResponse (UserVm userVm) {
+       if (userVm.getPrivateIpAddress() == null) {
+           return createUserVm2Response(userVm);
+       }
        UserVmResponse userVmResponse = new UserVmResponse();  
        Account acct = ApiDBUtils.findAccountById(Long.valueOf(userVm.getAccountId()));
        //FIXME - this check should be done in searchForUserVm method in ManagementServerImpl; 
@@ -376,7 +383,6 @@ public class ApiResponseHelper {
        if (userVm.getState() != null) {
            userVmResponse.setState(userVm.getState().toString());
        }
-
 
        userVmResponse.setHaEnable(userVm.isHaEnabled());
        
@@ -473,6 +479,9 @@ public class ApiResponseHelper {
    }
    
    public static SystemVmResponse createSystemVmResponse (VMInstanceVO systemVM) {
+       if (systemVM.getPrivateIpAddress() == null) {
+           return createSystemVm2Response(systemVM);
+       }
        SystemVmResponse vmResponse = new SystemVmResponse();
        if (systemVM instanceof SystemVm) {
            SystemVm vm = (SystemVm)systemVM;
@@ -528,6 +537,9 @@ public class ApiResponseHelper {
    
    
    public static DomainRouterResponse createDomainRouterResponse (DomainRouter router) {
+       if (router.getPrivateIpAddress() == null) {
+           return createDomainRouter2Response(router);
+       }
        DomainRouterResponse routerResponse = new DomainRouterResponse();
        routerResponse.setId(router.getId());
 
@@ -985,4 +997,276 @@ public class ApiResponseHelper {
        return response;
    }
    
+   
+   
+   public static UserVmResponse createUserVm2Response (UserVm userVm) {
+       UserVmResponse userVmResponse = new UserVmResponse();  
+       Account acct = ApiDBUtils.findAccountById(Long.valueOf(userVm.getAccountId()));
+       //FIXME - this check should be done in searchForUserVm method in ManagementServerImpl; 
+       //otherwise the number of vms returned is not going to match pageSize request parameter
+       if ((acct != null) && (acct.getRemoved() == null)) {
+           userVmResponse.setAccountName(acct.getAccountName());
+           userVmResponse.setDomainId(acct.getDomainId());
+           userVmResponse.setDomainName(ApiDBUtils.findDomainById(acct.getDomainId()).getName());
+       } else {
+           return null; // the account has been deleted, skip this VM in the response
+       }
+
+       userVmResponse.setId(userVm.getId());
+       AsyncJobVO asyncJob = ApiDBUtils.findInstancePendingAsyncJob("vm_instance", userVm.getId());
+       if (asyncJob != null) {
+           userVmResponse.setJobId(asyncJob.getId());
+           userVmResponse.setJobStatus(asyncJob.getStatus());
+       } 
+
+       userVmResponse.setName(userVm.getHostName());
+       userVmResponse.setCreated(userVm.getCreated());
+
+       if (userVm.getState() != null) {
+           userVmResponse.setState(userVm.getState().toString());
+       }
+
+       userVmResponse.setHaEnable(userVm.isHaEnabled());
+       
+       if (userVm.getDisplayName() != null) {
+           userVmResponse.setDisplayName(userVm.getDisplayName());
+       } else {
+           userVmResponse.setDisplayName(userVm.getHostName());
+       }
+
+       InstanceGroupVO group = ApiDBUtils.findInstanceGroupForVM(userVm.getId());
+       if (group != null) {
+           userVmResponse.setGroup(group.getName());
+           userVmResponse.setGroupId(group.getId());
+       }
+
+       // Data Center Info
+       userVmResponse.setZoneId(userVm.getDataCenterId());
+       userVmResponse.setZoneName(ApiDBUtils.findZoneById(userVm.getDataCenterId()).getName());
+
+       Account account = UserContext.current().getAccount();
+       //if user is an admin, display host id
+       if (((account == null) || (account.getType() == Account.ACCOUNT_TYPE_ADMIN)) && (userVm.getHostId() != null)) {
+           userVmResponse.setHostId(userVm.getHostId());
+           userVmResponse.setHostName(ApiDBUtils.findHostById(userVm.getHostId()).getName());
+       }
+       
+       // Template Info
+       VMTemplateVO template = ApiDBUtils.findTemplateById(userVm.getTemplateId());
+       if (template != null) {
+           userVmResponse.setTemplateId(userVm.getTemplateId());
+           userVmResponse.setTemplateName(template.getName());
+           userVmResponse.setTemplateDisplayText(template.getDisplayText());
+           userVmResponse.setPasswordEnabled(template.getEnablePassword());
+       } else {
+           userVmResponse.setTemplateId(-1L);
+           userVmResponse.setTemplateName("ISO Boot");
+           userVmResponse.setTemplateDisplayText("ISO Boot");
+           userVmResponse.setPasswordEnabled(false);
+       }
+       
+       if (userVm.getPassword() != null) {
+           userVmResponse.setPassword(userVm.getPassword());
+       }
+
+       // ISO Info
+       if (userVm.getIsoId() != null) {
+           VMTemplateVO iso = ApiDBUtils.findTemplateById(userVm.getIsoId().longValue());
+           if (iso != null) {
+               userVmResponse.setIsoId(userVm.getIsoId());
+               userVmResponse.setIsoName(iso.getName());
+           }
+       }
+
+       // Service Offering Info
+       ServiceOffering offering = ApiDBUtils.findServiceOfferingById(userVm.getServiceOfferingId());
+       userVmResponse.setServiceOfferingId(userVm.getServiceOfferingId());
+       userVmResponse.setServiceOfferingName(offering.getName());
+       userVmResponse.setCpuNumber(offering.getCpu());
+       userVmResponse.setCpuSpeed(offering.getSpeed());
+       userVmResponse.setMemory(offering.getRamSize());
+
+       VolumeVO rootVolume = ApiDBUtils.findRootVolume(userVm.getId());
+       if (rootVolume != null) {
+           userVmResponse.setRootDeviceId(rootVolume.getDeviceId());
+           String rootDeviceType = "Not created";
+           if (rootVolume.getPoolId() != null){
+               StoragePoolVO storagePool = ApiDBUtils.findStoragePoolById(rootVolume.getPoolId());
+               rootDeviceType = storagePool.getPoolType().toString();
+           }
+           userVmResponse.setRootDeviceType(rootDeviceType);
+       }
+
+       //stats calculation
+       DecimalFormat decimalFormat = new DecimalFormat("#.##");
+       String cpuUsed = null;
+       VmStats vmStats = ApiDBUtils.getVmStatistics(userVm.getId());
+       if (vmStats != null) {
+           float cpuUtil = (float) vmStats.getCPUUtilization();
+           cpuUsed = decimalFormat.format(cpuUtil) + "%";
+           userVmResponse.setCpuUsed(cpuUsed);
+
+           long networkKbRead = (long)vmStats.getNetworkReadKBs();
+           userVmResponse.setNetworkKbsRead(networkKbRead);
+           
+           long networkKbWrite = (long)vmStats.getNetworkWriteKBs();
+           userVmResponse.setNetworkKbsWrite(networkKbWrite);
+       }
+       
+       userVmResponse.setGuestOsId(userVm.getGuestOSId());
+       //network groups
+       userVmResponse.setNetworkGroupList(ApiDBUtils.getNetworkGroupsNamesForVm(userVm.getId()));
+       
+       List<? extends Nic> nics = BaseCmd._networkMgr.getNics(userVm);
+       for (Nic singleNic : nics) {
+           long configId = singleNic.getNetworkConfigurationId();
+           NetworkConfiguration networkConf = BaseCmd._networkMgr.getNetworkConfiguration(configId);
+           if (networkConf.getTrafficType() == TrafficType.Guest) {
+               userVmResponse.setIpAddress(singleNic.getIp4Address());
+           }
+       }
+       
+       userVmResponse.setObjectName("virtualmachine");
+       return userVmResponse;
+   }
+   
+   
+   public static DomainRouterResponse createDomainRouter2Response (DomainRouter router) {
+       DomainRouterResponse routerResponse = new DomainRouterResponse();
+       routerResponse.setId(router.getId());
+       routerResponse.setZoneId(router.getDataCenterId());
+       routerResponse.setName(router.getHostName());
+       routerResponse.setPodId(router.getPodId());
+       routerResponse.setTemplateId(router.getTemplateId());
+       routerResponse.setCreated(router.getCreated());
+       routerResponse.setState(router.getState());
+       routerResponse.setNetworkDomain(router.getDomain());
+
+       if (router.getHostId() != null) {
+           routerResponse.setHostId(router.getHostId());
+           routerResponse.setHostName(ApiDBUtils.findHostById(router.getHostId()).getName());
+       } 
+       
+       Account accountTemp = ApiDBUtils.findAccountById(router.getAccountId());
+       if (accountTemp != null) {
+           routerResponse.setAccountName(accountTemp.getAccountName());
+           routerResponse.setDomainId(accountTemp.getDomainId());
+           routerResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
+       }
+       
+       AsyncJobVO asyncJob = ApiDBUtils.findInstancePendingAsyncJob("domain_router", router.getId());
+       if (asyncJob != null) {
+           routerResponse.setJobId(asyncJob.getId());
+           routerResponse.setJobStatus(asyncJob.getStatus());
+       } 
+       
+       List<? extends Nic> nics = BaseCmd._networkMgr.getNics(router);
+       for (Nic singleNic : nics) {
+           long configId = singleNic.getNetworkConfigurationId();
+           NetworkConfiguration networkConf = BaseCmd._networkMgr.getNetworkConfiguration(configId);
+           
+           if (networkConf.getTrafficType() == TrafficType.Guest) {
+               routerResponse.setGuestIpAddress(singleNic.getIp4Address());
+               routerResponse.setGuestMacAddress(singleNic.getMacAddress());
+               routerResponse.setGuestNetmask(singleNic.getNetmask());
+           }
+           
+           if (networkConf.getTrafficType() == TrafficType.Control) {
+               routerResponse.setPrivateIp(singleNic.getIp4Address());
+               routerResponse.setPrivateMacAddress(singleNic.getMacAddress());
+               routerResponse.setPrivateNetmask(singleNic.getNetmask());
+           }
+           
+           if (networkConf.getTrafficType() == TrafficType.Public) {
+               routerResponse.setPublicIp(singleNic.getIp4Address());
+               routerResponse.setPublicMacAddress(singleNic.getMacAddress());
+               routerResponse.setPublicNetmask(singleNic.getNetmask());
+               routerResponse.setGateway(singleNic.getGateway());
+           }
+           
+           DataCenter zone = ApiDBUtils.findZoneById(router.getDataCenterId());
+           if (zone != null) {
+               routerResponse.setZoneName(zone.getName());
+               routerResponse.setDns1(zone.getDns1());
+               routerResponse.setDns2(zone.getDns2());
+           }
+       }
+       
+       routerResponse.setObjectName("domainrouter");
+       return routerResponse;
+   }
+   
+   
+   public static SystemVmResponse createSystemVm2Response (VMInstanceVO systemVM) {
+       SystemVmResponse vmResponse = new SystemVmResponse();
+       if (systemVM instanceof SystemVm) {
+           SystemVm vm = (SystemVm)systemVM;
+
+           vmResponse.setId(vm.getId());
+           vmResponse.setSystemVmType(vm.getType().toString().toLowerCase());
+           vmResponse.setZoneId(vm.getDataCenterId());
+           
+           vmResponse.setNetworkDomain(vm.getDomain());
+           vmResponse.setName(vm.getHostName());
+           vmResponse.setPodId(vm.getPodId());
+           vmResponse.setTemplateId(vm.getTemplateId());
+           vmResponse.setCreated(vm.getCreated());
+           
+           if (vm.getHostId() != null) {
+               vmResponse.setHostId(vm.getHostId());
+               vmResponse.setHostName(ApiDBUtils.findHostById(vm.getHostId()).getName());
+           }
+           
+           if (vm.getState() != null) {
+               vmResponse.setState(vm.getState().toString());
+           }
+           
+           String instanceType = "console_proxy";
+           if (systemVM instanceof SecondaryStorageVmVO) {
+               instanceType = "sec_storage_vm"; // FIXME:  this should be a constant so that the async jobs get updated with the correct instance type, they are using
+                                                //         different instance types at the moment
+           }
+           
+           AsyncJobVO asyncJob = ApiDBUtils.findInstancePendingAsyncJob(instanceType, vm.getId());
+           if (asyncJob != null) {
+               vmResponse.setJobId(asyncJob.getId());
+               vmResponse.setJobStatus(asyncJob.getStatus());
+           } 
+           
+           // for console proxies, add the active sessions
+           if (systemVM instanceof ConsoleProxyVO) {
+               ConsoleProxyVO proxy = (ConsoleProxyVO)systemVM;
+               vmResponse.setActiveViewerSessions(proxy.getActiveSession());
+           }
+           
+           DataCenter zone = ApiDBUtils.findZoneById(vm.getDataCenterId());
+           if (zone != null) {
+               vmResponse.setZoneName(zone.getName());
+               vmResponse.setDns1(zone.getDns1());
+               vmResponse.setDns2(zone.getDns2());
+           }
+           
+           List<? extends Nic> nics = BaseCmd._networkMgr.getNics(systemVM);
+           for (Nic singleNic : nics) {
+               long configId = singleNic.getNetworkConfigurationId();
+               NetworkConfiguration networkConf = BaseCmd._networkMgr.getNetworkConfiguration(configId);
+               
+               if (networkConf.getTrafficType() == TrafficType.Management) {
+                   vmResponse.setPrivateIp(singleNic.getIp4Address());
+                   vmResponse.setPrivateMacAddress(singleNic.getMacAddress());
+                   vmResponse.setPrivateNetmask(singleNic.getNetmask());
+               }
+               
+               if (networkConf.getTrafficType() == TrafficType.Public) {
+                   vmResponse.setPublicIp(singleNic.getIp4Address());
+                   vmResponse.setPublicMacAddress(singleNic.getMacAddress());
+                   vmResponse.setPublicNetmask(singleNic.getNetmask());
+                   vmResponse.setGateway(singleNic.getGateway());
+               }
+           }
+       }
+
+       vmResponse.setObjectName("systemvm");
+       return vmResponse;
+   }
 }

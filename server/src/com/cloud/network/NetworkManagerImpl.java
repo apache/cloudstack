@@ -49,10 +49,12 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.AddVpnUserCmd;
 import com.cloud.api.commands.AssignToLoadBalancerRuleCmd;
 import com.cloud.api.commands.AssociateIPAddrCmd;
-import com.cloud.api.commands.CreateIPForwardingRuleCmd;
+import com.cloud.api.commands.CreateIpForwardingRuleCmd;
+import com.cloud.api.commands.CreatePortForwardingRuleCmd;
 import com.cloud.api.commands.CreateLoadBalancerRuleCmd;
 import com.cloud.api.commands.CreateRemoteAccessVpnCmd;
-import com.cloud.api.commands.DeleteIPForwardingRuleCmd;
+import com.cloud.api.commands.DeleteIpForwardingRuleCmd;
+import com.cloud.api.commands.DeletePortForwardingRuleCmd;
 import com.cloud.api.commands.DeleteLoadBalancerRuleCmd;
 import com.cloud.api.commands.DeleteRemoteAccessVpnCmd;
 import com.cloud.api.commands.DisassociateIPAddrCmd;
@@ -156,13 +158,16 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DomainRouter;
 import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.State;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 
@@ -727,7 +732,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             Pair<String, VlanVO> ipAndVlan = _vlanDao.assignIpAddress(zoneId, accountId, domainId, VlanType.VirtualNetwork, false);
             
             if (ipAndVlan == null) {
-                throw new InsufficientAddressCapacityException("Unable to find available public IP addresses");
+                throw new InsufficientAddressCapacityException("Unable to find available public IP addresses", DataCenter.class, zoneId);
             } else {
             	ipAddress = ipAndVlan.first();
             	_accountMgr.incrementResourceCount(accountId, ResourceType.public_ip);
@@ -892,7 +897,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
             if (rule.isForwarding()) {
                 fwdRules.add(rule);
-                final SetFirewallRuleCommand cmd = new SetFirewallRuleCommand(routerName, routerIp, rule);
+                final SetFirewallRuleCommand cmd = new SetFirewallRuleCommand(routerName, routerIp, false, rule, false);
                 cmds.addCommand(cmd);
             } else {
                 lbRules.add(rule);
@@ -971,7 +976,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         	rule.setVlanNetmask(vlanNetmask);
             if (rule.isForwarding()) {
                 fwdRules.add(rule);
-                final SetFirewallRuleCommand cmd = new SetFirewallRuleCommand(router.getInstanceName(), router.getPrivateIpAddress(), rule);
+                final SetFirewallRuleCommand cmd = new SetFirewallRuleCommand(router.getInstanceName(), router.getPrivateIpAddress(), false, rule, false);
                 cmds.addCommand(cmd);
             }
         }
@@ -999,7 +1004,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    public FirewallRuleVO createPortForwardingRule(CreateIPForwardingRuleCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, NetworkRuleConflictException {
+    public FirewallRuleVO createPortForwardingRule(CreatePortForwardingRuleCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, NetworkRuleConflictException {
         // validate IP Address exists
         IPAddressVO ipAddress = _ipAddressDao.findById(cmd.getIpAddress());
         if (ipAddress == null) {
@@ -1376,6 +1381,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                         EventUtils.saveEvent(UserContext.current().getUserId(), loadBalancer.getAccountId(), level, type, description);
                     }
                 }
+                return true;
             } else {
                 // Remove the instanceIds from the load balancer since there was a failure.  Make sure to commit the
                 // transaction here, otherwise the act of throwing the internal error exception will cause this
@@ -1391,7 +1397,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 _loadBalancerDao.releaseFromLockTable(loadBalancerId);
             }
         }
-        return true;
     }
 
     @Override @DB
@@ -2086,7 +2091,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
     
     @Override
-    public List<NicVO> getNics(VMInstanceVO vm) {
+    public List<? extends Nic> getNics(VirtualMachine vm) {
         return _nicDao.listBy(vm.getId());
     }
     
@@ -2507,7 +2512,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
     
     @Override @DB
-    public boolean deleteIpForwardingRule(DeleteIPForwardingRuleCmd cmd) {
+    public boolean deletePortForwardingRule(DeletePortForwardingRuleCmd cmd) {
     	Long ruleId = cmd.getId();
     	Long userId = UserContext.current().getUserId();
     	Account account = UserContext.current().getAccount();
@@ -2921,7 +2926,247 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 	}
 	
 	@Override
-    public String getNextAvailableMacAddressInNetwork(long networkConfigurationId) {
-	    return _networkConfigDao.getNextAvailableMacAddress(networkConfigurationId);
+    public String getNextAvailableMacAddressInNetwork(long networkConfigurationId) throws InsufficientAddressCapacityException {
+	    String mac = _networkConfigDao.getNextAvailableMacAddress(networkConfigurationId);
+	    if (mac == null) {
+	        throw new InsufficientAddressCapacityException("Unable to create another mac address", NetworkConfiguration.class, networkConfigurationId);
+	    }
+	    return mac;
 	}
+	
+	@Override
+	public NetworkConfiguration getNetworkConfiguration(long id) {
+	        return _networkConfigDao.findById(id);
+	}
+	
+	@Override
+	public FirewallRuleVO createIpForwardingRuleOnDomr(Long ruleId) throws ServerApiException{
+        boolean success = false;
+		//get the rule 
+		FirewallRuleVO rule = _rulesDao.findById(ruleId);
+		
+		if(rule == null){
+			throw new PermissionDeniedException("Cannot create ip forwarding rule in db");
+		}
+		
+		//get ip address 
+		IPAddressVO ipAddress = _ipAddressDao.findById(rule.getPublicIpAddress());
+		if (ipAddress == null) {
+		    throw new InvalidParameterValueException("Unable to create ip forwarding rule on address " + ipAddress + ", invalid IP address specified.");
+		}
+		
+		//get the domain router object
+        DomainRouterVO router = _routerMgr.getRouter(ipAddress.getAccountId(), ipAddress.getDataCenterId());
+		success = createOrDeleteIpForwardingRuleOnDomr(rule,router,rule.getPrivateIpAddress(),true); //true +> create
+		
+		if(!success){
+			//corner case; delete record from db as domR rule creation failed
+	    	try {
+				_rulesDao.remove(ruleId);
+				throw new PermissionDeniedException("Cannot create ip forwarding rule on domr, hence deleting created record in db");
+			} catch (Exception e) {
+				throw new ServerApiException(BaseCmd.NET_CREATE_IPFW_RULE_ERROR, e.getMessage());
+			}
+		}
+		
+		// Save and create the event
+		String description;
+		String ruleName = "ip forwarding";
+		String level = EventVO.LEVEL_INFO;
+
+		description = "created new " + ruleName + " rule [" + rule.getPublicIpAddress() + "]->["
+		        + rule.getPrivateIpAddress() + "]" + ":" + rule.getProtocol();
+
+		EventUtils.saveEvent(UserContext.current().getUserId(), ipAddress.getAccountId(), level, EventTypes.EVENT_NET_RULE_ADD, description);
+		
+		return rule;
+
+	}
+	
+    @Override @DB
+    public FirewallRuleVO createIpForwardingRuleInDb(String ipAddr, Long virtualMachineId) throws ServerApiException {
+    	
+    	Transaction txn = Transaction.currentTxn();
+    	txn.start();
+    	UserVmVO userVM = null;
+        FirewallRuleVO newFwRule = null;
+        boolean locked = false;
+		try {
+			// validate IP Address exists
+			IPAddressVO ipAddress = _ipAddressDao.findById(ipAddr);
+			if (ipAddress == null) {
+			    throw new InvalidParameterValueException("Unable to create ip forwarding rule on address " + ipAddress + ", invalid IP address specified.");
+			}
+
+			// validate user VM exists
+			userVM = _vmDao.findById(virtualMachineId);
+			if (userVM == null) {
+			    throw new InvalidParameterValueException("Unable to create ip forwarding rule on address " + ipAddress + ", invalid virtual machine id specified (" + virtualMachineId + ").");
+			}
+			
+			//sync point; cannot lock on rule ; hence sync on vm
+			userVM = _vmDao.acquireInLockTable(userVM.getId());
+			
+			if(userVM == null){
+				s_logger.warn("Unable to acquire lock on user vm for creating 1-1 NAT rule");
+				return newFwRule;
+			}else{
+				locked = true;
+			}
+
+			// validate that IP address and userVM belong to the same account
+			if ((ipAddress.getAccountId() == null) || (ipAddress.getAccountId().longValue() != userVM.getAccountId())) {
+			    throw new InvalidParameterValueException("Unable to create ip forwarding rule, IP address " + ipAddress + " owner is not the same as owner of virtual machine " + userVM.toString()); 
+			}
+
+			// validate that userVM is in the same availability zone as the IP address
+			if (ipAddress.getDataCenterId() != userVM.getDataCenterId()) {
+			    throw new InvalidParameterValueException("Unable to create ip forwarding rule, IP address " + ipAddress + " is not in the same availability zone as virtual machine " + userVM.toString());
+			}
+
+			// if an admin account was passed in, or no account was passed in, make sure we honor the accountName/domainId parameters
+			Account account = UserContext.current().getAccount();
+			if (account != null) {
+			    if ((account.getType() == Account.ACCOUNT_TYPE_ADMIN) || (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)) {
+			        if (!_domainDao.isChildDomain(account.getDomainId(), userVM.getDomainId())) {
+			            throw new PermissionDeniedException("Unable to create ip forwarding rule, IP address " + ipAddress + " to virtual machine " + virtualMachineId + ", permission denied.");
+			        }
+			    } else if (account.getId() != userVM.getAccountId()) {
+			        throw new PermissionDeniedException("Unable to create ip forwarding rule, IP address " + ipAddress + " to virtual machine " + virtualMachineId + ", permission denied.");
+			    }
+			}
+
+			// check for ip address/port conflicts by checking existing forwarding and load balancing rules
+			List<FirewallRuleVO> existingNatRules = _rulesDao.findByPublicIpPrivateIpForNatRule(ipAddr, userVM.getGuestIpAddress());
+			
+			if(existingNatRules.size() > 0){
+				throw new NetworkRuleConflictException("The specified rule for public ip:"+ipAddr+" vm id:"+virtualMachineId+" already exists");
+			}
+			
+			newFwRule = new FirewallRuleVO();
+			newFwRule.setEnabled(true);
+			newFwRule.setForwarding(true);
+			newFwRule.setPrivatePort(null);
+			newFwRule.setProtocol("NAT");//protocol cannot be null; adding this as a NAT
+			newFwRule.setPublicPort(null);
+			newFwRule.setPublicIpAddress(ipAddress.getAddress());
+			newFwRule.setPrivateIpAddress(userVM.getGuestIpAddress());
+			newFwRule.setGroupId(null);
+			
+			_rulesDao.persist(newFwRule);			
+			txn.commit();
+		} catch (Exception e) {
+			s_logger.warn("Unable to create new firewall rule for 1:1 NAT");
+			txn.rollback();
+			throw new ServerApiException(BaseCmd.IP_ALLOCATION_ERROR,"Unable to create new firewall rule for 1:1 NAT:"+e.getMessage());
+		}finally{
+			if(locked)
+				_vmDao.releaseFromLockTable(userVM.getId());
+		}
+
+        return newFwRule;
+    }
+    
+    @Override @DB
+    public boolean deleteIpForwardingRule(Long id) {
+    	Long ruleId = id;
+    	Long userId = UserContext.current().getUserId();
+    	Account account = UserContext.current().getAccount();
+    	
+    	//verify input parameters here
+    	FirewallRuleVO rule = _firewallRulesDao.findById(ruleId);
+    	if (rule == null) {
+          throw new InvalidParameterValueException("Unable to find port forwarding rule " + ruleId);
+    	}
+    	
+    	String publicIp = rule.getPublicIpAddress();
+
+    	
+        IPAddressVO ipAddress = _ipAddressDao.findById(publicIp);
+        if (ipAddress == null) {
+            throw new InvalidParameterValueException("Unable to find IP address for ip forwarding rule " + ruleId);
+        }
+        
+        // although we are not writing these values to the DB, we will check
+        // them out of an abundance
+        // of caution (may not be warranted)
+
+        Account ruleOwner = _accountDao.findById(ipAddress.getAccountId());
+        if (ruleOwner == null) {
+            throw new InvalidParameterValueException("Unable to find owning account for ip forwarding rule " + ruleId);
+        }
+
+        // if an admin account was passed in, or no account was passed in, make sure we honor the accountName/domainId parameters
+        if (account != null) {
+            if (isAdmin(account.getType())) {
+                if (!_domainDao.isChildDomain(account.getDomainId(), ruleOwner.getDomainId())) {
+                    throw new PermissionDeniedException("Unable to delete ip forwarding rule " + ruleId + ", permission denied.");
+                }
+            } else if (account.getId() != ruleOwner.getId()) {
+                throw new PermissionDeniedException("Unable to delete ip forwarding rule " + ruleId + ", permission denied.");
+            }
+        }
+                
+        Transaction txn = Transaction.currentTxn();
+        boolean locked = false;
+        boolean success = false;
+        try {
+        	
+        	ipAddress = _ipAddressDao.acquireInLockTable(publicIp);
+            if (ipAddress == null) {
+                throw new PermissionDeniedException("Unable to obtain lock on record for deletion");
+            }
+
+            locked = true;
+            txn.start();
+            
+	        final DomainRouterVO router = _routerMgr.getRouter(ipAddress.getAccountId(), ipAddress.getDataCenterId());
+            success = createOrDeleteIpForwardingRuleOnDomr(rule, router, rule.getPrivateIpAddress(), false);
+            _firewallRulesDao.remove(ruleId);
+            
+            String description;
+            String type = EventTypes.EVENT_NET_RULE_DELETE;
+            String level = EventVO.LEVEL_INFO;
+            String ruleName = rule.isForwarding() ? "ip forwarding" : "load balancer";
+
+            if (success) {
+                description = "deleted " + ruleName + " rule [" + publicIp +"]->[" + rule.getPrivateIpAddress() + "] " + rule.getProtocol();
+            } else {
+                level = EventVO.LEVEL_ERROR;
+                description = "Error while deleting " + ruleName + " rule [" + publicIp + "]->[" + rule.getPrivateIpAddress() +"] " + rule.getProtocol();
+            }
+            EventUtils.saveEvent(userId, ipAddress.getAccountId(), level, type, description);
+            txn.commit();
+        }catch (Exception ex) {
+	        txn.rollback();
+	        s_logger.error("Unexpected exception deleting port forwarding rule " + ruleId, ex);
+	        return false;
+        }finally {
+        	if (locked) {
+              _ipAddressDao.releaseFromLockTable(publicIp);
+        	}
+        	txn.close();
+        }
+        return success;
+    }
+    
+    private boolean  createOrDeleteIpForwardingRuleOnDomr(FirewallRuleVO fwRule, DomainRouterVO router, String guestIp, boolean create){
+    	
+        Commands cmds = new Commands(OnError.Continue);
+        final SetFirewallRuleCommand cmd = new SetFirewallRuleCommand(router.getInstanceName(), router.getPrivateIpAddress(), true, fwRule, create);
+        cmds.addCommand(cmd);       
+        try {
+            _agentMgr.send(router.getHostId(), cmds);
+        } catch (final AgentUnavailableException e) {
+            s_logger.warn("agent unavailable", e);
+        } catch (final OperationTimedoutException e) {
+            s_logger.warn("Timed Out", e);
+        }
+        Answer[] answers = cmds.getAnswers();
+        if (answers == null || answers[0].getResult() == false ){
+            return false;
+        }else{
+        	return true;
+        }
+    }
 }

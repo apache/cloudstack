@@ -9,7 +9,7 @@ usage() {
   printf "Usage: %s: (-A|-D) -i <domR eth1 ip>  -r <target-instance-ip> -P protocol (-p port_range | -t icmp_type_code)  -l <public ip address> -d <target port> [-f <firewall ip> -u <firewall user> -y <firewall password> -z <firewall enable password> ] \n" $(basename $0) >&2
 }
 
-set -x
+# set -x
 
 get_dom0_ip () {
  eval "$1=$(ifconfig eth0 | awk '/inet addr/ {split ($2,A,":"); print A[2]}')"
@@ -71,6 +71,36 @@ icmp_entry() {
   return $?
 }
 
+#Add 1:1 NAT entry
+add_one_to_one_nat_entry() {
+  local guestIp=$1
+  local publicIp=$2  
+  local dIp=$3
+  local op=$4 
+  if [ "$op" == "-D" ]
+  then
+  	iptables -t nat $op PREROUTING -i eth2 -d $publicIp -j DNAT --to-destination $guestIp
+  	if [ $? -gt 0 ]
+  	then
+  	  return 0
+  	fi
+  else
+  	iptables -t nat $op PREROUTING -i eth2 -d $publicIp -j DNAT --to-destination $guestIp
+  fi
+  iptables -t nat $op POSTROUTING -o eth2 -s $guestIp -j SNAT --to-source $publicIp
+  if [ "$op" == "-A" ]
+  then
+    iptables -P FORWARD DROP
+  else
+    iptables -P FORWARD ACCEPT
+  fi
+  iptables $op FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
+  iptables $op FORWARD -i eth2 -o eth0 -d $guestIp -m state --state NEW -j ACCEPT
+  iptables $op FORWARD -i eth0 -o eth2 -s $guestIp -m state --state NEW -j ACCEPT
+  
+  return $?
+}
+
 get_vif_list() {
   local vif_list=""
   for i in /sys/class/net/eth*; do 
@@ -107,11 +137,12 @@ wflag=
 xflag=
 nflag=
 Nflag=
+Gflag=
 op=""
 oldPrivateIP=""
 oldPrivatePort=""
 
-while getopts 'ADr:i:P:p:t:l:d:w:x:n:N:' OPTION
+while getopts 'ADr:i:P:p:t:l:d:w:x:n:N:G:' OPTION
 do
   case $OPTION in
   A)	Aflag=1
@@ -153,11 +184,22 @@ do
   N)	Nflag=1
   		netmask="$OPTARG"
   		;;
+  G)	Gflag=1
+		nat="$OPTARG"
+		;;
   ?)	usage
 		exit 2
 		;;
   esac
 done
+
+#1:1 NAT
+if [ "$Gflag" == "1" ]
+  then
+    add_one_to_one_nat_entry $instanceIp $publicIp $domRIp $op
+  fi
+  exit $?
+fi
 
 reverseOp=$(reverse_op $op)
 

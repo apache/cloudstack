@@ -1,2 +1,0 @@
-# Vnet configuration for a vnet with id 97 and no security.
-(vnet (id 97) (bridge vnet97) (vnetif vnif97) (security none))

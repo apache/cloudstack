@@ -1,2 +1,0 @@
-# Vnet configuration for a vnet with id 98 and message authentication.
-(vnet (id 98) (bridge vnet98) (vnetif vnif98) (security auth))

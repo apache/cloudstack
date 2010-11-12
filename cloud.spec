@@ -74,19 +74,6 @@ Group:     System Environment/Libraries
 The Cloud.com server libraries provide a set of Java classes used
 in the Cloud.com Stack.
 
-%package vnet
-Summary:   Cloud.com-specific virtual network daemon
-Requires: python
-Requires: %{name}-daemonize = %{version}-%{release}
-Requires: %{name}-python = %{version}-%{release}
-Requires: net-tools
-Requires: bridge-utils
-Obsoletes: vmops-vnet < %{version}-%{release}
-Group:     System Environment/Daemons
-%description vnet
-The Cloud.com virtual network daemon manages virtual networks used in the
-Cloud.com Stack.
-
 %package agent-scripts
 Summary:   Cloud.com agent scripts
 # FIXME nuke the archdependency
@@ -217,7 +204,6 @@ Requires: java >= 1.6.0
 Requires: %{name}-utils = %{version}-%{release}, %{name}-core = %{version}-%{release}, %{name}-deps = %{version}-%{release}
 Requires: %{name}-agent-libs = %{version}-%{release}
 Requires: %{name}-agent-scripts = %{version}-%{release}
-Requires: %{name}-vnet = %{version}-%{release}
 Requires: python
 Requires: %{name}-python = %{version}-%{release}
 Requires: commons-httpclient
@@ -439,21 +425,6 @@ else
     /sbin/service %{name}-console-proxy condrestart >/dev/null 2>&1 || true
 fi
 
-%preun vnet
-if [ "$1" == "0" ] ; then
-    /sbin/chkconfig --del %{name}-vnetd > /dev/null 2>&1 || true
-    /sbin/service %{name}-vnetd stop > /dev/null 2>&1 || true
-fi
-
-%post vnet
-if [ "$1" == "1" ] ; then
-    /sbin/chkconfig --add %{name}-vnetd > /dev/null 2>&1 || true
-    /sbin/chkconfig --level 345 %{name}-vnetd on > /dev/null 2>&1 || true
-else
-    /sbin/service %{name}-vnetd condrestart >/dev/null 2>&1 || true
-fi
-
-
 %files utils
 %defattr(0644,root,root,0755)
 %{_javadir}/%{name}-utils.jar
@@ -519,12 +490,6 @@ fi
 %files core
 %defattr(0644,root,root,0755)
 %{_javadir}/%{name}-core.jar
-
-%files vnet
-%defattr(0644,root,root,0755)
-%attr(0755,root,root) %{_sbindir}/%{name}-vnetd
-%attr(0755,root,root) %{_sbindir}/%{name}-vn
-%attr(0755,root,root) %{_initrddir}/%{name}-vnetd
 
 %files python
 %defattr(0644,root,root,0755)

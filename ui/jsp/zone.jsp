@@ -131,7 +131,7 @@
 	                    <div id="internaldns2_edit_errormsg" style="display:none"></div>       
                     </div>
                 </div>
-                <div class="grid_rows odd">
+                <div class="grid_rows odd" id="vlan_container">
                     <div class="grid_row_cell" style="width: 20%;">
                         <div class="row_celltitles">
                             <%=t.t("vlan")%>:</div>

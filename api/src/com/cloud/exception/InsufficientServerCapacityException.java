@@ -17,6 +17,7 @@
  */
 package com.cloud.exception;
 
+import com.cloud.org.Cluster;
 import com.cloud.utils.SerialVersionUID;
 
 /**
@@ -28,7 +29,11 @@ public class InsufficientServerCapacityException extends InsufficientCapacityExc
     
     private static final long serialVersionUID = SerialVersionUID.InsufficientServerCapacityException;
     
-    public InsufficientServerCapacityException(String msg) {
-        super(msg);
+    public InsufficientServerCapacityException(String msg, Long clusterId) {
+        this(msg, Cluster.class, clusterId);
+    }
+    
+    public InsufficientServerCapacityException(String msg, Class<?> scope, Long id) {
+        super(msg, scope, id);
     }
 }

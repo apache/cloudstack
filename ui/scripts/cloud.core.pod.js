@@ -16,7 +16,7 @@
  * 
  */
  
- function afterLoadPodJSP($midmenuItem1) {
+ function afterLoadPodJSP($leftmenuItem1) {   
     hideMiddleMenu();	
           	
     initAddHostButton($("#midmenu_add_link"), "pod_page"); 
@@ -29,36 +29,76 @@
     if (getHypervisorType() == 'kvm') 
 	    $("#dialog_add_pool").find("#add_pool_protocol").empty().html('<option value="nfs">NFS</option>');	
     bindEventHandlerToDialogAddPool();	 
-    	    
-	podJsonToRightPanel($midmenuItem1);     	
+    
+    //switch between different tabs 
+    var tabArray = [$("#tab_details"), $("#tab_network")];
+    var tabContentArray = [$("#tab_content_details"), $("#tab_content_network")];
+    var afterSwitchFnArray = [podJsonToDetailsTab, podJsonToNetworkTab];
+    switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray);       
+   
+	podJsonToRightPanel($leftmenuItem1);     	
 }
 
 function podJsonToRightPanel($leftmenuItem1) {	 
-    podJsonToDetailsTab($leftmenuItem1);
+    $("#right_panel_content").data("$leftmenuItem1", $leftmenuItem1);  
+    $("#tab_details").click();   
 }
 
-function podJsonToDetailsTab($leftmenuItem1) {	
-    var jsonObj = $leftmenuItem1.data("jsonObj");     
-    var $detailsTab = $("#tab_content_details");   
-    $detailsTab.data("jsonObj", jsonObj);           
-    $detailsTab.find("#id").text(fromdb(jsonObj.id));
-    $detailsTab.find("#grid_header_title").text(fromdb(jsonObj.name));
+function podJsonToDetailsTab() {	
+    var $thisTab = $("#right_panel_content #tab_content_details");  
+    $thisTab.find("#tab_container").hide(); 
+    $thisTab.find("#tab_spinning_wheel").show();        
     
-    $detailsTab.find("#name").text(fromdb(jsonObj.name));
-    $detailsTab.find("#name_edit").val(fromdb(jsonObj.name));
+    var $leftmenuItem1 = $("#right_panel_content").data("$leftmenuItem1");
+    var jsonObj = $leftmenuItem1.data("jsonObj");
+    $thisTab.data("jsonObj", jsonObj);  
+     
+    $thisTab.find("#id").text(fromdb(jsonObj.id));
+    $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));
     
-    $detailsTab.find("#cidr").text(fromdb(jsonObj.cidr));   
-    $detailsTab.find("#cidr_edit").val(fromdb(jsonObj.cidr));   
+    $thisTab.find("#name").text(fromdb(jsonObj.name));
+    $thisTab.find("#name_edit").val(fromdb(jsonObj.name));
+    
+    $thisTab.find("#cidr").text(fromdb(jsonObj.cidr));   
+    $thisTab.find("#cidr_edit").val(fromdb(jsonObj.cidr));   
          
-    $detailsTab.find("#ipRange").text(getIpRange(jsonObj.startip, jsonObj.endip));
-    $detailsTab.find("#startIpRange_edit").val(fromdb(jsonObj.startip));
-    $detailsTab.find("#endIpRange_edit").val(fromdb(jsonObj.endip));
+    $thisTab.find("#ipRange").text(getIpRange(jsonObj.startip, jsonObj.endip));
+    $thisTab.find("#startIpRange_edit").val(fromdb(jsonObj.startip));
+    $thisTab.find("#endIpRange_edit").val(fromdb(jsonObj.endip));
     
-    $detailsTab.find("#gateway").text(fromdb(jsonObj.gateway));  
-    $detailsTab.find("#gateway_edit").val(fromdb(jsonObj.gateway));  
+    $thisTab.find("#gateway").text(fromdb(jsonObj.gateway));  
+    $thisTab.find("#gateway_edit").val(fromdb(jsonObj.gateway));  
+    
+    
+    // hide network tab upon zone vlan
+    var zoneVlan;  
+    $.ajax({
+	    data: createURL("command=listZones&id="+jsonObj.zoneid),
+		dataType: "json",	
+		async: false,	
+		success: function(json) {
+			var items = json.listzonesresponse.zone;						
+			if (items != null && items.length > 0) {					    
+				//zoneVlan = items[0].vlan;  //comment this one out until bug 7162 is fixed ("listZones API should take in id parameter")
+				
+				//temporary code before bug 7162 is fixed ********(begin)***********		
+				for(var i=0; i<items.length; i++) {				   		    
+				    if(items[i].name == jsonObj.zonename) {
+				        zoneVlan = items[i].vlan; 
+				    }
+				}	
+				//temporary code before bug 7162 is fixed ********(end)*************	
+			}				
+		}
+	});	
+    if(zoneVlan == null) //basic network (VLAN in pod-level)
+        $("#tab_network").show();  
+    else //advanced network (VLAN in zone-level)
+        $("#tab_network").hide();
+    
     
     //actions ***   
-    var $actionLink = $detailsTab.find("#action_link"); 
+    var $actionLink = $thisTab.find("#action_link"); 
     $actionLink.bind("mouseover", function(event) {	    
         $(this).find("#action_menu").show();    
         return false;
@@ -67,32 +107,75 @@ function podJsonToDetailsTab($leftmenuItem1) {
         $(this).find("#action_menu").hide();    
         return false;
     });	  
-    var $actionMenu = $detailsTab.find("#action_link #action_menu");
+    var $actionMenu = $thisTab.find("#action_link #action_menu");
     $actionMenu.find("#action_list").empty();   
-    buildActionLinkForTab("Edit Pod", podActionMap, $actionMenu, $leftmenuItem1, $detailsTab);  
-    buildActionLinkForTab("Delete Pod", podActionMap, $actionMenu, $leftmenuItem1, $detailsTab);  
+    buildActionLinkForTab("Edit Pod", podActionMap, $actionMenu, $leftmenuItem1, $thisTab);  
+    buildActionLinkForTab("Delete Pod", podActionMap, $actionMenu, $leftmenuItem1, $thisTab); 
+    
+    $thisTab.find("#tab_spinning_wheel").hide();    
+    $thisTab.find("#tab_container").show();      
 }	
+
+function podJsonToNetworkTab() {   
+    var $thisTab = $("#right_panel_content #tab_content_network");
+	$thisTab.find("#tab_container").hide(); 
+    $thisTab.find("#tab_spinning_wheel").show();   
+		
+	var $leftmenuItem1 = $("#right_panel_content").data("$leftmenuItem1");	
+	var jsonObj = $leftmenuItem1.data("jsonObj");	
+        
+    $.ajax({
+		data: createURL("command=listVlanIpRanges&zoneid="+jsonObj.zoneid+"&podid="+jsonObj.id),
+		dataType: "json",
+		success: function(json) {			       
+			var items = json.listvlaniprangesresponse.vlaniprange;
+			var $container = $thisTab.find("#tab_container").empty();
+			var template = $("#network_tab_template");	
+			if (items != null && items.length > 0) {					    
+				for (var i = 0; i < items.length; i++) {	
+				    var newTemplate = template.clone(true);	               
+	                podVLANJSONToTemplate(items[i], newTemplate); 
+	                $container.append(newTemplate.show());	
+				}
+			}
+			$thisTab.find("#tab_spinning_wheel").hide();    
+            $thisTab.find("#tab_container").show();    	
+		}			
+	});			
+} 
+
+function podVLANJSONToTemplate(jsonObj, template) {
+    template.data("jsonObj", jsonObj);     
+    template.attr("id", "pod_VLAN_"+jsonObj.id).data("podVLANId", jsonObj.id);    
+    template.find("#grid_header_title").text(fromdb(jsonObj.description));			   
+    template.find("#id").text(jsonObj.id);    
+    template.find("#iprange").text(jsonObj.description);
+    template.find("#netmask").text(jsonObj.netmask);
+    template.find("#gateway").text(jsonObj.gateway);
+    template.find("#podname").text(jsonObj.podname); 
+   
+}
 
 function podJsonClearRightPanel(jsonObj) {	 
     podJsonClearDetailsTab(jsonObj);
 }
 
 function podJsonClearDetailsTab(jsonObj) {	    
-    var $detailsTab = $("#tab_content_details");       
-    $detailsTab.find("#id").text("");
+    var $thisTab = $("#right_panel_content #tab_content_details");  
+    $thisTab.find("#id").text("");
     
-    $detailsTab.find("#name").text("");
-    $detailsTab.find("#name_edit").val("");
+    $thisTab.find("#name").text("");
+    $thisTab.find("#name_edit").val("");
     
-    $detailsTab.find("#cidr").text("");  
-    $detailsTab.find("#cidr_edit").val("");
+    $thisTab.find("#cidr").text("");  
+    $thisTab.find("#cidr_edit").val("");
           
-    $detailsTab.find("#ipRange").text("");
-    $detailsTab.find("#startIpRange_edit").val("");
-    $detailsTab.find("#endIpRange_edit").val("");
+    $thisTab.find("#ipRange").text("");
+    $thisTab.find("#startIpRange_edit").val("");
+    $thisTab.find("#endIpRange_edit").val("");
     
-    $detailsTab.find("#gateway").text(""); 
-    $detailsTab.find("#gateway_edit").val(""); 
+    $thisTab.find("#gateway").text(""); 
+    $thisTab.find("#gateway_edit").val(""); 
     
     //if (getDirectAttachUntaggedEnabled() == "true") 
 	//	$("#submenu_content_zones #action_add_directip_vlan").data("type", "pod").data("id", obj.id).data("name", obj.name).data("zoneid", obj.zoneid).show();		

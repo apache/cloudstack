@@ -20,13 +20,16 @@ package com.cloud.network;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.AddVpnUserCmd;
 import com.cloud.api.commands.AssignToLoadBalancerRuleCmd;
 import com.cloud.api.commands.AssociateIPAddrCmd;
-import com.cloud.api.commands.CreateIPForwardingRuleCmd;
+import com.cloud.api.commands.CreateIpForwardingRuleCmd;
+import com.cloud.api.commands.CreatePortForwardingRuleCmd;
 import com.cloud.api.commands.CreateLoadBalancerRuleCmd;
 import com.cloud.api.commands.CreateRemoteAccessVpnCmd;
-import com.cloud.api.commands.DeleteIPForwardingRuleCmd;
+import com.cloud.api.commands.DeleteIpForwardingRuleCmd;
+import com.cloud.api.commands.DeletePortForwardingRuleCmd;
 import com.cloud.api.commands.DeleteLoadBalancerRuleCmd;
 import com.cloud.api.commands.DeleteRemoteAccessVpnCmd;
 import com.cloud.api.commands.DisassociateIPAddrCmd;
@@ -61,11 +64,12 @@ import com.cloud.user.AccountVO;
 import com.cloud.utils.Pair;
 import com.cloud.vm.DomainRouter;
 import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
-import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 /**
@@ -210,7 +214,7 @@ public interface NetworkManager {
      * @param cmd the command specifying the ip address, public port, protocol, private port, and virtual machine id.
      * @return the newly created FirewallRuleVO if successful, null otherwise.
      */
-    public FirewallRuleVO createPortForwardingRule(CreateIPForwardingRuleCmd cmd) throws NetworkRuleConflictException;
+    public FirewallRuleVO createPortForwardingRule(CreatePortForwardingRuleCmd cmd) throws NetworkRuleConflictException;
 
     /**
      * List port forwarding rules assigned to an ip address
@@ -302,8 +306,6 @@ public interface NetworkManager {
     List<IPAddressVO> listPublicIpAddressesInVirtualNetwork(long accountId, long dcId, Boolean sourceNat);	
     
     public boolean disassociateIpAddress(DisassociateIPAddrCmd cmd);
-    
-    public boolean deleteIpForwardingRule(DeleteIPForwardingRuleCmd cmd);
 
     List<NetworkConfigurationVO> setupNetworkConfiguration(Account owner, NetworkOfferingVO offering, DeploymentPlan plan);
     List<NetworkConfigurationVO> setupNetworkConfiguration(Account owner, NetworkOfferingVO offering, NetworkConfiguration predefined, DeploymentPlan plan);
@@ -316,7 +318,7 @@ public interface NetworkManager {
     void release(VirtualMachineProfile<? extends VMInstanceVO> vmProfile);
     
     DomainRouter upgradeRouter(UpgradeRouterCmd cmd);
-    List<NicVO> getNics(VMInstanceVO vm);
+    List<? extends Nic> getNics (VirtualMachine vm);
 	
     List<AccountVO> getAccountsUsingNetworkConfiguration(long configurationId);    
     AccountVO getNetworkConfigurationOwner(long configurationId);
@@ -357,5 +359,14 @@ public interface NetworkManager {
 
 	boolean removeVpnUser(RemoveVpnUserCmd cmd) throws ConcurrentOperationException;
 	
-	String getNextAvailableMacAddressInNetwork(long networkConfigurationId);
+	NetworkConfiguration getNetworkConfiguration(long id);
+	String getNextAvailableMacAddressInNetwork(long networkConfigurationId) throws InsufficientAddressCapacityException;
+
+	FirewallRuleVO createIpForwardingRuleInDb(String ipAddr, Long virtualMachineId) throws ServerApiException;
+
+	public boolean deletePortForwardingRule(DeletePortForwardingRuleCmd cmd);
+
+	FirewallRuleVO createIpForwardingRuleOnDomr(Long ruleId);
+
+	boolean deleteIpForwardingRule(Long id);
 }

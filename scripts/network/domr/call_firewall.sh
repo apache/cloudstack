@@ -33,11 +33,12 @@ wflag=
 xflag=
 nflag=
 Nflag=
+Gflag=
 op=""
 oldPrivateIP=""
 oldPrivatePort=""
 
-while getopts 'ADr:i:P:p:t:l:d:w:x:n:N:' OPTION
+while getopts 'ADr:i:P:p:t:l:d:w:x:n:N:G:' OPTION
 do
   case $OPTION in
   A)	Aflag=1
@@ -79,6 +80,9 @@ do
   N)	Nflag=1
   		netmask="$OPTARG"
   		;;
+  G)    Gflag=1
+  		nat="OPTARG"
+  		;;
   ?)	usage
 		exit 2
 		;;
@@ -96,12 +100,6 @@ fi
 
 #Either the A flag or the D flag but not both
 if [ "$Aflag$Dflag" != "1" ]
-then
-  usage
-  exit 2
-fi
-
-if [ "$rflag$iflag$Pflag$pflag$tflag$lflag" != "11111" ]
 then
   usage
   exit 2

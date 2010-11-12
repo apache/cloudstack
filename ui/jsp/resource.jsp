@@ -193,39 +193,39 @@
                                 <li>
                                     <label>Name:</label>
                                     <input class="text" type="text" name="add_zone_name" id="add_zone_name"/>
-                                    <div id="add_zone_name_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+                                    <div id="add_zone_name_errormsg" class="dialog_formcontent_errormsg" style="display:none; margin-left:0;" ></div>
                                 </li>
                                 <li>
                                     <label>DNS 1:</label>
                                     <input class="text" type="text" name="add_zone_dns1" id="add_zone_dns1"/>
-                                    <div id="add_zone_dns1_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+                                    <div id="add_zone_dns1_errormsg" class="dialog_formcontent_errormsg" style="display:none; margin-left:0;" ></div>
                                 </li>
                                 <li>
                                     <label>DNS 2:</label>
                                     <input class="text" type="text" name="add_zone_dns2" id="add_zone_dns2"/>
-                                    <div id="add_zone_dns2_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+                                    <div id="add_zone_dns2_errormsg" class="dialog_formcontent_errormsg" style="display:none; margin-left:0;" ></div>
                                 </li>
                                 <li>
                                     <label>Internal DNS 1:</label>
                                     <input class="text" type="text" id="add_zone_internaldns1"/>
-                                    <div id="add_zone_internaldns1_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+                                    <div id="add_zone_internaldns1_errormsg" class="dialog_formcontent_errormsg" style="display:none; margin-left:0;" ></div>
                                 </li>
                                 <li>
                                     <label>Internal DNS 2:</label>
                                     <input class="text" type="text" id="add_zone_internaldns2"/>
-                                    <div id="add_zone_internaldns2_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+                                    <div id="add_zone_internaldns2_errormsg" class="dialog_formcontent_errormsg" style="display:none; margin-left:0;" ></div>
                                 </li>
                                 <li id="add_zone_vlan_container">
                                     <label>VLAN Range:</label>
                                     <input class="text" style="width:92px" type="text" name="add_zone_startvlan" id="add_zone_startvlan"/><span>-</span>
                                    <input class="text" style="width:92px" type="text" name="add_zone_endvlan" id="add_zone_endvlan"/>
-                                    <div id="add_zone_startvlan_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
-                                    <div id="add_zone_endvlan_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+                                    <div id="add_zone_startvlan_errormsg" class="dialog_formcontent_errormsg" style="display:none; margin-left:0;" ></div>
+                                    <div id="add_zone_endvlan_errormsg" class="dialog_formcontent_errormsg" style="display:none; margin-left:0;" ></div>
                                 </li>
                                 <li>
                                     <label for="add_zone_guestcidraddress">Guest CIDR:</label>
                                     <input class="text" type="text" id="add_zone_guestcidraddress" value="10.1.1.0/24"/>
-                                    <div id="add_zone_guestcidraddress_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+                                    <div id="add_zone_guestcidraddress_errormsg" class="dialog_formcontent_errormsg" style="display:none; margin-left:0;" ></div>
                                 </li>				
                                 <li>
                                     <label>Public?:</label>
@@ -292,21 +292,21 @@
                                 <label for="user_name" style="width: 115px;">
                                     Name:</label>
                                 <input class="text" type="text" name="add_pod_name" id="add_pod_name" />
-                                <div id="add_pod_name_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                                <div id="add_pod_name_errormsg" class="dialog_formcontent_errormsg" style="display: none; margin-left:0;">
                                 </div>
                             </li>
                             <li>
                                 <label for="add_pod_gateway" style="width: 115px;">
                                     Gateway:</label>
                                 <input class="text" type="text" id="add_pod_gateway" />
-                                <div id="add_pod_gateway_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                                <div id="add_pod_gateway_errormsg" class="dialog_formcontent_errormsg" style="display: none; margin-left:0;">
                                 </div>
                             </li>
                             <li>
                                 <label for="user_name" style="width: 115px;">
                                     CIDR:</label>
                                 <input class="text" type="text" name="add_pod_cidr" id="add_pod_cidr" />
-                                <div id="add_pod_cidr_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                                <div id="add_pod_cidr_errormsg" class="dialog_formcontent_errormsg" style="display: none; margin-left:0;">
                                 </div>
                             </li>
                             <li>
@@ -314,9 +314,9 @@
                                     Reserved System IP:</label>
                                 <input class="text" style="width: 92px" type="text" name="add_pod_startip" id="add_pod_startip" /><span>-</span>
                                 <input class="text" style="width: 92px" type="text" name="add_pod_endip" id="add_pod_endip" />
-                                <div id="add_pod_startip_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                                <div id="add_pod_startip_errormsg" class="dialog_formcontent_errormsg" style="display: none; margin-left:133px;">
                                 </div>
-                                <div id="add_pod_endip_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                                <div id="add_pod_endip_errormsg" class="dialog_formcontent_errormsg" style="display: none; ">
                                 </div>
                             </li>
                             <li id="guestip_container">
@@ -324,7 +324,7 @@
                                     Guest IP Range:</label>
                                 <input class="text" style="width: 92px" type="text" id="startguestip" /><span>-</span>
                                 <input class="text" style="width: 92px" type="text" id="endguestip" />
-                                <div id="startguestip_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                                <div id="startguestip_errormsg" class="dialog_formcontent_errormsg" style="display: none; margin-left:133px;">
                                 </div>
                                 <div id="endguestip_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                                 </div>
@@ -333,7 +333,7 @@
                                 <label style="width: 115px;">
                                     Guest Netmask:</label>
                                 <input class="text" type="text" id="guestnetmask" />
-                                <div id="guestnetmask_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                                <div id="guestnetmask_errormsg" class="dialog_formcontent_errormsg" style="display: none; margin-left:0;">
                                 </div>
                             </li>	
                         </ol>
@@ -362,9 +362,9 @@
                 Step 1</div>
             <div class="vmpopup_steps" style="background: url(images/othersteps_bg.gif) no-repeat top left">
                 Step 2</div>
-            <div class="vmpopup_steps" style="color: #FFF; background: url(images/step2_selected.gif) no-repeat top left">
+            <div class="vmpopup_steps" style="background: url(images/othersteps_bg.gif) no-repeat top left">
                 Step 3</div>
-            <div class="vmpopup_steps" style="background: url(images/laststep_slectedbg.gif) no-repeat top left">
+            <div class="vmpopup_steps" style="background: url(images/laststep_bg.gif) no-repeat top left">
             </div>
             <div class="vmpopup_container_closebutton" id="close_button">
             </div>

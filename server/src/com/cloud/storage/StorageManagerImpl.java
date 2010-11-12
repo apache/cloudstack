@@ -716,6 +716,9 @@ public class StorageManagerImpl implements StorageManager {
         StoragePoolVO pool = null;
         final HashSet<StoragePool> avoidPools = new HashSet<StoragePool>(avoids);
        
+        if(diskOffering != null && diskOffering.isCustomized()){
+        	diskOffering.setDiskSize(size);
+        }
         DiskProfile dskCh = null;
         if (volume.getVolumeType() == VolumeType.ROOT && Storage.ImageFormat.ISO != template.getFormat()) {
             dskCh = createDiskCharacteristics(volume, template, dc, offering);
@@ -842,7 +845,7 @@ public class StorageManagerImpl implements StorageManager {
             rootVol.setDeviceId(0l);
             rootVol = _volsDao.persist(rootVol);
             
-            if (diskOffering != null && diskOffering.getDiskSizeInBytes() > 0) {
+            if ((diskOffering != null && diskOffering.getDiskSizeInBytes() > 0) || (diskOffering != null && diskOffering.isCustomized())) {
                 dataVol = new VolumeVO(VolumeType.DATADISK, vm.getId(), vm.getInstanceName() + "-DATA", dc.getId(), pod.getId(), account.getId(), account.getDomainId(), (size>0)? size : diskOffering.getDiskSizeInBytes());
                 
                 createStartedEvent(account, dataVol);
@@ -1458,10 +1461,12 @@ public class StorageManagerImpl implements StorageManager {
     	//verify parameters
     	StoragePoolVO sPool = _storagePoolDao.findById(id);
     	if (sPool == null) {
+    		s_logger.warn("Unable to find pool:"+id);
     		throw new InvalidParameterValueException("Unable to find pool by id " + id);
     	}
     	
     	if (sPool.getPoolType().equals(StoragePoolType.LVM)) {
+    		s_logger.warn("Unable to delete local storage id:"+id);
     		throw new InvalidParameterValueException("Unable to delete local storage id: " + id);
     	}
 
@@ -1481,6 +1486,7 @@ public class StorageManagerImpl implements StorageManager {
             Pair<Long, Long> volumeRecords = _volsDao.getCountAndTotalByPool(id);
 
             if (volumeRecords.first() > 0) {
+            	s_logger.warn("Cannot delete pool "+sPool.getName()+" as there are associated vols for this pool");
                 return false; // cannot delete as there are associated vols
             }
             // 3. Else part, remove the SR associated with the Xenserver
@@ -1490,7 +1496,8 @@ public class StorageManagerImpl implements StorageManager {
                 StoragePoolVO lock = _storagePoolDao.acquireInLockTable(sPool.getId());
                 try {
                     if (lock == null) {
-                        s_logger.debug("Failed to acquire lock when deleting StoragePool with ID: " + sPool.getId());
+                    	if(s_logger.isDebugEnabled())
+                    		s_logger.debug("Failed to acquire lock when deleting StoragePool with ID: " + sPool.getId());
                         return false;
                     }
 

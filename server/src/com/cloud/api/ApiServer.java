@@ -90,6 +90,7 @@ import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.maid.StackMaid;
 import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.user.UserContext;
@@ -113,6 +114,9 @@ public class ApiServer implements HttpRequestHandler {
     //private AsyncJobManager _asyncMgr;
     private ApiDispatcher _dispatcher;
     private ManagementServer _ms = null;
+    private AccountManager _accountMgr = null;
+    private Account _systemAccount = null;
+    private User _systemUser = null;
 
     private static int _workerCount = 0;
 
@@ -187,6 +191,9 @@ public class ApiServer implements HttpRequestHandler {
 
         _ms = (ManagementServer)ComponentLocator.getComponent(ManagementServer.Name);
         ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
+        _accountMgr = locator.getManager(AccountManager.class);
+        _systemAccount = _accountMgr.getSystemAccount();
+        _systemUser = _accountMgr.getSystemUser();
         //_asyncMgr = locator.getManager(AsyncJobManager.class);
         _dispatcher = ApiDispatcher.getInstance();
 
@@ -247,7 +254,7 @@ public class ApiServer implements HttpRequestHandler {
             }
             try {
             	// always trust commands from API port, user context will always be UID_SYSTEM/ACCOUNT_ID_SYSTEM
-            	UserContext.registerContext(User.UID_SYSTEM, null, null, Account.ACCOUNT_ID_SYSTEM, null, null, true);
+            	UserContext.registerContext(_systemUser.getId(), _systemAccount, _systemAccount.getAccountName(), _systemAccount.getId(), null, null, true);
             	sb.insert(0,"(userId="+User.UID_SYSTEM+ " accountId="+Account.ACCOUNT_ID_SYSTEM+ " sessionId="+null+ ") " );
                 String responseText = handleRequest(parameterMap, true, responseType, sb);
                 sb.append(" 200 " + ((responseText == null) ? 0 : responseText.length()));
@@ -362,7 +369,7 @@ public class ApiServer implements HttpRequestHandler {
 
             UserContext ctx = UserContext.current();
             Long userId = ctx.getUserId();
-            Account account = (Account)ctx.getAccount();
+            Account account = ctx.getAccount();
             if (userId != null) {
                 params.put("ctxUserId", userId.toString());
             }

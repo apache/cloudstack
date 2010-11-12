@@ -121,9 +121,11 @@ import com.cloud.api.commands.RebootSystemVmCmd;
 import com.cloud.api.commands.RegisterCmd;
 import com.cloud.api.commands.RegisterPreallocatedLunCmd;
 import com.cloud.api.commands.StartSystemVMCmd;
+import com.cloud.api.commands.StartSystemVm2Cmd;
+import com.cloud.api.commands.StopSystemVm2Cmd;
 import com.cloud.api.commands.StopSystemVmCmd;
 import com.cloud.api.commands.UpdateDomainCmd;
-import com.cloud.api.commands.UpdateIPForwardingRuleCmd;
+import com.cloud.api.commands.UpdatePortForwardingRuleCmd;
 import com.cloud.api.commands.UpdateIsoCmd;
 import com.cloud.api.commands.UpdateIsoPermissionsCmd;
 import com.cloud.api.commands.UpdateTemplateCmd;
@@ -391,7 +393,7 @@ public class ManagementServerImpl implements ManagementServer {
     private final int _routerRamSize;
     private final int _proxyRamSize;
     private final int _ssRamSize;
-    private int _maxVolumeSizeInGb;
+    private int _maxVolumeSizeInMb;
 
     private final Map<String, Boolean> _availableIdsMap;
 
@@ -510,9 +512,9 @@ public class ManagementServerImpl implements ManagementServer {
 			_networkGroupsEnabled = true;
 		}
 		
-        String maxVolumeSizeInGbString = _configDao.getValue("max.volume.size.gb");
-        int maxVolumeSizeGb = NumbersUtil.parseInt(maxVolumeSizeInGbString, 2000);
-        _maxVolumeSizeInGb = maxVolumeSizeGb;
+        String maxVolumeSizeInMbString = _configDao.getValue("max.volume.size.gb");
+        int maxVolumeSizeMb = NumbersUtil.parseInt(maxVolumeSizeInMbString, (2000*1024));//2000 gb
+        _maxVolumeSizeInMb = maxVolumeSizeMb;
     }
     
     protected Map<String, String> getConfigs() {
@@ -1214,8 +1216,8 @@ public class ManagementServerImpl implements ManagementServer {
         	throw new InvalidParameterValueException("Please specify a valid disk size for VM creation; custom disk offering has no size set");
         }
         
-        if(diskOffering != null && diskOffering.isCustomized() && size > _maxVolumeSizeInGb){
-        	throw new InvalidParameterValueException("Please specify a valid disk size for VM creation; custom disk offering max size is:"+_maxVolumeSizeInGb);
+        if(diskOffering != null && diskOffering.isCustomized() && size > _maxVolumeSizeInMb){
+        	throw new InvalidParameterValueException("Please specify a valid disk size for VM creation; custom disk offering max size is:"+_maxVolumeSizeInMb);
         }
         
         // validate that the template is usable by the account
@@ -1489,10 +1491,10 @@ public class ManagementServerImpl implements ManagementServer {
             // default domainId to the admin's domain
             domainId = ((account == null) ? DomainVO.ROOT_DOMAIN : account.getDomainId());
         }
-
+        
         Filter searchFilter = new Filter(UserAccountVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
 
-        Object id = cmd.getId();
+        Long id = cmd.getId();
         Object username = cmd.getUsername();
         Object type = cmd.getAccountType();
         Object accountName = cmd.getAccountName();
@@ -1501,7 +1503,17 @@ public class ManagementServerImpl implements ManagementServer {
 
         SearchBuilder<UserAccountVO> sb = _userAccountDao.createSearchBuilder();
         sb.and("username", sb.entity().getUsername(), SearchCriteria.Op.LIKE);
-        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        if (id != null && id == 1) {
+          //system user should NOT be searchable
+            List<UserAccountVO> emptyList = new ArrayList<UserAccountVO>();
+            return emptyList;
+        } else if (id != null) {
+            sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+         } else {
+             //this condition is used to exclude system user from the search results
+            sb.and("id", sb.entity().getId(), SearchCriteria.Op.NEQ);
+         }
+        
         sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
         sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
         sb.and("accountName", sb.entity().getAccountName(), SearchCriteria.Op.LIKE);
@@ -1534,6 +1546,9 @@ public class ManagementServerImpl implements ManagementServer {
 
         if (id != null) {
             sc.setParameters("id", id);
+        } else {
+            //Don't return system user, search builder with NEQ
+            sc.setParameters("id", 1);
         }
 
         if (type != null) {
@@ -2565,7 +2580,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public FirewallRuleVO updatePortForwardingRule(UpdateIPForwardingRuleCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
+    public FirewallRuleVO updatePortForwardingRule(UpdatePortForwardingRuleCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
     	String publicIp = cmd.getPublicIp();
     	String privateIp = cmd.getPrivateIp();
     	String privatePort = cmd.getPrivatePort();
@@ -3462,7 +3477,13 @@ public class ManagementServerImpl implements ManagementServer {
         Filter searchFilter = new Filter(DomainVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         Long domainId = cmd.getId();
         String domainName = cmd.getDomainName();
+        Boolean isRecursive = cmd.isRecursive();
         Object keyword = cmd.getKeyword();
+        List <DomainVO> domainList = null;
+        
+        if (isRecursive == null) {
+            isRecursive = false;
+        }
 
         Account account = UserContext.current().getAccount();
         if (account != null) {
@@ -3475,12 +3496,24 @@ public class ManagementServerImpl implements ManagementServer {
             }
         }
 
-        return searchForDomainChildren(searchFilter, domainId, domainName,
-				keyword);
+        domainList = searchForDomainChildren(searchFilter, domainId, domainName,
+				keyword, null);
+        
+        if (isRecursive) {
+            List<DomainVO> childDomains = new ArrayList<DomainVO>();
+            for (DomainVO domain : domainList) {
+                String path = domain.getPath();
+                 childDomains.addAll(searchForDomainChildren(searchFilter, null, null,
+                        null, path));
+            }
+            return childDomains;
+        } else {
+            return domainList;
+        }
 	}
 
 	private List<DomainVO> searchForDomainChildren(Filter searchFilter,
-			Long domainId, String domainName, Object keyword) {
+			Long domainId, String domainName, Object keyword, String path) {
 		SearchCriteria<DomainVO> sc = _domainDao.createSearchCriteria();
 
         if (keyword != null) {
@@ -3496,6 +3529,10 @@ public class ManagementServerImpl implements ManagementServer {
 
         if (domainName != null) {
             sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + domainName + "%");
+        }
+        
+        if (path != null) {
+            sc.addAnd("path", SearchCriteria.Op.LIKE, path + "%");
         }
 
         return _domainDao.search(sc, searchFilter);
@@ -4796,6 +4833,76 @@ public class ManagementServerImpl implements ManagementServer {
 		}
 	}
 
+    @Override
+    public VirtualMachine startSystemVm(StartSystemVm2Cmd cmd) {
+        UserContext context = UserContext.current();
+        long callerId = context.getUserId();
+        long callerAccountId = context.getAccountId(); 
+        
+        //verify input
+        Long id = cmd.getId();
+
+        VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(id, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
+        if (systemVm == null) {
+            throw new InvalidParameterValueException("unable to find a system vm with id " + id);
+        }
+        
+        if (systemVm.getType() == VirtualMachine.Type.ConsoleProxy) {
+            long eventId = EventUtils.saveScheduledEvent(callerId, callerAccountId, EventTypes.EVENT_PROXY_START, "Starting console proxy with Id: "+id);
+            try {
+                checkIfStoragePoolAvailable(id);
+            } catch (StorageUnavailableException e) {
+                s_logger.warn(e.getMessage());
+                return null;
+            } catch (Exception e){
+                //unforseen exceptions
+                s_logger.warn(e.getMessage());
+                return null;
+            }
+            return startConsoleProxy(id, eventId);
+        } else if (systemVm.getType() == VirtualMachine.Type.SecondaryStorageVm) {
+            long eventId = EventUtils.saveScheduledEvent(callerId, callerAccountId, EventTypes.EVENT_SSVM_START, "Starting secondary storage Vm Id: "+id);
+            try {
+                checkIfStoragePoolAvailable(id);
+            } catch (StorageUnavailableException e) {
+                s_logger.warn(e.getMessage());
+                return null;
+            } catch (Exception e){
+                //unforseen exceptions
+                s_logger.warn(e.getMessage());
+                return null;
+            }
+            return startSecondaryStorageVm(id, eventId);
+        } else {
+            throw new InvalidParameterValueException("Unable to find a system vm: " + id);
+        }
+    }
+    
+    @Override
+    public VirtualMachine stopSystemVm(StopSystemVm2Cmd cmd) {
+        UserContext context = UserContext.current();
+        
+        long callerId = context.getUserId();
+        long callerAccountId = context.getAccountId();
+        
+        Long id = cmd.getId();
+        
+        // verify parameters      
+        VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(id, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
+        if (systemVm == null) {
+            throw new ServerApiException (BaseCmd.PARAM_ERROR, "unable to find a system vm with id " + id);
+        }
+
+        // FIXME: We need to return the system VM from this method, so what do we do with the boolean response from stopConsoleProxy and stopSecondaryStorageVm?
+        if (systemVm.getType().equals(VirtualMachine.Type.ConsoleProxy)){
+            long eventId = EventUtils.saveScheduledEvent(callerId, callerAccountId, EventTypes.EVENT_PROXY_STOP, "stopping console proxy with Id: "+id);
+            return stopConsoleProxy(id, eventId);
+        } else {
+            long eventId = EventUtils.saveScheduledEvent(callerId, callerAccountId, EventTypes.EVENT_SSVM_STOP, "stopping secondary storage Vm Id: "+id);
+            return stopSecondaryStorageVm(id, eventId);
+        }
+    }
+    
 	private void checkIfStoragePoolAvailable(Long id) throws StorageUnavailableException {
 		//check if the sp is up before starting
         List<VolumeVO> rootVolList = _volumeDao.findByInstanceAndType(id, VolumeType.ROOT); 

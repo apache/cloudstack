@@ -62,7 +62,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
         if (nic.getIp4Address() == null) {
             Pair<String, VlanVO> ipAndVlan = _vlanDao.assignIpAddress(dc.getId(), vm.getVirtualMachine().getAccountId(), vm.getVirtualMachine().getDomainId(), VlanType.VirtualNetwork, true);
             if (ipAndVlan == null) {
-                throw new InsufficientVirtualNetworkCapcityException("Unable to get public ip address in " + dc.getId());
+                throw new InsufficientVirtualNetworkCapcityException("Unable to get public ip address in " + dc.getId(), DataCenter.class, dc.getId());
             }
             VlanVO vlan = ipAndVlan.second();
             nic.setIp4Address(ipAndVlan.first());
@@ -92,9 +92,6 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
         }
         
         String mac = _networkMgr.getNextAvailableMacAddressInNetwork(config.getId());
-        if (mac == null) {
-            throw new InsufficientAddressCapacityException("Not enough mac addresses");
-        }
         nic.setMacAddress(mac);
         
         DataCenter dc = _dcDao.findById(config.getDataCenterId());
@@ -127,5 +124,10 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     
     @Override
     public void destroy(NetworkConfiguration config, NetworkOffering offering) {
+    }
+
+    @Override
+    public boolean trash(NetworkConfiguration config, NetworkOffering offering, Account owner) {
+        return true;
     }
 }

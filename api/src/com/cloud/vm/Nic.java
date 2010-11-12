@@ -31,6 +31,10 @@ public interface Nic extends Resource {
     
     String getMacAddress();
     
+    String getNetmask();
+    
+    String getGateway();
+    
     /**
      * @return network profile id that this 
      */

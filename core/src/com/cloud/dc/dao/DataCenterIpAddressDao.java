@@ -26,6 +26,7 @@ public interface DataCenterIpAddressDao extends GenericDao<DataCenterIpAddressVO
     
     boolean mark(long dcId, long podId, String ip);
     List<DataCenterIpAddressVO> listByPodIdDcIdIpAddress(long podId, long dcId, String ipAddress);
+    List<DataCenterIpAddressVO> listByPodIdDcId(long podId, long dcId);
     int countIPs(long podId, long dcId, boolean onlyCountAllocated);
     boolean deleteIpAddressByPod(long podId);
 

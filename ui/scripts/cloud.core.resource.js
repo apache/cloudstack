@@ -347,13 +347,10 @@ function initAddZoneShortcut() {
 		}
 	});    
     
-    $("#add_zone_shortcut").unbind("click").bind("click", function(event) {  
-        /*      
+    $("#add_zone_shortcut").unbind("click").bind("click", function(event) {              
         if($("#leftmenu_physical_resource").find("#physical_resource_arrow").hasClass("expanded_close") == true)
-			$("#leftmenu_physical_resource").click(); //if Physical Resource arrow shows closed (i.e. zonetree is hidden), expand and show zonetree.     
-        */
-        
-        //$addZoneWizard.find("#info_container").hide();	
+			expandOrCollapseZoneTree(); //if Physical Resource arrow shows closed (i.e. zonetree is hidden), expand and show zonetree.    
+       
         openAddZoneWizard();
         return false;
     });    
@@ -483,9 +480,6 @@ function addZoneWizardSubmit($thisWizard) {
 		else 							
 			moreCriteria.push("&vlan=" + encodeURIComponent(vlanStart));		
 	}	
-	else { 
-	    moreCriteria.push("&vlan=30"); //temporary hacking before bug 7143 is fixed ("VLAN parameter in CreateZone shouldn't be required") 
-	} 			
 	
 	var guestcidraddress = trim($thisWizard.find("#add_zone_guestcidraddress").val());
 	moreCriteria.push("&guestcidraddress="+encodeURIComponent(guestcidraddress));	
@@ -502,9 +496,8 @@ function addZoneWizardSubmit($thisWizard) {
 	    dataType: "json",
 	    async: false,
 	    success: function(json) {	
-	        afterActionMsg += "Zone was created successfully<br>";	     	 
-	        $thisWizard.find("#spinning_wheel").hide();
-	        	        			        
+	        afterActionMsg += "Zone was created successfully<br><br>";	     	 
+	       	        	        			        
 	        $zoneNode = $("#leftmenu_zone_node_template").clone(true); 			            			   
             var $zoneTree = $("#leftmenu_zone_tree").find("#tree_container");		     			
             $zoneTree.prepend($zoneNode);	
@@ -517,8 +510,7 @@ function addZoneWizardSubmit($thisWizard) {
 	    },
         error: function(XMLHttpResponse) {            
 			handleError(XMLHttpResponse, function() {
-				afterActionMsg += ("Failed to create zone. " + parseXMLHttpResponse(XMLHttpResponse) + "<br>");
-				$thisWizard.find("#spinning_wheel").hide();
+				afterActionMsg += ("Failed to create zone. " + parseXMLHttpResponse(XMLHttpResponse) + "<br><br>");				
 			});
         }
     });
@@ -544,8 +536,7 @@ function addZoneWizardSubmit($thisWizard) {
 	        dataType: "json",
 	        async: false,
 	        success: function(json) {
-	            afterActionMsg += "Pod was created successfully<br>";
-	            $thisWizard.find("#spinning_wheel").hide();
+	            afterActionMsg += "Pod was created successfully<br><br>";	            
 	            	            
 	            var item = json.createpodresponse.pod; 	
 	            podId = item.id;		            		            				    
@@ -569,8 +560,7 @@ function addZoneWizardSubmit($thisWizard) {
 	        },
             error: function(XMLHttpResponse) {	
 				handleError(XMLHttpResponse, function() {
-					afterActionMsg += ("Failed to create Pod. " + parseXMLHttpResponse(XMLHttpResponse) + "<br>");
-					$thisWizard.find("#spinning_wheel").hide();
+					afterActionMsg += ("Failed to create Pod. " + parseXMLHttpResponse(XMLHttpResponse) + "<br><br>");					
 				});
             }
         });	
@@ -595,20 +585,21 @@ function addZoneWizardSubmit($thisWizard) {
         $.ajax({
 		    data: createURL("command=createVlanIpRange" + array1.join("")),
 			dataType: "json",
+			async: false,
 			success: function(json) { 
-			    afterActionMsg += "Guest IP range was created successfully<br>";   
+			    afterActionMsg += "Guest IP range was created successfully<br><br>";   
 				var item = json.createvlaniprangeresponse.vlan;
 				vlanId = item.id;				
 			},		   
 		    error: function(XMLHttpResponse) {	
 				handleError(XMLHttpResponse, function() {
-					afterActionMsg += ("Failed to create Guest IP range. " + parseXMLHttpResponse(XMLHttpResponse) + "<br>");
-					$thisWizard.find("#spinning_wheel").hide();
+					afterActionMsg += ("Failed to create Guest IP range. " + parseXMLHttpResponse(XMLHttpResponse) + "<br><br>");					
 				});
             }
 		});		
     }
-        
+    
+    $thisWizard.find("#spinning_wheel").hide();    
     $thisWizard.find("#after_action_message").html(afterActionMsg);	
 }
 

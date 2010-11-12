@@ -174,7 +174,7 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
         if (nic.getMacAddress() == null) {
             nic.setMacAddress(_networkMgr.getNextAvailableMacAddressInNetwork(config.getId()));
             if (nic.getMacAddress() == null) {
-                throw new InsufficientAddressCapacityException("Unable to allocate more mac addresses");
+                throw new InsufficientAddressCapacityException("Unable to allocate more mac addresses", NetworkConfiguration.class, config.getId());
             }
         }
         
@@ -224,5 +224,11 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
     @Override
     public void destroy(NetworkConfiguration config, NetworkOffering offering) {
         config.getBroadcastUri();
+    }
+
+    @Override
+    public boolean trash(NetworkConfiguration config, NetworkOffering offering, Account owner) {
+        // TODO Auto-generated method stub
+        return true;
     }
 }

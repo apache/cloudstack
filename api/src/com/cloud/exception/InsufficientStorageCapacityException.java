@@ -17,6 +17,7 @@
  */
 package com.cloud.exception;
 
+import com.cloud.storage.StoragePool;
 import com.cloud.utils.SerialVersionUID;
 
 /**
@@ -27,7 +28,11 @@ public class InsufficientStorageCapacityException extends InsufficientCapacityEx
     
     private static final long serialVersionUID = SerialVersionUID.InsufficientStorageCapacityException;
     
-    public InsufficientStorageCapacityException(String msg) {
-        super(msg);
+    public InsufficientStorageCapacityException(String msg, long id) {
+        this(msg, StoragePool.class, id);
+    }
+    
+    public InsufficientStorageCapacityException(String msg, Class<?> scope, Long id) {
+        super(msg, scope, id);
     }
 }

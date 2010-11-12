@@ -37,8 +37,8 @@ public class DiskProfile {
     private long diskOfferingId;
     private Long templateId;
     private long volumeId;
-    private Volume vol;
-    private DiskOffering offering;
+
+
     private HypervisorType hyperType;
     
     protected DiskProfile() {
@@ -58,8 +58,6 @@ public class DiskProfile {
     
     public DiskProfile(Volume vol, DiskOffering offering, HypervisorType hyperType) {
         this(vol.getId(), vol.getVolumeType(), vol.getName(), offering.getId(), vol.getSize(), offering.getTagsArray(), offering.getUseLocalStorage(), offering.getUseLocalStorage(), vol.getSize());
-        this.vol = vol;
-        this.offering = offering;
         this.hyperType = hyperType;
     }
     

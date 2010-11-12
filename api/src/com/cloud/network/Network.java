@@ -92,9 +92,9 @@ public class Network {
         Public,
         Guest,
         Storage,
+        Management,
         Control,
-        Vpn,
-        Management
+        Vpn
     };
     
     public enum IsolationType {

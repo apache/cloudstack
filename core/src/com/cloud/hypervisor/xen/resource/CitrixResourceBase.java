@@ -1115,32 +1115,44 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     protected Answer execute(final SetFirewallRuleCommand cmd) {
         String args;
 
-        if (cmd.isEnable()) {
-            args = "-A";
-        } else {
-            args = "-D";
+        if(cmd.isNat()){
+        	//1:1 NAT needs instanceip;publicip;domrip;op
+        	if(cmd.isCreate())
+        		args = "-A";
+        	else
+        		args = "-D";
+        	
+	        args += " -l " + cmd.getPublicIpAddress();
+	        args += " -i " + cmd.getRouterIpAddress();
+	        args += " -r " + cmd.getPrivateIpAddress();
+	        args += " -G " + cmd.getProtocol();
+        }else{
+            if (cmd.isEnable()) {
+                args = "-A";
+            } else {
+                args = "-D";
+            }
+
+	        args += " -P " + cmd.getProtocol().toLowerCase();
+	        args += " -l " + cmd.getPublicIpAddress();
+	        args += " -p " + cmd.getPublicPort();
+	        args += " -n " + cmd.getRouterName();
+	        args += " -i " + cmd.getRouterIpAddress();
+	        args += " -r " + cmd.getPrivateIpAddress();
+	        args += " -d " + cmd.getPrivatePort();
+	        args += " -N " + cmd.getVlanNetmask();
+	
+	        String oldPrivateIP = cmd.getOldPrivateIP();
+	        String oldPrivatePort = cmd.getOldPrivatePort();
+	
+	        if (oldPrivateIP != null) {
+	            args += " -w " + oldPrivateIP;
+	        }
+	
+	        if (oldPrivatePort != null) {
+	            args += " -x " + oldPrivatePort;
+	        }
         }
-
-        args += " -P " + cmd.getProtocol().toLowerCase();
-        args += " -l " + cmd.getPublicIpAddress();
-        args += " -p " + cmd.getPublicPort();
-        args += " -n " + cmd.getRouterName();
-        args += " -i " + cmd.getRouterIpAddress();
-        args += " -r " + cmd.getPrivateIpAddress();
-        args += " -d " + cmd.getPrivatePort();
-        args += " -N " + cmd.getVlanNetmask();
-
-        String oldPrivateIP = cmd.getOldPrivateIP();
-        String oldPrivatePort = cmd.getOldPrivatePort();
-
-        if (oldPrivateIP != null) {
-            args += " -w " + oldPrivateIP;
-        }
-
-        if (oldPrivatePort != null) {
-            args += " -x " + oldPrivatePort;
-        }
-
         String result = callHostPlugin("vmops", "setFirewallRule", "args", args);
 
         if (result == null || result.isEmpty()) {
@@ -4680,7 +4692,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 vdir.type = Types.VdiType.USER;
                 
                 if(cmd.getSize()!=0)
-                	vdir.virtualSize = cmd.getSize();
+                	vdir.virtualSize = (cmd.getSize()*1024*1024*1L);
                 else
                 	vdir.virtualSize = dskch.getSize();
                 vdi = VDI.create(conn, vdir);

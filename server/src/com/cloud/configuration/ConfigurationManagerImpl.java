@@ -52,16 +52,18 @@ import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Pod;
 import com.cloud.dc.PodVlanMapVO;
 import com.cloud.dc.Vlan;
-import com.cloud.dc.VlanVO;
 import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterIpAddressDao;
+import com.cloud.dc.dao.DataCenterLinkLocalIpAddressDaoImpl;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
@@ -81,8 +83,8 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
-import com.cloud.offering.ServiceOffering;
 import com.cloud.offering.NetworkOffering.GuestIpType;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
@@ -97,6 +99,7 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.Adapters;
+import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
@@ -140,6 +143,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     @Inject NetworkManager _networkMgr;
 	@Inject(adapter=SecurityChecker.class)
     Adapters<SecurityChecker> _secChecker;
+	
+	//FIXME - why don't we have interface for DataCenterLinkLocalIpAddressDao?
+	protected static final DataCenterLinkLocalIpAddressDaoImpl _LinkLocalIpAllocDao = ComponentLocator.inject(DataCenterLinkLocalIpAddressDaoImpl.class);
 
     private int _maxVolumeSizeInGb;
 
@@ -437,14 +443,27 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
     	HostPodVO pod = _podDao.findById(podId);
     	DataCenterVO zone = _zoneDao.findById(pod.getDataCenterId());
+    	
+    	//Delete private ip addresses for the pod if there are any
+    	List<DataCenterIpAddressVO> privateIps = _privateIpAddressDao.listByPodIdDcId(Long.valueOf(podId), pod.getDataCenterId());
+	    if (privateIps != null && privateIps.size() != 0) {
+	        if (!(_privateIpAddressDao.deleteIpAddressByPod(podId))) {
+	            throw new CloudRuntimeException("Failed to cleanup private ip addresses for pod " + podId);
+	        }
+	    }
+    	
+    	//Delete link local ip addresses for the pod
+    	if (!(_LinkLocalIpAllocDao.deleteIpAddressByPod(podId))) {
+            throw new CloudRuntimeException("Failed to cleanup private ip addresses for pod " + podId);
+        }
 
-    	//Delete the pod and private IP addresses in the pod
-    	if (_podDao.expunge(podId) && _privateIpAddressDao.deleteIpAddressByPod(podId)) {
-    		saveConfigurationEvent(userId, null, EventTypes.EVENT_POD_DELETE, "Successfully deleted pod with name: " + pod.getName() + " in zone: " + zone.getName() + ".", "podId=" + podId, "dcId=" + zone.getId());
-    		return true;
-    	} else {
-    		return false;
+    	//Delete the pod
+    	if (!(_podDao.expunge(podId))) {
+    	    throw new CloudRuntimeException("Failed to delete pod " + podId);
     	}
+    	
+		saveConfigurationEvent(userId, null, EventTypes.EVENT_POD_DELETE, "Successfully deleted pod with name: " + pod.getName() + " in zone: " + zone.getName() + ".", "podId=" + podId, "dcId=" + zone.getId());
+		return true;
     }
 
     @Override
@@ -974,7 +993,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
     @Override @DB
     public DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String vnetRange, String guestCidr, String domain, Long domainId)  {
-        int vnetStart, vnetEnd;
+        int vnetStart = -1;
+        int vnetEnd = -1;
         if (vnetRange != null) {
             String[] tokens = vnetRange.split("-");
             
@@ -993,9 +1013,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             if (networkType != null && networkType.equals("vnet")) {
                 vnetStart = 1000;
                 vnetEnd = 2000;
-            } else {
-                throw new InvalidParameterValueException("Please specify a vlan range.");
-            }
+            } 
         }
 
         //checking the following params outside checkzoneparams method as we do not use these params for updatezone
@@ -1011,8 +1029,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         zone = _zoneDao.persist(zone);
 
         // Add vnet entries for the new zone
-        _zoneDao.addVnet(zone.getId(), vnetStart, vnetEnd);
-
+        if (vnetStart != -1 && vnetEnd != -1) {
+            _zoneDao.addVnet(zone.getId(), vnetStart, vnetEnd);
+        }
         saveConfigurationEvent(userId, null, EventTypes.EVENT_ZONE_CREATE, "Successfully created new zone with name: " + zoneName + ".", "dcId=" + zone.getId(), "dns1=" + dns1, "dns2=" + dns2, "internalDns1=" + internalDns1, "internalDns2=" + internalDns2, "vnetRange=" + vnetRange, "guestCidr=" + guestCidr);
 
         return zone;
