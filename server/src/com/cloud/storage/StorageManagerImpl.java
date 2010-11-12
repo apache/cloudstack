@@ -1461,10 +1461,12 @@ public class StorageManagerImpl implements StorageManager {
     	//verify parameters
     	StoragePoolVO sPool = _storagePoolDao.findById(id);
     	if (sPool == null) {
+    		s_logger.warn("Unable to find pool:"+id);
     		throw new InvalidParameterValueException("Unable to find pool by id " + id);
     	}
     	
     	if (sPool.getPoolType().equals(StoragePoolType.LVM)) {
+    		s_logger.warn("Unable to delete local storage id:"+id);
     		throw new InvalidParameterValueException("Unable to delete local storage id: " + id);
     	}
 
@@ -1484,6 +1486,7 @@ public class StorageManagerImpl implements StorageManager {
             Pair<Long, Long> volumeRecords = _volsDao.getCountAndTotalByPool(id);
 
             if (volumeRecords.first() > 0) {
+            	s_logger.warn("Cannot delete pool "+sPool.getName()+" as there are associated vols for this pool");
                 return false; // cannot delete as there are associated vols
             }
             // 3. Else part, remove the SR associated with the Xenserver
