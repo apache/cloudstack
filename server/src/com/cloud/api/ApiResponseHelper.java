@@ -889,6 +889,7 @@ public class ApiResponseHelper {
        }
        volResponse.setHypervisor(ApiDBUtils.getVolumeHyperType(volume.getId()).toString());
        volResponse.setAttached(volume.getAttached());
+       volResponse.setDestroyed(volume.getDestroyed());
        volResponse.setObjectName("volume");
        return volResponse;
    }

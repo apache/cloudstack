@@ -108,7 +108,18 @@ public class VolumeResponse extends BaseResponse {
     @SerializedName("attached") @Param(description="the date the volume was attached to a VM instance")
     private Date attached;
 
-    public Long getId() {
+    @SerializedName("destroyed") @Param(description="the boolean state of whether the volume is destroyed or not")
+    private Boolean destroyed;
+    
+    public Boolean getDestroyed() {
+		return destroyed;
+	}
+
+	public void setDestroyed(Boolean destroyed) {
+		this.destroyed = destroyed;
+	}
+
+	public Long getId() {
         return id;
     }
 
