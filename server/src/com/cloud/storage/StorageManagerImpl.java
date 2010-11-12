@@ -1496,7 +1496,8 @@ public class StorageManagerImpl implements StorageManager {
                 StoragePoolVO lock = _storagePoolDao.acquireInLockTable(sPool.getId());
                 try {
                     if (lock == null) {
-                        s_logger.debug("Failed to acquire lock when deleting StoragePool with ID: " + sPool.getId());
+                    	if(s_logger.isDebugEnabled())
+                    		s_logger.debug("Failed to acquire lock when deleting StoragePool with ID: " + sPool.getId());
                         return false;
                     }
 
