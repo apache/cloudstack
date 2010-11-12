@@ -31,6 +31,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.security.InvalidParameterException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -87,6 +88,7 @@ import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.event.EventUtils;
 import com.cloud.exception.CloudAuthenticationException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.maid.StackMaid;
 import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
@@ -125,7 +127,8 @@ public class ApiServer implements HttpRequestHandler {
     private static List<String> s_resellerCommands = null; // AKA domain-admin
     private static List<String> s_adminCommands = null;
     private static List<String> s_readOnlyAdminCommands = null;
-
+    private static List<String> s_allCommands = null;
+    
     private static ExecutorService _executor = new ThreadPoolExecutor(10, 150, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("ApiServer"));
 
     static {
@@ -133,6 +136,7 @@ public class ApiServer implements HttpRequestHandler {
         s_resellerCommands = new ArrayList<String>();
         s_adminCommands = new ArrayList<String>();
         s_readOnlyAdminCommands = new ArrayList<String>();
+        s_allCommands = new ArrayList<String>();
     }
 
     private ApiServer() { }
@@ -182,6 +186,11 @@ public class ApiServer implements HttpRequestHandler {
                         }
                     }
                 }
+                
+                s_allCommands.addAll(s_adminCommands);
+                s_allCommands.addAll(s_readOnlyAdminCommands);
+                s_allCommands.addAll(s_userCommands);
+                s_allCommands.addAll(s_resellerCommands);
             }
         } catch (FileNotFoundException fnfex) {
             s_logger.error("Unable to find properites file", fnfex);
@@ -441,8 +450,13 @@ public class ApiServer implements HttpRequestHandler {
         }
         */
     }
+	   private static boolean isCommandAvailable(String commandName) {
+	       boolean isCommandAvailable = false;
+           isCommandAvailable = s_allCommands.contains(commandName);
+	       return isCommandAvailable;
+	   }
     
-    public boolean verifyRequest(Map<String, Object[]> requestParameters, Long userId) {
+    public boolean verifyRequest(Map<String, Object[]> requestParameters, Long userId) throws InvalidParameterException {
         try {
             String apiKey = null;
             String secretKey = null;
@@ -467,7 +481,15 @@ public class ApiServer implements HttpRequestHandler {
             		return false;
             	}
             	return true;
+            }else{
+            	//check against every available command to see if the command exists or not
+            	if(!isCommandAvailable(commandName)){
+            		s_logger.warn("The given command:"+commandName+" does not exist");
+            		throw new InvalidParameterException("The given command:"+commandName+" does not exist");
+            	}
+            	
             }
+            
 
             // - build a request string with sorted params, make sure it's all lowercase
             // - sign the request, verify the signature is the same
@@ -552,6 +574,9 @@ public class ApiServer implements HttpRequestHandler {
             }
             return equalSig;
         } catch (Exception ex) {
+        	if(ex instanceof InvalidParameterException){
+        		throw new InvalidParameterException(ex.getMessage());
+        	}
             s_logger.error("unable to verifty request signature", ex);
         }
         return false;

@@ -20,6 +20,7 @@ package com.cloud.api;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.security.InvalidParameterException;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
@@ -32,6 +33,7 @@ import javax.servlet.http.HttpSession;
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.CloudAuthenticationException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.maid.StackMaid;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
@@ -266,7 +268,15 @@ public class ApiServlet extends HttpServlet {
                 s_logger.trace("exception processing request: " + ioex);
             }
             auditTrailSb.append(" exception processing request" );
-        } catch (Exception ex) {
+        }catch (InvalidParameterException ipe){
+            auditTrailSb.append(" " + HttpServletResponse.SC_NOT_FOUND +  " " + ipe.getMessage());
+            try {
+				resp.sendError(HttpServletResponse.SC_NOT_FOUND, ipe.getMessage());
+			} catch (IOException e) {
+				s_logger.error("Unable to send back error response for invalid command");
+				auditTrailSb.append(" " + HttpServletResponse.SC_NOT_FOUND +  " " + "Unable to send back error response for "+ipe.getMessage());
+			}        	
+        }catch (Exception ex) {
             s_logger.error("unknown exception writing api response", ex);
             auditTrailSb.append(" unknown exception writing api response");
         } finally {
