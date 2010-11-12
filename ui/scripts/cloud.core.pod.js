@@ -83,7 +83,7 @@ function podJsonToDetailsTab() {
 				
 				//temporary code before bug 7162 is fixed ********(begin)***********		
 				for(var i=0; i<items.length; i++) {				   		    
-				    if(items[i].name == jsonObj.zonename) {
+				    if(items[i].id == jsonObj.zoneid) {
 				        zoneVlan = items[i].vlan; 
 				    }
 				}	
@@ -134,7 +134,7 @@ function podJsonToNetworkTab() {
 			if (items != null && items.length > 0) {					    
 				for (var i = 0; i < items.length; i++) {	
 				    var newTemplate = template.clone(true);	               
-	                podVLANJSONToTemplate(items[i], newTemplate); 
+	                podNetworkJsonToTemplate(items[i], newTemplate); 
 	                $container.append(newTemplate.show());	
 				}
 			}
@@ -144,7 +144,7 @@ function podJsonToNetworkTab() {
 	});			
 } 
 
-function podVLANJSONToTemplate(jsonObj, template) {
+function podNetworkJsonToTemplate(jsonObj, template) {
     template.data("jsonObj", jsonObj);     
     template.attr("id", "pod_VLAN_"+jsonObj.id).data("podVLANId", jsonObj.id);    
     template.find("#grid_header_title").text(fromdb(jsonObj.description));			   
@@ -154,7 +154,34 @@ function podVLANJSONToTemplate(jsonObj, template) {
     template.find("#gateway").text(jsonObj.gateway);
     template.find("#podname").text(jsonObj.podname); 
    
+    var $actionLink = template.find("#network_action_link");		
+	$actionLink.bind("mouseover", function(event) {
+        $(this).find("#network_action_menu").show();    
+        return false;
+    });
+    $actionLink.bind("mouseout", function(event) {
+        $(this).find("#network_action_menu").hide();    
+        return false;
+    });		
+	
+	var $actionMenu = $actionLink.find("#network_action_menu");
+    $actionMenu.find("#action_list").empty();	
+    
+    buildActionLinkForSubgridItem("Delete VLAN", podNetworkActionMap, $actionMenu, template);	
 }
+
+var podNetworkActionMap = {  
+    "Delete VLAN": {              
+        api: "deleteVlanIpRange",     
+        isAsyncJob: false,   
+        inProcessText: "Deleting VLAN....",
+        afterActionSeccessFn: function(json, id, $subgridItem) {                 
+            $subgridItem.slideUp("slow", function() {
+                $(this).remove();
+            });
+        }
+    } 
+}  
 
 function podJsonClearRightPanel(jsonObj) {	 
     podJsonClearDetailsTab(jsonObj);
