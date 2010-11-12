@@ -83,7 +83,7 @@ function zoneJsonToDetailsTab($leftmenuItem1) {
     $detailsTab.find("#vlan").text(fromdb(jsonObj.vlan));
     var vlan = jsonObj.vlan; 
     if(vlan != null) {
-        $("#tab_network, #midmenu_add2_link").show();       
+        $("#midmenu_add2_link, #tab_network, #tab_content_details #vlan_container").show();       
 		if(vlan.indexOf("-")!==-1) {
 			var startVlan = vlan.substring(0, vlan.indexOf("-"));
 			var endVlan = vlan.substring((vlan.indexOf("-")+1));	
@@ -95,7 +95,7 @@ function zoneJsonToDetailsTab($leftmenuItem1) {
 		}
 	}   
 	else {
-	    $("#tab_network, #midmenu_add2_link").hide();
+	    $("#midmenu_add2_link, #tab_network, #tab_content_details #vlan_container").hide();
 	}
         
     $detailsTab.find("#guestcidraddress").text(fromdb(jsonObj.guestcidraddress));   
@@ -762,9 +762,9 @@ function doEditZone2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $
 	isValid &= validateIp("DNS 2", $detailsTab.find("#dns2_edit"), $detailsTab.find("#dns2_edit_errormsg"), true);	//optional	
 	isValid &= validateIp("Internal DNS 1", $detailsTab.find("#internaldns1_edit"), $detailsTab.find("#internaldns1_edit_errormsg"), false);	//required
 	isValid &= validateIp("Internal DNS 2", $detailsTab.find("#internaldns2_edit"), $detailsTab.find("#internaldns2_edit_errormsg"), true);	//optional						
-	if (getNetworkType() != "vnet") {
-		isValid &= validateString("Zone - Start VLAN Range", $detailsTab.find("#startvlan_edit"), $detailsTab.find("#startvlan_edit_errormsg"), false); //required
-		isValid &= validateString("Zone - End VLAN Range", $detailsTab.find("#endvlan_edit"), $detailsTab.find("#endvlan_edit_errormsg"), true);  //optional
+	if ($("#tab_content_details #vlan_container").css("display") != "none") {
+		isValid &= validateString("Start VLAN Range", $detailsTab.find("#startvlan_edit"), $detailsTab.find("#startvlan_edit_errormsg"), false); //required
+		isValid &= validateString("End VLAN Range", $detailsTab.find("#endvlan_edit"), $detailsTab.find("#endvlan_edit_errormsg"), true);  //optional
 	}
 	isValid &= validateCIDR("Guest CIDR", $detailsTab.find("#guestcidraddress_edit"), $detailsTab.find("#guestcidraddress_edit_errormsg"), false);	//required					
 	if (!isValid) 
@@ -794,7 +794,7 @@ function doEditZone2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $
 		moreCriteria.push("&internaldns2="+encodeURIComponent(internaldns2));						
 	
 	var vlan;				
-	if (getNetworkType() != "vnet") {
+	if ($("#tab_content_details #vlan_container").css("display") != "none") {
 		var vlanStart = trim($detailsTab.find("#startvlan_edit").val());	
 		var vlanEnd = trim($detailsTab.find("#endvlan_edit").val());						
 		if (vlanEnd != null && vlanEnd.length > 0) 
