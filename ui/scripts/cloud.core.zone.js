@@ -81,8 +81,9 @@ function zoneJsonToDetailsTab($leftmenuItem1) {
     $detailsTab.find("#internaldns2_edit").val(fromdb(jsonObj.internaldns2));
     	
     $detailsTab.find("#vlan").text(fromdb(jsonObj.vlan));
-    var vlan = fromdb(jsonObj.vlan);
+    var vlan = jsonObj.vlan; 
     if(vlan != null) {
+        $("#tab_network, #midmenu_add2_link").show();       
 		if(vlan.indexOf("-")!==-1) {
 			var startVlan = vlan.substring(0, vlan.indexOf("-"));
 			var endVlan = vlan.substring((vlan.indexOf("-")+1));	
@@ -93,6 +94,9 @@ function zoneJsonToDetailsTab($leftmenuItem1) {
 		    $detailsTab.find("#startvlan_edit").val(vlan);					        
 		}
 	}   
+	else {
+	    $("#tab_network, #midmenu_add2_link").hide();
+	}
         
     $detailsTab.find("#guestcidraddress").text(fromdb(jsonObj.guestcidraddress));   
     $detailsTab.find("#guestcidraddress_edit").val(fromdb(jsonObj.guestcidraddress));   
