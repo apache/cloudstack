@@ -152,14 +152,7 @@ $(document).ready(function() {
 			disableMultipleSelectionInMidMenu();  
 			clearMiddleMenu();
 		   
-			$arrowIcon = $(this).find("#physical_resource_arrow");
-			if($arrowIcon.hasClass("expanded_close") == true) {
-				$arrowIcon.removeClass("expanded_close").addClass("expanded_open");
-				buildZoneTree();
-			} else {
-				$arrowIcon.removeClass("expanded_open").addClass("expanded_close");
-				$("#leftmenu_zone_tree").find("#tree_container").empty();
-			}
+			expandOrCollapseZoneTree();
 			
 			resourceLoadPage("jsp/resource.jsp", null);			
 			return false;

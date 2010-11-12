@@ -347,13 +347,10 @@ function initAddZoneShortcut() {
 		}
 	});    
     
-    $("#add_zone_shortcut").unbind("click").bind("click", function(event) {  
-        /*      
+    $("#add_zone_shortcut").unbind("click").bind("click", function(event) {              
         if($("#leftmenu_physical_resource").find("#physical_resource_arrow").hasClass("expanded_close") == true)
-			$("#leftmenu_physical_resource").click(); //if Physical Resource arrow shows closed (i.e. zonetree is hidden), expand and show zonetree.     
-        */
-        
-        //$addZoneWizard.find("#info_container").hide();	
+			expandOrCollapseZoneTree(); //if Physical Resource arrow shows closed (i.e. zonetree is hidden), expand and show zonetree.    
+       
         openAddZoneWizard();
         return false;
     });    
