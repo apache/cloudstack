@@ -257,6 +257,7 @@ function afterLoadResourceJSP($midmenuItem1) {
 	initDialog("dialog_update_cert", 450);	
 		
 	initAddPodShortcut();
+	initAddHostShortcut();
 	
 	resourceCountTotal();	  
 }
@@ -357,6 +358,175 @@ function initAddPodShortcut() {
         return false;
     });        
 }    
+
+ function initAddHostShortcut() {
+    initDialog("dialog_add_host");    
+    var $dialogAddHost = $("#dialog_add_host");    
+    
+    $.ajax({
+        data: createURL("command=listZones&available=true"),
+	    dataType: "json",
+	    success: function(json) {
+		    var zones = json.listzonesresponse.zone;
+		    var zoneSelect = $dialogAddHost.find("#zone_dropdown").empty();								
+		    if (zones != null && zones.length > 0) {
+			    for (var i = 0; i < zones.length; i++) 
+				    zoneSelect.append("<option value='" + zones[i].id + "'>" + fromdb(zones[i].name) + "</option>"); 				    
+		    }	
+		    //$dialogAddHost.find("#zone_dropdown").change();	//comment out to avoid race condition, do it before dialog box pops up	    
+	    }
+    });
+	
+    $dialogAddHost.find("#zone_dropdown").bind("change", function(event) {
+	    var zoneId = $(this).val();
+	    $.ajax({
+	        data: createURL("command=listPods&zoneId="+zoneId),
+		    dataType: "json",
+		    async: false,
+		    success: function(json) {
+			    var pods = json.listpodsresponse.pod;
+			    var podSelect = $dialogAddHost.find("#pod_dropdown").empty();	
+			    if (pods != null && pods.length > 0) {
+				    for (var i = 0; i < pods.length; i++) {
+					    podSelect.append("<option value='" + pods[i].id + "'>" + fromdb(pods[i].name) + "</option>"); 
+				    }
+			    }
+			    $dialogAddHost.find("#pod_dropdown").change();
+		    }
+	    });
+    });
+	
+    $dialogAddHost.find("#pod_dropdown").bind("change", function(event) {			   
+        var podId = $(this).val();
+        if(podId == null || podId.length == 0)
+            return;
+        var clusterSelect = $dialogAddHost.find("#cluster_select").empty();		        
+        $.ajax({
+	       data: createURL("command=listClusters&podid=" + podId),
+            dataType: "json",
+            success: function(json) {			            
+                var items = json.listclustersresponse.cluster;
+                if(items != null && items.length > 0) {			                
+                    for(var i=0; i<items.length; i++) 			                    
+                        clusterSelect.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");		      
+                    $dialogAddHost.find("input[value=existing_cluster_radio]").attr("checked", true);
+                }
+                else {
+				    clusterSelect.append("<option value='-1'>None Available</option>");
+                    $dialogAddHost.find("input[value=new_cluster_radio]").attr("checked", true);
+                }
+            }
+        });
+    });                 	        	    
+        
+    $("#add_host_shortcut").unbind("click").bind("click", function(event) {   
+        $dialogAddHost.find("#zone_dropdown").change(); //refresh cluster dropdown (do it here to avoid race condition)        
+        $dialogAddHost.find("#info_container").hide();    
+        $dialogAddHost.find("#new_cluster_name").val("");
+        
+        $dialogAddHost
+        .dialog('option', 'buttons', { 				
+	        "Add": function() { 
+	            var $thisDialog = $(this);		            
+	            			   
+		        var clusterRadio = $thisDialog.find("input[name=cluster]:checked").val();				
+			
+		        // validate values
+		        var isValid = true;	
+		        isValid &= validateDropDownBox("Zone", $thisDialog.find("#zone_dropdown"), $thisDialog.find("#zone_dropdown_errormsg"));	
+		        isValid &= validateDropDownBox("Pod", $thisDialog.find("#pod_dropdown"), $thisDialog.find("#pod_dropdown_errormsg"));									
+		        isValid &= validateString("Host name", $thisDialog.find("#host_hostname"), $thisDialog.find("#host_hostname_errormsg"));
+		        isValid &= validateString("User name", $thisDialog.find("#host_username"), $thisDialog.find("#host_username_errormsg"));
+		        isValid &= validateString("Password", $thisDialog.find("#host_password"), $thisDialog.find("#host_password_errormsg"));	
+				if(clusterRadio == "new_cluster_radio") {
+					isValid &= validateString("Cluster Name", $thisDialog.find("#new_cluster_name"), $thisDialog.find("#new_cluster_name_errormsg"));
+				}
+		        if (!isValid) 
+		            return;
+		            
+				//$thisDialog.dialog("close");   //only close dialog when this action succeeds		
+				$thisDialog.find("#spinning_wheel").show() 				
+				
+		        var array1 = [];    
+		        
+		        var zoneId = $thisDialog.find("#zone_dropdown").val();
+		        array1.push("&zoneid="+zoneId);
+		        
+		        var podId = $thisDialog.find("#pod_dropdown").val();
+		        array1.push("&podid="+podId);
+						      
+		        var username = trim($thisDialog.find("#host_username").val());
+		        array1.push("&username="+encodeURIComponent(username));
+				
+		        var password = trim($thisDialog.find("#host_password").val());
+		        array1.push("&password="+encodeURIComponent(password));
+					
+				var newClusterName, existingClusterId;							
+			    if(clusterRadio == "new_cluster_radio") {
+		            newClusterName = trim($thisDialog.find("#new_cluster_name").val());
+		            array1.push("&clustername="+todb(newClusterName));				    
+		        }
+		        else if(clusterRadio == "existing_cluster_radio") {			            
+		            existingClusterId = $thisDialog.find("#cluster_select").val();
+				    // We will default to no cluster if someone selects Join Cluster with no cluster available.
+				    if (existingClusterId != '-1') {
+					    array1.push("&clusterid="+existingClusterId);
+				    }
+		        }				
+				
+		        var hostname = trim($thisDialog.find("#host_hostname").val());
+		        var url;					
+		        if(hostname.indexOf("http://")==-1)
+		            url = "http://" + todb(hostname);
+		        else
+		            url = hostname;
+		        array1.push("&url="+encodeURIComponent(url));
+									
+		        //var $midmenuItem1 = beforeAddingMidMenuItem() ;    				
+		        
+		        $.ajax({
+			       data: createURL("command=addHost" + array1.join("")),
+			        dataType: "json",
+			        success: function(json) {
+			            $thisDialog.find("#spinning_wheel").hide();
+			            $thisDialog.dialog("close");
+					
+					    showMiddleMenu();
+					    
+					    /*
+					    var $midmenuItem1 = $("#midmenu_item").clone();
+                        $("#midmenu_container").append($midmenuItem1.fadeIn("slow"));
+                        var items = json.addhostresponse.host;				            			      										   
+					    hostToMidmenu(items[0], $midmenuItem1);
+	                    bindClickToMidMenu($midmenuItem1, hostToRightPanel, hostGetMidmenuId); 
+			           
+                        if(items.length > 1) { 
+                            for(var i=1; i<items.length; i++) {                                    
+                                var $midmenuItem2 = $("#midmenu_item").clone();
+                                hostToMidmenu(items[i], $midmenuItem2);
+                                bindClickToMidMenu($midmenuItem2, hostToRightPanel, hostGetMidmenuId); 
+                                $("#midmenu_container").append($midmenuItem2.fadeIn("slow"));                                   
+                            }	
+                        }   
+                        */                             
+                        
+                        clickClusterNodeAfterAddHost(clusterRadio, podId, newClusterName, existingClusterId, $thisDialog);                                  
+			        },			
+                    error: function(XMLHttpResponse) {	
+						handleError(XMLHttpResponse, function() {
+							clickClusterNodeAfterAddHost(clusterRadio, podId, newClusterName, existingClusterId, $thisDialog);                                  
+							handleErrorInDialog(XMLHttpResponse, $thisDialog);
+						});
+                    }				
+		        });
+	        }, 
+	        "Cancel": function() { 
+		        $(this).dialog("close"); 
+	        } 
+        }).dialog("open");            
+        return false;
+    });  
+}      
 
 function initAddZoneLinks() {     
     $("#add_zone_shortcut,#midmenu_add_link").unbind("click").bind("click", function(event) {              

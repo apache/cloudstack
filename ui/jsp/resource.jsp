@@ -490,3 +490,87 @@
     </div>
 </div>
 <!-- Add Pod Dialog (end) -->
+
+<!-- Add Host Dialog (begin) -->
+<div id="dialog_add_host" title="Add Host" style="display: none">   
+    <div class="dialog_formcontent">
+        <form action="#" method="post" id="form_acquire">
+        <ol>
+            <li>
+                <label style="width: 115px;">
+                    Zone:</label>
+                <select class="select" id="zone_dropdown">
+                </select>
+                <div id="zone_dropdown_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>   
+            <li>
+                <label style="width: 115px;">
+                    Pod:</label>
+                <select class="select" id="pod_dropdown">
+                </select>
+                <div id="pod_dropdown_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>   
+            <li>
+                <label for="host_hostname">
+                    Host name:</label>
+                <input class="text" type="text" name="host_hostname" id="host_hostname" />
+                <div id="host_hostname_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li>
+                <label for="user_name">
+                    User name:</label>
+                <input class="text" type="text" name="host_username" id="host_username" />
+                <div id="host_username_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li>
+                <label for="user_name">
+                    Password:</label>
+                <input class="text" type="password" name="host_password" id="host_password" autocomplete="off" />
+                <div id="host_password_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li id="cluster_options_container">
+                <label>
+                    &nbsp;</label><span><u>Cluster Options</u></span> </li>
+            <li id="new_cluster_radio_container">
+                <label>
+                    <input type="radio" name="cluster" value="new_cluster_radio" checked />&nbsp;New
+                    cluster:</label>
+                <input class="text" type="text" id="new_cluster_name" />
+                <div id="new_cluster_name_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li id="existing_cluster_radio_container">
+                <label>
+                    <input type="radio" name="cluster" value="existing_cluster_radio" />&nbsp;Join cluster:</label>
+                <select class="select" id="cluster_select">
+                </select>
+            </li>
+            <li id="no_cluster_radio_container">
+                <label>
+                    <input type="radio" name="cluster" value="no_cluster_radio" />&nbsp;Standalone</label>
+                <span style="padding-left: 20px"></span></li>
+        </ol>
+        </form>
+    </div>
+    <!--Loading box-->
+    <div id="spinning_wheel" class="ui_dialog_loaderbox" style="display: none;">
+        <div class="ui_dialog_loader">
+        </div>
+        <p>
+            Adding....</p>
+    </div>
+    <!--Confirmation msg box-->
+    <!--Note: for error msg, just have to add error besides everything for eg. add error(class) next to ui_dialog_messagebox error, ui_dialog_msgicon error, ui_dialog_messagebox_text error.  -->
+    <div id="info_container" class="ui_dialog_messagebox error" style="display: none;">
+        <div id="icon" class="ui_dialog_msgicon error">
+        </div>
+        <div id="info" class="ui_dialog_messagebox_text error">
+            (info)</div>
+    </div>
+</div>
+<!-- Add Host Dialog (end) -->
