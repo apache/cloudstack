@@ -25,6 +25,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -48,7 +49,7 @@ import com.cloud.storage.dao.VMTemplateDao.TemplateFilter;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(description="List all public, private, and privileged templates.")
+@Implementation(description="List all public, private, and privileged templates.", responseObject=TemplateResponse.class)
 public class ListTemplatesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListTemplatesCmd.class.getName());
 
@@ -126,7 +127,7 @@ public class ListTemplatesCmd extends BaseListCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<VMTemplateVO> templates = _mgr.listTemplates(this);
+        List<VMTemplateVO> templates = BaseCmd._mgr.listTemplates(this);
         TemplateFilter templateFilterObj;
         try {
             templateFilterObj = TemplateFilter.valueOf(templateFilter);

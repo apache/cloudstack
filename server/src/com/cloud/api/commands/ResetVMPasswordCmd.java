@@ -23,6 +23,7 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -38,7 +39,7 @@ import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.PasswordGenerator;
 
-@Implementation(description="Resets the password for virtual machine. " +
+@Implementation(responseObject=UserVmResponse.class, description="Resets the password for virtual machine. " +
 																					"The virtual machine must be in a \"Stopped\" state and the template must already " +
 																					"support this feature for this command to take effect. [async]")
 public class ResetVMPasswordCmd extends BaseAsyncCmd {
@@ -105,8 +106,8 @@ public class ResetVMPasswordCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, StorageUnavailableException{
         
-        password = _mgr.generateRandomPassword();
-        UserVm result = _userVmService.resetVMPassword(this, password);
+        password = BaseCmd._mgr.generateRandomPassword();
+        UserVm result = BaseCmd._userVmService.resetVMPassword(this, password);
         
         UserVmResponse response = ApiResponseHelper.createUserVmResponse(result);
         

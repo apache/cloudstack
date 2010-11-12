@@ -31,7 +31,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 
-@Implementation(description="Disassociates an ip address from the account.")
+@Implementation(description="Disassociates an ip address from the account.", responseObject=SuccessResponse.class)
 public class DisassociateIPAddrCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DisassociateIPAddrCmd.class.getName());
 
@@ -63,7 +63,7 @@ public class DisassociateIPAddrCmd extends BaseCmd {
 
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        boolean result = _networkMgr.disassociateIpAddress(this);
+        boolean result = BaseCmd._networkMgr.disassociateIpAddress(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getName());
             this.setResponseObject(response);

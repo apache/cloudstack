@@ -11,8 +11,9 @@ import com.cloud.server.ManagementServer;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({TYPE})
 public @interface Implementation {
-    String createMethod() default "";
-    String method() default "";
-    Class<?> manager() default ManagementServer.class;
+//    String createMethod() default "";
+//    String method() default "";
+//    Class<?> manager() default ManagementServer.class;
+    Class<?> responseObject();
     String description() default "";
 }

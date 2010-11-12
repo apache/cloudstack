@@ -36,7 +36,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Destroys console proxy")
+@Implementation(description="Destroys console proxy", responseObject=SuccessResponse.class)
 public class DestroyConsoleProxyCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(DestroyConsoleProxyCmd.class.getName());
 
@@ -90,7 +90,7 @@ public class DestroyConsoleProxyCmd extends BaseAsyncCmd {
 	
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        boolean result = _consoleProxyMgr.destroyConsoleProxy(this);
+        boolean result = BaseCmd._consoleProxyMgr.destroyConsoleProxy(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getName());
             this.setResponseObject(response);

@@ -34,7 +34,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.uservm.UserVm;
 
-@Implementation(description="Changes the service offering for a virtual machine. " +
+@Implementation(responseObject=UserVmResponse.class, description="Changes the service offering for a virtual machine. " +
 																							"The virtual machine must be in a \"Stopped\" state for " +
 																							"this command to take effect.")
 public class UpgradeVMCmd extends BaseCmd {
@@ -78,7 +78,7 @@ public class UpgradeVMCmd extends BaseCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, StorageUnavailableException{
-        UserVm result = _userVmService.upgradeVirtualMachine(this);
+        UserVm result = BaseCmd._userVmService.upgradeVirtualMachine(this);
         UserVmResponse response = ApiResponseHelper.createUserVmResponse(result);
         response.setResponseName(getName());
         this.setResponseObject(response);

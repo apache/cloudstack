@@ -110,8 +110,12 @@ public abstract class BaseCmd {
     public static final DateFormat INPUT_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
     private static final DateFormat _outputFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
     
-    public static final ComponentLocator s_locator = getComponents();
-    
+    private Object _responseObject = null;
+
+    @Parameter(name="response", type=CommandType.STRING)
+    private String responseType;
+
+    public static ComponentLocator s_locator;
     public static ConfigurationService _configService;
     public static AccountService _accountService;
     public static UserVmService _userVmService;
@@ -125,15 +129,9 @@ public abstract class BaseCmd {
     public static SnapshotManager _snapshotMgr;
     public static ConsoleProxyManager _consoleProxyMgr;
     public static DomainRouterService _routerMgr;
-
-
-    private Object _responseObject = null;
-
-    @Parameter(name="response", type=CommandType.STRING)
-    private String responseType;
    
     
-    private static ComponentLocator getComponents(){
+    static void setComponents(){
         ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
         _accountService = locator.getManager(AccountService.class);
         _configService = locator.getManager(ConfigurationService.class);
@@ -148,7 +146,6 @@ public abstract class BaseCmd {
         _snapshotMgr = locator.getManager(SnapshotManager.class);
         _consoleProxyMgr = locator.getManager(ConsoleProxyManager.class);
         _routerMgr = locator.getManager(DomainRouterService.class);
-        return locator;
     }
     
     public abstract void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ResourceUnavailableException,  ConcurrentOperationException;
@@ -527,7 +524,7 @@ public abstract class BaseCmd {
 		return 0;
 	}
 
-	public static boolean isAdmin(short accountType) {
+    public static boolean isAdmin(short accountType) {
 	    return ((accountType == Account.ACCOUNT_TYPE_ADMIN) ||
 	            (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) ||
 	            (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));

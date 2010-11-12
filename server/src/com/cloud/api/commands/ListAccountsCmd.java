@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiResponseHelper;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -37,7 +38,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.AccountVO;
 
-@Implementation(description="Lists accounts and provides detailed account information for listed accounts")
+@Implementation(description="Lists accounts and provides detailed account information for listed accounts", responseObject=AccountResponse.class)
 public class ListAccountsCmd extends BaseListCmd {
 	public static final Logger s_logger = Logger.getLogger(ListAccountsCmd.class.getName());
     private static final String s_name = "listaccountsresponse";
@@ -111,7 +112,7 @@ public class ListAccountsCmd extends BaseListCmd {
 
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<AccountVO> accounts = _mgr.searchForAccounts(this);
+        List<AccountVO> accounts = BaseCmd._mgr.searchForAccounts(this);
         ListResponse<AccountResponse> response = new ListResponse<AccountResponse>();
         List<AccountResponse> accountResponses = new ArrayList<AccountResponse>();
         for (AccountVO account : accounts) {

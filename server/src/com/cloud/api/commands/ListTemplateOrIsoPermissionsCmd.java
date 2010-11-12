@@ -23,6 +23,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -37,7 +38,7 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(description="List template visibility and all accounts that have permissions to view this template.")
+@Implementation(description="List template visibility and all accounts that have permissions to view this template.", responseObject=TemplatePermissionsResponse.class)
 public class ListTemplateOrIsoPermissionsCmd extends BaseListCmd {
 	public Logger s_logger = getLogger();
     protected String s_name = "listtemplatepermissionsresponse";
@@ -94,7 +95,7 @@ public class ListTemplateOrIsoPermissionsCmd extends BaseListCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<String> accountNames = _mgr.listTemplatePermissions(this);
+        List<String> accountNames = BaseCmd._mgr.listTemplatePermissions(this);
         Account account = (Account)UserContext.current().getAccount();
         boolean isAdmin = ((account == null) || isAdmin(account.getType()));
         Long templateOwnerDomain = null;

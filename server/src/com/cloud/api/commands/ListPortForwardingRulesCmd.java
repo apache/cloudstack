@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiResponseHelper;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -37,7 +38,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.FirewallRuleVO;
 
-@Implementation(description="Lists all port forwarding rules for an IP address.")
+@Implementation(description="Lists all port forwarding rules for an IP address.", responseObject=FirewallRuleResponse.class)
 public class ListPortForwardingRulesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListPortForwardingRulesCmd.class.getName());
 
@@ -69,7 +70,7 @@ public class ListPortForwardingRulesCmd extends BaseListCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<FirewallRuleVO> result = _networkMgr.listPortForwardingRules(this);
+        List<FirewallRuleVO> result = BaseCmd._networkMgr.listPortForwardingRules(this);
         ListResponse<FirewallRuleResponse> response = new ListResponse<FirewallRuleResponse>();
         List<FirewallRuleResponse> fwResponses = new ArrayList<FirewallRuleResponse>();
         

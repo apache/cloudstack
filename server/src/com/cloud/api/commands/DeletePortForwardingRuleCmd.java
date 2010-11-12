@@ -31,7 +31,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 
-@Implementation(description="Deletes a port forwarding rule")
+@Implementation(description="Deletes a port forwarding rule", responseObject=SuccessResponse.class)
 public class DeletePortForwardingRuleCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeletePortForwardingRuleCmd.class.getName());
     private static final String s_name = "deleteportforwardingruleresponse";
@@ -63,7 +63,7 @@ public class DeletePortForwardingRuleCmd extends BaseCmd {
 	
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        boolean result = _networkMgr.deletePortForwardingRule(this);
+        boolean result = BaseCmd._networkMgr.deletePortForwardingRule(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getName());
             this.setResponseObject(response);

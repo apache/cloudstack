@@ -34,7 +34,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 
-@Implementation(description="Deletes snapshot policies for the account.")
+@Implementation(description="Deletes snapshot policies for the account.", responseObject=SuccessResponse.class)
 public class DeleteSnapshotPoliciesCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteSnapshotPoliciesCmd.class.getName());
 
@@ -43,12 +43,6 @@ public class DeleteSnapshotPoliciesCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING)
-    private String accountName;
-
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG)
-    private Long domainId;
 
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="the Id of the snapshot")
     private Long id;
@@ -60,14 +54,6 @@ public class DeleteSnapshotPoliciesCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
-    public String getAccountName() {
-        return accountName;
-    }
-
-    public Long getDomainId() {
-        return domainId;
-    }
 
     public Long getId() {
         return id;
@@ -89,7 +75,7 @@ public class DeleteSnapshotPoliciesCmd extends BaseCmd {
 
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        boolean result = _snapshotMgr.deleteSnapshotPolicies(this);
+        boolean result = BaseCmd._snapshotMgr.deleteSnapshotPolicies(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getName());
             this.setResponseObject(response);

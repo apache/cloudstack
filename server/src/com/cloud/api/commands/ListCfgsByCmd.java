@@ -25,6 +25,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiResponseHelper;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -38,7 +39,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 
-@Implementation(description="Lists all configurations.")
+@Implementation(description="Lists all configurations.", responseObject=ConfigurationResponse.class)
 public class ListCfgsByCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListCfgsByCmd.class.getName());
 
@@ -79,7 +80,7 @@ public class ListCfgsByCmd extends BaseListCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<ConfigurationVO> result = _mgr.searchForConfigurations(this);
+        List<ConfigurationVO> result = BaseCmd._mgr.searchForConfigurations(this);
         ListResponse<ConfigurationResponse> response = new ListResponse<ConfigurationResponse>();
         List<ConfigurationResponse> configResponses = new ArrayList<ConfigurationResponse>();
         for (ConfigurationVO cfg : result) {

@@ -29,7 +29,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 
-@Implementation(description="Unregisters PreallocatedLun")
+@Implementation(description="Unregisters PreallocatedLun", responseObject=SuccessResponse.class)
 public class DeletePreallocatedLunCmd extends BaseCmd {
     private static final String s_name = "deletePreallocatedLunsResponse";
 
@@ -59,7 +59,7 @@ public class DeletePreallocatedLunCmd extends BaseCmd {
 
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        boolean result = _mgr.unregisterPreallocatedLun(this);
+        boolean result = BaseCmd._mgr.unregisterPreallocatedLun(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getName());
             this.setResponseObject(response);

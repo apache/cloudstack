@@ -80,7 +80,6 @@ import org.apache.http.protocol.ResponseServer;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.response.ApiResponseSerializer;
-import com.cloud.api.response.ListResponse;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -88,7 +87,6 @@ import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.event.EventUtils;
 import com.cloud.exception.CloudAuthenticationException;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.maid.StackMaid;
 import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
@@ -113,12 +111,12 @@ public class ApiServer implements HttpRequestHandler {
     private static final short READ_ONLY_ADMIN_COMMAND = 4;
     private static final short USER_COMMAND = 8;
     private Properties _apiCommands = null;
-    //private AsyncJobManager _asyncMgr;
     private ApiDispatcher _dispatcher;
     private ManagementServer _ms = null;
     private AccountManager _accountMgr = null;
     private Account _systemAccount = null;
     private User _systemUser = null;
+    
 
     private static int _workerCount = 0;
 
@@ -152,9 +150,10 @@ public class ApiServer implements HttpRequestHandler {
         //initApiServer();
         return s_instance;
     }
-
+    
     public void init(String[] apiConfig) {
         try {
+            BaseCmd.setComponents();
             _apiCommands = new Properties();
             Properties preProcessedCommands = new Properties();
             if (apiConfig != null) {
@@ -747,6 +746,8 @@ public class ApiServer implements HttpRequestHandler {
         }
         return sb.toString();
     }
+
+
 
     // FIXME:  the following two threads are copied from http://svn.apache.org/repos/asf/httpcomponents/httpcore/trunk/httpcore/src/examples/org/apache/http/examples/ElementalHttpServer.java
     //         we have to cite a license if we are using this code directly, so we need to add the appropriate citation or modify the code to be very specific to our needs

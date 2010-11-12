@@ -35,7 +35,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 
-@Implementation(description="Creates a new Pod.")
+@Implementation(description="Creates a new Pod.", responseObject=PodResponse.class)
 public class CreatePodCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreatePodCmd.class.getName());
 
@@ -103,7 +103,7 @@ public class CreatePodCmd extends BaseCmd {
 
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        Pod result = _configService.createPod(this);
+        Pod result = BaseCmd._configService.createPod(this);
         PodResponse response = ApiResponseHelper.createPodResponse((HostPodVO)result);
         response.setResponseName(getName());
         this.setResponseObject(response);

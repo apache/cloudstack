@@ -36,7 +36,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Removes vpn user")
+@Implementation(description="Removes vpn user", responseObject=SuccessResponse.class)
 public class RemoveVpnUserCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RemoveVpnUserCmd.class.getName());
 
@@ -116,7 +116,7 @@ public class RemoveVpnUserCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        boolean result = _networkMgr.removeVpnUser(this);
+        boolean result = BaseCmd._networkMgr.removeVpnUser(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getName());
             this.setResponseObject(response);

@@ -23,6 +23,7 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -36,7 +37,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.LoadBalancerVO;
 import com.cloud.user.Account;
 
-@Implementation(description="Updates load balancer")
+@Implementation(description="Updates load balancer", responseObject=LoadBalancerResponse.class)
 public class UpdateLoadBalancerRuleCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateLoadBalancerRuleCmd.class.getName());
     private static final String s_name = "updateloadbalancerruleresponse";
@@ -114,7 +115,7 @@ public class UpdateLoadBalancerRuleCmd extends BaseAsyncCmd {
 	
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        LoadBalancerVO result = _networkMgr.updateLoadBalancerRule(this);
+        LoadBalancerVO result = BaseCmd._networkMgr.updateLoadBalancerRule(this);
         LoadBalancerResponse response = ApiResponseHelper.createLoadBalancerResponse(result);
         response.setResponseName(getName());
         this.setResponseObject(response);

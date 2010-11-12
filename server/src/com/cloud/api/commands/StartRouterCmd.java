@@ -24,6 +24,7 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -39,7 +40,7 @@ import com.cloud.uservm.UserVm;
 import com.cloud.vm.DomainRouter;
 
 
-@Implementation(description="Starts a router.")
+@Implementation(responseObject=DomainRouterResponse.class, description="Starts a router.")
 public class StartRouterCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(StartRouterCmd.class.getName());
     private static final String s_name = "startrouterresponse";
@@ -95,7 +96,7 @@ public class StartRouterCmd extends BaseAsyncCmd {
 	
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        DomainRouter result = _routerMgr.startRouter(this);
+        DomainRouter result = BaseCmd._routerMgr.startRouter(this);
         DomainRouterResponse routerResponse = ApiResponseHelper.createDomainRouterResponse(result);
         routerResponse.setResponseName(getName());
         this.setResponseObject(routerResponse);

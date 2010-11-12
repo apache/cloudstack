@@ -40,7 +40,7 @@ import com.cloud.storage.UploadVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.user.Account;
 
-@Implementation(description="Extracts volume")
+@Implementation(description="Extracts volume", responseObject=ExtractResponse.class)
 public class ExtractVolumeCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(ExtractVolumeCmd.class.getName());
 
@@ -122,7 +122,7 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException{
         try {
-            Long uploadId = _mgr.extractVolume(this);
+            Long uploadId = BaseCmd._mgr.extractVolume(this);
             UploadVO uploadInfo = ApiDBUtils.findUploadById(uploadId);
             
             ExtractResponse response = new ExtractResponse();

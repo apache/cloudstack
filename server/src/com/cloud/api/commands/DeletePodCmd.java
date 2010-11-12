@@ -32,7 +32,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 
-@Implementation(description="Deletes a Pod.")
+@Implementation(description="Deletes a Pod.", responseObject=SuccessResponse.class)
 public class DeletePodCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeletePodCmd.class.getName());
 
@@ -64,7 +64,7 @@ public class DeletePodCmd extends BaseCmd {
 
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        boolean result = _configService.deletePod(this);
+        boolean result = BaseCmd._configService.deletePod(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getName());
             this.setResponseObject(response);

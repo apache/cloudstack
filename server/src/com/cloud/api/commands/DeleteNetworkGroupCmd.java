@@ -15,7 +15,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceInUseException;
 
-@Implementation(description="Deletes network group")
+@Implementation(description="Deletes network group", responseObject=SuccessResponse.class)
 public class DeleteNetworkGroupCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteNetworkGroupCmd.class.getName());
     private static final String s_name = "deletenetworkgroupresponse";
@@ -63,7 +63,7 @@ public class DeleteNetworkGroupCmd extends BaseCmd {
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         try{
-            boolean result = _networkGroupMgr.deleteNetworkGroup(this);
+            boolean result = BaseCmd._networkGroupMgr.deleteNetworkGroup(this);
             if (result) {
                 SuccessResponse response = new SuccessResponse(getName());
                 this.setResponseObject(response);

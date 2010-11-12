@@ -38,7 +38,7 @@ import com.cloud.network.RemoteAccessVpnVO;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Creates a l2tp/ipsec remote access vpn")
+@Implementation(description="Creates a l2tp/ipsec remote access vpn", responseObject=RemoteAccessVpnResponse.class)
 public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateRemoteAccessVpnCmd.class.getName());
 
@@ -138,7 +138,7 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
 	
     @Override
     public void callCreate() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException{
-        RemoteAccessVpnVO vpn = _networkMgr.createRemoteAccessVpn(this);
+        RemoteAccessVpnVO vpn = BaseCmd._networkMgr.createRemoteAccessVpn(this);
         if (vpn != null) {
             this.setId(vpn.getId());
         }
@@ -147,7 +147,7 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         try {
-        RemoteAccessVpnVO result = _networkMgr.startRemoteAccessVpn(this);
+        RemoteAccessVpnVO result = BaseCmd._networkMgr.startRemoteAccessVpn(this);
         RemoteAccessVpnResponse response = new RemoteAccessVpnResponse();
         response.setId(result.getId());
         response.setPublicIp(result.getVpnServerAddress());

@@ -46,7 +46,7 @@ import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
 
-@Implementation(description="Registers an existing template into the Cloud.com cloud. ")
+@Implementation(description="Registers an existing template into the Cloud.com cloud. ", responseObject=TemplateResponse.class)
 public class RegisterTemplateCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(RegisterTemplateCmd.class.getName());
 
@@ -170,7 +170,7 @@ public class RegisterTemplateCmd extends BaseCmd {
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException{
         try {
-            VMTemplateVO template = _templateMgr.registerTemplate(this);
+            VMTemplateVO template = BaseCmd._templateMgr.registerTemplate(this);
             ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
             List<TemplateResponse> responses = new ArrayList<TemplateResponse>();
             List<DataCenterVO> zones = null;

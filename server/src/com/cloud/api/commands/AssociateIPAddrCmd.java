@@ -34,7 +34,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.IPAddressVO;
 
-@Implementation(description="Acquires and associates a public IP to an account.")
+@Implementation(description="Acquires and associates a public IP to an account.", responseObject=IPAddressResponse.class)
 public class AssociateIPAddrCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AssociateIPAddrCmd.class.getName());
     private static final String s_name = "associateipaddressresponse";
@@ -86,7 +86,7 @@ public class AssociateIPAddrCmd extends BaseCmd {
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         try {
-            IPAddressVO result = _networkMgr.associateIP(this);
+            IPAddressVO result = BaseCmd._networkMgr.associateIP(this);
             IPAddressResponse ipResponse = ApiResponseHelper.createIPAddressResponse(result);
             ipResponse.setResponseName(getName());
             this.setResponseObject(ipResponse);

@@ -25,6 +25,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiResponseHelper;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -38,7 +39,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.storage.preallocatedlun.PreallocatedLunVO;
 
-@Implementation()
+@Implementation(responseObject=PreallocatedLunResponse.class)
 public class ListPreallocatedLunsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListPreallocatedLunsCmd.class.getName());
 
@@ -79,7 +80,7 @@ public class ListPreallocatedLunsCmd extends BaseListCmd {
 
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<PreallocatedLunVO> preallocatedLuns = _mgr.getPreAllocatedLuns(this);
+        List<PreallocatedLunVO> preallocatedLuns = BaseCmd._mgr.getPreAllocatedLuns(this);
         ListResponse<PreallocatedLunResponse> response = new ListResponse<PreallocatedLunResponse>();
         List<PreallocatedLunResponse> lunResponses = new ArrayList<PreallocatedLunResponse>();
         for (PreallocatedLunVO preallocatedLun : preallocatedLuns) {

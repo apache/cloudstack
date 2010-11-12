@@ -23,6 +23,7 @@ import org.apache.log4j.Logger;
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -37,7 +38,7 @@ import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.vm.VMInstanceVO;
 
-@Implementation(description="Reboots a system VM.")
+@Implementation(description="Reboots a system VM.", responseObject=SystemVmResponse.class)
 public class RebootSystemVmCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(RebootSystemVmCmd.class.getName());
 
@@ -89,7 +90,7 @@ public class RebootSystemVmCmd extends BaseAsyncCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        VMInstanceVO result = _mgr.rebootSystemVM(this);
+        VMInstanceVO result = BaseCmd._mgr.rebootSystemVM(this);
         SystemVmResponse response = ApiResponseHelper.createSystemVmResponse(result);
         response.setResponseName(getName());
         this.setResponseObject(response);

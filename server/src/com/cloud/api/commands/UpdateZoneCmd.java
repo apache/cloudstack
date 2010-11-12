@@ -35,7 +35,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 
-@Implementation(description="Updates a Zone.")
+@Implementation(description="Updates a Zone.", responseObject=ZoneResponse.class)
 public class UpdateZoneCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateZoneCmd.class.getName());
 
@@ -134,7 +134,7 @@ public class UpdateZoneCmd extends BaseCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        DataCenter result = _configService.editZone(this);
+        DataCenter result = BaseCmd._configService.editZone(this);
         if (result != null) {
             ZoneResponse response = ApiResponseHelper.createZoneResponse((DataCenterVO)result);
             response.setResponseName(getName());

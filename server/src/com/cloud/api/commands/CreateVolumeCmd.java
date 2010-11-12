@@ -24,6 +24,7 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseAsyncCreateCmd;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -40,7 +41,7 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Creates a disk volume from a disk offering. This disk volume must still be attached to a virtual machine to make use of it.")
+@Implementation(responseObject=VolumeResponse.class, description="Creates a disk volume from a disk offering. This disk volume must still be attached to a virtual machine to make use of it.")
 public class CreateVolumeCmd extends BaseAsyncCreateCmd {
 	public static final Logger s_logger = Logger.getLogger(CreateVolumeCmd.class.getName());
     private static final String s_name = "createvolumeresponse";
@@ -147,7 +148,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     
     @Override
     public void callCreate() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException{
-        Volume volume = _storageMgr.allocVolume(this);
+        Volume volume = BaseCmd._storageMgr.allocVolume(this);
         if (volume != null) {
             this.setId(volume.getId());
         }
@@ -155,7 +156,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        Volume volume = _storageMgr.createVolume(this);
+        Volume volume = BaseCmd._storageMgr.createVolume(this);
         VolumeResponse response = ApiResponseHelper.createVolumeResponse((VolumeVO)volume);
         //FIXME - have to be moved to ApiResponseHelper
         response.setSnapshotId(getSnapshotId());  // if the volume was created from a snapshot, snapshotId will be set so we pass it back in the response

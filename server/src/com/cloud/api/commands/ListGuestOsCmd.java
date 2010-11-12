@@ -24,6 +24,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -37,7 +38,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.storage.GuestOSVO;
 
-@Implementation(description="Lists all supported OS types for this cloud.")
+@Implementation(description="Lists all supported OS types for this cloud.", responseObject=GuestOSResponse.class)
 public class ListGuestOsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListIsosCmd.class.getName());
 
@@ -88,7 +89,7 @@ public class ListGuestOsCmd extends BaseListCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<GuestOSVO> result = _mgr.listGuestOSByCriteria(this);
+        List<GuestOSVO> result = BaseCmd._mgr.listGuestOSByCriteria(this);
         ListResponse<GuestOSResponse> response = new ListResponse<GuestOSResponse>();
         List<GuestOSResponse> osResponses = new ArrayList<GuestOSResponse>();
         for (GuestOSVO guestOS : result) {

@@ -27,7 +27,6 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.response.IsoVmResponse;
 import com.cloud.api.response.UserVmResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -38,9 +37,8 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
-import com.cloud.vm.VMInstanceVO;
 
-@Implementation(description="Attaches an ISO to a virtual machine.")
+@Implementation(description="Attaches an ISO to a virtual machine.", responseObject=UserVmResponse.class)
 public class AttachIsoCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AttachIsoCmd.class.getName());
 
@@ -100,7 +98,7 @@ public class AttachIsoCmd extends BaseAsyncCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        boolean result = _templateMgr.attachIso(this);
+        boolean result = BaseCmd._templateMgr.attachIso(this);
         if (result) {
             UserVm userVm = ApiDBUtils.findUserVmById(virtualMachineId);           
             UserVmResponse response = ApiResponseHelper.createUserVmResponse(userVm);            

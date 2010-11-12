@@ -36,7 +36,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
 
-@Implementation(description="Deletes an ISO file.")
+@Implementation(description="Deletes an ISO file.", responseObject=SuccessResponse.class)
 public class DeleteIsoCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteIsoCmd.class.getName());
     private static final String s_name = "deleteisosresponse";
@@ -99,7 +99,7 @@ public class DeleteIsoCmd extends BaseAsyncCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        boolean result = _templateMgr.deleteIso(this);
+        boolean result = BaseCmd._templateMgr.deleteIso(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getName());
             this.setResponseObject(response);

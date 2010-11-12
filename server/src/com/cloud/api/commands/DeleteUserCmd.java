@@ -38,7 +38,7 @@ import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Deletes a user account")
+@Implementation(description="Deletes a user account", responseObject=SuccessResponse.class)
 public class DeleteUserCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(DeleteUserCmd.class.getName());
 	private static final String s_name = "deleteuserresponse";
@@ -96,7 +96,7 @@ public class DeleteUserCmd extends BaseAsyncCmd {
 	
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        boolean result = _accountService.deleteUser(this);
+        boolean result = BaseCmd._accountService.deleteUser(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getName());
             this.setResponseObject(response);

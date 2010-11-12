@@ -34,7 +34,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.UserAccount;
 
-@Implementation(description="Enables a user account")
+@Implementation(description="Enables a user account", responseObject=UserResponse.class)
 public class EnableUserCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(EnableUserCmd.class.getName());
     private static final String s_name = "enableuserresponse";
@@ -66,7 +66,7 @@ public class EnableUserCmd extends BaseCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        UserAccount user = _accountService.enableUser(this);
+        UserAccount user = BaseCmd._accountService.enableUser(this);
         UserResponse response = ApiResponseHelper.createUserResponse(user);
         response.setResponseName(getName());   
         this.setResponseObject(response);

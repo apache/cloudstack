@@ -39,7 +39,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.LoadBalancerVO;
 import com.cloud.user.Account;
 
-@Implementation(description="Assigns virtual machine or a list of virtual machines to a load balancer rule.")
+@Implementation(description="Assigns virtual machine or a list of virtual machines to a load balancer rule.", responseObject=SuccessResponse.class)
 public class AssignToLoadBalancerRuleCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AssignToLoadBalancerRuleCmd.class.getName());
 
@@ -105,7 +105,7 @@ public class AssignToLoadBalancerRuleCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         try {
-            boolean result = _networkMgr.assignToLoadBalancer(this);
+            boolean result = BaseCmd._networkMgr.assignToLoadBalancer(this);
             if (result) {
                 SuccessResponse response = new SuccessResponse(getName());
                 this.setResponseObject(response);

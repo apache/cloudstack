@@ -36,7 +36,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.LoadBalancerVO;
 import com.cloud.user.Account;
 
-@Implementation(description="Deletes a load balancer rule.")
+@Implementation(description="Deletes a load balancer rule.", responseObject=SuccessResponse.class)
 public class DeleteLoadBalancerRuleCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteLoadBalancerRuleCmd.class.getName());
     private static final String s_name = "deleteloadbalancerruleresponse";
@@ -87,7 +87,7 @@ public class DeleteLoadBalancerRuleCmd extends BaseAsyncCmd {
 	
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        boolean result = _networkMgr.deleteLoadBalancerRule(this);
+        boolean result = BaseCmd._networkMgr.deleteLoadBalancerRule(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getName());
             this.setResponseObject(response);

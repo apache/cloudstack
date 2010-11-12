@@ -36,7 +36,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.Account;
 
-@Implementation(description="Deletes a specified domain")
+@Implementation(description="Deletes a specified domain", responseObject=SuccessResponse.class)
 public class DeleteDomainCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteDomainCmd.class.getName());
     private static final String s_name = "deletedomainresponse";
@@ -48,7 +48,7 @@ public class DeleteDomainCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="ID of domain to delete")
     private Long id;
 
-    @Parameter(name=ApiConstants.CLEANUP, type=CommandType.BOOLEAN)
+    @Parameter(name=ApiConstants.CLEANUP, type=CommandType.BOOLEAN, description="true if all domain resources (child domains, accounts) have to be cleaned up, false otherwise")
     private Boolean cleanup;
 
 
@@ -95,7 +95,7 @@ public class DeleteDomainCmd extends BaseAsyncCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        boolean result = _mgr.deleteDomain(this);
+        boolean result = BaseCmd._mgr.deleteDomain(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getName());
             this.setResponseObject(response);

@@ -39,7 +39,7 @@ import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
 
-@Implementation(description="Extracts a template")
+@Implementation(description="Extracts a template", responseObject=ExtractResponse.class)
 public class ExtractTemplateCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(ExtractTemplateCmd.class.getName());
 
@@ -118,7 +118,7 @@ public class ExtractTemplateCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException{
         try {
-            Long uploadId = _templateMgr.extract(this);
+            Long uploadId = BaseCmd._templateMgr.extract(this);
             UploadVO uploadInfo = ApiDBUtils.findUploadById(uploadId);
             
             ExtractResponse response = new ExtractResponse();

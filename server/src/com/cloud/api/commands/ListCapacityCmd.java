@@ -31,6 +31,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -47,7 +48,7 @@ import com.cloud.server.Criteria;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePoolVO;
 
-@Implementation(description="Lists capacity.")
+@Implementation(description="Lists capacity.", responseObject=CapacityResponse.class)
 public class ListCapacityCmd extends BaseListCmd {
 
     public static final Logger s_logger = Logger.getLogger(ListCapacityCmd.class.getName());
@@ -201,7 +202,7 @@ public class ListCapacityCmd extends BaseListCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<CapacityVO> result = _mgr.listCapacities(this);
+        List<CapacityVO> result = BaseCmd._mgr.listCapacities(this);
         ListResponse<CapacityResponse> response = new ListResponse<CapacityResponse>();
         List<CapacityResponse> capacityResponses = new ArrayList<CapacityResponse>();
         List<CapacityVO> summedCapacities = sumCapacities(result);

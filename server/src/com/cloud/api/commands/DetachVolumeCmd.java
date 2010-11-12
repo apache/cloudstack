@@ -23,6 +23,7 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -38,7 +39,7 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
-@Implementation(description="Detaches a disk volume from a virtual machine.")
+@Implementation(description="Detaches a disk volume from a virtual machine.", responseObject=VolumeResponse.class)
 public class DetachVolumeCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(DetachVolumeCmd.class.getName());
     private static final String s_name = "detachvolumeresponse";
@@ -124,7 +125,7 @@ public class DetachVolumeCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        Volume result = _userVmService.detachVolumeFromVM(this);
+        Volume result = BaseCmd._userVmService.detachVolumeFromVM(this);
         VolumeResponse response = ApiResponseHelper.createVolumeResponse((VolumeVO)result);
         response.setResponseName("volume");
         this.setResponseObject(response);

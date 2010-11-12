@@ -13,7 +13,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 
-@Implementation(description="Updates iso permissions")
+@Implementation(description="Updates iso permissions", responseObject=SuccessResponse.class)
 public class UpdateIsoPermissionsCmd extends UpdateTemplateOrIsoPermissionsCmd {
     protected String getResponseName() {
     	return "updateisopermissionsresponse";
@@ -25,7 +25,7 @@ public class UpdateIsoPermissionsCmd extends UpdateTemplateOrIsoPermissionsCmd {
 	
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException{
-        boolean result = _mgr.updateTemplatePermissions(this);
+        boolean result = BaseCmd._mgr.updateTemplatePermissions(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getName());
             this.setResponseObject(response);

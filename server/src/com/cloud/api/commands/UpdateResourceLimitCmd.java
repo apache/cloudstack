@@ -34,7 +34,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 
-@Implementation(description="Updates resource limits for an account or domain.")
+@Implementation(description="Updates resource limits for an account or domain.", responseObject=ResourceLimitResponse.class)
 public class UpdateResourceLimitCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateResourceLimitCmd.class.getName());
 
@@ -92,7 +92,7 @@ public class UpdateResourceLimitCmd extends BaseCmd {
 
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        ResourceLimit result = _accountService.updateResourceLimit(this);
+        ResourceLimit result = BaseCmd._accountService.updateResourceLimit(this);
         ResourceLimitResponse response = ApiResponseHelper.createResourceLimitResponse(result);
         response.setResponseName(getName());
         this.setResponseObject(response);

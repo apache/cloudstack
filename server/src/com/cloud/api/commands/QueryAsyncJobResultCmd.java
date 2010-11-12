@@ -37,7 +37,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 
-@Implementation(description="Retrieves the current status of asynchronous job.")
+@Implementation(description="Retrieves the current status of asynchronous job.", responseObject=AsyncJobResponse.class)
 public class QueryAsyncJobResultCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(QueryAsyncJobResultCmd.class.getName());
 
@@ -69,7 +69,7 @@ public class QueryAsyncJobResultCmd extends BaseCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        AsyncJobResult result = _asyncMgr.queryAsyncJobResult(this);
+        AsyncJobResult result = BaseCmd._asyncMgr.queryAsyncJobResult(this);
         AsyncJobResponse response = new AsyncJobResponse();
         response.setId(result.getJobId());
         response.setJobStatus(result.getJobStatus());

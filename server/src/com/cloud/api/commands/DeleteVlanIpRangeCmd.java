@@ -32,7 +32,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 
-@Implementation(description="Creates a VLAN IP range.")
+@Implementation(description="Creates a VLAN IP range.", responseObject=SuccessResponse.class)
 public class DeleteVlanIpRangeCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(DeleteVlanIpRangeCmd.class.getName());
 
@@ -64,7 +64,7 @@ public class DeleteVlanIpRangeCmd extends BaseCmd {
 	
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        boolean result = _configService.deleteVlanIpRange(this);
+        boolean result = BaseCmd._configService.deleteVlanIpRange(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getName());
             this.setResponseObject(response);

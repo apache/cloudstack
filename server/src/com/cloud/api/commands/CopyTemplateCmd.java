@@ -42,7 +42,7 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Copies a template from one zone to another.")
+@Implementation(description="Copies a template from one zone to another.", responseObject=TemplateResponse.class)
 public class CopyTemplateCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(CopyTemplateCmd.class.getName());
     private static final String s_name = "copytemplateresponse";
@@ -114,7 +114,7 @@ public class CopyTemplateCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         try {
-            VMTemplateVO template = _templateMgr.copyTemplate(this);
+            VMTemplateVO template = BaseCmd._templateMgr.copyTemplate(this);
             TemplateResponse templateResponse = new TemplateResponse();
             if (template != null) {
                 templateResponse.setId(template.getId());

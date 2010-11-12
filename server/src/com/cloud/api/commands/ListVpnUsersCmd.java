@@ -24,6 +24,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -38,7 +39,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.VpnUserVO;
 import com.cloud.user.Account;
 
-@Implementation(description="Lists vpn users")
+@Implementation(description="Lists vpn users", responseObject=VpnUsersResponse.class)
 public class ListVpnUsersCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger (ListVpnUsersCmd.class.getName());
 
@@ -91,7 +92,7 @@ public class ListVpnUsersCmd extends BaseListCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<VpnUserVO> vpnUsers = _mgr.searchForVpnUsers(this);
+        List<VpnUserVO> vpnUsers = BaseCmd._mgr.searchForVpnUsers(this);
 
         ListResponse<VpnUsersResponse> response = new ListResponse<VpnUsersResponse>();
         List<VpnUsersResponse> vpnResponses = new ArrayList<VpnUsersResponse>();

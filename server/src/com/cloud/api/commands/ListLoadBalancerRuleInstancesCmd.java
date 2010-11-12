@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiResponseHelper;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -37,7 +38,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.vm.UserVmVO;
 
-@Implementation(description="List all virtual machine instances that are assigned to a load balancer rule.")
+@Implementation(description="List all virtual machine instances that are assigned to a load balancer rule.", responseObject=UserVmResponse.class)
 public class ListLoadBalancerRuleInstancesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger (ListLoadBalancerRuleInstancesCmd.class.getName());
 
@@ -76,7 +77,7 @@ public class ListLoadBalancerRuleInstancesCmd extends BaseListCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<UserVmVO> result = _mgr.listLoadBalancerInstances(this);
+        List<UserVmVO> result = BaseCmd._mgr.listLoadBalancerInstances(this);
         ListResponse<UserVmResponse> response = new ListResponse<UserVmResponse>();
         List<UserVmResponse> vmResponses = new ArrayList<UserVmResponse>();
         for (UserVmVO instance : result) {

@@ -22,6 +22,7 @@ import org.apache.log4j.Logger;
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -36,7 +37,7 @@ import com.cloud.storage.StoragePoolVO;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Puts storage pool into maintenance state")
+@Implementation(description="Puts storage pool into maintenance state", responseObject=StoragePoolResponse.class)
 public class PreparePrimaryStorageForMaintenanceCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(PreparePrimaryStorageForMaintenanceCmd.class.getName());	
     private static final String s_name = "prepareprimarystorageformaintenanceresponse";
@@ -91,7 +92,7 @@ public class PreparePrimaryStorageForMaintenanceCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        StoragePoolVO result = _storageMgr.preparePrimaryStorageForMaintenance(this);
+        StoragePoolVO result = BaseCmd._storageMgr.preparePrimaryStorageForMaintenance(this);
         StoragePoolResponse response = ApiResponseHelper.createStoragePoolResponse(result);
         response.setResponseName("storagepool");
         this.setResponseObject(response);

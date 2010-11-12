@@ -33,7 +33,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.Account;
 
-@Implementation(description="Updates account information for the authenticated user")
+@Implementation(description="Updates account information for the authenticated user", responseObject=AccountResponse.class)
 public class UpdateAccountCmd extends BaseCmd{
     public static final Logger s_logger = Logger.getLogger(UpdateAccountCmd.class.getName());
     private static final String s_name = "updateaccountresponse";
@@ -78,7 +78,7 @@ public class UpdateAccountCmd extends BaseCmd{
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        Account result = _accountService.updateAccount(this);
+        Account result = BaseCmd._accountService.updateAccount(this);
         AccountResponse response = ApiResponseHelper.createAccountResponse(result);
         response.setResponseName(getName());
         this.setResponseObject(response);

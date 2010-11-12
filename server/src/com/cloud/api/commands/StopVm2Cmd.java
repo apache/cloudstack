@@ -23,6 +23,7 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -36,7 +37,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
-@Implementation(description="Stops a virtual machine.")
+@Implementation(description="Stops a virtual machine.", responseObject=UserVmResponse.class)
 public class StopVm2Cmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(StopVMCmd.class.getName());
 
@@ -62,7 +63,7 @@ public class StopVm2Cmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        UserVm userVm = _userVmService.stopVirtualMachine(this);
+        UserVm userVm = BaseCmd._userVmService.stopVirtualMachine(this);
         UserVmResponse response = ApiResponseHelper.createUserVmResponse(userVm);
         response.setResponseName(getName());
         this.setResponseObject(response);

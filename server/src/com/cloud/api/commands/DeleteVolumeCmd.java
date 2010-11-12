@@ -32,7 +32,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 
-@Implementation(description="Deletes a detached disk volume.")
+@Implementation(description="Deletes a detached disk volume.", responseObject=SuccessResponse.class)
 public class DeleteVolumeCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(DeleteVolumeCmd.class.getName());
     private static final String s_name = "deletevolumeresponse";
@@ -69,7 +69,7 @@ public class DeleteVolumeCmd extends BaseCmd {
 	
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        boolean result = _storageMgr.deleteVolume(this);
+        boolean result = BaseCmd._storageMgr.deleteVolume(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getName());
             this.setResponseObject(response);

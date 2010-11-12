@@ -9,6 +9,7 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.response.TemplateResponse;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -16,7 +17,6 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 
-@Implementation()
 public abstract class UpdateTemplateOrIsoPermissionsCmd extends BaseCmd {
 	public Logger s_logger = getLogger();
     protected String s_name = getResponseName();

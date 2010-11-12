@@ -26,6 +26,7 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseAsyncCreateCmd;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -41,7 +42,7 @@ import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 
-@Implementation(description="Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.")
+@Implementation(description="Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.", responseObject=UserVmResponse.class)
 public class DeployVm2Cmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(DeployVMCmd.class.getName());
     
@@ -158,7 +159,7 @@ public class DeployVm2Cmd extends BaseAsyncCreateCmd {
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException{
         UserVm result;
-        result = _userVmService.startVirtualMachine(this);
+        result = BaseCmd._userVmService.startVirtualMachine(this);
         UserVmResponse response = ApiResponseHelper.createUserVm2Response(result);
         response.setPassword(password);
         response.setResponseName(getName());
@@ -167,7 +168,7 @@ public class DeployVm2Cmd extends BaseAsyncCreateCmd {
     
     @Override
     public void callCreate() throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
-        UserVm vm = _userVmService.createVirtualMachine(this);
+        UserVm vm = BaseCmd._userVmService.createVirtualMachine(this);
         this.setId(vm.getId());
     }
 

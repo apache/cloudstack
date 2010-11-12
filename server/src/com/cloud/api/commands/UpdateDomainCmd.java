@@ -33,7 +33,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 
-@Implementation(description="Updates a domain with a new name")
+@Implementation(description="Updates a domain with a new name", responseObject=DomainResponse.class)
 public class UpdateDomainCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateDomainCmd.class.getName());
     private static final String s_name = "updatedomainresponse";
@@ -71,7 +71,7 @@ public class UpdateDomainCmd extends BaseCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        DomainVO domain = _mgr.updateDomain(this);
+        DomainVO domain = BaseCmd._mgr.updateDomain(this);
         if (domain != null) {
             DomainResponse response = ApiResponseHelper.createDomainResponse(domain);
             response.setResponseName(getName());

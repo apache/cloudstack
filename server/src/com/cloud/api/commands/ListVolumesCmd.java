@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiResponseHelper;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -37,7 +38,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.storage.VolumeVO;
 
-@Implementation(description="Lists all volumes.")
+@Implementation(description="Lists all volumes.", responseObject=VolumeResponse.class)
 public class ListVolumesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListVolumesCmd.class.getName());
 
@@ -62,7 +63,7 @@ public class ListVolumesCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the disk volume")
     private String volumeName;
 
-    @Parameter(name=ApiConstants.POD_ID, type=CommandType.LONG)
+    @Parameter(name=ApiConstants.POD_ID, type=CommandType.LONG, description="the pod id the disk volume belongs to")
     private Long podId;
 
     @Parameter(name=ApiConstants.TYPE, type=CommandType.STRING, description="the type of disk volume")
@@ -125,7 +126,7 @@ public class ListVolumesCmd extends BaseListCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<VolumeVO> volumes = _mgr.searchForVolumes(this);
+        List<VolumeVO> volumes = BaseCmd._mgr.searchForVolumes(this);
 
         ListResponse<VolumeResponse> response = new ListResponse<VolumeResponse>();
         List<VolumeResponse> volResponses = new ArrayList<VolumeResponse>();

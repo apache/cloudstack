@@ -41,7 +41,7 @@ import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.InstanceGroupVO;
 
-@Implementation(description="Starts a virtual machine.")
+@Implementation(responseObject=UserVmResponse.class, description="Starts a virtual machine.")
 public class StartVm2Cmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(StartVMCmd.class.getName());
 
@@ -68,7 +68,7 @@ public class StartVm2Cmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         try {
-            UserVm vm = _userVmService.startVirtualMachine(this);
+            UserVm vm = BaseCmd._userVmService.startVirtualMachine(this);
 
             UserVmResponse response = new UserVmResponse();
             response.setId(vm.getId());

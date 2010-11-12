@@ -34,7 +34,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.storage.SnapshotPolicyVO;
 
-@Implementation(description="Creates a snapshot policy for the account.")
+@Implementation(description="Creates a snapshot policy for the account.", responseObject=SnapshotPolicyResponse.class)
 public class CreateSnapshotPolicyCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateSnapshotPolicyCmd.class.getName());
 
@@ -115,7 +115,7 @@ public class CreateSnapshotPolicyCmd extends BaseCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        SnapshotPolicyVO result = _snapshotMgr.createPolicy(this);
+        SnapshotPolicyVO result = BaseCmd._snapshotMgr.createPolicy(this);
         SnapshotPolicyResponse response = ApiResponseHelper.createSnapshotPolicyResponse(result);
         response.setResponseName(getName());
         this.setResponseObject(response);

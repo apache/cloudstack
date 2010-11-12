@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiResponseHelper;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -37,7 +38,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.vm.InstanceGroupVO;
 
-@Implementation(description="Lists vm groups")
+@Implementation(description="Lists vm groups", responseObject=InstanceGroupResponse.class)
 public class ListVMGroupsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListVMGroupsCmd.class.getName());
 
@@ -90,7 +91,7 @@ public class ListVMGroupsCmd extends BaseListCmd {
 
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<InstanceGroupVO> groups = _mgr.searchForVmGroups(this);
+        List<InstanceGroupVO> groups = BaseCmd._mgr.searchForVmGroups(this);
         ListResponse<InstanceGroupResponse> response = new ListResponse<InstanceGroupResponse>();
         List<InstanceGroupResponse> responses = new ArrayList<InstanceGroupResponse>();
         for (InstanceGroupVO group : groups) {

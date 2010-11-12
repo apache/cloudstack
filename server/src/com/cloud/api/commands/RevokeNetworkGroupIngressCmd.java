@@ -25,7 +25,7 @@ import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
 @SuppressWarnings("rawtypes")
-@Implementation()
+@Implementation(responseObject=SuccessResponse.class)
 public class RevokeNetworkGroupIngressCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(RevokeNetworkGroupIngressCmd.class.getName());
 
@@ -186,7 +186,7 @@ public class RevokeNetworkGroupIngressCmd extends BaseAsyncCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        boolean result = _networkGroupMgr.revokeNetworkGroupIngress(this);
+        boolean result = BaseCmd._networkGroupMgr.revokeNetworkGroupIngress(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getName());
             this.setResponseObject(response);

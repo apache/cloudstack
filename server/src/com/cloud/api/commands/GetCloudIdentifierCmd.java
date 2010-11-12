@@ -34,7 +34,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 
-@Implementation(description="Retrieves a cloud identifier.")
+@Implementation(description="Retrieves a cloud identifier.", responseObject=CloudIdentifierResponse.class)
 public class GetCloudIdentifierCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(GetCloudIdentifierCmd.class.getName());
     private static final String s_name = "getcloudidentifierresponse";
@@ -66,7 +66,7 @@ public class GetCloudIdentifierCmd extends BaseCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        ArrayList<String> result = _mgr.getCloudIdentifierResponse(this);
+        ArrayList<String> result = BaseCmd._mgr.getCloudIdentifierResponse(this);
         CloudIdentifierResponse response = new CloudIdentifierResponse();
         if (result != null) {
             response.setCloudIdentifier(result.get(0));

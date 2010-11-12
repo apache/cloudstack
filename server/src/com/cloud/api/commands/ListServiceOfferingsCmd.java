@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiResponseHelper;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -37,7 +38,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.service.ServiceOfferingVO;
 
-@Implementation(description="Lists all available service offerings.")
+@Implementation(description="Lists all available service offerings.", responseObject=ServiceOfferingResponse.class)
 public class ListServiceOfferingsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListServiceOfferingsCmd.class.getName());
 
@@ -83,7 +84,7 @@ public class ListServiceOfferingsCmd extends BaseListCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<ServiceOfferingVO> offerings = _mgr.searchForServiceOfferings(this);
+        List<ServiceOfferingVO> offerings = BaseCmd._mgr.searchForServiceOfferings(this);
         ListResponse<ServiceOfferingResponse> response = new ListResponse<ServiceOfferingResponse>();
         List<ServiceOfferingResponse> offeringResponses = new ArrayList<ServiceOfferingResponse>();
         for (ServiceOfferingVO offering : offerings) {

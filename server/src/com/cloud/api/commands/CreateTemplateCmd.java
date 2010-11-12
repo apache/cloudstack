@@ -23,9 +23,11 @@ import org.apache.log4j.Logger;
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCreateCmd;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.response.StoragePoolResponse;
 import com.cloud.api.response.TemplateResponse;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.event.EventTypes;
@@ -43,7 +45,7 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.user.Account;
 
-@Implementation(description="Creates a template of a virtual machine. " +
+@Implementation(responseObject=StoragePoolResponse.class, description="Creates a template of a virtual machine. " +
 																															"The virtual machine must be in a STOPPED state. " +
 																															"A template created from this command is automatically designated as a private template visible to the account that created it.")
 public class CreateTemplateCmd extends BaseAsyncCreateCmd {
@@ -69,7 +71,7 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="the name of the template")
     private String templateName;
 
-    @Parameter(name=ApiConstants.OS_TYPE_ID, type=CommandType.LONG, required=true, description="	the ID of the OS Type that best represents the OS of this template.")
+    @Parameter(name=ApiConstants.OS_TYPE_ID, type=CommandType.LONG, required=true, description="the ID of the OS Type that best represents the OS of this template.")
     private Long osTypeId;
 
     @Parameter(name=ApiConstants.PASSWORD_ENABLED, type=CommandType.BOOLEAN, description="true if the template supports the password reset feature; default is false")
@@ -173,14 +175,14 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void callCreate() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException{
-        VMTemplateVO template = _userVmService.createPrivateTemplateRecord(this);
+        VMTemplateVO template = BaseCmd._userVmService.createPrivateTemplateRecord(this);
         if (template != null)
             this.setId(template.getId());
     }
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        VMTemplateVO template = _userVmService.createPrivateTemplate(this);
+        VMTemplateVO template = BaseCmd._userVmService.createPrivateTemplate(this);
 
         TemplateResponse response = new TemplateResponse();
         response.setId(template.getId());

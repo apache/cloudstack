@@ -32,7 +32,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 
-@Implementation(description="Deletes a service offering.")
+@Implementation(description="Deletes a service offering.", responseObject=SuccessResponse.class)
 public class DeleteServiceOfferingCmd extends BaseCmd{
     public static final Logger s_logger = Logger.getLogger(DeleteServiceOfferingCmd.class.getName());
     private static final String s_name = "deleteserviceofferingresponse";
@@ -65,7 +65,7 @@ public class DeleteServiceOfferingCmd extends BaseCmd{
 	
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        boolean result = _configService.deleteServiceOffering(this);
+        boolean result = BaseCmd._configService.deleteServiceOffering(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getName());
             this.setResponseObject(response);

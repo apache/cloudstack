@@ -34,7 +34,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.storage.StoragePoolVO;
 
-@Implementation(description="Updates a storage pool.")
+@Implementation(description="Updates a storage pool.", responseObject=StoragePoolResponse.class)
 public class UpdateStoragePoolCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateStoragePoolCmd.class.getName());
 
@@ -73,7 +73,7 @@ public class UpdateStoragePoolCmd extends BaseCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        StoragePoolVO result = _storageMgr.updateStoragePool(this);
+        StoragePoolVO result = BaseCmd._storageMgr.updateStoragePool(this);
         StoragePoolResponse response = ApiResponseHelper.createStoragePoolResponse(result);
         response.setResponseName(getName());
         this.setResponseObject(response);

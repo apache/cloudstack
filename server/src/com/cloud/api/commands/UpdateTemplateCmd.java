@@ -32,7 +32,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.storage.VMTemplateVO;
 
-@Implementation(description="Updates attributes of a template.")
+@Implementation(description="Updates attributes of a template.", responseObject=TemplateResponse.class)
 public class UpdateTemplateCmd extends UpdateTemplateOrIsoCmd {
 	public static final Logger s_logger = Logger.getLogger(UpdateTemplateCmd.class.getName());
     private static final String s_name = "updatetemplateresponse";
@@ -61,7 +61,7 @@ public class UpdateTemplateCmd extends UpdateTemplateOrIsoCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException{
-        VMTemplateVO result = _mgr.updateTemplate(this);
+        VMTemplateVO result = BaseCmd._mgr.updateTemplate(this);
         TemplateResponse response = new TemplateResponse();
         if (result != null) {
             response.setId(result.getId());

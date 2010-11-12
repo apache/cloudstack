@@ -34,7 +34,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 
-@Implementation(description="Adds configuration value")
+@Implementation(description="Adds configuration value", responseObject=ConfigurationResponse.class)
 public class CreateCfgCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateCfgCmd.class.getName());
     private static final String s_name = "addconfigresponse";
@@ -52,8 +52,7 @@ public class CreateCfgCmd extends BaseCmd {
     @Parameter(name=ApiConstants.DESCRIPTION, type=CommandType.STRING, description="the description of the configuration")
     private String description;
 
-    //FIXME - add description
-    @Parameter(name=ApiConstants.INSTANCE, type=CommandType.STRING, required=true)
+    @Parameter(name=ApiConstants.INSTANCE, type=CommandType.STRING, required=true, description="the instance of the configuration")
     private String instance;
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="the name of the configuration")
@@ -103,7 +102,7 @@ public class CreateCfgCmd extends BaseCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        Configuration cfg = _configService.addConfig(this);
+        Configuration cfg = BaseCmd._configService.addConfig(this);
         if (cfg != null) {
             ConfigurationResponse response = ApiResponseHelper.createConfigurationResponse((ConfigurationVO)cfg);
             response.setResponseName(getName());

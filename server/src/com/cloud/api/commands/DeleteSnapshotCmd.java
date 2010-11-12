@@ -37,7 +37,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.storage.Snapshot;
 import com.cloud.user.Account;
 
-@Implementation(description="Deletes a snapshot of a disk volume.")
+@Implementation(description="Deletes a snapshot of a disk volume.", responseObject=SuccessResponse.class)
 public class DeleteSnapshotCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteSnapshotCmd.class.getName());
     private static final String s_name = "deletesnapshotresponse";
@@ -46,12 +46,6 @@ public class DeleteSnapshotCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING)
-    private String accountName;
-
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG)
-    private Long domainId;
-
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="The ID of the snapshot")
     private Long id;
 
@@ -59,14 +53,6 @@ public class DeleteSnapshotCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
-    public String getAccountName() {
-        return accountName;
-    }
-
-    public Long getDomainId() {
-        return domainId;
-    }
 
     public Long getId() {
         return id;
@@ -103,7 +89,7 @@ public class DeleteSnapshotCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        boolean result = _snapshotMgr.deleteSnapshot(this);
+        boolean result = BaseCmd._snapshotMgr.deleteSnapshot(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getName());
             this.setResponseObject(response);

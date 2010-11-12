@@ -38,7 +38,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.HostVO;
 
-@Implementation(description="Adds a new host.")
+@Implementation(description="Adds a new host.", responseObject=HostResponse.class)
 public class AddHostCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddHostCmd.class.getName());
 
@@ -114,7 +114,7 @@ public class AddHostCmd extends BaseCmd {
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         try {
-            List<HostVO> result = _agentMgr.discoverHosts(this);
+            List<HostVO> result = BaseCmd._agentMgr.discoverHosts(this);
             ListResponse<HostResponse> response = new ListResponse<HostResponse>();
             List<HostResponse> hostResponses = new ArrayList<HostResponse>();
             if (result != null) {

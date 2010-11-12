@@ -34,7 +34,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.LoadBalancerVO;
 
-@Implementation(description="Creates a load balancer rule")
+@Implementation(description="Creates a load balancer rule", responseObject=LoadBalancerResponse.class)
 public class CreateLoadBalancerRuleCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateLoadBalancerRuleCmd.class.getName());
 
@@ -102,7 +102,7 @@ public class CreateLoadBalancerRuleCmd extends BaseCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        LoadBalancerVO result = _networkMgr.createLoadBalancerRule(this);
+        LoadBalancerVO result = BaseCmd._networkMgr.createLoadBalancerRule(this);
         LoadBalancerResponse response = ApiResponseHelper.createLoadBalancerResponse(result);
         response.setResponseName(getName());
         this.setResponseObject(response);

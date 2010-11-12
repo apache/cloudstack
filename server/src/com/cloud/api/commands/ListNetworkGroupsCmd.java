@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -40,7 +41,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.security.NetworkGroupRulesVO;
 
-@Implementation(description="Lists network groups")
+@Implementation(description="Lists network groups", responseObject=NetworkGroupResponse.class)
 public class ListNetworkGroupsCmd extends BaseListCmd {
 	public static final Logger s_logger = Logger.getLogger(ListNetworkGroupsCmd.class.getName());
 
@@ -93,7 +94,7 @@ public class ListNetworkGroupsCmd extends BaseListCmd {
 
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<NetworkGroupRulesVO> networkGroups = _networkGroupMgr.searchForNetworkGroupRules(this);
+        List<NetworkGroupRulesVO> networkGroups = BaseCmd._networkGroupMgr.searchForNetworkGroupRules(this);
         List<NetworkGroupResultObject> groupResultObjs = NetworkGroupResultObject.transposeNetworkGroups(networkGroups);
 
         ListResponse<NetworkGroupResponse> response = new ListResponse<NetworkGroupResponse>();

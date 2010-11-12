@@ -35,7 +35,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.Account;
 
-@Implementation(description="Deletes an ip forwarding rule")
+@Implementation(description="Deletes an ip forwarding rule", responseObject=SuccessResponse.class)
 public class DeleteIpForwardingRuleCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteIpForwardingRuleCmd.class.getName());
 
@@ -69,7 +69,7 @@ public class DeleteIpForwardingRuleCmd extends BaseAsyncCmd {
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         try {
             boolean result = false;
-            	result = _networkMgr.deleteIpForwardingRule(id);
+            	result = BaseCmd._networkMgr.deleteIpForwardingRule(id);
                 if (result) {
                     SuccessResponse response = new SuccessResponse(getName());
                     this.setResponseObject(response);

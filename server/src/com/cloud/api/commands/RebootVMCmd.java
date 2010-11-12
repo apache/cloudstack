@@ -23,6 +23,7 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -37,7 +38,7 @@ import com.cloud.exception.StorageUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
-@Implementation(description="Reboots a virtual machine.")
+@Implementation(description="Reboots a virtual machine.", responseObject=UserVmResponse.class)
 public class RebootVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RebootVMCmd.class.getName());
     private static final String s_name = "rebootvirtualmachineresponse";
@@ -88,7 +89,7 @@ public class RebootVMCmd extends BaseAsyncCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, StorageUnavailableException{
-        UserVm result = _userVmService.rebootVirtualMachine(this);
+        UserVm result = BaseCmd._userVmService.rebootVirtualMachine(this);
         UserVmResponse response = ApiResponseHelper.createUserVmResponse(result);
         response.setResponseName(getName());
         this.setResponseObject(response);

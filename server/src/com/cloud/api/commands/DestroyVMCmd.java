@@ -23,6 +23,7 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -37,7 +38,7 @@ import com.cloud.exception.StorageUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
-@Implementation(description="Destroys a virtual machine. Once destroyed, only the administrator can recover it.")
+@Implementation(description="Destroys a virtual machine. Once destroyed, only the administrator can recover it.", responseObject=UserVmResponse.class)
 public class DestroyVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DestroyVMCmd.class.getName());
 
@@ -89,7 +90,7 @@ public class DestroyVMCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, StorageUnavailableException{
-        UserVm result = _userVmService.destroyVm(this);
+        UserVm result = BaseCmd._userVmService.destroyVm(this);
         UserVmResponse response = ApiResponseHelper.createUserVmResponse(result);
         response.setResponseName("virtualmachine");
         this.setResponseObject(response);

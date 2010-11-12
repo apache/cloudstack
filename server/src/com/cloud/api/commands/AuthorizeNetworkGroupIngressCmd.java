@@ -30,6 +30,7 @@ import org.apache.log4j.Logger;
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -47,7 +48,7 @@ import com.cloud.user.UserContext;
 import com.cloud.utils.StringUtils;
 
 //FIXME - add description
-@Implementation() @SuppressWarnings("rawtypes")
+@Implementation(responseObject=IngressRuleResponse.class) @SuppressWarnings("rawtypes")
 public class AuthorizeNetworkGroupIngressCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(AuthorizeNetworkGroupIngressCmd.class.getName());
 
@@ -213,7 +214,7 @@ public class AuthorizeNetworkGroupIngressCmd extends BaseAsyncCmd {
 	
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<IngressRuleVO> ingressRules = _networkGroupMgr.authorizeNetworkGroupIngress(this);
+        List<IngressRuleVO> ingressRules = BaseCmd._networkGroupMgr.authorizeNetworkGroupIngress(this);
         ListResponse<IngressRuleResponse> response = new ListResponse<IngressRuleResponse>();
         if ((ingressRules != null) && !ingressRules.isEmpty()) {
             List<IngressRuleResponse> responses = new ArrayList<IngressRuleResponse>();

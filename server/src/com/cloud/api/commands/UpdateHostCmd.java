@@ -34,7 +34,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.HostVO;
 
-@Implementation(description="Updates a host.")
+@Implementation(description="Updates a host.", responseObject=HostResponse.class)
 public class UpdateHostCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateHostCmd.class.getName());
     private static final String s_name = "updatehostresponse";
@@ -46,7 +46,7 @@ public class UpdateHostCmd extends BaseCmd {
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the host to update")
     private Long id;
 
-    @Parameter(name=ApiConstants.OS_CATEGORY_ID, type=CommandType.LONG)
+    @Parameter(name=ApiConstants.OS_CATEGORY_ID, type=CommandType.LONG, description="the id of Os category to update the host with")
     private Long osCategoryId;
 
     /////////////////////////////////////////////////////
@@ -76,7 +76,7 @@ public class UpdateHostCmd extends BaseCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        HostVO result = _agentMgr.updateHost(this);
+        HostVO result = BaseCmd._agentMgr.updateHost(this);
         if (result != null) {
             HostResponse hostResponse = ApiResponseHelper.createHostResponse(result);
             hostResponse.setResponseName(getName());

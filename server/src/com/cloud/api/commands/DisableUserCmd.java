@@ -22,6 +22,7 @@ import org.apache.log4j.Logger;
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -36,7 +37,7 @@ import com.cloud.user.Account;
 import com.cloud.user.UserAccount;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Disables a user account")
+@Implementation(description="Disables a user account", responseObject=UserResponse.class)
 public class DisableUserCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(DisableUserCmd.class.getName());
     private static final String s_name = "disableuserresponse";
@@ -88,7 +89,7 @@ public class DisableUserCmd extends BaseAsyncCmd {
 	
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        UserAccount user = _accountService.disableUser(this);
+        UserAccount user = BaseCmd._accountService.disableUser(this);
         UserResponse response = ApiResponseHelper.createUserResponse(user);
         response.setResponseName(getName()); 
         this.setResponseObject(response);

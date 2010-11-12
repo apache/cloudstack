@@ -39,7 +39,7 @@ import com.cloud.host.HostVO;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Reconnects a host.")
+@Implementation(description="Reconnects a host.", responseObject=HostResponse.class)
 public class ReconnectHostCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(ReconnectHostCmd.class.getName());
 
@@ -96,7 +96,7 @@ public class ReconnectHostCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         try {
-            HostVO result = _agentMgr.reconnectHost(this);
+            HostVO result = BaseCmd._agentMgr.reconnectHost(this);
             HostResponse response = ApiResponseHelper.createHostResponse(result);
             response.setResponseName(getName());
             this.setResponseObject(response);

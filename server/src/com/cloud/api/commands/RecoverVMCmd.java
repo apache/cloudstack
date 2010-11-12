@@ -36,7 +36,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.uservm.UserVm;
 
-@Implementation(description="Recovers a virtual machine.")
+@Implementation(description="Recovers a virtual machine.", responseObject=UserVmResponse.class)
 public class RecoverVMCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(RecoverVMCmd.class.getName());
 
@@ -69,7 +69,7 @@ public class RecoverVMCmd extends BaseCmd {
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, StorageUnavailableException{
         try {
-            UserVm result = _userVmService.recoverVirtualMachine(this);
+            UserVm result = BaseCmd._userVmService.recoverVirtualMachine(this);
             UserVmResponse recoverVmResponse = ApiResponseHelper.createUserVmResponse(result);
             recoverVmResponse.setResponseName(getName());
             this.setResponseObject(recoverVmResponse);

@@ -44,7 +44,7 @@ import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
 
-@Implementation(description="Registers an existing ISO into the Cloud.com Cloud.")
+@Implementation(responseObject=TemplateResponse.class, description="Registers an existing ISO into the Cloud.com Cloud.")
 public class RegisterIsoCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(RegisterIsoCmd.class.getName());
 
@@ -140,7 +140,7 @@ public class RegisterIsoCmd extends BaseCmd {
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException{
         try {
-            VMTemplateVO template = _templateMgr.registerIso(this);
+            VMTemplateVO template = BaseCmd._templateMgr.registerIso(this);
             ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
             List<TemplateResponse> responses = new ArrayList<TemplateResponse>();
             List<DataCenterVO> zones = null;

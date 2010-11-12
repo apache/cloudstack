@@ -33,7 +33,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.vm.InstanceGroupVO;
 
-@Implementation(description="Updates a vm group")
+@Implementation(description="Updates a vm group", responseObject=InstanceGroupResponse.class)
 public class UpdateVMGroupCmd extends BaseCmd{
 
     private static final String s_name = "updateinstancegroupresponse";
@@ -72,7 +72,7 @@ public class UpdateVMGroupCmd extends BaseCmd{
 
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        InstanceGroupVO result = _mgr.updateVmGroup(this);
+        InstanceGroupVO result = BaseCmd._mgr.updateVmGroup(this);
         InstanceGroupResponse response = ApiResponseHelper.createInstanceGroupResponse(result);
         response.setResponseName(getName());
         this.setResponseObject(response);

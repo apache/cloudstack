@@ -24,6 +24,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -38,7 +39,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.RemoteAccessVpnVO;
 import com.cloud.user.Account;
 
-@Implementation(description="Lists remote access vpns")
+@Implementation(description="Lists remote access vpns", responseObject=RemoteAccessVpnResponse.class)
 public class ListRemoteAccessVpnsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger (ListRemoteAccessVpnsCmd.class.getName());
 
@@ -104,7 +105,7 @@ public class ListRemoteAccessVpnsCmd extends BaseListCmd {
 
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<RemoteAccessVpnVO> vpns = _mgr.searchForRemoteAccessVpns(this);
+        List<RemoteAccessVpnVO> vpns = BaseCmd._mgr.searchForRemoteAccessVpns(this);
         ListResponse<RemoteAccessVpnResponse> response = new ListResponse<RemoteAccessVpnResponse>();
         List<RemoteAccessVpnResponse> vpnResponses = new ArrayList<RemoteAccessVpnResponse>();
         for (RemoteAccessVpnVO vpn : vpns) {

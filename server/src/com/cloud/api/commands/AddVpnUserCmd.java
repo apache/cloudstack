@@ -22,6 +22,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -36,7 +37,7 @@ import com.cloud.network.VpnUserVO;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Adds vpn users")
+@Implementation(description="Adds vpn users", responseObject=VpnUsersResponse.class)
 public class AddVpnUserCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AddVpnUserCmd.class.getName());
 
@@ -127,7 +128,7 @@ public class AddVpnUserCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        VpnUserVO vpnUser = _networkMgr.addVpnUser(this);
+        VpnUserVO vpnUser = BaseCmd._networkMgr.addVpnUser(this);
         VpnUsersResponse vpnResponse = new VpnUsersResponse();
         vpnResponse.setId(vpnUser.getId());
         vpnResponse.setUserName(vpnUser.getUsername());

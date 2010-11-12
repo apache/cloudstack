@@ -39,7 +39,7 @@ import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.user.Account;
 
-@Implementation(description="Creates an instant snapshot of a volume.")
+@Implementation(description="Creates an instant snapshot of a volume.", responseObject=SnapshotResponse.class)
 public class CreateSnapshotInternalCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(CreateSnapshotInternalCmd.class.getName());
     private static final String s_name = "createsnapshotresponse";
@@ -103,7 +103,7 @@ public class CreateSnapshotInternalCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         try {
-            SnapshotVO snapshot = _snapshotMgr.createSnapshotInternal(this);
+            SnapshotVO snapshot = BaseCmd._snapshotMgr.createSnapshotInternal(this);
             SnapshotResponse response = new SnapshotResponse();
             response.setId(snapshot.getId());
 

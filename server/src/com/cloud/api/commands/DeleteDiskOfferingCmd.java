@@ -31,7 +31,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 
-@Implementation(description="Updates a disk offering.")
+@Implementation(description="Updates a disk offering.", responseObject=SuccessResponse.class)
 public class DeleteDiskOfferingCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteDiskOfferingCmd.class.getName());
     private static final String s_name = "deletediskofferingresponse";
@@ -63,7 +63,7 @@ public class DeleteDiskOfferingCmd extends BaseCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        boolean result = _configService.deleteDiskOffering(this);
+        boolean result = BaseCmd._configService.deleteDiskOffering(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getName());
             this.setResponseObject(response);

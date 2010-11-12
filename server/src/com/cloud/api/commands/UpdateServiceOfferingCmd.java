@@ -34,7 +34,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 
-@Implementation(description="Updates a service offering.")
+@Implementation(description="Updates a service offering.", responseObject=ServiceOfferingResponse.class)
 public class UpdateServiceOfferingCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateServiceOfferingCmd.class.getName());
     private static final String s_name = "updateserviceofferingresponse";
@@ -100,7 +100,7 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
 
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        ServiceOffering result = _configService.updateServiceOffering(this);
+        ServiceOffering result = BaseCmd._configService.updateServiceOffering(this);
         ServiceOfferingResponse response = ApiResponseHelper.createServiceOfferingResponse((ServiceOfferingVO)result);
         response.setResponseName(getName());
         this.setResponseObject(response);

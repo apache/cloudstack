@@ -31,7 +31,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 
-@Implementation(description="Deletes a vm group")
+@Implementation(description="Deletes a vm group", responseObject=SuccessResponse.class)
 public class DeleteVMGroupCmd extends BaseCmd{
     public static final Logger s_logger = Logger.getLogger(DeleteVMGroupCmd.class.getName());
     private static final String s_name = "deleteinstancegroupresponse";
@@ -62,7 +62,7 @@ public class DeleteVMGroupCmd extends BaseCmd{
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        boolean result = _userVmService.deleteVmGroup(this);
+        boolean result = BaseCmd._userVmService.deleteVmGroup(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getName());
             this.setResponseObject(response);

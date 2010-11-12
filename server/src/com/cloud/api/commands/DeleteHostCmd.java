@@ -33,7 +33,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 
 
-@Implementation(description="Deletes a host.")
+@Implementation(description="Deletes a host.", responseObject=SuccessResponse.class)
 public class DeleteHostCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteHostCmd.class.getName());
 
@@ -67,7 +67,7 @@ public class DeleteHostCmd extends BaseCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        boolean result = _agentMgr.deleteHost(this);
+        boolean result = BaseCmd._agentMgr.deleteHost(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getName());
             this.setResponseObject(response);

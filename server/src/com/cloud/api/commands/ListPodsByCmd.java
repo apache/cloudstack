@@ -25,6 +25,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiResponseHelper;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -38,7 +39,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 
-@Implementation(description="Lists all Pods.")
+@Implementation(description="Lists all Pods.", responseObject=PodResponse.class)
 public class ListPodsByCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListPodsByCmd.class.getName());
 
@@ -85,7 +86,7 @@ public class ListPodsByCmd extends BaseListCmd {
 
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<HostPodVO> result = _mgr.searchForPods(this);
+        List<HostPodVO> result = BaseCmd._mgr.searchForPods(this);
         ListResponse<PodResponse> response = new ListResponse<PodResponse>();
         List<PodResponse> podResponses = new ArrayList<PodResponse>();
         for (HostPodVO pod : result) {

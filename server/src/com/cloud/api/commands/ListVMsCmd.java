@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiResponseHelper;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -38,7 +39,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.UserVmVO;
 
-@Implementation(description="List the virtual machines owned by the account.")
+@Implementation(description="List the virtual machines owned by the account.", responseObject=UserVmResponse.class)
 public class ListVMsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListVMsCmd.class.getName());
 
@@ -126,7 +127,7 @@ public class ListVMsCmd extends BaseListCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<UserVmVO> result = _mgr.searchForUserVMs(this);
+        List<UserVmVO> result = BaseCmd._mgr.searchForUserVMs(this);
         ListResponse<UserVmResponse> response = new ListResponse<UserVmResponse>();
         List<UserVmResponse> vmResponses = new ArrayList<UserVmResponse>();
         for (UserVm userVm : result) {

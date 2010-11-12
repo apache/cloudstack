@@ -35,7 +35,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 
-@Implementation(description="Updates a configuration.")
+@Implementation(description="Updates a configuration.", responseObject=ConfigurationResponse.class)
 public class UpdateCfgCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateCfgCmd.class.getName());
     private static final String s_name = "updateconfigurationresponse";
@@ -72,7 +72,7 @@ public class UpdateCfgCmd extends BaseCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        Configuration cfg = _configService.updateConfiguration(this);
+        Configuration cfg = BaseCmd._configService.updateConfiguration(this);
         if (cfg != null) {
             ConfigurationResponse response = ApiResponseHelper.createConfigurationResponse((ConfigurationVO)cfg);
             response.setResponseName(getName());

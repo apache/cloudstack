@@ -35,7 +35,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 
-@Implementation(description="Creates a Zone.")
+@Implementation(description="Creates a Zone.", responseObject=ZoneResponse.class)
 public class CreateZoneCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateZoneCmd.class.getName());
 
@@ -123,7 +123,7 @@ public class CreateZoneCmd extends BaseCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        DataCenter result = _configService.createZone(this);
+        DataCenter result = BaseCmd._configService.createZone(this);
         ZoneResponse response = ApiResponseHelper.createZoneResponse((DataCenterVO)result);
         response.setResponseName(getName());
         this.setResponseObject(response);

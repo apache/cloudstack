@@ -25,6 +25,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -39,7 +40,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.User;
 
-@Implementation(description="A command to list events.")
+@Implementation(description="A command to list events.", responseObject=EventResponse.class)
 public class ListEventsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListEventsCmd.class.getName());
 
@@ -120,7 +121,7 @@ public class ListEventsCmd extends BaseListCmd {
 
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<EventVO> result = _mgr.searchForEvents(this);
+        List<EventVO> result = BaseCmd._mgr.searchForEvents(this);
         ListResponse<EventResponse> response = new ListResponse<EventResponse>();
         List<EventResponse> eventResponses = new ArrayList<EventResponse>();
         for (EventVO event : result) {

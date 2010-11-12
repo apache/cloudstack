@@ -23,6 +23,7 @@ import org.apache.log4j.Logger;
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseAsyncCreateCmd;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -38,7 +39,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.FirewallRuleVO;
 import com.cloud.user.Account;
 
-@Implementation(description="Creates an ip forwarding rule")
+@Implementation(description="Creates an ip forwarding rule", responseObject=FirewallRuleResponse.class)
 public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateIpForwardingRuleCmd.class.getName());
 
@@ -79,7 +80,7 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{ 
-        FirewallRuleVO result = _networkMgr.createIpForwardingRuleOnDomr(this.getId());
+        FirewallRuleVO result = BaseCmd._networkMgr.createIpForwardingRuleOnDomr(this.getId());
         if (result != null) {
             FirewallRuleResponse fwResponse = ApiResponseHelper.createFirewallRuleResponse(result);
             fwResponse.setResponseName(getName());
@@ -92,7 +93,7 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd {
 
 	@Override
 	public void callCreate() throws ServerApiException,InvalidParameterValueException, PermissionDeniedException,InsufficientAddressCapacityException,InsufficientCapacityException, ResourceUnavailableException,ConcurrentOperationException, ResourceAllocationException{
-		FirewallRuleVO rule = _networkMgr.createIpForwardingRuleInDb(ipAddress,virtualMachineId);
+		FirewallRuleVO rule = BaseCmd._networkMgr.createIpForwardingRuleInDb(ipAddress,virtualMachineId);
         this.setId(rule.getId());
 	}
 

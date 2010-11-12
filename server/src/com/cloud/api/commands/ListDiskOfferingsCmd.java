@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiResponseHelper;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -37,7 +38,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.storage.DiskOfferingVO;
 
-@Implementation(description="Lists all available disk offerings.")
+@Implementation(description="Lists all available disk offerings.", responseObject=DiskOfferingResponse.class)
 public class ListDiskOfferingsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListDiskOfferingsCmd.class.getName());
 
@@ -83,7 +84,7 @@ public class ListDiskOfferingsCmd extends BaseListCmd {
 
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<DiskOfferingVO> result = _mgr.searchForDiskOfferings(this);
+        List<DiskOfferingVO> result = BaseCmd._mgr.searchForDiskOfferings(this);
         ListResponse<DiskOfferingResponse> response = new ListResponse<DiskOfferingResponse>();
         List<DiskOfferingResponse> diskOfferingResponses = new ArrayList<DiskOfferingResponse>();
         for (DiskOfferingVO offering : result) {

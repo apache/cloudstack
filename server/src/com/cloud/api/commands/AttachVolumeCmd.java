@@ -24,6 +24,7 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -38,7 +39,7 @@ import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.user.Account;
 
-@Implementation(description="Attaches a disk volume to a virtual machine.")
+@Implementation(description="Attaches a disk volume to a virtual machine.", responseObject=VolumeResponse.class)
 public class AttachVolumeCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(AttachVolumeCmd.class.getName());
     private static final String s_name = "attachvolumeresponse";
@@ -114,7 +115,7 @@ public class AttachVolumeCmd extends BaseAsyncCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        Volume result = _userVmService.attachVolumeToVM(this);
+        Volume result = BaseCmd._userVmService.attachVolumeToVM(this);
         VolumeResponse response = ApiResponseHelper.createVolumeResponse((VolumeVO)result);
         response.setResponseName(getName());
         this.setResponseObject(response);

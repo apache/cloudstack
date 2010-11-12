@@ -6,6 +6,7 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -20,7 +21,7 @@ import com.cloud.network.FirewallRuleVO;
 import com.cloud.network.IPAddressVO;
 import com.cloud.user.Account;
 
-@Implementation(description="Updates a port forwarding rule.  Only the private port and the virtual machine can be updated.")
+@Implementation(responseObject=FirewallRuleResponse.class, description="Updates a port forwarding rule.  Only the private port and the virtual machine can be updated.")
 public class UpdatePortForwardingRuleCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdatePortForwardingRuleCmd.class.getName());
     private static final String s_name = "updateportforwardingruleresponse";
@@ -107,7 +108,7 @@ public class UpdatePortForwardingRuleCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        FirewallRuleVO result = _mgr.updatePortForwardingRule(this);
+        FirewallRuleVO result = BaseCmd._mgr.updatePortForwardingRule(this);
         FirewallRuleResponse response = ApiResponseHelper.createFirewallRuleResponse(result);
         response.setResponseName(getName());
         this.setResponseObject(response);

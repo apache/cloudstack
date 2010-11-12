@@ -21,6 +21,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -33,7 +34,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.Account;
 
-@Implementation(description="Uploads custom certificate")
+@Implementation(responseObject=CustomCertificateResponse.class, description="Uploads custom certificate")
 public class UploadCustomCertificateCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UploadCustomCertificateCmd.class.getName());
 
@@ -72,7 +73,7 @@ public class UploadCustomCertificateCmd extends BaseAsyncCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        String result = _mgr.uploadCertificate(this);
+        String result = BaseCmd._mgr.uploadCertificate(this);
         CustomCertificateResponse response = new CustomCertificateResponse();
         response.setResponseName(getName());
         response.setUpdatedConsoleProxyIdList(result);

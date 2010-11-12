@@ -23,6 +23,7 @@ import org.apache.log4j.Logger;
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -37,7 +38,7 @@ import com.cloud.storage.StoragePoolVO;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Cancels maintenance for primary storage")
+@Implementation(description="Cancels maintenance for primary storage", responseObject=StoragePoolResponse.class)
 public class CancelPrimaryStorageMaintenanceCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(CancelPrimaryStorageMaintenanceCmd.class.getName());
 	
@@ -95,7 +96,7 @@ public class CancelPrimaryStorageMaintenanceCmd extends BaseAsyncCmd {
 	
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        StoragePoolVO result = _storageMgr.cancelPrimaryStorageForMaintenance(this);
+        StoragePoolVO result = BaseCmd._storageMgr.cancelPrimaryStorageForMaintenance(this);
         StoragePoolResponse response = ApiResponseHelper.createStoragePoolResponse(result);
         response.setResponseName(getName());
         this.setResponseObject(response);

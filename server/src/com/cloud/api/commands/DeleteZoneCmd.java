@@ -32,7 +32,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 
-@Implementation(description="Deletes a Zone.")
+@Implementation(description="Deletes a Zone.", responseObject=SuccessResponse.class)
 public class DeleteZoneCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteZoneCmd.class.getName());
 
@@ -66,7 +66,7 @@ public class DeleteZoneCmd extends BaseCmd {
 
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        boolean result = _configService.deleteZone(this);
+        boolean result = BaseCmd._configService.deleteZone(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getName());
             this.setResponseObject(response);

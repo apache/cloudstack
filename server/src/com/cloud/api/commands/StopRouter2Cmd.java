@@ -24,6 +24,7 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -40,7 +41,7 @@ import com.cloud.uservm.UserVm;
 import com.cloud.vm.DomainRouter;
 
 
-@Implementation(description="Stops a router.")
+@Implementation(description="Stops a router.", responseObject=DomainRouterResponse.class)
 public class StopRouter2Cmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(StopRouter2Cmd.class.getName());
     private static final String s_name = "stoprouterresponse";
@@ -91,7 +92,7 @@ public class StopRouter2Cmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException{
-        DomainRouter router = _routerMgr.stopRouter(this);
+        DomainRouter router = BaseCmd._routerMgr.stopRouter(this);
         DomainRouterResponse response =ApiResponseHelper.createDomainRouterResponse(router);
         response.setResponseName(getName());
         this.setResponseObject(response);

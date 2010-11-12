@@ -42,7 +42,7 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Copies an ISO file.")
+@Implementation(description="Copies an ISO file.", responseObject=TemplateResponse.class)
 public class CopyIsoCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(CopyIsoCmd.class.getName());
     private static final String s_name = "copyisoresponse";
@@ -113,7 +113,7 @@ public class CopyIsoCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         try {
-            VMTemplateVO iso = _templateMgr.copyIso(this);
+            VMTemplateVO iso = BaseCmd._templateMgr.copyIso(this);
             TemplateResponse isoResponse = new TemplateResponse();
             if (iso != null) {
                 isoResponse.setId(iso.getId());

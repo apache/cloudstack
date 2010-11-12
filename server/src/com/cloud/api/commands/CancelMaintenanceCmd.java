@@ -23,6 +23,7 @@ import org.apache.log4j.Logger;
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -37,7 +38,7 @@ import com.cloud.host.HostVO;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Cancels host maintenance.")
+@Implementation(description="Cancels host maintenance.", responseObject=HostResponse.class)
 public class CancelMaintenanceCmd extends BaseAsyncCmd  {
     public static final Logger s_logger = Logger.getLogger(CancelMaintenanceCmd.class.getName());
 
@@ -95,7 +96,7 @@ public class CancelMaintenanceCmd extends BaseAsyncCmd  {
 	
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        HostVO result = _agentMgr.cancelMaintenance(this);
+        HostVO result = BaseCmd._agentMgr.cancelMaintenance(this);
         HostResponse response = ApiResponseHelper.createHostResponse(result);
         response.setResponseName(getName());
         this.setResponseObject(response);

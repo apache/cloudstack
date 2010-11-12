@@ -37,7 +37,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.HostVO;
 
-@Implementation(description="Adds secondary storage.")
+@Implementation(description="Adds secondary storage.", responseObject=HostResponse.class)
 public class AddSecondaryStorageCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddSecondaryStorageCmd.class.getName());
     private static final String s_name = "addsecondarystorageresponse";
@@ -76,7 +76,7 @@ public class AddSecondaryStorageCmd extends BaseCmd {
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         try {
-            List<HostVO> result = _agentMgr.discoverHosts(this);
+            List<HostVO> result = BaseCmd._agentMgr.discoverHosts(this);
             HostResponse hostResponse = null;
             if (result != null && result.size() > 0) {
                 for (HostVO host : result) {

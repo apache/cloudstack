@@ -32,7 +32,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 
-@Implementation(description="This command allows a user to register for the developer API, returning a secret key and an API key. This request is made through the integration API port, so it is a privileged command and must be made on behalf of a user. It is up to the implementer just how the username and password are entered, and then how that translates to an integration API request. Both secret key and API key should be returned to the user")
+@Implementation(responseObject=RegisterResponse.class, description="This command allows a user to register for the developer API, returning a secret key and an API key. This request is made through the integration API port, so it is a privileged command and must be made on behalf of a user. It is up to the implementer just how the username and password are entered, and then how that translates to an integration API request. Both secret key and API key should be returned to the user")
 public class RegisterCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(RegisterCmd.class.getName());
 
@@ -63,7 +63,7 @@ public class RegisterCmd extends BaseCmd {
 
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        String[] keys = _mgr.createApiKeyAndSecretKey(this);
+        String[] keys = BaseCmd._mgr.createApiKeyAndSecretKey(this);
         RegisterResponse response = new RegisterResponse();
         response.setApiKey(keys[0]);
         response.setSecretKey(keys[1]);

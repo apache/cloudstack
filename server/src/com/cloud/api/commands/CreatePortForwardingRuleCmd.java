@@ -35,7 +35,7 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.FirewallRuleVO;
 
-@Implementation(description="Creates a port forwarding rule")
+@Implementation(description="Creates a port forwarding rule", responseObject=FirewallRuleResponse.class)
 public class CreatePortForwardingRuleCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreatePortForwardingRuleCmd.class.getName());
 
@@ -98,7 +98,7 @@ public class CreatePortForwardingRuleCmd extends BaseCmd {
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         try {
-            FirewallRuleVO result = _networkMgr.createPortForwardingRule(this);
+            FirewallRuleVO result = BaseCmd._networkMgr.createPortForwardingRule(this);
             if (result != null) {
                 FirewallRuleResponse fwResponse = ApiResponseHelper.createFirewallRuleResponse(result);
                 fwResponse.setResponseName(getName());

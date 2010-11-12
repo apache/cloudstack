@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiResponseHelper;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -37,7 +38,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 
-@Implementation(description="Lists all VLAN IP ranges.")
+@Implementation(description="Lists all VLAN IP ranges.", responseObject=VlanIpRangeResponse.class)
 public class ListVlanIpRangesCmd extends BaseListCmd {
 	public static final Logger s_logger = Logger.getLogger(ListVlanIpRangesCmd.class.getName());
 
@@ -104,7 +105,7 @@ public class ListVlanIpRangesCmd extends BaseListCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<VlanVO> vlans = _mgr.searchForVlans(this);
+        List<VlanVO> vlans = BaseCmd._mgr.searchForVlans(this);
         ListResponse<VlanIpRangeResponse> response = new ListResponse<VlanIpRangeResponse>();
         List<VlanIpRangeResponse> vlanResponses = new ArrayList<VlanIpRangeResponse>();
         for (VlanVO vlan : vlans) {  

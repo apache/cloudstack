@@ -39,7 +39,7 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
-@Implementation(description="Detaches any ISO file (if any) currently attached to a virtual machine.")
+@Implementation(description="Detaches any ISO file (if any) currently attached to a virtual machine.", responseObject=UserVmResponse.class)
 public class DetachIsoCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DetachIsoCmd.class.getName());
 
@@ -91,7 +91,7 @@ public class DetachIsoCmd extends BaseAsyncCmd {
 	
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        boolean result = _templateMgr.detachIso(this);
+        boolean result = BaseCmd._templateMgr.detachIso(this);
         if (result) {
             UserVm userVm = ApiDBUtils.findUserVmById(virtualMachineId);           
             UserVmResponse response = ApiResponseHelper.createUserVmResponse(userVm);            

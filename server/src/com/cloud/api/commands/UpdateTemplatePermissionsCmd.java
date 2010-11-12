@@ -31,7 +31,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 
-@Implementation(description="Updates a template visibility permissions. " +
+@Implementation(responseObject=SuccessResponse.class, description="Updates a template visibility permissions. " +
 																						"A public template is visible to all accounts within the same domain. " +
 																						"A private template is visible only to the owner of the template. " +
 																						"A priviledged template is a private template with account permissions added. " +
@@ -47,7 +47,7 @@ public class UpdateTemplatePermissionsCmd extends UpdateTemplateOrIsoPermissions
 	
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException{
-        boolean result = _mgr.updateTemplatePermissions(this);
+        boolean result = BaseCmd._mgr.updateTemplatePermissions(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getName());
             this.setResponseObject(response);

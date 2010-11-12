@@ -32,7 +32,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 
-@Implementation(description="List hypervisors")
+@Implementation(description="List hypervisors", responseObject=HypervisorResponse.class)
 public class ListHypervisorsCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(UpgradeRouterCmd.class.getName());
 	private static final String s_name = "listhypervisorsresponse";
@@ -44,7 +44,7 @@ public class ListHypervisorsCmd extends BaseCmd {
 	
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        String[] result = _mgr.getHypervisors(this);
+        String[] result = BaseCmd._mgr.getHypervisors(this);
         ListResponse<HypervisorResponse> response = new ListResponse<HypervisorResponse>();
         ArrayList<HypervisorResponse> responses = new ArrayList<HypervisorResponse>();
         for (String hypervisor : result) {

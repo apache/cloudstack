@@ -34,7 +34,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.offering.DiskOffering;
 import com.cloud.storage.DiskOfferingVO;
 
-@Implementation(description="Updates a disk offering.")
+@Implementation(description="Updates a disk offering.", responseObject=DiskOfferingResponse.class)
 public class UpdateDiskOfferingCmd extends BaseCmd{
     public static final Logger s_logger = Logger.getLogger(UpdateDiskOfferingCmd.class.getName());
     private static final String s_name = "updatediskofferingresponse";
@@ -86,7 +86,7 @@ public class UpdateDiskOfferingCmd extends BaseCmd{
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        DiskOffering result = _configService.updateDiskOffering(this);
+        DiskOffering result = BaseCmd._configService.updateDiskOffering(this);
         DiskOfferingResponse response = ApiResponseHelper.createDiskOfferingResponse((DiskOfferingVO)result);
         response.setResponseName(getName());
         this.setResponseObject(response);

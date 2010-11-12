@@ -40,7 +40,7 @@ import com.cloud.exception.ResourceInUseException;
 import com.cloud.storage.StoragePoolVO;
 
 @SuppressWarnings("rawtypes")
-@Implementation(description="Creates a storage pool.")
+@Implementation(description="Creates a storage pool.", responseObject=StoragePoolResponse.class)
 public class CreateStoragePoolCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateStoragePoolCmd.class.getName());
 
@@ -115,7 +115,7 @@ public class CreateStoragePoolCmd extends BaseCmd {
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         try {
-            StoragePoolVO result = _storageMgr.createPool(this);
+            StoragePoolVO result = BaseCmd._storageMgr.createPool(this);
             if (result != null) {
                 StoragePoolResponse response = ApiResponseHelper.createStoragePoolResponse(result);
                 response.setResponseName(getName());

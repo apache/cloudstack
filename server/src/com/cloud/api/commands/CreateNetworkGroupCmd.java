@@ -34,7 +34,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.security.NetworkGroupVO;
 
 //TODO - add description to implementation
-@Implementation()
+@Implementation(responseObject=NetworkGroupResponse.class)
 public class CreateNetworkGroupCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateNetworkGroupCmd.class.getName());
 
@@ -88,7 +88,7 @@ public class CreateNetworkGroupCmd extends BaseCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        NetworkGroupVO group = _networkGroupMgr.createNetworkGroup(this);
+        NetworkGroupVO group = BaseCmd._networkGroupMgr.createNetworkGroup(this);
         NetworkGroupResponse response = new NetworkGroupResponse();
         response.setAccountName(group.getAccountName());
         response.setDescription(group.getDescription());

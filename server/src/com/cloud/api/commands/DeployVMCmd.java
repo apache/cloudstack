@@ -45,7 +45,7 @@ import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.exception.ExecutionException;
 
-@Implementation(description="Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.")
+@Implementation(description="Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.", responseObject=UserVmResponse.class)
 public class DeployVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeployVMCmd.class.getName());
     
@@ -206,10 +206,10 @@ public class DeployVMCmd extends BaseAsyncCmd {
             if (templateId != null ) {
                 VMTemplateVO template = ApiDBUtils.findTemplateById(templateId);
                 if (template.getEnablePassword()) { 
-                    password = _mgr.generateRandomPassword();
+                    password = BaseCmd._mgr.generateRandomPassword();
                 } 
             }
-            UserVm result = _mgr.deployVirtualMachine(this, password);
+            UserVm result = BaseCmd._mgr.deployVirtualMachine(this, password);
             UserVmResponse response = ApiResponseHelper.createUserVmResponse(result);
             response.setPassword(password);
             response.setResponseName(getName());

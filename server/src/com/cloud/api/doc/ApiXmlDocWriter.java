@@ -24,9 +24,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
@@ -39,6 +36,7 @@ import org.apache.log4j.Logger;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.serializer.Param;
@@ -46,7 +44,8 @@ import com.google.gson.annotations.SerializedName;
 import com.thoughtworks.xstream.XStream;
 
 public class ApiXmlDocWriter {
-	private static final Logger s_logger = Logger.getLogger(ApiXmlDocWriter.class.getName());
+    public static final Logger s_logger = Logger
+    .getLogger(ApiXmlDocWriter.class.getName());
 	private static Properties api_commands = new Properties();
 	private static String dirName="";
 	
@@ -70,7 +69,7 @@ public class ApiXmlDocWriter {
 		}
 
 		if ((fileNames == null) || (fileNames.length == 0)){
-			s_logger.error("Please specify input file(s) separated by coma using -f option");
+			System.out.println("Please specify input file(s) separated by coma using -f option");
 			System.exit(2);
 		}
 		
@@ -79,10 +78,10 @@ public class ApiXmlDocWriter {
 				FileInputStream in = new FileInputStream(fileName);
 				preProcessedCommands.load(in);
 			}catch (FileNotFoundException ex) {
-				s_logger.error("Can't find file " + fileName);
+			    System.out.println("Can't find file " + fileName);
 				System.exit(2);
 			} catch (IOException ex1) {
-				s_logger.error("Error reading from file " + ex1);
+			    System.out.println("Error reading from file " + ex1);
 				System.exit(2);
 			}
 		}
@@ -104,7 +103,7 @@ public class ApiXmlDocWriter {
 
 			ObjectOutputStream out = xs.createObjectOutputStream(new FileWriter(dirName + "/commands.xml"), "commands");
 	
-			while (command.hasMoreElements()) {
+			while (command.hasMoreElements()) {	    
 				String key = (String) command.nextElement();
 				Class clas = Class.forName(api_commands.getProperty(key));
 				ArrayList<Argument> request = new ArrayList<Argument>();
@@ -114,6 +113,7 @@ public class ApiXmlDocWriter {
 				Command apiCommand = new Command();
 				apiCommand.setName(key);
 				
+				
 	            Implementation impl = (Implementation)clas.getAnnotation(Implementation.class);
 	            if (impl == null)
 	            	impl = (Implementation)clas.getSuperclass().getAnnotation(Implementation.class);
@@ -121,17 +121,17 @@ public class ApiXmlDocWriter {
 	            if (commandDescription != null)
 	            	apiCommand.setDescription(commandDescription);
 	            else
-	            	s_logger.warn("Command " + apiCommand.getName() + " misses description");
+	                System.out.println("Command " + apiCommand.getName() + " misses description");
 	            
 	            //Get request parameters        
 	            Field[] fields = clas.getDeclaredFields();
 	            
-//	            //Get fields from superclass
+	            //Get fields from superclass
 	            Class<?> superClass = clas.getSuperclass();
 	            String superName = superClass.getName();
 	            if (!superName.equals(BaseCmd.class.getName()) && !superName.equals(BaseAsyncCmd.class.getName()) && !superName.equals(BaseAsyncCreateCmd.class.getName())) {
 	            	Field[] superClassFields = superClass.getDeclaredFields();
-	                if (superClassFields != null) {
+	                if (superClassFields != null && !superClass.getName().equals(BaseListCmd.class.getName())) {
 	                    Field[] tmpFields = new Field[fields.length + superClassFields.length];
 	                    System.arraycopy(fields, 0, tmpFields, 0, fields.length);
 	                    System.arraycopy(superClassFields, 0, tmpFields, fields.length, superClassFields.length);
@@ -145,39 +145,30 @@ public class ApiXmlDocWriter {
 					if (parameterAnnotation != null) {
 						Argument reqArg = new Argument(parameterAnnotation.name());
 						reqArg.setRequired(parameterAnnotation.required());
-						if (!parameterAnnotation.description().isEmpty())
+						if (!parameterAnnotation.description().isEmpty() && parameterAnnotation.expose())
 							reqArg.setDescription(parameterAnnotation.description());
-						else
-							s_logger.warn("Description is missing for the parameter " + parameterAnnotation.name() + " of the command " + apiCommand.getName() );
-						
+						else if (parameterAnnotation.expose()) {
+						    //System.out.println("Description is missing for the parameter " + parameterAnnotation.name() + " of the command " + apiCommand.getName() );
+						}
 						request.add(reqArg);
 					}
 				}
 	            
-//	            //Get response parameters
-//	            Method getResponseMethod = clas.getMethod("getResponse");
-//	            Class responseClas = (Class)getResponseMethod.getReturnType();
-//	            Type returnType = getResponseMethod.getGenericReturnType();
-//
-//	            if(returnType != null && returnType instanceof ParameterizedType){
-//	                ParameterizedType type = (ParameterizedType) returnType;
-//	                Type[] typeArguments = type.getActualTypeArguments();
-//	                responseClas = (Class)typeArguments[0];
-//	            }
-//				
-//				//Get response parameters
-//				Field[] responseFields = responseClas.getDeclaredFields();
-//				for (Field responseField : responseFields) {
-//					SerializedName nameAnnotation = responseField.getAnnotation(SerializedName.class);
-//					Param descAnnotation = responseField.getAnnotation(Param.class);
-//					Argument respArg = new Argument(nameAnnotation.value());
-//					if (descAnnotation != null)
-//						respArg.setDescription(descAnnotation.description());
-//					response.add(respArg);
-//				}
+				Class responseClas = impl.responseObject();
+				
+				//Get response parameters
+				Field[] responseFields = responseClas.getDeclaredFields();
+				for (Field responseField : responseFields) {
+					SerializedName nameAnnotation = responseField.getAnnotation(SerializedName.class);
+					Param descAnnotation = responseField.getAnnotation(Param.class);
+					Argument respArg = new Argument(nameAnnotation.value());
+					if (descAnnotation != null)
+						respArg.setDescription(descAnnotation.description());
+					response.add(respArg);
+				}
 	            
 	            apiCommand.setRequest(request);
-	            //apiCommand.setResponse(response);
+	            apiCommand.setResponse(response);
 	            commands.add(apiCommand);
 	            
 	            //Write command to xml file

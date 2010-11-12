@@ -33,7 +33,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 
-@Implementation(description="Creates a domain")
+@Implementation(description="Creates a domain", responseObject=DomainResponse.class)
 public class CreateDomainCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateDomainCmd.class.getName());
 
@@ -74,7 +74,7 @@ public class CreateDomainCmd extends BaseCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        DomainVO domain = _mgr.createDomain(this);
+        DomainVO domain = BaseCmd._mgr.createDomain(this);
         if (domain != null) {
             DomainResponse response = ApiResponseHelper.createDomainResponse(domain);
             response.setResponseName(getName());
