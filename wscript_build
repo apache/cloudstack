@@ -87,7 +87,7 @@ tgen = bld(rule=Utils.runant, name='runant', source=ant_sources, target=ant_jars
 
 # =================== C / Python compilation =========================
 
-bld.recurse(["vnet","daemonize","python"],'build')
+bld.recurse(["daemonize","python"],'build')
 
 # ===================== End C / Python compilation ==========================
 

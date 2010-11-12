@@ -49,16 +49,6 @@ Description: Cloud.com server library
  The Cloud.com server libraries provide a set of Java classes used
  in the Cloud.com Cloud Stack.
 
-Package: cloud-vnet
-Provides: vmops-vnet
-Conflicts: vmops-vnet
-Replaces: vmops-vnet
-Architecture: any
-Depends: cloud-daemonize (= ${source:Version}), cloud-python (= ${source:Version}), python, bridge-utils, net-tools
-Description: Cloud.com-specific virtual network daemon
- The Cloud.com virtual network daemon manages virtual networks used in the
- Cloud.com Cloud Stack.
-
 Package: cloud-agent-scripts
 Provides: vmops-agent-scripts, vmops-console, cloud-console, vmops-console-proxy
 Conflicts: vmops-agent-scripts, vmops-console, cloud-console, vmops-console-proxy
@@ -151,7 +141,7 @@ Provides: vmops-agent
 Conflicts: vmops-agent
 Replaces: vmops-agent
 Architecture: any
-Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-deps (= ${source:Version}), python, cloud-python (= ${source:Version}), cloud-agent-libs (= ${source:Version}), cloud-agent-scripts (= ${source:Version}), cloud-vnet (= ${source:Version}), libcommons-httpclient-java, libcommons-collections-java, libcommons-dbcp-java, libcommons-pool-java, libcommons-logging-java, libvirt0, cloud-daemonize, sysvinit-utils, chkconfig, qemu-kvm, libvirt-bin, cgroup-bin, augeas-tools, uuid-runtime, rsync, grep, iproute
+Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-deps (= ${source:Version}), python, cloud-python (= ${source:Version}), cloud-agent-libs (= ${source:Version}), cloud-agent-scripts (= ${source:Version}), libcommons-httpclient-java, libcommons-collections-java, libcommons-dbcp-java, libcommons-pool-java, libcommons-logging-java, libvirt0, cloud-daemonize, sysvinit-utils, chkconfig, qemu-kvm, libvirt-bin, cgroup-bin, augeas-tools, uuid-runtime, rsync, grep, iproute
 Description: Cloud.com agent
  The Cloud.com agent is in charge of managing shared computing resources in
  a Cloud.com Cloud Stack-powered cloud.  Install this package if this computer
