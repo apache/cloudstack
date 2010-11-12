@@ -1491,10 +1491,10 @@ public class ManagementServerImpl implements ManagementServer {
             // default domainId to the admin's domain
             domainId = ((account == null) ? DomainVO.ROOT_DOMAIN : account.getDomainId());
         }
-
+        
         Filter searchFilter = new Filter(UserAccountVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
 
-        Object id = cmd.getId();
+        Long id = cmd.getId();
         Object username = cmd.getUsername();
         Object type = cmd.getAccountType();
         Object accountName = cmd.getAccountName();
@@ -1503,7 +1503,17 @@ public class ManagementServerImpl implements ManagementServer {
 
         SearchBuilder<UserAccountVO> sb = _userAccountDao.createSearchBuilder();
         sb.and("username", sb.entity().getUsername(), SearchCriteria.Op.LIKE);
-        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        if (id != null && id == 1) {
+          //system user should NOT be searchable
+            List<UserAccountVO> emptyList = new ArrayList<UserAccountVO>();
+            return emptyList;
+        } else if (id != null) {
+            sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+         } else {
+             //this condition is used to exclude system user from the search results
+            sb.and("id", sb.entity().getId(), SearchCriteria.Op.NEQ);
+         }
+        
         sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
         sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
         sb.and("accountName", sb.entity().getAccountName(), SearchCriteria.Op.LIKE);
@@ -1536,6 +1546,9 @@ public class ManagementServerImpl implements ManagementServer {
 
         if (id != null) {
             sc.setParameters("id", id);
+        } else {
+            //Don't return system user, search builder with NEQ
+            sc.setParameters("id", 1);
         }
 
         if (type != null) {
