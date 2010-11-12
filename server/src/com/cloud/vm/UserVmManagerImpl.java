@@ -625,8 +625,20 @@ public class UserVmManagerImpl implements UserVmManager {
         
         DataCenterVO dc = _dcDao.findById(vm.getDataCenterId());
         HostPodVO pod = _podDao.findById(vm.getPodId());
+
         List<StoragePoolVO> sps = _storageMgr.getStoragePoolsForVm(vm.getId());
-        StoragePoolVO sp = sps.get(0); // FIXME
+        if( sps.size() == 0 ) {
+            throw new RuntimeException("Volume is not created for VM " + vm.getName());
+        }
+        StoragePoolVO sp = sps.get(0);
+        for (StoragePoolVO tsp: sps ) {
+            // use the local storage pool to choose host,
+            // shared storage pool should be in the same cluster as local storage pool
+            if( tsp.isLocal()) {
+                sp = tsp;
+                break;
+            }
+        }
 
         VMTemplateVO template = _templateDao.findById(vm.getTemplateId());
         ServiceOffering offering = _offeringDao.findById(vm.getServiceOfferingId());
