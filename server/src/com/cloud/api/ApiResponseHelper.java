@@ -101,6 +101,7 @@ import com.cloud.vm.SystemVm;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VmStats;
+import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type;
 
 public class ApiResponseHelper {
     
@@ -874,11 +875,20 @@ public class ApiResponseHelper {
        }
 
        volResponse.setStorageType(storageType);            
-       volResponse.setDiskOfferingId(volume.getDiskOfferingId());
-
+       if(volume.getVolumeType().equals(Volume.VolumeType.ROOT)){
+    	   volResponse.setServiceOfferingId(volume.getDiskOfferingId());
+       }else{
+    	   volResponse.setDiskOfferingId(volume.getDiskOfferingId());   
+       }
+       
        DiskOfferingVO diskOffering = ApiDBUtils.findDiskOfferingById(volume.getDiskOfferingId());
-       volResponse.setDiskOfferingName(diskOffering.getName());
-       volResponse.setDiskOfferingDisplayText(diskOffering.getDisplayText());
+       if(volume.getVolumeType().equals(Volume.VolumeType.ROOT)){
+           volResponse.setServiceOfferingName(diskOffering.getName());
+           volResponse.setServiceOfferingDisplayText(diskOffering.getDisplayText());    	       	   
+       }else{
+           volResponse.setDiskOfferingName(diskOffering.getName());
+           volResponse.setDiskOfferingDisplayText(diskOffering.getDisplayText());    	   
+       }
 
        Long poolId = volume.getPoolId();
        String poolName = (poolId == null) ? "none" : ApiDBUtils.findStoragePoolById(poolId).getName();

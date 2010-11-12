@@ -110,7 +110,16 @@ public class VolumeResponse extends BaseResponse {
 
     @SerializedName("destroyed") @Param(description="the boolean state of whether the volume is destroyed or not")
     private Boolean destroyed;
-    
+
+    @SerializedName(ApiConstants.SERVICE_OFFERING_ID) @Param(description="ID of the service offering for root disk")
+    private Long serviceOfferingId;
+
+    @SerializedName("serviceofferingname") @Param(description="name of the service offering for root disk")
+    private String serviceOfferingName;
+
+    @SerializedName("serviceofferingdisplaytext") @Param(description="the display text of the service offering for root disk")
+    private String serviceOfferingDisplayText;
+
     public Boolean getDestroyed() {
 		return destroyed;
 	}
@@ -342,4 +351,28 @@ public class VolumeResponse extends BaseResponse {
     public void setAttached(Date attached) {
         this.attached = attached;
     }
+
+	public Long getServiceOfferingId() {
+		return serviceOfferingId;
+	}
+
+	public void setServiceOfferingId(Long serviceOfferingId) {
+		this.serviceOfferingId = serviceOfferingId;
+	}
+
+	public String getServiceOfferingName() {
+		return serviceOfferingName;
+	}
+
+	public void setServiceOfferingName(String serviceOfferingName) {
+		this.serviceOfferingName = serviceOfferingName;
+	}
+
+	public String getServiceOfferingDisplayText() {
+		return serviceOfferingDisplayText;
+	}
+
+	public void setServiceOfferingDisplayText(String serviceOfferingDisplayText) {
+		this.serviceOfferingDisplayText = serviceOfferingDisplayText;
+	}
 }
