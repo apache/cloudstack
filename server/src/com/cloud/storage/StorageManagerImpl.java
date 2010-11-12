@@ -845,7 +845,7 @@ public class StorageManagerImpl implements StorageManager {
             rootVol.setDeviceId(0l);
             rootVol = _volsDao.persist(rootVol);
             
-            if ((diskOffering != null && diskOffering.getDiskSizeInBytes() > 0)) {
+            if ((diskOffering != null && diskOffering.getDiskSizeInBytes() > 0) || (diskOffering != null && diskOffering.isCustomized())) {
                 dataVol = new VolumeVO(VolumeType.DATADISK, vm.getId(), vm.getInstanceName() + "-DATA", dc.getId(), pod.getId(), account.getId(), account.getDomainId(), (size>0)? size : diskOffering.getDiskSizeInBytes());
                 
                 createStartedEvent(account, dataVol);
