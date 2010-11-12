@@ -102,7 +102,7 @@ public class TemplateResponse extends BaseResponse {
     private String domainName;  
 
     @SerializedName("domainid") @Param(description="the ID of the domain to which the template belongs")
-    private long domainId;
+    private Long domainId;
 
     public Long getZoneId() {
         return zoneId;

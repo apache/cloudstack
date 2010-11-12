@@ -19,6 +19,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.ServerApiException;
@@ -69,6 +70,7 @@ public class UpdateIsoCmd extends UpdateTemplateOrIsoCmd {
             response.setCreated(result.getCreated());
             response.setFormat(result.getFormat());
             response.setOsTypeId(result.getGuestOSId());
+            response.setOsTypeName(ApiDBUtils.findGuestOSById(result.getGuestOSId()).getDisplayName());
             response.setBootable(result.isBootable());
             response.setObjectName("iso");
             response.setResponseName(getName());
