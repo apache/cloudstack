@@ -262,7 +262,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 	public SecondaryStorageVmVO startSecStorageVm(long secStorageVmId, long startEventId) {
 		try {
 
-			return start2(secStorageVmId, startEventId);
+			return start(secStorageVmId, startEventId);
 
 		} catch (StorageUnavailableException e) {
 			s_logger.warn("Exception while trying to start secondary storage vm", e);
@@ -684,7 +684,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 		if (s_logger.isDebugEnabled())
 			s_logger.debug("Assign secondary storage vm from a newly started instance for request from data center : " + dataCenterId);
 
-		Map<String, Object> context = createSecStorageVmInstance2(dataCenterId);
+		Map<String, Object> context = createSecStorageVmInstance(dataCenterId);
 
 		long secStorageVmId = (Long) context.get("secStorageVmId");
 		if (secStorageVmId == 0) {
