@@ -820,6 +820,7 @@ function initVMWizard() {
 										    var item = result.jobresult.virtualmachine;					                        
 				                            vmToMidmenu(item, $midmenuItem1);
 				                            bindClickToMidMenu($midmenuItem1, vmToRightPanel, getMidmenuId);  
+				                            
 				                            if (item.passwordenabled == 'true') {							                                									        
 										        var extraMessage = "New password: " + item.password;
 										        afterAddingMidMenuItem($midmenuItem1, true, extraMessage);
@@ -838,7 +839,7 @@ function initVMWizard() {
 							    error: function(XMLHttpResponse) {
 								    $("body").stopTime(timerKey);
 									handleError(XMLHttpResponse, function() {
-										afterAddingMidMenuItem($midmenuItem1, false);	
+										afterAddingMidMenuItem($midmenuItem1, false, parseXMLHttpResponse(XMLHttpResponse));
 									});
 							    }
 						    });
@@ -848,7 +849,7 @@ function initVMWizard() {
 			    },
 			    error: function(XMLHttpResponse) {	
 					handleError(XMLHttpResponse, function() {
-						afterAddingMidMenuItem($midmenuItem1, false);
+						afterAddingMidMenuItem($midmenuItem1, false, parseXMLHttpResponse(XMLHttpResponse));
 					});
 			    }					
 		    });
