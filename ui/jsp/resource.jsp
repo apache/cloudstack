@@ -574,3 +574,102 @@
     </div>
 </div>
 <!-- Add Host Dialog (end) -->
+
+<!-- Add Primary Storage Dialog -->
+<div id="dialog_add_pool" title="Add Primary Storage" style="display: none">    
+    <div class="dialog_formcontent">
+        <form action="#" method="post" id="form_acquire">
+        <ol>
+            <li>
+                <label style="width: 115px;">
+                    Zone:</label>
+                <select class="select" id="zone_dropdown">
+                </select>
+                <div id="zone_dropdown_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>   
+            <li>
+                <label style="width: 115px;">
+                    Pod:</label>
+                <select class="select" id="pod_dropdown">
+                </select>
+                <div id="pod_dropdown_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>   
+            <li id="pool_cluster_container">
+                <label for="pool_cluster">
+                    Cluster:</label>
+                <select class="select" id="cluster_select">
+                </select>
+                <div id="cluster_select_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li>
+                <label for="user_name">
+                    Name:</label>
+                <input class="text" type="text" name="add_pool_name" id="add_pool_name" />
+                <div id="add_pool_name_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li>
+                <label for="add_pool_protocol">
+                    Protocol:</label>
+                <select class="select" id="add_pool_protocol">
+                    <option value="nfs">NFS</option>
+                    <option value="iscsi">ISCSI</option>
+                </select>
+            </li>
+            <li>
+                <label for="add_pool_nfs_server">
+                    Server:</label>
+                <input class="text" type="text" name="add_pool_nfs_server" id="add_pool_nfs_server" />
+                <div id="add_pool_nfs_server_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li id="add_pool_path_container">
+                <label for="add_pool_path">
+                    Path:</label>
+                <input class="text" type="text" name="add_pool_path" id="add_pool_path" />
+                <div id="add_pool_path_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li id="add_pool_iqn_container" style="display: none">
+                <label for="add_pool_iqn">
+                    Target IQN:</label>
+                <input class="text" type="text" name="add_pool_iqn" id="add_pool_iqn" />
+                <div id="add_pool_iqn_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li id="add_pool_lun_container" style="display: none">
+                <label for="add_pool_lun">
+                    LUN #:</label>
+                <input class="text" type="text" name="add_pool_lun" id="add_pool_lun" />
+                <div id="add_pool_lun_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li id="add_pool_tags_container">
+                <label for="add_pool_tags">
+                    Tags:</label>
+                <input class="text" type="text" id="add_pool_tags" />
+                <div id="add_pool_tags_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+        </ol>
+        </form>
+    </div>
+    <!--Loading box-->
+    <div id="spinning_wheel" class="ui_dialog_loaderbox" style="display: none;">
+        <div class="ui_dialog_loader">
+        </div>
+        <p>
+            Adding....</p>
+    </div>
+    <!--Confirmation msg box-->
+    <!--Note: for error msg, just have to add error besides everything for eg. add error(class) next to ui_dialog_messagebox error, ui_dialog_msgicon error, ui_dialog_messagebox_text error.  -->
+    <div id="info_container" class="ui_dialog_messagebox error" style="display: none;">
+        <div id="icon" class="ui_dialog_msgicon error">
+        </div>
+        <div id="info" class="ui_dialog_messagebox_text error">
+            (info)</div>
+    </div>
+</div>
