@@ -502,10 +502,14 @@ function initAddPodShortcut() {
 					
 					    showMiddleMenu();
 					    
+					    var items = json.addhostresponse.host;			  
+		                var hostTotal = parseInt($("#host_total").text());
+		                hostTotal = hostTotal + items.length;
+		                $("#host_total").text(hostTotal.toString());
+		                
 					    /*
 					    var $midmenuItem1 = $("#midmenu_item").clone();
-                        $("#midmenu_container").append($midmenuItem1.fadeIn("slow"));
-                        var items = json.addhostresponse.host;				            			      										   
+                        $("#midmenu_container").append($midmenuItem1.fadeIn("slow"));                        			            			      										   
 					    hostToMidmenu(items[0], $midmenuItem1);
 	                    bindClickToMidMenu($midmenuItem1, hostToRightPanel, hostGetMidmenuId); 
 			           
