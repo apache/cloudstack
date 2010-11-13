@@ -146,10 +146,8 @@ function doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $thisTab) {
 
 function handleErrorInDetailsTab(XMLHttpResponse, $thisTab, label, $afterActionInfoContainer, $midmenuItem1) {     
     var errorMsg = "";
-    if(XMLHttpResponse.responseText != null & XMLHttpResponse.responseText.length > 0) {
-        var start = XMLHttpResponse.responseText.indexOf("h1") + 3;
-        var end = XMLHttpResponse.responseText.indexOf("</h1");
-        errorMsg = XMLHttpResponse.responseText.substring(start, end);		
+    if(XMLHttpResponse.responseText != null & XMLHttpResponse.responseText.length > 0) {        
+        errorMsg = parseXMLHttpResponse(XMLHttpResponse);	
     }        
    
     var afterActionInfo;
@@ -300,9 +298,7 @@ function handleErrorInSubgridItem(XMLHttpResponse, $subgridItem, label) {
 		                        
     var errorMsg = "";
     if(XMLHttpResponse.responseText != null & XMLHttpResponse.responseText.length > 0) {
-        var start = XMLHttpResponse.responseText.indexOf("h1") + 3;
-        var end = XMLHttpResponse.responseText.indexOf("</h1");
-        errorMsg = XMLHttpResponse.responseText.substring(start, end);		
+        errorMsg = parseXMLHttpResponse(XMLHttpResponse);		
     }
     if(errorMsg.length > 0)  
         $subgridItem.find("#after_action_info").text(label + " action failed. Reason: " + fromdb(errorMsg));    
@@ -461,9 +457,7 @@ function handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1, id, inProcessText)
 		                        
     var errorMsg = "";
     if(XMLHttpResponse.responseText != null & XMLHttpResponse.responseText.length > 0) {
-        var start = XMLHttpResponse.responseText.indexOf("h1") + 3;
-        var end = XMLHttpResponse.responseText.indexOf("</h1");
-        errorMsg = XMLHttpResponse.responseText.substring(start, end);		
+        errorMsg = parseXMLHttpResponse(XMLHttpResponse);		
     }
     if(errorMsg.length > 0) 
         $midmenuItem1.find("#second_row").text(fromdb(errorMsg));   
@@ -997,10 +991,8 @@ function bindAndListMidMenuItems($leftmenu, commandString, jsonResponse1, jsonRe
     });
 }
 
-function handleErrorInDialog(XMLHttpResponse, $thisDialog) {
-    var start = XMLHttpResponse.responseText.indexOf("h1") + 3;
-	var end = XMLHttpResponse.responseText.indexOf("</h1");
-	var errorMsg = XMLHttpResponse.responseText.substring(start, end);
+function handleErrorInDialog(XMLHttpResponse, $thisDialog) {    
+	var errorMsg = parseXMLHttpResponse(XMLHttpResponse);	
 	var $infoContainer = $thisDialog.find("#info_container");
 
 	if(errorMsg != null && errorMsg.length > 0) 	    
@@ -1754,27 +1746,25 @@ function getVmName(p_vmName, p_vmDisplayname) {
 
 // FUNCTION: Handles AJAX error callbacks.  You can pass in an optional function to 
 // handle errors that are not already handled by this method.  
-function handleError(xmlHttp, handleErrorCallback) {
+function handleError(XMLHttpResponse, handleErrorCallback) {
 	// User Not authenticated
-	if (xmlHttp.status == ERROR_ACCESS_DENIED_DUE_TO_UNAUTHORIZED) {
+	if (XMLHttpResponse.status == ERROR_ACCESS_DENIED_DUE_TO_UNAUTHORIZED) {
 		$("#dialog_session_expired").dialog("open");
 	} 	
-	else if (xmlHttp.status == ERROR_INTERNET_NAME_NOT_RESOLVED) {
+	else if (XMLHttpResponse.status == ERROR_INTERNET_NAME_NOT_RESOLVED) {
 		$("#dialog_error_internet_not_resolved").dialog("open");
 	} 
-	else if (xmlHttp.status == ERROR_INTERNET_CANNOT_CONNECT) {
+	else if (XMLHttpResponse.status == ERROR_INTERNET_CANNOT_CONNECT) {
 		$("#dialog_error_management_server_not_accessible").dialog("open");
 	} 
-	else if (xmlHttp.status == ERROR_VMOPS_ACCOUNT_ERROR && handleErrorCallback != undefined) {
+	else if (XMLHttpResponse.status == ERROR_VMOPS_ACCOUNT_ERROR && handleErrorCallback != undefined) {
 		handleErrorCallback();
 	} 
 	else if (handleErrorCallback != undefined) {
 		handleErrorCallback();
 	}
-	else {	   
-		var start = xmlHttp.responseText.indexOf("h1") + 3;
-		var end = xmlHttp.responseText.indexOf("</h1");
-		var errorMsg = xmlHttp.responseText.substring(start, end);		
+	else {	  
+		var errorMsg = parseXMLHttpResponse(XMLHttpResponse);				
 		$("#dialog_error").text(fromdb(errorMsg)).dialog("open");
 	}
 }
