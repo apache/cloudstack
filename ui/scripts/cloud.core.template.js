@@ -107,7 +107,7 @@ function afterLoadTemplateJSP() {
 					}, 
 					error: function(XMLHttpResponse) {	
 						handleError(XMLHttpResponse, function() {
-							handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1);	
+							afterAddingMidMenuItem($midmenuItem1, false, parseXMLHttpResponse(XMLHttpResponse));
 						});
 					}						
 				});
