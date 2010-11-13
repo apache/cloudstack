@@ -189,7 +189,7 @@ function hostJsonToStatisticsTab() {
     $thisTab.find("#tab_container").show();  
 }
 
-function  hostJsonToInstanceTab() {   
+function hostJsonToInstanceTab() {   
     var $thisTab = $("#right_panel_content #tab_content_instance");
 	$thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show(); 
@@ -227,10 +227,11 @@ function hostInstanceJSONToTemplate(jsonObj, template) {
     template.find("#ipaddress").text(fromdb(jsonObj.ipaddress));
     template.find("#serviceOfferingName").text(fromdb(jsonObj.serviceofferingname));	
     template.find("#account").text(fromdb(jsonObj.account));
+    template.find("#domain").text(fromdb(jsonObj.domain));
     setDateField(jsonObj.created, template.find("#created"));	 		
 } 
 
-function  hostJsonToRouterTab() {   
+function hostJsonToRouterTab() {   
     var $thisTab = $("#right_panel_content #tab_content_router");
 	$thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show(); 
@@ -269,10 +270,11 @@ function hostRouterJSONToTemplate(jsonObj, template) {
     template.find("#privateip").text(fromdb(jsonObj.privateip));
     template.find("#guestipaddress").text(fromdb(jsonObj.guestipaddress)); 
     template.find("#account").text(fromdb(jsonObj.account));
+    template.find("#domain").text(fromdb(jsonObj.domain));
     setDateField(jsonObj.created, template.find("#created"));	 		
 }  
 
-function  hostJsonToSystemvmTab() {   
+function hostJsonToSystemvmTab() {   
     var $thisTab = $("#right_panel_content #tab_content_systemvm");
 	$thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show(); 
