@@ -19,6 +19,7 @@
 package com.cloud.configuration.dao;
 
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,10 +30,12 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.configuration.ConfigurationVO;
+import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @Local(value={ConfigurationDao.class})
 public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String> implements ConfigurationDao {
@@ -144,7 +147,36 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
         ConfigurationVO config = configurations.get(0);
         String value = config.getValue();
         return value;
-       
+    }
+    
+    @Override
+    @DB
+    public String getValueAndInitIfNotExist(String name, String initValue) {
+    	Transaction txn = Transaction.currentTxn();
+    	PreparedStatement stmt = null;
+    	PreparedStatement stmtInsert = null;
+    	String returnValue = initValue;
+    	try {
+    		txn.start();
+    		stmt = txn.prepareAutoCloseStatement("SELECT value FROM configuration WHERE name=?");
+    		stmt.setString(1, name);
+    		ResultSet rs = stmt.executeQuery();
+    		if(rs != null && rs.next()) {
+    			returnValue =  rs.getString(1);
+    		} else {
+    			stmtInsert = txn.prepareAutoCloseStatement("INSERT INTO configuration(instance, name, value, description) VALUES('DEFAULT', ?, ?, '')");
+    			stmtInsert.setString(1, name);
+    			stmtInsert.setString(2, initValue);
+    			if(stmtInsert.executeUpdate() < 1) {
+    				throw new CloudRuntimeException("Unable to init configuration variable: " + name); 
+    			}
+    		}
+    		txn.commit();
+    		return returnValue;
+    	} catch (Exception e) {
+    		s_logger.warn("Unable to update Configuration Value", e);
+    		throw new CloudRuntimeException("Unable to init configuration variable: " + name); 
+    	}
     }
     
     @Override

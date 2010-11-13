@@ -1299,8 +1299,14 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
 		
         String ticket = ConsoleProxyServlet.genAccessTicket(cmd.getHost(), cmd.getPort(), cmd.getSid(), cmd.getVmId());
 		if(!ticket.startsWith(ticketInUrl)) {
-			s_logger.error("Access ticket expired or has been modified. vmId: " + cmd.getVmId());
-			return new ConsoleAccessAuthenticationAnswer(cmd, false);
+			Date now = new Date();
+			// considering of minute round-up
+			String minuteEarlyTicket = ConsoleProxyServlet.genAccessTicket(cmd.getHost(), cmd.getPort(), cmd.getSid(), cmd.getVmId(), 
+				new Date(now.getTime() - 60*1000));
+			if(!minuteEarlyTicket.startsWith(ticketInUrl)) {
+				s_logger.error("Access ticket expired or has been modified. vmId: " + cmd.getVmId());
+				return new ConsoleAccessAuthenticationAnswer(cmd, false);
+			}
 		}
 
         if (cmd.getVmId() != null && cmd.getVmId().isEmpty()) {

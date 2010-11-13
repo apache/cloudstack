@@ -1047,4 +1047,5 @@ public interface ManagementServer {
     public List<RemoteAccessVpnVO> searchForRemoteAccessVpns(ListRemoteAccessVpnsCmd cmd);
     
     public List<VpnUserVO> searchForVpnUsers(ListVpnUsersCmd cmd);
+    public String getHashKey();
 }

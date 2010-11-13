@@ -58,7 +58,7 @@ public class ConsoleProxyServlet extends HttpServlet {
 	private static final int DEFAULT_THUMBNAIL_WIDTH = 144;
 	private static final int DEFAULT_THUMBNAIL_HEIGHT = 110;
 	
-	private final ManagementServer _ms = (ManagementServer)ComponentLocator.getComponent(ManagementServer.Name);
+	private final static ManagementServer _ms = (ManagementServer)ComponentLocator.getComponent(ManagementServer.Name);
 	
 	@Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) {
@@ -298,14 +298,18 @@ public class ConsoleProxyServlet extends HttpServlet {
 	}
 	
 	public static String genAccessTicket(String host, String port, String sid, String tag) {
+		return genAccessTicket(host, port, sid, tag, new Date());
+	}
+	
+	public static String genAccessTicket(String host, String port, String sid, String tag, Date normalizedHashTime) {
 		String params = "host=" + host + "&port=" + port + "&sid=" + sid + "&tag=" + tag;
 		
 		try {
 	        Mac mac = Mac.getInstance("HmacSHA1");
 	        
-	        long ts = (new Date()).getTime();
+	        long ts = normalizedHashTime.getTime();
 	        ts = ts/60000;		// round up to 1 minute
-	        String secretKey = "cloud.com";
+	        String secretKey = _ms.getHashKey();
 	        
 	        SecretKeySpec keySpec = new SecretKeySpec(secretKey.getBytes(), "HmacSHA1");
 	        mac.init(keySpec);
