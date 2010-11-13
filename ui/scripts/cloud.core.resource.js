@@ -1115,10 +1115,7 @@ function initAddPrimaryStorageShortcut($midmenuAddLink2, currentPageInRightPanel
 			    $.ajax({
 				    data: createURL("command=createStoragePool" + array1.join("")),
 				    dataType: "json",
-				    success: function(json) {
-				        $thisDialog.find("#spinning_wheel").hide();					       
-				        $thisDialog.dialog("close");					
-						            
+				    success: function(json) {				       			               
 					    if(isMiddleMenuShown() == false) { //not on cluster node (still on pod node, so middle menu is hidden)
 					        var $clusterNode = $("#cluster_"+clusterId);
 					        if($clusterNode.length > 0)
@@ -1141,7 +1138,13 @@ function initAddPrimaryStorageShortcut($midmenuAddLink2, currentPageInRightPanel
 					        primarystorageToMidmenu(item, $midmenuItem1);
 	                        bindClickToMidMenu($midmenuItem1, primarystorageToRightPanel, primarystorageGetMidmenuId);  
 	                    }
-	                                                                 
+	                    
+	                    var primarystorageTotal = parseInt($("#primarystorage_total").text());
+		                primarystorageTotal++;
+		                $("#primarystorage_total").text(primarystorageTotal.toString());				    	
+	                    
+	                    $thisDialog.find("#spinning_wheel").hide();					       
+				        $thisDialog.dialog("close");	                                                                 
 				    },			
                     error: function(XMLHttpResponse) {	  
 						handleError(XMLHttpResponse, function() {
