@@ -392,7 +392,7 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
         for (SnapshotScheduleVO snapshotSchedule : snapshotSchedules) {
             _snapshotScheduleDao.delete(snapshotSchedule.getId());
         }
-        List<SnapshotPolicyVO> policyInstances = _snapshotPolicyDao.listAll();
+        List<SnapshotPolicyVO> policyInstances = _snapshotPolicyDao.listActivePolicies();
         for (SnapshotPolicyVO policyInstance : policyInstances) {
             if (policyInstance.getId() != Snapshot.MANUAL_POLICY_ID) {
                 scheduleNextSnapshotJob(policyInstance);

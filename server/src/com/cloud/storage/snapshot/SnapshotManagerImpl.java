@@ -1200,24 +1200,23 @@ public class SnapshotManagerImpl implements SnapshotManager {
     
     @Override
     public boolean deletePolicy(long userId, long policyId) {
-        SnapshotPolicyVO snapshotPolicy = _snapshotPolicyDao.findById(policyId);
-        VolumeVO volume = _volsDao.findById(snapshotPolicy.getVolumeId());
-        snapshotPolicy.setActive(false);
-        _snapSchedMgr.removeSchedule(snapshotPolicy.getVolumeId(), snapshotPolicy.getId());
-        EventVO event = new EventVO();
-        event.setAccountId(volume.getAccountId());
-        event.setUserId(userId);
-        event.setType(EventTypes.EVENT_SNAPSHOT_POLICY_DELETE);
-        boolean success = _snapshotPolicyDao.update(policyId, snapshotPolicy);
-        if(success){
+        try{
+            SnapshotPolicyVO snapshotPolicy = _snapshotPolicyDao.findById(policyId);
+            _snapshotPolicyDao.delete(policyId);
+            VolumeVO volume = _volsDao.findById(snapshotPolicy.getVolumeId());
+            _snapSchedMgr.removeSchedule(snapshotPolicy.getVolumeId(), snapshotPolicy.getId());
+            EventVO event = new EventVO();
+            event.setAccountId(volume.getAccountId());
+            event.setUserId(userId);
+            event.setType(EventTypes.EVENT_SNAPSHOT_POLICY_DELETE);
             event.setLevel(EventVO.LEVEL_INFO);
             event.setDescription("Successfully deleted snapshot policy with Id: "+policyId);
-        } else {
-            event.setLevel(EventVO.LEVEL_ERROR);
-            event.setDescription("Failed to  delete snapshot policy with Id: "+policyId);
+            _eventDao.persist(event);
+            return true;
+        } catch (Exception e) {
+            s_logger.warn("Unable to delete policy: " + policyId + " due to " + e.toString(), e);
         }
-        _eventDao.persist(event);
-        return success;
+        return false;
     }
 
     @Override
