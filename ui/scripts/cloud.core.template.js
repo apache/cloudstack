@@ -120,7 +120,7 @@ function afterLoadTemplateJSP() {
     });
     
     //populate dropdown ***   			
-	var addTemplateZoneField = $("#dialog_add_template #add_template_zone");    	
+	var addTemplateZoneField = $("#dialog_add_template").find("#add_template_zone");    	
 	if (isAdmin())  
 		addTemplateZoneField.append("<option value='-1'>All Zones</option>"); 	
     $.ajax({
@@ -144,7 +144,7 @@ function afterLoadTemplateJSP() {
 		success: function(json) {
 			types = json.listostypesresponse.ostype;
 			if (types != null && types.length > 0) {		
-			    var osTypeDropdownAdd = $("#dialog_add_template #add_template_os_type");    
+			    var osTypeDropdownAdd = $("#dialog_add_template").find("#add_template_os_type");    
 				var osTypeDropdownEdit = $detailsTab.find("#ostypename_edit").empty();
 				if(types != null && types.length > 0) {
 				    for(var i = 0; i < types.length; i++) {
@@ -163,7 +163,7 @@ function afterLoadTemplateJSP() {
 	    success: function(json) {
 	        var items = json.listserviceofferingsresponse.serviceoffering;
 	        if(items != null && items.length > 0 ) {
-	            var serviceOfferingField = $("#dialog_create_vm_from_template #service_offering").empty();
+	            var serviceOfferingField = $("#dialog_create_vm_from_template").find("#service_offering").empty();
 	            for(var i = 0; i < items.length; i++)		        
 	                serviceOfferingField.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");
 	        }		        
@@ -176,7 +176,7 @@ function afterLoadTemplateJSP() {
 	    success: function(json) {
 	        var items = json.listdiskofferingsresponse.diskoffering;
 	        if(items != null && items.length > 0 ) {
-	            var diskOfferingField = $("#dialog_create_vm_from_template #disk_offering").empty();
+	            var diskOfferingField = $("#dialog_create_vm_from_template").find("#disk_offering").empty();
 	            diskOfferingField.append("<option value=''>No disk offering</option>");
 	            for(var i = 0; i < items.length; i++) {		
 	                var $option = $("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");	

@@ -99,11 +99,11 @@ function afterLoadIsoJSP() {
     });
     
     //populate dropdown ***
-    var addIsoZoneField = $("#dialog_add_iso #add_iso_zone");    	
+    var addIsoZoneField = $("#dialog_add_iso").find("#add_iso_zone");    	
 	if (isAdmin())  
 		addIsoZoneField.append("<option value='-1'>All Zones</option>"); 	
     $.ajax({
-        data: createURL("command=listZones&available=true"+maxPageSize),
+        data: createURL("command=listZones&available=true"),
 	    dataType: "json",
 	    success: function(json) {		        
 		    var zones = json.listzonesresponse.zone;	 			     			    	
@@ -118,12 +118,12 @@ function afterLoadIsoJSP() {
 	});	
     
     $.ajax({
-	    data: createURL("command=listOsTypes&response=json"+maxPageSize),
+	    data: createURL("command=listOsTypes"),
 		dataType: "json",
 		success: function(json) {
 			types = json.listostypesresponse.ostype;
 			if (types != null && types.length > 0) {
-				var osTypeDropDownAdd = $("#dialog_add_iso #add_iso_os_type").empty();
+				var osTypeDropDownAdd = $("#dialog_add_iso").find("#add_iso_os_type").empty();
 				var osTypeDropdownEdit = $detailsTab.find("#ostypename_edit").empty();
 				for (var i = 0; i < types.length; i++) {
 					var html = "<option value='" + types[i].id + "'>" + fromdb(types[i].description) + "</option>";
@@ -135,12 +135,12 @@ function afterLoadIsoJSP() {
 	});
 	
 	$.ajax({
-	    data: createURL("command=listServiceOfferings&response=json"+maxPageSize),
+	    data: createURL("command=listServiceOfferings"),
 	    dataType: "json",
 	    success: function(json) {
 	        var items = json.listserviceofferingsresponse.serviceoffering;
 	        if(items != null && items.length > 0 ) {
-	            var serviceOfferingField = $("#dialog_create_vm_from_iso #service_offering").empty();
+	            var serviceOfferingField = $("#dialog_create_vm_from_iso").find("#service_offering").empty();
 	            for(var i = 0; i < items.length; i++)		        
 	                serviceOfferingField.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");
 	        }		        
@@ -148,12 +148,12 @@ function afterLoadIsoJSP() {
 	});		
 	
 	$.ajax({
-	    data: createURL("command=listDiskOfferings&response=json"+maxPageSize),
+	    data: createURL("command=listDiskOfferings"),
 	    dataType: "json",
 	    success: function(json) {
 	        var items = json.listdiskofferingsresponse.diskoffering;
 	        if(items != null && items.length > 0 ) {
-	            var diskOfferingField = $("#dialog_create_vm_from_iso #disk_offering").empty();
+	            var diskOfferingField = $("#dialog_create_vm_from_iso").find("#disk_offering").empty();
 	            for(var i = 0; i < items.length; i++) {		  
 	                var $option = $("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");	
 		            $option.data("jsonObj", items[i]);			                              
