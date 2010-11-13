@@ -74,11 +74,12 @@ public class XenServerConnectionPool {
         PoolSyncDB(conn);
         s_logger.debug("Designating the new master to " + masterIp);
         Pool.designateNewMaster(conn, host);
+        forceSleep(8);
         Connection slaveConn = null;
         Connection masterConn = null;
         int retry = 30;
         for (int i = 0; i < retry; i++) {
-            forceSleep(5);
+            forceSleep(2);
             try {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Logging on as the slave to " + slaveIp);
@@ -439,26 +440,31 @@ public class XenServerConnectionPool {
     protected synchronized void ensurePoolIntegrity(Connection conn,
             String masterIp, String username, String password, int wait)
             throws XenAPIException, XmlRpcException {
+        Session slaveSession = null;
+        Connection slaveConn = null;
         try {
             // try recoverSlave first
             Set<Host> slaves = Pool.recoverSlaves(conn);
             // wait 10 second
             forceSleep(10);
+
             for(Host slave : slaves ) {
-                Session slaveSession = null;
+
                 for (int i = 0; i < 10; i++) {
-                    Connection slaveConn = null;
+                    slaveConn = null;
+                    slaveSession = null;
                     try {
                         
                         String slaveIp = slave.getAddress(conn);
-                        s_logger.debug("ensurePoolIntegrity: trying to logon as the slave to " + slaveIp);
+                        s_logger.debug("ensurePoolIntegrity-1: trying to logon as the slave to " + slaveIp);
                         URL slaveUrl = new URL("http://" + slaveIp);
                         slaveConn = new Connection(slaveUrl, 10);
                         slaveSession = null;
                         try {
                         	slaveSession = Session.slaveLocalLoginWithPassword(slaveConn, username, password);
                         } catch (Exception e) {
-                        	s_logger.debug("ensurePoolIntegrity: Unable to logging on as the slave to " + slaveIp);
+                        	s_logger.debug("ensurePoolIntegrity-1: Unable to logging on as the slave to " + slaveIp 
+                        	        + " error " + e.toString());
                         	break;
                         }
                         Pool.Record pr = getPoolRecord(slaveConn);
@@ -473,7 +479,9 @@ public class XenServerConnectionPool {
                             } catch (Exception e1) {
                             }
                         }
-                        slaveConn.dispose();
+                        if (slaveConn != null) {
+                            slaveConn.dispose();
+                        }
                     }
                     // wait 2 second
                     forceSleep(2);
@@ -486,12 +494,13 @@ public class XenServerConnectionPool {
         Set<Host> slaves = Host.getAll(conn);
         for (Host slave : slaves) {
             String slaveIp = slave.getAddress(conn);
-            Connection slaveConn = null;
+            slaveConn = null;
+            slaveSession = null;
             try {
-                s_logger.debug("Logging on as the slave to " + slaveIp);
+                s_logger.debug("ensurePoolIntegrity-2: trying to logon as the slave to " + slaveIp);
                 URL slaveUrl = new URL("http://" + slaveIp);
                 slaveConn = new Connection(slaveUrl, 10);
-                Session.slaveLocalLoginWithPassword(slaveConn, username,
+                slaveSession = Session.slaveLocalLoginWithPassword(slaveConn, username,
                         password);
                 Pool.Record slavePoolr = getPoolRecord(slaveConn);
                 String ip = slavePoolr.master.getAddress(slaveConn);
@@ -499,17 +508,17 @@ public class XenServerConnectionPool {
                     PoolEmergencyResetMaster(slaveIp, masterIp, username,
                             password);
                 }
-            } catch (MalformedURLException e) {
-                throw new CloudRuntimeException("Bad URL" + slaveIp, e);
             } catch (Exception e) {
-                s_logger.debug("Unable to login to slave " + slaveIp
-                        + " error " + e.getMessage());
+                s_logger.debug("ensurePoolIntegrity-2: Unable to logging on as the slave to " + slaveIp
+                        + " error " + e.toString());
             } finally {
-                if (slaveConn != null) {
+                if (slaveSession != null) {
                     try {
                         Session.localLogout(slaveConn);
                     } catch (Exception e) {
                     }
+                }
+                if (slaveConn != null ) {
                     slaveConn.dispose();
                 }
             }
