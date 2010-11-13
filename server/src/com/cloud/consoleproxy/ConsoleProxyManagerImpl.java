@@ -564,8 +564,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager,
 
 			DataCenterVO dc = _dcDao.findById(proxy.getDataCenterId());
 			HostPodVO pod = _podDao.findById(proxy.getPodId());
-			List<StoragePoolVO> sps = _storageMgr.getStoragePoolsForVm(proxy.getId());
-			StoragePoolVO sp = sps.get(0); // FIXME
+			StoragePoolVO sp = _storageMgr.getStoragePoolForVm(proxy.getId());
 
 			HashSet<Host> avoid = new HashSet<Host>();
 			HostVO routingHost = (HostVO) _agentMgr.findHost(Host.Type.Routing,
@@ -2379,9 +2378,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager,
 		boolean mirroredVols = proxy.isMirroredVols();
 		DataCenterVO dc = _dcDao.findById(proxy.getDataCenterId());
 		HostPodVO pod = _podDao.findById(proxy.getPodId());
-		List<StoragePoolVO> sps = _storageMgr.getStoragePoolsForVm(proxy
-				.getId());
-		StoragePoolVO sp = sps.get(0); // FIXME
+		StoragePoolVO sp = _storageMgr.getStoragePoolForVm(proxy.getId());
 
 		List<VolumeVO> vols = _volsDao.findCreatedByInstance(routerId);
 

@@ -149,11 +149,8 @@ public class XenServerConnectionPool {
                     slaveConn.dispose();
                     slaveConn = null;
                 }
-
             }
-
         }
-
         throw new CloudRuntimeException(
                 "Unable to logon to the new master after " + retry + " retries");
     }
@@ -448,31 +445,39 @@ public class XenServerConnectionPool {
             // wait 10 second
             forceSleep(10);
             for(Host slave : slaves ) {
-                for (int i = 0; i < 30; i++) {
+                Session slaveSession = null;
+                for (int i = 0; i < 10; i++) {
                     Connection slaveConn = null;
                     try {
                         
                         String slaveIp = slave.getAddress(conn);
-                        s_logger.debug("Logging on as the slave to " + slaveIp);
+                        s_logger.debug("ensurePoolIntegrity: trying to logon as the slave to " + slaveIp);
                         URL slaveUrl = new URL("http://" + slaveIp);
                         slaveConn = new Connection(slaveUrl, 10);
-                        Session.slaveLocalLoginWithPassword(slaveConn, username, password);
+                        slaveSession = null;
+                        try {
+                        	slaveSession = Session.slaveLocalLoginWithPassword(slaveConn, username, password);
+                        } catch (Exception e) {
+                        	s_logger.debug("ensurePoolIntegrity: Unable to logging on as the slave to " + slaveIp);
+                        	break;
+                        }
                         Pool.Record pr = getPoolRecord(slaveConn);
                         String mIp = pr.master.getAddress(slaveConn);
                         if (mIp.trim().equals(masterIp.trim())) {
                             break;
                         }
                     } catch (Exception e) {
-                        try {
-                            Session.localLogout(slaveConn);
-                        } catch (Exception e1) {
+                        if (slaveSession != null) {
+                            try {
+                                Session.localLogout(slaveConn);
+                            } catch (Exception e1) {
+                            }
                         }
                         slaveConn.dispose();
                     }
                     // wait 2 second
                     forceSleep(2);
-                }
-                
+                }             
             }
         } catch (Exception e) {
         }
