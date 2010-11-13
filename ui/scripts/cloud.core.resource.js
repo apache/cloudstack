@@ -332,6 +332,10 @@ function initAddPodShortcut() {
 		                $zoneNode.find("#pods_container").prepend(template.show());						
 		                $zoneNode.find("#zone_arrow").removeClass("white_nonexpanded_close").addClass("expanded_open");	
                         template.fadeIn("slow");
+			             
+			            var podTotal = parseInt($("#pod_total").text());
+		                podTotal++;
+		                $("#pod_total").text(podTotal.toString());  
 			                                    
                         forceLogout = false;  // We don't force a logout if pod(s) exit.
 				        if (forceLogout) {
@@ -787,7 +791,11 @@ function addZoneWizardSubmit($thisWizard) {
 		    var item = json.createzoneresponse.zone;					    
 		    zoneJSONToTreeNode(item, $zoneNode);		
 		    
-		    zoneId = item.id;			           
+		    zoneId = item.id;	
+		    
+		    var zoneTotal = parseInt($("#zone_total").text());
+		    zoneTotal++;
+		    $("#zone_total").text(zoneTotal.toString());		           
 	    },
         error: function(XMLHttpResponse) {            
 			handleError(XMLHttpResponse, function() {
@@ -827,6 +835,10 @@ function addZoneWizardSubmit($thisWizard) {
                 $zoneNode.find("#pods_container").prepend($podNode.show());						
                 $zoneNode.find("#zone_arrow").removeClass("white_nonexpanded_close").addClass("expanded_open");	
                 $podNode.fadeIn("slow");
+	             
+	            var podTotal = parseInt($("#pod_total").text());
+		        podTotal++;
+		        $("#pod_total").text(podTotal.toString()); 
 	                                    
                 forceLogout = false;  // We don't force a logout if pod(s) exit.
 		        if (forceLogout) {
