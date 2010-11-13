@@ -152,7 +152,7 @@ function afterLoadVolumeJSP() {
 							    error: function(XMLHttpResponse) {
 								    $("body").stopTime(timerKey);
 									handleError(XMLHttpResponse, function() {
-										afterAddingMidMenuItem($midmenuItem1, false);
+										afterAddingMidMenuItem($midmenuItem1, false, parseXMLHttpResponse(XMLHttpResponse));
 									});
 							    }
 						    });
@@ -160,7 +160,7 @@ function afterLoadVolumeJSP() {
 				    },
 				    error: function(XMLHttpResponse) {
 						handleError(XMLHttpResponse, function() {
-							afterAddingMidMenuItem($midmenuItem1, false);	
+							afterAddingMidMenuItem($midmenuItem1, false, parseXMLHttpResponse(XMLHttpResponse));	
 						});
 				    }
 			    });
