@@ -1401,10 +1401,12 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         }
 
         final DomainRouterVO router = _routerDao.findBy(ipVO.getAccountId(), ipVO.getDataCenterId());
-        Long hostId = router.getHostId();
+
         if (router == null || router.getHostId() == null) {
         	return true;
         }
+        
+        Long hostId = router.getHostId();        
         
         if (rule.isForwarding()) {
             return updatePortForwardingRule(rule, router, hostId, oldPrivateIP, oldPrivatePort);
