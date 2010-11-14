@@ -110,7 +110,8 @@ function hostJsonToDetailsTab() {
         noAvailableActions = false;
     }	
 	else if(jsonObj.state == "Alert") {
-	    buildActionLinkForTab("Update OS Preference", hostActionMap, $actionMenu, $midmenuItem1, $detailsTab);  	
+	    buildActionLinkForTab("Update OS Preference", hostActionMap, $actionMenu, $midmenuItem1, $detailsTab); 
+	    buildActionLinkForTab("Remove Host", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);   	
 	    noAvailableActions = false;   
      
 	}	
