@@ -1328,6 +1328,7 @@ public class ManagementServerImpl implements ManagementServer {
         Account account = UserContext.current().getAccount();    	
         List<DataCenterVO> dcs = null;
     	Long domainId = cmd.getDomainId();
+    	Long id = cmd.getId();
     	if(domainId != null){
     		//for domainId != null
     		//right now, we made the decision to only list zones associated with this domain
@@ -1404,7 +1405,17 @@ public class ManagementServerImpl implements ManagementServer {
                 }
             }
         }
-
+        
+        if (id != null) {
+            for (DataCenterVO zone : dcs) {
+                List<DataCenterVO> singleZone = new ArrayList<DataCenterVO>();
+                if (zone.getId() == id) {
+                    singleZone.add(zone);
+                }
+                return singleZone;
+            }
+        } 
+        
         return dcs;
     }
 

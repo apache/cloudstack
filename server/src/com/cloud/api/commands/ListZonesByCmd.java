@@ -47,6 +47,8 @@ public class ListZonesByCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="the ID of the zone")
+    private Long id;
 
     @Parameter(name=ApiConstants.AVAILABLE, type=CommandType.BOOLEAN, description="true if you want to retrieve all available Zones. False if you only want to return the Zones from which you have at least one VM. Default is false.")
     private Boolean available;
@@ -56,6 +58,10 @@ public class ListZonesByCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
+    
+    public Long getId() {
+        return id;
+    }
 
     public Boolean isAvailable() {
         return available;
