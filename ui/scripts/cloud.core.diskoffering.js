@@ -111,8 +111,8 @@ function initAddDiskOfferingButton($midmenuAddLink1) {
 }
 
 function doEditDiskOffering($actionLink, $detailsTab, $midmenuItem1) {       
-    var $readonlyFields  = $detailsTab.find("#name, #displaytext");
-    var $editFields = $detailsTab.find("#name_edit, #displaytext_edit"); 
+    var $readonlyFields  = $detailsTab.find("#name, #displaytext, #tags");
+    var $editFields = $detailsTab.find("#name_edit, #displaytext_edit, #tags_edit"); 
              
     $readonlyFields.hide();
     $editFields.show();  
@@ -145,8 +145,12 @@ function doEditDiskOffering2($actionLink, $detailsTab, $midmenuItem1, $readonlyF
     var array1 = [];    
     var name = $detailsTab.find("#name_edit").val();
     array1.push("&name="+todb(name));
+    
     var displaytext = $detailsTab.find("#displaytext_edit").val();
     array1.push("&displayText="+todb(displaytext));
+	
+	var tags = $detailsTab.find("#tags_edit").val();
+	array1.push("&tags="+todb(tags));	
 	
 	$.ajax({
 	    data: createURL("command=updateDiskOffering&id="+id+array1.join("")),
@@ -214,7 +218,9 @@ function diskOfferingJsonToDetailsTab() {
     var diskSize = diskofferingGetDiskSize(jsonObj);   
     $thisTab.find("#disksize").text(diskSize);    
         
-    $thisTab.find("#tags").text(fromdb(jsonObj.tags));      
+    $thisTab.find("#tags").text(fromdb(jsonObj.tags));    
+    $thisTab.find("#tags_edit").val(fromdb(jsonObj.tags));    
+      
     $thisTab.find("#domain").text(fromdb(jsonObj.domain));   
     
     //actions ***
