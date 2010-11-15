@@ -40,6 +40,9 @@ public class FirewallRuleResponse extends BaseResponse {
     @SerializedName("vmname") @Param(description="the VM name for the port forwarding rule")
     private String virtualMachineName;
 
+    @SerializedName("vmdisplayname") @Param(description="the VM display name for the port forwarding rule")
+    private String virtualMachineDisplayName;
+
     public Long getId() {
         return id;
     }
@@ -87,4 +90,12 @@ public class FirewallRuleResponse extends BaseResponse {
     public void setVirtualMachineName(String virtualMachineName) {
         this.virtualMachineName = virtualMachineName;
     }
+
+	public String getVirtualMachineDisplayName() {
+		return virtualMachineDisplayName;
+	}
+
+	public void setVirtualMachineDisplayName(String virtualMachineDisplayName) {
+		this.virtualMachineDisplayName = virtualMachineDisplayName;
+	}
 }

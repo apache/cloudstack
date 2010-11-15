@@ -1004,6 +1004,7 @@ public class ApiResponseHelper {
            UserVm vm = ApiDBUtils.findUserVmByPublicIpAndGuestIp(fwRule.getPublicIpAddress(), fwRule.getPrivateIpAddress());
            response.setVirtualMachineId(vm.getId());
            response.setVirtualMachineName(vm.getHostName());
+           response.setVirtualMachineDisplayName(vm.getDisplayName());
        }
        response.setObjectName("portforwardingrule");
        return response;
