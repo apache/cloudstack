@@ -1846,7 +1846,7 @@ function toBooleanValue(booleanText) {
 }
 
 function toNetworkType(usevirtualnetwork) {
-    if(usevirtualnetwork == "true")
+    if(usevirtualnetwork == true || usevirtualnetwork == "true")
         return "Public";
     else
         return "Direct";
