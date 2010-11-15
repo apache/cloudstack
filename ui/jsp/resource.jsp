@@ -491,8 +491,8 @@
 </div>
 <!-- Add Pod Dialog in resource page (end) -->
 
-<!-- Add Host Dialog (begin) -->
-<div id="dialog_add_host" title="Add Host" style="display: none">   
+<!-- Add Host Dialog in resource page (begin) -->
+<div id="dialog_add_host_in_resource_page" title="Add Host" style="display: none">   
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form_acquire">
         <ol>
@@ -573,10 +573,10 @@
             (info)</div>
     </div>
 </div>
-<!-- Add Host Dialog (end) -->
+<!-- Add Host Dialog in resource page (end) -->
 
-<!-- Add Primary Storage Dialog -->
-<div id="dialog_add_pool" title="Add Primary Storage" style="display: none">    
+<!-- Add Primary Storage Dialog  in resource page (begin) -->
+<div id="dialog_add_pool_in_resource_page" title="Add Primary Storage" style="display: none">    
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form_acquire">
         <ol>
@@ -673,3 +673,5 @@
             (info)</div>
     </div>
 </div>
+<!-- Add Primary Storage Dialog  in resource page (end) -->
+

@@ -366,8 +366,8 @@ function initAddPodShortcut() {
 }    
 
  function initAddHostShortcut() {
-    initDialog("dialog_add_host");    
-    var $dialogAddHost = $("#dialog_add_host");    
+    initDialog("dialog_add_host_in_resource_page");    
+    var $dialogAddHost = $("#dialog_add_host_in_resource_page");    
     
     $.ajax({
         data: createURL("command=listZones&available=true"),
@@ -978,8 +978,8 @@ function initUpdateConsoleCertButton($midMenuAddLink2) {
 
 
 function initAddPrimaryStorageShortcut($midmenuAddLink2, currentPageInRightPanel) {    
-	initDialog("dialog_add_pool");
-	var $dialogAddPool = $("#dialog_add_pool");    
+	initDialog("dialog_add_pool_in_resource_page");
+	var $dialogAddPool = $("#dialog_add_pool_in_resource_page");    
 	
     // if hypervisor is KVM, limit the server option to NFS for now
     if (getHypervisorType() == 'kvm') 
@@ -1047,7 +1047,7 @@ function initAddPrimaryStorageShortcut($midmenuAddLink2, currentPageInRightPanel
         $dialogAddPool.find("#zone_dropdown").change(); //refresh cluster dropdown (do it here to avoid race condition)     
         $dialogAddPool.find("#info_container").hide();	
                        
-        $("#dialog_add_pool")
+        $("#dialog_add_pool_in_resource_page")
 	    .dialog('option', 'buttons', { 				    
 		    "Add": function() { 	
 		    	var $thisDialog = $(this);
