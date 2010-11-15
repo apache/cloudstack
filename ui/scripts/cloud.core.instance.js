@@ -933,18 +933,8 @@ var vmActionMap = {
         asyncJobResponse: "attachisoresponse",    
         inProcessText: "Attaching ISO....",        
         dialogBeforeActionFn : doAttachISO,
-        afterActionSeccessFn: function(json, $midmenuItem1, id) {       
-            //call listVirtualMachine to get embedded object until Bug 7101 is fixed ("Bug 7101 - DetachISO API and AttachISO API should return an embedded object of virtualmachine, not an embedded object of ISO")
-            var jsonObj;
-            $.ajax({
-                data: createURL("command=listVirtualMachines&id="+id),
-                dataType: "json",
-                async: false,
-                success: function(json) {                    
-                    jsonObj = json.listvirtualmachinesresponse.virtualmachine[0];                    
-                }
-            });
-            
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {   
+            var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine;           
             vmToMidmenu(jsonObj, $midmenuItem1);
             vmToRightPanel($midmenuItem1);
         }   
@@ -955,17 +945,7 @@ var vmActionMap = {
         inProcessText: "Detaching ISO....",       
         dialogBeforeActionFn : doDetachISO,
         afterActionSeccessFn: function(json, $midmenuItem1, id) { 
-            //call listVirtualMachine to get embedded object until Bug 7101 is fixed ("Bug 7101 - DetachISO API and AttachISO API should return an embedded object of virtualmachine, not an embedded object of ISO")
-            var jsonObj;
-            $.ajax({
-                data: createURL("command=listVirtualMachines&id="+id),
-                dataType: "json",
-                async: false,
-                success: function(json) {                    
-                    jsonObj = json.listvirtualmachinesresponse.virtualmachine[0];                    
-                }
-            });
-            
+            var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine;    
             vmToMidmenu(jsonObj, $midmenuItem1);
             vmToRightPanel($midmenuItem1);
         }   
