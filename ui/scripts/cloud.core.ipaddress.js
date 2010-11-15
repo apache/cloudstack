@@ -823,7 +823,7 @@ function portForwardingJsonToTemplate(jsonObj, $template) {
     $template.find("#row_container #protocol").text(fromdb(jsonObj.protocol));
     $template.find("#row_container_edit #protocol").text(fromdb(jsonObj.protocol));
        
-    var vmName = getVmName(jsonObj.vmname, jsonObj.vmdisplayname); //jsonObj doesn't include vmdisplayname property(incorrect). Waiting for Bug 6241 to be fixed....
+    var vmName = getVmName(jsonObj.vmname, jsonObj.vmdisplayname); //jsonObj doesn't include vmdisplayname property(incorrect). Waiting for Bug 7189 to be fixed....
     $template.find("#row_container #vm_name").text(vmName);		    
     var virtualMachineId = noNull(jsonObj.virtualmachineid);
    
@@ -832,22 +832,10 @@ function portForwardingJsonToTemplate(jsonObj, $template) {
     var ipAddress = noNull(ipObj.ipaddress);  
     var IpDomainid = noNull(ipObj.domainid);
     var IpAccount = fromdb(ipObj.account);    
-    	    
-    $.ajax({
-	    data: createURL("command=listVirtualMachines&domainid="+IpDomainid+"&account="+IpAccount),
-	    dataType: "json",
-	    success: function(json) {			    
-		    var instances = json.listvirtualmachinesresponse.virtualmachine;			   
-		    var vmSelect = $template.find("#row_container_edit #vm").empty();							
-		    if (instances != null && instances.length > 0) {
-			    for (var i = 0; i < instances.length; i++) {								
-			        var html = $("<option value='" + noNull(instances[i].id) + "'>" + getVmName(instances[i].name, instances[i].displayname) + "</option>");							        
-		            vmSelect.append(html); 								
-			    }
-			    vmSelect.val(virtualMachineId);
-		    } 
-	    }
-    });		    
+    
+    var $vmSelect = $template.find("#row_container_edit #vm").empty();			    
+    ipPortFowardingPopulateVMDropdown($vmSelect, IpDomainid, IpAccount);
+    $vmSelect.val(virtualMachineId);    
    	   	    	   
     var $rowContainer = $template.find("#row_container");      
     var $rowContainerEdit = $template.find("#row_container_edit");    
@@ -960,22 +948,41 @@ function refreshCreatePortForwardingRow() {
     var IpDomainid = jsonObj.domainid;
     var IpAccount = jsonObj.account;
 
+    var $vmSelect = $createPortForwardingRow.find("#vm").empty();		
+    ipPortFowardingPopulateVMDropdown($vmSelect, IpDomainid, IpAccount);
+}	
+   
+function ipPortFowardingPopulateVMDropdown($vmSelect, IpDomainid, IpAccount) {
     $.ajax({
-	    data: createURL("command=listVirtualMachines&domainid="+IpDomainid+"&account="+IpAccount),
+	    data: createURL("command=listVirtualMachines&domainid="+IpDomainid+"&account="+IpAccount+"&state=Running"),
 	    dataType: "json",
+	    async: false,
 	    success: function(json) {			    
 		    var instances = json.listvirtualmachinesresponse.virtualmachine;
-		    var vmSelect = $createPortForwardingRow.find("#vm").empty();							
 		    if (instances != null && instances.length > 0) {
 			    for (var i = 0; i < instances.length; i++) {								
-			        var html = $("<option value='" + instances[i].id + "'>" +  getVmName(instances[i].name, instances[i].displayname) + "</option>");							        
-		            vmSelect.append(html); 								
-			    }
+			        var html = $("<option value='" + noNull(instances[i].id) + "'>" + getVmName(instances[i].name, instances[i].displayname) + "</option>");							        
+		            $vmSelect.append(html); 								
+			    }			    
 		    } 
 	    }
-    });		    
-}	
+    });	
     
+    $.ajax({
+	    data: createURL("command=listVirtualMachines&domainid="+IpDomainid+"&account="+IpAccount+"&state=Stopped"),
+	    dataType: "json",
+	    async: false,
+	    success: function(json) {			    
+		    var instances = json.listvirtualmachinesresponse.virtualmachine;
+		    if (instances != null && instances.length > 0) {
+			    for (var i = 0; i < instances.length; i++) {								
+			        var html = $("<option value='" + noNull(instances[i].id) + "'>" + getVmName(instances[i].name, instances[i].displayname) + "</option>");							        
+		            $vmSelect.append(html); 								
+			    }			    
+		    } 
+	    }
+    });	
+}	    
 //***** Port Forwarding tab (end) **********************************************************************************************************
 
 
