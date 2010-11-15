@@ -23,6 +23,7 @@ import com.cloud.api.commands.CreateVMGroupCmd;
 import com.cloud.api.commands.DeleteVMGroupCmd;
 import com.cloud.api.commands.DeployVm2Cmd;
 import com.cloud.api.commands.DestroyVMCmd;
+import com.cloud.api.commands.DestroyVm2Cmd;
 import com.cloud.api.commands.DetachVolumeCmd;
 import com.cloud.api.commands.RebootVMCmd;
 import com.cloud.api.commands.RecoverVMCmd;
@@ -55,6 +56,15 @@ public interface UserVmService {
      * @param vmId the id of the virtual machine.
      */
     UserVm destroyVm(DestroyVMCmd cmd);
+    
+    /**
+     * Destroys one virtual machine
+     * @param userId the id of the user performing the action
+     * @param vmId the id of the virtual machine.
+     * @throws ConcurrentOperationException 
+     * @throws ResourceUnavailableException 
+     */
+    UserVm destroyVm(DestroyVm2Cmd cmd) throws ResourceUnavailableException, ConcurrentOperationException;
     
     /**
      * Resets the password of a virtual machine.

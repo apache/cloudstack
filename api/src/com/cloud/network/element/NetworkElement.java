@@ -33,4 +33,8 @@ public interface NetworkElement extends Adapter {
     boolean release(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException;
     
     boolean shutdown(NetworkConfiguration config, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException;
+    
+    boolean addRule();
+    
+    boolean revokeRule();
 }

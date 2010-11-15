@@ -71,7 +71,8 @@ public interface VmManager extends Manager {
     
     <T extends VMInstanceVO> boolean stop(T vm, User caller, Account account) throws AgentUnavailableException, ConcurrentOperationException, OperationTimedoutException;
     
-    void destroy();
+    <T extends VMInstanceVO> boolean destroy(T vm, User caller, Account account) throws ResourceUnavailableException, ConcurrentOperationException, OperationTimedoutException;
+;
     
     <T extends VMInstanceVO> void registerGuru(VirtualMachine.Type type, VirtualMachineGuru<T> guru);
     

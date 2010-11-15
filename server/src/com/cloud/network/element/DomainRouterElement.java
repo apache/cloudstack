@@ -113,6 +113,16 @@ public class DomainRouterElement extends AdapterBase implements NetworkElement {
         }
         return _routerMgr.stopRouter(router.getId(), 1);
     }
+    
+    @Override
+    public boolean addRule() {
+        return false;
+    }
+    
+    @Override
+    public boolean revokeRule() {
+        return false;
+    }
 
     protected DomainRouterElement() {
         super();

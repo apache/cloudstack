@@ -15,31 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-package com.cloud.exception;
+package com.cloud.utils.component;
 
-import com.cloud.utils.SerialVersionUID;
+import java.util.List;
+import java.util.Map;
 
-/**
- * This exception is thrown when the agent is unavailable to accept an
- * command.
- *
- */
-public class AgentUnavailableException extends ResourceUnavailableException {
-    
-    private static final long serialVersionUID = SerialVersionUID.AgentUnavailableException;
-    
-    long _agentId;
-    
-    public AgentUnavailableException(String msg, long agentId) {
-        super("Host " + agentId + ": " + msg);
-        _agentId = agentId;
-    }
-    
-    public AgentUnavailableException(long agentId) {
-        this("Unable to reach host.", agentId);
-    }
-    
-    public long getAgentId() {
-        return _agentId;
-    }
+import com.cloud.utils.component.ComponentLocator.ComponentInfo;
+import com.cloud.utils.db.GenericDao;
+
+public interface ComponentLibrary {
+    Map<String, ComponentInfo<GenericDao<?,?>>> getDaos();
+    Map<String, ComponentInfo<Manager>> getManagers();
+    Map<String, List<ComponentInfo<Adapter>>> getAdapters();
 }

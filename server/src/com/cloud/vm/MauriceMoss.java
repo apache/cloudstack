@@ -205,10 +205,41 @@ public class MauriceMoss implements VmManager, ClusterManagerListener {
         return allocate(vm, template, serviceOffering, new Pair<DiskOfferingVO, Long>(serviceOffering, null), null, networks, null, plan, owner);
     }
     
+    @SuppressWarnings("unchecked")
+    private <T extends VMInstanceVO> VirtualMachineGuru<T> getVmGuru(T vm) {
+        return (VirtualMachineGuru<T>)_vmGurus.get(vm);
+    }
+    
     @Override
-    public void destroy() {
-        // TODO Auto-generated method stub
+    public <T extends VMInstanceVO> boolean destroy(T vm, User caller, Account account) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException {
+        if (vm == null || vm.getState() == State.Destroyed || vm.getState() == State.Expunging || vm.getRemoved() != null) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Unable to find vm or vm is destroyed: " + vm);
+            }
+            return true;
+        }
 
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Destroying vm " + vm);
+        }
+        
+        if (!stop(vm, caller, account)) {
+            s_logger.error("Unable to stop vm so we can't destroy it: " + vm);
+            return false;
+        }
+        
+        VirtualMachineGuru<T> guru = getVmGuru(vm);
+        vm = guru.findById(vm.getId());
+
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Destroying vm " + vm);
+        }
+        if (!_vmDao.updateIf(vm, VirtualMachine.Event.DestroyRequested, vm.getHostId())) {
+            s_logger.debug("Unable to destroy the vm because it is not in the correct state: " + vm.toString());
+            return false;
+        }
+
+        return true;
     }
 
     @Override

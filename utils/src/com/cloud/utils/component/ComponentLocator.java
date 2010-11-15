@@ -19,6 +19,7 @@ package com.cloud.utils.component;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -55,6 +56,7 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import com.cloud.utils.Pair;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.db.DatabaseCallback;
 import com.cloud.utils.db.DatabaseCallbackFilter;
@@ -74,22 +76,19 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
     protected static final Logger                      s_logger     = Logger.getLogger(ComponentLocator.class);
     
     protected static HashMap<String, Object> s_singletons = new HashMap<String, Object>(111);
-
-    protected HashMap<String, Adapters<? extends Adapter>> _adapterMap;
-    protected HashMap<String, Info<Manager>>           _managerMap;
-    protected LinkedHashMap<String, Info<GenericDao<?, ?>>>  _daoMap;
-    protected static HashMap<String, Object>		   _componentMap = new HashMap<String, Object>();
-    protected static HashMap<String, String>           _implementationClassMap = new HashMap<String, String>();
-    protected ComponentLocator                         _parentLocator;
-    protected String                                   _serverName;
     private static boolean                             s_doOnce = false;
-    
     protected static final Callback[] s_callbacks = new Callback[] { NoOp.INSTANCE, new DatabaseCallback() };
     protected static final CallbackFilter s_callbackFilter = new DatabaseCallbackFilter();
-    
     protected static final HashMap<Class<?>, InjectInfo> s_factories = new HashMap<Class<?>, InjectInfo>();
-
     protected static HashMap<String, ComponentLocator> s_locatorMap = new HashMap<String, ComponentLocator>();
+    protected static HashMap<String, Object>           _componentMap = new HashMap<String, Object>();
+    protected static HashMap<String, String>           _implementationClassMap = new HashMap<String, String>();
+
+    protected HashMap<String, Adapters<? extends Adapter>> _adapterMap;
+    protected HashMap<String, ComponentInfo<Manager>>           _managerMap;
+    protected LinkedHashMap<String, ComponentInfo<GenericDao<?, ?>>>  _daoMap;
+    protected ComponentLocator                         _parentLocator;
+    protected String                                   _serverName;
 
     public ComponentLocator(String server) {
         _parentLocator = null;
@@ -114,9 +113,9 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
             }
         }
 
-        Iterator<Info<Manager>> itManagers = _managerMap.values().iterator();
+        Iterator<ComponentInfo<Manager>> itManagers = _managerMap.values().iterator();
         while (itManagers.hasNext()) {
-            Info<Manager> manager = itManagers.next();
+            ComponentInfo<Manager> manager = itManagers.next();
             itManagers.remove();
             manager.instance.stop();
         }
@@ -130,9 +129,9 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
             if (file == null) {
                 s_logger.warn("Unable to find the config file automatically.  Now checking properties files.");
                 _parentLocator = null;
-                _managerMap = new HashMap<String, Info<Manager>>();
+                _managerMap = new HashMap<String, ComponentInfo<Manager>>();
                 _adapterMap = new HashMap<String, Adapters<? extends Adapter>>();
-                _daoMap = new LinkedHashMap<String, Info<GenericDao<?, ?>>>();
+                _daoMap = new LinkedHashMap<String, ComponentInfo<GenericDao<?, ?>>>();
                 _parentLocator = null;
                 return;
             }
@@ -144,8 +143,19 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
                 _parentLocator = getLocatorInternal(handler.parent, false, filename, log4jFile);
             }
 
-            _managerMap = handler.managers;
-            _daoMap = handler.daos;
+            _daoMap = new LinkedHashMap<String, ComponentInfo<GenericDao<?, ? extends Serializable>>>();
+            _managerMap = new LinkedHashMap<String, ComponentInfo<Manager>>();
+            _adapterMap = new HashMap<String, Adapters<? extends Adapter>>();
+            if (handler.library != null) {
+                Class<?> clazz = Class.forName(handler.library);
+                ComponentLibrary library = (ComponentLibrary)clazz.newInstance();
+                _managerMap.putAll(library.getManagers());
+                _daoMap.putAll(library.getDaos());
+                createAdaptersMap(library.getAdapters());
+            }
+
+            _managerMap.putAll(handler.managers);
+            _daoMap.putAll(handler.daos);
 
             startDaos();    // daos should not be using managers and adapters.
             createAdaptersMap(handler.adapters);
@@ -178,10 +188,10 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
      * here.
      */
     protected void startDaos()  {
-        Set<Map.Entry<String, Info<GenericDao<?, ?>>>> entries = _daoMap.entrySet();
+        Set<Map.Entry<String, ComponentInfo<GenericDao<?, ? extends Serializable>>>> entries = _daoMap.entrySet();
 
-        for (Map.Entry<String, Info<GenericDao<?, ?>>> entry : entries) {
-            Info<GenericDao<?, ?>> info = entry.getValue();
+        for (Map.Entry<String, ComponentInfo<GenericDao<?, ?>>> entry : entries) {
+            ComponentInfo<GenericDao<?, ?>> info = entry.getValue();
             s_logger.info("Starting DAO: " + info.name);
             try {
                 info.instance = (GenericDao<?, ?>)createInstance(info.clazz, true, info.singleton);
@@ -272,8 +282,8 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
     }
     
 
-    protected Info<GenericDao<?, ?>> getDao(String name) {
-        Info<GenericDao<?, ?>> info = _daoMap.get(name);
+    protected ComponentInfo<GenericDao<?, ?>> getDao(String name) {
+        ComponentInfo<GenericDao<?, ?>> info = _daoMap.get(name);
         if (info != null) {
             return info;
         }
@@ -326,15 +336,15 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
         return null;
     }
 
-    public <T> T getDao(Class<T> clazz) {
-        Info<GenericDao<?, ?>> info = getDao(clazz.getName());
+    public <T extends GenericDao<?, ?>> T getDao(Class<T> clazz) {
+        ComponentInfo<GenericDao<?, ?>> info = getDao(clazz.getName());
         return info != null ? (T)info.instance : null;
     }
 
     protected void instantiateManagers() {
-        Set<Map.Entry<String, Info<Manager>>> entries = _managerMap.entrySet();
-        for (Map.Entry<String, Info<Manager>> entry : entries) {
-            Info<Manager> info = entry.getValue();
+        Set<Map.Entry<String, ComponentInfo<Manager>>> entries = _managerMap.entrySet();
+        for (Map.Entry<String, ComponentInfo<Manager>> entry : entries) {
+            ComponentInfo<Manager> info = entry.getValue();
             if (info.instance == null) {
                 s_logger.info("Instantiating Manager: " + info.name);
                 info.instance = (Manager)createInstance(info.clazz, false, info.singleton);
@@ -343,14 +353,14 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
     }
 
     protected void configureManagers() {
-        Set<Map.Entry<String, Info<Manager>>> entries = _managerMap.entrySet();
-        for (Map.Entry<String, Info<Manager>> entry : entries) {
-            Info<Manager> info = entry.getValue();
+        Set<Map.Entry<String, ComponentInfo<Manager>>> entries = _managerMap.entrySet();
+        for (Map.Entry<String, ComponentInfo<Manager>> entry : entries) {
+            ComponentInfo<Manager> info = entry.getValue();
             s_logger.info("Injecting Manager: " + info.name);
             inject(info.clazz, info.instance);
         }
-        for (Map.Entry<String, Info<Manager>> entry : entries) {
-            Info<Manager> info = entry.getValue();
+        for (Map.Entry<String, ComponentInfo<Manager>> entry : entries) {
+            ComponentInfo<Manager> info = entry.getValue();
             s_logger.info("Configuring Manager: " + info.name);
             try {
                 info.instance.configure(info.name, info.params);
@@ -376,7 +386,7 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
                 if (Manager.class.isAssignableFrom(fc)) {
                     instance = locator.getManager(fc);
                 } else if (GenericDao.class.isAssignableFrom(fc)) {
-                    instance = locator.getDao(fc);
+                    instance = locator.getDao((Class<? extends GenericDao<?, ?>>)fc);
                 } else if (Adapters.class.isAssignableFrom(fc)) {
                     instance = locator.getAdapters(inject.adapter());
                 } else {
@@ -401,9 +411,9 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
     }
 
     protected void startManagers() {
-        Set<Map.Entry<String, Info<Manager>>> entries = _managerMap.entrySet();
-        for (Map.Entry<String, Info<Manager>> entry : entries) {
-            Info<Manager> info = entry.getValue();
+        Set<Map.Entry<String, ComponentInfo<Manager>>> entries = _managerMap.entrySet();
+        for (Map.Entry<String, ComponentInfo<Manager>> entry : entries) {
+            ComponentInfo<Manager> info = entry.getValue();
             s_logger.info("Starting Manager: " + info.name);
             if (!info.instance.start()) {
                 throw new CloudRuntimeException("Incorrect Configuration: " + info.name);
@@ -430,8 +440,8 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
         s_logger.info("Registered MBean: " + mbean.getName());
     }
 
-    protected Info<Manager> getManager(String name) {
-        Info<Manager> mgr = _managerMap.get(name);
+    protected ComponentInfo<Manager> getManager(String name) {
+        ComponentInfo<Manager> mgr = _managerMap.get(name);
         if (mgr != null) {
             return mgr;
         }
@@ -449,7 +459,7 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
     }
 
     public <T> T getManager(Class<T> clazz) {
-        Info<Manager> info = getManager(clazz.getName());
+        ComponentInfo<Manager> info = getManager(clazz.getName());
         if (info == null) {
             return null;
         }
@@ -459,12 +469,12 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
         return (T)info.instance;
     }
 
-    protected void instantiateAdapters(Map<String, List<Info<Adapter>>> map) {
-        Set<Map.Entry<String, List<Info<Adapter>>>> entries = map.entrySet();
-        for (Map.Entry<String, List<Info<Adapter>>> entry : entries) {
+    protected void instantiateAdapters(Map<String, List<ComponentInfo<Adapter>>> map) {
+        Set<Map.Entry<String, List<ComponentInfo<Adapter>>>> entries = map.entrySet();
+        for (Map.Entry<String, List<ComponentInfo<Adapter>>> entry : entries) {
             Adapters<Adapter> adapters = (Adapters<Adapter>)_adapterMap.get(entry.getKey());
             List<Adapter> lst = new ArrayList<Adapter>();
-            for (Info<Adapter> info : entry.getValue()) {
+            for (ComponentInfo<Adapter> info : entry.getValue()) {
                 s_logger.info("Instantiating Adapter: " + info.name);
                 info.instance = (Adapter)createInstance(info.clazz, true, info.singleton);
                 try {
@@ -486,10 +496,9 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
         }
     }
 
-    protected void createAdaptersMap(Map<String, List<Info<Adapter>>> map) {
-        _adapterMap = new HashMap<String, Adapters<? extends Adapter>>(map.size());
-        Set<Map.Entry<String, List<Info<Adapter>>>> entries = map.entrySet();
-        for (Map.Entry<String, List<Info<Adapter>>> entry : entries) {
+    protected void createAdaptersMap(Map<String, List<ComponentInfo<Adapter>>> map) {
+        Set<Map.Entry<String, List<ComponentInfo<Adapter>>>> entries = map.entrySet();
+        for (Map.Entry<String, List<ComponentInfo<Adapter>>> entry : entries) {
             List<? extends Adapter> lst = new ArrayList<Adapter>(entry.getValue().size());
             _adapterMap.put(entry.getKey(), new Adapters(entry.getKey(), lst));
         }
@@ -550,7 +559,7 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
     @Override
     public Collection<String> getManagers() {
         Collection<String> names = _parentLocator != null ? _parentLocator.getManagers() : new HashSet<String>();
-        for (Map.Entry<String, Info<Manager>> entry : _managerMap.entrySet()) {
+        for (Map.Entry<String, ComponentInfo<Manager>> entry : _managerMap.entrySet()) {
             names.add(entry.getValue().name);
         }
         return names;
@@ -559,7 +568,7 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
     @Override
     public Collection<String> getDaos() {
         Collection<String> names = _parentLocator != null ? _parentLocator.getDaos() : new HashSet<String>();
-        for (Map.Entry<String, Info<GenericDao<?, ?>>> entry : _daoMap.entrySet()) {
+        for (Map.Entry<String, ComponentInfo<GenericDao<?, ?>>> entry : _daoMap.entrySet()) {
             names.add(entry.getValue().name);
         }
         return names;
@@ -637,13 +646,65 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
         return s_tl.get();
     }
 
-    protected class Info<T> {
+    public static class ComponentInfo<T> {
         Class<?>                clazz;
         HashMap<String, Object> params = new HashMap<String, Object>();
         String                  name;
         List<String>            keys = new ArrayList<String>();
         T                       instance;
         boolean                 singleton = true;
+        
+        protected ComponentInfo() {
+        }
+        
+        public List<String> getKeys() {
+            return keys;
+        }
+        
+        public String getName() {
+            return name;
+        }
+        
+        public ComponentInfo(String name, Class<? extends T> clazz) {
+            this(name, clazz, new ArrayList<Pair<String, Object>>(0));
+        }
+        
+        public ComponentInfo(String name, Class<? extends T> clazz, List<Pair<String, Object>> params) {
+            this(name, clazz, params, true);
+        }
+        
+        public ComponentInfo(String name, Class<? extends T> clazz, List<Pair<String, Object>> params, boolean singleton) {
+            this.name = name;
+            this.clazz = clazz;
+            this.singleton = singleton;
+            for (Pair<String, Object> param : params) {
+                this.params.put(param.first(), param.second());
+            }
+            fillInfo();
+        }
+        
+        protected void fillInfo() {
+            String clazzName = clazz.getName();
+            
+            Local local = clazz.getAnnotation(Local.class);
+            if (local == null) {
+                throw new CloudRuntimeException("Unable to find Local annotation for class " + clazzName);
+            }
+
+            // Verify that all interfaces specified in the Local annotation is implemented by the class.
+            Class<?>[] classes = local.value();
+            for (int i = 0; i < classes.length; i++) {
+                if (!classes[i].isInterface()) {
+                    throw new CloudRuntimeException(classes[i].getName() + " is not an interface");
+                }
+                if (classes[i].isAssignableFrom(clazz)) {
+                    keys.add(classes[i].getName());
+                    s_logger.info("Found component: " + classes[i].getName() + " in " + clazzName + " - " + name);
+                } else {
+                    throw new CloudRuntimeException(classes[i].getName() + " is not implemented by " + clazzName);
+                }
+            }
+        }
     }
 
     /**
@@ -651,29 +712,30 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
      * It builds a hash map of lists of adapters and a hash map of managers.
      **/
     protected class XmlHandler extends DefaultHandler {
-        public HashMap<String, List<Info<Adapter>>>    adapters;
-        public HashMap<String, Info<Manager>>          managers;
-        public LinkedHashMap<String, Info<GenericDao<?, ?>>> daos;
+        public HashMap<String, List<ComponentInfo<Adapter>>>    adapters;
+        public HashMap<String, ComponentInfo<Manager>>          managers;
+        public LinkedHashMap<String, ComponentInfo<GenericDao<?, ?>>> daos;
         public String                                  parent;
+        public String                                  library;
 
-        List<Info<Adapter>>                            lst;
+        List<ComponentInfo<Adapter>>                            lst;
         String                                         paramName;
         StringBuilder                                  value;
         String                                         serverName;
         boolean                                        parse;
-        Info<?>                                        currentInfo;
+        ComponentInfo<?>                                        currentInfo;
 
         public XmlHandler(String serverName) {
             this.serverName = serverName;
             parse = false;
-            adapters = new HashMap<String, List<Info<Adapter>>>();
-            managers = new HashMap<String, Info<Manager>>();
-            daos = new LinkedHashMap<String, Info<GenericDao<?, ?>>>();
+            adapters = new HashMap<String, List<ComponentInfo<Adapter>>>();
+            managers = new HashMap<String, ComponentInfo<Manager>>();
+            daos = new LinkedHashMap<String, ComponentInfo<GenericDao<?, ?>>>();
             value = null;
             parent = null;
         }
 
-        protected void fillInfo(Attributes atts, Class<?> interphace, Info<?> info) {
+        protected void fillInfo(Attributes atts, Class<?> interphace, ComponentInfo<?> info) {
             String clazzName = getAttribute(atts, "class");
             if (clazzName == null) {
                 throw new CloudRuntimeException("Missing class attribute for " + interphace.getName());
@@ -696,43 +758,9 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
                 throw new CloudRuntimeException("Class " + info.clazz.toString() + " does not implment " + interphace);
             }
             
-            Local local = info.clazz.getAnnotation(Local.class);
-            if (local == null) {
-                throw new CloudRuntimeException("Unable to find Local annotation for class " + clazzName);
-            }
-            
-            Class<?>[] classes = local.value();
-            for (int i = 0; i < classes.length; i++) {
-                if (!classes[i].isInterface()) {
-                    throw new CloudRuntimeException(classes[i].getName() + " is not an interface");
-                }
-            	if (classes[i].isAssignableFrom(info.clazz)) {
-                    info.keys.add(classes[i].getName());
-                    s_logger.info("Found component: " + classes[i].getName() + " in " + clazzName + " - " + info.name);
-                } else {
-                    throw new CloudRuntimeException(classes[i].getName() + " is not implemented by " + info.clazz.getName());
-                }
-            }
-            
-            if (info.keys.size() != classes.length) {
-                throw new CloudRuntimeException("Class " + clazzName + " does not implement " + interphace.getName());
-            }
+            info.fillInfo();
         }
         
-        protected boolean findInterfaceInHierarchy(Class<?>[] interphaces, Class<?> interphace) {
-        	if (interphaces == null) {
-        		return false;
-        	}
-        	
-            for (int j = 0; j < interphaces.length; j++) {
-                if (interphaces[j] == interphace || findInterfaceInHierarchy(interphaces[j].getInterfaces(), interphace)) {
-                	return true;
-                }
-            }
-            
-            return false;
-        }
-
         @Override
         public void startElement(String namespaceURI, String localName, String qName, Attributes atts)
         throws SAXException {
@@ -745,21 +773,23 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
                     if (implementationClass != null) {
                         _implementationClassMap.put(_serverName, implementationClass);
                     }
+                    
+                    library = getAttribute(atts, "library");
                 }
             } else if (qName.equals("adapters")) {
-                lst = new ArrayList<Info<Adapter>>();
+                lst = new ArrayList<ComponentInfo<Adapter>>();
                 String key = getAttribute(atts, "key");
                 if (key == null) {
                     throw new CloudRuntimeException("Missing key attribute for adapters");
                 }
                 adapters.put(key, lst);
             } else if (qName.equals("adapter")) {
-                Info<Adapter> info = new Info<Adapter>();
+                ComponentInfo<Adapter> info = new ComponentInfo<Adapter>();
                 fillInfo(atts, Adapter.class, info);
                 lst.add(info);
                 currentInfo = info;
             } else if (qName.equals("manager")) {
-                Info<Manager> info = new Info<Manager>();
+                ComponentInfo<Manager> info = new ComponentInfo<Manager>();
                 fillInfo(atts, Manager.class, info);
                 s_logger.info("Adding Manager: " + info.name);
                 for (String key : info.keys) {
@@ -771,7 +801,7 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
                 paramName = getAttribute(atts, "name");
                 value = new StringBuilder();
             } else if (qName.equals("dao")) {
-                Info<GenericDao<?, ?>> info = new Info<GenericDao<?, ?>>();
+                ComponentInfo<GenericDao<?, ?>> info = new ComponentInfo<GenericDao<?, ?>>();
                 fillInfo(atts, GenericDao.class, info);
                 for (String key : info.keys) {
                     daos.put(key, info);

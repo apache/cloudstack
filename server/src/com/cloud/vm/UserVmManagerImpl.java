@@ -71,6 +71,7 @@ import com.cloud.api.commands.CreateVMGroupCmd;
 import com.cloud.api.commands.DeleteVMGroupCmd;
 import com.cloud.api.commands.DeployVm2Cmd;
 import com.cloud.api.commands.DestroyVMCmd;
+import com.cloud.api.commands.DestroyVm2Cmd;
 import com.cloud.api.commands.DetachVolumeCmd;
 import com.cloud.api.commands.RebootVMCmd;
 import com.cloud.api.commands.RecoverVMCmd;
@@ -3878,6 +3879,39 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         UserVO user = _userDao.findById(userId);
         
         return _itMgr.start(vm, null, user, account);
+    }
+    
+    @Override
+    public UserVm destroyVm(DestroyVm2Cmd cmd) throws ResourceUnavailableException, ConcurrentOperationException {
+        Account account = UserContext.current().getAccount();
+        Long userId = UserContext.current().getUserId();
+        Long vmId = cmd.getId();
+        
+        //Verify input parameters
+        UserVmVO vm = _vmDao.findById(vmId.longValue());
+        if (vm == null) {
+            throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + vmId);
+        }
+
+        userId = accountAndUserValidation(vmId, account, userId, vm);
+        User caller = _userDao.findById(userId);
+        
+        EventUtils.saveScheduledEvent(userId, vm.getAccountId(), EventTypes.EVENT_VM_DESTROY, "Destroying Vm with Id: "+vmId);
+        
+        boolean status;
+        try {
+            status = _itMgr.destroy(vm, caller, account);
+        } catch (OperationTimedoutException e) {
+            throw new ResourceUnavailableException("Resource not available to complete the command", e);
+        }
+        
+        if (status) {
+            EventUtils.saveEvent(userId, vm.getAccountId(), EventTypes.EVENT_VM_DESTROY, "Successfully destroyed vm with id:"+vmId);
+            return _vmDao.findById(vmId);
+        } else {
+            EventUtils.saveEvent(userId, vm.getAccountId(), EventTypes.EVENT_VM_DESTROY, "Failed to destroy vm with id:"+vmId);
+            throw new CloudRuntimeException("Failed to destroy vm with id " + vmId);
+        }
     }
     
 }

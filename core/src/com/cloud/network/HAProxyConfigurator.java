@@ -19,7 +19,6 @@ package com.cloud.network;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -145,18 +144,6 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
 		return new String("\t ");
 	}
 	
-	public static void main(String [] args) {
-/*		FirewallRulesDao dao = new FirewallRulesDaoImpl();
-		List<FirewallRuleVO> rules = dao.listIPForwarding();
-		
-		HAProxyConfigurator hapc = new HAProxyConfigurator();
-		String [] result = hapc.generateConfiguration(rules);
-		for (int i=0; i < result.length; i++) {
-			System.out.println(result[i]);
-		}*/
-		
-	}
-
 	@Override
 	public String[][] generateFwRules(List<FirewallRuleVO> fwRules) {
 		String [][] result = new String [2][];
