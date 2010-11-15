@@ -1118,10 +1118,10 @@ function getHypervisorType() { return g_hypervisorType; }
 var g_directAttachNetworkGroupsEnabled = "false";
 function getDirectAttachNetworkGroupsEnabled() { return g_directAttachNetworkGroupsEnabled; }
 
-var g_directAttachedUntaggedEnabled = "false"
+var g_directAttachedUntaggedEnabled = "false";
 function getDirectAttachUntaggedEnabled() { return g_directAttachedUntaggedEnabled; }
 
-var g_systemVmUseLocalStorage = "false"
+var g_systemVmUseLocalStorage = "false";
 function getSystemVmUseLocalStorage() { return g_systemVmUseLocalStorage; }
 
 //keyboard keycode

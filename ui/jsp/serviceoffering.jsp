@@ -225,8 +225,8 @@
 				<li>
 					<label>Network Type</label>
 					<select class="select" id="add_service_networktype">						
-						<option value="direct">Direct</option>
-						<option value="public">Public</option>
+						<option value="Direct">Direct</option>
+						<option value="Public">Public</option>
 					</select>
 				</li>	
 				<li id="add_service_tags_container">
