@@ -170,10 +170,16 @@
                 </div>
                 <div class="grid_row_cell" style="width: 79%;">
                     <div class="row_celltitles" id="tags">
-                    </div>
+                    </div>                    
+                    <input class="text" id="tags_edit" style="width: 200px; display: none;" type="text" />
+	                <div id="tags_edit_errormsg" style="display:none"></div>                      
                 </div>
             </div>
-        </div>
+        </div>        
+        <div class="grid_botactionpanel">
+	     	<div class="gridbot_buttons" id="save_button" style="display:none;">Save</div>
+	        <div class="gridbot_buttons" id="cancel_button" style="display:none;">Cancel</div>
+	    </div>          
     </div>
     <!-- Details tab (end)-->
 </div>

@@ -69,8 +69,10 @@ function primarystorageJsonToDetailsTab($midmenuItem1) {
     $detailsTab.find("#path").text(fromdb(jsonObj.path));                
 	$detailsTab.find("#disksizetotal").text(convertBytes(jsonObj.disksizetotal));
 	$detailsTab.find("#disksizeallocated").text(convertBytes(jsonObj.disksizeallocated));
-	$detailsTab.find("#tags").text(fromdb(jsonObj.tags));   
 	
+	$detailsTab.find("#tags").text(fromdb(jsonObj.tags));   
+	$detailsTab.find("#tags_edit").val(fromdb(jsonObj.tags));  
+	 
 	//actions ***   
     var $actionLink = $detailsTab.find("#action_link"); 
     $actionLink.bind("mouseover", function(event) {	    
@@ -83,6 +85,7 @@ function primarystorageJsonToDetailsTab($midmenuItem1) {
     });	  
     var $actionMenu = $detailsTab.find("#action_link #action_menu");
     $actionMenu.find("#action_list").empty(); 
+    buildActionLinkForTab("Edit Primary Storage", primarystorageActionMap, $actionMenu, $midmenuItem1, $detailsTab);     
     buildActionLinkForTab("Enable Maintenance Mode", primarystorageActionMap, $actionMenu, $midmenuItem1, $detailsTab);     
     buildActionLinkForTab("Cancel Maintenance Mode", primarystorageActionMap, $actionMenu, $midmenuItem1, $detailsTab);     
     buildActionLinkForTab("Delete Primary Storage", primarystorageActionMap, $actionMenu, $midmenuItem1, $detailsTab);        
@@ -108,7 +111,10 @@ function primarystorageJsonClearDetailsTab() {
 	$detailsTab.find("#tags").text("");         
 }
 
-var primarystorageActionMap = {
+var primarystorageActionMap = {    
+    "Edit Primary Storage": {
+        dialogBeforeActionFn: doEditPrimaryStorage
+    },           
     "Enable Maintenance Mode": {              
         isAsyncJob: true,
         asyncJobResponse: "prepareprimarystorageformaintenanceresponse",
@@ -145,6 +151,56 @@ var primarystorageActionMap = {
             primarystorageClearRightPanel();
         }
     }
+}
+
+function doEditPrimaryStorage($actionLink, $detailsTab, $midmenuItem1) {       
+    var $readonlyFields  = $detailsTab.find("#tags");
+    var $editFields = $detailsTab.find("##tags_edit"); 
+             
+    $readonlyFields.hide();
+    $editFields.show();  
+    $detailsTab.find("#cancel_button, #save_button").show();
+    
+    $detailsTab.find("#cancel_button").unbind("click").bind("click", function(event){    
+        $editFields.hide();
+        $readonlyFields.show();   
+        $("#save_button, #cancel_button").hide();       
+        return false;
+    });
+    $detailsTab.find("#save_button").unbind("click").bind("click", function(event){        
+        doEditPrimaryStorage2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $editFields);   
+        return false;
+    });   
+}
+
+function doEditPrimaryStorage2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $editFields) { 
+    var $detailsTab = $("#right_panel_content #tab_content_details");   
+    var jsonObj = $detailsTab.data("jsonObj");
+    var id = jsonObj.id;
+    
+    // validate values   
+    var isValid = true;					
+    isValid &= validateString("Tags", $detailsTab.find("#tags_edit"), $detailsTab.find("#tags_edit_errormsg"), true);	//optional
+    if (!isValid) 
+        return;	
+     
+    var array1 = [];       
+	
+	var tags = $detailsTab.find("#tags_edit").val();
+	array1.push("&tags="+todb(tags));	
+	
+	$.ajax({
+	    data: createURL("command=updateStoragePool&id="+id+array1.join("")),
+		dataType: "json",
+		success: function(json) {			       
+		    primarystorageToMidmenu(jsonObj, $midmenuItem1);
+            primarystorageToRightPanel($midmenuItem1);	
+		    		    
+		    $editFields.hide();      
+            $readonlyFields.show();       
+            $("#save_button, #cancel_button").hide();     	  
+		}
+	});
 }
 
 function doEnableMaintenanceModeForPrimaryStorage($actionLink, $detailsTab, $midmenuItem1){ 
