@@ -25,7 +25,8 @@ function routerToMidmenu(jsonObj, $midmenuItem1) {
     $midmenuItem1.data("jsonObj", jsonObj); 
     
     $midmenuItem1.find("#first_row").text(jsonObj.name.substring(0,25)); 
-    $midmenuItem1.find("#second_row").text(jsonObj.publicip.substring(0,25));
+    if(jsonObj.publicip != null) //jsonObj.publicip is null while router state is Stopped
+        $midmenuItem1.find("#second_row").text(jsonObj.publicip.substring(0,25));
     updateVmStateInMidMenu(jsonObj, $midmenuItem1);       
 }
 
@@ -46,8 +47,8 @@ function routerJsonToDetailsTab() {
     
     $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));
             
-    setVmStateInRightPanel(jsonObj.state, $thisTab.find("#state"));  
-    $thisTab.find("#ipAddress").text(jsonObj.publicip);
+    setVmStateInRightPanel(fromdb(jsonObj.state), $thisTab.find("#state"));  
+    $thisTab.find("#ipAddress").text(fromdb(jsonObj.publicip));
     $thisTab.find("#zonename").text(fromdb(jsonObj.zonename));
     $thisTab.find("#name").text(fromdb(jsonObj.name));
     $thisTab.find("#publicip").text(fromdb(jsonObj.publicip));
