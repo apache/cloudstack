@@ -236,6 +236,15 @@ public class StorageManagerImpl implements StorageManager {
     @Override
     public boolean share(VMInstanceVO vm, List<VolumeVO> vols, HostVO host, boolean cancelPreviousShare) {
     	
+        //if pool is in maintenance and it is the ONLY pool available; reject
+        List<VolumeVO> rootVolForGivenVm = _volsDao.findByInstanceAndType(vm.getId(), VolumeType.ROOT);
+        if(rootVolForGivenVm != null && rootVolForGivenVm.size() > 0){
+        	boolean isPoolAvailable = isPoolAvailable(rootVolForGivenVm.get(0).getPoolId());	
+        	if(!isPoolAvailable){
+        		return false;
+        	}
+        }
+        
     	//this check is done for maintenance mode for primary storage
     	//if any one of the volume is unusable, we return false
     	//if we return false, the allocator will try to switch to another PS if available
@@ -299,6 +308,17 @@ public class StorageManagerImpl implements StorageManager {
         return _volsDao.persist(newVol);
     }
     
+    private boolean isPoolAvailable(Long poolId){
+    	//get list of all pools
+    	List<StoragePoolVO> pools = _storagePoolDao.listAll();
+    	
+    	//if no pools or 1 pool which is in maintenance
+    	if(pools == null || pools.size() == 0 || (pools.size() == 1 && pools.get(0).getStatus().equals(Status.Maintenance) )){
+    		return false;
+    	}else{
+    		return true;
+    	}
+    }
     
     @Override
     public List<VolumeVO> prepare(VMInstanceVO vm, HostVO host) {
@@ -309,9 +329,19 @@ public class StorageManagerImpl implements StorageManager {
                 return vols;
             }
             
+            //if pool is in maintenance and it is the ONLY pool available; reject
+            List<VolumeVO> rootVolForGivenVm = _volsDao.findByInstanceAndType(vm.getId(), VolumeType.ROOT);
+            if(rootVolForGivenVm != null && rootVolForGivenVm.size() > 0){
+            	boolean isPoolAvailable = isPoolAvailable(rootVolForGivenVm.get(0).getPoolId());
+            	
+            	if(!isPoolAvailable){
+            		return new ArrayList<VolumeVO>();
+            	}
+            }
+            
             //if we have a system vm
             //get the storage pool
-            //if pool is in maintenance
+            //if pool is in prepareformaintenance
             //add to recreate vols, and continue
             if(vm.getType().equals(VirtualMachine.Type.ConsoleProxy) || vm.getType().equals(VirtualMachine.Type.DomainRouter) || vm.getType().equals(VirtualMachine.Type.SecondaryStorageVm))
             {
@@ -2379,6 +2409,10 @@ public class StorageManagerImpl implements StorageManager {
 			if (primaryStorage.getStatus().equals(Status.Up)) {
 				throw new StorageUnavailableException("Primary storage with id " + primaryStorageId + " is not ready to complete migration, as the status is:" + primaryStorage.getStatus().toString());
 			}
+			
+			//set state to cancelmaintenance
+        	primaryStorage.setStatus(Status.CancelMaintenance);
+    		_storagePoolDao.persist(primaryStorage);
 			
 			//2. Get a list of all the volumes within this storage pool
 			List<VolumeVO> allVolumes = _volsDao.findByPoolId(primaryStorageId);

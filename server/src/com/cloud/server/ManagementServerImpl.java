@@ -4819,29 +4819,9 @@ public class ManagementServerImpl implements ManagementServer {
 		
 		if (systemVm.getType().equals(VirtualMachine.Type.ConsoleProxy)){
 			long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_START, "Starting console proxy with Id: "+id);
-//	        try {
-//				checkIfStoragePoolAvailable(id);
-//			} catch (StorageUnavailableException e) {
-//				s_logger.warn(e.getMessage());
-//				return null;
-//			} catch (Exception e){
-//				//unforseen exceptions
-//				s_logger.warn(e.getMessage());
-//				return null;
-//			}
 			return startConsoleProxy(id, eventId);
 		} else {
 			long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_SSVM_START, "Starting secondary storage Vm Id: "+id);
-//	        try {
-//				checkIfStoragePoolAvailable(id);
-//			} catch (StorageUnavailableException e) {
-//				s_logger.warn(e.getMessage());
-//				return null;
-//			} catch (Exception e){
-//				//unforseen exceptions
-//				s_logger.warn(e.getMessage());
-//				return null;
-//			}
 			return startSecondaryStorageVm(id, eventId);
 		}
 	}
@@ -4862,29 +4842,9 @@ public class ManagementServerImpl implements ManagementServer {
         
         if (systemVm.getType() == VirtualMachine.Type.ConsoleProxy) {
             long eventId = EventUtils.saveScheduledEvent(callerId, callerAccountId, EventTypes.EVENT_PROXY_START, "Starting console proxy with Id: "+id);
-            try {
-                checkIfStoragePoolAvailable(id);
-            } catch (StorageUnavailableException e) {
-                s_logger.warn(e.getMessage());
-                return null;
-            } catch (Exception e){
-                //unforseen exceptions
-                s_logger.warn(e.getMessage());
-                return null;
-            }
             return startConsoleProxy(id, eventId);
         } else if (systemVm.getType() == VirtualMachine.Type.SecondaryStorageVm) {
             long eventId = EventUtils.saveScheduledEvent(callerId, callerAccountId, EventTypes.EVENT_SSVM_START, "Starting secondary storage Vm Id: "+id);
-            try {
-                checkIfStoragePoolAvailable(id);
-            } catch (StorageUnavailableException e) {
-                s_logger.warn(e.getMessage());
-                return null;
-            } catch (Exception e){
-                //unforseen exceptions
-                s_logger.warn(e.getMessage());
-                return null;
-            }
             return startSecondaryStorageVm(id, eventId);
         } else {
             throw new InvalidParameterValueException("Unable to find a system vm: " + id);

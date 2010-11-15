@@ -30,6 +30,7 @@ public enum Status {
     Updating(true, true, false),
     PrepareForMaintenance(false, false, false),
     ErrorInMaintenance(false, false, false),
+    CancelMaintenance(false, false, false),
     Maintenance(false, false, false),
     Alert(true, true, true),
     Removed(true, false, true);

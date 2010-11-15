@@ -817,7 +817,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
             return null;
         }
         
-//        checkIfPoolAvailable(vmId);//throws StorageUnavailableException if pool is not UP
+        checkIfPoolAvailable(vmId);//throws StorageUnavailableException if pool is not UP
         
         EventVO event = new EventVO();
         event.setType(EventTypes.EVENT_VM_START);
