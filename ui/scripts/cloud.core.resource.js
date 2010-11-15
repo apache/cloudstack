@@ -264,9 +264,9 @@ function afterLoadResourceJSP($midmenuItem1) {
 }
 
 function initAddPodShortcut() {
-    initDialog("dialog_add_pod", 320); 	
+    initDialog("dialog_add_pod_in_resource_page", 320); 	
 
-    var $zoneDropdown = $("#dialog_add_pod").find("#zone_dropdown");
+    var $zoneDropdown = $("#dialog_add_pod_in_resource_page").find("#zone_dropdown");
     $.ajax({
 	    data: createURL("command=listZones&available=true"),
 	    dataType: "json",
@@ -280,10 +280,11 @@ function initAddPodShortcut() {
 	});    
 
     $("#add_pod_shortcut").unbind("click").bind("click", function(event) {           
-        $("#dialog_add_pod").find("#info_container").hide();	
-        $("#dialog_add_pod #add_pod_name, #dialog_add_pod #add_pod_cidr, #dialog_add_pod #add_pod_startip, #dialog_add_pod #add_pod_endip, #add_pod_gateway").val("");
+        $("#dialog_add_pod_in_resource_page").find("#info_container").hide();	
+        $("#dialog_add_pod_in_resource_page").find("#add_pod_name,#add_pod_cidr,#add_pod_startip,add_pod_endip").val("");
+        $("#add_pod_gateway").val("");
 		
-        $("#dialog_add_pod")
+        $("#dialog_add_pod_in_resource_page")
         .dialog('option', 'buttons', { 				
 	        "Add": function() {		
 	            var $thisDialog = $(this);

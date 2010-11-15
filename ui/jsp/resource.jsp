@@ -424,8 +424,8 @@
 </div>
 <!-- End Update Certificate Dialog -->
 
-<!-- Add Pod Dialog (begin) -->
-<div id="dialog_add_pod" title="Add Pod" style="display: none">   
+<!-- Add Pod Dialog in resource page (begin) -->
+<div id="dialog_add_pod_in_resource_page" title="Add Pod" style="display: none">   
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form_acquire">
         <ol>
@@ -489,7 +489,7 @@
             (info)</div>
     </div>
 </div>
-<!-- Add Pod Dialog (end) -->
+<!-- Add Pod Dialog in resource page (end) -->
 
 <!-- Add Host Dialog (begin) -->
 <div id="dialog_add_host" title="Add Host" style="display: none">   
