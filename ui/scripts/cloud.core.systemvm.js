@@ -56,10 +56,10 @@ function systemvmJsonToDetailsTab() {
     $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));
        
     resetViewConsoleAction(jsonObj, $thisTab);         
-    setVmStateInRightPanel(jsonObj.state, $thisTab.find("#state"));		
-    $thisTab.find("#ipAddress").text(jsonObj.publicip);
+    setVmStateInRightPanel(fromdb(jsonObj.state), $thisTab.find("#state"));		
+    $thisTab.find("#ipAddress").text(noNull(jsonObj.publicip));
         
-    $thisTab.find("#state").text(jsonObj.state);     
+    $thisTab.find("#state").text(fromdb(jsonObj.state));     
     $thisTab.find("#systemvmtype").text(toSystemVMTypeText(jsonObj.systemvmtype));    
     $thisTab.find("#zonename").text(fromdb(jsonObj.zonename)); 
     $thisTab.find("#id").text(fromdb(jsonObj.id));  

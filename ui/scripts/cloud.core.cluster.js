@@ -49,7 +49,8 @@ function clusterJsonToRightPanel($leftmenuItem1) {
 function clusterJsonToDetailsTab($leftmenuItem1) {	 
     var jsonObj = $leftmenuItem1.data("jsonObj");    
     var $detailsTab = $("#tab_content_details");   
-    $detailsTab.data("jsonObj", jsonObj);           
+    $detailsTab.data("jsonObj", jsonObj);   
+            
     $detailsTab.find("#id").text(fromdb(jsonObj.id));
     $detailsTab.find("#name").text(fromdb(jsonObj.name));
     $detailsTab.find("#zonename").text(fromdb(jsonObj.zonename));        

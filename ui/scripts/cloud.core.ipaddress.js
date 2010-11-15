@@ -223,28 +223,18 @@ function ipToRightPanel($midmenuItem1) {
     copyActionInfoFromMidMenuToRightPanel($midmenuItem1);
     
     $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);
-    $("#tab_details").click(); 
-    
-    
-    //Details tab
-    //ipJsonToDetailsTab($midmenuItem1);       
-    //ipJsonToDetailsTab(); 
-    
+    $("#tab_details").click();        
+   
     //Port Forwarding tab, Load Balancer tab
     if(isIpManageable(ipObj.domainid, ipObj.account) == true) {     
 	    $("#tab_port_forwarding, #tab_load_balancer").show();
 		// Only show VPN tab if the IP is the source nat IP
 		if (ipObj.issourcenat == true) {
 			$("#tab_vpn").show();
-		}
-        //ipJsonToPortForwardingTab(); 
-        //ipJsonToLoadBalancerTab();        
+		}             
     } 
     else { 
-	    $("#tab_port_forwarding, #tab_load_balancer, #tab_vpn").hide();
-	    //ipClearPortForwardingTab();
-	    //ipClearLoadBalancerTab();
-	    //$("#tab_details").click();
+	    $("#tab_port_forwarding, #tab_load_balancer, #tab_vpn").hide();	    
     }
 }
 
@@ -258,8 +248,8 @@ function ipJsonToPortForwardingTab() {
    
     refreshCreatePortForwardingRow(); 
         
-    var ipAddress = ipObj.ipaddress;
-    if(ipAddress == null || ipAddress.length == 0)
+    var ipAddress = noNull(ipObj.ipaddress);
+    if(ipAddress.length == 0)
         return;           		
     $.ajax({
         data: createURL("command=listPortForwardingRules&ipaddress=" + ipAddress),
@@ -291,8 +281,8 @@ function ipJsonToLoadBalancerTab() {
 
     refreshCreateLoadBalancerRow();
         
-    var ipAddress = ipObj.ipaddress;
-    if(ipAddress == null || ipAddress.length == 0)
+    var ipAddress = noNull(ipObj.ipaddress);
+    if(ipAddress.length == 0)
         return;  
     $.ajax({
         data: createURL("command=listLoadBalancerRules&publicip="+ipAddress),
@@ -699,7 +689,7 @@ function ipJsonToDetailsTab() {
     $thisTab.find("#tab_spinning_wheel").show();        
     
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    var ipaddress = $midmenuItem1.data("jsonObj").ipaddress;
+    var ipaddress = noNull($midmenuItem1.data("jsonObj").ipaddress);
     
     var ipObj;   
     $.ajax({
@@ -714,8 +704,9 @@ function ipJsonToDetailsTab() {
     });        
     $thisTab.data("jsonObj", ipObj);    
     $midmenuItem1.data("jsonObj", ipObj);    
-          
-    $thisTab.find("#ipaddress").text(fromdb(ipObj.ipaddress));
+   
+    $thisTab.find("#grid_header_title").text(noNull(ipObj.ipaddress));       
+    $thisTab.find("#ipaddress").text(noNull(ipObj.ipaddress));
     $thisTab.find("#zonename").text(fromdb(ipObj.zonename));
     $thisTab.find("#vlanname").text(fromdb(ipObj.vlanname));    
     setSourceNatField(ipObj.issourcenat, $thisTab.find("#source_nat")); 
@@ -820,29 +811,27 @@ function ipClearPortForwardingTab() {
     refreshCreatePortForwardingRow(); 
 }    
 
-//var portForwardingIndex = 0;	
 function portForwardingJsonToTemplate(jsonObj, $template) {				        
-    //(portForwardingIndex++ % 2 == 0)? $template.find("#row_container").addClass("smallrow_even"): $template.find("#row_container").addClass("smallrow_odd");		    
-    $template.attr("id", "portForwarding_" + jsonObj.id).data("portForwardingId", jsonObj.id);	
+    $template.attr("id", "portForwarding_" + noNull(jsonObj.id)).data("portForwardingId", noNull(jsonObj.id));	
     		     
-    $template.find("#row_container #public_port").text(jsonObj.publicport);
-    $template.find("#row_container_edit #public_port").text(jsonObj.publicport);
+    $template.find("#row_container #public_port").text(noNull(jsonObj.publicport));
+    $template.find("#row_container_edit #public_port").text(noNull(jsonObj.publicport));
     
-    $template.find("#row_container #private_port").text(jsonObj.privateport);
-    $template.find("#row_container_edit #private_port").val(jsonObj.privateport);
+    $template.find("#row_container #private_port").text(noNull(jsonObj.privateport));
+    $template.find("#row_container_edit #private_port").val(noNull(jsonObj.privateport));
     
-    $template.find("#row_container #protocol").text(jsonObj.protocol);
-    $template.find("#row_container_edit #protocol").text(jsonObj.protocol);
+    $template.find("#row_container #protocol").text(fromdb(jsonObj.protocol));
+    $template.find("#row_container_edit #protocol").text(fromdb(jsonObj.protocol));
        
     var vmName = getVmName(jsonObj.vmname, jsonObj.vmdisplayname); //jsonObj doesn't include vmdisplayname property(incorrect). Waiting for Bug 6241 to be fixed....
     $template.find("#row_container #vm_name").text(vmName);		    
-    var virtualMachineId = jsonObj.virtualmachineid;
+    var virtualMachineId = noNull(jsonObj.virtualmachineid);
    
     var $detailsTab = $("#right_panel_content #tab_content_details");   
     var ipObj = $detailsTab.data("jsonObj");  
-    var ipAddress = ipObj.ipaddress;  
-    var IpDomainid = ipObj.domainid;
-    var IpAccount = ipObj.account;    
+    var ipAddress = noNull(ipObj.ipaddress);  
+    var IpDomainid = noNull(ipObj.domainid);
+    var IpAccount = fromdb(ipObj.account);    
     	    
     $.ajax({
 	    data: createURL("command=listVirtualMachines&domainid="+IpDomainid+"&account="+IpAccount),
@@ -852,7 +841,7 @@ function portForwardingJsonToTemplate(jsonObj, $template) {
 		    var vmSelect = $template.find("#row_container_edit #vm").empty();							
 		    if (instances != null && instances.length > 0) {
 			    for (var i = 0; i < instances.length; i++) {								
-			        var html = $("<option value='" + instances[i].id + "'>" +  getVmName(instances[i].name, instances[i].displayname) + "</option>");							        
+			        var html = $("<option value='" + noNull(instances[i].id) + "'>" + getVmName(instances[i].name, instances[i].displayname) + "</option>");							        
 		            vmSelect.append(html); 								
 			    }
 			    vmSelect.val(virtualMachineId);
@@ -868,7 +857,7 @@ function portForwardingJsonToTemplate(jsonObj, $template) {
         $spinningWheel.find("#description").text("Deleting....");	
         $spinningWheel.show();   
         $.ajax({						
-	       data: createURL("command=deletePortForwardingRule&id="+jsonObj.id),
+	       data: createURL("command=deletePortForwardingRule&id="+noNull(jsonObj.id)),
             dataType: "json",
             success: function(json) {             
                 $template.slideUp("slow", function(){		                    
@@ -997,22 +986,20 @@ function ipClearLoadBalancerTab() {
 }
 
 function loadBalancerJsonToTemplate(jsonObj, $template) {	
-    //(loadBalancerIndex++ % 2 == 0)? $template.find("#row_container").addClass("smallrow_even"): $template.find("#row_container").addClass("smallrow_odd");		
-
-    var loadBalancerId = jsonObj.id;	    
+    var loadBalancerId = noNull(jsonObj.id);	    
     $template.attr("id", "loadBalancer_" + loadBalancerId).data("loadBalancerId", loadBalancerId);		    
     
     $template.find("#row_container #name").text(fromdb(jsonObj.name));
     $template.find("#row_container_edit #name").val(fromdb(jsonObj.name));
     
-    $template.find("#row_container #public_port").text(jsonObj.publicport);
-    $template.find("#row_container_edit #public_port").text(jsonObj.publicport);
+    $template.find("#row_container #public_port").text(noNull(jsonObj.publicport));
+    $template.find("#row_container_edit #public_port").text(noNull(jsonObj.publicport));
     
-    $template.find("#row_container #private_port").text(jsonObj.privateport);
-    $template.find("#row_container_edit #private_port").val(jsonObj.privateport);
+    $template.find("#row_container #private_port").text(noNull(jsonObj.privateport));
+    $template.find("#row_container_edit #private_port").val(noNull(jsonObj.privateport));
     
-    $template.find("#row_container #algorithm").text(jsonObj.algorithm);	
-    $template.find("#row_container_edit #algorithm").val(jsonObj.algorithm);			    	    
+    $template.find("#row_container #algorithm").text(fromdb(jsonObj.algorithm));	
+    $template.find("#row_container_edit #algorithm").val(fromdb(jsonObj.algorithm));			    	    
         
     $template.find("#manage_link").unbind("click").bind("click", function(event){	
         var $managementArea = $template.find("#management_area");
@@ -1259,13 +1246,13 @@ function refreshCreateLoadBalancerRow() {
 
 function lbVmObjToTemplate(obj, $template) {
     $template.find("#vm_name").text(obj.vmName);
-	$template.find("#vm_private_ip").text(obj.vmPrivateIp);		
+	$template.find("#vm_private_ip").text(noNull(obj.vmPrivateIp));		
 		
 	$template.find("#remove_link").bind("click", function(event){	
 	    var $spinningWheel = $template.find("#spinning_wheel");		    
         $spinningWheel.show();   	   			    		
         $.ajax({
-	       data: createURL("command=removeFromLoadBalancerRule&id="+obj.loadBalancerId+"&virtualmachineid="+obj.vmId),
+	       data: createURL("command=removeFromLoadBalancerRule&id="+noNull(obj.loadBalancerId)+"&virtualmachineid="+noNull(obj.vmId)),
 			dataType: "json",
 			success: function(json) {
 				var lbJSON = json.removefromloadbalancerruleresponse;

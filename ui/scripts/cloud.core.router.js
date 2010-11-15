@@ -25,8 +25,7 @@ function routerToMidmenu(jsonObj, $midmenuItem1) {
     $midmenuItem1.data("jsonObj", jsonObj); 
     
     $midmenuItem1.find("#first_row").text(jsonObj.name.substring(0,25)); 
-    if(jsonObj.publicip != null) //jsonObj.publicip is null while router state is Stopped
-        $midmenuItem1.find("#second_row").text(jsonObj.publicip.substring(0,25));
+    $midmenuItem1.find("#second_row").text(fromdb(jsonObj.publicip).substring(0,25));
     updateVmStateInMidMenu(jsonObj, $midmenuItem1);       
 }
 

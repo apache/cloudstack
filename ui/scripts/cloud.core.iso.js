@@ -217,7 +217,7 @@ function isoJsonToDetailsTab() {
      
     $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));
         
-    $thisTab.find("#id").text(fromdb(jsonObj.id));
+    $thisTab.find("#id").text(noNull(jsonObj.id));
     $thisTab.find("#zonename").text(fromdb(jsonObj.zonename));
     
     $thisTab.find("#name").text(fromdb(jsonObj.name));
@@ -226,7 +226,7 @@ function isoJsonToDetailsTab() {
     $thisTab.find("#displaytext").text(fromdb(jsonObj.displaytext));
     $thisTab.find("#displaytext_edit").val(fromdb(jsonObj.displaytext));
     $thisTab.find("#ostypename").text(fromdb(jsonObj.ostypename));
-    $thisTab.find("#ostypename_edit").val(jsonObj.ostypeid);    
+    $thisTab.find("#ostypename_edit").val(noNull(jsonObj.ostypeid));    
     $thisTab.find("#account").text(fromdb(jsonObj.account));
 	$thisTab.find("#domain").text(fromdb(jsonObj.domain));
                       

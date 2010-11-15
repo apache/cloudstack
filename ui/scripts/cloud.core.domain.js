@@ -69,12 +69,12 @@ function drawNode(json, level, container) {
 
     var template = $("#domain_tree_node_template").clone(true);	  
     template.find("#domain_indent").css("marginLeft", (30*(level+1)));           
-    template.attr("id", "domain_"+json.id);	         
+    template.attr("id", "domain_"+noNull(json.id));	         
     template.data("jsonObj", json).data("domainLevel", level); 	      
-    template.find("#domain_title_container").attr("id", "domain_title_container_"+json.id); 	        
-    template.find("#domain_expand_icon").attr("id", "domain_expand_icon_"+json.id); 
-    template.find("#domain_name").attr("id", "domain_name_"+json.id).text(json.name);        	              	
-    template.find("#domain_children_container").attr("id", "domain_children_container_"+json.id);          
+    template.find("#domain_title_container").attr("id", "domain_title_container_"+noNull(json.id)); 	        
+    template.find("#domain_expand_icon").attr("id", "domain_expand_icon_"+noNull(json.id)); 
+    template.find("#domain_name").attr("id", "domain_name_"+noNull(json.id)).text(fromdb(json.name));        	              	
+    template.find("#domain_children_container").attr("id", "domain_children_container_"+noNull(json.id));          
     container.append(template.show());	 
     return template;   	       
 }          

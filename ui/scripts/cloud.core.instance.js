@@ -1322,7 +1322,7 @@ function vmJsonToDetailsTab(){
 
     resetViewConsoleAction(jsonObj, $thisTab);      
     setVmStateInRightPanel(jsonObj.state, $thisTab.find("#state"));		
-    $thisTab.find("#ipAddress").text(jsonObj.ipaddress);
+    $thisTab.find("#ipAddress").text(noNull(jsonObj.ipaddress));
     
     $thisTab.find("#zoneName").text(fromdb(jsonObj.zonename));
            
@@ -1347,7 +1347,6 @@ function vmJsonToDetailsTab(){
     
     setBooleanReadField(jsonObj.haenable, $thisTab.find("#haenable"));
     setBooleanEditField(jsonObj.haenable, $thisTab.find("#haenable_edit"));
-    //$thisTab.find("#haenable_edit").val(jsonObj.haenable);
     	
     setBooleanReadField((jsonObj.isoid != null), $thisTab.find("#iso"));	
       
@@ -1533,15 +1532,15 @@ var vmVolumeActionMap = {
 }     
 
 function vmVolumeJSONToTemplate(json, $template) {
-    $template.attr("id","vm_volume_"+json.id);	        
+    $template.attr("id","vm_volume_"+noNull(json.id));	        
     $template.data("jsonObj", json);    
     $template.find("#title").text(fromdb(json.name));    
-	$template.find("#id").text(json.id);	
+	$template.find("#id").text(noNull(json.id));	
 	$template.find("#name").text(fromdb(json.name));
 	if (json.storagetype == "shared") 
-		$template.find("#type").text(json.type + " (shared storage)");
+		$template.find("#type").text(fromdb(json.type) + " (shared storage)");
 	else 
-		$template.find("#type").text(json.type + " (local storage)");
+		$template.find("#type").text(fromdb(json.type) + " (local storage)");
 			
 	$template.find("#size").text((json.size == "0") ? "" : convertBytes(json.size));										
 	setDateField(json.created, $template.find("#created"));
@@ -1591,8 +1590,8 @@ function vmRouterJSONToTemplate(jsonObj, $template) {
     $template.find("#title").text(fromdb(jsonObj.name));    
      
     resetViewConsoleAction(jsonObj, $template);   
-    setVmStateInRightPanel(jsonObj.state, $template.find("#state"));
-    $template.find("#ipAddress").text(jsonObj.publicip);
+    setVmStateInRightPanel(fromdb(jsonObj.state), $template.find("#state"));
+    $template.find("#ipAddress").text(noNull(jsonObj.publicip));
     
     $template.find("#zonename").text(fromdb(jsonObj.zonename));
     $template.find("#name").text(fromdb(jsonObj.name));

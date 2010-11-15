@@ -53,7 +53,7 @@ function podJsonToDetailsTab() {
     var jsonObj = $leftmenuItem1.data("jsonObj");
     $thisTab.data("jsonObj", jsonObj);  
      
-    $thisTab.find("#id").text(fromdb(jsonObj.id));
+    $thisTab.find("#id").text(noNull(jsonObj.id));
     $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));
     
     $thisTab.find("#name").text(fromdb(jsonObj.name));
@@ -73,7 +73,7 @@ function podJsonToDetailsTab() {
     // hide network tab upon zone vlan
     var zoneVlan;  
     $.ajax({
-	    data: createURL("command=listZones&id="+jsonObj.zoneid),
+	    data: createURL("command=listZones&id="+noNull(jsonObj.zoneid)),
 		dataType: "json",	
 		async: false,	
 		success: function(json) {
@@ -125,7 +125,7 @@ function podJsonToNetworkTab() {
 	var jsonObj = $leftmenuItem1.data("jsonObj");	
         
     $.ajax({
-		data: createURL("command=listVlanIpRanges&zoneid="+jsonObj.zoneid+"&podid="+jsonObj.id),
+		data: createURL("command=listVlanIpRanges&zoneid="+noNull(jsonObj.zoneid)+"&podid="+noNull(jsonObj.id)),
 		dataType: "json",
 		success: function(json) {			       
 			var items = json.listvlaniprangesresponse.vlaniprange;
@@ -146,13 +146,13 @@ function podJsonToNetworkTab() {
 
 function podNetworkJsonToTemplate(jsonObj, template) {
     template.data("jsonObj", jsonObj);     
-    template.attr("id", "pod_VLAN_"+jsonObj.id).data("podVLANId", jsonObj.id);    
+    template.attr("id", "pod_VLAN_"+noNull(jsonObj.id)).data("podVLANId", noNull(jsonObj.id));    
     template.find("#grid_header_title").text(fromdb(jsonObj.description));			   
-    template.find("#id").text(jsonObj.id);    
-    template.find("#iprange").text(jsonObj.description);
-    template.find("#netmask").text(jsonObj.netmask);
-    template.find("#gateway").text(jsonObj.gateway);
-    template.find("#podname").text(jsonObj.podname); 
+    template.find("#id").text(noNull(jsonObj.id));    
+    template.find("#iprange").text(fromdb(jsonObj.description));
+    template.find("#netmask").text(noNull(jsonObj.netmask));
+    template.find("#gateway").text(noNull(jsonObj.gateway));
+    template.find("#podname").text(fromdb(jsonObj.podname)); 
    
     var $actionLink = template.find("#network_action_link");		
 	$actionLink.bind("mouseover", function(event) {

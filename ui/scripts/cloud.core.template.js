@@ -243,7 +243,7 @@ function templateJsonToDetailsTab() {
     
     $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name)); 
      
-    $thisTab.find("#id").text(fromdb(jsonObj.id));
+    $thisTab.find("#id").text(noNull(jsonObj.id));
     $thisTab.find("#zonename").text(fromdb(jsonObj.zonename));
     
     $thisTab.find("#name").text(fromdb(jsonObj.name));
@@ -264,15 +264,12 @@ function templateJsonToDetailsTab() {
     
     setBooleanReadField(jsonObj.passwordenabled, $thisTab.find("#passwordenabled"));	
     setBooleanEditField(jsonObj.passwordenabled, $thisTab.find("#passwordenabled_edit"));
-    //$thisTab.find("#passwordenabled_edit").val(jsonObj.passwordenabled);
-    
+   
     setBooleanReadField(jsonObj.ispublic, $thisTab.find("#ispublic"));	
     setBooleanEditField(jsonObj.ispublic, $thisTab.find("#ispublic_edit"));
-    //$thisTab.find("#ispublic_edit").val(jsonObj.ispublic);
     
     setBooleanReadField(jsonObj.isfeatured, $thisTab.find("#isfeatured"));
     setBooleanEditField(jsonObj.isfeatured, $thisTab.find("#isfeatured_edit"));
-    //$thisTab.find("#isfeatured_edit").val(jsonObj.isfeatured);
     
     setBooleanReadField(jsonObj.crossZones, $thisTab.find("#crossZones"));
     

@@ -46,8 +46,8 @@ function alertJsonToDetailsTab() {
     var jsonObj = $midmenuItem1.data("jsonObj");       
     $thisTab.data("jsonObj", jsonObj);     
         
-    $thisTab.find("#type").text(jsonObj.type);
-    $thisTab.find("#description").text(jsonObj.description);    
+    $thisTab.find("#type").text(fromdb(jsonObj.type));
+    $thisTab.find("#description").text(fromdb(jsonObj.description));    
     setDateField(jsonObj.sent, $thisTab.find("#sent"));	
     
     $thisTab.find("#tab_spinning_wheel").hide();    

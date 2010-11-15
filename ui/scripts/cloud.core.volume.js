@@ -309,7 +309,7 @@ function volumeJsonToDetailsTab(){
     $thisTab.find("#tab_spinning_wheel").show();        
     
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    var id = $midmenuItem1.data("jsonObj").id;
+    var id = noNull($midmenuItem1.data("jsonObj").id);
     
     var jsonObj;   
     $.ajax({
@@ -325,7 +325,7 @@ function volumeJsonToDetailsTab(){
     $thisTab.data("jsonObj", jsonObj);    
     $midmenuItem1.data("jsonObj", jsonObj);    
         
-    $thisTab.find("#id").text(fromdb(jsonObj.id));
+    $thisTab.find("#id").text(noNull(jsonObj.id));
     $thisTab.find("#name").text(fromdb(jsonObj.name));    
     $thisTab.find("#zonename").text(fromdb(jsonObj.zonename));    
     $thisTab.find("#device_id").text(fromdb(jsonObj.deviceid));   
@@ -374,7 +374,7 @@ function volumeJsonToDetailsTab(){
     $thisTab.find("#tab_container").show();     
 } 
 
-function  volumeJsonToSnapshotTab() {   
+function volumeJsonToSnapshotTab() {   
     var $thisTab = $("#right_panel_content #tab_content_snapshot");
 	$thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();   
@@ -384,7 +384,7 @@ function  volumeJsonToSnapshotTab() {
     
     $.ajax({
 		cache: false,
-		data: createURL("command=listSnapshots&volumeid="+jsonObj.id+maxPageSize),
+		data: createURL("command=listSnapshots&volumeid="+noNull(jsonObj.id)),
 		dataType: "json",
 		success: function(json) {							    
 			var items = json.listsnapshotsresponse.snapshot;																						
@@ -405,12 +405,12 @@ function  volumeJsonToSnapshotTab() {
  
 function volumeSnapshotJSONToTemplate(jsonObj, template) {
     template.data("jsonObj", jsonObj);     
-    template.attr("id", "volume_snapshot_"+jsonObj.id).data("volumeSnapshotId", jsonObj.id);    
+    template.attr("id", "volume_snapshot_"+noNull(jsonObj.id)).data("volumeSnapshotId", noNull(jsonObj.id));    
     template.find("#grid_header_title").text(fromdb(jsonObj.name));			   
-    template.find("#id").text(jsonObj.id);
+    template.find("#id").text(noNull(jsonObj.id));
     template.find("#name").text(fromdb(jsonObj.name));			      
     template.find("#volumename").text(fromdb(jsonObj.volumename));	
-    template.find("#intervaltype").text(jsonObj.intervaltype);	    		   
+    template.find("#intervaltype").text(fromdb(jsonObj.intervaltype));	    		   
     template.find("#account").text(fromdb(jsonObj.account));
     template.find("#domain").text(fromdb(jsonObj.domain));    
     setDateField(jsonObj.created, template.find("#created"));	 

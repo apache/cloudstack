@@ -32,8 +32,8 @@ function eventToMidmenu(jsonObj, $midmenuItem1) {
     else if(jsonObj.level == "WARN")
         $iconContainer.find("#icon").attr("src", "images/midmenuicon_events_warning.png");
     
-    $midmenuItem1.find("#first_row").text(jsonObj.description.substring(0,25)); 
-    $midmenuItem1.find("#second_row").text(jsonObj.type.substring(0,25));  
+    $midmenuItem1.find("#first_row").text(fromdb(jsonObj.description).substring(0,25)); 
+    $midmenuItem1.find("#second_row").text(fromdb(jsonObj.type).substring(0,25));  
 }
 
 function eventToRightPanel($midmenuItem1) {  
@@ -51,13 +51,13 @@ function eventJsonToDetailsTab() {
     var jsonObj = $midmenuItem1.data("jsonObj");  
     $thisTab.data("jsonObj", jsonObj);    
          
-    $thisTab.find("#id").text(fromdb(jsonObj.id));
+    $thisTab.find("#id").text(noNull(jsonObj.id));
     $thisTab.find("#username").text(fromdb(jsonObj.username));
     $thisTab.find("#account").text(fromdb(jsonObj.account));
-    $thisTab.find("#type").text(jsonObj.type);
-    $thisTab.find("#level").text(jsonObj.level);   
+    $thisTab.find("#type").text(fromdb(jsonObj.type));
+    $thisTab.find("#level").text(fromdb(jsonObj.level));   
     $thisTab.find("#description").text(fromdb(jsonObj.description));  
-    $thisTab.find("#state").text(jsonObj.state);     
+    $thisTab.find("#state").text(fromdb(jsonObj.state));     
     setDateField(jsonObj.created, $thisTab.find("#created"));	
     
     $thisTab.find("#tab_spinning_wheel").hide();    

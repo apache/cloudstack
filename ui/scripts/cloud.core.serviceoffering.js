@@ -216,7 +216,7 @@ function serviceOfferingJsonToDetailsTab() {
     $thisTab.data("jsonObj", jsonObj);    
     $midmenuItem1.data("jsonObj", jsonObj);    
     
-    $thisTab.find("#id").text(jsonObj.id);
+    $thisTab.find("#id").text(noNull(jsonObj.id));
    
     $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name)); 
     $thisTab.find("#name").text(fromdb(jsonObj.name));
@@ -225,7 +225,7 @@ function serviceOfferingJsonToDetailsTab() {
     $thisTab.find("#displaytext").text(fromdb(jsonObj.displaytext));
     $thisTab.find("#displaytext_edit").val(fromdb(jsonObj.displaytext));
     
-    $thisTab.find("#storagetype").text(jsonObj.storagetype);
+    $thisTab.find("#storagetype").text(fromdb(jsonObj.storagetype));
     $thisTab.find("#cpu").text(jsonObj.cpunumber + " x " + convertHz(jsonObj.cpuspeed));
     $thisTab.find("#memory").text(convertBytes(parseInt(jsonObj.memory)*1024*1024));
     

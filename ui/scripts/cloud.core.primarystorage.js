@@ -52,8 +52,9 @@ function primarystorageToRightPanel($midmenuItem1) {
 function primarystorageJsonToDetailsTab($midmenuItem1) {	
     var jsonObj = $midmenuItem1.data("jsonObj");    
     var $detailsTab = $("#tab_content_details");   
-    $detailsTab.data("jsonObj", jsonObj);           
-    $detailsTab.find("#id").text(fromdb(jsonObj.id));
+    $detailsTab.data("jsonObj", jsonObj);   
+            
+    $detailsTab.find("#id").text(noNull(jsonObj.id));
     $detailsTab.find("#grid_header_title").text(fromdb(jsonObj.name));
     $detailsTab.find("#name").text(fromdb(jsonObj.name));
     
@@ -63,9 +64,10 @@ function primarystorageJsonToDetailsTab($midmenuItem1) {
     $detailsTab.find("#podname").text(fromdb(jsonObj.podname));
     $detailsTab.find("#clustername").text(fromdb(jsonObj.clustername));
 	var storageType = "ISCSI Share";
-	if (jsonObj.type == 'NetworkFilesystem') storageType = "NFS Share";
-    $detailsTab.find("#type").text(storageType);
-    $detailsTab.find("#ipaddress").text(fromdb(jsonObj.ipaddress));
+	if (jsonObj.type == 'NetworkFilesystem') 
+	    storageType = "NFS Share";
+    $detailsTab.find("#type").text(fromdb(storageType));
+    $detailsTab.find("#ipaddress").text(noNull(jsonObj.ipaddress));
     $detailsTab.find("#path").text(fromdb(jsonObj.path));                
 	$detailsTab.find("#disksizetotal").text(convertBytes(jsonObj.disksizetotal));
 	$detailsTab.find("#disksizeallocated").text(convertBytes(jsonObj.disksizeallocated));

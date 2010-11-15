@@ -61,8 +61,9 @@ function zoneJsonClearRightPanel() {
 function zoneJsonToDetailsTab($leftmenuItem1) {	 
     var jsonObj = $leftmenuItem1.data("jsonObj");     
     var $detailsTab = $("#tab_content_details");   
-    $detailsTab.data("jsonObj", jsonObj);           
-    $detailsTab.find("#id").text(jsonObj.id);
+    $detailsTab.data("jsonObj", jsonObj);  
+             
+    $detailsTab.find("#id").text(noNull(jsonObj.id));
     $detailsTab.find("#title").text(fromdb(jsonObj.name));
     
     $detailsTab.find("#name").text(fromdb(jsonObj.name));
