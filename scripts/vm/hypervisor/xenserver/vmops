@@ -745,19 +745,12 @@ def mount(remoteDir, localDir):
     return
 
 def umount(localDir):
-    success = False
-    if os.path.isdir(localDir) and os.path.ismount(localDir):
-        try: 
-            cmd = ['umount', localDir]
-            util.pread2(cmd)
-        except CommandException:
-            errMsg = "CommandException raised while trying to umount " + localDir 
-            util.SMlog(errMsg)
-            raise xs_errors.XenError(errMsg)
-        util.SMlog("Successfully unmounted " + localDir)
-        success = True
-    else:
-        util.SMlog("LocalDir: " + localDir + " doesn't exist or is not a mount point")
+    try: 
+        cmd = ['umount', localDir]
+        util.pread2(cmd)
+    except CommandException:
+        errMsg = "CommandException raised while trying to umount " + localDir 
+        util.SMlog(errMsg)
 
     return
 

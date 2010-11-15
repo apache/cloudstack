@@ -329,7 +329,7 @@ echo Doing open source build
 # we put the build number again here, otherwise state checking will cause an almost-full recompile
 ./waf install --destdir=$RPM_BUILD_ROOT --nochown --build-number=%{?_build_number}
 
-%clean
+#%clean
 
 [ ${RPM_BUILD_ROOT} != "/" ] && rm -rf ${RPM_BUILD_ROOT}
 
