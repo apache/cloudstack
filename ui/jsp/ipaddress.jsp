@@ -353,18 +353,18 @@
     </div> 
     <div class="grid_rows odd" id="row_container_edit" style="display:none">
         <div class="grid_row_cell" style="width: 25%;">
-            <input id="name" class="text" style="width: 90%;" type="text" />
+            <input id="name" class="text" style="width: 70%;" type="text" />
             <div id="name_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
         </div>
         <div class="grid_row_cell" style="width: 15%;">
             <div class="row_celltitles" id="public_port">8080</div>
         </div>
         <div class="grid_row_cell" style="width: 15%;">
-            <input id="private_port" class="text" style="width: 90%;" type="text" />
+            <input id="private_port" class="text" style="width: 70%;" type="text" />
             <div id="private_port_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
         </div>
         <div class="grid_row_cell" style="width: 15%;">
-            <select id="algorithm_select" class="select" style="width: 90%;">                       
+            <select id="algorithm_select" class="select" style="width: 70%;">                       
 				<option value="roundrobin">roundrobin</option>
                 <option value="leastconn">leastconn</option>
                 <option value="source">source</option>
@@ -372,10 +372,8 @@
         </div>
         <div class="grid_row_cell" style="width: 29%;">
             <div class="row_celltitles">
-                <a id="save_link" href="#">Save</a>
-            </div>
-            <div class="row_celltitles">
-                <a id="cancel_link" href="#">Cancel</a>
+                <a id="save_link" href="#" style="float:left;">Save</a>
+                <a id="cancel_link" href="#" style="float:left; margin-left:15px; display:inline;">Cancel</a>
             </div>
         </div>
         <div class="gridrow_loaderbox" style="display: none;" id="spinning_wheel">
@@ -476,7 +474,7 @@
             <div class="row_celltitles" id="public_port"></div>
         </div>
         <div class="grid_row_cell" style="width: 15%;">
-            <input id="private_port" class="text" style="width: 90%;" type="text" />
+            <input id="private_port" class="text" style="width: 70%;" type="text" />
             <div id="private_port_errormsg" class="errormsg" style="display: none;">
                 Error msg will appear here</div>
         </div>
@@ -484,15 +482,13 @@
             <div class="row_celltitles" id="protocol"></div>
         </div>
         <div class="grid_row_cell" style="width: 39%;">
-            <select class="select" style="width: 104px;" id="vm">
+            <select class="select" id="vm">
             </select>
         </div>
         <div class="grid_row_cell" style="width: 15%;">
             <div class="row_celltitles">
-                <a id="save_link" href="#">Save</a>
-            </div>
-            <div class="row_celltitles">
-                <a id="cancel_link" href="#">Cancel</a>
+                <a id="save_link" href="#" style="float:left;">Save</a>
+                <a id="cancel_link" href="#" style="float:left; margin-left:15px;">Cancel</a>
             </div>
         </div>
         <div class="gridrow_loaderbox" style="display: none;" id="spinning_wheel">

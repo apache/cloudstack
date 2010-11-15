@@ -4642,17 +4642,18 @@ a:hover.search_button {
 }
 
 .ui_dialog_messagebox{
-	width:250px;
+	width:243px;
 	height:auto;
 	float:left;
 	background:#fff7e3 repeat top left;
 	border:1px solid #CCC;
 	margin:10px 0 0 0;
-	padding:0 10px 5px 0;
+	padding:7px 10px 5px 7px;
 }
 
 .ui_dialog_messagebox.error{
 	background:#ffe5e5 repeat top left;
+	color:#ae0000;
 }
 
 .ui_dialog_msgicon {
