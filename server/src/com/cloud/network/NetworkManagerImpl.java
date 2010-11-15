@@ -2934,53 +2934,76 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 	    return mac;
 	}
 	
-	@Override
+	@Override @DB
 	public NetworkConfiguration getNetworkConfiguration(long id) {
 	        return _networkConfigDao.findById(id);
 	}
 	
-	@Override
+	@Override @DB
 	public FirewallRuleVO createIpForwardingRuleOnDomr(Long ruleId) throws ServerApiException{
+    	Transaction txn = Transaction.currentTxn();
+    	txn.start();
         boolean success = false;
-		//get the rule 
-		FirewallRuleVO rule = _rulesDao.findById(ruleId);
+        FirewallRuleVO rule = null;
+        IPAddressVO ipAddress = null;
+        boolean locked = false;
+		try {
+			//get the rule 
+			rule = _rulesDao.findById(ruleId);
+			
+			if(rule == null){
+				throw new PermissionDeniedException("Cannot create ip forwarding rule in db");
+			}
+			
+			//get ip address 
+			ipAddress = _ipAddressDao.findById(rule.getPublicIpAddress());
+			if (ipAddress == null) {
+			    throw new InvalidParameterValueException("Unable to create ip forwarding rule on address " + ipAddress + ", invalid IP address specified.");
+			}
+			
+			//sync point
+			ipAddress = _ipAddressDao.acquireInLockTable(ipAddress.getAddress());
+			
+			if(ipAddress == null){
+				s_logger.warn("Unable to acquire lock on ipAddress for creating 1-1 NAT rule");
+				return rule;
+			}else{
+				locked = true;
+			}
 		
-		if(rule == null){
-			throw new PermissionDeniedException("Cannot create ip forwarding rule in db");
-		}
-		
-		//get ip address 
-		IPAddressVO ipAddress = _ipAddressDao.findById(rule.getPublicIpAddress());
-		if (ipAddress == null) {
-		    throw new InvalidParameterValueException("Unable to create ip forwarding rule on address " + ipAddress + ", invalid IP address specified.");
-		}
-		
-		//get the domain router object
-        DomainRouterVO router = _routerMgr.getRouter(ipAddress.getAccountId(), ipAddress.getDataCenterId());
-		success = createOrDeleteIpForwardingRuleOnDomr(rule,router,rule.getPrivateIpAddress(),true); //true +> create
-		
-		if(!success){
-			//corner case; delete record from db as domR rule creation failed
-	    	try {
+			//get the domain router object
+			DomainRouterVO router = _routerMgr.getRouter(ipAddress.getAccountId(), ipAddress.getDataCenterId());
+			success = createOrDeleteIpForwardingRuleOnDomr(rule,router,rule.getPrivateIpAddress(),true); //true +> create
+			
+			if(!success){
+				//corner case; delete record from db as domR rule creation failed
 				_rulesDao.remove(ruleId);
 				throw new PermissionDeniedException("Cannot create ip forwarding rule on domr, hence deleting created record in db");
-			} catch (Exception e) {
-				throw new ServerApiException(BaseCmd.NET_CREATE_IPFW_RULE_ERROR, e.getMessage());
+			}
+			
+			//update the user_ip_address record
+			ipAddress.setOneToOneNat(true);
+			_ipAddressDao.update(ipAddress.getAddress(),ipAddress);
+			
+			// Save and create the event
+			String description;
+			String ruleName = "ip forwarding";
+			String level = EventVO.LEVEL_INFO;
+
+			description = "created new " + ruleName + " rule [" + rule.getPublicIpAddress() + "]->["
+			        + rule.getPrivateIpAddress() + "]" + ":" + rule.getProtocol();
+
+			EventUtils.saveEvent(UserContext.current().getUserId(), ipAddress.getAccountId(), level, EventTypes.EVENT_NET_RULE_ADD, description);
+			txn.commit();
+		} catch (Exception e) {
+			txn.rollback();
+			throw new ServerApiException(BaseCmd.NET_CREATE_IPFW_RULE_ERROR, e.getMessage());
+		}finally{
+			if(locked){
+				_ipAddressDao.releaseFromLockTable(ipAddress.getAddress());
 			}
 		}
-		
-		// Save and create the event
-		String description;
-		String ruleName = "ip forwarding";
-		String level = EventVO.LEVEL_INFO;
-
-		description = "created new " + ruleName + " rule [" + rule.getPublicIpAddress() + "]->["
-		        + rule.getPrivateIpAddress() + "]" + ":" + rule.getProtocol();
-
-		EventUtils.saveEvent(UserContext.current().getUserId(), ipAddress.getAccountId(), level, EventTypes.EVENT_NET_RULE_ADD, description);
-		
 		return rule;
-
 	}
 	
     @Override @DB
@@ -3124,6 +3147,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             success = createOrDeleteIpForwardingRuleOnDomr(rule, router, rule.getPrivateIpAddress(), false);
             _firewallRulesDao.remove(ruleId);
             
+            //update the ip_address record
+			ipAddress.setOneToOneNat(false);
+			_ipAddressDao.persist(ipAddress);
+			
             String description;
             String type = EventTypes.EVENT_NET_RULE_DELETE;
             String level = EventVO.LEVEL_INFO;

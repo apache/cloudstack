@@ -58,7 +58,10 @@ public class IPAddressVO {
 	
 	@Column(name="vlan_db_id")
 	private long vlanDbId;
-	
+
+	@Column(name="one_to_one_nat")
+	private boolean oneToOneNat;
+
 	protected IPAddressVO() {
 	}
 
@@ -115,6 +118,14 @@ public class IPAddressVO {
 	
 	public void setVlanDbId(long vlanDbId) {
 		this.vlanDbId = vlanDbId;
+	}
+
+	public boolean isOneToOneNat() {
+		return oneToOneNat;
+	}
+
+	public void setOneToOneNat(boolean oneToOneNat) {
+		this.oneToOneNat = oneToOneNat;
 	}
 
 }

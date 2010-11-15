@@ -56,6 +56,9 @@ public class IPAddressResponse extends BaseResponse {
     @SerializedName("vlanname") @Param(description="the VLAN associated with the IP address")
     private String vlanName;
 
+    @SerializedName("onetoonenat") @Param(description="whether this ip is for one-to-one nat")
+    private Boolean oneToOneNat;
+    
     public String getIpAddress() {
         return ipAddress;
     }
@@ -143,4 +146,12 @@ public class IPAddressResponse extends BaseResponse {
     public void setVlanName(String vlanName) {
         this.vlanName = vlanName;
     }
+
+	public Boolean getOneToOneNat() {
+		return oneToOneNat;
+	}
+
+	public void setOneToOneNat(Boolean oneToOneNat) {
+		this.oneToOneNat = oneToOneNat;
+	}
 }

@@ -736,7 +736,8 @@ public class ApiResponseHelper {
        } 
        
        ipResponse.setForVirtualNetwork(forVirtualNetworks);
-
+       ipResponse.setOneToOneNat(ipAddress.isOneToOneNat());
+       
        //show this info to admin only
        Account account = UserContext.current().getAccount();
        if ((account == null)  || account.getType() == Account.ACCOUNT_TYPE_ADMIN) {

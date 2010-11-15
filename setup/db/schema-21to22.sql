@@ -53,6 +53,7 @@ ALTER TABLE `cloud`.`volumes` ADD COLUMN `source_id` bigint unsigned;  -- id for
 ALTER TABLE `cloud`.`volumes` ADD COLUMN `source_type` varchar(32); --source from which the volume is created i.e. snapshot, diskoffering, template, blank
 ALTER TABLE `cloud`.`volumes` ADD COLUMN 'attached' datetime; --date and time the volume was attached
 ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `customized` tinyint(1) unsigned NOT NULL DEFAULT 0;-- 0 implies not customized by default 
+ALTER TABLE `cloud`.`user_ip_address` ADD COLUMN `one_to_one_nat` int(1) unsigned NOT NULL default '0'; -- new column for NAT ip
 
 
 

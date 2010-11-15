@@ -555,6 +555,7 @@ CREATE TABLE  `cloud`.`user_ip_address` (
   `source_nat` int(1) unsigned NOT NULL default '0',
   `allocated` datetime NULL COMMENT 'Date this ip was allocated to someone',
   `vlan_db_id` bigint unsigned NOT NULL,
+  `one_to_one_nat` int(1) unsigned NOT NULL default '0',
   PRIMARY KEY (`public_ip_address`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
