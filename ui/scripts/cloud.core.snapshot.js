@@ -78,10 +78,10 @@ function snapshotJsonToDetailsTab() {
     $thisTab.data("jsonObj", jsonObj);    
     $midmenuItem1.data("jsonObj", jsonObj);    
  
-    $thisTab.find("#id").text(jsonObj.id);
+    $thisTab.find("#id").text(noNull(jsonObj.id));
     $thisTab.find("#name").text(fromdb(jsonObj.name));
     $thisTab.find("#volume_name").text(fromdb(jsonObj.volumename));
-    $thisTab.find("#interval_type").text(jsonObj.intervaltype);
+    $thisTab.find("#interval_type").text(fromdb(jsonObj.intervaltype));
     $thisTab.find("#account").text(fromdb(jsonObj.account));
     $thisTab.find("#domain").text(fromdb(jsonObj.domain));      
     setDateField(jsonObj.created, $thisTab.find("#created"));	
