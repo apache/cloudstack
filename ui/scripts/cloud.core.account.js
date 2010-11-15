@@ -51,16 +51,17 @@ function accountJsonToDetailsTab($midmenuItem1) {
     var jsonObj = $midmenuItem1.data("jsonObj");    
     var $detailsTab = $("#right_panel_content #tab_content_details");   
     $detailsTab.data("jsonObj", jsonObj);  
+    
     $detailsTab.find("#grid_header_title").text(fromdb(jsonObj.name));
-    $detailsTab.find("#id").text(jsonObj.id);
+    $detailsTab.find("#id").text(noNull(jsonObj.id));
     $detailsTab.find("#role").text(toRole(jsonObj.accounttype));
     $detailsTab.find("#account").text(fromdb(jsonObj.name));
     $detailsTab.find("#domain").text(fromdb(jsonObj.domain));
-    $detailsTab.find("#vm_total").text(jsonObj.vmtotal);
-    $detailsTab.find("#ip_total").text(jsonObj.iptotal);
+    $detailsTab.find("#vm_total").text(noNull(jsonObj.vmtotal));
+    $detailsTab.find("#ip_total").text(noNull(jsonObj.iptotal));
     $detailsTab.find("#bytes_received").text(convertBytes(jsonObj.receivedbytes));
     $detailsTab.find("#bytes_sent").text(convertBytes(jsonObj.sentbytes));
-    $detailsTab.find("#state").text(jsonObj.state);
+    $detailsTab.find("#state").text(noNull(jsonObj.state));
     
     //actions ***
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
