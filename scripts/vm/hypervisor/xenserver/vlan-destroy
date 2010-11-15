@@ -1,0 +1,27 @@
+#!/bin/bash
+
+for host in `xe host-list | grep ^uuid | awk '{print $NF}'`; do 
+  for pif in `xe pif-list host-uuid=$host | grep -v VLAN.*-1 | grep -B 3 VLAN | grep ^uuid | awk '{print $NF}'`; do 
+    networkuuid=`xe pif-list uuid=$pif | grep network-uuid | awk '{print $NF}'`; 
+    count=`xe vif-list network-uuid=$networkuuid | grep ^uuid | wc -l`; 
+    if [ $count -eq 0 ]; then
+      vlan=`xe vlan-list | grep -B 2 $pif | grep ^uuid |  awk '{print $NF}'`; 
+      if [ -n "$vlan" ]; then
+        echo "Destroy free VLAN on host $host: $vlan";
+        xe vlan-destroy uuid=$vlan 
+      fi
+    else
+      for vm in `xe vif-list network-uuid=$networkuuid | grep vm-uuid | awk '{print $NF}'`; do
+        resident=`xe vm-param-get param-name=resident-on uuid=$vm`;
+        vlan=`xe vlan-list | grep -B 2 $pif | grep ^uuid | awk '{print $NF}'`;
+        if [ "$resident" = "$host" ]; then
+          echo "VLAN in used by vm $vm: $vlan";
+        else
+          echo "VLAN in used by vm $vm on host $resident: $vlan"; 
+        fi
+        break;
+      done
+    fi
+    sleep 2; 
+  done
+done
