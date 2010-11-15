@@ -79,7 +79,7 @@ function afterLoadServiceOfferingJSP() {
 				array1.push("&offerha="+offerha);								
 									
 				var networkType = thisDialog.find("#add_service_networktype").val();
-				var useVirtualNetwork = (networkType=="direct")? false:true;
+				var useVirtualNetwork = (networkType=="Direct")? false:true;
 				array1.push("&usevirtualnetwork="+useVirtualNetwork);		
 				
 				var tags = trim(thisDialog.find("#add_service_tags").val());
@@ -112,8 +112,10 @@ function afterLoadServiceOfferingJSP() {
 }
 
 function doEditServiceOffering($actionLink, $detailsTab, $midmenuItem1) {       
-    var $readonlyFields  = $detailsTab.find("#name, #displaytext, #offerha");
-    var $editFields = $detailsTab.find("#name_edit, #displaytext_edit, #offerha_edit"); 
+    //var $readonlyFields  = $detailsTab.find("#name, #displaytext, #offerha, #networktype, #tags");
+    var $readonlyFields  = $detailsTab.find("#name, #displaytext, #offerha, #tags");
+    //var $editFields = $detailsTab.find("#name_edit, #displaytext_edit, #offerha_edit, #networktype_edit, #tags_edit");
+    var $editFields = $detailsTab.find("#name_edit, #displaytext_edit, #offerha_edit, #tags_edit");
              
     $readonlyFields.hide();
     $editFields.show();  
@@ -150,6 +152,15 @@ function doEditServiceOffering2($actionLink, $detailsTab, $midmenuItem1, $readon
     array1.push("&displayText="+todb(displaytext));
     var offerha = $detailsTab.find("#offerha_edit").val();   
     array1.push("&offerha="+offerha);		
+
+    /*
+	var networkType = $detailsTab.find("#networktype_edit").val();
+	var useVirtualNetwork = (networkType=="Direct")? false:true;
+	array1.push("&usevirtualnetwork="+useVirtualNetwork);
+	*/		
+	
+	var tags = $detailsTab.find("#tags_edit").val();
+	array1.push("&tags="+todb(tags));	
 	
 	$.ajax({
 	    data: createURL("command=updateServiceOffering&id="+id+array1.join("")),
@@ -220,10 +231,13 @@ function serviceOfferingJsonToDetailsTab() {
     
     setBooleanReadField(jsonObj.offerha, $thisTab.find("#offerha"));	
     setBooleanEditField(jsonObj.offerha, $thisTab.find("#offerha_edit"));
-    //$thisTab.find("#offerha_edit").val(jsonObj.offerha);
     
     $thisTab.find("#networktype").text(toNetworkType(jsonObj.usevirtualnetwork));
-    $thisTab.find("#tags").text(fromdb(jsonObj.tags));   
+    $thisTab.find("#networktype").val(toNetworkType(jsonObj.usevirtualnetwork));
+    
+    $thisTab.find("#tags").text(fromdb(jsonObj.tags)); 
+    $thisTab.find("#tags_edit").val(fromdb(jsonObj.tags));
+      
     setDateField(jsonObj.created, $thisTab.find("#created"));	
     
     //actions ***

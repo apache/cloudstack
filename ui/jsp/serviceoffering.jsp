@@ -139,7 +139,11 @@
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="networktype">
-	                    </div>
+	                    </div>	                    
+	                    <select class="select" id="networktype_edit" style="width: 202px; display: none;">
+	                        <option value="Direct">Direct</option>
+							<option value="Public">Public</option>	
+	                    </select>	
 	                </div>
 	            </div>
 	            <div class="grid_rows odd">
@@ -149,7 +153,9 @@
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="tags">
-	                    </div>
+	                    </div>	                    
+	                    <input class="text" id="tags_edit" style="width: 200px; display: none;" type="text" />
+	                    <div id="tags_edit_errormsg" style="display:none"></div>  
 	                </div>
 	            </div>
 	            <div class="grid_rows even">
