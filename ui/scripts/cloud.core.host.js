@@ -20,8 +20,8 @@ function afterLoadHostJSP($midmenuItem1) {
     initAddHostButton($("#midmenu_add_link"), "host_page"); 
     initAddPrimaryStorageButton($("#midmenu_add2_link"), "host_page");          
 
-    //initDialog("dialog_add_host");
-    //initDialog("dialog_add_pool");
+    initDialog("dialog_add_host");
+    initDialog("dialog_add_pool");
     initDialog("dialog_confirmation_enable_maintenance");
     initDialog("dialog_confirmation_cancel_maintenance");
     initDialog("dialog_confirmation_force_reconnect");
