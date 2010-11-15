@@ -121,10 +121,12 @@ public class CreatePrivateTemplateExecutor extends VolumeOperationExecutor {
             	            // For template snapshot, we use a separate snapshot method.
             	            snapshot = vmMgr.createTemplateSnapshot(param.getUserId(), param.getVolumeId());           		       
             	        }
-            	        else {
+            	        else if (snapshotId != null){
             	            // We are creating a private template from an already present snapshot. 
             	            // This snapshot is already backed up on secondary storage.
             	            snapshot = managerServer.findSnapshotById(snapshotId);
+            	        }else{
+            	        	throw new CloudRuntimeException("Do not support create template from volume at this moment for hypervisor:" +managerServer.getHyperType());
             	        }
             	        
                         if (snapshot == null) {
