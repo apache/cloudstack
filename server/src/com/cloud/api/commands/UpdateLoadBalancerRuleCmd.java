@@ -115,9 +115,13 @@ public class UpdateLoadBalancerRuleCmd extends BaseAsyncCmd {
 	
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        LoadBalancerVO result = BaseCmd._networkMgr.updateLoadBalancerRule(this);
-        LoadBalancerResponse response = ApiResponseHelper.createLoadBalancerResponse(result);
-        response.setResponseName(getName());
-        this.setResponseObject(response);
+        LoadBalancerVO result = _networkMgr.updateLoadBalancerRule(this);
+        if (result != null){
+            LoadBalancerResponse response = ApiResponseHelper.createLoadBalancerResponse(result);
+            response.setResponseName(getName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update load balancer rule");
+        }
     }
 }

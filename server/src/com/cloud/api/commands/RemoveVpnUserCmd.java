@@ -116,7 +116,7 @@ public class RemoveVpnUserCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        boolean result = BaseCmd._networkMgr.removeVpnUser(this);
+        boolean result = _networkMgr.removeVpnUser(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getName());
             this.setResponseObject(response);

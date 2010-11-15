@@ -106,7 +106,7 @@ public class ListUsersCmd extends BaseListCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<UserAccountVO> result = BaseCmd._mgr.searchForUsers(this);
+        List<UserAccountVO> result = _mgr.searchForUsers(this);
         ListResponse<UserResponse> response = new ListResponse<UserResponse>();
         List<UserResponse> userResponses = new ArrayList<UserResponse>();
         for (UserAccountVO user : result) {

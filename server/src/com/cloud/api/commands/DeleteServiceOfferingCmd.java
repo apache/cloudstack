@@ -65,7 +65,7 @@ public class DeleteServiceOfferingCmd extends BaseCmd{
 	
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        boolean result = BaseCmd._configService.deleteServiceOffering(this);
+        boolean result = _configService.deleteServiceOffering(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getName());
             this.setResponseObject(response);

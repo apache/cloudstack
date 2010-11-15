@@ -25,7 +25,7 @@ public class UpdateIsoPermissionsCmd extends UpdateTemplateOrIsoPermissionsCmd {
 	
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException{
-        boolean result = BaseCmd._mgr.updateTemplatePermissions(this);
+        boolean result = _mgr.updateTemplatePermissions(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getName());
             this.setResponseObject(response);

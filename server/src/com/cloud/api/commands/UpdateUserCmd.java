@@ -121,9 +121,13 @@ public class UpdateUserCmd extends BaseCmd {
    
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        UserAccount user = BaseCmd._accountService.updateUser(this);
-        UserResponse response = ApiResponseHelper.createUserResponse(user);
-        response.setResponseName(getName());
-        this.setResponseObject(response);
+        UserAccount user = _accountService.updateUser(this);
+        if (user != null){
+            UserResponse response = ApiResponseHelper.createUserResponse(user);
+            response.setResponseName(getName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update user");
+        }
     }
 }

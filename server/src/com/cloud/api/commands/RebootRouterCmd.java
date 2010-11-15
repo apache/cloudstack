@@ -91,9 +91,13 @@ public class RebootRouterCmd extends BaseAsyncCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        DomainRouter result = BaseCmd._networkMgr.rebootRouter(this);
-        DomainRouterResponse response = ApiResponseHelper.createDomainRouterResponse(result);
-        response.setResponseName("router");
-        this.setResponseObject(response);
+        DomainRouter result = _networkMgr.rebootRouter(this);
+        if (result != null){
+            DomainRouterResponse response = ApiResponseHelper.createDomainRouterResponse(result);
+            response.setResponseName("router");
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to reboot router");
+        }
     }
 }

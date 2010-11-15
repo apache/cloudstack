@@ -63,7 +63,7 @@ public class StopVm2Cmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        UserVm userVm = BaseCmd._userVmService.stopVirtualMachine(this);
+        UserVm userVm = _userVmService.stopVirtualMachine(this);
         UserVmResponse response = ApiResponseHelper.createUserVmResponse(userVm);
         response.setResponseName(getName());
         this.setResponseObject(response);

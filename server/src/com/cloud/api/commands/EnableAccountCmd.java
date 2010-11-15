@@ -71,9 +71,13 @@ public class EnableAccountCmd extends BaseCmd {
 
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        Account result = BaseCmd._accountService.enableAccount(this);
-        AccountResponse response = ApiResponseHelper.createAccountResponse(result);
-        response.setResponseName(getName());
-        this.setResponseObject(response);
+        Account result = _accountService.enableAccount(this);
+        if (result != null){
+            AccountResponse response = ApiResponseHelper.createAccountResponse(result);
+            response.setResponseName(getName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to enable account");
+        }
     }
 }

@@ -72,9 +72,13 @@ public class UpdateVMGroupCmd extends BaseCmd{
 
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        InstanceGroupVO result = BaseCmd._mgr.updateVmGroup(this);
-        InstanceGroupResponse response = ApiResponseHelper.createInstanceGroupResponse(result);
-        response.setResponseName(getName());
-        this.setResponseObject(response);
+        InstanceGroupVO result = _mgr.updateVmGroup(this);
+        if (result != null){
+            InstanceGroupResponse response = ApiResponseHelper.createInstanceGroupResponse(result);
+            response.setResponseName(getName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update vm instance group");
+        }
     }
 }

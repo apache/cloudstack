@@ -117,23 +117,27 @@ public class ExtractIsoCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException{
         try {
-            Long uploadId = BaseCmd._templateMgr.extract(this);
-            UploadVO uploadInfo = ApiDBUtils.findUploadById(uploadId); 
-            ExtractResponse response = new ExtractResponse();
-            response.setId(id);
-            response.setName(ApiDBUtils.findTemplateById(id).getName());        
-            response.setZoneId(zoneId);
-            response.setZoneName(ApiDBUtils.findZoneById(zoneId).getName());
-            response.setMode(mode);
-            response.setUploadId(uploadId);
-            response.setState(uploadInfo.getUploadState().toString());
-            response.setAccountId(getAccountId());        
-            //FIX ME - Need to set the url once the gson jar is upgraded since it is throwing an error right now due to a bug.
-            //response.setUrl(uploadInfo.getUploadUrl()); 
-            response.setUrl(uploadInfo.getUploadUrl().replaceAll("/", "%2F"));
-            response.setResponseName(getName());
-            response.setObjectName("iso");
-            this.setResponseObject(response);
+            Long uploadId = _templateMgr.extract(this);
+            if (uploadId != null){
+                UploadVO uploadInfo = ApiDBUtils.findUploadById(uploadId); 
+                ExtractResponse response = new ExtractResponse();
+                response.setId(id);
+                response.setName(ApiDBUtils.findTemplateById(id).getName());        
+                response.setZoneId(zoneId);
+                response.setZoneName(ApiDBUtils.findZoneById(zoneId).getName());
+                response.setMode(mode);
+                response.setUploadId(uploadId);
+                response.setState(uploadInfo.getUploadState().toString());
+                response.setAccountId(getAccountId());        
+                //FIX ME - Need to set the url once the gson jar is upgraded since it is throwing an error right now due to a bug.
+                //response.setUrl(uploadInfo.getUploadUrl()); 
+                response.setUrl(uploadInfo.getUploadUrl().replaceAll("/", "%2F"));
+                response.setResponseName(getName());
+                response.setObjectName("iso");
+                this.setResponseObject(response);
+            } else {
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to extract iso");
+            }
         } catch (InternalErrorException ex) {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
         }

@@ -129,9 +129,13 @@ public class CreateUserCmd extends BaseCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        UserAccount user = BaseCmd._accountService.createUser(this);  
-        UserResponse response = ApiResponseHelper.createUserResponse(user);
-        response.setResponseName(getName());
-        this.setResponseObject(response);
+        UserAccount user = _accountService.createUser(this);
+        if (user != null) {
+            UserResponse response = ApiResponseHelper.createUserResponse(user);
+            response.setResponseName(getName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create a user");
+        }
     }
 }

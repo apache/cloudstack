@@ -90,9 +90,13 @@ public class RebootSystemVmCmd extends BaseAsyncCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        VMInstanceVO result = BaseCmd._mgr.rebootSystemVM(this);
-        SystemVmResponse response = ApiResponseHelper.createSystemVmResponse(result);
-        response.setResponseName(getName());
-        this.setResponseObject(response);
+        VMInstanceVO result = _mgr.rebootSystemVM(this);
+        if (result != null) {
+            SystemVmResponse response = ApiResponseHelper.createSystemVmResponse(result);
+            response.setResponseName(getName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Fail to reboot system vm");
+        }
     }
 }

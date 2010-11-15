@@ -86,10 +86,14 @@ public class AssociateIPAddrCmd extends BaseCmd {
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         try {
-            IPAddressVO result = BaseCmd._networkMgr.associateIP(this);
-            IPAddressResponse ipResponse = ApiResponseHelper.createIPAddressResponse(result);
-            ipResponse.setResponseName(getName());
-            this.setResponseObject(ipResponse);
+            IPAddressVO result = _networkMgr.associateIP(this);
+            if (result != null) {
+                IPAddressResponse ipResponse = ApiResponseHelper.createIPAddressResponse(result);
+                ipResponse.setResponseName(getName());
+                this.setResponseObject(ipResponse);
+            } else {
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to assign ip address");
+            }
         } catch (ResourceAllocationException ex) {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
         }

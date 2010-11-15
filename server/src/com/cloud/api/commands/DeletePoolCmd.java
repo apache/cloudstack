@@ -47,7 +47,7 @@ public class DeletePoolCmd extends BaseCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        boolean result = BaseCmd._storageMgr.deletePool(this);
+        boolean result = _storageMgr.deletePool(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getName());
             this.setResponseObject(response);

@@ -98,12 +98,16 @@ public class AttachIsoCmd extends BaseAsyncCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        boolean result = BaseCmd._templateMgr.attachIso(this);
+        boolean result = _templateMgr.attachIso(this);
         if (result) {
-            UserVm userVm = ApiDBUtils.findUserVmById(virtualMachineId);           
-            UserVmResponse response = ApiResponseHelper.createUserVmResponse(userVm);            
-            response.setResponseName(DeployVMCmd.getResultObjectName());           
-            this.setResponseObject(response);
+            UserVm userVm = ApiDBUtils.findUserVmById(virtualMachineId);
+            if (userVm != null) {
+                UserVmResponse response = ApiResponseHelper.createUserVmResponse(userVm);            
+                response.setResponseName(DeployVMCmd.getResultObjectName());           
+                this.setResponseObject(response);
+            } else {
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to attach iso");
+            }
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to attach iso");
         }

@@ -71,9 +71,13 @@ public class UpgradeRouterCmd extends BaseCmd {
 	
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        DomainRouter router = BaseCmd._networkMgr.upgradeRouter(this);
-        DomainRouterResponse routerResponse = ApiResponseHelper.createDomainRouterResponse(router);
-        routerResponse.setResponseName(getName());
-        this.setResponseObject(routerResponse);
+        DomainRouter router = _networkMgr.upgradeRouter(this);
+        if (router != null){
+            DomainRouterResponse routerResponse = ApiResponseHelper.createDomainRouterResponse(router);
+            routerResponse.setResponseName(getName());
+            this.setResponseObject(routerResponse);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to upgrade router");
+        }
     }
 }

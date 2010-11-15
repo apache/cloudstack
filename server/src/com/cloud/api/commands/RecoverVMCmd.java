@@ -69,10 +69,14 @@ public class RecoverVMCmd extends BaseCmd {
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, StorageUnavailableException{
         try {
-            UserVm result = BaseCmd._userVmService.recoverVirtualMachine(this);
-            UserVmResponse recoverVmResponse = ApiResponseHelper.createUserVmResponse(result);
-            recoverVmResponse.setResponseName(getName());
-            this.setResponseObject(recoverVmResponse);
+            UserVm result = _userVmService.recoverVirtualMachine(this);
+            if (result != null){
+                UserVmResponse recoverVmResponse = ApiResponseHelper.createUserVmResponse(result);
+                recoverVmResponse.setResponseName(getName());
+                this.setResponseObject(recoverVmResponse);
+            } else {
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to recover vm");
+            }
         } catch (ResourceAllocationException ex) {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
         }

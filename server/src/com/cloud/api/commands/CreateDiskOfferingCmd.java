@@ -93,7 +93,7 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        DiskOffering offering = BaseCmd._configService.createDiskOffering(this);
+        DiskOffering offering = _configService.createDiskOffering(this);
         if (offering != null) {
             DiskOfferingResponse response = ApiResponseHelper.createDiskOfferingResponse((DiskOfferingVO)offering);
             response.setResponseName(getName());

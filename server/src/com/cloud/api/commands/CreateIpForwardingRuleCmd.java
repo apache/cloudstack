@@ -80,7 +80,7 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{ 
-        FirewallRuleVO result = BaseCmd._networkMgr.createIpForwardingRuleOnDomr(this.getId());
+        FirewallRuleVO result = _networkMgr.createIpForwardingRuleOnDomr(this.getId());
         if (result != null) {
             FirewallRuleResponse fwResponse = ApiResponseHelper.createFirewallRuleResponse(result);
             fwResponse.setResponseName(getName());
@@ -93,8 +93,12 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd {
 
 	@Override
 	public void callCreate() throws ServerApiException,InvalidParameterValueException, PermissionDeniedException,InsufficientAddressCapacityException,InsufficientCapacityException, ResourceUnavailableException,ConcurrentOperationException, ResourceAllocationException{
-		FirewallRuleVO rule = BaseCmd._networkMgr.createIpForwardingRuleInDb(ipAddress,virtualMachineId);
-        this.setId(rule.getId());
+		FirewallRuleVO rule = _networkMgr.createIpForwardingRuleInDb(ipAddress,virtualMachineId);
+		if (rule != null){
+		    this.setId(rule.getId());
+		} else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create ip forwarding rule");
+        }
 	}
 
     @Override

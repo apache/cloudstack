@@ -148,19 +148,25 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     
     @Override
     public void callCreate() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException{
-        Volume volume = BaseCmd._storageMgr.allocVolume(this);
+        Volume volume = _storageMgr.allocVolume(this);
         if (volume != null) {
             this.setId(volume.getId());
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create volume");
         }
     }
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        Volume volume = BaseCmd._storageMgr.createVolume(this);
-        VolumeResponse response = ApiResponseHelper.createVolumeResponse((VolumeVO)volume);
-        //FIXME - have to be moved to ApiResponseHelper
-        response.setSnapshotId(getSnapshotId());  // if the volume was created from a snapshot, snapshotId will be set so we pass it back in the response
-        response.setResponseName(getName());
-        this.setResponseObject(response);
+        Volume volume = _storageMgr.createVolume(this);
+        if (volume != null) {
+            VolumeResponse response = ApiResponseHelper.createVolumeResponse((VolumeVO)volume);
+            //FIXME - have to be moved to ApiResponseHelper
+            response.setSnapshotId(getSnapshotId());  // if the volume was created from a snapshot, snapshotId will be set so we pass it back in the response
+            response.setResponseName(getName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create a volume");
+        }
     }
 }

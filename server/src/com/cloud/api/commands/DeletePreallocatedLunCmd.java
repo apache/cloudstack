@@ -59,7 +59,7 @@ public class DeletePreallocatedLunCmd extends BaseCmd {
 
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        boolean result = BaseCmd._mgr.unregisterPreallocatedLun(this);
+        boolean result = _mgr.unregisterPreallocatedLun(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getName());
             this.setResponseObject(response);

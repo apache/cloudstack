@@ -63,7 +63,7 @@ public class DisassociateIPAddrCmd extends BaseCmd {
 
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        boolean result = BaseCmd._networkMgr.disassociateIpAddress(this);
+        boolean result = _networkMgr.disassociateIpAddress(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getName());
             this.setResponseObject(response);

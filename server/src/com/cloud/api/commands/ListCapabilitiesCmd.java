@@ -44,7 +44,7 @@ public class ListCapabilitiesCmd extends BaseCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        Map<String, String> capabilities = BaseCmd._mgr.listCapabilities(this);
+        Map<String, String> capabilities = _mgr.listCapabilities(this);
         CapabilitiesResponse response = new CapabilitiesResponse();
         response.setNetworkGroupsEnabled(capabilities.get("networkGroupsEnabled"));
         response.setCloudStackVersion(capabilities.get("cloudStackVersion"));

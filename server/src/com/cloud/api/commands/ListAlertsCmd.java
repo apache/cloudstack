@@ -24,7 +24,6 @@ import org.apache.log4j.Logger;
 
 import com.cloud.alert.AlertVO;
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -70,7 +69,7 @@ public class ListAlertsCmd extends BaseListCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<AlertVO> result = BaseCmd._mgr.searchForAlerts(this);
+        List<AlertVO> result = _mgr.searchForAlerts(this);
         ListResponse<AlertResponse> response = new ListResponse<AlertResponse>();
         List<AlertResponse> alertResponseList = new ArrayList<AlertResponse>();
         for (AlertVO alert : result) {

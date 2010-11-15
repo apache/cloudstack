@@ -72,7 +72,7 @@ public class UpdateCfgCmd extends BaseCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        Configuration cfg = BaseCmd._configService.updateConfiguration(this);
+        Configuration cfg = _configService.updateConfiguration(this);
         if (cfg != null) {
             ConfigurationResponse response = ApiResponseHelper.createConfigurationResponse((ConfigurationVO)cfg);
             response.setResponseName(getName());

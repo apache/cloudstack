@@ -96,7 +96,7 @@ public class DeleteUserCmd extends BaseAsyncCmd {
 	
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        boolean result = BaseCmd._accountService.deleteUser(this);
+        boolean result = _accountService.deleteUser(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getName());
             this.setResponseObject(response);

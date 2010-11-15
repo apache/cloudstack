@@ -96,9 +96,13 @@ public class CancelMaintenanceCmd extends BaseAsyncCmd  {
 	
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        HostVO result = BaseCmd._agentMgr.cancelMaintenance(this);
-        HostResponse response = ApiResponseHelper.createHostResponse(result);
-        response.setResponseName(getName());
-        this.setResponseObject(response);
+        HostVO result = _agentMgr.cancelMaintenance(this);
+        if (result != null) {
+            HostResponse response = ApiResponseHelper.createHostResponse(result);
+            response.setResponseName(getName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to cancel host maintenance");
+        }
     }
 }

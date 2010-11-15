@@ -128,20 +128,24 @@ public class AddVpnUserCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        VpnUserVO vpnUser = BaseCmd._networkMgr.addVpnUser(this);
-        VpnUsersResponse vpnResponse = new VpnUsersResponse();
-        vpnResponse.setId(vpnUser.getId());
-        vpnResponse.setUserName(vpnUser.getUsername());
-        vpnResponse.setAccountName(vpnUser.getAccountName());
-        
-        Account accountTemp = ApiDBUtils.findAccountById(vpnUser.getAccountId());
-        if (accountTemp != null) {
-            vpnResponse.setDomainId(accountTemp.getDomainId());
-            vpnResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
+        VpnUserVO vpnUser = _networkMgr.addVpnUser(this);
+        if (vpnUser != null) {
+            VpnUsersResponse vpnResponse = new VpnUsersResponse();
+            vpnResponse.setId(vpnUser.getId());
+            vpnResponse.setUserName(vpnUser.getUsername());
+            vpnResponse.setAccountName(vpnUser.getAccountName());
+            
+            Account accountTemp = ApiDBUtils.findAccountById(vpnUser.getAccountId());
+            if (accountTemp != null) {
+                vpnResponse.setDomainId(accountTemp.getDomainId());
+                vpnResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
+            }
+            
+            vpnResponse.setResponseName(getName());
+            vpnResponse.setObjectName("vpnuser");
+            this.setResponseObject(vpnResponse);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add vpn user");
         }
-        
-        vpnResponse.setResponseName(getName());
-        vpnResponse.setObjectName("vpnuser");
-        this.setResponseObject(vpnResponse);
     }	
 }

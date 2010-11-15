@@ -108,9 +108,13 @@ public class UpdatePortForwardingRuleCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        FirewallRuleVO result = BaseCmd._mgr.updatePortForwardingRule(this);
-        FirewallRuleResponse response = ApiResponseHelper.createFirewallRuleResponse(result);
-        response.setResponseName(getName());
-        this.setResponseObject(response);
+        FirewallRuleVO result = _mgr.updatePortForwardingRule(this);
+        if (result != null) {
+            FirewallRuleResponse response = ApiResponseHelper.createFirewallRuleResponse(result);
+            response.setResponseName(getName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update port forwarding rule");
+        }
     }
 }

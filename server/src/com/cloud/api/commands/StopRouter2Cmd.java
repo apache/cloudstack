@@ -92,9 +92,13 @@ public class StopRouter2Cmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException{
-        DomainRouter router = BaseCmd._routerMgr.stopRouter(this);
-        DomainRouterResponse response =ApiResponseHelper.createDomainRouterResponse(router);
-        response.setResponseName(getName());
-        this.setResponseObject(response);
+        DomainRouter router = _routerMgr.stopRouter(this);
+        if (router != null){
+            DomainRouterResponse response =ApiResponseHelper.createDomainRouterResponse(router);
+            response.setResponseName(getName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to stop router");
+        }
     }
 }

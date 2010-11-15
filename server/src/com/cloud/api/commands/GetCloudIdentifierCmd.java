@@ -66,14 +66,14 @@ public class GetCloudIdentifierCmd extends BaseCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        ArrayList<String> result = BaseCmd._mgr.getCloudIdentifierResponse(this);
+        ArrayList<String> result = _mgr.getCloudIdentifierResponse(this);
         CloudIdentifierResponse response = new CloudIdentifierResponse();
         if (result != null) {
             response.setCloudIdentifier(result.get(0));
             response.setSignature(result.get(1));
 
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add config");
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to get cloud identifier");
         }
         response.setObjectName("cloudidentifier");
         response.setResponseName(getName());

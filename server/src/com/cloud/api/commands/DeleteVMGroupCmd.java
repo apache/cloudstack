@@ -62,7 +62,7 @@ public class DeleteVMGroupCmd extends BaseCmd{
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        boolean result = BaseCmd._userVmService.deleteVmGroup(this);
+        boolean result = _userVmService.deleteVmGroup(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getName());
             this.setResponseObject(response);

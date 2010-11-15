@@ -95,9 +95,13 @@ public class StartSystemVm2Cmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        VirtualMachine instance = BaseCmd._mgr.startSystemVm(this);
-        SystemVmResponse response = ApiResponseHelper.createSystemVmResponse((VMInstanceVO)instance);
-        response.setResponseName(getName());
-        this.setResponseObject(response);    
+        VirtualMachine instance = _mgr.startSystemVm(this);
+        if (instance != null){
+            SystemVmResponse response = ApiResponseHelper.createSystemVmResponse((VMInstanceVO)instance);
+            response.setResponseName(getName());
+            this.setResponseObject(response);    
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to start system vm");
+        }
      }
 }

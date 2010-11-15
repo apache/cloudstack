@@ -114,7 +114,7 @@ public class AddHostCmd extends BaseCmd {
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         try {
-            List<HostVO> result = BaseCmd._agentMgr.discoverHosts(this);
+            List<HostVO> result = _agentMgr.discoverHosts(this);
             ListResponse<HostResponse> response = new ListResponse<HostResponse>();
             List<HostResponse> hostResponses = new ArrayList<HostResponse>();
             if (result != null) {

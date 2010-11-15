@@ -24,7 +24,6 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiResponseHelper;
-import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -126,7 +125,7 @@ public class ListVolumesCmd extends BaseListCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<VolumeVO> volumes = BaseCmd._mgr.searchForVolumes(this);
+        List<VolumeVO> volumes = _mgr.searchForVolumes(this);
 
         ListResponse<VolumeResponse> response = new ListResponse<VolumeResponse>();
         List<VolumeResponse> volResponses = new ArrayList<VolumeResponse>();

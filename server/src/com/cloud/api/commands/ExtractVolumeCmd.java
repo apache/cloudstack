@@ -122,23 +122,26 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException{
         try {
-            Long uploadId = BaseCmd._mgr.extractVolume(this);
-            UploadVO uploadInfo = ApiDBUtils.findUploadById(uploadId);
-            
-            ExtractResponse response = new ExtractResponse();
-            response.setResponseName(getName());
-            response.setObjectName("volume");
-            response.setId(id);
-            response.setName(ApiDBUtils.findVolumeById(id).getName());        
-            response.setZoneId(zoneId);
-            response.setZoneName(ApiDBUtils.findZoneById(zoneId).getName());
-            response.setMode(mode);
-            response.setUploadId(uploadId);
-            response.setState(uploadInfo.getUploadState().toString());
-            response.setAccountId(getAccountId());        
-            //FIX ME - Need to set the url once the gson jar is upgraded since it is throwing an error right now.
-            response.setUrl(uploadInfo.getUploadUrl().replaceAll("/", "%2F"));
-            this.setResponseObject(response);
+            Long uploadId = _mgr.extractVolume(this);
+            if (uploadId != null){
+                UploadVO uploadInfo = ApiDBUtils.findUploadById(uploadId);
+                ExtractResponse response = new ExtractResponse();
+                response.setResponseName(getName());
+                response.setObjectName("volume");
+                response.setId(id);
+                response.setName(ApiDBUtils.findVolumeById(id).getName());        
+                response.setZoneId(zoneId);
+                response.setZoneName(ApiDBUtils.findZoneById(zoneId).getName());
+                response.setMode(mode);
+                response.setUploadId(uploadId);
+                response.setState(uploadInfo.getUploadState().toString());
+                response.setAccountId(getAccountId());        
+                //FIX ME - Need to set the url once the gson jar is upgraded since it is throwing an error right now.
+                response.setUrl(uploadInfo.getUploadUrl().replaceAll("/", "%2F"));
+                this.setResponseObject(response);
+            } else {
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to extract volume");
+            }
         } catch (URISyntaxException ex) {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
         }

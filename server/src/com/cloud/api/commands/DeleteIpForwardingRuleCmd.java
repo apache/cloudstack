@@ -67,17 +67,13 @@ public class DeleteIpForwardingRuleCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        try {
-            boolean result = false;
-            	result = BaseCmd._networkMgr.deleteIpForwardingRule(id);
-                if (result) {
-                    SuccessResponse response = new SuccessResponse(getName());
-                    this.setResponseObject(response);
-                } else {
-                    throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete ip forwarding rule");
-                }
-        } catch (Exception ex) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
+        boolean result = false;
+    	result = _networkMgr.deleteIpForwardingRule(id);
+        if (result) {
+            SuccessResponse response = new SuccessResponse(getName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete ip forwarding rule");
         }
     }
 

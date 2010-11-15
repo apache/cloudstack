@@ -25,7 +25,6 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiResponseHelper;
-import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -85,7 +84,7 @@ public class ListSnapshotPoliciesCmd extends BaseListCmd {
 
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<SnapshotPolicyVO> result = BaseCmd._snapshotMgr.listPoliciesforVolume(this);
+        List<SnapshotPolicyVO> result = _snapshotMgr.listPoliciesforVolume(this);
         ListResponse<SnapshotPolicyResponse> response = new ListResponse<SnapshotPolicyResponse>();
         List<SnapshotPolicyResponse> policyResponses = new ArrayList<SnapshotPolicyResponse>();
         for (SnapshotPolicyVO policy : result) {

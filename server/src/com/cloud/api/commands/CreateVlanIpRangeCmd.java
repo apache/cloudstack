@@ -131,9 +131,13 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        Vlan result = BaseCmd._configService.createVlanAndPublicIpRange(this);
-        VlanIpRangeResponse response = ApiResponseHelper.createVlanIpRangeResponse((VlanVO)result);
-        response.setResponseName(getName());
-        this.setResponseObject(response);
+        Vlan result = _configService.createVlanAndPublicIpRange(this);
+        if (result != null) {
+            VlanIpRangeResponse response = ApiResponseHelper.createVlanIpRangeResponse((VlanVO)result);
+            response.setResponseName(getName());
+            this.setResponseObject(response);
+        }else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create vlan ip range");
+        }
     }
 }

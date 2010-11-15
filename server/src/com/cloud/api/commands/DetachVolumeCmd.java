@@ -125,9 +125,13 @@ public class DetachVolumeCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        Volume result = BaseCmd._userVmService.detachVolumeFromVM(this);
-        VolumeResponse response = ApiResponseHelper.createVolumeResponse((VolumeVO)result);
-        response.setResponseName("volume");
-        this.setResponseObject(response);
+        Volume result = _userVmService.detachVolumeFromVM(this);
+        if (result != null){
+            VolumeResponse response = ApiResponseHelper.createVolumeResponse((VolumeVO)result);
+            response.setResponseName("volume");
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to detach volume");
+        }
     }
 }

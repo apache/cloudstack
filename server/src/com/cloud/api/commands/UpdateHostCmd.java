@@ -76,7 +76,7 @@ public class UpdateHostCmd extends BaseCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        HostVO result = BaseCmd._agentMgr.updateHost(this);
+        HostVO result = _agentMgr.updateHost(this);
         if (result != null) {
             HostResponse hostResponse = ApiResponseHelper.createHostResponse(result);
             hostResponse.setResponseName(getName());

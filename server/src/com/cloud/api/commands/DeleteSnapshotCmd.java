@@ -89,7 +89,7 @@ public class DeleteSnapshotCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        boolean result = BaseCmd._snapshotMgr.deleteSnapshot(this);
+        boolean result = _snapshotMgr.deleteSnapshot(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getName());
             this.setResponseObject(response);

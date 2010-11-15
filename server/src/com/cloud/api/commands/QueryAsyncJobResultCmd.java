@@ -69,7 +69,7 @@ public class QueryAsyncJobResultCmd extends BaseCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        AsyncJobResult result = BaseCmd._asyncMgr.queryAsyncJobResult(this);
+        AsyncJobResult result = _asyncMgr.queryAsyncJobResult(this);
         AsyncJobResponse response = new AsyncJobResponse();
         response.setId(result.getJobId());
         response.setJobStatus(result.getJobStatus());

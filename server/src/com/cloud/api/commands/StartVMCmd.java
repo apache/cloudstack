@@ -96,10 +96,14 @@ public class StartVMCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, StorageUnavailableException{
         try {
-            UserVm result = BaseCmd._userVmService.startVirtualMachine(this);
-            UserVmResponse response = ApiResponseHelper.createUserVmResponse(result);
-            response.setResponseName(getName());
-            this.setResponseObject(response);
+            UserVm result = _userVmService.startVirtualMachine(this);
+            if (result != null){
+                UserVmResponse response = ApiResponseHelper.createUserVmResponse(result);
+                response.setResponseName(getName());
+                this.setResponseObject(response);
+            } else {
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to start a vm");
+            }
         } catch (ExecutionException ex) {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
         }

@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -72,7 +71,7 @@ public class ListRecurringSnapshotScheduleCmd extends BaseListCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<SnapshotScheduleVO> snapshotSchedules = BaseCmd._snapshotMgr.findRecurringSnapshotSchedule(this);
+        List<SnapshotScheduleVO> snapshotSchedules = _snapshotMgr.findRecurringSnapshotSchedule(this);
         ListResponse<SnapshotScheduleResponse> response = new ListResponse<SnapshotScheduleResponse>();
         List<SnapshotScheduleResponse> snapshotScheduleResponses = new ArrayList<SnapshotScheduleResponse>();
         for (SnapshotScheduleVO snapshotSchedule : snapshotSchedules) {

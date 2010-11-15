@@ -101,9 +101,13 @@ public class RegisterPreallocatedLunCmd extends BaseCmd {
 
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        PreallocatedLunVO result = BaseCmd._mgr.registerPreallocatedLun(this);
-        PreallocatedLunResponse response = ApiResponseHelper.createPreallocatedLunResponse(result);
-        response.setResponseName(getName());
-        this.setResponseObject(response);
+        PreallocatedLunVO result = _mgr.registerPreallocatedLun(this);
+        if (result != null){
+            PreallocatedLunResponse response = ApiResponseHelper.createPreallocatedLunResponse(result);
+            response.setResponseName(getName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to register preallocated lun");
+        }
     }
 }

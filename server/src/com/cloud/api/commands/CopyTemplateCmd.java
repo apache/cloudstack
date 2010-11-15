@@ -114,7 +114,7 @@ public class CopyTemplateCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         try {
-            VMTemplateVO template = BaseCmd._templateMgr.copyTemplate(this);
+            VMTemplateVO template = _templateMgr.copyTemplate(this);
             TemplateResponse templateResponse = new TemplateResponse();
             if (template != null) {
                 templateResponse.setId(template.getId());

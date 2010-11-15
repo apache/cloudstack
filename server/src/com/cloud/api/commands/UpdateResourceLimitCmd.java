@@ -92,9 +92,13 @@ public class UpdateResourceLimitCmd extends BaseCmd {
 
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        ResourceLimit result = BaseCmd._accountService.updateResourceLimit(this);
-        ResourceLimitResponse response = ApiResponseHelper.createResourceLimitResponse(result);
-        response.setResponseName(getName());
-        this.setResponseObject(response);
+        ResourceLimit result = _accountService.updateResourceLimit(this);
+        if (result != null){
+            ResourceLimitResponse response = ApiResponseHelper.createResourceLimitResponse(result);
+            response.setResponseName(getName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update resource limit");
+        }
     }
 }

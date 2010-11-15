@@ -73,9 +73,13 @@ public class UpdateStoragePoolCmd extends BaseCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        StoragePoolVO result = BaseCmd._storageMgr.updateStoragePool(this);
-        StoragePoolResponse response = ApiResponseHelper.createStoragePoolResponse(result);
-        response.setResponseName(getName());
-        this.setResponseObject(response);
+        StoragePoolVO result = _storageMgr.updateStoragePool(this);
+        if (result != null){
+            StoragePoolResponse response = ApiResponseHelper.createStoragePoolResponse(result);
+            response.setResponseName(getName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update storage pool");
+        }
     }
 }

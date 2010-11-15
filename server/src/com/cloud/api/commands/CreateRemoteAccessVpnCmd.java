@@ -138,27 +138,33 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
 	
     @Override
     public void callCreate() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException{
-        RemoteAccessVpnVO vpn = BaseCmd._networkMgr.createRemoteAccessVpn(this);
+        RemoteAccessVpnVO vpn = _networkMgr.createRemoteAccessVpn(this);
         if (vpn != null) {
             this.setId(vpn.getId());
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create remote access vpn");
         }
     }
 
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         try {
-        RemoteAccessVpnVO result = BaseCmd._networkMgr.startRemoteAccessVpn(this);
-        RemoteAccessVpnResponse response = new RemoteAccessVpnResponse();
-        response.setId(result.getId());
-        response.setPublicIp(result.getVpnServerAddress());
-        response.setIpRange(result.getIpRange());
-        response.setAccountName(result.getAccountName());
-        response.setDomainId(result.getDomainId());
-        response.setDomainName(ApiDBUtils.findDomainById(result.getDomainId()).getName());
-        response.setObjectName("remoteaccessvpn");
-        response.setResponseName(getName());
-        response.setPresharedKey(result.getIpsecPresharedKey());
-        this.setResponseObject(response);
+        RemoteAccessVpnVO result = _networkMgr.startRemoteAccessVpn(this);
+        if (result != null) {
+            RemoteAccessVpnResponse response = new RemoteAccessVpnResponse();
+            response.setId(result.getId());
+            response.setPublicIp(result.getVpnServerAddress());
+            response.setIpRange(result.getIpRange());
+            response.setAccountName(result.getAccountName());
+            response.setDomainId(result.getDomainId());
+            response.setDomainName(ApiDBUtils.findDomainById(result.getDomainId()).getName());
+            response.setObjectName("remoteaccessvpn");
+            response.setResponseName(getName());
+            response.setPresharedKey(result.getIpsecPresharedKey());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create remote access vpn");
+        }
         } catch (ResourceUnavailableException ex) {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
         }

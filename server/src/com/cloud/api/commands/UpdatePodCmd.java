@@ -101,9 +101,13 @@ public class UpdatePodCmd extends BaseCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        Pod result = BaseCmd._configService.editPod(this);
-        PodResponse response = ApiResponseHelper.createPodResponse((HostPodVO)result);
-        response.setResponseName(getName());
-        this.setResponseObject(response);
+        Pod result = _configService.editPod(this);
+        if (result != null) {
+            PodResponse response = ApiResponseHelper.createPodResponse((HostPodVO)result);
+            response.setResponseName(getName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update pod");
+        }
     }
 }

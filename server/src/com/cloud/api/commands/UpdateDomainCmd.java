@@ -71,7 +71,7 @@ public class UpdateDomainCmd extends BaseCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        DomainVO domain = BaseCmd._mgr.updateDomain(this);
+        DomainVO domain = _mgr.updateDomain(this);
         if (domain != null) {
             DomainResponse response = ApiResponseHelper.createDomainResponse(domain);
             response.setResponseName(getName());

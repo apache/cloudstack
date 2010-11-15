@@ -115,9 +115,13 @@ public class AttachVolumeCmd extends BaseAsyncCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        Volume result = BaseCmd._userVmService.attachVolumeToVM(this);
-        VolumeResponse response = ApiResponseHelper.createVolumeResponse((VolumeVO)result);
-        response.setResponseName(getName());
-        this.setResponseObject(response);
+        Volume result = _userVmService.attachVolumeToVM(this);
+        if (result != null) {
+            VolumeResponse response = ApiResponseHelper.createVolumeResponse((VolumeVO)result);
+            response.setResponseName(getName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to attach volume");
+        }
     }
 }

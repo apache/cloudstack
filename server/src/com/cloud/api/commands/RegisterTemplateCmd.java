@@ -29,7 +29,6 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.TemplateResponse;
 import com.cloud.dc.DataCenterVO;
@@ -170,64 +169,68 @@ public class RegisterTemplateCmd extends BaseCmd {
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException{
         try {
-            VMTemplateVO template = BaseCmd._templateMgr.registerTemplate(this);
-            ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
-            List<TemplateResponse> responses = new ArrayList<TemplateResponse>();
-            List<DataCenterVO> zones = null;
-
-            if ((zoneId != null) && (zoneId != -1)) {
-                zones = new ArrayList<DataCenterVO>();
-                zones.add(ApiDBUtils.findZoneById(zoneId));
-            } else {
-                zones = ApiDBUtils.listZones();
-            }
-
-            for (DataCenterVO zone : zones) {
-                TemplateResponse templateResponse = new TemplateResponse();
-                templateResponse.setId(template.getId());
-                templateResponse.setName(template.getName());
-                templateResponse.setDisplayText(template.getDisplayText());
-                templateResponse.setPublic(template.isPublicTemplate());
-                templateResponse.setCrossZones(template.isCrossZones());
-
-                VMTemplateHostVO isoHostRef = ApiDBUtils.findTemplateHostRef(template.getId(), zone.getId());
-                if (isoHostRef != null) {
-                    templateResponse.setCreated(isoHostRef.getCreated());
-                    templateResponse.setReady(isoHostRef.getDownloadState() == Status.DOWNLOADED);
-                }
-
-                templateResponse.setFeatured(template.isFeatured());
-                templateResponse.setPasswordEnabled(template.getEnablePassword());
-                templateResponse.setFormat(template.getFormat());
-                templateResponse.setStatus("Processing");
-
-                GuestOS os = ApiDBUtils.findGuestOSById(template.getGuestOSId());
-                if (os != null) {
-                    templateResponse.setOsTypeId(os.getId());
-                    templateResponse.setOsTypeName(os.getDisplayName());
+            VMTemplateVO template = _templateMgr.registerTemplate(this);
+            if (template != null){
+                ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
+                List<TemplateResponse> responses = new ArrayList<TemplateResponse>();
+                List<DataCenterVO> zones = null;
+    
+                if ((zoneId != null) && (zoneId != -1)) {
+                    zones = new ArrayList<DataCenterVO>();
+                    zones.add(ApiDBUtils.findZoneById(zoneId));
                 } else {
-                    templateResponse.setOsTypeId(-1L);
-                    templateResponse.setOsTypeName("");
+                    zones = ApiDBUtils.listZones();
                 }
-                  
-                Account owner = ApiDBUtils.findAccountById(template.getAccountId());
-                if (owner != null) {
-                    templateResponse.setAccountId(owner.getId());
-                    templateResponse.setAccount(owner.getAccountName());
-                    templateResponse.setDomainId(owner.getDomainId());
+    
+                for (DataCenterVO zone : zones) {
+                    TemplateResponse templateResponse = new TemplateResponse();
+                    templateResponse.setId(template.getId());
+                    templateResponse.setName(template.getName());
+                    templateResponse.setDisplayText(template.getDisplayText());
+                    templateResponse.setPublic(template.isPublicTemplate());
+                    templateResponse.setCrossZones(template.isCrossZones());
+    
+                    VMTemplateHostVO isoHostRef = ApiDBUtils.findTemplateHostRef(template.getId(), zone.getId());
+                    if (isoHostRef != null) {
+                        templateResponse.setCreated(isoHostRef.getCreated());
+                        templateResponse.setReady(isoHostRef.getDownloadState() == Status.DOWNLOADED);
+                    }
+    
+                    templateResponse.setFeatured(template.isFeatured());
+                    templateResponse.setPasswordEnabled(template.getEnablePassword());
+                    templateResponse.setFormat(template.getFormat());
+                    templateResponse.setStatus("Processing");
+    
+                    GuestOS os = ApiDBUtils.findGuestOSById(template.getGuestOSId());
+                    if (os != null) {
+                        templateResponse.setOsTypeId(os.getId());
+                        templateResponse.setOsTypeName(os.getDisplayName());
+                    } else {
+                        templateResponse.setOsTypeId(-1L);
+                        templateResponse.setOsTypeName("");
+                    }
+                      
+                    Account owner = ApiDBUtils.findAccountById(template.getAccountId());
+                    if (owner != null) {
+                        templateResponse.setAccountId(owner.getId());
+                        templateResponse.setAccount(owner.getAccountName());
+                        templateResponse.setDomainId(owner.getDomainId());
+                    }
+    
+                    templateResponse.setZoneId(zone.getId());
+                    templateResponse.setZoneName(zone.getName());
+                    templateResponse.setHypervisor(template.getHypervisorType().toString());
+                    templateResponse.setObjectName("template");
+    
+                    responses.add(templateResponse);
                 }
-
-                templateResponse.setZoneId(zone.getId());
-                templateResponse.setZoneName(zone.getName());
-                templateResponse.setHypervisor(template.getHypervisorType().toString());
-                templateResponse.setObjectName("template");
-
-                responses.add(templateResponse);
+                response.setResponseName(getName());
+                response.setResponses(responses);
+                
+                this.setResponseObject(response);
+            } else {
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to register template");
             }
-            response.setResponseName(getName());
-            response.setResponses(responses);
-            
-            this.setResponseObject(response);
         } catch (ResourceAllocationException ex) {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
         } catch (URISyntaxException ex1) {

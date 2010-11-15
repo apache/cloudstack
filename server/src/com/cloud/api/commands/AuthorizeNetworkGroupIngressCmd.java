@@ -214,7 +214,7 @@ public class AuthorizeNetworkGroupIngressCmd extends BaseAsyncCmd {
 	
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<IngressRuleVO> ingressRules = BaseCmd._networkGroupMgr.authorizeNetworkGroupIngress(this);
+        List<IngressRuleVO> ingressRules = _networkGroupMgr.authorizeNetworkGroupIngress(this);
         ListResponse<IngressRuleResponse> response = new ListResponse<IngressRuleResponse>();
         if ((ingressRules != null) && !ingressRules.isEmpty()) {
             List<IngressRuleResponse> responses = new ArrayList<IngressRuleResponse>();
@@ -242,8 +242,11 @@ public class AuthorizeNetworkGroupIngressCmd extends BaseAsyncCmd {
                 responses.add(ingressData);
             }
             response.setResponses(responses);
+            response.setResponseName("securitygroupingressrule");
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to authorize network group ingress rule");
         }
-        response.setResponseName("securitygroupingressrule");
-        this.setResponseObject(response);
+        
     }
 }

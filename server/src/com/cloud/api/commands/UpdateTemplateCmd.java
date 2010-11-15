@@ -61,7 +61,7 @@ public class UpdateTemplateCmd extends UpdateTemplateOrIsoCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException{
-        VMTemplateVO result = BaseCmd._mgr.updateTemplate(this);
+        VMTemplateVO result = _mgr.updateTemplate(this);
         TemplateResponse response = new TemplateResponse();
         if (result != null) {
             response.setId(result.getId());
@@ -76,7 +76,6 @@ public class UpdateTemplateCmd extends UpdateTemplateOrIsoCmd {
             response.setCrossZones(result.isCrossZones());
             response.setObjectName("template");
             response.setResponseName(getName());
-            
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update template");

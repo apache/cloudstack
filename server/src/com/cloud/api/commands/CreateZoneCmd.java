@@ -123,9 +123,13 @@ public class CreateZoneCmd extends BaseCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        DataCenter result = BaseCmd._configService.createZone(this);
-        ZoneResponse response = ApiResponseHelper.createZoneResponse((DataCenterVO)result);
-        response.setResponseName(getName());
-        this.setResponseObject(response);
+        DataCenter result = _configService.createZone(this);
+        if (result != null){
+            ZoneResponse response = ApiResponseHelper.createZoneResponse((DataCenterVO)result);
+            response.setResponseName(getName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create a zone");
+        }
     }
 }

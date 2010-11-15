@@ -25,7 +25,6 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiResponseHelper;
-import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -80,7 +79,7 @@ public class ListCfgsByCmd extends BaseListCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<ConfigurationVO> result = BaseCmd._mgr.searchForConfigurations(this);
+        List<ConfigurationVO> result = _mgr.searchForConfigurations(this);
         ListResponse<ConfigurationResponse> response = new ListResponse<ConfigurationResponse>();
         List<ConfigurationResponse> configResponses = new ArrayList<ConfigurationResponse>();
         for (ConfigurationVO cfg : result) {

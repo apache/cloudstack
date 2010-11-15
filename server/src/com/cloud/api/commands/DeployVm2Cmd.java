@@ -159,17 +159,25 @@ public class DeployVm2Cmd extends BaseAsyncCreateCmd {
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException{
         UserVm result;
-        result = BaseCmd._userVmService.startVirtualMachine(this);
-        UserVmResponse response = ApiResponseHelper.createUserVm2Response(result);
-        response.setPassword(password);
-        response.setResponseName(getName());
-        this.setResponseObject(response);
+        result = _userVmService.startVirtualMachine(this);
+        if (result != null) {
+            UserVmResponse response = ApiResponseHelper.createUserVm2Response(result);
+            response.setPassword(password);
+            response.setResponseName(getName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to deploy vm");
+        }
     }
     
     @Override
     public void callCreate() throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
-        UserVm vm = BaseCmd._userVmService.createVirtualMachine(this);
-        this.setId(vm.getId());
+        UserVm vm = _userVmService.createVirtualMachine(this);
+        if (vm != null) {
+            this.setId(vm.getId());
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to deploy vm");
+        }
     }
 
 

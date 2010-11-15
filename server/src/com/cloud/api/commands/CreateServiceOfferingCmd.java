@@ -122,9 +122,13 @@ public class CreateServiceOfferingCmd extends BaseCmd {
 
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        ServiceOffering result = BaseCmd._configService.createServiceOffering(this);
-        ServiceOfferingResponse response = ApiResponseHelper.createServiceOfferingResponse((ServiceOfferingVO)result);
-        response.setResponseName(getName());
-        this.setResponseObject(response);
+        ServiceOffering result = _configService.createServiceOffering(this);
+        if (result != null) {
+            ServiceOfferingResponse response = ApiResponseHelper.createServiceOfferingResponse((ServiceOfferingVO)result);
+            response.setResponseName(getName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create service offering");
+        }
     }
 }

@@ -78,9 +78,13 @@ public class UpgradeVMCmd extends BaseCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, StorageUnavailableException{
-        UserVm result = BaseCmd._userVmService.upgradeVirtualMachine(this);
-        UserVmResponse response = ApiResponseHelper.createUserVmResponse(result);
-        response.setResponseName(getName());
-        this.setResponseObject(response);
+        UserVm result = _userVmService.upgradeVirtualMachine(this);
+        if (result != null){
+            UserVmResponse response = ApiResponseHelper.createUserVmResponse(result);
+            response.setResponseName(getName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to upgrade vm");
+        }
     }
 }

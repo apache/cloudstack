@@ -98,7 +98,7 @@ public class CreatePortForwardingRuleCmd extends BaseCmd {
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         try {
-            FirewallRuleVO result = BaseCmd._networkMgr.createPortForwardingRule(this);
+            FirewallRuleVO result = _networkMgr.createPortForwardingRule(this);
             if (result != null) {
                 FirewallRuleResponse fwResponse = ApiResponseHelper.createFirewallRuleResponse(result);
                 fwResponse.setResponseName(getName());

@@ -113,7 +113,7 @@ public class CopyIsoCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         try {
-            VMTemplateVO iso = BaseCmd._templateMgr.copyIso(this);
+            VMTemplateVO iso = _templateMgr.copyIso(this);
             TemplateResponse isoResponse = new TemplateResponse();
             if (iso != null) {
                 isoResponse.setId(iso.getId());

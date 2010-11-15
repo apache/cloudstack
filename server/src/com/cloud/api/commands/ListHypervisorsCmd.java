@@ -44,7 +44,7 @@ public class ListHypervisorsCmd extends BaseCmd {
 	
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        String[] result = BaseCmd._mgr.getHypervisors(this);
+        String[] result = _mgr.getHypervisors(this);
         ListResponse<HypervisorResponse> response = new ListResponse<HypervisorResponse>();
         ArrayList<HypervisorResponse> responses = new ArrayList<HypervisorResponse>();
         for (String hypervisor : result) {

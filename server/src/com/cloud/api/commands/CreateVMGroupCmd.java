@@ -79,9 +79,13 @@ public class CreateVMGroupCmd extends BaseCmd{
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        InstanceGroupVO result = BaseCmd._userVmService.createVmGroup(this);
-        InstanceGroupResponse response = ApiResponseHelper.createInstanceGroupResponse(result);
-        response.setResponseName(getName());
-        this.setResponseObject(response);
+        InstanceGroupVO result = _userVmService.createVmGroup(this);
+        if (result != null) {
+            InstanceGroupResponse response = ApiResponseHelper.createInstanceGroupResponse(result);
+            response.setResponseName(getName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create vm instance group");
+        }
     }
 }

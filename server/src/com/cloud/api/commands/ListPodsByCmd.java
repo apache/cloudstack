@@ -25,7 +25,6 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiResponseHelper;
-import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -86,7 +85,7 @@ public class ListPodsByCmd extends BaseListCmd {
 
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<HostPodVO> result = BaseCmd._mgr.searchForPods(this);
+        List<HostPodVO> result = _mgr.searchForPods(this);
         ListResponse<PodResponse> response = new ListResponse<PodResponse>();
         List<PodResponse> podResponses = new ArrayList<PodResponse>();
         for (HostPodVO pod : result) {

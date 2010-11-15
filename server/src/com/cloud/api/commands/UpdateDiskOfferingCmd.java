@@ -86,9 +86,13 @@ public class UpdateDiskOfferingCmd extends BaseCmd{
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        DiskOffering result = BaseCmd._configService.updateDiskOffering(this);
-        DiskOfferingResponse response = ApiResponseHelper.createDiskOfferingResponse((DiskOfferingVO)result);
-        response.setResponseName(getName());
-        this.setResponseObject(response);
+        DiskOffering result = _configService.updateDiskOffering(this);
+        if (result != null){
+            DiskOfferingResponse response = ApiResponseHelper.createDiskOfferingResponse((DiskOfferingVO)result);
+            response.setResponseName(getName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update disk offering");
+        }
     }
 }

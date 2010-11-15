@@ -111,13 +111,14 @@ public class CreateSnapshotCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         try {
-            SnapshotVO snapshot = BaseCmd._snapshotMgr.createSnapshot(this);
+            SnapshotVO snapshot = _snapshotMgr.createSnapshot(this);
             if (snapshot != null) {
                 SnapshotResponse response = ApiResponseHelper.createSnapshotResponse(snapshot);
                 response.setResponseName(getName());
                 this.setResponseObject(response);
+            } else {
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create snapshot due to an internal error creating snapshot for volume " + volumeId);
             }
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create snapshot due to an internal error creating snapshot for volume " + volumeId);
         } catch (ResourceAllocationException ex) {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
         }

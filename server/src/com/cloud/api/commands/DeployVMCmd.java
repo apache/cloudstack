@@ -201,19 +201,22 @@ public class DeployVMCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, StorageUnavailableException{
         try {
-            
             String password = null;
             if (templateId != null ) {
                 VMTemplateVO template = ApiDBUtils.findTemplateById(templateId);
                 if (template.getEnablePassword()) { 
-                    password = BaseCmd._mgr.generateRandomPassword();
+                    password = _mgr.generateRandomPassword();
                 } 
             }
-            UserVm result = BaseCmd._mgr.deployVirtualMachine(this, password);
-            UserVmResponse response = ApiResponseHelper.createUserVmResponse(result);
-            response.setPassword(password);
-            response.setResponseName(getName());
-            this.setResponseObject(response);
+            UserVm result = _mgr.deployVirtualMachine(this, password);
+            if (result != null){
+                UserVmResponse response = ApiResponseHelper.createUserVmResponse(result);
+                response.setPassword(password);
+                response.setResponseName(getName());
+                this.setResponseObject(response);
+            } else {
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to deploy vm");
+            }
         } catch (ResourceAllocationException ex) {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
         } catch (ExecutionException ex1) {

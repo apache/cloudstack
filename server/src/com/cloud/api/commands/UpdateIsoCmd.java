@@ -60,7 +60,7 @@ public class UpdateIsoCmd extends UpdateTemplateOrIsoCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException{
-        VMTemplateVO result = BaseCmd._mgr.updateTemplate(this);
+        VMTemplateVO result = _mgr.updateTemplate(this);
         TemplateResponse response = new TemplateResponse();
         if (result != null) {
             response.setId(result.getId());

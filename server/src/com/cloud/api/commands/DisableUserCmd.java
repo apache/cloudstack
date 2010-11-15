@@ -89,9 +89,13 @@ public class DisableUserCmd extends BaseAsyncCmd {
 	
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        UserAccount user = BaseCmd._accountService.disableUser(this);
-        UserResponse response = ApiResponseHelper.createUserResponse(user);
-        response.setResponseName(getName()); 
-        this.setResponseObject(response);
+        UserAccount user = _accountService.disableUser(this);
+        if (user != null){
+            UserResponse response = ApiResponseHelper.createUserResponse(user);
+            response.setResponseName(getName()); 
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to disable user");
+        }
     }
 }

@@ -64,7 +64,7 @@ public class DeleteVlanIpRangeCmd extends BaseCmd {
 	
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        boolean result = BaseCmd._configService.deleteVlanIpRange(this);
+        boolean result = _configService.deleteVlanIpRange(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getName());
             this.setResponseObject(response);

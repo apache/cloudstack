@@ -175,60 +175,66 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void callCreate() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException{
-        VMTemplateVO template = BaseCmd._userVmService.createPrivateTemplateRecord(this);
-        if (template != null)
+        VMTemplateVO template = _userVmService.createPrivateTemplateRecord(this);
+        if (template != null){
             this.setId(template.getId());
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create a template");
+        }
     }
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        VMTemplateVO template = BaseCmd._userVmService.createPrivateTemplate(this);
-
-        TemplateResponse response = new TemplateResponse();
-        response.setId(template.getId());
-        response.setName(template.getName());
-        response.setDisplayText(template.getDisplayText());
-        response.setPublic(template.isPublicTemplate());
-        response.setPasswordEnabled(template.getEnablePassword());
-        response.setCrossZones(template.isCrossZones());
-
-        VolumeVO volume = null;
-        if (snapshotId != null) {
-            Snapshot snapshot = ApiDBUtils.findSnapshotById(snapshotId);
-            volume = ApiDBUtils.findVolumeById(snapshot.getVolumeId());
+        VMTemplateVO template = _userVmService.createPrivateTemplate(this);
+        if (template != null) {
+            TemplateResponse response = new TemplateResponse();
+            response.setId(template.getId());
+            response.setName(template.getName());
+            response.setDisplayText(template.getDisplayText());
+            response.setPublic(template.isPublicTemplate());
+            response.setPasswordEnabled(template.getEnablePassword());
+            response.setCrossZones(template.isCrossZones());
+    
+            VolumeVO volume = null;
+            if (snapshotId != null) {
+                Snapshot snapshot = ApiDBUtils.findSnapshotById(snapshotId);
+                volume = ApiDBUtils.findVolumeById(snapshot.getVolumeId());
+            } else {
+                volume = ApiDBUtils.findVolumeById(volumeId);
+            }
+    
+            VMTemplateHostVO templateHostRef = ApiDBUtils.findTemplateHostRef(template.getId(), volume.getDataCenterId());
+            response.setCreated(templateHostRef.getCreated());
+            response.setReady(templateHostRef != null && templateHostRef.getDownloadState() == Status.DOWNLOADED);
+    
+            GuestOS os = ApiDBUtils.findGuestOSById(template.getGuestOSId());
+            if (os != null) {
+                response.setOsTypeId(os.getId());
+                response.setOsTypeName(os.getDisplayName());
+            } else {
+                response.setOsTypeId(-1L);
+                response.setOsTypeName("");
+            }
+    
+            Account owner = ApiDBUtils.findAccountById(template.getAccountId());
+            if (owner != null) {
+                response.setAccount(owner.getAccountName());
+                response.setDomainId(owner.getDomainId());
+                response.setDomainName(ApiDBUtils.findDomainById(owner.getDomainId()).getName());
+            }
+    
+            DataCenterVO zone = ApiDBUtils.findZoneById(volume.getDataCenterId());
+            if (zone != null) {
+                response.setZoneId(zone.getId());
+                response.setZoneName(zone.getName());
+            }
+    
+            response.setObjectName("template");
+            response.setResponseName(getName());
+            
+            this.setResponseObject(response);
         } else {
-            volume = ApiDBUtils.findVolumeById(volumeId);
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create template");
         }
-
-        VMTemplateHostVO templateHostRef = ApiDBUtils.findTemplateHostRef(template.getId(), volume.getDataCenterId());
-        response.setCreated(templateHostRef.getCreated());
-        response.setReady(templateHostRef != null && templateHostRef.getDownloadState() == Status.DOWNLOADED);
-
-        GuestOS os = ApiDBUtils.findGuestOSById(template.getGuestOSId());
-        if (os != null) {
-            response.setOsTypeId(os.getId());
-            response.setOsTypeName(os.getDisplayName());
-        } else {
-            response.setOsTypeId(-1L);
-            response.setOsTypeName("");
-        }
-
-        Account owner = ApiDBUtils.findAccountById(template.getAccountId());
-        if (owner != null) {
-            response.setAccount(owner.getAccountName());
-            response.setDomainId(owner.getDomainId());
-            response.setDomainName(ApiDBUtils.findDomainById(owner.getDomainId()).getName());
-        }
-
-        DataCenterVO zone = ApiDBUtils.findZoneById(volume.getDataCenterId());
-        if (zone != null) {
-            response.setZoneId(zone.getId());
-            response.setZoneName(zone.getName());
-        }
-
-        response.setObjectName("template");
-        response.setResponseName(getName());
-        
-        this.setResponseObject(response);
     }
 }

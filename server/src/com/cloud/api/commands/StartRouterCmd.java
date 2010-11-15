@@ -96,9 +96,13 @@ public class StartRouterCmd extends BaseAsyncCmd {
 	
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        DomainRouter result = BaseCmd._routerMgr.startRouter(this);
-        DomainRouterResponse routerResponse = ApiResponseHelper.createDomainRouterResponse(result);
-        routerResponse.setResponseName(getName());
-        this.setResponseObject(routerResponse);
+        DomainRouter result = _routerMgr.startRouter(this);
+        if (result != null){
+            DomainRouterResponse routerResponse = ApiResponseHelper.createDomainRouterResponse(result);
+            routerResponse.setResponseName(getName());
+            this.setResponseObject(routerResponse);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to start router");
+        }
     }
 }

@@ -102,9 +102,13 @@ public class CreateLoadBalancerRuleCmd extends BaseCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        LoadBalancerVO result = BaseCmd._networkMgr.createLoadBalancerRule(this);
-        LoadBalancerResponse response = ApiResponseHelper.createLoadBalancerResponse(result);
-        response.setResponseName(getName());
-        this.setResponseObject(response);
+        LoadBalancerVO result = _networkMgr.createLoadBalancerRule(this);
+        if (result != null) {
+            LoadBalancerResponse response = ApiResponseHelper.createLoadBalancerResponse(result);
+            response.setResponseName(getName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create load balancer rule");
+        }
     }
 }

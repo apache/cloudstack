@@ -76,7 +76,7 @@ public class AddSecondaryStorageCmd extends BaseCmd {
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         try {
-            List<HostVO> result = BaseCmd._agentMgr.discoverHosts(this);
+            List<HostVO> result = _agentMgr.discoverHosts(this);
             HostResponse hostResponse = null;
             if (result != null && result.size() > 0) {
                 for (HostVO host : result) {

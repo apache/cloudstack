@@ -24,7 +24,6 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiResponseHelper;
-import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -70,7 +69,7 @@ public class ListPortForwardingRulesCmd extends BaseListCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<FirewallRuleVO> result = BaseCmd._networkMgr.listPortForwardingRules(this);
+        List<FirewallRuleVO> result = _networkMgr.listPortForwardingRules(this);
         ListResponse<FirewallRuleResponse> response = new ListResponse<FirewallRuleResponse>();
         List<FirewallRuleResponse> fwResponses = new ArrayList<FirewallRuleResponse>();
         

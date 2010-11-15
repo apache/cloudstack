@@ -24,7 +24,6 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -89,7 +88,7 @@ public class ListGuestOsCmd extends BaseListCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<GuestOSVO> result = BaseCmd._mgr.listGuestOSByCriteria(this);
+        List<GuestOSVO> result = _mgr.listGuestOSByCriteria(this);
         ListResponse<GuestOSResponse> response = new ListResponse<GuestOSResponse>();
         List<GuestOSResponse> osResponses = new ArrayList<GuestOSResponse>();
         for (GuestOSVO guestOS : result) {

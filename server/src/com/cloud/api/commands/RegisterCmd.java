@@ -63,7 +63,7 @@ public class RegisterCmd extends BaseCmd {
 
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        String[] keys = BaseCmd._mgr.createApiKeyAndSecretKey(this);
+        String[] keys = _mgr.createApiKeyAndSecretKey(this);
         RegisterResponse response = new RegisterResponse();
         response.setApiKey(keys[0]);
         response.setSecretKey(keys[1]);

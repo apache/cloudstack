@@ -36,7 +36,6 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
 
 @Implementation(responseObject=SystemVmResponse.class, description="Starts a system virtual machine.")
@@ -94,11 +93,14 @@ public class StartSystemVMCmd extends BaseAsyncCmd {
     }
 	
     @Override
-
-    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, CloudRuntimeException{
+    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         VMInstanceVO instance = _mgr.startSystemVM(this);
-        SystemVmResponse response = ApiResponseHelper.createSystemVmResponse(instance);
-        response.setResponseName(getName());
-        this.setResponseObject(response);
+        if (instance != null) {
+            SystemVmResponse response = ApiResponseHelper.createSystemVmResponse(instance);
+            response.setResponseName(getName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Fail to start system vm");
+        }
     }
 }

@@ -90,9 +90,13 @@ public class DestroyVMCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, StorageUnavailableException{
-        UserVm result = BaseCmd._userVmService.destroyVm(this);
-        UserVmResponse response = ApiResponseHelper.createUserVmResponse(result);
-        response.setResponseName("virtualmachine");
-        this.setResponseObject(response);
+        UserVm result = _userVmService.destroyVm(this);
+        if (result != null) {
+            UserVmResponse response = ApiResponseHelper.createUserVmResponse(result);
+            response.setResponseName("virtualmachine");
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to destroy vm");
+        }
     }
 }

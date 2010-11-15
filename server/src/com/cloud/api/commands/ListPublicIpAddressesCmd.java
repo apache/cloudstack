@@ -25,7 +25,6 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiResponseHelper;
-import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -113,7 +112,7 @@ public class ListPublicIpAddressesCmd extends BaseListCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<IPAddressVO> result = BaseCmd._mgr.searchForIPAddresses(this);
+        List<IPAddressVO> result = _mgr.searchForIPAddresses(this);
         ListResponse<IPAddressResponse> response = new ListResponse<IPAddressResponse>();
         List<IPAddressResponse> ipAddrResponses = new ArrayList<IPAddressResponse>();
         for (IPAddressVO ipAddress : result) {

@@ -186,7 +186,7 @@ public class RevokeNetworkGroupIngressCmd extends BaseAsyncCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        boolean result = BaseCmd._networkGroupMgr.revokeNetworkGroupIngress(this);
+        boolean result = _networkGroupMgr.revokeNetworkGroupIngress(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getName());
             this.setResponseObject(response);

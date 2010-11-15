@@ -118,24 +118,27 @@ public class ExtractTemplateCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException{
         try {
-            Long uploadId = BaseCmd._templateMgr.extract(this);
-            UploadVO uploadInfo = ApiDBUtils.findUploadById(uploadId);
-            
-            ExtractResponse response = new ExtractResponse();
-            response.setResponseName(getName());
-            response.setObjectName("template");
-            response.setId(id);
-            response.setName(ApiDBUtils.findTemplateById(id).getName());        
-            response.setZoneId(zoneId);
-            response.setZoneName(ApiDBUtils.findZoneById(zoneId).getName());
-            response.setMode(mode);
-            response.setUploadId(uploadId);
-            response.setState(uploadInfo.getUploadState().toString());
-            response.setAccountId(getAccountId());        
-            //FIX ME - Need to set the url once the gson jar is upgraded since it is throwing an error right now.
-            //response.setUrl(uploadInfo.getUploadUrl());         
-            response.setUrl(uploadInfo.getUploadUrl().replaceAll("/", "%2F"));
-            this.setResponseObject(response);
+            Long uploadId = _templateMgr.extract(this);
+            if (uploadId != null){
+                UploadVO uploadInfo = ApiDBUtils.findUploadById(uploadId);
+                ExtractResponse response = new ExtractResponse();
+                response.setResponseName(getName());
+                response.setObjectName("template");
+                response.setId(id);
+                response.setName(ApiDBUtils.findTemplateById(id).getName());        
+                response.setZoneId(zoneId);
+                response.setZoneName(ApiDBUtils.findZoneById(zoneId).getName());
+                response.setMode(mode);
+                response.setUploadId(uploadId);
+                response.setState(uploadInfo.getUploadState().toString());
+                response.setAccountId(getAccountId());        
+                //FIX ME - Need to set the url once the gson jar is upgraded since it is throwing an error right now.
+                //response.setUrl(uploadInfo.getUploadUrl());         
+                response.setUrl(uploadInfo.getUploadUrl().replaceAll("/", "%2F"));
+                this.setResponseObject(response);
+            } else {
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to extract template");
+            }
         } catch (InternalErrorException ex) {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
         }

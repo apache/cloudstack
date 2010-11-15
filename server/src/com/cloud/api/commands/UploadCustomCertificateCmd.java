@@ -73,12 +73,16 @@ public class UploadCustomCertificateCmd extends BaseAsyncCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        String result = BaseCmd._mgr.uploadCertificate(this);
-        CustomCertificateResponse response = new CustomCertificateResponse();
-        response.setResponseName(getName());
-        response.setUpdatedConsoleProxyIdList(result);
-        response.setObjectName("customcertificate");
-        this.setResponseObject(response);
+        String result = _mgr.uploadCertificate(this);
+        if (result != null){
+            CustomCertificateResponse response = new CustomCertificateResponse();
+            response.setResponseName(getName());
+            response.setUpdatedConsoleProxyIdList(result);
+            response.setObjectName("customcertificate");
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to upload custom certificate");
+        }
     }
 
 }

@@ -100,9 +100,13 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
 
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        ServiceOffering result = BaseCmd._configService.updateServiceOffering(this);
-        ServiceOfferingResponse response = ApiResponseHelper.createServiceOfferingResponse((ServiceOfferingVO)result);
-        response.setResponseName(getName());
-        this.setResponseObject(response);
+        ServiceOffering result = _configService.updateServiceOffering(this);
+        if (result != null){
+            ServiceOfferingResponse response = ApiResponseHelper.createServiceOfferingResponse((ServiceOfferingVO)result);
+            response.setResponseName(getName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update service offering");
+        }
     }
 }

@@ -96,10 +96,14 @@ public class ReconnectHostCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         try {
-            HostVO result = BaseCmd._agentMgr.reconnectHost(this);
-            HostResponse response = ApiResponseHelper.createHostResponse(result);
-            response.setResponseName(getName());
-            this.setResponseObject(response);
+            HostVO result = _agentMgr.reconnectHost(this);
+            if (result != null){
+                HostResponse response = ApiResponseHelper.createHostResponse(result);
+                response.setResponseName(getName());
+                this.setResponseObject(response);
+            } else {
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to reconnect host");
+            }
         } catch (AgentUnavailableException ex) {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
         }

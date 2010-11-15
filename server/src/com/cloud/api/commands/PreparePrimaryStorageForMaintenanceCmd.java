@@ -92,9 +92,13 @@ public class PreparePrimaryStorageForMaintenanceCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        StoragePoolVO result = BaseCmd._storageMgr.preparePrimaryStorageForMaintenance(this);
-        StoragePoolResponse response = ApiResponseHelper.createStoragePoolResponse(result);
-        response.setResponseName("storagepool");
-        this.setResponseObject(response);
+        StoragePoolVO result = _storageMgr.preparePrimaryStorageForMaintenance(this);
+        if (result != null){
+            StoragePoolResponse response = ApiResponseHelper.createStoragePoolResponse(result);
+            response.setResponseName("storagepool");
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to prepare primary storage for maintenance");
+        }
     }
 }

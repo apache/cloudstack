@@ -25,7 +25,6 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
-import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -127,7 +126,7 @@ public class ListTemplatesCmd extends BaseListCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<VMTemplateVO> templates = BaseCmd._mgr.listTemplates(this);
+        List<VMTemplateVO> templates = _mgr.listTemplates(this);
         TemplateFilter templateFilterObj;
         try {
             templateFilterObj = TemplateFilter.valueOf(templateFilter);

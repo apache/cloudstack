@@ -115,9 +115,13 @@ public class CreateSnapshotPolicyCmd extends BaseCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        SnapshotPolicyVO result = BaseCmd._snapshotMgr.createPolicy(this);
-        SnapshotPolicyResponse response = ApiResponseHelper.createSnapshotPolicyResponse(result);
-        response.setResponseName(getName());
-        this.setResponseObject(response);
+        SnapshotPolicyVO result = _snapshotMgr.createPolicy(this);
+        if (result != null) {
+            SnapshotPolicyResponse response = ApiResponseHelper.createSnapshotPolicyResponse(result);
+            response.setResponseName(getName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create snapshot policy");
+        }
     }
 }

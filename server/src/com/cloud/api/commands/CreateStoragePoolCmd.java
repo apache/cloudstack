@@ -115,13 +115,13 @@ public class CreateStoragePoolCmd extends BaseCmd {
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         try {
-            StoragePoolVO result = BaseCmd._storageMgr.createPool(this);
+            StoragePoolVO result = _storageMgr.createPool(this);
             if (result != null) {
                 StoragePoolResponse response = ApiResponseHelper.createStoragePoolResponse(result);
                 response.setResponseName(getName());
                 this.setResponseObject(response);
             } else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add host");
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add storage pool");
             }
         } catch (ResourceAllocationException ex1) {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex1.getMessage());

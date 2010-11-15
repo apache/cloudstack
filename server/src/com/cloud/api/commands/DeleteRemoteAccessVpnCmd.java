@@ -113,7 +113,7 @@ public class DeleteRemoteAccessVpnCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        boolean result = BaseCmd._networkMgr.destroyRemoteAccessVpn(this);
+        boolean result = _networkMgr.destroyRemoteAccessVpn(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getName());
             this.setResponseObject(response);

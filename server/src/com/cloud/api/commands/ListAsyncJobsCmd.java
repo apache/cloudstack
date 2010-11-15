@@ -23,7 +23,6 @@ import java.util.List;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiSerializerHelper;
-import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -82,7 +81,7 @@ public class ListAsyncJobsCmd extends BaseListCmd {
 
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        List<AsyncJobVO> result = BaseCmd._mgr.searchForAsyncJobs(this);
+        List<AsyncJobVO> result = _mgr.searchForAsyncJobs(this);
         ListResponse<AsyncJobResponse> response = new ListResponse<AsyncJobResponse>();
         List<AsyncJobResponse> jobResponses = new ArrayList<AsyncJobResponse>();
         for (AsyncJobVO job : result) {

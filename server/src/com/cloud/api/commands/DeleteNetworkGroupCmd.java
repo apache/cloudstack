@@ -63,7 +63,7 @@ public class DeleteNetworkGroupCmd extends BaseCmd {
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
         try{
-            boolean result = BaseCmd._networkGroupMgr.deleteNetworkGroup(this);
+            boolean result = _networkGroupMgr.deleteNetworkGroup(this);
             if (result) {
                 SuccessResponse response = new SuccessResponse(getName());
                 this.setResponseObject(response);

@@ -87,7 +87,7 @@ public class DeleteLoadBalancerRuleCmd extends BaseAsyncCmd {
 	
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        boolean result = BaseCmd._networkMgr.deleteLoadBalancerRule(this);
+        boolean result = _networkMgr.deleteLoadBalancerRule(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getName());
             this.setResponseObject(response);

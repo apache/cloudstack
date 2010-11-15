@@ -90,7 +90,7 @@ public class DestroyConsoleProxyCmd extends BaseAsyncCmd {
 	
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        boolean result = BaseCmd._consoleProxyMgr.destroyConsoleProxy(this);
+        boolean result = _consoleProxyMgr.destroyConsoleProxy(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getName());
             this.setResponseObject(response);

@@ -69,7 +69,7 @@ public class DeleteVolumeCmd extends BaseCmd {
 	
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        boolean result = BaseCmd._storageMgr.deleteVolume(this);
+        boolean result = _storageMgr.deleteVolume(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getName());
             this.setResponseObject(response);

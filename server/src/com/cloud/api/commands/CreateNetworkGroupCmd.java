@@ -88,17 +88,21 @@ public class CreateNetworkGroupCmd extends BaseCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        NetworkGroupVO group = BaseCmd._networkGroupMgr.createNetworkGroup(this);
-        NetworkGroupResponse response = new NetworkGroupResponse();
-        response.setAccountName(group.getAccountName());
-        response.setDescription(group.getDescription());
-        response.setDomainId(group.getDomainId());
-        response.setDomainName(ApiDBUtils.findDomainById(group.getDomainId()).getName());
-        response.setId(group.getId());
-        response.setName(group.getName());
-
-        response.setResponseName(getName());
-        response.setObjectName("securitygroup");
-        this.setResponseObject(response);
+        NetworkGroupVO group = _networkGroupMgr.createNetworkGroup(this);
+        if (group != null) {
+            NetworkGroupResponse response = new NetworkGroupResponse();
+            response.setAccountName(group.getAccountName());
+            response.setDescription(group.getDescription());
+            response.setDomainId(group.getDomainId());
+            response.setDomainName(ApiDBUtils.findDomainById(group.getDomainId()).getName());
+            response.setId(group.getId());
+            response.setName(group.getName());
+    
+            response.setResponseName(getName());
+            response.setObjectName("securitygroup");
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create network group");
+        }
     }
 }

@@ -93,9 +93,13 @@ public class PrepareForMaintenanceCmd extends BaseAsyncCmd {
     
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        HostVO result = BaseCmd._agentMgr.maintain(this);
-        HostResponse response = ApiResponseHelper.createHostResponse(result);
-        response.setResponseName("host");
-        this.setResponseObject(response);
+        HostVO result = _agentMgr.maintain(this);
+        if (result != null){
+            HostResponse response = ApiResponseHelper.createHostResponse(result);
+            response.setResponseName("host");
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to prepare host for maintenance");
+        }
     }
 }
