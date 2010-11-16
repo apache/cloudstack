@@ -16,17 +16,6 @@
  * 
  */
  
- function afterLoadPrimaryStorageJSP($midmenuItem1) {
-    initAddHostButton($("#midmenu_add_link"), "primarystorage_page"); 
-    initAddPrimaryStorageButton($("#midmenu_add2_link"), "primarystorage_page");  
-    
-    initDialog("dialog_add_host");
-    initDialog("dialog_add_pool");
-    initDialog("dialog_confirmation_delete_primarystorage");
-        
-    primarystorageJsonToDetailsTab($midmenuItem1); 
-}
-
 function primarystorageGetMidmenuId(jsonObj) {
     return "midmenuItem_primarystorage_" + jsonObj.id; 
 }
@@ -46,37 +35,53 @@ function primarystorageToMidmenu(jsonObj, $midmenuItem1) {
 
 function primarystorageToRightPanel($midmenuItem1) {  
     copyActionInfoFromMidMenuToRightPanel($midmenuItem1);         
-    resourceLoadPage("jsp/primarystorage.jsp", $midmenuItem1);
+    resourceLoadPage("jsp/primarystorage.jsp", $midmenuItem1);  //after reloading "jsp/primarystorage.jsp", afterLoadPrimaryStorageJSP() will be called.
 }
 
-function primarystorageJsonToDetailsTab($midmenuItem1) {	
-    var jsonObj = $midmenuItem1.data("jsonObj");    
-    var $detailsTab = $("#tab_content_details");   
-    $detailsTab.data("jsonObj", jsonObj);   
+ function afterLoadPrimaryStorageJSP($midmenuItem1) {
+    initAddHostButton($("#midmenu_add_link"), "primarystorage_page"); 
+    initAddPrimaryStorageButton($("#midmenu_add2_link"), "primarystorage_page");  
+    
+    initDialog("dialog_add_host");
+    initDialog("dialog_add_pool");
+    initDialog("dialog_confirmation_delete_primarystorage");
+     
+    $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);    
+    primarystorageJsonToDetailsTab(); 
+}
+
+function primarystorageJsonToDetailsTab() {	
+    var $thisTab = $("#right_panel_content").find("#tab_content_details");  
+    $thisTab.find("#tab_container").hide(); 
+    $thisTab.find("#tab_spinning_wheel").show();        
+    
+    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
+    var jsonObj = $midmenuItem1.data("jsonObj");  
+    $thisTab.data("jsonObj", jsonObj);   
             
-    $detailsTab.find("#id").text(noNull(jsonObj.id));
-    $detailsTab.find("#grid_header_title").text(fromdb(jsonObj.name));
-    $detailsTab.find("#name").text(fromdb(jsonObj.name));
+    $thisTab.find("#id").text(noNull(jsonObj.id));
+    $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));
+    $thisTab.find("#name").text(fromdb(jsonObj.name));
     
-    setHostStateInRightPanel(fromdb(jsonObj.state), $detailsTab.find("#state"));
+    setHostStateInRightPanel(fromdb(jsonObj.state), $thisTab.find("#state"));
     
-    $detailsTab.find("#zonename").text(fromdb(jsonObj.zonename));
-    $detailsTab.find("#podname").text(fromdb(jsonObj.podname));
-    $detailsTab.find("#clustername").text(fromdb(jsonObj.clustername));
+    $thisTab.find("#zonename").text(fromdb(jsonObj.zonename));
+    $thisTab.find("#podname").text(fromdb(jsonObj.podname));
+    $thisTab.find("#clustername").text(fromdb(jsonObj.clustername));
 	var storageType = "ISCSI Share";
 	if (jsonObj.type == 'NetworkFilesystem') 
 	    storageType = "NFS Share";
-    $detailsTab.find("#type").text(fromdb(storageType));
-    $detailsTab.find("#ipaddress").text(noNull(jsonObj.ipaddress));
-    $detailsTab.find("#path").text(fromdb(jsonObj.path));                
-	$detailsTab.find("#disksizetotal").text(convertBytes(jsonObj.disksizetotal));
-	$detailsTab.find("#disksizeallocated").text(convertBytes(jsonObj.disksizeallocated));
+    $thisTab.find("#type").text(fromdb(storageType));
+    $thisTab.find("#ipaddress").text(noNull(jsonObj.ipaddress));
+    $thisTab.find("#path").text(fromdb(jsonObj.path));                
+	$thisTab.find("#disksizetotal").text(convertBytes(jsonObj.disksizetotal));
+	$thisTab.find("#disksizeallocated").text(convertBytes(jsonObj.disksizeallocated));
 	
-	$detailsTab.find("#tags").text(fromdb(jsonObj.tags));   
-	$detailsTab.find("#tags_edit").val(fromdb(jsonObj.tags));  
+	$thisTab.find("#tags").text(fromdb(jsonObj.tags));   
+	$thisTab.find("#tags_edit").val(fromdb(jsonObj.tags));  
 	 
 	//actions ***   
-    var $actionLink = $detailsTab.find("#action_link"); 
+    var $actionLink = $thisTab.find("#action_link"); 
     $actionLink.bind("mouseover", function(event) {	    
         $(this).find("#action_menu").show();    
         return false;
@@ -85,12 +90,41 @@ function primarystorageJsonToDetailsTab($midmenuItem1) {
         $(this).find("#action_menu").hide();    
         return false;
     });	  
-    var $actionMenu = $detailsTab.find("#action_link #action_menu");
+    var $actionMenu = $thisTab.find("#action_link #action_menu");
     $actionMenu.find("#action_list").empty(); 
-    buildActionLinkForTab("Edit Primary Storage", primarystorageActionMap, $actionMenu, $midmenuItem1, $detailsTab);     
-    buildActionLinkForTab("Enable Maintenance Mode", primarystorageActionMap, $actionMenu, $midmenuItem1, $detailsTab);     
-    buildActionLinkForTab("Cancel Maintenance Mode", primarystorageActionMap, $actionMenu, $midmenuItem1, $detailsTab);     
-    buildActionLinkForTab("Delete Primary Storage", primarystorageActionMap, $actionMenu, $midmenuItem1, $detailsTab);        
+    buildActionLinkForTab("Edit Primary Storage", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab);     
+      
+    if (jsonObj.state == 'Up' || jsonObj.state == "Connecting") {
+		buildActionLinkForTab("Enable Maintenance Mode", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab);  
+	} 
+	else if(jsonObj.state == 'Down') {
+	    buildActionLinkForTab("Enable Maintenance Mode", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab); 
+        buildActionLinkForTab("Delete Primary Storage", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab);  
+        
+    }	
+	else if(jsonObj.state == "Alert") {	     
+	    buildActionLinkForTab("Delete Primary Storage", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab);   
+	}	
+	else if (jsonObj.state == "ErrorInMaintenance") {
+	    buildActionLinkForTab("Enable Maintenance Mode", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab);  
+        buildActionLinkForTab("Cancel Maintenance Mode", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab);   
+    }
+	else if (jsonObj.state == "PrepareForMaintenance") {
+	    buildActionLinkForTab("Cancel Maintenance Mode", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab); 
+    }
+	else if (jsonObj.state == "Maintenance") {
+	    buildActionLinkForTab("Cancel Maintenance Mode", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab);            	    
+        buildActionLinkForTab("Delete Primary Storage", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab);          
+    }
+	else if (jsonObj.state == "Disconnected"){	      	    
+        buildActionLinkForTab("Delete Primary Storage", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab);          
+    }
+	else {
+	    alert("Unsupported Host State: " + jsonObj.state);
+	}      
+    
+    $thisTab.find("#tab_spinning_wheel").hide();    
+    $thisTab.find("#tab_container").show();         
 }
        
 function primarystorageClearRightPanel() {  
@@ -98,19 +132,19 @@ function primarystorageClearRightPanel() {
 }
 
 function primarystorageJsonClearDetailsTab() {	    
-    var $detailsTab = $("#tab_content_details");   
-    $detailsTab.find("#id").text("");
-    $detailsTab.find("#name").text("");
-	$detailsTab.find("#state").text("");
-    $detailsTab.find("#zonename").text("");
-    $detailsTab.find("#podname").text("");
-    $detailsTab.find("#clustername").text("");
-    $detailsTab.find("#type").text("");
-    $detailsTab.find("#ipaddress").text("");
-    $detailsTab.find("#path").text("");                
-	$detailsTab.find("#disksizetotal").text("");
-	$detailsTab.find("#disksizeallocated").text("");
-	$detailsTab.find("#tags").text("");         
+    var $thisTab = $("#right_panel_content").find("#tab_content_details");   
+    $thisTab.find("#id").text("");
+    $thisTab.find("#name").text("");
+	$thisTab.find("#state").text("");
+    $thisTab.find("#zonename").text("");
+    $thisTab.find("#podname").text("");
+    $thisTab.find("#clustername").text("");
+    $thisTab.find("#type").text("");
+    $thisTab.find("#ipaddress").text("");
+    $thisTab.find("#path").text("");                
+	$thisTab.find("#disksizetotal").text("");
+	$thisTab.find("#disksizeallocated").text("");
+	$thisTab.find("#tags").text("");         
 }
 
 var primarystorageActionMap = {    
