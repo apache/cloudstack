@@ -8,7 +8,7 @@
 %define _rel 1
 
 Name:      cloud
-Summary:   Cloud.com Stack
+Summary:   Cloud.com CloudStack
 Version:   %{_ver}
 #http://fedoraproject.org/wiki/PackageNamingGuidelines#Pre-Release_packages
 %if "%{?_prerelease}" != ""
@@ -18,7 +18,7 @@ Release:   %{_rel}
 %endif
 License:   GPLv3+ with exceptions or CSL 1.1
 Vendor:    Cloud.com, Inc. <sqa@cloud.com>
-Packager:  Manuel Amador (Rudd-O) <manuel@cloud.com>
+Packager:  Engineering  <info@cloud.com>
 Group:     System Environment/Libraries
 # FIXME do groups for every single one of the subpackages
 Source0:   %{name}-%{_ver}.tar.bz2
@@ -38,8 +38,8 @@ BuildRequires: glibc-devel
 %global _premium %(tar jtvmf %{SOURCE0} '*/cloudstack-proprietary/' --occurrence=1 2>/dev/null | wc -l)
 
 %description
-This is the Cloud.com Stack, a highly-scalable elastic, open source,
-intelligent cloud implementation.
+This is the Cloud.com CloudStack, a highly-scalable elastic, open source,
+cloud orchestration implementation.
 
 %package utils
 Summary:   Cloud.com utility library
@@ -48,7 +48,7 @@ Group:     System Environment/Libraries
 Obsoletes: vmops-utils < %{version}-%{release}
 %description utils
 The Cloud.com utility libraries provide a set of Java classes used
-in the Cloud.com Stack.
+in the Cloud.com CloudStack.
 
 %package client-ui
 Summary:   Cloud.com management server UI
@@ -57,7 +57,7 @@ Group:     System Environment/Libraries
 Obsoletes: vmops-client-ui < %{version}-%{release}
 %description client-ui
 The Cloud.com management server is the central point of coordination,
-management, and intelligence in the Cloud.com Stack.  This package
+management, and intelligence in the Cloud.com CloudStack.  This package
 is a requirement of the %{name}-client package, which installs the
 Cloud.com management server.
 
@@ -65,24 +65,24 @@ Cloud.com management server.
 Summary:   Cloud.com server library
 Requires: java >= 1.6.0
 Obsoletes: vmops-server < %{version}-%{release}
-Requires: %{name}-utils = %{version}-%{release}, %{name}-core = %{version}-%{release}, %{name}-deps = %{version}-%{release}, tomcat6-servlet-2.5-api
+Requires: %{name}-utils = %{version}, %{name}-core = %{version}, %{name}-deps = %{version}, tomcat6-servlet-2.5-api
 Group:     System Environment/Libraries
 %description server
 The Cloud.com server libraries provide a set of Java classes used
-in the Cloud.com Stack.
+in the Cloud.com CloudStack.
 
 %package vnet
 Summary:   Cloud.com-specific virtual network daemon
 Requires: python
-Requires: %{name}-daemonize = %{version}-%{release}
-Requires: %{name}-python = %{version}-%{release}
+Requires: %{name}-daemonize = %{version}
+Requires: %{name}-python = %{version}
 Requires: net-tools
 Requires: bridge-utils
 Obsoletes: vmops-vnet < %{version}-%{release}
 Group:     System Environment/Daemons
 %description vnet
 The Cloud.com virtual network daemon manages virtual networks used in the
-Cloud.com Stack.
+Cloud.com CloudStack.
 
 %package agent-scripts
 Summary:   Cloud.com agent scripts
@@ -99,7 +99,7 @@ Obsoletes: vmops-agent-scripts < %{version}-%{release}
 Group:     System Environment/Libraries
 %description agent-scripts
 The Cloud.com agent is in charge of managing shared computing resources in
-a Cloud.com Stack-powered cloud.  Install this package if this computer
+a Cloud.com CloudStack-powered cloud.  Install this package if this computer
 will participate in your cloud -- this is a requirement for the Cloud.com
 agent.
 
@@ -128,18 +128,18 @@ Group:     System Environment/Libraries
 Obsoletes: vmops-daemonize < %{version}-%{release}
 %description daemonize
 This package contains a program that daemonizes the specified
-process.  The Cloud.com Cloud Stack uses this to start the agent
+process.  The Cloud.com CloudStack uses this to start the agent
 as a service.
 
 %package core
 Summary:   Cloud.com core library
 Requires: java >= 1.6.0
-Requires: %{name}-utils = %{version}-%{release}, %{name}-deps = %{version}-%{release}
+Requires: %{name}-utils = %{version}, %{name}-deps = %{version}
 Group:     System Environment/Libraries
 Obsoletes: vmops-core < %{version}-%{release}
 %description core
 The Cloud.com core libraries provide a set of Java classes used
-in the Cloud.com Stack.
+in the Cloud.com CloudStack.
 
 %package client
 Summary:   Cloud.com management server
@@ -147,12 +147,12 @@ Summary:   Cloud.com management server
 Conflicts: java-1.5.0-gcj-devel
 Obsoletes: vmops-client < %{version}-%{release}
 Requires: java >= 1.6.0
-Requires: %{name}-deps = %{version}-%{release}, %{name}-utils = %{version}-%{release}, %{name}-server = %{version}-%{release}
-Requires: %{name}-client-ui = %{version}-%{release}
-Requires: %{name}-setup = %{version}-%{release}
+Requires: %{name}-deps = %{version}, %{name}-utils = %{version}, %{name}-server = %{version}
+Requires: %{name}-client-ui = %{version}
+Requires: %{name}-setup = %{version}
 # reqs the agent-scripts package because of xenserver within the management server
-Requires: %{name}-agent-scripts = %{version}-%{release}
-Requires: %{name}-python = %{version}-%{release}
+Requires: %{name}-agent-scripts = %{version}
+Requires: %{name}-python = %{version}
 # for consoleproxy
 # Requires: %{name}-agent
 Requires: tomcat6
@@ -172,7 +172,7 @@ Requires: augeas >= 0.7.1
 Group:     System Environment/Libraries
 %description client
 The Cloud.com management server is the central point of coordination,
-management, and intelligence in the Cloud.com Stack.  This package
+management, and intelligence in the Cloud.com CloudStack.  This package
 installs the management server..
 
 %package setup
@@ -181,10 +181,10 @@ Obsoletes: vmops-setup < %{version}-%{release}
 Requires: java >= 1.6.0
 Requires: python
 Requires: mysql
-Requires: %{name}-utils = %{version}-%{release}
-Requires: %{name}-server = %{version}-%{release}
-Requires: %{name}-deps = %{version}-%{release}
-Requires: %{name}-python = %{version}-%{release}
+Requires: %{name}-utils = %{version}
+Requires: %{name}-server = %{version}
+Requires: %{name}-deps = %{version}
+Requires: %{name}-python = %{version}
 Requires: MySQL-python
 Group:     System Environment/Libraries
 %description setup
@@ -196,10 +196,10 @@ Obsoletes: vmops-agent < %{version}-%{release}
 Obsoletes: vmops-console < %{version}-%{release}
 Obsoletes: cloud-console < %{version}-%{release}
 Requires: java >= 1.6.0
-Requires: %{name}-utils = %{version}-%{release}, %{name}-core = %{version}-%{release}, %{name}-deps = %{version}-%{release}
-Requires: %{name}-agent-scripts = %{version}-%{release}
-Requires: %{name}-vnet = %{version}-%{release}
-Requires: %{name}-python = %{version}-%{release}
+Requires: %{name}-utils = %{version}, %{name}-core = %{version}, %{name}-deps = %{version}
+Requires: %{name}-agent-scripts = %{version}
+Requires: %{name}-vnet = %{version}
+Requires: %{name}-python = %{version}
 Requires: commons-httpclient
 #Requires: commons-codec
 Requires: commons-collections
@@ -220,13 +220,13 @@ Requires: rsync
 Group:     System Environment/Libraries
 %description agent
 The Cloud.com agent is in charge of managing shared computing resources in
-a Cloud.com Stack-powered cloud.  Install this package if this computer
+a Cloud.com CloudStack-powered cloud.  Install this package if this computer
 will participate in your cloud.
 
 %package console-proxy
 Summary:   Cloud.com console proxy
 Requires: java >= 1.6.0
-Requires: %{name}-utils = %{version}-%{release}, %{name}-core = %{version}-%{release}, %{name}-deps = %{version}-%{release}, %{name}-agent = %{version}-%{release}
+Requires: %{name}-utils = %{version}, %{name}-core = %{version}, %{name}-deps = %{version}, %{name}-agent = %{version}
 Requires: commons-httpclient
 #Requires: commons-codec
 Requires: commons-collections
@@ -250,13 +250,13 @@ access into virtual machines managed by the Cloud.com CloudStack.
 %package test
 Summary:   Cloud.com test suite
 Requires: java >= 1.6.0
-Requires: %{name}-utils = %{version}-%{release}, %{name}-deps = %{version}-%{release}, wget
+Requires: %{name}-utils = %{version}, %{name}-deps = %{version}, wget
 Group:     System Environment/Libraries
 Obsoletes: vmops-test < %{version}-%{release}
 %description test
 The Cloud.com test package contains a suite of automated tests
 that the very much appreciated QA team at Cloud.com constantly
-uses to help increase the quality of the Cloud.com Stack.
+uses to help increase the quality of the Cloud.com CloudStack.
 
 %package premium-deps
 Summary:   Cloud.com premium library dependencies
@@ -266,7 +266,7 @@ Group:     System Environment/Libraries
 Obsoletes: vmops-premium-deps < %{version}-%{release}
 %description premium-deps
 This package contains the certified software components required to run
-the premium edition of the Cloud.com Stack.
+the premium edition of the Cloud.com CloudStack.
 
 %package premium
 Summary:   Cloud.com premium components
@@ -276,20 +276,20 @@ Obsoletes: %{name}-premium-plugin-zynga < %{version}-%{release}
 Provides: %{name}-premium-vendor-zynga = %{version}-%{release}
 Obsoletes: %{name}-premium-vendor-zynga < %{version}-%{release}
 Requires: java >= 1.6.0
-Requires: %{name}-utils = %{version}-%{release}
+Requires: %{name}-utils = %{version}
 Requires: %{name}-premium-deps
 License:   CSL 1.1
 Group:     System Environment/Libraries
 %description premium
-The Cloud.com premium components expand the range of features on your Cloud.com Stack.
+The Cloud.com premium components expand the range of features on your Cloud.com CloudStack.
 
 %package usage
 Summary:   Cloud.com usage monitor
 Obsoletes: vmops-usage < %{version}-%{release}
 Requires: java >= 1.6.0
-Requires: %{name}-utils = %{version}-%{release}, %{name}-core = %{version}-%{release}, %{name}-deps = %{version}-%{release}, %{name}-server = %{version}-%{release}, %{name}-premium = %{version}-%{release}, %{name}-daemonize = %{version}-%{release}
-Requires: %{name}-setup = %{version}-%{release}
-Requires: %{name}-client = %{version}-%{release}
+Requires: %{name}-utils = %{version}, %{name}-core = %{version}, %{name}-deps = %{version}, %{name}-server = %{version}, %{name}-premium = %{version}, %{name}-daemonize = %{version}
+Requires: %{name}-setup = %{version}
+Requires: %{name}-client = %{version}
 License:   CSL 1.1
 Group:     System Environment/Libraries
 %description usage
