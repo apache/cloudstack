@@ -355,7 +355,7 @@
         </div>
     </div>
         
-    <div class="grid_rows even">
+    <div class="grid_rows odd">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
                 ID:</div>
@@ -365,7 +365,7 @@
             </div>
         </div>
     </div>
-    <div class="grid_rows odd">
+    <div class="grid_rows even">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
                 Name:</div>
@@ -375,7 +375,7 @@
             </div>
         </div>
     </div>
-    <div class="grid_rows even">
+    <div class="grid_rows odd">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
                 IP:</div>
@@ -385,7 +385,7 @@
             </div>
         </div>
     </div>
-    <div class="grid_rows odd">
+    <div class="grid_rows even">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
                 Service Offering:</div>
@@ -395,7 +395,7 @@
             </div>
         </div>
     </div>
-    <div class="grid_rows even">
+    <div class="grid_rows odd">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
                 Created:</div>
@@ -405,7 +405,7 @@
             </div>
         </div>
     </div>
-    <div class="grid_rows odd">
+    <div class="grid_rows even">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
                 Account:</div>
@@ -415,7 +415,7 @@
             </div>
         </div>
     </div>  
-    <div class="grid_rows even">
+    <div class="grid_rows odd">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
                 Domain:</div>
@@ -455,7 +455,7 @@
         </div>
     </div>
         
-    <div class="grid_rows even">
+    <div class="grid_rows odd">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
                 <%=t.t("ID")%>:</div>
@@ -465,7 +465,7 @@
             </div>
         </div>
     </div>
-    <div class="grid_rows odd">
+    <div class="grid_rows even">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
                 <%=t.t("Name")%>:</div>
@@ -475,7 +475,7 @@
             </div>
         </div>
     </div>
-    <div class="grid_rows even">
+    <div class="grid_rows odd">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
                 <%=t.t("Public IP")%>:</div>
@@ -495,7 +495,7 @@
             </div>
         </div>
     </div>   
-    <div class="grid_rows even">
+    <div class="grid_rows odd">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
                 <%=t.t("Guest IP")%>:</div>
@@ -565,7 +565,7 @@
         </div>
     </div>
         
-    <div class="grid_rows even">
+    <div class="grid_rows odd">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
                 ID:</div>
@@ -575,7 +575,7 @@
             </div>
         </div>
     </div>
-    <div class="grid_rows odd">
+    <div class="grid_rows even">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
                 Name:</div>
@@ -585,6 +585,18 @@
             </div>
         </div>
     </div>
+    
+    <div class="grid_rows odd">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <%=t.t("system.vm.type")%>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="systemvmtype">
+            </div>
+        </div>
+    </div>
+    
     <div class="grid_rows even">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
@@ -595,7 +607,7 @@
             </div>
         </div>
     </div>   
-    <div class="grid_rows even">
+    <div class="grid_rows odd">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
                 Private IP:</div>

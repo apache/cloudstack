@@ -314,7 +314,8 @@ function hostSystemvmJSONToTemplate(jsonObj, template) {
     template.attr("id", "host_systemvm_"+jsonObj.id).data("hostSystemvmId", jsonObj.id);    
     template.find("#grid_header_title").text(fromdb(jsonObj.name));			   
     template.find("#id").text(jsonObj.id);
-    template.find("#name").text(fromdb(jsonObj.name));	  
+    template.find("#name").text(fromdb(jsonObj.name));	      
+    template.find("#systemvmtype").text(toSystemVMTypeText(jsonObj.systemvmtype));  
     template.find("#publicip").text(fromdb(jsonObj.publicip));    
     template.find("#privateip").text(fromdb(jsonObj.privateip));  
     setDateField(jsonObj.created, template.find("#created"));	 		
