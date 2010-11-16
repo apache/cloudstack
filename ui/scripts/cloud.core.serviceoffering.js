@@ -84,7 +84,7 @@ function afterLoadServiceOfferingJSP() {
 				
 				var tags = trim(thisDialog.find("#add_service_tags").val());
 				if(tags != null && tags.length > 0)
-				    array1.push("&tags="+todb(tags));	
+				    array1.push("&tags="+encodeURIComponent(tags));	
 				
 				$.ajax({
 				  data: createURL("command=createServiceOffering"+array1.join("")+"&response=json"),
@@ -160,7 +160,7 @@ function doEditServiceOffering2($actionLink, $detailsTab, $midmenuItem1, $readon
 	*/		
 	
 	var tags = $detailsTab.find("#tags_edit").val();
-	array1.push("&tags="+todb(tags));	
+	array1.push("&tags="+encodeURIComponent(tags));	
 	
 	$.ajax({
 	    data: createURL("command=updateServiceOffering&id="+id+array1.join("")),

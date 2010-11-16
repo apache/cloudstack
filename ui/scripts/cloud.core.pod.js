@@ -491,7 +491,7 @@ function initAddPrimaryStorageButton($midmenuAddLink2, currentPageInRightPanel) 
 				
 			    var tags = trim($thisDialog.find("#add_pool_tags").val());
 				if(tags != null && tags.length > 0)
-				    array1.push("&tags="+todb(tags));				    
+				    array1.push("&tags="+encodeURIComponent(tags));				    
 			    
 			    $.ajax({
 				    data: createURL("command=createStoragePool" + array1.join("")),

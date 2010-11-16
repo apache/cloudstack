@@ -189,7 +189,7 @@ function doEditPrimaryStorage2($actionLink, $detailsTab, $midmenuItem1, $readonl
     var array1 = [];       
 	
 	var tags = $detailsTab.find("#tags_edit").val();
-	array1.push("&tags="+todb(tags));	
+	array1.push("&tags="+encodeURIComponent(tags));	
 	
 	$.ajax({
 	    data: createURL("command=updateStoragePool&id="+id+array1.join("")),
