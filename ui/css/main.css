@@ -2521,6 +2521,19 @@ a:hover.search_button {
 	font-size:11px;
 }
 
+.grid_row_cell .error_select {
+	width:92%;
+	height:16px;
+	float:left;
+	margin:0 0 0 10px;
+	display:inline;
+	padding:0 0 0 2px;
+	border:1px solid #999;
+	background:#ffe5e5;
+	color:#333;
+	font-size:11px;
+}
+
 .errormsg {
 	width:80%;
 	height:auto;
