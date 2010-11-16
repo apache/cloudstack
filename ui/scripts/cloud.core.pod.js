@@ -219,6 +219,30 @@ function getIpRange(startip, endip) {
 	return ipRange;
 }	
 
+function refreshClsuterFieldInAddHostDialog(dialogAddHost, podId, clusterId) {                         
+    $.ajax({
+        data: createURL("command=listClusters&podid="+podId),
+        dataType: "json",
+        success: function(json) {			            
+            var items = json.listclustersresponse.cluster;
+            var clusterSelect = dialogAddHost.find("#cluster_select").empty();		
+            if(items != null && items.length > 0) {		                                        
+                for(var i=0; i<items.length; i++) {	
+                    if(clusterId != null && items[i].id == clusterId)
+                        clusterSelect.append("<option value='" + noNull(items[i].id) + "' selected>" + fromdb(items[i].name) + "</option>");	
+                    else               
+                        clusterSelect.append("<option value='" + noNull(items[i].id) + "'>" + fromdb(items[i].name) + "</option>");		
+                }                             
+                dialogAddHost.find("input[value=existing_cluster_radio]").attr("checked", true);
+            }
+            else {
+			    clusterSelect.append("<option value='-1'>None Available</option>");
+                dialogAddHost.find("input[value=new_cluster_radio]").attr("checked", true);
+            }
+        }
+    });     
+}      
+
 function initAddHostButton($midmenuAddLink1, currentPageInRightPanel) {
     $midmenuAddLink1.find("#label").text("Add Host"); 
     $midmenuAddLink1.show();
@@ -251,28 +275,8 @@ function initAddHostButton($midmenuAddLink1, currentPageInRightPanel) {
             dialogAddHost.find("#zone_name").text(fromdb(primarystorageObj.zonename));  
             dialogAddHost.find("#pod_name").text(fromdb(primarystorageObj.podname)); 
         }
-                                  
-        $.ajax({
-	       data: createURL("command=listClusters&podid="+podId+maxPageSize),
-            dataType: "json",
-            success: function(json) {			            
-                var items = json.listclustersresponse.cluster;
-                var clusterSelect = dialogAddHost.find("#cluster_select").empty();		
-                if(items != null && items.length > 0) {		                                        
-                    for(var i=0; i<items.length; i++) {	
-	                    if(clusterId != null && items[i].id == clusterId)
-	                        clusterSelect.append("<option value='" + items[i].id + "' selected>" + fromdb(items[i].name) + "</option>");	
-	                    else               
-	                        clusterSelect.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");		
-	                }                             
-                    dialogAddHost.find("input[value=existing_cluster_radio]").attr("checked", true);
-                }
-                else {
-				    clusterSelect.append("<option value='-1'>None Available</option>");
-                    dialogAddHost.find("input[value=new_cluster_radio]").attr("checked", true);
-                }
-            }
-        });           
+          
+        refreshClsuterFieldInAddHostDialog(dialogAddHost, podId, clusterId);
 	        	    
         dialogAddHost
         .dialog('option', 'buttons', { 				
@@ -291,8 +295,7 @@ function initAddHostButton($midmenuAddLink1, currentPageInRightPanel) {
 				}
 		        if (!isValid) 
 		            return;
-		            
-				//$thisDialog.dialog("close");   //only close dialog when this action succeeds		
+		            				
 				$thisDialog.find("#spinning_wheel").show() 				
 				
 		        var array1 = [];    
@@ -358,7 +361,8 @@ function initAddHostButton($midmenuAddLink1, currentPageInRightPanel) {
 			        },			
                     error: function(XMLHttpResponse) {	
 						handleError(XMLHttpResponse, function() {
-							clickClusterNodeAfterAddHost(clusterRadio, podId, newClusterName, existingClusterId, $thisDialog);                                  
+							clickClusterNodeAfterAddHost(clusterRadio, podId, newClusterName, existingClusterId, $thisDialog);  
+							refreshClsuterFieldInAddHostDialog($thisDialog, podId, null);                                
 							handleErrorInDialog(XMLHttpResponse, $thisDialog);
 						});
                     }				
