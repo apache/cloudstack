@@ -1183,10 +1183,24 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             offering.setGuestIpType(guestIpType);
         }
         
-        if (tags != null) {
-        	if (tags.trim().isEmpty()) {
+        if (tags != null) 
+        {
+        	if (tags.trim().isEmpty() && offeringHandle.getTags() == null) 
+        	{
+        		//no new tags; no existing tags
         		offering.setTagsArray(csvTagsToList(null));
-        	} else {
+        	} 
+        	else if (!tags.trim().isEmpty() && offeringHandle.getTags() != null)
+        	{
+        		//new tags + existing tags
+        		List<String> oldTags = csvTagsToList(offeringHandle.getTags());
+        		List<String> newTags = csvTagsToList(tags);
+        		oldTags.addAll(newTags);
+        		offering.setTagsArray(oldTags);
+        	}
+        	else if(!tags.trim().isEmpty())
+        	{
+        		//new tags; NO existing tags
         		offering.setTagsArray(csvTagsToList(tags));
         	}     	
         }
@@ -1247,9 +1261,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     	String tags = cmd.getTags();
     	
     	//Check if diskOffering exists
-    	DiskOfferingVO diskOffering = _diskOfferingDao.findById(diskOfferingId);
+    	DiskOfferingVO diskOfferingHandle = _diskOfferingDao.findById(diskOfferingId);
     	
-    	if (diskOffering == null) {
+    	if (diskOfferingHandle == null) {
     		throw new InvalidParameterValueException("Unable to find disk offering by id " + diskOfferingId);
     	}
     	
@@ -1258,7 +1272,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     		return _diskOfferingDao.findById(diskOfferingId);
     	}
     	
-    	diskOffering = _diskOfferingDao.createForUpdate(diskOfferingId);
+    	DiskOfferingVO diskOffering = _diskOfferingDao.createForUpdate(diskOfferingId);
     	
     	if (name != null) {
     		diskOffering.setName(name);
@@ -1268,12 +1282,26 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     		diskOffering.setDisplayText(displayText);
     	}
     	
-    	if (tags != null) {
-        	if (tags.trim().isEmpty()) {
+        if (tags != null) 
+        {
+        	if (tags.trim().isEmpty() && diskOfferingHandle.getTags() == null) 
+        	{
+        		//no new tags; no existing tags
         		diskOffering.setTagsArray(csvTagsToList(null));
-        	} else {
+        	} 
+        	else if (!tags.trim().isEmpty() && diskOfferingHandle.getTags() != null)
+        	{
+        		//new tags + existing tags
+        		List<String> oldTags = csvTagsToList(diskOfferingHandle.getTags());
+        		List<String> newTags = csvTagsToList(tags);
+        		oldTags.addAll(newTags);
+        		diskOffering.setTagsArray(oldTags);
+        	}
+        	else if(!tags.trim().isEmpty())
+        	{
+        		//new tags; NO existing tags
         		diskOffering.setTagsArray(csvTagsToList(tags));
-        	}     	
+        	}
         }
 
     	if (_diskOfferingDao.update(diskOfferingId, diskOffering)) {
