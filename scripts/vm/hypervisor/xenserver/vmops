@@ -712,9 +712,9 @@ def makedirs(path):
         try:
             os.makedirs(path)
         except OSError, (errno, strerror):
-            if errno == errno.EEXIST:
+            if errno == 17:
                 try:
-                    cmd = ['umount', path ]
+                    cmd = ['umount', '-f', path ]
                     util.pread2(cmd)
                 except CommandException:
                     errMsg = "CommandException raised while trying to umount " + path
@@ -732,7 +732,7 @@ def mount(remoteDir, localDir):
     makedirs(localDir)
     
     try: 
-        options = "soft,timeo=133,retrans=10,tcp,noac"
+        options = "soft,timeo=133,retrans=3,tcp,noac"
         cmd = ['mount', remoteDir, localDir, "-o", options]
         txt = util.pread2(cmd)
     except:
@@ -746,7 +746,7 @@ def mount(remoteDir, localDir):
 
 def umount(localDir):
     try: 
-        cmd = ['umount', localDir]
+        cmd = ['umount', '-f', localDir]
         util.pread2(cmd)
     except CommandException:
         errMsg = "CommandException raised while trying to umount " + localDir 
