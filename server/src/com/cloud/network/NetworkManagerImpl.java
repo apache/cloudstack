@@ -3000,7 +3000,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 			txn.commit();
 		} catch (Exception e) {
 			txn.rollback();
-			throw new ServerApiException(BaseCmd.NET_CREATE_IPFW_RULE_ERROR, e.getMessage());
+			throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e.getMessage());
 		}finally{
 			if(locked){
 				_ipAddressDao.releaseFromLockTable(ipAddress.getAddress());
@@ -3084,7 +3084,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 		} catch (Exception e) {
 			s_logger.warn("Unable to create new firewall rule for 1:1 NAT");
 			txn.rollback();
-			throw new ServerApiException(BaseCmd.IP_ALLOCATION_ERROR,"Unable to create new firewall rule for 1:1 NAT:"+e.getMessage());
+			throw new ServerApiException(BaseCmd.INTERNAL_ERROR,"Unable to create new firewall rule for 1:1 NAT:"+e.getMessage());
 		}finally{
 			if(locked)
 				_vmDao.releaseFromLockTable(userVM.getId());

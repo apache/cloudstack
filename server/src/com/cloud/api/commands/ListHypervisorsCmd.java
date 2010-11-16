@@ -23,14 +23,8 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
-import com.cloud.api.ServerApiException;
 import com.cloud.api.response.HypervisorResponse;
 import com.cloud.api.response.ListResponse;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
 
 @Implementation(description="List hypervisors", responseObject=HypervisorResponse.class)
 public class ListHypervisorsCmd extends BaseCmd {
@@ -43,7 +37,7 @@ public class ListHypervisorsCmd extends BaseCmd {
 	}
 	
     @Override
-    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute(){
         String[] result = _mgr.getHypervisors(this);
         ListResponse<HypervisorResponse> response = new ListResponse<HypervisorResponse>();
         ArrayList<HypervisorResponse> responses = new ArrayList<HypervisorResponse>();

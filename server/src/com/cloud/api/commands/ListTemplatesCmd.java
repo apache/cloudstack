@@ -28,16 +28,10 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.TemplateResponse;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.dc.DataCenterVO;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.HostVO;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.Storage;
@@ -125,7 +119,7 @@ public class ListTemplatesCmd extends BaseListCmd {
     }
     
     @Override
-    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute(){
         List<VMTemplateVO> templates = _mgr.listTemplates(this);
         TemplateFilter templateFilterObj;
         try {

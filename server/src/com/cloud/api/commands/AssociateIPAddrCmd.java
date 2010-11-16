@@ -28,9 +28,6 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.IPAddressResponse;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.IPAddressVO;
 
@@ -84,7 +81,7 @@ public class AssociateIPAddrCmd extends BaseCmd {
     }
     
     @Override
-    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute(){
         try {
             IPAddressVO result = _networkMgr.associateIP(this);
             if (result != null) {
@@ -95,7 +92,11 @@ public class AssociateIPAddrCmd extends BaseCmd {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to assign ip address");
             }
         } catch (ResourceAllocationException ex) {
+            throw new ServerApiException(BaseCmd.RESOURCE_ALLOCATION_ERROR, ex.getMessage());
+        } catch (ConcurrentOperationException ex) {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
+        } catch (InsufficientAddressCapacityException ex) {
+            throw new ServerApiException(BaseCmd.INSUFFICIENT_CAPACITY_ERROR, ex.getMessage());
         }
     }
 }

@@ -1395,7 +1395,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
 
     	HostVO host = _hostDao.findById(hostId);
     	if (host == null) {
-    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "Host with id " + hostId.toString() + " doesn't exist");
+    		throw new InvalidParameterValueException("Host with id " + hostId.toString() + " doesn't exist");
     	}
 
     	boolean result = reconnect(hostId);
@@ -1463,12 +1463,12 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         //verify input parameters
     	HostVO host = _hostDao.findById(hostId);
     	if (host == null || host.getRemoved() != null) {
-    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "Host with id " + hostId.toString() + " doesn't exist");
+    		throw new InvalidParameterValueException("Host with id " + hostId.toString() + " doesn't exist");
     	}
     	
     	boolean success = cancelMaintenance(hostId);
     	if (!success) {
-    	    throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Internal error cancelling maintenance.");
+    	    throw new CloudRuntimeException("Internal error cancelling maintenance.");
     	}
     	return host;
     }

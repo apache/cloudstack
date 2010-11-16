@@ -27,13 +27,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.UserVmResponse;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.StorageUnavailableException;
 import com.cloud.uservm.UserVm;
 
 @Implementation(description="Recovers a virtual machine.", responseObject=UserVmResponse.class)
@@ -67,7 +61,7 @@ public class RecoverVMCmd extends BaseCmd {
     }
     
     @Override
-    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, StorageUnavailableException{
+    public void execute(){
         try {
             UserVm result = _userVmService.recoverVirtualMachine(this);
             if (result != null){
@@ -78,7 +72,7 @@ public class RecoverVMCmd extends BaseCmd {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to recover vm");
             }
         } catch (ResourceAllocationException ex) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
+            throw new ServerApiException(BaseCmd.RESOURCE_ALLOCATION_ERROR, ex.getMessage());
         }
     }
 }

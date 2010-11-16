@@ -30,11 +30,6 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.DomainRouterResponse;
 import com.cloud.event.EventTypes;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.Account;
 import com.cloud.vm.DomainRouter;
 import com.cloud.vm.DomainRouterVO;
@@ -90,7 +85,7 @@ public class RebootRouterCmd extends BaseAsyncCmd {
 
     
     @Override
-    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute(){
         DomainRouter result = _networkMgr.rebootRouter(this);
         if (result != null){
             DomainRouterResponse response = ApiResponseHelper.createDomainRouterResponse(result);

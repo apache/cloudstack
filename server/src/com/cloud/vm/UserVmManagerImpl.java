@@ -391,7 +391,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         // Check that the device ID is valid
         if( deviceId != null ) {
             if(deviceId.longValue() == 0) {
-                throw new ServerApiException (BaseCmd.VM_INVALID_PARAM_ERROR, "deviceId can't be 0, which is used by Root device");
+                throw new ServerApiException (BaseCmd.PARAM_ERROR, "deviceId can't be 0, which is used by Root device");
             }
         }
         
@@ -775,7 +775,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
             s_logger.debug("Unable to start vm because storage is unavailable: " + e.getMessage());
             
         	executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
-        		AsyncJobResult.STATUS_FAILED, BaseCmd.VM_ALLOCATION_ERROR, "Unable to start vm because storage is unavailable");
+        		AsyncJobResult.STATUS_FAILED, BaseCmd.RESOURCE_UNAVAILABLE_ERROR, "Unable to start vm because storage is unavailable");
         } catch (ConcurrentOperationException e) {
         	s_logger.debug(e.getMessage());
         	
@@ -1357,7 +1357,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         // Verify input parameters
         UserVmVO vmInstance = _vmDao.findById(virtualMachineId);
         if (vmInstance == null) {
-        	throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + virtualMachineId);
+        	throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find a virtual machine with id " + virtualMachineId);
         }       
 
         userId = accountAndUserValidation(virtualMachineId, account, userId,vmInstance);                         
@@ -1426,7 +1426,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 	private Long accountAndUserValidation(Long virtualMachineId,Account account, Long userId, UserVmVO vmInstance) throws ServerApiException {
 		if (account != null) {
             if (!isAdmin(account.getType()) && (account.getId() != vmInstance.getAccountId())) {
-                throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + virtualMachineId + " for this account");
+                throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find a virtual machine with id " + virtualMachineId + " for this account");
             } else if (!_domainDao.isChildDomain(account.getDomainId(),vmInstance.getDomainId())) {
                 throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid virtual machine id (" + virtualMachineId + ") given, unable to upgrade virtual machine.");
             }
@@ -1899,7 +1899,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         UserVmVO vm = _vmDao.findById(vmId.longValue());
         
         if (vm == null) {
-        	throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + vmId);
+        	throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find a virtual machine with id " + vmId);
         }
 
         if ((accountHandle != null) && !_domainDao.isChildDomain(accountHandle.getDomainId(), vm.getDomainId())) {
@@ -3313,7 +3313,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         		
         UserVmVO vmInstance = _vmDao.findById(id);
         if (vmInstance == null) {
-        	throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + id);
+        	throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find a virtual machine with id " + id);
         }
         
         long eventId = EventUtils.saveScheduledEvent(userId, vmInstance.getAccountId(), EventTypes.EVENT_VM_STOP, "stopping Vm with Id: "+id);
@@ -3340,7 +3340,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         		
         UserVmVO vmInstance = _vmDao.findById(id.longValue());
         if (vmInstance == null) {
-        	throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + id);
+        	throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find a virtual machine with id " + id);
         }
 
         long eventId = EventUtils.saveScheduledEvent(userId, vmInstance.getAccountId(), EventTypes.EVENT_VM_START, "Starting Vm with Id: "+id);
@@ -3367,7 +3367,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         //Verify input parameters
         UserVmVO vmInstance = _vmDao.findById(vmId.longValue());
         if (vmInstance == null) {
-        	throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + vmId);
+        	throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find a virtual machine with id " + vmId);
         }
 
         userId = accountAndUserValidation(vmId, account, userId, vmInstance);
@@ -3395,7 +3395,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         //Verify input parameters
         UserVmVO vmInstance = _vmDao.findById(vmId.longValue());
         if (vmInstance == null) {
-        	throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + vmId);
+        	throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find a virtual machine with id " + vmId);
         }
 
         userId = accountAndUserValidation(vmId, account, userId, vmInstance);
@@ -3868,7 +3868,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
                 
         UserVmVO vm = _vmDao.findById(id.longValue());
         if (vm == null) {
-            throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + id);
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find a virtual machine with id " + id);
         }
 
         long eventId = EventUtils.saveScheduledEvent(userId, vm.getAccountId(), EventTypes.EVENT_VM_START, "Starting Vm with Id: "+id);
@@ -3888,7 +3888,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         //Verify input parameters
         UserVmVO vm = _vmDao.findById(vmId.longValue());
         if (vm == null) {
-            throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + vmId);
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find a virtual machine with id " + vmId);
         }
 
         userId = accountAndUserValidation(vmId, account, userId, vm);

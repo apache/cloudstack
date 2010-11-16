@@ -32,8 +32,6 @@ import com.cloud.api.response.DomainRouterResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
@@ -95,14 +93,22 @@ public class StartRouter2Cmd extends BaseAsyncCmd {
     }
     
     @Override
-    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
-        DomainRouter router = _routerMgr.startRouter(this);
-        if (router != null){
-            DomainRouterResponse routerResponse = ApiResponseHelper.createDomainRouterResponse(router);
-            routerResponse.setResponseName(getName());
-            this.setResponseObject(routerResponse);
-        } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to start router");
+    public void execute() {
+        try {
+            DomainRouter router = _routerMgr.startRouter(this);
+            if (router != null){
+                DomainRouterResponse routerResponse = ApiResponseHelper.createDomainRouterResponse(router);
+                routerResponse.setResponseName(getName());
+                this.setResponseObject(routerResponse);
+            } else {
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to start router");
+            }
+        }catch (InsufficientCapacityException ex) {
+            throw new ServerApiException(BaseCmd.INSUFFICIENT_CAPACITY_ERROR, ex.getMessage());
+        }catch (ConcurrentOperationException ex) {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
+        }catch (ResourceUnavailableException ex) {
+            throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
         }
     }
 

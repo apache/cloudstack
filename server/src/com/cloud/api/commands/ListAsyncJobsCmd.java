@@ -27,15 +27,9 @@ import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ResponseObject;
-import com.cloud.api.ServerApiException;
 import com.cloud.api.response.AsyncJobResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.async.AsyncJobVO;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
 
 @Implementation(description="Lists all pending asynchronous jobs for the account.", responseObject=AsyncJobResponse.class)
 public class ListAsyncJobsCmd extends BaseListCmd {
@@ -80,7 +74,7 @@ public class ListAsyncJobsCmd extends BaseListCmd {
     }
 
     @Override
-    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute(){
         List<AsyncJobVO> result = _mgr.searchForAsyncJobs(this);
         ListResponse<AsyncJobResponse> response = new ListResponse<AsyncJobResponse>();
         List<AsyncJobResponse> jobResponses = new ArrayList<AsyncJobResponse>();

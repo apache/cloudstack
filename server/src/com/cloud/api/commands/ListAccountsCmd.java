@@ -27,14 +27,8 @@ import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
 import com.cloud.api.response.AccountResponse;
 import com.cloud.api.response.ListResponse;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.AccountVO;
 
 @Implementation(description="Lists accounts and provides detailed account information for listed accounts", responseObject=AccountResponse.class)
@@ -110,7 +104,7 @@ public class ListAccountsCmd extends BaseListCmd {
     }
 
     @Override
-    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute(){
         List<AccountVO> accounts = _mgr.searchForAccounts(this);
         ListResponse<AccountResponse> response = new ListResponse<AccountResponse>();
         List<AccountResponse> accountResponses = new ArrayList<AccountResponse>();
@@ -119,7 +113,6 @@ public class ListAccountsCmd extends BaseListCmd {
             acctResponse.setObjectName("account");
             accountResponses.add(acctResponse);
         }
-
         response.setResponses(accountResponses);
         response.setResponseName(getName());
         

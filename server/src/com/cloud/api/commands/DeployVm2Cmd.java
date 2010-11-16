@@ -33,10 +33,7 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.UserVmResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
@@ -157,27 +154,43 @@ public class DeployVm2Cmd extends BaseAsyncCreateCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
     @Override
-    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException{
+    public void execute(){
         UserVm result;
-        result = _userVmService.startVirtualMachine(this);
-        if (result != null) {
-            UserVmResponse response = ApiResponseHelper.createUserVm2Response(result);
-            response.setPassword(password);
-            response.setResponseName(getName());
-            this.setResponseObject(response);
-        } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to deploy vm");
-        }
+        try {
+            result = _userVmService.startVirtualMachine(this);
+            if (result != null) {
+                UserVmResponse response = ApiResponseHelper.createUserVm2Response(result);
+                response.setPassword(password);
+                response.setResponseName(getName());
+                this.setResponseObject(response);
+            } else {
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to deploy vm");
+            }
+        } catch (ResourceUnavailableException ex) {
+            throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
+        } catch (ConcurrentOperationException ex) {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage()); 
+        } catch (InsufficientCapacityException ex) {
+            throw new ServerApiException(BaseCmd.INSUFFICIENT_CAPACITY_ERROR, ex.getMessage());
+        } 
     }
     
     @Override
-    public void callCreate() throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
-        UserVm vm = _userVmService.createVirtualMachine(this);
-        if (vm != null) {
-            this.setId(vm.getId());
-        } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to deploy vm");
-        }
+    public void callCreate() {
+        try {
+            UserVm vm = _userVmService.createVirtualMachine(this);
+            if (vm != null) {
+                this.setId(vm.getId());
+            } else {
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to deploy vm");
+            }
+        } catch (ResourceUnavailableException ex) {
+            throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
+        } catch (ConcurrentOperationException ex) {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage()); 
+        } catch (InsufficientCapacityException ex) {
+            throw new ServerApiException(BaseCmd.INSUFFICIENT_CAPACITY_ERROR, ex.getMessage());
+        } 
     }
 
 

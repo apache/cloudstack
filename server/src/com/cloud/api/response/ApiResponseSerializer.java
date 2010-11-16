@@ -4,6 +4,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -90,16 +91,18 @@ public class ApiResponseSerializer {
         sb.append("</" + result.getResponseName() + ">");
         return sb.toString();
     }
-
-    private static void serializeResponseObjXML(StringBuilder sb, ResponseObject obj) {
-        if (!(obj instanceof SuccessResponse)&& !(obj instanceof ExceptionResponse))
+    
+    private static void serializeResponseObjXML(StringBuilder sb, ResponseObject obj){
+        if (!(obj instanceof SuccessResponse)&& !(obj instanceof ExceptionResponse)){
             sb.append("<" + obj.getObjectName() + ">");
-        serializeResponseObjFieldsXML(sb, obj);
-        if (!(obj instanceof SuccessResponse) && !(obj instanceof ExceptionResponse))
+        }
+            serializeResponseObjFieldsXML(sb, obj);
+        if (!(obj instanceof SuccessResponse) && !(obj instanceof ExceptionResponse)){
             sb.append("</" + obj.getObjectName() + ">");
+        }
     }
 
-    private static void serializeResponseObjFieldsXML(StringBuilder sb, ResponseObject obj) {
+    private static void serializeResponseObjFieldsXML(StringBuilder sb, ResponseObject obj){
         boolean isAsync = false;
         if (obj instanceof AsyncJobResponse)
             isAsync = true;
@@ -130,7 +133,16 @@ public class ApiResponseSerializer {
                             if (isAsync) {
                                 sb.append("</jobresult>");
                             }
-                        } else if (fieldValue instanceof Date) {
+                        } else if (fieldValue instanceof ArrayList<?>){
+                            ArrayList<?> subResponseList = (ArrayList<Object>)fieldValue;
+                            for (Object value: subResponseList) {
+                                if (value instanceof ResponseObject){
+                                    ResponseObject subObj = (ResponseObject)value;
+                                    serializeResponseObjXML(sb, subObj);
+                                }
+                            }
+                            
+                        }else if (fieldValue instanceof Date) {
                             sb.append("<" + serializedName.value() + ">" + BaseCmd.getDateString((Date)fieldValue) + "</" + serializedName.value() + ">");
                         } else {
                             sb.append("<" + serializedName.value() + ">" + fieldValue.toString() + "</" + serializedName.value() + ">");

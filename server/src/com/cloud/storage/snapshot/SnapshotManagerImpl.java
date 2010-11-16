@@ -602,13 +602,13 @@ public class SnapshotManagerImpl implements SnapshotManager {
         //Verify parameters
         Snapshot snapshotCheck = _snapshotDao.findById(snapshotId.longValue());
         if (snapshotCheck == null) {
-            throw new ServerApiException (BaseCmd.SNAPSHOT_INVALID_PARAM_ERROR, "unable to find a snapshot with id " + snapshotId);
+            throw new ServerApiException (BaseCmd.PARAM_ERROR, "unable to find a snapshot with id " + snapshotId);
         }
 
         // If an account was passed in, make sure that it matches the account of the snapshot
         Account snapshotOwner = _accountDao.findById(snapshotCheck.getAccountId());
         if (snapshotOwner == null) {
-            throw new ServerApiException(BaseCmd.SNAPSHOT_INVALID_PARAM_ERROR, "Snapshot id " + snapshotId + " does not have a valid account");
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Snapshot id " + snapshotId + " does not have a valid account");
         }
         checkAccountPermissions(snapshotOwner.getId(), snapshotOwner.getDomainId(), "snapshot", snapshotId);
 

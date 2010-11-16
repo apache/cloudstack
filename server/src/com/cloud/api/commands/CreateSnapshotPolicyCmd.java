@@ -27,11 +27,6 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SnapshotPolicyResponse;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
 import com.cloud.storage.SnapshotPolicyVO;
 
 @Implementation(description="Creates a snapshot policy for the account.", responseObject=SnapshotPolicyResponse.class)
@@ -114,7 +109,7 @@ public class CreateSnapshotPolicyCmd extends BaseCmd {
     }
     
     @Override
-    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute(){
         SnapshotPolicyVO result = _snapshotMgr.createPolicy(this);
         if (result != null) {
             SnapshotPolicyResponse response = ApiResponseHelper.createSnapshotPolicyResponse(result);

@@ -29,11 +29,6 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.TemplateResponse;
 import com.cloud.event.EventTypes;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.VMTemplateHostVO;
@@ -112,7 +107,7 @@ public class CopyTemplateCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute(){
         try {
             VMTemplateVO template = _templateMgr.copyTemplate(this);
             TemplateResponse templateResponse = new TemplateResponse();
@@ -188,7 +183,7 @@ public class CopyTemplateCmd extends BaseAsyncCmd {
             
             this.setResponseObject(templateResponse);
         } catch (StorageUnavailableException ex) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
+            throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
         }
     }
 }

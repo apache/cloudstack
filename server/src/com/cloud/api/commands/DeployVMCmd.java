@@ -32,18 +32,13 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.UserVmResponse;
 import com.cloud.event.EventTypes;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.InsufficientStorageCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
-import com.cloud.utils.exception.ExecutionException;
 
 @Implementation(description="Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.", responseObject=UserVmResponse.class)
 public class DeployVMCmd extends BaseAsyncCmd {
@@ -199,7 +194,7 @@ public class DeployVMCmd extends BaseAsyncCmd {
     }
     
     @Override
-    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, StorageUnavailableException{
+    public void execute(){
         try {
             String password = null;
             if (templateId != null ) {
@@ -218,9 +213,13 @@ public class DeployVMCmd extends BaseAsyncCmd {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to deploy vm");
             }
         } catch (ResourceAllocationException ex) {
+            throw new ServerApiException(BaseCmd.RESOURCE_ALLOCATION_ERROR, ex.getMessage());
+        } catch (InsufficientStorageCapacityException ex) {
+            throw new ServerApiException(BaseCmd.INSUFFICIENT_CAPACITY_ERROR, ex.getMessage());
+        } catch (StorageUnavailableException ex) {
+            throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
+        } catch (Exception ex) {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
-        } catch (ExecutionException ex1) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex1.getMessage());
         }
     }
 }

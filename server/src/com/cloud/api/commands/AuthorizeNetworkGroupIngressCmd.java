@@ -37,11 +37,6 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.IngressRuleResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.event.EventTypes;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.security.IngressRuleVO;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
@@ -83,7 +78,7 @@ public class AuthorizeNetworkGroupIngressCmd extends BaseAsyncCmd {
 
     //FIXME - add description
     @Parameter(name=ApiConstants.CIDR_LIST, type=CommandType.LIST, collectionType=CommandType.STRING)
-    private List<String> cidrList;
+    private List cidrList;
 
     //FIXME - add description
     @Parameter(name=ApiConstants.USER_NETWORK_GROUP_LIST, type=CommandType.MAP)
@@ -106,7 +101,7 @@ public class AuthorizeNetworkGroupIngressCmd extends BaseAsyncCmd {
         return accountName;
     }
 
-    public List<String> getCidrList() {
+    public List getCidrList() {
         return cidrList;
     }
 
@@ -213,7 +208,7 @@ public class AuthorizeNetworkGroupIngressCmd extends BaseAsyncCmd {
     }
 	
     @Override
-    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute(){
         List<IngressRuleVO> ingressRules = _networkGroupMgr.authorizeNetworkGroupIngress(this);
         ListResponse<IngressRuleResponse> response = new ListResponse<IngressRuleResponse>();
         if ((ingressRules != null) && !ingressRules.isEmpty()) {

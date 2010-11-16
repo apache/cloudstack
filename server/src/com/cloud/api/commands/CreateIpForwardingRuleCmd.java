@@ -29,13 +29,6 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.FirewallRuleResponse;
 import com.cloud.event.EventTypes;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.FirewallRuleVO;
 import com.cloud.user.Account;
 
@@ -79,20 +72,20 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd {
     }
 
     @Override
-    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{ 
+    public void execute(){ 
         FirewallRuleVO result = _networkMgr.createIpForwardingRuleOnDomr(this.getId());
         if (result != null) {
             FirewallRuleResponse fwResponse = ApiResponseHelper.createFirewallRuleResponse(result);
             fwResponse.setResponseName(getName());
             this.setResponseObject(fwResponse);
         } else {
-            throw new ServerApiException(NET_CREATE_IPFW_RULE_ERROR, "Error in creating ip forwarding rule on the domr");
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Error in creating ip forwarding rule on the domr");
         }
        
     }
 
 	@Override
-	public void callCreate() throws ServerApiException,InvalidParameterValueException, PermissionDeniedException,InsufficientAddressCapacityException,InsufficientCapacityException, ResourceUnavailableException,ConcurrentOperationException, ResourceAllocationException{
+	public void callCreate(){
 		FirewallRuleVO rule = _networkMgr.createIpForwardingRuleInDb(ipAddress,virtualMachineId);
 		if (rule != null){
 		    this.setId(rule.getId());

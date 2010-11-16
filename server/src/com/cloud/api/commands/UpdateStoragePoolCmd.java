@@ -27,11 +27,6 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.StoragePoolResponse;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
 import com.cloud.storage.StoragePoolVO;
 
 @Implementation(description="Updates a storage pool.", responseObject=StoragePoolResponse.class)
@@ -72,7 +67,7 @@ public class UpdateStoragePoolCmd extends BaseCmd {
     }
     
     @Override
-    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute(){
         StoragePoolVO result = _storageMgr.updateStoragePool(this);
         if (result != null){
             StoragePoolResponse response = ApiResponseHelper.createStoragePoolResponse(result);

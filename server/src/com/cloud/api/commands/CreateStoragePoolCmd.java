@@ -30,11 +30,6 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.StoragePoolResponse;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.storage.StoragePoolVO;
@@ -113,7 +108,7 @@ public class CreateStoragePoolCmd extends BaseCmd {
     }
 
     @Override
-    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute(){
         try {
             StoragePoolVO result = _storageMgr.createPool(this);
             if (result != null) {
@@ -124,9 +119,9 @@ public class CreateStoragePoolCmd extends BaseCmd {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add storage pool");
             }
         } catch (ResourceAllocationException ex1) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex1.getMessage());
+            throw new ServerApiException(BaseCmd.RESOURCE_ALLOCATION_ERROR, ex1.getMessage());
         }catch (ResourceInUseException ex2) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex2.getMessage());
+            throw new ServerApiException(BaseCmd.RESOURCE_IN_USE_ERROR, ex2.getMessage());
         } catch (UnknownHostException ex3) {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex3.getMessage());
         }

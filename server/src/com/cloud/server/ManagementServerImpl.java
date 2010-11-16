@@ -3961,7 +3961,7 @@ public class ManagementServerImpl implements ManagementServer {
         VMTemplateVO template = _templateDao.findById(id);
         
         if (template == null || !templateIsCorrectType(template)) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "unable to find " + mediaType + " with id " + id);
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find " + mediaType + " with id " + id);
         }
 
         if(cmd instanceof UpdateTemplatePermissionsCmd)
@@ -3969,7 +3969,7 @@ public class ManagementServerImpl implements ManagementServer {
         	mediaType = "template";
         	if(template.getFormat().equals(ImageFormat.ISO))
         	{
-        		throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Please provide a valid template");
+        		throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please provide a valid template");
         	}
         }
         if(cmd instanceof UpdateIsoPermissionsCmd)
@@ -3977,7 +3977,7 @@ public class ManagementServerImpl implements ManagementServer {
         	mediaType = "iso";
         	if(!template.getFormat().equals(ImageFormat.ISO))
         	{
-        		throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Please provide a valid iso");
+        		throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please provide a valid iso");
         	}
         }
         
@@ -5504,38 +5504,42 @@ public class ManagementServerImpl implements ManagementServer {
 		}catch (Exception e) {
 			s_logger.warn("Failed to successfully update the cert across console proxies on management server:"+this.getId());			
 			if(e instanceof ResourceUnavailableException)
-				throw new ServerApiException(BaseCmd.CUSTOM_CERT_UPDATE_ERROR, e.getMessage());
-			if(e instanceof ManagementServerException)
-				throw new ServerApiException(BaseCmd.CUSTOM_CERT_UPDATE_ERROR, e.getMessage());
-			if(e instanceof IndexOutOfBoundsException){
+				throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, e.getMessage());
+			else if(e instanceof ManagementServerException)
+				throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e.getMessage());
+			else if(e instanceof IndexOutOfBoundsException){
 				String msg = "Custom certificate record in the db deleted; this should never happen. Please create a new record in the certificate table";
 				s_logger.error(msg,e);
-				throw new ServerApiException(BaseCmd.CUSTOM_CERT_UPDATE_ERROR, msg);
+				throw new ServerApiException(BaseCmd.INTERNAL_ERROR, msg);
 			}
-			if(e instanceof FileNotFoundException){
+			else if(e instanceof FileNotFoundException){
 				String msg = "Invalid file path for custom cert found during cert validation";
 				s_logger.error(msg,e);
-				throw new ServerApiException(BaseCmd.CUSTOM_CERT_UPDATE_ERROR, msg);
+				throw new ServerApiException(BaseCmd.INTERNAL_ERROR, msg);
 			}
-			if(e instanceof CertificateException){
+			else if(e instanceof CertificateException){
 				String msg = "The file format for custom cert does not conform to the X.509 specification";
 				s_logger.error(msg,e);
-				throw new ServerApiException(BaseCmd.CUSTOM_CERT_UPDATE_ERROR, msg);				
+				throw new ServerApiException(BaseCmd.INTERNAL_ERROR, msg);				
 			}
-			if(e instanceof UnsupportedEncodingException){
+			else if(e instanceof UnsupportedEncodingException){
 				String msg = "Unable to encode the certificate into UTF-8 input stream for validation";
 				s_logger.error(msg,e);
-				throw new ServerApiException(BaseCmd.CUSTOM_CERT_UPDATE_ERROR, msg);								
+				throw new ServerApiException(BaseCmd.INTERNAL_ERROR, msg);								
 			}
-			if(e instanceof IOException){
+			else if(e instanceof IOException){
 				String msg = "Cannot generate input stream during custom cert validation";
 				s_logger.error(msg,e);
-				throw new ServerApiException(BaseCmd.CUSTOM_CERT_UPDATE_ERROR, msg);								
+				throw new ServerApiException(BaseCmd.INTERNAL_ERROR, msg);								
+			} else {
+			    String msg = "Cannot upload custom certificate, internal error.";
+                s_logger.error(msg,e);
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, msg);          
 			}
+			
 		}finally{
 				_certDao.releaseFromLockTable(cert.getId());					
 		}
-		return null;
     }
 
     @Override

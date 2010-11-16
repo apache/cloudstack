@@ -659,44 +659,44 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
         //FIXME: for exceptions below, add new enums to BaseCmd.PARAM_ to reflect the error condition more precisely
         if (!NetUtils.isValidNetworkGroupProto(protocol)) {
         	s_logger.debug("Invalid protocol specified " + protocol);
-        	 throw new ServerApiException(BaseCmd.NET_INVALID_PARAM_ERROR, "Invalid protocol " + protocol);
+        	 throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid protocol " + protocol);
         }
         if ("icmp".equalsIgnoreCase(protocol) ) {
             if ((icmpType == null) || (icmpCode == null)) {
-                throw new ServerApiException(BaseCmd.NET_INVALID_PARAM_ERROR, "Invalid ICMP type/code specified, icmpType = " + icmpType + ", icmpCode = " + icmpCode);
+                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid ICMP type/code specified, icmpType = " + icmpType + ", icmpCode = " + icmpCode);
             }
             if (icmpType == -1 && icmpCode != -1) {
-                throw new ServerApiException(BaseCmd.NET_INVALID_PARAM_ERROR, "Invalid icmp type range" );
+                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid icmp type range" );
             } 
             if (icmpCode > 255) {
-                throw new ServerApiException(BaseCmd.NET_INVALID_PARAM_ERROR, "Invalid icmp code " );
+                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid icmp code " );
             }
             startPortOrType = icmpType;
             endPortOrCode= icmpCode;
         } else if (protocol.equals("all")) {
         	if ((startPort != null) || (endPort != null)) {
-                throw new ServerApiException(BaseCmd.NET_INVALID_PARAM_ERROR, "Cannot specify startPort or endPort without specifying protocol");
+                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Cannot specify startPort or endPort without specifying protocol");
             }
         	startPortOrType = 0;
         	endPortOrCode = 0;
         } else {
             if ((startPort == null) || (endPort == null)) {
-                throw new ServerApiException(BaseCmd.NET_INVALID_PARAM_ERROR, "Invalid port range specified, startPort = " + startPort + ", endPort = " + endPort);
+                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid port range specified, startPort = " + startPort + ", endPort = " + endPort);
             }
             if (startPort == 0 && endPort == 0) {
                 endPort = 65535;
             }
             if (startPort > endPort) {
                 s_logger.debug("Invalid port range specified: " + startPort + ":" + endPort);
-                throw new ServerApiException(BaseCmd.NET_INVALID_PARAM_ERROR, "Invalid port range " );
+                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid port range " );
             }
             if (startPort > 65535 || endPort > 65535 || startPort < -1 || endPort < -1) {
                 s_logger.debug("Invalid port numbers specified: " + startPort + ":" + endPort);
-                throw new ServerApiException(BaseCmd.NET_INVALID_PARAM_ERROR, "Invalid port numbers " );
+                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid port numbers " );
             }
             
             if (startPort < 0 || endPort < 0) {
-                throw new ServerApiException(BaseCmd.NET_INVALID_PARAM_ERROR, "Invalid port range " );
+                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid port range " );
             }
             startPortOrType = startPort;
             endPortOrCode= endPort;
@@ -746,13 +746,13 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
         List<String> authorizedCidrs = new ArrayList<String>();
         if (cidrList != null) {
         	if (protocol.equals("all")) {
-                throw new ServerApiException(BaseCmd.NET_INVALID_PARAM_ERROR, "Cannot specify cidrs without specifying protocol and ports.");	
+                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Cannot specify cidrs without specifying protocol and ports.");	
         	}
         	cidrs = cidrList.split(",");
         	for (String cidr: cidrs) {
         		if (!NetUtils.isValidCIDR(cidr)) {
                     s_logger.debug( "Invalid cidr (" + cidr + ") given, unable to revoke ingress.");	
-                    throw new ServerApiException(BaseCmd.NET_INVALID_PARAM_ERROR, "Invalid cidr (" + cidr + ") given, unable to revoke ingress.");	
+                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid cidr (" + cidr + ") given, unable to revoke ingress.");	
         		}
         		authorizedCidrs.add(cidr);
         	}
@@ -783,7 +783,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Nonexistent group and/or accountId: " + accountId + ", groupName=" + group);
                     }
-                    throw new ServerApiException(BaseCmd.NET_INVALID_PARAM_ERROR, "Invalid account/group pair  (" + userGroup + ") given, unable to revoke ingress.");
+                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid account/group pair  (" + userGroup + ") given, unable to revoke ingress.");
                 }
                 authorizedGroups.add(groupVO);
         	}

@@ -28,11 +28,6 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.CloudIdentifierResponse;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
 
 @Implementation(description="Retrieves a cloud identifier.", responseObject=CloudIdentifierResponse.class)
 public class GetCloudIdentifierCmd extends BaseCmd {
@@ -65,18 +60,18 @@ public class GetCloudIdentifierCmd extends BaseCmd {
     }
     
     @Override
-    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute(){
         ArrayList<String> result = _mgr.getCloudIdentifierResponse(this);
         CloudIdentifierResponse response = new CloudIdentifierResponse();
         if (result != null) {
             response.setCloudIdentifier(result.get(0));
             response.setSignature(result.get(1));
-
+            response.setObjectName("cloudidentifier");
+            response.setResponseName(getName());
+            this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to get cloud identifier");
         }
-        response.setObjectName("cloudidentifier");
-        response.setResponseName(getName());
-        this.setResponseObject(response);
+      
     }
 }

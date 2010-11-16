@@ -29,10 +29,6 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
@@ -112,14 +108,18 @@ public class DeleteRemoteAccessVpnCmd extends BaseAsyncCmd {
 	}
 
     @Override
-    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        boolean result = _networkMgr.destroyRemoteAccessVpn(this);
-        if (result) {
-            SuccessResponse response = new SuccessResponse(getName());
-            this.setResponseObject(response);
-        } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete remote access vpn");
-        }
+    public void execute(){
+        try {
+            boolean result = _networkMgr.destroyRemoteAccessVpn(this);
+            if (result) {
+                SuccessResponse response = new SuccessResponse(getName());
+                this.setResponseObject(response);
+            } else {
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete remote access vpn");
+            }
+        } catch (ConcurrentOperationException ex) {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
+        } 
     }
 	
 }

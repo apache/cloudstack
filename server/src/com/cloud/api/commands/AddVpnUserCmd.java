@@ -29,10 +29,6 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.VpnUsersResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.VpnUserVO;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
@@ -127,25 +123,29 @@ public class AddVpnUserCmd extends BaseAsyncCmd {
 	}
 
     @Override
-    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        VpnUserVO vpnUser = _networkMgr.addVpnUser(this);
-        if (vpnUser != null) {
-            VpnUsersResponse vpnResponse = new VpnUsersResponse();
-            vpnResponse.setId(vpnUser.getId());
-            vpnResponse.setUserName(vpnUser.getUsername());
-            vpnResponse.setAccountName(vpnUser.getAccountName());
-            
-            Account accountTemp = ApiDBUtils.findAccountById(vpnUser.getAccountId());
-            if (accountTemp != null) {
-                vpnResponse.setDomainId(accountTemp.getDomainId());
-                vpnResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
+    public void execute(){
+        try {
+            VpnUserVO vpnUser = _networkMgr.addVpnUser(this);
+            if (vpnUser != null) {
+                VpnUsersResponse vpnResponse = new VpnUsersResponse();
+                vpnResponse.setId(vpnUser.getId());
+                vpnResponse.setUserName(vpnUser.getUsername());
+                vpnResponse.setAccountName(vpnUser.getAccountName());
+                
+                Account accountTemp = ApiDBUtils.findAccountById(vpnUser.getAccountId());
+                if (accountTemp != null) {
+                    vpnResponse.setDomainId(accountTemp.getDomainId());
+                    vpnResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
+                }
+                
+                vpnResponse.setResponseName(getName());
+                vpnResponse.setObjectName("vpnuser");
+                this.setResponseObject(vpnResponse);
+            } else {
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add vpn user");
             }
-            
-            vpnResponse.setResponseName(getName());
-            vpnResponse.setObjectName("vpnuser");
-            this.setResponseObject(vpnResponse);
-        } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add vpn user");
+        } catch (ConcurrentOperationException ex) {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
         }
     }	
 }

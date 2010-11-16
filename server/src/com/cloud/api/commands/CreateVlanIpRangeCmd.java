@@ -30,10 +30,7 @@ import com.cloud.api.response.VlanIpRangeResponse;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.VlanVO;
 import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
 
 @Implementation(description="Creates a VLAN IP range.", responseObject=VlanIpRangeResponse.class)
 public class CreateVlanIpRangeCmd extends BaseCmd {
@@ -130,14 +127,20 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
     }
     
     @Override
-    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        Vlan result = _configService.createVlanAndPublicIpRange(this);
-        if (result != null) {
-            VlanIpRangeResponse response = ApiResponseHelper.createVlanIpRangeResponse((VlanVO)result);
-            response.setResponseName(getName());
-            this.setResponseObject(response);
-        }else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create vlan ip range");
+    public void execute(){
+        try {
+            Vlan result = _configService.createVlanAndPublicIpRange(this);
+            if (result != null) {
+                VlanIpRangeResponse response = ApiResponseHelper.createVlanIpRangeResponse((VlanVO)result);
+                response.setResponseName(getName());
+                this.setResponseObject(response);
+            }else {
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create vlan ip range");
+            }
+        } catch (ConcurrentOperationException ex) {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
+        } catch (InsufficientCapacityException ex) {
+            throw new ServerApiException(BaseCmd.INSUFFICIENT_CAPACITY_ERROR, ex.getMessage());
         }
     }
 }

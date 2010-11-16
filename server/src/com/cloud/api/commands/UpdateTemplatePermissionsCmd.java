@@ -24,12 +24,6 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
-import com.cloud.exception.ResourceUnavailableException;
 
 @Implementation(responseObject=SuccessResponse.class, description="Updates a template visibility permissions. " +
 																						"A public template is visible to all accounts within the same domain. " +
@@ -46,7 +40,7 @@ public class UpdateTemplatePermissionsCmd extends UpdateTemplateOrIsoPermissions
 	}	
 	
     @Override
-    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException{
+    public void execute(){
         boolean result = _mgr.updateTemplatePermissions(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getName());

@@ -23,13 +23,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
-import com.cloud.api.ServerApiException;
 import com.cloud.api.response.CapabilitiesResponse;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
 
 @Implementation(description="Lists capabilities", responseObject=CapabilitiesResponse.class)
 public class ListCapabilitiesCmd extends BaseCmd {
@@ -43,7 +37,7 @@ public class ListCapabilitiesCmd extends BaseCmd {
     }
     
     @Override
-    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute(){
         Map<String, String> capabilities = _mgr.listCapabilities(this);
         CapabilitiesResponse response = new CapabilitiesResponse();
         response.setNetworkGroupsEnabled(capabilities.get("networkGroupsEnabled"));

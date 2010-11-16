@@ -30,12 +30,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.HostResponse;
 import com.cloud.api.response.ListResponse;
-import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.DiscoveryException;
-import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.HostVO;
 
 @Implementation(description="Adds a new host.", responseObject=HostResponse.class)
@@ -112,7 +107,7 @@ public class AddHostCmd extends BaseCmd {
     }
     
     @Override
-    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute(){
         try {
             List<HostVO> result = _agentMgr.discoverHosts(this);
             ListResponse<HostResponse> response = new ListResponse<HostResponse>();

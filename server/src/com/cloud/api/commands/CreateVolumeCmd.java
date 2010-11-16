@@ -30,11 +30,6 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.VolumeResponse;
 import com.cloud.event.EventTypes;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
@@ -147,17 +142,21 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     }
     
     @Override
-    public void callCreate() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException{
-        Volume volume = _storageMgr.allocVolume(this);
-        if (volume != null) {
-            this.setId(volume.getId());
-        } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create volume");
-        }
+    public void callCreate(){
+        try {
+            Volume volume = _storageMgr.allocVolume(this);
+            if (volume != null) {
+                this.setId(volume.getId());
+            } else {
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create volume");
+            }
+        } catch (ResourceAllocationException ex) {
+            throw new ServerApiException(BaseCmd.RESOURCE_ALLOCATION_ERROR, ex.getMessage());
+        } 
     }
     
     @Override
-    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute(){
         Volume volume = _storageMgr.createVolume(this);
         if (volume != null) {
             VolumeResponse response = ApiResponseHelper.createVolumeResponse((VolumeVO)volume);

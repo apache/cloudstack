@@ -28,8 +28,7 @@ import java.util.StringTokenizer;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd.CommandType;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.AccountLimitException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
@@ -66,76 +65,57 @@ public class ApiDispatcher {
 
         try {
             cmd.callCreate();
-        } catch (InvalidParameterValueException e1) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, e1.getMessage());
-        } catch (IllegalArgumentException e2) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, e2.getMessage());
-        } catch (PermissionDeniedException e3) {
-            throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, e3.getMessage());
-        } catch (InsufficientAddressCapacityException e4) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e4.getMessage());
-        } catch (InsufficientCapacityException e5) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e5.getMessage());
-        } catch (ConcurrentOperationException e6) {
-            s_logger.error("Exception while executing " + cmd.getName() + ":", e6);
-            if (UserContext.current().getAccount() == null || UserContext.current().getAccount().getType() == Account.ACCOUNT_TYPE_ADMIN)
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e6.getMessage());
-            else
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, BaseCmd.USER_ERROR_MESSAGE);
-        } catch (ResourceUnavailableException e7) {
-            s_logger.error("Exception while executing " + cmd.getName() + ":", e7);
-            if (UserContext.current().getAccount() == null || UserContext.current().getAccount().getType() == Account.ACCOUNT_TYPE_ADMIN)
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e7.getMessage());
-            else
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, BaseCmd.USER_ERROR_MESSAGE);
-        } catch (ResourceAllocationException e8) {
-            s_logger.error("Exception while executing " + cmd.getName() + ":", e8);
-            if (UserContext.current().getAccount() == null || UserContext.current().getAccount().getType() == Account.ACCOUNT_TYPE_ADMIN)
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e8.getMessage());
-            else
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, BaseCmd.USER_ERROR_MESSAGE);
-        } catch (CloudRuntimeException e9) {
-            s_logger.error("Exception while executing " + cmd.getName() + ":", e9);
-            if (UserContext.current().getAccount() == null || UserContext.current().getAccount().getType() == Account.ACCOUNT_TYPE_ADMIN)
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e9.getMessage());
-            else
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, BaseCmd.USER_ERROR_MESSAGE);
+        } catch (Throwable t) {
+            if (t instanceof  InvalidParameterValueException || t instanceof IllegalArgumentException) {
+                throw new ServerApiException(BaseCmd.PARAM_ERROR, t.getMessage());
+            }else if (t instanceof PermissionDeniedException) {
+                throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, t.getMessage());
+            }else if (t instanceof AccountLimitException) {
+                throw new ServerApiException(BaseCmd.ACCOUNT_RESOURCE_LIMIT_ERROR, t.getMessage());
+            }else if (t instanceof InsufficientCapacityException) {
+                throw new ServerApiException(BaseCmd.INSUFFICIENT_CAPACITY_ERROR, t.getMessage());
+            }else if (t instanceof ResourceAllocationException) {
+                throw new ServerApiException(BaseCmd.RESOURCE_ALLOCATION_ERROR, t.getMessage());
+            }else if (t instanceof ResourceUnavailableException) {
+                throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, t.getMessage());
+            }else if (t instanceof ServerApiException) {
+                throw new ServerApiException(((ServerApiException) t).getErrorCode(), ((ServerApiException) t).getDescription());
+            }else {
+                s_logger.error("Exception while executing " + cmd.getName() + ":", t);
+                if (UserContext.current().getAccount() == null || UserContext.current().getAccount().getType() == Account.ACCOUNT_TYPE_ADMIN)
+                    throw new ServerApiException(BaseCmd.INTERNAL_ERROR, t.getMessage());
+                else
+                    throw new ServerApiException(BaseCmd.INTERNAL_ERROR, BaseCmd.USER_ERROR_MESSAGE);
+            }
         }
     }
 
     public void dispatch(BaseCmd cmd, Map<String, String> params) {
         setupParameters(cmd, params);
-
         try {
             cmd.execute();
-        } catch (InvalidParameterValueException e1) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, e1.getMessage());
-        } catch (IllegalArgumentException e2) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, e2.getMessage());
-        } catch (PermissionDeniedException e3) {
-            throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, e3.getMessage());
-        } catch (InsufficientAddressCapacityException e4) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e4.getMessage());
-        } catch (InsufficientCapacityException e5) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e5.getMessage());
-        } catch (ConcurrentOperationException e6) {
-            s_logger.error("Exception while executing " + cmd.getName() + ":", e6);
-            if (UserContext.current().getAccount() == null || UserContext.current().getAccount().getType() == Account.ACCOUNT_TYPE_ADMIN)
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e6.getMessage());
-            else
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, BaseCmd.USER_ERROR_MESSAGE);
-        } catch (ResourceUnavailableException e7) {
-            s_logger.error("Exception while executing " + cmd.getName() + ":", e7);
-            if (UserContext.current().getAccount() == null || UserContext.current().getAccount().getType() == Account.ACCOUNT_TYPE_ADMIN)
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e7.getMessage());
-            else
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, BaseCmd.USER_ERROR_MESSAGE);
-        } catch (CloudRuntimeException e8) {
-            s_logger.error("Exception while executing " + cmd.getName() + ":", e8);
-            if (UserContext.current().getAccount() == null || UserContext.current().getAccount().getType() == Account.ACCOUNT_TYPE_ADMIN)
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e8.getMessage());
-            else
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, BaseCmd.USER_ERROR_MESSAGE);
+        } catch (Throwable t) {
+            if (t instanceof  InvalidParameterValueException || t instanceof IllegalArgumentException) {
+                throw new ServerApiException(BaseCmd.PARAM_ERROR, t.getMessage());
+            }else if (t instanceof PermissionDeniedException) {
+                throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, t.getMessage());
+            }else if (t instanceof AccountLimitException) {
+                throw new ServerApiException(BaseCmd.ACCOUNT_RESOURCE_LIMIT_ERROR, t.getMessage());
+            }else if (t instanceof InsufficientCapacityException) {
+                throw new ServerApiException(BaseCmd.INSUFFICIENT_CAPACITY_ERROR, t.getMessage());
+            }else if (t instanceof ResourceAllocationException) {
+                throw new ServerApiException(BaseCmd.RESOURCE_ALLOCATION_ERROR, t.getMessage());
+            }else if (t instanceof ResourceUnavailableException) {
+                throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, t.getMessage());
+            }else if (t instanceof ServerApiException) {
+                throw new ServerApiException(((ServerApiException) t).getErrorCode(), ((ServerApiException) t).getDescription());
+            } else {
+                s_logger.error("Exception while executing " + cmd.getName() + ":", t);
+                if (UserContext.current().getAccount() == null || UserContext.current().getAccount().getType() == Account.ACCOUNT_TYPE_ADMIN)
+                    throw new ServerApiException(BaseCmd.INTERNAL_ERROR, t.getMessage());
+                else
+                    throw new ServerApiException(BaseCmd.INTERNAL_ERROR, BaseCmd.USER_ERROR_MESSAGE);
+            }
         }
     }
 
@@ -225,7 +205,7 @@ public class ApiDispatcher {
                         listParam.add(Long.valueOf(token));
                         break;
                     case STRING:
-                        listParam.add(token.toString());
+                        listParam.add(token);
                         break;
                     }
                 }

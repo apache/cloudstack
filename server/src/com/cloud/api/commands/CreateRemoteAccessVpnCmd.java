@@ -29,10 +29,6 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.RemoteAccessVpnResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.RemoteAccessVpnVO;
 import com.cloud.user.Account;
@@ -137,35 +133,41 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
 	}
 	
     @Override
-    public void callCreate() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException{
-        RemoteAccessVpnVO vpn = _networkMgr.createRemoteAccessVpn(this);
-        if (vpn != null) {
-            this.setId(vpn.getId());
-        } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create remote access vpn");
-        }
+    public void callCreate(){
+        try {
+            RemoteAccessVpnVO vpn = _networkMgr.createRemoteAccessVpn(this);
+            if (vpn != null) {
+                this.setId(vpn.getId());
+            } else {
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create remote access vpn");
+            }
+        } catch (ConcurrentOperationException ex) {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
+        } 
     }
 
     @Override
-    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute(){
         try {
-        RemoteAccessVpnVO result = _networkMgr.startRemoteAccessVpn(this);
-        if (result != null) {
-            RemoteAccessVpnResponse response = new RemoteAccessVpnResponse();
-            response.setId(result.getId());
-            response.setPublicIp(result.getVpnServerAddress());
-            response.setIpRange(result.getIpRange());
-            response.setAccountName(result.getAccountName());
-            response.setDomainId(result.getDomainId());
-            response.setDomainName(ApiDBUtils.findDomainById(result.getDomainId()).getName());
-            response.setObjectName("remoteaccessvpn");
-            response.setResponseName(getName());
-            response.setPresharedKey(result.getIpsecPresharedKey());
-            this.setResponseObject(response);
-        } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create remote access vpn");
-        }
+            RemoteAccessVpnVO result = _networkMgr.startRemoteAccessVpn(this);
+            if (result != null) {
+                RemoteAccessVpnResponse response = new RemoteAccessVpnResponse();
+                response.setId(result.getId());
+                response.setPublicIp(result.getVpnServerAddress());
+                response.setIpRange(result.getIpRange());
+                response.setAccountName(result.getAccountName());
+                response.setDomainId(result.getDomainId());
+                response.setDomainName(ApiDBUtils.findDomainById(result.getDomainId()).getName());
+                response.setObjectName("remoteaccessvpn");
+                response.setResponseName(getName());
+                response.setPresharedKey(result.getIpsecPresharedKey());
+                this.setResponseObject(response);
+            } else {
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create remote access vpn");
+            }
         } catch (ResourceUnavailableException ex) {
+            throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
+        }  catch (ConcurrentOperationException ex) {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
         }
     }

@@ -29,11 +29,6 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.ConfigurationResponse;
 import com.cloud.configuration.Configuration;
 import com.cloud.configuration.ConfigurationVO;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
 
 @Implementation(description="Updates a configuration.", responseObject=ConfigurationResponse.class)
 public class UpdateCfgCmd extends BaseCmd {
@@ -71,7 +66,7 @@ public class UpdateCfgCmd extends BaseCmd {
     }
     
     @Override
-    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute(){
         Configuration cfg = _configService.updateConfiguration(this);
         if (cfg != null) {
             ConfigurationResponse response = ApiResponseHelper.createConfigurationResponse((ConfigurationVO)cfg);

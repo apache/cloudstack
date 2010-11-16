@@ -27,17 +27,11 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
 import com.cloud.api.response.IngressRuleResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.NetworkGroupResponse;
 import com.cloud.async.executor.IngressRuleResultObject;
 import com.cloud.async.executor.NetworkGroupResultObject;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.security.NetworkGroupRulesVO;
 
 @Implementation(description="Lists network groups", responseObject=NetworkGroupResponse.class)
@@ -92,7 +86,7 @@ public class ListNetworkGroupsCmd extends BaseListCmd {
     }
 
     @Override
-    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
+    public void execute(){
         List<NetworkGroupRulesVO> networkGroups = _networkGroupMgr.searchForNetworkGroupRules(this);
         List<NetworkGroupResultObject> groupResultObjs = NetworkGroupResultObject.transposeNetworkGroups(networkGroups);
 

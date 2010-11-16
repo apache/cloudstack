@@ -1173,7 +1173,7 @@ public class TemplateManagerImpl implements TemplateManager {
         // Verify input parameters
         UserVmVO vmInstanceCheck = _userVmDao.findById(vmId.longValue());
         if (vmInstanceCheck == null) {
-            throw new ServerApiException (BaseCmd.VM_INVALID_PARAM_ERROR, "Unable to find a virtual machine with id " + vmId);
+            throw new ServerApiException (BaseCmd.PARAM_ERROR, "Unable to find a virtual machine with id " + vmId);
         }
         
         UserVm userVM = _userVmDao.findById(vmId);

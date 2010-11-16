@@ -31,12 +31,6 @@ import com.cloud.agent.AgentManager;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.configuration.ConfigurationService;
 import com.cloud.consoleproxy.ConsoleProxyManager;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.DomainRouterService;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.security.NetworkGroupManager;
@@ -66,46 +60,19 @@ public abstract class BaseCmd {
     // FIXME:  Extract these out into a separate file
     // Client error codes
     public static final int MALFORMED_PARAMETER_ERROR = 430;
-    public static final int VM_INVALID_PARAM_ERROR = 431;
-    public static final int NET_INVALID_PARAM_ERROR = 432;
-    public static final int VM_ALLOCATION_ERROR = 433;
-    public static final int IP_ALLOCATION_ERROR = 434;
-    public static final int SNAPSHOT_INVALID_PARAM_ERROR = 435;
-    public static final int PARAM_ERROR = 436;
-
+    public static final int PARAM_ERROR = 431;
+    public static final int UNSUPPORTED_ACTION_ERROR = 432;
+    
     // Server error codes
     public static final int INTERNAL_ERROR = 530;
     public static final int ACCOUNT_ERROR = 531;
-    public static final int UNSUPPORTED_ACTION_ERROR = 532;
+    public static final int ACCOUNT_RESOURCE_LIMIT_ERROR= 532;
+    public static final int INSUFFICIENT_CAPACITY_ERROR = 533;
+    public static final int RESOURCE_UNAVAILABLE_ERROR = 534;
+    public static final int RESOURCE_ALLOCATION_ERROR = 534;
+    public static final int RESOURCE_IN_USE_ERROR = 536;
+    public static final int NETWORK_RULE_CONFLICT_ERROR = 537;
 
-    public static final int VM_DEPLOY_ERROR = 540;
-    public static final int VM_DESTROY_ERROR = 541;
-    public static final int VM_REBOOT_ERROR = 542;
-    public static final int VM_START_ERROR = 543;
-    public static final int VM_STOP_ERROR = 544;
-    public static final int VM_RESET_PASSWORD_ERROR = 545;
-    public static final int VM_CHANGE_SERVICE_ERROR = 546;
-    public static final int VM_LIST_ERROR = 547;
-    public static final int VM_RECOVER_ERROR = 548;
-    public static final int SNAPSHOT_LIST_ERROR = 549;
-    public static final int CREATE_VOLUME_FROM_SNAPSHOT_ERROR = 550;
-    public static final int VM_INSUFFICIENT_CAPACITY = 551;
-    public static final int CREATE_PRIVATE_TEMPLATE_ERROR = 552;
-    public static final int VM_HOST_LICENSE_EXPIRED = 553;
-    
-    public static final int NET_IP_ASSOC_ERROR = 560;
-    public static final int NET_IP_DIASSOC_ERROR = 561;
-    public static final int NET_CREATE_IPFW_RULE_ERROR = 562;
-    public static final int NET_DELETE_IPFW_RULE_ERROR = 563;
-    public static final int NET_CONFLICT_IPFW_RULE_ERROR = 564;
-    public static final int NET_CREATE_LB_RULE_ERROR = 566;
-    public static final int NET_DELETE_LB_RULE_ERROR = 567;
-    public static final int NET_CONFLICT_LB_RULE_ERROR = 568;
-    public static final int NET_LIST_ERROR = 570;
-    public static final int CUSTOM_CERT_UPDATE_ERROR = 571;
-    public static final int PREPARE_STORAGE_MAINTENANCE_ERROR = 572;
-    public static final int CANCEL_STORAGE_MAINTENANCE_ERROR = 573;  
-    public static final int STORAGE_RESOURCE_IN_USE = 580;
 
     public static final DateFormat INPUT_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
     private static final DateFormat _outputFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
@@ -148,7 +115,7 @@ public abstract class BaseCmd {
         _routerMgr = locator.getManager(DomainRouterService.class);
     }
     
-    public abstract void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ResourceUnavailableException,  ConcurrentOperationException;
+    public abstract void execute();
     
     public String getResponseType() {
         if (responseType == null) {

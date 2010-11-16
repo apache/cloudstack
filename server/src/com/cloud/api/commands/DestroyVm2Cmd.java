@@ -23,6 +23,7 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -88,10 +89,20 @@ public class DestroyVm2Cmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException{
-        UserVm result = _userVmService.destroyVm(this);
-        UserVmResponse response = ApiResponseHelper.createUserVmResponse(result);
-        response.setResponseName("virtualmachine");
-        this.setResponseObject(response);
+    public void execute(){
+        try {
+            UserVm result = _userVmService.destroyVm(this);
+            if (result != null) {
+                UserVmResponse response = ApiResponseHelper.createUserVmResponse(result);
+                response.setResponseName("virtualmachine");
+                this.setResponseObject(response);
+            } else {
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to destroy vm");
+            }
+        }catch (ConcurrentOperationException ex) {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
+        }catch (ResourceUnavailableException ex) {
+            throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
+        }
     }
 }

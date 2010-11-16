@@ -1743,7 +1743,7 @@ public class StorageManagerImpl implements StorageManager {
             Long snapshotId = cmd.getSnapshotId();
             Snapshot snapshotCheck = _snapshotDao.findById(snapshotId);
             if (snapshotCheck == null) {
-                throw new ServerApiException (BaseCmd.SNAPSHOT_INVALID_PARAM_ERROR, "unable to find a snapshot with id " + snapshotId);
+                throw new ServerApiException (BaseCmd.PARAM_ERROR, "unable to find a snapshot with id " + snapshotId);
             }
 
             VolumeVO vol = _volsDao.findById(snapshotCheck.getVolumeId());
@@ -1758,7 +1758,7 @@ public class StorageManagerImpl implements StorageManager {
                         throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to create volume from snapshot with id " + snapshotId + ", permission denied.");
                     }
                 } else if (account.getId() != snapshotCheck.getAccountId()) {
-                    throw new ServerApiException(BaseCmd.SNAPSHOT_INVALID_PARAM_ERROR, "unable to find a snapshot with id " + snapshotId + " for this account");
+                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find a snapshot with id " + snapshotId + " for this account");
                 }
             }
         }
@@ -2358,19 +2358,15 @@ public class StorageManagerImpl implements StorageManager {
         } catch (Exception e) { 
         	if(e instanceof ResourceUnavailableException){
                 s_logger.error("Exception in enabling primary storage maintenance:",e);
-        		throw new ServerApiException(BaseCmd.PREPARE_STORAGE_MAINTENANCE_ERROR, e.getMessage());
+        		throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, e.getMessage());
         	}
         	if(e instanceof InvalidParameterValueException){
                 s_logger.error("Exception in enabling primary storage maintenance:",e);
-        		throw new ServerApiException(BaseCmd.PREPARE_STORAGE_MAINTENANCE_ERROR, e.getMessage());
-        	}
-        	if(e instanceof CloudRuntimeException){
-                s_logger.error("Exception in enabling primary storage maintenance:",e);
-        		throw new ServerApiException(BaseCmd.PREPARE_STORAGE_MAINTENANCE_ERROR, e.getMessage());
+        		throw new ServerApiException(BaseCmd.PARAM_ERROR, e.getMessage());
         	}
         	//for everything else
         	s_logger.error("Exception in enabling primary storage maintenance:",e);
-        	throw new ServerApiException(BaseCmd.PREPARE_STORAGE_MAINTENANCE_ERROR, e.getMessage());
+        	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e.getMessage());
         	
         }finally{
         	_storagePoolDao.releaseFromLockTable(primaryStorage.getId());					
@@ -2516,21 +2512,17 @@ public class StorageManagerImpl implements StorageManager {
 			if(e instanceof ResourceUnavailableException){
             	primaryStorage.setStatus(Status.ErrorInMaintenance);
         		_storagePoolDao.persist(primaryStorage);
-				throw new ServerApiException(BaseCmd.CANCEL_STORAGE_MAINTENANCE_ERROR, e.getMessage());
+				throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, e.getMessage());
 			}	
 			else if(e instanceof InvalidParameterValueException){
             	primaryStorage.setStatus(Status.ErrorInMaintenance);
         		_storagePoolDao.persist(primaryStorage);
-				throw new ServerApiException(BaseCmd.CANCEL_STORAGE_MAINTENANCE_ERROR, e.getMessage());
-			}
-			else if(e instanceof StorageUnavailableException){
-				//the ps was not in maintenance mode; dont reset state as maintenance did not begin
-				throw new ServerApiException(BaseCmd.CANCEL_STORAGE_MAINTENANCE_ERROR, e.getMessage());
+				throw new ServerApiException(BaseCmd.PARAM_ERROR, e.getMessage());
 			}
 			else{//all other exceptions
             	primaryStorage.setStatus(Status.ErrorInMaintenance);
         		_storagePoolDao.persist(primaryStorage);
-				throw new ServerApiException(BaseCmd.CANCEL_STORAGE_MAINTENANCE_ERROR, e.getMessage());
+				throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e.getMessage());
 			}
 		}finally{
 			_storagePoolDao.releaseFromLockTable(primaryStorage.getId());			
