@@ -195,6 +195,7 @@
 	                <div class="grid_row_cell" style="width: 39%;">                   
 	                    <select class="select" id="vm">
 	                    </select>
+	                    <div id="vm_errormsg" class="errormsg" style="display: none;"></div>	                    
 	                </div>
 	                <div class="grid_row_cell" style="width: 15%;">
 	                    <div class="row_celltitles">

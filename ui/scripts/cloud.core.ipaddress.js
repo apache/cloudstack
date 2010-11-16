@@ -86,10 +86,11 @@ function afterLoadIpJSP() {
     //*** Acquire New IP (end) ***
     
     //Port Fowording tab
-    var $createPortForwardingRow = $("#tab_content_port_forwarding #create_port_forwarding_row");     
+    var $createPortForwardingRow = $("#tab_content_port_forwarding").find("#create_port_forwarding_row");     
     
     $createPortForwardingRow.find("#add_link").bind("click", function(event){	        
-		var isValid = true;				
+		var isValid = true;		
+		isValid &= validateDropDownBox("Instance", $createPortForwardingRow.find("#vm"), $createPortForwardingRow.find("#vm_errormsg"));				
 		isValid &= validateNumber("Public Port", $createPortForwardingRow.find("#public_port"), $createPortForwardingRow.find("#public_port_errormsg"), 1, 65535);
 		isValid &= validateNumber("Private Port", $createPortForwardingRow.find("#private_port"), $createPortForwardingRow.find("#private_port_errormsg"), 1, 65535);				
 		if (!isValid) return;			

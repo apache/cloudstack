@@ -1544,6 +1544,20 @@ function showError2(isValid, field, errMsgField, errMsg, appendErrMsg) {
 	}
 }
 
+function showErrorInDropdown(isValid, field, errMsgField, errMsg, appendErrMsg) {    
+	if(isValid) {
+	    errMsgField.text("").hide();
+	    field.addClass("select").removeClass("error_select");
+	}
+	else {
+	    if(appendErrMsg) //append text
+	        errMsgField.text(errMsgField.text()+errMsg).show();  
+	    else  //reset text
+	        errMsgField.text(errMsg).show();  
+	    field.removeClass("select").addClass("error_select");	
+	}
+}
+
 function validateDropDownBox(label, field, errMsgField, appendErrMsg) {  
     var isValid = true;
     var errMsg = "";   
@@ -1552,7 +1566,7 @@ function validateDropDownBox(label, field, errMsgField, appendErrMsg) {
 	    errMsg = label + " is a required value. ";	   
 		isValid = false;		
 	} 		
-	showError2(isValid, field, errMsgField, errMsg, appendErrMsg);	
+	showErrorInDropdown(isValid, field, errMsgField, errMsg, appendErrMsg);	
 	return isValid;
 }
 
