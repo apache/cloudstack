@@ -161,6 +161,7 @@ public class StoragePoolVO implements StoragePool {
     private Long clusterId;
     
     
+    @Override
     public Long getClusterId() {
         return clusterId;
     }
@@ -195,6 +196,10 @@ public class StoragePoolVO implements StoragePool {
         this.setStatus(Status.Up);
     }
     
+    public StoragePoolVO(StoragePoolVO that) {
+        this(that.id, that.name, that.uuid, that.poolType, that.dataCenterId, that.podId, that.availableBytes, that.capacityBytes, that.hostAddress, that.port, that.path);
+    }
+    
     public StoragePoolVO(StoragePoolType type, String hostAddress, int port, String path) {
         this.poolType = type;
         this.hostAddress = hostAddress;
@@ -224,6 +229,7 @@ public class StoragePoolVO implements StoragePool {
         this.uuid = uuid;
     }
     
+    @Override
     public int getPort() {
         return port;
     }
@@ -257,7 +263,8 @@ public class StoragePoolVO implements StoragePool {
         return null;
     }
 
-	public Long getPodId() {
+	@Override
+    public Long getPodId() {
 		return podId;
 	}
 	

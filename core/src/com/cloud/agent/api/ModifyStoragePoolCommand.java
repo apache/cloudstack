@@ -38,7 +38,7 @@ public class ModifyStoragePoolCommand extends Command {
     
     public ModifyStoragePoolCommand(boolean add, StoragePoolVO pool, String localPath) {
     	this.add = add;
-    	this.pool = pool;
+    	this.pool = new StoragePoolVO(pool);
         this.localPath = localPath;
 
     }

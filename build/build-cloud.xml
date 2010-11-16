@@ -317,7 +317,7 @@
       <fileset dir="${deps.dir}">
         <include name="log4j-1.2.15.jar" />
         <include name="apache-log4j-extras-1.0.jar" />
-        <include name="gson-1.5.jar" />
+        <include name="gson.jar" />
       </fileset>
     </copy>
 

@@ -47,20 +47,20 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     @Id
     @TableGenerator(name="vm_instance_sq", table="sequence", pkColumnName="name", valueColumnName="value", pkColumnValue="vm_instance_seq", allocationSize=1)
     @Column(name="id", updatable=false, nullable = false)
-	private long id;
+	protected long id;
 
     @Column(name="name", updatable=false, nullable=false, length=255)
-	private String hostName = null;
+	protected String hostName = null;
 
     @Column(name="vnc_password", updatable=true, nullable=false, length=255)
-    String vncPassword;
+    protected String vncPassword;
     
     @Column(name="proxy_id", updatable=true, nullable=true)
-    Long proxyId;
+    protected Long proxyId;
     
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name="proxy_assign_time", updatable=true, nullable=true)
-    Date proxyAssignTime;
+    protected Date proxyAssignTime;
 
     /**
      * Note that state is intentionally missing the setter.  Any updates to
@@ -70,72 +70,72 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     @Enumerated(value=EnumType.STRING)
     @StateMachine(state=State.class, event=Event.class)
     @Column(name="state", updatable=true, nullable=false, length=32)
-    private State state = null;
+    protected State state = null;
 
     @Column(name="private_ip_address", updatable=true)
-	private String privateIpAddress;
+	protected String privateIpAddress;
 
     @Column(name="instance_name", updatable=true, nullable=false)
-    private String instanceName;
+    protected String instanceName;
 
     @Column(name="vm_template_id", updatable=false, nullable=true, length=17)
-	private Long templateId = new Long(-1);
+	protected Long templateId = new Long(-1);
 
     @Column(name="guest_os_id", nullable=false, length=17)
-    private long guestOSId;
+    protected long guestOSId;
     
     @Column(name="host_id", updatable=true, nullable=true)
-	private Long hostId;
+	protected Long hostId;
     
     @Column(name="last_host_id", updatable=true, nullable=true)
-    private Long lastHostId;
+    protected Long lastHostId;
 
     @Column(name="pod_id", updatable=true, nullable=false)
-    private Long podId;
+    protected Long podId;
 
     @Column(name="private_mac_address", updatable=true, nullable=true)
-    String privateMacAddress;
+    protected String privateMacAddress;
 
     @Column(name="private_netmask")
-    private String privateNetmask;
+    protected String privateNetmask;
 
     @Column(name="data_center_id", updatable=true, nullable=false)
-    long dataCenterId;
+    protected long dataCenterId;
 
     @Column(name="type", updatable=false, nullable=false, length=32)
     @Enumerated(value=EnumType.STRING)
-    Type type;
+    protected Type type;
 
     @Column(name="ha_enabled", updatable=true, nullable=true)
-    boolean haEnabled;
+    protected boolean haEnabled;
     
     @Column(name="mirrored_vols", updatable=true, nullable=true)
-    boolean mirroredVols;
+    protected boolean mirroredVols;
 
     @Column(name="update_count", updatable = true, nullable=false)
-    long updated;	// This field should be updated everytime the state is updated.  There's no set method in the vo object because it is done with in the dao code.
+    protected long updated;	// This field should be updated everytime the state is updated.  There's no set method in the vo object because it is done with in the dao code.
     
     @Column(name=GenericDao.CREATED_COLUMN)
-    Date created;
+    protected Date created;
     
     @Column(name=GenericDao.REMOVED_COLUMN)
-    Date removed;
+    protected Date removed;
     
     @Column(name="update_time", updatable=true)
     @Temporal(value=TemporalType.TIMESTAMP)
-    Date updateTime;
+    protected Date updateTime;
     
     @Column(name="domain_id")
-    long domainId;
+    protected long domainId;
     
     @Column(name="account_id")
-    long accountId;
+    protected long accountId;
     
     @Column(name="service_offering_id")
-    long serviceOfferingId;
+    protected long serviceOfferingId;
     
     @Column(name="reservation_id")
-    String reservationId;
+    protected String reservationId;
     
     public VMInstanceVO(long id,
                         long serviceOfferingId,

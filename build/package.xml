@@ -57,7 +57,7 @@
         <include name="cloud-ws-commons-util-1.0.2.jar" />
         <include name="cloud-log4j.jar" />
         <include name="cloud-apache-log4j-extras-1.0.jar" />
-        <include name="cloud-gson-1.3.jar" />
+        <include name="cloud-gson.jar" />
         <include name="cloud-commons-httpclient-3.1.jar" />
         <include name="cloud-commons-logging-1.1.1.jar" />
         <include name="cloud-commons-collections-3.2.1.jar" />
@@ -169,7 +169,7 @@
         <include name="cloud-ws-commons-util-1.0.2.jar" />
         <include name="cloud-log4j.jar" />
         <include name="cloud-apache-log4j-extras-1.0.jar" />
-        <include name="cloud-gson-1.3.jar" />
+        <include name="cloud-gson.jar" />
         <include name="cloud-commons-httpclient-3.1.jar" />
         <include name="cloud-commons-logging-1.1.1.jar" />
         <include name="cloud-commons-collections-3.2.1.jar" />

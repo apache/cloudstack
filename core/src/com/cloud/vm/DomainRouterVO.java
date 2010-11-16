@@ -90,6 +90,11 @@ public class DomainRouterVO extends VMInstanceVO implements DomainRouter {
     @Enumerated(EnumType.STRING)
     private Role role = Role.DHCP_FIREWALL_LB_PASSWD_USERDATA;
     
+    public DomainRouterVO(DomainRouterVO that) {
+        this(that.id, that.serviceOfferingId, that.instanceName, that.privateMacAddress, that.privateIpAddress, that.privateNetmask, that.templateId, that.guestOSId, that.guestMacAddress, that.guestIpAddress, that.guestNetmask, that.accountId, that.domainId, that.publicMacAddress, that.publicIpAddress, that.publicNetmask, that.vlanDbId, that.vlanId, that.podId, that.dataCenterId, that.ramSize, that.gateway, that.domain, that.dns1, that.dns2);
+        this.vnet = that.vnet;
+    }
+    
     public DomainRouterVO(long id,
                           long serviceOfferingId,
                           String name,

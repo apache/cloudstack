@@ -21,8 +21,8 @@ import java.util.List;
 
 import com.cloud.storage.VolumeVO;
 import com.cloud.vm.DomainRouter;
-import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.DomainRouter.Role;
+import com.cloud.vm.DomainRouterVO;
 
 
 public class StartRouterCommand extends AbstractStartCommand {
@@ -46,7 +46,7 @@ public class StartRouterCommand extends AbstractStartCommand {
             String routerName, String[] storageIps, List<VolumeVO> vols, boolean mirroredVols, 
             String guestOSDescription, String mgmtHost) {
         super(routerName, storageIps, vols, mirroredVols);
-        this.router = router;
+        this.router = new DomainRouterVO(router);
         this.networkRateMbps = networkRateMbps;
         this.networkRateMulticastMbps = networkRateMulticastMbps;
         this.guestOSDescription = guestOSDescription;
