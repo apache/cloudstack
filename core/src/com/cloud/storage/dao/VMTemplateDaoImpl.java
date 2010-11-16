@@ -388,7 +388,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 			if (_defaultHyperType != HypervisorType.XenServer) {
 				sc = tmpltTypeHyperSearch.create();
 				sc.setParameters("templateType", Storage.TemplateType.SYSTEM);
-				sc.setParameters("hypervisor_type", HypervisorType.XenServer);
+				sc.setParameters("hypervisor_type", HypervisorType.XenServer.toString());
 				tmplt = findOneBy(sc);
 				
 				/*Still can't find it? return a random one*/
