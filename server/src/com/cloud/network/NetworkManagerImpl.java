@@ -2512,10 +2512,18 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
     
     @Override @DB
-    public boolean deletePortForwardingRule(DeletePortForwardingRuleCmd cmd) {
-    	Long ruleId = cmd.getId();
-    	Long userId = UserContext.current().getUserId();
-    	Account account = UserContext.current().getAccount();
+    public boolean deletePortForwardingRule(Long id, boolean sysContext) {
+    	Long ruleId = id;
+    	Long userId = null;
+    	Account account = null;
+    	if(sysContext){
+    		userId = User.UID_SYSTEM;
+    		account = _accountDao.findById(User.UID_SYSTEM);
+    	}else{
+        	userId = UserContext.current().getUserId();
+        	account = UserContext.current().getAccount();    		
+    	}
+
     	
     	//verify input parameters here
     	FirewallRuleVO rule = _firewallRulesDao.findById(ruleId);

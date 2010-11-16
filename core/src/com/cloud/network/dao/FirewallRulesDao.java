@@ -46,4 +46,5 @@ public interface FirewallRulesDao extends GenericDao<FirewallRuleVO, Long> {
     public List<FirewallRuleVO> listForwardingByPubAndPrivIp(boolean forwarding, String publicIPAddress, String privateIp);
     public FirewallRuleVO findByGroupAndPrivateIp(long groupId, String privateIp, boolean forwarding);
 	List<FirewallRuleVO> findByPublicIpPrivateIpForNatRule(String publicIp,String privateIp);
+	List<FirewallRuleVO> listByPrivateIp(String privateIp);
 }

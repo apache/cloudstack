@@ -56,8 +56,8 @@ public class IPAddressResponse extends BaseResponse {
     @SerializedName("vlanname") @Param(description="the VLAN associated with the IP address")
     private String vlanName;
 
-    @SerializedName("onetoonenat") @Param(description="whether this ip is for one-to-one nat")
-    private Boolean oneToOneNat;
+    @SerializedName("isstaticnat") @Param(description="true if this ip is for static nat, false otherwise")
+    private Boolean staticNat;
     
     public String getIpAddress() {
         return ipAddress;
@@ -147,11 +147,12 @@ public class IPAddressResponse extends BaseResponse {
         this.vlanName = vlanName;
     }
 
-	public Boolean getOneToOneNat() {
-		return oneToOneNat;
+	public Boolean getStaticNat() {
+		return staticNat;
 	}
 
-	public void setOneToOneNat(Boolean oneToOneNat) {
-		this.oneToOneNat = oneToOneNat;
+	public void setStaticNat(Boolean staticNat) {
+		this.staticNat = staticNat;
 	}
+
 }

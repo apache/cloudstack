@@ -323,4 +323,11 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
     	sc.setParameters("privateIpAddress", privateIp);
     	return listBy(sc);
     }
+    
+	@Override
+	public List<FirewallRuleVO> listByPrivateIp(String privateIp) {
+		SearchCriteria<FirewallRuleVO> sc = FWByPrivateIPSearch.create();
+        sc.setParameters("privateIpAddress", privateIp);
+        return listBy(sc);
+	}
 }

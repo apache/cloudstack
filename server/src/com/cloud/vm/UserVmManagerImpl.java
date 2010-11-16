@@ -2339,6 +2339,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     	List<UserVmVO> vms = _vmDao.findDestroyedVms(new Date(System.currentTimeMillis() - ((long)_expungeDelay << 10)));
     	s_logger.info("Found " + vms.size() + " vms to expunge.");
     	for (UserVmVO vm : vms) {
+    		boolean deleteRules = true;
+            String privateIpAddress = vm.getPrivateIpAddress();
     		long vmId = vm.getId();
     		releaseGuestIpAddress(vm);
             vm.setGuestNetmask(null);
@@ -2348,6 +2350,38 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     			continue;
     		}
     		
+            if(VirtualMachineName.isValidRouterName(vm.getHostName()) && !vm.getState().equals(State.Running)){
+                deleteRules = false;
+            }
+           
+    		if(deleteRules)
+    		{
+	    		List<FirewallRuleVO> forwardingRules = null;
+				forwardingRules = _rulesDao.listByPrivateIp(privateIpAddress);
+				
+				for(FirewallRuleVO rule: forwardingRules)
+				{
+					try
+					{
+						IPAddressVO publicIp = _ipAddressDao.findById(rule.getPublicIpAddress());
+						
+						if(publicIp != null)
+						{
+							if((publicIp.getAccountId().longValue() == vm.getAccountId()))
+							{
+								_networkMgr.deletePortForwardingRule(rule.getId(),true);//delete the rule with the sys user's credentials
+								if(s_logger.isDebugEnabled())
+									s_logger.debug("Rule "+rule.getId()+" for vm:"+vm.getHostName()+" is deleted successfully during expunge operation");
+							}
+						}
+					}
+					catch(Exception e)
+					{
+						s_logger.warn("Failed to delete rule:"+rule.getId()+" for vm:"+vm.getHostName());
+					}
+				}
+    		}
+
             List<VolumeVO> vols = null;
             try {
                 vols = _volsDao.findByInstanceIdDestroyed(vmId);

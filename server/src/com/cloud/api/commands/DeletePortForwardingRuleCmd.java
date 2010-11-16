@@ -63,7 +63,7 @@ public class DeletePortForwardingRuleCmd extends BaseCmd {
 	
     @Override
     public void execute() throws ServerApiException, InvalidParameterValueException, PermissionDeniedException, InsufficientAddressCapacityException, InsufficientCapacityException, ConcurrentOperationException{
-        boolean result = BaseCmd._networkMgr.deletePortForwardingRule(this);
+        boolean result = BaseCmd._networkMgr.deletePortForwardingRule(id,false);
         if (result) {
             SuccessResponse response = new SuccessResponse(getName());
             this.setResponseObject(response);

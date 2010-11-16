@@ -736,7 +736,7 @@ public class ApiResponseHelper {
        } 
        
        ipResponse.setForVirtualNetwork(forVirtualNetworks);
-       ipResponse.setOneToOneNat(ipAddress.isOneToOneNat());
+       ipResponse.setStaticNat(ipAddress.isOneToOneNat());
        
        //show this info to admin only
        Account account = UserContext.current().getAccount();

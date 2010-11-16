@@ -364,7 +364,7 @@ public interface NetworkManager {
 
 	FirewallRuleVO createIpForwardingRuleInDb(String ipAddr, Long virtualMachineId) throws ServerApiException;
 
-	public boolean deletePortForwardingRule(DeletePortForwardingRuleCmd cmd);
+	public boolean deletePortForwardingRule(Long id, boolean sysContext);
 
 	FirewallRuleVO createIpForwardingRuleOnDomr(Long ruleId);
 
