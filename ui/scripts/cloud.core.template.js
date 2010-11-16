@@ -16,6 +16,8 @@
  * 
  */
 
+var DomRTemplateId = 1;
+
 var g_zoneIds = []; 
 var g_zoneNames = [];	
 
@@ -398,9 +400,6 @@ var templateActionMap = {
         afterActionSeccessFn: function(json, $midmenuItem1, id){}   
     }  
 }   
-
-var DomRTemplateId = 1;
-
 
 function doEditTemplate($actionLink, $detailsTab, $midmenuItem1) {   
     //var $detailsTab = $("#right_panel_content #tab_content_details");  

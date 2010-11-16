@@ -16,6 +16,8 @@
  * 
  */
 
+var xsToolsIsoId = 200;
+
 var g_zoneIds = []; 
 var g_zoneNames = [];	
 
@@ -256,13 +258,14 @@ function isoJsonToDetailsTab() {
 
     // "Edit", "Copy", "Create VM" 
 	if ((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) || jsonObj.isready == false) {		
-		//$("#edit_button").hide();
+		//nothing happens
     }
     else {        
-        buildActionLinkForTab("Edit ISO", isoActionMap, $actionMenu, $midmenuItem1, $thisTab);		
-        //$("#edit_button").show();
-        buildActionLinkForTab("Copy ISO", isoActionMap, $actionMenu, $midmenuItem1, $thisTab);		
-        noAvailableActions = false;
+        buildActionLinkForTab("Edit ISO", isoActionMap, $actionMenu, $midmenuItem1, $thisTab);	
+        noAvailableActions = false;	
+        
+        if(jsonObj.id != xsToolsIsoId)
+            buildActionLinkForTab("Copy ISO", isoActionMap, $actionMenu, $midmenuItem1, $thisTab);	        
     }
 		
 	// "Create VM" 
