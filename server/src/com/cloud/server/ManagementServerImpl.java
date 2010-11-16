@@ -174,6 +174,7 @@ import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientStorageCapacityException;
@@ -663,7 +664,8 @@ public class ManagementServerImpl implements ManagementServer {
             if (s_logger.isInfoEnabled()) {
                 s_logger.info("user " + username + " in domain " + domainId + " is disabled/locked (or account is disabled/locked), returning null");
             }
-            return null;
+            throw new CloudAuthenticationException("user " + username + " in domain " + domainId + " is disabled/locked (or account is disabled/locked)");
+            //return null;
         }
 
         // We only use the first adapter even if multiple have been
