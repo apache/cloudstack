@@ -224,6 +224,9 @@ public class ApiDispatcher {
                     case LONG:
                         listParam.add(Long.valueOf(token));
                         break;
+                    case STRING:
+                        listParam.add(token.toString());
+                        break;
                     }
                 }
                 field.set(cmdObj, listParam);
