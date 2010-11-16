@@ -671,8 +671,12 @@ $(document).ready(function() {
 			        }
 			        responseText += ('<br>' + includingIndent('} ', -1));
 			        responseIndent--;
-			    } else if (typeof obj == 'string') {
+			    } 
+			    else if (typeof obj == 'string') {
 			        responseText += ('"'+ obj + '"');
+			    }	
+			    else if (typeof obj == 'number' || typeof obj == "boolean") {
+			        responseText += (obj.toString());
 			    }			
 			}
 			
