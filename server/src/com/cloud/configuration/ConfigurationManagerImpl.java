@@ -1145,7 +1145,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     	Long id = cmd.getId();
     	String name = cmd.getServiceOfferingName();
     	Boolean ha = cmd.getOfferHa();
-    	String tags = cmd.getTags();
+//    	String tags = cmd.getTags();
     	Boolean useVirtualNetwork = cmd.getUseVirtualNetwork();
     	Long userId = UserContext.current().getUserId();
 
@@ -1159,7 +1159,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     		throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find service offering " + id);
     	}
     	
-    	boolean updateNeeded = (name != null || displayText != null || ha != null || useVirtualNetwork != null || tags != null);
+    	boolean updateNeeded = (name != null || displayText != null || ha != null || useVirtualNetwork != null);
     	if (!updateNeeded) {
     		return _serviceOfferingDao.findById(id);
     	}
@@ -1182,28 +1182,28 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         	NetworkOffering.GuestIpType guestIpType = useVirtualNetwork ? NetworkOffering.GuestIpType.Virtualized : NetworkOffering.GuestIpType.DirectSingle;
             offering.setGuestIpType(guestIpType);
         }
-        
-        if (tags != null) 
-        {
-        	if (tags.trim().isEmpty() && offeringHandle.getTags() == null) 
-        	{
-        		//no new tags; no existing tags
-        		offering.setTagsArray(csvTagsToList(null));
-        	} 
-        	else if (!tags.trim().isEmpty() && offeringHandle.getTags() != null)
-        	{
-        		//new tags + existing tags
-        		List<String> oldTags = csvTagsToList(offeringHandle.getTags());
-        		List<String> newTags = csvTagsToList(tags);
-        		oldTags.addAll(newTags);
-        		offering.setTagsArray(oldTags);
-        	}
-        	else if(!tags.trim().isEmpty())
-        	{
-        		//new tags; NO existing tags
-        		offering.setTagsArray(csvTagsToList(tags));
-        	}     	
-        }
+
+//        if (tags != null) 
+//        {
+//        	if (tags.trim().isEmpty() && offeringHandle.getTags() == null) 
+//        	{
+//        		//no new tags; no existing tags
+//        		offering.setTagsArray(csvTagsToList(null));
+//        	} 
+//        	else if (!tags.trim().isEmpty() && offeringHandle.getTags() != null)
+//        	{
+//        		//new tags + existing tags
+//        		List<String> oldTags = csvTagsToList(offeringHandle.getTags());
+//        		List<String> newTags = csvTagsToList(tags);
+//        		oldTags.addAll(newTags);
+//        		offering.setTagsArray(oldTags);
+//        	}
+//        	else if(!tags.trim().isEmpty())
+//        	{
+//        		//new tags; NO existing tags
+//        		offering.setTagsArray(csvTagsToList(tags));
+//        	}     	
+//        }
         
         if (_serviceOfferingDao.update(id, offering)) {
         	offering = _serviceOfferingDao.findById(id);
@@ -1258,7 +1258,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     	Long diskOfferingId = cmd.getId();
     	String name = cmd.getDiskOfferingName();
     	String displayText = cmd.getDisplayText();
-    	String tags = cmd.getTags();
+//    	String tags = cmd.getTags();
     	
     	//Check if diskOffering exists
     	DiskOfferingVO diskOfferingHandle = _diskOfferingDao.findById(diskOfferingId);
@@ -1267,7 +1267,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     		throw new InvalidParameterValueException("Unable to find disk offering by id " + diskOfferingId);
     	}
     	
-    	boolean updateNeeded = (name != null || displayText != null || tags != null);
+    	boolean updateNeeded = (name != null || displayText != null);
     	if (!updateNeeded) {
     		return _diskOfferingDao.findById(diskOfferingId);
     	}
@@ -1282,27 +1282,27 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     		diskOffering.setDisplayText(displayText);
     	}
     	
-        if (tags != null) 
-        {
-        	if (tags.trim().isEmpty() && diskOfferingHandle.getTags() == null) 
-        	{
-        		//no new tags; no existing tags
-        		diskOffering.setTagsArray(csvTagsToList(null));
-        	} 
-        	else if (!tags.trim().isEmpty() && diskOfferingHandle.getTags() != null)
-        	{
-        		//new tags + existing tags
-        		List<String> oldTags = csvTagsToList(diskOfferingHandle.getTags());
-        		List<String> newTags = csvTagsToList(tags);
-        		oldTags.addAll(newTags);
-        		diskOffering.setTagsArray(oldTags);
-        	}
-        	else if(!tags.trim().isEmpty())
-        	{
-        		//new tags; NO existing tags
-        		diskOffering.setTagsArray(csvTagsToList(tags));
-        	}
-        }
+//        if (tags != null) 
+//        {
+//        	if (tags.trim().isEmpty() && diskOfferingHandle.getTags() == null) 
+//        	{
+//        		//no new tags; no existing tags
+//        		diskOffering.setTagsArray(csvTagsToList(null));
+//        	} 
+//        	else if (!tags.trim().isEmpty() && diskOfferingHandle.getTags() != null)
+//        	{
+//        		//new tags + existing tags
+//        		List<String> oldTags = csvTagsToList(diskOfferingHandle.getTags());
+//        		List<String> newTags = csvTagsToList(tags);
+//        		oldTags.addAll(newTags);
+//        		diskOffering.setTagsArray(oldTags);
+//        	}
+//        	else if(!tags.trim().isEmpty())
+//        	{
+//        		//new tags; NO existing tags
+//        		diskOffering.setTagsArray(csvTagsToList(tags));
+//        	}
+//        }
 
     	if (_diskOfferingDao.update(diskOfferingId, diskOffering)) {
             saveConfigurationEvent(UserContext.current().getUserId(), null, EventTypes.EVENT_DISK_OFFERING_EDIT, "Successfully updated disk offering with name: " + diskOffering.getName() + ".", "doId=" + diskOffering.getId(), "name=" + diskOffering.getName(),

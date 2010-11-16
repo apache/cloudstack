@@ -50,8 +50,8 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
     @Parameter(name=ApiConstants.OFFER_HA, type=CommandType.BOOLEAN, description="the HA of the service offering to be updated")
     private Boolean offerHa;
     
-    @Parameter(name=ApiConstants.TAGS, type=CommandType.STRING, description="the tags for this service offering.")
-    private String tags;
+//    @Parameter(name=ApiConstants.TAGS, type=CommandType.STRING, description="the tags for this service offering.")
+//    private String tags;
 
     @Parameter(name=ApiConstants.USE_VIRTUAL_NETWORK, type=CommandType.BOOLEAN, description="if true, the VM created from the offering will use default virtual networking. If false, the VM created will use a direct attached networking model. The default value is true.")
     private Boolean useVirtualNetwork;
@@ -76,9 +76,9 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
         return offerHa;
     }
 
-    public String getTags() {
-        return tags;
-    }
+//    public String getTags() {
+//        return tags;
+//    }
 
     public Boolean getUseVirtualNetwork() {
         return useVirtualNetwork;

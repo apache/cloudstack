@@ -47,8 +47,8 @@ public class UpdateDiskOfferingCmd extends BaseCmd{
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="updates name of the disk offering with this value")
     private String diskOfferingName;
 
-    @Parameter(name=ApiConstants.TAGS, type=CommandType.STRING, description="update tags of the disk offering with this value")
-    private String tags;
+//    @Parameter(name=ApiConstants.TAGS, type=CommandType.STRING, description="update tags of the disk offering with this value")
+//    private String tags;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -66,9 +66,9 @@ public class UpdateDiskOfferingCmd extends BaseCmd{
         return diskOfferingName;
     }
 
-    public String getTags() {
-        return tags;
-    }
+//    public String getTags() {
+//        return tags;
+//    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
