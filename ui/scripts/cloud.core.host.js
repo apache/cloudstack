@@ -15,26 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-  
-function afterLoadHostJSP($midmenuItem1) {
-    initAddHostButton($("#midmenu_add_link"), "host_page"); 
-    initAddPrimaryStorageButton($("#midmenu_add2_link"), "host_page");          
-
-    initDialog("dialog_add_host");
-    initDialog("dialog_add_pool");
-    initDialog("dialog_confirmation_enable_maintenance");
-    initDialog("dialog_confirmation_cancel_maintenance");
-    initDialog("dialog_confirmation_force_reconnect");
-    initDialog("dialog_confirmation_remove_host");
-    initDialog("dialog_update_os");
-         
-    // switch between different tabs 
-    var tabArray = [$("#tab_details"), $("#tab_statistics"), $("#tab_instance"), $("#tab_router"), $("#tab_systemvm")];
-    var tabContentArray = [$("#tab_content_details"), $("#tab_content_statistics"), $("#tab_content_instance"), $("#tab_content_router"), $("#tab_content_systemvm")];
-    var afterSwitchFnArray = [hostJsonToDetailsTab, hostJsonToStatisticsTab, hostJsonToInstanceTab, hostJsonToRouterTab, hostJsonToSystemvmTab];
-    switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray);         
-}
-
+ 
 
 function hostGetMidmenuId(jsonObj) {
     return "midmenuItem_host_" + jsonObj.id; 
@@ -54,7 +35,28 @@ function hostToMidmenu(jsonObj, $midmenuItem1) {
 }
 
 function hostToRightPanel($midmenuItem1) {     
-    resourceLoadPage("jsp/host.jsp", $midmenuItem1);   
+    resourceLoadPage("jsp/host.jsp", $midmenuItem1);  //after reloading "jsp/host.jsp", afterLoadHostJSP() will be called. 
+}
+
+function afterLoadHostJSP($midmenuItem1) {
+    initAddHostButton($("#midmenu_add_link"), "host_page"); 
+    initAddPrimaryStorageButton($("#midmenu_add2_link"), "host_page");          
+
+    initDialog("dialog_add_host");
+    initDialog("dialog_add_pool");
+    initDialog("dialog_confirmation_enable_maintenance");
+    initDialog("dialog_confirmation_cancel_maintenance");
+    initDialog("dialog_confirmation_force_reconnect");
+    initDialog("dialog_confirmation_remove_host");
+    initDialog("dialog_update_os");
+         
+    // switch between different tabs 
+    var tabArray = [$("#tab_details"), $("#tab_statistics"), $("#tab_instance"), $("#tab_router"), $("#tab_systemvm")];
+    var tabContentArray = [$("#tab_content_details"), $("#tab_content_statistics"), $("#tab_content_instance"), $("#tab_content_router"), $("#tab_content_systemvm")];
+    var afterSwitchFnArray = [hostJsonToDetailsTab, hostJsonToStatisticsTab, hostJsonToInstanceTab, hostJsonToRouterTab, hostJsonToSystemvmTab];
+    switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray);    
+    
+    $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);         
 }
 
 function hostJsonToDetailsTab() {    
@@ -144,7 +146,10 @@ function hostJsonToDetailsTab() {
     // no available actions 
 	if(noAvailableActions == true) {
 	    $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());
-	}	       
+	}	
+	
+	$thisTab.find("#tab_spinning_wheel").hide();    
+    $thisTab.find("#tab_container").show();               
 }
 
 function hostJsonToStatisticsTab() {
