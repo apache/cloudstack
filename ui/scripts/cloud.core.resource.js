@@ -405,24 +405,8 @@ function initAddPodShortcut() {
     $dialogAddHost.find("#pod_dropdown").bind("change", function(event) {			   
         var podId = $(this).val();
         if(podId == null || podId.length == 0)
-            return;
-        var $clusterSelect = $dialogAddHost.find("#cluster_select").empty();		        
-        $.ajax({
-	       data: createURL("command=listClusters&podid=" + podId),
-            dataType: "json",
-            success: function(json) {			            
-                var items = json.listclustersresponse.cluster;
-                if(items != null && items.length > 0) {			                
-                    for(var i=0; i<items.length; i++) 			                    
-                        $clusterSelect.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");		      
-                    $dialogAddHost.find("input[value=existing_cluster_radio]").attr("checked", true);
-                }
-                else {
-				    $clusterSelect.append("<option value='-1'>None Available</option>");
-                    $dialogAddHost.find("input[value=new_cluster_radio]").attr("checked", true);
-                }
-            }
-        });
+            return;        
+        refreshClsuterFieldInAddHostDialog($dialogAddHost, podId, null);        
     });                 	        	    
         
     $("#add_host_shortcut").unbind("click").bind("click", function(event) {   
@@ -528,7 +512,8 @@ function initAddPodShortcut() {
 			        },			
                     error: function(XMLHttpResponse) {	
 						handleError(XMLHttpResponse, function() {					
-							clickClusterNodeAfterAddHost(clusterRadio, podId, newClusterName, existingClusterId, $thisDialog);                         
+							clickClusterNodeAfterAddHost(clusterRadio, podId, newClusterName, existingClusterId, $thisDialog);    
+							refreshClsuterFieldInAddHostDialog($thisDialog, podId, null);                     
 							handleErrorInDialog(XMLHttpResponse, $thisDialog);
 						});
                     }				
