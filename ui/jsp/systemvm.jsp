@@ -112,18 +112,8 @@
 	                    <div class="row_celltitles" id="name">
 	                    </div>
 	                </div>
-	            </div>
+	            </div>	            
 	            <div class="grid_rows even">
-	                <div class="grid_row_cell" style="width: 20%;">
-	                    <div class="row_celltitles">
-	                        <%=t.t("active.sessions")%>:</div>
-	                </div>
-	                <div class="grid_row_cell" style="width: 79%;">
-	                    <div class="row_celltitles" id="activeviewersessions">
-	                    </div>
-	                </div>
-	            </div>
-	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <%=t.t("public.ip")%>:</div>
@@ -133,7 +123,7 @@
 	                    </div>
 	                </div>
 	            </div>
-	            <div class="grid_rows even">
+	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <%=t.t("private.ip")%>:</div>
@@ -143,7 +133,7 @@
 	                    </div>
 	                </div>
 	            </div>
-	            <div class="grid_rows odd">
+	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <%=t.t("host")%>:</div>
@@ -153,7 +143,7 @@
 	                    </div>
 	                </div>
 	            </div>
-	            <div class="grid_rows even">
+	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <%=t.t("gateway")%>:</div>
@@ -163,7 +153,7 @@
 	                    </div>
 	                </div>
 	            </div>
-	            <div class="grid_rows odd">
+	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <%=t.t("created")%>:</div>
@@ -172,7 +162,17 @@
 	                    <div class="row_celltitles" id="created">
 	                    </div>
 	                </div>
-	            </div>
+	            </div>	
+	            <div class="grid_rows odd" id="activeviewersessions_container" style="display:none">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <%=t.t("active.sessions")%>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="activeviewersessions">
+	                    </div>
+	                </div>
+	            </div> 
 	        </div>
         </div>  
     </div>

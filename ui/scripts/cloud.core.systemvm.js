@@ -63,13 +63,21 @@ function systemvmJsonToDetailsTab() {
     $thisTab.find("#systemvmtype").text(toSystemVMTypeText(jsonObj.systemvmtype));    
     $thisTab.find("#zonename").text(fromdb(jsonObj.zonename)); 
     $thisTab.find("#id").text(fromdb(jsonObj.id));  
-    $thisTab.find("#name").text(fromdb(jsonObj.name));   
-    $thisTab.find("#activeviewersessions").text(fromdb(jsonObj.activeviewersessions)); 
+    $thisTab.find("#name").text(fromdb(jsonObj.name));     
     $thisTab.find("#publicip").text(fromdb(jsonObj.publicip)); 
     $thisTab.find("#privateip").text(fromdb(jsonObj.privateip)); 
     $thisTab.find("#hostname").text(fromdb(jsonObj.hostname));
     $thisTab.find("#gateway").text(fromdb(jsonObj.gateway)); 
     $thisTab.find("#created").text(fromdb(jsonObj.created));   
+    
+    if(jsonObj.systemvmtype == "consoleproxy") {
+        $thisTab.find("#activeviewersessions").text(fromdb(jsonObj.activeviewersessions)); 
+        $thisTab.find("#activeviewersessions_container").show();
+    }
+    else {  //jsonObj.systemvmtype == "secondarystoragevm"
+        $thisTab.find("#activeviewersessions").text(""); 
+        $thisTab.find("#activeviewersessions_container").hide();
+    }    
         
     //actions ***
     var $actionLink = $thisTab.find("#action_link"); 
