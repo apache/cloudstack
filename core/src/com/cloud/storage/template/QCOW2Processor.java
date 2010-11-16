@@ -23,14 +23,16 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Map;
 
+import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.storage.StorageLayer;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.StorageLayer;
 import com.cloud.utils.NumbersUtil;
 
+@Local(value=Processor.class)
 public class QCOW2Processor implements Processor {
     private static final Logger s_logger = Logger.getLogger(QCOW2Processor.class);
     String _name;

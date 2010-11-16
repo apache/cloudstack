@@ -4,9 +4,7 @@ import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -457,20 +455,6 @@ public class UploadManagerImpl implements UploadManager {
             scriptsDir = "scripts/storage/secondary";
         }
 
-        List<Processor> processors = new ArrayList<Processor>();
-        _processors = new Adapters<Processor>("processors", processors);
-        Processor processor = new VhdProcessor();
-        
-        processor.configure("VHD Processor", params);
-        processors.add(processor);
-        
-        processor = new IsoProcessor();
-        processor.configure("ISO Processor", params);
-        processors.add(processor);
-        
-        processor = new QCOW2Processor();
-        processor.configure("QCOW2 Processor", params);
-        processors.add(processor);
         // Add more processors here.
         threadPool = Executors.newFixedThreadPool(numInstallThreads);
 

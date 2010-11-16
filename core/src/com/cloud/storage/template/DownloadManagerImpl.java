@@ -52,8 +52,10 @@ import com.cloud.storage.template.Processor.FormatInfo;
 import com.cloud.storage.template.TemplateDownloader.DownloadCompleteCallback;
 import com.cloud.storage.template.TemplateDownloader.Status;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.component.Adapter;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.component.ComponentLocator.ComponentInfo;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
@@ -770,24 +772,23 @@ public class DownloadManagerImpl implements DownloadManager {
         }
         s_logger.info("createtmplt.sh found in " + createTmpltScr);
 
-        List<Processor> processors = new ArrayList<Processor>();
+        List<ComponentInfo<Adapter>> processors = new ArrayList<ComponentInfo<Adapter>>();
        
         Processor processor = new VhdProcessor();
-        
         processor.configure("VHD Processor", params);
-        processors.add(processor);
+        processors.add(new ComponentInfo<Adapter>("VHD Processor", VhdProcessor.class, processor));
         
         processor = new IsoProcessor();
         processor.configure("ISO Processor", params);
-        processors.add(processor);
+        processors.add(new ComponentInfo<Adapter>("ISO Processor", IsoProcessor.class, processor));
         
         processor = new QCOW2Processor();
         processor.configure("QCOW2 Processor", params);
-        processors.add(processor);
+        processors.add(new ComponentInfo<Adapter>("QCOW2 Processor", QCOW2Processor.class, processor));
 
         processor = new VmdkProcessor();
         processor.configure("VMDK Processor", params);
-        processors.add(processor);
+        processors.add(new ComponentInfo<Adapter>("VMDK Processor", VmdkProcessor.class, processor));
         
         _processors = new Adapters<Processor>("processors", processors);
         // Add more processors here.

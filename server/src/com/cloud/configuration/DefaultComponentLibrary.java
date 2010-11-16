@@ -24,6 +24,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.acl.DomainChecker;
+import com.cloud.acl.SecurityChecker;
 import com.cloud.agent.manager.AgentManagerImpl;
 import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.agent.manager.allocator.PodAllocator;
@@ -54,11 +56,14 @@ import com.cloud.dc.dao.DataCenterIpAddressDaoImpl;
 import com.cloud.dc.dao.HostPodDaoImpl;
 import com.cloud.dc.dao.PodVlanMapDaoImpl;
 import com.cloud.dc.dao.VlanDaoImpl;
+import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.SimplePlanner;
 import com.cloud.domain.dao.DomainDaoImpl;
 import com.cloud.event.dao.EventDaoImpl;
 import com.cloud.ha.CheckOnAgentInvestigator;
+import com.cloud.ha.FenceBuilder;
 import com.cloud.ha.HighAvailabilityManagerImpl;
+import com.cloud.ha.Investigator;
 import com.cloud.ha.InvestigatorImpl;
 import com.cloud.ha.StorageFence;
 import com.cloud.ha.XenServerInvestigator;
@@ -72,9 +77,11 @@ import com.cloud.maid.dao.StackMaidDaoImpl;
 import com.cloud.maint.UpgradeManagerImpl;
 import com.cloud.maint.dao.AgentUpgradeDaoImpl;
 import com.cloud.network.ExteralIpAddressAllocator;
+import com.cloud.network.IpAddrAllocator;
 import com.cloud.network.NetworkManagerImpl;
 import com.cloud.network.configuration.ControlNetworkGuru;
 import com.cloud.network.configuration.GuestNetworkGuru;
+import com.cloud.network.configuration.NetworkGuru;
 import com.cloud.network.configuration.PodBasedNetworkGuru;
 import com.cloud.network.configuration.PublicNetworkGuru;
 import com.cloud.network.dao.FirewallRulesDaoImpl;
@@ -94,7 +101,9 @@ import com.cloud.network.security.dao.NetworkGroupVMMapDaoImpl;
 import com.cloud.network.security.dao.NetworkGroupWorkDaoImpl;
 import com.cloud.network.security.dao.VmRulesetLogDaoImpl;
 import com.cloud.offerings.dao.NetworkOfferingDaoImpl;
+import com.cloud.resource.Discoverer;
 import com.cloud.server.auth.MD5UserAuthenticator;
+import com.cloud.server.auth.UserAuthenticator;
 import com.cloud.service.dao.ServiceOfferingDaoImpl;
 import com.cloud.storage.StorageManagerImpl;
 import com.cloud.storage.allocator.FirstFitStoragePoolAllocator;
@@ -102,7 +111,6 @@ import com.cloud.storage.allocator.GarbageCollectingStoragePoolAllocator;
 import com.cloud.storage.allocator.LocalStoragePoolAllocator;
 import com.cloud.storage.allocator.StoragePoolAllocator;
 import com.cloud.storage.dao.DiskOfferingDaoImpl;
-import com.cloud.storage.dao.DiskTemplateDaoImpl;
 import com.cloud.storage.dao.GuestOSCategoryDaoImpl;
 import com.cloud.storage.dao.GuestOSDaoImpl;
 import com.cloud.storage.dao.LaunchPermissionDaoImpl;
@@ -121,6 +129,7 @@ import com.cloud.storage.download.DownloadMonitorImpl;
 import com.cloud.storage.preallocatedlun.dao.PreallocatedLunDaoImpl;
 import com.cloud.storage.secondary.SecondaryStorageDiscoverer;
 import com.cloud.storage.secondary.SecondaryStorageManagerImpl;
+import com.cloud.storage.secondary.SecondaryStorageVmAllocator;
 import com.cloud.storage.secondary.SecondaryStorageVmDefaultAllocator;
 import com.cloud.storage.snapshot.SnapshotManagerImpl;
 import com.cloud.storage.snapshot.SnapshotSchedulerImpl;
@@ -137,6 +146,7 @@ import com.cloud.utils.component.ComponentLibrary;
 import com.cloud.utils.component.ComponentLocator.ComponentInfo;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.GenericDao;
+import com.cloud.vm.ItWorkDaoImpl;
 import com.cloud.vm.MauriceMoss;
 import com.cloud.vm.UserVmManagerImpl;
 import com.cloud.vm.dao.ConsoleProxyDaoImpl;
@@ -152,38 +162,47 @@ public class DefaultComponentLibrary implements ComponentLibrary {
 
     protected final Map<String, ComponentInfo<GenericDao<?, ? extends Serializable>>> _daos = new LinkedHashMap<String, ComponentInfo<GenericDao<?, ?>>>();
 
-    protected void addDao(String name, Class<? extends GenericDao<?, ? extends Serializable>> clazz) {
-        addDao(name, clazz, null, true);
+    protected ComponentInfo<? extends GenericDao<?, ? extends Serializable>> addDao(String name, Class<? extends GenericDao<?, ? extends Serializable>> clazz) {
+        return addDao(name, clazz, new ArrayList<Pair<String, Object>>(), true);
     }
 
-    protected void addDao(String name, Class<? extends GenericDao<?, ? extends Serializable>> clazz, List<Pair<String, Object>> params,
-            boolean singleton) {
-        ComponentInfo<GenericDao<?, ? extends Serializable>> ComponentInfo = new ComponentInfo<GenericDao<?, ? extends Serializable>>(name, clazz, params, singleton);
-        for (String key : ComponentInfo.getKeys()) {
-            _daos.put(key, ComponentInfo);
+    protected ComponentInfo<? extends GenericDao<?, ? extends Serializable>> addDao(String name, Class<? extends GenericDao<?, ? extends Serializable>> clazz, List<Pair<String, Object>> params, boolean singleton) {
+        ComponentInfo<GenericDao<?, ? extends Serializable>> componentInfo = new ComponentInfo<GenericDao<?, ? extends Serializable>>(name, clazz, params, singleton);
+        for (String key : componentInfo.getKeys()) {
+            _daos.put(key, componentInfo);
         }
+        return componentInfo;
     }
 
-    protected void addDaos() {
+    protected void populateDaos() {
         addDao("StackMaidDao", StackMaidDaoImpl.class);
         addDao("VMTemplateZoneDao", VMTemplateZoneDaoImpl.class);
         addDao("DomainRouterDao", DomainRouterDaoImpl.class);
         addDao("HostDao", HostDaoImpl.class);
         addDao("VMInstanceDao", VMInstanceDaoImpl.class);
         addDao("UserVmDao", UserVmDaoImpl.class);
-        addDao("ServiceOfferingDao", ServiceOfferingDaoImpl.class);
-        addDao("DiskOfferingDao", DiskOfferingDaoImpl.class);
-        addDao("DataCenterDao", DataCenterDaoImpl.class);
-        addDao("HostPodDao", HostPodDaoImpl.class);
+        ComponentInfo<? extends GenericDao<?, ? extends Serializable>> info = addDao("ServiceOfferingDao", ServiceOfferingDaoImpl.class);
+        info.addParameter("cache.size", "50");
+        info.addParameter("cache.time.to.live", "600");
+        info = addDao("DiskOfferingDao", DiskOfferingDaoImpl.class);
+        info.addParameter("cache.size", "50");
+        info.addParameter("cache.time.to.live", "600");
+        info = addDao("DataCenterDao", DataCenterDaoImpl.class);
+        info.addParameter("cache.size", "50");
+        info.addParameter("cache.time.to.live", "600");
+        info = addDao("HostPodDao", HostPodDaoImpl.class);
+        info.addParameter("cache.size", "50");
+        info.addParameter("cache.time.to.live", "600");
         addDao("IPAddressDao", IPAddressDaoImpl.class);
         addDao("VlanDao", VlanDaoImpl.class);
         addDao("PodVlanMapDao", PodVlanMapDaoImpl.class);
         addDao("AccountVlanMapDao", AccountVlanMapDaoImpl.class);
         addDao("VolumeDao", VolumeDaoImpl.class);
         addDao("EventDao", EventDaoImpl.class);
-        addDao("UserDao", UserDaoImpl.class);
+        info = addDao("UserDao", UserDaoImpl.class);
+        info.addParameter("cache.size", "5000");
+        info.addParameter("cache.time.to.live", "300");
         addDao("UserStatisticsDao", UserStatisticsDaoImpl.class);
-        addDao("DiskTemplateDao", DiskTemplateDaoImpl.class);
         addDao("FirewallRulesDao", FirewallRulesDaoImpl.class);
         addDao("LoadBalancerDao", LoadBalancerDaoImpl.class);
         addDao("NetworkRuleConfigDao", NetworkRuleConfigDaoImpl.class);
@@ -207,7 +226,10 @@ public class DefaultComponentLibrary implements ComponentLibrary {
         addDao("VMTemplatePoolDao", VMTemplatePoolDaoImpl.class);
         addDao("LaunchPermissionDao", LaunchPermissionDaoImpl.class);
         addDao("ConfigurationDao", ConfigurationDaoImpl.class);
-        addDao("VMTemplateDao", VMTemplateDaoImpl.class);
+        info = addDao("VMTemplateDao", VMTemplateDaoImpl.class);
+        info.addParameter("cache.size", "100");
+        info.addParameter("cache.time.to.live", "600");
+        info.addParameter("routing.uniquename", "routing");
         addDao("HighAvailabilityDao", HighAvailabilityDaoImpl.class);
         addDao("ConsoleProxyDao", ConsoleProxyDaoImpl.class);
         addDao("SecondaryStorageVmDao", SecondaryStorageVmDaoImpl.class);
@@ -234,6 +256,7 @@ public class DefaultComponentLibrary implements ComponentLibrary {
         addDao("InstanceGroupVMMapDao", InstanceGroupVMMapDaoImpl.class);
         addDao("RemoteAccessVpnDao", RemoteAccessVpnDaoImpl.class);
         addDao("VpnUserDao", VpnUserDaoImpl.class);
+        addDao("ItWorkDao", ItWorkDaoImpl.class);
     }
 
     Map<String, ComponentInfo<Manager>> _managers = new HashMap<String, ComponentInfo<Manager>>();
@@ -242,23 +265,24 @@ public class DefaultComponentLibrary implements ComponentLibrary {
     @Override
     public synchronized Map<String, ComponentInfo<GenericDao<?, ?>>> getDaos() {
         if (_daos.size() == 0) {
-            addDaos();
+            populateDaos();
         }
         return _daos;
     }
 
-    protected void addManager(String name, Class<? extends Manager> clazz, List<Pair<String, Object>> params, boolean singleton) {
-        ComponentInfo<Manager> ComponentInfo = new ComponentInfo<Manager>(name, clazz, params, singleton);
-        for (String key : ComponentInfo.getKeys()) {
-            _managers.put(key, ComponentInfo);
+    protected ComponentInfo<Manager> addManager(String name, Class<? extends Manager> clazz, List<Pair<String, Object>> params, boolean singleton) {
+        ComponentInfo<Manager> info = new ComponentInfo<Manager>(name, clazz, params, singleton);
+        for (String key : info.getKeys()) {
+            _managers.put(key, info);
         }
+        return info;
     }
     
-    protected void addManager(String name, Class<? extends Manager> clazz) {
-        addManager(name, clazz, null, true);
+    protected ComponentInfo<Manager> addManager(String name, Class<? extends Manager> clazz) {
+        return addManager(name, clazz, new ArrayList<Pair<String, Object>>(), true);
     }
 
-    protected void addManagers() {
+    protected void populateManagers() {
         addManager("StackMaidManager", StackMaidManagerImpl.class);
         addManager("agent manager", AgentManagerImpl.class);
         addManager("account manager", AccountManagerImpl.class);
@@ -285,7 +309,7 @@ public class DefaultComponentLibrary implements ComponentLibrary {
         addManager("DomainRouterManager", DomainRouterManagerImpl.class);
     }
 
-    protected <T> void addAdapterChain(Class<T> interphace, List<Pair<String, Class<? extends T>>> adapters) {
+    protected <T> List<ComponentInfo<Adapter>> addAdapterChain(Class<T> interphace, List<Pair<String, Class<? extends T>>> adapters) {
         ArrayList<ComponentInfo<Adapter>> lst = new ArrayList<ComponentInfo<Adapter>>(adapters.size());
         for (Pair<String, Class<? extends T>> adapter : adapters) {
             @SuppressWarnings("unchecked")
@@ -293,17 +317,24 @@ public class DefaultComponentLibrary implements ComponentLibrary {
             lst.add(new ComponentInfo<Adapter>(adapter.first(), clazz));
         }
         _adapters.put(interphace.getName(), lst);
+        return lst;
+    }
+    
+    protected <T> void addOneAdapter(Class<T> interphace, String name, Class<? extends T> adapterClass) {
+        List<Pair<String, Class<? extends T>>> adapters = new ArrayList<Pair<String, Class<? extends T>>>();
+        adapters.add(new Pair<String, Class<? extends T>>(name, adapterClass));
+        addAdapterChain(interphace, adapters);
     }
     
     @Override
     public synchronized Map<String, ComponentInfo<Manager>> getManagers() {
         if (_managers.size() == 0) {
-            addManagers();
+            populateManagers();
         }
         return _managers;
     }
 
-    public void addAllAdapters() {
+    protected void populateAdapters() {
         
         List<Pair<String, Class<? extends HostAllocator>>> hostAllocators = new ArrayList<Pair<String, Class<? extends HostAllocator>>>();
         hostAllocators.add(new Pair<String, Class<? extends HostAllocator>>("FirstFitRouting", RecreateHostAllocator.class)); 
@@ -317,51 +348,42 @@ public class DefaultComponentLibrary implements ComponentLibrary {
         poolAllocators.add(new Pair<String, Class<? extends StoragePoolAllocator>>("GarbageCollecting", GarbageCollectingStoragePoolAllocator.class));
         addAdapterChain(StoragePoolAllocator.class, poolAllocators);
         
-        List<Pair<String, Class<? extends PodAllocator>>> podAllocators = new ArrayList<Pair<String, Class<? extends PodAllocator>>>();
-        podAllocators.add(new Pair<String, Class<? extends PodAllocator>>("User First", UserConcentratedAllocator.class));
-        addAdapterChain(PodAllocator.class, podAllocators);
-        
-        List<Pair<String, Class<? extends ConsoleProxyAllocator>>> proxyAllocators = new ArrayList<Pair<String, Class<? extends ConsoleProxyAllocator>>>();
-        proxyAllocators.add(new Pair<String, Class<? extends ConsoleProxyAllocator>>("Balance", ConsoleProxyBalanceAllocator.class));
-        addAdapterChain(ConsoleProxyAllocator.class, proxyAllocators);
-        
-        // NetworkGuru
-        addAdapterChain("GuestNetworkGuru", GuestNetworkGuru.class); 
-        addAdapterChain("PublicNetworkGuru", PublicNetworkGuru.class); 
-        addAdapterChain("PodBasedNetworkGuru", PodBasedNetworkGuru.class); 
-        addAdapterChain("ControlNetworkGuru", ControlNetworkGuru.class);
-        
-        // Secondary Storage Vm Allocator
-        addAdapterChain("Balance", SecondaryStorageVmDefaultAllocator.class); 
+        List<Pair<String, Class<? extends NetworkGuru>>> networkGurus = new ArrayList<Pair<String, Class<? extends NetworkGuru>>>();
+        networkGurus.add(new Pair<String, Class<? extends NetworkGuru>>("GuestNetworkGuru", GuestNetworkGuru.class));
+        networkGurus.add(new Pair<String, Class<? extends NetworkGuru>>("PublicNetworkGuru", PublicNetworkGuru.class));
+        networkGurus.add(new Pair<String, Class<? extends NetworkGuru>>("PodBasedNetworkGuru", PodBasedNetworkGuru.class));
+        networkGurus.add(new Pair<String, Class<? extends NetworkGuru>>("ControlNetworkGuru", ControlNetworkGuru.class));
+        addAdapterChain(NetworkGuru.class, networkGurus);
 
-        // Ip Address Allocator
-        addAdapterChain("Basic", ExteralIpAddressAllocator.class); 
-    
+        addOneAdapter(PodAllocator.class, "UserConcentratedPodAllocator", UserConcentratedAllocator.class);
+        addOneAdapter(ConsoleProxyAllocator.class, "ConsoleProxyBalanceAllocator", ConsoleProxyBalanceAllocator.class);
+        addOneAdapter(SecondaryStorageVmAllocator.class, "SecondaryStorageVmDefaultBalance", SecondaryStorageVmDefaultAllocator.class);
+        addOneAdapter(IpAddrAllocator.class, "BasicExternalIpAddressAllocator", ExteralIpAddressAllocator.class); 
+        addOneAdapter(UserAuthenticator.class, "MD5UserAuthenticator", MD5UserAuthenticator.class);
 
-        // User Authenticator
-        addAdapterChain("MD5", MD5UserAuthenticator.class);
         
-        // HA Investigator
-        addAdapterChain("SimpleInvestigator", CheckOnAgentInvestigator.class); 
-        addAdapterChain("XenServerInvestigator", XenServerInvestigator.class); 
-        addAdapterChain("PingInvestigator", InvestigatorImpl.class);
+        List<Pair<String, Class<? extends Investigator>>> investigators = new ArrayList<Pair<String, Class<? extends Investigator>>>();
+        investigators.add(new Pair<String, Class<? extends Investigator>>("SimpleInvestigator", CheckOnAgentInvestigator.class));
+        investigators.add(new Pair<String, Class<? extends Investigator>>("XenServerInvestigator", XenServerInvestigator.class));
+        investigators.add(new Pair<String, Class<? extends Investigator>>("PingInvestigator", InvestigatorImpl.class));
+        addAdapterChain(Investigator.class, investigators);
+
+        addOneAdapter(FenceBuilder.class, "StorageFenceBuilder", StorageFence.class);
+
+        List<Pair<String, Class<? extends Discoverer>>> discovers = new ArrayList<Pair<String, Class<? extends Discoverer>>>();
+        discovers.add(new Pair<String, Class<? extends Discoverer>>("XCP Agent", XcpServerDiscoverer.class));
+        discovers.add(new Pair<String, Class<? extends Discoverer>>("SecondaryStorage", SecondaryStorageDiscoverer.class));
+        discovers.add(new Pair<String, Class<? extends Discoverer>>("KVM Agent", KvmServerDiscoverer.class));
+        addAdapterChain(Discoverer.class, discovers);
         
-        // HA Fence Builder
-        addAdapterChain("StorageFenceBuilder", StorageFence.class);
-        
-        // Discoverer
-        addAdapterChain("XCP Agent", XcpServerDiscoverer.class); 
-        addAdapterChain("SecondaryStorage", SecondaryStorageDiscoverer.class); 
-        addAdapterChain("KVM Agent", KvmServerDiscoverer.class);
-        
-        // Deployment Planner
-        addAdapterChain("Simple", SimplePlanner.class); 
+        addOneAdapter(SecurityChecker.class, "DomainChecker", DomainChecker.class);
+        addOneAdapter(DeploymentPlanner.class, "SimpleDeploymentPlanner", SimplePlanner.class);
     }
 
     @Override
     public synchronized Map<String, List<ComponentInfo<Adapter>>> getAdapters() {
         if (_adapters.size() == 0) {
-            addAdapters();
+            populateAdapters();
         }
         return _adapters;
     }

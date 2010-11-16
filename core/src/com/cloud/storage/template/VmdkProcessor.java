@@ -3,15 +3,17 @@ package com.cloud.storage.template;
 import java.io.File;
 import java.util.Map;
 
+import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.InternalErrorException;
-import com.cloud.storage.StorageLayer;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.StorageLayer;
 import com.cloud.utils.script.Script;
 
+@Local(value=Processor.class)
 public class VmdkProcessor implements Processor {
     private static final Logger s_logger = Logger.getLogger(VmdkProcessor.class);
 

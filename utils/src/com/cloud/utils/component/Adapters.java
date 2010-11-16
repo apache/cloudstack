@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.utils.EnumerationImpl;
+import com.cloud.utils.component.ComponentLocator.ComponentInfo;
 
 /**
  * Adapters is a simple wrapper around the list of adapters. The reason is
@@ -34,11 +35,13 @@ import com.cloud.utils.EnumerationImpl;
  * the iterator even during dynamic reloading.
  * 
  **/
-public class Adapters<T extends Adapter> implements Iterable<T> {
-    private Map<String, T> _map; 
+public class Adapters<T> implements Iterable<T> {
+    protected Map<String, T> _map; 
+    protected List<ComponentInfo<Adapter>> _infos;
+    
     protected String      _name;
 
-    public Adapters(String name, List<T> adapters) {
+    public Adapters(String name, List<ComponentInfo<Adapter>> adapters) {
         _name = name;
         set(adapters);
     }
@@ -65,12 +68,15 @@ public class Adapters<T extends Adapter> implements Iterable<T> {
         return _map.values();
     }
     
-    protected void set(List<T> adapters) {
+    protected void set(List<ComponentInfo<Adapter>> adapters) {
         HashMap<String, T> map = new HashMap<String, T>(adapters.size());
-        for (T adapter : adapters) {
-            map.put(adapter.getName(), adapter);
+        for (ComponentInfo<Adapter> adapter : adapters) {
+            @SuppressWarnings("unchecked")
+            T t = (T)adapter.instance;
+            map.put(adapter.getName(), t);
         }
         this._map = map;
+        this._infos = adapters;
     }
     
     public T get(String name) {

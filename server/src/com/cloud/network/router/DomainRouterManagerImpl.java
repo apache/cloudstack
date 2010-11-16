@@ -134,7 +134,6 @@ import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.dao.DiskTemplateDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -195,7 +194,6 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
     @Inject LoadBalancerVMMapDao _loadBalancerVMMapDao = null;
     @Inject IPAddressDao _ipAddressDao = null;
     @Inject VMTemplateDao _templateDao =  null;
-    @Inject DiskTemplateDao _diskDao = null;
     @Inject DomainRouterDao _routerDao = null;
     @Inject UserDao _userDao = null;
     @Inject AccountDao _accountDao = null;

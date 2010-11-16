@@ -18,7 +18,6 @@ DROP TABLE IF EXISTS `cloud`.`host_zone_ref`;
 DROP TABLE IF EXISTS `cloud`.`data_ceneter`;
 DROP TABLE IF EXISTS `cloud`.`volumes`;
 DROP TABLE IF EXISTS `cloud`.`storage`;
-DROP TABLE IF EXISTS `cloud`.`disk_template_ref`;
 DROP TABLE IF EXISTS `cloud`.`data_center`;
 DROP TABLE IF EXISTS `cloud`.`pricing`;
 DROP TABLE IF EXISTS `cloud`.`sequence`;
@@ -277,19 +276,6 @@ INSERT INTO `cloud`.`sequence` (name, value) VALUES ('private_mac_address_seq', 
 INSERT INTO `cloud`.`sequence` (name, value) VALUES ('storage_pool_seq', 200);
 INSERT INTO `cloud`.`sequence` (name, value) VALUES ('volume_seq', 1);
 INSERT INTO `cloud`.`sequence` (name, value) VALUES ('network_configuration_seq', 1);
-
-CREATE TABLE  `cloud`.`disk_template_ref` (
-  `id` bigint unsigned NOT NULL auto_increment,
-  `description` varchar(255) NOT NULL,
-  `host` varchar(255) NOT NULL COMMENT 'host on which the server exists',
-  `parent` varchar(255) NOT NULL COMMENT 'parent path',
-  `path` varchar(255) NOT NULL,
-  `size` int(10) unsigned NOT NULL COMMENT 'size of the disk',
-  `type` varchar(255) NOT NULL COMMENT 'file system type',
-  `created` datetime NOT NULL COMMENT 'Date created',
-  `removed` datetime COMMENT 'Date removed if not null',
-  PRIMARY KEY  (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`volumes` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'Primary Key',

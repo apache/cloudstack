@@ -37,7 +37,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
-@Implementation(description="Destroys a virtual machine. Once destroyed, only the administrator can recover it.")
+@Implementation(description="Destroys a virtual machine. Once destroyed, only the administrator can recover it.", responseObject=UserVmResponse.class)
 public class DestroyVm2Cmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DestroyVm2Cmd.class.getName());
 

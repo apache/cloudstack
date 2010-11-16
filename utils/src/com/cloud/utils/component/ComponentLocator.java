@@ -32,6 +32,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.ejb.Local;
 import javax.management.InstanceAlreadyExistsException;
@@ -72,54 +73,37 @@ import com.cloud.utils.mgmt.ManagementBean;
  * 
  **/
 @SuppressWarnings("unchecked")
-public class ComponentLocator extends Thread implements ComponentLocatorMBean {
+public class ComponentLocator implements ComponentLocatorMBean {
     protected static final Logger                      s_logger     = Logger.getLogger(ComponentLocator.class);
     
-    protected static HashMap<String, Object> s_singletons = new HashMap<String, Object>(111);
+    protected static ConcurrentHashMap<Class<?>, Singleton> s_singletons = new ConcurrentHashMap<Class<?>, Singleton>(111);
+    static HashMap<String, ComponentLocator> s_locators = new HashMap<String, ComponentLocator>();
     private static boolean                             s_doOnce = false;
     protected static final Callback[] s_callbacks = new Callback[] { NoOp.INSTANCE, new DatabaseCallback() };
     protected static final CallbackFilter s_callbackFilter = new DatabaseCallbackFilter();
     protected static final HashMap<Class<?>, InjectInfo> s_factories = new HashMap<Class<?>, InjectInfo>();
-    protected static HashMap<String, ComponentLocator> s_locatorMap = new HashMap<String, ComponentLocator>();
-    protected static HashMap<String, Object>           _componentMap = new HashMap<String, Object>();
-    protected static HashMap<String, String>           _implementationClassMap = new HashMap<String, String>();
 
-    protected HashMap<String, Adapters<? extends Adapter>> _adapterMap;
-    protected HashMap<String, ComponentInfo<Manager>>           _managerMap;
-    protected LinkedHashMap<String, ComponentInfo<GenericDao<?, ?>>>  _daoMap;
-    protected ComponentLocator                         _parentLocator;
-    protected String                                   _serverName;
+    protected HashMap<String, Adapters<? extends Adapter>>              _adapterMap;
+    protected HashMap<String, ComponentInfo<Manager>>                   _managerMap;
+    protected LinkedHashMap<String, ComponentInfo<GenericDao<?, ?>>>    _daoMap;
+    protected ComponentLocator                                          _parentLocator;
+    protected String                                                    _serverName;
+    protected Object                                                    _component;
 
     public ComponentLocator(String server) {
         _parentLocator = null;
         _serverName = server;
-        Runtime.getRuntime().addShutdownHook(this);
     }
 
     public String getLocatorName() {
         return _serverName;
     }
-
+    
     @Override
-	public synchronized void run() {
-        Iterator<Adapters<? extends Adapter>> itAdapters = _adapterMap.values().iterator();
-        while (itAdapters.hasNext()) {
-            Adapters<? extends Adapter> adapters = itAdapters.next();
-            itAdapters.remove();
-            Enumeration<? extends Adapter> it = adapters.enumeration();
-            while (it.hasMoreElements()) {
-                Adapter adapter = it.nextElement();
-                adapter.stop();
-            }
-        }
-
-        Iterator<ComponentInfo<Manager>> itManagers = _managerMap.values().iterator();
-        while (itManagers.hasNext()) {
-            ComponentInfo<Manager> manager = itManagers.next();
-            itManagers.remove();
-            manager.instance.stop();
-        }
+    public String getName() {
+        return getLocatorName();
     }
+
 
     protected void parse(String filename, String log4jFile) {
         try {
@@ -139,31 +123,43 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
             XmlHandler handler = new XmlHandler(_serverName);
             saxParser.parse(file, handler);
 
-            if (handler.parent != null) {
-                _parentLocator = getLocatorInternal(handler.parent, false, filename, log4jFile);
-            }
-
             _daoMap = new LinkedHashMap<String, ComponentInfo<GenericDao<?, ? extends Serializable>>>();
             _managerMap = new LinkedHashMap<String, ComponentInfo<Manager>>();
             _adapterMap = new HashMap<String, Adapters<? extends Adapter>>();
-            if (handler.library != null) {
-                Class<?> clazz = Class.forName(handler.library);
-                ComponentLibrary library = (ComponentLibrary)clazz.newInstance();
-                _managerMap.putAll(library.getManagers());
-                _daoMap.putAll(library.getDaos());
-                createAdaptersMap(library.getAdapters());
+            if (handler.parent != null) {
+                synchronized(s_locators) {
+                    _parentLocator = s_locators.get(handler.parent);
+                    if (_parentLocator == null) {
+                        _parentLocator = new ComponentLocator(handler.parent);
+                        s_locators.put(handler.parent, _parentLocator);
+                        _parentLocator.parse(filename, log4jFile);
+                    }
+                }
             }
 
-            _managerMap.putAll(handler.managers);
-            _daoMap.putAll(handler.daos);
+            ComponentLibrary library = null;
+            if (handler.library != null) {
+                Class<?> clazz = Class.forName(handler.library);
+                library = (ComponentLibrary)clazz.newInstance();
+                _daoMap.putAll(library.getDaos());
+                _managerMap.putAll(library.getManagers());
+            }
 
+            _daoMap.putAll(handler.daos);
+            _managerMap.putAll(handler.managers);
+            
             startDaos();    // daos should not be using managers and adapters.
-            createAdaptersMap(handler.adapters);
-            instantiateManagers();
+            if (library != null) {
+                instantiateAdapters(library.getAdapters());
+            }
             instantiateAdapters(handler.adapters);
+            instantiateManagers();
+            _component = createInstance(handler.componentClass, true, true);
             configureManagers();
+            configureAdapters();
             startManagers();
             startAdapters();
+            
 
         } catch (ParserConfigurationException e) {
             s_logger.error("Unable to load " + _serverName + " due to errors while parsing " + filename, e);
@@ -192,13 +188,29 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
 
         for (Map.Entry<String, ComponentInfo<GenericDao<?, ?>>> entry : entries) {
             ComponentInfo<GenericDao<?, ?>> info = entry.getValue();
-            s_logger.info("Starting DAO: " + info.name);
             try {
                 info.instance = (GenericDao<?, ?>)createInstance(info.clazz, true, info.singleton);
-                inject(info.clazz, info.instance);
-                if (!info.instance.configure(info.name, info.params)) {
-                    s_logger.error("Unable to configure DAO: " + info.name);
-                    System.exit(1);
+                if (info.singleton) {
+                    s_logger.info("Starting singleton DAO: " + info.name);
+                    Singleton singleton = s_singletons.get(info.clazz);
+                    if (singleton.state == Singleton.State.Instantiated) {
+                        inject(info.clazz, info.instance);
+                        singleton.state = Singleton.State.Injected;
+                    } 
+                    if (singleton.state == Singleton.State.Injected) {
+                        if (!info.instance.configure(info.name, info.params)) {
+                            s_logger.error("Unable to configure DAO: " + info.name);
+                            System.exit(1);
+                        }
+                        singleton.state = Singleton.State.Started;
+                    }
+                } else {
+                    s_logger.info("Starting DAO: " + info.name);
+                    inject(info.clazz, info.instance);
+                    if (!info.instance.configure(info.name, info.params)) {
+                        s_logger.error("Unable to configure DAO: " + info.name);
+                        System.exit(1);
+                    }
                 }
             } catch (ConfigurationException e) {
                 s_logger.error("Unable to configure DAO: " + info.name, e);
@@ -215,13 +227,13 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
     
     private static Object createInstance(Class<?> clazz, boolean inject, boolean singleton, Object... args) {
         Factory factory = null;
-        Object entity = null;
+        Singleton entity = null;
         synchronized(s_factories) {
             if (singleton) {
-                entity = s_singletons.get(clazz.toString());
+                entity = s_singletons.get(clazz);
                 if (entity != null) {
                     s_logger.debug("Found singleton instantiation for " + clazz.toString());
-                    return entity;
+                    return entity.singleton;
                 }
             }
             InjectInfo info = s_factories.get(clazz);
@@ -263,22 +275,23 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
                 throw new CloudRuntimeException("Unable to find constructor to match parameters given: " + clazz.getName());
             }
         
-            entity = factory.newInstance(argTypes, args, s_callbacks);
+            entity = new Singleton(factory.newInstance(argTypes, args, s_callbacks));
         } else {
-            entity = factory.newInstance(s_callbacks);
+            entity = new Singleton(factory.newInstance(s_callbacks));
         }
         
         if (inject) {
-            inject(clazz, entity);
+            inject(clazz, entity.singleton);
+            entity.state = Singleton.State.Injected;
         }
         
         if (singleton) {
             synchronized(s_factories) {
-                s_singletons.put(clazz.toString(), entity);
+                s_singletons.put(clazz, entity);
             }
         }
         
-        return entity;
+        return entity.singleton;
     }
     
 
@@ -293,50 +306,22 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
         }
 
         if (info == null) {
-            return null;
+            throw new CloudRuntimeException("Unable to find DAO " + name);
         }
 
         _daoMap.put(name, info);
         return info;
     }
 
-    private static synchronized Object getComponent(Class<?> clazz) {
-        String name = clazz.getName();
-        try {
-            Object component = _componentMap.get(name);
-            if (component == null) {
-                Class<?> impl = Class.forName(name);
-                component = createInstance(impl, true, true);
-                _componentMap.put(name, component);
-            }
-            return component;
-        } catch (ClassNotFoundException e) {
-            s_logger.error("Unable to load " + name + " due to ", e);
-            System.exit(1);
-        }
-        return null;
-    }
-
     public static synchronized Object getComponent(String componentName) {
         ComponentLocator locator = s_locators.get(componentName);
         if (locator == null) {
-            ComponentLocator.getLocator(componentName);
+            locator = ComponentLocator.getLocator(componentName);
         }
-        String implementationClass = _implementationClassMap.get(componentName);
-        if (implementationClass != null) {
-            try {
-                Class<?> clazz = Class.forName(implementationClass);
-                return getComponent(clazz);
-            } catch (Exception ex) {
-                s_logger.error("Failed to get component " + componentName + ", caused by exception " + ex, ex);
-            }
-        } else {
-            s_logger.warn("Unable to find component with name: " + componentName);
-        }
-        return null;
+        return locator._component;
     }
 
-    public <T extends GenericDao<?, ?>> T getDao(Class<T> clazz) {
+    public <T extends GenericDao<?, ? extends Serializable>> T getDao(Class<T> clazz) {
         ComponentInfo<GenericDao<?, ?>> info = getDao(clazz.getName());
         return info != null ? (T)info.instance : null;
     }
@@ -356,17 +341,40 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
         Set<Map.Entry<String, ComponentInfo<Manager>>> entries = _managerMap.entrySet();
         for (Map.Entry<String, ComponentInfo<Manager>> entry : entries) {
             ComponentInfo<Manager> info = entry.getValue();
-            s_logger.info("Injecting Manager: " + info.name);
-            inject(info.clazz, info.instance);
+            if (info.singleton) {
+                Singleton s = s_singletons.get(info.clazz);
+                if (s.state == Singleton.State.Instantiated) {
+                    s_logger.info("Injecting singleton Manager: " + info.name);
+                    inject(info.clazz, info.instance);
+                    s.state = Singleton.State.Injected;
+                }
+            } else {
+                s_logger.info("Injecting Manager: " + info.name);
+                inject(info.clazz, info.instance);
+            }
         }
         for (Map.Entry<String, ComponentInfo<Manager>> entry : entries) {
             ComponentInfo<Manager> info = entry.getValue();
-            s_logger.info("Configuring Manager: " + info.name);
-            try {
-                info.instance.configure(info.name, info.params);
-            } catch (ConfigurationException e) {
-                s_logger.error("Unable to configure manager: " + info.name, e);
-                System.exit(1);
+            if (info.singleton) {
+                Singleton s = s_singletons.get(info.clazz);
+                if (s.state == Singleton.State.Injected) {
+                    s_logger.info("Configuring singleton Manager: " + info.name);
+                    try {
+                        info.instance.configure(info.name, info.params);
+                    } catch (ConfigurationException e) {
+                        s_logger.error("Unable to configure manager: " + info.name, e);
+                        System.exit(1);
+                    }
+                    s.state = Singleton.State.Configured;
+                } 
+            } else {
+                s_logger.info("Configuring Manager: " + info.name);
+                try {
+                    info.instance.configure(info.name, info.params);
+                } catch (ConfigurationException e) {
+                    s_logger.error("Unable to configure manager: " + info.name, e);
+                    System.exit(1);
+                }
             }
         }
     }
@@ -384,12 +392,16 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
                 Class<?> fc = field.getType();
                 Object instance = null;
                 if (Manager.class.isAssignableFrom(fc)) {
+                    s_logger.trace("Manager: " + fc.getName());
                     instance = locator.getManager(fc);
                 } else if (GenericDao.class.isAssignableFrom(fc)) {
-                    instance = locator.getDao((Class<? extends GenericDao<?, ?>>)fc);
+                    s_logger.trace("Dao:" + fc.getName());
+                    instance = locator.getDao((Class<? extends GenericDao<?, ? extends Serializable>>)fc);
                 } else if (Adapters.class.isAssignableFrom(fc)) {
+                    s_logger.trace("Adapter" + fc.getName());
                     instance = locator.getAdapters(inject.adapter());
                 } else {
+                    s_logger.trace("Other:" + fc.getName());
                     instance = locator.getManager(fc);
                 }
         
@@ -414,14 +426,29 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
         Set<Map.Entry<String, ComponentInfo<Manager>>> entries = _managerMap.entrySet();
         for (Map.Entry<String, ComponentInfo<Manager>> entry : entries) {
             ComponentInfo<Manager> info = entry.getValue();
-            s_logger.info("Starting Manager: " + info.name);
-            if (!info.instance.start()) {
-                throw new CloudRuntimeException("Incorrect Configuration: " + info.name);
+            if (info.singleton) {
+                Singleton s = s_singletons.get(info.clazz);
+                if (s.state == Singleton.State.Configured) {
+                    s_logger.info("Starting singleton Manager: " + info.name);
+                    if (!info.instance.start()) {
+                        throw new CloudRuntimeException("Incorrect Configuration: " + info.name);
+                    }
+                    if (info.instance instanceof ManagementBean) {
+                        registerMBean((ManagementBean) info.instance);
+                    }
+                    s_logger.info("Started Manager: " + info.name);
+                    s.state = Singleton.State.Started;
+                }
+            } else {
+                s_logger.info("Starting Manager: " + info.name);
+                if (!info.instance.start()) {
+                    throw new CloudRuntimeException("Incorrect Configuration: " + info.name);
+                }
+                if (info.instance instanceof ManagementBean) {
+                    registerMBean((ManagementBean) info.instance);
+                }
+                s_logger.info("Started Manager: " + info.name);
             }
-            if (info.instance instanceof ManagementBean) {
-                registerMBean((ManagementBean) info.instance);
-            }
-            s_logger.info("Started Manager: " + info.name);
         }
     }
 
@@ -468,19 +495,35 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
         }
         return (T)info.instance;
     }
-
-    protected void instantiateAdapters(Map<String, List<ComponentInfo<Adapter>>> map) {
-        Set<Map.Entry<String, List<ComponentInfo<Adapter>>>> entries = map.entrySet();
-        for (Map.Entry<String, List<ComponentInfo<Adapter>>> entry : entries) {
-            Adapters<Adapter> adapters = (Adapters<Adapter>)_adapterMap.get(entry.getKey());
-            List<Adapter> lst = new ArrayList<Adapter>();
-            for (ComponentInfo<Adapter> info : entry.getValue()) {
-                s_logger.info("Instantiating Adapter: " + info.name);
-                info.instance = (Adapter)createInstance(info.clazz, true, info.singleton);
+    
+    protected void configureAdapters() {
+        for (Adapters<? extends Adapter> adapters : _adapterMap.values()) {
+            List<ComponentInfo<Adapter>> infos = adapters._infos;
+            for (ComponentInfo<Adapter> info : infos) {
                 try {
-                    if (!info.instance.configure(info.name, info.params)) {
-                        s_logger.error("Unable to configure adapter: " + info.name);
-                        System.exit(1);
+                    if (info.singleton) {
+                        Singleton singleton = s_singletons.get(info.clazz);
+                        if (singleton.state == Singleton.State.Instantiated) {
+                            s_logger.info("Injecting singleton Adapter: " + info.getName());
+                            inject(info.clazz, info.instance);
+                            singleton.state = Singleton.State.Injected;
+                        } 
+                        if (singleton.state == Singleton.State.Injected) {
+                            s_logger.info("Configuring singleton Adapter: " + info.getName());
+                            if (!info.instance.configure(info.name, info.params)) {
+                                s_logger.error("Unable to configure adapter: " + info.name);
+                                System.exit(1);
+                            }
+                            singleton.state = Singleton.State.Configured;
+                        }
+                    } else {
+                        s_logger.info("Injecting Adapter: " + info.getName());
+                        inject(info.clazz, info.instance);
+                        s_logger.info("Configuring singleton Adapter: " + info.getName());
+                        if (!info.instance.configure(info.name, info.params)) {
+                            s_logger.error("Unable to configure adapter: " + info.name);
+                            System.exit(1);
+                        }
                     }
                 } catch (ConfigurationException e) {
                     s_logger.error("Unable to configure adapter: " + info.name, e);
@@ -489,32 +532,48 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
                     s_logger.error("Unable to configure adapter: " + info.name, e);
                     System.exit(1);
                 }
-                lst.add(info.instance);
-                s_logger.info("Instantiated Adapter: " + info.name);
-            }
-            adapters.set(lst);
+            }            
         }
     }
 
-    protected void createAdaptersMap(Map<String, List<ComponentInfo<Adapter>>> map) {
+    protected void instantiateAdapters(Map<String, List<ComponentInfo<Adapter>>> map) {
         Set<Map.Entry<String, List<ComponentInfo<Adapter>>>> entries = map.entrySet();
         for (Map.Entry<String, List<ComponentInfo<Adapter>>> entry : entries) {
-            List<? extends Adapter> lst = new ArrayList<Adapter>(entry.getValue().size());
-            _adapterMap.put(entry.getKey(), new Adapters(entry.getKey(), lst));
+            for (ComponentInfo<Adapter> info : entry.getValue()) {
+                s_logger.info("Instantiating Adapter: " + info.name);
+                info.instance = (Adapter)createInstance(info.clazz, false, info.singleton);
+            }
+            Adapters<Adapter> adapters = new Adapters<Adapter>(entry.getKey(), entry.getValue());
+            _adapterMap.put(entry.getKey(), adapters);
         }
     }
 
     protected void startAdapters() {
         for (Map.Entry<String, Adapters<? extends Adapter>> entry : _adapterMap.entrySet()) {
-            for (Adapter adapter : entry.getValue().get()) {
-                s_logger.info("Starting Adapter: " + adapter.getName());
-                if (!adapter.start()) {
-                    throw new CloudRuntimeException("Unable to start adapter: " + adapter.getName());
+            for (ComponentInfo<Adapter> adapter : entry.getValue()._infos) {
+                if (adapter.singleton) {
+                    Singleton s = s_singletons.get(adapter.clazz);
+                    if (s.state == Singleton.State.Configured) {
+                        s_logger.info("Starting singleton Adapter: " + adapter.getName());
+                        if (!adapter.instance.start()) {
+                            throw new CloudRuntimeException("Unable to start adapter: " + adapter.getName());
+                        }
+                        if (adapter.instance instanceof ManagementBean) {
+                            registerMBean((ManagementBean)adapter.instance);
+                        }
+                        s_logger.info("Started Adapter: " + adapter.instance.getName());
+                    }
+                    s.state = Singleton.State.Started;
+                } else {
+                    s_logger.info("Starting Adapter: " + adapter.getName());
+                    if (!adapter.instance.start()) {
+                        throw new CloudRuntimeException("Unable to start adapter: " + adapter.getName());
+                    }
+                    if (adapter.instance instanceof ManagementBean) {
+                        registerMBean((ManagementBean)adapter.instance);
+                    }
+                    s_logger.info("Started Adapter: " + adapter.instance.getName());
                 }
-                if (adapter instanceof ManagementBean) {
-                    registerMBean((ManagementBean)adapter);
-                }
-                s_logger.info("Started Adapter: " + adapter.getName());
             }
         }
     }
@@ -589,10 +648,9 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
                 return adapters;
             }
         }
-        return new Adapters(key, new ArrayList<Adapter>());
+        return new Adapters<Adapter>(key, new ArrayList<ComponentInfo<Adapter>>());
     }
 
-    static HashMap<String, ComponentLocator> s_locators = new HashMap<String, ComponentLocator>();
     protected static ComponentLocator getLocatorInternal(String server, boolean setInThreadLocal, String configFileName, String log4jFile) {
         // init log4j based on the passed in configuration
         if (s_doOnce == false) {
@@ -605,6 +663,7 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
                     PropertyConfigurator.configureAndWatch(file.getAbsolutePath());
                 }
             }
+            Runtime.getRuntime().addShutdownHook(new CleanupThread());
             s_doOnce = true;
         }
 
@@ -669,6 +728,11 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
             this(name, clazz, new ArrayList<Pair<String, Object>>(0));
         }
         
+        public ComponentInfo(String name, Class<? extends T> clazz, T instance) {
+            this(name, clazz);
+            this.instance = instance;
+        }
+        
         public ComponentInfo(String name, Class<? extends T> clazz, List<Pair<String, Object>> params) {
             this(name, clazz, params, true);
         }
@@ -705,6 +769,10 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
                 }
             }
         }
+        
+        public void addParameter(String name, String value) {
+            params.put(name, value);
+        }
     }
 
     /**
@@ -723,7 +791,8 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
         StringBuilder                                  value;
         String                                         serverName;
         boolean                                        parse;
-        ComponentInfo<?>                                        currentInfo;
+        ComponentInfo<?>                               currentInfo;
+        Class<?>                                       componentClass;
 
         public XmlHandler(String serverName) {
             this.serverName = serverName;
@@ -770,8 +839,10 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
                     parent = getAttribute(atts, "extends");
                     String implementationClass = getAttribute(atts, "class");
 
-                    if (implementationClass != null) {
-                        _implementationClassMap.put(_serverName, implementationClass);
+                    try {
+                        componentClass = Class.forName(implementationClass);
+                    } catch (ClassNotFoundException e) {
+                        throw new CloudRuntimeException("Unable to find " + implementationClass, e);
                     }
                     
                     library = getAttribute(atts, "library");
@@ -858,6 +929,70 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
         public InjectInfo(Enhancer enhancer, Factory factory) {
             this.factory = factory;
             this.enhancer = enhancer;
+        }
+    }
+    
+    protected static class CleanupThread extends Thread {
+        @Override
+        public synchronized void run() {
+            for (ComponentLocator locator : s_locators.values()) {
+                Iterator<Adapters<? extends Adapter>> itAdapters = locator._adapterMap.values().iterator();
+                while (itAdapters.hasNext()) {
+                    Adapters<? extends Adapter> adapters = itAdapters.next();
+                    itAdapters.remove();
+                    for (ComponentInfo<Adapter> adapter : adapters._infos) {
+                        if (adapter.singleton) {
+                            Singleton singleton = s_singletons.get(adapter.clazz);
+                            if (singleton.state == Singleton.State.Started) {
+                                s_logger.info("Asking " + adapter.getName() + " to shutdown.");
+                                adapter.instance.stop();
+                                singleton.state = Singleton.State.Stopped;
+                            } else {
+                                s_logger.debug("Skippng " + adapter.getName() + " because it has already stopped");
+                            }
+                        } else {
+                            s_logger.info("Asking " + adapter.getName() + " to shutdown.");
+                            adapter.instance.stop();
+                        }
+                    }
+                }
+            }
+            
+            for (ComponentLocator locator : s_locators.values()) {
+                Iterator<ComponentInfo<Manager>> itManagers = locator._managerMap.values().iterator();
+                while (itManagers.hasNext()) {
+                    ComponentInfo<Manager> manager = itManagers.next();
+                    itManagers.remove();
+                    if (manager.singleton == true) {
+                        Singleton singleton = s_singletons.get(manager.clazz);
+                        if (singleton.state == Singleton.State.Started) {
+                            s_logger.info("Asking Manager " + manager.getName() + " to shutdown.");
+                            manager.instance.stop();
+                            singleton.state = Singleton.State.Stopped;
+                        } else {
+                            s_logger.info("Skipping Manager " + manager.getName() + " because it is not in a state to shutdown.");
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    static class Singleton {
+        public enum State {
+            Instantiated,
+            Injected,
+            Configured,
+            Started,
+            Stopped
+        }
+        
+        public Object singleton;
+        public State state;
+        
+        public Singleton(Object singleton) {
+            this.singleton = singleton;
+            this.state = State.Instantiated;
         }
     }
 }

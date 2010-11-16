@@ -75,9 +75,9 @@ import com.cloud.api.commands.StartSystemVm2Cmd;
 import com.cloud.api.commands.StopSystemVm2Cmd;
 import com.cloud.api.commands.StopSystemVmCmd;
 import com.cloud.api.commands.UpdateDomainCmd;
-import com.cloud.api.commands.UpdatePortForwardingRuleCmd;
 import com.cloud.api.commands.UpdateIsoCmd;
 import com.cloud.api.commands.UpdateIsoPermissionsCmd;
+import com.cloud.api.commands.UpdatePortForwardingRuleCmd;
 import com.cloud.api.commands.UpdateTemplateCmd;
 import com.cloud.api.commands.UpdateTemplatePermissionsCmd;
 import com.cloud.api.commands.UpdateVMGroupCmd;
@@ -111,7 +111,6 @@ import com.cloud.network.VpnUserVO;
 import com.cloud.network.security.NetworkGroupVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.DiskTemplateVO;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.SnapshotPolicyVO;
@@ -641,12 +640,6 @@ public interface ManagementServer {
      * @return List of Billings.
     List<UsageVO> searchForUsage(Criteria c);
      */
-    
-    /**
-     * Obtains a list of all active DiskTemplates.
-     * @return list of DiskTemplates
-     */
-    List<DiskTemplateVO> listAllActiveDiskTemplates();
     
     /**
      * Obtains a list of all templates.

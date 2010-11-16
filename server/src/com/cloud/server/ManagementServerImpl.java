@@ -162,7 +162,7 @@ import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.dc.dao.DataCenterIpAddressDaoImpl;
+import com.cloud.dc.dao.DataCenterIpAddressDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
@@ -212,7 +212,6 @@ import com.cloud.server.auth.UserAuthenticator;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.DiskTemplateVO;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.LaunchPermissionVO;
@@ -237,7 +236,6 @@ import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.VolumeStats;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
-import com.cloud.storage.dao.DiskTemplateDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.LaunchPermissionDao;
@@ -316,7 +314,7 @@ public class ManagementServerImpl implements ManagementServer {
 	private final NetworkGroupDao _networkSecurityGroupDao;
     private final LoadBalancerDao _loadBalancerDao;
     private final IPAddressDao _publicIpAddressDao;
-    private final DataCenterIpAddressDaoImpl _privateIpAddressDao;
+    private final DataCenterIpAddressDao _privateIpAddressDao;
     private final LoadBalancerVMMapDao _loadBalancerVMMapDao;
     private final DomainRouterDao _routerDao;
     private final ConsoleProxyDao _consoleProxyDao;
@@ -359,7 +357,6 @@ public class ManagementServerImpl implements ManagementServer {
     private final UserStatisticsDao _userStatsDao;
     private final VMInstanceDao _vmInstanceDao;
     private final VolumeDao _volumeDao;
-    private final DiskTemplateDao _diskTemplateDao;
     private final AlertManager _alertMgr;
     private final AsyncJobDao _jobDao;
     private final AsyncJobManager _asyncMgr;
@@ -425,7 +422,7 @@ public class ManagementServerImpl implements ManagementServer {
         _networkSecurityGroupDao  = locator.getDao(NetworkGroupDao.class);
         _loadBalancerDao = locator.getDao(LoadBalancerDao.class);
         _publicIpAddressDao = locator.getDao(IPAddressDao.class);
-        _privateIpAddressDao = locator.getDao(DataCenterIpAddressDaoImpl.class);
+        _privateIpAddressDao = locator.getDao(DataCenterIpAddressDao.class);
         _loadBalancerVMMapDao = locator.getDao(LoadBalancerVMMapDao.class);
         _consoleProxyDao = locator.getDao(ConsoleProxyDao.class);
         _secStorageVmDao = locator.getDao(SecondaryStorageVmDao.class);
@@ -458,7 +455,6 @@ public class ManagementServerImpl implements ManagementServer {
         _userStatsDao = locator.getDao(UserStatisticsDao.class);
         _vmInstanceDao = locator.getDao(VMInstanceDao.class);
         _volumeDao = locator.getDao(VolumeDao.class);
-        _diskTemplateDao = locator.getDao(DiskTemplateDao.class);
         _alertMgr = locator.getManager(AlertManager.class);
         _asyncMgr = locator.getManager(AsyncJobManager.class);
         _tmpltMgr = locator.getManager(TemplateManager.class);
@@ -3193,11 +3189,6 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         return _publicIpAddressDao.search(sc, searchFilter);
-    }
-
-    @Override
-    public List<DiskTemplateVO> listAllActiveDiskTemplates() {
-        return _diskTemplateDao.listAll();
     }
 
     @Override

@@ -1,6 +1,3 @@
-ALTER TABLE `cloud`.`disk_template_ref` ADD INDEX `i_disk_template_ref__removed`(`removed`);
-ALTER TABLE `cloud`.`disk_template_ref` ADD INDEX `i_disk_template_ref__type__size`(`type`, `size`);
-
 ALTER TABLE `cloud`.`volumes` ADD INDEX `i_volumes__removed`(`removed`);
 ALTER TABLE `cloud`.`volumes` ADD INDEX `i_volumes__pod_id`(`pod_id`);
 ALTER TABLE `cloud`.`volumes` ADD INDEX `i_volumes__data_center_id`(`data_center_id`);

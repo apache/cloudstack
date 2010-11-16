@@ -161,7 +161,6 @@ import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
-import com.cloud.storage.dao.DiskTemplateDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.SnapshotDao;
@@ -218,7 +217,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     @Inject UserStatisticsDao _userStatsDao = null;
     @Inject VMTemplateDao _templateDao =  null;
     @Inject VMTemplateHostDao _templateHostDao = null;
-    @Inject DiskTemplateDao _diskDao = null;
     @Inject DomainDao _domainDao = null;
     @Inject ResourceLimitDao _limitDao = null;
     @Inject UserVmDao _vmDao = null;
