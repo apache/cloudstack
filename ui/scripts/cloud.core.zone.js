@@ -774,6 +774,10 @@ function doEditZone2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $
 	var moreCriteria = [];	
 	
 	var jsonObj = $detailsTab.data("jsonObj"); 
+	
+	var oldDns1 = jsonObj.dns1;
+	var oldDns2 = jsonObj.dns2;	
+	
 	var id = jsonObj.id;
 	moreCriteria.push("&id="+id);
 	
@@ -818,7 +822,13 @@ function doEditZone2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $
 		    
 		    $editFields.hide();      
             $readonlyFields.show();       
-            $("#save_button, #cancel_button").hide();       	    
+            $("#save_button, #cancel_button").hide();  
+                       
+            if(item.dns1 != oldDns1 || item.dns2 != oldDns2) {
+                $("#dialog_info")
+                .text("DNS update will not take effect until all virtual routers are stopped and then started")
+                .dialog("open"); 
+            }               	    
 		}
 	});   
 }
