@@ -248,7 +248,7 @@ public class ApiServlet extends HttpServlet {
             	auditTrailSb.insert(0, "(userId="+UserContext.current().getUserId()+ " accountId="+UserContext.current().getAccountId()+ " sessionId="+(session != null ? session.getId() : null)+ ")" );
 
             	try {
-            		String response = _apiServer.handleRequest(params, false, responseType, auditTrailSb);            		
+            		String response = _apiServer.handleRequest(params, true, responseType, auditTrailSb);            		
             		writeResponse(resp, response != null ? response : "", false, responseType);
             	} catch (ServerApiException se) {
             	    auditTrailSb.append(" " +se.getErrorCode() + " " + se.getDescription());
