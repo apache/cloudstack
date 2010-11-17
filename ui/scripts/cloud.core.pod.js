@@ -93,7 +93,7 @@ function podJsonToDetailsTab() {
 	});	
     if(zoneVlan == null) { //basic-mode network (pod-wide VLAN)
         $("#tab_network").show();  
-        initAddPodVLANButton($("#midmenu_add3_link"));  //???
+        initAddPodVLANButton($("#midmenu_add3_link"));  
     }
     else { //advanced-mode network (zone-wide VLAN)
         $("#tab_network").hide();
@@ -548,7 +548,8 @@ function initAddPodVLANButton($button) {
     $button.find("#label").text("Add Direct IP Range"); 
     $button.show();   
     $button.unbind("click").bind("click", function(event) {   
-        $("#tab_network").click();    
+        if($("#tab_content_network").css("display") == "none")
+            $("#tab_network").click();    
             
         var podObj = $("#tab_content_details").data("jsonObj");               
         var zoneId = podObj.zoneid;        

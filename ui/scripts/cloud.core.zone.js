@@ -289,15 +289,16 @@ function initAddVLANButton($addButton) {
     $addButton.find("#label").text("Add VLAN");      
     $addButton.show();   
     $addButton.unbind("click").bind("click", function(event) {  
-        $("#tab_network").click();      
+        if($("#tab_content_network").css("display") == "none")
+            $("#tab_network").click();      
+            
         var zoneObj = $("#tab_content_details").data("jsonObj");       
         var dialogAddVlanForZone = $("#dialog_add_vlan_for_zone");       
         dialogAddVlanForZone.find("#info_container").hide();
         dialogAddVlanForZone.find("#zone_name").text(fromdb(zoneObj.name));         
 		dialogAddVlanForZone.find("#add_publicip_vlan_vlan_container, #add_publicip_vlan_domain_container, #add_publicip_vlan_account_container").hide();
 		dialogAddVlanForZone.find("#add_publicip_vlan_tagged, #add_publicip_vlan_vlan, #add_publicip_vlan_gateway, #add_publicip_vlan_netmask, #add_publicip_vlan_startip, #add_publicip_vlan_endip, #add_publicip_vlan_account").val("");
-		
-				
+						
 		if (getNetworkType() == 'vnet') {
 			dialogAddVlanForZone.find("#add_publicip_vlan_type_container").hide();
 		} else {	
@@ -449,7 +450,9 @@ function initAddSecondaryStorageButton($addButton) {
     $addButton.find("#label").text("Add Secondary Storage");
     $addButton.show();      
     $addButton.unbind("click").bind("click", function(event) {
-        $("#tab_secondarystorage").click();    
+        if($("#tab_content_secondarystorage").css("display") == "none")
+            $("#tab_secondarystorage").click();    
+        
         var zoneObj = $("#tab_content_details").data("jsonObj");       
         $("#dialog_add_secondarystorage").find("#zone_name").text(fromdb(zoneObj.name));   
         $("#dialog_add_secondarystorage").find("#info_container").hide();		    
