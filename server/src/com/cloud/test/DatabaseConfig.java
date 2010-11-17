@@ -154,6 +154,7 @@ public class DatabaseConfig {
     	fieldNames.add("storageType");
     	fieldNames.add("category");
     	fieldNames.add("tags");
+    	fieldNames.add("networktype");
     	
 
     	
@@ -602,6 +603,7 @@ public class DatabaseConfig {
         String internalDns2 = _currentObjectParams.get("internalDns2");
         String vnetRange = _currentObjectParams.get("vnet");
         String guestNetworkCidr = _currentObjectParams.get("guestNetworkCidr");
+        String networkType = _currentObjectParams.get("networktype");
         
         // Check that all IPs are valid
         String ipError = "Please enter a valid IP address for the field: ";
@@ -618,7 +620,7 @@ public class DatabaseConfig {
             vnetEnd = Integer.parseInt(tokens[1]);
         }
     	
-    	pzc.saveZone(false, id, name, dns1, dns2, internalDns1, internalDns2, vnetStart, vnetEnd, guestNetworkCidr);
+    	pzc.saveZone(false, id, name, dns1, dns2, internalDns1, internalDns2, vnetStart, vnetEnd, guestNetworkCidr, networkType);
         
     }
     

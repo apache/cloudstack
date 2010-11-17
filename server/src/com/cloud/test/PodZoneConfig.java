@@ -254,7 +254,7 @@ public class PodZoneConfig {
     }
 	
 	@DB
-	public void saveZone(boolean printOutput, long id, String name, String dns1, String dns2, String dns3, String dns4, int vnetStart, int vnetEnd, String guestNetworkCidr) {
+	public void saveZone(boolean printOutput, long id, String name, String dns1, String dns2, String dns3, String dns4, int vnetStart, int vnetEnd, String guestNetworkCidr, String networkType) {
 		
 		if (printOutput) System.out.println("Saving zone, please wait...");
 		
@@ -292,6 +292,11 @@ public class PodZoneConfig {
 		if(guestNetworkCidr != null) {
 			columns += ", guest_network_cidr";
 			values += ",'" + guestNetworkCidr + "'";
+		}
+		
+		if(networkType != null) {
+			columns += ", networktype";
+			values += ",'" + networkType + "'";
 		}
 		
 			
