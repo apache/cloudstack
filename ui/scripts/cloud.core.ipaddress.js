@@ -710,7 +710,8 @@ function ipJsonToDetailsTab() {
     $thisTab.find("#ipaddress").text(noNull(ipObj.ipaddress));
     $thisTab.find("#zonename").text(fromdb(ipObj.zonename));
     $thisTab.find("#vlanname").text(fromdb(ipObj.vlanname));    
-    setSourceNatField(ipObj.issourcenat, $thisTab.find("#source_nat")); 
+    setSourceNatField(ipObj.issourcenat, $thisTab.find("#source_nat"));    
+    setSourceNatField(ipObj.isstaticnat, $thisTab.find("#static_nat")); 
     setNetworkTypeField(ipObj.forvirtualnetwork, $thisTab.find("#network_type"));    
     
     $thisTab.find("#domain").text(fromdb(ipObj.domain));
