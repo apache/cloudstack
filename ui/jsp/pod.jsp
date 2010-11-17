@@ -380,4 +380,49 @@
             (info)</div>
     </div>
 </div>
+
+   
+<!-- Add VLAN IP Range Dialog for pod (begin) -->
+<div id="dialog_add_vlan_for_pod" title="Add Direct IP Range" style="display:none">
+	<p>Please enter the following info to add a new direct IP range on untagged VLAN to pod: <b><span id="pod_name_label"></span></b></p>
+	<div class="dialog_formcontent">
+		<form action="#" method="post" id="form5">
+			<ol>					
+				<li>
+					<label for="gateway">Gateway:</label>
+					<input class="text" type="text" id="gateway"/>
+					<div id="gateway_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+				</li>
+				<li>
+					<label for="netmask">Netmask:</label>
+					<input class="text" type="text" id="netmask"/>
+					<div id="netmask_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+				</li>
+				<li>
+					<label>IP Range:</label>
+					<input class="text" style="width:67px" type="text" id="startip"/><span>-</span>
+                    <input class="text" style="width:67px" type="text" id="endip"/>
+					<div id="startip_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+					<div id="endip_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+				</li>
+			</ol>
+		</form>
+	</div>
+	<!--Loading box-->
+    <div id="spinning_wheel" class="ui_dialog_loaderbox" style="display: none;">
+        <div class="ui_dialog_loader">
+        </div>
+        <p>
+            Adding....</p>
+    </div>
+    <!--Confirmation msg box-->
+    <!--Note: for error msg, just have to add error besides everything for eg. add error(class) next to ui_dialog_messagebox error, ui_dialog_msgicon error, ui_dialog_messagebox_text error.  -->
+    <div id="info_container" class="ui_dialog_messagebox error" style="display: none;">
+        <div id="icon" class="ui_dialog_msgicon error">
+        </div>
+        <div id="info" class="ui_dialog_messagebox_text error">
+            (info)</div>
+    </div>
+</div>
+<!-- Add VLAN IP Range Dialog for pod (end) -->
 <!-- ***** dialogs (begin) ***** -->

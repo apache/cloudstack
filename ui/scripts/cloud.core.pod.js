@@ -91,10 +91,14 @@ function podJsonToDetailsTab() {
 			}				
 		}
 	});	
-    if(zoneVlan == null) //basic network (VLAN in pod-level)
+    if(zoneVlan == null) { //basic-mode network (pod-wide VLAN)
         $("#tab_network").show();  
-    else //advanced network (VLAN in zone-level)
+        initAddPodVLANButton($("#midmenu_add3_link"));  //???
+    }
+    else { //advanced-mode network (zone-wide VLAN)
         $("#tab_network").hide();
+        $("#midmenu_add3_link").unbind("click").hide();         
+    }
     
     
     //actions ***   
@@ -296,7 +300,7 @@ function initAddHostButton($midmenuAddLink1, currentPageInRightPanel) {
 		        if (!isValid) 
 		            return;
 		            				
-				$thisDialog.find("#spinning_wheel").show() 				
+				$thisDialog.find("#spinning_wheel").show(); 				
 				
 		        var array1 = [];    
 		        array1.push("&zoneId="+zoneId);
@@ -397,8 +401,7 @@ function initAddPrimaryStorageButton($midmenuAddLink2, currentPageInRightPanel) 
              
         var zoneId, podId, sourceClusterId;        
         if(currentPageInRightPanel == "pod_page") {
-            var podObj = $("#tab_content_details").data("jsonObj");   
-            var podObj = $("#tab_content_details").data("jsonObj");
+            var podObj = $("#tab_content_details").data("jsonObj");  
             zoneId = podObj.zoneid;
             podId = podObj.id;
             dialogAddPool.find("#zone_name").text(fromdb(podObj.zonename));  
@@ -535,6 +538,83 @@ function initAddPrimaryStorageButton($midmenuAddLink2, currentPageInRightPanel) 
 			    $(this).dialog("close"); 
 		    } 
 	    }).dialog("open");            
+        return false;
+    });             
+}
+
+function initAddPodVLANButton($button) {
+    initDialog("dialog_add_vlan_for_pod");
+
+    $button.find("#label").text("Add Direct IP Range"); 
+    $button.show();   
+    $button.unbind("click").bind("click", function(event) {   
+        $("#tab_network").click();    
+            
+        var podObj = $("#tab_content_details").data("jsonObj");               
+        var zoneId = podObj.zoneid;        
+        var podId = podObj.id;
+        var podName = podObj.name;      
+                
+        $("#dialog_add_vlan_for_pod").find("#pod_name_label").text(podName);
+                
+        $("#dialog_add_vlan_for_pod")
+	    .dialog('option', 'buttons', {
+	        "Add": function() {             
+	            var $thisDialog = $(this);		
+			   				
+				// validate values
+				var isValid = true;						
+				isValid &= validateIp("Gateway", $thisDialog.find("#gateway"), $thisDialog.find("#gateway_errormsg"));
+				isValid &= validateIp("Netmask", $thisDialog.find("#netmask"), $thisDialog.find("#netmask_errormsg"));
+				isValid &= validateIp("Start IP Range", $thisDialog.find("#startip"), $thisDialog.find("#startip_errormsg"));   //required
+				isValid &= validateIp("End IP Range", $thisDialog.find("#endip"), $thisDialog.find("#endip_errormsg"), true);  //optional
+				if (!isValid) 
+				    return;							
+				
+				$thisDialog.find("#spinning_wheel").show(); 
+												
+				var gateway = trim($thisDialog.find("#gateway").val());
+				var netmask = trim($thisDialog.find("#netmask").val());
+				var startip = trim($thisDialog.find("#startip").val());
+				var endip = trim($thisDialog.find("#endip").val());		
+				
+				var array1 = [];
+				array1.push("&vlan=untagged");	
+				array1.push("&zoneid=" + zoneId);
+				array1.push("&podId=" + podId);	
+				array1.push("&forVirtualNetwork=false"); //direct VLAN	
+				array1.push("&gateway="+encodeURIComponent(gateway));
+				array1.push("&netmask="+encodeURIComponent(netmask));	
+				array1.push("&startip="+encodeURIComponent(startip));
+				if(endip != null && endip.length > 0)
+				    array1.push("&endip="+encodeURIComponent(endip));	
+				
+				$.ajax({
+				  data: createURL("command=createVlanIpRange" + array1.join("")),
+					dataType: "json",
+					success: function(json) {					    
+					    $thisDialog.find("#spinning_wheel").hide();				        
+				        $thisDialog.dialog("close");
+					    
+					    var item = json.createvlaniprangeresponse.vlan;
+					    var $subgridItem = $("#network_tab_template").clone(true);
+					    podNetworkJsonToTemplate(item, $subgridItem); 	
+					    $subgridItem.find("#after_action_info").text("Direct VLAN was added successfully.");
+                        $subgridItem.find("#after_action_info_container").removeClass("error").addClass("success").show();  				                        
+	                    $("#tab_content_network").find("#tab_container").append($subgridItem.fadeIn("slow"));	
+					},
+				    error: function(XMLHttpResponse) {					        				        
+				        handleError(XMLHttpResponse, function() {				           
+							handleErrorInDialog(XMLHttpResponse, $thisDialog);
+						});
+				    }
+				});		        
+	        },
+	        "Cancel": function() {
+	            $(this).dialog("close");
+	        }		    
+	    }).dialog("open");
+        
         return false;
     });             
 }
