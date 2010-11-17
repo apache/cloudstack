@@ -790,12 +790,14 @@ function doEditZone2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $
 	var vlan;				
 	if ($("#tab_content_details #vlan_container").css("display") != "none") {
 		var vlanStart = trim($detailsTab.find("#startvlan_edit").val());	
-		var vlanEnd = trim($detailsTab.find("#endvlan_edit").val());						
-		if (vlanEnd != null && vlanEnd.length > 0) 
-		    vlan = vlanStart + "-" + vlanEnd;						    							
-		else 	
-		    vlan = vlanStart;							
-       moreCriteria.push("&vlan=" + encodeURIComponent(vlan));	
+		if(vlanStart != null && vlanStart.length > 0) {
+		    var vlanEnd = trim($detailsTab.find("#endvlan_edit").val());						
+		    if (vlanEnd != null && vlanEnd.length > 0) 
+		        vlan = vlanStart + "-" + vlanEnd;						    							
+		    else 	
+		        vlan = vlanStart;							
+           moreCriteria.push("&vlan=" + encodeURIComponent(vlan));	
+        }
 	}				
 	
 	var guestcidraddress = trim($detailsTab.find("#guestcidraddress_edit").val());
