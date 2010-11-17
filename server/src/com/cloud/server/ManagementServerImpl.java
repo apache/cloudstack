@@ -2425,6 +2425,7 @@ public class ManagementServerImpl implements ManagementServer {
         c.addCriteria(Criteria.STATE, cmd.getState());
         c.addCriteria(Criteria.DATACENTERID, cmd.getZoneId());
         c.addCriteria(Criteria.GROUPID, cmd.getGroupId());
+        c.addCriteria(Criteria.FOR_VIRTUAL_NETWORK, cmd.getForVirtualNetwork());
 
         // ignore these search requests if it's not an admin
         if (isAdmin == true) {
@@ -2462,6 +2463,7 @@ public class ManagementServerImpl implements ManagementServer {
         Object isAdmin = c.getCriteria(Criteria.ISADMIN);
         Object ipAddress = c.getCriteria(Criteria.IPADDRESS);
         Object groupId = c.getCriteria(Criteria.GROUPID);
+        Object useVirtualNetwork = c.getCriteria(Criteria.FOR_VIRTUAL_NETWORK);
         
         sb.and("displayName", sb.entity().getDisplayName(), SearchCriteria.Op.LIKE);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
@@ -2493,6 +2495,16 @@ public class ManagementServerImpl implements ManagementServer {
         	groupSearch.and("groupId", groupSearch.entity().getGroupId(), SearchCriteria.Op.EQ);
             sb.join("groupSearch", groupSearch, sb.entity().getId(), groupSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
         }
+        
+        if (useVirtualNetwork != null) {
+            SearchBuilder<ServiceOfferingVO> serviceSearch = _offeringsDao.createSearchBuilder();
+            if ((Boolean)useVirtualNetwork){
+                serviceSearch.and("guestIpType", serviceSearch.entity().getGuestIpType(), SearchCriteria.Op.EQ);
+            } else {
+                serviceSearch.and("guestIpType", serviceSearch.entity().getGuestIpType(), SearchCriteria.Op.NEQ);
+            }
+            sb.join("serviceSearch", serviceSearch, sb.entity().getServiceOfferingId(), serviceSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+        }
 
         // populate the search criteria with the values passed in
         SearchCriteria<UserVmVO> sc = sb.create();
@@ -2501,6 +2513,10 @@ public class ManagementServerImpl implements ManagementServer {
         	sc.setJoinParameters("vmSearch", "instanceId", (Object)null);
         } else if (groupId != null ) {
         	sc.setJoinParameters("groupSearch", "groupId", groupId);
+        }
+        
+        if (useVirtualNetwork != null) {
+            sc.setJoinParameters("serviceSearch", "guestIpType", NetworkOffering.GuestIpType.Virtualized.toString());
         }
 
         if (keyword != null) {

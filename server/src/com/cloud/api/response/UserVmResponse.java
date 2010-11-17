@@ -98,6 +98,9 @@ public class UserVmResponse extends BaseResponse {
 
     @SerializedName("serviceofferingname") @Param(description="the name of the service offering of the virtual machine")
     private String serviceOfferingName;
+    
+    @SerializedName("forvirtualnetwork") @Param(description="the virtual network for the service offering")
+    private Boolean forVirtualNetwork;
 
     @SerializedName(ApiConstants.CPU_NUMBER) @Param(description="the number of cpu this virtual machine is running with")
     private Integer cpuNumber;
@@ -440,5 +443,13 @@ public class UserVmResponse extends BaseResponse {
 
     public void setJobStatus(Integer jobStatus) {
         this.jobStatus = jobStatus;
+    }
+
+    public Boolean getForVirtualNetwork() {
+        return forVirtualNetwork;
+    }
+
+    public void setForVirtualNetwork(Boolean forVirtualNetwork) {
+        this.forVirtualNetwork = forVirtualNetwork;
     }
 }

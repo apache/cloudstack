@@ -443,6 +443,7 @@ public class ApiResponseHelper {
        userVmResponse.setCpuNumber(offering.getCpu());
        userVmResponse.setCpuSpeed(offering.getSpeed());
        userVmResponse.setMemory(offering.getRamSize());
+       userVmResponse.setForVirtualNetwork(offering.getGuestIpType().equals(GuestIpType.Virtualized));
 
        VolumeVO rootVolume = ApiDBUtils.findRootVolume(userVm.getId());
        if (rootVolume != null) {

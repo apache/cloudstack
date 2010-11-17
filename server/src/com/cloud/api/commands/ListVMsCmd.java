@@ -68,6 +68,9 @@ public class ListVMsCmd extends BaseListCmd {
 
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the availability zone ID")
     private Long zoneId;
+    
+    @Parameter(name=ApiConstants.FOR_VIRTUAL_NETWORK, type=CommandType.BOOLEAN, description="list by network type; true if need to list vms using Virtual Network, false otherwise")
+    private Boolean forVirtualNetwork;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -108,11 +111,18 @@ public class ListVMsCmd extends BaseListCmd {
     public Long getZoneId() {
         return zoneId;
     }
+    
+    public Boolean getForVirtualNetwork() {
+        return forVirtualNetwork;
+    }
+
+    public void setForVirtualNetwork(Boolean forVirtualNetwork) {
+        this.forVirtualNetwork = forVirtualNetwork;
+    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
     @Override
 	public String getName() {
         return s_name;
