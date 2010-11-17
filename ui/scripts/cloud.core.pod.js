@@ -71,9 +71,10 @@ function podJsonToDetailsTab() {
     
     
     // hide network tab upon zone vlan
-    var zoneVlan;  
+    var networkType;  
     $.ajax({
-	    data: createURL("command=listZones&id="+noNull(jsonObj.zoneid)),
+	    data: createURL("command=listZones"),
+	    //data: createURL("command=listZones&id="+noNull(jsonObj.zoneid)),
 		dataType: "json",	
 		async: false,	
 		success: function(json) {
@@ -84,18 +85,18 @@ function podJsonToDetailsTab() {
 				//temporary code before bug 7162 is fixed ********(begin)***********		
 				for(var i=0; i<items.length; i++) {				   		    
 				    if(items[i].id == jsonObj.zoneid) {
-				        zoneVlan = items[i].vlan; 
+				        networkType = items[i].networktype; 
 				    }
 				}	
 				//temporary code before bug 7162 is fixed ********(end)*************	
 			}				
 		}
 	});	
-    if(zoneVlan == null) { //basic-mode network (pod-wide VLAN)
+    if(networkType == "Basic") { //basic-mode network (pod-wide VLAN)
         $("#tab_network").show();  
         initAddPodVLANButton($("#midmenu_add3_link"));  
     }
-    else { //advanced-mode network (zone-wide VLAN)
+    else if(networkType == "Advanced") { //advanced-mode network (zone-wide VLAN)
         $("#tab_network").hide();
         $("#midmenu_add3_link").unbind("click").hide();         
     }
