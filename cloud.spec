@@ -474,7 +474,7 @@ fi
 %{_javadir}/%{name}-backport-util-concurrent-3.0.jar
 %{_javadir}/%{name}-ehcache.jar
 %{_javadir}/%{name}-email.jar
-%{_javadir}/%{name}-gson-1.3.jar
+%{_javadir}/%{name}-gson.jar
 %{_javadir}/%{name}-httpcore-4.0.jar
 %{_javadir}/%{name}-jna.jar
 %{_javadir}/%{name}-junit-4.8.1.jar
