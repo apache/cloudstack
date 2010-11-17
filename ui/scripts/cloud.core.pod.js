@@ -255,7 +255,7 @@ function initAddHostButton($midmenuAddLink1, currentPageInRightPanel) {
         dialogAddHost = $("#dialog_add_host");      
         dialogAddHost.find("#info_container").hide();    
         dialogAddHost.find("#new_cluster_name").val("");
-        
+       
         var zoneId, podId, clusterId;               
         if(currentPageInRightPanel == "pod_page") {
             var podObj = $("#tab_content_details").data("jsonObj");   
@@ -263,6 +263,12 @@ function initAddHostButton($midmenuAddLink1, currentPageInRightPanel) {
             podId = podObj.id;
             dialogAddHost.find("#zone_name").text(fromdb(podObj.zonename));  
             dialogAddHost.find("#pod_name").text(fromdb(podObj.name)); 
+        }
+        else if(currentPageInRightPanel == "cluster_page") {
+            var clusterObj = $("#tab_content_details").data("jsonObj");   
+            zoneId = clusterObj.zoneid;
+            podId = clusterObj.podid;    
+            clusterId = clusterObj.id;   
         }
         else if(currentPageInRightPanel == "host_page") {
             var hostObj = $("#tab_content_details").data("jsonObj");  
@@ -407,7 +413,13 @@ function initAddPrimaryStorageButton($midmenuAddLink2, currentPageInRightPanel) 
             podId = podObj.id;
             dialogAddPool.find("#zone_name").text(fromdb(podObj.zonename));  
             dialogAddPool.find("#pod_name").text(fromdb(podObj.name)); 
-        }
+        }        
+        else if(currentPageInRightPanel == "cluster_page") {
+            var clusterObj = $("#tab_content_details").data("jsonObj");   
+            zoneId = clusterObj.zoneid;
+            podId = clusterObj.podid;    
+            sourceClusterId = clusterObj.id;   
+        }        
         else if(currentPageInRightPanel == "host_page") {
             var hostObj = $("#tab_content_details").data("jsonObj");  
             zoneId = hostObj.zoneid;

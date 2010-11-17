@@ -19,9 +19,17 @@
 function afterLoadClusterJSP($midmenuItem1) {
     showMiddleMenu();
         
-    $("#midmenu_add_link").unbind("click").hide();              
-    $("#midmenu_add2_link").unbind("click").hide();   
-    $("#midmenu_add3_link").unbind("click").hide();          
+    //$("#midmenu_add_link").unbind("click").hide();              
+    //$("#midmenu_add2_link").unbind("click").hide();   
+        
+    //???
+    initAddHostButton($("#midmenu_add_link"), "cluster_page"); 
+    initAddPrimaryStorageButton($("#midmenu_add2_link"), "cluster_page");  
+    $("#midmenu_add3_link").unbind("click").hide();   
+    
+    initDialog("dialog_add_host");
+    initDialog("dialog_add_pool");    
+    //???       
     
 	clusterJsonToRightPanel($midmenuItem1);	
 	var clusterId = $midmenuItem1.data("jsonObj").id;            
