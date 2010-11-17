@@ -123,7 +123,7 @@
                     <div class="zonepopup_selectionpanel">
                       
                         <div class="zonepopup_selectionbox">
-                            <input type="radio" name="basic_advanced" value="Basic" id="Basic" class="radio" checked />
+                            <input type="radio" name="basic_advanced" value="Basic" id="Basic" class="radio" />
                             <label class="label">
                                 Basic Mode</label>
                             <div class="zonepopup_selectiondescriptionbox">

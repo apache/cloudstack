@@ -687,10 +687,11 @@ function initAddZoneWizard() {
                 $thisWizard.find("#after_submit_screen").show();
                 addZoneWizardSubmit($thisWizard);
                 break;       
-        }   
-        
+        }           
         return false;
     }); 
+    
+    $addZoneWizard.find("#step1").find("#Basic").click();
 }
 
 function addZoneWizardValidateZond($thisWizard) {    
