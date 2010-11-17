@@ -752,12 +752,14 @@ function addZoneWizardSubmit($thisWizard) {
 	    moreCriteria.push("&internaldns2="+encodeURIComponent(internaldns2));						
 	 											
     if($thisWizard.find("#step2").find("#add_zone_vlan_container").css("display") != "none") {
-		var vlanStart = trim($thisWizard.find("#add_zone_startvlan").val());	
-		var vlanEnd = trim($thisWizard.find("#add_zone_endvlan").val());						
-		if (vlanEnd != null && vlanEnd.length > 0) 
-		    moreCriteria.push("&vlan=" + encodeURIComponent(vlanStart + "-" + vlanEnd));									
-		else 							
-			moreCriteria.push("&vlan=" + encodeURIComponent(vlanStart));		
+		var vlanStart = $thisWizard.find("#add_zone_startvlan").val();
+		if(vlanStart != null && vlanStart.length > 0) {	
+		    var vlanEnd = $thisWizard.find("#add_zone_endvlan").val();						
+		    if (vlanEnd != null && vlanEnd.length > 0) 
+		        moreCriteria.push("&vlan=" + encodeURIComponent(vlanStart + "-" + vlanEnd));									
+		    else 							
+			    moreCriteria.push("&vlan=" + encodeURIComponent(vlanStart));		
+        }
 	}	
 	
 	var guestcidraddress = trim($thisWizard.find("#add_zone_guestcidraddress").val());
