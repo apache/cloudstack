@@ -639,14 +639,14 @@ function initAddZoneWizard() {
                 closeAddZoneWizard();
                 break;
             
-            case "basic_mode":  //create VLAN in pod-level      
+            case "Basic":  //create VLAN in pod-level      
                 //hide Zone VLAN Range in Add Zone(step 2), show Guest IP Range in Add Pod(step3)                 
                 $thisWizard.find("#step2").find("#add_zone_vlan_container").hide();
                 $thisWizard.find("#step3").find("#guestip_container, #guestnetmask_container").show();
                 return true;
                 break;
                 
-            case "advanced_mode":  //create VLAN in zone-level 
+            case "Advanced":  //create VLAN in zone-level 
                 //show Zone VLAN Range in Add Zone(step 2), hide Guest IP Range in Add Pod(step3) 
                 $thisWizard.find("#step2").find("#add_zone_vlan_container").show();  
                 $thisWizard.find("#step3").find("#guestip_container, #guestnetmask_container").hide();   
@@ -729,6 +729,9 @@ function addZoneWizardSubmit($thisWizard) {
 	$thisWizard.find("#spinning_wheel").show();
 	
 	var moreCriteria = [];	
+	
+	var networktype = $thisWizard.find("#step1").find("input:radio[name=basic_advanced]:checked").val();  //"Basic", "Advanced"
+	moreCriteria.push("&networktype="+todb(networktype));
 	
 	var name = trim($thisWizard.find("#add_zone_name").val());
 	moreCriteria.push("&name="+todb(name));
