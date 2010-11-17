@@ -82,6 +82,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
     protected static final Callback[] s_callbacks = new Callback[] { NoOp.INSTANCE, new DatabaseCallback() };
     protected static final CallbackFilter s_callbackFilter = new DatabaseCallbackFilter();
     protected static final HashMap<Class<?>, InjectInfo> s_factories = new HashMap<Class<?>, InjectInfo>();
+    protected static Boolean s_once = false;
 
     protected HashMap<String, Adapters<? extends Adapter>>              _adapterMap;
     protected HashMap<String, ComponentInfo<Manager>>                   _managerMap;
@@ -91,17 +92,6 @@ public class ComponentLocator implements ComponentLocatorMBean {
     protected Object                                                    _component;
     
     static {
-        File file = PropertiesUtil.findConfigFile("log4j-cloud.xml");
-        if (file != null) {
-            s_logger.info("log4j configuration found at " + file.getAbsolutePath());
-            DOMConfigurator.configureAndWatch(file.getAbsolutePath());
-        } else {
-            file = PropertiesUtil.findConfigFile("log4j-cloud.properties");
-            if (file != null) {
-                s_logger.info("log4j configuration found at " + file.getAbsolutePath());
-                PropertyConfigurator.configureAndWatch(file.getAbsolutePath());
-            }
-        }
         Runtime.getRuntime().addShutdownHook(new CleanupThread());
     }
 
@@ -679,7 +669,24 @@ public class ComponentLocator implements ComponentLocatorMBean {
         return new Adapters<Adapter>(key, new ArrayList<ComponentInfo<Adapter>>());
     }
 
-    protected static ComponentLocator getLocatorInternal(String server, boolean setInThreadLocal, String configFileName) {
+    protected static ComponentLocator getLocatorInternal(String server, boolean setInThreadLocal, String configFileName, String log4jFilename) {
+        synchronized(s_once) {
+            if (!s_once) {
+                File file = PropertiesUtil.findConfigFile(log4jFilename + ".xml");
+                if (file != null) {
+                    s_logger.info("log4j configuration found at " + file.getAbsolutePath());
+                    DOMConfigurator.configureAndWatch(file.getAbsolutePath());
+                } else {
+                    file = PropertiesUtil.findConfigFile(log4jFilename + ".properties");
+                    if (file != null) {
+                        s_logger.info("log4j configuration found at " + file.getAbsolutePath());
+                        PropertyConfigurator.configureAndWatch(file.getAbsolutePath());
+                    }
+                }
+                s_once = true;
+            }
+        }
+        
         ComponentLocator locator;
         synchronized (s_locators) {
             locator = s_locators.get(server);
@@ -700,8 +707,8 @@ public class ComponentLocator implements ComponentLocatorMBean {
         return locator;
     }
 
-    public static ComponentLocator getLocator(String server, String configFileName) {
-        return getLocatorInternal(server, true, configFileName);
+    public static ComponentLocator getLocator(String server, String configFileName, String log4jFilename) {
+        return getLocatorInternal(server, true, configFileName, log4jFilename);
     }
 
     public static ComponentLocator getLocator(String server) {
@@ -713,7 +720,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
         		configFile = "components.xml";
         	}
         }
-        return getLocatorInternal(server, true, configFile);
+        return getLocatorInternal(server, true, configFile, "log4j-cloud");
     }
 
     public static ComponentLocator getCurrentLocator() {

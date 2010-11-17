@@ -33,7 +33,8 @@ public class ComponentTestCase extends Log4jEnabledTestCase {
 				if(annotation instanceof ComponentSetup) {
 					ComponentLocator.getLocator(
 						((ComponentSetup)annotation).managerName(),
-						((ComponentSetup)annotation).setupXml()
+						((ComponentSetup)annotation).setupXml(),
+						((ComponentSetup)annotation).log4j()
 					);
 					
 					break;
