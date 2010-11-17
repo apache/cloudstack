@@ -1251,10 +1251,10 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
             }
         }
 
-        Filter searchFilter = new Filter(NetworkGroupRulesVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        Filter searchFilter = new Filter(NetworkGroupVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         Object keyword = cmd.getKeyword();
 
-        SearchBuilder<NetworkGroupRulesVO> sb = _networkGroupRulesDao.createSearchBuilder();
+        SearchBuilder<NetworkGroupVO> sb = _networkGroupDao.createSearchBuilder();
         sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
@@ -1266,7 +1266,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
             sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         }
 
-        SearchCriteria<NetworkGroupRulesVO> sc = sb.create();
+        SearchCriteria<NetworkGroupVO> sc = sb.create();
         if (accountId != null) {
             sc.setParameters("accountId", accountId);
             if (networkGroup != null) {
@@ -1277,8 +1277,6 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
                 ssc.addOr("description", SearchCriteria.Op.LIKE, "%" + keyword + "%");
                 sc.addAnd("name", SearchCriteria.Op.SC, ssc);
             }
-        } else if (instanceId != null) {
-            return listNetworkGroupRulesByVM(instanceId.longValue());
         } else if (domainId != null) {
             if (Boolean.TRUE.equals(recursive)) {
                 DomainVO domain = _domainDao.findById(domainId);
@@ -1287,8 +1285,18 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
                 sc.setParameters("domainId", domainId);
             }
         }
-
-        return _networkGroupRulesDao.search(sc, searchFilter);
+        
+        List<NetworkGroupVO> networkGroups = _networkGroupDao.search(sc, searchFilter);
+        List<NetworkGroupRulesVO> networkRulesList = new ArrayList<NetworkGroupRulesVO>();
+        for (NetworkGroupVO group : networkGroups) {
+           networkRulesList.addAll(_networkGroupRulesDao.listNetworkRulesByGroupId(group.getId()));
+        }
+        
+       if (instanceId != null) {
+            return listNetworkGroupRulesByVM(instanceId.longValue());
+       } 
+       
+        return networkRulesList;
     }
 
 	private List<NetworkGroupRulesVO> listNetworkGroupRulesByVM(long vmId) {

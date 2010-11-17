@@ -14,6 +14,8 @@ import com.cloud.utils.db.SearchCriteria;
 public class NetworkGroupRulesDaoImpl extends GenericDaoBase<NetworkGroupRulesVO, Long> implements NetworkGroupRulesDao {
     private SearchBuilder<NetworkGroupRulesVO> AccountGroupNameSearch;
     private SearchBuilder<NetworkGroupRulesVO> AccountSearch;
+    private SearchBuilder<NetworkGroupRulesVO> GroupSearch;
+
 
     protected NetworkGroupRulesDaoImpl() {
         AccountGroupNameSearch = createSearchBuilder();
@@ -24,6 +26,11 @@ public class NetworkGroupRulesDaoImpl extends GenericDaoBase<NetworkGroupRulesVO
         AccountSearch = createSearchBuilder();
         AccountSearch.and("accountId", AccountSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         AccountSearch.done();
+        
+        GroupSearch = createSearchBuilder();
+        GroupSearch.and("groupId", GroupSearch.entity().getId(), SearchCriteria.Op.EQ);
+        GroupSearch.done();
+        
     }
 
     @Override
@@ -48,7 +55,14 @@ public class NetworkGroupRulesDaoImpl extends GenericDaoBase<NetworkGroupRulesVO
         Filter searchFilter = new Filter(NetworkGroupRulesVO.class, "id", true, null, null);
         SearchCriteria<NetworkGroupRulesVO> sc = AccountSearch.create();
         sc.setParameters("accountId", accountId);
-
+        return listBy(sc, searchFilter);
+    }
+    
+    @Override
+    public List<NetworkGroupRulesVO> listNetworkRulesByGroupId(long groupId) {
+        Filter searchFilter = new Filter(NetworkGroupRulesVO.class, "id", true, null, null);
+        SearchCriteria<NetworkGroupRulesVO> sc = GroupSearch.create();
+        sc.setParameters("groupId", groupId);
         return listBy(sc, searchFilter);
     }
 }
