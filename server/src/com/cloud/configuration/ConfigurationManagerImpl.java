@@ -877,6 +877,11 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     	if (zoneName == null) {
     		zoneName = zone.getName();
     	}
+    	
+    	//if zone is of Basic type, don't allow to add vnet range
+    	if (vnetRange != null && zone.getNetworkType() == DataCenterNetworkType.Basic) {
+    	    throw new InvalidParameterValueException("Can't add vnet range for the zone that supports Basic network");
+    	}
 
     	// Make sure the zone exists
     	if (!validZone(zoneId)) {
