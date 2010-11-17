@@ -891,8 +891,16 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         }
 
         HashSet<Host> avoid = new HashSet<Host>();
+        
+        HostVO host = null;
+        if(vm.getLastHostId() != null) {
+        	host = _hostDao.findById(vm.getLastHostId());
+        	if(host == null || host.getStatus() != com.cloud.host.Status.Up || host.getHypervisorType() != HypervisorType.VmWare)
+        		host = null;
+        }
 
-        HostVO host = (HostVO) _agentMgr.findHost(Host.Type.Routing, dc, pod, sp, offering, template, vm, null, avoid);
+        if(host == null)
+        	host = (HostVO) _agentMgr.findHost(Host.Type.Routing, dc, pod, sp, offering, template, vm, null, avoid);
 
         if (host == null) {	
         	String description = "Unable to find any host for " + vm.toString();
@@ -902,7 +910,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     		_eventDao.persist(event);
             return null;
         }
-        
 
         if (!_vmDao.updateIf(vm, Event.StartRequested, host.getId())) {
             String description = "Unable to start VM " + vm.toString() + " because the state is not correct.";
@@ -3831,7 +3838,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         }
         
         long eventId = EventUtils.saveScheduledEvent(userId, vmInstance.getAccountId(), EventTypes.EVENT_VM_STOP, "stopping Vm with Id: "+id);
-        
         userId = accountAndUserValidation(id, caller, userId, vmInstance);
         UserVO user = _userDao.findById(userId);
 
@@ -3911,5 +3917,4 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
             throw new CloudRuntimeException("Failed to destroy vm with id " + vmId);
         }
     }
-    
 }

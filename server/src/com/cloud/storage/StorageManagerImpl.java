@@ -1032,7 +1032,7 @@ public class StorageManagerImpl implements StorageManager {
             if (poolId != null && volumePath != null && !volumePath.trim().isEmpty()) {
                 Answer answer = null;
                 StoragePoolVO pool = _storagePoolDao.findById(poolId);
-                final DestroyCommand cmd = new DestroyCommand(pool, vol);
+                final DestroyCommand cmd = new DestroyCommand(pool, vol, vm.getInstanceName());
                 boolean removed = false;
                 List<StoragePoolHostVO> poolhosts = _storagePoolHostDao.listByPoolId(poolId);
                 for (StoragePoolHostVO poolhost : poolhosts) {
@@ -1645,7 +1645,7 @@ public class StorageManagerImpl implements StorageManager {
         String destPrimaryStorageVolumeFolder = cvAnswer.getVolumeFolder();
 
         // Delete the volume on the source storage pool
-        final DestroyCommand cmd = new DestroyCommand(srcPool, volume);
+        final DestroyCommand cmd = new DestroyCommand(srcPool, volume, null);
         Answer destroyAnswer = _agentMgr.easySend(sourceHostId, cmd);
         
         if (destroyAnswer == null || !destroyAnswer.getResult()) {
@@ -2143,7 +2143,7 @@ public class StorageManagerImpl implements StorageManager {
                 Long poolId = vol.getPoolId();
                 Answer answer = null;
                 StoragePoolVO pool = _storagePoolDao.findById(poolId);
-                final DestroyCommand cmd = new DestroyCommand(pool, vol);
+                final DestroyCommand cmd = new DestroyCommand(pool, vol, null);
                 answer = sendToPool(pool, cmd);
                 if (answer != null && answer.getResult()) {
                     s_logger.debug("Destroyed " + vol);

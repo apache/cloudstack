@@ -24,13 +24,16 @@ import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VolumeVO;
 
 public class DestroyCommand extends StorageCommand {
+	// in VMware, things are designed around VM instead of volume, we need it the volume VM context if the volume is attached
+	String vmName;
     VolumeTO volume;
     
     protected DestroyCommand() {
     }
     
-    public DestroyCommand(StoragePoolVO pool, VolumeVO volume) {
+    public DestroyCommand(StoragePoolVO pool, VolumeVO volume, String vmName) {
          this.volume = new VolumeTO(volume, pool);
+         this.vmName = vmName;
     }
     
     public DestroyCommand(StoragePoolVO pool, VMTemplateStoragePoolVO templatePoolRef) {
@@ -39,6 +42,10 @@ public class DestroyCommand extends StorageCommand {
     
     public VolumeTO getVolume() {
     	return volume;
+    }
+    
+    public String getVmName() {
+    	return vmName;
     }
 
     @Override
