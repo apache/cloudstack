@@ -130,8 +130,18 @@
                         <input class="text" id="internaldns2_edit" style="width: 200px; display: none;" type="text" />
 	                    <div id="internaldns2_edit_errormsg" style="display:none"></div>       
                     </div>
-                </div>
-                <div class="grid_rows odd" id="vlan_container">
+                </div>                
+                <div class="grid_rows odd">
+                    <div class="grid_row_cell" style="width: 20%;">
+                        <div class="row_celltitles">
+                            <%=t.t("network.type")%>:</div>
+                    </div>
+                    <div class="grid_row_cell" style="width: 79%;">
+                        <div class="row_celltitles" id="networktype">
+                        </div>                             
+                    </div>
+                </div>                
+                <div class="grid_rows even" id="vlan_container">
                     <div class="grid_row_cell" style="width: 20%;">
                         <div class="row_celltitles">
                             <%=t.t("vlan")%>:</div>
@@ -145,7 +155,7 @@
 	                    <div id="endvlan_edit_errormsg" style="display:none"></div>            
                     </div>
                 </div>
-                <div class="grid_rows even">
+                <div class="grid_rows odd">
                     <div class="grid_row_cell" style="width: 20%;">
                         <div class="row_celltitles">
                             <%=t.t("guestcidraddress")%>:</div>
@@ -157,18 +167,14 @@
 	                    <div id="guestcidraddress_edit_errormsg" style="display:none"></div>       
                     </div>
                 </div>
-                <div class="grid_rows odd">
+                <div class="grid_rows even">
                     <div class="grid_row_cell" style="width: 20%;">
                         <div class="row_celltitles">
                             <%=t.t("domain")%>:</div>
                     </div>
                     <div class="grid_row_cell" style="width: 79%;">
                         <div class="row_celltitles" id="domain">
-                        </div>
-                        <!--  
-                        <select class="select" id="domain_edit" style="width: 202px; display: none;">	                       
-	                    </select>  
-	                    -->
+                        </div>                        
                     </div>
                 </div>
             </div>            

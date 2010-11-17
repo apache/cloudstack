@@ -80,48 +80,34 @@ function zoneJsonToDetailsTab($leftmenuItem1) {
     
     $detailsTab.find("#internaldns2").text(fromdb(jsonObj.internaldns2));
     $detailsTab.find("#internaldns2_edit").val(fromdb(jsonObj.internaldns2));
-    	
-    $detailsTab.find("#vlan").text(fromdb(jsonObj.vlan));
-    var vlan = jsonObj.vlan; 
-    if(vlan != null) {
-        $("#midmenu_add2_link, #tab_network, #tab_content_details #vlan_container").show();       
-		if(vlan.indexOf("-")!==-1) {
-			var startVlan = vlan.substring(0, vlan.indexOf("-"));
-			var endVlan = vlan.substring((vlan.indexOf("-")+1));	
-			$detailsTab.find("#startvlan_edit").val(startVlan);
-			$detailsTab.find("#endvlan_edit").val(endVlan);			
-		}
-		else {
-		    $detailsTab.find("#startvlan_edit").val(vlan);					        
-		}
-	}   
-	else {
-	    $("#midmenu_add2_link, #tab_network, #tab_content_details #vlan_container").hide();
-	}
+    
+    $detailsTab.find("#networktype").text(fromdb(jsonObj.networktype));
+    if(jsonObj.networktype == "Basic") {
+        $("#midmenu_add2_link, #tab_network, #tab_content_details #vlan_container").hide();
+    }
+    else if(jsonObj.networktype == "Advanced") {
+        $("#midmenu_add2_link, #tab_network, #tab_content_details #vlan_container").show();           
+        
+        var vlan = jsonObj.vlan; 
+        $detailsTab.find("#vlan").text(fromdb(vlan));      
+        if(vlan != null) {           
+		    if(vlan.indexOf("-")!==-1) {
+			    var startVlan = vlan.substring(0, vlan.indexOf("-"));
+			    var endVlan = vlan.substring((vlan.indexOf("-")+1));	
+			    $detailsTab.find("#startvlan_edit").val(startVlan);
+			    $detailsTab.find("#endvlan_edit").val(endVlan);			
+		    }
+		    else {
+		        $detailsTab.find("#startvlan_edit").val(vlan);					        
+		    }
+	    } 
+    }	
         
     $detailsTab.find("#guestcidraddress").text(fromdb(jsonObj.guestcidraddress));   
     $detailsTab.find("#guestcidraddress_edit").val(fromdb(jsonObj.guestcidraddress));   
         
     $detailsTab.find("#domain").text(fromdb(jsonObj.domain)); 
-    //don't allow update domain
-    /*
-    $.ajax({
-        data: createURL("command=listDomains"),
-        dataType: "json",
-        success: function(json) {           
-            var items = json.listdomainsresponse.domain;
-            if(items != null && items.length > 0) {
-                for(var i=0; i<items.length; i++) {
-                    if(items[i].id == jsonObj.domainid)
-                        $detailsTab.find("#domain_edit").append("<option value='" + items[i].id + "' selected>" + fromdb(items[i].name) + "</option>"); 
-                    else
-                        $detailsTab.find("#domain_edit").append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>"); 
-                }		
-            }
-        }    
-    });    
-    */
-    
+        
     //actions ***   
     var $actionLink = $detailsTab.find("#action_link"); 
     $actionLink.bind("mouseover", function(event) {	    
