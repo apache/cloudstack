@@ -1400,13 +1400,13 @@ public class ManagementServerImpl implements ManagementServer {
         }
         
         if (id != null) {
+            List<DataCenterVO> singleZone = new ArrayList<DataCenterVO>();
             for (DataCenterVO zone : dcs) {
-                List<DataCenterVO> singleZone = new ArrayList<DataCenterVO>();
                 if (zone.getId() == id) {
                     singleZone.add(zone);
                 }
-                return singleZone;
             }
+            return singleZone;
         } 
         return dcs;
     }
