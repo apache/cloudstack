@@ -387,23 +387,18 @@
 	<p>Please enter the following info to add a new direct IP range on untagged VLAN to pod: <b><span id="pod_name_label"></span></b></p>
 	<div class="dialog_formcontent">
 		<form action="#" method="post" id="form5">
-			<ol>					
+			<ol>				    		
 				<li>
-					<label for="gateway">Gateway:</label>
-					<input class="text" type="text" id="gateway"/>
-					<div id="gateway_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
-				</li>
-				<li>
-					<label for="netmask">Netmask:</label>
-					<input class="text" type="text" id="netmask"/>
-					<div id="netmask_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
-				</li>
-				<li>
-					<label>IP Range:</label>
+					<label>Guest IP Range:</label>
 					<input class="text" style="width:67px" type="text" id="startip"/><span>-</span>
                     <input class="text" style="width:67px" type="text" id="endip"/>
 					<div id="startip_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
 					<div id="endip_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+				</li>
+				<li>
+					<label for="netmask">Guest Netmask:</label>
+					<input class="text" type="text" id="netmask"/>
+					<div id="netmask_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
 				</li>
 			</ol>
 		</form>
