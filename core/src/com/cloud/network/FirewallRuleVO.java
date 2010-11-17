@@ -85,6 +85,7 @@ public class FirewallRuleVO {
 	    this.privatePort = privatePort;
 	    this.enabled = enabled;
 	    this.protocol = protocol;
+	    this.forwarding = forwarding;
 	}
 	
 	public FirewallRuleVO(FirewallRuleVO fwRule) {
