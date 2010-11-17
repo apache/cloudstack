@@ -204,7 +204,6 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 				} else {
 					createPod(User.UID_SYSTEM, "Default", zone.getId(), gateway, gateway + "/" + cidrSize, null, null);
 				}
-
 				s_logger.debug("ConfigurationServer saved a default pod and zone, with gateway: " + gateway + " and netmask: " + netmask);
 			} else {
 				s_logger.debug("ConfigurationServer could not detect the gateway and netmask of the management server.");
@@ -533,10 +532,10 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 	}
 
     private DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String vnetRange, String guestCidr, String domain, Long domainId, DataCenterNetworkType zoneType) throws InvalidParameterValueException, InternalErrorException {
-        int vnetStart, vnetEnd;
+        int vnetStart = 0;
+        int vnetEnd = 0;
         if (vnetRange != null) {
             String[] tokens = vnetRange.split("-");
-            
             try {
                 vnetStart = Integer.parseInt(tokens[0]);
                 if (tokens.length == 1) {
@@ -547,15 +546,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
             } catch (NumberFormatException e) {
                 throw new InvalidParameterValueException("Please specify valid integers for the vlan range.");
             }
-        } else {
-            String networkType = _configDao.getValue("network.type");
-            if (networkType != null && networkType.equals("vnet")) {
-                vnetStart = 1000;
-                vnetEnd = 2000;
-            } else {
-                throw new InvalidParameterValueException("Please specify a vlan range.");
-            }
-        }
+        } 
+        
 
         //checking the following params outside checkzoneparams method as we do not use these params for updatezone
         //hence the method below is generic to check for common params
@@ -574,7 +566,9 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         zone = _zoneDao.persist(zone);
 
         // Add vnet entries for the new zone
-        _zoneDao.addVnet(zone.getId(), vnetStart, vnetEnd);
+        if (vnetRange != null){
+            _zoneDao.addVnet(zone.getId(), vnetStart, vnetEnd);
+        }
 
         return zone;
     }
