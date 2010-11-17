@@ -113,17 +113,18 @@ public class ComponentLocator implements ComponentLocatorMBean {
         try {
             SAXParserFactory spfactory = SAXParserFactory.newInstance();
             SAXParser saxParser = spfactory.newSAXParser();
+            _daoMap = new LinkedHashMap<String, ComponentInfo<GenericDao<?, ? extends Serializable>>>();
+            _managerMap = new LinkedHashMap<String, ComponentInfo<Manager>>();
+            _adapterMap = new HashMap<String, Adapters<? extends Adapter>>();
             File file = PropertiesUtil.findConfigFile(filename);
             if (file == null) {
-                throw new CloudRuntimeException("Unable to find " + filename);
+            	return null;
             }
             s_logger.info("Config file found at " + file.getAbsolutePath() + ".  Configuring " + _serverName);
             XmlHandler handler = new XmlHandler(_serverName);
             saxParser.parse(file, handler);
 
-            _daoMap = new LinkedHashMap<String, ComponentInfo<GenericDao<?, ? extends Serializable>>>();
-            _managerMap = new LinkedHashMap<String, ComponentInfo<Manager>>();
-            _adapterMap = new HashMap<String, Adapters<? extends Adapter>>();
+
             if (handler.parent != null) {
                 String[] tokens = handler.parent.split(":");
                 String parentFile = filename;
@@ -173,6 +174,10 @@ public class ComponentLocator implements ComponentLocatorMBean {
 
     protected void parse(String filename) {
         Pair<XmlHandler, ComponentLibrary> parseResults = parse2(filename);
+        if (parseResults == null) {
+        	s_logger.info("Skipping configuration using components.xml");
+        	return;
+        }
         XmlHandler handler = parseResults.first();
         ComponentLibrary library = parseResults.second();
         
