@@ -47,7 +47,7 @@ public class StartConsoleProxyCommand extends AbstractStartCommand {
     	this.networkRateMbps = networkRateMbps;
     	this.networkRateMulticastMbps = networkRateMulticastMbps;
     	this.proxyCmdPort = proxyCmdPort;
-    	this.proxy = proxy;
+    	this.proxy = new ConsoleProxyVO(proxy);
     	this.vncPort = vncPort;
     	this.urlPort = urlPort;
     	this.mgmt_host = mgmtHost;

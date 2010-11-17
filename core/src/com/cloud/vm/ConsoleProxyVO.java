@@ -102,6 +102,13 @@ public class ConsoleProxyVO extends VMInstanceVO implements ConsoleProxy {
 	    this.activeSession = activeSession;
 	}
 	
+	public ConsoleProxyVO(ConsoleProxyVO that) {
+	    this(that.id, that.serviceOfferingId, that.instanceName, that.guestMacAddress, that.guestIpAddress, that.guestNetmask, that.privateMacAddress, that.privateIpAddress, that.privateNetmask, that.templateId, that.guestOSId, that.publicMacAddress, that.publicIpAddress, that.publicNetmask, that.vlanDbId, that.vlanId, that.podId, that.dataCenterId, that.domainId, that.accountId, that.gateway, that.hostId, that.dns1, that.dns2, that.domain, that.ramSize, that.activeSession);
+	    this.vncPassword = that.vncPassword;
+	    this.sslEnabled = that.sslEnabled;
+	    this.sessionDetails = that.sessionDetails;
+	}
+	
     public ConsoleProxyVO(
     		long id,
     		long serviceOfferingId,
