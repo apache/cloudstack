@@ -691,8 +691,8 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         ServiceOfferingVO currentServiceOffering = _serviceOfferingDao.findById(router.getServiceOfferingId());
 
         if (!currentServiceOffering.getGuestIpType().equals(newServiceOffering.getGuestIpType())) {
-            throw new InvalidParameterValueException("Can't upgrade, due to new newtowrk type: " + newServiceOffering.getGuestIpType() + " is different from " +
-                    "curruent network type: " + currentServiceOffering.getGuestIpType());
+            throw new InvalidParameterValueException("Can't upgrade router, due to the new network type: " + newServiceOffering.getGuestIpType() + " being different from " +
+                    "current network type: " + currentServiceOffering.getGuestIpType());
         }
         if (currentServiceOffering.getUseLocalStorage() != newServiceOffering.getUseLocalStorage()) {
             throw new InvalidParameterValueException("Can't upgrade, due to new local storage status : " + newServiceOffering.getGuestIpType() + " is different from " +
