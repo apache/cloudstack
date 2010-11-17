@@ -23,7 +23,8 @@ import java.lang.annotation.Annotation;
 import com.cloud.utils.component.ComponentLocator;
 
 public class ComponentTestCase extends Log4jEnabledTestCase {
-	protected void setUp() {
+	@Override
+    protected void setUp() {
 		super.setUp();
 		
 		Annotation[] annotations = getClass().getAnnotations();
@@ -32,8 +33,7 @@ public class ComponentTestCase extends Log4jEnabledTestCase {
 				if(annotation instanceof ComponentSetup) {
 					ComponentLocator.getLocator(
 						((ComponentSetup)annotation).managerName(),
-						((ComponentSetup)annotation).setupXml(),
-						((ComponentSetup)annotation).log4j()
+						((ComponentSetup)annotation).setupXml()
 					);
 					
 					break;

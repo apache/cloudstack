@@ -76,9 +76,9 @@ import com.cloud.utils.mgmt.ManagementBean;
 public class ComponentLocator implements ComponentLocatorMBean {
     protected static final Logger                      s_logger     = Logger.getLogger(ComponentLocator.class);
     
+    protected static final ThreadLocal<ComponentLocator> s_tl = new ThreadLocal<ComponentLocator>();
     protected static ConcurrentHashMap<Class<?>, Singleton> s_singletons = new ConcurrentHashMap<Class<?>, Singleton>(111);
     static HashMap<String, ComponentLocator> s_locators = new HashMap<String, ComponentLocator>();
-    private static boolean                             s_doOnce = false;
     protected static final Callback[] s_callbacks = new Callback[] { NoOp.INSTANCE, new DatabaseCallback() };
     protected static final CallbackFilter s_callbackFilter = new DatabaseCallbackFilter();
     protected static final HashMap<Class<?>, InjectInfo> s_factories = new HashMap<Class<?>, InjectInfo>();
@@ -89,6 +89,21 @@ public class ComponentLocator implements ComponentLocatorMBean {
     protected ComponentLocator                                          _parentLocator;
     protected String                                                    _serverName;
     protected Object                                                    _component;
+    
+    static {
+        File file = PropertiesUtil.findConfigFile("log4j-cloud.xml");
+        if (file != null) {
+            s_logger.info("log4j configuration found at " + file.getAbsolutePath());
+            DOMConfigurator.configureAndWatch(file.getAbsolutePath());
+        } else {
+            file = PropertiesUtil.findConfigFile("log4j-cloud.properties");
+            if (file != null) {
+                s_logger.info("log4j configuration found at " + file.getAbsolutePath());
+                PropertyConfigurator.configureAndWatch(file.getAbsolutePath());
+            }
+        }
+        Runtime.getRuntime().addShutdownHook(new CleanupThread());
+    }
 
     public ComponentLocator(String server) {
         _parentLocator = null;
@@ -104,20 +119,13 @@ public class ComponentLocator implements ComponentLocatorMBean {
         return getLocatorName();
     }
 
-
-    protected void parse(String filename, String log4jFile) {
+    protected Pair<XmlHandler, ComponentLibrary> parse2(String filename) {
         try {
             SAXParserFactory spfactory = SAXParserFactory.newInstance();
             SAXParser saxParser = spfactory.newSAXParser();
             File file = PropertiesUtil.findConfigFile(filename);
             if (file == null) {
-                s_logger.warn("Unable to find the config file automatically.  Now checking properties files.");
-                _parentLocator = null;
-                _managerMap = new HashMap<String, ComponentInfo<Manager>>();
-                _adapterMap = new HashMap<String, Adapters<? extends Adapter>>();
-                _daoMap = new LinkedHashMap<String, ComponentInfo<GenericDao<?, ?>>>();
-                _parentLocator = null;
-                return;
+                throw new CloudRuntimeException("Unable to find " + filename);
             }
             s_logger.info("Config file found at " + file.getAbsolutePath() + ".  Configuring " + _serverName);
             XmlHandler handler = new XmlHandler(_serverName);
@@ -127,14 +135,18 @@ public class ComponentLocator implements ComponentLocatorMBean {
             _managerMap = new LinkedHashMap<String, ComponentInfo<Manager>>();
             _adapterMap = new HashMap<String, Adapters<? extends Adapter>>();
             if (handler.parent != null) {
-                synchronized(s_locators) {
-                    _parentLocator = s_locators.get(handler.parent);
-                    if (_parentLocator == null) {
-                        _parentLocator = new ComponentLocator(handler.parent);
-                        s_locators.put(handler.parent, _parentLocator);
-                        _parentLocator.parse(filename, log4jFile);
-                    }
+                String[] tokens = handler.parent.split(":");
+                String parentFile = filename;
+                String parentName = handler.parent;
+                if (tokens.length > 1) {
+                    parentFile = tokens[0];
+                    parentName = tokens[1];
                 }
+                _parentLocator = new ComponentLocator(parentName);
+                _parentLocator.parse2(parentFile);
+                _daoMap.putAll(_parentLocator._daoMap);
+                _managerMap.putAll(_parentLocator._managerMap);
+                _adapterMap.putAll(_parentLocator._adapterMap);
             }
 
             ComponentLibrary library = null;
@@ -148,6 +160,33 @@ public class ComponentLocator implements ComponentLocatorMBean {
             _daoMap.putAll(handler.daos);
             _managerMap.putAll(handler.managers);
             
+            return new Pair<XmlHandler, ComponentLibrary>(handler, library);
+            
+        } catch (ParserConfigurationException e) {
+            s_logger.error("Unable to load " + _serverName + " due to errors while parsing " + filename, e);
+            System.exit(1);
+        } catch (SAXException e) {
+            s_logger.error("Unable to load " + _serverName + " due to errors while parsing " + filename, e);
+            System.exit(1);
+        } catch (IOException e) {
+            s_logger.error("Unable to load " + _serverName + " due to errors while reading from " + filename, e);
+            System.exit(1);
+        } catch (CloudRuntimeException e) {
+            s_logger.error("Unable to load configuration for " + _serverName + " from " + filename, e);
+            System.exit(1);
+        } catch (Exception e) {
+            s_logger.error("Unable to load configuration for " + _serverName + " from " + filename, e);
+            System.exit(1);
+        }
+        return null;
+    }
+
+    protected void parse(String filename) {
+        Pair<XmlHandler, ComponentLibrary> parseResults = parse2(filename);
+        XmlHandler handler = parseResults.first();
+        ComponentLibrary library = parseResults.second();
+        
+        try {
             startDaos();    // daos should not be using managers and adapters.
             if (library != null) {
                 instantiateAdapters(library.getAdapters());
@@ -159,17 +198,6 @@ public class ComponentLocator implements ComponentLocatorMBean {
             configureAdapters();
             startManagers();
             startAdapters();
-            
-
-        } catch (ParserConfigurationException e) {
-            s_logger.error("Unable to load " + _serverName + " due to errors while parsing " + filename, e);
-            System.exit(1);
-        } catch (SAXException e) {
-            s_logger.error("Unable to load " + _serverName + " due to errors while parsing " + filename, e);
-            System.exit(1);
-        } catch (IOException e) {
-            s_logger.error("Unable to load " + _serverName + " due to errors while reading from " + filename, e);
-            System.exit(1);
         } catch (CloudRuntimeException e) {
             s_logger.error("Unable to load configuration for " + _serverName + " from " + filename, e);
             System.exit(1);
@@ -651,22 +679,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
         return new Adapters<Adapter>(key, new ArrayList<ComponentInfo<Adapter>>());
     }
 
-    protected static ComponentLocator getLocatorInternal(String server, boolean setInThreadLocal, String configFileName, String log4jFile) {
-        // init log4j based on the passed in configuration
-        if (s_doOnce == false) {
-            File file = PropertiesUtil.findConfigFile(log4jFile + ".xml");
-            if (file != null) {
-                DOMConfigurator.configureAndWatch(file.getAbsolutePath());
-            } else {
-                file = PropertiesUtil.findConfigFile(log4jFile + ".properties");
-                if (file != null) {
-                    PropertyConfigurator.configureAndWatch(file.getAbsolutePath());
-                }
-            }
-            Runtime.getRuntime().addShutdownHook(new CleanupThread());
-            s_doOnce = true;
-        }
-
+    protected static ComponentLocator getLocatorInternal(String server, boolean setInThreadLocal, String configFileName) {
         ComponentLocator locator;
         synchronized (s_locators) {
             locator = s_locators.get(server);
@@ -676,7 +689,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
                 if (setInThreadLocal) {
                     s_tl.set(locator);
                 }
-                locator.parse(configFileName, log4jFile);
+                locator.parse(configFileName);
             } else {
                 if (setInThreadLocal) {
                     s_tl.set(locator);
@@ -687,18 +700,20 @@ public class ComponentLocator implements ComponentLocatorMBean {
         return locator;
     }
 
-    protected static final ThreadLocal<ComponentLocator> s_tl = new ThreadLocal<ComponentLocator>();
-
-    public static ComponentLocator getLocator(String server, String configFileName, String log4jFile) {
-        return getLocatorInternal(server, true, configFileName, log4jFile);
+    public static ComponentLocator getLocator(String server, String configFileName) {
+        return getLocatorInternal(server, true, configFileName);
     }
 
     public static ComponentLocator getLocator(String server) {
-    	String configfile = "components-premium.xml";
-    	if (PropertiesUtil.findConfigFile(configfile) == null){
-    		configfile = "components.xml";
-    	}
-        return getLocatorInternal(server, true, configfile, "log4j-cloud");
+        Map<String, String> env = System.getenv();
+        String configFile = env.get("cloud-stack-components-specification");
+        if (configFile == null || PropertiesUtil.findConfigFile(configFile) == null) {
+        	configFile = "components-premium.xml";
+        	if (PropertiesUtil.findConfigFile(configFile) == null){
+        		configFile = "components.xml";
+        	}
+        }
+        return getLocatorInternal(server, true, configFile);
     }
 
     public static ComponentLocator getCurrentLocator() {

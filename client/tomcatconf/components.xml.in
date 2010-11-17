@@ -24,9 +24,72 @@
 -->
 <components.xml>
     <management-server class="com.cloud.server.ManagementServerImpl" library="com.cloud.configuration.DefaultComponentLibrary">
+        <adapters key="com.cloud.agent.manager.allocator.HostAllocator">
+            <adapter name="FirstFitRouting" class="com.cloud.agent.manager.allocator.impl.RecreateHostAllocator"/>
+            <!--adapter name="FirstFit" class="com.cloud.agent.manager.allocator.impl.FirstFitAllocator"/-->
+        </adapters>
+        <adapters key="com.cloud.storage.allocator.StoragePoolAllocator">
+            <adapter name="LocalStorage" class="com.cloud.storage.allocator.LocalStoragePoolAllocator"/>
+            <adapter name="Storage" class="com.cloud.storage.allocator.FirstFitStoragePoolAllocator"/>
+            <adapter name="GarbageCollecting" class="com.cloud.storage.allocator.GarbageCollectingStoragePoolAllocator"/>
+        </adapters>
+        <adapters key="com.cloud.agent.manager.allocator.PodAllocator">
+            <adapter name="User First" class="com.cloud.agent.manager.allocator.impl.UserConcentratedAllocator"/>
+        </adapters>
+        <adapters key="com.cloud.consoleproxy.ConsoleProxyAllocator">
+            <adapter name="Balance" class="com.cloud.consoleproxy.ConsoleProxyBalanceAllocator"/>
+        </adapters>
+        <adapters key="com.cloud.network.configuration.NetworkGuru">
+            <adapter name="GuestNetworkGuru" class="com.cloud.network.configuration.GuestNetworkGuru"/>
+            <adapter name="PublicNetworkGuru" class="com.cloud.network.configuration.PublicNetworkGuru"/>
+            <adapter name="PodBasedNetworkGuru" class="com.cloud.network.configuration.PodBasedNetworkGuru"/>
+            <adapter name="ControlNetworkGuru" class="com.cloud.network.configuration.ControlNetworkGuru"/>
+        </adapters>
+        <adapters key="com.cloud.storage.secondary.SecondaryStorageVmAllocator">
+            <adapter name="Balance" class="com.cloud.storage.secondary.SecondaryStorageVmDefaultAllocator"/>
+        </adapters>
+        <adapters key="com.cloud.network.IpAddrAllocator">
+            <adapter name="Basic" class="com.cloud.network.ExteralIpAddressAllocator"/>
+        </adapters>
+        <adapters key="com.cloud.server.auth.UserAuthenticator">
+            <adapter name="MD5" class="com.cloud.server.auth.MD5UserAuthenticator"/>
+        </adapters>
+        <adapters key="com.cloud.ha.Investigator">
+            <adapter name="SimpleInvestigator" class="com.cloud.ha.CheckOnAgentInvestigator"/>
+            <adapter name="PingInvestigator" class="com.cloud.ha.InvestigatorImpl"/>
+        </adapters>
+        <adapters key="com.cloud.ha.FenceBuilder">
+            <adapter name="StorageFenceBuilder" class="com.cloud.ha.StorageFence"/>
+        </adapters>
+        <adapters key="com.cloud.hypervisor.HypervisorGuru">
+            <adapter name="XenServerGuru" class="com.cloud.hypervisor.XenServerGuru"/>
+            <adapter name="KVMGuru" class="com.cloud.hypervisor.KVMGuru"/>
+        </adapters>
+        <adapters key="com.cloud.resource.Discoverer">
+            <adapter name="XCP Agent" class="com.cloud.hypervisor.xen.discoverer.XcpServerDiscoverer"/>
+            <adapter name="SecondaryStorage" class="com.cloud.storage.secondary.SecondaryStorageDiscoverer"/>
+            <adapter name="KVM Agent" class="com.cloud.hypervisor.kvm.discoverer.KvmServerDiscoverer"/>
+        </adapters>
+        <adapters key="com.cloud.deploy.DeploymentPlanner">
+            <adapter name="Simple" class="com.cloud.deploy.SimplePlanner"/>
+        </adapters>
+        <adapters key="com.cloud.network.element.NetworkElement">
+            <adapter name="DomainRouter" class="com.cloud.network.element.DomainRouterElement"/>
+        </adapters>
+        <adapters key="com.cloud.acl.SecurityChecker">
+            <adapter name="DomainChecker" class="com.cloud.acl.DomainChecker"/>
+        </adapters>
     </management-server>
 
-    <configuration-server class="com.cloud.server.ConfigurationServerImpl" extends="management-server">
+    <configuration-server class="com.cloud.server.ConfigurationServerImpl">
+        <dao name="Configuration configuration server" class="com.cloud.configuration.dao.ConfigurationDaoImpl" singleton="false">
+             <param name="premium">false</param>
+        </dao>
+        <dao name="Snapshot policy defaults" class="com.cloud.storage.dao.SnapshotPolicyDaoImpl" singleton="false"/>
+        <dao name="DiskOffering configuration server" class="com.cloud.storage.dao.DiskOfferingDaoImpl" singleton="false"/>         
+        <dao name="ServiceOffering configuration server" class="com.cloud.service.dao.ServiceOfferingDaoImpl" singleton="false"/>
+        <dao name="host zone configuration server" class="com.cloud.dc.dao.DataCenterDaoImpl" singleton="false"/>
+        <dao name="host pod configuration server" class="com.cloud.dc.dao.HostPodDaoImpl" singleton="false"/>
+        <dao name="DomainDao" class="com.cloud.domain.dao.DomainDaoImpl" singleton="false"/>
     </configuration-server>
-    
 </components.xml>
