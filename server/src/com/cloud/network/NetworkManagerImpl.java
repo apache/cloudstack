@@ -1078,7 +1078,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                         if (s_logger.isDebugEnabled()) {
                             s_logger.debug("skipping the creating of firewall rule " + ipAddress + ":" + publicPort + " to " + userVM.getGuestIpAddress() + ":" + privatePort + "; rule already exists.");
                         }
-                        return null; // already mapped
+                        // already mapped
+                        throw new NetworkRuleConflictException("An existing port forwarding service rule for " + ipAddress + ":" + publicPort
+                                + " already exists, found while trying to create mapping to " + userVM.getGuestIpAddress() + ":" + privatePort + ".");
                     }
                 }
             } else {
