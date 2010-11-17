@@ -20,6 +20,8 @@ package com.cloud.dc;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -68,16 +70,20 @@ public class DataCenterVO implements DataCenter {
     @Column(name="domain")
     private String domain = null;
     
+    @Column(name="networktype")
+    @Enumerated(EnumType.STRING) 
+    DataCenterNetworkType networkType;
+    
     @Column(name="mac_address", updatable = false, nullable=false)
     @TableGenerator(name="mac_address_sq", table="data_center", pkColumnName="id", valueColumnName="mac_address", allocationSize=1)
     private long macAddress = 1;
     
-    public DataCenterVO(long id, String name, String description, String dns1, String dns2, String dns3, String dns4, String vnet, String guestCidr, String domain, Long domainId) {
-        this(name, description, dns1, dns2, dns3, dns4, vnet, guestCidr, domain, domainId);
+    public DataCenterVO(long id, String name, String description, String dns1, String dns2, String dns3, String dns4, String vnet, String guestCidr, String domain, Long domainId, DataCenterNetworkType zoneType) {
+        this(name, description, dns1, dns2, dns3, dns4, vnet, guestCidr, domain, domainId, zoneType);
         this.id = id;
 	}
 
-    public DataCenterVO(String name, String description, String dns1, String dns2, String dns3, String dns4, String vnet, String guestCidr, String domain, Long domainId) {
+    public DataCenterVO(String name, String description, String dns1, String dns2, String dns3, String dns4, String vnet, String guestCidr, String domain, Long domainId, DataCenterNetworkType zoneType) {
         this.name = name;
         this.description = description;
         this.dns1 = dns1;
@@ -88,6 +94,7 @@ public class DataCenterVO implements DataCenter {
         this.guestNetworkCidr = guestCidr;
         this.domain = domain;
         this.domainId = domainId;
+        this.networkType = zoneType;
     }
     
     public Long getDomainId() {
@@ -182,6 +189,14 @@ public class DataCenterVO implements DataCenter {
 
     public void setDomain(String domain) {
         this.domain = domain;
+    }
+    
+    public void setNetworkType(DataCenterNetworkType zoneNetworkType) {
+        this.networkType = zoneNetworkType;
+    }
+
+    public DataCenterNetworkType getNetworkType() {
+        return networkType;
     }
     
 }

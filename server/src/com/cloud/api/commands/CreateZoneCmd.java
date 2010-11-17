@@ -57,9 +57,8 @@ public class CreateZoneCmd extends BaseCmd {
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="the name of the Zone")
     private String zoneName;
-    
-    //FIXME - this parameter is called "vnet" in updateZone. Have to figure out which one is right
-    @Parameter(name=ApiConstants.VLAN, type=CommandType.STRING, description="the VNET for the Zone")
+
+    @Parameter(name=ApiConstants.VLAN, type=CommandType.STRING, description="the VLAN for the Zone")
     private String vlan;
     
     @Parameter(name=ApiConstants.DOMAIN, type=CommandType.STRING, description="Domain name for the Vms in the zone")
@@ -67,6 +66,9 @@ public class CreateZoneCmd extends BaseCmd {
 
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the ID of the containing domain, null for public zones")
     private Long domainId; 
+    
+    @Parameter(name=ApiConstants.NETWORK_TYPE, type=CommandType.STRING, required=true, description="network type of the zone, can be Basic or Advanced")
+    private String networkType; 
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -106,6 +108,10 @@ public class CreateZoneCmd extends BaseCmd {
 
     public Long getDomainId(){
     	return domainId;
+    }
+    
+    public String getNetworkType(){
+        return networkType;
     }
     
     /////////////////////////////////////////////////////

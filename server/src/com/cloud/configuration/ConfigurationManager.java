@@ -20,6 +20,7 @@ package com.cloud.configuration;
 import java.util.List;
 
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenter.DataCenterNetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.exception.ConcurrentOperationException;
@@ -97,11 +98,12 @@ public interface ConfigurationManager extends Manager {
      * @param internalDns2
      * @param vnetRange
      * @param guestCidr
+     * @param zoneType
      * @return
      * @throws 
      * @throws 
      */
-    DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String vnetRange, String guestCidr, String domain, Long domainId);
+    DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String vnetRange, String guestCidr, String domain, Long domainId, DataCenterNetworkType zoneType);
     
 	/**
 	 * Associates an ip address list to an account.  The list of ip addresses are all addresses associated with the given vlan id.

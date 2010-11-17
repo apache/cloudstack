@@ -31,52 +31,8 @@ public class ResponseObjectTypeAdapter implements JsonSerializer<ResponseObject>
         	obj.addProperty("errortext", ((ExceptionResponse)responseObj).getErrorText());
         	return obj;
         } else {
-	        // Get the declared fields from the response obj, create a new JSON Object, add props to it.
-	        // Once that object is done, create a new JSON Object with the response name and the JSON Obj as the name/value pair.  Return that as the serialized element.
-	        Field[] fields = responseObj.getClass().getDeclaredFields();
-	        for (Field field : fields) {
-	            if ((field.getModifiers() & Modifier.TRANSIENT) != 0) {
-	                continue;  // skip transient fields
-	            }
-	
-	            SerializedName serializedName = field.getAnnotation(SerializedName.class);
-	            if (serializedName == null) {
-	                continue; // skip fields w/o serialized name
-	            }
-	
-	            String propName = field.getName();                
-	            Method method = getGetMethod(responseObj, propName);
-	            if (method != null) {
-	                try {
-	                    Object fieldValue = method.invoke(responseObj);
-	                    if (fieldValue != null) {
-	                        if (fieldValue instanceof ResponseObject) {
-	                            ResponseObject subObj = (ResponseObject)fieldValue;
-	                            obj.add(serializedName.value(), serialize(subObj, subObj.getClass(), ctx));
-	                        } else {
-	                        	if (fieldValue instanceof Number) {
-	                        		obj.addProperty(serializedName.value(), (Number)fieldValue);
-	                        	} else if (fieldValue instanceof Character) {
-	                        		obj.addProperty(serializedName.value(), (Character)fieldValue);
-	                        	} else if (fieldValue instanceof Boolean) {
-	                        		obj.addProperty(serializedName.value(), (Boolean)fieldValue);
-	                        	} else {
-	                        		obj.addProperty(serializedName.value(), fieldValue.toString());
-	                        	}
-	                        }
-	                    }
-	                } catch (IllegalArgumentException e) {
-	                    s_logger.error("Illegal argument exception when calling ResponseObject " + responseObj.getClass().getName() + " get method for property: " + propName);
-	                } catch (IllegalAccessException e) {
-	                    s_logger.error("Illegal access exception when calling ResponseObject " + responseObj.getClass().getName() + " get method for property: " + propName);
-	                } catch (InvocationTargetException e) {
-	                    s_logger.error("Invocation target exception when calling ResponseObject " + responseObj.getClass().getName() + " get method for property: " + propName);
-	                }
-	            }
-	        }
-	        JsonObject response = new JsonObject();
-	        response.add(responseObj.getObjectName(), obj);
-	        return response;
+            obj.add(responseObj.getObjectName(), ApiGsonHelper.getBuilder().create().toJsonTree(responseObj));
+	        return obj;
         }
     }
 

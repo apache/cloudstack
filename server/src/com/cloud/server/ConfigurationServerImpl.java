@@ -45,6 +45,7 @@ import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
+import com.cloud.dc.DataCenter.DataCenterNetworkType;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.domain.DomainVO;
@@ -194,7 +195,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 				if (dns == null) {
 					dns = "4.2.2.2";
 				}
-				DataCenterVO zone = createZone(User.UID_SYSTEM, "Default", dns, null, dns, null, "1000-2000","10.1.1.0/24", null, null);
+				DataCenterVO zone = createZone(User.UID_SYSTEM, "Default", dns, null, dns, null, null,"10.1.1.0/24", null, null, DataCenterNetworkType.Basic);
 
 				// Create a default pod
 				String networkType = _configDao.getValue("network.type");
@@ -531,7 +532,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         }
 	}
 
-    private DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String vnetRange, String guestCidr, String domain, Long domainId) throws InvalidParameterValueException, InternalErrorException {
+    private DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String vnetRange, String guestCidr, String domain, Long domainId, DataCenterNetworkType zoneType) throws InvalidParameterValueException, InternalErrorException {
         int vnetStart, vnetEnd;
         if (vnetRange != null) {
             String[] tokens = vnetRange.split("-");
@@ -569,7 +570,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         		throw new InvalidParameterValueException("Please specify a valid domain id");
         }
         // Create the new zone in the database
-        DataCenterVO zone = new DataCenterVO(zoneName, null, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr, domain, domainId);
+        DataCenterVO zone = new DataCenterVO(zoneName, null, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr, domain, domainId, zoneType);
         zone = _zoneDao.persist(zone);
 
         // Add vnet entries for the new zone

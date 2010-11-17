@@ -101,7 +101,6 @@ import com.cloud.vm.SystemVm;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VmStats;
-import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type;
 
 public class ApiResponseHelper {
     
@@ -810,6 +809,7 @@ public class ApiResponseHelper {
        
        zoneResponse.setDomain(dataCenter.getDomain());
        zoneResponse.setDomainId(dataCenter.getDomainId());
+       zoneResponse.setType(dataCenter.getNetworkType().toString());
        zoneResponse.setObjectName("zone");
        return zoneResponse;
    }

@@ -63,6 +63,9 @@ public class ZoneResponse extends BaseResponse {
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the ID of the containing domain, null for public zones")
     private Long domainId;
     
+    @SerializedName(ApiConstants.NETWORK_TYPE) @Param(description="the network type of the zone; can be Basic or Advanced")
+    private String networkType;
+
     public Long getId() {
         return id;
     }
@@ -166,5 +169,13 @@ public class ZoneResponse extends BaseResponse {
 	public void setDomainId(Long domainId) {
 		this.domainId = domainId;
 	}
+	
+    public String getNetworkType() {
+        return networkType;
+    }
+
+    public void setType(String networkType) {
+        this.networkType = networkType;
+    }
 
 }

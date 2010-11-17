@@ -52,6 +52,7 @@ import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenter.DataCenterNetworkType;
 import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
@@ -858,7 +859,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     	String dns2 = cmd.getDns2();
     	String internalDns1 = cmd.getInternalDns1();
     	String internalDns2 = cmd.getInternalDns2();
-    	String vnetRange = cmd.getVnet();
+    	String vnetRange = cmd.getVlan();
     	String guestCidr = cmd.getGuestCidrAddress();
 //    	String domain = cmd.getDomain();
     	Long userId = UserContext.current().getUserId();
@@ -992,12 +993,11 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     }
 
     @Override @DB
-    public DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String vnetRange, String guestCidr, String domain, Long domainId)  {
-        int vnetStart = -1;
-        int vnetEnd = -1;
+    public DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String vnetRange, String guestCidr, String domain, Long domainId, DataCenterNetworkType zoneType)  {
+        int vnetStart = 0;
+        int vnetEnd = 0;
         if (vnetRange != null) {
             String[] tokens = vnetRange.split("-");
-            
             try {
             	vnetStart = Integer.parseInt(tokens[0]);
             	if (tokens.length == 1) {
@@ -1008,14 +1008,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             } catch (NumberFormatException e) {
                 throw new InvalidParameterValueException("Please specify valid integers for the vlan range.");
             }
-        } else {
-            String networkType = _configDao.getValue("network.type");
-            if (networkType != null && networkType.equals("vnet")) {
-                vnetStart = 1000;
-                vnetEnd = 2000;
-            } 
-        }
-
+        } 
+        
         //checking the following params outside checkzoneparams method as we do not use these params for updatezone
         //hence the method below is generic to check for common params
         if ((guestCidr != null) && !NetUtils.isValidCIDR(guestCidr)) {
@@ -1025,15 +1019,19 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         checkZoneParameters(zoneName, dns1, dns2, internalDns1, internalDns2, true, domainId);
 
         // Create the new zone in the database
-        DataCenterVO zone = new DataCenterVO(zoneName, null, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr, domain, domainId);
+        DataCenterVO zone = new DataCenterVO(zoneName, null, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr, domain, domainId, zoneType);
         zone = _zoneDao.persist(zone);
 
-        // Add vnet entries for the new zone
-        if (vnetStart != -1 && vnetEnd != -1) {
+        // Add vnet entries for the new zone if zone type is Advanced
+        if (vnetRange != null) {
             _zoneDao.addVnet(zone.getId(), vnetStart, vnetEnd);
         }
-        saveConfigurationEvent(userId, null, EventTypes.EVENT_ZONE_CREATE, "Successfully created new zone with name: " + zoneName + ".", "dcId=" + zone.getId(), "dns1=" + dns1, "dns2=" + dns2, "internalDns1=" + internalDns1, "internalDns2=" + internalDns2, "vnetRange=" + vnetRange, "guestCidr=" + guestCidr);
-
+        
+        if (vnetRange != null) {
+            saveConfigurationEvent(userId, null, EventTypes.EVENT_ZONE_CREATE, "Successfully created new zone with name: " + zoneName + ".", "dcId=" + zone.getId(), "dns1=" + dns1, "dns2=" + dns2, "internalDns1=" + internalDns1, "internalDns2=" + internalDns2, "vnetRange=" + vnetRange, "guestCidr=" + guestCidr);
+        } else {
+            saveConfigurationEvent(userId, null, EventTypes.EVENT_ZONE_CREATE, "Successfully created new zone with name: " + zoneName + ".", "dcId=" + zone.getId(), "dns1=" + dns1, "dns2=" + dns2, "internalDns1=" + internalDns1, "internalDns2=" + internalDns2, "guestCidr=" + guestCidr);
+        }
         return zone;
     }
 
@@ -1050,6 +1048,17 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String guestCidr = cmd.getGuestCidrAddress();
         String domain = cmd.getDomain();//we are not passing domain right now, always null
         Long domainId = cmd.getDomainId();
+        String type = cmd.getNetworkType();
+        Boolean isBasic = false;
+
+        
+        if (!(type.equalsIgnoreCase(DataCenterNetworkType.Basic.toString())) && !(type.equalsIgnoreCase(DataCenterNetworkType.Advanced.toString()))) {
+            throw new InvalidParameterValueException("Invalid zone type; only Advanced and Basic values are supported");
+        } else if (type.endsWith(DataCenterNetworkType.Basic.toString())) {
+            isBasic = true;
+        }
+        
+        DataCenterNetworkType zoneType = isBasic ? DataCenterNetworkType.Basic : DataCenterNetworkType.Advanced;
         DomainVO domainVO = null;
         
         if (userId == null) {
@@ -1059,7 +1068,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if(domainId != null){
         	domainVO = _domainDao.findById(domainId); 
         }
-        return createZone(userId, zoneName, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr, domainVO != null ? domainVO.getName() : null, domainId);
+        
+        //Verify zone type 
+        if (zoneType == DataCenterNetworkType.Basic && vnetRange != null) {
+            vnetRange = null;
+        }
+        return createZone(userId, zoneName, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr, domainVO != null ? domainVO.getName() : null, domainId, zoneType);
     }
 
     @Override
@@ -1378,9 +1392,26 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
     @Override
     public Vlan createVlanAndPublicIpRange(CreateVlanIpRangeCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException {
+        Long zoneId = cmd.getZoneId();
+        Long podId = cmd.getPodId();
+        String startIP = cmd.getStartIp();
+        String endIP = cmd.getEndIp();
+        String vlanGateway = cmd.getGateway();
+        String vlanNetmask = cmd.getNetmask();
         Long userId = UserContext.current().getUserId();
+        
         if (userId == null) {
             userId = Long.valueOf(User.UID_SYSTEM);
+        }
+        
+     // Check that the pod ID is valid
+        if (podId != null && ((_podDao.findById(podId)) == null)) {
+            throw new InvalidParameterValueException("Please specify a valid pod.");
+        }
+
+        
+        if (podId != null && _podDao.findById(podId).getDataCenterId() != zoneId) {
+            throw new InvalidParameterValueException("Pod id=" + podId + " doesn't belong to zone id=" + zoneId);
         }
 
         // If forVirtualNetworks isn't specified, default it to true
@@ -1393,6 +1424,23 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String vlanId = cmd.getVlan();
         if (vlanId == null) {
             vlanId = Vlan.UNTAGGED;
+        }
+        
+        DataCenterVO zone;
+        if (zoneId == null || ((zone = _zoneDao.findById(zoneId)) == null)) {
+            throw new InvalidParameterValueException("Please specify a valid zone.");
+        }
+        
+        //Allow adding untagged direct vlan only for Basic zone
+        if (zone.getNetworkType() == DataCenterNetworkType.Advanced && vlanId.equals(Vlan.UNTAGGED) && !forVirtualNetwork) {
+            throw new InvalidParameterValueException("Direct untagged network is not supported for the zone " + zone.getId() + " of type " + zone.getNetworkType());
+        } else if (zone.getNetworkType() == DataCenterNetworkType.Basic && !(vlanId.equals(Vlan.UNTAGGED) && !forVirtualNetwork)) {
+            throw new InvalidParameterValueException("Only direct untagged network is supported in the zone " + zone.getId() + " of type " + zone.getNetworkType());
+        }
+        
+        //don't allow to create a virtual vlan when zone's vnet is NULL
+        if (zone.getVnet() == null && forVirtualNetwork) {
+            throw new InvalidParameterValueException("Can't add virtual network to the zone id=" + zone.getId() + " as zone doesn't have guest vlan configured");
         }
 
         // If an account name and domain ID are specified, look up the account
@@ -1407,12 +1455,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }       
         
         VlanType vlanType = forVirtualNetwork ? VlanType.VirtualNetwork : VlanType.DirectAttached;
-        Long zoneId = cmd.getZoneId();
-        Long podId = cmd.getPodId();
-        String startIP = cmd.getStartIp();
-        String endIP = cmd.getEndIp();
-        String vlanGateway = cmd.getGateway();
-        String vlanNetmask = cmd.getNetmask();
+        
 
         //check for hypervisor type to be xenserver
 		String hypervisorType = _configDao.getValue("hypervisor.type");
@@ -1439,10 +1482,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                         +",whilst you are trying to associate it with vlan type "+vlanType.toString());
         }
 
-    	DataCenterVO zone;
-    	if (zoneId == null || ((zone = _zoneDao.findById(zoneId)) == null)) {
-			throw new InvalidParameterValueException("Please specify a valid zone.");
-		}
+
     	
 //    	//check if the account's domain is a child of the zone's domain, for adding vlan ip ranges
 //		if(domainId != null && !_domainDao.isChildDomain(zone.getDomainId(), domainId)){
@@ -1491,11 +1531,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         			throw new InvalidParameterValueException("Direct Attached IP ranges for a pod must be untagged.");
         		}
 
-        		// Check that the pod ID is valid
-        		if (podId != null && ((_podDao.findById(podId)) == null)) {
-        			throw new InvalidParameterValueException("Please specify a valid pod.");
-        		}
-
+        		
         		// Make sure there aren't any account VLANs in this zone
         		List<AccountVlanMapVO> accountVlanMaps = _accountVlanMapDao.listAllIncludingRemoved();
         		for (AccountVlanMapVO accountVlanMap : accountVlanMaps) {

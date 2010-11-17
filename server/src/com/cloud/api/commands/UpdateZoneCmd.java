@@ -61,8 +61,8 @@ public class UpdateZoneCmd extends BaseCmd {
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the Zone")
     private String zoneName;
 
-    @Parameter(name=ApiConstants.VNET, type=CommandType.STRING, description="the VNET for the Zone")
-    private String vnet;
+    @Parameter(name=ApiConstants.VLAN, type=CommandType.STRING, description="the VLAN for the Zone")
+    private String vlan;
     
 //    @Parameter(name=ApiConstants.DOMAIN, type=CommandType.STRING, description="Domain name for the Vms in the zone")
 //    private String domain;
@@ -102,8 +102,8 @@ public class UpdateZoneCmd extends BaseCmd {
         return zoneName;
     }
 
-    public String getVnet() {
-        return vnet;
+    public String getVlan() {
+        return vlan;
     }
     
 //    public String getDomain() {

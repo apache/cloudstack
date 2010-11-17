@@ -370,6 +370,7 @@ CREATE TABLE  `cloud`.`data_center` (
   `guest_network_cidr` varchar(18),
   `domain` varchar(100) COMMENT 'Network domain name of the Vms of the zone',
   `domain_id` bigint unsigned COMMENT 'domain id for the parent domain to this zone (null signifies public zone)',
+  `networktype` varchar(255) NOT NULL COMMENT 'Network type of the zone',
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
