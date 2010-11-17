@@ -34,7 +34,9 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils;
 
 @Local(value = { FirewallRulesDao.class })
 public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> implements FirewallRulesDao {
@@ -44,6 +46,8 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
     public static String SELECT_IP_FORWARDINGS_BY_USERID_AND_DCID_SQL = null;
 
     public static final String           DELETE_IP_FORWARDING_BY_IPADDRESS_SQL = "DELETE FROM ip_forwarding WHERE public_ip_address = ?";
+    public static final String           DELETE_IP_FORWARDING_BY_IP_PORT_SQL = "DELETE FROM ip_forwarding WHERE public_ip_address = ? and public_port = ?";
+
     public static final String           DISABLE_IP_FORWARDING_BY_IPADDRESS_SQL = "UPDATE  ip_forwarding set enabled=0 WHERE public_ip_address = ?";
 
 
@@ -55,8 +59,11 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
     protected SearchBuilder<FirewallRuleVO> FWByPrivateIPSearch;
     protected SearchBuilder<FirewallRuleVO> RulesExcludingPubIpPort;
     protected SearchBuilder<FirewallRuleVO> FWByGroupId;
+    protected SearchBuilder<FirewallRuleVO> FWByIpForLB;
     protected SearchBuilder<FirewallRuleVO> FWByGroupAndPrivateIp;
     protected SearchBuilder<FirewallRuleVO> FWByPrivateIpPrivatePortPublicIpPublicPortSearch;
+    protected SearchBuilder<FirewallRuleVO> OneToOneNATSearch;
+
 
     protected FirewallRulesDaoImpl() {
     }
@@ -132,6 +139,16 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
         FWByPrivateIpPrivatePortPublicIpPublicPortSearch.and("publicPort", FWByPrivateIpPrivatePortPublicIpPublicPortSearch.entity().getPublicPort(), SearchCriteria.Op.NULL);
         FWByPrivateIpPrivatePortPublicIpPublicPortSearch.done();
         
+        OneToOneNATSearch = createSearchBuilder();
+        OneToOneNATSearch.and("publicIpAddress", OneToOneNATSearch.entity().getPublicIpAddress(), SearchCriteria.Op.EQ);
+        OneToOneNATSearch.and("protocol", OneToOneNATSearch.entity().getProtocol(), SearchCriteria.Op.EQ);
+        OneToOneNATSearch.done();
+        
+        FWByIpForLB = createSearchBuilder();
+        FWByIpForLB.and("publicIpAddress", FWByIpForLB.entity().getPublicIpAddress(), SearchCriteria.Op.EQ);
+        FWByIpForLB.and("groupId", FWByIpForLB.entity().getGroupId(), SearchCriteria.Op.NNULL);
+        FWByIpForLB.and("forwarding", FWByIpForLB.entity().isForwarding(), SearchCriteria.Op.EQ);
+        FWByIpForLB.done();
         return true;
     }
 
@@ -203,6 +220,21 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
         }
     }
 
+    @Override
+    public void deleteIPForwardingByPublicIpAndPort(String ipAddress, String port) {
+        Transaction txn = Transaction.currentTxn();
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = txn.prepareAutoCloseStatement(DELETE_IP_FORWARDING_BY_IP_PORT_SQL);
+            pstmt.setString(1, ipAddress);
+            pstmt.setString(2, port);
+
+            pstmt.executeUpdate();
+        } catch (Exception e) {
+        	s_logger.warn(e);
+        }
+    }
+    
     @Override
     public List<FirewallRuleVO> listIPForwarding(String publicIPAddress) {
         SearchCriteria<FirewallRuleVO> sc = FWByIPSearch.create();
@@ -329,5 +361,35 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
 		SearchCriteria<FirewallRuleVO> sc = FWByPrivateIPSearch.create();
         sc.setParameters("privateIpAddress", privateIp);
         return listBy(sc);
+	}
+
+	@Override
+	public List<FirewallRuleVO> listIPForwardingByPortAndProto(String publicIp,
+			String publicPort, String proto) {
+		SearchCriteria<FirewallRuleVO> sc = FWByIPPortProtoSearch.create();
+        sc.setParameters("publicIpAddress", publicIp);
+        sc.setParameters("publicPort", publicPort);
+        sc.setParameters("protocol", proto);
+        return search(sc, null);
+	}
+
+	@Override
+	public boolean isPublicIpOneToOneNATted(String publicIp) {
+		SearchCriteria<FirewallRuleVO> sc = OneToOneNATSearch.create();
+        sc.setParameters("publicIpAddress", publicIp);
+        sc.setParameters("protocol", NetUtils.NAT_PROTO);
+        List<FirewallRuleVO> rules = search(sc, null);
+        if (rules.size() != 1)
+        	return false;
+        return rules.get(1).getProtocol().equalsIgnoreCase(NetUtils.NAT_PROTO);
+	}
+
+	@Override
+	public List<FirewallRuleVO> listIpForwardingRulesForLoadBalancers(
+			String publicIp) {
+		SearchCriteria<FirewallRuleVO> sc = FWByIpForLB.create();
+        sc.setParameters("publicIpAddress", publicIp);
+        sc.setParameters("forwarding", false);
+        return search(sc, null);
 	}
 }

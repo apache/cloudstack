@@ -20,7 +20,6 @@ iptables_() {
    local subnet_if="eth0"
    local subnet_ip=$(get_intf_ip $subnet_if)
 
-   iptables $op INPUT -i $public_if -p udp -m udp --dport 1701 -j ACCEPT
    iptables $op INPUT -i $public_if -p udp -m udp --dport 500 -j ACCEPT
    iptables $op INPUT -i $public_if -p udp -m udp --dport 4500 -j ACCEPT
    iptables $op INPUT -i eth2 -p ah -j ACCEPT
@@ -29,6 +28,9 @@ iptables_() {
    iptables $op FORWARD -i $subnet_if -o ppp+ -j ACCEPT 
    iptables $op FORWARD -i ppp+ -o ppp+ -j ACCEPT 
    iptables $op INPUT -i ppp+ -m udp -p udp --dport 53 -j ACCEPT
+   iptables $op INPUT -i ppp+ -p udp -m udp --dport 1701 -j ACCEPT
+
+
    iptables -t nat $op PREROUTING -i ppp+ -p udp -m udp --dport 53 -j  DNAT --to-destination $subnet_ip
    
 }

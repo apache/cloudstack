@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.cloud.utils.net.NetUtils;
+
 
 /**
  * @author chiradeep
@@ -116,7 +118,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
 		sb = new StringBuilder();
 		sb.append("\t").append("balance ").append(algorithm);
 		result.add(sb.toString());
-		if (publicPort.equals("80")) {
+		if (publicPort.equals(NetUtils.HTTP_PORT)) {
 			sb = new StringBuilder();
 			sb.append("\t").append("mode http");
 			result.add(sb.toString());

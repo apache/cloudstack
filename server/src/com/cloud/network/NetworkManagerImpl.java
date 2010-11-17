@@ -226,6 +226,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     ScheduledExecutorService _executor;
     
     SearchBuilder<AccountVO> AccountsUsingNetworkConfigurationSearch;
+
+	private Map<String, String> _configs;
 	
     @Override
     public boolean sendSshKeysToHost(Long hostId, String pubKey, String prvKey) {
@@ -1320,7 +1322,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         IPAddressVO ipAddr = _ipAddressDao.findById(loadBalancer.getIpAddress());
         List<IPAddressVO> ipAddrs = listPublicIpAddressesInVirtualNetwork(accountId, ipAddr.getDataCenterId(), null);
         for (IPAddressVO ipv : ipAddrs) {
-            List<FirewallRuleVO> rules = _rulesDao.listIPForwarding(ipv.getAddress(), false);
+            List<FirewallRuleVO> rules = _rulesDao.listIpForwardingRulesForLoadBalancers(ipv.getAddress());
             firewallRulesToApply.addAll(rules);
         }
 
@@ -1669,24 +1671,25 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             return ans.getResult();
         }
     }
+    
+    private Integer getIntegerConfigValue(String configKey) {
+    	String value = _configs.get(configKey);
+    	if (value != null) {
+            return Integer.parseInt(value);
+        }
+    	return null;
+    }
 
+    
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         _name = name;
 
-        final Map<String, String> configs = _configDao.getConfiguration("AgentManager", params);
+        _configs = _configDao.getConfiguration("AgentManager", params);
         
-        String value = configs.get(Config.NetworkThrottlingRate.key());
-        Integer rateMbps = null;
-        if (value != null) {
-            rateMbps = Integer.parseInt(value);
-        }
-        
-        Integer multicastRateMbps = null;
-        value = configs.get(Config.MulticastThrottlingRate.key());
-        if (value != null) {
-            multicastRateMbps = Integer.parseInt(value);
-        }
+        Integer rateMbps = getIntegerConfigValue(Config.NetworkThrottlingRate.key());  
+        Integer multicastRateMbps = getIntegerConfigValue(Config.MulticastThrottlingRate.key());
+       
         
         NetworkOfferingVO publicNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmPublicNetwork, TrafficType.Public, null);
         publicNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(publicNetworkOffering);
@@ -2651,6 +2654,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return setupNetworkConfiguration(owner, networkOffering, plan);
     }
 
+    private String [] getGuestIpRange() {
+    	String guestRouterIp = _configs.get(Config.GuestIpNetwork.key());
+    	String guestNetmask = _configs.get(Config.GuestNetmask.key());
+    	return NetUtils.ipAndNetMaskToRange(guestRouterIp, guestNetmask);
+    }
+    
+    
 	@Override
 	@DB
 	public RemoteAccessVpnVO createRemoteAccessVpn(CreateRemoteAccessVpnCmd cmd)
@@ -2711,30 +2721,28 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         String ipRange = cmd.getIpRange();
         if (ipRange == null) {
-        	//TODO: get default range from database
-        	ipRange = "10.1.2.1-10.1.2.8";
+        	ipRange = _configs.get(Config.RemoteAccessVpnClientIpRange.key());
         }
         String [] range = ipRange.split("-");
         if (range.length != 2) {
         	throw new InvalidParameterValueException("Invalid ip range");
         }
         if (!NetUtils.isValidIp(range[0]) || !NetUtils.isValidIp(range[1])){
-        	throw new InvalidParameterValueException("Invalid ip range");
+        	throw new InvalidParameterValueException("Invalid ip range " + ipRange);
         }
         if (!NetUtils.validIpRange(range[0], range[1])){
         	throw new InvalidParameterValueException("Invalid ip range");
         }
-        if (NetUtils.ipRangesOverlap(range[0], range[1], "10.1.1.1", "10.1.1.255")) {
-        	throw new InvalidParameterValueException("Invalid ip range --- overlaps with guest ip range");
-        	//TODO: get actual guest ip range from config db
+        String [] guestIpRange = getGuestIpRange();
+        if (NetUtils.ipRangesOverlap(range[0], range[1], guestIpRange[0], guestIpRange[1])) {
+        	throw new InvalidParameterValueException("Invalid ip range: " + ipRange + " overlaps with guest ip range " + guestIpRange[0] + "-" + guestIpRange[1]);
         }
         //TODO: check sufficient range
         //TODO: check overlap with private and public ip ranges in datacenter
-        //TODO: check overlap with port forwarding rules on this ip (udp ports 500, 4500, 1701)
+        
         long startIp = NetUtils.ip2Long(range[0]);
         String newIpRange = NetUtils.long2Ip(++startIp) + "-" + range[1];
-        String sharedSecret = PasswordGenerator.generateRandomPassword(24);
-        //TODO: use SecureRandom in password generator
+        String sharedSecret = PasswordGenerator.generatePresharedKey(24); //TODO:configurable length
         Transaction txn = Transaction.currentTxn();
         txn.start();
         boolean locked = false;
@@ -2744,8 +2752,24 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         		throw new ConcurrentOperationException("Another operation active, unable to create vpn");
         	}
         	locked = true;
+        	//check overlap with port forwarding rules on this ip (udp ports 500, 4500)
+            List<FirewallRuleVO> existing = _rulesDao.listIPForwardingByPortAndProto(publicIp, NetUtils.VPN_PORT, NetUtils.UDP_PROTO);
+            if (!existing.isEmpty()) {
+            	throw new InvalidParameterValueException("UDP Port " + NetUtils.VPN_PORT + " is configured for destination NAT");
+            }
+            existing = _rulesDao.listIPForwardingByPortAndProto(publicIp, NetUtils.VPN_NATT_PORT, NetUtils.UDP_PROTO);
+            if (!existing.isEmpty()) {
+            	throw new InvalidParameterValueException("UDP Port " + NetUtils.VPN_NATT_PORT + " is configured for destination NAT");
+            }
+            if (_rulesDao.isPublicIpOneToOneNATted(publicIp)) {
+            	throw new InvalidParameterValueException("Public Ip " + publicIp + " is configured for destination NAT");
+            }
         	vpnVO = new RemoteAccessVpnVO(account.getId(), cmd.getZoneId(), publicIp, range[0], newIpRange, sharedSecret);
         	vpnVO = _remoteAccessVpnDao.persist(vpnVO);
+        	FirewallRuleVO rule = new FirewallRuleVO(null, null, publicIp, NetUtils.VPN_PORT, guestIpRange[0], NetUtils.VPN_PORT, true, NetUtils.UDP_PROTO, false, null);
+        	_rulesDao.persist(rule);
+        	rule = new FirewallRuleVO(null, null, publicIp, NetUtils.VPN_NATT_PORT, guestIpRange[0], NetUtils.VPN_PORT, true, NetUtils.UDP_PROTO, false, null);
+        	_rulesDao.persist(rule);
         	txn.commit();
         	return vpnVO;
         } finally {
@@ -2822,6 +2846,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         } finally {
         	if (deleted) {
         		_remoteAccessVpnDao.remove(vpnId);
+        		_rulesDao.deleteIPForwardingByPublicIpAndPort(publicIp, NetUtils.VPN_PORT);
+        		_rulesDao.deleteIPForwardingByPublicIpAndPort(publicIp, NetUtils.VPN_NATT_PORT);
         		EventUtils.saveEvent(userId, account.getId(), EventTypes.EVENT_REMOTE_ACCESS_VPN_DESTROY, "Deleted Remote Access VPN for account: " + account.getAccountName() + " in zone " + cmd.getZoneId());
         	} else {
         		EventUtils.saveEvent(userId, account.getId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_REMOTE_ACCESS_VPN_DESTROY, "Unable to delete Remote Access VPN ", account.getAccountName() + " in zone " + cmd.getZoneId());
@@ -3075,7 +3101,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 			newFwRule.setEnabled(true);
 			newFwRule.setForwarding(true);
 			newFwRule.setPrivatePort(null);
-			newFwRule.setProtocol("NAT");//protocol cannot be null; adding this as a NAT
+			newFwRule.setProtocol(NetUtils.NAT_PROTO);//protocol cannot be null; adding this as a NAT
 			newFwRule.setPublicPort(null);
 			newFwRule.setPublicIpAddress(ipAddress.getAddress());
 			newFwRule.setPrivateIpAddress(userVM.getGuestIpAddress());

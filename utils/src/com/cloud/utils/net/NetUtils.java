@@ -41,7 +41,16 @@ import com.cloud.utils.NumbersUtil;
 
 public class NetUtils {
     protected final static Logger s_logger = Logger.getLogger(NetUtils.class);
+    public final static String HTTP_PORT = "80";
+    public final static String VPN_PORT = "500";
+    public final static String VPN_NATT_PORT = "4500";
+    
+    public final static String UDP_PROTO = "udp";
+    public final static String TCP_PROTO = "tcp";
+    public final static String ICMP_PROTO = "icmp";
+    public final static String NAT_PROTO = "nat"; //special value for one-to-one NAT
 
+    
 	public static String getHostName() {
         try {
             InetAddress localAddr = InetAddress.getLocalHost();
@@ -552,6 +561,23 @@ public class NetUtils {
     	return long2Ip(result) + "/" + Integer.toString(bits);
     }
     
+    public static String [] ipAndNetMaskToRange(String ip, String netmask) {
+    	long ipAddr = ip2Long(ip);
+    	long subnet = ip2Long(netmask);
+    	long start = (ipAddr & subnet) + 1;
+        long end = start;
+        int bits = (subnet == 0)?0:1;
+    	while ((subnet = (subnet >> 1) & subnet) != 0 )
+    		bits++;
+        end = end >> (32 - bits);
+        
+        end++;
+        end = (end << (32 - bits)) - 2;
+        
+        return new String[] {long2Ip(start), long2Ip(end)};
+    	
+    }
+    
     public static boolean isNetworkAWithinNetworkB(String cidrA, String cidrB) {
     	Long cidrALong = cidrToLong(cidrA);
     	Long cidrBLong = cidrToLong(cidrB);
@@ -761,7 +787,12 @@ public class NetUtils {
         	String ip = args[1];
         	String mask = args[2];
         	System.out.println(NetUtils.ipAndNetMaskToCidr(ip, mask));
+        } else if (args[0].equals("ipmasktorange")){
+        	String ip = args[1];
+        	String mask = args[2];
+        	String [] range = NetUtils.ipAndNetMaskToRange(ip, mask);
         	
+        	System.out.println(range[0] + " : " + range[1]);
         } else {
             System.out.println(long2Ip(NumbersUtil.parseLong(args[1], 0)));
         }

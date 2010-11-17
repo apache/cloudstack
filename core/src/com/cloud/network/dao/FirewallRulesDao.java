@@ -38,13 +38,19 @@ public interface FirewallRulesDao extends GenericDao<FirewallRuleVO, Long> {
 	public void disableIPForwarding(String publicIPAddress);
 	public List<FirewallRuleVO> listIPForwardingForUpdate(String publicIp, boolean fwding);
 	public List<FirewallRuleVO> listIPForwardingForUpdate(String publicIp, String publicPort, String proto);
+	public List<FirewallRuleVO> listIPForwardingByPortAndProto(String publicIp, String publicPort, String proto);
+
 	public List<FirewallRuleVO> listLoadBalanceRulesForUpdate(String publicIp, String publicPort, String algo);
+	public List<FirewallRuleVO> listIpForwardingRulesForLoadBalancers(String publicIp);
+
 
 	public List<FirewallRuleVO> listRulesExcludingPubIpPort(String publicIpAddress, long securityGroupId);
     public List<FirewallRuleVO> listBySecurityGroupId(long securityGroupId);
     public List<FirewallRuleVO> listByLoadBalancerId(long loadBalancerId);
     public List<FirewallRuleVO> listForwardingByPubAndPrivIp(boolean forwarding, String publicIPAddress, String privateIp);
     public FirewallRuleVO findByGroupAndPrivateIp(long groupId, String privateIp, boolean forwarding);
-	List<FirewallRuleVO> findByPublicIpPrivateIpForNatRule(String publicIp,String privateIp);
-	List<FirewallRuleVO> listByPrivateIp(String privateIp);
+	public List<FirewallRuleVO> findByPublicIpPrivateIpForNatRule(String publicIp,String privateIp);
+	public List<FirewallRuleVO> listByPrivateIp(String privateIp);
+	public boolean isPublicIpOneToOneNATted(String publicIp);
+	void deleteIPForwardingByPublicIpAndPort(String ipAddress, String port);
 }

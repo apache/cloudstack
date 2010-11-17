@@ -18,6 +18,7 @@ version.
  */
 package com.cloud.utils;
 
+import java.security.SecureRandom;
 import java.util.Random;
 
 /**
@@ -25,51 +26,66 @@ import java.util.Random;
  *
  */
 public class PasswordGenerator {
+	//Leave out visually confusing  l,L,1,o,O,0
+	static private char[] lowerCase = new char[]{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'm', 'n', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'};
+	static private char[] upperCase = new char[]{'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'};
+	static private char[] numeric = new char[]{'2', '3', '4', '5', '6', '7', '8', '9'};
+
+	static private char[] alphaNumeric = new char[]{'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',  'J', 'K',  'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+        'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h',  'j', 'k',  'm', 'n', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+         '2', '3', '4', '5', '6', '7', '8', '9'};
+
 	 public static String generateRandomPassword(int num) {
-	        Random r = new Random();
-	        StringBuffer password = new StringBuffer();
+	        Random r = new SecureRandom();
+	        StringBuilder password = new StringBuilder();
 
 	        // Generate random 3-character string with a lowercase character,
 	        // uppercase character, and a digit
+	        password.append(generateLowercaseChar(r))
+	                .append(generateUppercaseChar(r))
+	                .append(generateDigit(r));
 
-	        // Generate a random lowercase character
-	        int lowercase = generateLowercaseChar(r);
-	        // Generate a random uppercase character ()
-	        int uppercase = generateUppercaseChar(r);
-	        // Generate a random digit between 2 and 9
-	        int digit = r.nextInt(8) + 2;
-
-	        // Append to the password
-	        password.append((char) lowercase);
-	        password.append((char) uppercase);
-	        password.append(digit);
-
-	        // Generate a random 6-character string with only lowercase
+	        // Generate a random n-character string with only lowercase
 	        // characters
 	        for (int i = 0; i < num; i++) {
-	            // Generate a random lowercase character (don't allow lowercase
-	            // "l" or lowercase "o")
-	            lowercase = generateLowercaseChar(r);
-	            // Append to the password
-	            password.append((char) lowercase);
+	            password.append(generateLowercaseChar(r));
 	        }
 
 	        return password.toString();
 	    }
 
 	    private static char generateLowercaseChar(Random r) {
-	        // Don't allow lowercase "l" or lowercase "o"
-	        int lowercase = -1;
-	        while (lowercase == -1 || lowercase == 108 || lowercase == 111)
-	            lowercase = r.nextInt(26) + 26 + 71;
-	        return ((char) lowercase);
+	    	return lowerCase[r.nextInt(lowerCase.length)];
 	    }
 
+	    private static char generateDigit(Random r ) {
+	    	return numeric[r.nextInt(numeric.length)];
+	    }
+	    
 	    private static char generateUppercaseChar(Random r) {
-	        // Don't allow uppercase "I" or uppercase "O"
-	        int uppercase = -1;
-	        while (uppercase == -1 || uppercase == 73 || uppercase == 79)
-	            uppercase = r.nextInt(26) + 65;
-	        return ((char) uppercase);
+	        return upperCase[r.nextInt(upperCase.length)];
+	    }
+	    
+	    private static char generateAlphaNumeric(Random r) {
+	        return alphaNumeric[r.nextInt(alphaNumeric.length)];
+	    }
+	    
+	    public static String generatePresharedKey(int numChars) {
+	    	Random r = new SecureRandom();
+	    	StringBuilder psk = new StringBuilder();
+	    	for (int i = 0; i < numChars; i++) {
+	    		psk.append(generateAlphaNumeric(r));
+	        }
+	    	return  psk.toString();
+	    	
+	    }
+	    
+	    public static void main(String [] args) {
+	    	for (int i=0; i < 100; i++) {
+	    		System.out.println("PSK: " + generatePresharedKey(24));
+	    	}
+	    	for (int i=0; i < 100; i++) {
+	    		System.out.println("Password: " + generateRandomPassword(6));
+	    	}
 	    }
 }

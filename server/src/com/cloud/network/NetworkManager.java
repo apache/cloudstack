@@ -336,7 +336,7 @@ public interface NetworkManager {
      * @throws PermissionDeniedException
      * @throws ConcurrentOperationException 
      */
-    public RemoteAccessVpnVO createRemoteAccessVpn(CreateRemoteAccessVpnCmd cmd) throws ConcurrentOperationException;
+    public RemoteAccessVpnVO createRemoteAccessVpn(CreateRemoteAccessVpnCmd cmd) throws ConcurrentOperationException, InvalidParameterValueException, PermissionDeniedException;
     
     /**
      * Start a remote access vpn for the given public ip address and client ip range

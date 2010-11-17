@@ -148,7 +148,7 @@ public class FirewallRuleVO {
 		return this.protocol;
 	}
 	public void setProtocol(String protocol) {
-		this.protocol = protocol;
+		this.protocol = protocol.toLowerCase();
 	}
 	public boolean isForwarding() {
 		return forwarding;
