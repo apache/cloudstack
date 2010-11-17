@@ -42,3 +42,4 @@
 	<classpathentry kind="lib" path="/thirdparty/gson.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
+
