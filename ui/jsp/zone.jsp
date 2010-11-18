@@ -378,8 +378,10 @@
                 <label for="add_publicip_vlan_scope">
                     Scope:</label>
                 <select class="select" name="add_publicip_vlan_scope" id="add_publicip_vlan_scope">
+                    <!--  
                     <option value="zone-wide">zone-wide</option>
                     <option value="account-specific">account-specific</option>
+                    -->
                 </select>
             </li>
             <li style="display: none" id="add_publicip_vlan_pod_container">
