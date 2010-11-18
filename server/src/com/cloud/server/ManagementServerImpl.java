@@ -389,7 +389,7 @@ public class ManagementServerImpl implements ManagementServer {
     private final int _routerRamSize;
     private final int _proxyRamSize;
     private final int _ssRamSize;
-    private int _maxVolumeSizeInMb;
+    private int _maxVolumeSizeInGb;
     
     private boolean _useNewNetworking = false;
 
@@ -509,9 +509,9 @@ public class ManagementServerImpl implements ManagementServer {
 			_networkGroupsEnabled = true;
 		}
 		
-        String maxVolumeSizeInMbString = _configDao.getValue("max.volume.size.gb");
-        int maxVolumeSizeMb = NumbersUtil.parseInt(maxVolumeSizeInMbString, (2000*1024));//2000 gb
-        _maxVolumeSizeInMb = maxVolumeSizeMb;
+        String maxVolumeSizeInGbString = _configDao.getValue("max.volume.size.gb");
+        int maxVolumeSizeGb = NumbersUtil.parseInt(maxVolumeSizeInGbString, (2000));//2000 gb
+        _maxVolumeSizeInGb = maxVolumeSizeGb;
         
         _useNewNetworking = Boolean.parseBoolean(_configs.get("use.new.networking"));
     }
@@ -1227,8 +1227,8 @@ public class ManagementServerImpl implements ManagementServer {
         	throw new InvalidParameterValueException("Please specify a valid disk size for VM creation; custom disk offering has no size set");
         }
         
-        if(diskOffering != null && diskOffering.isCustomized() && size > _maxVolumeSizeInMb){
-        	throw new InvalidParameterValueException("Please specify a valid disk size for VM creation; custom disk offering max size is:"+_maxVolumeSizeInMb);
+        if(diskOffering != null && diskOffering.isCustomized() && size > _maxVolumeSizeInGb){
+        	throw new InvalidParameterValueException("Please specify a valid disk size for VM creation; custom disk offering max size is:"+_maxVolumeSizeInGb);
         }
         
         // validate that the template is usable by the account
@@ -1284,7 +1284,7 @@ public class ManagementServerImpl implements ManagementServer {
 
         Long eventId = cmd.getStartEventId();
         try {
-            return deployVirtualMachineImpl(userId, accountId, dataCenterId, serviceOfferingId, template, diskOfferingId, domain, password, displayName, group, userData, networkGroups, eventId, size);
+            return deployVirtualMachineImpl(userId, accountId, dataCenterId, serviceOfferingId, template, diskOfferingId, domain, password, displayName, group, userData, networkGroups, eventId, (1L*size*1024));//this api expects size in MB
         } catch (ResourceAllocationException e) {
             if(s_logger.isDebugEnabled())
                 s_logger.debug("Unable to deploy VM: " + e.getMessage());
