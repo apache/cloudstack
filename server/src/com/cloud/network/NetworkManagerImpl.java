@@ -1680,13 +1680,42 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     	return null;
     }
 
+    private void validateRemoteAccessVpnConfiguration() throws ConfigurationException {
+    	String ipRange = _configs.get(Config.RemoteAccessVpnClientIpRange.key());
+    	if (ipRange == null) {
+    		s_logger.warn("Remote Access VPN configuration missing client ip range -- ignoring");
+    		return;
+    	}
+    	Integer pskLength = getIntegerConfigValue(Config.RemoteAccessVpnPskLength.key());
+    	if (pskLength != null && (pskLength < 8 || pskLength > 256)) {
+    		throw new ConfigurationException("Remote Access VPN: IPSec preshared key length should be between 8 and 256");
+    	} else if (pskLength == null) {
+    		s_logger.warn("Remote Access VPN configuration missing Preshared Key Length -- ignoring");
+    		return;
+    	}
+    	
+    	String [] range = ipRange.split("-");
+    	if (range.length != 2) {
+    		throw new ConfigurationException("Remote Access VPN: Invalid ip range " + ipRange);
+    	}
+    	if (!NetUtils.isValidIp(range[0]) || !NetUtils.isValidIp(range[1])){
+    		throw new ConfigurationException("Remote Access VPN: Invalid ip in range specification " + ipRange);
+    	}
+    	if (!NetUtils.validIpRange(range[0], range[1])){
+    		throw new ConfigurationException("Remote Access VPN: Invalid ip range " + ipRange);
+    	}
+    	String [] guestIpRange = getGuestIpRange();
+    	if (NetUtils.ipRangesOverlap(range[0], range[1], guestIpRange[0], guestIpRange[1])) {
+    		throw new ConfigurationException("Remote Access VPN: Invalid ip range: " + ipRange + " overlaps with guest ip range " + guestIpRange[0] + "-" + guestIpRange[1]);
+    	}
+    }
     
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         _name = name;
 
         _configs = _configDao.getConfiguration("AgentManager", params);
-        
+        validateRemoteAccessVpnConfiguration();
         Integer rateMbps = getIntegerConfigValue(Config.NetworkThrottlingRate.key());  
         Integer multicastRateMbps = getIntegerConfigValue(Config.MulticastThrottlingRate.key());
        
@@ -2728,10 +2757,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         	throw new InvalidParameterValueException("Invalid ip range");
         }
         if (!NetUtils.isValidIp(range[0]) || !NetUtils.isValidIp(range[1])){
-        	throw new InvalidParameterValueException("Invalid ip range " + ipRange);
+        	throw new InvalidParameterValueException("Invalid ip in range specification " + ipRange);
         }
         if (!NetUtils.validIpRange(range[0], range[1])){
-        	throw new InvalidParameterValueException("Invalid ip range");
+        	throw new InvalidParameterValueException("Invalid ip range " + ipRange);
         }
         String [] guestIpRange = getGuestIpRange();
         if (NetUtils.ipRangesOverlap(range[0], range[1], guestIpRange[0], guestIpRange[1])) {
@@ -2742,7 +2771,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         
         long startIp = NetUtils.ip2Long(range[0]);
         String newIpRange = NetUtils.long2Ip(++startIp) + "-" + range[1];
-        String sharedSecret = PasswordGenerator.generatePresharedKey(24); //TODO:configurable length
+        String sharedSecret = PasswordGenerator.generatePresharedKey(getIntegerConfigValue(Config.RemoteAccessVpnPskLength.key())); 
         Transaction txn = Transaction.currentTxn();
         txn.start();
         boolean locked = false;

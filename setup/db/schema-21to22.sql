@@ -32,7 +32,7 @@ CREATE TABLE `cloud`.`remote_access_vpn` (
   `vpn_server_addr` varchar(15) UNIQUE NOT NULL,
   `local_ip` varchar(15) NOT NULL,
   `ip_range` varchar(32) NOT NULL,
-  `ipsec_psk` varchar(255) NOT NULL,
+  `ipsec_psk` varchar(256) NOT NULL,
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
