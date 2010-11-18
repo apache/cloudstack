@@ -738,12 +738,11 @@ function ipJsonToDetailsTab() {
     if(ipObj.isstaticnat == true) {
     
     }
-    else { //ipObj.isstaticnat == false  
-        buildActionLinkForTab("Enable Static NAT", ipActionMap, $actionMenu, $midmenuItem1, $thisTab);	        
-        noAvailableActions = false;
-        
+    else { //ipObj.isstaticnat == false
         if(isIpManageable(ipObj.domainid, ipObj.account) == true && ipObj.issourcenat != true) {     
-            buildActionLinkForTab("Release IP", ipActionMap, $actionMenu, $midmenuItem1, $thisTab);		            
+            buildActionLinkForTab("Release IP", ipActionMap, $actionMenu, $midmenuItem1, $thisTab);	
+            buildActionLinkForTab("Enable Static NAT", ipActionMap, $actionMenu, $midmenuItem1, $thisTab);	        
+            noAvailableActions = false;
         }
     }
     
