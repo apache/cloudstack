@@ -96,6 +96,7 @@ import com.cloud.api.commands.ListGuestOsCategoriesCmd;
 import com.cloud.api.commands.ListGuestOsCmd;
 import com.cloud.api.commands.ListHostsCmd;
 import com.cloud.api.commands.ListHypervisorsCmd;
+import com.cloud.api.commands.ListIpForwardingRulesCmd;
 import com.cloud.api.commands.ListIsosCmd;
 import com.cloud.api.commands.ListLoadBalancerRuleInstancesCmd;
 import com.cloud.api.commands.ListLoadBalancerRulesCmd;
@@ -2400,6 +2401,22 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public VMTemplateVO findTemplateById(long templateId) {
         return _templateDao.findById(templateId);
+    }
+    
+    @Override
+    public List<FirewallRuleVO> searchForIpForwardingRules(ListIpForwardingRulesCmd cmd){
+        String ipAddress = cmd.getPublicIpAddress();
+        Filter searchFilter = new Filter(FirewallRuleVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        SearchCriteria<FirewallRuleVO> sc = _firewallRulesDao.createSearchCriteria();
+
+        if (ipAddress != null) {
+            sc.addAnd("publicIpAddress", SearchCriteria.Op.EQ, ipAddress);
+        }
+        
+        //search for rules with protocol = nat
+        sc.addAnd("protocol", SearchCriteria.Op.EQ, NetUtils.NAT_PROTO);
+
+        return _firewallRulesDao.search(sc, searchFilter); 	
     }
     
     @Override

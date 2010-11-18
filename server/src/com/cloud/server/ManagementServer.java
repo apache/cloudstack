@@ -46,6 +46,7 @@ import com.cloud.api.commands.ListGuestOsCategoriesCmd;
 import com.cloud.api.commands.ListGuestOsCmd;
 import com.cloud.api.commands.ListHostsCmd;
 import com.cloud.api.commands.ListHypervisorsCmd;
+import com.cloud.api.commands.ListIpForwardingRulesCmd;
 import com.cloud.api.commands.ListIsosCmd;
 import com.cloud.api.commands.ListLoadBalancerRuleInstancesCmd;
 import com.cloud.api.commands.ListLoadBalancerRulesCmd;
@@ -1043,4 +1044,6 @@ public interface ManagementServer {
     
     public List<VpnUserVO> searchForVpnUsers(ListVpnUsersCmd cmd);
     public String getHashKey();
+
+	List<FirewallRuleVO> searchForIpForwardingRules(ListIpForwardingRulesCmd cmd);
 }
