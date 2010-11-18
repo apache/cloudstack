@@ -47,7 +47,7 @@ public class ListDomainChildrenCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.IS_RECURSIVE, type=CommandType.BOOLEAN, description="to return the entire tree, use the value \"true\". To return the first level children, use the value \"false\".")
     private Boolean recursive;
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="list children domain by parent domain name.")
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="list children domains by name")
     private String domainName;
 
     /////////////////////////////////////////////////////

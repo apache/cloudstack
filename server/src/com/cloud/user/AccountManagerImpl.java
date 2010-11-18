@@ -486,7 +486,6 @@ public class AccountManagerImpl implements AccountManager, AccountService {
 
     @Override
     public ResourceLimitVO updateResourceLimit(UpdateResourceLimitCmd cmd)  {
-
         Account account = UserContext.current().getAccount();
     	String accountName = cmd.getAccountName();
     	Long domainId = cmd.getDomainId();
@@ -509,12 +508,12 @@ public class AccountManagerImpl implements AccountManager, AccountService {
         } catch (ArrayIndexOutOfBoundsException e) {
         	throw new InvalidParameterValueException("Please specify a valid resource type.");
         }               
-
-        /*
-        if (accountName==null && domainId != null && !domainId.equals(DomainVO.ROOT_DOMAIN)) {
-        	throw new ServerApiException(BaseCmd.PARAM_ERROR, "Resource limits must be made for an account or the ROOT domain.");
+        
+        
+        // Either a domainId or an accountId must be passed in, but not both.
+        if ((domainId == null) && (accountName == null)) {
+            throw new InvalidParameterValueException("Either a domainId or domainId/account must be passed in.");
         }
-        */
 
         if (account != null) {
             if (domainId != null) {
@@ -544,13 +543,13 @@ public class AccountManagerImpl implements AccountManager, AccountService {
             		}
             	}
             }
-        } else if (domainId == null) {
-            domainId = DomainVO.ROOT_DOMAIN; // for system commands, default to root domain if domain is not specified
-        }
+        } 
 
-        if (domainId == null) {
-            throw new InvalidParameterValueException("Unable to update resource limit, unable to determine domain in which to update limit.");
-        } else if (accountName != null) {
+
+       if (accountName != null) {
+           if (domainId == null) {
+               throw new InvalidParameterValueException("domainId parameter is required if account is specified");
+           }
             Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
             if (userAccount == null) {
                 throw new InvalidParameterValueException("unable to find account by name " + account.getAccountName() + " in domain with id " + domainId);
@@ -560,10 +559,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
 
         if (accountId != null) domainId = null;
         
-    	// Either a domainId or an accountId must be passed in, but not both.
-        if ((domainId == null) && (accountId == null)) {
-            throw new InvalidParameterValueException("Either a domainId or domainId/accountId must be passed in.");
-        }
+    	
 
         // Check if the domain or account exists and is valid
         if (accountId != null) {
