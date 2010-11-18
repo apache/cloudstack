@@ -20,9 +20,6 @@ package com.cloud.network.router;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.api.commands.RebootRouterCmd;
-import com.cloud.api.commands.StartRouterCmd;
-import com.cloud.api.commands.StopRouterCmd;
 import com.cloud.api.commands.UpgradeRouterCmd;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
@@ -97,39 +94,16 @@ public interface DomainRouterManager extends Manager {
     
     DomainRouterVO startRouter(long routerId, long eventId);
     
-    /**
-     * Starts domain router
-     * @param cmd the command specifying router's id
-     * @return DomainRouter object
-     * @throws InvalidParameterValueException, PermissionDeniedException
-     */
-    DomainRouter startRouter(StartRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
-    
     boolean releaseRouter(long routerId);
     
     boolean destroyRouter(long routerId);
     
     boolean stopRouter(long routerId, long eventId);
     
-    /**
-     * Stops domain router
-     * @param cmd the command specifying router's id
-     * @return router if successful, null otherwise
-     * @throws InvalidParameterValueException, PermissionDeniedException
-     */
-    DomainRouter stopRouter(StopRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
-    
     boolean getRouterStatistics(long vmId, Map<String, long[]> netStats, Map<String, long[]> diskStats);
 
     boolean rebootRouter(long routerId, long eventId);
     
-    /**
-     * Reboots domain router
-     * @param cmd the command specifying router's id
-     * @return router if successful
-     * @throws InvalidParameterValueException, PermissionDeniedException
-     */
-    DomainRouter rebootRouter(RebootRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
     /**
      * @param hostId get all of the virtual machine routers on a host.
      * @return collection of VirtualMachineRouter

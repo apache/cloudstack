@@ -86,7 +86,7 @@ public class RebootRouterCmd extends BaseAsyncCmd {
     
     @Override
     public void execute(){
-        DomainRouter result = _networkMgr.rebootRouter(this);
+        DomainRouter result = _routerMgr.rebootRouter(this);
         if (result != null){
             DomainRouterResponse response = ApiResponseHelper.createDomainRouterResponse(result);
             response.setResponseName("router");

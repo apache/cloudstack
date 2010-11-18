@@ -53,17 +53,12 @@ import com.cloud.api.commands.CreateLoadBalancerRuleCmd;
 import com.cloud.api.commands.CreatePortForwardingRuleCmd;
 import com.cloud.api.commands.CreateRemoteAccessVpnCmd;
 import com.cloud.api.commands.DeleteLoadBalancerRuleCmd;
-import com.cloud.api.commands.DeletePortForwardingRuleCmd;
 import com.cloud.api.commands.DeleteRemoteAccessVpnCmd;
 import com.cloud.api.commands.DisassociateIPAddrCmd;
 import com.cloud.api.commands.ListPortForwardingRulesCmd;
-import com.cloud.api.commands.RebootRouterCmd;
 import com.cloud.api.commands.RemoveFromLoadBalancerRuleCmd;
 import com.cloud.api.commands.RemoveVpnUserCmd;
-import com.cloud.api.commands.StartRouterCmd;
-import com.cloud.api.commands.StopRouterCmd;
 import com.cloud.api.commands.UpdateLoadBalancerRuleCmd;
-import com.cloud.api.commands.UpgradeRouterCmd;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Config;
@@ -497,11 +492,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
     
     @Override
-    public DomainRouter upgradeRouter(UpgradeRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
-        return _routerMgr.upgradeRouter(cmd);
-    }
-
-    @Override
     public boolean savePasswordToRouter(final long routerId, final String vmIpAddress, final String password) {
         return _routerMgr.savePasswordToRouter(routerId, vmIpAddress, password);
     }
@@ -512,21 +502,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
     
     @Override
-    public DomainRouter startRouter(StartRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
-        return _routerMgr.startRouter(cmd);
-    }
-
-    @Override
     public boolean stopRouter(final long routerId, long eventId) {
         return _routerMgr.stopRouter(routerId, eventId);
     }
     
     
-    @Override
-    public DomainRouter stopRouter(StopRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
-        return _routerMgr.stopRouter(cmd);
-    }
-
     @Override
     public boolean getRouterStatistics(final long vmId, final Map<String, long[]> netStats, final Map<String, long[]> diskStats) {
         return _routerMgr.getRouterStatistics(vmId, netStats, diskStats);
@@ -536,12 +516,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     public boolean rebootRouter(final long routerId, long startEventId) {
         return _routerMgr.rebootRouter(routerId, startEventId);
-    }
-
-    @Override
-    public DomainRouterVO rebootRouter(RebootRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
-        _routerMgr.rebootRouter(cmd);
-        return _routerMgr.getRouter(cmd.getId());
     }
 
     @Override

@@ -71,8 +71,6 @@ import com.cloud.api.commands.RebootSystemVmCmd;
 import com.cloud.api.commands.RegisterCmd;
 import com.cloud.api.commands.RegisterPreallocatedLunCmd;
 import com.cloud.api.commands.StartSystemVMCmd;
-import com.cloud.api.commands.StartSystemVm2Cmd;
-import com.cloud.api.commands.StopSystemVm2Cmd;
 import com.cloud.api.commands.StopSystemVmCmd;
 import com.cloud.api.commands.UpdateDomainCmd;
 import com.cloud.api.commands.UpdateIsoCmd;
@@ -95,11 +93,13 @@ import com.cloud.dc.VlanVO;
 import com.cloud.domain.DomainVO;
 import com.cloud.event.EventVO;
 import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientStorageCapacityException;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.info.ConsoleProxyInfo;
@@ -302,8 +302,10 @@ public interface ManagementServer {
      * @throws ExecutionException
      * @throws StorageUnavailableException
      * @throws ConcurrentOperationException
+     * @throws ResourceUnavailableException 
+     * @throws InsufficientCapacityException 
      */
-    UserVm deployVirtualMachine(DeployVMCmd cmd, String password) throws ResourceAllocationException, InsufficientStorageCapacityException, ExecutionException, StorageUnavailableException, ConcurrentOperationException;
+    UserVm deployVirtualMachine(DeployVMCmd cmd, String password) throws ResourceAllocationException, InsufficientStorageCapacityException, ExecutionException, StorageUnavailableException, ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException;
 
     /**
      * Finds a domain router by user and data center
@@ -673,11 +675,11 @@ public interface ManagementServer {
 	ConsoleProxyVO findConsoleProxyById(long instanceId);
 	VMInstanceVO findSystemVMById(long instanceId);
 	VMInstanceVO stopSystemVM(StopSystemVmCmd cmd);
-	VMInstanceVO startSystemVM(StartSystemVMCmd cmd);
-	VMInstanceVO rebootSystemVM(RebootSystemVmCmd cmd);
+	VirtualMachine startSystemVM(StartSystemVMCmd cmd);
+	VirtualMachine rebootSystemVM(RebootSystemVmCmd cmd);
 	
-	VirtualMachine startSystemVm(StartSystemVm2Cmd cmd);
-	VirtualMachine stopSystemVm(StopSystemVm2Cmd cmd);
+	VirtualMachine startSystemVm(long vmId);
+	VirtualMachine stopSystemVm(long vmId);
 
 	/**
 	 * Returns a configuration value with the specified name

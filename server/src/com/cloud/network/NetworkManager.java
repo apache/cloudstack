@@ -24,23 +24,16 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.AddVpnUserCmd;
 import com.cloud.api.commands.AssignToLoadBalancerRuleCmd;
 import com.cloud.api.commands.AssociateIPAddrCmd;
-import com.cloud.api.commands.CreateIpForwardingRuleCmd;
-import com.cloud.api.commands.CreatePortForwardingRuleCmd;
 import com.cloud.api.commands.CreateLoadBalancerRuleCmd;
+import com.cloud.api.commands.CreatePortForwardingRuleCmd;
 import com.cloud.api.commands.CreateRemoteAccessVpnCmd;
-import com.cloud.api.commands.DeleteIpForwardingRuleCmd;
-import com.cloud.api.commands.DeletePortForwardingRuleCmd;
 import com.cloud.api.commands.DeleteLoadBalancerRuleCmd;
 import com.cloud.api.commands.DeleteRemoteAccessVpnCmd;
 import com.cloud.api.commands.DisassociateIPAddrCmd;
 import com.cloud.api.commands.ListPortForwardingRulesCmd;
-import com.cloud.api.commands.RebootRouterCmd;
 import com.cloud.api.commands.RemoveFromLoadBalancerRuleCmd;
 import com.cloud.api.commands.RemoveVpnUserCmd;
-import com.cloud.api.commands.StartRouterCmd;
-import com.cloud.api.commands.StopRouterCmd;
 import com.cloud.api.commands.UpdateLoadBalancerRuleCmd;
-import com.cloud.api.commands.UpgradeRouterCmd;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
@@ -121,39 +114,16 @@ public interface NetworkManager {
     
     DomainRouterVO startRouter(long routerId, long eventId);
     
-    /**
-     * Starts domain router
-     * @param cmd the command specifying router's id
-     * @return DomainRouter object
-     * @throws InvalidParameterValueException, PermissionDeniedException
-     */
-    DomainRouter startRouter(StartRouterCmd cmd);
-    
     boolean releaseRouter(long routerId);
     
     boolean destroyRouter(long routerId);
     
     boolean stopRouter(long routerId, long eventId);
     
-    /**
-     * Stops domain router
-     * @param cmd the command specifying router's id
-     * @return router if successful, null otherwise
-     * @throws InvalidParameterValueException, PermissionDeniedException
-     */
-    DomainRouter stopRouter(StopRouterCmd cmd);
-    
     boolean getRouterStatistics(long vmId, Map<String, long[]> netStats, Map<String, long[]> diskStats);
 
     boolean rebootRouter(long routerId, long eventId);
     
-    /**
-     * Reboots domain router
-     * @param cmd the command specifying router's id
-     * @return the rebooted router
-     * @throws InvalidParameterValueException, PermissionDeniedException
-     */
-    DomainRouter rebootRouter(RebootRouterCmd cmd);
     /**
      * @param hostId get all of the virtual machine routers on a host.
      * @return collection of VirtualMachineRouter
@@ -317,7 +287,6 @@ public interface NetworkManager {
     void prepare(VirtualMachineProfile<? extends VMInstanceVO> profile, DeployDestination dest, ReservationContext context) throws InsufficientNetworkCapacityException, ConcurrentOperationException, ResourceUnavailableException;
     void release(VirtualMachineProfile<? extends VMInstanceVO> vmProfile);
     
-    DomainRouter upgradeRouter(UpgradeRouterCmd cmd);
     List<? extends Nic> getNics (VirtualMachine vm);
 	
     List<AccountVO> getAccountsUsingNetworkConfiguration(long configurationId);    

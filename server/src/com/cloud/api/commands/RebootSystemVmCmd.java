@@ -31,7 +31,7 @@ import com.cloud.api.response.SystemVmResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
-import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 
 @Implementation(description="Reboots a system VM.", responseObject=SystemVmResponse.class)
 public class RebootSystemVmCmd extends BaseAsyncCmd {
@@ -85,7 +85,7 @@ public class RebootSystemVmCmd extends BaseAsyncCmd {
     
     @Override
     public void execute(){
-        VMInstanceVO result = _mgr.rebootSystemVM(this);
+        VirtualMachine result = _mgr.rebootSystemVM(this);
         if (result != null) {
             SystemVmResponse response = ApiResponseHelper.createSystemVmResponse(result);
             response.setResponseName(getName());

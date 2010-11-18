@@ -116,7 +116,6 @@ public class ApiServer implements HttpRequestHandler {
     private AccountManager _accountMgr = null;
     private Account _systemAccount = null;
     private User _systemUser = null;
-    
 
     private static int _workerCount = 0;
 

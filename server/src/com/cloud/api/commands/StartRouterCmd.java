@@ -30,6 +30,9 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.DomainRouterResponse;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.DomainRouter;
@@ -90,7 +93,7 @@ public class StartRouterCmd extends BaseAsyncCmd {
     }
 	
     @Override
-    public void execute(){
+    public void execute() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
         DomainRouter result = _routerMgr.startRouter(this);
         if (result != null){
             DomainRouterResponse routerResponse = ApiResponseHelper.createDomainRouterResponse(result);

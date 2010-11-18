@@ -17,26 +17,22 @@
  */
 package com.cloud.vm;
 
+import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.AttachVolumeCmd;
 import com.cloud.api.commands.CreateTemplateCmd;
 import com.cloud.api.commands.CreateVMGroupCmd;
 import com.cloud.api.commands.DeleteVMGroupCmd;
+import com.cloud.api.commands.DeployVMCmd;
 import com.cloud.api.commands.DeployVm2Cmd;
 import com.cloud.api.commands.DestroyVMCmd;
-import com.cloud.api.commands.DestroyVm2Cmd;
 import com.cloud.api.commands.DetachVolumeCmd;
 import com.cloud.api.commands.RebootVMCmd;
 import com.cloud.api.commands.RecoverVMCmd;
 import com.cloud.api.commands.ResetVMPasswordCmd;
 import com.cloud.api.commands.StartVMCmd;
-import com.cloud.api.commands.StartVm2Cmd;
 import com.cloud.api.commands.StopVMCmd;
-import com.cloud.api.commands.StopVm2Cmd;
 import com.cloud.api.commands.UpdateVMCmd;
 import com.cloud.api.commands.UpgradeVMCmd;
-import com.cloud.async.executor.OperationResponse;
-import com.cloud.async.executor.RebootVMExecutor;
-import com.cloud.async.executor.VMOperationParam;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -54,8 +50,10 @@ public interface UserVmService {
      * Destroys one virtual machine
      * @param userId the id of the user performing the action
      * @param vmId the id of the virtual machine.
+     * @throws ConcurrentOperationException 
+     * @throws ResourceUnavailableException 
      */
-    UserVm destroyVm(DestroyVMCmd cmd);
+    UserVm destroyVm(DestroyVMCmd cmd) throws ResourceUnavailableException, ConcurrentOperationException;
     
     /**
      * Destroys one virtual machine
@@ -64,7 +62,7 @@ public interface UserVmService {
      * @throws ConcurrentOperationException 
      * @throws ResourceUnavailableException 
      */
-    UserVm destroyVm(DestroyVm2Cmd cmd) throws ResourceUnavailableException, ConcurrentOperationException;
+    UserVm destroyVm(long vmId) throws ResourceUnavailableException, ConcurrentOperationException;
     
     /**
      * Resets the password of a virtual machine.
@@ -89,14 +87,11 @@ public interface UserVmService {
      */
     Volume detachVolumeFromVM(DetachVolumeCmd cmmd);
     
-    UserVm startVirtualMachine(StartVMCmd cmd) throws StorageUnavailableException, ExecutionException, ConcurrentOperationException;
-    UserVm stopVirtualMachine(StopVMCmd cmd);
+    UserVm startVirtualMachine(StartVMCmd cmd) throws StorageUnavailableException, ExecutionException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
+    UserVm stopVirtualMachine(StopVMCmd cmd) throws ServerApiException, ConcurrentOperationException;
     UserVm rebootVirtualMachine(RebootVMCmd cmd);
     UserVm updateVirtualMachine(UpdateVMCmd cmd);
     UserVm recoverVirtualMachine(RecoverVMCmd cmd) throws ResourceAllocationException;
-    
-    @Deprecated
-    OperationResponse executeRebootVM(RebootVMExecutor executor, VMOperationParam param);
     
     /**
      * Create a template database record in preparation for creating a private template.
@@ -127,7 +122,7 @@ public interface UserVmService {
      * @throws PermissionDeniedException if the caller doesn't have any access rights to the VM.
      * @throws InvalidParameterValueException if the parameters are incorrect. 
      */
-    UserVm createVirtualMachine(DeployVm2Cmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException;
+    UserVm createVirtualMachine(DeployVMCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException;
     
     /**
      * Starts the virtual machine created from createVirtualMachine.
@@ -157,7 +152,7 @@ public interface UserVmService {
      */
     UserVm upgradeVirtualMachine(UpgradeVMCmd cmd);
     
-    UserVm stopVirtualMachine(StopVm2Cmd cmd) throws ConcurrentOperationException;
+    UserVm stopVirtualMachine(long vmId) throws ConcurrentOperationException;
     
-    UserVm startVirtualMachine(StartVm2Cmd cmd) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
+    UserVm startVirtualMachine(long vmId) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
 }

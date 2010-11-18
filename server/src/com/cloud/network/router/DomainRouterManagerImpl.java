@@ -59,9 +59,7 @@ import com.cloud.agent.api.routing.VpnUsersCfgCommand;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.commands.RebootRouterCmd;
-import com.cloud.api.commands.StartRouter2Cmd;
 import com.cloud.api.commands.StartRouterCmd;
-import com.cloud.api.commands.StopRouter2Cmd;
 import com.cloud.api.commands.StopRouterCmd;
 import com.cloud.api.commands.UpgradeRouterCmd;
 import com.cloud.async.AsyncJobExecutor;
@@ -252,6 +250,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
     ScheduledExecutorService _executor;
     
     AccountVO _systemAcct;
+    boolean _useNewNetworking;
 	
     @Override
     public DomainRouterVO getRouter(long accountId, long dataCenterId) {
@@ -757,7 +756,10 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
     }
     
     @Override
-    public DomainRouter startRouter(StartRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
+    public DomainRouter startRouter(StartRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException{
+        if (_useNewNetworking) {
+            return startRouter(cmd.getId());
+        }
     	Long routerId = cmd.getId();
     	Account account = UserContext.current().getAccount();
     	
@@ -1258,7 +1260,10 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
     
     
     @Override
-    public DomainRouter stopRouter(StopRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
+    public DomainRouter stopRouter(StopRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, ResourceUnavailableException, ConcurrentOperationException{
+        if (_useNewNetworking) {
+            return stopRouter(cmd.getId());
+        }
 	    Long routerId = cmd.getId();
         Account account = UserContext.current().getAccount();
 
@@ -1504,6 +1509,8 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         } else {
         	_routerTemplateId = _template.getId();
         }
+        
+        _useNewNetworking = Boolean.parseBoolean(configs.get("use.new.networking"));
         
         _systemAcct = _accountMgr.getSystemAccount();
         
@@ -2341,8 +2348,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
     }
     
     @Override
-    public DomainRouter startRouter(StartRouter2Cmd cmd) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException {
-        Long routerId = cmd.getId();
+    public DomainRouter startRouter(long routerId) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException {
         Account account = UserContext.current().getAccount();
         
         //verify parameters
@@ -2367,8 +2373,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
      * @throws InvalidParameterValueException, PermissionDeniedException
      */
     @Override
-    public DomainRouter stopRouter(StopRouter2Cmd cmd) throws ResourceUnavailableException, ConcurrentOperationException {
-        Long routerId = cmd.getId();
+    public DomainRouter stopRouter(long routerId) throws ResourceUnavailableException, ConcurrentOperationException {
         UserContext context = UserContext.current();
         Account account = context.getAccount();
         long accountId = context.getAccountId();

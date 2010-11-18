@@ -77,8 +77,8 @@ public class ComponentLocator implements ComponentLocatorMBean {
     protected static final Logger                      s_logger     = Logger.getLogger(ComponentLocator.class);
     
     protected static final ThreadLocal<ComponentLocator> s_tl = new ThreadLocal<ComponentLocator>();
-    protected static ConcurrentHashMap<Class<?>, Singleton> s_singletons = new ConcurrentHashMap<Class<?>, Singleton>(111);
-    static HashMap<String, ComponentLocator> s_locators = new HashMap<String, ComponentLocator>();
+    protected static final ConcurrentHashMap<Class<?>, Singleton> s_singletons = new ConcurrentHashMap<Class<?>, Singleton>(111);
+    protected static final HashMap<String, ComponentLocator> s_locators = new HashMap<String, ComponentLocator>();
     protected static final Callback[] s_callbacks = new Callback[] { NoOp.INSTANCE, new DatabaseCallback() };
     protected static final CallbackFilter s_callbackFilter = new DatabaseCallbackFilter();
     protected static final HashMap<Class<?>, InjectInfo> s_factories = new HashMap<Class<?>, InjectInfo>();
@@ -87,7 +87,6 @@ public class ComponentLocator implements ComponentLocatorMBean {
     protected HashMap<String, Adapters<? extends Adapter>>              _adapterMap;
     protected HashMap<String, ComponentInfo<Manager>>                   _managerMap;
     protected LinkedHashMap<String, ComponentInfo<GenericDao<?, ?>>>    _daoMap;
-    protected ComponentLocator                                          _parentLocator;
     protected String                                                    _serverName;
     protected Object                                                    _component;
     
@@ -96,7 +95,6 @@ public class ComponentLocator implements ComponentLocatorMBean {
     }
 
     public ComponentLocator(String server) {
-        _parentLocator = null;
         _serverName = server;
     }
 
@@ -109,7 +107,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
         return getLocatorName();
     }
 
-    protected Pair<XmlHandler, ComponentLibrary> parse2(String filename) {
+    protected Pair<XmlHandler, HashMap<String, List<ComponentInfo<Adapter>>>> parse2(String filename) {
         try {
             SAXParserFactory spfactory = SAXParserFactory.newInstance();
             SAXParser saxParser = spfactory.newSAXParser();
@@ -118,13 +116,14 @@ public class ComponentLocator implements ComponentLocatorMBean {
             _adapterMap = new HashMap<String, Adapters<? extends Adapter>>();
             File file = PropertiesUtil.findConfigFile(filename);
             if (file == null) {
-            	return null;
+                s_logger.info("Unable to find " + filename);
+                return null;
             }
             s_logger.info("Config file found at " + file.getAbsolutePath() + ".  Configuring " + _serverName);
             XmlHandler handler = new XmlHandler(_serverName);
             saxParser.parse(file, handler);
 
-
+            HashMap<String, List<ComponentInfo<Adapter>>> adapters = new HashMap<String, List<ComponentInfo<Adapter>>>();
             if (handler.parent != null) {
                 String[] tokens = handler.parent.split(":");
                 String parentFile = filename;
@@ -133,11 +132,10 @@ public class ComponentLocator implements ComponentLocatorMBean {
                     parentFile = tokens[0];
                     parentName = tokens[1];
                 }
-                _parentLocator = new ComponentLocator(parentName);
-                _parentLocator.parse2(parentFile);
-                _daoMap.putAll(_parentLocator._daoMap);
-                _managerMap.putAll(_parentLocator._managerMap);
-                _adapterMap.putAll(_parentLocator._adapterMap);
+                ComponentLocator parentLocator = new ComponentLocator(parentName);
+                adapters.putAll(parentLocator.parse2(parentFile).second());
+                _daoMap.putAll(parentLocator._daoMap);
+                _managerMap.putAll(parentLocator._managerMap);
             }
 
             ComponentLibrary library = null;
@@ -146,12 +144,14 @@ public class ComponentLocator implements ComponentLocatorMBean {
                 library = (ComponentLibrary)clazz.newInstance();
                 _daoMap.putAll(library.getDaos());
                 _managerMap.putAll(library.getManagers());
+                adapters.putAll(library.getAdapters());
             }
 
             _daoMap.putAll(handler.daos);
             _managerMap.putAll(handler.managers);
+            adapters.putAll(handler.adapters);
             
-            return new Pair<XmlHandler, ComponentLibrary>(handler, library);
+            return new Pair<XmlHandler, HashMap<String, List<ComponentInfo<Adapter>>>>(handler, adapters);
             
         } catch (ParserConfigurationException e) {
             s_logger.error("Unable to load " + _serverName + " due to errors while parsing " + filename, e);
@@ -173,20 +173,17 @@ public class ComponentLocator implements ComponentLocatorMBean {
     }
 
     protected void parse(String filename) {
-        Pair<XmlHandler, ComponentLibrary> parseResults = parse2(filename);
-        if (parseResults == null) {
-        	s_logger.info("Skipping configuration using components.xml");
-        	return;
+        Pair<XmlHandler, HashMap<String, List<ComponentInfo<Adapter>>>> result = parse2(filename);
+        if (result == null) {
+            s_logger.info("Skipping configuration using " + filename);
+            return;
         }
-        XmlHandler handler = parseResults.first();
-        ComponentLibrary library = parseResults.second();
-        
+
+        XmlHandler handler = result.first();
+        HashMap<String, List<ComponentInfo<Adapter>>> adapters = result.second();
         try {
             startDaos();    // daos should not be using managers and adapters.
-            if (library != null) {
-                instantiateAdapters(library.getAdapters());
-            }
-            instantiateAdapters(handler.adapters);
+            instantiateAdapters(adapters);
             instantiateManagers();
             _component = createInstance(handler.componentClass, true, true);
             configureManagers();
@@ -320,19 +317,10 @@ public class ComponentLocator implements ComponentLocatorMBean {
 
     protected ComponentInfo<GenericDao<?, ?>> getDao(String name) {
         ComponentInfo<GenericDao<?, ?>> info = _daoMap.get(name);
-        if (info != null) {
-            return info;
-        }
-
-        if (_parentLocator != null) {
-            info = _parentLocator.getDao(name);
-        }
-
         if (info == null) {
             throw new CloudRuntimeException("Unable to find DAO " + name);
         }
-
-        _daoMap.put(name, info);
+        
         return info;
     }
 
@@ -492,19 +480,6 @@ public class ComponentLocator implements ComponentLocatorMBean {
 
     protected ComponentInfo<Manager> getManager(String name) {
         ComponentInfo<Manager> mgr = _managerMap.get(name);
-        if (mgr != null) {
-            return mgr;
-        }
-
-        if (_parentLocator != null) {
-            mgr = _parentLocator.getManager(name);
-        }
-
-        if (mgr == null) {
-            return null;
-        }
-
-        _managerMap.put(name, mgr);
         return mgr;
     }
 
@@ -559,6 +534,18 @@ public class ComponentLocator implements ComponentLocatorMBean {
         }
     }
 
+    protected void populateAdapters(Map<String, List<ComponentInfo<Adapter>>> map) {
+        Set<Map.Entry<String, List<ComponentInfo<Adapter>>>> entries = map.entrySet();
+        for (Map.Entry<String, List<ComponentInfo<Adapter>>> entry : entries) {
+            for (ComponentInfo<Adapter> info : entry.getValue()) {
+                s_logger.info("Instantiating Adapter: " + info.name);
+                info.instance = (Adapter)createInstance(info.clazz, false, info.singleton);
+            }
+            Adapters<Adapter> adapters = new Adapters<Adapter>(entry.getKey(), entry.getValue());
+            _adapterMap.put(entry.getKey(), adapters);
+        }
+    }
+    
     protected void instantiateAdapters(Map<String, List<ComponentInfo<Adapter>>> map) {
         Set<Map.Entry<String, List<ComponentInfo<Adapter>>>> entries = map.entrySet();
         for (Map.Entry<String, List<ComponentInfo<Adapter>>> entry : entries) {
@@ -601,11 +588,6 @@ public class ComponentLocator implements ComponentLocatorMBean {
         }
     }
 
-    @Override
-    public String getParentName() {
-        return _parentLocator != null ? _parentLocator.getName() : "None";
-    }
-    
     public static <T> T inject(Class<T> clazz) {
         return (T)createInstance(clazz, true, false);
     }
@@ -631,8 +613,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
     }
 
     public Map<String, List<String>> getAllAccessibleAdapters() {
-        Map<String, List<String>> parentResults = _parentLocator != null ? _parentLocator.getAllAccessibleAdapters()
-                : new HashMap<String, List<String>>();
+        Map<String, List<String>> parentResults = new HashMap<String, List<String>>();
         Map<String, List<String>> results = getAdapters();
         parentResults.putAll(results);
         return parentResults;
@@ -640,7 +621,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
 
     @Override
     public Collection<String> getManagers() {
-        Collection<String> names = _parentLocator != null ? _parentLocator.getManagers() : new HashSet<String>();
+        Collection<String> names = new HashSet<String>();
         for (Map.Entry<String, ComponentInfo<Manager>> entry : _managerMap.entrySet()) {
             names.add(entry.getValue().name);
         }
@@ -649,7 +630,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
 
     @Override
     public Collection<String> getDaos() {
-        Collection<String> names = _parentLocator != null ? _parentLocator.getDaos() : new HashSet<String>();
+        Collection<String> names = new HashSet<String>();
         for (Map.Entry<String, ComponentInfo<GenericDao<?, ?>>> entry : _daoMap.entrySet()) {
             names.add(entry.getValue().name);
         }
@@ -664,12 +645,6 @@ public class ComponentLocator implements ComponentLocatorMBean {
         Adapters<? extends Adapter> adapters = _adapterMap.get(key);
         if (adapters != null) {
             return adapters;
-        }
-        if (_parentLocator != null) {
-            adapters = _parentLocator.getAdapters(key);
-            if (adapters != null) {
-                return adapters;
-            }
         }
         return new Adapters<Adapter>(key, new ArrayList<ComponentInfo<Adapter>>());
     }

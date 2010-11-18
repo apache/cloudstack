@@ -31,6 +31,9 @@ import com.cloud.agent.AgentManager;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.configuration.ConfigurationService;
 import com.cloud.consoleproxy.ConsoleProxyManager;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.DomainRouterService;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.security.NetworkGroupManager;
@@ -115,7 +118,7 @@ public abstract class BaseCmd {
         _routerMgr = locator.getManager(DomainRouterService.class);
     }
     
-    public abstract void execute();
+    public abstract void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException;
     
     public String getResponseType() {
         if (responseType == null) {

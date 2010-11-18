@@ -286,6 +286,8 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
 
     private String _domain;
     private String _instance;
+    
+    private boolean _useNewNetworking = false;
 
     // private String _privateNetmask;
     private int _proxyCmdPort = DEFAULT_PROXY_CMD_PORT;
@@ -531,7 +533,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
     @Override
     public ConsoleProxyVO startProxy(long proxyVmId, long startEventId) {
         try {
-            return start(proxyVmId, startEventId);
+            return start2(proxyVmId, startEventId);
         } catch (StorageUnavailableException e) {
             s_logger.warn("Exception while trying to start console proxy", e);
             return null;
@@ -548,6 +550,9 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
     }
 
     public ConsoleProxyVO start2(long proxyVmId, long startEventId) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException {
+        if (!_useNewNetworking) {
+            return start(proxyVmId, startEventId);
+        }
         ConsoleProxyVO proxy = _consoleProxyDao.findById(proxyVmId);
         AccountVO systemAcct = _accountMgr.getSystemAccount();
         UserVO systemUser = _accountMgr.getSystemUser();
@@ -556,8 +561,8 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
 
     @Override
     @DB
-    public ConsoleProxyVO start(long proxyId, long startEventId) throws StorageUnavailableException, InsufficientCapacityException,
-            ConcurrentOperationException {
+    public ConsoleProxyVO start(long proxyId, long startEventId) throws InsufficientCapacityException,
+            ConcurrentOperationException, StorageUnavailableException {
 
         AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor.getCurrentExecutor();
         if (asyncExecutor != null) {
@@ -881,7 +886,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
         if (s_logger.isDebugEnabled())
             s_logger.debug("Assign console proxy from a newly started instance for request from data center : " + dataCenterId);
 
-        Map<String, Object> context = createProxyInstance(dataCenterId);
+        Map<String, Object> context = _useNewNetworking ? createProxyInstance2(dataCenterId) : createProxyInstance(dataCenterId);
 
         long proxyVmId = (Long) context.get("proxyVmId");
         if (proxyVmId == 0) {
@@ -921,7 +926,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
         if (s_logger.isDebugEnabled())
             s_logger.debug("Assign console proxy from a newly started instance for request from data center : " + dataCenterId);
 
-        Map<String, Object> context = createProxyInstance(dataCenterId);
+        Map<String, Object> context = _useNewNetworking ? createProxyInstance2(dataCenterId) : createProxyInstance(dataCenterId);
 
         long proxyVmId = (Long) context.get("proxyVmId");
         if (proxyVmId == 0) {
@@ -1468,7 +1473,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
                                 try {
                                     if (proxyLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC)) {
                                         try {
-                                            readyProxy = start(readyProxy.getId(), 0);
+                                            readyProxy = start2(readyProxy.getId(), 0);
                                         } finally {
                                             proxyLock.unlock();
                                         }
@@ -2294,6 +2299,8 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
         value = configs.get("secondary.storage.vm");
         if (value != null && value.equalsIgnoreCase("true"))
             _use_storage_vm = true;
+        
+        _useNewNetworking = Boolean.parseBoolean(configs.get("use.new.networking"));
 
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Console proxy max session soft limit : " + _capacityPerProxy);

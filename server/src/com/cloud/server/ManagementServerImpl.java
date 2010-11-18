@@ -78,6 +78,7 @@ import com.cloud.api.commands.CreateDomainCmd;
 import com.cloud.api.commands.DeleteDomainCmd;
 import com.cloud.api.commands.DeletePreallocatedLunCmd;
 import com.cloud.api.commands.DeployVMCmd;
+import com.cloud.api.commands.DeployVm2Cmd;
 import com.cloud.api.commands.ExtractVolumeCmd;
 import com.cloud.api.commands.GetCloudIdentifierCmd;
 import com.cloud.api.commands.ListAccountsCmd;
@@ -120,8 +121,6 @@ import com.cloud.api.commands.RebootSystemVmCmd;
 import com.cloud.api.commands.RegisterCmd;
 import com.cloud.api.commands.RegisterPreallocatedLunCmd;
 import com.cloud.api.commands.StartSystemVMCmd;
-import com.cloud.api.commands.StartSystemVm2Cmd;
-import com.cloud.api.commands.StopSystemVm2Cmd;
 import com.cloud.api.commands.StopSystemVmCmd;
 import com.cloud.api.commands.UpdateDomainCmd;
 import com.cloud.api.commands.UpdateIsoCmd;
@@ -177,6 +176,7 @@ import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientStorageCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ManagementServerException;
@@ -251,7 +251,6 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.preallocatedlun.PreallocatedLunVO;
 import com.cloud.storage.preallocatedlun.dao.PreallocatedLunDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
-import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.storage.upload.UploadMonitor;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
@@ -274,6 +273,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.component.Inject;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
@@ -294,6 +294,7 @@ import com.cloud.vm.InstanceGroupVO;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.State;
 import com.cloud.vm.UserVmManager;
+import com.cloud.vm.UserVmService;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -362,7 +363,6 @@ public class ManagementServerImpl implements ManagementServer {
     private final AsyncJobDao _jobDao;
     private final AsyncJobManager _asyncMgr;
     private final TemplateManager _tmpltMgr;
-    private final SnapshotManager _snapMgr;
     private final NetworkGroupManager _networkGroupMgr;
     private final int _purgeDelay;
     private final boolean _directAttachNetworkExternalIpAllocator;
@@ -374,6 +374,7 @@ public class ManagementServerImpl implements ManagementServer {
     private final CertificateDao _certDao;
     private final RemoteAccessVpnDao _remoteAccessVpnDao;
     private final VpnUserDao _vpnUsersDao;
+    @Inject private UserVmService _userVmService; 
 
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AccountChecker"));
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
@@ -388,6 +389,8 @@ public class ManagementServerImpl implements ManagementServer {
     private final int _proxyRamSize;
     private final int _ssRamSize;
     private int _maxVolumeSizeInMb;
+    
+    private boolean _useNewNetworking = false;
 
     private final Map<String, Boolean> _availableIdsMap;
 
@@ -459,7 +462,6 @@ public class ManagementServerImpl implements ManagementServer {
         _alertMgr = locator.getManager(AlertManager.class);
         _asyncMgr = locator.getManager(AsyncJobManager.class);
         _tmpltMgr = locator.getManager(TemplateManager.class);
-        _snapMgr = locator.getManager(SnapshotManager.class);
         _networkGroupMgr = locator.getManager(NetworkGroupManager.class);
         _uploadMonitor = locator.getManager(UploadMonitor.class);        
     	
@@ -509,6 +511,8 @@ public class ManagementServerImpl implements ManagementServer {
         String maxVolumeSizeInMbString = _configDao.getValue("max.volume.size.gb");
         int maxVolumeSizeMb = NumbersUtil.parseInt(maxVolumeSizeInMbString, (2000*1024));//2000 gb
         _maxVolumeSizeInMb = maxVolumeSizeMb;
+        
+        _useNewNetworking = Boolean.parseBoolean(_configs.get("use.new.networking"));
     }
     
     protected Map<String, String> getConfigs() {
@@ -1099,8 +1103,19 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public UserVm deployVirtualMachine(DeployVMCmd cmd, String password) throws ResourceAllocationException,
-                                                               InsufficientStorageCapacityException, ExecutionException,
-                                                               StorageUnavailableException, ConcurrentOperationException {
+                                                               ExecutionException,
+                                                               ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+        if (_useNewNetworking) {
+            UserVm vm = _userVmService.createVirtualMachine(cmd);
+            if (vm == null) {
+                return null;
+            }
+            
+            DeployVm2Cmd cmd2 = new DeployVm2Cmd();
+            cmd2.setId(vm.getId());
+            vm = _userVmService.startVirtualMachine(cmd2);
+            return vm;
+        }
         Account ctxAccount = UserContext.current().getAccount();
         Long userId = UserContext.current().getUserId();
         String accountName = cmd.getAccountName();
@@ -4810,7 +4825,10 @@ public class ManagementServerImpl implements ManagementServer {
 	}
 
 	@Override
-	public VMInstanceVO startSystemVM(StartSystemVMCmd cmd) {
+	public VirtualMachine startSystemVM(StartSystemVMCmd cmd) {
+	    if (_useNewNetworking) {
+	        return startSystemVm(cmd.getId());
+	    }
 		
 		//verify input
 		Long id = cmd.getId();
@@ -4830,52 +4848,47 @@ public class ManagementServerImpl implements ManagementServer {
 	}
 
     @Override
-    public VirtualMachine startSystemVm(StartSystemVm2Cmd cmd) {
+    public VirtualMachine startSystemVm(long vmId) {
         UserContext context = UserContext.current();
         long callerId = context.getUserId();
         long callerAccountId = context.getAccountId(); 
         
-        //verify input
-        Long id = cmd.getId();
-
-        VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(id, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
+        VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(vmId, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
         if (systemVm == null) {
-            throw new InvalidParameterValueException("unable to find a system vm with id " + id);
+            throw new InvalidParameterValueException("unable to find a system vm with id " + vmId);
         }
         
         if (systemVm.getType() == VirtualMachine.Type.ConsoleProxy) {
-            long eventId = EventUtils.saveScheduledEvent(callerId, callerAccountId, EventTypes.EVENT_PROXY_START, "Starting console proxy with Id: "+id);
-            return startConsoleProxy(id, eventId);
+            long eventId = EventUtils.saveScheduledEvent(callerId, callerAccountId, EventTypes.EVENT_PROXY_START, "Starting console proxy with Id: "+vmId);
+            return startConsoleProxy(vmId, eventId);
         } else if (systemVm.getType() == VirtualMachine.Type.SecondaryStorageVm) {
-            long eventId = EventUtils.saveScheduledEvent(callerId, callerAccountId, EventTypes.EVENT_SSVM_START, "Starting secondary storage Vm Id: "+id);
-            return startSecondaryStorageVm(id, eventId);
+            long eventId = EventUtils.saveScheduledEvent(callerId, callerAccountId, EventTypes.EVENT_SSVM_START, "Starting secondary storage Vm Id: "+vmId);
+            return startSecondaryStorageVm(vmId, eventId);
         } else {
-            throw new InvalidParameterValueException("Unable to find a system vm: " + id);
+            throw new InvalidParameterValueException("Unable to find a system vm: " + vmId);
         }
     }
     
     @Override
-    public VirtualMachine stopSystemVm(StopSystemVm2Cmd cmd) {
+    public VirtualMachine stopSystemVm(long vmId) {
         UserContext context = UserContext.current();
         
         long callerId = context.getUserId();
         long callerAccountId = context.getAccountId();
         
-        Long id = cmd.getId();
-        
         // verify parameters      
-        VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(id, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
+        VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(vmId, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
         if (systemVm == null) {
-            throw new ServerApiException (BaseCmd.PARAM_ERROR, "unable to find a system vm with id " + id);
+            throw new ServerApiException (BaseCmd.PARAM_ERROR, "unable to find a system vm with id " + vmId);
         }
 
         // FIXME: We need to return the system VM from this method, so what do we do with the boolean response from stopConsoleProxy and stopSecondaryStorageVm?
         if (systemVm.getType().equals(VirtualMachine.Type.ConsoleProxy)){
-            long eventId = EventUtils.saveScheduledEvent(callerId, callerAccountId, EventTypes.EVENT_PROXY_STOP, "stopping console proxy with Id: "+id);
-            return stopConsoleProxy(id, eventId);
+            long eventId = EventUtils.saveScheduledEvent(callerId, callerAccountId, EventTypes.EVENT_PROXY_STOP, "stopping console proxy with Id: "+vmId);
+            return stopConsoleProxy(vmId, eventId);
         } else {
-            long eventId = EventUtils.saveScheduledEvent(callerId, callerAccountId, EventTypes.EVENT_SSVM_STOP, "stopping secondary storage Vm Id: "+id);
-            return stopSecondaryStorageVm(id, eventId);
+            long eventId = EventUtils.saveScheduledEvent(callerId, callerAccountId, EventTypes.EVENT_SSVM_STOP, "stopping secondary storage Vm Id: "+vmId);
+            return stopSecondaryStorageVm(vmId, eventId);
         }
     }
     

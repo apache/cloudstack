@@ -66,7 +66,7 @@ public class UpgradeRouterCmd extends BaseCmd {
 	
     @Override
     public void execute(){
-        DomainRouter router = _networkMgr.upgradeRouter(this);
+        DomainRouter router = _routerMgr.upgradeRouter(this);
         if (router != null){
             DomainRouterResponse routerResponse = ApiResponseHelper.createDomainRouterResponse(router);
             routerResponse.setResponseName(getName());

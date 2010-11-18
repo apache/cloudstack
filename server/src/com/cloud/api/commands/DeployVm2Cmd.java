@@ -177,20 +177,20 @@ public class DeployVm2Cmd extends BaseAsyncCreateCmd {
     
     @Override
     public void callCreate() {
-        try {
-            UserVm vm = _userVmService.createVirtualMachine(this);
-            if (vm != null) {
-                this.setId(vm.getId());
-            } else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to deploy vm");
-            }
-        } catch (ResourceUnavailableException ex) {
-            throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
-        } catch (ConcurrentOperationException ex) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage()); 
-        } catch (InsufficientCapacityException ex) {
-            throw new ServerApiException(BaseCmd.INSUFFICIENT_CAPACITY_ERROR, ex.getMessage());
-        } 
+//        try {
+//            UserVm vm = _userVmService.createVirtualMachine(this);
+//            if (vm != null) {
+//                this.setId(vm.getId());
+//            } else {
+//                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to deploy vm");
+//            }
+//        } catch (ResourceUnavailableException ex) {
+//            throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
+//        } catch (ConcurrentOperationException ex) {
+//            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage()); 
+//        } catch (InsufficientCapacityException ex) {
+//            throw new ServerApiException(BaseCmd.INSUFFICIENT_CAPACITY_ERROR, ex.getMessage());
+//        } 
     }
 
 

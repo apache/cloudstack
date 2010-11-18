@@ -55,7 +55,7 @@ public interface ServerResource extends Manager {
      */
     public Answer executeRequest(Command cmd);
     
-//    public void revertRequest(Command cmd);
+//    public void revertRequest(Command cmd, Answer answer);
     
     /**
      * disconnected() is called when the connection is down between the

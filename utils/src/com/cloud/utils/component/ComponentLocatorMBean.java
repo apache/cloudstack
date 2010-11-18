@@ -27,11 +27,6 @@ import com.cloud.utils.mgmt.ManagementBean;
 public interface ComponentLocatorMBean extends ManagementBean {
 
     /**
-     * @return the name of the parent component locator. 
-     **/
-    String getParentName();
-
-    /**
      * @return the list of adapters accessible by this component locator.
      **/
     Map<String, List<String>> getAdapters();

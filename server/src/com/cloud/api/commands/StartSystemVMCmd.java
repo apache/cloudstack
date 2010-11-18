@@ -31,7 +31,7 @@ import com.cloud.api.response.SystemVmResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
-import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 
 @Implementation(responseObject=SystemVmResponse.class, description="Starts a system virtual machine.")
 public class StartSystemVMCmd extends BaseAsyncCmd {
@@ -89,7 +89,7 @@ public class StartSystemVMCmd extends BaseAsyncCmd {
 	
     @Override
     public void execute(){
-        VMInstanceVO instance = _mgr.startSystemVM(this);
+        VirtualMachine instance = _mgr.startSystemVM(this);
         if (instance != null) {
             SystemVmResponse response = ApiResponseHelper.createSystemVmResponse(instance);
             response.setResponseName(getName());

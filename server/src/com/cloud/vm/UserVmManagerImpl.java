@@ -69,17 +69,15 @@ import com.cloud.api.commands.AttachVolumeCmd;
 import com.cloud.api.commands.CreateTemplateCmd;
 import com.cloud.api.commands.CreateVMGroupCmd;
 import com.cloud.api.commands.DeleteVMGroupCmd;
+import com.cloud.api.commands.DeployVMCmd;
 import com.cloud.api.commands.DeployVm2Cmd;
 import com.cloud.api.commands.DestroyVMCmd;
-import com.cloud.api.commands.DestroyVm2Cmd;
 import com.cloud.api.commands.DetachVolumeCmd;
 import com.cloud.api.commands.RebootVMCmd;
 import com.cloud.api.commands.RecoverVMCmd;
 import com.cloud.api.commands.ResetVMPasswordCmd;
 import com.cloud.api.commands.StartVMCmd;
-import com.cloud.api.commands.StartVm2Cmd;
 import com.cloud.api.commands.StopVMCmd;
-import com.cloud.api.commands.StopVm2Cmd;
 import com.cloud.api.commands.UpdateVMCmd;
 import com.cloud.api.commands.UpgradeVMCmd;
 import com.cloud.async.AsyncJobExecutor;
@@ -88,7 +86,6 @@ import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.async.BaseAsyncJobExecutor;
 import com.cloud.async.executor.OperationResponse;
-import com.cloud.async.executor.RebootVMExecutor;
 import com.cloud.async.executor.StartVMExecutor;
 import com.cloud.async.executor.StopVMExecutor;
 import com.cloud.async.executor.VMExecutorHelper;
@@ -165,7 +162,6 @@ import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.StoragePoolDao;
-import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -242,7 +238,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     @Inject AlertManager _alertMgr = null;
     @Inject AccountManager _accountMgr;
     @Inject AsyncJobManager _asyncMgr;
-    @Inject protected StoragePoolHostDao _storagePoolHostDao;
     @Inject VlanDao _vlanDao;
     @Inject AccountVlanMapDao _accountVlanMapDao;
     @Inject StoragePoolDao _storagePoolDao;
@@ -264,6 +259,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     String _instance;
     String _zone;
     String _defaultNetworkDomain;
+    boolean _useNewNetworking = false;
 
     Random _rand = new Random(System.currentTimeMillis());
 
@@ -1314,43 +1310,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
             return false;
         }
     }
-
-    @Override
-    public OperationResponse executeRebootVM(RebootVMExecutor executor, VMOperationParam param) {
-    	
-        final UserVmVO vm = _vmDao.findById(param.getVmId());
-        String resultDescription;
-        
-        if (vm == null || vm.getState() == State.Destroyed || vm.getState() == State.Expunging || vm.getRemoved() != null) {
-        	resultDescription = "VM does not exist or in destroying state";
-        	executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
-        		AsyncJobResult.STATUS_FAILED, 0, resultDescription);
-        	if(s_logger.isDebugEnabled())
-        		s_logger.debug("Execute asynchronize Reboot VM command: " +resultDescription);
-        	return new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
-        }
-        
-        if (vm.getState() == State.Running && vm.getHostId() != null) {
-            RebootCommand cmd = new RebootCommand(vm.getInstanceName());
-            try {
-				long seq = _agentMgr.send(vm.getHostId(), new Commands(cmd), new VMOperationListener(executor, param, vm, 0));
-				resultDescription = "Execute asynchronize Reboot VM command: sending command to agent, seq - " + seq;
-            	if(s_logger.isDebugEnabled())
-            		s_logger.debug(resultDescription);
-				return new OperationResponse(OperationResponse.STATUS_IN_PROGRESS, resultDescription);
-			} catch (AgentUnavailableException e) {
-				resultDescription = "Agent is not available";
-	        	executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
-            		AsyncJobResult.STATUS_FAILED, 0, resultDescription);
-	        	return new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
-			}
-        }
-        resultDescription = "VM is not running or agent host is disconnected";
-    	executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
-    		AsyncJobResult.STATUS_FAILED, 0, resultDescription);
-    	return new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
-    }
-    
     @Override
     /*
      * TODO: cleanup eventually - Refactored API call
@@ -1785,113 +1744,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         return true;
     }
 
-//    @Override @DB
-//    public OperationResponse executeDestroyVM(DestroyVMExecutor executor, VMOperationParam param) {
-//        UserVmVO vm = _vmDao.findById(param.getVmId());
-//        State state = vm.getState();
-//        OperationResponse response; 
-//        String resultDescription = "Success";               
-//        
-//        if (vm == null || state == State.Destroyed || state == State.Expunging || vm.getRemoved() != null) {
-//            if (s_logger.isDebugEnabled()) {
-//                s_logger.debug("Unable to find vm or vm is destroyed: " + param.getVmId());
-//            }
-//            resultDescription = "VM does not exist or already in destroyed state";
-//            response = new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
-//        	executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
-//        		AsyncJobResult.STATUS_FAILED, 0, resultDescription);
-//        	return response;
-//        }
-//        
-//        if(state == State.Stopping) {
-//            if (s_logger.isDebugEnabled()) {
-//                s_logger.debug("VM is being stopped: " + param.getVmId());
-//            }
-//            resultDescription = "VM is being stopped, please re-try later";
-//            response = new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
-//        	executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
-//        		AsyncJobResult.STATUS_FAILED, 0, resultDescription);
-//        	return response;
-//        }
-//
-//        if (state == State.Running) {
-//            if (vm.getHostId() == null) {
-//            	resultDescription = "VM host is null (invalid VM)";
-//            	response = new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
-//            	executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
-//                		AsyncJobResult.STATUS_FAILED, 0, resultDescription);
-//            	if(s_logger.isDebugEnabled())
-//            		s_logger.debug("Execute asynchronize destroy VM command: " + resultDescription);
-//                return response;
-//            }
-//        	
-//            if (!_vmDao.updateIf(vm, Event.StopRequested, vm.getHostId())) {
-//            	resultDescription = "Failed to issue stop command, please re-try later";
-//            	response = new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
-//            	executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
-//                		AsyncJobResult.STATUS_FAILED, 0, resultDescription);            	    	
-//            	if(s_logger.isDebugEnabled())
-//            		s_logger.debug("Execute asynchronize destroy VM command:" + resultDescription);            	
-//                return response;
-//            }
-//            long childEventId = EventUtils.saveStartedEvent(param.getUserId(), param.getAccountId(),
-//            		EventTypes.EVENT_VM_STOP, "stopping vm " + vm.getName(), 0);
-//            param.setChildEventId(childEventId);
-//            StopCommand cmd = new StopCommand(vm, vm.getInstanceName(), vm.getVnet());
-//            try {
-//    			long seq = _agentMgr.send(vm.getHostId(), new Command[] {cmd}, true,
-//    				new VMOperationListener(executor, param, vm, 0));
-//    			resultDescription = "Execute asynchronize destroy VM command: sending stop command to agent, seq - " + seq;
-//            	if(s_logger.isDebugEnabled())
-//            		s_logger.debug(resultDescription);
-//            	response = new OperationResponse(OperationResponse.STATUS_IN_PROGRESS, resultDescription);
-//            	return response;
-//    		} catch (AgentUnavailableException e) {
-//    			resultDescription = "Agent is not available";
-//    			response = new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
-//            	executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
-//            		AsyncJobResult.STATUS_FAILED, 0, resultDescription);
-//            	return response;
-//    		}
-//        }
-//        
-//        Transaction txn = Transaction.currentTxn();
-//        txn.start();        
-//        
-//        _accountMgr.decrementResourceCount(vm.getAccountId(), ResourceType.user_vm);
-//        if (!_vmDao.updateIf(vm, VirtualMachine.Event.DestroyRequested, vm.getHostId()) ) {
-//        	resultDescription = "Unable to destroy the vm because it is not in the correct state";
-//            s_logger.debug(resultDescription + vm.toString());
-//            
-//            txn.rollback();
-//            response = new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
-//        	executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
-//            		AsyncJobResult.STATUS_FAILED, 0, resultDescription);
-//            return response;
-//        }
-//
-//        // Now that the VM is destroyed, clean the network rules associated with it.
-//        cleanNetworkRules(param.getUserId(), vm.getId());
-//
-//        // Mark the VM's root disk as destroyed
-//        List<VolumeVO> volumes = _volsDao.findByInstanceAndType(vm.getId(), VolumeType.ROOT);
-//        for (VolumeVO volume : volumes) {
-//        	_storageMgr.destroyVolume(volume);
-//        }
-//        
-//        // Mark the VM's data disks as detached
-//        volumes = _volsDao.findByInstanceAndType(vm.getId(), VolumeType.DATADISK);
-//        for (VolumeVO volume : volumes) {
-//        	_volsDao.detachVolume(volume.getId());
-//        }
-//        
-//        txn.commit();
-//        response = new OperationResponse(OperationResponse.STATUS_SUCCEEDED, resultDescription);
-//    	executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
-//    		AsyncJobResult.STATUS_SUCCEEDED, 0, "success");
-//    	return response;
-//    }
-    
     @Override @DB
     public UserVm recoverVirtualMachine(RecoverVMCmd cmd) throws ResourceAllocationException, CloudRuntimeException {
     	
@@ -2047,6 +1899,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         
         String maxCap = configs.get("cpu.uservm.cap");
         _userVMCap = NumbersUtil.parseInt(maxCap, 0);
+        
+        _useNewNetworking = Boolean.parseBoolean(configs.get("use.new.networking"));
         
         _executor = Executors.newScheduledThreadPool(wrks, new NamedThreadFactory("UserVm-Scavenger"));
         
@@ -3307,8 +3161,10 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     }
 
 	@Override
-	public UserVm stopVirtualMachine(StopVMCmd cmd) throws ServerApiException{
-		
+	public UserVm stopVirtualMachine(StopVMCmd cmd) throws ServerApiException, ConcurrentOperationException{
+		if (_useNewNetworking) {
+		    return stopVirtualMachine(cmd.getId());
+		}
 		//Input validation
 		Account account = UserContext.current().getAccount();
 		Long userId = UserContext.current().getUserId();
@@ -3335,7 +3191,10 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 	}
 
 	@Override
-	public UserVm startVirtualMachine(StartVMCmd cmd) throws StorageUnavailableException, ExecutionException, ConcurrentOperationException {
+	public UserVm startVirtualMachine(StartVMCmd cmd) throws ExecutionException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+	    if (_useNewNetworking) {
+	        return startVirtualMachine(cmd.getId());
+	    }
 		//Input validation
 		Account account = UserContext.current().getAccount();
 		Long userId = UserContext.current().getUserId();
@@ -3393,8 +3252,10 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 	}
 
 	@Override
-	public UserVm destroyVm(DestroyVMCmd cmd) {
-	
+	public UserVm destroyVm(DestroyVMCmd cmd) throws ResourceUnavailableException, ConcurrentOperationException {
+	    if (_useNewNetworking) {
+	        return destroyVm(cmd.getId());
+	    }
         Account account = UserContext.current().getAccount();
         Long userId = UserContext.current().getUserId();
         Long vmId = cmd.getId();
@@ -3629,7 +3490,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     }
     
 	@Override @DB
-    public UserVm createVirtualMachine(DeployVm2Cmd cmd) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException {
+    public UserVm createVirtualMachine(DeployVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException {
         Account caller = UserContext.current().getAccount();
         
         AccountVO owner = _accountDao.findById(cmd.getAccountId());
@@ -3822,34 +3683,34 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     }
 
     @Override
-    public UserVm stopVirtualMachine(StopVm2Cmd cmd) throws ConcurrentOperationException {
+    public UserVm stopVirtualMachine(long vmId) throws ConcurrentOperationException {
+        
         //Input validation
         Account caller = UserContext.current().getAccount();
         Long userId = UserContext.current().getUserId();
-        long id = cmd.getId();
         
         //if account is removed, return error
         if (caller != null && caller.getRemoved() != null)
             throw new PermissionDeniedException("The account " + caller.getId()+" is removed");
                 
-        UserVmVO vmInstance = _vmDao.findById(id);
-        if (vmInstance == null) {
-            throw new InvalidParameterValueException("unable to find a virtual machine with id " + id);
+        UserVmVO vm = _vmDao.findById(vmId);
+        if (vm == null) {
+            throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
         }
         
-        long eventId = EventUtils.saveScheduledEvent(userId, vmInstance.getAccountId(), EventTypes.EVENT_VM_STOP, "stopping Vm with Id: "+id);
-        userId = accountAndUserValidation(id, caller, userId, vmInstance);
+        long eventId = EventUtils.saveScheduledEvent(userId, vm.getAccountId(), EventTypes.EVENT_VM_STOP, "stopping Vm with Id: "+ vmId);
+        userId = accountAndUserValidation(vmId, caller, userId, vm);
         UserVO user = _userDao.findById(userId);
 
         try {
-            _itMgr.stop(vmInstance, user, caller);
+            _itMgr.stop(vm, user, caller);
         } catch (AgentUnavailableException e) {
-            throw new CloudRuntimeException("Unable to contact the agent to stop the virtual machine " + vmInstance, e);
+            throw new CloudRuntimeException("Unable to contact the agent to stop the virtual machine " + vm, e);
         } catch (OperationTimedoutException e) {
-            throw new CloudRuntimeException("Waiting too long for agent to stop the virtual machine " + vmInstance, e);
+            throw new CloudRuntimeException("Waiting too long for agent to stop the virtual machine " + vm, e);
         } 
         
-        return _vmDao.findById(id);
+        return _vmDao.findById(vmId);
     }
     
     @Override
@@ -3862,37 +3723,35 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 
     
     @Override
-    public UserVm startVirtualMachine(StartVm2Cmd cmd) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+    public UserVm startVirtualMachine(long vmId) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         //Input validation
         Account account = UserContext.current().getAccount();
         Long userId = UserContext.current().getUserId();
-        Long id = cmd.getId();
         
         //if account is removed, return error
         if(account!=null && account.getRemoved() != null)
             throw new PermissionDeniedException("The account " + account.getId()+" is removed");
                 
-        UserVmVO vm = _vmDao.findById(id.longValue());
+        UserVmVO vm = _vmDao.findById(vmId);
         if (vm == null) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find a virtual machine with id " + id);
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find a virtual machine with id " + vmId);
         }
 
-        long eventId = EventUtils.saveScheduledEvent(userId, vm.getAccountId(), EventTypes.EVENT_VM_START, "Starting Vm with Id: "+id);
+        long eventId = EventUtils.saveScheduledEvent(userId, vm.getAccountId(), EventTypes.EVENT_VM_START, "Starting Vm with Id: "+vmId);
         
-        userId = accountAndUserValidation(id, account, userId, vm);
+        userId = accountAndUserValidation(vmId, account, userId, vm);
         UserVO user = _userDao.findById(userId);
         
         return _itMgr.start(vm, null, user, account);
     }
     
     @Override
-    public UserVm destroyVm(DestroyVm2Cmd cmd) throws ResourceUnavailableException, ConcurrentOperationException {
+    public UserVm destroyVm(long vmId) throws ResourceUnavailableException, ConcurrentOperationException {
         Account account = UserContext.current().getAccount();
         Long userId = UserContext.current().getUserId();
-        Long vmId = cmd.getId();
         
         //Verify input parameters
-        UserVmVO vm = _vmDao.findById(vmId.longValue());
+        UserVmVO vm = _vmDao.findById(vmId);
         if (vm == null) {
             throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find a virtual machine with id " + vmId);
         }
@@ -3917,4 +3776,147 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
             throw new CloudRuntimeException("Failed to destroy vm with id " + vmId);
         }
     }
+    
+//  @Override
+//  public OperationResponse executeRebootVM(RebootVMExecutor executor, VMOperationParam param) {
+//    
+//      final UserVmVO vm = _vmDao.findById(param.getVmId());
+//      String resultDescription;
+//      
+//      if (vm == null || vm.getState() == State.Destroyed || vm.getState() == State.Expunging || vm.getRemoved() != null) {
+//        resultDescription = "VM does not exist or in destroying state";
+//        executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
+//            AsyncJobResult.STATUS_FAILED, 0, resultDescription);
+//        if(s_logger.isDebugEnabled())
+//            s_logger.debug("Execute asynchronize Reboot VM command: " +resultDescription);
+//        return new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
+//      }
+//      
+//      if (vm.getState() == State.Running && vm.getHostId() != null) {
+//          RebootCommand cmd = new RebootCommand(vm.getInstanceName());
+//          try {
+//            long seq = _agentMgr.send(vm.getHostId(), new Commands(cmd), new VMOperationListener(executor, param, vm, 0));
+//            resultDescription = "Execute asynchronize Reboot VM command: sending command to agent, seq - " + seq;
+//            if(s_logger.isDebugEnabled())
+//                s_logger.debug(resultDescription);
+//            return new OperationResponse(OperationResponse.STATUS_IN_PROGRESS, resultDescription);
+//        } catch (AgentUnavailableException e) {
+//            resultDescription = "Agent is not available";
+//            executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
+//                AsyncJobResult.STATUS_FAILED, 0, resultDescription);
+//            return new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
+//        }
+//      }
+//      resultDescription = "VM is not running or agent host is disconnected";
+//    executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
+//        AsyncJobResult.STATUS_FAILED, 0, resultDescription);
+//    return new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
+//  }
+    
+//  @Override @DB
+//  public OperationResponse executeDestroyVM(DestroyVMExecutor executor, VMOperationParam param) {
+//      UserVmVO vm = _vmDao.findById(param.getVmId());
+//      State state = vm.getState();
+//      OperationResponse response; 
+//      String resultDescription = "Success";               
+//      
+//      if (vm == null || state == State.Destroyed || state == State.Expunging || vm.getRemoved() != null) {
+//          if (s_logger.isDebugEnabled()) {
+//              s_logger.debug("Unable to find vm or vm is destroyed: " + param.getVmId());
+//          }
+//          resultDescription = "VM does not exist or already in destroyed state";
+//          response = new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
+//        executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
+//            AsyncJobResult.STATUS_FAILED, 0, resultDescription);
+//        return response;
+//      }
+//      
+//      if(state == State.Stopping) {
+//          if (s_logger.isDebugEnabled()) {
+//              s_logger.debug("VM is being stopped: " + param.getVmId());
+//          }
+//          resultDescription = "VM is being stopped, please re-try later";
+//          response = new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
+//        executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
+//            AsyncJobResult.STATUS_FAILED, 0, resultDescription);
+//        return response;
+//      }
+//
+//      if (state == State.Running) {
+//          if (vm.getHostId() == null) {
+//            resultDescription = "VM host is null (invalid VM)";
+//            response = new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
+//            executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
+//                    AsyncJobResult.STATUS_FAILED, 0, resultDescription);
+//            if(s_logger.isDebugEnabled())
+//                s_logger.debug("Execute asynchronize destroy VM command: " + resultDescription);
+//              return response;
+//          }
+//        
+//          if (!_vmDao.updateIf(vm, Event.StopRequested, vm.getHostId())) {
+//            resultDescription = "Failed to issue stop command, please re-try later";
+//            response = new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
+//            executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
+//                    AsyncJobResult.STATUS_FAILED, 0, resultDescription);                        
+//            if(s_logger.isDebugEnabled())
+//                s_logger.debug("Execute asynchronize destroy VM command:" + resultDescription);             
+//              return response;
+//          }
+//          long childEventId = EventUtils.saveStartedEvent(param.getUserId(), param.getAccountId(),
+//                EventTypes.EVENT_VM_STOP, "stopping vm " + vm.getName(), 0);
+//          param.setChildEventId(childEventId);
+//          StopCommand cmd = new StopCommand(vm, vm.getInstanceName(), vm.getVnet());
+//          try {
+//            long seq = _agentMgr.send(vm.getHostId(), new Command[] {cmd}, true,
+//                new VMOperationListener(executor, param, vm, 0));
+//            resultDescription = "Execute asynchronize destroy VM command: sending stop command to agent, seq - " + seq;
+//            if(s_logger.isDebugEnabled())
+//                s_logger.debug(resultDescription);
+//            response = new OperationResponse(OperationResponse.STATUS_IN_PROGRESS, resultDescription);
+//            return response;
+//        } catch (AgentUnavailableException e) {
+//            resultDescription = "Agent is not available";
+//            response = new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
+//            executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
+//                AsyncJobResult.STATUS_FAILED, 0, resultDescription);
+//            return response;
+//        }
+//      }
+//      
+//      Transaction txn = Transaction.currentTxn();
+//      txn.start();        
+//      
+//      _accountMgr.decrementResourceCount(vm.getAccountId(), ResourceType.user_vm);
+//      if (!_vmDao.updateIf(vm, VirtualMachine.Event.DestroyRequested, vm.getHostId()) ) {
+//        resultDescription = "Unable to destroy the vm because it is not in the correct state";
+//          s_logger.debug(resultDescription + vm.toString());
+//          
+//          txn.rollback();
+//          response = new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
+//        executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
+//                AsyncJobResult.STATUS_FAILED, 0, resultDescription);
+//          return response;
+//      }
+//
+//      // Now that the VM is destroyed, clean the network rules associated with it.
+//      cleanNetworkRules(param.getUserId(), vm.getId());
+//
+//      // Mark the VM's root disk as destroyed
+//      List<VolumeVO> volumes = _volsDao.findByInstanceAndType(vm.getId(), VolumeType.ROOT);
+//      for (VolumeVO volume : volumes) {
+//        _storageMgr.destroyVolume(volume);
+//      }
+//      
+//      // Mark the VM's data disks as detached
+//      volumes = _volsDao.findByInstanceAndType(vm.getId(), VolumeType.DATADISK);
+//      for (VolumeVO volume : volumes) {
+//        _volsDao.detachVolume(volume.getId());
+//      }
+//      
+//      txn.commit();
+//      response = new OperationResponse(OperationResponse.STATUS_SUCCEEDED, resultDescription);
+//    executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
+//        AsyncJobResult.STATUS_SUCCEEDED, 0, "success");
+//    return response;
+//  }
 }

@@ -100,6 +100,7 @@ import com.cloud.vm.State;
 import com.cloud.vm.SystemVm;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VmStats;
 
 public class ApiResponseHelper {
@@ -479,7 +480,7 @@ public class ApiResponseHelper {
        return userVmResponse;
    }
    
-   public static SystemVmResponse createSystemVmResponse (VMInstanceVO systemVM) {
+   public static SystemVmResponse createSystemVmResponse (VirtualMachine systemVM) {
        if (systemVM.getPrivateIpAddress() == null) {
            return createSystemVm2Response(systemVM);
        }
@@ -1211,7 +1212,7 @@ public class ApiResponseHelper {
    }
    
    
-   public static SystemVmResponse createSystemVm2Response (VMInstanceVO systemVM) {
+   public static SystemVmResponse createSystemVm2Response (VirtualMachine systemVM) {
        SystemVmResponse vmResponse = new SystemVmResponse();
        if (systemVM instanceof SystemVm) {
            SystemVm vm = (SystemVm)systemVM;

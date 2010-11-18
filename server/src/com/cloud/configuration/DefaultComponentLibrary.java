@@ -24,13 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.acl.DomainChecker;
-import com.cloud.acl.SecurityChecker;
 import com.cloud.agent.manager.AgentManagerImpl;
-import com.cloud.agent.manager.allocator.HostAllocator;
-import com.cloud.agent.manager.allocator.PodAllocator;
-import com.cloud.agent.manager.allocator.impl.RecreateHostAllocator;
-import com.cloud.agent.manager.allocator.impl.UserConcentratedAllocator;
 import com.cloud.alert.AlertManagerImpl;
 import com.cloud.alert.dao.AlertDaoImpl;
 import com.cloud.async.AsyncJobExecutorContextImpl;
@@ -47,8 +41,6 @@ import com.cloud.configuration.dao.ConfigurationDaoImpl;
 import com.cloud.configuration.dao.ResourceCountDaoImpl;
 import com.cloud.configuration.dao.ResourceLimitDaoImpl;
 import com.cloud.consoleproxy.AgentBasedStandaloneConsoleProxyManager;
-import com.cloud.consoleproxy.ConsoleProxyAllocator;
-import com.cloud.consoleproxy.ConsoleProxyBalanceAllocator;
 import com.cloud.dc.dao.AccountVlanMapDaoImpl;
 import com.cloud.dc.dao.ClusterDaoImpl;
 import com.cloud.dc.dao.DataCenterDaoImpl;
@@ -56,34 +48,17 @@ import com.cloud.dc.dao.DataCenterIpAddressDaoImpl;
 import com.cloud.dc.dao.HostPodDaoImpl;
 import com.cloud.dc.dao.PodVlanMapDaoImpl;
 import com.cloud.dc.dao.VlanDaoImpl;
-import com.cloud.deploy.DeploymentPlanner;
-import com.cloud.deploy.SimplePlanner;
 import com.cloud.domain.dao.DomainDaoImpl;
 import com.cloud.event.dao.EventDaoImpl;
-import com.cloud.ha.CheckOnAgentInvestigator;
-import com.cloud.ha.FenceBuilder;
 import com.cloud.ha.HighAvailabilityManagerImpl;
-import com.cloud.ha.Investigator;
-import com.cloud.ha.InvestigatorImpl;
-import com.cloud.ha.StorageFence;
-import com.cloud.ha.XenServerInvestigator;
 import com.cloud.ha.dao.HighAvailabilityDaoImpl;
 import com.cloud.host.dao.DetailsDaoImpl;
 import com.cloud.host.dao.HostDaoImpl;
-import com.cloud.hypervisor.kvm.discoverer.KvmServerDiscoverer;
-import com.cloud.hypervisor.xen.discoverer.XcpServerDiscoverer;
 import com.cloud.maid.StackMaidManagerImpl;
 import com.cloud.maid.dao.StackMaidDaoImpl;
 import com.cloud.maint.UpgradeManagerImpl;
 import com.cloud.maint.dao.AgentUpgradeDaoImpl;
-import com.cloud.network.ExteralIpAddressAllocator;
-import com.cloud.network.IpAddrAllocator;
 import com.cloud.network.NetworkManagerImpl;
-import com.cloud.network.configuration.ControlNetworkGuru;
-import com.cloud.network.configuration.GuestNetworkGuru;
-import com.cloud.network.configuration.NetworkGuru;
-import com.cloud.network.configuration.PodBasedNetworkGuru;
-import com.cloud.network.configuration.PublicNetworkGuru;
 import com.cloud.network.dao.FirewallRulesDaoImpl;
 import com.cloud.network.dao.IPAddressDaoImpl;
 import com.cloud.network.dao.LoadBalancerDaoImpl;
@@ -101,15 +76,8 @@ import com.cloud.network.security.dao.NetworkGroupVMMapDaoImpl;
 import com.cloud.network.security.dao.NetworkGroupWorkDaoImpl;
 import com.cloud.network.security.dao.VmRulesetLogDaoImpl;
 import com.cloud.offerings.dao.NetworkOfferingDaoImpl;
-import com.cloud.resource.Discoverer;
-import com.cloud.server.auth.MD5UserAuthenticator;
-import com.cloud.server.auth.UserAuthenticator;
 import com.cloud.service.dao.ServiceOfferingDaoImpl;
 import com.cloud.storage.StorageManagerImpl;
-import com.cloud.storage.allocator.FirstFitStoragePoolAllocator;
-import com.cloud.storage.allocator.GarbageCollectingStoragePoolAllocator;
-import com.cloud.storage.allocator.LocalStoragePoolAllocator;
-import com.cloud.storage.allocator.StoragePoolAllocator;
 import com.cloud.storage.dao.DiskOfferingDaoImpl;
 import com.cloud.storage.dao.GuestOSCategoryDaoImpl;
 import com.cloud.storage.dao.GuestOSDaoImpl;
@@ -127,10 +95,7 @@ import com.cloud.storage.dao.VMTemplateZoneDaoImpl;
 import com.cloud.storage.dao.VolumeDaoImpl;
 import com.cloud.storage.download.DownloadMonitorImpl;
 import com.cloud.storage.preallocatedlun.dao.PreallocatedLunDaoImpl;
-import com.cloud.storage.secondary.SecondaryStorageDiscoverer;
 import com.cloud.storage.secondary.SecondaryStorageManagerImpl;
-import com.cloud.storage.secondary.SecondaryStorageVmAllocator;
-import com.cloud.storage.secondary.SecondaryStorageVmDefaultAllocator;
 import com.cloud.storage.snapshot.SnapshotManagerImpl;
 import com.cloud.storage.snapshot.SnapshotSchedulerImpl;
 import com.cloud.storage.upload.UploadMonitorImpl;
@@ -333,51 +298,8 @@ public class DefaultComponentLibrary implements ComponentLibrary {
         }
         return _managers;
     }
-
+    
     protected void populateAdapters() {
-        
-        List<Pair<String, Class<? extends HostAllocator>>> hostAllocators = new ArrayList<Pair<String, Class<? extends HostAllocator>>>();
-        hostAllocators.add(new Pair<String, Class<? extends HostAllocator>>("FirstFitRouting", RecreateHostAllocator.class)); 
-        //addAdapter("FirstFit", FirstFitAllocator.class);
-        addAdapterChain(HostAllocator.class, hostAllocators);
-        
-        
-        List<Pair<String, Class<? extends StoragePoolAllocator>>> poolAllocators = new ArrayList<Pair<String, Class<? extends StoragePoolAllocator>>>();
-        poolAllocators.add(new Pair<String, Class<? extends StoragePoolAllocator>>("LocalStorage", LocalStoragePoolAllocator.class));
-        poolAllocators.add(new Pair<String, Class<? extends StoragePoolAllocator>>("Storage", FirstFitStoragePoolAllocator.class));
-        poolAllocators.add(new Pair<String, Class<? extends StoragePoolAllocator>>("GarbageCollecting", GarbageCollectingStoragePoolAllocator.class));
-        addAdapterChain(StoragePoolAllocator.class, poolAllocators);
-        
-        List<Pair<String, Class<? extends NetworkGuru>>> networkGurus = new ArrayList<Pair<String, Class<? extends NetworkGuru>>>();
-        networkGurus.add(new Pair<String, Class<? extends NetworkGuru>>("GuestNetworkGuru", GuestNetworkGuru.class));
-        networkGurus.add(new Pair<String, Class<? extends NetworkGuru>>("PublicNetworkGuru", PublicNetworkGuru.class));
-        networkGurus.add(new Pair<String, Class<? extends NetworkGuru>>("PodBasedNetworkGuru", PodBasedNetworkGuru.class));
-        networkGurus.add(new Pair<String, Class<? extends NetworkGuru>>("ControlNetworkGuru", ControlNetworkGuru.class));
-        addAdapterChain(NetworkGuru.class, networkGurus);
-
-        addOneAdapter(PodAllocator.class, "UserConcentratedPodAllocator", UserConcentratedAllocator.class);
-        addOneAdapter(ConsoleProxyAllocator.class, "ConsoleProxyBalanceAllocator", ConsoleProxyBalanceAllocator.class);
-        addOneAdapter(SecondaryStorageVmAllocator.class, "SecondaryStorageVmDefaultBalance", SecondaryStorageVmDefaultAllocator.class);
-        addOneAdapter(IpAddrAllocator.class, "BasicExternalIpAddressAllocator", ExteralIpAddressAllocator.class); 
-        addOneAdapter(UserAuthenticator.class, "MD5UserAuthenticator", MD5UserAuthenticator.class);
-
-        
-        List<Pair<String, Class<? extends Investigator>>> investigators = new ArrayList<Pair<String, Class<? extends Investigator>>>();
-        investigators.add(new Pair<String, Class<? extends Investigator>>("SimpleInvestigator", CheckOnAgentInvestigator.class));
-        investigators.add(new Pair<String, Class<? extends Investigator>>("XenServerInvestigator", XenServerInvestigator.class));
-        investigators.add(new Pair<String, Class<? extends Investigator>>("PingInvestigator", InvestigatorImpl.class));
-        addAdapterChain(Investigator.class, investigators);
-
-        addOneAdapter(FenceBuilder.class, "StorageFenceBuilder", StorageFence.class);
-
-        List<Pair<String, Class<? extends Discoverer>>> discovers = new ArrayList<Pair<String, Class<? extends Discoverer>>>();
-        discovers.add(new Pair<String, Class<? extends Discoverer>>("XCP Agent", XcpServerDiscoverer.class));
-        discovers.add(new Pair<String, Class<? extends Discoverer>>("SecondaryStorage", SecondaryStorageDiscoverer.class));
-        discovers.add(new Pair<String, Class<? extends Discoverer>>("KVM Agent", KvmServerDiscoverer.class));
-        addAdapterChain(Discoverer.class, discovers);
-        
-        addOneAdapter(SecurityChecker.class, "DomainChecker", DomainChecker.class);
-        addOneAdapter(DeploymentPlanner.class, "SimpleDeploymentPlanner", SimplePlanner.class);
     }
 
     @Override

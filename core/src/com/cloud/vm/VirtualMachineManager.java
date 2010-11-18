@@ -22,6 +22,7 @@ import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.OperationTimedoutException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.utils.exception.ExecutionException;
@@ -78,6 +79,7 @@ public interface VirtualMachineManager<T extends VMInstanceVO> {
      * @throws StorageUnavailableException if the storage is unavailable.
      * @throws ConcurrentOperationException there's multiple threads working on this vm.
      * @throws ExecutionException 
+     * @throws ResourceUnavailableException 
      */
     T start(long vmId, long startEventId) throws InsufficientCapacityException, StorageUnavailableException, ConcurrentOperationException, ExecutionException;
 

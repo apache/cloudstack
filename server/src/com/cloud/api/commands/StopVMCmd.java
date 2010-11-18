@@ -29,6 +29,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.UserVmResponse;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
@@ -87,7 +88,7 @@ public class StopVMCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() throws ServerApiException, ConcurrentOperationException{
         UserVm result = _userVmService.stopVirtualMachine(this);
         if (result != null) {
             UserVmResponse response = ApiResponseHelper.createUserVmResponse(result);
