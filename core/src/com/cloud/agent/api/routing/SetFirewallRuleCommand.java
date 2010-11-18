@@ -31,19 +31,19 @@ public class SetFirewallRuleCommand extends RoutingCommand {
     protected SetFirewallRuleCommand() {
     }
     
-    public SetFirewallRuleCommand(String routerName, String routerIpAddress, FirewallRuleVO rule, String oldPrivateIP, String oldPrivatePort) {
+    public SetFirewallRuleCommand(String routerName, String routerIpAddress, FirewallRuleVO rule1, String oldPrivateIP, String oldPrivatePort) {
     	this.routerName = routerName;
     	this.routerIpAddress = routerIpAddress;
-    	this.rule = rule;
+    	this.rule = new FirewallRuleVO(rule1);
     	this.oldPrivateIP = oldPrivateIP;
     	this.oldPrivatePort = oldPrivatePort;
     }
     
-    public SetFirewallRuleCommand(String routerName, String routerIpAddress, boolean nat, FirewallRuleVO rule, boolean create) {
+    public SetFirewallRuleCommand(String routerName, String routerIpAddress, boolean nat, FirewallRuleVO rule2, boolean create) {
     	this.routerName = routerName;
     	this.routerIpAddress = routerIpAddress;
     	this.nat = nat;
-    	this.rule = rule;
+    	this.rule = new FirewallRuleVO(rule2);
     	this.create = create;
     }
     

@@ -163,11 +163,6 @@ public class FirewallRuleVO {
 		this.algorithm = algorithm;
 	}
 	
-	public String toString() {
-        Gson gson = new Gson();
-        return gson.toJson(this);
-	}
-	
 	public void setVlanNetmask(String vlanNetmask) {
 		this.vlanNetmask = vlanNetmask;
 	}
