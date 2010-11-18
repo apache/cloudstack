@@ -841,7 +841,9 @@ var ipActionMap = {
             var item = json.queryasyncjobresultresponse.jobresult.portforwardingrule;        
             var $thisTab =$("#right_panel_content #tab_content_details");
             $thisTab.find("#vm_of_static_nat").text(getVmName(item.virtualmachinename, item.virtualmachinedisplayname));
-	        $thisTab.find("#vm_of_static_nat_container").show();	       
+	        $thisTab.find("#vm_of_static_nat_container").show();	 
+	        
+	        ipToRightPanel($midmenuItem1);      
         }        
     },
     "Disable Static NAT": {                      
@@ -854,9 +856,12 @@ var ipActionMap = {
             var ipObj = $midmenuItem1.data("jsonObj");           
             ipObj.isstaticnat = false;   
             setBooleanReadField(ipObj.isstaticnat, $("#right_panel_content #tab_content_details").find("#static_nat"));              
+            
             var $thisTab =$("#right_panel_content #tab_content_details");
             $thisTab.find("#vm_of_static_nat").text("");
-            $thisTab.find("#vm_of_static_nat_container").hide();          
+            $thisTab.find("#vm_of_static_nat_container").hide();   
+            
+            ipToRightPanel($midmenuItem1);        
         }        
     }
 }   
