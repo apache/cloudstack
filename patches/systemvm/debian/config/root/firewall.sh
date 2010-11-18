@@ -195,9 +195,8 @@ done
 
 #1:1 NAT
 if [ "$Gflag" == "1" ]
-  then
-    add_one_to_one_nat_entry $instanceIp $publicIp $domRIp $op
-  fi
+then
+  add_one_to_one_nat_entry $instanceIp $publicIp $domRIp $op
   exit $?
 fi
 
