@@ -21,7 +21,7 @@ import com.cloud.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
-public class FirewallRuleResponse extends BaseResponse {
+public class IpForwardingRuleResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the ID of the port forwarding rule")
     private Long id;
 

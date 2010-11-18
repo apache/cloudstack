@@ -35,6 +35,7 @@ import com.cloud.api.response.FirewallRuleResponse;
 import com.cloud.api.response.HostResponse;
 import com.cloud.api.response.IPAddressResponse;
 import com.cloud.api.response.InstanceGroupResponse;
+import com.cloud.api.response.IpForwardingRuleResponse;
 import com.cloud.api.response.LoadBalancerResponse;
 import com.cloud.api.response.PodResponse;
 import com.cloud.api.response.PreallocatedLunResponse;
@@ -1013,6 +1014,22 @@ public class ApiResponseHelper {
        return response;
    }
    
+   public static IpForwardingRuleResponse createIpForwardingRuleResponse(FirewallRuleVO fwRule) {
+       IpForwardingRuleResponse response = new IpForwardingRuleResponse();
+       response.setId(fwRule.getId());
+       response.setPrivatePort(fwRule.getPrivatePort());
+       response.setProtocol(fwRule.getProtocol());
+       response.setPublicPort(fwRule.getPublicPort());
+       response.setPublicIpAddress(fwRule.getPublicIpAddress());
+       if (fwRule.getPublicIpAddress() != null && fwRule.getPrivateIpAddress() != null) {
+           UserVm vm = ApiDBUtils.findUserVmByPublicIpAndGuestIp(fwRule.getPublicIpAddress(), fwRule.getPrivateIpAddress());
+           response.setVirtualMachineId(vm.getId());
+           response.setVirtualMachineName(vm.getHostName());
+           response.setVirtualMachineDisplayName(vm.getDisplayName());
+       }
+       response.setObjectName("ipforwardingrule");
+       return response;
+   }
    
    
    public static UserVmResponse createUserVm2Response (UserVm userVm) {

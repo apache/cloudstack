@@ -28,6 +28,7 @@ import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.FirewallRuleResponse;
+import com.cloud.api.response.IpForwardingRuleResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.network.FirewallRuleVO;
 
@@ -68,12 +69,11 @@ public class ListIpForwardingRulesCmd extends BaseListCmd {
 	@Override
     public void execute(){
         List<FirewallRuleVO> result = _mgr.searchForIpForwardingRules(this);
-        ListResponse<FirewallRuleResponse> response = new ListResponse<FirewallRuleResponse>();
-        List<FirewallRuleResponse> fwResponses = new ArrayList<FirewallRuleResponse>();
+        ListResponse<IpForwardingRuleResponse> response = new ListResponse<IpForwardingRuleResponse>();
+        List<IpForwardingRuleResponse> fwResponses = new ArrayList<IpForwardingRuleResponse>();
         for (FirewallRuleVO rule : result) {
-            FirewallRuleResponse resp = ApiResponseHelper.createFirewallRuleResponse(rule);
+            IpForwardingRuleResponse resp = ApiResponseHelper.createIpForwardingRuleResponse(rule);
             if (resp != null) {
-                resp.setObjectName("firewallrule");
                 fwResponses.add(resp);
             }
         }
