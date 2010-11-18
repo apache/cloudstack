@@ -392,6 +392,30 @@ a:hover {
 	margin:0 0 0 0;
 }
 
+.vmpopup_offeringpanel_overlay {
+	width:700px;
+	height:290px;
+	position:absolute;
+	background:url(../images/white_overlay.png) repeat top left;
+	margin:0;
+	padding:0;
+}
+
+.vmpopup_offeringpanel_underconstructionbox {
+	width:auto;
+	height:auto;
+	position:absolute;
+	color:#333;
+	background:#fff8bb repeat top left;
+	border:1px dashed #999;
+	font-size:13px;
+	font-weight:bold;
+	padding:12px;
+	margin:0;
+	top:30%;
+	left:38%;
+}
+
 .vmpopup_offeringpanel {
 	width:700px;
 	height:290px;
