@@ -3510,7 +3510,7 @@ public class ManagementServerImpl implements ManagementServer {
         String domainName = cmd.getDomainName();
         Boolean isRecursive = cmd.isRecursive();
         Object keyword = cmd.getKeyword();
-        List <DomainVO> domainList = null;
+        String path = null;
         
         if (isRecursive == null) {
             isRecursive = false;
@@ -3526,21 +3526,17 @@ public class ManagementServerImpl implements ManagementServer {
                 domainId = account.getDomainId();
             }
         }
-
-        domainList = searchForDomainChildren(searchFilter, domainId, domainName,
-				keyword, null);
         
-        if (isRecursive) {
-            List<DomainVO> childDomains = new ArrayList<DomainVO>();
-            for (DomainVO domain : domainList) {
-                String path = domain.getPath();
-                 childDomains.addAll(searchForDomainChildren(searchFilter, null, null,
-                        null, path));
-            }
-            return childDomains;
-        } else {
-            return domainList;
+        DomainVO domain = _domainDao.findById(domainId);
+        if (domain != null && isRecursive) {
+            path = domain.getPath();
+            domainId = null;
         }
+
+        List<DomainVO> domainList = searchForDomainChildren(searchFilter, domainId, domainName,
+				keyword, path);
+        
+        return domainList;
 	}
 
 	private List<DomainVO> searchForDomainChildren(Filter searchFilter,
@@ -3563,9 +3559,10 @@ public class ManagementServerImpl implements ManagementServer {
         }
         
         if (path != null) {
+            sc.addAnd("path", SearchCriteria.Op.NEQ, path);
             sc.addAnd("path", SearchCriteria.Op.LIKE, path + "%");
+            
         }
-
         return _domainDao.search(sc, searchFilter);
 	}
 
