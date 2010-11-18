@@ -6,7 +6,6 @@ import com.cloud.agent.api.storage.DeleteEntityDownloadURLAnswer;
 import com.cloud.agent.api.storage.DeleteEntityDownloadURLCommand;
 import com.cloud.agent.api.storage.UploadAnswer;
 import com.cloud.agent.api.storage.UploadCommand;
-import com.cloud.storage.StorageResource;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Upload.Status;
 import com.cloud.utils.component.Manager;
@@ -54,8 +53,6 @@ public interface UploadManager extends Manager {
 	 * @return answer representing status of upload.
 	 */
 	public UploadAnswer handleUploadCommand(UploadCommand cmd);		
-	
-	public String setRootDir(String rootDir, StorageResource storage);
     
     public String getPublicTemplateRepo();
 

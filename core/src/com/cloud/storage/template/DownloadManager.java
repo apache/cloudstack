@@ -22,7 +22,6 @@ import java.util.Map;
 
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.DownloadCommand;
-import com.cloud.storage.StorageResource;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.utils.component.Manager;
@@ -104,9 +103,7 @@ public interface DownloadManager extends Manager {
 	 * @return list of template info for installed templates
 	 */
 	public Map<String, TemplateInfo> gatherTemplateInfo();
-	
-	public String setRootDir(String rootDir, StorageResource storage);
-    
+	   
     public String getPublicTemplateRepo();
 
 }

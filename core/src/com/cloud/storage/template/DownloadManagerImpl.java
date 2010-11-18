@@ -46,7 +46,6 @@ import com.cloud.agent.api.storage.DownloadProgressCommand.RequestType;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
-import com.cloud.storage.StorageResource;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.template.Processor.FormatInfo;
 import com.cloud.storage.template.TemplateDownloader.DownloadCompleteCallback;
@@ -207,19 +206,6 @@ public class DownloadManagerImpl implements DownloadManager {
     private String listTmpltScr;
     private int installTimeoutPerGig = 180 * 60 * 1000;
 	private boolean _sslCopy;
-
-    @Override
-    public String setRootDir(String rootDir, StorageResource storage) {
-        /*
-         * if (!storage.existPath(rootDir + templateDownloadDir)) { s_logger.info("Creating template download path: " +
-         * rootDir + templateDownloadDir); String result = storage.createPath(rootDir + templateDownloadDir); if (result
-         * != null) { return "Cannot create " + rootDir + templateDownloadDir + " due to " + result; } }
-         * this.templateDownloadDir = rootDir + templateDownloadDir;
-         */
-        this.publicTemplateRepo = rootDir + publicTemplateRepo;
-
-        return null;
-    }
 
     /**
      * Get notified of change of job status. Executed in context of downloader thread

@@ -24,7 +24,6 @@ import com.cloud.agent.api.storage.UploadCommand;
 import com.cloud.agent.api.storage.UploadProgressCommand;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
-import com.cloud.storage.StorageResource;
 import com.cloud.storage.Upload;
 import com.cloud.storage.UploadVO;
 import com.cloud.storage.template.TemplateUploader.Status;
@@ -401,12 +400,6 @@ public class UploadManagerImpl implements UploadManager {
             return uj.getTemplatesize();
         }
         return 0;
-	}
-
-	@Override
-	public String setRootDir(String rootDir, StorageResource storage) {
-        this.publicTemplateRepo = rootDir + publicTemplateRepo;
-        return null;
 	}
 
 	@Override
