@@ -156,27 +156,37 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
     	PreparedStatement stmt = null;
     	PreparedStatement stmtInsert = null;
     	String returnValue = initValue;
-    	try {
-    		txn.start();
-    		stmt = txn.prepareAutoCloseStatement("SELECT value FROM configuration WHERE name=?");
-    		stmt.setString(1, name);
-    		ResultSet rs = stmt.executeQuery();
-    		if(rs != null && rs.next()) {
-    			returnValue =  rs.getString(1);
-    		} else {
-    			stmtInsert = txn.prepareAutoCloseStatement("INSERT INTO configuration(instance, name, value, description) VALUES('DEFAULT', ?, ?, '')");
-    			stmtInsert.setString(1, name);
-    			stmtInsert.setString(2, initValue);
-    			if(stmtInsert.executeUpdate() < 1) {
-    				throw new CloudRuntimeException("Unable to init configuration variable: " + name); 
-    			}
-    		}
-    		txn.commit();
-    		return returnValue;
-    	} catch (Exception e) {
-    		s_logger.warn("Unable to update Configuration Value", e);
-    		throw new CloudRuntimeException("Unable to init configuration variable: " + name); 
-    	}
+		try {
+			txn.start();
+			stmt = txn.prepareAutoCloseStatement("SELECT value FROM configuration WHERE name=?");
+			stmt.setString(1, name);
+			ResultSet rs = stmt.executeQuery();
+			if(rs != null && rs.next()) {
+				returnValue =  rs.getString(1);
+				if(returnValue != null) {
+					txn.commit();
+					return returnValue;
+				} else {
+					// restore init value
+					returnValue = initValue;
+				}
+			}
+			stmt.close();
+			
+			stmtInsert = txn.prepareAutoCloseStatement(
+				"INSERT INTO configuration(instance, name, value, description) VALUES('DEFAULT', ?, ?, '') ON DUPLICATE KEY UPDATE value=?");
+			stmtInsert.setString(1, name);
+			stmtInsert.setString(2, initValue);
+			stmtInsert.setString(3, initValue);
+			if(stmtInsert.executeUpdate() < 1) {
+				throw new CloudRuntimeException("Unable to init configuration variable: " + name); 
+			}
+			txn.commit();
+			return returnValue;
+		} catch (Exception e) {
+			s_logger.warn("Unable to update Configuration Value", e);
+			throw new CloudRuntimeException("Unable to init configuration variable: " + name); 
+		}
     }
     
     @Override
