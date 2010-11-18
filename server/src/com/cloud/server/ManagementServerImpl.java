@@ -3453,18 +3453,12 @@ public class ManagementServerImpl implements ManagementServer {
     public List<DomainVO> searchForDomains(ListDomainsCmd cmd) throws PermissionDeniedException {
         Long domainId = cmd.getId();
         Account account = UserContext.current().getAccount();
+        String path = null;
         
-        if(account == null || account.getType() == Account.ACCOUNT_TYPE_ADMIN){
-        	return _domainDao.listAll();
-        }
-        
-        if (account != null) {
-            if (domainId != null) {
-                if (!_domainDao.isChildDomain(account.getDomainId(), domainId)) {
-                    throw new PermissionDeniedException("Unable to list domains for domain id " + domainId + ", permission denied.");
-                }
-            }else {
-            	domainId = account.getDomainId();
+        if (account != null && account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+            DomainVO domain = _domainDao.findById(account.getDomainId());
+            if (domain != null) {
+                path = domain.getPath();
             }
         }
 
@@ -3484,7 +3478,6 @@ public class ManagementServerImpl implements ManagementServer {
         if (keyword != null) {
             SearchCriteria<DomainVO> ssc = _domainDao.createSearchCriteria();
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-
             sc.addAnd("name", SearchCriteria.Op.SC, ssc);
         }
 
@@ -3498,6 +3491,10 @@ public class ManagementServerImpl implements ManagementServer {
 
         if (domainId != null) {
             sc.setParameters("id", domainId);
+        }
+        
+        if (path != null) {
+            sc.setParameters("path", path);
         }
 
        	return _domainDao.search(sc, searchFilter);
