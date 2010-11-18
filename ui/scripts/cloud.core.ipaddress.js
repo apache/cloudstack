@@ -226,17 +226,27 @@ function ipToRightPanel($midmenuItem1) {
     $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);
     $("#tab_details").click();        
    
-    //Port Forwarding tab, Load Balancer tab
-    if(isIpManageable(ipObj.domainid, ipObj.account) == true) {     
-	    $("#tab_port_forwarding, #tab_load_balancer").show();
-		// Only show VPN tab if the IP is the source nat IP
-		if (ipObj.issourcenat == true) {
-			$("#tab_vpn").show();
-		}             
-    } 
-    else { 
-	    $("#tab_port_forwarding, #tab_load_balancer, #tab_vpn").hide();	    
+    if(ipObj.isstaticnat == true) {
+        $("#tab_port_forwarding, #tab_load_balancer, #tab_vpn").hide();	
     }
+    else { //ipObj.isstaticnat == false  
+        if(ipObj.forvirtualnetwork == true) { //(public network)
+            //Port Forwarding tab, Load Balancer tab
+            if(isIpManageable(ipObj.domainid, ipObj.account) == true) {     
+	            $("#tab_port_forwarding, #tab_load_balancer").show();
+		        // Only show VPN tab if the IP is the source nat IP
+		        if (ipObj.issourcenat == true) {
+			        $("#tab_vpn").show();
+		        }             
+            } 
+            else { 
+	            $("#tab_port_forwarding, #tab_load_balancer, #tab_vpn").hide();	    
+            }
+        }
+        else { //ipObj.forvirtualnetwork == false (direct network)
+            $("#tab_port_forwarding, #tab_load_balancer, #tab_vpn").hide();	    
+        }            
+    }        
 }
 
 function ipJsonToPortForwardingTab() {
@@ -710,8 +720,8 @@ function ipJsonToDetailsTab() {
     $thisTab.find("#ipaddress").text(noNull(ipObj.ipaddress));
     $thisTab.find("#zonename").text(fromdb(ipObj.zonename));
     $thisTab.find("#vlanname").text(fromdb(ipObj.vlanname));    
-    setSourceNatField(ipObj.issourcenat, $thisTab.find("#source_nat"));    
-    setSourceNatField(ipObj.isstaticnat, $thisTab.find("#static_nat")); 
+    setBooleanReadField(ipObj.issourcenat, $thisTab.find("#source_nat"));    
+    setBooleanReadField(ipObj.isstaticnat, $thisTab.find("#static_nat")); 
     setNetworkTypeField(ipObj.forvirtualnetwork, $thisTab.find("#network_type"));    
     
     $thisTab.find("#domain").text(fromdb(ipObj.domain));
@@ -755,6 +765,7 @@ function ipClearDetailsTab() {
     $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());		 
 }
 
+/*
 function setSourceNatField(value, $field) {
     if(value == true)
         $field.text("Yes");
@@ -763,6 +774,7 @@ function setSourceNatField(value, $field) {
     else
         $field.text("");
 }
+*/
 
 function setNetworkTypeField(value, $field) {  
     if(value == true)
