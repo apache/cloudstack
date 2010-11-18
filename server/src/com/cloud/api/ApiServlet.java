@@ -97,8 +97,12 @@ public class ApiServlet extends HttpServlet {
                     if (session != null) {  
                         Long userId = (Long)session.getAttribute("userid");
                         Account account = (Account)session.getAttribute("accountobj");
+                        Long accountId = null;
+                        if (account != null) {
+                            accountId = account.getId();
+                        }
                         auditTrailSb.insert(0, "(userId="+userId+ 
-                                " accountId="+ account==null ? null:account.getId()+ 
+                                " accountId="+ accountId + 
                                 " sessionId="+session.getId() +")" );
                         if (userId != null) {
                             _apiServer.logoutUser(userId);
