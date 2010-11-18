@@ -233,8 +233,6 @@ import com.cloud.vm.VirtualMachineName;
 public class LibvirtComputingResource extends ServerResourceBase implements ServerResource {
     private static final Logger s_logger = Logger.getLogger(LibvirtComputingResource.class);
     
-    private String _createvnetPath;
-    private String _vnetcleanupPath;
     private String _modifyVlanPath;
     private String _versionstringpath;
     private String _patchdomrPath;
@@ -590,17 +588,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
         
         _clusterId = (String) params.get("cluster");
-		    
-        _createvnetPath = Script.findScript(networkScriptsDir, "createvnet.sh");
-        if(_createvnetPath == null) {
-            throw new ConfigurationException("Unable to find createvnet.sh");
-        }
-
-        _vnetcleanupPath = Script.findScript(networkScriptsDir, "vnetcleanup.sh");
-        if(_vnetcleanupPath == null) {
-            throw new ConfigurationException("Unable to find createvnet.sh");
-        }
-        
+       
         _modifyVlanPath = Script.findScript(networkScriptsDir, "modifyvlan.sh");
         if (_modifyVlanPath == null) {
             throw new ConfigurationException("Unable to find modifyvlan.sh");
