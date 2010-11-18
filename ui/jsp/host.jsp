@@ -29,7 +29,7 @@
         <div class="content_tabs off" id="tab_router">
             <%=t.t("router")%></div>
         <div class="content_tabs off" id="tab_systemvm">
-            <%=t.t("system.VM")%></div>
+            <%=t.t("system.vm")%></div>
     </div>
     <!-- Details tab (start)-->
     <div id="tab_content_details">

@@ -526,7 +526,7 @@
             </li>
             <li id="size_container">
                 <label>
-                    Size:</label>
+                    Disk Size (in GB):</label>
                 <input class="text" type="text" id="size" />
                 <div id="size_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
