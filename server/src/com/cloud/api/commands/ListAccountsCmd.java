@@ -40,13 +40,10 @@ public class ListAccountsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="list account for a specified account. Must be used with the domainId parameter.")
-    private String accountName;
-
     @Parameter(name=ApiConstants.ACCOUNT_TYPE, type=CommandType.LONG, description="list accounts by account type. Valid account types are 1 (admin), 2 (domain-admin), and 0 (user).")
     private Long accountType;
 
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="list all accounts in specified domain. If used with the account parameter, retrieves account information for specified account in specified domain.")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="list all accounts in specified domain. If used with the name parameter, retrieves account information for the account with specified name in specified domain.")
     private Long domainId;
 
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list account by account ID")
@@ -65,10 +62,6 @@ public class ListAccountsCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
-    public String getAccountName() {
-        return accountName;
-    }
 
     public Long getAccountType() {
         return accountType;
