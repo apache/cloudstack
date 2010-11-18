@@ -16,6 +16,12 @@ PATH="/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin"
 
 . /lib/lsb/init-functions
 
+log_it() {
+  echo "$(date) $@" >> /var/log/cloud.log
+  log_action_begin_msg "$@"
+}
+
+
 init_interfaces() {
   cat > /etc/network/interfaces << EOF
 auto lo $1 $2 $3
@@ -35,13 +41,13 @@ patch() {
   mkdir -p $PATCH_MOUNT
 
   if [ -e /dev/vdb ]; then
-	# KVM needs to mount another disk, to get cmdline
-  	mkdir -p $EXTRA_MOUNT
-	mount /dev/vdb $EXTRA_MOUNT
-	cp -f $EXTRA_MOUNT/cmdline  /var/cache/cloud/cmdline
+    # KVM needs to mount another disk, to get cmdline
+    mkdir -p $EXTRA_MOUNT
+    mount /dev/vdb $EXTRA_MOUNT
+    cp -f $EXTRA_MOUNT/cmdline  /var/cache/cloud/cmdline
     cp -f $EXTRA_MOUNT/authorized_keys /var/cache/cloud/authorized_keys
     privkey=/var/cache/cloud/authorized_keys
-  	umount $EXTRA_MOUNT
+    umount $EXTRA_MOUNT
   elif [ -e /dev/cdrom1 ]; then
     vmtoolsd --cmd 'machine.id.get' > /var/cache/cloud/cmdline 
   else
@@ -69,16 +75,16 @@ patch() {
    if [ "$oldmd5" != "$newmd5" ] && [ -f ${patchfile} ] && [ "$newmd5" != "" ]
     then
       shouldpatch=true
-      logger -t cloud "Patching  scripts"
+      log_it "Patching  scripts oldmd5=$oldmd5 newmd5=$newmd5"
       tar xzf $patchfile -C /
       echo ${newmd5} > ${md5file}
     fi
-    logger -t cloud "Patching  cloud service"
+    log_it "Patching  cloud service"
     /opt/cloud/bin/patchsystemvm.sh $PATCH_MOUNT 
     umount $PATCH_MOUNT
     if [ "$shouldpatch" == "true" ] 
     then
-      logger -t cloud "Rebooting system since we patched init scripts"
+      log_it "Rebooting system since we patched init scripts"
       sleep 2
       reboot
     fi
@@ -122,7 +128,7 @@ setup_interface() {
 
 enable_fwding() {
   log_action_begin_msg "cloud: enable_fwding = $1"
-  logger -t cloud "enable_fwding = $1"
+  log_it "enable_fwding = $1"
   echo "$1" > /proc/sys/net/ipv4/ip_forward
   [ -f /etc/iptables/iptables.conf ] && sed  -i "s/ENABLE_ROUTING=.*$/ENABLE_ROUTING=$enabled/" /etc/iptables/iptables.conf && return
 }
@@ -131,7 +137,7 @@ enable_svc() {
   local svc=$1
   local enabled=$2
 
-  logger -t cloud "Enable service ${svc} = $enabled"
+  log_it "Enable service ${svc} = $enabled"
   local cfg=/etc/default/${svc}
   [ -f $cfg ] && sed  -i "s/ENABLED=.*$/ENABLED=$enabled/" $cfg && return
 }
@@ -407,7 +413,7 @@ case "$1" in
 start)
 
 	log_action_begin_msg "Executing cloud-early-config"
-        logger -t cloud "Executing cloud-early-config"
+        log_it "Executing cloud-early-config"
 	if start; then
 	    log_action_end_msg $?
 	else
