@@ -643,4 +643,23 @@
 	</div>
 </div>
 <!-- Create User for VPN (end) -->
+
+<!-- Enable Static NAT Dialog (begin) -->
+<div id="dialog_enable_static_NAT" title="Enable Static NAT" style="display: none">   
+    <div class="dialog_formcontent">
+        <form action="#" method="post" id="form3">
+        <ol>
+            <li>
+                <label for="vm_dropdown">
+                    Instance:</label>
+                <select class="select" name="vm_dropdown" id="vm_dropdown">
+                </select>
+                <div id="vm_dropdown_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+            </li>
+        </ol>
+        </form>
+    </div>
+</div>
+<!-- Enable Static NAT Dialog (end) -->
+
 <!--  dialogs (end) -->
