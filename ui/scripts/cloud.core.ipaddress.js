@@ -734,18 +734,21 @@ function ipJsonToDetailsTab() {
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty();
     var noAvailableActions = true;
-        
-    if(ipObj.isstaticnat == true) {
     
-    }
-    else { //ipObj.isstaticnat == false
-        if(isIpManageable(ipObj.domainid, ipObj.account) == true && ipObj.issourcenat != true) {     
-            buildActionLinkForTab("Release IP", ipActionMap, $actionMenu, $midmenuItem1, $thisTab);	
-            buildActionLinkForTab("Enable Static NAT", ipActionMap, $actionMenu, $midmenuItem1, $thisTab);	        
-            noAvailableActions = false;
+    if(isIpManageable(ipObj.domainid, ipObj.account) == true) {     
+        if(ipObj.isstaticnat == true) {        
+            buildActionLinkForTab("Disable Static NAT", ipActionMap, $actionMenu, $midmenuItem1, $thisTab);	        
+            noAvailableActions = false;        
         }
+        else { //ipObj.isstaticnat == false  
+            buildActionLinkForTab("Enable Static NAT", ipActionMap, $actionMenu, $midmenuItem1, $thisTab);	        
+            noAvailableActions = false;  
+            
+            if(ipObj.issourcenat != true)      
+                buildActionLinkForTab("Release IP", ipActionMap, $actionMenu, $midmenuItem1, $thisTab);	                  
+        }   
     }
-    
+       
     // no available actions 
 	if(noAvailableActions == true) {
 	    $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());
@@ -806,11 +809,23 @@ var ipActionMap = {
         asyncJobResponse: "createipforwardingruleresponse",
         dialogBeforeActionFn: doEnableStaticNAT,
         inProcessText: "Enabling Static NAT....",
-        afterActionSeccessFn: function(json, $midmenuItem1, id){    
+        afterActionSeccessFn: function(json, $midmenuItem1, id){                
             //var item = json.queryasyncjobresultresponse.jobresult.portforwardingrule;            
             var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
             var ipObj = $midmenuItem1.data("jsonObj");           
             ipObj.isstaticnat = true;   
+            setBooleanReadField(ipObj.isstaticnat, $("#right_panel_content #tab_content_details").find("#static_nat"));            
+        }        
+    },
+    "Disable Static NAT": {                      
+        isAsyncJob: true,
+        asyncJobResponse: "deleteipforwardingruleresponse",
+        dialogBeforeActionFn: doDisableStaticNAT,
+        inProcessText: "Disabling Static NAT....",
+        afterActionSeccessFn: function(json, $midmenuItem1, id){   
+            var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
+            var ipObj = $midmenuItem1.data("jsonObj");           
+            ipObj.isstaticnat = false;   
             setBooleanReadField(ipObj.isstaticnat, $("#right_panel_content #tab_content_details").find("#static_nat"));            
         }        
     }
@@ -852,6 +867,41 @@ function doEnableStaticNAT($actionLink, $detailsTab, $midmenuItem1) {
 		    $thisDialog.dialog("close");	
 		    
 			var apiCommand = "command=createIpForwardingRule&ipaddress="+ipaddress+"&virtualmachineid="+vmId;
+            doActionToTab(ipaddress, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	
+		}, 
+		"Cancel": function() { 
+			$(this).dialog("close"); 
+		} 
+	}).dialog("open");
+}
+
+function doDisableStaticNAT($actionLink, $detailsTab, $midmenuItem1) {  
+    var $detailsTab = $("#right_panel_content #tab_content_details"); 
+    var jsonObj = $detailsTab.data("jsonObj");
+    var ipaddress = jsonObj.ipaddress;
+    
+    $("#dialog_info")
+    .text("Please confirm you want to disable static NAT")    
+	.dialog('option', 'buttons', { 						
+		"Confirm": function() { 
+		    var $thisDialog = $(this);
+		
+		    var ipForwardingRuleId;		    
+		    $.ajax({
+		        data: createURL("command=listIpForwardingRules&ipaddress="+ipaddress),		       
+		        dataType: "json",		        
+		        async: false,
+		        success: function(json) {
+		            var items = json.listipforwardingrulesresponse.ipforwardingrule;
+		            if(items != null && items.length > 0) {
+		                ipForwardingRuleId = items[0].id;
+		            }		            
+		        }	        	    
+		    });			       
+				
+		    $thisDialog.dialog("close");	
+		    
+			var apiCommand = "command=deleteIpForwardingRule&id="+ipForwardingRuleId;
             doActionToTab(ipaddress, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	
 		}, 
 		"Cancel": function() { 
