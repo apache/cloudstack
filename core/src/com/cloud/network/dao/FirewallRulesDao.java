@@ -53,4 +53,5 @@ public interface FirewallRulesDao extends GenericDao<FirewallRuleVO, Long> {
 	public List<FirewallRuleVO> listByPrivateIp(String privateIp);
 	public boolean isPublicIpOneToOneNATted(String publicIp);
 	void deleteIPForwardingByPublicIpAndPort(String ipAddress, String port);
+	public List<FirewallRuleVO> listIPForwardingForLB(long userId, long dcId);
 }

@@ -825,11 +825,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         
         if (rule.isForwarding()) {
             return updatePortForwardingRule(rule, router, hostId, oldPrivateIP, oldPrivatePort);
-        } else {
-            final List<FirewallRuleVO> fwRules = _rulesDao.listIPForwarding(ipVO.getAccountId(), ipVO.getDataCenterId());
+        } else if (rule.getGroupId() != null) {
+            final List<FirewallRuleVO> fwRules = _rulesDao.listIPForwardingForLB(ipVO.getAccountId(), ipVO.getDataCenterId());
  
             return updateLoadBalancerRules(fwRules, router, hostId);
         }
+        return true;
     }
 
     @Override
@@ -870,7 +871,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 fwdRules.add(rule);
                 final SetFirewallRuleCommand cmd = new SetFirewallRuleCommand(routerName, routerIp, false, rule, false);
                 cmds.addCommand(cmd);
-            } else {
+            } else if (rule.getGroupId() != null){
                 lbRules.add(rule);
             }
             
@@ -881,6 +882,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             final String [][] addRemoveRules = cfgrtr.generateFwRules(fwRules);
             final LoadBalancerCfgCommand cmd = new LoadBalancerCfgCommand(cfg, addRemoveRules, routerName, routerIp);
             cmds.addCommand(cmd);
+        }
+        if (cmds.size() == 0) {
+        	return result;
         }
         Answer [] answers = null;
         try {

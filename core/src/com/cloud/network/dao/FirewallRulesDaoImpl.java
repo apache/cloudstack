@@ -44,6 +44,8 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
 
     public static String SELECT_IP_FORWARDINGS_BY_USERID_SQL   = null;
     public static String SELECT_IP_FORWARDINGS_BY_USERID_AND_DCID_SQL = null;
+    public static String SELECT_LB_FORWARDINGS_BY_USERID_AND_DCID_SQL = null;
+
 
     public static final String           DELETE_IP_FORWARDING_BY_IPADDRESS_SQL = "DELETE FROM ip_forwarding WHERE public_ip_address = ?";
     public static final String           DELETE_IP_FORWARDING_BY_IP_PORT_SQL = "DELETE FROM ip_forwarding WHERE public_ip_address = ? and public_port = ?";
@@ -60,6 +62,7 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
     protected SearchBuilder<FirewallRuleVO> RulesExcludingPubIpPort;
     protected SearchBuilder<FirewallRuleVO> FWByGroupId;
     protected SearchBuilder<FirewallRuleVO> FWByIpForLB;
+
     protected SearchBuilder<FirewallRuleVO> FWByGroupAndPrivateIp;
     protected SearchBuilder<FirewallRuleVO> FWByPrivateIpPrivatePortPublicIpPublicPortSearch;
     protected SearchBuilder<FirewallRuleVO> OneToOneNATSearch;
@@ -83,6 +86,12 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
         if (s_logger.isDebugEnabled()) {
             s_logger.debug(SELECT_IP_FORWARDINGS_BY_USERID_AND_DCID_SQL);
         }
+        
+        SELECT_LB_FORWARDINGS_BY_USERID_AND_DCID_SQL = buildSelectByUserIdAndDatacenterIdForLBSql();
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug(SELECT_LB_FORWARDINGS_BY_USERID_AND_DCID_SQL);
+        }
+        
 
         FWByIPSearch = createSearchBuilder();
         FWByIPSearch.and("publicIpAddress", FWByIPSearch.entity().getPublicIpAddress(), SearchCriteria.Op.EQ);
@@ -149,6 +158,7 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
         FWByIpForLB.and("groupId", FWByIpForLB.entity().getGroupId(), SearchCriteria.Op.NNULL);
         FWByIpForLB.and("forwarding", FWByIpForLB.entity().isForwarding(), SearchCriteria.Op.EQ);
         FWByIpForLB.done();
+        
         return true;
     }
 
@@ -162,6 +172,10 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
     
     protected String buildSelectByUserIdAndDatacenterIdSql() {
     	return "SELECT i.id, i.group_id, i.public_ip_address, i.public_port, i.private_ip_address, i.private_port, i.enabled, i.protocol, i.forwarding, i.algorithm FROM ip_forwarding i, user_ip_address u WHERE i.public_ip_address=u.public_ip_address AND u.account_id=? AND u.data_center_id=?";
+    }
+    
+    protected String buildSelectByUserIdAndDatacenterIdForLBSql() {
+    	return "SELECT i.id, i.group_id, i.public_ip_address, i.public_port, i.private_ip_address, i.private_port, i.enabled, i.protocol, i.forwarding, i.algorithm FROM ip_forwarding i, user_ip_address u WHERE i.public_ip_address=u.public_ip_address AND u.account_id=? AND u.data_center_id=? AND i.group_id is not NULL";
     }
 
     public List<FirewallRuleVO> listIPForwarding(String publicIPAddress, boolean forwarding) {
@@ -392,4 +406,23 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
         sc.setParameters("forwarding", false);
         return search(sc, null);
 	}
+	
+	@Override
+    public List<FirewallRuleVO> listIPForwardingForLB(long userId, long dcId) {
+    	Transaction txn = Transaction.currentTxn();
+        List<FirewallRuleVO> forwardings = new ArrayList<FirewallRuleVO>();
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = txn.prepareAutoCloseStatement(SELECT_LB_FORWARDINGS_BY_USERID_AND_DCID_SQL);
+            pstmt.setLong(1, userId);
+            pstmt.setLong(2, dcId);
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                forwardings.add(toEntityBean(rs, false));
+            }
+        } catch (Exception e) {
+        	s_logger.warn(e);
+        }
+        return forwardings;
+    }
 }

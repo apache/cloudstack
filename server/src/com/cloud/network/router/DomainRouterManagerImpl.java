@@ -1140,7 +1140,9 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
 			}
 			final List<FirewallRuleVO> fwRules = new ArrayList<FirewallRuleVO>();
 			for (final IPAddressVO ipVO : ipAddrs) {
-				fwRules.addAll(_rulesDao.listIPForwarding(ipVO.getAddress()));
+				//We need only firewall rules that are either forwarding or for load balancers
+				fwRules.addAll(_rulesDao.listIPForwarding(ipVO.getAddress(), true));
+				fwRules.addAll(_rulesDao.listIpForwardingRulesForLoadBalancers(ipVO.getAddress()));
 			}
 			final List<FirewallRuleVO> result = _networkMgr.updateFirewallRules(router
 					.getPublicIpAddress(), fwRules, router);
