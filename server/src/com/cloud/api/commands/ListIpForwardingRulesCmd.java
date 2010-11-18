@@ -70,14 +70,14 @@ public class ListIpForwardingRulesCmd extends BaseListCmd {
     public void execute(){
         List<FirewallRuleVO> result = _mgr.searchForIpForwardingRules(this);
         ListResponse<IpForwardingRuleResponse> response = new ListResponse<IpForwardingRuleResponse>();
-        List<IpForwardingRuleResponse> fwResponses = new ArrayList<IpForwardingRuleResponse>();
+        List<IpForwardingRuleResponse> ipForwardingResponses = new ArrayList<IpForwardingRuleResponse>();
         for (FirewallRuleVO rule : result) {
             IpForwardingRuleResponse resp = ApiResponseHelper.createIpForwardingRuleResponse(rule);
             if (resp != null) {
-                fwResponses.add(resp);
+                ipForwardingResponses.add(resp);
             }
         }
-        response.setResponses(fwResponses);
+        response.setResponses(ipForwardingResponses);
         response.setResponseName(getName());
         this.setResponseObject(response);
     }
