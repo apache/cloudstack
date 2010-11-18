@@ -2409,6 +2409,7 @@ public class ManagementServerImpl implements ManagementServer {
         String accountName = cmd.getAccountName();
         Long accountId = null;
         boolean isAdmin = false;
+        String path = null;
         if ((account == null) || isAdmin(account.getType())) {
             isAdmin = true;
             if (domainId != null) {
@@ -2423,14 +2424,15 @@ public class ManagementServerImpl implements ManagementServer {
                     }
                     accountId = account.getId();
                 }
-            } else {
-                domainId = ((account == null) ? DomainVO.ROOT_DOMAIN : account.getDomainId());
+            } 
+            if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+                DomainVO domain = _domainDao.findById(account.getDomainId());
+                if (domain != null) {
+                    path = domain.getPath();
+                }
             }
-
         } else {
-            accountName = account.getAccountName();
             accountId = account.getId();
-            domainId = account.getDomainId();
         }
 
         Criteria c = new Criteria("id", Boolean.TRUE, cmd.getStartIndex(), cmd.getPageSizeVal());
@@ -2441,6 +2443,10 @@ public class ManagementServerImpl implements ManagementServer {
         c.addCriteria(Criteria.DATACENTERID, cmd.getZoneId());
         c.addCriteria(Criteria.GROUPID, cmd.getGroupId());
         c.addCriteria(Criteria.FOR_VIRTUAL_NETWORK, cmd.getForVirtualNetwork());
+        
+        if (path != null) {
+            c.addCriteria(Criteria.PATH, path);
+        }
 
         // ignore these search requests if it's not an admin
         if (isAdmin == true) {
@@ -2448,8 +2454,10 @@ public class ManagementServerImpl implements ManagementServer {
             c.addCriteria(Criteria.PODID, cmd.getPodId());
             c.addCriteria(Criteria.HOSTID, cmd.getHostId());
         }
-
-        c.addCriteria(Criteria.ACCOUNTID, new Object[] {accountId});
+        
+        if (accountId != null) {
+            c.addCriteria(Criteria.ACCOUNTID, new Object[] {accountId});
+        }
         c.addCriteria(Criteria.ISADMIN, isAdmin); 
 
         return searchForUserVMs(c);
@@ -2479,6 +2487,7 @@ public class ManagementServerImpl implements ManagementServer {
         Object ipAddress = c.getCriteria(Criteria.IPADDRESS);
         Object groupId = c.getCriteria(Criteria.GROUPID);
         Object useVirtualNetwork = c.getCriteria(Criteria.FOR_VIRTUAL_NETWORK);
+        Object path = c.getCriteria(Criteria.PATH);
         
         sb.and("displayName", sb.entity().getDisplayName(), SearchCriteria.Op.LIKE);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
@@ -2494,9 +2503,10 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("hostIdIN", sb.entity().getHostId(), SearchCriteria.Op.IN);
         sb.and("guestIP", sb.entity().getGuestIpAddress(), SearchCriteria.Op.EQ);
         
-        if ((accountIds == null) && (domainId != null)) {
+        if (domainId != null || path != null) {
             // if accountId isn't specified, we can do a domain match for the admin case
             SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
+            domainSearch.and("id", domainSearch.entity().getId(), SearchCriteria.Op.EQ);
             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
             sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         }
@@ -2540,7 +2550,7 @@ public class ManagementServerImpl implements ManagementServer {
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("instanceName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("state", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-
+            
             sc.addAnd("displayName", SearchCriteria.Op.SC, ssc);
         }
 
@@ -2556,10 +2566,11 @@ public class ManagementServerImpl implements ManagementServer {
                 sc.setParameters("accountIdIN", accountIds);
             }
         } else if (domainId != null) {
-            DomainVO domain = _domainDao.findById((Long)domainId);
-
-            // I want to join on user_vm.domain_id = domain.id where domain.path like 'foo%'
-            sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
+            sc.setJoinParameters("domainSearch", "id", domainId);
+        }
+        
+        if (path != null) {
+            sc.setJoinParameters("domainSearch", "path", path + "%");
         }
 
         if (name != null) {
