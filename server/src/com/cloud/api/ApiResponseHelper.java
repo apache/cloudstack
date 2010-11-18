@@ -1002,6 +1002,7 @@ public class ApiResponseHelper {
        response.setPrivatePort(fwRule.getPrivatePort());
        response.setProtocol(fwRule.getProtocol());
        response.setPublicPort(fwRule.getPublicPort());
+       response.setPublicIpAddress(fwRule.getPublicIpAddress());
        if (fwRule.getPublicIpAddress() != null && fwRule.getPrivateIpAddress() != null) {
            UserVm vm = ApiDBUtils.findUserVmByPublicIpAndGuestIp(fwRule.getPublicIpAddress(), fwRule.getPrivateIpAddress());
            response.setVirtualMachineId(vm.getId());
