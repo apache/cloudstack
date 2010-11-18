@@ -30,7 +30,7 @@
         <div class="content_tabs off" id="tab_statistics">
             <%=t.t("Statistics")%></div>
         <div class="content_tabs off" id="tab_router" style="display:none">
-            <%=t.t("Routers")%></div>
+            <%=t.t("Router")%></div>
     </div>
     <!--Details tab (start)-->
     <div  id="tab_content_details">

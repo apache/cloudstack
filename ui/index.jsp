@@ -367,8 +367,8 @@ long milliseconds = new Date().getTime();
                         <div class="leftmenu_firstindent">
                             <div class="leftmenu_arrows_firstlevel_open" id="expandable_first_level_arrow" style="display:none;"></div>
                             <div class="leftmenu_list_icons">
-                                <img src="images/instance_leftmenuicon.png" alt="Instance" /></div>
-                            <%=t.t("instance")%>
+                                <img src="images/instance_leftmenuicon.png" alt="Instances" /></div>
+                            <%=t.t("instances")%>
                         </div>
                     </div>
                     
@@ -439,7 +439,7 @@ long milliseconds = new Date().getTime();
                                    	<div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
                                     </div>
                                       
-                                    <%=t.t("volume")%>
+                                    <%=t.t("volumes")%>
                                 </div>
                             </div>
                         </div>
@@ -449,7 +449,7 @@ long milliseconds = new Date().getTime();
                                 	  <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
                                             </div>
                                    
-                                    <%=t.t("snapshot")%>
+                                    <%=t.t("snapshots")%>
                                 </div>
                             </div>
                         </div>
@@ -471,7 +471,7 @@ long milliseconds = new Date().getTime();
                                    	<div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
                                     </div>
                                     
-                                    <%=t.t("ip.address")%>
+                                    <%=t.t("ip.addresses")%>
                                 </div>
                             </div>
                         </div>                        
@@ -482,8 +482,8 @@ long milliseconds = new Date().getTime();
                         <div class="leftmenu_firstindent">
                             <div class="leftmenu_arrows_firstlevel_open" id="expandable_first_level_arrow" style="display:none;"></div>
                             <div class="leftmenu_list_icons">
-                                <img src="images/templates_leftmenuicon.png" alt="Template" /></div>
-                            <%=t.t("template")%>
+                                <img src="images/templates_leftmenuicon.png" alt="Templates" /></div>
+                            <%=t.t("templates")%>
                         </div>
                     </div>
                     <div class="leftmenu_expandedbox" style="display: none">
@@ -493,7 +493,7 @@ long milliseconds = new Date().getTime();
                                     <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
                                     </div>
                                     
-                                    <%=t.t("template")%>
+                                    <%=t.t("templates")%>
                                 </div>
                             </div>
                             <div id="leftmenu_template_filter_container">
@@ -504,7 +504,7 @@ long milliseconds = new Date().getTime();
                                             </div>
                                             
                                             <div>
-                                                <%=t.t("my.template")%></div>
+                                                <%=t.t("my.templates")%></div>
                                         </div>
                                     </div>
                                 </div>
@@ -515,7 +515,7 @@ long milliseconds = new Date().getTime();
                                             </div>
                                           
                                             <div>
-                                                <%=t.t("featured.template")%></div>
+                                                <%=t.t("featured.templates")%></div>
                                         </div>
                                     </div>
                                 </div>
@@ -526,7 +526,7 @@ long milliseconds = new Date().getTime();
                                             </div>
                                             
                                             <div>
-                                                <%=t.t("community.template")%></div>
+                                                <%=t.t("community.templates")%></div>
                                         </div>
                                     </div>
                                 </div>
@@ -538,7 +538,7 @@ long milliseconds = new Date().getTime();
                                     <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
                                     </div>
                                     
-                                    <%=t.t("iso")%>
+                                    <%=t.t("isos")%>
                                 </div>
                             </div>
                             <div id="leftmenu_iso_filter_container">
@@ -549,7 +549,7 @@ long milliseconds = new Date().getTime();
                                             </div>
                                             
                                             <div>
-                                                <%=t.t("my.iso")%></div>
+                                                <%=t.t("my.isos")%></div>
                                         </div>
                                     </div>
                                 </div>
@@ -560,7 +560,7 @@ long milliseconds = new Date().getTime();
                                             </div>
                                             
                                             <div>
-                                                <%=t.t("featured.iso")%></div>
+                                                <%=t.t("featured.isos")%></div>
                                         </div>
                                     </div>
                                 </div>
@@ -571,7 +571,7 @@ long milliseconds = new Date().getTime();
                                             </div>
                                             
                                             <div>
-                                                <%=t.t("community.iso")%></div>
+                                                <%=t.t("community.isos")%></div>
                                         </div>
                                     </div>
                                 </div>
@@ -584,8 +584,8 @@ long milliseconds = new Date().getTime();
                         <div class="leftmenu_firstindent">
                             <!-- <div class="leftmenu_arrows_firstlevel_open" id="expandable_first_level_arrow" style="display:none;"></div> -->
                             <div class="leftmenu_list_icons">
-                                <img src="images/accounts_leftmenuicon.png" alt="Account" /></div>
-                            <%=t.t("account")%>
+                                <img src="images/accounts_leftmenuicon.png" alt="Accounts" /></div>
+                            <%=t.t("accounts")%>
                         </div>
                     </div>
                     
@@ -595,8 +595,8 @@ long milliseconds = new Date().getTime();
                         <div class="leftmenu_firstindent">
                             <div class="leftmenu_arrows_firstlevel_open" id="expandable_first_level_arrow" style="display:none;"></div>
                             <div class="leftmenu_list_icons">
-                                <img src="images/domain_leftmenuicon.png" alt="Domain" /></div>
-                            <%=t.t("domain")%>
+                                <img src="images/domain_leftmenuicon.png" alt="Domains" /></div>
+                            <%=t.t("domains")%>
                         </div>
                     </div>
                     <div class="leftmenu_expandedbox" style="display: none">
@@ -619,8 +619,8 @@ long milliseconds = new Date().getTime();
                         <div class="leftmenu_firstindent">
                              <div class="leftmenu_arrows_firstlevel_open" id="expandable_first_level_arrow" style="display:none;"></div>
                             <div class="leftmenu_list_icons">
-                                <img src="images/events_leftmenuicon.png" alt="Event" /></div>
-                            <%=t.t("event")%>
+                                <img src="images/events_leftmenuicon.png" alt="Events" /></div>
+                            <%=t.t("events")%>
                         </div>
                     </div>
                     <div class="leftmenu_expandedbox" style="display: none">
@@ -630,7 +630,7 @@ long milliseconds = new Date().getTime();
                                     <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
                                     </div>
                                     
-                                    <%=t.t("event")%>
+                                    <%=t.t("events")%>
                                 </div>
                             </div>
                         </div>
@@ -640,7 +640,7 @@ long milliseconds = new Date().getTime();
                                     <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
                                     </div>
                                     
-                                    <%=t.t("alert")%>
+                                    <%=t.t("alerts")%>
                                 </div>
                             </div>
                         </div>
@@ -652,8 +652,8 @@ long milliseconds = new Date().getTime();
                         <div class="leftmenu_firstindent">
                             <div class="leftmenu_arrows_firstlevel_open" id="expandable_first_level_arrow" style="display:none;"></div>
                             <div class="leftmenu_list_icons">
-                                <img src="images/resource_leftmenuicon.png" alt="resources" /></div>
-                            <%=t.t("resources")%>
+                                <img src="images/resource_leftmenuicon.png" alt="System" /></div>
+                            <%=t.t("system")%>
                         </div>
                     </div>
                     <div class="leftmenu_expandedbox" style="display: none">
@@ -693,7 +693,7 @@ long milliseconds = new Date().getTime();
                                             </div>
                                             
                                             <div>
-                                                <%=t.t("virtual.router")%></div>
+                                                <%=t.t("virtual.routers")%></div>
                                         </div>
                                     </div>
                                 </div>
@@ -704,7 +704,7 @@ long milliseconds = new Date().getTime();
                                             </div>
                                           
                                             <div>
-                                                <%=t.t("system.VM")%></div>
+                                                <%=t.t("system.vms")%></div>
                                         </div>
                                     </div>
                                 </div>                                
@@ -718,8 +718,8 @@ long milliseconds = new Date().getTime();
                         <div class="leftmenu_firstindent">
                             <div class="leftmenu_arrows_firstlevel_open" id="expandable_first_level_arrow" style="display:none;"></div>
                             <div class="leftmenu_list_icons">
-                                <img src="images/configuration_leftmenuicon.png" alt="System" /></div>
-                            <%=t.t("system")%>
+                                <img src="images/configuration_leftmenuicon.png" alt="Configuration" /></div>
+                            <%=t.t("configuration")%>
                         </div>
                     </div>
                     <div class="leftmenu_expandedbox" style="display: none">                                                          
