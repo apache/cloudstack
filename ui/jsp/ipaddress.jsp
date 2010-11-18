@@ -98,18 +98,8 @@
 	                    <div class="row_celltitles" id="source_nat">
 	                    </div>
 	                </div>
-	            </div>	            
+	            </div>	  
 	            <div class="grid_rows odd">
-	                <div class="grid_row_cell" style="width: 20%;">
-	                    <div class="row_celltitles">
-	                        Static NAT:</div>
-	                </div>
-	                <div class="grid_row_cell" style="width: 79%;">
-	                    <div class="row_celltitles" id="static_nat">
-	                    </div>
-	                </div>
-	            </div>	            
-	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        Network Type:</div>
@@ -119,7 +109,7 @@
 	                    </div>
 	                </div>
 	            </div>
-	            <div class="grid_rows odd">
+	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        Domain:</div>
@@ -129,7 +119,7 @@
 	                    </div>
 	                </div>
 	            </div>
-	            <div class="grid_rows even">
+	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        Account:</div>
@@ -139,7 +129,7 @@
 	                    </div>
 	                </div>
 	            </div>
-	            <div class="grid_rows odd">
+	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        Allocated:</div>
@@ -149,6 +139,26 @@
 	                    </div>
 	                </div>
 	            </div>
+	            <div class="grid_rows odd">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        Static NAT:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="static_nat">
+	                    </div>
+	                </div>
+	            </div>	 
+	            <div class="grid_rows even" id="vm_of_static_nat_container" style="display:none">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        VM of Static NAT:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="vm_of_static_nat">
+	                    </div>
+	                </div>
+	            </div>	  
 	        </div>
         </div>        
     </div>
