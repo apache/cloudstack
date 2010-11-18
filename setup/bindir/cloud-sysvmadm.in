@@ -5,8 +5,8 @@
 #set -x
 
 usage() {
-  printf "\nUsage: %s: [-d] [-u] [-p] [-s] [-r] [-a] \n\n -d - cloud DB server ip address, defaulted to localhost if not specified \n -u - user name to access cloud DB, defaulted to "root" if not specified \n -p - cloud DB user password, defaulted to no password -s - stop then start any running SSVM or console proxy in any
-zone \n -r - stop then start any running virtual router in any zone \n -a - stop then start any running SSVM, console proxy, or virtual router in any zone\n" $(basename $0) >&2
+  printf "\nThe tool stopping/starting running system vms and domain routers \n\nUsage: %s: [-d] [-u] [-p] [-s] [-r] [-a] \n\n -d - cloud DB server ip address, defaulted to localhost if not specified \n -u - user name to access cloud DB, defaulted to "root" if not specified \n -p - cloud DB user password, defaulted to no password if not specified \n -s - stop then start any running SSVM or console proxy in any
+zone \n -r - stop then start any running virtual router in any zone \n -a - stop then start any running SSVM, console proxy, or virtual router in any zone\n\n" $(basename $0) >&2
 }
 
 
