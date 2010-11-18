@@ -600,18 +600,31 @@
                             <div class="vmpopup_offeringpanel_underconstructionbox">Under Construction</div>
                         </div>
                         <div class="vmpopup_offeringbox">
-                            <input type="radio" name="radiogroup" class="radio" />
+                            <input type="radio" name="radiogroup" class="radio" selected />
                             <label class="label">
-                                Virtual Network</label>
+                                My Virtual Network</label>
                             <div class="vmpopup_offdescriptionbox">
                                 <div class="vmpopup_offdescriptionbox_top">
                                 </div>
                                 <div class="vmpopup_offdescriptionbox_bot">
                                     <p>
-                                        Some info about virtual network will appear here..Some info about virtual network
-                                        will appear here..Some info about virtual network will appear here..Some info about
-                                        virtual network will appear here..Some info about virtual network will appear here..Some
-                                        info about virtual network will appear here..
+                                        A virtual private network that is fronted by a virtual router. 
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+						<div class="vmpopup_offeringbox">
+                            <input type="radio" name="radiogroup" class="radio" selected />
+                            <label class="label">
+                                My Virtual Network with Guest CIDR support.  Specify guest CIDR: 
+							</label>
+							<input type="text" name="disksize" class="text" />
+                            <div class="vmpopup_offdescriptionbox">
+                                <div class="vmpopup_offdescriptionbox_top">
+                                </div>
+                                <div class="vmpopup_offdescriptionbox_bot">
+                                    <p>
+                                        A virtual private network that is fronted by a virtual router.  An optional guest CIDR can be specified.
                                     </p>
                                 </div>
                             </div>
@@ -619,18 +632,33 @@
                         <div class="vmpopup_offeringbox" style="margin-top: 15px;">
                             <input type="radio" name="radiogroup" class="radio" />
                             <label class="label">
-                                Shared Network:</label>
-                            <input type="text" name="disksize" class="text" />
+                                My Direct Network:</label>
                             <div class="vmpopup_offdescriptionbox">
                                 <div class="vmpopup_offdescriptionbox_top">
                                 </div>
                                 <div class="vmpopup_offdescriptionbox_bot">
                                     <p>
-                                        Some info about virtual network will appear here..Some info about virtual network
-                                        will appear here..Some info about virtual network will appear here..Some info about
-                                        virtual network will appear here..Some info about virtual network will appear here..Some
-                                        info about virtual network will appear here.. Some info about virtual network will
-                                        appear here..Some info about virtual network will appear here..</p>
+                                       A network where the virtual instance is directly assigned an IP from.
+									</p?
+                                </div>
+                            </div>
+                        </div>
+						<div class="vmpopup_offeringbox" style="margin-top: 15px;">
+                            <input type="radio" name="radiogroup" class="radio" />
+                            <label class="label">
+                                My Direct Shared Network: </label>
+                            <select class="select">
+							  <option>VLAN 100</option>
+							  <option>VLAN 101</option>
+							  <option>VLAN 102</option>
+							</select>
+                            <div class="vmpopup_offdescriptionbox">
+                                <div class="vmpopup_offdescriptionbox_top">
+                                </div>
+                                <div class="vmpopup_offdescriptionbox_bot">
+                                    <p>
+                                       A network where the virtual instance is directly assigned an IP from.  A VLAN must be selected.
+									</p?
                                 </div>
                             </div>
                         </div>
@@ -835,7 +863,7 @@
         <label class="label1" style="margin-left:33px; display:inline;">
             Disk Size:</label>
         <input type="text" id="custom_disk_size" class="text" />
-        <span>MB</span>
+        <span>GB</span>
        
         <div id="custom_disk_size_errormsg" class="errormsg" style="display: none; margin-left:89px; display:inline;">
         </div>
