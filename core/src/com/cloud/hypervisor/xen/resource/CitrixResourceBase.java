@@ -1236,10 +1236,11 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         	args += " -p " + cmd.getPresharedKey();
         	args += " -s " + cmd.getVpnServerIp();
         	args += " -l " + cmd.getLocalIp();
-        	args += " -c";
+        	args += " -c ";
         	
         } else {
-        	args += " -d";
+        	args += " -d ";
+        	args += " -s " + cmd.getVpnServerIp();
         }
         String result = callHostPlugin("vmops", "lt2p_vpn", "args", args);
     	if (result == null || result.isEmpty()) {

@@ -2768,6 +2768,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             if (!existing.isEmpty()) {
             	throw new InvalidParameterValueException("UDP Port " + NetUtils.VPN_NATT_PORT + " is configured for destination NAT");
             }
+            existing = _rulesDao.listIPForwardingByPortAndProto(publicIp, NetUtils.VPN_L2TP_PORT, NetUtils.UDP_PROTO);
+            if (!existing.isEmpty()) {
+            	throw new InvalidParameterValueException("UDP Port " + NetUtils.VPN_L2TP_PORT + " is configured for destination NAT");
+            }
             if (_rulesDao.isPublicIpOneToOneNATted(publicIp)) {
             	throw new InvalidParameterValueException("Public Ip " + publicIp + " is configured for destination NAT");
             }
@@ -2775,7 +2779,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         	vpnVO = _remoteAccessVpnDao.persist(vpnVO);
         	FirewallRuleVO rule = new FirewallRuleVO(null, null, publicIp, NetUtils.VPN_PORT, guestIpRange[0], NetUtils.VPN_PORT, true, NetUtils.UDP_PROTO, false, null);
         	_rulesDao.persist(rule);
-        	rule = new FirewallRuleVO(null, null, publicIp, NetUtils.VPN_NATT_PORT, guestIpRange[0], NetUtils.VPN_PORT, true, NetUtils.UDP_PROTO, false, null);
+        	rule = new FirewallRuleVO(null, null, publicIp, NetUtils.VPN_NATT_PORT, guestIpRange[0], NetUtils.VPN_NATT_PORT, true, NetUtils.UDP_PROTO, false, null);
+        	_rulesDao.persist(rule);
+        	rule = new FirewallRuleVO(null, null, publicIp, NetUtils.VPN_L2TP_PORT, guestIpRange[0], NetUtils.VPN_L2TP_PORT, true, NetUtils.UDP_PROTO, false, null);
         	_rulesDao.persist(rule);
         	txn.commit();
         	return vpnVO;
@@ -2855,6 +2861,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         		_remoteAccessVpnDao.remove(vpnId);
         		_rulesDao.deleteIPForwardingByPublicIpAndPort(publicIp, NetUtils.VPN_PORT);
         		_rulesDao.deleteIPForwardingByPublicIpAndPort(publicIp, NetUtils.VPN_NATT_PORT);
+        		_rulesDao.deleteIPForwardingByPublicIpAndPort(publicIp, NetUtils.VPN_L2TP_PORT);
         		EventUtils.saveEvent(userId, account.getId(), EventTypes.EVENT_REMOTE_ACCESS_VPN_DESTROY, "Deleted Remote Access VPN for account: " + account.getAccountName() + " in zone " + cmd.getZoneId());
         	} else {
         		EventUtils.saveEvent(userId, account.getId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_REMOTE_ACCESS_VPN_DESTROY, "Unable to delete Remote Access VPN ", account.getAccountName() + " in zone " + cmd.getZoneId());

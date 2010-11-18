@@ -4,7 +4,7 @@
 usage() {
   printf "Usage:\n"
   printf "Create VPN     : %s -c -r <ip range for clients> -l <localip> -p <ipsec psk> -s <public ip> \n" $(basename $0)
-  printf "Delete VPN     : %s -d \n" $(basename $0)
+  printf "Delete VPN     : %s -d -s <public ip>\n" $(basename $0)
   printf "Add VPN User   : %s -u <username,password> \n" $(basename $0)
   printf "Remote VPN User: %s -U <username \n" $(basename $0)
 }
@@ -16,19 +16,20 @@ get_intf_ip() {
 
 iptables_() {
    local op=$1
+   local public_ip=$2
    local public_if="eth2"
    local subnet_if="eth0"
    local subnet_ip=$(get_intf_ip $subnet_if)
 
-   iptables $op INPUT -i $public_if -p udp -m udp --dport 500 -j ACCEPT
-   iptables $op INPUT -i $public_if -p udp -m udp --dport 4500 -j ACCEPT
+   iptables $op INPUT -i $public_if --dst $public_ip -p udp -m udp --dport 500 -j ACCEPT
+   iptables $op INPUT -i $public_if --dst $public_ip -p udp -m udp --dport 4500 -j ACCEPT
+   iptables $op INPUT -i $public_if --dst $public_ip -p udp -m udp --dport 1701 -j ACCEPT
    iptables $op INPUT -i eth2 -p ah -j ACCEPT
    iptables $op INPUT -i eth2 -p esp -j ACCEPT
    iptables $op FORWARD -i ppp+ -o $subnet_if -j ACCEPT 
    iptables $op FORWARD -i $subnet_if -o ppp+ -j ACCEPT 
    iptables $op FORWARD -i ppp+ -o ppp+ -j ACCEPT 
    iptables $op INPUT -i ppp+ -m udp -p udp --dport 53 -j ACCEPT
-   iptables $op INPUT -i ppp+ -p udp -m udp --dport 1701 -j ACCEPT
 
 
    iptables -t nat $op PREROUTING -i ppp+ -p udp -m udp --dport 53 -j  DNAT --to-destination $subnet_ip
@@ -50,19 +51,19 @@ ipsec_server() {
 
 create_l2tp_ipsec_vpn_server() {
    local ipsec_psk=$1
-   local server_ip=$2
+   local public_ip=$2
    local client_range=$3
    local local_ip=$4
 
-   sed -i -e "s/left=.*$/left=$server_ip/" /etc/ipsec.d/l2tp.conf
+   sed -i -e "s/left=.*$/left=$public_ip/" /etc/ipsec.d/l2tp.conf
    echo ": PSK \"$ipsec_psk\"" > /etc/ipsec.d/ipsec.any.secrets
    sed -i -e "s/^ip range = .*$/ip range = $client_range/"  /etc/xl2tpd/xl2tpd.conf
    sed -i -e "s/^local ip = .*$/local ip = $local_ip/"  /etc/xl2tpd/xl2tpd.conf
 
    sed -i -e "s/^ms-dns.*$/ms-dns $local_ip/" /etc/ppp/options.xl2tpd
 
-   iptables_ "-D"
-   iptables_ "-I"
+   iptables_ "-D" $public_ip
+   iptables_ "-I" $public_ip
 
    ipsec_server "restart"
 
@@ -71,10 +72,11 @@ create_l2tp_ipsec_vpn_server() {
 }
 
 destroy_l2tp_ipsec_vpn_server() {
+   local public_ip=$1
 
    ipsec auto --down L2TP-PSK
 
-   iptables_ "-D"
+   iptables_ "-D" $public_ip
    
    ipsec_server "stop"
 }
@@ -146,8 +148,8 @@ if [ "$create" == "1" ]; then
 fi
 
 if [ "$destroy" == "1" ]; then
-   destroy_l2tp_ipsec_vpn_server
-    exit $?
+   destroy_l2tp_ipsec_vpn_server $server_ip
+   exit $?
 fi
 
 if [ "$useradd" == "1" ]; then
