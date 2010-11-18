@@ -1304,6 +1304,7 @@ function vmJsonToDetailsTab(){
     setVmStateInRightPanel(jsonObj.state, $thisTab.find("#state"));		
     $thisTab.find("#ipAddress").text(noNull(jsonObj.ipaddress));
     
+    $thisTab.find("#id").text(noNull(jsonObj.id));
     $thisTab.find("#zoneName").text(fromdb(jsonObj.zonename));
            
     var vmName = getVmName(jsonObj.name, jsonObj.displayname);        

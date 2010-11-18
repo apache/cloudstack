@@ -78,7 +78,19 @@
 	                    </div>
 	                </div>
 	            </div>
+	            
 	            <div class="grid_rows even">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <%=t.t("ID")%>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="id">
+	                    </div>
+	                </div>
+	            </div>
+	            
+	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <%=t.t("Zone")%>:</div>
@@ -88,7 +100,7 @@
 	                    </div>
 	                </div>
 	            </div>        
-	            <div class="grid_rows odd">
+	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <%=t.t("Name")%>:</div>
@@ -100,7 +112,7 @@
 	                    <div id="vmname_edit_errormsg" style="display:none"></div>
 	                </div>
 	            </div>
-	            <div class="grid_rows even">
+	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <%=t.t("IP")%>:</div>
@@ -110,7 +122,7 @@
 	                    </div>
 	                </div>
 	            </div>        
-	            <div class="grid_rows odd">
+	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <%=t.t("Template")%>:</div>
@@ -120,7 +132,7 @@
 	                    </div>
 	                </div>
 	            </div>
-	            <div class="grid_rows even">
+	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <%=t.t("Service")%>:</div>
@@ -130,7 +142,7 @@
 	                    </div>
 	                </div>
 	            </div>
-	            <div class="grid_rows odd">
+	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <%=t.t("HA.Enabled")%>:</div>
@@ -144,7 +156,7 @@
 	                    </select>
 	                </div>
 	            </div>
-	            <div class="grid_rows even">
+	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <%=t.t("Created")%>:</div>
@@ -154,7 +166,7 @@
 	                    </div>
 	                </div>
 	            </div>
-	            <div class="grid_rows odd">
+	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <%=t.t("Account")%>:</div>
@@ -164,7 +176,7 @@
 	                    </div>
 	                </div>
 	            </div>
-	            <div class="grid_rows even">
+	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <%=t.t("Domain")%>:</div>
@@ -174,7 +186,7 @@
 	                    </div>
 	                </div>
 	            </div>
-	            <div class="grid_rows odd">
+	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <%=t.t("Host")%>:</div>
@@ -184,7 +196,7 @@
 	                    </div>
 	                </div>
 	            </div>
-	            <div class="grid_rows even">
+	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <%=t.t("ISO.attached")%>:</div>
@@ -194,7 +206,7 @@
 	                    </div>
 	                </div>
 	            </div>
-	            <div class="grid_rows odd">
+	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <%=t.t("Group")%>:</div>
@@ -205,14 +217,14 @@
 	                    <input class="text" id="group_edit" style="width: 200px; display: none;" type="text" />
 	                    <div id="group_edit_errormsg" style="display:none"></div>
 	                </div>
-	            </div>
-	            
-	              
+	            </div>	
 	        </div>
+	        
             <div class="grid_botactionpanel">
-	        		<div class="gridbot_buttons" id="save_button" style="display:none;">Save</div>
-	            	<div class="gridbot_buttons" id="cancel_button" style="display:none;">Cancel</div>
-	      </div>
+	        	<div class="gridbot_buttons" id="save_button" style="display:none;">Save</div>
+	            <div class="gridbot_buttons" id="cancel_button" style="display:none;">Cancel</div>
+	        </div>
+	        
 	    </div>
     </div>  
     <!--Details tab (end)-->
