@@ -35,21 +35,16 @@
             
     //switch between different tabs in zone page    
     var tabArray = [$("#tab_details"), $("#tab_secondarystorage"), $("#tab_network")];
-    var tabContentArray = [$("#tab_content_details"), $("#tab_content_secondarystorage"), $("#tab_content_network")];   
-    switchBetweenDifferentTabs(tabArray, tabContentArray);  
-    
-    //var afterSwitchFnArray = [zoneJsonToDetailsTab, zoneJsonToNetworkTab, zoneJsonToSecondaryStorageTab];
-    //switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray); 
-    //$zonePage.find("#tab_details").click();   
-            
+    var tabContentArray = [$("#tab_content_details"), $("#tab_content_secondarystorage"), $("#tab_content_network")];      
+    var afterSwitchFnArray = [zoneJsonToDetailsTab, zoneJsonToSecondaryStorageTab, zoneJsonToNetworkTab];
+    switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray); 
+                 
 	zoneJsonToRightPanel($midmenuItem1);		  
 }
 
-function zoneJsonToRightPanel($leftmenuItem1) {
-    zoneJsonToDetailsTab($leftmenuItem1);
-    var jsonObj = $leftmenuItem1.data("jsonObj");  
-    zoneJsonToNetworkTab(jsonObj);				    
-    zoneJsonToSecondaryStorageTab(jsonObj);
+function zoneJsonToRightPanel($leftmenuItem1) {	 
+    $("#right_panel_content").data("$leftmenuItem1", $leftmenuItem1);      
+    $("#right_panel_content").find("#tab_details").click();     
 }
 
 function zoneJsonClearRightPanel() {
@@ -58,30 +53,34 @@ function zoneJsonClearRightPanel() {
     zoneJsonClearSecondaryStorageTab();
 }
 
-function zoneJsonToDetailsTab($leftmenuItem1) {	 
-    var jsonObj = $leftmenuItem1.data("jsonObj");     
-    var $detailsTab = $("#tab_content_details");   
-    $detailsTab.data("jsonObj", jsonObj);  
+function zoneJsonToDetailsTab() {	 
+    var $thisTab = $("#right_panel_content").find("#tab_content_details");  
+    $thisTab.find("#tab_container").hide(); 
+    $thisTab.find("#tab_spinning_wheel").show();        
+    
+    var $leftmenuItem1 = $("#right_panel_content").data("$leftmenuItem1");
+    var jsonObj = $leftmenuItem1.data("jsonObj");
+    $thisTab.data("jsonObj", jsonObj);  
              
-    $detailsTab.find("#id").text(noNull(jsonObj.id));
-    $detailsTab.find("#title").text(fromdb(jsonObj.name));
+    $thisTab.find("#id").text(noNull(jsonObj.id));
+    $thisTab.find("#title").text(fromdb(jsonObj.name));
     
-    $detailsTab.find("#name").text(fromdb(jsonObj.name));
-    $detailsTab.find("#name_edit").val(fromdb(jsonObj.name));
+    $thisTab.find("#name").text(fromdb(jsonObj.name));
+    $thisTab.find("#name_edit").val(fromdb(jsonObj.name));
     
-    $detailsTab.find("#dns1").text(fromdb(jsonObj.dns1));
-    $detailsTab.find("#dns1_edit").val(fromdb(jsonObj.dns1));
+    $thisTab.find("#dns1").text(fromdb(jsonObj.dns1));
+    $thisTab.find("#dns1_edit").val(fromdb(jsonObj.dns1));
     
-    $detailsTab.find("#dns2").text(fromdb(jsonObj.dns2));
-    $detailsTab.find("#dns2_edit").val(fromdb(jsonObj.dns2));
+    $thisTab.find("#dns2").text(fromdb(jsonObj.dns2));
+    $thisTab.find("#dns2_edit").val(fromdb(jsonObj.dns2));
     
-    $detailsTab.find("#internaldns1").text(fromdb(jsonObj.internaldns1));
-    $detailsTab.find("#internaldns1_edit").val(fromdb(jsonObj.internaldns1));
+    $thisTab.find("#internaldns1").text(fromdb(jsonObj.internaldns1));
+    $thisTab.find("#internaldns1_edit").val(fromdb(jsonObj.internaldns1));
     
-    $detailsTab.find("#internaldns2").text(fromdb(jsonObj.internaldns2));
-    $detailsTab.find("#internaldns2_edit").val(fromdb(jsonObj.internaldns2));
+    $thisTab.find("#internaldns2").text(fromdb(jsonObj.internaldns2));
+    $thisTab.find("#internaldns2_edit").val(fromdb(jsonObj.internaldns2));
     
-    $detailsTab.find("#networktype").text(fromdb(jsonObj.networktype));
+    $thisTab.find("#networktype").text(fromdb(jsonObj.networktype));
     if(jsonObj.networktype == "Basic") {
         $("#midmenu_add_vlan_button, #tab_network, #tab_content_details #vlan_container").hide();
     }
@@ -89,27 +88,27 @@ function zoneJsonToDetailsTab($leftmenuItem1) {
         $("#midmenu_add_vlan_button, #tab_network, #tab_content_details #vlan_container").show();           
         
         var vlan = jsonObj.vlan; 
-        $detailsTab.find("#vlan").text(fromdb(vlan));      
+        $thisTab.find("#vlan").text(fromdb(vlan));      
         if(vlan != null) {           
 		    if(vlan.indexOf("-") != -1) {  //e.g. vlan == "30-33"
 			    var startVlan = vlan.substring(0, vlan.indexOf("-"));
 			    var endVlan = vlan.substring((vlan.indexOf("-")+1));	
-			    $detailsTab.find("#startvlan_edit").val(startVlan);
-			    $detailsTab.find("#endvlan_edit").val(endVlan);			
+			    $thisTab.find("#startvlan_edit").val(startVlan);
+			    $thisTab.find("#endvlan_edit").val(endVlan);			
 		    }
 		    else {  //e.g. vlan == "30"
-		        $detailsTab.find("#startvlan_edit").val(vlan);					        
+		        $thisTab.find("#startvlan_edit").val(vlan);					        
 		    }
 	    } 
     }	
         
-    $detailsTab.find("#guestcidraddress").text(fromdb(jsonObj.guestcidraddress));   
-    $detailsTab.find("#guestcidraddress_edit").val(fromdb(jsonObj.guestcidraddress));   
+    $thisTab.find("#guestcidraddress").text(fromdb(jsonObj.guestcidraddress));   
+    $thisTab.find("#guestcidraddress_edit").val(fromdb(jsonObj.guestcidraddress));   
         
-    $detailsTab.find("#domain").text(fromdb(jsonObj.domain)); 
+    $thisTab.find("#domain").text(fromdb(jsonObj.domain)); 
         
     //actions ***   
-    var $actionLink = $detailsTab.find("#action_link"); 
+    var $actionLink = $thisTab.find("#action_link"); 
     $actionLink.bind("mouseover", function(event) {	    
         $(this).find("#action_menu").show();    
         return false;
@@ -118,41 +117,83 @@ function zoneJsonToDetailsTab($leftmenuItem1) {
         $(this).find("#action_menu").hide();    
         return false;
     });	  
-    var $actionMenu = $detailsTab.find("#action_link #action_menu");
+    var $actionMenu = $thisTab.find("#action_link #action_menu");
     $actionMenu.find("#action_list").empty();      
-    buildActionLinkForTab("Edit Zone", zoneActionMap, $actionMenu, $leftmenuItem1, $detailsTab);    
-    buildActionLinkForTab("Delete Zone", zoneActionMap, $actionMenu, $leftmenuItem1, $detailsTab);     
+    buildActionLinkForTab("Edit Zone", zoneActionMap, $actionMenu, $leftmenuItem1, $thisTab);    
+    buildActionLinkForTab("Delete Zone", zoneActionMap, $actionMenu, $leftmenuItem1, $thisTab);   
+    
+    $thisTab.find("#tab_spinning_wheel").hide();    
+    $thisTab.find("#tab_container").show();      
 }	  
 
 function zoneJsonClearDetailsTab() {	    
-    var $detailsTab = $("#tab_content_details");             
-    $detailsTab.find("#id").text("");
-    $detailsTab.find("#name").text("");
-    $detailsTab.find("#dns1").text("");
-    $detailsTab.find("#dns2").text("");
-    $detailsTab.find("#internaldns1").text("");
-    $detailsTab.find("#internaldns2").text("");	
-    $detailsTab.find("#vlan").text("");
-    $detailsTab.find("#guestcidraddress").text("");   
+    var $thisTab = $("#right_panel_content").find("#tab_content_details");             
+    $thisTab.find("#id").text("");
+    $thisTab.find("#name").text("");
+    $thisTab.find("#dns1").text("");
+    $thisTab.find("#dns2").text("");
+    $thisTab.find("#internaldns1").text("");
+    $thisTab.find("#internaldns2").text("");	
+    $thisTab.find("#vlan").text("");
+    $thisTab.find("#guestcidraddress").text("");   
     
     //actions ***   
-    var $actionMenu = $detailsTab.find("#action_link #action_menu");
+    var $actionMenu = $thisTab.find("#action_link #action_menu");
     $actionMenu.find("#action_list").empty();   
 	$actionMenu.find("#action_list").append($("#no_available_actions").clone().show());		
 }	
 
+function zoneJsonToSecondaryStorageTab() {   
+    var $thisTab = $("#right_panel_content").find("#tab_content_secondarystorage");
+	$thisTab.find("#tab_container").hide(); 
+    $thisTab.find("#tab_spinning_wheel").show();   
+ 		
+	var $leftmenuItem1 = $("#right_panel_content").data("$leftmenuItem1");	
+	var jsonObj = $leftmenuItem1.data("jsonObj");	
+      
+    $.ajax({
+		cache: false,
+		data: createURL("command=listHosts&type=SecondaryStorage&zoneid="+jsonObj.id),
+		dataType: "json",
+		success: function(json) {			   			    
+			var items = json.listhostsresponse.host;	
+			var $container = $thisTab.find("#tab_container").empty();																					
+			if (items != null && items.length > 0) {			    
+				var $template = $("#secondary_storage_tab_template");				
+				for (var i = 0; i < items.length; i++) {
+					var $newTemplate = $template.clone(true);	               
+	                secondaryStorageJSONToTemplate(items[i], $newTemplate); 
+	                $container.append($newTemplate.show());	
+				}			
+			}	
+			$thisTab.find("#tab_spinning_wheel").hide();    
+            $thisTab.find("#tab_container").show();    		
+		}
+	});     
+}
+
+function zoneJsonClearSecondaryStorageTab() {   
+    $("#right_panel_content").find("#tab_content_secondarystorage").empty();	
+}
+
 var $vlanContainer;
-function zoneJsonToNetworkTab(jsonObj) {	    
-    var $networkTab = $("#tab_content_network");      
-    $networkTab.find("#zone_cloud").find("#zone_name").text(fromdb(jsonObj.name));	 
-    $networkTab.find("#zone_vlan").text(jsonObj.vlan);   
+function zoneJsonToNetworkTab(jsonObj) {	
+    var $thisTab = $("#right_panel_content").find("#tab_content_network");
+	$thisTab.find("#tab_container").hide(); 
+    $thisTab.find("#tab_spinning_wheel").show();   
+		
+	var $leftmenuItem1 = $("#right_panel_content").data("$leftmenuItem1");	
+	var jsonObj = $leftmenuItem1.data("jsonObj");	
+        
+    $thisTab.find("#zone_cloud").find("#zone_name").text(fromdb(jsonObj.name));	 
+    $thisTab.find("#zone_vlan").text(jsonObj.vlan);   
                   
     $.ajax({
 	  data: createURL("command=listVlanIpRanges&zoneId="+jsonObj.id),
 		dataType: "json",
 		success: function(json) {
 			var items = json.listvlaniprangesresponse.vlaniprange;		
-			$vlanContainer = $networkTab.find("#vlan_container").empty();   					
+			$vlanContainer = $thisTab.find("#vlan_container").empty();   					
 			if (items != null && items.length > 0) {					    
 				for (var i = 0; i < items.length; i++) {	
 				    var item = items[i];
@@ -167,41 +208,18 @@ function zoneJsonToNetworkTab(jsonObj) {
 				    $vlanContainer.append($template1.show());											
 				}
 			}
+			$thisTab.find("#tab_spinning_wheel").hide();    
+            $thisTab.find("#tab_container").show();    
 		}
 	});
 }	 
 
 function zoneJsonClearNetworkTab() {	    
-    var $networkTab = $("#tab_content_network");      
-    $networkTab.find("#zone_cloud").find("#zone_name").text("");	 
-    $networkTab.find("#zone_vlan").text("");   
-    $networkTab.find("#vlan_container").empty();    
-}	 
-
-function zoneJsonToSecondaryStorageTab(jsonObj) {   
-    var zoneObj =  $("#tab_content_details").data("jsonObj");  
-    $.ajax({
-		cache: false,
-		data: createURL("command=listHosts&type=SecondaryStorage&zoneid="+zoneObj.id+maxPageSize),
-		dataType: "json",
-		success: function(json) {			   			    
-			var items = json.listhostsresponse.host;	
-			var container = $("#tab_content_secondarystorage").empty();																					
-			if (items != null && items.length > 0) {			    
-				var template = $("#secondary_storage_tab_template");				
-				for (var i = 0; i < items.length; i++) {
-					var newTemplate = template.clone(true);	               
-	                secondaryStorageJSONToTemplate(items[i], newTemplate); 
-	                container.append(newTemplate.show());	
-				}			
-			}			
-		}
-	});     
-}
-
-function zoneJsonClearSecondaryStorageTab() {   
-    $("#tab_content_secondarystorage").empty();	
-}
+    var $thisTab = $("#right_panel_content").find("#tab_content_network");      
+    $thisTab.find("#zone_cloud").find("#zone_name").text("");	 
+    $thisTab.find("#zone_vlan").text("");   
+    $thisTab.find("#vlan_container").empty();    
+}	
 
 function vlanJsonToTemplate(jsonObj, $template1) {
     $template1.data("jsonObj", jsonObj);

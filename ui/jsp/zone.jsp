@@ -187,22 +187,23 @@
     <!-- Details tab (end)-->
     
     <!-- Secondary Storage tab (start)-->
-    <div id="tab_content_secondarystorage" style="display: none">
-        Secondary Storage
-        <div class="rightpanel_mainloader_panel" style="display: none;">
+    <div id="tab_content_secondarystorage" style="display: none">        
+        <div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display: none;">
             <div class="rightpanel_mainloaderbox">
                 <div class="rightpanel_mainloader_animatedicon">
                 </div>
                 <p>
                     Loading &hellip;</p>
             </div>
+        </div>
+        <div id="tab_container">
         </div>
     </div>
     <!-- Secondary Storage tab (end)-->
     
     <!-- Network tab (start)-->
     <div style="display: none;" id="tab_content_network">
-        <div class="rightpanel_mainloader_panel" style="display: none;">
+        <div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display: none;">
             <div class="rightpanel_mainloaderbox">
                 <div class="rightpanel_mainloader_animatedicon">
                 </div>
@@ -210,35 +211,37 @@
                     Loading &hellip;</p>
             </div>
         </div>
-        <div class="text_container">
-            <div class="network_dgbox">
-                <div class="networkdg_zonepanel">
-                    <div class="networkdg_zonebox">
-                        <div class="networkdg_zonecloud" id="zone_cloud">
-                            <p>
-                                <%=t.t("zone")%>
-                                <span id="zone_name"></span>
-                            </p>
-                        </div>
-                        <div class="networkdg_zoneconnect">
-                        </div>
-                    </div>
-                    <div class="networkswitchpanel">
-                        <div class="networkswitch_titlebox">
-                            <p>
-                                <strong>Guest VLAN: <span id="zone_vlan"></span></strong>
-                            </p>
-                        </div>
-                        <div class="networkswitch_top">
-                        </div>
-                        <div class="networkswitch_midpanel" id="vlan_container">
-                        </div>
-                        <div class="networkswitch_end">
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <div id="tab_container">
+	        <div class="text_container">
+	            <div class="network_dgbox">
+	                <div class="networkdg_zonepanel">
+	                    <div class="networkdg_zonebox">
+	                        <div class="networkdg_zonecloud" id="zone_cloud">
+	                            <p>
+	                                <%=t.t("zone")%>
+	                                <span id="zone_name"></span>
+	                            </p>
+	                        </div>
+	                        <div class="networkdg_zoneconnect">
+	                        </div>
+	                    </div>
+	                    <div class="networkswitchpanel">
+	                        <div class="networkswitch_titlebox">
+	                            <p>
+	                                <strong>Guest VLAN: <span id="zone_vlan"></span></strong>
+	                            </p>
+	                        </div>
+	                        <div class="networkswitch_top">
+	                        </div>
+	                        <div class="networkswitch_midpanel" id="vlan_container">
+	                        </div>
+	                        <div class="networkswitch_end">
+	                        </div>
+	                    </div>
+	                </div>
+	            </div>
+	        </div>
+	    </div>   
     </div>
     <!-- Network tab (end)-->   
     
