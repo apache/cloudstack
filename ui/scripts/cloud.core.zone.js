@@ -37,7 +37,7 @@
     });
     if(pods.length > 0) {
         initAddHostButtonOnZonePage($("#midmenu_add_host_button"), zoneId, zoneName, pods); 
-        //initAddPrimaryStorageButtonOnZonePage($("#midmenu_add_primarystorage_button"), zoneId, zoneName, pods);  
+        initAddPrimaryStorageButtonOnZonePage($("#midmenu_add_primarystorage_button"), zoneId, zoneName, pods);  
     }    
    
     initDialog("dialog_add_pod", 320); 
@@ -886,7 +886,7 @@ function initAddHostButtonOnZonePage($button, zoneId, zoneName, pods) {
         refreshClsuterFieldInAddHostDialog($dialogAddHost, podId, null);        
     });   
     
-    $dialogAddHost.find("#pod_dropdown").change();            	        	    
+    $podSelect.change();            	        	    
         
     $button.unbind("click").bind("click", function(event) { 
         $dialogAddHost.find("#zone_name").text(zoneName);             
@@ -999,3 +999,159 @@ function initAddHostButtonOnZonePage($button, zoneId, zoneName, pods) {
         return false;
     });  
 }      
+
+function initAddPrimaryStorageButtonOnZonePage($button, zoneId, zoneName, pods) {
+    $button.show();
+
+	initDialog("dialog_add_pool_in_zone_page");
+	var $dialogAddPool = $("#dialog_add_pool_in_zone_page");    
+	
+    // if hypervisor is KVM, limit the server option to NFS for now
+    if (getHypervisorType() == 'kvm') 
+	    $dialogAddPool.find("#add_pool_protocol").empty().html('<option value="nfs">NFS</option>');	
+    bindEventHandlerToDialogAddPool($dialogAddPool);	
+       
+	var $podSelect = $dialogAddPool.find("#pod_dropdown");
+    if(pods != null && pods.length > 0) {
+        for(var i=0; i<pods.length; i++)
+            $podSelect.append("<option value='" + pods[i].id + "'>" + fromdb(pods[i].name) + "</option>"); 	
+    }
+		
+    $podSelect.bind("change", function(event) {			   
+        var podId = $(this).val();
+        if(podId == null || podId.length == 0)
+            return;
+        var $clusterSelect = $dialogAddPool.find("#cluster_select").empty();		        
+        $.ajax({
+	       data: createURL("command=listClusters&podid=" + podId),
+            dataType: "json",
+            success: function(json) {			            
+                var items = json.listclustersresponse.cluster;
+                if(items != null && items.length > 0) {			                
+                    for(var i=0; i<items.length; i++) 			                    
+                        $clusterSelect.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");		      
+                    $dialogAddPool.find("input[value=existing_cluster_radio]").attr("checked", true);
+                }
+                else {
+				    $clusterSelect.append("<option value='-1'>None Available</option>");
+                    $dialogAddPool.find("input[value=new_cluster_radio]").attr("checked", true);
+                }
+            }
+        });
+    });        
+    
+    $podSelect.change();
+       
+    $button.unbind("click").bind("click", function(event) { 
+        $dialogAddPool.find("#zone_name").text(zoneName);        
+        $dialogAddPool.find("#zone_dropdown").change(); //refresh cluster dropdown (do it here to avoid race condition)     
+        $dialogAddPool.find("#info_container").hide();	
+                       
+        $("#dialog_add_pool_in_zone_page")
+	    .dialog('option', 'buttons', { 				    
+		    "Add": function() { 	
+		    	var $thisDialog = $(this);
+		    	
+			    // validate values
+				var protocol = $thisDialog.find("#add_pool_protocol").val();
+				
+			    var isValid = true;					    
+		        isValid &= validateDropDownBox("Pod", $thisDialog.find("#pod_dropdown"), $thisDialog.find("#pod_dropdown_errormsg"));						    
+			    isValid &= validateDropDownBox("Cluster", $thisDialog.find("#cluster_select"), $thisDialog.find("#cluster_select_errormsg"), false);  //required, reset error text					    				
+			    isValid &= validateString("Name", $thisDialog.find("#add_pool_name"), $thisDialog.find("#add_pool_name_errormsg"));
+			    isValid &= validateString("Server", $thisDialog.find("#add_pool_nfs_server"), $thisDialog.find("#add_pool_nfs_server_errormsg"));	
+				if (protocol == "nfs") {
+					isValid &= validateString("Path", $thisDialog.find("#add_pool_path"), $thisDialog.find("#add_pool_path_errormsg"));	
+				} else {
+					isValid &= validateString("Target IQN", $thisDialog.find("#add_pool_iqn"), $thisDialog.find("#add_pool_iqn_errormsg"));	
+					isValid &= validateString("LUN #", $thisDialog.find("#add_pool_lun"), $thisDialog.find("#add_pool_lun_errormsg"));	
+				}
+				isValid &= validateString("Tags", $thisDialog.find("#add_pool_tags"), $thisDialog.find("#add_pool_tags_errormsg"), true);	//optional
+			    if (!isValid) 
+			        return;
+			        			    
+				$thisDialog.find("#spinning_wheel").show()  
+							
+				var array1 = [];
+								
+		        array1.push("&zoneid="+zoneId);
+		        
+		        //expand zone in left menu tree (to show pod, cluster under the zone) 
+				var $zoneNode = $("#leftmenu_zone_tree").find("#tree_container").find("#zone_" + zoneId);							
+				if($zoneNode.find("#zone_arrow").hasClass("expanded_close"))
+				    $zoneNode.find("#zone_arrow").click();
+				
+				var podId = $thisDialog.find("#pod_dropdown").val();
+		        array1.push("&podId="+podId);
+				
+				var clusterId = $thisDialog.find("#cluster_select").val();
+			    array1.push("&clusterid="+clusterId);	
+				
+			    var name = trim($thisDialog.find("#add_pool_name").val());
+			    array1.push("&name="+todb(name));
+			    
+			    var server = trim($thisDialog.find("#add_pool_nfs_server").val());						
+				
+				var url = null;
+				if (protocol == "nfs") {
+					var path = trim($thisDialog.find("#add_pool_path").val());
+					if(path.substring(0,1)!="/")
+						path = "/" + path; 
+					url = nfsURL(server, path);
+				} else {
+					var iqn = trim($thisDialog.find("#add_pool_iqn").val());
+					if(iqn.substring(0,1)!="/")
+						iqn = "/" + iqn; 
+					var lun = trim($thisDialog.find("#add_pool_lun").val());
+					url = iscsiURL(server, iqn, lun);
+				}
+				array1.push("&url="+encodeURIComponent(url));
+				
+			    var tags = trim($thisDialog.find("#add_pool_tags").val());
+				if(tags != null && tags.length > 0)
+				    array1.push("&tags="+todb(tags));				    
+			    
+			    $.ajax({
+				    data: createURL("command=createStoragePool" + array1.join("")),
+				    dataType: "json",
+				    success: function(json) {				       			               
+					    if(isMiddleMenuShown() == false) { //not on cluster node (still on pod node, so middle menu is hidden)
+					        var $clusterNode = $("#cluster_"+clusterId);
+					        if($clusterNode.length > 0)
+					  	        $("#cluster_"+clusterId).find("#cluster_name").click();		
+					  	    else  //pod node is close. Expand pod node.	
+					  	        refreshClusterUnderPod($("#pod_" + podId), null, clusterId);
+					    }
+					    else {	
+					        var $container = $("#midmenu_container").find("#midmenu_primarystorage_container");
+					        var $noItemsAvailable = $container.siblings("#midmenu_container_no_items_available");
+					        if($noItemsAvailable.length > 0) {
+					            $noItemsAvailable.slideUp("slow", function() {
+					                $(this).remove();
+					            });
+					        }					            
+					        
+					        var $midmenuItem1 = $("#midmenu_item").clone();
+                            $container.append($midmenuItem1.fadeIn("slow"));
+				            var item = json.createstoragepoolresponse.storagepool;				            			      										   
+					        primarystorageToMidmenu(item, $midmenuItem1);
+	                        bindClickToMidMenu($midmenuItem1, primarystorageToRightPanel, primarystorageGetMidmenuId);  
+	                    }	                                  	    	
+	                    
+	                    $thisDialog.find("#spinning_wheel").hide();					       
+				        $thisDialog.dialog("close");	                                                                 
+				    },			
+                    error: function(XMLHttpResponse) {	  
+						handleError(XMLHttpResponse, function() {
+							handleErrorInDialog(XMLHttpResponse, $thisDialog);	
+						});
+                    }							    
+			    });
+		    }, 
+		    "Cancel": function() { 
+			    $(this).dialog("close"); 
+		    } 
+	    }).dialog("open");            
+        return false;
+    });             
+}
