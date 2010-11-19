@@ -726,8 +726,7 @@ function doEditPod2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $e
 	var newIpRange = getIpRange(newStartip, newEndip);	
 	var newGateway = trim($detailsTab.find("#gateway_edit").val());				
         
-    var array1 = [];	
-    array1.push("&id="+id);
+    var array1 = []; 	    
     if(newName != oldName)
         array1.push("&name="+todb(newName));
     if(newCidr != oldCidr)
@@ -743,17 +742,24 @@ function doEditPod2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $e
 	if(newGateway != oldGateway && newGateway != null && newGateway.length > 0)				             
 	    array1.push("&gateway="+encodeURIComponent(newGateway)); 	
 	
-	$.ajax({
-	  data: createURL("command=updatePod"+array1.join("")),
-		dataType: "json",
-		success: function(json) {		   	   				    
-		    var item = json.updatepodresponse.pod;	
-		    $midmenuItem1.data("jsonObj", item);
-		    podJsonToRightPanel($midmenuItem1);			    
-		    
-		    $editFields.hide();      
-            $readonlyFields.show();       
-            $("#save_button, #cancel_button").hide();      			
-		}
-	});	   
+	if(array1.length > 0) {
+	    $.ajax({
+	      data: createURL("command=updatePod&id="+id+array1.join("")),
+		    dataType: "json",
+		    success: function(json) {		   	   				    
+		        var item = json.updatepodresponse.pod;	
+		        $midmenuItem1.data("jsonObj", item);
+		        podJsonToRightPanel($midmenuItem1);			    
+    		    
+		        $editFields.hide();      
+                $readonlyFields.show();       
+                $("#save_button, #cancel_button").hide();      			
+		    }
+	    });	   
+	}
+	else {
+	    $editFields.hide();      
+        $readonlyFields.show();       
+        $("#save_button, #cancel_button").hide();   
+	}
 }
