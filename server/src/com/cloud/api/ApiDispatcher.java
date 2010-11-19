@@ -119,8 +119,16 @@ public class ApiDispatcher {
         }
     }
 
-    public static void setupParameters(BaseCmd cmd, Map<String, String> params) {
+    public static void setupParameters(BaseCmd cmd, Map<String, String> params){
         Map<String, Object> unpackedParams = cmd.unpackParams(params);
+        if (cmd instanceof BaseListCmd) {     
+            if ((unpackedParams.get(ApiConstants.PAGE) == null) && (unpackedParams.get(ApiConstants.PAGE_SIZE) != null)) {
+                throw new ServerApiException(BaseCmd.PARAM_ERROR, "\"page\" parameter is required when \"pagesize\" is specified");
+            } else if ((unpackedParams.get(ApiConstants.PAGE_SIZE) == null) && (unpackedParams.get(ApiConstants.PAGE) != null)) {
+                throw new ServerApiException(BaseCmd.PARAM_ERROR, "\"pagesize\" parameter is required when \"page\" is specified");
+            }
+        }
+        
         Field[] fields = cmd.getClass().getDeclaredFields();
         Class<?> superClass = cmd.getClass().getSuperclass();
         while (BaseCmd.class.isAssignableFrom(superClass)) {

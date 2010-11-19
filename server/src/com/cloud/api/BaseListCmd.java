@@ -11,10 +11,10 @@ public abstract class BaseListCmd extends BaseCmd {
     private String keyword;
 
     // FIXME:  Need to be able to specify next/prev/first/last, so Integer might not be right
-    @Parameter(name="page", type=CommandType.INTEGER)
+    @Parameter(name=ApiConstants.PAGE, type=CommandType.INTEGER)
     private Integer page;
 
-    @Parameter(name="pagesize", type=CommandType.INTEGER)
+    @Parameter(name=ApiConstants.PAGE_SIZE, type=CommandType.INTEGER)
     private Integer pageSize;
 
     /////////////////////////////////////////////////////

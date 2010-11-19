@@ -161,4 +161,6 @@ public class ApiConstants {
     public static final String VOLUME_ID = "volumeid";
     public static final String ZONE_ID = "zoneid";
     public static final String NETWORK_TYPE = "networktype";
+    public static final String PAGE = "page";
+    public static final String PAGE_SIZE = "pagesize";
 }
