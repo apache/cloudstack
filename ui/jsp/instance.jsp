@@ -277,7 +277,7 @@
                     </div>
                     <div class="dbrow_cell" style="width: 16%; border: none;">
                         <div class="db_totaltitle" id="percentused">
-                        K%
+                        0%
                         </div>
                     </div>
                 </div>
