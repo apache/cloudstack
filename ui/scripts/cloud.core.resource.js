@@ -101,16 +101,14 @@ function buildZoneTree() {
 				
 			
 			case "zone_name_label":	
-			case "zone_name":	
-			    target.siblings("#zone_arrow").click();			    
+			case "zone_name":				    		    
 			    selectRowInZoneTree(target.parent().parent());			    
 			    var $leftmenuItem1 = target.parent().parent().parent().parent();	
 			    resourceLoadPage("jsp/zone.jsp", $leftmenuItem1);			    		   				    		   			    
 			    break;		
 			    	
 			case "pod_name_label" :	
-			case "pod_name" :	
-			    target.siblings("#pod_arrow").click();
+			case "pod_name" :				    
 			    selectRowInZoneTree(target.parent().parent());
 			    var $leftmenuItem1 = target.parent().parent().parent().parent();
 			    resourceLoadPage("jsp/pod.jsp", $leftmenuItem1);				   			
