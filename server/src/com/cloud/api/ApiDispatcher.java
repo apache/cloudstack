@@ -81,7 +81,7 @@ public class ApiDispatcher {
             }else if (t instanceof ServerApiException) {
                 throw new ServerApiException(((ServerApiException) t).getErrorCode(), ((ServerApiException) t).getDescription());
             }else {
-                s_logger.error("Exception while executing " + cmd.getName() + ":", t);
+                s_logger.error("Exception while executing " + cmd.getClass().getSimpleName() + ":", t);
                 if (UserContext.current().getAccount() == null || UserContext.current().getAccount().getType() == Account.ACCOUNT_TYPE_ADMIN)
                     throw new ServerApiException(BaseCmd.INTERNAL_ERROR, t.getMessage());
                 else
@@ -110,7 +110,7 @@ public class ApiDispatcher {
             }else if (t instanceof ServerApiException) {
                 throw new ServerApiException(((ServerApiException) t).getErrorCode(), ((ServerApiException) t).getDescription());
             } else {
-                s_logger.error("Exception while executing " + cmd.getName() + ":", t);
+                s_logger.error("Exception while executing " + cmd.getClass().getSimpleName() + ":", t);
                 if (UserContext.current().getAccount() == null || UserContext.current().getAccount().getType() == Account.ACCOUNT_TYPE_ADMIN)
                     throw new ServerApiException(BaseCmd.INTERNAL_ERROR, t.getMessage());
                 else
