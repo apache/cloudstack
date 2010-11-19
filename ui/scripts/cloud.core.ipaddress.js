@@ -132,6 +132,8 @@ function afterLoadIpJSP() {
 					$template.slideUp("slow", function() {
 						$(this).remove();
 					});
+					var errorMsg = parseXMLHttpResponse(XMLHttpResponse);				
+		            $("#dialog_error").text(fromdb(errorMsg)).dialog("open");
 				});
 		    }	
         });	    
