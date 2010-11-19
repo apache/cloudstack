@@ -219,6 +219,7 @@ function clusterJSONToTreeNode(json, $clusterNode) {
 
 function resourceLoadPage(pageToShow, $midmenuItem1) {   //$midmenuItem1 is either $leftmenuItem1 or $midmenuItem1    
     clearAddButtonsOnTop();  
+	removeDialogs();
     $("#right_panel").load(pageToShow, function(){       
 	    if(pageToShow == "jsp/resource.jsp") {
             afterLoadResourceJSP($midmenuItem1); 
