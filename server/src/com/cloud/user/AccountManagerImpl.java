@@ -1406,7 +1406,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
         
         //Check if user performing the action is allowed to modify this account
         Account adminAccount = UserContext.current().getAccount();
-        if ((adminAccount != null) && _domainDao.isChildDomain(adminAccount.getDomainId(), account.getDomainId())) {
+        if ((adminAccount != null) && (adminAccount.getType() != Account.ACCOUNT_TYPE_ADMIN) && _domainDao.isChildDomain(adminAccount.getDomainId(), account.getDomainId())) {
           throw new PermissionDeniedException("Invalid account " + accountName + " in domain " + domainId + " given, permission denied");
         }
 
