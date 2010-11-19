@@ -974,7 +974,7 @@ function initAddPrimaryStorageShortcut($midmenuAddLink2, currentPageInRightPanel
     // if hypervisor is KVM, limit the server option to NFS for now
     if (getHypervisorType() == 'kvm') 
 	    $dialogAddPool.find("#add_pool_protocol").empty().html('<option value="nfs">NFS</option>');	
-    bindEventHandlerToDialogAddPool();	
+    bindEventHandlerToDialogAddPool($dialogAddPool);	
     
     $.ajax({
         data: createURL("command=listZones&available=true"),

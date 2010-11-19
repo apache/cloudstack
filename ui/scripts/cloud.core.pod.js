@@ -28,7 +28,7 @@
     // if hypervisor is KVM, limit the server option to NFS for now
     if (getHypervisorType() == 'kvm') 
 	    $("#dialog_add_pool").find("#add_pool_protocol").empty().html('<option value="nfs">NFS</option>');	
-    bindEventHandlerToDialogAddPool();	 
+    bindEventHandlerToDialogAddPool($("#dialog_add_pool"));	 
     
     //switch between different tabs 
     var tabArray = [$("#tab_details"), $("#tab_network")];
@@ -649,14 +649,15 @@ function iscsiURL(server, iqn, lun) {
 	return url;
 }
 
-function bindEventHandlerToDialogAddPool() {    
-    $("#dialog_add_pool").find("#add_pool_protocol").change(function(event) {
+function bindEventHandlerToDialogAddPool($dialogAddPool) { 
+    $dialogAddPool.find("#add_pool_protocol").change(function(event) {        
 		if ($(this).val() == "iscsi") {
-			$("#dialog_add_pool #add_pool_path_container").hide();
-			$("#dialog_add_pool #add_pool_iqn_container, #dialog_add_pool #add_pool_lun_container").show();
-		} else {
-			$("#dialog_add_pool #add_pool_path_container").show();
-			$("#dialog_add_pool #add_pool_iqn_container, #dialog_add_pool #add_pool_lun_container").hide();
+			$dialogAddPool.find("#add_pool_path_container").hide();
+			$dialogAddPool.find("#add_pool_iqn_container,#add_pool_lun_container").show();
+		} 
+		else if ($(this).val() == "nfs") {
+			$dialogAddPool.find("#add_pool_path_container").show();
+			$dialogAddPool.find("#add_pool_iqn_container,#add_pool_lun_container").hide();
 		}
 	});		
 }

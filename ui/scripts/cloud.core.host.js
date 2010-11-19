@@ -44,6 +44,7 @@ function afterLoadHostJSP($midmenuItem1) {
 
     initDialog("dialog_add_host");
     initDialog("dialog_add_pool");
+    bindEventHandlerToDialogAddPool($("#dialog_add_pool"));	     
     initDialog("dialog_confirmation_enable_maintenance");
     initDialog("dialog_confirmation_cancel_maintenance");
     initDialog("dialog_confirmation_force_reconnect");

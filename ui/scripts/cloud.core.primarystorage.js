@@ -44,6 +44,7 @@ function primarystorageToRightPanel($midmenuItem1) {
     
     initDialog("dialog_add_host");
     initDialog("dialog_add_pool");
+    bindEventHandlerToDialogAddPool($("#dialog_add_pool"));	     
     initDialog("dialog_confirmation_delete_primarystorage");
      
     $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);    
