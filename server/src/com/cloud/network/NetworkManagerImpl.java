@@ -1650,12 +1650,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
     }
     
-    private Integer getIntegerConfigValue(String configKey) {
+    private Integer getIntegerConfigValue(String configKey, Integer dflt) {
     	String value = _configs.get(configKey);
     	if (value != null) {
             return Integer.parseInt(value);
         }
-    	return null;
+    	return dflt;
     }
 
     private void validateRemoteAccessVpnConfiguration() throws ConfigurationException {
@@ -1664,7 +1664,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     		s_logger.warn("Remote Access VPN configuration missing client ip range -- ignoring");
     		return;
     	}
-    	Integer pskLength = getIntegerConfigValue(Config.RemoteAccessVpnPskLength.key());
+    	Integer pskLength = getIntegerConfigValue(Config.RemoteAccessVpnPskLength.key(), 24);
     	if (pskLength != null && (pskLength < 8 || pskLength > 256)) {
     		throw new ConfigurationException("Remote Access VPN: IPSec preshared key length should be between 8 and 256");
     	} else if (pskLength == null) {
@@ -1694,8 +1694,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         _configs = _configDao.getConfiguration("AgentManager", params);
         validateRemoteAccessVpnConfiguration();
-        Integer rateMbps = getIntegerConfigValue(Config.NetworkThrottlingRate.key());  
-        Integer multicastRateMbps = getIntegerConfigValue(Config.MulticastThrottlingRate.key());
+        Integer rateMbps = getIntegerConfigValue(Config.NetworkThrottlingRate.key(), null);  
+        Integer multicastRateMbps = getIntegerConfigValue(Config.MulticastThrottlingRate.key(), null);
        
         
         NetworkOfferingVO publicNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmPublicNetwork, TrafficType.Public, null);
@@ -2749,7 +2749,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         
         long startIp = NetUtils.ip2Long(range[0]);
         String newIpRange = NetUtils.long2Ip(++startIp) + "-" + range[1];
-        String sharedSecret = PasswordGenerator.generatePresharedKey(getIntegerConfigValue(Config.RemoteAccessVpnPskLength.key())); 
+        String sharedSecret = PasswordGenerator.generatePresharedKey(getIntegerConfigValue(Config.RemoteAccessVpnPskLength.key(), 24)); 
         Transaction txn = Transaction.currentTxn();
         txn.start();
         boolean locked = false;
@@ -2874,7 +2874,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 	}
 	
 	@Override
-	public VpnUserVO addVpnUser(AddVpnUserCmd cmd) throws ConcurrentOperationException, InvalidParameterValueException {
+	@DB
+	public VpnUserVO addVpnUser(AddVpnUserCmd cmd) throws ConcurrentOperationException, InvalidParameterValueException, AccountLimitException {
 		Long userId = UserContext.current().getUserId();
 		Account account = getAccountForApiCommand(cmd.getAccountName(), cmd.getDomainId());
 		EventUtils.saveStartedEvent(userId, account.getId(), EventTypes.EVENT_VPN_USER_ADD, "Add VPN user for account: " + account.getAccountName(), cmd.getStartEventId());
@@ -2885,14 +2886,29 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 		if (!cmd.getPassword().matches("^[a-zA-Z0-9][a-zA-Z0-9@#+=._-]{2,31}$")) {
 			throw new InvalidParameterValueException("Password has to be 3-32 characters including alphabets, numbers and the set '@#+=.-_'");
 		}
-		VpnUserVO user = addRemoveVpnUser(account, cmd.getUserName(), cmd.getPassword(), true);
-		if (user != null) {
-			EventUtils.saveEvent(userId, account.getId(), EventTypes.EVENT_VPN_USER_ADD, "Added a VPN user for account: " + account.getAccountName() + " username= " + cmd.getUserName());
-		} else {
-			EventUtils.saveEvent(userId, account.getId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VPN_USER_ADD, "Unable to add VPN user for account: ", account.getAccountName() + " username= " + cmd.getUserName());
-			throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to add VPN user for account: "+ account.getAccountName() + " username= " + cmd.getUserName());
+		account = _accountDao.acquireInLockTable(account.getId());
+		if (account == null) {
+			throw new ConcurrentOperationException("Unable to add vpn user: Another operation active");
 		}
-		return user;
+		try {
+			long userCount = _vpnUsersDao.getVpnUserCount(account.getId());
+			Integer userLimit = getIntegerConfigValue(Config.RemoteAccessVpnUserLimit.key(), 8);
+			if (userCount >= userLimit) {
+				throw new AccountLimitException("Cannot add more than " + userLimit + " remote access vpn users");
+			}
+			VpnUserVO user = addRemoveVpnUser(account, cmd.getUserName(), cmd.getPassword(), true);
+			if (user != null) {
+				EventUtils.saveEvent(userId, account.getId(), EventTypes.EVENT_VPN_USER_ADD, "Added a VPN user for account: " + account.getAccountName() + " username= " + cmd.getUserName());
+				return user;
+			} else {
+				EventUtils.saveEvent(userId, account.getId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VPN_USER_ADD, "Unable to add VPN user for account: ", account.getAccountName() + " username= " + cmd.getUserName());
+				throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to add VPN user for account: "+ account.getAccountName() + " username= " + cmd.getUserName());
+			}
+		} finally {
+			if (account != null)
+				_accountDao.releaseFromLockTable(account.getId());
+		}
+		
         
 	}
 	
@@ -2931,6 +2947,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         	List<VpnUserVO> addVpnUsers = new ArrayList<VpnUserVO>();
         	List<VpnUserVO> removeVpnUsers = new ArrayList<VpnUserVO>();
         	if (add) {
+        		
             	user = _vpnUsersDao.persist(new VpnUserVO(account.getId(), username, password));
             	addVpnUsers.add(user);
 

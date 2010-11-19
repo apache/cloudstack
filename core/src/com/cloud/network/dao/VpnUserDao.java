@@ -26,4 +26,5 @@ import com.cloud.utils.db.GenericDao;
 public interface VpnUserDao extends GenericDao<VpnUserVO, Long> {
     List<VpnUserVO> listByAccount(Long accountId);
     VpnUserVO findByAccountAndUsername(Long acccountId, String userName);
+    long getVpnUserCount(Long accountId);
 }

@@ -28,6 +28,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.VpnUsersResponse;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.AccountLimitException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.network.VpnUserVO;
 import com.cloud.user.Account;
@@ -146,6 +147,6 @@ public class AddVpnUserCmd extends BaseAsyncCmd {
             }
         } catch (ConcurrentOperationException ex) {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
-        }
+        } 
     }	
 }

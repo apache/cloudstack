@@ -24,13 +24,16 @@ import javax.ejb.Local;
 
 import com.cloud.network.VpnUserVO;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Func;
 
 @Local(value={VpnUserDao.class})
 public class VpnUserDaoImpl extends GenericDaoBase<VpnUserVO, Long> implements VpnUserDao {
     private final SearchBuilder<VpnUserVO> AccountSearch;
     private final SearchBuilder<VpnUserVO> AccountNameSearch;
+    private final GenericSearchBuilder<VpnUserVO, Long> VpnUserCount;
 
 
     protected VpnUserDaoImpl() {
@@ -43,6 +46,11 @@ public class VpnUserDaoImpl extends GenericDaoBase<VpnUserVO, Long> implements V
         AccountNameSearch.and("accountId", AccountNameSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         AccountNameSearch.and("username", AccountNameSearch.entity().getUsername(), SearchCriteria.Op.EQ);
         AccountNameSearch.done();
+        
+        VpnUserCount = createSearchBuilder(Long.class);
+        VpnUserCount.and("accountId", VpnUserCount.entity().getAccountId(), SearchCriteria.Op.EQ);
+        VpnUserCount.select(null, Func.COUNT, null);
+        VpnUserCount.done();
     }
 
     @Override
@@ -59,5 +67,17 @@ public class VpnUserDaoImpl extends GenericDaoBase<VpnUserVO, Long> implements V
         sc.setParameters("username", userName);
 
         return findOneBy(sc);
+	}
+
+	@Override
+	public long getVpnUserCount(Long accountId) {
+		SearchCriteria<Long> sc = VpnUserCount.create();
+		sc.setParameters("accountId", accountId);
+		List<Long> rs = searchIncludingRemoved(sc, null);
+		if (rs.size() == 0) {
+            return 0;
+        }
+        
+        return rs.get(0);
 	}
 }

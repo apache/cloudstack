@@ -40,6 +40,7 @@ import com.cloud.dc.HostPodVO;
 import com.cloud.dc.VlanVO;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
+import com.cloud.exception.AccountLimitException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -324,7 +325,7 @@ public interface NetworkManager {
      */
     public boolean destroyRemoteAccessVpn(DeleteRemoteAccessVpnCmd cmd) throws ConcurrentOperationException;
 
-    VpnUserVO addVpnUser(AddVpnUserCmd cmd) throws ConcurrentOperationException;
+    VpnUserVO addVpnUser(AddVpnUserCmd cmd) throws ConcurrentOperationException, AccountLimitException;
 
 	boolean removeVpnUser(RemoveVpnUserCmd cmd) throws ConcurrentOperationException;
 	
