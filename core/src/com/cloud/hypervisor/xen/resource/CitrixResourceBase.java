@@ -4537,6 +4537,10 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 cmd.setPrivateIpAddress(pifr.IP);
                 cmd.setPrivateMacAddress(pifr.MAC);
                 cmd.setPrivateNetmask(pifr.netmask);
+            } else {
+                String msg = "Private network " + _privateNetworkName + " doesn't have IP address, please check the host network configuration";
+                s_logger.error(msg);
+                throw new CloudRuntimeException(msg);
             }
 
             pif = PIF.getByUuid(conn, _host.storagePif1);
