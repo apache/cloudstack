@@ -68,7 +68,8 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     protected SearchBuilder<VMTemplateVO> TmpltsInZoneSearch;
     private SearchBuilder<VMTemplateVO> PublicSearch;
     private SearchBuilder<VMTemplateVO> NameAccountIdSearch;
-
+    private SearchBuilder<VMTemplateVO> XenToolsIsoSearch;
+    
     private String routerTmpltName;
     private String consoleProxyTmpltName;
     
@@ -103,6 +104,13 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         return findOneBy(sc);
     }
 
+    @Override
+    public List<VMTemplateVO> xenToolsIsoSearch(){
+        SearchCriteria<VMTemplateVO> sc = XenToolsIsoSearch.create();
+        sc.setParameters("name", "xs-tools.iso");
+        return listBy(sc);
+    }
+    
 	@Override
 	public List<VMTemplateVO> listAllRoutingTemplates() {
 		SearchCriteria<VMTemplateVO> sc = tmpltTypeSearch.create();
@@ -184,6 +192,8 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 		NameAccountIdSearch.and("name", NameAccountIdSearch.entity().getName(), SearchCriteria.Op.EQ);
 		NameAccountIdSearch.and("accountId", NameAccountIdSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
 
+		XenToolsIsoSearch = createSearchBuilder();
+		XenToolsIsoSearch.and("name", XenToolsIsoSearch.entity().getName(), SearchCriteria.Op.EQ);
 		
 		tmpltTypeHyperSearch = createSearchBuilder();
 		tmpltTypeHyperSearch.and("templateType", tmpltTypeHyperSearch.entity().getTemplateType(), SearchCriteria.Op.EQ);
@@ -287,6 +297,11 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         		} else {
         			templates.add(tmplt);
         		}
+            }
+            
+            if(isIso && (account.getType() == Account.ACCOUNT_TYPE_NORMAL)){
+            	List<VMTemplateVO> xenToolsIso = xenToolsIsoSearch();
+            	templates.addAll(xenToolsIso);
             }
         } catch (Exception e) {
             s_logger.warn("Error listing templates", e);
