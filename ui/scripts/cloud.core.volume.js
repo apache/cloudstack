@@ -329,7 +329,8 @@ function volumeJsonToDetailsTab(){
     $thisTab.find("#device_id").text(fromdb(jsonObj.deviceid));   
     $thisTab.find("#state").text(fromdb(jsonObj.state));    
     $thisTab.find("#storage").text(fromdb(jsonObj.storage));
-    $thisTab.find("#account").text(fromdb(jsonObj.account));     
+    $thisTab.find("#account").text(fromdb(jsonObj.account));  
+	$thisTab.find("#domain").text(fromdb(jsonObj.domain));
     $thisTab.find("#type").text(fromdb(jsonObj.type) + " (" + fromdb(jsonObj.storagetype) + " storage)");
     $thisTab.find("#size").text((jsonObj.size == "0") ? "" : convertBytes(jsonObj.size));	    
     if (jsonObj.virtualmachineid == null) 
