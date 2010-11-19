@@ -447,7 +447,7 @@ a:hover {
 	padding:0 0 5px 0;
 }
 
-.vmpopup_reviewbox_odd {
+.vmpopup_reviewbox {
 	width:695px;
 	height:auto;
 	float:left;
@@ -457,14 +457,28 @@ a:hover {
 	padding:0 0 5px 0;
 }
 
-.vmpopup_reviewbox_even {
-	width:695px;
-	height:auto;
+
+.vmpopup_reviewbox .text {
+	width:160px;
+	height:15px;
 	float:left;
-	border:1px solid #d2d2d2;
+	color:#333;
+	font-size:11px;
+	font-weight:normal;
+	background:#FFF;
+	border:1px solid #999;
+	margin:4px 0 0 8px;
+	display:inline;
+	padding:0;
+}
+
+.vmpopup_reviewbox.odd {
+	background:#efefef url(../images/offeringbox_bg.gif) repeat-x top left;
+
+}
+
+.vmpopup_reviewbox.even {
 	background:#d0d0d0 url(../images/reviewboxeven_bg.gif) repeat-x top left;
-	margin:0 0 0 0;
-	padding:0 0 5px 0;
 }
 
 .vmopopup_reviewtextbox {

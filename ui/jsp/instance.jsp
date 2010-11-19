@@ -704,7 +704,7 @@
                     <h3>
                     </h3>
                     <div class="vmpopup_offeringpanel" style="margin-top: 10px;">
-                        <div class="vmpopup_reviewbox_odd">
+                        <div class="vmpopup_reviewbox odd">
                             <div class="vmopopup_reviewtextbox">
                                 <div class="vmpopup_reviewtick">
                                 </div>
@@ -713,7 +713,7 @@
                                 <span id="wizard_review_zone"></span>
                             </div>
                         </div>                        
-                        <div class="vmpopup_reviewbox_even">
+                        <div class="vmpopup_reviewbox even">
                             <div class="vmopopup_reviewtextbox">
                                 <div class="vmpopup_reviewtick">
                                 </div>
@@ -722,7 +722,7 @@
                                 <span id="wizard_review_hypervisor"></span>
                             </div>
                         </div>                        
-                        <div class="vmpopup_reviewbox_odd">
+                        <div class="vmpopup_reviewbox odd">
                             <div class="vmopopup_reviewtextbox">
                                 <div class="vmpopup_reviewtick">
                                 </div>
@@ -732,7 +732,7 @@
                                 <span id="wizard_review_template"></span>
                             </div>
                         </div>
-                        <div class="vmpopup_reviewbox_even">
+                        <div class="vmpopup_reviewbox even">
                             <div class="vmopopup_reviewtextbox">
                                 <div class="vmpopup_reviewtick">
                                 </div>
@@ -741,7 +741,7 @@
                                 <span id="wizard_review_service_offering"></span>
                             </div>
                         </div>
-                        <div class="vmpopup_reviewbox_odd">
+                        <div class="vmpopup_reviewbox odd">
                             <div class="vmopopup_reviewtextbox">
                                 <div class="vmpopup_reviewtick">
                                 </div>
@@ -751,7 +751,7 @@
                                 <span id="wizard_review_disk_offering"></span>
                             </div>
                         </div>
-                        <div class="vmpopup_reviewbox_even">
+                        <div class="vmpopup_reviewbox even">
                             <div class="vmopopup_reviewtextbox">
                                 <div class="vmpopup_reviewtick">
                                 </div>
@@ -760,7 +760,7 @@
                                 <span id="wizard_review_network"></span>
                             </div>
                         </div>
-                        <div class="vmpopup_reviewbox_odd">
+                        <div class="vmpopup_reviewbox odd">
                             <div class="vmopopup_reviewtextbox">
                                 <div class="vmpopup_reviewtick">
                                 </div>
@@ -772,7 +772,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="vmpopup_reviewbox_even">
+                        <div class="vmpopup_reviewbox even">
                             <div class="vmopopup_reviewtextbox">
                                 <div class="vmpopup_reviewtick">
                                 </div>
