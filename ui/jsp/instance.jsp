@@ -597,7 +597,7 @@
                     <div class="vmpopup_offeringpanel" style="position:relative;">
                     	<div id="underconstruction">
                             <div class="vmpopup_offeringpanel_overlay"></div>
-                            <div class="vmpopup_offeringpanel_underconstructionbox">Under Construction</div>
+                            <div class="vmpopup_offeringpanel_underconstructionbox"><p> Under Construction </p></div>
                         </div>
                         <div class="vmpopup_offeringbox">
                             <input type="radio" name="radiogroup" class="radio" selected />

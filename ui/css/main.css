@@ -402,18 +402,28 @@ a:hover {
 }
 
 .vmpopup_offeringpanel_underconstructionbox {
-	width:auto;
-	height:auto;
+	width:168px;
+	height:55px;
 	position:absolute;
 	color:#333;
-	background:#fff8bb repeat top left;
-	border:1px dashed #999;
-	font-size:13px;
+	background:url(../images/underconstructionbg.png) no-repeat top left;
+	font-size:11px;
 	font-weight:bold;
-	padding:12px;
+	padding:0;
 	margin:0;
-	top:30%;
+	top:33%;
 	left:38%;
+}
+.vmpopup_offeringpanel_underconstructionbox p{
+	width:auto;
+	height:auto;
+	float:left;
+	color:#333;
+	text-align:left;
+	font-size:12px;
+	font-weight:bold;
+	margin:15px 0 0 27px;
+	padding:0;
 }
 
 .vmpopup_offeringpanel {
@@ -512,6 +522,20 @@ a:hover {
 }
 
 .vmpopup_offeringbox .text {
+	width:80px;
+	height:15px;
+	float:left;
+	color:#333;
+	font-size:11px;
+	font-weight:normal;
+	background:#FFF;
+	border:1px solid #999;
+	margin:4px 0 0 8px;
+	display:inline;
+	padding:0;
+}
+
+.vmpopup_offeringbox .select {
 	width:80px;
 	height:15px;
 	float:left;
