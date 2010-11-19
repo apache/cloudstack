@@ -224,7 +224,7 @@
 
 
 <!-- ***** dialogs (begin) ***** -->
-<!-- Add Host Dialog -->
+<!-- Add Host Dialog (begin) -->
 <div id="dialog_add_host" title="Add Host" style="display: none">
     <p>
         Add a host for zone <b><span id="zone_name"></span></b>, pod <b><span id="pod_name">
@@ -294,7 +294,9 @@
             (info)</div>
     </div>
 </div>
-<!-- Add Primary Storage Dialog -->
+<!-- Add Host Dialog (end) -->
+
+<!-- Add Primary Storage Dialog (begin) -->
 <div id="dialog_add_pool" title="Add Primary Storage" style="display: none">
     <p>
         Add a new Primary Storage for zone <b><span id="zone_name"></span></b>, pod <b><span
@@ -380,7 +382,7 @@
             (info)</div>
     </div>
 </div>
-
+<!-- Add Primary Storage Dialog (end) -->
    
 <!-- Add VLAN IP Range Dialog for pod (begin) -->
 <div id="dialog_add_vlan_for_pod" title="Add Direct IP Range" style="display:none">

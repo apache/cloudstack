@@ -363,7 +363,7 @@ function initAddPodShortcut() {
     });        
 }    
 
- function initAddHostShortcut() {
+function initAddHostShortcut() {
     initDialog("dialog_add_host_in_resource_page");    
     var $dialogAddHost = $("#dialog_add_host_in_resource_page");    
     
