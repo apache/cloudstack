@@ -248,10 +248,9 @@ function refreshClsuterFieldInAddHostDialog(dialogAddHost, podId, clusterId) {
     });     
 }      
 
-function initAddHostButton($midmenuAddLink1, currentPageInRightPanel) {
-    $midmenuAddLink1.find("#label").text("Add Host"); 
-    $midmenuAddLink1.show();
-    $midmenuAddLink1.unbind("click").bind("click", function(event) {     
+function initAddHostButton($button, currentPageInRightPanel) {    
+    $button.show();
+    $button.unbind("click").bind("click", function(event) {     
         dialogAddHost = $("#dialog_add_host");      
         dialogAddHost.find("#info_container").hide();    
         dialogAddHost.find("#new_cluster_name").val("");
@@ -268,7 +267,9 @@ function initAddHostButton($midmenuAddLink1, currentPageInRightPanel) {
             var clusterObj = $("#tab_content_details").data("jsonObj");   
             zoneId = clusterObj.zoneid;
             podId = clusterObj.podid;    
-            clusterId = clusterObj.id;   
+            clusterId = clusterObj.id;  
+            dialogAddHost.find("#zone_name").text(fromdb(clusterObj.zonename));  
+            dialogAddHost.find("#pod_name").text(fromdb(clusterObj.podname)); 
         }
         else if(currentPageInRightPanel == "host_page") {
             var hostObj = $("#tab_content_details").data("jsonObj");  
@@ -399,10 +400,9 @@ function clickClusterNodeAfterAddHost(clusterRadio, podId, newClusterName, exist
     }         
 }
 
-function initAddPrimaryStorageButton($midmenuAddLink2, currentPageInRightPanel) {
-    $midmenuAddLink2.find("#label").text("Add Primary Storage"); 
-    $midmenuAddLink2.show();   
-    $midmenuAddLink2.unbind("click").bind("click", function(event) {   
+function initAddPrimaryStorageButton($button, currentPageInRightPanel) {    
+    $button.show();   
+    $button.unbind("click").bind("click", function(event) {   
         dialogAddPool = $("#dialog_add_pool");  
         dialogAddPool.find("#info_container").hide();	
              
@@ -419,6 +419,8 @@ function initAddPrimaryStorageButton($midmenuAddLink2, currentPageInRightPanel) 
             zoneId = clusterObj.zoneid;
             podId = clusterObj.podid;    
             sourceClusterId = clusterObj.id;   
+            dialogAddPool.find("#zone_name").text(fromdb(clusterObj.zonename));  
+            dialogAddPool.find("#pod_name").text(fromdb(clusterObj.podname)); 
         }        
         else if(currentPageInRightPanel == "host_page") {
             var hostObj = $("#tab_content_details").data("jsonObj");  
