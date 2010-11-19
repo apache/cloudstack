@@ -791,7 +791,7 @@ public class StorageManagerImpl implements StorageManager {
                 }
                 cmd = new CreateCommand(dskCh, tmpltStoredOn.getLocalDownloadPath(), new StorageFilerTO(pool));
             } else {
-                cmd = new CreateCommand(dskCh, new StorageFilerTO(pool), size);
+                cmd = new CreateCommand(dskCh, new StorageFilerTO(pool));
             }
             
             Answer answer = sendToPool(pool, cmd);
@@ -2813,7 +2813,7 @@ public class StorageManagerImpl implements StorageManager {
                 }
                 cmd = new CreateCommand(diskProfile, tmpltStoredOn.getLocalDownloadPath(), new StorageFilerTO(pool));
             } else {
-                cmd = new CreateCommand(diskProfile, new StorageFilerTO(pool), diskProfile.getSize());
+                cmd = new CreateCommand(diskProfile, new StorageFilerTO(pool));
             }
             Answer answer = sendToPool(pool, cmd);
             if (answer.getResult()) {

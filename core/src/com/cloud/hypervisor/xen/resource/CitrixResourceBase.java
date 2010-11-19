@@ -4695,11 +4695,8 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 vdir.nameLabel = dskch.getName();
                 vdir.SR = poolSr;
                 vdir.type = Types.VdiType.USER;
-                
-                if(cmd.getSize()!=0)
-                	vdir.virtualSize = (cmd.getSize()*1024*1024*1L);
-                else
-                	vdir.virtualSize = dskch.getSize();
+                            
+                vdir.virtualSize = dskch.getSize();
                 vdi = VDI.create(conn, vdir);
             }
 
