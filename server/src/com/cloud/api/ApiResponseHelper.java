@@ -69,8 +69,8 @@ import com.cloud.host.Status.Event;
 import com.cloud.network.FirewallRuleVO;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.LoadBalancerVO;
-import com.cloud.network.Network.TrafficType;
-import com.cloud.network.NetworkConfiguration;
+import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.Network;
 import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.server.Criteria;
@@ -1152,8 +1152,8 @@ public class ApiResponseHelper {
        
        List<? extends Nic> nics = BaseCmd._networkMgr.getNics(userVm);
        for (Nic singleNic : nics) {
-           long configId = singleNic.getNetworkConfigurationId();
-           NetworkConfiguration networkConf = BaseCmd._networkMgr.getNetworkConfiguration(configId);
+           long configId = singleNic.getNetworkId();
+           Network networkConf = BaseCmd._networkMgr.getNetworkConfiguration(configId);
            if (networkConf.getTrafficType() == TrafficType.Guest) {
                userVmResponse.setIpAddress(singleNic.getIp4Address());
            }
@@ -1195,8 +1195,8 @@ public class ApiResponseHelper {
        
        List<? extends Nic> nics = BaseCmd._networkMgr.getNics(router);
        for (Nic singleNic : nics) {
-           long configId = singleNic.getNetworkConfigurationId();
-           NetworkConfiguration networkConf = BaseCmd._networkMgr.getNetworkConfiguration(configId);
+           long configId = singleNic.getNetworkId();
+           Network networkConf = BaseCmd._networkMgr.getNetworkConfiguration(configId);
            
            if (networkConf.getTrafficType() == TrafficType.Guest) {
                routerResponse.setGuestIpAddress(singleNic.getIp4Address());
@@ -1281,8 +1281,8 @@ public class ApiResponseHelper {
            
            List<? extends Nic> nics = BaseCmd._networkMgr.getNics(systemVM);
            for (Nic singleNic : nics) {
-               long configId = singleNic.getNetworkConfigurationId();
-               NetworkConfiguration networkConf = BaseCmd._networkMgr.getNetworkConfiguration(configId);
+               long configId = singleNic.getNetworkId();
+               Network networkConf = BaseCmd._networkMgr.getNetworkConfiguration(configId);
                
                if (networkConf.getTrafficType() == TrafficType.Management) {
                    vmResponse.setPrivateIp(singleNic.getIp4Address());

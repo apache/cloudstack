@@ -1,148 +1,109 @@
 /**
- *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
- * 
- * This software is licensed under the GNU General Public License v3 or later.  
- * 
- * It is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or any later version.
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
 package com.cloud.network;
 
 import java.net.URI;
-import java.net.URISyntaxException;
+import java.util.List;
+import java.util.Set;
 
-import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.acl.ControlledEntity;
+import com.cloud.network.Networks.BroadcastDomainType;
+import com.cloud.network.Networks.Mode;
+import com.cloud.network.Networks.TrafficType;
+import com.cloud.offering.NetworkOffering.GuestIpType;
+import com.cloud.utils.fsm.FiniteState;
+import com.cloud.utils.fsm.StateMachine;
 
 /**
- * Network includes all of the enums used within networking.
- *
+ * A NetworkProfile defines the specifics of a network
+ * owned by an account. 
  */
-public class Network {
-    /**
-     * Different ways to assign ip address to this network.
-     */
-    public enum Mode {
-        None,
-        Static,
-        Dhcp,
-        ExternalDhcp;
-    };
-    
-    public enum AddressFormat {
-        Ip4,
-        Ip6,
-        Mixed
+public interface Network extends ControlledEntity {
+    enum Event {
+        ImplementNetwork,
+        DestroyNetwork,
+        OperationSucceeded,
+        OperationFailed;
     }
+    
+    enum State implements FiniteState<State, Event> {
+        Allocated("Indicates the network configuration is in allocated but not setup"),
+        Setup("Indicates the network configuration is setup"),
+        Implementing("Indicates the network configuration is being implemented"),
+        Implemented("Indicates the network configuration is in use"),
+        Destroying("Indicates the network configuration is being destroyed");
 
-    /**
-     * Different types of broadcast domains. 
-     */
-    public enum BroadcastDomainType {
-        Native(null, null),
-        Vlan("vlan", Integer.class),
-        Vswitch("vs", String.class),
-        LinkLocal(null, null),
-        Vnet("vnet", Long.class),
-        UnDecided(null, null);
-        
-        private String scheme;
-        private Class<?> type;
-        
-        private BroadcastDomainType(String scheme, Class<?> type) {
-            this.scheme = scheme;
-            this.type = type;
+        @Override
+        public StateMachine<State, Event> getStateMachine() {
+            return s_fsm;
+        }
+
+        @Override
+        public State getNextState(Event event) {
+            return s_fsm.getNextState(this, event);
+        }
+
+        @Override
+        public List<State> getFromStates(Event event) {
+            return s_fsm.getFromStates(this, event);
+        }
+
+        @Override
+        public Set<Event> getPossibleEvents() {
+            return s_fsm.getPossibleEvents(this);
         }
         
-        /**
-         * @return scheme to be used in broadcast uri.  Null indicates that this type does not have broadcast tags.
-         */
-        public String scheme() {
-            return scheme;
-        }
-        
-        /**
-         * @return type of the value in the broadcast uri. Null indicates that this type does not have broadcast tags.
-         */
-        public Class<?> type() {
-            return type;
-        }
-        
-        public <T> URI toUri(T value) {
-            try {
-                return new URI(scheme + "://" + value);
-            } catch (URISyntaxException e) {
-                throw new CloudRuntimeException("Unable to convert to broadcast URI: " + value);
-            }
-        }
-    };
-    
-    /**
-     * Different types of network traffic in the data center. 
-     */
-    public enum TrafficType {
-        Public,
-        Guest,
-        Storage,
-        Management,
-        Control,
-        Vpn
-    };
-    
-    public enum IsolationType {
-        None(null, null),
-        Ec2("ec2", String.class),
-        Vlan("vlan", Integer.class),
-        Vswitch("vs", String.class),
-        Undecided(null, null),
-        Vnet("vnet", Long.class);
-        
-        private final String scheme;
-        private final Class<?> type;
-        
-        private IsolationType(String scheme, Class<?> type) {
-            this.scheme = scheme;
-            this.type = type;
-        }
-        
-        public String scheme() {
-            return scheme;
-        }
-        
-        public Class<?> type() {
-            return type;
-        }
-        
-        public <T> URI toUri(T value) {
-            try {
-                return new URI(scheme + "://" + value.toString());
-            } catch (URISyntaxException e) {
-                throw new CloudRuntimeException("Unable to convert to isolation type URI: " + value);
-            }
-        }
-    }
-    
-    public enum BroadcastScheme {
-        Vlan("vlan"),
-        VSwitch("vswitch");
-        
-        private String scheme;
-        
-        private BroadcastScheme(String scheme) {
-            this.scheme = scheme;
-        }
+        String _description;
         
         @Override
-        public String toString() {
-            return scheme;
+        public String getDescription() {
+            return _description;
+        }
+        
+        private State(String description) {
+            _description = description;
+        }
+        
+        private static StateMachine<State, Event> s_fsm = new StateMachine<State, Event>();
+        static {
+            s_fsm.addTransition(State.Allocated, Event.ImplementNetwork, State.Implementing);
+            s_fsm.addTransition(State.Implementing, Event.OperationSucceeded, State.Implemented);
+            s_fsm.addTransition(State.Implementing, Event.OperationFailed, State.Destroying);
+            s_fsm.addTransition(State.Implemented, Event.DestroyNetwork, State.Destroying);
+            s_fsm.addTransition(State.Destroying, Event.OperationSucceeded, State.Allocated);
+            s_fsm.addTransition(State.Destroying, Event.OperationFailed, State.Implemented);
         }
     }
+    
+    /**
+     * @return id of the network profile.  Null means the network profile is not from the database.
+     */
+    long getId();
+
+    Mode getMode();
+
+    BroadcastDomainType getBroadcastDomainType();
+
+    TrafficType getTrafficType();
+
+    String getGateway();
+
+    String getCidr();
+
+    long getDataCenterId();
+    
+    long getNetworkOfferingId();
+    
+    State getState();
+    
+    long getRelated();
+    
+    URI getBroadcastUri();
+    
+    String getDns1();
+    
+    String getDns2();
+    
+    GuestIpType getGuestType();
 }

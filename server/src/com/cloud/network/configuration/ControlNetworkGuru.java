@@ -17,12 +17,12 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
-import com.cloud.network.Network.AddressFormat;
-import com.cloud.network.Network.BroadcastDomainType;
-import com.cloud.network.Network.Mode;
-import com.cloud.network.Network.TrafficType;
-import com.cloud.network.NetworkConfiguration;
-import com.cloud.network.NetworkConfigurationVO;
+import com.cloud.network.Networks.AddressFormat;
+import com.cloud.network.Networks.BroadcastDomainType;
+import com.cloud.network.Networks.Mode;
+import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.Network;
+import com.cloud.network.NetworkVO;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.resource.Resource.ReservationStrategy;
 import com.cloud.user.Account;
@@ -44,12 +44,12 @@ public class ControlNetworkGuru extends AdapterBase implements NetworkGuru {
     String _gateway;
 
     @Override
-    public NetworkConfiguration design(NetworkOffering offering, DeploymentPlan plan, NetworkConfiguration specifiedConfig, Account owner) {
+    public Network design(NetworkOffering offering, DeploymentPlan plan, Network specifiedConfig, Account owner) {
         if (offering.getTrafficType() != TrafficType.Control) {
             return null;
         }
         
-        NetworkConfigurationVO config = new NetworkConfigurationVO(offering.getTrafficType(), offering.getGuestIpType(), Mode.Static, BroadcastDomainType.LinkLocal, offering.getId(), plan.getDataCenterId());
+        NetworkVO config = new NetworkVO(offering.getTrafficType(), offering.getGuestIpType(), Mode.Static, BroadcastDomainType.LinkLocal, offering.getId(), plan.getDataCenterId());
         config.setCidr(_cidr);
         config.setGateway(_gateway);
         
@@ -61,7 +61,7 @@ public class ControlNetworkGuru extends AdapterBase implements NetworkGuru {
     }
     
     @Override
-    public NicProfile allocate(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) throws InsufficientVirtualNetworkCapcityException,
+    public NicProfile allocate(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException {
         if (config.getTrafficType() != TrafficType.Control) {
             return null;
@@ -75,11 +75,11 @@ public class ControlNetworkGuru extends AdapterBase implements NetworkGuru {
     }
     
     @Override
-    public void deallocate(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) {
+    public void deallocate(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) {
     }
 
     @Override
-    public void reserve(NicProfile nic, NetworkConfiguration config, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException,
+    public void reserve(NicProfile nic, Network config, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException {
         assert nic.getTrafficType() == TrafficType.Control;
         
@@ -106,13 +106,13 @@ public class ControlNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     @Override
-    public NetworkConfiguration implement(NetworkConfiguration config, NetworkOffering offering, DeployDestination destination, ReservationContext context) {
+    public Network implement(Network config, NetworkOffering offering, DeployDestination destination, ReservationContext context) {
         assert config.getTrafficType() == TrafficType.Control : "Why are you sending this configuration to me " + config;
         return config;
     }
     
     @Override
-    public void destroy(NetworkConfiguration config, NetworkOffering offering) {
+    public void destroy(Network config, NetworkOffering offering) {
         assert false : "Destroying a link local...Either you're out of your mind or something has changed.";
     }
     
@@ -141,7 +141,7 @@ public class ControlNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     @Override
-    public boolean trash(NetworkConfiguration config, NetworkOffering offering, Account owner) {
+    public boolean trash(Network config, NetworkOffering offering, Account owner) {
         return true;
     }
 

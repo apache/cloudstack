@@ -17,7 +17,7 @@
  */
 package com.cloud.vm;
 
-import com.cloud.network.Network.Mode;
+import com.cloud.network.Networks.Mode;
 import com.cloud.resource.Resource;
 
 
@@ -38,7 +38,7 @@ public interface Nic extends Resource {
     /**
      * @return network profile id that this 
      */
-    long getNetworkConfigurationId();
+    long getNetworkId();
     
     /**
      * @return the vm instance id that this nic belongs to.

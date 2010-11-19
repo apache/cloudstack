@@ -17,7 +17,7 @@
  */
 package com.cloud.offering;
 
-import com.cloud.network.Network.TrafficType;
+import com.cloud.network.Networks.TrafficType;
 
 /**
  * Describes network offering

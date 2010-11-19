@@ -7,7 +7,7 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
-import com.cloud.network.NetworkConfiguration;
+import com.cloud.network.Network;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.utils.component.Adapter;
@@ -31,7 +31,7 @@ public interface NetworkGuru extends Adapter {
      * @param owner owner of this network configuration.
      * @return NetworkConfiguration
      */
-    NetworkConfiguration design(NetworkOffering offering, DeploymentPlan plan, NetworkConfiguration userSpecified, Account owner);
+    Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner);
     
     /**
      * allocate a nic in this network.  This method implementation cannot take a long time as 
@@ -43,7 +43,7 @@ public interface NetworkGuru extends Adapter {
      * @throws InsufficientVirtualNetworkCapcityException
      * @throws InsufficientAddressCapacityException
      */
-    NicProfile allocate(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException;
+    NicProfile allocate(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException;
     
     /**
      * Fully implement the network configuration as specified.
@@ -52,7 +52,7 @@ public interface NetworkGuru extends Adapter {
      * @param destination where were deploying to.
      * @return a fully implemented NetworkConfiguration.
      */
-    NetworkConfiguration implement(NetworkConfiguration config, NetworkOffering offering, DeployDestination destination, ReservationContext context);
+    Network implement(Network config, NetworkOffering offering, DeployDestination destination, ReservationContext context);
     
     /**
      * reserve a nic for this VM in this network.
@@ -64,13 +64,13 @@ public interface NetworkGuru extends Adapter {
      * @throws InsufficientVirtualNetworkCapcityException
      * @throws InsufficientAddressCapacityException
      */
-    void reserve(NicProfile nic, NetworkConfiguration config, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException;
+    void reserve(NicProfile nic, Network config, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException;
 
     boolean release(NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, String reservationId);
     
-    void deallocate(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm);
+    void deallocate(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm);
     
-    void destroy(NetworkConfiguration config, NetworkOffering offering);
+    void destroy(Network config, NetworkOffering offering);
     
     /**
      * Throw away the design.
@@ -79,5 +79,5 @@ public interface NetworkGuru extends Adapter {
      * @param owner
      * @return
      */
-    boolean trash(NetworkConfiguration config, NetworkOffering offering, Account owner);
+    boolean trash(Network config, NetworkOffering offering, Account owner);
 }

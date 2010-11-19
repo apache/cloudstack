@@ -74,7 +74,8 @@ DROP TABLE IF EXISTS `cloud`.`storage_pool_details`;
 DROP TABLE IF EXISTS `cloud`.`ext_lun_details`;
 DROP TABLE IF EXISTS `cloud`.`cluster`;
 DROP TABLE IF EXISTS `cloud`.`nics`;
-DROP TABLE IF EXISTS `cloud`.`network_configurations`;
+DROP TABLE IF EXISTS `cloud`.`networks`;
+DROP TABLE IF EXISTS `cloud`.`op_networks`;
 DROP TABLE IF EXISTS `cloud`.`network_offerings`;
 DROP TABLE IF EXISTS `cloud`.`host_master`;
 DROP TABLE IF EXISTS `cloud`.`hypervisor_properties`;
@@ -102,13 +103,13 @@ CREATE TABLE `cloud`.`hypervsior_properties` (
   `max_network_devices` int(10) NOT NULL COMMENT 'maximum number of network devices'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`op_network_configurations`(
+CREATE TABLE `cloud`.`op_networks`(
   `id` bigint unsigned NOT NULL UNIQUE KEY,
   `mac_address_seq` bigint unsigned NOT NULL DEFAULT 1 COMMENT 'mac address',
   PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`network_configurations` (
+CREATE TABLE `cloud`.`networks` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `name` varchar(255) COMMENT 'name for this network',
   `traffic_type` varchar(32) NOT NULL COMMENT 'type of traffic going through this network',
@@ -137,7 +138,7 @@ CREATE TABLE `cloud`.`network_configurations` (
 CREATE TABLE `cloud`.`account_network_ref` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `account_id` bigint unsigned NOT NULL COMMENT 'account id',
-  `network_configuration_id` bigint unsigned NOT NULL COMMENT 'network configuration id',
+  `network_id` bigint unsigned NOT NULL COMMENT 'network id',
   `is_owner` smallint(1) NOT NULL COMMENT 'is the owner of the network',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -160,7 +161,7 @@ CREATE TABLE `cloud`.`nics` (
   `gateway` varchar(15) COMMENT 'gateway',
   `ip_type` varchar(32) COMMENT 'type of ip',
   `broadcast_uri` varchar(255) COMMENT 'broadcast uri',
-  `network_configuration_id` bigint unsigned NOT NULL COMMENT 'network configuration id',
+  `network_id` bigint unsigned NOT NULL COMMENT 'network configuration id',
   `mode` varchar(32) COMMENT 'mode of getting ip address',  
   `state` varchar(32) NOT NULL COMMENT 'state of the creation',
   `reserver_name` varchar(255) COMMENT 'Name of the component that reserved the ip address',
@@ -275,7 +276,7 @@ INSERT INTO `cloud`.`sequence` (name, value) VALUES ('public_mac_address_seq', 1
 INSERT INTO `cloud`.`sequence` (name, value) VALUES ('private_mac_address_seq', 1);
 INSERT INTO `cloud`.`sequence` (name, value) VALUES ('storage_pool_seq', 200);
 INSERT INTO `cloud`.`sequence` (name, value) VALUES ('volume_seq', 1);
-INSERT INTO `cloud`.`sequence` (name, value) VALUES ('network_configuration_seq', 1);
+INSERT INTO `cloud`.`sequence` (name, value) VALUES ('networks_seq', 1);
 
 CREATE TABLE `cloud`.`volumes` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'Primary Key',
@@ -649,7 +650,7 @@ CREATE TABLE `cloud`.`domain_router` (
   `vlan_db_id` bigint unsigned COMMENT 'Foreign key into vlan id table',
   `vlan_id` varchar(255) COMMENT 'optional VLAN ID for DomainRouter that can be used in rundomr.sh',
   `dhcp_ip_address` bigint unsigned DEFAULT 2 COMMENT 'next ip address for dhcp for this domR',
-  `network_configuration_id` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'network configuration that this domain router belongs to',
+  `network_id` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'network configuration that this domain router belongs to',
   `role` varchar(64) NOT NULL COMMENT 'type of role played by this router',
   PRIMARY KEY (`id`)
 ) ENGINE = InnoDB DEFAULT CHARSET=utf8 COMMENT = 'information about the domR instance';

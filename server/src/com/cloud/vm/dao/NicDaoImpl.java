@@ -28,7 +28,7 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
         
         IpSearch = createSearchBuilder(String.class);
         IpSearch.select(null, Func.DISTINCT, IpSearch.entity().getIp4Address());
-        IpSearch.and("nc", IpSearch.entity().getNetworkConfigurationId(), SearchCriteria.Op.EQ);
+        IpSearch.and("nc", IpSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
         IpSearch.and("address", IpSearch.entity().getIp4Address(), SearchCriteria.Op.NNULL);
         IpSearch.done();
     }

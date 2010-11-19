@@ -17,8 +17,8 @@
  */
 package com.cloud.vm;
 
-import com.cloud.network.Network.IsolationType;
-import com.cloud.network.Network.Mode;
+import com.cloud.network.Networks.IsolationType;
+import com.cloud.network.Networks.Mode;
 
 /**
  * VirtualNetwork describes from a management level the

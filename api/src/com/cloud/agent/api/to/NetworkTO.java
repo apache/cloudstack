@@ -19,8 +19,8 @@ package com.cloud.agent.api.to;
 
 import java.net.URI;
 
-import com.cloud.network.Network.BroadcastDomainType;
-import com.cloud.network.Network.TrafficType;
+import com.cloud.network.Networks.BroadcastDomainType;
+import com.cloud.network.Networks.TrafficType;
 
 /**
  * Transfer object to transfer network settings.

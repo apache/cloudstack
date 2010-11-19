@@ -59,7 +59,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuru;
-import com.cloud.network.NetworkConfigurationVO;
+import com.cloud.network.NetworkVO;
 import com.cloud.network.NetworkManager;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -125,7 +125,7 @@ public class MauriceMoss implements VmManager, ClusterManagerListener {
             ServiceOfferingVO serviceOffering,
             Pair<? extends DiskOfferingVO, Long> rootDiskOffering,
             List<Pair<DiskOfferingVO, Long>> dataDiskOfferings,
-            List<Pair<NetworkConfigurationVO, NicProfile>> networks,
+            List<Pair<NetworkVO, NicProfile>> networks,
             Map<String, Object> params,
             DeploymentPlan plan,
             Account owner) throws InsufficientCapacityException {
@@ -185,7 +185,7 @@ public class MauriceMoss implements VmManager, ClusterManagerListener {
             ServiceOfferingVO serviceOffering,
             Long rootSize,
             Pair<DiskOfferingVO, Long> dataDiskOffering,
-            List<Pair<NetworkConfigurationVO, NicProfile>> networks,
+            List<Pair<NetworkVO, NicProfile>> networks,
             DeploymentPlan plan,
             Account owner) throws InsufficientCapacityException {
         List<Pair<DiskOfferingVO, Long>> diskOfferings = new ArrayList<Pair<DiskOfferingVO, Long>>(1);
@@ -199,7 +199,7 @@ public class MauriceMoss implements VmManager, ClusterManagerListener {
     public <T extends VMInstanceVO> T allocate(T vm,
             VMTemplateVO template,
             ServiceOfferingVO serviceOffering,
-            List<Pair<NetworkConfigurationVO, NicProfile>> networks,
+            List<Pair<NetworkVO, NicProfile>> networks,
             DeploymentPlan plan, 
             Account owner) throws InsufficientCapacityException {
         return allocate(vm, template, serviceOffering, new Pair<DiskOfferingVO, Long>(serviceOffering, null), null, networks, null, plan, owner);

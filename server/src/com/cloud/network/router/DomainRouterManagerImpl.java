@@ -107,9 +107,9 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.DomainRouterService;
 import com.cloud.network.FirewallRuleVO;
 import com.cloud.network.IPAddressVO;
-import com.cloud.network.Network.TrafficType;
-import com.cloud.network.NetworkConfiguration;
-import com.cloud.network.NetworkConfigurationVO;
+import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.Network;
+import com.cloud.network.NetworkVO;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.RemoteAccessVpnVO;
 import com.cloud.network.SshKeysDistriMonitor;
@@ -118,7 +118,7 @@ import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
-import com.cloud.network.dao.NetworkConfigurationDao;
+import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkRuleConfigDao;
 import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.dao.VpnUserDao;
@@ -221,7 +221,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
     @Inject AccountVlanMapDao _accountVlanMapDao;
     @Inject UserStatisticsDao _statsDao = null;
     @Inject NetworkOfferingDao _networkOfferingDao = null;
-    @Inject NetworkConfigurationDao _networkConfigurationDao = null;
+    @Inject NetworkDao _networkConfigurationDao = null;
     @Inject NicDao _nicDao;
     @Inject GuestOSDao _guestOSDao = null;
     @Inject NetworkManager _networkMgr;
@@ -2041,13 +2041,13 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
 	}
 	
 	@Override
-	public DomainRouterVO deploy(NetworkConfiguration guestConfig, DeployDestination dest, Account owner) throws InsufficientCapacityException, StorageUnavailableException, ConcurrentOperationException, ResourceUnavailableException {
+	public DomainRouterVO deploy(Network guestConfig, DeployDestination dest, Account owner) throws InsufficientCapacityException, StorageUnavailableException, ConcurrentOperationException, ResourceUnavailableException {
 	    long dcId = dest.getDataCenter().getId();
 	    
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Starting a router for network configurations: virtual="  + guestConfig + " in " + dest);
         }
-	    assert guestConfig.getState() == NetworkConfiguration.State.Implemented : "Network is not yet fully implemented: " + guestConfig;
+	    assert guestConfig.getState() == Network.State.Implemented : "Network is not yet fully implemented: " + guestConfig;
 	    assert guestConfig.getTrafficType() == TrafficType.Guest;
 	    
         DataCenterDeployment plan = new DataCenterDeployment(dcId);
@@ -2068,16 +2068,16 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         
             List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemVmControlNetwork);
             NetworkOfferingVO controlOffering = offerings.get(0);
-            NetworkConfigurationVO controlConfig = _networkMgr.setupNetworkConfiguration(_systemAcct, controlOffering, plan).get(0);
+            NetworkVO controlConfig = _networkMgr.setupNetworkConfiguration(_systemAcct, controlOffering, plan).get(0);
             
-            List<Pair<NetworkConfigurationVO, NicProfile>> networks = new ArrayList<Pair<NetworkConfigurationVO, NicProfile>>(3);
+            List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>(3);
             NetworkOfferingVO publicOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemVmPublicNetwork).get(0);
-            List<NetworkConfigurationVO> publicConfigs = _networkMgr.setupNetworkConfiguration(_systemAcct, publicOffering, plan);
+            List<NetworkVO> publicConfigs = _networkMgr.setupNetworkConfiguration(_systemAcct, publicOffering, plan);
             NicProfile defaultNic = new NicProfile();
             defaultNic.setDefaultNic(true);
             //defaultNic.setIp4Address(sourceNatIp);
             defaultNic.setDeviceId(2);
-            networks.add(new Pair<NetworkConfigurationVO, NicProfile>(publicConfigs.get(0), defaultNic));
+            networks.add(new Pair<NetworkVO, NicProfile>(publicConfigs.get(0), defaultNic));
             NicProfile gatewayNic = new NicProfile();
             gatewayNic.setIp4Address(guestConfig.getGateway());
             gatewayNic.setBroadcastUri(guestConfig.getBroadcastUri());
@@ -2085,8 +2085,8 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
             gatewayNic.setIsolationUri(guestConfig.getBroadcastUri());
             gatewayNic.setMode(guestConfig.getMode());
             gatewayNic.setNetmask(NetUtils.getCidrSubNet(guestConfig.getCidr()));
-            networks.add(new Pair<NetworkConfigurationVO, NicProfile>((NetworkConfigurationVO)guestConfig, gatewayNic));
-            networks.add(new Pair<NetworkConfigurationVO, NicProfile>(controlConfig, null));
+            networks.add(new Pair<NetworkVO, NicProfile>((NetworkVO)guestConfig, gatewayNic));
+            networks.add(new Pair<NetworkVO, NicProfile>(controlConfig, null));
             
             router = new DomainRouterVO(id, _offering.getId(), VirtualMachineName.getRouterName(id, _instance), _template.getId(), _template.getGuestOSId(), owner.getDomainId(), owner.getId(), guestConfig.getId(), _offering.getOfferHA());
     	    router = _itMgr.allocate(router, _template, _offering, networks, plan, owner);
@@ -2231,7 +2231,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
 	}
 
     @Override
-    public DomainRouterVO addVirtualMachineIntoNetwork(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile<UserVm> profile, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientNetworkCapacityException, ResourceUnavailableException {
+    public DomainRouterVO addVirtualMachineIntoNetwork(Network config, NicProfile nic, VirtualMachineProfile<UserVm> profile, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientNetworkCapacityException, ResourceUnavailableException {
         DomainRouterVO router = _routerDao.findByNetworkConfiguration(config.getId());
         try {
             router = this.deploy(config, dest, profile.getOwner());
@@ -2254,7 +2254,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         String routerControlIpAddress = null;
         List<NicVO> nics = _nicDao.listBy(router.getId());
         for (NicVO n : nics) {
-            NetworkConfigurationVO nc = _networkConfigurationDao.findById(n.getNetworkConfigurationId());
+            NetworkVO nc = _networkConfigurationDao.findById(n.getNetworkId());
             if (n.getIp4Address() != null && nc.getTrafficType() == TrafficType.Public) {
                 routerPublicIpAddress = nic.getIp4Address();
             } else if (nc.getTrafficType() == TrafficType.Control) {
@@ -2407,7 +2407,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         return router;
     }
     
-    private boolean resendRouterState(NetworkConfiguration config, DomainRouterVO router, Commands cmds) {
+    private boolean resendRouterState(Network config, DomainRouterVO router, Commands cmds) {
         if (router.getRole() == Role.DHCP_FIREWALL_LB_PASSWD_USERDATA) {
             //source NAT address is stored in /proc/cmdline of the domR and gets
             //reassigned upon powerup. Source NAT rule gets configured in StartRouter command
@@ -2441,7 +2441,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
       
     }
     
-    private boolean resendDhcpEntries(NetworkConfiguration config, DomainRouterVO router, Commands cmd){
+    private boolean resendDhcpEntries(Network config, DomainRouterVO router, Commands cmd){
         final List<UserVmVO> vms = _vmDao.listBy(router.getId(), State.Creating, State.Starting, State.Running, State.Stopping, State.Stopped, State.Migrating);
         Commands cmds = new Commands(OnError.Continue);
         for (UserVmVO vm: vms) {

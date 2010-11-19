@@ -35,7 +35,7 @@ public class LoadBalancerVO {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
-    private Long id;
+    private long id;
 
     @Column(name="name")
     private String name;
@@ -76,7 +76,7 @@ public class LoadBalancerVO {
         this.algorithm = algorithm;
     }
 
-    public Long getId() {
+    public long getId() {
         return id;
     }
 

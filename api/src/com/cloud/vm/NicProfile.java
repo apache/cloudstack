@@ -5,11 +5,11 @@ package com.cloud.vm;
 
 import java.net.URI;
 
-import com.cloud.network.Network.AddressFormat;
-import com.cloud.network.Network.BroadcastDomainType;
-import com.cloud.network.Network.Mode;
-import com.cloud.network.Network.TrafficType;
-import com.cloud.network.NetworkConfiguration;
+import com.cloud.network.Networks.AddressFormat;
+import com.cloud.network.Networks.BroadcastDomainType;
+import com.cloud.network.Networks.Mode;
+import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.Network;
 import com.cloud.resource.Resource;
 import com.cloud.resource.Resource.ReservationStrategy;
 
@@ -182,7 +182,7 @@ public class NicProfile {
         this.ip4Address = ip4Address;
     }
 
-    public NicProfile(Nic nic, NetworkConfiguration network, URI broadcastUri, URI isolationUri) {
+    public NicProfile(Nic nic, Network network, URI broadcastUri, URI isolationUri) {
         this.id = nic.getId();
         this.gateway = network.getGateway();
         this.mode = network.getMode();

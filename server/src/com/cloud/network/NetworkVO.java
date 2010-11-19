@@ -28,9 +28,9 @@ import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 import javax.persistence.Transient;
 
-import com.cloud.network.Network.BroadcastDomainType;
-import com.cloud.network.Network.Mode;
-import com.cloud.network.Network.TrafficType;
+import com.cloud.network.Networks.BroadcastDomainType;
+import com.cloud.network.Networks.Mode;
+import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.net.NetUtils;
@@ -40,10 +40,10 @@ import com.cloud.utils.net.NetUtils;
  *
  */
 @Entity
-@Table(name="network_configurations")
-public class NetworkConfigurationVO implements NetworkConfiguration {
+@Table(name="networks")
+public class NetworkVO implements Network {
     @Id
-    @TableGenerator(name="network_configuration_sq", table="sequence", pkColumnName="name", valueColumnName="value", pkColumnValue="network_configuration_seq", allocationSize=1)
+    @TableGenerator(name="networks_sq", table="sequence", pkColumnName="name", valueColumnName="value", pkColumnValue="networks_seq", allocationSize=1)
     @Column(name="id")
     long id;
     
@@ -99,7 +99,7 @@ public class NetworkConfigurationVO implements NetworkConfiguration {
     @Column(name="set_fields")
     long setFields;
     
-    @TableGenerator(name="mac_address_seq", table="op_network_configurations", pkColumnName="id", valueColumnName="mac_address_seq", allocationSize=1)
+    @TableGenerator(name="mac_address_seq", table="op_networks", pkColumnName="id", valueColumnName="mac_address_seq", allocationSize=1)
     @Transient
     long macAddress = 1;
     
@@ -109,7 +109,7 @@ public class NetworkConfigurationVO implements NetworkConfiguration {
     @Column(name="dns2")
     String dns2;
     
-    public NetworkConfigurationVO() {
+    public NetworkVO() {
     }
     
     /**
@@ -120,7 +120,7 @@ public class NetworkConfigurationVO implements NetworkConfiguration {
      * @param networkOfferingId
      * @param dataCenterId
      */
-    public NetworkConfigurationVO(TrafficType trafficType, GuestIpType guestType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId, long dataCenterId) {
+    public NetworkVO(TrafficType trafficType, GuestIpType guestType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId, long dataCenterId) {
         this.trafficType = trafficType;
         this.mode = mode;
         this.broadcastDomainType = broadcastDomainType;
@@ -131,7 +131,7 @@ public class NetworkConfigurationVO implements NetworkConfiguration {
         this.guestType = guestType;
     }
     
-    public NetworkConfigurationVO(long id, NetworkConfiguration that, long offeringId, long dataCenterId, String guruName, long domainId, long accountId, long related) {
+    public NetworkVO(long id, Network that, long offeringId, long dataCenterId, String guruName, long domainId, long accountId, long related) {
         this(id, that.getTrafficType(), that.getGuestType(), that.getMode(), that.getBroadcastDomainType(), offeringId, dataCenterId, domainId, accountId, related);
         this.gateway = that.getGateway();
         this.dns1 = that.getDns1();
@@ -154,7 +154,7 @@ public class NetworkConfigurationVO implements NetworkConfiguration {
      * @param domainId
      * @param accountId
      */
-    public NetworkConfigurationVO(long id, TrafficType trafficType, GuestIpType guestType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId, long dataCenterId, long domainId, long accountId, long related) {
+    public NetworkVO(long id, TrafficType trafficType, GuestIpType guestType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId, long dataCenterId, long domainId, long accountId, long related) {
         this(trafficType, guestType, mode, broadcastDomainType, networkOfferingId, dataCenterId);
         this.domainId = domainId;
         this.accountId = accountId;
@@ -303,10 +303,10 @@ public class NetworkConfigurationVO implements NetworkConfiguration {
     
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof NetworkConfigurationVO)) {
+        if (!(obj instanceof NetworkVO)) {
             return false;
         }
-        NetworkConfigurationVO that = (NetworkConfigurationVO)obj;
+        NetworkVO that = (NetworkVO)obj;
         if (this.trafficType != that.trafficType) {
             return false;
         }

@@ -97,13 +97,13 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.Network.TrafficType;
+import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.configuration.NetworkGuru;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
-import com.cloud.network.dao.NetworkConfigurationDao;
+import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkRuleConfigDao;
 import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.dao.VpnUserDao;
@@ -204,7 +204,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Inject AccountVlanMapDao _accountVlanMapDao;
     @Inject UserStatisticsDao _statsDao = null;
     @Inject NetworkOfferingDao _networkOfferingDao = null;
-    @Inject NetworkConfigurationDao _networkConfigDao = null;
+    @Inject NetworkDao _networkConfigDao = null;
     @Inject NicDao _nicDao;
     @Inject GuestOSDao _guestOSDao = null;
     @Inject RemoteAccessVpnDao _remoteAccessVpnDao = null;
@@ -1264,7 +1264,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 for (FirewallRuleVO fwRule : existingRulesOnPubIp) {
                     if (!(  (fwRule.isForwarding() == false) &&
                             (fwRule.getGroupId() != null) &&
-                            (fwRule.getGroupId() == loadBalancer.getId().longValue())  )) {
+                            (fwRule.getGroupId() == loadBalancer.getId())  )) {
                         // if the rule is not for the current load balancer, check to see if the private IP is our target IP,
                         // in which case we have a conflict
                         if (fwRule.getPublicPort().equals(loadBalancer.getPublicPort())) {
@@ -1348,15 +1348,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                  */
 
                 for (FirewallRuleVO updatedRule : updatedRules) {
-                    if (updatedRule.getId() == null) {
-                        _rulesDao.persist(updatedRule);
+                   _rulesDao.persist(updatedRule);
 
-                        description = "created new " + ruleName + " rule [" + updatedRule.getPublicIpAddress() + ":"
-                                + updatedRule.getPublicPort() + "]->[" + updatedRule.getPrivateIpAddress() + ":"
-                                + updatedRule.getPrivatePort() + "]" + " " + updatedRule.getProtocol();
+                    description = "created new " + ruleName + " rule [" + updatedRule.getPublicIpAddress() + ":"
+                            + updatedRule.getPublicPort() + "]->[" + updatedRule.getPrivateIpAddress() + ":"
+                            + updatedRule.getPrivatePort() + "]" + " " + updatedRule.getProtocol();
 
-                        EventUtils.saveEvent(UserContext.current().getUserId(), loadBalancer.getAccountId(), level, type, description);
-                    }
+                    EventUtils.saveEvent(UserContext.current().getUserId(), loadBalancer.getAccountId(), level, type, description);
                 }
                 return true;
             } else {
@@ -1563,7 +1561,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 event.setType(EventTypes.EVENT_LOAD_BALANCER_DELETE);
                 String params = "id="+loadBalancer.getId();
                 event.setParameters(params);
-                event.setDescription("Successfully deleted load balancer " + loadBalancer.getId().toString());
+                event.setDescription("Successfully deleted load balancer " + loadBalancer.getId());
                 event.setLevel(EventVO.LEVEL_INFO);
                 _eventDao.persist(event);
             }
@@ -1722,7 +1720,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         AccountsUsingNetworkConfigurationSearch = _accountDao.createSearchBuilder();
         SearchBuilder<NetworkAccountVO> networkAccountSearch = _networkConfigDao.createSearchBuilderForAccount();
         AccountsUsingNetworkConfigurationSearch.join("nc", networkAccountSearch, AccountsUsingNetworkConfigurationSearch.entity().getId(), networkAccountSearch.entity().getAccountId(), JoinType.INNER);
-        networkAccountSearch.and("config", networkAccountSearch.entity().getNetworkConfigurationId(), SearchCriteria.Op.EQ);
+        networkAccountSearch.and("config", networkAccountSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
         networkAccountSearch.and("owner", networkAccountSearch.entity().isOwner(), SearchCriteria.Op.EQ);
         AccountsUsingNetworkConfigurationSearch.done();
         
@@ -1796,13 +1794,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
     
     @Override
-    public List<NetworkConfigurationVO> setupNetworkConfiguration(Account owner, NetworkOfferingVO offering, DeploymentPlan plan) {
+    public List<NetworkVO> setupNetworkConfiguration(Account owner, NetworkOfferingVO offering, DeploymentPlan plan) {
         return setupNetworkConfiguration(owner, offering, null, plan);
     }
     
     @Override
-    public List<NetworkConfigurationVO> setupNetworkConfiguration(Account owner, NetworkOfferingVO offering, NetworkConfiguration predefined, DeploymentPlan plan) {
-        List<NetworkConfigurationVO> configs = _networkConfigDao.listBy(owner.getId(), offering.getId(), plan.getDataCenterId());
+    public List<NetworkVO> setupNetworkConfiguration(Account owner, NetworkOfferingVO offering, Network predefined, DeploymentPlan plan) {
+        List<NetworkVO> configs = _networkConfigDao.listBy(owner.getId(), offering.getId(), plan.getDataCenterId());
         if (configs.size() > 0) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Found existing network configuration for offering " + offering + ": " + configs.get(0));
@@ -1810,19 +1808,19 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             return configs;
         }
         
-        configs = new ArrayList<NetworkConfigurationVO>();
+        configs = new ArrayList<NetworkVO>();
         
         long related = -1;
         
         for (NetworkGuru guru : _networkGurus) {
-            NetworkConfiguration config = guru.design(offering, plan, predefined, owner);
+            Network config = guru.design(offering, plan, predefined, owner);
             if (config == null) {
                 continue;
             }
             
             if (config.getId() != -1) {
-                if (config instanceof NetworkConfigurationVO) {
-                    configs.add((NetworkConfigurationVO)config);
+                if (config instanceof NetworkVO) {
+                    configs.add((NetworkVO)config);
                 } else {
                     configs.add(_networkConfigDao.findById(config.getId()));
                 }
@@ -1834,7 +1832,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 related = id;
             } 
             
-            NetworkConfigurationVO vo = new NetworkConfigurationVO(id, config, offering.getId(), plan.getDataCenterId(), guru.getName(), owner.getDomainId(), owner.getId(), related);
+            NetworkVO vo = new NetworkVO(id, config, offering.getId(), plan.getDataCenterId(), guru.getName(), owner.getDomainId(), owner.getId(), related);
             configs.add(_networkConfigDao.persist(vo));
         }
 
@@ -1859,7 +1857,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
     
     @Override @DB
-    public void allocate(VirtualMachineProfile<? extends VMInstanceVO> vm, List<Pair<NetworkConfigurationVO, NicProfile>> networks) throws InsufficientCapacityException {
+    public void allocate(VirtualMachineProfile<? extends VMInstanceVO> vm, List<Pair<NetworkVO, NicProfile>> networks) throws InsufficientCapacityException {
         Transaction txn = Transaction.currentTxn();
         txn.start();
         
@@ -1871,8 +1869,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         List<NicVO> nics = new ArrayList<NicVO>(networks.size());
         NicVO defaultNic = null;
         
-        for (Pair<NetworkConfigurationVO, NicProfile> network : networks) {
-            NetworkConfigurationVO config = network.first();
+        for (Pair<NetworkVO, NicProfile> network : networks) {
+            NetworkVO config = network.first();
             NetworkGuru concierge = _networkGurus.get(config.getGuruName());
             NicProfile requested = network.second();
             NicProfile profile = concierge.allocate(config, requested, vm);
@@ -1952,7 +1950,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return deviceId;
     }
     
-    protected NicTO toNicTO(NicVO nic, NicProfile profile, NetworkConfigurationVO config) {
+    protected NicTO toNicTO(NicVO nic, NicProfile profile, NetworkVO config) {
         NicTO to = new NicTO();
         to.setDeviceId(nic.getDeviceId());
         to.setBroadcastType(config.getBroadcastDomainType());
@@ -1983,18 +1981,18 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
     
     @DB
-    protected Pair<NetworkGuru, NetworkConfigurationVO> implementNetworkConfiguration(long configId, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientAddressCapacityException {
+    protected Pair<NetworkGuru, NetworkVO> implementNetworkConfiguration(long configId, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientAddressCapacityException {
         Transaction.currentTxn();
-        Pair<NetworkGuru, NetworkConfigurationVO> implemented = new Pair<NetworkGuru, NetworkConfigurationVO>(null, null);
+        Pair<NetworkGuru, NetworkVO> implemented = new Pair<NetworkGuru, NetworkVO>(null, null);
         
-        NetworkConfigurationVO config = _networkConfigDao.acquireInLockTable(configId);
+        NetworkVO config = _networkConfigDao.acquireInLockTable(configId);
         if (config == null) {
             throw new ConcurrentOperationException("Unable to acquire network configuration: " + configId);
         }
         
         try {
             NetworkGuru guru = _networkGurus.get(config.getGuruName());
-            if (config.getState() == NetworkConfiguration.State.Implemented || config.getState() == NetworkConfiguration.State.Setup) {
+            if (config.getState() == Network.State.Implemented || config.getState() == Network.State.Setup) {
                 implemented.set(guru, config);
                 return implemented;
             }
@@ -2005,14 +2003,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             
             NetworkOfferingVO offering = _networkOfferingDao.findById(config.getNetworkOfferingId());
             
-            NetworkConfiguration result = guru.implement(config, offering, dest, context);
+            Network result = guru.implement(config, offering, dest, context);
             config.setCidr(result.getCidr());
             config.setBroadcastUri(result.getBroadcastUri());
             config.setGateway(result.getGateway());
             config.setDns1(result.getDns1());
             config.setDns2(result.getDns2());
             config.setMode(result.getMode());
-            config.setState(NetworkConfiguration.State.Implemented);
+            config.setState(Network.State.Implemented);
             _networkConfigDao.update(configId, config);
             
             for (NetworkElement element : _networkElements) {
@@ -2040,9 +2038,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     public void prepare(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, DeployDestination dest, ReservationContext context) throws InsufficientNetworkCapacityException, ConcurrentOperationException, ResourceUnavailableException {
         List<NicVO> nics = _nicDao.listBy(vmProfile.getId());
         for (NicVO nic : nics) {
-            Pair<NetworkGuru, NetworkConfigurationVO> implemented = implementNetworkConfiguration(nic.getNetworkConfigurationId(), dest, context);
+            Pair<NetworkGuru, NetworkVO> implemented = implementNetworkConfiguration(nic.getNetworkId(), dest, context);
             NetworkGuru concierge = implemented.first();
-            NetworkConfigurationVO config = implemented.second();
+            NetworkVO config = implemented.second();
             NicProfile profile = null;
             if (nic.getReservationStrategy() == ReservationStrategy.Start) {
                 nic.setState(Resource.State.Reserving);
@@ -2083,7 +2081,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     public void release(VirtualMachineProfile<? extends VMInstanceVO> vmProfile) {
         List<NicVO> nics = _nicDao.listBy(vmProfile.getId());
         for (NicVO nic : nics) {
-            NetworkConfigurationVO config = _networkConfigDao.findById(nic.getNetworkConfigurationId());
+            NetworkVO config = _networkConfigDao.findById(nic.getNetworkId());
             if (nic.getReservationStrategy() == ReservationStrategy.Start) {
                 NetworkGuru concierge = _networkGurus.get(config.getGuruName());
                 nic.setState(Resource.State.Releasing);
@@ -2345,7 +2343,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         // make sure the name's not already in use
         if (name != null) {
             LoadBalancerVO existingLB = _loadBalancerDao.findByAccountAndName(loadBalancer.getAccountId(), name);
-            if ((existingLB != null) && (existingLB.getId().longValue() != loadBalancer.getId().longValue())) {
+            if ((existingLB != null) && (existingLB.getId() != loadBalancer.getId())) {
                 throw new InvalidParameterValueException("Unable to update load balancer " + loadBalancer.getName() + " with new name " + name + ", the name is already in use.");
             }
         }
@@ -2651,12 +2649,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
     
     @Override
-    public List<NetworkConfigurationVO> getNetworkConfigurationsforOffering(long offeringId, long dataCenterId, long accountId) {
+    public List<NetworkVO> getNetworkConfigurationsforOffering(long offeringId, long dataCenterId, long accountId) {
         return _networkConfigDao.getNetworkConfigurationsForOffering(offeringId, dataCenterId, accountId);
     }
     
     @Override
-    public List<NetworkConfigurationVO> setupNetworkConfiguration(Account owner, ServiceOfferingVO offering, DeploymentPlan plan) {
+    public List<NetworkVO> setupNetworkConfiguration(Account owner, ServiceOfferingVO offering, DeploymentPlan plan) {
         NetworkOfferingVO networkOffering = _networkOfferingDao.findByServiceOffering(offering);
         return setupNetworkConfiguration(owner, networkOffering, plan);
     }
@@ -2991,13 +2989,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     public String getNextAvailableMacAddressInNetwork(long networkConfigurationId) throws InsufficientAddressCapacityException {
 	    String mac = _networkConfigDao.getNextAvailableMacAddress(networkConfigurationId);
 	    if (mac == null) {
-	        throw new InsufficientAddressCapacityException("Unable to create another mac address", NetworkConfiguration.class, networkConfigurationId);
+	        throw new InsufficientAddressCapacityException("Unable to create another mac address", Network.class, networkConfigurationId);
 	    }
 	    return mac;
 	}
 	
 	@Override @DB
-	public NetworkConfiguration getNetworkConfiguration(long id) {
+	public Network getNetworkConfiguration(long id) {
 	        return _networkConfigDao.findById(id);
 	}
 	

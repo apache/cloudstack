@@ -63,7 +63,7 @@ import com.cloud.network.dao.FirewallRulesDaoImpl;
 import com.cloud.network.dao.IPAddressDaoImpl;
 import com.cloud.network.dao.LoadBalancerDaoImpl;
 import com.cloud.network.dao.LoadBalancerVMMapDaoImpl;
-import com.cloud.network.dao.NetworkConfigurationDaoImpl;
+import com.cloud.network.dao.NetworkDaoImpl;
 import com.cloud.network.dao.NetworkRuleConfigDaoImpl;
 import com.cloud.network.dao.RemoteAccessVpnDaoImpl;
 import com.cloud.network.dao.VpnUserDaoImpl;
@@ -214,7 +214,7 @@ public class DefaultComponentLibrary implements ComponentLibrary {
         addDao("PreallocatedLunDao", PreallocatedLunDaoImpl.class);
         addDao("ClusterDao", ClusterDaoImpl.class);
         addDao("CertificateDao", CertificateDaoImpl.class);
-        addDao("NetworkConfigurationDao", NetworkConfigurationDaoImpl.class);
+        addDao("NetworkConfigurationDao", NetworkDaoImpl.class);
         addDao("NetworkOfferingDao", NetworkOfferingDaoImpl.class);
         addDao("NicDao", NicDaoImpl.class);
         addDao("InstanceGroupDao", InstanceGroupDaoImpl.class);

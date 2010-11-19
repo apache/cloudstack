@@ -117,7 +117,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         StateChangeSearch.done();
         
         NetworkConfigSearch = createSearchBuilder();
-        NetworkConfigSearch.and("network", NetworkConfigSearch.entity().getNetworkConfigurationId(), SearchCriteria.Op.EQ);
+        NetworkConfigSearch.and("network", NetworkConfigSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
 
         _updateTimeAttr = _allAttributes.get("updateTime");
         assert _updateTimeAttr != null : "Couldn't get this updateTime attribute";

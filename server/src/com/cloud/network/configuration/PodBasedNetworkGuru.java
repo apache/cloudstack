@@ -13,12 +13,12 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
-import com.cloud.network.Network.AddressFormat;
-import com.cloud.network.Network.BroadcastDomainType;
-import com.cloud.network.Network.Mode;
-import com.cloud.network.Network.TrafficType;
-import com.cloud.network.NetworkConfiguration;
-import com.cloud.network.NetworkConfigurationVO;
+import com.cloud.network.Networks.AddressFormat;
+import com.cloud.network.Networks.BroadcastDomainType;
+import com.cloud.network.Networks.Mode;
+import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.Network;
+import com.cloud.network.NetworkVO;
 import com.cloud.network.NetworkManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.resource.Resource.ReservationStrategy;
@@ -38,14 +38,14 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
     @Inject NetworkManager _networkMgr;
 
     @Override
-    public NetworkConfiguration design(NetworkOffering offering, DeploymentPlan plan, NetworkConfiguration userSpecified, Account owner) {
+    public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner) {
         TrafficType type = offering.getTrafficType();
         
         if (type != TrafficType.Management && type != TrafficType.Storage) {
             return null;
         }
         
-        NetworkConfigurationVO config = new NetworkConfigurationVO(type, offering.getGuestIpType(), Mode.Static, BroadcastDomainType.Native, offering.getId(), plan.getDataCenterId());
+        NetworkVO config = new NetworkVO(type, offering.getGuestIpType(), Mode.Static, BroadcastDomainType.Native, offering.getId(), plan.getDataCenterId());
         
         return config;
     }
@@ -55,11 +55,11 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     @Override
-    public void deallocate(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) {
+    public void deallocate(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) {
     }
     
     @Override
-    public NicProfile allocate(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) throws InsufficientVirtualNetworkCapcityException,
+    public NicProfile allocate(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException {
         TrafficType trafficType = config.getTrafficType();
         assert (trafficType == TrafficType.Storage || trafficType == TrafficType.Management) : "Well, I can't take care of this config now can I? " + config; 
@@ -77,7 +77,7 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     @Override
-    public void reserve(NicProfile nic, NetworkConfiguration config, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException,
+    public void reserve(NicProfile nic, Network config, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException {
         Pod pod = dest.getPod();
         
@@ -101,16 +101,16 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     @Override
-    public NetworkConfiguration implement(NetworkConfiguration config, NetworkOffering offering, DeployDestination destination, ReservationContext context) {
+    public Network implement(Network config, NetworkOffering offering, DeployDestination destination, ReservationContext context) {
         return config;
     }
     
     @Override
-    public void destroy(NetworkConfiguration config, NetworkOffering offering) {
+    public void destroy(Network config, NetworkOffering offering) {
     }
     
     @Override
-    public boolean trash(NetworkConfiguration config, NetworkOffering offering, Account owner) {
+    public boolean trash(Network config, NetworkOffering offering, Account owner) {
         return true;
     }
 }

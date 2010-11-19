@@ -26,10 +26,10 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.Network.TrafficType;
-import com.cloud.network.NetworkConfiguration;
+import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
-import com.cloud.network.dao.NetworkConfigurationDao;
+import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.router.DomainRouterManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.GuestIpType;
@@ -51,7 +51,7 @@ import com.cloud.vm.dao.UserVmDao;
 public class DomainRouterElement extends AdapterBase implements NetworkElement {
     private static final Logger s_logger = Logger.getLogger(DomainRouterElement.class);
     
-    @Inject NetworkConfigurationDao _networkConfigDao;
+    @Inject NetworkDao _networkConfigDao;
     @Inject NetworkManager _networkMgr;
     @Inject DomainRouterManager _routerMgr;
     @Inject UserVmManager _userVmMgr;
@@ -59,7 +59,7 @@ public class DomainRouterElement extends AdapterBase implements NetworkElement {
     @Inject DomainRouterDao _routerDao;
 
     @Override
-    public boolean implement(NetworkConfiguration guestConfig, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException {
+    public boolean implement(Network guestConfig, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException {
         if (offering.getGuestIpType() != GuestIpType.Virtualized) {
             s_logger.trace("Not handling guest ip type = " + offering.getGuestIpType());
             return false;
@@ -74,7 +74,7 @@ public class DomainRouterElement extends AdapterBase implements NetworkElement {
     }
 
     @Override
-    public boolean prepare(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientNetworkCapacityException, ResourceUnavailableException {
+    public boolean prepare(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientNetworkCapacityException, ResourceUnavailableException {
         if (config.getTrafficType() != TrafficType.Guest || vm.getType() != Type.User) {
             s_logger.trace("Domain Router only cares about guest network and User VMs");
             return false;
@@ -91,7 +91,7 @@ public class DomainRouterElement extends AdapterBase implements NetworkElement {
     }
 
     @Override
-    public boolean release(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, ReservationContext context) {
+    public boolean release(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, ReservationContext context) {
         if (config.getTrafficType() != TrafficType.Guest || vm.getType() != Type.User) {
             s_logger.trace("Domain Router only cares about guest network and User VMs");
             return false;
@@ -102,7 +102,7 @@ public class DomainRouterElement extends AdapterBase implements NetworkElement {
     }
 
     @Override
-    public boolean shutdown(NetworkConfiguration config, ReservationContext context) throws ConcurrentOperationException {
+    public boolean shutdown(Network config, ReservationContext context) throws ConcurrentOperationException {
         if (config.getTrafficType() != TrafficType.Guest) {
             s_logger.trace("Domain Router only cares about guet network.");
             return false;

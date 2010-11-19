@@ -278,12 +278,12 @@ public interface NetworkManager {
     
     public boolean disassociateIpAddress(DisassociateIPAddrCmd cmd);
 
-    List<NetworkConfigurationVO> setupNetworkConfiguration(Account owner, NetworkOfferingVO offering, DeploymentPlan plan);
-    List<NetworkConfigurationVO> setupNetworkConfiguration(Account owner, NetworkOfferingVO offering, NetworkConfiguration predefined, DeploymentPlan plan);
+    List<NetworkVO> setupNetworkConfiguration(Account owner, NetworkOfferingVO offering, DeploymentPlan plan);
+    List<NetworkVO> setupNetworkConfiguration(Account owner, NetworkOfferingVO offering, Network predefined, DeploymentPlan plan);
     
     List<NetworkOfferingVO> getSystemAccountNetworkOfferings(String... offeringNames);
     
-    void allocate(VirtualMachineProfile<? extends VMInstanceVO> vm, List<Pair<NetworkConfigurationVO, NicProfile>> networks) throws InsufficientCapacityException;
+    void allocate(VirtualMachineProfile<? extends VMInstanceVO> vm, List<Pair<NetworkVO, NicProfile>> networks) throws InsufficientCapacityException;
 
     void prepare(VirtualMachineProfile<? extends VMInstanceVO> profile, DeployDestination dest, ReservationContext context) throws InsufficientNetworkCapacityException, ConcurrentOperationException, ResourceUnavailableException;
     void release(VirtualMachineProfile<? extends VMInstanceVO> vmProfile);
@@ -293,9 +293,9 @@ public interface NetworkManager {
     List<AccountVO> getAccountsUsingNetworkConfiguration(long configurationId);    
     AccountVO getNetworkConfigurationOwner(long configurationId);
     
-    List<NetworkConfigurationVO> getNetworkConfigurationsforOffering(long offeringId, long dataCenterId, long accountId);
+    List<NetworkVO> getNetworkConfigurationsforOffering(long offeringId, long dataCenterId, long accountId);
 
-    List<NetworkConfigurationVO> setupNetworkConfiguration(Account owner, ServiceOfferingVO offering, DeploymentPlan plan);
+    List<NetworkVO> setupNetworkConfiguration(Account owner, ServiceOfferingVO offering, DeploymentPlan plan);
     
     String assignSourceNatIpAddress(Account account, DataCenter dc) throws InsufficientAddressCapacityException;
     /**
@@ -329,7 +329,7 @@ public interface NetworkManager {
 
 	boolean removeVpnUser(RemoveVpnUserCmd cmd) throws ConcurrentOperationException;
 	
-	NetworkConfiguration getNetworkConfiguration(long id);
+	Network getNetworkConfiguration(long id);
 	String getNextAvailableMacAddressInNetwork(long networkConfigurationId) throws InsufficientAddressCapacityException;
 
 	FirewallRuleVO createIpForwardingRuleInDb(String ipAddr, Long virtualMachineId) throws ServerApiException;

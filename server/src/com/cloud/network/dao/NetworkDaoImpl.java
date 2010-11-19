@@ -25,12 +25,12 @@ import java.util.Random;
 import javax.ejb.Local;
 import javax.persistence.TableGenerator;
 
-import com.cloud.network.Network.BroadcastDomainType;
-import com.cloud.network.Network.Mode;
-import com.cloud.network.Network.TrafficType;
 import com.cloud.network.NetworkAccountDaoImpl;
 import com.cloud.network.NetworkAccountVO;
-import com.cloud.network.NetworkConfigurationVO;
+import com.cloud.network.NetworkVO;
+import com.cloud.network.Networks.BroadcastDomainType;
+import com.cloud.network.Networks.Mode;
+import com.cloud.network.Networks.TrafficType;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.JoinBuilder;
@@ -42,20 +42,20 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 
-@Local(value=NetworkConfigurationDao.class) @DB(txn=false)
-public class NetworkConfigurationDaoImpl extends GenericDaoBase<NetworkConfigurationVO, Long> implements NetworkConfigurationDao {
-    final SearchBuilder<NetworkConfigurationVO> ProfileSearch;
-    final SearchBuilder<NetworkConfigurationVO> AccountSearch;
-    final SearchBuilder<NetworkConfigurationVO> OfferingSearch;
-    final SearchBuilder<NetworkConfigurationVO> RelatedConfigSearch;
-    final SearchBuilder<NetworkConfigurationVO> RelatedConfigsSearch;
+@Local(value=NetworkDao.class) @DB(txn=false)
+public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements NetworkDao {
+    final SearchBuilder<NetworkVO> ProfileSearch;
+    final SearchBuilder<NetworkVO> AccountSearch;
+    final SearchBuilder<NetworkVO> OfferingSearch;
+    final SearchBuilder<NetworkVO> RelatedConfigSearch;
+    final SearchBuilder<NetworkVO> RelatedConfigsSearch;
     
     NetworkAccountDaoImpl _accountsDao = new NetworkAccountDaoImpl();
     final TableGenerator _tgMacAddress;
     Random _rand = new Random(System.currentTimeMillis());
     long _prefix = 0x2;
     
-    protected NetworkConfigurationDaoImpl() {
+    protected NetworkDaoImpl() {
         super();
         
         ProfileSearch = createSearchBuilder();
@@ -70,7 +70,7 @@ public class NetworkConfigurationDaoImpl extends GenericDaoBase<NetworkConfigura
         AccountSearch.and("offering", AccountSearch.entity().getNetworkOfferingId(), SearchCriteria.Op.EQ);
         SearchBuilder<NetworkAccountVO> join = _accountsDao.createSearchBuilder();
         join.and("account", join.entity().getAccountId(), SearchCriteria.Op.EQ);
-        AccountSearch.join("accounts", join, AccountSearch.entity().getId(), join.entity().getNetworkConfigurationId(), JoinBuilder.JoinType.INNER);
+        AccountSearch.join("accounts", join, AccountSearch.entity().getId(), join.entity().getNetworkId(), JoinBuilder.JoinType.INNER);
         AccountSearch.and("datacenter", AccountSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         AccountSearch.done();
     
@@ -83,7 +83,7 @@ public class NetworkConfigurationDaoImpl extends GenericDaoBase<NetworkConfigura
         RelatedConfigSearch.and("datacenter", RelatedConfigSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         SearchBuilder<NetworkAccountVO> join2 = _accountsDao.createSearchBuilder();
         join2.and("account", join2.entity().getAccountId(), SearchCriteria.Op.EQ);
-        RelatedConfigSearch.join("account", join2, join2.entity().getNetworkConfigurationId(), RelatedConfigSearch.entity().getId(), JoinType.INNER);
+        RelatedConfigSearch.join("account", join2, join2.entity().getNetworkId(), RelatedConfigSearch.entity().getId(), JoinType.INNER);
         RelatedConfigSearch.done();
         
         RelatedConfigsSearch = createSearchBuilder();
@@ -93,8 +93,8 @@ public class NetworkConfigurationDaoImpl extends GenericDaoBase<NetworkConfigura
         _tgMacAddress = _tgs.get("macAddress");
     }
     
-    public List<NetworkConfigurationVO> findBy(TrafficType trafficType, Mode mode, BroadcastDomainType broadcastType, long networkOfferingId, long dataCenterId) {
-        SearchCriteria<NetworkConfigurationVO> sc = ProfileSearch.create();
+    public List<NetworkVO> findBy(TrafficType trafficType, Mode mode, BroadcastDomainType broadcastType, long networkOfferingId, long dataCenterId) {
+        SearchCriteria<NetworkVO> sc = ProfileSearch.create();
         sc.setParameters("trafficType", trafficType);
         sc.setParameters("broadcastType", broadcastType);
         sc.setParameters("offering", networkOfferingId);
@@ -104,8 +104,8 @@ public class NetworkConfigurationDaoImpl extends GenericDaoBase<NetworkConfigura
     }
     
     @Override
-    public List<NetworkConfigurationVO> listBy(long accountId) {
-        SearchCriteria<NetworkConfigurationVO> sc = AccountSearch.create();
+    public List<NetworkVO> listBy(long accountId) {
+        SearchCriteria<NetworkVO> sc = AccountSearch.create();
         sc.setParameters("account", accountId);
         sc.setJoinParameters("accounts", "account", accountId);
         
@@ -113,8 +113,8 @@ public class NetworkConfigurationDaoImpl extends GenericDaoBase<NetworkConfigura
     }
     
     @Override
-    public List<NetworkConfigurationVO> listBy(long accountId, long offeringId, long dataCenterId) {
-        SearchCriteria<NetworkConfigurationVO> sc = AccountSearch.create();
+    public List<NetworkVO> listBy(long accountId, long offeringId, long dataCenterId) {
+        SearchCriteria<NetworkVO> sc = AccountSearch.create();
         sc.setParameters("offering", offeringId);
         sc.setJoinParameters("accounts", "account", accountId);
         sc.setParameters("datacenter", dataCenterId);
@@ -123,13 +123,13 @@ public class NetworkConfigurationDaoImpl extends GenericDaoBase<NetworkConfigura
     }
     
     @Override @DB
-    public NetworkConfigurationVO persist(NetworkConfigurationVO config) {
+    public NetworkVO persist(NetworkVO config) {
         Transaction txn = Transaction.currentTxn();
         txn.start();
         config = super.persist(config);
         addAccountToNetworkConfiguration(config.getId(), config.getAccountId(), true);
         try {
-            PreparedStatement pstmt = txn.prepareAutoCloseStatement("INSERT INTO op_network_configurations (id) VALUES(?)");
+            PreparedStatement pstmt = txn.prepareAutoCloseStatement("INSERT INTO op_networks (id) VALUES(?)");
             pstmt.setLong(1, config.getId());
             pstmt.executeUpdate();
         } catch (SQLException e) {
@@ -155,8 +155,8 @@ public class NetworkConfigurationDaoImpl extends GenericDaoBase<NetworkConfigura
     }
     
     @Override
-    public List<NetworkConfigurationVO> getNetworkConfigurationsForOffering(long offeringId, long dataCenterId, long accountId) {
-        SearchCriteria<NetworkConfigurationVO> sc = RelatedConfigSearch.create();
+    public List<NetworkVO> getNetworkConfigurationsForOffering(long offeringId, long dataCenterId, long accountId) {
+        SearchCriteria<NetworkVO> sc = RelatedConfigSearch.create();
         sc.setParameters("offering", offeringId);
         sc.setParameters("dc", dataCenterId);
         sc.setJoinParameters("account", "account", accountId);
@@ -164,8 +164,8 @@ public class NetworkConfigurationDaoImpl extends GenericDaoBase<NetworkConfigura
     }
     
     @Override
-    public List<NetworkConfigurationVO> getRelatedNetworkConfigurations(long related) {
-        SearchCriteria<NetworkConfigurationVO> sc = RelatedConfigsSearch.create();
+    public List<NetworkVO> getRelatedNetworkConfigurations(long related) {
+        SearchCriteria<NetworkVO> sc = RelatedConfigsSearch.create();
         sc.setParameters("related", related);
         return search(sc, null);
     }

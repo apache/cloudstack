@@ -29,8 +29,8 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.network.Network.AddressFormat;
-import com.cloud.network.Network.Mode;
+import com.cloud.network.Networks.AddressFormat;
+import com.cloud.network.Networks.Mode;
 
 @Entity
 @Table(name="nics")
@@ -74,8 +74,8 @@ public class NicVO implements Nic {
     @Enumerated(value=EnumType.STRING)
     Mode mode;
     
-    @Column(name="network_configuration_id")
-    long networkConfigurationId;
+    @Column(name="network_id")
+    long networkId;
     
     @Column(name="state")
     @Enumerated(value=EnumType.STRING)
@@ -99,7 +99,7 @@ public class NicVO implements Nic {
     public NicVO(String reserver, long instanceId, long configurationId) {
         this.reserver = reserver;
         this.instanceId = instanceId;
-        this.networkConfigurationId = configurationId;
+        this.networkId = configurationId;
         this.state = State.Allocated;
     }
     
@@ -126,6 +126,7 @@ public class NicVO implements Nic {
         return state;
     }
     
+    @Override
     public boolean isDefaultNic() {
         return defaultNic;
     }
@@ -142,10 +143,12 @@ public class NicVO implements Nic {
         this.ip6Address = ip6Address;
     }
 
+    @Override
     public String getNetmask() {
         return netmask;
     }
     
+    @Override
     public String getGateway() {
         return gateway;
     }
@@ -186,8 +189,8 @@ public class NicVO implements Nic {
         this.instanceId = instanceId;
     }
 
-    public void setNetworkConfigurationId(long networkConfigurationId) {
-        this.networkConfigurationId = networkConfigurationId;
+    public void setNetworkId(long networkConfigurationId) {
+        this.networkId = networkConfigurationId;
     }
 
     public void setUpdateTime(Date updateTime) {
@@ -209,8 +212,8 @@ public class NicVO implements Nic {
     }
 
     @Override
-    public long getNetworkConfigurationId() {
-        return networkConfigurationId;
+    public long getNetworkId() {
+        return networkId;
     }
     
     @Override

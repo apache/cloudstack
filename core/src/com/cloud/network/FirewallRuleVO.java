@@ -26,7 +26,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
-import com.google.gson.Gson;
+import com.cloud.network.rules.FirewallRule;
 
 /**
  * A bean representing a IP Forwarding
@@ -36,11 +36,11 @@ import com.google.gson.Gson;
  */
 @Entity
 @Table(name=("ip_forwarding"))
-public class FirewallRuleVO {
+public class FirewallRuleVO implements FirewallRule {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
-	private Long id;
+	private long id;
 
     @Column(name="group_id")
     private Long groupId;
@@ -95,8 +95,14 @@ public class FirewallRuleVO {
 			 fwRule.isForwarding(), fwRule.getAlgorithm());
 	}
 
-	public Long getId() {
+	@Override
+    public long getId() {
 		return id;
+	}
+	
+	@Override
+    public String getXid() {
+	    return Long.toHexString(id);
 	}
 
 	public Long getGroupId() {
@@ -107,7 +113,8 @@ public class FirewallRuleVO {
 	    this.groupId = groupId;
 	}
 
-	public String getPublicIpAddress() {
+	@Override
+    public String getPublicIpAddress() {
 		return publicIpAddress;
 	}
 	
@@ -115,7 +122,8 @@ public class FirewallRuleVO {
 		this.publicIpAddress = address;
 	}
 	
-	public String getPublicPort() {
+	@Override
+    public String getPublicPort() {
 		return publicPort;
 	}
 	
@@ -123,7 +131,8 @@ public class FirewallRuleVO {
 		this.publicPort = port;
 	}
 	
-	public String getPrivateIpAddress() {
+	@Override
+    public String getPrivateIpAddress() {
 		return privateIpAddress;
 	}
 	
@@ -131,7 +140,8 @@ public class FirewallRuleVO {
 		this.privateIpAddress = privateIpAddress;
 	}
 	
-	public String getPrivatePort() {
+	@Override
+    public String getPrivatePort() {
 		return privatePort;
 	}
 	

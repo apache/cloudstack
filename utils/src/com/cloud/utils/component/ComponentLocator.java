@@ -842,7 +842,6 @@ public class ComponentLocator implements ComponentLocatorMBean {
                     parse = true;
                     parent = getAttribute(atts, "extends");
                     String implementationClass = getAttribute(atts, "class");
-                    
                     if (implementationClass != null) {
                         try {
                             componentClass = Class.forName(implementationClass);

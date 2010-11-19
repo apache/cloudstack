@@ -22,8 +22,8 @@ public class NetworkAccountVO implements OwnedBy {
     @Column(name="account_id")
     long accountId;
     
-    @Column(name="network_configuration_id")
-    long networkConfigurationId;
+    @Column(name="network_id")
+    long networkId;
     
     @Column(name="is_owner")
     boolean owner;
@@ -31,8 +31,8 @@ public class NetworkAccountVO implements OwnedBy {
     protected NetworkAccountVO() {
     }
     
-    public NetworkAccountVO(long networkConfigurationId, long accountId, boolean owner) {
-        this.networkConfigurationId = networkConfigurationId;
+    public NetworkAccountVO(long networkId, long accountId, boolean owner) {
+        this.networkId = networkId;
         this.accountId = accountId;
         this.owner = owner;
     }
@@ -42,8 +42,8 @@ public class NetworkAccountVO implements OwnedBy {
         return accountId;
     }
     
-    public long getNetworkConfigurationId() {
-        return networkConfigurationId;
+    public long getNetworkId() {
+        return networkId;
     }
     
     public boolean isOwner() {

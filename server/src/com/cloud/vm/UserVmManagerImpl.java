@@ -132,7 +132,7 @@ import com.cloud.network.FirewallRuleVO;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.IpAddrAllocator;
 import com.cloud.network.LoadBalancerVMMapVO;
-import com.cloud.network.NetworkConfigurationVO;
+import com.cloud.network.NetworkVO;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
@@ -3600,10 +3600,10 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         
         s_logger.debug("Allocating in the DB for vm");
         
-        List<NetworkConfigurationVO> configs = _networkMgr.setupNetworkConfiguration(owner, offering, plan);
-        List<Pair<NetworkConfigurationVO, NicProfile>> networks = new ArrayList<Pair<NetworkConfigurationVO, NicProfile>>(); 
-        for (NetworkConfigurationVO config : configs) {
-            networks.add(new Pair<NetworkConfigurationVO, NicProfile>(config, null));
+        List<NetworkVO> configs = _networkMgr.setupNetworkConfiguration(owner, offering, plan);
+        List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>(); 
+        for (NetworkVO config : configs) {
+            networks.add(new Pair<NetworkVO, NicProfile>(config, null));
         }
 
         
