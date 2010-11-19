@@ -63,19 +63,17 @@ function afterLoadVolumeJSP() {
 	        var offerings = json.listdiskofferingsresponse.diskoffering;								
 		    var volumeDiskOfferingSelect = $("#dialog_add_volume").find("#volume_diskoffering").empty();	
 		    if (offerings != null && offerings.length > 0) {								
-		        if (offerings != null && offerings.length > 0) {		            
-		            for (var i = 0; i < offerings.length; i++) {		
-		                var $option = $("<option value='" + offerings[i].id + "'>" + fromdb(offerings[i].displaytext) + "</option>");	
-		                $option.data("jsonObj", offerings[i]);	
-			            volumeDiskOfferingSelect.append($option); 
-			        }	
-			        $("#dialog_add_volume").find("#volume_diskoffering").change();	
-			    }	
+				for (var i = 0; i < offerings.length; i++) {		
+					var $option = $("<option value='" + offerings[i].id + "'>" + fromdb(offerings[i].displaytext) + "</option>");	
+					$option.data("jsonObj", offerings[i]);	
+					volumeDiskOfferingSelect.append($option); 
+				}	
+				$("#dialog_add_volume").find("#volume_diskoffering").change();	
 			}	
 	    }
     });	 
     
-    $("#dialog_add_volume").find("#volume_diskoffering").bind("change", function(event) {        
+    $("#dialog_add_volume").find("#volume_diskoffering").unbind("change").bind("change", function(event) {        
         var jsonObj = $(this).find("option:selected").data("jsonObj");
         if(jsonObj.isCustomized == true) {
             $("#dialog_add_volume").find("#size_container").show();

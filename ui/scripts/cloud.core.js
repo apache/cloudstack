@@ -840,13 +840,13 @@ function setTemplateStateInRightPanel(stateValue, $stateField) {
         $stateField.text(stateValue).removeClass("status_green").addClass("status_red");              			       
 }
 
-function initDialog(elementId, width1) {
+function initDialog(elementId, width1, addToActive) {
 	if(width1 == null) {
 	    activateDialog($("#"+elementId).dialog({    	            
 	        autoOpen: false,
 	        modal: true,
 	        zIndex: 2000
-        })); 
+        }), addToActive); 
     }
     else {
         activateDialog($("#"+elementId).dialog({ 
@@ -854,18 +854,18 @@ function initDialog(elementId, width1) {
 	        autoOpen: false,
 	        modal: true,
 	        zIndex: 2000
-        })); 
+        }), addToActive); 
     }
 } 
 
-function initDialogWithOK(elementId, width1) {
+function initDialogWithOK(elementId, width1, addToActive) {
 	if(width1 == null) {
 	    activateDialog($("#"+elementId).dialog({    	            
 	        autoOpen: false,
 	        modal: true,
 	        zIndex: 2000,
 	        buttons: { "OK": function() { $(this).dialog("close"); } }
-        })); 
+        }), addToActive); 
     }
     else {
         activateDialog($("#"+elementId).dialog({ 
@@ -874,7 +874,7 @@ function initDialogWithOK(elementId, width1) {
 	        modal: true,
 	        zIndex: 2000,
 	        buttons: { "OK": function() { $(this).dialog("close"); } }
-        })); 
+        }), addToActive); 
     }
 } 
 
@@ -976,7 +976,7 @@ function listMidMenuItems(commandString, jsonResponse1, jsonResponse2, rightPane
 			$(this).find("#action_menu").hide();    
 			return false;
 		});	   
-					  
+		removeDialogs();
 		afterLoadRightPanelJSPFn();                
 		listMidMenuItems2(commandString, jsonResponse1, jsonResponse2, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu, true);            
 	});     
@@ -1786,8 +1786,10 @@ function handleError(XMLHttpResponse, handleErrorCallback) {
 // FUNCTION: Adds a Dialog to the list of active Dialogs so that
 // when you shift from one tab to another, we clean out the dialogs
 var activeDialogs = new Array();
-function activateDialog(dialog) {
-	activeDialogs[activeDialogs.length] = dialog;
+function activateDialog(dialog, addToActive) {
+	if (addToActive == undefined || addToActive) {
+		activeDialogs[activeDialogs.length] = dialog;
+	}
 	
 	//bind Enter-Key-pressing event handler to the dialog 	
 	dialog.keypress(function(event) {
