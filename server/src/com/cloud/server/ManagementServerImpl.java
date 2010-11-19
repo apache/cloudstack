@@ -1389,8 +1389,10 @@ public class ManagementServerImpl implements ManagementServer {
     				allChildDomainIds.add(domain.getId());
     			}
     			//now make a search for zones based on this
-    			List<DataCenterVO> childZones = _dcDao.findChildZones((allChildDomainIds.toArray()));
-    			dcs.addAll(childZones);
+    			if(allChildDomainIds.size() > 0){
+    				List<DataCenterVO> childZones = _dcDao.findChildZones((allChildDomainIds.toArray()));
+    				dcs.addAll(childZones);
+    			}
     		}   		
     		//add all public zones too
     		dcs.addAll(_dcDao.listPublicZones());
