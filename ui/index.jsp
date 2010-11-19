@@ -239,6 +239,22 @@ long milliseconds = new Date().getTime();
                                     <%=t.t("add")%></div>
                             </div>
                         </div>
+                        <div class="actionpanel_button_wrapper" id="midmenu_add4_link" style="display: none;">
+                            <div class="actionpanel_button">
+                                <div class="actionpanel_button_icons">
+                                    <img src="images/addvm_actionicon.png" alt="Add" /></div>
+                                <div class="actionpanel_button_links" id="label">
+                                    <%=t.t("add")%></div>
+                            </div>
+                        </div>
+                        <div class="actionpanel_button_wrapper" id="midmenu_add5_link" style="display: none;">
+                            <div class="actionpanel_button">
+                                <div class="actionpanel_button_icons">
+                                    <img src="images/addvm_actionicon.png" alt="Add" /></div>
+                                <div class="actionpanel_button_links" id="label">
+                                    <%=t.t("add")%></div>
+                            </div>
+                        </div>
                         <div class="actionpanel_button_wrapper" id="midmenu_startvm_link" style="display: none;">
                             <div class="actionpanel_button">
                                 <div class="actionpanel_button_icons">
