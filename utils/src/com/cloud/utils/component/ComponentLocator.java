@@ -185,7 +185,9 @@ public class ComponentLocator implements ComponentLocatorMBean {
             startDaos();    // daos should not be using managers and adapters.
             instantiateAdapters(adapters);
             instantiateManagers();
-            _component = createInstance(handler.componentClass, true, true);
+            if (handler.componentClass != null) {
+                _component = createInstance(handler.componentClass, true, true);
+            }
             configureManagers();
             configureAdapters();
             startManagers();
@@ -840,11 +842,13 @@ public class ComponentLocator implements ComponentLocatorMBean {
                     parse = true;
                     parent = getAttribute(atts, "extends");
                     String implementationClass = getAttribute(atts, "class");
-
-                    try {
-                        componentClass = Class.forName(implementationClass);
-                    } catch (ClassNotFoundException e) {
-                        throw new CloudRuntimeException("Unable to find " + implementationClass, e);
+                    
+                    if (implementationClass != null) {
+                        try {
+                            componentClass = Class.forName(implementationClass);
+                        } catch (ClassNotFoundException e) {
+                            throw new CloudRuntimeException("Unable to find " + implementationClass, e);
+                        }
                     }
                     
                     library = getAttribute(atts, "library");
