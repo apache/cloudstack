@@ -91,13 +91,13 @@ function zoneJsonToDetailsTab($leftmenuItem1) {
         var vlan = jsonObj.vlan; 
         $detailsTab.find("#vlan").text(fromdb(vlan));      
         if(vlan != null) {           
-		    if(vlan.indexOf("-")!==-1) {
+		    if(vlan.indexOf("-") != -1) {  //e.g. vlan == "30-33"
 			    var startVlan = vlan.substring(0, vlan.indexOf("-"));
 			    var endVlan = vlan.substring((vlan.indexOf("-")+1));	
 			    $detailsTab.find("#startvlan_edit").val(startVlan);
 			    $detailsTab.find("#endvlan_edit").val(endVlan);			
 		    }
-		    else {
+		    else {  //e.g. vlan == "30"
 		        $detailsTab.find("#startvlan_edit").val(vlan);					        
 		    }
 	    } 
@@ -768,59 +768,69 @@ function doEditZone2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $
 	var oldDns1 = jsonObj.dns1;
 	var oldDns2 = jsonObj.dns2;	
 	
-	var id = jsonObj.id;
-	moreCriteria.push("&id="+id);
+	var name = $detailsTab.find("#name_edit").val();
+	if(name != jsonObj.name)
+	    moreCriteria.push("&name="+todb(name));
 	
-	var name = trim($detailsTab.find("#name_edit").val());
-	moreCriteria.push("&name="+todb(name));
+	var dns1 = $detailsTab.find("#dns1_edit").val();
+	if(dns1 != jsonObj.dns1)
+	    moreCriteria.push("&dns1="+encodeURIComponent(dns1));
 	
-	var dns1 = trim($detailsTab.find("#dns1_edit").val());
-	moreCriteria.push("&dns1="+encodeURIComponent(dns1));
-	
-	var dns2 = trim($detailsTab.find("#dns2_edit").val());
-	if (dns2 != null & dns2.length > 0) 
+	var dns2 = $detailsTab.find("#dns2_edit").val();
+	if (dns2 != null && dns2.length > 0 && dns2 != jsonObj.dns2) 
 		moreCriteria.push("&dns2="+encodeURIComponent(dns2));	
 	
-	var internaldns1 = trim($detailsTab.find("#internaldns1_edit").val());
-	moreCriteria.push("&internaldns1="+encodeURIComponent(internaldns1));
+	var internaldns1 = $detailsTab.find("#internaldns1_edit").val();
+	if(internaldns1 != jsonObj.internaldns1)
+	    moreCriteria.push("&internaldns1="+encodeURIComponent(internaldns1));
 	
-	var internaldns2 = trim($detailsTab.find("#internaldns2_edit").val());	
-	if (internaldns2 != null & internaldns2.length > 0) 
+	var internaldns2 = $detailsTab.find("#internaldns2_edit").val();	
+	if (internaldns2 != null && internaldns2.length > 0 && internaldns2 != jsonObj.internaldns2) 
 		moreCriteria.push("&internaldns2="+encodeURIComponent(internaldns2));						
 	
 	var vlan;				
 	if ($("#tab_content_details #vlan_container").css("display") != "none") {
-		var vlanStart = trim($detailsTab.find("#startvlan_edit").val());	
+		var vlanStart = $detailsTab.find("#startvlan_edit").val();	
 		if(vlanStart != null && vlanStart.length > 0) {
-		    var vlanEnd = trim($detailsTab.find("#endvlan_edit").val());						
+		    var vlanEnd = $detailsTab.find("#endvlan_edit").val();						
 		    if (vlanEnd != null && vlanEnd.length > 0) 
 		        vlan = vlanStart + "-" + vlanEnd;						    							
 		    else 	
 		        vlan = vlanStart;							
-           moreCriteria.push("&vlan=" + encodeURIComponent(vlan));	
+                      
+            if(vlan != jsonObj.vlan)
+               moreCriteria.push("&vlan=" + encodeURIComponent(vlan));	
         }
 	}				
 	
-	var guestcidraddress = trim($detailsTab.find("#guestcidraddress_edit").val());
-	moreCriteria.push("&guestcidraddress="+encodeURIComponent(guestcidraddress));				    		 
-	 	        	
-	$.ajax({
-	  data: createURL("command=updateZone"+moreCriteria.join("")),
-		dataType: "json",
-		success: function(json) {		   
-		    var item = json.updatezoneresponse.zone;		  
-		    $midmenuItem1.data("jsonObj", item);
-		    zoneJsonToRightPanel($midmenuItem1);	
-		    
-		    $editFields.hide();      
-            $readonlyFields.show();       
-            $("#save_button, #cancel_button").hide();  
-                       
-            if(item.dns1 != oldDns1 || item.dns2 != oldDns2) {
-                $("#dialog_info")
-                .text("DNS update will not take effect until all virtual routers are stopped and then started")
-                .dialog("open"); 
-            }               	    
-		}
-	});   
+	var guestcidraddress = $detailsTab.find("#guestcidraddress_edit").val();
+	if(guestcidraddress != jsonObj.guestcidraddress)
+	    moreCriteria.push("&guestcidraddress="+encodeURIComponent(guestcidraddress));				    		 
+	 
+	if(moreCriteria.length > 0) { 	        	
+	    $.ajax({
+	      data: createURL("command=updateZone&id="+jsonObj.id+moreCriteria.join("")),
+		    dataType: "json",
+		    success: function(json) {		   
+		        var item = json.updatezoneresponse.zone;		  
+		        $midmenuItem1.data("jsonObj", item);
+		        zoneJsonToRightPanel($midmenuItem1);	
+    		    
+		        $editFields.hide();      
+                $readonlyFields.show();       
+                $("#save_button, #cancel_button").hide();  
+                           
+                if(item.dns1 != oldDns1 || item.dns2 != oldDns2) {
+                    $("#dialog_info")
+                    .text("DNS update will not take effect until all virtual routers are stopped and then started")
+                    .dialog("open"); 
+                }               	    
+		    }
+	    }); 
+	}  
+	else {
+	    $editFields.hide();      
+        $readonlyFields.show();       
+        $("#save_button, #cancel_button").hide();  
+	}
 }
