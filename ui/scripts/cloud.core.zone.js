@@ -22,6 +22,23 @@
     initAddPodButton($("#midmenu_add_pod_button"));                  
     initAddVLANButton($("#midmenu_add_vlan_button"));
     initAddSecondaryStorageButton($("#midmenu_add_secondarystorage_button"));
+          
+    var pods = [];
+    var zoneObj = $midmenuItem1.data("jsonObj");
+    var zoneId = zoneObj.id;
+    var zoneName = zoneObj.name;
+    $.ajax({
+        data: createURL("command=listPods&zoneid="+zoneId),
+        dataType: "json",
+        async: false,
+        success: function(json) {            
+            pods = json.listpodsresponse.pod;            
+        }        
+    });
+    if(pods.length > 0) {
+        initAddHostButtonOnZonePage($("#midmenu_add_host_button"), zoneId, zoneName, pods); 
+        //initAddPrimaryStorageButtonOnZonePage($("#midmenu_add_primarystorage_button"), zoneId, zoneName, pods);  
+    }    
    
     initDialog("dialog_add_pod", 320); 
     initDialog("dialog_add_vlan_for_zone");
@@ -289,10 +306,9 @@ function vlanJsonToTemplate(jsonObj, $template1) {
 } 	
 
 
-function initAddVLANButton($addButton) {
-    $addButton.find("#label").text("Add VLAN");      
-    $addButton.show();   
-    $addButton.unbind("click").bind("click", function(event) {  
+function initAddVLANButton($button) {    
+    $button.show();   
+    $button.unbind("click").bind("click", function(event) {  
         if($("#tab_content_network").css("display") == "none")
             $("#tab_network").click();      
             
@@ -450,10 +466,9 @@ function initAddVLANButton($addButton) {
 }
 
 
-function initAddSecondaryStorageButton($addButton) {
-    $addButton.find("#label").text("Add Secondary Storage");
-    $addButton.show();      
-    $addButton.unbind("click").bind("click", function(event) {
+function initAddSecondaryStorageButton($button) {    
+    $button.show();      
+    $button.unbind("click").bind("click", function(event) {
         if($("#tab_content_secondarystorage").css("display") == "none")
             $("#tab_secondarystorage").click();    
         
@@ -508,10 +523,9 @@ function initAddSecondaryStorageButton($addButton) {
     });
 }
 
-function initAddPodButton($midmenuAddLink1) {
-    $midmenuAddLink1.find("#label").text("Add Pod"); 
-    $midmenuAddLink1.show();     
-    $midmenuAddLink1.unbind("click").bind("click", function(event) {   
+function initAddPodButton($button) {
+    $button.show();     
+    $button.unbind("click").bind("click", function(event) {   
         var zoneObj = $("#tab_content_details").data("jsonObj"); 
         $("#dialog_add_pod").find("#info_container").hide();				  	
         $("#dialog_add_pod").find("#add_pod_zone_name").text(fromdb(zoneObj.name));
@@ -852,3 +866,136 @@ function doEditZone2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $
         $("#save_button, #cancel_button").hide();  
 	}
 }
+
+function initAddHostButtonOnZonePage($button, zoneId, zoneName, pods) {
+    $button.show();
+    
+    initDialog("dialog_add_host_in_zone_page");    
+    var $dialogAddHost = $("#dialog_add_host_in_zone_page");    
+    
+    var $podSelect = $dialogAddHost.find("#pod_dropdown");
+    if(pods != null && pods.length > 0) {
+        for(var i=0; i<pods.length; i++)
+            $podSelect.append("<option value='" + pods[i].id + "'>" + fromdb(pods[i].name) + "</option>"); 	
+    }
+	
+    $podSelect.bind("change", function(event) {	        	   
+        var podId = $(this).val();
+        if(podId == null || podId.length == 0)
+            return;        
+        refreshClsuterFieldInAddHostDialog($dialogAddHost, podId, null);        
+    });   
+    
+    $dialogAddHost.find("#pod_dropdown").change();            	        	    
+        
+    $button.unbind("click").bind("click", function(event) { 
+        $dialogAddHost.find("#zone_name").text(zoneName);             
+        $dialogAddHost.find("#info_container").hide();    
+        $dialogAddHost.find("#new_cluster_name").val("");
+        
+        $dialogAddHost
+        .dialog('option', 'buttons', { 				
+	        "Add": function() { 
+	            var $thisDialog = $(this);		            
+	    			   
+		        var clusterRadio = $thisDialog.find("input[name=cluster]:checked").val();				
+			
+		        // validate values
+		        var isValid = true;			       	
+		        isValid &= validateDropDownBox("Pod", $thisDialog.find("#pod_dropdown"), $thisDialog.find("#pod_dropdown_errormsg"));									
+		        isValid &= validateString("Host name", $thisDialog.find("#host_hostname"), $thisDialog.find("#host_hostname_errormsg"));
+		        isValid &= validateString("User name", $thisDialog.find("#host_username"), $thisDialog.find("#host_username_errormsg"));
+		        isValid &= validateString("Password", $thisDialog.find("#host_password"), $thisDialog.find("#host_password_errormsg"));	
+				if(clusterRadio == "new_cluster_radio") {
+					isValid &= validateString("Cluster Name", $thisDialog.find("#new_cluster_name"), $thisDialog.find("#new_cluster_name_errormsg"));
+				}
+		        if (!isValid) 
+		            return;		            			
+					
+				$thisDialog.find("#spinning_wheel").show() 				
+				
+		        var array1 = [];    
+		        		    
+		        array1.push("&zoneid="+zoneId);
+		        
+		        //expand zone in left menu tree (to show pod, cluster under the zone) 
+				var $zoneNode = $("#leftmenu_zone_tree").find("#tree_container").find("#zone_" + zoneId);							
+				if($zoneNode.find("#zone_arrow").hasClass("expanded_close"))
+				    $zoneNode.find("#zone_arrow").click();
+										             
+		        var podId = $thisDialog.find("#pod_dropdown").val();
+		        array1.push("&podid="+podId);
+						      
+		        var username = trim($thisDialog.find("#host_username").val());
+		        array1.push("&username="+encodeURIComponent(username));
+				
+		        var password = trim($thisDialog.find("#host_password").val());
+		        array1.push("&password="+encodeURIComponent(password));
+					
+				var newClusterName, existingClusterId;							
+			    if(clusterRadio == "new_cluster_radio") {
+		            newClusterName = trim($thisDialog.find("#new_cluster_name").val());
+		            array1.push("&clustername="+todb(newClusterName));				    
+		        }
+		        else if(clusterRadio == "existing_cluster_radio") {			            
+		            existingClusterId = $thisDialog.find("#cluster_select").val();
+				    // We will default to no cluster if someone selects Join Cluster with no cluster available.
+				    if (existingClusterId != '-1') {
+					    array1.push("&clusterid="+existingClusterId);
+				    }
+		        }				
+				
+		        var hostname = trim($thisDialog.find("#host_hostname").val());
+		        var url;					
+		        if(hostname.indexOf("http://")==-1)
+		            url = "http://" + todb(hostname);
+		        else
+		            url = hostname;
+		        array1.push("&url="+encodeURIComponent(url));
+									
+		        //var $midmenuItem1 = beforeAddingMidMenuItem() ;    				
+		        
+		        $.ajax({
+			       data: createURL("command=addHost" + array1.join("")),
+			        dataType: "json",
+			        success: function(json) {			        
+			            $thisDialog.find("#spinning_wheel").hide();
+			            $thisDialog.dialog("close");
+					
+					    //showMiddleMenu();
+					    		                
+					    /*
+					    var items = json.addhostresponse.host;	
+					    var $midmenuItem1 = $("#midmenu_item").clone();
+                        $("#midmenu_container").append($midmenuItem1.fadeIn("slow"));                        			            			      										   
+					    hostToMidmenu(items[0], $midmenuItem1);
+	                    bindClickToMidMenu($midmenuItem1, hostToRightPanel, hostGetMidmenuId); 
+			           
+                        if(items.length > 1) { 
+                            for(var i=1; i<items.length; i++) {                                    
+                                var $midmenuItem2 = $("#midmenu_item").clone();
+                                hostToMidmenu(items[i], $midmenuItem2);
+                                bindClickToMidMenu($midmenuItem2, hostToRightPanel, hostGetMidmenuId); 
+                                $("#midmenu_container").append($midmenuItem2.fadeIn("slow"));                                   
+                            }	
+                        }   
+                        */                             
+                        
+                        clickClusterNodeAfterAddHost(clusterRadio, podId, newClusterName, existingClusterId, $thisDialog);                                  
+			        },			
+                    error: function(XMLHttpResponse) {	            
+						handleError(XMLHttpResponse, function() {						  				
+							clickClusterNodeAfterAddHost(clusterRadio, podId, newClusterName, existingClusterId, $thisDialog);    
+							refreshClsuterFieldInAddHostDialog($thisDialog, podId, null);                     
+							handleErrorInDialog(XMLHttpResponse, $thisDialog);
+						});
+                    }				
+		        });
+	        }, 
+	        "Cancel": function() { 
+		        $(this).dialog("close"); 
+	        } 
+        }).dialog("open");            
+        return false;
+    });  
+}      
