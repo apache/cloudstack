@@ -1081,6 +1081,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
         String timeZone = cmd.getTimezone();
         String userName = cmd.getUsername();
         
+        
         //Input validation
         UserVO user = _userDao.getUser(id);
         
@@ -1093,7 +1094,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
         }
         
         // If the account is an admin type, return an error.  We do not allow this
-        Account account = UserContext.current().getAccount();
+        Account account = _accountDao.findById(user.getAccountId());
         
         if (account != null && (account.getId() == Account.ACCOUNT_ID_SYSTEM)) {
             throw new PermissionDeniedException("user id : " + id + " is system account, update is not allowed");
