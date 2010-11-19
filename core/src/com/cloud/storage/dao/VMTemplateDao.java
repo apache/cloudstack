@@ -70,6 +70,6 @@ public interface VMTemplateDao extends GenericDao<VMTemplateVO, Long> {
 	public List<VMTemplateVO> listAllInZone(long dataCenterId);	
 	
 	public List<VMTemplateVO> listByHypervisorType(HypervisorType hyperType);
-	public List<VMTemplateVO> xenToolsIsoSearch();
+	public List<VMTemplateVO> publicIsoSearch();
 	
 }

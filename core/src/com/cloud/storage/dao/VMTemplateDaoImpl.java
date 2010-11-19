@@ -68,7 +68,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     protected SearchBuilder<VMTemplateVO> TmpltsInZoneSearch;
     private SearchBuilder<VMTemplateVO> PublicSearch;
     private SearchBuilder<VMTemplateVO> NameAccountIdSearch;
-    private SearchBuilder<VMTemplateVO> XenToolsIsoSearch;
+    private SearchBuilder<VMTemplateVO> PublicIsoSearch;
     
     private String routerTmpltName;
     private String consoleProxyTmpltName;
@@ -105,9 +105,10 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     }
 
     @Override
-    public List<VMTemplateVO> xenToolsIsoSearch(){
-        SearchCriteria<VMTemplateVO> sc = XenToolsIsoSearch.create();
-        sc.setParameters("name", "xs-tools.iso");
+    public List<VMTemplateVO> publicIsoSearch(){
+        SearchCriteria<VMTemplateVO> sc = PublicIsoSearch.create();
+    	sc.setParameters("public", 1);
+    	sc.setParameters("format", "ISO");
         return listBy(sc);
     }
     
@@ -192,8 +193,9 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 		NameAccountIdSearch.and("name", NameAccountIdSearch.entity().getName(), SearchCriteria.Op.EQ);
 		NameAccountIdSearch.and("accountId", NameAccountIdSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
 
-		XenToolsIsoSearch = createSearchBuilder();
-		XenToolsIsoSearch.and("name", XenToolsIsoSearch.entity().getName(), SearchCriteria.Op.EQ);
+		PublicIsoSearch = createSearchBuilder();
+		PublicIsoSearch.and("public", PublicIsoSearch.entity().isPublicTemplate(), SearchCriteria.Op.EQ);
+		PublicIsoSearch.and("format", PublicIsoSearch.entity().getFormat(), SearchCriteria.Op.EQ);
 		
 		tmpltTypeHyperSearch = createSearchBuilder();
 		tmpltTypeHyperSearch.and("templateType", tmpltTypeHyperSearch.entity().getTemplateType(), SearchCriteria.Op.EQ);
@@ -300,8 +302,8 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
             }
             
             if(isIso && (account.getType() == Account.ACCOUNT_TYPE_NORMAL)){
-            	List<VMTemplateVO> xenToolsIso = xenToolsIsoSearch();
-            	templates.addAll(xenToolsIso);
+            	List<VMTemplateVO> publicIsos = publicIsoSearch();
+            	templates.addAll(publicIsos);
             }
         } catch (Exception e) {
             s_logger.warn("Error listing templates", e);
