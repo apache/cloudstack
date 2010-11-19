@@ -21,15 +21,13 @@
     </div>
     <div class="tabbox" style="margin-top: 15px;">
         <div class="content_tabs on" id="tab_details">
-            <%=t.t("details")%></div>
-        <div class="content_tabs off" id="tab_network">
-            <%=t.t("network")%></div>
+            <%=t.t("details")%></div>        
         <div class="content_tabs off" id="tab_secondarystorage">
-            <%=t.t("secondary.storage")%></div>
+            <%=t.t("secondary.storage")%></div>        
+        <div class="content_tabs off" id="tab_network">
+            <%=t.t("network")%></div>        
     </div>
     
-    
-
     <!-- Details tab (start)-->
     <div id="tab_content_details">
         <div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display: none;">
@@ -187,6 +185,21 @@
         </div>
     </div>
     <!-- Details tab (end)-->
+    
+    <!-- Secondary Storage tab (start)-->
+    <div id="tab_content_secondarystorage" style="display: none">
+        Secondary Storage
+        <div class="rightpanel_mainloader_panel" style="display: none;">
+            <div class="rightpanel_mainloaderbox">
+                <div class="rightpanel_mainloader_animatedicon">
+                </div>
+                <p>
+                    Loading &hellip;</p>
+            </div>
+        </div>
+    </div>
+    <!-- Secondary Storage tab (end)-->
+    
     <!-- Network tab (start)-->
     <div style="display: none;" id="tab_content_network">
         <div class="rightpanel_mainloader_panel" style="display: none;">
@@ -227,20 +240,8 @@
             </div>
         </div>
     </div>
-    <!-- Network tab (end)-->
-    <!-- Secondary Storage tab (start)-->
-    <div id="tab_content_secondarystorage" style="display: none">
-        Secondary Storage
-        <div class="rightpanel_mainloader_panel" style="display: none;">
-            <div class="rightpanel_mainloaderbox">
-                <div class="rightpanel_mainloader_animatedicon">
-                </div>
-                <p>
-                    Loading &hellip;</p>
-            </div>
-        </div>
-    </div>
-    <!-- Secondary Storage tab (end)-->
+    <!-- Network tab (end)-->   
+    
 </div>
 
 <!-- ***** dialogs ***** (begin)-->

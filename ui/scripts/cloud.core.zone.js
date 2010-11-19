@@ -34,8 +34,8 @@
     bindEventHandlerToDialogAddVlanForZone();	        
             
     //switch between different tabs in zone page    
-    var tabArray = [$("#tab_details"), $("#tab_network"), $("#tab_secondarystorage")];
-    var tabContentArray = [$("#tab_content_details"), $("#tab_content_network"), $("#tab_content_secondarystorage")];   
+    var tabArray = [$("#tab_details"), $("#tab_secondarystorage"), $("#tab_network")];
+    var tabContentArray = [$("#tab_content_details"), $("#tab_content_secondarystorage"), $("#tab_content_network")];   
     switchBetweenDifferentTabs(tabArray, tabContentArray);  
     
     //var afterSwitchFnArray = [zoneJsonToDetailsTab, zoneJsonToNetworkTab, zoneJsonToSecondaryStorageTab];
