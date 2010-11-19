@@ -36,8 +36,8 @@
         }        
     });
     if(pods.length > 0) {
-        initAddHostButtonOnZonePage($("#midmenu_add_host_button"), zoneId, zoneName, pods); 
-        initAddPrimaryStorageButtonOnZonePage($("#midmenu_add_primarystorage_button"), zoneId, zoneName, pods);  
+        initAddHostButtonOnZonePage($("#midmenu_add_host_button"), zoneId, zoneName); 
+        initAddPrimaryStorageButtonOnZonePage($("#midmenu_add_primarystorage_button"), zoneId, zoneName);  
     }    
    
     initDialog("dialog_add_pod", 320); 
@@ -867,18 +867,14 @@ function doEditZone2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $
 	}
 }
 
-function initAddHostButtonOnZonePage($button, zoneId, zoneName, pods) {
+function initAddHostButtonOnZonePage($button, zoneId, zoneName) {
     $button.show();
     
     initDialog("dialog_add_host_in_zone_page");    
     var $dialogAddHost = $("#dialog_add_host_in_zone_page");    
     
     var $podSelect = $dialogAddHost.find("#pod_dropdown");
-    if(pods != null && pods.length > 0) {
-        for(var i=0; i<pods.length; i++)
-            $podSelect.append("<option value='" + pods[i].id + "'>" + fromdb(pods[i].name) + "</option>"); 	
-    }
-	
+        
     $podSelect.bind("change", function(event) {	        	   
         var podId = $(this).val();
         if(podId == null || podId.length == 0)
@@ -886,13 +882,26 @@ function initAddHostButtonOnZonePage($button, zoneId, zoneName, pods) {
         refreshClsuterFieldInAddHostDialog($dialogAddHost, podId, null);        
     });   
     
-    $podSelect.change();            	        	    
-        
     $button.unbind("click").bind("click", function(event) { 
         $dialogAddHost.find("#zone_name").text(zoneName);             
         $dialogAddHost.find("#info_container").hide();    
         $dialogAddHost.find("#new_cluster_name").val("");
         
+        $.ajax({
+            data: createURL("command=listPods&zoneid="+zoneId),
+            dataType: "json",
+            async: false,
+            success: function(json) {            
+                var pods = json.listpodsresponse.pod;   
+                $podSelect.empty(); 
+                if(pods != null && pods.length > 0) {
+                    for(var i=0; i<pods.length; i++)
+                        $podSelect.append("<option value='" + pods[i].id + "'>" + fromdb(pods[i].name) + "</option>"); 	
+                }  
+                $podSelect.change();        
+            }        
+        });    
+	    
         $dialogAddHost
         .dialog('option', 'buttons', { 				
 	        "Add": function() { 
@@ -1000,7 +1009,7 @@ function initAddHostButtonOnZonePage($button, zoneId, zoneName, pods) {
     });  
 }      
 
-function initAddPrimaryStorageButtonOnZonePage($button, zoneId, zoneName, pods) {
+function initAddPrimaryStorageButtonOnZonePage($button, zoneId, zoneName) {
     $button.show();
 
 	initDialog("dialog_add_pool_in_zone_page");
@@ -1012,11 +1021,7 @@ function initAddPrimaryStorageButtonOnZonePage($button, zoneId, zoneName, pods) 
     bindEventHandlerToDialogAddPool($dialogAddPool);	
        
 	var $podSelect = $dialogAddPool.find("#pod_dropdown");
-    if(pods != null && pods.length > 0) {
-        for(var i=0; i<pods.length; i++)
-            $podSelect.append("<option value='" + pods[i].id + "'>" + fromdb(pods[i].name) + "</option>"); 	
-    }
-		
+    
     $podSelect.bind("change", function(event) {			   
         var podId = $(this).val();
         if(podId == null || podId.length == 0)
@@ -1040,12 +1045,25 @@ function initAddPrimaryStorageButtonOnZonePage($button, zoneId, zoneName, pods) 
         });
     });        
     
-    $podSelect.change();
-       
     $button.unbind("click").bind("click", function(event) { 
         $dialogAddPool.find("#zone_name").text(zoneName);        
         $dialogAddPool.find("#zone_dropdown").change(); //refresh cluster dropdown (do it here to avoid race condition)     
         $dialogAddPool.find("#info_container").hide();	
+        
+        $.ajax({
+            data: createURL("command=listPods&zoneid="+zoneId),
+            dataType: "json",
+            async: false,
+            success: function(json) {            
+                var pods = json.listpodsresponse.pod;   
+                $podSelect.empty(); 
+                if(pods != null && pods.length > 0) {
+                    for(var i=0; i<pods.length; i++)
+                        $podSelect.append("<option value='" + pods[i].id + "'>" + fromdb(pods[i].name) + "</option>"); 	
+                }   
+                $podSelect.change();    
+            }        
+        });          
                        
         $("#dialog_add_pool_in_zone_page")
 	    .dialog('option', 'buttons', { 				    
