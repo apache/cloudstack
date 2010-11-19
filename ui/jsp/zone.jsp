@@ -474,7 +474,7 @@
         <form action="#" method="post" id="form_acquire">
         <ol>            
             <li>
-                <label style="width: 115px;">
+                <label>
                     Pod:</label>
                 <select class="select" id="pod_dropdown">
                 </select>
