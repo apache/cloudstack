@@ -90,7 +90,7 @@ public interface SnapshotManager extends Manager {
      * @param policyIds  The list of policyIds to which this snapshot belongs to
      * @param backedUp   If true, the snapshot has been successfully created.
      */
-    void postCreateSnapshot(long volumeId, long snapshotId, long policyId, boolean backedUp);
+    void postCreateSnapshot(Long volumeId, Long snapshotId, Long policyId, boolean backedUp);
     
     /**
      * Destroys the specified snapshot from secondary storage
@@ -115,7 +115,7 @@ public interface SnapshotManager extends Manager {
     /**
      * Deletes snapshot scheduling policy. Delete will fail if this policy is assigned to one or more volumes
      */
-    boolean deletePolicy(long userId, long policyId);
+    boolean deletePolicy(long userId, Long policyId);
     
     /**
      * Lists all snapshots for the volume which are created using schedule of the specified policy

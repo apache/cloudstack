@@ -528,7 +528,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
     
     @Override
     @DB
-    public void postCreateSnapshot(long volumeId, long snapshotId, long policyId, boolean backedUp) {
+    public void postCreateSnapshot(Long volumeId, Long snapshotId, Long policyId, boolean backedUp) {
         Long userId = getSnapshotUserId();
         // Update the snapshot_policy_ref table with the created snapshot
         // Get the list of policies for this snapshot
@@ -918,7 +918,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
     }
 
     @Override
-    public boolean deletePolicy(long userId, long policyId) {
+    public boolean deletePolicy(long userId, Long policyId) {
         SnapshotPolicyVO snapshotPolicy = _snapshotPolicyDao.findById(policyId);
         VolumeVO volume = _volsDao.findById(snapshotPolicy.getVolumeId());
         _snapSchedMgr.removeSchedule(snapshotPolicy.getVolumeId(), snapshotPolicy.getId());
@@ -1122,7 +1122,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
 		    throw new InvalidParameterValueException("Invalid Policy id given: " + Snapshot.MANUAL_POLICY_ID);
 		}
 		
-		for (long pId : policyIds) {
+		for (Long pId : policyIds) {
 			if (!deletePolicy(userId, pId)) {
 				success = false;
 				s_logger.warn("Failed to delete snapshot policy with Id: " + policyId);
