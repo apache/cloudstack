@@ -372,13 +372,44 @@
         <div class="zonepopup_container_mid">
             <div class="zonepopup_maincontentarea">
                 
+                
                 <div class="zonepopup_contentpanel">
                 	<div id="spinning_wheel" class="zonepoup_loadingbox" style="display:none;">
                     	<div class="zonepoup_loader"></div>
                         <p> Adding zone and pod....</p>
                     </div>
                     
-                    <div id="after_action_message" class="zonepoup_msgbox"></div>
+                   <!-- <div id="after_action_message" class="zonepoup_msgbox"></div>-->
+                    
+                   <div class="zonepopup_reviewbox odd">
+                      <div class="zonepopup_reviewtextbox">
+                           <div class="zonepopup_reviewtick">
+                           </div>
+                           <div class="zonepopup_review_label">
+                              Zone:</div>
+                           <span id="wizard_review_zone"></span>
+                      </div>
+                    </div>
+                    
+                    <div class="zonepopup_reviewbox even">
+                      <div class="zonepopup_reviewtextbox">
+                           <div class="zonepopup_reviewcross">
+                           </div>
+                           <div class="zonepopup_review_label">
+                              Pod:</div>
+                           <span class="error" id="wizard_review_zone">some text</span>
+                      </div>
+                    </div>
+                    
+                    <div class="zonepopup_reviewbox odd">
+                      <div class="zonepopup_reviewtextbox">
+                           <div class="zonepopup_reviewtick">
+                           </div>
+                           <div class="zonepopup_review_label">
+                              Guest IP Range:</div>
+                           <span id="wizard_review_zone"></span>
+                      </div>
+                    </div>
                 </div>
                 <div class="zonepopup_navigationpanel">                    
                     <div class="vmpop_nextbutton" id="close_button">

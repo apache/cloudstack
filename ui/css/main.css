@@ -458,6 +458,18 @@ a:hover {
 }
 
 
+.vmpopup_reviewbox.odd {
+	background:#efefef url(../images/offeringbox_bg.gif) repeat-x top left;
+
+}
+
+.vmpopup_reviewbox.even {
+	background:#d0d0d0 url(../images/reviewboxeven_bg.gif) repeat-x top left;
+}
+
+
+
+
 .vmpopup_reviewbox .text {
 	width:160px;
 	height:15px;
@@ -470,15 +482,6 @@ a:hover {
 	margin:4px 0 0 8px;
 	display:inline;
 	padding:0;
-}
-
-.vmpopup_reviewbox.odd {
-	background:#efefef url(../images/offeringbox_bg.gif) repeat-x top left;
-
-}
-
-.vmpopup_reviewbox.even {
-	background:#d0d0d0 url(../images/reviewboxeven_bg.gif) repeat-x top left;
 }
 
 .vmopopup_reviewtextbox {
@@ -4628,6 +4631,111 @@ a:hover.search_button {
 	padding:0;
 }
 
+
+
+.zonepopup_reviewbox {
+	width:460px;
+	height:auto;
+	float:left;
+	border:1px solid #c0c0c0;
+	background:#efefef url(../images/offeringbox_bg.gif) repeat-x top left;
+	margin:0 0 0 0;
+	padding:0 0 5px 0;
+}
+
+
+.zonepopup_reviewbox.odd {
+	background:#efefef url(../images/offeringbox_bg.gif) repeat-x top left;
+
+}
+
+.zonepopup_reviewbox.even {
+	background:#d0d0d0 url(../images/reviewboxeven_bg.gif) repeat-x top left;
+}
+
+
+
+
+.zonepopup_reviewbox .text {
+	width:160px;
+	height:15px;
+	float:left;
+	color:#333;
+	font-size:11px;
+	font-weight:normal;
+	background:#FFF;
+	border:1px solid #999;
+	margin:4px 0 0 8px;
+	display:inline;
+	padding:0;
+}
+
+.zonepopup_reviewtextbox {
+	width:440px;
+	height:auto;
+	float:left;
+	margin:5px 0 0 10px;
+	padding:0;
+}
+
+.zonepopup_reviewtextbox span {
+	width:auto;
+	height:auto;
+	float:left;
+	font-size:12px;
+	font-weight:normal;
+	color:#333;
+	text-align:left;
+	margin:4px 0 0 0;
+	padding:0;
+}
+
+
+.zonepopup_reviewtextbox span.error {
+	width:auto;
+	height:auto;
+	float:left;
+	font-size:12px;
+	font-weight:normal;
+	color:#cc0101;
+	text-align:left;
+	margin:4px 0 0 0;
+	padding:0;
+}
+
+
+.zonepopup_review_label {
+	width:150px;
+	height:auto;
+	float:left;
+	font-size:12px;
+	font-weight:bold;
+	text-align:left;
+	color:#333;
+	margin:3px 0 0 10px;
+	display:inline;
+	padding:0;
+}
+
+
+.zonepopup_reviewtick {
+	width:18px;
+	height:20px;
+	float:left;
+	background:url(../images/tick_review.png) no-repeat top left;
+	margin:0;
+	padding:0;
+}
+
+.zonepopup_reviewcross {
+	width:18px;
+	height:20px;
+	float:left;
+	background:url(../images/cross_review.png) no-repeat top left;
+	margin:0;
+	padding:0;
+}
+
 .zonepopup_container_bot {
 	width:500px;
 	height:12px;
@@ -4636,6 +4744,9 @@ a:hover.search_button {
 	margin:0;
 	padding:0;
 }
+
+
+
 
 .zonepoup_formcontent{ width:auto; height:auto; float:left; margin-top:10px; padding:0; color:#FFF; font-size:11px; margin-left:0; display:inline;}
 .zonepoup_formcontent ol { width:auto; height:auto; color:#333; float:left; font-family:Arial, Helvetica, sans-serif; font-size:11px; list-style:none; margin:0; padding:0;}
