@@ -19,9 +19,9 @@
 function afterLoadClusterJSP($midmenuItem1) {
     showMiddleMenu();
      
-    initAddHostButton($("#midmenu_add_link"), "cluster_page"); 
-    initAddPrimaryStorageButton($("#midmenu_add2_link"), "cluster_page");  
-    $("#midmenu_add3_link").unbind("click").hide();   
+    clearAddButtonsOnTop(); 
+    initAddHostButton($("#midmenu_add_host_button"), "cluster_page"); 
+    initAddPrimaryStorageButton($("#midmenu_add_primarystorage_button"), "cluster_page");  
     
     initDialog("dialog_add_host");
     initDialog("dialog_add_pool");    

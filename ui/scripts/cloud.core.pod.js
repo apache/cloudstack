@@ -19,8 +19,8 @@
  function afterLoadPodJSP($leftmenuItem1) {   
     hideMiddleMenu();	
           	
-    initAddHostButton($("#midmenu_add_link"), "pod_page"); 
-    initAddPrimaryStorageButton($("#midmenu_add2_link"), "pod_page");  
+    initAddHostButton($("#midmenu_add_host_button"), "pod_page"); 
+    initAddPrimaryStorageButton($("#midmenu_add_primarystorage_button"), "pod_page");  
            
     initDialog("dialog_add_host");
     initDialog("dialog_add_pool");
@@ -94,11 +94,11 @@ function podJsonToDetailsTab() {
 	});	
     if(networkType == "Basic") { //basic-mode network (pod-wide VLAN)
         $("#tab_network").show();  
-        initAddPodVLANButton($("#midmenu_add3_link"));  
+        initAddPodVLANButton($("#midmenu_add_directIpRange_button"));  
     }
     else if(networkType == "Advanced") { //advanced-mode network (zone-wide VLAN)
         $("#tab_network").hide();
-        $("#midmenu_add3_link").unbind("click").hide();         
+        $("#midmenu_add_directIpRange_button").unbind("click").hide();         
     }
     
     

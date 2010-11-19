@@ -39,8 +39,8 @@ function hostToRightPanel($midmenuItem1) {
 }
 
 function afterLoadHostJSP($midmenuItem1) {
-    initAddHostButton($("#midmenu_add_link"), "host_page"); 
-    initAddPrimaryStorageButton($("#midmenu_add2_link"), "host_page");          
+    initAddHostButton($("#midmenu_add_host_button"), "host_page"); 
+    initAddPrimaryStorageButton($("#midmenu_add_primarystorage_button"), "host_page");          
 
     initDialog("dialog_add_host");
     initDialog("dialog_add_pool");

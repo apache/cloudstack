@@ -245,14 +245,13 @@ function resourceLoadPage(pageToShow, $midmenuItem1) {   //$midmenuItem1 is eith
 
 function afterLoadResourceJSP($midmenuItem1) {
     hideMiddleMenu();        
-    
-    //initAddZoneButton($("#midmenu_add_link")); 
-    $("#midmenu_add_link").show().find("#label").text("Add Zone");   
+        
+    $("#midmenu_add_zone_button").show();   
     
     initAddZoneWizard();  
 	initAddZoneLinks();	 
     
-	initUpdateConsoleCertButton($("#midmenu_add2_link"));
+	initUpdateConsoleCertButton($("#midmenu_Update_SSL_Certificate_button"));
 	initDialog("dialog_update_cert", 450);	
 		
 	initAddPodShortcut();
@@ -527,7 +526,7 @@ function initAddPodShortcut() {
 }      
 
 function initAddZoneLinks() {     
-    $("#add_zone_shortcut,#midmenu_add_link").unbind("click").bind("click", function(event) {              
+    $("#add_zone_shortcut,#midmenu_add_zone_button").unbind("click").bind("click", function(event) {              
         if($("#leftmenu_physical_resource").find("#physical_resource_arrow").hasClass("expanded_close") == true)
 			expandOrCollapseZoneTree(); //if Physical Resource arrow shows closed (i.e. zonetree is hidden), expand and show zonetree.    
 			       

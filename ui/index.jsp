@@ -215,6 +215,7 @@ long milliseconds = new Date().getTime();
                                 </ul>
                             </div>
                         </div>
+                        
                         <div class="actionpanel_button_wrapper" id="midmenu_add_link" style="display: none;">
                             <div class="actionpanel_button">
                                 <div class="actionpanel_button_icons">
@@ -223,6 +224,78 @@ long milliseconds = new Date().getTime();
                                     <%=t.t("add")%></div>
                             </div>
                         </div>
+                         
+                        <div class="actionpanel_button_wrapper" id="midmenu_add_zone_button" style="display: none;">
+                            <div class="actionpanel_button">
+                                <div class="actionpanel_button_icons">
+                                    <img src="images/addvm_actionicon.png" alt="Add Zone" /></div>
+                                <div class="actionpanel_button_links" id="Div3">
+                                    <%=t.t("add.zone")%></div>
+                            </div>
+                        </div> 
+                        <div class="actionpanel_button_wrapper" id="midmenu_add_host_button" style="display: none;">
+                            <div class="actionpanel_button">
+                                <div class="actionpanel_button_icons">
+                                    <img src="images/addvm_actionicon.png" alt="Add Host" /></div>
+                                <div class="actionpanel_button_links" id="label">
+                                    <%=t.t("add.host")%></div>
+                            </div>
+                        </div>
+                        
+                        <div class="actionpanel_button_wrapper" id="midmenu_add_primarystorage_button" style="display: none;">
+                            <div class="actionpanel_button">
+                                <div class="actionpanel_button_icons">
+                                    <img src="images/addvm_actionicon.png" alt="Add Primary Storage" /></div>
+                                <div class="actionpanel_button_links" id="Div2">
+                                    <%=t.t("add.primarystorage")%></div>
+                            </div>
+                        </div>
+                        
+                        <div class="actionpanel_button_wrapper" id="midmenu_add_secondarystorage_button" style="display: none;">
+                            <div class="actionpanel_button">
+                                <div class="actionpanel_button_icons">
+                                    <img src="images/addvm_actionicon.png" alt="Add Secondary Storage" /></div>
+                                <div class="actionpanel_button_links" id="Div4">
+                                    <%=t.t("add.secondarystorage")%></div>
+                            </div>
+                        </div>
+                        
+                        <div class="actionpanel_button_wrapper" id="midmenu_add_pod_button" style="display: none;">
+                            <div class="actionpanel_button">
+                                <div class="actionpanel_button_icons">
+                                    <img src="images/addvm_actionicon.png" alt="Add pod" /></div>
+                                <div class="actionpanel_button_links" id="Div6">
+                                    <%=t.t("add.pod")%></div>
+                            </div>
+                        </div>
+                        
+                        <div class="actionpanel_button_wrapper" id="midmenu_add_vlan_button" style="display: none;">
+                            <div class="actionpanel_button">
+                                <div class="actionpanel_button_icons">
+                                    <img src="images/addvm_actionicon.png" alt="Add VLAN" /></div>
+                                <div class="actionpanel_button_links" id="Div8">
+                                    <%=t.t("add.vlan")%></div>
+                            </div>
+                        </div>
+                        
+                        <div class="actionpanel_button_wrapper" id="midmenu_add_directIpRange_button" style="display: none;">
+                            <div class="actionpanel_button">
+                                <div class="actionpanel_button_icons">
+                                    <img src="images/addvm_actionicon.png" alt="Add Direct IP Range" /></div>
+                                <div class="actionpanel_button_links" id="Div10">
+                                    <%=t.t("add.direct.ip.range")%></div>
+                            </div>
+                        </div>
+                        
+                        <div class="actionpanel_button_wrapper" id="midmenu_Update_SSL_Certificate_button" style="display: none;">
+                            <div class="actionpanel_button">
+                                <div class="actionpanel_button_icons">
+                                    <img src="images/addvm_actionicon.png" alt="Update SSL Certificate" /></div>
+                                <div class="actionpanel_button_links" id="Div12">
+                                    <%=t.t("update.SSL.certificate")%></div>
+                            </div>
+                        </div>
+                        <!--  
                         <div class="actionpanel_button_wrapper" id="midmenu_add2_link" style="display: none;">
                             <div class="actionpanel_button">
                                 <div class="actionpanel_button_icons">
@@ -238,23 +311,8 @@ long milliseconds = new Date().getTime();
                                 <div class="actionpanel_button_links" id="label">
                                     <%=t.t("add")%></div>
                             </div>
-                        </div>
-                        <div class="actionpanel_button_wrapper" id="midmenu_add4_link" style="display: none;">
-                            <div class="actionpanel_button">
-                                <div class="actionpanel_button_icons">
-                                    <img src="images/addvm_actionicon.png" alt="Add" /></div>
-                                <div class="actionpanel_button_links" id="label">
-                                    <%=t.t("add")%></div>
-                            </div>
-                        </div>
-                        <div class="actionpanel_button_wrapper" id="midmenu_add5_link" style="display: none;">
-                            <div class="actionpanel_button">
-                                <div class="actionpanel_button_icons">
-                                    <img src="images/addvm_actionicon.png" alt="Add" /></div>
-                                <div class="actionpanel_button_links" id="label">
-                                    <%=t.t("add")%></div>
-                            </div>
-                        </div>
+                        </div>                        
+                        -->
                         <div class="actionpanel_button_wrapper" id="midmenu_startvm_link" style="display: none;">
                             <div class="actionpanel_button">
                                 <div class="actionpanel_button_icons">

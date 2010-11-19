@@ -19,9 +19,9 @@
  function afterLoadZoneJSP($midmenuItem1) {
     hideMiddleMenu();  
                  
-    initAddPodButton($("#midmenu_add_link"));                  
-    initAddVLANButton($("#midmenu_add2_link"));
-    initAddSecondaryStorageButton($("#midmenu_add3_link"));
+    initAddPodButton($("#midmenu_add_pod_button"));                  
+    initAddVLANButton($("#midmenu_add_vlan_button"));
+    initAddSecondaryStorageButton($("#midmenu_add_secondarystorage_button"));
    
     initDialog("dialog_add_pod", 320); 
     initDialog("dialog_add_vlan_for_zone");
@@ -83,10 +83,10 @@ function zoneJsonToDetailsTab($leftmenuItem1) {
     
     $detailsTab.find("#networktype").text(fromdb(jsonObj.networktype));
     if(jsonObj.networktype == "Basic") {
-        $("#midmenu_add2_link, #tab_network, #tab_content_details #vlan_container").hide();
+        $("#midmenu_add_vlan_button, #tab_network, #tab_content_details #vlan_container").hide();
     }
     else if(jsonObj.networktype == "Advanced") {
-        $("#midmenu_add2_link, #tab_network, #tab_content_details #vlan_container").show();           
+        $("#midmenu_add_vlan_button, #tab_network, #tab_content_details #vlan_container").show();           
         
         var vlan = jsonObj.vlan; 
         $detailsTab.find("#vlan").text(fromdb(vlan));      
