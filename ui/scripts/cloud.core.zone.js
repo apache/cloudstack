@@ -23,7 +23,7 @@
     initAddVLANButton($("#midmenu_add_vlan_button"));
     initAddSecondaryStorageButton($("#midmenu_add_secondarystorage_button"));
           
-    var pods = [];
+    var pods;
     var zoneObj = $midmenuItem1.data("jsonObj");
     var zoneId = zoneObj.id;
     var zoneName = zoneObj.name;
@@ -35,7 +35,7 @@
             pods = json.listpodsresponse.pod;            
         }        
     });
-    if(pods.length > 0) {
+    if(pods != null && pods.length > 0) {
         initAddHostButtonOnZonePage($("#midmenu_add_host_button"), zoneId, zoneName); 
         initAddPrimaryStorageButtonOnZonePage($("#midmenu_add_primarystorage_button"), zoneId, zoneName);  
     }    
