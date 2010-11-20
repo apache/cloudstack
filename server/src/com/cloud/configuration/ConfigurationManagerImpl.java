@@ -911,6 +911,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     		dns1 = zone.getDns1();
     	}
     	
+    	if (dns2 == null) {
+    	    dns2 = zone.getDns2();
+    	}
+    	
     	if(internalDns1 == null)
     	{
     		internalDns1 = zone.getInternalDns1();
