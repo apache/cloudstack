@@ -399,12 +399,7 @@ long milliseconds = new Date().getTime();
                     <!-- Right Panel starts here-->
                     <div class="main_contentarea" id="right_panel">
                     </div>
-                    <div class="midmenu_navigationbox" id="middle_menu_pagination">
-                        <div class="midmenu_prevbutton">
-                        </div>
-                        <div class="midmenu_nextbutton">
-                        </div>
-                    </div>
+                    
                     <!-- Right Panel ends here-->
                 </div>
                 <!-- Mid Menu starts here-->
@@ -417,6 +412,12 @@ long milliseconds = new Date().getTime();
                                 Loading &hellip;</p>
                         </div>
                         <div id="midmenu_container">                            
+                        </div>
+                    </div>
+                    <div class="midmenu_navigationbox" id="middle_menu_pagination" style="display:none;">
+                        <div class="midmenu_prevbutton">
+                        </div>
+                        <div class="midmenu_nextbutton">
                         </div>
                     </div>
                 </div>
