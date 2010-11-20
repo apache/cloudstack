@@ -78,6 +78,17 @@ public class ConsoleProxyServlet extends HttpServlet {
             params.putAll(req.getParameterMap());
             
             HttpSession session = req.getSession(false);
+            
+            // Disabling IE6 support
+            String ua = req.getHeader( "User-Agent" );
+            if (ua.contains("MSIE 6")) {
+            	if (s_logger.isDebugEnabled()) {
+            		s_logger.debug("Console access attempted with IE6 browser, rejecting access.");
+            	}
+            	sendResponse(resp, "Only IE7, IE8, FireFox 3.x, Chrome, and Safari browsers are supported at this time.");
+            	return;
+            }
+            
             if(session == null) {
             	if(verifyRequest(params)) {
             		userId = (String)params.get("userId")[0];
