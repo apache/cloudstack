@@ -573,12 +573,10 @@ function initAddPodButton($button) {
 			            var item = json.createpodresponse.pod; 			            		            				    
 		                var template = $("#leftmenu_pod_node_template").clone(true);
 		                podJSONToTreeNode(item, template);	
-		                var $zoneNode = $("#leftmenu_zone_tree").find("#tree_container").find("#zone_" + zoneObj.id);	                   				
-		                $zoneNode.find("#zone_content").show();	
-		                $zoneNode.find("#pods_container").prepend(template.show());						
-		                $zoneNode.find("#zone_arrow").removeClass("white_nonexpanded_close").addClass("expanded_open");	
-                        template.fadeIn("slow");
-			                                    
+		                var $zoneNode = $("#leftmenu_zone_tree").find("#tree_container").find("#zone_" + zoneObj.id);	 
+		                $zoneNode.find("#pods_container").prepend(template.show());			
+		                template.fadeIn("slow");
+		                    			                                    
                         forceLogout = false;  // We don't force a logout if pod(s) exit.
 				        if (forceLogout) {
 					        $("#dialog_confirmation")
@@ -590,6 +588,10 @@ function initAddPodButton($button) {
 							        } 
 						        }).dialog("open");
 				        }
+				        
+				        //expand zone node to show the newly added pod
+				        if($zoneNode.find("#zone_arrow").hasClass("expanded_close"))
+				            $zoneNode.find("#zone_arrow").click();  
 			        },
 		            error: function(XMLHttpResponse) {	
 						handleError(XMLHttpResponse, function() {
