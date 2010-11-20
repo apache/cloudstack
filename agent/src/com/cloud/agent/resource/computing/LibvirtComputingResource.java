@@ -999,7 +999,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		vm.setHvsType(_hypervisorType);
 		vm.setDomainName(vmName);
 		vm.setDomUUID(uuid);
-		vm.setDomDescription(KVMGuestOsMapper.getGuestOsName(guestOSType));
+		vm.setDomDescription(guestOSType);
 		
 		GuestDef guest = new GuestDef();
 		guest.setGuestType(GuestDef.guestType.KVM);
