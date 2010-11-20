@@ -775,7 +775,8 @@ function addZoneWizardSubmit($thisWizard) {
 	    dataType: "json",
 	    async: false,
 	    success: function(json) {	
-	        afterActionMsg += "Zone was created successfully<br><br>";	     	 
+	        $thisWizard.find("#after_submit_screen").find("#add_zone_tick_cross").removeClass().addClass("zonepopup_reviewtick");
+	        $thisWizard.find("#after_submit_screen").find("#add_zone_message").text("Zone was created successfully");	         
 	       	        	        			        
 	        $zoneNode = $("#leftmenu_zone_node_template").clone(true); 			            			   
             var $zoneTree = $("#leftmenu_zone_tree").find("#tree_container");		     			
@@ -793,7 +794,8 @@ function addZoneWizardSubmit($thisWizard) {
 	    },
         error: function(XMLHttpResponse) {            
 			handleError(XMLHttpResponse, function() {
-				afterActionMsg += ("Failed to create zone. " + parseXMLHttpResponse(XMLHttpResponse) + "<br><br>");				
+			    $thisWizard.find("#after_submit_screen").find("#add_zone_tick_cross").removeClass().addClass("zonepopup_reviewcross");
+	            $thisWizard.find("#after_submit_screen").find("#add_zone_message").addClass("error").text(("Failed to create zone: " + parseXMLHttpResponse(XMLHttpResponse)));					
 			});
         }
     });
@@ -818,9 +820,10 @@ function addZoneWizardSubmit($thisWizard) {
             data: createURL("command=createPod"+array1.join("")), 
 	        dataType: "json",
 	        async: false,
-	        success: function(json) {
-	            afterActionMsg += "Pod was created successfully<br><br>";	            
-	            	            
+	        success: function(json) {	            
+	            $thisWizard.find("#after_submit_screen").find("#add_pod_tick_cross").removeClass().addClass("zonepopup_reviewtick");
+	            $thisWizard.find("#after_submit_screen").find("#add_pod_message").text("Pod was created successfully");	    
+	                      
 	            var item = json.createpodresponse.pod; 	
 	            podId = item.id;		            		            				    
                 $podNode = $("#leftmenu_pod_node_template").clone(true);
@@ -846,8 +849,9 @@ function addZoneWizardSubmit($thisWizard) {
 		        }
 	        },
             error: function(XMLHttpResponse) {	
-				handleError(XMLHttpResponse, function() {
-					afterActionMsg += ("Failed to create Pod. " + parseXMLHttpResponse(XMLHttpResponse) + "<br><br>");					
+				handleError(XMLHttpResponse, function() {				    
+				    $thisWizard.find("#after_submit_screen").find("#add_pod_tick_cross").removeClass().addClass("zonepopup_reviewcross");
+	                $thisWizard.find("#after_submit_screen").find("#add_pod_message").addClass("error").text(("Failed to create pod: " + parseXMLHttpResponse(XMLHttpResponse)));			
 				});
             }
         });	
@@ -873,21 +877,23 @@ function addZoneWizardSubmit($thisWizard) {
 		    data: createURL("command=createVlanIpRange" + array1.join("")),
 			dataType: "json",
 			async: false,
-			success: function(json) { 
-			    afterActionMsg += "Guest IP range was created successfully<br><br>";   
+			success: function(json) { 			    
+			    $thisWizard.find("#after_submit_screen").find("#add_guestiprange_tick_cross").removeClass().addClass("zonepopup_reviewtick");
+	            $thisWizard.find("#after_submit_screen").find("#add_guestiprange_message").text("Guest IP range was created successfully");	    
+			    
 				var item = json.createvlaniprangeresponse.vlan;
 				vlanId = item.id;				
 			},		   
 		    error: function(XMLHttpResponse) {	
-				handleError(XMLHttpResponse, function() {
-					afterActionMsg += ("Failed to create Guest IP range. " + parseXMLHttpResponse(XMLHttpResponse) + "<br><br>");					
-				});
+				handleError(XMLHttpResponse, function() {			
+				    $thisWizard.find("#after_submit_screen").find("#add_guestiprange_tick_cross").removeClass().addClass("zonepopup_reviewcross");
+	                $thisWizard.find("#after_submit_screen").find("#add_guestiprange_message").addClass("error").text(("Failed to create Guest IP range: " + parseXMLHttpResponse(XMLHttpResponse)));			
+			    });
             }
 		});		
     }
     
-    $thisWizard.find("#spinning_wheel").hide();    
-    $thisWizard.find("#after_action_message").html(afterActionMsg);	
+    $thisWizard.find("#spinning_wheel").hide();   
 }
 
 function initUpdateConsoleCertButton($midMenuAddLink2) {

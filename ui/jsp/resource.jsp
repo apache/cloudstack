@@ -370,8 +370,7 @@
             </div>
         </div>
         <div class="zonepopup_container_mid">
-            <div class="zonepopup_maincontentarea">
-                
+            <div class="zonepopup_maincontentarea">                
                 
                 <div class="zonepopup_contentpanel">
                 	<div id="spinning_wheel" class="zonepoup_loadingbox" style="display:none;">
@@ -383,31 +382,34 @@
                     
                    <div class="zonepopup_reviewbox odd">
                       <div class="zonepopup_reviewtextbox">
-                           <div class="zonepopup_reviewtick">
+                           <div id="add_zone_tick_cross"> <!-- class "zonepopup_reviewtick" or class "zonepopup_reviewcross" -->
                            </div>
                            <div class="zonepopup_review_label">
                               Zone:</div>
-                           <span id="wizard_review_zone"></span>
+                           <span id="add_zone_message"> <!-- add class "error" if in error -->
+                           </span>
                       </div>
                     </div>
                     
                     <div class="zonepopup_reviewbox even">
                       <div class="zonepopup_reviewtextbox">
-                           <div class="zonepopup_reviewcross">
+                           <div id="add_pod_tick_cross"> <!-- class "zonepopup_reviewtick" or class "zonepopup_reviewcross" -->
                            </div>
                            <div class="zonepopup_review_label">
                               Pod:</div>
-                           <span class="error" id="wizard_review_zone">some text</span>
+                           <span id="add_pod_message"> <!-- add class "error" if in error -->
+                           </span>
                       </div>
                     </div>
                     
                     <div class="zonepopup_reviewbox odd">
                       <div class="zonepopup_reviewtextbox">
-                           <div class="zonepopup_reviewtick">
+                           <div id="add_guestiprange_tick_cross"> <!-- class "zonepopup_reviewtick" or class "zonepopup_reviewcross" -->
                            </div>
                            <div class="zonepopup_review_label">
                               Guest IP Range:</div>
-                           <span id="wizard_review_zone"></span>
+                           <span id="add_guestiprange_message"> <!-- add class "error" if in error -->
+                           </span>
                       </div>
                     </div>
                 </div>
