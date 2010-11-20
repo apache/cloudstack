@@ -1032,7 +1032,11 @@ public class StorageManagerImpl implements StorageManager {
             if (poolId != null && volumePath != null && !volumePath.trim().isEmpty()) {
                 Answer answer = null;
                 StoragePoolVO pool = _storagePoolDao.findById(poolId);
-                final DestroyCommand cmd = new DestroyCommand(pool, vol, vm.getInstanceName());
+                String vmName = null;
+                if (vm != null) {
+                    vmName = vm.getInstanceName();
+                }
+                final DestroyCommand cmd = new DestroyCommand(pool, vol, vmName);
                 boolean removed = false;
                 List<StoragePoolHostVO> poolhosts = _storagePoolHostDao.listByPoolId(poolId);
                 for (StoragePoolHostVO poolhost : poolhosts) {

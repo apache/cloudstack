@@ -2273,8 +2273,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 }
 
                 // remove all loadBalancer->VM mappings
-                _loadBalancerVMMapDao.remove(loadBalancerId);
-
+                List<LoadBalancerVMMapVO> lbVmMap = _loadBalancerVMMapDao.listByLoadBalancerId(loadBalancerId);
+                if (lbVmMap != null && !lbVmMap.isEmpty()) {
+                    for (LoadBalancerVMMapVO lb : lbVmMap) {
+                        _loadBalancerVMMapDao.remove(lb.getId());
+                    }
+                }
+                
                 // Save and create the event
                 String description;
                 String type = EventTypes.EVENT_NET_RULE_DELETE;

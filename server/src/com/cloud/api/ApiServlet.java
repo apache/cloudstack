@@ -328,7 +328,9 @@ public class ApiServlet extends HttpServlet {
                 s_logger.trace("exception writing response: " + ioex);
             }
         } catch (Exception ex) {
-            s_logger.error("unknown exception writing api response", ex);
+            if (!(ex instanceof IllegalStateException)) {
+                s_logger.error("unknown exception writing api response", ex);
+            }
         }
     }
 
