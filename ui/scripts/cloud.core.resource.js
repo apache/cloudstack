@@ -776,7 +776,7 @@ function addZoneWizardSubmit($thisWizard) {
 	    async: false,
 	    success: function(json) {	
 	        $thisWizard.find("#after_submit_screen").find("#add_zone_tick_cross").removeClass().addClass("zonepopup_reviewtick");
-	        $thisWizard.find("#after_submit_screen").find("#add_zone_message").text("Zone was created successfully");	         
+	        $thisWizard.find("#after_submit_screen").find("#add_zone_message").removeClass().text("Zone was created successfully");	         
 	       	        	        			        
 	        $zoneNode = $("#leftmenu_zone_node_template").clone(true); 			            			   
             var $zoneTree = $("#leftmenu_zone_tree").find("#tree_container");		     			
@@ -795,7 +795,7 @@ function addZoneWizardSubmit($thisWizard) {
         error: function(XMLHttpResponse) {            
 			handleError(XMLHttpResponse, function() {
 			    $thisWizard.find("#after_submit_screen").find("#add_zone_tick_cross").removeClass().addClass("zonepopup_reviewcross");
-	            $thisWizard.find("#after_submit_screen").find("#add_zone_message").addClass("error").text(("Failed to create zone: " + parseXMLHttpResponse(XMLHttpResponse)));					
+	            $thisWizard.find("#after_submit_screen").find("#add_zone_message").removeClass().addClass("error").text(("Failed to create zone: " + parseXMLHttpResponse(XMLHttpResponse)));					
 			});
         }
     });
@@ -822,7 +822,7 @@ function addZoneWizardSubmit($thisWizard) {
 	        async: false,
 	        success: function(json) {	            
 	            $thisWizard.find("#after_submit_screen").find("#add_pod_tick_cross").removeClass().addClass("zonepopup_reviewtick");
-	            $thisWizard.find("#after_submit_screen").find("#add_pod_message").text("Pod was created successfully");	    
+	            $thisWizard.find("#after_submit_screen").find("#add_pod_message").removeClass().text("Pod was created successfully");	    
 	                      
 	            var item = json.createpodresponse.pod; 	
 	            podId = item.id;		            		            				    
@@ -851,13 +851,15 @@ function addZoneWizardSubmit($thisWizard) {
             error: function(XMLHttpResponse) {	
 				handleError(XMLHttpResponse, function() {				    
 				    $thisWizard.find("#after_submit_screen").find("#add_pod_tick_cross").removeClass().addClass("zonepopup_reviewcross");
-	                $thisWizard.find("#after_submit_screen").find("#add_pod_message").addClass("error").text(("Failed to create pod: " + parseXMLHttpResponse(XMLHttpResponse)));			
+	                $thisWizard.find("#after_submit_screen").find("#add_pod_message").removeClass().addClass("error").text(("Failed to create pod: " + parseXMLHttpResponse(XMLHttpResponse)));			
 				});
             }
         });	
     } 
     
-    if(podId != null && $thisWizard.find("#step3").find("#guestip_container").css("display") != "none") {        
+    if(podId != null && $thisWizard.find("#step3").find("#guestip_container").css("display") != "none") {     
+        $thisWizard.find("#after_submit_screen").find("#add_guestiprange_message_container").show();
+       
 		var netmask = $thisWizard.find("#step3").find("#guestnetmask").val();
 		var startip = $thisWizard.find("#step3").find("#startguestip").val();
 		var endip = $thisWizard.find("#step3").find("#endguestip").val();	
@@ -879,7 +881,7 @@ function addZoneWizardSubmit($thisWizard) {
 			async: false,
 			success: function(json) { 			    
 			    $thisWizard.find("#after_submit_screen").find("#add_guestiprange_tick_cross").removeClass().addClass("zonepopup_reviewtick");
-	            $thisWizard.find("#after_submit_screen").find("#add_guestiprange_message").text("Guest IP range was created successfully");	    
+	            $thisWizard.find("#after_submit_screen").find("#add_guestiprange_message").removeClass().text("Guest IP range was created successfully");	    
 			    
 				var item = json.createvlaniprangeresponse.vlan;
 				vlanId = item.id;				
@@ -887,10 +889,13 @@ function addZoneWizardSubmit($thisWizard) {
 		    error: function(XMLHttpResponse) {	
 				handleError(XMLHttpResponse, function() {			
 				    $thisWizard.find("#after_submit_screen").find("#add_guestiprange_tick_cross").removeClass().addClass("zonepopup_reviewcross");
-	                $thisWizard.find("#after_submit_screen").find("#add_guestiprange_message").addClass("error").text(("Failed to create Guest IP range: " + parseXMLHttpResponse(XMLHttpResponse)));			
+	                $thisWizard.find("#after_submit_screen").find("#add_guestiprange_message").removeClass().addClass("error").text(("Failed to create Guest IP range: " + parseXMLHttpResponse(XMLHttpResponse)));			
 			    });
             }
 		});		
+    }
+    else {
+         $thisWizard.find("#after_submit_screen").find("#add_guestiprange_message_container").hide();
     }
     
     $thisWizard.find("#spinning_wheel").hide();   

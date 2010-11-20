@@ -402,7 +402,7 @@
                       </div>
                     </div>
                     
-                    <div class="zonepopup_reviewbox odd">
+                    <div class="zonepopup_reviewbox odd" id="add_guestiprange_message_container" style="display:none">
                       <div class="zonepopup_reviewtextbox">
                            <div id="add_guestiprange_tick_cross"> <!-- class "zonepopup_reviewtick" or class "zonepopup_reviewcross" -->
                            </div>
