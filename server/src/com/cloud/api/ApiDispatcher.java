@@ -28,6 +28,7 @@ import java.util.StringTokenizer;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd.CommandType;
+import com.cloud.async.AsyncCommandQueued;
 import com.cloud.exception.AccountLimitException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -80,6 +81,8 @@ public class ApiDispatcher {
                 throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, t.getMessage());
             }else if (t instanceof ServerApiException) {
                 throw new ServerApiException(((ServerApiException) t).getErrorCode(), ((ServerApiException) t).getDescription());
+            }else if (t instanceof AsyncCommandQueued) {
+                throw (AsyncCommandQueued)t;
             }else {
                 s_logger.error("Exception while executing " + cmd.getClass().getSimpleName() + ":", t);
                 if (UserContext.current().getAccount() == null || UserContext.current().getAccount().getType() == Account.ACCOUNT_TYPE_ADMIN)
@@ -109,7 +112,9 @@ public class ApiDispatcher {
                 throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, t.getMessage());
             }else if (t instanceof ServerApiException) {
                 throw new ServerApiException(((ServerApiException) t).getErrorCode(), ((ServerApiException) t).getDescription());
-            } else {
+            } else if (t instanceof AsyncCommandQueued) {
+                throw (AsyncCommandQueued)t;
+            }else {
                 s_logger.error("Exception while executing " + cmd.getClass().getSimpleName() + ":", t);
                 if (UserContext.current().getAccount() == null || UserContext.current().getAccount().getType() == Account.ACCOUNT_TYPE_ADMIN)
                     throw new ServerApiException(BaseCmd.INTERNAL_ERROR, t.getMessage());
