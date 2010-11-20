@@ -1516,10 +1516,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     	        associateIpRangeToAccount = true;
     	    }
     	} else if (vlanType.equals(VlanType.DirectAttached)) {
-    		if (!((account != null && podId == null) ||
-    		      (account == null && podId != null))) {
-    			throw new InvalidParameterValueException("Direct Attached IP ranges must either be pod-wide, or for one account.");
-    		}
+//    		if (!((account != null && podId == null) ||
+//    		      (account == null && podId != null))) {
+//    			throw new InvalidParameterValueException("Direct Attached IP ranges must either be pod-wide, or for one account.");
+//    		}
 
     		if (account != null) {
     			// VLANs for an account must be tagged
