@@ -1128,9 +1128,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 if ((addrOwner != null) && !_domainDao.isChildDomain(account.getDomainId(), addrOwner.getDomainId())) {
                     throw new PermissionDeniedException("Unable to list port forwarding rules for address " + ipAddress + ", permission denied for account " + account.getId());
                 }
-            } else {
-                throw new InvalidParameterValueException("Unable to list port forwarding rules for address " + ipAddress + ", address not in use.");
-            }
+            } 
         } else {
             if (account != null) {
                 if ((ipAddressVO.getAccountId() == null) || (account.getId() != ipAddressVO.getAccountId().longValue())) {
