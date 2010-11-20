@@ -113,31 +113,31 @@ function hostJsonToDetailsTab() {
         noAvailableActions = false;
     }	
 	else if(jsonObj.state == "Alert") {
-	    buildActionLinkForTab("Update OS Preference", hostActionMap, $actionMenu, $midmenuItem1, $detailsTab); 
+	    buildActionLinkForTab("Update OS Preference", hostActionMap, $actionMenu, $midmenuItem1, $thisTab); 
 	    buildActionLinkForTab("Remove Host", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);   	
 	    noAvailableActions = false;   
      
 	}	
 	else if (jsonObj.state == "ErrorInMaintenance") {
-	    buildActionLinkForTab("Enable Maintenance Mode", hostActionMap, $actionMenu, $midmenuItem1, $detailsTab);  
-        buildActionLinkForTab("Cancel Maintenance Mode", hostActionMap, $actionMenu, $midmenuItem1, $detailsTab);  
-        buildActionLinkForTab("Update OS Preference", hostActionMap, $actionMenu, $midmenuItem1, $detailsTab);  	 
+	    buildActionLinkForTab("Enable Maintenance Mode", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  
+        buildActionLinkForTab("Cancel Maintenance Mode", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  
+        buildActionLinkForTab("Update OS Preference", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  	 
         noAvailableActions = false;   
     }
 	else if (jsonObj.state == "PrepareForMaintenance") {
-	    buildActionLinkForTab("Cancel Maintenance Mode", hostActionMap, $actionMenu, $midmenuItem1, $detailsTab);  
-        buildActionLinkForTab("Update OS Preference", hostActionMap, $actionMenu, $midmenuItem1, $detailsTab);  	
+	    buildActionLinkForTab("Cancel Maintenance Mode", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  
+        buildActionLinkForTab("Update OS Preference", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  	
         noAvailableActions = false;    
     }
 	else if (jsonObj.state == "Maintenance") {
-	    buildActionLinkForTab("Cancel Maintenance Mode", hostActionMap, $actionMenu, $midmenuItem1, $detailsTab);  
-        buildActionLinkForTab("Update OS Preference", hostActionMap, $actionMenu, $midmenuItem1, $detailsTab);  	    
-        buildActionLinkForTab("Remove Host", hostActionMap, $actionMenu, $midmenuItem1, $detailsTab);  
+	    buildActionLinkForTab("Cancel Maintenance Mode", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  
+        buildActionLinkForTab("Update OS Preference", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  	    
+        buildActionLinkForTab("Remove Host", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  
         noAvailableActions = false;
     }
 	else if (jsonObj.state == "Disconnected"){
-	    buildActionLinkForTab("Update OS Preference", hostActionMap, $actionMenu, $midmenuItem1, $detailsTab);  	    
-        buildActionLinkForTab("Remove Host", hostActionMap, $actionMenu, $midmenuItem1, $detailsTab);  
+	    buildActionLinkForTab("Update OS Preference", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  	    
+        buildActionLinkForTab("Remove Host", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  
         noAvailableActions = false;
     }
 	else {
@@ -327,19 +327,19 @@ function hostClearRightPanel() {
 }
 
 function hostClearDetailsTab() {
-    var $detailsTab = $("#right_panel_content").find("#tab_content_details");  
-    $detailsTab.find("#id").text("");
-    $detailsTab.find("#name").text("");
-    $detailsTab.find("#state").text("");        
-    $detailsTab.find("#zonename").text(""); 
-    $detailsTab.find("#podname").text(""); 
-    $detailsTab.find("#clustername").text(""); 
-    $detailsTab.find("#ipaddress").text(""); 
-    $detailsTab.find("#version").text(""); 
-    $detailsTab.find("#oscategoryname").text("");       
-    $detailsTab.find("#disconnected").text(""); 
+    var $thisTab = $("#right_panel_content").find("#tab_content_details");  
+    $thisTab.find("#id").text("");
+    $thisTab.find("#name").text("");
+    $thisTab.find("#state").text("");        
+    $thisTab.find("#zonename").text(""); 
+    $thisTab.find("#podname").text(""); 
+    $thisTab.find("#clustername").text(""); 
+    $thisTab.find("#ipaddress").text(""); 
+    $thisTab.find("#version").text(""); 
+    $thisTab.find("#oscategoryname").text("");       
+    $thisTab.find("#disconnected").text(""); 
     
-    var $actionMenu = $detailsTab.find("#action_link #action_menu");
+    var $actionMenu = $thisTab.find("#action_link #action_menu");
     $actionMenu.find("#action_list").empty();   
 	$actionMenu.find("#action_list").append($("#no_available_actions").clone().show());		    
 }
