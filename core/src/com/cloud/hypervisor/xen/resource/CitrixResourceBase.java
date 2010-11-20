@@ -872,6 +872,38 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     }
     
     protected VBD createPatchVbd(Connection conn, String vmName, VM vm) throws XmlRpcException, XenAPIException {
+        
+        if(  _host.systemvmisouuid == null ) {
+            Set<SR> srs = SR.getByNameLabel(conn, "XenServer Tools");
+            if( srs.size() != 1 ) {
+                throw new CloudRuntimeException("There are " + srs.size() + " SRs with name XenServer Tools");
+            }
+            SR sr = srs.iterator().next();
+            sr.scan(conn);
+
+            SR.Record srr = sr.getRecord(conn);
+
+            for( VDI vdi : srr.VDIs ) {
+                VDI.Record vdir = vdi.getRecord(conn);
+                if(vdir.nameLabel.contains("systemvm-premium")){
+                    _host.systemvmisouuid = vdir.uuid;
+                    break;
+                }                       
+            }
+            if(  _host.systemvmisouuid == null ) {
+                for( VDI vdi : srr.VDIs ) {
+                    VDI.Record vdir = vdi.getRecord(conn);
+                        if(vdir.nameLabel.contains("systemvm")){
+                            _host.systemvmisouuid = vdir.uuid;
+                            break;
+                     }
+                }
+            }
+            if(  _host.systemvmisouuid == null ) {
+                throw new CloudRuntimeException("can not find systemvmiso");
+            } 
+        }
+        
         VBD.Record cdromVBDR = new VBD.Record();
         cdromVBDR.VM = vm;
         cdromVBDR.empty = true;
@@ -3210,15 +3242,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
             
             /* create CD-ROM VBD */
-            VBD.Record cdromVBDR = new VBD.Record();
-            cdromVBDR.VM = vm;
-            cdromVBDR.empty = true;
-            cdromVBDR.bootable = false;
-            cdromVBDR.userdevice = "3";
-            cdromVBDR.mode = Types.VbdMode.RO;
-            cdromVBDR.type = Types.VbdType.CD;
-            VBD cdromVBD = VBD.create(conn, cdromVBDR);
-            cdromVBD.insert(conn, VDI.getByUuid(conn, _host.systemvmisouuid));
+            createPatchVbd(conn, vmName, vm);
 
             /* create VIF0 */
             Network network = null;
@@ -3895,37 +3919,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 _host.speed = hc.getSpeed(conn).intValue();
                 break;
             }
-            
-            Set<SR> srs = SR.getByNameLabel(conn, "XenServer Tools");
-            if( srs.size() != 1 ) {
-            	throw new CloudRuntimeException("There are " + srs.size() + " SRs with name XenServer Tools");
-            }
-            SR sr = srs.iterator().next();
-            sr.scan(conn);
-
-            SR.Record srr = sr.getRecord(conn);
-            _host.systemvmisouuid = null;
-            for( VDI vdi : srr.VDIs ) {
-            	VDI.Record vdir = vdi.getRecord(conn);
-           		if(vdir.nameLabel.contains("systemvm-premium")){
-           			_host.systemvmisouuid = vdir.uuid;
-           			break;
-            	}                   	
-            }
-            if(  _host.systemvmisouuid == null ) {
-                for( VDI vdi : srr.VDIs ) {
-                    VDI.Record vdir = vdi.getRecord(conn);
-                        if(vdir.nameLabel.contains("systemvm")){
-                            _host.systemvmisouuid = vdir.uuid;
-                            break;
-                     }
-                }
-            }
-
-            if(  _host.systemvmisouuid == null ) {
-            	throw new CloudRuntimeException("can not find systemvmiso");
-            } 
-            
+                       
             _localGateway = callHostPlugin("vmops", "getgateway", "mgmtIP", myself.getAddress(conn));
             if (_localGateway == null || _localGateway.isEmpty()) {
                 s_logger.warn("can not get gateway for host :" + _host.uuid);
@@ -3934,6 +3928,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
             _canBridgeFirewall = can_bridge_firewall();
             
+            _host.systemvmisouuid = null;
             
             Nic privateNic = null;
             privateNic = getManageMentNetwork(conn, "cloud-private");
