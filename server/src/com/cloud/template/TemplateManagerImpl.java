@@ -265,7 +265,7 @@ public class TemplateManagerImpl implements TemplateManager {
         String format = cmd.getFormat();
         Long guestOSId = cmd.getOsTypeId();
         Long zoneId = cmd.getZoneId();
-        HypervisorType hypervisorType = HypervisorType.valueOf(cmd.getHypervisor());
+        HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
         String accountName = cmd.getAccountName();
         Long domainId = cmd.getDomainId();
         Account resourceAccount = null;
