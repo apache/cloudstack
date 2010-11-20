@@ -1354,6 +1354,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
                     EventUtils.saveEvent(UserContext.current().getUserId(), loadBalancer.getAccountId(), level, type, description);
                 }
+                txn.commit();
                 return true;
             } else {
                 // Remove the instanceIds from the load balancer since there was a failure.  Make sure to commit the
