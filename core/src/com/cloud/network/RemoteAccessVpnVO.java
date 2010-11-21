@@ -31,11 +31,11 @@ import javax.persistence.Table;
 @Table(name=("remote_access_vpn"))
 @SecondaryTable(name="account",
         pkJoinColumns={@PrimaryKeyJoinColumn(name="account_id", referencedColumnName="id")})
-public class RemoteAccessVpnVO {
+public class RemoteAccessVpnVO implements RemoteAccessVpn {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
-    private Long id;
+    private long id;
 
     @Column(name="account_id")
     private long accountId;
@@ -73,61 +73,75 @@ public class RemoteAccessVpnVO {
 
     }
 
-    public Long getId() {
+    @Override
+    public long getId() {
         return id;
     }
 
     
 
+    @Override
     public long getAccountId() {
         return accountId;
     }
     
+    @Override
     public String getAccountName() {
         return accountName;
     }
 
-	public String getVpnServerAddress() {
+	@Override
+    public String getVpnServerAddress() {
 		return vpnServerAddress;
 	}
 
-	public void setVpnServerAddress(String vpnServerAddress) {
+	@Override
+    public void setVpnServerAddress(String vpnServerAddress) {
 		this.vpnServerAddress = vpnServerAddress;
 	}
 
-	public String getIpRange() {
+	@Override
+    public String getIpRange() {
 		return ipRange;
 	}
 
-	public void setIpRange(String ipRange) {
+	@Override
+    public void setIpRange(String ipRange) {
 		this.ipRange = ipRange;
 	}
 
-	public String getIpsecPresharedKey() {
+	@Override
+    public String getIpsecPresharedKey() {
 		return ipsecPresharedKey;
 	}
 
-	public void setIpsecPresharedKey(String ipsecPresharedKey) {
+	@Override
+    public void setIpsecPresharedKey(String ipsecPresharedKey) {
 		this.ipsecPresharedKey = ipsecPresharedKey;
 	}
 
-	public void setId(Long id) {
+	@Override
+    public void setId(Long id) {
 		this.id = id;
 	}
 
-	public void setZoneId(long zoneId) {
+	@Override
+    public void setZoneId(long zoneId) {
 		this.zoneId = zoneId;
 	}
 
-	public long getZoneId() {
+	@Override
+    public long getZoneId() {
 		return zoneId;
 	}
 
-	public String getLocalIp() {
+	@Override
+    public String getLocalIp() {
 		return localIp;
 	}
 
-	public long getDomainId() {
+	@Override
+    public long getDomainId() {
 		return domainId;
 	}
     

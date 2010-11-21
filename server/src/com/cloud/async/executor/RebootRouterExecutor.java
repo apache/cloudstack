@@ -26,9 +26,9 @@ import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.exception.InternalErrorException;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ManagementServer;
-import com.cloud.vm.DomainRouter;
 import com.google.gson.Gson;
 
 public class RebootRouterExecutor extends VMOperationExecutor {

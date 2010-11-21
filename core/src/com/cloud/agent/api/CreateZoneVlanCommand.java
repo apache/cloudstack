@@ -17,7 +17,7 @@
  */
 package com.cloud.agent.api;
 
-import com.cloud.vm.DomainRouter;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.vm.DomainRouterVO;
 
 
@@ -38,7 +38,7 @@ public class CreateZoneVlanCommand extends Command {
         this.router = router;
     }
     
-	public DomainRouter getRouter() {
+	public VirtualRouter getRouter() {
         return router;
     }
 	

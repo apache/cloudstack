@@ -35,7 +35,7 @@ import javax.persistence.TemporalType;
  */
 @Entity
 @Table(name=("user_ip_address"))
-public class IPAddressVO {
+public class IPAddressVO implements IpAddress {
 	@Column(name="account_id")
 	private Long accountId = null;
 
@@ -72,59 +72,74 @@ public class IPAddressVO {
 		this.sourceNat = sourceNat;
 	}
 	
-	public long getDataCenterId() {
+	@Override
+    public long getDataCenterId() {
 	    return dataCenterId; 
 	}
 
-	public String getAddress() {
+	@Override
+    public String getAddress() {
 		return address;
 	}
-	public Long getAccountId() {
+	@Override
+    public Long getAccountId() {
 		return accountId;
 	}
+    @Override
     public Long getDomainId() {
         return domainId;
     }
-	public Date getAllocated() {
+	@Override
+    public Date getAllocated() {
 		return allocated;
 	}
-	public boolean isSourceNat() {
+	@Override
+    public boolean isSourceNat() {
 		return sourceNat;
 	}
 
-	public void setAccountId(Long accountId) {
+	@Override
+    public void setAccountId(Long accountId) {
 		this.accountId = accountId;
 	}
 
-	public void setDomainId(Long domainId) {
+	@Override
+    public void setDomainId(Long domainId) {
         this.domainId = domainId;
     }
 
-	public void setSourceNat(boolean sourceNat) {
+	@Override
+    public void setSourceNat(boolean sourceNat) {
 		this.sourceNat = sourceNat;
 	}
 	
-	public boolean getSourceNat() {
+	@Override
+    public boolean getSourceNat() {
 		return this.sourceNat;
 	}
 
-	public void setAllocated(Date allocated) {
+	@Override
+    public void setAllocated(Date allocated) {
 		this.allocated = allocated;
 	}
 	
-	public long getVlanDbId() {
+	@Override
+    public long getVlanDbId() {
 		return this.vlanDbId;
 	}
 	
-	public void setVlanDbId(long vlanDbId) {
+	@Override
+    public void setVlanDbId(long vlanDbId) {
 		this.vlanDbId = vlanDbId;
 	}
 
-	public boolean isOneToOneNat() {
+	@Override
+    public boolean isOneToOneNat() {
 		return oneToOneNat;
 	}
 
-	public void setOneToOneNat(boolean oneToOneNat) {
+	@Override
+    public void setOneToOneNat(boolean oneToOneNat) {
 		this.oneToOneNat = oneToOneNat;
 	}
 

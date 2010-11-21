@@ -26,7 +26,7 @@ import com.cloud.async.BaseAsyncJobExecutor;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ManagementServer;
 import com.cloud.storage.Snapshot;
-import com.cloud.storage.Snapshot.SnapshotType;
+import com.cloud.storage.Snapshot.Type;
 import com.cloud.user.Account;
 import com.google.gson.Gson;
 
@@ -132,7 +132,7 @@ public class CreateSnapshotExecutor extends BaseAsyncJobExecutor {
 			}
 			
 		}
-		String snapshotTypeStr = SnapshotType.values()[snapshot.getSnapshotType()].name();
+		String snapshotTypeStr = Type.values()[snapshot.getSnapshotType()].name();
 		resultObject.setSnapshotType(snapshotTypeStr);
 		resultObject.setVolumeId(snapshot.getVolumeId());
 //		resultObject.setVolumeName(volume.getName());

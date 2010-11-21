@@ -31,11 +31,11 @@ import javax.persistence.Table;
 @Table(name=("vpn_users"))
 @SecondaryTable(name="account",
         pkJoinColumns={@PrimaryKeyJoinColumn(name="account_id", referencedColumnName="id")})
-public class VpnUserVO {
+public class VpnUserVO implements VpnUser {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
-    private Long id;
+    private long id;
 
     @Column(name="account_id")
     private long accountId;
@@ -60,19 +60,23 @@ public class VpnUserVO {
         this.password = password;
     }
 
-    public Long getId() {
+    @Override
+    public long getId() {
         return id;
     }
 
+    @Override
     public long getAccountId() {
         return accountId;
     }
     
+    @Override
     public String getAccountName() {
         return accountName;
     }
 
-	public String getUsername() {
+	@Override
+    public String getUsername() {
 		return username;
 	}
 
@@ -80,7 +84,8 @@ public class VpnUserVO {
 		this.username = userName;
 	}
 
-	public String getPassword() {
+	@Override
+    public String getPassword() {
 		return password;
 	}
 
@@ -93,7 +98,8 @@ public class VpnUserVO {
 	}
 
 
-	public long getDomainId() {
+	@Override
+    public long getDomainId() {
 		return domainId;
 	}
     

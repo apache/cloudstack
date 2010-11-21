@@ -120,6 +120,7 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.resource.Discoverer;
+import com.cloud.resource.ResourceService;
 import com.cloud.resource.ServerResource;
 import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
@@ -145,6 +146,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
+import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchCriteria;
@@ -184,8 +186,8 @@ import com.cloud.vm.dao.VMInstanceDao;
  *         router.stats.interval | interval to report router statistics |
  *         seconds | 300s || * }
  **/
-@Local(value = { AgentManager.class })
-public class AgentManagerImpl implements AgentManager, HandlerFactory {
+@Local(value = { AgentManager.class, ResourceService.class })
+public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceService, Manager {
     private static final Logger s_logger = Logger.getLogger(AgentManagerImpl.class);
 
     protected ConcurrentHashMap<Long, AgentAttache> _agents = new ConcurrentHashMap<Long, AgentAttache>(10007);
@@ -504,7 +506,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
     }
 
     @Override
-    public List<HostVO> discoverHosts(AddHostCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
+    public List<? extends Host> discoverHosts(AddHostCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
         Long dcId = cmd.getZoneId();
         Long podId = cmd.getPodId();
         Long clusterId = cmd.getClusterId();
@@ -520,7 +522,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
     }
 
     @Override
-    public List<HostVO> discoverHosts(AddSecondaryStorageCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
+    public List<? extends Host> discoverHosts(AddSecondaryStorageCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
         Long dcId = cmd.getZoneId();
         String url = cmd.getUrl();
         return discoverHosts(dcId, null, null, null, url, null, null);
@@ -1390,7 +1392,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
     }
 
     @Override
-    public HostVO reconnectHost(ReconnectHostCmd cmd) throws AgentUnavailableException {
+    public Host reconnectHost(ReconnectHostCmd cmd) throws AgentUnavailableException {
     	Long hostId = cmd.getId();
 
     	HostVO host = _hostDao.findById(hostId);
@@ -1457,7 +1459,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
     }
     
     @Override
-    public HostVO cancelMaintenance(CancelMaintenanceCmd cmd) throws InvalidParameterValueException{
+    public Host cancelMaintenance(CancelMaintenanceCmd cmd) throws InvalidParameterValueException{
     	Long hostId = cmd.getId();
     	
         //verify input parameters
@@ -1563,7 +1565,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
     }
     
     @Override
-    public HostVO maintain(PrepareForMaintenanceCmd cmd) throws InvalidParameterValueException {
+    public Host maintain(PrepareForMaintenanceCmd cmd) throws InvalidParameterValueException {
     	Long hostId = cmd.getId();
     	HostVO host = _hostDao.findById(hostId);
     	
@@ -1870,7 +1872,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
     }
 
     @Override
-    public HostVO updateHost(UpdateHostCmd cmd) throws InvalidParameterValueException{
+    public Host updateHost(UpdateHostCmd cmd) throws InvalidParameterValueException{
     	Long hostId = cmd.getId();
     	Long guestOSCategoryId = cmd.getOsCategoryId();
     	

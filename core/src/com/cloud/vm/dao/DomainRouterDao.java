@@ -19,8 +19,8 @@ package com.cloud.vm.dao;
 
 import java.util.List;
 
+import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.utils.db.GenericDao;
-import com.cloud.vm.DomainRouter.Role;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.VirtualMachine;
 

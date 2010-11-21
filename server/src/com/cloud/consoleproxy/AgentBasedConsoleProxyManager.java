@@ -36,8 +36,6 @@ import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupProxyCommand;
 import com.cloud.agent.api.StopCommand;
-import com.cloud.api.ServerApiException;
-import com.cloud.api.commands.DestroyConsoleProxyCmd;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
@@ -55,9 +53,9 @@ import com.cloud.utils.component.Inject;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
-import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -323,13 +321,8 @@ public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, Virtu
         return false;
     }
 
-    @Override
-    public boolean destroyConsoleProxy(DestroyConsoleProxyCmd cmd) throws ServerApiException {
-        return false;
-    }
-
 	@Override
-	public boolean applyCustomCertToNewProxy(StartupProxyCommand cmd) {
+    public boolean applyCustomCertToNewProxy(StartupProxyCommand cmd) {
 		// TODO Auto-generated method stub
 		return false;
 	}

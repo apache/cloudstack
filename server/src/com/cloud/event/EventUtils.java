@@ -25,7 +25,7 @@ public class EventUtils {
         event.setUserId(userId);
         event.setAccountId(accountId);
         event.setType(type);
-        event.setState(EventState.Scheduled);
+        event.setState(Event.State.Scheduled);
         event.setDescription("Scheduled async job for "+description);
         event = _eventDao.persist(event);
         return event.getId();
@@ -39,7 +39,7 @@ public class EventUtils {
         event.setUserId(userId);
         event.setAccountId(accountId);
         event.setType(type);
-        event.setState(EventState.Started);
+        event.setState(Event.State.Started);
         event.setDescription(description);
         event.setStartId(startEventId);
         event = _eventDao.persist(event);

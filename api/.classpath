@@ -3,5 +3,7 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/utils"/>
+	<classpathentry kind="lib" path="/thirdparty/log4j-1.2.15.jar"/>
+	<classpathentry kind="lib" path="/thirdparty/gson.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

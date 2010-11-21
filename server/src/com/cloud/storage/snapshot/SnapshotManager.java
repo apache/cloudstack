@@ -19,28 +19,18 @@ package com.cloud.storage.snapshot;
 
 import java.util.List;
 
-import com.cloud.api.commands.CreateSnapshotCmd;
-import com.cloud.api.commands.CreateSnapshotInternalCmd;
-import com.cloud.api.commands.CreateSnapshotPolicyCmd;
-import com.cloud.api.commands.DeleteSnapshotCmd;
-import com.cloud.api.commands.DeleteSnapshotPoliciesCmd;
-import com.cloud.api.commands.ListRecurringSnapshotScheduleCmd;
-import com.cloud.api.commands.ListSnapshotPoliciesCmd;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.SnapshotPolicyVO;
-import com.cloud.storage.SnapshotScheduleVO;
 import com.cloud.storage.SnapshotVO;
-import com.cloud.storage.VolumeVO;
 import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.utils.component.Manager;
+import com.cloud.storage.VolumeVO;
 
 /**
 *
 * SnapshotManager contains all of the code to work with volume snapshots.
 * 
 */
-public interface SnapshotManager extends Manager {
+public interface SnapshotManager {
  
 	public static final int HOURLYMAX = 8;
 	public static final int DAILYMAX = 8;
@@ -54,21 +44,6 @@ public interface SnapshotManager extends Manager {
      * @return the Snapshot that was created
      */
     SnapshotVO createSnapshotImpl(Long volumeId, Long policyId, Long startEventId) throws ResourceAllocationException;
-
-    /**
-     * Create a snapshot of a volume
-     * @param cmd the API command wrapping the parameters for creating the snapshot (mainly volumeId) 
-     * @return the Snapshot that was created
-     */
-    SnapshotVO createSnapshot(CreateSnapshotCmd cmd) throws InvalidParameterValueException, ResourceAllocationException;
-
-    /**
-     * An internal method for creating recurring snapshots.  The command is not exposed through the API but is used to hook into the async framework.
-     * @param cmd the command specifying volumeId and policyId
-     * @return the created snapshot
-     * @throws ResourceAllocationException
-     */
-    SnapshotVO createSnapshotInternal(CreateSnapshotInternalCmd cmd) throws ResourceAllocationException;
 
     /**
      * After successfully creating a snapshot of a volume, copy the snapshot to the secondary storage for 
@@ -98,21 +73,6 @@ public interface SnapshotManager extends Manager {
     boolean destroySnapshot(long userId, long snapshotId, long policyId);
 
     /**
-     * Delete specified snapshot from the specified.
-     * If no other policies are assigned it calls destroy snapshot.
-     * This will be used for manual snapshots too.
-     */
-    boolean deleteSnapshot(DeleteSnapshotCmd cmd);    
-
-    /**
-     * Creates a policy with specified schedule. maxSnaps specifies the number of most recent snapshots that are to be retained.
-     * If the number of snapshots go beyond maxSnaps the oldest snapshot is deleted 
-     * @param cmd the command that
-     * @return the newly created snapshot policy if success, null otherwise
-     */
-    SnapshotPolicyVO createPolicy(CreateSnapshotPolicyCmd cmd);
-    
-    /**
      * Deletes snapshot scheduling policy. Delete will fail if this policy is assigned to one or more volumes
      */
     boolean deletePolicy(long userId, Long policyId);
@@ -129,13 +89,6 @@ public interface SnapshotManager extends Manager {
     List<SnapshotPolicyVO> listPoliciesforVolume(long volumeId);
 
     /**
-     * list all snapshot policies assigned to the specified volume
-     * @param cmd the command that specifies the volume criteria
-     * @return list of snapshot policies
-     */
-    List<SnapshotPolicyVO> listPoliciesforVolume(ListSnapshotPoliciesCmd cmd);
-    
-    /**
      * List all policies to which a specified snapshot belongs. For ex: A snapshot 
      * may belong to a hourly snapshot and a daily snapshot run at the same time
      */
@@ -147,13 +100,6 @@ public interface SnapshotManager extends Manager {
      * created the snapshot
      */
     List<SnapshotVO> listSnapsforVolume(long volumeId);
-
-    /**
-     * Get the recurring snapshots scheduled for this volume currently along with the time at which they are scheduled 
-     * @param cmd the command wrapping the volumeId (volume for which the snapshots are required) and policyId (to show snapshots for only this policy).
-     * @return The list of snapshot schedules.
-     */
-    public List<SnapshotScheduleVO> findRecurringSnapshotSchedule(ListRecurringSnapshotScheduleCmd cmd);
 
 	SnapshotPolicyVO getPolicyForVolumeByInterval(long volumeId, short interval);
 
@@ -170,7 +116,6 @@ public interface SnapshotManager extends Manager {
 
     void validateSnapshot(Long userId, SnapshotVO snapshot);
 
-    boolean deleteSnapshotPolicies(DeleteSnapshotPoliciesCmd cmd);
 	ImageFormat getImageFormat(Long volumeId);
 
     SnapshotPolicyVO getPolicyForVolume(long volumeId);

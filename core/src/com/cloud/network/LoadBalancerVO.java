@@ -31,7 +31,7 @@ import javax.persistence.Table;
 @Table(name=("load_balancer"))
 @SecondaryTable(name="account",
         pkJoinColumns={@PrimaryKeyJoinColumn(name="account_id", referencedColumnName="id")})
-public class LoadBalancerVO {
+public class LoadBalancerVO implements LoadBalancer {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
@@ -76,54 +76,68 @@ public class LoadBalancerVO {
         this.algorithm = algorithm;
     }
 
+    @Override
     public long getId() {
         return id;
     }
 
+    @Override
     public String getName() {
         return name;
     }
+    @Override
     public void setName(String name) {
         this.name = name;
     }
 
+    @Override
     public String getDescription() {
         return description;
     }
+    @Override
     public void setDescription(String description) {
         this.description = description;
     }
 
+    @Override
     public long getAccountId() {
         return accountId;
     }
 
+    @Override
     public String getIpAddress() {
         return ipAddress;
     }
 
+    @Override
     public String getPublicPort() {
         return publicPort;
     }
 
+    @Override
     public String getPrivatePort() {
         return privatePort;
     }
+    @Override
     public void setPrivatePort(String privatePort) {
         this.privatePort = privatePort;
     }
 
+    @Override
     public String getAlgorithm() {
         return algorithm;
     }
+    @Override
     public void setAlgorithm(String algorithm) {
         this.algorithm = algorithm;
     }
     
+    @Override
     public Long getDomainId() {
         return domainId;
     }
     
+    @Override
     public String getAccountName() {
         return accountName;
     }

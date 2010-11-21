@@ -37,6 +37,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
+import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
@@ -76,6 +77,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     protected VMTemplateDaoImpl() {
     }
     
+    @Override
     public List<VMTemplateVO> listByPublic() {
     	SearchCriteria<VMTemplateVO> sc = PublicSearch.create();
     	sc.setParameters("public", 1);

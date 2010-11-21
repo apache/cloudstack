@@ -27,20 +27,11 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name="op_host_capacity")
-public class CapacityVO {
-    public static final short CAPACITY_TYPE_MEMORY = 0;
-    public static final short CAPACITY_TYPE_CPU = 1;
-    public static final short CAPACITY_TYPE_STORAGE = 2;
-    public static final short CAPACITY_TYPE_STORAGE_ALLOCATED = 3;
-    public static final short CAPACITY_TYPE_PUBLIC_IP = 4;
-    public static final short CAPACITY_TYPE_PRIVATE_IP = 5;
-    public static final short CAPACITY_TYPE_SECONDARY_STORAGE = 6;
-    
-
+public class CapacityVO implements Capacity {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
-    private Long id = null;
+    private long id;
 
     @Column(name="host_id")
     private Long hostOrPoolId;
@@ -71,10 +62,12 @@ public class CapacityVO {
         this.capacityType = capacityType;
     }
 
-    public Long getId() {
+    @Override
+    public long getId() {
         return id;
     }
     
+    @Override
     public Long getHostOrPoolId() {
         return hostOrPoolId;
     }
@@ -82,6 +75,7 @@ public class CapacityVO {
     public void setHostId(Long hostId) {
         this.hostOrPoolId = hostId;
     }
+    @Override
     public long getDataCenterId() {
         return dataCenterId;
     }
@@ -89,24 +83,28 @@ public class CapacityVO {
         this.dataCenterId = dataCenterId;
     }
     
+    @Override
     public Long getPodId() {
         return podId;
     }
     public void setPodId(long podId) {
         this.podId = new Long(podId);
     }
+    @Override
     public long getUsedCapacity() {
         return usedCapacity;
     }
     public void setUsedCapacity(long usedCapacity) {
         this.usedCapacity = usedCapacity;
     }
+    @Override
     public long getTotalCapacity() {
         return totalCapacity;
     }
     public void setTotalCapacity(long totalCapacity) {
         this.totalCapacity = totalCapacity;
     }
+    @Override
     public short getCapacityType() {
         return capacityType;
     }

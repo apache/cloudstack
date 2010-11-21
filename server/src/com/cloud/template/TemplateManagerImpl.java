@@ -57,7 +57,7 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.dao.DomainDao;
-import com.cloud.event.EventState;
+import com.cloud.event.Event;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
@@ -112,6 +112,7 @@ import com.cloud.utils.EnumUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
+import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
@@ -125,8 +126,8 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
-@Local(value=TemplateManager.class)
-public class TemplateManagerImpl implements TemplateManager {
+@Local(value={TemplateManager.class, TemplateService.class})
+public class TemplateManagerImpl implements TemplateManager, Manager, TemplateService {
     private final static Logger s_logger = Logger.getLogger(TemplateManagerImpl.class);
     String _name;
     @Inject VMTemplateDao _tmpltDao;
@@ -153,12 +154,13 @@ public class TemplateManagerImpl implements TemplateManager {
     @Inject UploadDao _uploadDao;
     long _routerTemplateId = -1;
     @Inject StorageManager _storageMgr;
+    @Inject AsyncJobManager _asyncMgr;
     @Inject UserVmManager _vmMgr;
     @Inject ConfigurationDao _configDao;
     protected SearchBuilder<VMTemplateHostVO> HostTemplateStatesSearch;
     
     @Override
-    public VMTemplateVO registerIso(RegisterIsoCmd cmd) throws ResourceAllocationException{
+    public VirtualMachineTemplate registerIso(RegisterIsoCmd cmd) throws ResourceAllocationException{
         Account ctxAccount = UserContext.current().getAccount();
         Long userId = UserContext.current().getUserId();
         String name = cmd.getIsoName();
@@ -250,7 +252,7 @@ public class TemplateManagerImpl implements TemplateManager {
     }
 
     @Override
-    public VMTemplateVO registerTemplate(RegisterTemplateCmd cmd) throws URISyntaxException, ResourceAllocationException{
+    public VirtualMachineTemplate registerTemplate(RegisterTemplateCmd cmd) throws URISyntaxException, ResourceAllocationException{
     	
         Account ctxAccount = UserContext.current().getAccount();
         Long userId = UserContext.current().getUserId();
@@ -459,7 +461,8 @@ public class TemplateManagerImpl implements TemplateManager {
         String mode = cmd.getMode();
         Long eventId = cmd.getStartEventId();
         
-        return extract(account, templateId, url, zoneId, mode, eventId, true, cmd.getJob(), cmd.getAsyncJobManager());
+        // FIXME: async job needs fixing
+        return extract(account, templateId, url, zoneId, mode, eventId, true, null, _asyncMgr);
     }
 
     @Override
@@ -471,7 +474,8 @@ public class TemplateManagerImpl implements TemplateManager {
         String mode = cmd.getMode();
         Long eventId = cmd.getStartEventId();
 
-        return extract(account, templateId, url, zoneId, mode, eventId, false, cmd.getJob(), cmd.getAsyncJobManager());
+        // FIXME: async job needs fixing
+        return extract(account, templateId, url, zoneId, mode, eventId, false, null, _asyncMgr);
     }
 
     private Long extract(Account account, Long templateId, String url, Long zoneId, String mode, Long eventId, boolean isISO, AsyncJobVO job, AsyncJobManager mgr) {
@@ -739,7 +743,7 @@ public class TemplateManagerImpl implements TemplateManager {
         event.setUserId(userId);
         event.setAccountId(vmTemplate.getAccountId());
         event.setType(EventTypes.EVENT_TEMPLATE_COPY);
-        event.setState(EventState.Started);
+        event.setState(Event.State.Started);
         event.setDescription("Copying template with Id: "+templateId);
         event.setStartId(startEventId);
         event = _eventDao.persist(event);
@@ -808,7 +812,7 @@ public class TemplateManagerImpl implements TemplateManager {
     }
       
     @Override
-    public VMTemplateVO copyIso(CopyIsoCmd cmd) throws StorageUnavailableException {
+    public VirtualMachineTemplate copyIso(CopyIsoCmd cmd) throws StorageUnavailableException {
     	Long isoId = cmd.getId();
     	Long userId = UserContext.current().getUserId();
     	Long sourceZoneId = cmd.getSourceZoneId();
@@ -842,7 +846,7 @@ public class TemplateManagerImpl implements TemplateManager {
     
     
     @Override
-    public VMTemplateVO copyTemplate(CopyTemplateCmd cmd) throws StorageUnavailableException {
+    public VirtualMachineTemplate copyTemplate(CopyTemplateCmd cmd) throws StorageUnavailableException {
     	Long templateId = cmd.getId();
     	Long userId = UserContext.current().getUserId();
     	Long sourceZoneId = cmd.getSourceZoneId();
@@ -1240,7 +1244,7 @@ public class TemplateManagerImpl implements TemplateManager {
 
         if (success) {
             if (attach) {
-                vm.setIsoId(iso.getId().longValue());
+                vm.setIsoId(iso.getId());
             } else {
                 vm.setIsoId(null);
             }

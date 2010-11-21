@@ -178,6 +178,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.NetworkEnums.RouterPrivateIpStrategy;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.ServerResourceBase;
 import com.cloud.storage.Storage;
@@ -203,7 +204,6 @@ import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DiskProfile;
-import com.cloud.vm.DomainRouter;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.State;
 import com.cloud.vm.VirtualMachine;
@@ -869,7 +869,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 	}
 	
 	protected synchronized String startDomainRouter(StartRouterCommand cmd) {
-		DomainRouter router = cmd.getRouter();
+		VirtualRouter router = cmd.getRouter();
 		List<InterfaceDef> nics = null;
 		try {
 			nics = createRouterVMNetworks(cmd);
@@ -2087,7 +2087,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 	
 	private Answer execute(StartRouterCommand cmd) {
 
-		final DomainRouter router = cmd.getRouter();
+		final VirtualRouter router = cmd.getRouter();
 
 		String result = null;
 
@@ -3649,7 +3649,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     
     private List<InterfaceDef> createRouterVMNetworks(StartRouterCommand cmd) throws InternalErrorException {
     	List<InterfaceDef> nics = new ArrayList<InterfaceDef>();
-    	DomainRouter router = cmd.getRouter();
+    	VirtualRouter router = cmd.getRouter();
     	String guestMac = router.getGuestMacAddress();
     	String privateMac = router.getPrivateMacAddress();
     	String pubMac = router.getPublicMacAddress();

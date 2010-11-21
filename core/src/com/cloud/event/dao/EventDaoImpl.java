@@ -25,7 +25,7 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.event.EventState;
+import com.cloud.event.Event.State;
 import com.cloud.event.EventVO;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
@@ -69,7 +69,7 @@ public class EventDaoImpl extends GenericDaoBase<EventVO, Long> implements Event
     public List<EventVO> listStartedEvents(Date minTime, Date maxTime) {
         if (minTime == null || maxTime == null) return null;
         SearchCriteria<EventVO> sc = StartedEventsSearch.create();
-        sc.setParameters("state", EventState.Completed);
+        sc.setParameters("state", State.Completed);
         sc.setParameters("startId", 0);
         sc.setParameters("createDate", minTime, maxTime);
         return listIncludingRemovedBy(sc, null);
@@ -78,7 +78,7 @@ public class EventDaoImpl extends GenericDaoBase<EventVO, Long> implements Event
     @Override
     public EventVO findCompletedEvent(long startId) {
         SearchCriteria<EventVO> sc = CompletedEventSearch.create();
-        sc.setParameters("state", EventState.Completed);
+        sc.setParameters("state", State.Completed);
         sc.setParameters("startId", startId);
         return findOneIncludingRemovedBy(sc);
     }

@@ -18,12 +18,12 @@
 
 package com.cloud.async.executor;
 
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
-import com.cloud.vm.DomainRouter;
 
 public class RouterExecutorHelper {
-	public static RouterOperationResultObject composeResultObject(ManagementServer managementServer, DomainRouter router) {
+	public static RouterOperationResultObject composeResultObject(ManagementServer managementServer, VirtualRouter router) {
 		RouterOperationResultObject resultObject = new RouterOperationResultObject();
 		resultObject.setId(router.getId());
 		resultObject.setZoneId(router.getDataCenterId());

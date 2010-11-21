@@ -29,14 +29,13 @@ import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.SecondaryTable;
 import javax.persistence.Table;
 
-import com.cloud.user.OwnedBy;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="instance_group")
 @SecondaryTable(name="account",
         pkJoinColumns={@PrimaryKeyJoinColumn(name="account_id", referencedColumnName="id")})
-public class InstanceGroupVO implements OwnedBy{
+public class InstanceGroupVO implements InstanceGroup {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
@@ -66,14 +65,17 @@ public class InstanceGroupVO implements OwnedBy{
         super();
     }
     
+    @Override
     public long getId() {
     	return id;
     }
     
+    @Override
     public String getName() {
     	return name; 
     }
     
+    @Override
     public long getAccountId() {
         return accountId;
     }

@@ -20,10 +20,10 @@ package com.cloud.agent.api;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.VolumeVO;
 import com.cloud.uservm.UserVm;
-import com.cloud.vm.DomainRouter;
 import com.cloud.vm.UserVmVO;
 
 public class StartCommand extends AbstractStartCommand {
@@ -48,13 +48,13 @@ public class StartCommand extends AbstractStartCommand {
     boolean bootFromISO;
     String guestOSDescription;
     
-    public StartCommand(UserVm vm, String vmName, ServiceOffering offering, int networkRate, int multicastRate, DomainRouter router, String storageHost, String imagePath, String guestNetworkId, int utilization, int cpuWeight, List<VolumeVO> vols, int bits, String isoPath, boolean bootFromISO, String guestOSDescription) {
+    public StartCommand(UserVm vm, String vmName, ServiceOffering offering, int networkRate, int multicastRate, VirtualRouter router, String storageHost, String imagePath, String guestNetworkId, int utilization, int cpuWeight, List<VolumeVO> vols, int bits, String isoPath, boolean bootFromISO, String guestOSDescription) {
     	super(vmName, storageHost, vols);
         initialize(vm, offering, networkRate, multicastRate, router, imagePath, guestNetworkId, utilization, cpuWeight, bits, isoPath, bootFromISO, guestOSDescription);
     }
 
 	private void initialize(UserVm vm,
-			ServiceOffering offering, int networkRate, int multicastRate, DomainRouter router, String imagePath,
+			ServiceOffering offering, int networkRate, int multicastRate, VirtualRouter router, String imagePath,
 			String guestNetworkId, int utilization, int cpuWeight, int bits, String isoPath, boolean bootFromISO, String guestOSDescription) {
 		id = vm.getId();
         guestIpAddress = vm.getGuestIpAddress();
@@ -96,7 +96,7 @@ public class StartCommand extends AbstractStartCommand {
     }
     
     public StartCommand(UserVmVO vm, String vmName, ServiceOffering offering, int networkRate, int multicastRate,
-			DomainRouter router, String[] storageIps, String imagePath,
+			VirtualRouter router, String[] storageIps, String imagePath,
 			String guestNetworkId, int utilization, int cpuWeight, List<VolumeVO> vols,
 			boolean mirroredVols, int bits, String isoPath, boolean bootFromISO, String guestOSDescription) {
 		super(vmName, storageIps, vols, mirroredVols);

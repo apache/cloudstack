@@ -25,14 +25,16 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.storage.snapshot.SnapshotPolicy;
+
 @Entity
 @Table(name="snapshot_policy")
-public class SnapshotPolicyVO {
+public class SnapshotPolicyVO implements SnapshotPolicy {
 	
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
-    Long id;
+    long id;
     
     @Column(name="volume_id")
     long volumeId;
@@ -63,7 +65,7 @@ public class SnapshotPolicyVO {
         this.active = true;
     }
 
-    public Long getId() {
+    public long getId() {
         return id;
     }
     

@@ -169,23 +169,23 @@ public class SnapshotVO implements Snapshot {
 		this.prevSnapshotId = prevSnapshotId;
 	}
 
-    public static SnapshotType getSnapshotType(Long policyId) {
+    public static Type getSnapshotType(Long policyId) {
         if (policyId.equals(MANUAL_POLICY_ID)) {
-            return SnapshotType.MANUAL;
+            return Type.MANUAL;
         } else {
-        	return SnapshotType.RECURRING;
+        	return Type.RECURRING;
         }
     }
     
-    public static SnapshotType getSnapshotType(String snapshotType) {
-        if (SnapshotType.MANUAL.equals(snapshotType)) {
-            return SnapshotType.MANUAL;
+    public static Type getSnapshotType(String snapshotType) {
+        if (Type.MANUAL.equals(snapshotType)) {
+            return Type.MANUAL;
         }
-        if (SnapshotType.RECURRING.equals(snapshotType)) {
-            return SnapshotType.RECURRING;
+        if (Type.RECURRING.equals(snapshotType)) {
+            return Type.RECURRING;
         }
-        if (SnapshotType.TEMPLATE.equals(snapshotType)) {
-            return SnapshotType.TEMPLATE;
+        if (Type.TEMPLATE.equals(snapshotType)) {
+            return Type.TEMPLATE;
         }
         return null;
     }

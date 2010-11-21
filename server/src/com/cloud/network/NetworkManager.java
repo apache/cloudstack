@@ -20,43 +20,25 @@ package com.cloud.network;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.api.ServerApiException;
-import com.cloud.api.commands.AddVpnUserCmd;
-import com.cloud.api.commands.AssignToLoadBalancerRuleCmd;
-import com.cloud.api.commands.AssociateIPAddrCmd;
-import com.cloud.api.commands.CreateLoadBalancerRuleCmd;
-import com.cloud.api.commands.CreatePortForwardingRuleCmd;
-import com.cloud.api.commands.CreateRemoteAccessVpnCmd;
-import com.cloud.api.commands.DeleteLoadBalancerRuleCmd;
-import com.cloud.api.commands.DeleteRemoteAccessVpnCmd;
-import com.cloud.api.commands.DisassociateIPAddrCmd;
-import com.cloud.api.commands.ListPortForwardingRulesCmd;
-import com.cloud.api.commands.RemoveFromLoadBalancerRuleCmd;
-import com.cloud.api.commands.RemoveVpnUserCmd;
-import com.cloud.api.commands.UpdateLoadBalancerRuleCmd;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.VlanVO;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
-import com.cloud.exception.AccountLimitException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientNetworkCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.NetworkRuleConflictException;
-import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.utils.Pair;
-import com.cloud.vm.DomainRouter;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
@@ -70,7 +52,7 @@ import com.cloud.vm.VirtualMachineProfile;
  * NetworkManager manages the network for the different end users.
  *
  */
-public interface NetworkManager {
+public interface NetworkManager extends NetworkService {
     public static final int DEFAULT_ROUTER_VM_RAMSIZE = 128;            // 128M
     public static final boolean USE_POD_VLAN = false;
     /**
@@ -129,7 +111,7 @@ public interface NetworkManager {
      * @param hostId get all of the virtual machine routers on a host.
      * @return collection of VirtualMachineRouter
      */
-    List<? extends DomainRouter> getRouters(long hostId);
+    List<? extends VirtualRouter> getRouters(long hostId);
     
     /**
      * @param routerId id of the router
@@ -181,27 +163,6 @@ public interface NetworkManager {
     public List<FirewallRuleVO> updateFirewallRules(String publicIpAddress, List<FirewallRuleVO> fwRules, DomainRouterVO router);
 
     /**
-     * Create a port forwarding rule from the given ipAddress/port to the given virtual machine/port.
-     * @param cmd the command specifying the ip address, public port, protocol, private port, and virtual machine id.
-     * @return the newly created FirewallRuleVO if successful, null otherwise.
-     */
-    public FirewallRuleVO createPortForwardingRule(CreatePortForwardingRuleCmd cmd) throws NetworkRuleConflictException;
-
-    /**
-     * List port forwarding rules assigned to an ip address
-     * @param cmd the command object holding the criteria for listing port forwarding rules (the ipAddress)
-     * @return list of port forwarding rules on the given address, empty list if no rules exist
-     */
-    public List<FirewallRuleVO> listPortForwardingRules(ListPortForwardingRulesCmd cmd);
-
-    /**
-     * Create a load balancer rule from the given ipAddress/port to the given private port
-     * @param cmd the command specifying the ip address, public port, protocol, private port, and algorithm
-     * @return the newly created LoadBalancerVO if successful, null otherwise
-     */
-    public LoadBalancerVO createLoadBalancerRule(CreateLoadBalancerRuleCmd cmd);
-
-    /**
      * Associates or disassociates a list of public IP address for a router.
      * @param router router object to send the association to
      * @param ipAddrList list of public IP addresses
@@ -210,14 +171,6 @@ public interface NetworkManager {
      * @return
      */
     boolean associateIP(DomainRouterVO router, List<String> ipAddrList, boolean add, long vmId) throws ConcurrentOperationException;
-    
-    /**
-     * Associates a public IP address for a router.
-     * @param cmd - the command specifying ipAddress
-     * @return ip address object
-     * @throws ResourceAllocationException, InsufficientCapacityException 
-     */
-    IPAddressVO associateIP(AssociateIPAddrCmd cmd) throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException;    
     
     /**
      * Associates or disassociates a single IP address for a router.
@@ -230,15 +183,6 @@ public interface NetworkManager {
     
     boolean updateFirewallRule(FirewallRuleVO fwRule, String oldPrivateIP, String oldPrivatePort);
 
-    /**
-     * Assign a virtual machine, or list of virtual machines, to a load balancer.
-     */
-    boolean assignToLoadBalancer(AssignToLoadBalancerRuleCmd cmd)  throws NetworkRuleConflictException;
-
-    public boolean removeFromLoadBalancer(RemoveFromLoadBalancerRuleCmd cmd);
-    
-    public boolean deleteLoadBalancerRule(DeleteLoadBalancerRuleCmd cmd);
-    public LoadBalancerVO updateLoadBalancerRule(UpdateLoadBalancerRuleCmd cmd);
     
     /**
      * Add a DHCP entry on the domr dhcp server
@@ -276,8 +220,6 @@ public interface NetworkManager {
      */
     List<IPAddressVO> listPublicIpAddressesInVirtualNetwork(long accountId, long dcId, Boolean sourceNat);	
     
-    public boolean disassociateIpAddress(DisassociateIPAddrCmd cmd);
-
     List<NetworkVO> setupNetworkConfiguration(Account owner, NetworkOfferingVO offering, DeploymentPlan plan);
     List<NetworkVO> setupNetworkConfiguration(Account owner, NetworkOfferingVO offering, Network predefined, DeploymentPlan plan);
     
@@ -298,45 +240,7 @@ public interface NetworkManager {
     List<NetworkVO> setupNetworkConfiguration(Account owner, ServiceOfferingVO offering, DeploymentPlan plan);
     
     String assignSourceNatIpAddress(Account account, DataCenter dc) throws InsufficientAddressCapacityException;
-    /**
-     * Create a remote access vpn from the given public ip address and client ip range
-     * @param cmd the command specifying the ip address, ip range
-     * @return the newly created RemoteAccessVpnVO if successful, null otherwise
-     * @throws InvalidParameterValueException
-     * @throws PermissionDeniedException
-     * @throws ConcurrentOperationException 
-     */
-    public RemoteAccessVpnVO createRemoteAccessVpn(CreateRemoteAccessVpnCmd cmd) throws ConcurrentOperationException, InvalidParameterValueException, PermissionDeniedException;
-    
-    /**
-     * Start a remote access vpn for the given public ip address and client ip range
-     * @param cmd the command specifying the ip address, ip range
-     * @return the RemoteAccessVpnVO if successful, null otherwise
-     * @throws ConcurrentOperationException 
-     * @throws ResourceUnavailableException 
-     */
-    public RemoteAccessVpnVO startRemoteAccessVpn(CreateRemoteAccessVpnCmd cmd) throws ConcurrentOperationException, ResourceUnavailableException;
-    
-    /**
-     * Destroy a previously created remote access VPN
-     * @param cmd the command specifying the account and zone
-     * @return success if successful, false otherwise
-     * @throws ConcurrentOperationException 
-     */
-    public boolean destroyRemoteAccessVpn(DeleteRemoteAccessVpnCmd cmd) throws ConcurrentOperationException;
-
-    VpnUserVO addVpnUser(AddVpnUserCmd cmd) throws ConcurrentOperationException, AccountLimitException;
-
-	boolean removeVpnUser(RemoveVpnUserCmd cmd) throws ConcurrentOperationException;
-	
 	Network getNetworkConfiguration(long id);
 	String getNextAvailableMacAddressInNetwork(long networkConfigurationId) throws InsufficientAddressCapacityException;
 
-	FirewallRuleVO createIpForwardingRuleInDb(String ipAddr, Long virtualMachineId) throws ServerApiException;
-
-	public boolean deletePortForwardingRule(Long id, boolean sysContext);
-
-	FirewallRuleVO createIpForwardingRuleOnDomr(Long ruleId);
-
-	boolean deleteIpForwardingRule(Long id);
 }

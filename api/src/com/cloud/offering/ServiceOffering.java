@@ -17,11 +17,21 @@
  */
 package com.cloud.offering;
 
+import java.util.Date;
+
 /**
  * ServiceOffering models the different types of service contracts to be 
  * offered.
  */
 public interface ServiceOffering {
+    long getId();
+    
+    String getDisplayText();
+    
+    Date getCreated();
+    
+    String getTags();
+    
 	/**
      * @return user readable description
      */

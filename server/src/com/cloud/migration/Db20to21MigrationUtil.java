@@ -292,9 +292,9 @@ public class Db20to21MigrationUtil {
 			so21.setDiskSize(0);
 			so21 = _serviceOffering21Dao.persist(so21);
 
-			if(so20.getId().longValue() != so21.getId().longValue()) {
+			if(so20.getId().longValue() != so21.getId()) {
 				// Update all foreign reference from old value to new value, need to be careful with foreign key constraints
-				updateServiceOfferingReferences(so20.getId().longValue(), so21.getId().longValue());
+				updateServiceOfferingReferences(so20.getId().longValue(), so21.getId());
 			}
 		}
 		
@@ -445,8 +445,8 @@ public class Db20to21MigrationUtil {
 			do21.setId(maxDiskOfferingId++);
 			
 			do21 = _diskOffering21Dao.persist(do21);
-			if(do20.getId().longValue() != do21.getId().longValue()) {
-				updateDiskOfferingReferences(do20.getId().longValue(), do21.getId().longValue());
+			if(do20.getId().longValue() != do21.getId()) {
+				updateDiskOfferingReferences(do20.getId().longValue(), do21.getId());
 			}
 		}
 		

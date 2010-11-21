@@ -105,7 +105,8 @@ public class ServiceOffering21VO extends DiskOffering21VO implements ServiceOffe
 		this.rateMbps = rateMbps;
 	}
 
-	public int getRateMbps() {
+	@Override
+    public int getRateMbps() {
 		return rateMbps;
 	}
 
@@ -113,7 +114,8 @@ public class ServiceOffering21VO extends DiskOffering21VO implements ServiceOffe
 		this.multicastRateMbps = multicastRateMbps;
 	}
 	
-	public int getMulticastRateMbps() {
+	@Override
+    public int getMulticastRateMbps() {
 		return multicastRateMbps;
 	}
 
@@ -121,7 +123,8 @@ public class ServiceOffering21VO extends DiskOffering21VO implements ServiceOffe
 		this.guestIpType = guestIpType;
 	}
 
-	public NetworkOffering.GuestIpType getGuestIpType() {
+	@Override
+    public NetworkOffering.GuestIpType getGuestIpType() {
 		return guestIpType;
 	}
 	public String gethypervisorType() {

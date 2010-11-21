@@ -23,6 +23,7 @@ import java.util.List;
 import com.cloud.domain.DomainVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
 import com.cloud.utils.db.GenericDao;
 
@@ -31,15 +32,6 @@ import com.cloud.utils.db.GenericDao;
  */
 public interface VMTemplateDao extends GenericDao<VMTemplateVO, Long> {
 	
-	public enum TemplateFilter {
-		featured,			// returns templates that have been marked as featured and public
-		self,				// returns templates that have been registered or created by the calling user
-		selfexecutable,		// same as self, but only returns templates that are ready to be deployed with
-		sharedexecutable,	// ready templates that have been granted to the calling user by another user
-		executable,			// templates that are owned by the calling user, or public templates, that can be used to deploy a new VM
-		community,			// returns templates that have been marked as public but not featured
-		all					// all templates (only usable by ROOT admins)
-	}
 	
 	public List<VMTemplateVO> listByPublic();
 	//finds by the column "unique_name"

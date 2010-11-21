@@ -27,10 +27,10 @@ import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.SecondaryTable;
 import javax.persistence.Table;
 import javax.persistence.Transient;
-import javax.persistence.PrimaryKeyJoinColumn;
 
 import com.cloud.utils.db.GenericDao;
 
@@ -38,18 +38,18 @@ import com.cloud.utils.db.GenericDao;
 @Table(name="event")
 @SecondaryTable(name="account",
         pkJoinColumns={@PrimaryKeyJoinColumn(name="account_id", referencedColumnName="id")})
-public class EventVO {
+public class EventVO implements Event {
 	@Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
-	private Long id = (long)-1;
+	private long id = -1;
 
 	@Column(name="type")
 	private String type;
 	
 	@Enumerated(value=EnumType.STRING)
 	@Column(name="state")
-    private EventState state = EventState.Completed;
+    private State state = State.Completed;
 
 	@Column(name="description")
 	private String description;
@@ -91,75 +91,83 @@ public class EventVO {
 	public EventVO() {
 	}
 	
-	public Long getId() {
+	public long getId() {
 		return id;
 	}
-	public void setId(Long id) {
-		this.id = id;
-	}
-	public String getType() {
+	@Override
+    public String getType() {
 		return type;
 	}
 	public void setType(String type) {
 		this.type = type;
 	}
-	public EventState getState() {
+	@Override
+    public State getState() {
         return state;
     }
 
-    public void setState(EventState state) {
+    public void setState(State state) {
         this.state = state;
     }
 
-	public String getDescription() {
+	@Override
+    public String getDescription() {
 		return description;
 	}
 	public void setDescription(String description) {
 		this.description = description;
 	}
-	public Date getCreateDate() {
+	@Override
+    public Date getCreateDate() {
 		return createDate;
 	}
 	public void setCreatedDate(Date createdDate) {
 	    createDate = createdDate;
 	}
-	public long getUserId() {
+	@Override
+    public long getUserId() {
 		return userId;
 	}
 	public void setUserId(long userId) {
 		this.userId = userId;
 	}
+    @Override
     public long getAccountId() {
         return accountId;
     }
     public void setAccountId(long accountId) {
         this.accountId = accountId;
     }
+    @Override
     public long getDomainId() {
         return domainId;
     }
     public void setDomainId(long domainId) {
     	this.domainId = domainId;
     }
-	public String getAccountName() {
+	@Override
+    public String getAccountName() {
 		return accountName;
 	}
 	public void setAccountName(String accountName) {
 		this.accountName = accountName;
 	}
-	public int getTotalSize() {
+	@Override
+    public int getTotalSize() {
 		return totalSize;
 	}
 	public void setTotalSize(int totalSize) {
 		this.totalSize = totalSize;
 	}
-	public String getLevel() {
+	@Override
+    public String getLevel() {
 		return level;
 	}
 	public void setLevel(String level) {
 		this.level = level;
 	}
-	public long getStartId() {
+	@Override
+    public long getStartId() {
         return startId;
     }
 
@@ -167,7 +175,8 @@ public class EventVO {
         this.startId = startId;
     }
 
-	public String getParameters() {
+	@Override
+    public String getParameters() {
 		return parameters;
 	}
 	public void setParameters(String parameters) {

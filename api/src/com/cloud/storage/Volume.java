@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.cloud.acl.ControlledEntity;
+import com.cloud.async.AsyncInstanceCreateStatus;
 import com.cloud.template.BasedOn;
 import com.cloud.utils.fsm.FiniteState;
 import com.cloud.utils.fsm.StateMachine;
@@ -152,4 +153,12 @@ public interface Volume extends ControlledEntity, BasedOn {
 	Date getAttached();
 
 	void setAttached(Date attached);
+	Long getDeviceId();
+	
+	Date getCreated();
+	AsyncInstanceCreateStatus getStatus();
+	
+	boolean getDestroyed();
+	
+	long getDiskOfferingId();
 }

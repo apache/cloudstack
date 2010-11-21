@@ -32,11 +32,11 @@ import com.google.gson.annotations.Expose;
 
 @Entity
 @Table(name=("network_ingress_rule"))
-public class IngressRuleVO {
+public class IngressRuleVO implements IngressRule {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
-    private Long id;
+    private long id;
 
     @Column(name="network_group_id")
     private long networkGroupId;
@@ -87,26 +87,32 @@ public class IngressRuleVO {
         this.allowedSourceIpCidr  = allowedIpCidr;
     }
 
-    public Long getId() {
+    @Override
+    public long getId() {
         return id;
     }
 
+    @Override
     public long getNetworkGroupId() {
         return networkGroupId;
     }
 
+    @Override
     public int getStartPort() {
         return startPort;
     }
 
+    @Override
     public int getEndPort() {
         return endPort;
     }
 
-    public String getProtocol() {
+    @Override
+    public String getProtocol() { 
         return protocol;
     }
     
+    @Override
     public AsyncInstanceCreateStatus getCreateStatus() {
     	return createStatus;
     }
@@ -115,19 +121,23 @@ public class IngressRuleVO {
     	this.createStatus = createStatus;
     }
 
-	public Long getAllowedNetworkId() {
+	@Override
+    public Long getAllowedNetworkId() {
 		return allowedNetworkId;
 	}
 
-	public String getAllowedNetworkGroup() {
+	@Override
+    public String getAllowedNetworkGroup() {
 	    return allowedNetworkGroup;
 	}
 
+    @Override
     public String getAllowedNetGrpAcct() {
         return allowedNetGrpAcct;
     }
 
-	public String getAllowedSourceIpCidr() {
+	@Override
+    public String getAllowedSourceIpCidr() {
 		return allowedSourceIpCidr;
 	}
 }

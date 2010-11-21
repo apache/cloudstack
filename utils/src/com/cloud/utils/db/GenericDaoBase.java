@@ -106,7 +106,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     
     protected final static TimeZone s_gmtTimeZone = TimeZone.getTimeZone("GMT");
     
-    protected final static Map<Class<?>, GenericDao<?, ?>> s_daoMaps = new HashMap<Class<?>, GenericDao<?, ?>>(71);
+    protected final static Map<Class<?>, GenericDao<?, ? extends Serializable>> s_daoMaps = new HashMap<Class<?>, GenericDao<?, ? extends Serializable>>(71);
 
     protected Class<T> _entityBeanType;
     protected String _table;
@@ -161,8 +161,9 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
 
     protected String _name;
     
-    protected static GenericDao<?, ?> getDao(Class<?> entityType) {
-        GenericDao<?, ?> dao = s_daoMaps.get(entityType);
+    public static <J> GenericDao<? extends J, ? extends Serializable> getDao(Class<J> entityType) {
+        @SuppressWarnings("unchecked")
+        GenericDao<? extends J, ? extends Serializable> dao = (GenericDao<? extends J, ? extends Serializable>)s_daoMaps.get(entityType);
         assert dao != null : "Unable to find DAO for " + entityType + ".  Are you sure you waited for the DAO to be initialized before asking for it?";
         return dao;
     }
@@ -188,6 +189,12 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
         }
         
         s_daoMaps.put(_entityBeanType, this);
+        Class<?>[] interphaces = _entityBeanType.getInterfaces();
+        if (interphaces != null) {
+            for (Class<?> interphace : interphaces) {
+                s_daoMaps.put(interphace, this);
+            }
+        }
         _table = DbUtil.getTableName(_entityBeanType);
 
         final SqlGenerator generator = new SqlGenerator(_entityBeanType);

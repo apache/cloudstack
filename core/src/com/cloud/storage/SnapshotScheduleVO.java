@@ -29,9 +29,11 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
+import com.cloud.storage.snapshot.SnapshotSchedule;
+
 @Entity
 @Table(name="snapshot_schedule")
-public class SnapshotScheduleVO {
+public class SnapshotScheduleVO implements SnapshotSchedule {
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -65,7 +67,7 @@ public class SnapshotScheduleVO {
         this.asyncJobId = null;
     }
     
-    public Long getId() {
+    public long getId() {
         return id;
     }
     

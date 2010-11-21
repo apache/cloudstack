@@ -20,12 +20,15 @@ import com.cloud.dc.dao.VlanDao;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.host.Host;
 import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.LoadBalancerVO;
+import com.cloud.network.Network;
+import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkRuleConfigVO;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
@@ -73,9 +76,11 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.InstanceGroupVO;
+import com.cloud.vm.Nic;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
@@ -84,11 +89,12 @@ public class ApiDBUtils {
     private static ManagementServer _ms;
     private static AccountManager _accountMgr;
     private static AgentManager _agentMgr;
-    private static AsyncJobManager _asyncMgr;
+    public static AsyncJobManager _asyncMgr;
     private static NetworkGroupManager _networkGroupMgr;
     private static SnapshotManager _snapMgr;
     private static StorageManager _storageMgr;
     private static UserVmManager _userVmMgr;
+    private static NetworkManager _networkMgr;
     private static StatsCollector _statsCollector;
 
     private static AccountDao _accountDao;
@@ -128,6 +134,7 @@ public class ApiDBUtils {
         _snapMgr = locator.getManager(SnapshotManager.class);
         _storageMgr = locator.getManager(StorageManager.class);
         _userVmMgr = locator.getManager(UserVmManager.class);
+        _networkMgr = locator.getManager(NetworkManager.class);
 
         _accountDao = locator.getDao(AccountDao.class);
         _accountVlanMapDao = locator.getDao(AccountVlanMapDao.class);
@@ -227,7 +234,7 @@ public class ApiDBUtils {
         String intervalTypes = "";
 
         SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
-        if (snapshot.getSnapshotType() == Snapshot.SnapshotType.MANUAL.ordinal()) {
+        if (snapshot.getSnapshotType() == Snapshot.Type.MANUAL.ordinal()) {
             return "MANUAL";
         }
 
@@ -249,7 +256,7 @@ public class ApiDBUtils {
         return _storageMgr.getStoragePoolTags(poolId);
     }
     
-    public static boolean isLocalStorageActiveOnHost(HostVO host) {
+    public static boolean isLocalStorageActiveOnHost(Host host) {
         return _storageMgr.isLocalStorageActiveOnHost(host);
     }
 
@@ -459,4 +466,17 @@ public class ApiDBUtils {
 
         return _storageMgr.volumeOnSharedStoragePool(volume);
     }
+    
+    public static List<? extends Nic> getNics(VirtualMachine vm) {
+        return _networkMgr.getNics(vm);
+    }
+    
+    public static Network getNetwork(long id) {
+        return _networkMgr.getNetworkConfiguration(id);
+    }
+    
+    public static void synchronizeCommand(Object job, String syncObjType, long syncObjId) {
+        _asyncMgr.syncAsyncJobExecution((AsyncJobVO)job, syncObjType, syncObjId);
+    }
+    
 }

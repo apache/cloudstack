@@ -63,7 +63,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.dao.DetailsDao;
 import com.cloud.host.dao.HostDao;
 import com.cloud.storage.Snapshot;
-import com.cloud.storage.Snapshot.SnapshotType;
+import com.cloud.storage.Snapshot.Type;
 import com.cloud.storage.Snapshot.Status;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotScheduleVO;
@@ -93,6 +93,7 @@ import com.cloud.utils.DateUtil.IntervalType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
+import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.Transaction;
@@ -100,8 +101,8 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.UserVmDao;
 
-@Local(value={SnapshotManager.class})
-public class SnapshotManagerImpl implements SnapshotManager {
+@Local(value={SnapshotManager.class, SnapshotService.class})
+public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Manager {
     private static final Logger s_logger = Logger.getLogger(SnapshotManagerImpl.class);
 
     @Inject protected HostDao _hostDao;
@@ -219,7 +220,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
 
         // Create the Snapshot object and save it so we can return it to the
         // user
-        SnapshotType snapshotType = SnapshotVO.getSnapshotType(policyId);
+        Type snapshotType = SnapshotVO.getSnapshotType(policyId);
         SnapshotVO snapshotVO = new SnapshotVO(volume.getAccountId(), volume.getId(), null, snapshotName,
                 (short) snapshotType.ordinal(), snapshotType.name());
         snapshotVO = _snapshotDao.persist(snapshotVO);
@@ -554,7 +555,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
 
     private void postCreateRecurringSnapshotForPolicy(long userId, long volumeId, long snapshotId, long policyId) {
         //Use count query
-        List<SnapshotVO> snaps = listSnapsforVolumeType(volumeId, SnapshotType.RECURRING.name());
+        List<SnapshotVO> snaps = listSnapsforVolumeType(volumeId, Type.RECURRING.name());
         SnapshotPolicyVO policy = _snapshotPolicyDao.findById(policyId);
         
         while(snaps.size() > policy.getMaxSnaps() && snaps.size() > 1) {
@@ -613,7 +614,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
         checkAccountPermissions(snapshotOwner.getId(), snapshotOwner.getDomainId(), "snapshot", snapshotId);
 
         boolean status = true; 
-        if (SnapshotType.MANUAL.ordinal() == snapshotCheck.getSnapshotType()) {
+        if (Type.MANUAL.ordinal() == snapshotCheck.getSnapshotType()) {
             status = deleteSnapshotInternal(snapshotId, Snapshot.MANUAL_POLICY_ID, userId);
 
             if (!status) {

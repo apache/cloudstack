@@ -68,6 +68,7 @@ import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.proxy.UpdateCertificateCommand;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
+import com.cloud.alert.Alert;
 import com.cloud.alert.AlertManager;
 import com.cloud.alert.AlertVO;
 import com.cloud.alert.dao.AlertDao;
@@ -168,7 +169,7 @@ import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
-import com.cloud.event.EventState;
+import com.cloud.event.Event;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
@@ -218,7 +219,7 @@ import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.storage.Snapshot;
-import com.cloud.storage.Snapshot.SnapshotType;
+import com.cloud.storage.Snapshot.Type;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
@@ -230,7 +231,6 @@ import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
 import com.cloud.storage.Upload;
 import com.cloud.storage.Upload.Mode;
-import com.cloud.storage.Upload.Type;
 import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
@@ -247,13 +247,13 @@ import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.UploadDao;
 import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VMTemplateDao.TemplateFilter;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.preallocatedlun.PreallocatedLunVO;
 import com.cloud.storage.preallocatedlun.dao.PreallocatedLunDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.upload.UploadMonitor;
 import com.cloud.template.TemplateManager;
+import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -825,7 +825,7 @@ public class ManagementServerImpl implements ManagementServer {
 
         if (success) {
             if (attach) {
-                vm.setIsoId(iso.getId().longValue());
+                vm.setIsoId(iso.getId());
             } else {
                 vm.setIsoId(null);
             }
@@ -1320,11 +1320,6 @@ public class ManagementServerImpl implements ManagementServer {
             EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_CREATE, "Unable to deploy VM: INTERNAL_ERROR", null, eventId);
             throw new CloudRuntimeException("Unable to deploy VM : " + e.getMessage());
         }
-    }
-
-    @Override
-    public DomainRouterVO findDomainRouterBy(long accountId, long dataCenterId) {
-        return _routerDao.findBy(accountId, dataCenterId);
     }
 
     @Override
@@ -3781,7 +3776,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public List<AlertVO> searchForAlerts(ListAlertsCmd cmd) {
+    public List<? extends Alert> searchForAlerts(ListAlertsCmd cmd) {
         Filter searchFilter = new Filter(AlertVO.class, "lastSent", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchCriteria<AlertVO> sc = _alertDao.createSearchCriteria();
 
@@ -3957,14 +3952,14 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         if (snapshotTypeStr != null) {
-            SnapshotType snapshotType = SnapshotVO.getSnapshotType((String)snapshotTypeStr);
+            Type snapshotType = SnapshotVO.getSnapshotType((String)snapshotTypeStr);
             if (snapshotType == null) {
                 throw new InvalidParameterValueException("Unsupported snapshot type " + snapshotTypeStr);
             }
             sc.setParameters("snapshotTypeEQ", snapshotType.ordinal());
         } else {
             // Show only MANUAL and RECURRING snapshot types
-            sc.setParameters("snapshotTypeNEQ", Snapshot.SnapshotType.TEMPLATE.ordinal());
+            sc.setParameters("snapshotTypeNEQ", Snapshot.Type.TEMPLATE.ordinal());
         }
         
         return _snapshotDao.search(sc, searchFilter);
@@ -4604,11 +4599,6 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public List<ClusterVO> listClusterByPodId(long podId) {
-        return _clusterDao.listByPodId(podId);
-    }
-
-    @Override
     public List<? extends StoragePoolVO> searchForStoragePools(ListStoragePoolsCmd cmd) {
         Criteria c = new Criteria("id", Boolean.TRUE, cmd.getStartIndex(), cmd.getPageSizeVal());
         c.addCriteria(Criteria.NAME, cmd.getStoragePoolName());
@@ -5183,7 +5173,7 @@ public class ManagementServerImpl implements ManagementServer {
         Long volumeId = cmd.getId();
         String url = cmd.getUrl();
         Long zoneId = cmd.getZoneId();
-        AsyncJobVO job = cmd.getJob();
+        AsyncJobVO job = null; // FIXME: cmd.getJob();
         String mode = cmd.getMode();
         Account account = UserContext.current().getAccount();
         
@@ -5244,7 +5234,7 @@ public class ManagementServerImpl implements ManagementServer {
                 throw new IllegalArgumentException("Unable to resolve " + host);
             }        
             
-            if ( _uploadMonitor.isTypeUploadInProgress(volumeId, Type.VOLUME) ){
+            if ( _uploadMonitor.isTypeUploadInProgress(volumeId, Upload.Type.VOLUME) ){
                 throw new IllegalArgumentException(volume.getName() + " upload is in progress. Please wait for some time to schedule another upload for the same");
             }
         }
@@ -5264,14 +5254,14 @@ public class ManagementServerImpl implements ManagementServer {
         if (extractMode == Upload.Mode.HTTP_DOWNLOAD && extractURLList.size() > 0){   
             return extractURLList.get(0).getId(); // If download url already exists then return 
         }else {
-            UploadVO uploadJob = _uploadMonitor.createNewUploadEntry(sserver.getId(), volumeId, UploadVO.Status.COPY_IN_PROGRESS, Type.VOLUME, url, extractMode);
+            UploadVO uploadJob = _uploadMonitor.createNewUploadEntry(sserver.getId(), volumeId, UploadVO.Status.COPY_IN_PROGRESS, Upload.Type.VOLUME, url, extractMode);
             s_logger.debug("Extract Mode - " +uploadJob.getMode());
             uploadJob = _uploadDao.createForUpdate(uploadJob.getId());
             
             // Update the async Job
             ExtractResponse resultObj = new ExtractResponse(volumeId, volume.getName(), accountId, UploadVO.Status.COPY_IN_PROGRESS.toString(), uploadJob.getId());
             resultObj.setResponseName(cmd.getName());
-            _asyncMgr.updateAsyncJobAttachment(job.getId(), Type.VOLUME.toString(), volumeId);
+            _asyncMgr.updateAsyncJobAttachment(job.getId(), Upload.Type.VOLUME.toString(), volumeId);
             _asyncMgr.updateAsyncJobStatus(job.getId(), AsyncJobResult.STATUS_IN_PROGRESS, resultObj);
     
             // Copy the volume from the source storage pool to secondary storage
@@ -5308,7 +5298,7 @@ public class ManagementServerImpl implements ManagementServer {
                 _uploadMonitor.extractVolume(uploadJob, sserver, volume, url, zoneId, volumeLocalPath, cmd.getStartEventId(), job.getId(), _asyncMgr);
                 return uploadJob.getId();
             }else{ // Volume is copied now make it visible under apache and create a URL.
-                _uploadMonitor.createVolumeDownloadURL(volumeId, volumeLocalPath, Type.VOLUME, zoneId, uploadJob.getId());                
+                _uploadMonitor.createVolumeDownloadURL(volumeId, volumeLocalPath, Upload.Type.VOLUME, zoneId, uploadJob.getId());                
                 EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_INFO, cmd.getEventType(), "Completed extraction of "+volume.getName()+ " in mode:" +mode, null, cmd.getStartEventId());
                 return uploadJob.getId();
             }
@@ -5449,7 +5439,7 @@ public class ManagementServerImpl implements ManagementServer {
         event.setUserId(userId);
         event.setAccountId(accountId);
         event.setType(type);
-        event.setState(EventState.Scheduled);
+        event.setState(Event.State.Scheduled);
         event.setDescription("Scheduled async job for "+description);
         event = _eventDao.persist(event);
         return event.getId();

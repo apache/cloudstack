@@ -73,6 +73,7 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
+import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
@@ -86,9 +87,9 @@ import com.cloud.vm.State;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.dao.UserVmDao;
 
-@Local(value={NetworkGroupManager.class})
-public class NetworkGroupManagerImpl implements NetworkGroupManager {
-    public static final Logger s_logger = Logger.getLogger(NetworkGroupManagerImpl.class.getName());
+@Local(value={NetworkGroupManager.class, NetworkGroupService.class})
+public class NetworkGroupManagerImpl implements NetworkGroupManager, NetworkGroupService, Manager {
+    public static final Logger s_logger = Logger.getLogger(NetworkGroupManagerImpl.class);
 
 	@Inject NetworkGroupDao _networkGroupDao;
 	@Inject IngressRuleDao  _ingressRuleDao;
@@ -428,7 +429,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
 		Integer icmpCode = cmd.getIcmpCode();
 		List<String> cidrList = cmd.getCidrList();
 		Map groupList = cmd.getUserNetworkGroupList();
-        Account account = (Account)UserContext.current().getAccount();
+        Account account = UserContext.current().getAccount();
         String accountName = cmd.getAccountName();
         Long domainId = cmd.getDomainId();
 		Integer startPortOrType = null;
@@ -638,7 +639,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
 	public boolean revokeNetworkGroupIngress(RevokeNetworkGroupIngressCmd cmd) {
 		
 		//input validation
-		Account account = (Account)UserContext.current().getAccount();
+		Account account = UserContext.current().getAccount();
 		Long userId  = UserContext.current().getUserId();
         Long domainId = cmd.getDomainId();
         Integer startPort = cmd.getStartPort();
@@ -855,7 +856,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
 	    Long domainId = cmd.getDomainId();
 	    Long accountId = null;
 
-	    Account account = (Account)UserContext.current().getAccount();
+	    Account account = UserContext.current().getAccount();
         if (account != null) {
             if ((account.getType() == Account.ACCOUNT_TYPE_ADMIN) || (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)) {
                 if ((domainId != null) && (accountName != null)) {
@@ -1115,7 +1116,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
 		String name = cmd.getNetworkGroupName();
 		String accountName = cmd.getAccountName();
 		Long domainId = cmd.getDomainId();
-		Account account = (Account)UserContext.current().getAccount();
+		Account account = UserContext.current().getAccount();
 		
 		if (!_enabled) {
 			return true;
@@ -1194,7 +1195,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
 
     @Override
     public List<NetworkGroupRulesVO> searchForNetworkGroupRules(ListNetworkGroupsCmd cmd) throws PermissionDeniedException, InvalidParameterValueException {
-        Account account = (Account)UserContext.current().getAccount();
+        Account account = UserContext.current().getAccount();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         Long accountId = null;

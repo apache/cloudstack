@@ -17,29 +17,16 @@
  */
 package com.cloud.storage;
 
-import java.net.UnknownHostException;
 import java.util.List;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.manager.Commands;
-import com.cloud.api.ServerApiException;
-import com.cloud.api.commands.CancelPrimaryStorageMaintenanceCmd;
-import com.cloud.api.commands.CreateStoragePoolCmd;
-import com.cloud.api.commands.CreateVolumeCmd;
-import com.cloud.api.commands.DeletePoolCmd;
-import com.cloud.api.commands.DeleteVolumeCmd;
-import com.cloud.api.commands.PreparePrimaryStorageForMaintenanceCmd;
-import com.cloud.api.commands.UpdateStoragePoolCmd;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientStorageCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -116,17 +103,6 @@ public interface StorageManager extends Manager {
      * @return List of VolumeVO
      */
 	List<VolumeVO> create(Account account, VMInstanceVO vm, VMTemplateVO template, DataCenterVO dc, HostPodVO pod, ServiceOfferingVO offering, DiskOfferingVO diskOffering, long size) throws StorageUnavailableException, ExecutionException;
-	
-	/**
-	 * Create StoragePool based on uri
-	 * @param cmd the command object that specifies the zone, cluster/pod, URI, details, etc. to use to create the storage pool.
-	 * @return
-	 * @throws ResourceInUseException
-	 * @throws IllegalArgumentException
-	 * @throws UnknownHostException
-	 * @throws ResourceAllocationException
-	 */
-	StoragePoolVO createPool(CreateStoragePoolCmd cmd) throws ResourceInUseException, IllegalArgumentException, UnknownHostException, ResourceAllocationException;
 	
     /**
      * Get the storage ip address to connect to.
@@ -208,22 +184,6 @@ public interface StorageManager extends Manager {
 	VolumeVO moveVolume(VolumeVO volume, long destPoolDcId, Long destPoolPodId, Long destPoolClusterId);
 
 	/**
-	 * Creates the database object for a volume based on the given criteria
-	 * @param cmd the API command wrapping the criteria (account/domainId [admin only], zone, diskOffering, snapshot, name)
-	 * @return the volume object
-	 * @throws InvalidParameterValueException
-	 * @throws PermissionDeniedException
-	 */
-	VolumeVO allocVolume(CreateVolumeCmd cmd) throws ResourceAllocationException;
-
-	/**
-     * Creates the volume based on the given criteria
-     * @param cmd the API command wrapping the criteria (account/domainId [admin only], zone, diskOffering, snapshot, name)
-     * @return the volume object
-	 */
-	VolumeVO createVolume(CreateVolumeCmd cmd);
-
-	/**
 	 * Create a volume based on the given criteria
 	 * @param volume
 	 * @param vm
@@ -246,7 +206,6 @@ public interface StorageManager extends Manager {
 	 * @param volume
 	 */
 	void destroyVolume(VolumeVO volume);
-	boolean deleteVolume(DeleteVolumeCmd cmd) throws InvalidParameterValueException;
 	
 	/** Create capacity entries in the op capacity table
 	 * @param storagePool
@@ -281,7 +240,7 @@ public interface StorageManager extends Manager {
 	 * Checks if a host has running VMs that are using its local storage pool.
 	 * @return true if local storage is active on the host
 	 */
-	boolean isLocalStorageActiveOnHost(HostVO host);
+	boolean isLocalStorageActiveOnHost(Host host);
 	
     /**
 	 * Cleans up storage pools by removing unused templates.
@@ -289,15 +248,6 @@ public interface StorageManager extends Manager {
 	 */
 	void cleanupStorage(boolean recurring);
 	
-	/**
-	 * Delete the storage pool
-	 * @param cmd - the command specifying poolId
-	 * @return success or failure
-	 * @throws InvalidParameterValueException
-	 */
-	boolean deletePool(DeletePoolCmd cmd) throws InvalidParameterValueException;
-	
-
 	/**
 	 * Find all of the storage pools needed for this vm.
 	 * 
@@ -308,24 +258,6 @@ public interface StorageManager extends Manager {
 	
     String getPrimaryStorageNameLabel(VolumeVO volume);
 
-    /**
-     * Enable maintenance for primary storage
-     * @param cmd - the command specifying primaryStorageId
-     * @return the primary storage pool
-     * @throws ServerApiException
-     */
-    public StoragePoolVO preparePrimaryStorageForMaintenance(PreparePrimaryStorageForMaintenanceCmd cmd) throws ServerApiException;
-    
-    /**
-     * Complete maintenance for primary storage
-     * @param cmd - the command specifying primaryStorageId
-     * @return the primary storage pool
-     * @throws ServerApiException
-     */
-    public StoragePoolVO cancelPrimaryStorageForMaintenance(CancelPrimaryStorageMaintenanceCmd cmd) throws ServerApiException;
-
-	public StoragePoolVO updateStoragePool(UpdateStoragePoolCmd cmd) throws IllegalArgumentException;
-    
     /**
      * Allocates one volume.
      * @param <T>

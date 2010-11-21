@@ -26,23 +26,26 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name="guest_os_category")
-public class GuestOSCategoryVO {
+public class GuestOSCategoryVO implements GuestOsCategory{
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
-    Long id;
+    long id;
     
     @Column(name="name")
     String name;
     
-    public Long getId() {
+    @Override
+    public long getId() {
     	return id;
     }
     
+    @Override
     public String getName() {
     	return name; 
     }
     
+    @Override
     public void setName(String name) {
     	this.name = name;
     }

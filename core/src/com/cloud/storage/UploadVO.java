@@ -31,6 +31,7 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDaoBase;
 
 /**
@@ -43,7 +44,7 @@ import com.cloud.utils.db.GenericDaoBase;
 public class UploadVO implements Upload {
 	@Id
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
-	Long id;
+	long id;
 	
 	@Column(name="host_id")
 	private long hostId;
@@ -85,7 +86,8 @@ public class UploadVO implements Upload {
 	@Column (name="install_path")
 	private String installPath;
 	   
-	public long getHostId() {
+	@Override
+    public long getHostId() {
 		return hostId;
 	}
 
@@ -93,15 +95,18 @@ public class UploadVO implements Upload {
 		this.hostId = hostId;
 	}
 
-	public Long getId() {
+	@Override
+    public long getId() {
 		return id;
 	}
 
-	public Date getCreated() {
+	@Override
+    public Date getCreated() {
 		return created;
 	}
 
-	public Date getLastUpdated() {
+	@Override
+    public Date getLastUpdated() {
 		return lastUpdated;
 	}
 	
@@ -152,7 +157,8 @@ public class UploadVO implements Upload {
 		this.errorString = errorString;
 	}
 
-	public String getErrorString() {
+	@Override
+    public String getErrorString() {
 		return errorString;
 	}
 
@@ -160,7 +166,8 @@ public class UploadVO implements Upload {
 		this.jobId = jobId;
 	}
 
-	public String getJobId() {
+	@Override
+    public String getJobId() {
 		return jobId;
 	}
 
@@ -168,25 +175,18 @@ public class UploadVO implements Upload {
 	public boolean equals(Object obj) {
 		if (obj instanceof UploadVO) {
 			UploadVO other = (UploadVO)obj;
-		   if (id == null && other.getId() == null) {
-			   return (this.typeId==other.getTypeId() && this.hostId==other.getHostId() && this.type == other.getType());
-		   } else if (id == null && other.getId() != null) {
-			   return false;
-		   } else if (id != null && other.getId() == null) {
-			   return false;
-		   } else {
-			   return (this.id.equals(other.getId()));
-		   }
+		   return (this.typeId==other.getTypeId() && this.hostId==other.getHostId() && this.type == other.getType());
 		}
 		return false;
 	}
 
 	@Override
 	public int hashCode() {
-		return id.hashCode();
+		return NumbersUtil.hash(id);
 	}
 
-	public int getUploadPercent() {
+	@Override
+    public int getUploadPercent() {
 		return uploadPercent;
 	}
 
@@ -194,7 +194,8 @@ public class UploadVO implements Upload {
 		this.uploadPercent = uploadPercent;
 	}
 
-	public Status getUploadState() {
+	@Override
+    public Status getUploadState() {
 		return uploadState;
 	}
 
@@ -202,7 +203,8 @@ public class UploadVO implements Upload {
 		this.uploadState = uploadState;
 	}
 
-	public long getTypeId() {
+	@Override
+    public long getTypeId() {
 		return typeId;
 	}
 
@@ -210,7 +212,8 @@ public class UploadVO implements Upload {
 		this.typeId = typeId;
 	}
 
-	public Type getType() {
+	@Override
+    public Type getType() {
 		return type;
 	}
 
@@ -218,14 +221,16 @@ public class UploadVO implements Upload {
 		this.type = type;
 	}
 
-	public Mode getMode() {
+	@Override
+    public Mode getMode() {
         return mode;
     }
 
-    public void setMode(Mode mode) {
+    public void setMode(Mode mode) { 
         this.mode = mode;
     }
 
+    @Override
     public String getUploadUrl() {
 		return uploadUrl;
 	}
@@ -234,20 +239,23 @@ public class UploadVO implements Upload {
 		this.uploadUrl = uploadUrl;
 	}
 
-	public void setId(Long id) {
+	@Override
+    public void setId(Long id) {
 		this.id = id;
 	}
 
-	public void setCreated(Date created) {
+	@Override
+    public void setCreated(Date created) {
 		this.created = created;
 	}
 
+    @Override
     public String getInstallPath() {
         return installPath;
     }
 
+    @Override
     public void setInstallPath(String installPath) {
         this.installPath = installPath;
     }
-
 }

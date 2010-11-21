@@ -19,9 +19,9 @@ package com.cloud.agent.api;
 
 import java.util.List;
 
+import com.cloud.network.router.VirtualRouter;
+import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.storage.VolumeVO;
-import com.cloud.vm.DomainRouter;
-import com.cloud.vm.DomainRouter.Role;
 import com.cloud.vm.DomainRouterVO;
 
 
@@ -53,7 +53,7 @@ public class StartRouterCommand extends AbstractStartCommand {
         this.mgmt_host = mgmtHost;
 	}
 
-	public DomainRouter getRouter() {
+	public VirtualRouter getRouter() {
         return router;
     }
 	

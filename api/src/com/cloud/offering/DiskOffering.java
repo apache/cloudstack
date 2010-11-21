@@ -17,6 +17,8 @@
  */
 package com.cloud.offering;
 
+import java.util.Date;
+
 
 /**
  * Represents a disk offering that specifies what the end user needs in
@@ -41,4 +43,10 @@ public interface DiskOffering {
     public String getTags();
     
     public String[] getTagsArray();
+    
+    Date getCreated();
+    
+    long getDiskSize();
+    
+    Boolean isCustomized();
 }

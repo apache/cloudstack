@@ -17,7 +17,6 @@
  */
 package com.cloud.storage.secondary;
 
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
@@ -71,7 +70,7 @@ import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.domain.DomainVO;
-import com.cloud.event.EventState;
+import com.cloud.event.Event;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
@@ -90,10 +89,10 @@ import com.cloud.info.RunningHostCountInfo;
 import com.cloud.info.RunningHostInfoAgregator;
 import com.cloud.info.RunningHostInfoAgregator.ZoneHostInfo;
 import com.cloud.network.IpAddrAllocator;
-import com.cloud.network.NetworkVO;
 import com.cloud.network.IpAddrAllocator.networkInfo;
-import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkVO;
+import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
@@ -133,19 +132,16 @@ import com.cloud.utils.events.SubscriptionMgr;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.utils.net.NfsUtils;
-import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.State;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineGuru;
-import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.VmManager;
-import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
+import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VmManager;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -361,7 +357,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 				}
 			}
 			// to ensure atomic state transition to Starting state
-			if (!_secStorageVmDao.updateIf(secStorageVm, Event.StartRequested, routingHost.getId())) {
+			if (!_secStorageVmDao.updateIf(secStorageVm, VirtualMachine.Event.StartRequested, routingHost.getId())) {
 				if (s_logger.isDebugEnabled()) {
 					SecondaryStorageVmVO temp = _secStorageVmDao.findById(secStorageVmId);
 					s_logger.debug("Unable to start secondary storage vm "
@@ -396,7 +392,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 					secStorageVm.setPrivateIpAddress(privateIpAddress);
 					String guestIpAddress = _dcDao.allocateLinkLocalIpAddress(secStorageVm.getDataCenterId(), routingHost.getPodId(), secStorageVm.getId(), null);
 					secStorageVm.setGuestIpAddress(guestIpAddress);
-					_secStorageVmDao.updateIf(secStorageVm, Event.OperationRetry, routingHost.getId());
+					_secStorageVmDao.updateIf(secStorageVm, VirtualMachine.Event.OperationRetry, routingHost.getId());
 					secStorageVm = _secStorageVmDao.findById(secStorageVm.getId());
 
 					List<VolumeVO> vols = _storageMgr.prepare(secStorageVm, routingHost);
@@ -509,7 +505,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 							"Couldn't find a routingHost to run secondary storage vm");
 				}
 
-				_secStorageVmDao.updateIf(secStorageVm, Event.OperationSucceeded, routingHost.getId());
+				_secStorageVmDao.updateIf(secStorageVm, VirtualMachine.Event.OperationSucceeded, routingHost.getId());
 				if (s_logger.isDebugEnabled()) {
 					s_logger.debug("Secondary storage vm is now started, vm id : " + secStorageVm.getId());
 				}
@@ -549,7 +545,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 						secStorageVm.setPrivateIpAddress(null);
 						freePrivateIpAddress(privateIpAddress, secStorageVm.getDataCenterId(), secStorageVm.getId());
 					}
-					_secStorageVmDao.updateIf(secStorageVm, Event.OperationFailed, null);
+					_secStorageVmDao.updateIf(secStorageVm, VirtualMachine.Event.OperationFailed, null);
 					txn.commit();
 				} catch (Exception e) {
 					s_logger.error("Caught exception during error recovery");
@@ -890,7 +886,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 			}
 			
 			// kick the state machine
-			_secStorageVmDao.updateIf(secStorageVm, Event.OperationSucceeded, null);
+			_secStorageVmDao.updateIf(secStorageVm, VirtualMachine.Event.OperationSucceeded, null);
 			return secStorageVm;
 		} catch (StorageUnavailableException e) {
 			s_logger.error("Unable to alloc storage for secondary storage vm: ", e);
@@ -1507,16 +1503,16 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 
 	@Override
 	public void completeStartCommand(SecondaryStorageVmVO vm) {
-		_secStorageVmDao.updateIf(vm, Event.AgentReportRunning, vm.getHostId());
+		_secStorageVmDao.updateIf(vm, VirtualMachine.Event.AgentReportRunning, vm.getHostId());
 	}
 
 	@Override
 	public void completeStopCommand(SecondaryStorageVmVO vm) {
-		completeStopCommand(vm, Event.AgentReportStopped);
+		completeStopCommand(vm, VirtualMachine.Event.AgentReportStopped);
 	}
 
 	@DB
-	protected void completeStopCommand(SecondaryStorageVmVO secStorageVm, Event ev) {
+	protected void completeStopCommand(SecondaryStorageVmVO secStorageVm, VirtualMachine.Event ev) {
 		Transaction txn = Transaction.currentTxn();
 		try {
 			txn.start();
@@ -1686,7 +1682,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 			s_logger.debug("Destroying secondary storage vm vm " + vmId);
 		}
 
-		if (!_secStorageVmDao.updateIf(vm, Event.DestroyRequested, null)) {
+		if (!_secStorageVmDao.updateIf(vm, VirtualMachine.Event.DestroyRequested, null)) {
 		    String msg = "Unable to destroy the vm because it is not in the correct state: " + vmId;
 			s_logger.debug(msg);
 			saveFailedEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_SSVM_DESTROY, msg, startEventId);
@@ -1767,7 +1763,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 
 	@Override
 	public boolean stop(SecondaryStorageVmVO secStorageVm, long startEventId) throws AgentUnavailableException {
-		if (!_secStorageVmDao.updateIf(secStorageVm, Event.StopRequested, secStorageVm.getHostId())) {
+		if (!_secStorageVmDao.updateIf(secStorageVm, VirtualMachine.Event.StopRequested, secStorageVm.getHostId())) {
 		    String msg = "Unable to stop secondary storage vm: " + secStorageVm.toString();
 			s_logger.debug(msg);
 			saveFailedEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_SSVM_STOP, msg, startEventId);
@@ -1794,7 +1790,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
                                 saveFailedEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_SSVM_STOP, msg, startEventId);
                                 return false;
                             }
-                            completeStopCommand(secStorageVm, Event.OperationSucceeded);
+                            completeStopCommand(secStorageVm, VirtualMachine.Event.OperationSucceeded);
                             
                             SubscriptionMgr.getInstance().notifySubscribers(
                                     SecStorageVmAlertEventArgs.ALERT_SUBJECT, this,
@@ -1839,7 +1835,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 	public boolean migrate(SecondaryStorageVmVO secStorageVm, HostVO host) {
 		HostVO fromHost = _hostDao.findById(secStorageVm.getId());
 
-		if (!_secStorageVmDao.updateIf(secStorageVm, Event.MigrationRequested, secStorageVm.getHostId())) {
+		if (!_secStorageVmDao.updateIf(secStorageVm, VirtualMachine.Event.MigrationRequested, secStorageVm.getHostId())) {
 			s_logger.debug("State for " + secStorageVm.toString() + " has changed so migration can not take place.");
 			return false;
 		}
@@ -1862,18 +1858,18 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 		CheckVirtualMachineAnswer answer = (CheckVirtualMachineAnswer) _agentMgr.send(host.getId(), cvm);
 		if (!answer.getResult()) {
 			s_logger.debug("Unable to complete migration for " + secStorageVm.getId());
-			_secStorageVmDao.updateIf(secStorageVm, Event.AgentReportStopped, null);
+			_secStorageVmDao.updateIf(secStorageVm, VirtualMachine.Event.AgentReportStopped, null);
 			return false;
 		}
 
 		State state = answer.getState();
 		if (state == State.Stopped) {
 			s_logger.warn("Unable to complete migration as we can not detect it on " + host.getId());
-			_secStorageVmDao.updateIf(secStorageVm, Event.AgentReportStopped, null);
+			_secStorageVmDao.updateIf(secStorageVm, VirtualMachine.Event.AgentReportStopped, null);
 			return false;
 		}
 
-		_secStorageVmDao.updateIf(secStorageVm, Event.OperationSucceeded, host.getId());
+		_secStorageVmDao.updateIf(secStorageVm, VirtualMachine.Event.OperationSucceeded, host.getId());
 		return true;
 	}
 
@@ -1967,7 +1963,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 	    event.setUserId(userId);
 	    event.setAccountId(accountId);
 	    event.setType(type);
-	    event.setState(EventState.Started);
+	    event.setState(Event.State.Started);
 	    event.setDescription(description);
 	    event.setStartId(startEventId);
 	    event = _eventDao.persist(event);
@@ -1981,7 +1977,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         event.setUserId(userId);
         event.setAccountId(accountId);
         event.setType(type);
-        event.setState(EventState.Completed);
+        event.setState(Event.State.Completed);
         event.setLevel(EventVO.LEVEL_ERROR);
         event.setDescription(description);
         event.setStartId(startEventId);

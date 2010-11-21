@@ -24,4 +24,8 @@ public interface Pod extends Grouping {
     long getDataCenterId();
     
     //String getUniqueName();
+    
+    String getDescription();
+    
+    String getName();
 }

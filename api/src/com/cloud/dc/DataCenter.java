@@ -19,4 +19,11 @@ public interface DataCenter extends Grouping {
     String getGuestNetworkCidr();
     String getName();
     Long getDomainId();
+    String getDescription();
+    String getDomain();
+    String getVnet();
+    
+    DataCenterNetworkType getNetworkType();
+    String getInternalDns1();
+    String getInternalDns2();
 }

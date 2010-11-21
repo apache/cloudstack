@@ -84,7 +84,7 @@ import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
-import com.cloud.event.EventState;
+import com.cloud.event.Event;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
@@ -107,10 +107,10 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.DomainRouterService;
 import com.cloud.network.FirewallRuleVO;
 import com.cloud.network.IPAddressVO;
-import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.Network;
-import com.cloud.network.NetworkVO;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkVO;
+import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.RemoteAccessVpnVO;
 import com.cloud.network.SshKeysDistriMonitor;
 import com.cloud.network.VpnUserVO;
@@ -122,6 +122,7 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkRuleConfigDao;
 import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.dao.VpnUserDao;
+import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -158,8 +159,6 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.vm.DomainRouter;
-import com.cloud.vm.DomainRouter.Role;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
@@ -167,7 +166,6 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.State;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachineGuru;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
@@ -379,7 +377,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
                 _eventDao.persist(event);
                 throw new ExecutionException("Unable to create DHCP Server");
             }
-            _routerDao.updateIf(router, Event.OperationSucceeded, null);
+            _routerDao.updateIf(router, VirtualMachine.Event.OperationSucceeded, null);
 
             s_logger.info("DHCP server created: id=" + router.getId() + "; name=" + router.getHostName() + "; vlan=" + guestVlan.getVlanId() + "; pod=" + pod.getName());
 
@@ -451,7 +449,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
             event.setUserId(1L);
             event.setAccountId(accountId);
             event.setType(EventTypes.EVENT_ROUTER_CREATE);
-            event.setState(EventState.Started);
+            event.setState(Event.State.Started);
             event.setStartId(startEventId);
             event.setDescription("Creating Router for account with Id: "+accountId);
             event = _eventDao.persist(event);
@@ -547,7 +545,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
                 _eventDao.persist(event);
                 throw new ExecutionException("Unable to create DomainRouter");
             }
-            _routerDao.updateIf(router, Event.OperationSucceeded, null);
+            _routerDao.updateIf(router, VirtualMachine.Event.OperationSucceeded, null);
 
             s_logger.debug("Router created: id=" + router.getId() + "; name=" + router.getHostName());
             
@@ -609,7 +607,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         event.setUserId(User.UID_SYSTEM);
         event.setAccountId(router.getAccountId());
         event.setType(EventTypes.EVENT_ROUTER_DESTROY);
-        event.setState(EventState.Started);
+        event.setState(Event.State.Started);
         event.setParameters("id=" + routerId);
         event.setDescription("Starting to destroy router : " + router.getHostName());
         event = _eventDao.persist(event);
@@ -627,7 +625,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
                 return false;
             }
             router = _routerDao.findById(routerId);
-            if (!_routerDao.updateIf(router, Event.DestroyRequested, router.getHostId())) {
+            if (!_routerDao.updateIf(router, VirtualMachine.Event.DestroyRequested, router.getHostId())) {
                 s_logger.debug("VM " + router.toString() + " is not in a state to be destroyed.");
                 return false;
             }
@@ -663,7 +661,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
     
     @Override
     @DB
-    public DomainRouter upgradeRouter(UpgradeRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+    public VirtualRouter upgradeRouter(UpgradeRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
         Long routerId = cmd.getId();
         Long serviceOfferingId = cmd.getServiceOfferingId();
         Account account = UserContext.current().getAccount();
@@ -756,7 +754,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
     }
     
     @Override
-    public DomainRouter startRouter(StartRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException{
+    public VirtualRouter startRouter(StartRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException{
         if (_useNewNetworking) {
             return startRouter(cmd.getId());
         }
@@ -812,7 +810,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
 	        event.setUserId(1L);
 	        event.setAccountId(router.getAccountId());
 	        event.setType(EventTypes.EVENT_ROUTER_START);
-	        event.setState(EventState.Started);
+	        event.setState(Event.State.Started);
 	        event.setDescription("Starting Router with Id: "+routerId);
 	        event.setStartId(startEventId);
 	        event = _eventDao.persist(event);
@@ -846,7 +844,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
 	        	return null;
 	        }
 	        
-	        if (!_routerDao.updateIf(router, Event.StartRequested, routingHost.getId())) {
+	        if (!_routerDao.updateIf(router, VirtualMachine.Event.StartRequested, routingHost.getId())) {
 	            s_logger.debug("Unable to start router " + router.toString() + " because it is not in a startable state");
 	            throw new ConcurrentOperationException("Someone else is starting the router: " + router.toString());
 	        }
@@ -955,7 +953,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
 	                    
 	                }
 	                router.setDomain(networkDomain);
-	                _routerDao.updateIf(router, Event.OperationRetry, routingHost.getId());
+	                _routerDao.updateIf(router, VirtualMachine.Event.OperationRetry, routingHost.getId());
 
 	                List<VolumeVO> vols = _storageMgr.prepare(router, routingHost);
 	                if (vols == null) {
@@ -1037,7 +1035,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
 	                throw new ExecutionException("Couldn't find a routingHost");
 	            }
 	
-	            _routerDao.updateIf(router, Event.OperationSucceeded, routingHost.getId());
+	            _routerDao.updateIf(router, VirtualMachine.Event.OperationSucceeded, routingHost.getId());
 	            if (s_logger.isDebugEnabled()) {
 	                s_logger.debug("Router " + router.toString() + " is now started on " + routingHost.toString());
 	            }
@@ -1078,7 +1076,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
                 }
 
 
-                if (_routerDao.updateIf(router, Event.OperationFailed, null)) {
+                if (_routerDao.updateIf(router, VirtualMachine.Event.OperationFailed, null)) {
                     txn.commit();
                 }
                 
@@ -1262,7 +1260,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
     
     
     @Override
-    public DomainRouter stopRouter(StopRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, ResourceUnavailableException, ConcurrentOperationException{
+    public VirtualRouter stopRouter(StopRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, ResourceUnavailableException, ConcurrentOperationException{
         if (_useNewNetworking) {
             return stopRouter(cmd.getId());
         }
@@ -1380,7 +1378,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         event.setUserId(1L);
         event.setAccountId(router.getAccountId());
         event.setType(EventTypes.EVENT_ROUTER_REBOOT);
-        event.setState(EventState.Started);
+        event.setState(Event.State.Started);
         event.setDescription("Rebooting Router with Id: "+routerId);
         event.setStartId(startEventId);
         _eventDao.persist(event);
@@ -1413,7 +1411,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
     }
     
     @Override
-    public DomainRouter rebootRouter(RebootRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
+    public VirtualRouter rebootRouter(RebootRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
     	Long routerId = cmd.getId();
     	Account account = UserContext.current().getAccount();
     	
@@ -1440,7 +1438,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
     }
 
     @Override
-    public List<? extends DomainRouter> getRouters(final long hostId) {
+    public List<? extends VirtualRouter> getRouters(final long hostId) {
         return _routerDao.listByHostId(hostId);
     }
 
@@ -1555,16 +1553,16 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
 
     @Override
     public void completeStartCommand(final DomainRouterVO router) {
-        _routerDao.updateIf(router, Event.AgentReportRunning, router.getHostId());
+        _routerDao.updateIf(router, VirtualMachine.Event.AgentReportRunning, router.getHostId());
     }
 
     @Override
     public void completeStopCommand(final DomainRouterVO router) {
-    	completeStopCommand(router, Event.AgentReportStopped);
+    	completeStopCommand(router, VirtualMachine.Event.AgentReportStopped);
     }
     
     @DB
-    public void completeStopCommand(final DomainRouterVO router, final Event ev) {
+    public void completeStopCommand(final DomainRouterVO router, final VirtualMachine.Event ev) {
         final long routerId = router.getId();
 
         final Transaction txn = Transaction.currentTxn();
@@ -1651,7 +1649,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         event.setUserId(1L);
         event.setAccountId(router.getAccountId());
         event.setType(EventTypes.EVENT_ROUTER_STOP);
-        event.setState(EventState.Started);
+        event.setState(Event.State.Started);
         event.setDescription("Stopping Router with Id: "+routerId);
         event.setStartId(eventId);
         event = _eventDao.persist(event);
@@ -1682,7 +1680,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
             event.setType(EventTypes.EVENT_ROUTER_STOP);
             event.setStartId(eventId);
     
-            if (!_routerDao.updateIf(router, Event.StopRequested, hostId)) {
+            if (!_routerDao.updateIf(router, VirtualMachine.Event.StopRequested, hostId)) {
                 s_logger.debug("VM " + router.toString() + " is not in a state to be stopped.");
                 return false;
             }
@@ -1717,11 +1715,11 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
                 event.setDescription("failed to stop Domain Router : " + router.getHostName());
                 event.setLevel(EventVO.LEVEL_ERROR);
                 _eventDao.persist(event);
-                _routerDao.updateIf(router, Event.OperationFailed, router.getHostId());
+                _routerDao.updateIf(router, VirtualMachine.Event.OperationFailed, router.getHostId());
                 return false;
             }
     
-            completeStopCommand(router, Event.OperationSucceeded);
+            completeStopCommand(router, VirtualMachine.Event.OperationSucceeded);
             event.setDescription("successfully stopped Domain Router : " + router.getHostName());
             _eventDao.persist(event);
             if (s_logger.isDebugEnabled()) {
@@ -1793,7 +1791,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
     public boolean migrate(final DomainRouterVO router, final HostVO host) {
         final HostVO fromHost = _hostDao.findById(router.getHostId());
 
-    	if (!_routerDao.updateIf(router, Event.MigrationRequested, router.getHostId())) {
+    	if (!_routerDao.updateIf(router, VirtualMachine.Event.MigrationRequested, router.getHostId())) {
     		s_logger.debug("State for " + router.toString() + " has changed so migration can not take place.");
     		return false;
     	}
@@ -1820,18 +1818,18 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         final CheckVirtualMachineAnswer answer = (CheckVirtualMachineAnswer)_agentMgr.send(host.getId(), cvm);
         if (answer == null || !answer.getResult()) {
             s_logger.debug("Unable to complete migration for " + router.getId());
-            _routerDao.updateIf(router, Event.AgentReportStopped, null);
+            _routerDao.updateIf(router, VirtualMachine.Event.AgentReportStopped, null);
             return false;
         }
 
         final State state = answer.getState();
         if (state == State.Stopped) {
             s_logger.warn("Unable to complete migration as we can not detect it on " + host.getId());
-            _routerDao.updateIf(router, Event.AgentReportStopped, null);
+            _routerDao.updateIf(router, VirtualMachine.Event.AgentReportStopped, null);
             return false;
         }
 
-        _routerDao.updateIf(router, Event.OperationSucceeded, host.getId());
+        _routerDao.updateIf(router, VirtualMachine.Event.OperationSucceeded, host.getId());
 
         return true;
     }
@@ -2350,7 +2348,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
     }
     
     @Override
-    public DomainRouter startRouter(long routerId) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException {
+    public VirtualRouter startRouter(long routerId) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException {
         Account account = UserContext.current().getAccount();
         
         //verify parameters
@@ -2375,7 +2373,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
      * @throws InvalidParameterValueException, PermissionDeniedException
      */
     @Override
-    public DomainRouter stopRouter(long routerId) throws ResourceUnavailableException, ConcurrentOperationException {
+    public VirtualRouter stopRouter(long routerId) throws ResourceUnavailableException, ConcurrentOperationException {
         UserContext context = UserContext.current();
         Account account = context.getAccount();
         long accountId = context.getAccountId();

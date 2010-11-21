@@ -25,12 +25,9 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.domain.PartOf;
-import com.cloud.user.OwnedBy;
-
 @Entity
 @Table(name=("network_group"))
-public class NetworkGroupVO implements PartOf, OwnedBy {
+public class NetworkGroupVO implements NetworkGroup {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
@@ -61,6 +58,7 @@ public class NetworkGroupVO implements PartOf, OwnedBy {
         this.accountName = accountName;
     }
 
+    @Override
     public long getId() {
         return id;
     }

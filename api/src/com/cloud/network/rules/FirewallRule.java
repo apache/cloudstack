@@ -50,4 +50,6 @@ public interface FirewallRule {
      * @return private port.
      */
     String getPrivatePort();
+    
+    String getProtocol();
 }

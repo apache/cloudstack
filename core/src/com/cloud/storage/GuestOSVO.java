@@ -30,7 +30,7 @@ public class GuestOSVO implements GuestOS {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
-    Long id;
+    long id;
     
     @Column(name="category_id")
     private long categoryId;
@@ -41,7 +41,8 @@ public class GuestOSVO implements GuestOS {
     @Column(name="display_name")
     String displayName;
     
-    public Long getId() {
+    @Override
+    public long getId() {
     	return id;
     }
     
@@ -53,6 +54,7 @@ public class GuestOSVO implements GuestOS {
     	this.categoryId = categoryId;
     }
     
+    @Override
     public String getName() {
     	return name; 
     }
@@ -61,6 +63,7 @@ public class GuestOSVO implements GuestOS {
     	this.name = name;
     }
     
+    @Override
     public String getDisplayName() {
     	return displayName;
     }

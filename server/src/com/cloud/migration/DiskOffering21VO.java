@@ -95,7 +95,7 @@ public class DiskOffering21VO {
         this.useLocalStorage = useLocalStorage;
     }
 
-    public Long getId() {
+    public long getId() {
         return id;
     }
     

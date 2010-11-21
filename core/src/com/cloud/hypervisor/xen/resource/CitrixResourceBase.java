@@ -157,6 +157,7 @@ import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.resource.ServerResource;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
@@ -177,7 +178,6 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DiskProfile;
-import com.cloud.vm.DomainRouter;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.State;
 import com.cloud.vm.VirtualMachine;
@@ -3153,7 +3153,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
     protected StartRouterAnswer execute(StartRouterCommand cmd) {
         final String vmName = cmd.getVmName();
-        final DomainRouter router = cmd.getRouter();
+        final VirtualRouter router = cmd.getRouter();
         try {
             String tag = router.getVnet();
             Network network = null;

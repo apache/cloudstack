@@ -33,11 +33,11 @@ import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="alert")
-public class AlertVO {
+public class AlertVO implements Alert{
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
-    private Long id = null;
+    private long id;
 
     @Column(name="type")
     private short type;
@@ -70,14 +70,11 @@ public class AlertVO {
         this.id = id;
     }
 
-    public Long getId() {
+    @Override
+    public long getId() {
         return id;
     }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
+    @Override
     public short getType() {
         return type;
     }
@@ -86,6 +83,7 @@ public class AlertVO {
         this.type = type;
     }
 
+    @Override
     public String getSubject() {
         return subject;
     }
@@ -94,6 +92,7 @@ public class AlertVO {
         this.subject = subject;
     }
 
+    @Override
     public Long getPodId() {
         return podId;
     }
@@ -102,6 +101,7 @@ public class AlertVO {
         this.podId = podId;
     }
 
+    @Override
     public long getDataCenterId() {
         return dataCenterId;
     }
@@ -110,6 +110,7 @@ public class AlertVO {
         this.dataCenterId = dataCenterId;
     }
 
+    @Override
     public int getSentCount() {
         return sentCount;
     }
@@ -118,6 +119,7 @@ public class AlertVO {
         this.sentCount = sentCount;
     }
 
+    @Override
     public Date getCreatedDate() {
         return createdDate;
     }
@@ -126,6 +128,7 @@ public class AlertVO {
         this.createdDate = createdDate;
     }
 
+    @Override
     public Date getLastSent() {
         return lastSent;
     }
@@ -134,6 +137,7 @@ public class AlertVO {
         this.lastSent = lastSent;
     }
 
+    @Override
     public Date getResolved() {
         return resolved;
     }

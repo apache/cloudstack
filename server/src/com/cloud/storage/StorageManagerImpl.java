@@ -89,7 +89,7 @@ import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
-import com.cloud.event.EventState;
+import com.cloud.event.Event;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
@@ -118,7 +118,6 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Storage.StorageResourceType;
-import com.cloud.storage.Volume.Event;
 import com.cloud.storage.Volume.MirrorState;
 import com.cloud.storage.Volume.SourceType;
 import com.cloud.storage.Volume.VolumeType;
@@ -148,6 +147,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
+import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
@@ -168,8 +168,8 @@ import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
-@Local(value = { StorageManager.class })
-public class StorageManagerImpl implements StorageManager {
+@Local(value = { StorageManager.class, StorageService.class })
+public class StorageManagerImpl implements StorageManager, StorageService, Manager {
     private static final Logger s_logger = Logger.getLogger(StorageManagerImpl.class);
 
     protected String _name;
@@ -413,7 +413,7 @@ public class StorageManagerImpl implements StorageManager {
     }
     
     @Override
-    public boolean isLocalStorageActiveOnHost(HostVO host) {
+    public boolean isLocalStorageActiveOnHost(Host host) {
     	List<StoragePoolHostVO> storagePoolHostRefs = _storagePoolHostDao.listByHostId(host.getId());
     	for (StoragePoolHostVO storagePoolHostRef : storagePoolHostRefs) {
     		StoragePoolVO storagePool = _storagePoolDao.findById(storagePoolHostRef.getPoolId());
@@ -641,7 +641,7 @@ public class StorageManagerImpl implements StorageManager {
         event.setUserId(UserContext.current().getUserId());
         event.setAccountId(volume.getAccountId());
         event.setType(EventTypes.EVENT_VOLUME_CREATE);
-        event.setState(EventState.Started);
+        event.setState(Event.State.Started);
         event.setStartId(startEventId);
         event.setDescription("Creating volume from snapshot with id: "+snapshotId);
         _eventDao.persist(event);
@@ -687,7 +687,7 @@ public class StorageManagerImpl implements StorageManager {
         event.setType(EventTypes.EVENT_VOLUME_CREATE);
         event.setParameters(eventParams);
         event.setStartId(startEventId);
-        event.setState(EventState.Completed);
+        event.setState(Event.State.Completed);
         if (createdVolume.getPath() != null) {
             event.setDescription("Created volume: "+ createdVolume.getName() + " with size: " + sizeMB + " MB in pool: " + poolName + " from snapshot id: " + snapshotId);
             event.setLevel(EventVO.LEVEL_INFO);
@@ -915,7 +915,7 @@ public class StorageManagerImpl implements StorageManager {
 		event1.setAccountId(account.getId());
 		event1.setUserId(1L);
 		event1.setType(EventTypes.EVENT_VOLUME_CREATE);
-		event1.setState(EventState.Started);
+		event1.setState(Event.State.Started);
 		event1.setDescription("Create volume: " + rootVol.getName()+ "started");
 		_eventDao.persist(event1);
 	}
@@ -1872,13 +1872,13 @@ public class StorageManagerImpl implements StorageManager {
 //                    event.setDescription("Created volume: " + createdVolume.getName() + " with size: " + sizeMB + " MB");
                     event.setDescription("Created volume: " + volume.getName() + " with size: " + sizeMB + " MB");
                     event.setParameters(eventParams);
-                    event.setState(EventState.Completed);
+                    event.setState(Event.State.Completed);
                     _eventDao.persist(event);
 /*
                 } else {
                     event.setDescription("Unable to create a volume for " + volume);
                     event.setLevel(EventVO.LEVEL_ERROR);
-                    event.setState(EventState.Completed);
+                    event.setState(Event.State.Completed);
                     _eventDao.persist(event);
                 }            
 
@@ -2383,7 +2383,7 @@ public class StorageManagerImpl implements StorageManager {
         event.setUserId(userId);
         event.setAccountId(accountId);
         event.setType(type);
-        event.setState(EventState.Scheduled);
+        event.setState(Event.State.Scheduled);
         event.setDescription("Scheduled async job for "+description);
         event = _eventDao.persist(event);
         return event.getId();
@@ -2743,7 +2743,7 @@ public class StorageManagerImpl implements StorageManager {
             if (created == null) {
                 newVol.setPoolId(null);
                 try {
-                    _volsDao.update(newVol, Event.OperationFailed);
+                    _volsDao.update(newVol, Volume.Event.OperationFailed);
                 } catch (ConcurrentOperationException e) {
                     throw new CloudRuntimeException("Unable to update the failure on a volume: " + newVol, e);
                 }
@@ -2756,7 +2756,7 @@ public class StorageManagerImpl implements StorageManager {
             newVol.setPoolType(created.second().getPoolType());
             newVol.setPodId(created.second().getPodId());
             try {
-                _volsDao.update(newVol, Event.OperationSucceeded);
+                _volsDao.update(newVol, Volume.Event.OperationSucceeded);
             } catch (ConcurrentOperationException e) {
                 throw new CloudRuntimeException("Unable to update an CREATE operation succeeded on volume " + newVol, e);
             }
@@ -2773,7 +2773,7 @@ public class StorageManagerImpl implements StorageManager {
         Transaction txn = Transaction.currentTxn();
         try {
             txn.start();
-            _volsDao.update(existingVolume, Event.Destroy);
+            _volsDao.update(existingVolume, Volume.Event.Destroy);
             VolumeVO newVolume = allocateDuplicateVolume(existingVolume);
             txn.commit();
             return newVolume;

@@ -13,11 +13,11 @@ import javax.persistence.Table;
 @Table(name=("network_group"))
 @SecondaryTable(name="network_ingress_rule", join="left",
         pkJoinColumns={@PrimaryKeyJoinColumn(name="id", referencedColumnName="network_group_id")})
-public class NetworkGroupRulesVO {
+public class NetworkGroupRulesVO implements NetworkGroupRules {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
-    private Long id;
+    private long id;
 
     @Column(name="name")
     private String name;
@@ -60,7 +60,7 @@ public class NetworkGroupRulesVO {
 
     public NetworkGroupRulesVO() { }
 
-    public NetworkGroupRulesVO(Long id, String name, String description, Long domainId, Long accountId, String accountName, Long ruleId, int startPort, int endPort, String protocol, Long allowedNetworkId, String allowedNetworkGroup, String allowedNetGrpAcct, String allowedSourceIpCidr) {
+    public NetworkGroupRulesVO(long id, String name, String description, Long domainId, Long accountId, String accountName, Long ruleId, int startPort, int endPort, String protocol, Long allowedNetworkId, String allowedNetworkGroup, String allowedNetGrpAcct, String allowedSourceIpCidr) {
     	this.id = id;
     	this.name = name;
     	this.description = description;
@@ -77,7 +77,7 @@ public class NetworkGroupRulesVO {
     	this.allowedSourceIpCidr = allowedSourceIpCidr;
     }
 
-	public Long getId() {
+	public long getId() {
 		return id;
 	}
 

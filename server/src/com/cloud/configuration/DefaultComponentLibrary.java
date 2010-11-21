@@ -41,6 +41,7 @@ import com.cloud.configuration.dao.ConfigurationDaoImpl;
 import com.cloud.configuration.dao.ResourceCountDaoImpl;
 import com.cloud.configuration.dao.ResourceLimitDaoImpl;
 import com.cloud.consoleproxy.AgentBasedStandaloneConsoleProxyManager;
+import com.cloud.dao.EntityManagerImpl;
 import com.cloud.dc.dao.AccountVlanMapDaoImpl;
 import com.cloud.dc.dao.ClusterDaoImpl;
 import com.cloud.dc.dao.DataCenterDaoImpl;
@@ -272,6 +273,7 @@ public class DefaultComponentLibrary implements ComponentLibrary {
         addManager("NetworkGroupManager", NetworkGroupManagerImpl.class);
         addManager("VmManager", MauriceMoss.class);
         addManager("DomainRouterManager", DomainRouterManagerImpl.class);
+        addManager("EntityManager", EntityManagerImpl.class);
     }
 
     protected <T> List<ComponentInfo<Adapter>> addAdapterChain(Class<T> interphace, List<Pair<String, Class<? extends T>>> adapters) {

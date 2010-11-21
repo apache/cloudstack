@@ -18,23 +18,10 @@
 package com.cloud.template;
 
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.List;
 
-import com.cloud.api.commands.AttachIsoCmd;
-import com.cloud.api.commands.CopyIsoCmd;
-import com.cloud.api.commands.CopyTemplateCmd;
-import com.cloud.api.commands.DeleteIsoCmd;
-import com.cloud.api.commands.DeleteTemplateCmd;
-import com.cloud.api.commands.DetachIsoCmd;
-import com.cloud.api.commands.ExtractIsoCmd;
-import com.cloud.api.commands.ExtractTemplateCmd;
-import com.cloud.api.commands.RegisterIsoCmd;
-import com.cloud.api.commands.RegisterTemplateCmd;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
-import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
@@ -43,7 +30,6 @@ import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.utils.component.Manager;
 
 /**
  * TemplateManager manages the templates stored
@@ -51,33 +37,8 @@ import com.cloud.utils.component.Manager;
  * creating private/public templates.  It is
  * also responsible for downloading.
  */
-public interface TemplateManager extends Manager {
+public interface TemplateManager {
 	
-    /**
-     * Creates a Template
-     * 
-     * @param userId the  Id of the user
-     * @param accountId of the template to be created.
-     * @param zoneId (optional) the zone to download the template to
-     * @param name - user specified name for the template
-     * @param displayText user readable name.
-     * @param isPublic is this a public template?
-     * @param featured is this template featured?
-     * @param format which image format is the template.
-     * @param fs what is the file system on the template
-     * @param url url to download the template from.
-     * @param chksum chksum to compare it to.
-     * @param requiresHvm does this template require hvm?
-     * @param bits is the os contained on the template 32 bit?
-     * @param enablePassword Does the template support password change.
-     * @param guestOSId OS that is on the template
-     * @param bootable true if this template will represent a bootable ISO
-     * @return the template created.
-     */
-//    Long create(long userId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, ImageFormat format, FileSystem fs, URI url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable);
-    VMTemplateVO registerTemplate(RegisterTemplateCmd cmd) throws URISyntaxException, ResourceAllocationException;
-    VMTemplateVO registerIso(RegisterIsoCmd cmd) throws IllegalArgumentException, ResourceAllocationException;   
-
     /**
      * Creates a Template
      * 
@@ -145,8 +106,6 @@ public interface TemplateManager extends Manager {
      * @throws InvalidParameterValueException 
      */
     boolean copy(long userId, long templateId, long sourceZoneId, long destZoneId, long startEventId) throws StorageUnavailableException;
-    VMTemplateVO copyIso(CopyIsoCmd cmd) throws StorageUnavailableException;
-    VMTemplateVO copyTemplate(CopyTemplateCmd cmd) throws StorageUnavailableException;
     
     /**
      * Deletes a template from secondary storage servers
@@ -156,10 +115,6 @@ public interface TemplateManager extends Manager {
      * @return true if success
      */
     boolean delete(long userId, long templateId, Long zoneId);
-    
-    boolean detachIso(DetachIsoCmd cmd);
-    
-    boolean attachIso(AttachIsoCmd cmd);
     
     /**
      * Lists templates in the specified storage pool that are not being used by any VM.
@@ -176,33 +131,4 @@ public interface TemplateManager extends Manager {
     
     boolean templateIsDeleteable(VMTemplateHostVO templateHostRef);
  
-    /**
-     * Deletes a template
-     * @param cmd - the command specifying templateId
-     */
-    boolean deleteTemplate(DeleteTemplateCmd cmd);
-    
-    /**
-     * Deletes a template
-     * @param cmd - the command specifying isoId
-     * @return true if deletion is successful, false otherwise
-     * @throws InvalidParameterValueException, InternalErrorException, PermissionDeniedException
-     */
-    boolean deleteIso(DeleteIsoCmd cmd);
-
-    /**
-     * Extracts an ISO
-     * @param cmd - the command specifying the mode and id of the ISO
-     * @return extractId.
-     * @throws InvalidParameterValueException, InternalErrorException, PermissionDeniedException
-     */
-    Long extract(ExtractIsoCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, InternalErrorException;
-    
-    /**
-     * Extracts a Template
-     * @param cmd - the command specifying the mode and id of the template
-     * @return extractId.
-     * @throws InvalidParameterValueException, InternalErrorException, PermissionDeniedException
-     */
-    Long extract(ExtractTemplateCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, InternalErrorException;
 }

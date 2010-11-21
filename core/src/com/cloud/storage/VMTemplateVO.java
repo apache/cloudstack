@@ -146,11 +146,13 @@ public class VMTemplateVO implements VirtualMachineTemplate {
 	    this.hypervisorType = hyperType.toString();
     }
 	
-	public boolean getEnablePassword() {
+	@Override
+    public boolean getEnablePassword() {
 		return enablePassword;
 	}
 	
-	public Storage.ImageFormat getFormat() {
+	@Override
+    public Storage.ImageFormat getFormat() {
 	    return format;
 	}
 
@@ -173,11 +175,12 @@ public class VMTemplateVO implements VirtualMachineTemplate {
 	}
 
 	@Override
-    public Long getId() {
+    public long getId() {
 		return id;
 	}
 	
-	public TemplateType getTemplateType() {
+	@Override
+    public TemplateType getTemplateType() {
 	    return templateType;
 	}
 	
@@ -227,7 +230,8 @@ public class VMTemplateVO implements VirtualMachineTemplate {
     	this.featured = featured;
     }
     
-	public Date getCreated() {
+	@Override
+    public Date getCreated() {
 	    return created;
 	}
 	
@@ -235,7 +239,8 @@ public class VMTemplateVO implements VirtualMachineTemplate {
 		return url;
 	}
 
-	public boolean isRequiresHvm() {
+	@Override
+    public boolean isRequiresHvm() {
 		return requiresHvm;
 	}
 	
@@ -252,6 +257,7 @@ public class VMTemplateVO implements VirtualMachineTemplate {
 		return checksum;
 	}
     
+    @Override
     public String getDisplayText() {
 		return displayText;
 	}
@@ -260,7 +266,8 @@ public class VMTemplateVO implements VirtualMachineTemplate {
 		this.displayText = displayText;
 	}
 
-	public long getGuestOSId() {
+	@Override
+    public long getGuestOSId() {
 		return guestOSId;
 	}
 	
@@ -268,7 +275,8 @@ public class VMTemplateVO implements VirtualMachineTemplate {
 		this.guestOSId = guestOSId;
 	}
 	
-	public boolean isBootable() {
+	@Override
+    public boolean isBootable() {
 		return bootable;
 	}
 	
@@ -288,11 +296,13 @@ public class VMTemplateVO implements VirtualMachineTemplate {
 		this.crossZones = crossZones;
 	}
 
-	public boolean isCrossZones() {
+	@Override
+    public boolean isCrossZones() {
 		return crossZones;
 	}
 	
-	public HypervisorType getHypervisorType() {
+	@Override
+    public HypervisorType getHypervisorType() {
 		return HypervisorType.getType(hypervisorType);
 	}
 	

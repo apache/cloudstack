@@ -109,6 +109,8 @@ import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.router.DomainRouterManager;
+import com.cloud.network.router.VirtualRouter;
+import com.cloud.network.rules.FirewallRule;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.offerings.NetworkOfferingVO;
@@ -148,7 +150,6 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.vm.DomainRouter;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
@@ -1374,7 +1375,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override @DB
-    public LoadBalancerVO createLoadBalancerRule(CreateLoadBalancerRuleCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+    public LoadBalancer createLoadBalancerRule(CreateLoadBalancerRuleCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
         String publicIp = cmd.getPublicIp();
 
         // make sure ip address exists
@@ -1619,7 +1620,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    public List<? extends DomainRouter> getRouters(final long hostId) {
+    public List<? extends VirtualRouter> getRouters(final long hostId) {
         return _routerMgr.getRouters(hostId);
     }
 
@@ -3004,7 +3005,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 	}
 	
 	@Override @DB
-	public FirewallRuleVO createIpForwardingRuleOnDomr(Long ruleId) throws ServerApiException{
+	public FirewallRule createIpForwardingRuleOnDomr(long ruleId) {
     	Transaction txn = Transaction.currentTxn();
     	txn.start();
         boolean success = false;
@@ -3071,7 +3072,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 	}
 	
     @Override @DB
-    public FirewallRuleVO createIpForwardingRuleInDb(String ipAddr, Long virtualMachineId) throws ServerApiException {
+    public FirewallRule createIpForwardingRuleInDb(String ipAddr, long virtualMachineId) {
     	
     	Transaction txn = Transaction.currentTxn();
     	txn.start();

@@ -38,7 +38,6 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.Manager;
-import com.cloud.vm.DomainRouter;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
@@ -108,7 +107,7 @@ public interface DomainRouterManager extends Manager {
      * @param hostId get all of the virtual machine routers on a host.
      * @return collection of VirtualMachineRouter
      */
-    List<? extends DomainRouter> getRouters(long hostId);
+    List<? extends VirtualRouter> getRouters(long hostId);
     
     /**
      * @param routerId id of the router
@@ -143,7 +142,7 @@ public interface DomainRouterManager extends Manager {
 
     String createZoneVlan(DomainRouterVO router);
     
-	DomainRouter upgradeRouter(UpgradeRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+	VirtualRouter upgradeRouter(UpgradeRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
 	
 	DomainRouterVO getRouter(long accountId, long zoneId);
 	DomainRouterVO getRouter(String publicIpAddress);

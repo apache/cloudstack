@@ -39,7 +39,6 @@ import com.cloud.api.ApiGsonHelper;
 import com.cloud.api.ApiSerializerHelper;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.QueryAsyncJobResultCmd;
 import com.cloud.api.response.ExceptionResponse;
@@ -329,6 +328,7 @@ public class AsyncJobManagerImpl implements AsyncJobManager {
 
     private Runnable getExecutorRunnable(final AsyncJobManager mgr, final AsyncJobVO job) {
         return new Runnable() {
+            @Override
             public void run() {
                 long jobId = 0;
 
@@ -344,7 +344,6 @@ public class AsyncJobManagerImpl implements AsyncJobManager {
 
                     Class<?> cmdClass = Class.forName(job.getCmd());
                     cmdObj = (BaseAsyncCmd)cmdClass.newInstance();
-                    cmdObj.setAsyncJobManager(mgr);
                     cmdObj.setJob(job);
 
                     Type mapType = new TypeToken<Map<String, String>>() {}.getType();
@@ -480,7 +479,8 @@ public class AsyncJobManagerImpl implements AsyncJobManager {
     
 	private Runnable getHeartbeatTask() {
 		return new Runnable() {
-			public void run() {
+			@Override
+            public void run() {
 				try {
 					List<SyncQueueItemVO> l = _queueMgr.dequeueFromAny(getMsid(), MAX_ONETIME_SCHEDULE_SIZE);
 					if(l != null && l.size() > 0) {
@@ -502,7 +502,8 @@ public class AsyncJobManagerImpl implements AsyncJobManager {
 	@DB
 	private Runnable getGCTask() {
 		return new Runnable() {
-			public void run() {
+			@Override
+            public void run() {
 				GlobalLock scanLock = GlobalLock.getInternLock("AsyncJobManagerGC");
 				try {
 					if(scanLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION)) {

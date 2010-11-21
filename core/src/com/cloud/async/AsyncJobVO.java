@@ -34,7 +34,7 @@ import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="async_job")
-public class AsyncJobVO {
+public class AsyncJobVO implements AsyncJob {
 	public static final int CALLBACK_POLLING = 0;
 	public static final int CALLBACK_EMAIL = 1;
 	
@@ -133,6 +133,7 @@ public class AsyncJobVO {
     	this.callbackAddress = callbackAddress;
     }
     
+    @Override
     public Long getId() {
 		return id;
 	}
@@ -141,7 +142,8 @@ public class AsyncJobVO {
 		this.id = id;
 	}
 
-	public long getUserId() {
+	@Override
+    public long getUserId() {
 		return userId;
 	}
 
@@ -149,7 +151,8 @@ public class AsyncJobVO {
 		this.userId = userId;
 	}
 
-	public long getAccountId() {
+	@Override
+    public long getAccountId() {
 		return accountId;
 	}
 
@@ -157,7 +160,8 @@ public class AsyncJobVO {
 		this.accountId = accountId;
 	}
 
-	public String getCmd() {
+	@Override
+    public String getCmd() {
 		return cmd;
 	}
 
@@ -165,7 +169,8 @@ public class AsyncJobVO {
 		this.cmd = cmd;
 	}
 	
-	public int getCmdVersion() {
+	@Override
+    public int getCmdVersion() {
 		return cmdVersion;
 	}
 	
@@ -173,7 +178,8 @@ public class AsyncJobVO {
 		cmdVersion = version;
 	}
 
-	public String getCmdInfo() {
+	@Override
+    public String getCmdInfo() {
 		return cmdInfo;
 	}
 
@@ -181,7 +187,8 @@ public class AsyncJobVO {
 		this.cmdInfo = cmdInfo;
 	}
 
-	public int getCallbackType() {
+	@Override
+    public int getCallbackType() {
 		return callbackType;
 	}
 
@@ -189,7 +196,8 @@ public class AsyncJobVO {
 		this.callbackType = callbackType;
 	}
 
-	public String getCallbackAddress() {
+	@Override
+    public String getCallbackAddress() {
 		return callbackAddress;
 	}
 
@@ -197,7 +205,8 @@ public class AsyncJobVO {
 		this.callbackAddress = callbackAddress;
 	}
 
-	public int getStatus() {
+	@Override
+    public int getStatus() {
 		return status;
 	}
 
@@ -205,7 +214,8 @@ public class AsyncJobVO {
 		this.status = status;
 	}
 	
-	public int getProcessStatus() {
+	@Override
+    public int getProcessStatus() {
 		return processStatus;
 	}
 	
@@ -213,7 +223,8 @@ public class AsyncJobVO {
 		processStatus = status;
 	}
 	
-	public int getResultCode() {
+	@Override
+    public int getResultCode() {
 		return resultCode;
 	}
 	
@@ -221,7 +232,8 @@ public class AsyncJobVO {
 		this.resultCode = resultCode;
 	}
 
-	public String getResult() {
+	@Override
+    public String getResult() {
 		return result;
 	}
 
@@ -229,7 +241,8 @@ public class AsyncJobVO {
 		this.result = result;
 	}
 
-	public Long getInitMsid() {
+	@Override
+    public Long getInitMsid() {
 		return initMsid;
 	}
 
@@ -237,7 +250,8 @@ public class AsyncJobVO {
 		this.initMsid = initMsid;
 	}
 
-	public Long getCompleteMsid() {
+	@Override
+    public Long getCompleteMsid() {
 		return completeMsid;
 	}
 
@@ -245,7 +259,8 @@ public class AsyncJobVO {
 		this.completeMsid = completeMsid;
 	}
 
-	public Date getCreated() {
+	@Override
+    public Date getCreated() {
 		return created;
 	}
 
@@ -253,7 +268,8 @@ public class AsyncJobVO {
 		this.created = created;
 	}
 
-	public Date getLastUpdated() {
+	@Override
+    public Date getLastUpdated() {
 		return lastUpdated;
 	}
 
@@ -261,7 +277,8 @@ public class AsyncJobVO {
 		this.lastUpdated = lastUpdated;
 	}
 
-	public Date getLastPolled() {
+	@Override
+    public Date getLastPolled() {
 		return lastPolled;
 	}
 
@@ -269,7 +286,8 @@ public class AsyncJobVO {
 		this.lastPolled = lastPolled;
 	}
 
-	public Date getRemoved() {
+	@Override
+    public Date getRemoved() {
 		return removed;
 	}
 
@@ -277,6 +295,7 @@ public class AsyncJobVO {
 		this.removed = removed;
 	}
 	
+    @Override
     public String getInstanceType() {
 		return instanceType;
 	}
@@ -285,7 +304,8 @@ public class AsyncJobVO {
 		this.instanceType = instanceType;
 	}
 
-	public Long getInstanceId() {
+	@Override
+    public Long getInstanceId() {
 		return instanceId;
 	}
 
@@ -293,6 +313,7 @@ public class AsyncJobVO {
 		this.instanceId = instanceId;
 	}
 	
+    @Override
     public String getSessionKey() {
 		return sessionKey;
 	}
@@ -301,6 +322,7 @@ public class AsyncJobVO {
 		this.sessionKey = sessionKey;
 	}
 	
+    @Override
     public String getCmdOriginator() {
 		return cmdOriginator;
 	}
@@ -317,6 +339,7 @@ public class AsyncJobVO {
         this.syncSource = syncSource;
     }
     
+    @Override
     public boolean isFromPreviousSession() {
         return fromPreviousSession;
     }
@@ -325,7 +348,8 @@ public class AsyncJobVO {
         this.fromPreviousSession = fromPreviousSession;
     }
     
-	public String toString() {
+	@Override
+    public String toString() {
 		StringBuffer sb = new StringBuffer();
 		sb.append("AsyncJobVO {id:").append(getId());
 		sb.append(", userId: ").append(getUserId());

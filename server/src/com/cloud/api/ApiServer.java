@@ -80,6 +80,7 @@ import org.apache.http.protocol.ResponseServer;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -114,6 +115,7 @@ public class ApiServer implements HttpRequestHandler {
     private ApiDispatcher _dispatcher;
     private ManagementServer _ms = null;
     private AccountManager _accountMgr = null;
+    private AsyncJobManager _asyncMgr = null;
     private Account _systemAccount = null;
     private User _systemUser = null;
 
@@ -152,7 +154,7 @@ public class ApiServer implements HttpRequestHandler {
     
     public void init(String[] apiConfig) {
         try {
-            BaseCmd.setComponents();
+            BaseCmd.setComponents(new ApiResponseHelper());
             _apiCommands = new Properties();
             Properties preProcessedCommands = new Properties();
             if (apiConfig != null) {
@@ -199,9 +201,9 @@ public class ApiServer implements HttpRequestHandler {
         _ms = (ManagementServer)ComponentLocator.getComponent(ManagementServer.Name);
         ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
         _accountMgr = locator.getManager(AccountManager.class);
+        _asyncMgr = locator.getManager(AsyncJobManager.class);
         _systemAccount = _accountMgr.getSystemAccount();
         _systemUser = _accountMgr.getSystemUser();
-        //_asyncMgr = locator.getManager(AsyncJobManager.class);
         _dispatcher = ApiDispatcher.getInstance();
 
         int apiPort = 8096; // default port
@@ -405,7 +407,7 @@ public class ApiServer implements HttpRequestHandler {
             job.setCmd(cmdObj.getClass().getName());
             job.setCmdInfo(ApiGsonHelper.getBuilder().create().toJson(params));
 
-            long jobId = BaseCmd._asyncMgr.submitAsyncJob(job);
+            long jobId = _asyncMgr.submitAsyncJob(job);
             if (objectId != null) {
                 return ((BaseAsyncCreateCmd)asyncCmd).getResponse(jobId, objectId);
             }

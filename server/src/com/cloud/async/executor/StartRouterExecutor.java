@@ -28,11 +28,11 @@ import com.cloud.async.AsyncJobVO;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.exception.InternalErrorException;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
 import com.cloud.user.User;
-import com.cloud.vm.DomainRouter;
 import com.google.gson.Gson;
 
 public class StartRouterExecutor extends VMOperationExecutor {

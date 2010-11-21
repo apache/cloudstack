@@ -96,7 +96,8 @@ public class AsyncJobResult {
 		this.result = ApiSerializerHelper.toSerializedStringOld(result);
 	}
 	
-	public String toString() {
+	@Override
+    public String toString() {
 		StringBuffer sb = new StringBuffer();
 		sb.append("AsyncJobResult {jobId:").append(getJobId());
 		sb.append(", jobStatus: ").append(getJobStatus());

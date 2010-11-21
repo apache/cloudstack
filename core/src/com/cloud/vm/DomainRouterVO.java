@@ -25,6 +25,7 @@ import javax.persistence.Enumerated;
 import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.Table;
 
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.utils.net.NetUtils;
 
 /**
@@ -34,7 +35,7 @@ import com.cloud.utils.net.NetUtils;
 @Table(name="domain_router")
 @PrimaryKeyJoinColumn(name="id")
 @DiscriminatorValue(value="DomainRouter")
-public class DomainRouterVO extends VMInstanceVO implements DomainRouter {
+public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
     @Column(name="ram_size", nullable=false)
     private int ramSize;
     
