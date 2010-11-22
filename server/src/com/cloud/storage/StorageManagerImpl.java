@@ -2466,26 +2466,26 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 							try {
 								if(_userVmMgr.start(vmInstance.getId(), eventId) == null)
 								{
-									String msg = "There was an error starting the ssvm id: "+vmInstance.getId()+" on storage pool, cannot complete primary storage maintenance";
+									String msg = "There was an error starting the user vm id: "+vmInstance.getId()+" on storage pool, cannot complete primary storage maintenance";
 									s_logger.warn(msg);
 			    	        		throw new ResourceUnavailableException(msg);
 								}
 							} catch (StorageUnavailableException e) {
-								String msg = "There was an error starting the ssvm id: "+vmInstance.getId()+" on storage pool, cannot complete primary storage maintenance";
+								String msg = "There was an error starting the user vm id: "+vmInstance.getId()+" on storage pool, cannot complete primary storage maintenance";
 								s_logger.warn(msg,e);
 				        		throw new ResourceUnavailableException(msg);
 							} catch (InsufficientCapacityException e) {
-								String msg = "There was an error starting the ssvm id: "+vmInstance.getId()+" on storage pool, cannot complete primary storage maintenance";
+								String msg = "There was an error starting the user vm id: "+vmInstance.getId()+" on storage pool, cannot complete primary storage maintenance";
 								s_logger.warn(msg,e);
 				        		throw new ResourceUnavailableException(msg);				
 							} catch (ConcurrentOperationException e) {
-								String msg = "There was an error starting the ssvm id: "+vmInstance.getId()+" on storage pool, cannot complete primary storage maintenance";
+								String msg = "There was an error starting the user vm id: "+vmInstance.getId()+" on storage pool, cannot complete primary storage maintenance";
 								s_logger.warn(msg,e);
 				            	primaryStorage.setStatus(Status.ErrorInMaintenance);
 				        		_storagePoolDao.persist(primaryStorage);
 				        		throw new ResourceUnavailableException(msg);
 							} catch (ExecutionException e) {
-								String msg = "There was an error starting the ssvm id: "+vmInstance.getId()+" on storage pool, cannot complete primary storage maintenance";
+								String msg = "There was an error starting the user vm id: "+vmInstance.getId()+" on storage pool, cannot complete primary storage maintenance";
 								s_logger.warn(msg,e);
 				        		throw new ResourceUnavailableException(msg);
 							}

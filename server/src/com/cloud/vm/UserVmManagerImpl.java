@@ -1147,7 +1147,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         		throw new StorageUnavailableException("Could not find the pool for the root disk of vm"+vmId+", to confirm if it is Up or not");
         	}else{
         		//found pool
-        		if(!sp.getStatus().equals(com.cloud.host.Status.Up)){
+        		if(!sp.getStatus().equals(com.cloud.host.Status.Up) && !sp.getStatus().equals(com.cloud.host.Status.CancelMaintenance)){
         			throw new StorageUnavailableException("Could not start the vm; the associated storage pool is in:"+sp.getStatus().toString()+" state");
         		}
         	}
