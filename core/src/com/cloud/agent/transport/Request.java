@@ -25,6 +25,8 @@ import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.SecStorageFirewallCfgCommand;
+import com.cloud.agent.api.SecStorageFirewallCfgCommand.PortConfig;
 import com.cloud.exception.UnsupportedVersionException;
 import com.cloud.storage.VolumeVO;
 import com.cloud.utils.NumbersUtil;
@@ -82,6 +84,7 @@ public class Request {
         s_gBuilder.registerTypeAdapter(Answer[].class, new ArrayTypeAdaptor<Answer>());
         final Type listType = new TypeToken<List<VolumeVO>>() {}.getType();
         s_gBuilder.registerTypeAdapter(listType, new VolListTypeAdaptor());
+        s_gBuilder.registerTypeAdapter(new TypeToken<List<PortConfig>>() {}.getType(), new SecStorageFirewallCfgCommand.PortConfigListTypeAdaptor());
         s_logger.info("Builder inited.");
     }
 

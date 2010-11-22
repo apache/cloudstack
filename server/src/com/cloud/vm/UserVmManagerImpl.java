@@ -730,8 +730,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 	        // we can't send a null path to the ServerResource, so return false if we are unable to find the isoPath
 	    	if (isoName.startsWith("xs-tools"))
 	    		isoPath = isoName;
-	    	else
-	    		return false;
+	    	else {
+	    	    s_logger.warn("Couldn't get absolute iso path");
+	    	    return false;
+	    	}
+	    		
 	    } else {
 	    	isoPath = isoPathPair.first();
 	    }

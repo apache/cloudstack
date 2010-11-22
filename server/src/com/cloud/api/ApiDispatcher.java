@@ -86,7 +86,7 @@ public class ApiDispatcher {
                 s_logger.warn(t);
                 throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, t.getMessage());
             }else if (t instanceof ServerApiException) {
-                s_logger.warn(t);
+                s_logger.warn(t.getClass() + " : " + ((ServerApiException) t).getDescription());
                 throw new ServerApiException(((ServerApiException) t).getErrorCode(), ((ServerApiException) t).getDescription());
             }else if (t instanceof AsyncCommandQueued) {
                 throw (AsyncCommandQueued)t;
@@ -125,7 +125,7 @@ public class ApiDispatcher {
                 s_logger.warn(t);
                 throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, t.getMessage());
             }else if (t instanceof ServerApiException) {
-                s_logger.warn(t);
+                s_logger.warn(t.getClass()  + " : " + ((ServerApiException) t).getDescription());
                 throw new ServerApiException(((ServerApiException) t).getErrorCode(), ((ServerApiException) t).getDescription());
             } else if (t instanceof AsyncCommandQueued) {
                 throw (AsyncCommandQueued)t;

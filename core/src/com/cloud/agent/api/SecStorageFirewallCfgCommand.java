@@ -22,45 +22,46 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import com.cloud.agent.transport.Request;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
 import com.google.gson.JsonParseException;
-import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 import com.google.gson.annotations.Expose;
 import com.google.gson.reflect.TypeToken;
 
 public class SecStorageFirewallCfgCommand extends Command {
-	
+	private static final Logger s_logger = Logger.getLogger(SecStorageFirewallCfgCommand.class);
 
 
 	public static class PortConfigListTypeAdaptor implements JsonDeserializer<List<PortConfig>>, JsonSerializer<List<PortConfig>> {
 		static final GsonBuilder s_gBuilder;
 	    static {
-	        s_gBuilder = new GsonBuilder().excludeFieldsWithoutExposeAnnotation();
+	        s_gBuilder = Request.initBuilder();
 	    }
 
-	    Type listType = new TypeToken<List<PortConfig>>() {}.getType();
+	    static final Type listType = new TypeToken<List<PortConfig>>() {}.getType();
 
 	    public PortConfigListTypeAdaptor() {
 	    }
 
 	    public JsonElement serialize(List<PortConfig> src, Type typeOfSrc, JsonSerializationContext context) {
 	        Gson json = s_gBuilder.create();
-	        String result = json.toJson(src, listType);
-	        return new JsonPrimitive(result);
+	        s_logger.debug("Returning gson tree");
+	        return json.toJsonTree(src, listType);
 	    }
 
 	    public List<PortConfig> deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
 	            throws JsonParseException {
-	        String jsonString = json.toString();
-	        Gson jsonp = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
-	        List<PortConfig> pcs = jsonp.fromJson(jsonString, listType);
+	        Gson jsonp = s_gBuilder.create();
+	        List<PortConfig> pcs = jsonp.fromJson(json, listType);
 	        return pcs;
 	    }
 
@@ -92,12 +93,6 @@ public class SecStorageFirewallCfgCommand extends Command {
 			return intf;
 		}
 	}
-	
-	static {//works since Request's static initializer is run before this one.
-        GsonBuilder s_gBuilder = Request.initBuilder();
-        final Type listType = new TypeToken<List<PortConfig>>() {}.getType();
-        s_gBuilder.registerTypeAdapter(listType, new PortConfigListTypeAdaptor());
-    }
 	
 	@Expose
 	private List<PortConfig> portConfigs = new ArrayList<PortConfig>();
