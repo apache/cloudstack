@@ -116,7 +116,7 @@
                     <h2>
                         Step 1: <strong>Select a Network</strong></h2>
                     <p>
-                        Please select a Network for your new zone. 
+                        Please select a network model for your zone.
                     </p>
                 </div>
                 <div class="zonepopup_contentpanel">
@@ -131,7 +131,7 @@
                                 </div>
                                 <div class="zonepopup_selectiondescriptionbox_bot">
                                     <p>
-                                        Create VLAN when adding a pod    
+                                        Choose this network model if you do <b>*<u>not</u>*</b> want to enable any VLAN support.  All virtual instances created under this network model will be assigned an IP directly from the network and security groups are used to provide security and segregation.
                                     </p>
                                 </div>
                             </div>
@@ -145,7 +145,7 @@
                                 </div>
                                 <div class="zonepopup_selectiondescriptionbox_bot">
                                     <p>
-                                        Create VLAN when add a zone  
+                                        Choose this network model if you wish to enable VLAN support.  This network model provides the most flexibility in allowing administrators to provide custom network offerings such as providing firewall, vpn, or load balancer support as well as enabling direct vs virtual networking.
                                     </p>
                                 </div>
                             </div>
