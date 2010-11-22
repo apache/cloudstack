@@ -53,6 +53,10 @@ public class SecStorageFirewallCfgCommand extends Command {
 	    }
 
 	    public JsonElement serialize(List<PortConfig> src, Type typeOfSrc, JsonSerializationContext context) {
+	        if (src.size() == 0) {
+	            s_logger.info("Returning JsonNull");
+	            return new JsonNull();
+	        }
 	        Gson json = s_gBuilder.create();
 	        s_logger.debug("Returning gson tree");
 	        return json.toJsonTree(src, listType);
@@ -60,6 +64,9 @@ public class SecStorageFirewallCfgCommand extends Command {
 
 	    public List<PortConfig> deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
 	            throws JsonParseException {
+	        if (json.isJsonNull()) {
+	            return new ArrayList<PortConfig>();
+	        }
 	        Gson jsonp = s_gBuilder.create();
 	        List<PortConfig> pcs = jsonp.fromJson(json, listType);
 	        return pcs;
