@@ -12,7 +12,7 @@
  * GNU General Public License for more details.
  * 
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * aLong with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
 package com.cloud.api;
@@ -188,11 +188,11 @@ public class ApiResponseHelper implements ResponseGenerator {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Internal error searching for user stats");
         }
 
-        long bytesSent = 0;
-        long bytesReceived = 0;
+        Long bytesSent = 0L;
+        Long bytesReceived = 0L;
         for (UserStatisticsVO stat : stats) {
-            long rx = stat.getNetBytesReceived() + stat.getCurrentBytesReceived();
-            long tx = stat.getNetBytesSent() + stat.getCurrentBytesSent();
+            Long rx = stat.getNetBytesReceived() + stat.getCurrentBytesReceived();
+            Long tx = stat.getNetBytesSent() + stat.getCurrentBytesSent();
             bytesReceived = bytesReceived + Long.valueOf(rx);
             bytesSent = bytesSent + Long.valueOf(tx);
         }
@@ -201,41 +201,41 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         // Get resource limits and counts
 
-        long vmLimit = ApiDBUtils.findCorrectResourceLimit(ResourceType.user_vm, account.getId());
+        Long vmLimit = ApiDBUtils.findCorrectResourceLimit(ResourceType.user_vm, account.getId());
         String vmLimitDisplay = (accountIsAdmin || vmLimit == -1) ? "Unlimited" : String.valueOf(vmLimit);
-        long vmTotal = ApiDBUtils.getResourceCount(ResourceType.user_vm, account.getId());
+        Long vmTotal = ApiDBUtils.getResourceCount(ResourceType.user_vm, account.getId());
         String vmAvail = (accountIsAdmin || vmLimit == -1) ? "Unlimited" : String.valueOf(vmLimit - vmTotal);
         accountResponse.setVmLimit(vmLimitDisplay);
         accountResponse.setVmTotal(vmTotal);
         accountResponse.setVmAvailable(vmAvail);
 
-        long ipLimit = ApiDBUtils.findCorrectResourceLimit(ResourceType.public_ip, account.getId());
+        Long ipLimit = ApiDBUtils.findCorrectResourceLimit(ResourceType.public_ip, account.getId());
         String ipLimitDisplay = (accountIsAdmin || ipLimit == -1) ? "Unlimited" : String.valueOf(ipLimit);
-        long ipTotal = ApiDBUtils.getResourceCount(ResourceType.public_ip, account.getId());
+        Long ipTotal = ApiDBUtils.getResourceCount(ResourceType.public_ip, account.getId());
         String ipAvail = (accountIsAdmin || ipLimit == -1) ? "Unlimited" : String.valueOf(ipLimit - ipTotal);
         accountResponse.setIpLimit(ipLimitDisplay);
         accountResponse.setIpTotal(ipTotal);
         accountResponse.setIpAvailable(ipAvail);
 
-        long volumeLimit = ApiDBUtils.findCorrectResourceLimit(ResourceType.volume, account.getId());
+        Long volumeLimit = ApiDBUtils.findCorrectResourceLimit(ResourceType.volume, account.getId());
         String volumeLimitDisplay = (accountIsAdmin || volumeLimit == -1) ? "Unlimited" : String.valueOf(volumeLimit);
-        long volumeTotal = ApiDBUtils.getResourceCount(ResourceType.volume, account.getId());
+        Long volumeTotal = ApiDBUtils.getResourceCount(ResourceType.volume, account.getId());
         String volumeAvail = (accountIsAdmin || volumeLimit == -1) ? "Unlimited" : String.valueOf(volumeLimit - volumeTotal);
         accountResponse.setVolumeLimit(volumeLimitDisplay);
         accountResponse.setVolumeTotal(volumeTotal);
         accountResponse.setVolumeAvailable(volumeAvail);
 
-        long snapshotLimit = ApiDBUtils.findCorrectResourceLimit(ResourceType.snapshot, account.getId());
+        Long snapshotLimit = ApiDBUtils.findCorrectResourceLimit(ResourceType.snapshot, account.getId());
         String snapshotLimitDisplay = (accountIsAdmin || snapshotLimit == -1) ? "Unlimited" : String.valueOf(snapshotLimit);
-        long snapshotTotal = ApiDBUtils.getResourceCount(ResourceType.snapshot, account.getId());
+        Long snapshotTotal = ApiDBUtils.getResourceCount(ResourceType.snapshot, account.getId());
         String snapshotAvail = (accountIsAdmin || snapshotLimit == -1) ? "Unlimited" : String.valueOf(snapshotLimit - snapshotTotal);
         accountResponse.setSnapshotLimit(snapshotLimitDisplay);
         accountResponse.setSnapshotTotal(snapshotTotal);
         accountResponse.setSnapshotAvailable(snapshotAvail);
 
-        long templateLimit = ApiDBUtils.findCorrectResourceLimit(ResourceType.template, account.getId());
+        Long templateLimit = ApiDBUtils.findCorrectResourceLimit(ResourceType.template, account.getId());
         String templateLimitDisplay = (accountIsAdmin || templateLimit == -1) ? "Unlimited" : String.valueOf(templateLimit);
-        long templateTotal = ApiDBUtils.getResourceCount(ResourceType.template, account.getId());
+        Long templateTotal = ApiDBUtils.getResourceCount(ResourceType.template, account.getId());
         String templateAvail = (accountIsAdmin || templateLimit == -1) ? "Unlimited" : String.valueOf(templateLimit - templateTotal);
         accountResponse.setTemplateLimit(templateLimitDisplay);
         accountResponse.setTemplateTotal(templateTotal);
@@ -483,7 +483,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         // ISO Info
         if (userVm.getIsoId() != null) {
-            VMTemplateVO iso = ApiDBUtils.findTemplateById(userVm.getIsoId().longValue());
+            VMTemplateVO iso = ApiDBUtils.findTemplateById(userVm.getIsoId());
             if (iso != null) {
                 userVmResponse.setIsoId(userVm.getIsoId());
                 userVmResponse.setIsoName(iso.getName());
@@ -519,10 +519,10 @@ public class ApiResponseHelper implements ResponseGenerator {
             cpuUsed = decimalFormat.format(cpuUtil) + "%";
             userVmResponse.setCpuUsed(cpuUsed);
 
-            long networkKbRead = (long) vmStats.getNetworkReadKBs();
+            Long networkKbRead = Double.doubleToLongBits(vmStats.getNetworkReadKBs());
             userVmResponse.setNetworkKbsRead(networkKbRead);
 
-            long networkKbWrite = (long) vmStats.getNetworkWriteKBs();
+            Long networkKbWrite = Double.doubleToLongBits(vmStats.getNetworkWriteKBs());
             userVmResponse.setNetworkKbsWrite(networkKbWrite);
         }
 
@@ -702,16 +702,16 @@ public class ApiResponseHelper implements ResponseGenerator {
             float cpuUtil = (float) hostStats.getCpuUtilization();
             cpuUsed = decimalFormat.format(cpuUtil) + "%";
             hostResponse.setCpuUsed(cpuUsed);
-            hostResponse.setAverageLoad((long) hostStats.getAverageLoad());
-            hostResponse.setNetworkKbsRead((long) hostStats.getNetworkReadKBs());
-            hostResponse.setNetworkKbsWrite((long) hostStats.getNetworkWriteKBs());
+            hostResponse.setAverageLoad(Double.doubleToLongBits(hostStats.getAverageLoad()));
+            hostResponse.setNetworkKbsRead(Double.doubleToLongBits(hostStats.getNetworkReadKBs()));
+            hostResponse.setNetworkKbsWrite(Double.doubleToLongBits(hostStats.getNetworkWriteKBs()));
         }
 
         if (host.getType() == Host.Type.Routing) {
             hostResponse.setMemoryTotal(host.getTotalMemory());
 
             // calculate memory allocated by systemVM and userVm
-            long mem = ApiDBUtils.getMemoryUsagebyHost(host.getId());
+            Long mem = ApiDBUtils.getMemoryUsagebyHost(host.getId());
             hostResponse.setMemoryAllocated(mem);
             hostResponse.setMemoryUsed(mem);
         } else if (host.getType().toString().equals("Storage")) {
@@ -1028,9 +1028,9 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         StorageStats stats = ApiDBUtils.getStoragePoolStatistics(pool.getId());
-        long capacity = pool.getCapacityBytes();
-        long available = pool.getAvailableBytes();
-        long used = capacity - available;
+        Long capacity = pool.getCapacityBytes();
+        Long available = pool.getAvailableBytes();
+        Long used = capacity - available;
 
         if (stats != null) {
             used = stats.getByteUsed();
@@ -1177,7 +1177,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         // ISO Info
         if (userVm.getIsoId() != null) {
-            VMTemplateVO iso = ApiDBUtils.findTemplateById(userVm.getIsoId().longValue());
+            VMTemplateVO iso = ApiDBUtils.findTemplateById(userVm.getIsoId());
             if (iso != null) {
                 userVmResponse.setIsoId(userVm.getIsoId());
                 userVmResponse.setIsoName(iso.getName());
@@ -1212,10 +1212,10 @@ public class ApiResponseHelper implements ResponseGenerator {
             cpuUsed = decimalFormat.format(cpuUtil) + "%";
             userVmResponse.setCpuUsed(cpuUsed);
 
-            long networkKbRead = (long) vmStats.getNetworkReadKBs();
+            Long networkKbRead = Double.doubleToLongBits(vmStats.getNetworkReadKBs());
             userVmResponse.setNetworkKbsRead(networkKbRead);
 
-            long networkKbWrite = (long) vmStats.getNetworkWriteKBs();
+            Long networkKbWrite = Double.doubleToLongBits(vmStats.getNetworkWriteKBs());
             userVmResponse.setNetworkKbsWrite(networkKbWrite);
         }
 
@@ -1225,7 +1225,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         List<? extends Nic> nics = ApiDBUtils.getNics(userVm);
         for (Nic singleNic : nics) {
-            long configId = singleNic.getNetworkId();
+            Long configId = singleNic.getNetworkId();
             Network networkConf = ApiDBUtils.getNetwork(configId);
             if (networkConf.getTrafficType() == TrafficType.Guest) {
                 userVmResponse.setIpAddress(singleNic.getIp4Address());
@@ -1268,7 +1268,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         List<? extends Nic> nics = ApiDBUtils.getNics(router);
         for (Nic singleNic : nics) {
-            long configId = singleNic.getNetworkId();
+            Long configId = singleNic.getNetworkId();
             Network networkConf = ApiDBUtils.getNetwork(configId);
 
             if (networkConf.getTrafficType() == TrafficType.Guest) {
@@ -1359,7 +1359,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
             List<? extends Nic> nics = ApiDBUtils.getNics(systemVM);
             for (Nic singleNic : nics) {
-                long configId = singleNic.getNetworkId();
+                Long configId = singleNic.getNetworkId();
                 Network networkConf = ApiDBUtils.getNetwork(configId);
 
                 if (networkConf.getTrafficType() == TrafficType.Management) {
@@ -1382,33 +1382,33 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
     
     @Override
-    public void synchronizeCommand(Object job, String syncObjType, long syncObjId) {
+    public void synchronizeCommand(Object job, String syncObjType, Long syncObjId) {
         ApiDBUtils.synchronizeCommand(job, syncObjType, syncObjId);
     }
     
     @Override
-    public User findUserById(long userId) {
+    public User findUserById(Long userId) {
         return ApiDBUtils.findUserById(userId);
     }
     
     @Override
-    public UserVm findUserVmById(long vmId) {
+    public UserVm findUserVmById(Long vmId) {
         return ApiDBUtils.findUserVmById(vmId);
 
     }
 
     @Override
-    public Volume findVolumeById(long volumeId) {
+    public Volume findVolumeById(Long volumeId) {
         return ApiDBUtils.findVolumeById(volumeId);
     }
     
     @Override
-    public Account findAccountByNameDomain(String accountName, long domainId) {
+    public Account findAccountByNameDomain(String accountName, Long domainId) {
         return ApiDBUtils.findAccountByNameDomain(accountName, domainId);        
     }
     
     @Override
-    public VirtualMachineTemplate findTemplateById(long templateId) {
+    public VirtualMachineTemplate findTemplateById(Long templateId) {
         return ApiDBUtils.findTemplateById(templateId);
     }
     
@@ -1536,7 +1536,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 }
             }
             
-            long templateSize = templateHostRef.getSize();
+            Long templateSize = templateHostRef.getSize();
             if (templateSize > 0) {
                 templateResponse.setSize(templateSize);
             }
@@ -1727,7 +1727,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
     
     @Override
-    public ExtractResponse createExtractResponse(long uploadId, long id, long zoneId, long accountId, String mode) {
+    public ExtractResponse createExtractResponse(Long uploadId, Long id, Long zoneId, Long accountId, String mode) {
         UploadVO uploadInfo = ApiDBUtils.findUploadById(uploadId);
         ExtractResponse response = new ExtractResponse();
         response.setObjectName("template");
@@ -1747,7 +1747,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public TemplateResponse createTemplateResponse(VirtualMachineTemplate template, long destZoneId) {
+    public TemplateResponse createTemplateResponse(VirtualMachineTemplate template, Long destZoneId) {
         TemplateResponse templateResponse = new TemplateResponse();
         if (template != null) {
             templateResponse.setId(template.getId());
@@ -1821,7 +1821,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
     
     @Override
-    public TemplateResponse createIsoResponse3(VirtualMachineTemplate iso, long destZoneId) {
+    public TemplateResponse createIsoResponse3(VirtualMachineTemplate iso, Long destZoneId) {
         TemplateResponse isoResponse = new TemplateResponse();
         if (iso != null) {
             isoResponse.setId(iso.getId());
@@ -1917,7 +1917,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
     
     @Override
-    public TemplateResponse createTemplateResponse(VirtualMachineTemplate template, Long snapshotId, long volumeId) {
+    public TemplateResponse createTemplateResponse(VirtualMachineTemplate template, Long snapshotId, Long volumeId) {
         TemplateResponse response = new TemplateResponse();
         response.setId(template.getId());
         response.setName(template.getName());
@@ -2080,7 +2080,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                     }
                 }
 
-                long isoSize = isoHost.getSize();
+                Long isoSize = isoHost.getSize();
                 if (isoSize > 0) {
                     isoResponse.setSize(isoSize);
                 }
@@ -2137,13 +2137,13 @@ public class ApiResponseHelper implements ResponseGenerator {
             if (totalCapacity == null) {
                 totalCapacity = new Long(capacity.getTotalCapacity());
             } else {
-                totalCapacity = new Long(capacity.getTotalCapacity() + totalCapacity.longValue());
+                totalCapacity = new Long(capacity.getTotalCapacity() + totalCapacity);
             }
 
             if (usedCapacity == null) {
                 usedCapacity = new Long(capacity.getUsedCapacity());
             } else {
-                usedCapacity = new Long(capacity.getUsedCapacity() + usedCapacity.longValue());
+                usedCapacity = new Long(capacity.getUsedCapacity() + usedCapacity);
             }
 
             totalCapacityMap.put(key, totalCapacity);
@@ -2156,13 +2156,13 @@ public class ApiResponseHelper implements ResponseGenerator {
                 if (totalCapacity == null) {
                     totalCapacity = new Long(capacity.getTotalCapacity());
                 } else {
-                    totalCapacity = new Long(capacity.getTotalCapacity() + totalCapacity.longValue());
+                    totalCapacity = new Long(capacity.getTotalCapacity() + totalCapacity);
                 }
 
                 if (usedCapacity == null) {
                     usedCapacity = new Long(capacity.getUsedCapacity());
                 } else {
-                    usedCapacity = new Long(capacity.getUsedCapacity() + usedCapacity.longValue());
+                    usedCapacity = new Long(capacity.getUsedCapacity() + usedCapacity);
                 }
 
                 totalCapacityMap.put(keyForPodTotal, totalCapacity);
@@ -2224,7 +2224,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public TemplatePermissionsResponse createTemplatePermissionsResponse(List<String> accountNames, long id, boolean isAdmin) {
+    public TemplatePermissionsResponse createTemplatePermissionsResponse(List<String> accountNames, Long id, boolean isAdmin) {
         Long templateOwnerDomain = null;
         VirtualMachineTemplate template = ApiDBUtils.findTemplateById(id);
         if (isAdmin) {

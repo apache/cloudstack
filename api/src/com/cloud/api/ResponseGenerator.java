@@ -12,7 +12,7 @@
  * GNU General Public License for more details.
  * 
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * aLong with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
 package com.cloud.api;
@@ -147,17 +147,17 @@ public interface ResponseGenerator {
 
     SystemVmResponse createSystemVm2Response(VirtualMachine systemVM);
 
-    void synchronizeCommand(Object job, String syncObjType, long syncObjId);
+    void synchronizeCommand(Object job, String syncObjType, Long syncObjId);
 
-    User findUserById(long userId);
+    User findUserById(Long userId);
 
-    UserVm findUserVmById(long vmId);
+    UserVm findUserVmById(Long vmId);
 
-    Volume findVolumeById(long volumeId);
+    Volume findVolumeById(Long volumeId);
 
-    Account findAccountByNameDomain(String accountName, long domainId);
+    Account findAccountByNameDomain(String accountName, Long domainId);
 
-    VirtualMachineTemplate findTemplateById(long templateId);
+    VirtualMachineTemplate findTemplateById(Long templateId);
 
     VpnUsersResponse createVpnUserResponse(VpnUser user);
 
@@ -174,17 +174,17 @@ public interface ResponseGenerator {
 
     NetworkGroupResponse createNetworkGroupResponse(NetworkGroup group);
 
-    ExtractResponse createExtractResponse(long uploadId, long id, long zoneId, long accountId, String mode);
+    ExtractResponse createExtractResponse(Long uploadId, Long id, Long zoneId, Long accountId, String mode);
 
-    TemplateResponse createTemplateResponse(VirtualMachineTemplate template, long destZoneId);
+    TemplateResponse createTemplateResponse(VirtualMachineTemplate template, Long destZoneId);
 
-    TemplateResponse createIsoResponse3(VirtualMachineTemplate iso, long destZoneId);
+    TemplateResponse createIsoResponse3(VirtualMachineTemplate iso, Long destZoneId);
 
     String toSerializedString(CreateCmdResponse response, String responseType);
 
     AsyncJobResponse createAsyncJobResponse(AsyncJob job);
 
-    TemplateResponse createTemplateResponse(VirtualMachineTemplate template, Long snapshotId, long volumeId);
+    TemplateResponse createTemplateResponse(VirtualMachineTemplate template, Long snapshotId, Long volumeId);
 
     EventResponse createEventResponse(Event event);
 
@@ -195,7 +195,7 @@ public interface ResponseGenerator {
 
     List<CapacityResponse> createCapacityResponse(List<? extends Capacity> result, DecimalFormat format);
 
-    TemplatePermissionsResponse createTemplatePermissionsResponse(List<String> accountNames, long id, boolean isAdmin);
+    TemplatePermissionsResponse createTemplatePermissionsResponse(List<String> accountNames, Long id, boolean isAdmin);
 
     AsyncJobResponse queryJobResult(QueryAsyncJobResultCmd cmd);
 
