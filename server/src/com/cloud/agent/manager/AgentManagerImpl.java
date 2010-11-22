@@ -753,6 +753,29 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
             return -1;
         }
     }
+    
+    public void removeAgent(AgentAttache attache, Status nextState){
+        if( attache == null ) {
+            return;
+        }
+        long hostId = attache.getId();
+        AgentAttache removed = null;
+        boolean conflict = false;
+        synchronized (_agents) {
+            removed = _agents.remove(hostId);
+            if( removed != attache ){
+                conflict = true;
+                _agents.put(hostId, removed);
+                removed = attache;
+            }
+        }
+        if( conflict ) {
+            s_logger.debug("Ageent for host " + hostId + " is created when it is being disconnected");
+        }
+        if( removed != null ) {
+            removed.disconnect(nextState);
+        }
+    }
 
     @Override
     public void disconnect(final long hostId, final Status.Event event, final boolean investigate) {
@@ -763,10 +786,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         } else {
             HostVO host = _hostDao.findById(hostId);
             if (host != null && host.getRemoved() == null) {
-                if(event!=null && event.equals(Event.Remove)) {
-                    host.setGuid(null);
-                    host.setClusterId(null);
-                }
                 _hostDao.updateStatus(host, event, _nodeId);
             }
         }
@@ -787,15 +806,18 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         HostVO host = _hostDao.findById(hostId);
         if (host == null) {
             s_logger.warn("Can't find host with " + hostId);
-            return false;
+            removeAgent(attache, Status.Removed);
+            return true;
         }
 
         final Status currentState = host.getStatus();
-        if (currentState == Status.Down || currentState == Status.Alert || currentState == Status.PrepareForMaintenance) {
+        if (currentState == Status.Down || currentState == Status.Alert || currentState == Status.Disconnected
+                || currentState == Status.Removed ) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Host " + hostId + " is already " + currentState.toString());
             }
-            return false;
+            removeAgent(attache, currentState);
+            return true;
         }
         
         Status nextState = currentState.getNextStatus(event);
@@ -873,14 +895,13 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         
         _hostDao.disconnect(host, event, _nodeId);
         
-        synchronized (_agents) {
-            AgentAttache removed = _agents.remove(hostId);
-        }
+        removeAgent(attache,nextState);
+        
         host = _hostDao.findById(host.getId());
         if (host.getStatus() == Status.Alert || host.getStatus() == Status.Down) {
             _haMgr.scheduleRestartForVmsOnHost(host);
         }
-        attache.disconnect(nextState);
+
 
         for (Pair<Integer, Listener> monitor : _hostMonitors) {
             if (s_logger.isDebugEnabled()) {
@@ -1577,7 +1598,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
             old = _agents.get(id);
             _agents.put(id, attache);
         }
-
+        if( old != null ) {
+            old.disconnect(Status.Removed);
+        }
         return attache;
     }
 
@@ -1593,7 +1616,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
             old = _agents.get(id);
             _agents.put(id, attache);
         }
-
+        if( old != null ) {
+            old.disconnect(Status.Removed);
+        }
         return attache;
     }
 

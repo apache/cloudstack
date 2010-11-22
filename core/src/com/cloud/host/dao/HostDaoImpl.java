@@ -185,6 +185,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         UnmanagedDirectConnectSearch = createSearchBuilder();
         UnmanagedDirectConnectSearch.and("resource", UnmanagedDirectConnectSearch.entity().getResource(), SearchCriteria.Op.NNULL);
         UnmanagedDirectConnectSearch.and("server", UnmanagedDirectConnectSearch.entity().getManagementServerId(), SearchCriteria.Op.NULL);
+        UnmanagedDirectConnectSearch.and("avoidstatus", UnmanagedDirectConnectSearch.entity().getStatus(), SearchCriteria.Op.NEQ);
         /*
         UnmanagedDirectConnectSearch.op(SearchCriteria.Op.OR, "managementServerId", UnmanagedDirectConnectSearch.entity().getManagementServerId(), SearchCriteria.Op.EQ);
         UnmanagedDirectConnectSearch.and("lastPinged", UnmanagedDirectConnectSearch.entity().getLastPinged(), SearchCriteria.Op.LTEQ);
@@ -244,7 +245,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     @Override
     public List<HostVO> findDirectAgentToLoad(long msid, long lastPingSecondsAfter, Long limit) {
     	SearchCriteria sc = UnmanagedDirectConnectSearch.create();
-    //	sc.setParameters("lastPinged", lastPingSecondsAfter);
+    	sc.setParameters("avoidstatus", Status.Removed);
     	//sc.setParameters("managementServerId", msid);
     	
         return search(sc, new Filter(HostVO.class, "id", true, 0L, limit));
@@ -390,10 +391,6 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     @Override
     public boolean disconnect(HostVO host, Event event, long msId) {
         host.setDisconnectedOn(new Date());
-        if(event!=null && event.equals(Event.Remove)) {
-            host.setGuid(null);
-            host.setClusterId(null);
-        }
         return updateStatus(host, event, msId);
     }
 
