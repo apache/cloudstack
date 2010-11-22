@@ -1008,7 +1008,10 @@ public class ManagementServerImpl implements ManagementServer {
             if (isIso)
             {
                 Pair<String, String> isoPath = _storageMgr.getAbsoluteIsoPath(templateId, dataCenterId);
-                assert(isoPath != null);
+                if (isoPath == null) {
+                    s_logger.warn("Unable to get absolute path of the iso");
+                    throw new CloudRuntimeException("Unable to get absolute path of the iso");
+                }
                 try
                 {
                     started = _vmMgr.startVirtualMachine(userId, created.getId(), password, isoPath.first(), startEventId);
