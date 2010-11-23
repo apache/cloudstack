@@ -45,6 +45,7 @@ import com.cloud.api.response.ExceptionResponse;
 import com.cloud.async.dao.AsyncJobDao;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.maid.StackMaid;
 import com.cloud.user.Account;
@@ -260,7 +261,11 @@ public class AsyncJobManagerImpl implements AsyncJobManager {
     }
     
     @Override
-    public AsyncJobResult queryAsyncJobResult(QueryAsyncJobResultCmd cmd) throws PermissionDeniedException {
+    public AsyncJobResult queryAsyncJobResult(QueryAsyncJobResultCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+        AsyncJobVO job = _jobDao.findById(cmd.getId());
+        if (job == null) {
+            throw new InvalidParameterValueException("Unable to find a job by id " + cmd.getId());
+        }
         return queryAsyncJobResult(cmd.getId());
     }
 

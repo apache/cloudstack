@@ -2248,7 +2248,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
     
     @Override
-    public AsyncJobResponse queryJobResult(QueryAsyncJobResultCmd cmd) {
+    public AsyncJobResponse queryJobResult(QueryAsyncJobResultCmd cmd) throws InvalidParameterValueException{
         AsyncJobResult result = ApiDBUtils._asyncMgr.queryAsyncJobResult(cmd);
         AsyncJobResponse response = new AsyncJobResponse();
         response.setId(result.getJobId());

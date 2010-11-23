@@ -19,6 +19,8 @@
 package com.cloud.async;
 
 import com.cloud.api.commands.QueryAsyncJobResultCmd;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.utils.component.Manager;
 
 public interface AsyncJobManager extends Manager {
@@ -43,5 +45,5 @@ public interface AsyncJobManager extends Manager {
      * @param cmd the command that specifies the job id
      * @return an async-call result object
      */
-    public AsyncJobResult queryAsyncJobResult(QueryAsyncJobResultCmd cmd);
+    public AsyncJobResult queryAsyncJobResult(QueryAsyncJobResultCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
 }
