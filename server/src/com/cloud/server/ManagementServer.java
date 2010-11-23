@@ -420,7 +420,7 @@ public interface ManagementServer extends ManagementService {
 	 * @param VirtualMachine vm
 	 * @return the vnc port if found; -1 if unable to find.
 	 */
-	int getVncPort(VirtualMachine vm);
+	Pair<String, Integer> getVncPort(VirtualMachine vm);
 
     /**
      * find the domain Id associated with the given account

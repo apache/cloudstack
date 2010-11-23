@@ -18,6 +18,8 @@
 package com.cloud.agent.api;
 
 public class GetVncPortAnswer extends Answer {
+	// when host is behind a cluster, address field will allow us to return the real host IP that VM is running at
+	String address;
     int port;
     
     protected GetVncPortAnswer() {
@@ -28,8 +30,18 @@ public class GetVncPortAnswer extends Answer {
         this.port = port;
     }
     
+    public GetVncPortAnswer(GetVncPortCommand cmd, String address, int port) {
+        super(cmd, true, null);
+        this.address = address;
+        this.port = port;
+    }
+    
     public GetVncPortAnswer(GetVncPortCommand cmd, String details) {
         super(cmd, false, details);
+    }
+    
+    public String getAddress() {
+    	return address;
     }
     
     public int getPort() {

@@ -260,13 +260,15 @@ public class ConsoleProxyServlet extends HttpServlet {
 		StringBuffer sb = new StringBuffer(rootUrl);
 
 		String host = hostVo.getPrivateIpAddress();
-		int port = _ms.getVncPort(vm);
+		Pair<String, Integer> portInfo = _ms.getVncPort(vm);
+		if(portInfo.first() != null)
+			host = portInfo.first();
 		String sid = vm.getVncPassword();
 		long tag = vm.getId();
-		String ticket = URLEncoder.encode(genAccessTicket(host, String.valueOf(port), sid, String.valueOf(tag)));
+		String ticket = URLEncoder.encode(genAccessTicket(host, String.valueOf(portInfo.second()), sid, String.valueOf(tag)));
 		
 		sb.append("/getscreen?host=").append(host);
-		sb.append("&port=").append(port);
+		sb.append("&port=").append(portInfo.second());
 		sb.append("&sid=").append(sid);
 		sb.append("&w=").append(w).append("&h=").append(h);
 		sb.append("&tag=").append(tag);
@@ -281,13 +283,15 @@ public class ConsoleProxyServlet extends HttpServlet {
 		StringBuffer sb = new StringBuffer(rootUrl);
 		
 		String host = hostVo.getPrivateIpAddress();
-		int port = _ms.getVncPort(vm);
+		Pair<String, Integer> portInfo = _ms.getVncPort(vm);
+		if(portInfo.first() != null)
+			host = portInfo.first();
 		String sid = vm.getVncPassword();
 		long tag = vm.getId();
-		String ticket = URLEncoder.encode(genAccessTicket(host, String.valueOf(port), sid, String.valueOf(tag)));
+		String ticket = URLEncoder.encode(genAccessTicket(host, String.valueOf(portInfo.second()), sid, String.valueOf(tag)));
 		
 		sb.append("/ajax?host=").append(host);
-		sb.append("&port=").append(port);
+		sb.append("&port=").append(portInfo.second());
 		sb.append("&sid=").append(sid);
 		sb.append("&tag=").append(tag);
 		sb.append("&ticket=").append(ticket);

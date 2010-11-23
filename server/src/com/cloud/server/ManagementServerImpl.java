@@ -3454,22 +3454,20 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public int getVncPort(VirtualMachine vm) {
+    public Pair<String, Integer> getVncPort(VirtualMachine vm) {
         if (vm.getHostId() == null) {
         	s_logger.warn("VM " + vm.getHostName() + " does not have host, return -1 for its VNC port");
-            return -1;
+            return new Pair<String, Integer>(null, -1);
         }
         
         if(s_logger.isTraceEnabled())
         	s_logger.trace("Trying to retrieve VNC port from agent about VM " + vm.getHostName());
         
         GetVncPortAnswer answer = (GetVncPortAnswer) _agentMgr.easySend(vm.getHostId(), new GetVncPortCommand(vm.getId(), vm.getInstanceName()));
-        int port = answer == null ? -1 : answer.getPort();
-        
-        if(s_logger.isTraceEnabled())
-        	s_logger.trace("Retrieved VNC port about VM " + vm.getHostName() + " is " + port);
-        
-        return port;
+        if(answer != null)
+            return new Pair<String, Integer>(answer.getAddress(), answer.getPort());
+        	
+        return new Pair<String, Integer>(null, -1);
     }
 
     @Override
