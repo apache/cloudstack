@@ -1059,7 +1059,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		s_logger.debug(domXML);
 		return domXML;
 	}
-	protected String startDomain(String vmName, String domainXML) throws LibvirtException{
+	protected String startDomain(String vmName, String domainXML) throws LibvirtException, InternalErrorException{
 		/*No duplicated vm, we will success, or failed*/
 		boolean failed =false;
 		Domain dm = null;
@@ -1090,6 +1090,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		} catch (final LibvirtException e) {
 			s_logger.warn("Failed to define domain (second time) " + vmName + ": " + e.getMessage());
 			throw e;
+		}  catch (Exception e) {
+			s_logger.warn("Failed to define domain (second time) " + vmName + ": " + e.getMessage());
+			throw new InternalErrorException(e.toString());
 		} finally {
 			try {
 				if (dmOld != null)
@@ -1943,7 +1946,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
     
 	protected GetVncPortAnswer execute(GetVncPortCommand cmd) {
-		return new GetVncPortAnswer(cmd, 5900 + getVncPort(cmd.getName()));
+		try {
+			Integer vncPort = getVncPort(cmd.getName());
+			return new GetVncPortAnswer(cmd, 5900 + vncPort);
+		} catch (Exception e) {
+			return new GetVncPortAnswer(cmd, e.toString());
+		}
 	}
 	
 	protected Answer execute(final CheckConsoleProxyLoadCommand cmd) {
@@ -2069,6 +2077,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			return new Answer(cmd, false, e.toString());
 		} catch (URISyntaxException e) {
 			return new Answer(cmd, false, e.toString());
+		} catch (InternalErrorException e) {
+			return new Answer(cmd, false, e.toString());
 		}
 		
 		return new Answer(cmd);
@@ -2078,6 +2088,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		try {
 			attachOrDetachDisk(cmd.getAttach(), cmd.getVmName(), cmd.getVolumePath());
 		} catch (LibvirtException e) {
+			return new AttachVolumeAnswer(cmd, e.toString());
+		} catch (InternalErrorException e) {
 			return new AttachVolumeAnswer(cmd, e.toString());
 		}
 		
@@ -2155,7 +2167,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 				return s;
 			} catch (final LibvirtException e) {
 				s_logger.warn("Can't get vm state " + vmName + e.getMessage() + "retry:" + retry);
-			} finally {
+			} catch (Exception e) {
+				s_logger.warn("Can't get vm state " + vmName + e.getMessage() + "retry:" + retry);
+            } finally {
 				try {
 					if (vms != null) {
 						vms.free();
@@ -2172,7 +2186,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         final State state = getVmState(cmd.getVmName());
         Integer vncPort = null;
         if (state == State.Running) {
-            vncPort = getVncPort(cmd.getVmName());
+        	try {
+        		vncPort = getVncPort(cmd.getVmName());
+        	} catch (Exception e) {
+        		s_logger.debug(e.toString());
+        	}
             synchronized(_vms) {
                 _vms.put(cmd.getVmName(), State.Running);
             }
@@ -2231,6 +2249,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			/*Hard code lm flags: VIR_MIGRATE_LIVE(1<<0) and VIR_MIGRATE_PERSIST_DEST(1<<3)*/
 			destDomain = dm.migrate(dconn, (1<<0)|(1<<3), vmName, "tcp:" + cmd.getDestinationIp(), 0);
 		} catch (LibvirtException e) {
+			s_logger.debug("Can't migrate domain: " + e.getMessage());
+			result = e.getMessage();
+		} catch (Exception e) {
 			s_logger.debug("Can't migrate domain: " + e.getMessage());
 			result = e.getMessage();
 		} finally {
@@ -2371,7 +2392,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 	    	final String result = rebootVM(cmd.getVmName());
 	    	if (result == null) {
 	    		/*TODO: need to reset iptables rules*/
-	    		return new RebootAnswer(cmd, null, bytesSent, bytesReceived, getVncPort(cmd.getVmName()));
+	    		Integer vncPort = null;
+	    		try {
+	    			vncPort =  getVncPort(cmd.getVmName());
+	    		} catch (Exception e) {
+	    			
+	    		}
+	    		return new RebootAnswer(cmd, null, bytesSent, bytesReceived, vncPort);
 	    	} else {
 	    		return new RebootAnswer(cmd, result);
 	    	}
@@ -2416,7 +2443,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 	    StopAnswer answer = null;
         final String vmName = cmd.getVmName();
         
-        final Integer port = getVncPort(vmName);
         Long bytesReceived = new Long(0);
         Long bytesSent = new Long(0);
         
@@ -2430,16 +2456,16 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         		destroy_network_rules_for_vm(vmName);*/
             String result = stopVM(vmName, defineOps.UNDEFINE_VM);
             
-            answer =  new StopAnswer(cmd, null, port, bytesSent, bytesReceived);
+            answer =  new StopAnswer(cmd, null, 0, bytesSent, bytesReceived);
             
             if (result != null) {
-                answer = new StopAnswer(cmd, result, port, bytesSent, bytesReceived);
+                answer = new StopAnswer(cmd, result, 0, bytesSent, bytesReceived);
             }
             
             final String result2 = cleanupVnet(cmd.getVnet());
             if (result2 != null) {
                 result = result2 + (result != null ? ("\n" + result) : "") ;
-                answer = new StopAnswer(cmd, result, port, bytesSent, bytesReceived);
+                answer = new StopAnswer(cmd, result, 0, bytesSent, bytesReceived);
             }
             
            
@@ -2898,7 +2924,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 	        return new CheckSshAnswer(cmd);
 	    }
 	
-	protected synchronized String attachOrDetachISO(String vmName, String isoPath, boolean isAttach) throws LibvirtException, URISyntaxException {
+	protected synchronized String attachOrDetachISO(String vmName, String isoPath, boolean isAttach) throws LibvirtException, URISyntaxException, InternalErrorException {
 		String isoXml = null;
 		if (isoPath != null && isAttach) {
 			StorageVol isoVol = getVolume(_conn, isoPath);
@@ -2919,7 +2945,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		return attachOrDetachDevice(true, vmName, isoXml);
 	}
 	
-	protected synchronized String attachOrDetachDisk(boolean attach, String vmName, String sourceFile) throws LibvirtException {
+	protected synchronized String attachOrDetachDisk(boolean attach, String vmName, String sourceFile) throws LibvirtException, InternalErrorException {
 		if (isCentosHost()) {
 			return "disk hotplug is not supported by hypervisor";
 		}
@@ -2971,7 +2997,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		return attachOrDetachDevice(attach, vmName, xml);
 	}
 	
-	private synchronized String attachOrDetachDevice(boolean attach, String vmName, String xml) throws LibvirtException{
+	private synchronized String attachOrDetachDevice(boolean attach, String vmName, String xml) throws LibvirtException, InternalErrorException{
 		Domain dm = null;
 		try {
 			dm = _conn.domainLookupByUUID(UUID.nameUUIDFromBytes((vmName.getBytes())));
@@ -2989,6 +3015,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			else
 				s_logger.warn("Failed to detach device from " + vmName + ": " + e.getMessage());
 			throw e;
+		} catch (Exception e) {
+			throw new InternalErrorException(e.toString());
 		} finally {
 			if (dm != null) {
 				try {
@@ -3156,6 +3184,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 }
             } catch (final LibvirtException e) {
                 s_logger.trace(e.getMessage());
+            } catch (Exception e) {
+            	s_logger.trace(e.getMessage());
             } finally {
             	try {
             		if (dm != null)
@@ -3269,6 +3299,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                  vmStates.put(vmName, state);
             } catch (final LibvirtException e) {
                  s_logger.warn("Unable to get vms", e);
+            } catch (Exception e) {
+            	 s_logger.warn("Unable to get vms", e);
             } finally {
             	try {
             		if (dm != null)
@@ -3338,7 +3370,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			} catch (LibvirtException e) {
 				s_logger.warn("Failed to create vm", e);
 				msg = e.getMessage();
-		    } finally {
+		    } catch (Exception e) {
+		    	s_logger.warn("Failed to create vm", e);
+				msg = e.getMessage();
+            } finally {
 		    	try {
 		    		if (dm != null)
 		    			dm.free();
@@ -3370,7 +3405,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 					break;
 				} catch (LibvirtException e) {
 					s_logger.debug("Failed to get vm status:" + e.getMessage());
-				} finally {
+				} catch (Exception e) {
+					s_logger.debug("Failed to get vm status:" + e.getMessage());
+		        } finally {
 					try {
 						if (dm != null)
 							dm.free();
@@ -3440,6 +3477,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             return e.getMessage();
         } catch (InterruptedException ie) {
         	s_logger.debug("Interrupted sleep");
+        	return ie.getMessage();
+        } catch (Exception e) {
+        	 s_logger.debug("Failed to stop VM :" + vmName + " :", e);
+        	 return e.getMessage();
         } finally {
         	try {
         		if (dm != null)
@@ -3472,7 +3513,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return command.execute();
     }
 
-    protected Integer getVncPort( String vmName) {
+    protected Integer getVncPort( String vmName) throws InternalErrorException {
     	LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
     	Domain dm = null;
     	try {
@@ -3480,8 +3521,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     		String xmlDesc = dm.getXMLDesc(0);
     		parser.parseDomainXML(xmlDesc);
     		return parser.getVncPort();
-    	} catch (LibvirtException e) {
-    		
+    	} catch (Exception e) {
+    		throw new InternalErrorException("Can't get vnc port: " + e);
     	} finally {
     		try {
     			if (dm != null)
@@ -3490,16 +3531,19 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     		}
     	}
-    	return null;
     }
     
     protected int[] gatherVncPorts(final Collection<String> names) {
         final ArrayList<Integer> ports = new ArrayList<Integer>(names.size());
         for (final String name : names) {
-            final Integer port = getVncPort(name);
-            
-            if (port != null) {
-                ports.add(port);
+        	Integer port = null; 
+        	try {
+        		port = getVncPort(name);
+        	} catch (Exception e) {
+        		s_logger.debug(e.toString());
+        	}
+        	if (port != null) {
+        		ports.add(port);
             }
         }
         
@@ -3554,6 +3598,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     		parser.parseDomainXML(xmlDesc);
     		return parser.getDescription();
     	} catch (LibvirtException e) {
+    		return null;
+    	}  catch (Exception e) {
     		return null;
     	} finally {
     		try {
@@ -3889,6 +3935,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     		dm =  _conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vmName.getBytes()));
     		parser.parseDomainXML(dm.getXMLDesc(0));
     	} catch (LibvirtException e) {
+    		s_logger.debug("Failed to get dom xml: " + e.toString());
+    		return new ArrayList<String>();
+    	} catch (Exception e) {
     		s_logger.debug("Failed to get dom xml: " + e.toString());
     		return new ArrayList<String>();
     	} finally {
