@@ -1173,11 +1173,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         // Permission check...
         Account account = UserContext.current().getAccount();
         if (account != null) {
-        	if ((account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) || (account.getType() == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN)) {
+        	if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
         		if (!_domainDao.isChildDomain(account.getDomainId(), loadBalancer.getDomainId())) {
             		throw new PermissionDeniedException("Failed to assign to load balancer " + loadBalancerId + ", permission denied.");
         		}
-        	} else if (account.getId() != loadBalancer.getAccountId()) {
+        	} else if (account.getType() != Account.ACCOUNT_TYPE_ADMIN && account.getId() != loadBalancer.getAccountId()) {
         		throw new PermissionDeniedException("Failed to assign to load balancer " + loadBalancerId + ", permission denied.");
         	}
         }
