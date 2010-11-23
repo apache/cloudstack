@@ -306,7 +306,7 @@ public class UploadMonitorImpl implements UploadMonitor {
 	            hostname = hostname + ".realhostip.com";
 	            scheme = "https";
 	        }
-	        return scheme + "://" + hostname + path.substring(path.lastIndexOf(File.separator)); 
+	        return scheme + "://" + hostname + path.substring(path.lastIndexOf("/")); 
 	    }
 	
 
