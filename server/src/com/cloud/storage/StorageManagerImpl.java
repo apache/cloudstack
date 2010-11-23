@@ -823,6 +823,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             volume.setPoolType(pool.getPoolType());
             volume.setPoolId(pool.getId());
             volume.setPodId(pod.getId());
+            volume.setState(Volume.State.Ready);
             _volsDao.persist(volume);
         }
         txn.commit();
