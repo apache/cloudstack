@@ -2461,7 +2461,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 						{
 							
 							//create a dummy event
-							long eventId = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_VM_START, "starting ssvm with Id: "+vmInstance.getId());
+							long eventId = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_VM_START, "starting user vm with Id: "+vmInstance.getId());
 							
 							try {
 								if(_userVmMgr.start(vmInstance.getId(), eventId) == null)
