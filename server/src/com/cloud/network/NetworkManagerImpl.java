@@ -1162,13 +1162,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         	throw new InvalidParameterValueException("Failed to assign to load balancer " + loadBalancerId + ", the load balancer was not found.");
         }
 
-        DomainRouterVO syncObject = _routerMgr.getRouter(loadBalancer.getIpAddress());
-        if(syncObject == null){
-        	throw new InvalidParameterValueException("Failed to assign to load balancer " + loadBalancerId + ", the domain router was not found at "+loadBalancer.getIpAddress());
-        }
-        else{
-        	cmd.synchronizeCommand("Router", syncObject.getId());
-        }
         
         // Permission check...
         Account account = UserContext.current().getAccount();
@@ -1294,6 +1287,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         // if there's no work to do, bail out early rather than reconfiguring the proxy with the existing rules
         if (firewallRulesToApply.isEmpty()) {
             return true;
+        }
+        
+        //Sync on domR
+        if(router == null){
+            throw new InvalidParameterValueException("Failed to assign to load balancer " + loadBalancerId + ", the domain router was not found at " + loadBalancer.getIpAddress());
+        }
+        else{
+            cmd.synchronizeCommand("Router", router.getId());
         }
 
         IPAddressVO ipAddr = _ipAddressDao.findById(loadBalancer.getIpAddress());
