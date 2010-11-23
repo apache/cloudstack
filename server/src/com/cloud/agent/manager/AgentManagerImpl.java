@@ -759,11 +759,14 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
             return;
         }
         long hostId = attache.getId();
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("remove Agent : " + hostId);
+        }
         AgentAttache removed = null;
         boolean conflict = false;
         synchronized (_agents) {
-            removed = _agents.remove(hostId);
-            if( removed != attache ){
+            removed = _agents.remove(hostId);          
+            if( removed != null && removed != attache ){
                 conflict = true;
                 _agents.put(hostId, removed);
                 removed = attache;
