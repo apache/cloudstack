@@ -856,7 +856,7 @@
         No Thanks</label>
 </div>
 <div class="vmpopup_offeringbox" id="vm_popup_disk_offering_template_custom" style="display: none">
-    <input type="radio" class="radio" value="custom" checked />
+    <input type="radio" class="radio" value="custom" checked="checked">
     <label class="label" id="name">
     </label>
     <div class="vmpopup_offdescriptionbox_bot" style="background:none; border:none;">
@@ -870,7 +870,7 @@
      </div>
 </div>
 <div class="vmpopup_offeringbox" id="vm_popup_disk_offering_template_existing" style="display: none">
-    <input type="radio" class="radio" checked />
+    <input type="radio" class="radio" checked="checked">
     <label class="label" id="name">
     </label>
     <div class="vmpopup_offdescriptionbox">

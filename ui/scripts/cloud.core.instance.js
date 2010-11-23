@@ -46,6 +46,8 @@ function instanceBuildSubMenu2(label, commandString) {
     $instanceSubMenuContainer.append($newSubMenu.show());
 }
 
+var $doTemplateNo, $doTemplateCustom,$doTemplateExisting;
+
 function afterLoadInstanceJSP() {
     //Add VM button
     $("#midmenu_add_link").find("#label").text("Add VM"); 
@@ -65,7 +67,10 @@ function afterLoadInstanceJSP() {
     var afterSwitchFnArray = [vmJsonToDetailsTab, vmJsonToVolumeTab, vmJsonToStatisticsTab, vmJsonToRouterTab];
     switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray);       
     
-    //initialize VM Wizard    
+    //initialize VM Wizard  
+	$doTemplateNo = $("#vm_popup_disk_offering_template_no");
+	$doTemplateCustom = $("#vm_popup_disk_offering_template_custom");
+	$doTemplateExisting = $("#vm_popup_disk_offering_template_existing");
     initVMWizard();       
     
     // dialogs
@@ -349,7 +354,6 @@ function initVMWizard() {
 			    }
 		    }
 		});
-		    			    
 	
 	    $.ajax({
 		    data: createURL("command=listDiskOfferings&domainid=1"),
@@ -362,7 +366,7 @@ function initVMWizard() {
 		        
 		        //***** data disk offering: "no, thanks", "custom", existing disk offerings in database (begin) ****************************************************
 		        //"no, thanks" radio button (default radio button in data disk offering)		               
-	            var $t = $("#vm_popup_disk_offering_template_no").clone(); 		            	     
+	            var $t = $doTemplateNo.clone(); 		            	     
 	            $t.find("input:radio").attr("name","data_disk_offering_radio");  
 	            $t.find("#name").text("no, thanks"); 		            
 	            $dataDiskOfferingContainer.append($t.show()); 
@@ -372,12 +376,12 @@ function initVMWizard() {
 			        for (var i = 0; i < offerings.length; i++) {	
 			            var $t;
 			            if(offerings[i].isCustomized == true) 			                       
-		                    $t = $("#vm_popup_disk_offering_template_custom").clone();  			            
+		                    $t = $doTemplateCustom.clone();  			            
 			            else 
-				            $t = $("#vm_popup_disk_offering_template_existing").clone(); 	
+				            $t = $doTemplateExisting.clone(); 	
 				        
-				        $t.data("jsonObj", offerings[i]);				        
-				        $t.find("input:radio").attr("name","data_disk_offering_radio").val(fromdb(offerings[i].id)).removeAttr("checked");	 	
+				        $t.data("jsonObj", offerings[i]).attr("id", "do"+offerings[i].id);				        
+				        $t.find("input:radio").attr("name","data_disk_offering_radio").attr("checked", "").val(fromdb(offerings[i].id));	 	
 			            $t.find("#name").text(fromdb(offerings[i].name));
 			            $t.find("#description").text(fromdb(offerings[i].displaytext)); 	 
 			            $dataDiskOfferingContainer.append($t.show());	
@@ -396,14 +400,15 @@ function initVMWizard() {
 			        for (var i = 0; i < offerings.length; i++) {	
 			            var $t;
 			            if(offerings[i].isCustomized == true) 
-			                $t = $("#vm_popup_disk_offering_template_custom").clone();  
+			                $t = $doTemplateCustom.clone();  
 			            else 
-				            $t = $("#vm_popup_disk_offering_template_existing").clone(); 	
+				            $t = $doTemplateExisting.clone(); 	
 				        
-				        $t.data("jsonObj", offerings[i]);	
-				        $t.find("input:radio").attr("name","root_disk_offering_radio").val(offerings[i].id);	 
-				        if(i > 0) //default is the 1st existing disk offering. If there is no existing disk offering, default to "custom" radio button
-				            $t.find("input:radio").removeAttr("checked");	 	
+				        $t.data("jsonObj", offerings[i]).attr("id", "do"+offerings[i].id);	
+				        var $offering = $t.find("input:radio").attr("name","root_disk_offering_radio").val(offerings[i].id);	 
+				        if(i > 0) {
+				            $offering.removeAttr("checked");	
+						}
 				        $t.find("#name").text(fromdb(offerings[i].name));
 				        $t.find("#description").text(fromdb(offerings[i].displaytext)); 	 
 				        $rootDiskOfferingContainer.append($t.show());	
