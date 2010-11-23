@@ -488,8 +488,8 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         if (template == null) {
             throw new InvalidParameterValueException("Unable to find " +desc+ " with id " + templateId);
         }
-        if (template.getId() < 201 ){
-            throw new InvalidParameterValueException("Unable to extract the " + desc + " " + template.getName() + " since it is system created and is not available for download");
+        if (template.getTemplateType() ==  Storage.TemplateType.SYSTEM){
+            throw new InvalidParameterValueException("Unable to extract the " + desc + " " + template.getName() + " as it is a default System template");
         }
         if (isISO) {
             if (template.getFormat() != ImageFormat.ISO ){
