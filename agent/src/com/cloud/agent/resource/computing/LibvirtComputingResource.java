@@ -452,6 +452,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 	private boolean _can_bridge_firewall;
 	private Pair<String, String> _pifs;
 	private final Map<String, vmStats> _vmStats = new ConcurrentHashMap<String, vmStats>();
+	private final Map<String, Object> _storagePools = new ConcurrentHashMap<String, Object>();
 	
 	protected boolean _disconnected = true;
 	protected int _timeout;
@@ -1252,17 +1253,19 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 	protected Answer execute(DeleteStoragePoolCommand cmd) {
 		try {
 			StoragePool pool = _conn.storagePoolLookupByUUIDString(cmd.getPool().getUuid());
-			pool.destroy();
-			pool.undefine();
 			
-
+			synchronized (getStoragePool(pool.getUUIDString())) {
+				pool.destroy();
+				pool.undefine();
+			}
+			
 			KVMHABase.NfsStoragePool sp = new KVMHABase.NfsStoragePool(cmd.getPool().getUuid(),
 					cmd.getPool().getHostAddress(),
 					cmd.getPool().getPath(),
 					_mountPoint + File.separator + cmd.getPool().getUuid(),
 					PoolType.PrimaryStorage);
 			_monitor.removeStoragePool(sp);
-			
+			rmStoragePool(cmd.getPool().getUuid());
 			
 			return new Answer(cmd);
 		} catch (LibvirtException e) {
@@ -1715,12 +1718,17 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         		  LibvirtStoragePoolDef spd = new LibvirtStoragePoolDef(poolType.NFS, uuid, uuid,
         				  sourceHost, sourcePath, targetPath);
         		  s_logger.debug(spd.toString());
-        		  sp = conn.storagePoolDefineXML(spd.toString(), 0);
-        		  if (sp == null) {
-        			  s_logger.debug("Failed to define storage pool");
-        			  return null;
+        		  addStoragePool(uuid);
+        		  
+        		  synchronized (getStoragePool(uuid)) {
+        			  sp = conn.storagePoolDefineXML(spd.toString(), 0);
+
+        			  if (sp == null) {
+        				  s_logger.debug("Failed to define storage pool");
+        				  return null;
+        			  }
+        			  sp.create(0);
         		  }
-        		  sp.create(0);
 
         		  return sp;
         	  } catch (LibvirtException e) {
@@ -1762,7 +1770,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         	 }
         	 if (tmpltname == null) {
         		 /*Hack: server just pass the directory of system vm template, need to scan the folder */
-        		 secondaryPool.refresh(0);
+        		 synchronized (getStoragePool(secondaryPool.getUUIDString())) {
+        			 secondaryPool.refresh(0);
+        		 }
         		 String[] volumes = secondaryPool.listVolumes();
         		 if (volumes == null) {
         			 return new Answer(cmd, false, "Failed to get volumes from pool: " + secondaryPool.getName());
@@ -1823,9 +1833,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 				}
 
 				if (secondaryPool != null) {
-					secondaryPool.destroy();
-					secondaryPool.undefine();
-					secondaryPool.free();
+					synchronized (getStoragePool(secondaryPool.getUUIDString())) {
+						secondaryPool.destroy();
+						secondaryPool.undefine();
+						secondaryPool.free();
+					}
+					rmStoragePool(secondaryPool.getUUIDString());
 				}
 			} catch (LibvirtException l) {
 
@@ -1842,8 +1855,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     	StoragePool sp = null;
     	try {
     		s_logger.debug(spd.toString());
-    		sp = conn.storagePoolDefineXML(spd.toString(), 0);
-    		sp.create(0);
+    		addStoragePool(pool.getUuid());
+    		
+    		synchronized (getStoragePool(pool.getUuid())) {
+    			sp = conn.storagePoolDefineXML(spd.toString(), 0);
+    			sp.create(0);
+    		}
     		return sp;
     	} catch (LibvirtException e) {
     		s_logger.debug(e.toString());
@@ -1913,7 +1930,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         		_mountPoint + File.separator + cmd.getPool().getUuid(),
         		PoolType.PrimaryStorage);
         _monitor.addStoragePool(pool);
-       
+        addStoragePool(cmd.getPool().getUuid());
         try {
         	storagePool.free();
         } catch (LibvirtException e) {
@@ -4110,7 +4127,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     	}
     	if (vol == null) {
     		try {
-    			pool.refresh(0);
+    			synchronized (getStoragePool(pool.getUUIDString())) {
+    				pool.refresh(0);
+    			}
     		} catch (LibvirtException e) {
     			
     		}
@@ -4140,7 +4159,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     		}
     		String poolUUID = token[token.length - 2];
     		pool = _conn.storagePoolLookupByUUIDString(poolUUID);
-    		pool.refresh(0);
+    		synchronized (getStoragePool(poolUUID)) {
+    			pool.refresh(0);
+    		}
     		vol = _conn.storageVolLookupByKey(volKey);
 
     	}
@@ -4148,5 +4169,30 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
     private String getPathOfStoragePool(StoragePool pool) throws LibvirtException {
     	return _mountPoint + File.separator + pool.getUUIDString() + File.separator;
+    }
+    
+    private void addStoragePool(String uuid) {
+    	synchronized (_storagePools) {
+    		if (!_storagePools.containsKey(uuid)) {
+    			_storagePools.put(uuid, new Object());
+    		}
+    	}
+    }
+    
+    private void rmStoragePool(String uuid) {
+    	synchronized (_storagePools) {
+    		if (_storagePools.containsKey(uuid)) {
+    			_storagePools.remove(uuid);
+    		}
+    	}
+    }
+    
+    private Object getStoragePool(String uuid) {
+    	synchronized (_storagePools) {
+    		if (!_storagePools.containsKey(uuid)) {   		
+    			addStoragePool(uuid);
+    		}
+    		return _storagePools.get(uuid);
+    	}
     }
 }
