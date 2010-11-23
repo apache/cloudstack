@@ -1836,12 +1836,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 				}
 
 				if (secondaryPool != null) {
-					synchronized (getStoragePool(secondaryPool.getUUIDString())) {
+					String uuid = secondaryPool.getUUIDString();
+					synchronized (getStoragePool(uuid)) {
 						secondaryPool.destroy();
 						secondaryPool.undefine();
 						secondaryPool.free();
 					}
-					rmStoragePool(secondaryPool.getUUIDString());
+					rmStoragePool(uuid);
 				}
 			} catch (LibvirtException l) {
 
