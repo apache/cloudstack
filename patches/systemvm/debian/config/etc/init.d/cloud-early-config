@@ -133,6 +133,12 @@ enable_fwding() {
   [ -f /etc/iptables/iptables.conf ] && sed  -i "s/ENABLE_ROUTING=.*$/ENABLE_ROUTING=$enabled/" /etc/iptables/iptables.conf && return
 }
 
+disable_rpfilter() {
+  log_action_begin_msg "cloud: disable rp_filter"
+  log_it "disable rpfilter"
+  sed -i "s/net.ipv4.conf.default.rp_filter.*$/net.ipv4.conf.default.rp_filter = 0/" /etc/sysctl.conf 
+}
+
 enable_svc() {
   local svc=$1
   local enabled=$2
@@ -271,6 +277,7 @@ setup_secstorage() {
   fi
   setup_apache2 $ETH2_IP
   
+  disable_rpfilter
   enable_fwding 0
   enable_svc haproxy 0
   enable_svc dnsmasq 0
@@ -292,6 +299,7 @@ setup_console_proxy() {
     setup_sshd $ETH0_IP
   fi
 
+  disable_rpfilter
   enable_fwding 0
   enable_svc haproxy 0
   enable_svc dnsmasq 0
