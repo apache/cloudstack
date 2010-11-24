@@ -1,16 +1,17 @@
 #!/bin/bash
 # $Id: installrtng.sh 11251 2010-07-23 23:40:44Z abhishek $ $HeadURL: svn://svn.lab.vmops.com/repos/vmdev/java/scripts/storage/secondary/installrtng.sh $
 usage() {
-  printf "Usage: %s: -m <secondary storage mount point> -f <system vm template file> [-F] [-t <template id>] [-e <template extention name>]\n" $(basename $0) >&2
+  printf "Usage: %s: -m <secondary storage mount point> -f <system vm template file> [-h <hypervisor name: kvm|vmware|xen>]\n" $(basename $0) >&2
   printf "or\n" >&2
-  printf "%s: -m <secondary storage mount point> -u <http url for system vm template> [-F] [-t <template id>] [-e <template extention name>]\n" $(basename $0) >&2
+  printf "%s: -m <secondary storage mount point> -u <http url for system vm template> [-h <hypervisor name: kvm|vmware|xen>]\n" $(basename $0) >&2
 }
 
 mflag=
 fflag=
 ext="vhd"
 templateId=1
-while getopts 'm:f:u:Ft:e:' OPTION
+hyper=
+while getopts 'm:h:f:u:Ft:e:' OPTION
 do
   case $OPTION in
   m)	mflag=1
@@ -27,6 +28,8 @@ do
   		;;
   e)    ext="$OPTARG"
   		;;
+  h)    hyper="$OPTARG"
+  		;;
   ?)	usage
 		exit 2
 		;;
@@ -39,11 +42,36 @@ then
   exit 2
 fi
 
+if [ -z "$hyper" ]
+then
+  usage
+  exit 2
+fi
+
 if [[ "$fflag" == "1" && ! -f $tmpltimg ]] 
 then
   echo "template image file $tmpltimg doesn't exist"
   exit 3
 fi
+
+if [ "$hyper" == "kvm" ]
+then
+   ext="qcow2"
+   templateId=3
+elif [ "$hyper" == "xen" ]
+then
+   ext="vhd"
+   templateId=1
+elif [ "hyper" == "vmware" ]
+then
+   ext="ova"
+   templateId=8
+else
+   usage
+   exit 2
+fi
+   
+
 
 localfile=$(uuidgen).$ext
 
