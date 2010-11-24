@@ -543,6 +543,13 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     	boolean sendCommand = (vm.getState() == State.Running);
     	AttachVolumeAnswer answer = null;
     	Long hostId = vm.getHostId();
+    	if(hostId  == null) {
+    		hostId = vm.getLastHostId();
+    		HostVO host = _hostDao.findById(hostId);
+    		if(host != null && host.getHypervisorType() == HypervisorType.VmWare)
+    			sendCommand = true;
+    	}
+    	
     	if (sendCommand) {
     		StoragePoolVO volumePool = _storagePoolDao.findById(volume.getPoolId());
     		AttachVolumeCommand cmd = new AttachVolumeCommand(true, vm.getInstanceName(), volume.getPoolType(), volume.getFolder(), volume.getPath(), volume.getName(), deviceId);
