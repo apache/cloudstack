@@ -29,7 +29,6 @@ function afterLoadDomainJSP() {
     //***** switch between different tabs (end) **********************************************************************	
 }
 
-
 function refreshWholeTree(rootDomainId, rootLevel) {
     drawRootNode(rootDomainId);
     drawTree(rootDomainId, (rootLevel+1), $("#domain_children_container_"+rootDomainId));  //draw the whole tree (under root node)			
@@ -67,16 +66,16 @@ function drawNode(json, level, container) {
         childParentMap[json.id] = json.parentdomainid;	//map childDomainId to parentDomainId   
     domainIdNameMap[json.id] = json.name;               //map domainId to domainName
 
-    var template = $("#domain_tree_node_template").clone(true);	  
-    template.find("#domain_indent").css("marginLeft", (30*(level+1)));           
-    template.attr("id", "domain_"+noNull(json.id));	         
-    template.data("jsonObj", json).data("domainLevel", level); 	      
-    template.find("#domain_title_container").attr("id", "domain_title_container_"+noNull(json.id)); 	        
-    template.find("#domain_expand_icon").attr("id", "domain_expand_icon_"+noNull(json.id)); 
-    template.find("#domain_name").attr("id", "domain_name_"+noNull(json.id)).text(fromdb(json.name));        	              	
-    template.find("#domain_children_container").attr("id", "domain_children_container_"+noNull(json.id));          
-    container.append(template.show());	 
-    return template;   	       
+    var $treeNode = $("#domain_tree_node_template").clone(true);	  
+    $treeNode.find("#domain_indent").css("marginLeft", (30*(level+1)));           
+    $treeNode.attr("id", "domain_"+noNull(json.id));	         
+    $treeNode.data("jsonObj", json).data("domainLevel", level); 	      
+    $treeNode.find("#domain_title_container").attr("id", "domain_title_container_"+noNull(json.id)); 	        
+    $treeNode.find("#domain_expand_icon").attr("id", "domain_expand_icon_"+noNull(json.id)); 
+    $treeNode.find("#domain_name").attr("id", "domain_name_"+noNull(json.id)).text(fromdb(json.name));        	              	
+    $treeNode.find("#domain_children_container").attr("id", "domain_children_container_"+noNull(json.id));          
+    container.append($treeNode.show());	 
+    return $treeNode;   	       
 }          
 
 function drawTree(id, level, container) {		        
@@ -98,14 +97,14 @@ function drawTree(id, level, container) {
 }	
 
 function clickExpandIcon(domainId) {
-    var template = $("#domain_"+domainId);
-    var expandIcon = template.find("#domain_expand_icon_"+domainId);
+    var $treeNode = $("#domain_"+domainId);
+    var expandIcon = $treeNode.find("#domain_expand_icon_"+domainId);
     if (expandIcon.hasClass("expanded_close")) {													
-		template.find("#domain_children_container_"+domainId).show();							
+		$treeNode.find("#domain_children_container_"+domainId).show();							
 		expandIcon.removeClass("expanded_close").addClass("expanded_open");
 	} 
 	else if (expandIcon.hasClass("expanded_open")) {																	
-	    template.find("#domain_children_container_"+domainId).hide();						
+	    $treeNode.find("#domain_children_container_"+domainId).hide();						
 		expandIcon.removeClass("expanded_open").addClass("expanded_close");
 	}			
 }					
@@ -143,8 +142,7 @@ function domainToRightPanel($leftmenuItem1) {
 function domainToRightPanel2($leftmenuItem1) {
     $("#right_panel_content").data("$leftmenuItem1", $leftmenuItem1);
     var jsonObj = $leftmenuItem1.data("jsonObj");    
-    var $detailsTab = $("#right_panel_content #tab_content_details");
-    $detailsTab.data("jsonObj", jsonObj);  
+    var $detailsTab = $("#right_panel_content").find("#tab_content_details");    
     var domainId = jsonObj.id;
     $detailsTab.find("#id").text(domainId);
     $detailsTab.find("#grid_header_title").text(fromdb(jsonObj.name));	
@@ -159,7 +157,7 @@ function domainToRightPanel2($leftmenuItem1) {
 		    if (accounts != null) 	
 		        $detailsTab.find("#redirect_to_account_page").text(accounts.length);
 		    else 
-		        $detailsTab.find("#redirect_to_account_page").text("");		
+		        $detailsTab.find("#redirect_to_account_page").text("0");		
 	    }		
     });		 
   			 				 			 
@@ -172,7 +170,7 @@ function domainToRightPanel2($leftmenuItem1) {
 		    if (instances != null) 	
 		        $detailsTab.find("#redirect_to_instance_page").text(instances.length);	
 		    else 
-		        $detailsTab.find("#redirect_to_instance_page").text("");	
+		        $detailsTab.find("#redirect_to_instance_page").text("0");	
 	    }		
     });		 
     			    
@@ -185,7 +183,7 @@ function domainToRightPanel2($leftmenuItem1) {
 		    if (volumes != null) 	
 		        $detailsTab.find("#redirect_to_volume_page").text(volumes.length);	
 		    else 
-		        $detailsTab.find("#redirect_to_volume_page").text("");		
+		        $detailsTab.find("#redirect_to_volume_page").text("0");		
 	    }		
     });
 
@@ -245,10 +243,15 @@ function domainToRightPanel2($leftmenuItem1) {
 
 function domainToResourceLimitsTab() {   
     var $leftmenuItem1 = $("#right_panel_content").data("$leftmenuItem1");
+    if($leftmenuItem1 == null)
+        return;
+    
     var jsonObj = $leftmenuItem1.data("jsonObj");
-    var $thisTab = $("#right_panel_content #tab_content_resource_limits");  
-    $thisTab.data("jsonObj", jsonObj);
-
+    if(jsonObj == null)
+        return;    
+    
+    var $thisTab = $("#right_panel_content").find("#tab_content_resource_limits");  
+    
     //actions ***
     var $actionLink = $thisTab.find("#action_link"); 
     $actionLink.bind("mouseover", function(event) {	    
@@ -347,7 +350,6 @@ function doEditResourceLimits($actionLink, $detailsTab, $midmenuItem1) {
 }
 
 function doEditResourceLimits2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $editFields) {  
-//function doUpdateResourceLimitsForDomain() {
     var $resourceLimitsTab = $("#right_panel_content #tab_content_resource_limits");
 
     var isValid = true;	        			
@@ -359,7 +361,7 @@ function doEditResourceLimits2($actionLink, $detailsTab, $midmenuItem1, $readonl
 	if (!isValid) 
 	    return;
 								
-	var jsonObj = $("#right_panel_content #tab_content_details").data("jsonObj");
+	var jsonObj = $midmenuItem1.data("jsonObj");
 	var domainId = jsonObj.id;
 	
 	var instanceLimit = trim($resourceLimitsTab.find("#limits_vm_edit").val());
