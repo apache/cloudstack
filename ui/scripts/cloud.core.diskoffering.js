@@ -155,8 +155,8 @@ function doEditDiskOffering2($actionLink, $detailsTab, $midmenuItem1, $readonlyF
 	$.ajax({
 	    data: createURL("command=updateDiskOffering&id="+id+array1.join("")),
 		dataType: "json",
-		success: function(json) {	
-		    var $midmenuItem1 = $("#"+getMidmenuId(json.updatediskofferingresponse.diskoffering));		   
+		success: function(json) {			    
+		    var jsonObj = json.updatediskofferingresponse.diskoffering;   
 		    diskOfferingToMidmenu(jsonObj, $midmenuItem1);
 		    diskOfferingToRightPanel($midmenuItem1);	
 		    
