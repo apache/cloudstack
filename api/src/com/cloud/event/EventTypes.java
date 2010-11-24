@@ -25,8 +25,7 @@ public class EventTypes {
 	public static final String EVENT_VM_START = "VM.START";
 	public static final String EVENT_VM_STOP = "VM.STOP";
 	public static final String EVENT_VM_REBOOT = "VM.REBOOT";
-    public static final String EVENT_VM_DISABLE_HA = "VM.DISABLEHA";
-	public static final String EVENT_VM_ENABLE_HA = "VM.ENABLEHA";
+    public static final String EVENT_VM_UPDATE = "VM.UPDATE";	
 	public static final String EVENT_VM_UPGRADE = "VM.UPGRADE";
 	public static final String EVENT_VM_RESETPASSWORD = "VM.RESETPASSWORD";
 
