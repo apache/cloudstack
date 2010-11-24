@@ -84,7 +84,8 @@ public class EventTypes {
     public static final String EVENT_TEMPLATE_DOWNLOAD_FAILED = "TEMPLATE.DOWNLOAD.FAILED";
 	public static final String EVENT_TEMPLATE_COPY = "TEMPLATE.COPY";	
     public static final String EVENT_TEMPLATE_EXTRACT = "TEMPLATE.EXTRACT";
-	public static final String EVENT_TEMPLATE_UPLOAD = "TEMPLATE.UPLOAD";	
+    public static final String EVENT_TEMPLATE_UPLOAD = "TEMPLATE.UPLOAD";
+    public static final String EVENT_TEMPLATE_CLEANUP = "TEMPLATE.CLEANUP";
 
 	// Volume Events
 	public static final String EVENT_VOLUME_CREATE = "VOLUME.CREATE";
