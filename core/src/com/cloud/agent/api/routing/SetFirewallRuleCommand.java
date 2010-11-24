@@ -98,9 +98,9 @@ public class SetFirewallRuleCommand extends RoutingCommand {
     	return this.oldPrivatePort;
     }
     
-    public boolean isNat(){
-    	return this.nat;
-    }
+//    public boolean isNat(){
+//    	return this.nat;
+//    }
 
 	public boolean isCreate() {
 		return create;
