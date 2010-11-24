@@ -35,7 +35,7 @@ public class DeleteStoragePoolCommand extends Command {
 	}
     
     public DeleteStoragePoolCommand(StoragePoolVO pool, String localPath) {
-    	this.pool = pool;
+    	this.pool = new StoragePoolVO(pool);
     	this.localPath = localPath;
     }
     
@@ -48,7 +48,7 @@ public class DeleteStoragePoolCommand extends Command {
     }
 
     public void setPool(StoragePoolVO pool) {
-        this.pool = pool;
+        this.pool = new StoragePoolVO(pool);
     }
     
 	@Override

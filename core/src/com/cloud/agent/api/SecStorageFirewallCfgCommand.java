@@ -20,6 +20,7 @@ package com.cloud.agent.api;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import org.apache.log4j.Logger;
@@ -27,6 +28,7 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.transport.Request;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
@@ -59,7 +61,12 @@ public class SecStorageFirewallCfgCommand extends Command {
 	        }
 	        Gson json = s_gBuilder.create();
 	        s_logger.debug("Returning gson tree");
-	        return json.toJsonTree(src, listType);
+	        JsonArray array = new JsonArray();
+	        for (PortConfig pc : src) {
+	            array.add(json.toJsonTree(pc));
+	        }
+
+	        return array;
 	    }
 
 	    public List<PortConfig> deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
@@ -68,7 +75,13 @@ public class SecStorageFirewallCfgCommand extends Command {
 	            return new ArrayList<PortConfig>();
 	        }
 	        Gson jsonp = s_gBuilder.create();
-	        List<PortConfig> pcs = jsonp.fromJson(json, listType);
+            List<PortConfig> pcs = new ArrayList<PortConfig>();
+	        JsonArray array = json.getAsJsonArray();
+	        Iterator<JsonElement> it = array.iterator();
+	        while (it.hasNext()) {
+	            JsonElement element = it.next();
+	            pcs.add(jsonp.fromJson(element, PortConfig.class));
+	        }
 	        return pcs;
 	    }
 
