@@ -48,7 +48,7 @@ public enum Config {
 	
 	StorageOverprovisioningFactor("Storage", StoragePoolAllocator.class, String.class, "storage.overprovisioning.factor", "2", "Used for storage overprovisioning calculation; available storage will be (actualStorageSize * storage.overprovisioning.factor)", null),
 	StorageStatsInterval("Storage", ManagementServer.class, String.class, "storage.stats.interval", "60000", "The interval in milliseconds when storage stats (per host) are retrieved from agents.", null),
-	MaxVolumeSize("Storage", ManagementServer.class, Integer.class, "max.volume.size.mb", "1024000", "The maximum size for a volume in megabytes.", null),
+	MaxVolumeSize("Storage", ManagementServer.class, Integer.class, "storage.max.volume.size", "2000", "The maximum size for a volume.", null),
 	TotalRetries("Storage", AgentManager.class, Integer.class, "total.retries", "4", "The number of times each command sent to a host should be retried in case of failure.", null),
 	
 	// Network

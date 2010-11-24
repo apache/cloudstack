@@ -1108,6 +1108,9 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             _agentMgr.registerForHostEvents(ComponentLocator.inject(LocalStoragePoolListener.class), true, false, false);
         }
         
+        String maxVolumeSizeInGbString = configDao.getValue("storage.max.volume.size");
+        _maxVolumeSizeInGb = NumbersUtil.parseInt(maxVolumeSizeInGbString, 2000);
+       
         PoolsUsedByVmSearch = _storagePoolDao.createSearchBuilder();
         SearchBuilder<VolumeVO> volSearch = _volsDao.createSearchBuilder();
         PoolsUsedByVmSearch.join("volumes", volSearch, volSearch.entity().getPoolId(), PoolsUsedByVmSearch.entity().getId(), JoinBuilder.JoinType.INNER);
@@ -1741,8 +1744,12 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                 
                 if(diskOffering.getDiskSize() > 0)
                 	size = (diskOffering.getDiskSize()*1024*1024);//the disk offering size is in MB, which needs to be converted into bytes
-                else
+                else{
+                	if(!validateCustomVolumeSizeRange(size)){
+                		throw new InvalidParameterValueException("Invalid size for custom volume creation: " + size+" ,max volume size is:"+_maxVolumeSizeInGb);
+                	}
                 	size = (size*1024*1024*1024);//custom size entered is in GB, to be converted to bytes
+                }
             }
         } else {
             Long snapshotId = cmd.getSnapshotId();

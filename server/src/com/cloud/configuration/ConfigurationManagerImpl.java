@@ -154,10 +154,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
     	_name = name;
 
-        String maxVolumeSizeInGbString = _configDao.getValue("max.volume.size.gb");
-        int maxVolumeSizeGb = NumbersUtil.parseInt(maxVolumeSizeInGbString, 2000);
-
-        _maxVolumeSizeInGb = maxVolumeSizeGb;
+        String maxVolumeSizeInGbString = _configDao.getValue("storage.max.volume.size");
+        _maxVolumeSizeInGb = NumbersUtil.parseInt(maxVolumeSizeInGbString, 2000);
 
     	return true;
     }
