@@ -590,7 +590,7 @@ function doDownloadISO($actionLink, $detailsTab, $midmenuItem1) {
            var jobId = json.extractisoresponse.jobid;                  			                        
            var timerKey = "asyncJob_" + jobId;					                       
            $("body").everyTime(
-               10000,
+               2000,  //this API returns fast. So, set 2 seconds instead of 10 seconds.
                timerKey,
                function() {
                    $.ajax({
@@ -604,7 +604,11 @@ function doDownloadISO($actionLink, $detailsTab, $midmenuItem1) {
 		                        $("body").stopTime(timerKey);				                        
 		                        $spinningWheel.hide(); 		                 		                          			                                             
 		                        if (result.jobstatus == 1) { // Succeeded 			                            
-		                            $infoContainer.find("#info").html("download ISO succeeded");
+		                            $infoContainer.removeClass("error");
+		                            $infoContainer.find("#icon,#info").removeClass("error");		                      
+		                            var url = fromdb(json.queryasyncjobresultresponse.jobresult.iso.url);	
+		                            var htmlMsg = "Please click <a href='" + url + "'>" + url + "</a>" + " to download ISO";                          
+		                            $infoContainer.find("#info").html(htmlMsg);
 		                            $infoContainer.show();		                        
 		                        } else if (result.jobstatus == 2) { // Failed	
 		                            handleErrorInDialog2(fromdb(result.jobresult.errortext), $dialogDownloadISO);		                        
