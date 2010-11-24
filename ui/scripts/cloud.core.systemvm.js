@@ -44,15 +44,19 @@ function systemvmToRightPanel($midmenuItem1) {
     systemvmJsonToDetailsTab();
 }
 
-function systemvmJsonToDetailsTab() {	
-    var $thisTab = $("#right_panel_content #tab_content_details");  
+function systemvmJsonToDetailsTab() {
+    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
+    if($midmenuItem1 == null)
+        return;
+    
+    var jsonObj = $midmenuItem1.data("jsonObj");
+    if(jsonObj == null)
+        return;
+     
+    var $thisTab = $("#right_panel_content").find("#tab_content_details");  
     $thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();   
-
-    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");  
-    var jsonObj = $midmenuItem1.data("jsonObj");       
-    $thisTab.data("jsonObj", jsonObj);
-    
+       
     $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));
        
     resetViewConsoleAction(jsonObj, $thisTab);         
