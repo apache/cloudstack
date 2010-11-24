@@ -757,6 +757,7 @@ function doEditPod2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $e
 		    success: function(json) {		   	   				    
 		        var item = json.updatepodresponse.pod;	
 		        $midmenuItem1.data("jsonObj", item);
+		        $midmenuItem1.find("#pod_name").text(item.name);
 		        podJsonToRightPanel($midmenuItem1);			    
     		    
 		        $editFields.hide();      
