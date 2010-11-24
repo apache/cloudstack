@@ -185,6 +185,7 @@ function afterLoadIsoJSP() {
     initDialog("dialog_copy_iso", 300);
     initDialog("dialog_create_vm_from_iso", 450);
     initDialog("dialog_add_iso", 450);   
+    initDialog("dialog_download_ISO");
 }
 
 function isoGetMidmenuId(jsonObj) {
@@ -285,6 +286,9 @@ function isoJsonToDetailsTab() {
 	    noAvailableActions = false;
 	}    
 	
+	buildActionLinkForTab("Download ISO", isoActionMap, $actionMenu, $midmenuItem1, $thisTab);	
+    noAvailableActions = false;	
+	
 	// no available actions 
 	if(noAvailableActions == true) {
 	    $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());
@@ -351,7 +355,10 @@ var isoActionMap = {
         dialogBeforeActionFn: doCreateVMFromIso,
         inProcessText: "Creating VM....",
         afterActionSeccessFn: function(json, $midmenuItem1, id){}   
-    }  
+    },
+    "Download ISO": {               
+        dialogBeforeActionFn : doDownloadISO        
+    }     
 }   
 
 function doEditISO($actionLink, $detailsTab, $midmenuItem1) {   
@@ -555,3 +562,70 @@ function doCreateVMFromIso($actionLink, $detailsTab, $midmenuItem1) {
 	    }
 	}).dialog("open");			
 }	
+
+function doDownloadISO($actionLink, $detailsTab, $midmenuItem1) { 
+	var jsonObj = $detailsTab.data("jsonObj");
+	var id = jsonObj.id;						
+	var zoneId = jsonObj.zoneid;	
+	
+   var apiCommand = "command=extractIso&id="+id+"&zoneid="+zoneId+"&mode=HTTP_DOWNLOAD";
+   
+   var $dialogDownloadISO = $("#dialog_download_ISO");
+   $spinningWheel = $dialogDownloadISO.find("#spinning_wheel");
+   $spinningWheel.show();
+   var $infoContainer = $dialogDownloadISO.find("#info_container");
+   $infoContainer.hide();	
+   
+   $dialogDownloadISO
+	.dialog('option', 'buttons', {	
+	    "Close": function() {				        
+		    $(this).dialog("close");
+	    }				
+	}).dialog("open");	
+			  
+   $.ajax({
+       data: createURL(apiCommand),
+       dataType: "json",           
+       success: function(json) {	                       	                        
+           var jobId = json.extractisoresponse.jobid;                  			                        
+           var timerKey = "asyncJob_" + jobId;					                       
+           $("body").everyTime(
+               10000,
+               timerKey,
+               function() {
+                   $.ajax({
+                       data: createURL("command=queryAsyncJobResult&jobId="+jobId),
+                       dataType: "json",									                    					                    
+                       success: function(json) {		                                                     							                       
+	                        var result = json.queryasyncjobresultresponse;										                   
+	                        if (result.jobstatus == 0) {
+		                        return; //Job has not completed
+	                        } else {											                    
+		                        $("body").stopTime(timerKey);				                        
+		                        $spinningWheel.hide(); 		                 		                          			                                             
+		                        if (result.jobstatus == 1) { // Succeeded 			                            
+		                            $infoContainer.find("#info").html("download ISO succeeded");
+		                            $infoContainer.show();		                        
+		                        } else if (result.jobstatus == 2) { // Failed	
+		                            handleErrorInDialog2(fromdb(result.jobresult.errortext), $dialogDownloadISO);		                        
+		                        }											                    
+	                        }
+                       },
+                       error: function(XMLHttpResponse) {	                            
+	                        $("body").stopTime(timerKey);	
+							handleError(XMLHttpResponse, function() {
+							    handleErrorInDialog(XMLHttpResponse, $dialogDownloadISO);									
+							});
+                       }
+                   });
+               },
+               0
+           );
+       },
+       error: function(XMLHttpResponse) {
+			handleError(XMLHttpResponse, function() {
+				handleErrorInDialog(XMLHttpResponse, $dialogDownloadISO);			
+			});
+       }
+   });  	
+}
