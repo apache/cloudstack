@@ -96,13 +96,7 @@ public interface AccountManager extends Manager {
 	
 	List<ResourceLimitVO> searchForLimits(Criteria c);
 
-	void checkAccess(Account account, Domain domain) throws PermissionDeniedException;
-	
-	void checkAccess(Account account, ControlledEntity... entities) throws PermissionDeniedException;
-	
-	AccountVO getSystemAccount();
-	
-	UserVO getSystemUser();
+
 	
     /**
      * Disables an account by accountId
@@ -114,4 +108,8 @@ public interface AccountManager extends Manager {
     boolean deleteAccount(AccountVO account);
     
     boolean deleteUserInternal(long userId, long startEventId);
+    
+    void checkAccess(Account account, Domain domain) throws PermissionDeniedException;
+    
+    void checkAccess(Account account, ControlledEntity... entities) throws PermissionDeniedException;
 }

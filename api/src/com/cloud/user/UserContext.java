@@ -18,94 +18,40 @@
 
 package com.cloud.user;
 
-import org.apache.log4j.Logger;
+import com.cloud.server.ManagementService;
+import com.cloud.utils.component.ComponentLocator;
 
-import com.cloud.utils.ProcessUtil;
 
 public class UserContext {
-    private static final Logger s_logger = Logger.getLogger(UserContext.class);
-
+    
     private static ThreadLocal<UserContext> s_currentContext = new ThreadLocal<UserContext>();
+    private static final ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
+    private static final AccountService _accountMgr = locator.getManager(AccountService.class);
 
-    private Long userId;
-    private String accountName;
-    private Long accountId;
-    private Long domainId;
+    private long userId;
     private String sessionId;
     private Account accountObject;
-    private Long eventId;
 
     private boolean apiServer;
 
-    private static UserContext s_nullContext = new UserContext(); 
+    private static UserContext s_adminContext = new UserContext(_accountMgr.getSystemUser().getId(), _accountMgr.getSystemAccount(), null, false); 
 
     public UserContext() {
     }
 
-    public UserContext(Long userId, Account accountObject, String accountName, Long accountId, Long domainId, String sessionId, boolean apiServer) {
+    public UserContext(long userId, Account accountObject, String sessionId, boolean apiServer) {
         this.userId = userId;
         this.accountObject = accountObject;
-        this.accountId = accountId;
-        this.domainId = domainId;
         this.sessionId = sessionId;
         this.apiServer = apiServer;
-        this.eventId = null;
     }
 
-    public Long getUserId() {
-        if (userId != null) {
-            return userId;
-        }
-
-        if (!apiServer) { 
-            s_logger.warn("Null user id in UserContext " + ProcessUtil.dumpStack());
-        }
-
-        return null;
+    public long getUserId() {
+        return userId;
     }
     
-    public void setEventId(long eventId) {
-        this.eventId = eventId;
-    }
-    
-    public Long getEventId() {
-        return eventId;
-    }
-
-    public void setUserId(Long userId) {
+    public void setUserId(long userId) {
         this.userId = userId;
-    }
-
-    public String getAccountName() {
-        return accountName;
-    }
-
-    public void setAccountName(String accountName) {
-        this.accountName = accountName;
-    }
-
-    public Long getAccountId() {
-        if (accountId != null) {
-            return accountId;
-        }
-
-        if (!apiServer) {
-            s_logger.warn("Null account id in UserContext " + ProcessUtil.dumpStack());
-        }
-
-        return null;
-    }
-
-    public void setAccountId(Long accountId) {
-        this.accountId = accountId;
-    }
-
-    public Long getDomainId() {
-        return domainId;
-    }
-
-    public void setDomainId(Long domainId) {
-        this.domainId = domainId;
     }
 
     public String getSessionId() {
@@ -135,25 +81,22 @@ public class UserContext {
     public static UserContext current() {
         UserContext context = s_currentContext.get();
         if (context == null) {
-            return s_nullContext;
+            return s_adminContext;
         }
         return context;
     }
 
-	public static void updateContext(Long userId, Account accountObject, String accountName, Long accountId, Long domainId, String sessionId) {
+	public static void updateContext(long userId, Account accountObject, String sessionId) {
 	    UserContext context = current();
 	    assert(context != null) : "Context should be already setup before you can call this one";
 
 	    context.setUserId(userId);
 	    context.setAccount(accountObject);
-	    context.setAccountName(accountName);
-	    context.setAccountId(accountId);
-	    context.setDomainId(domainId);
 	    context.setSessionKey(sessionId);
 	}
 
-	public static void registerContext(Long userId, Account accountObject, String accountName, Long accountId, Long domainId, String sessionId, boolean apiServer) {
-	    s_currentContext.set(new UserContext(userId, accountObject, accountName, accountId, domainId, sessionId, apiServer));
+	public static void registerContext(long userId, Account accountObject, String sessionId, boolean apiServer) {
+	    s_currentContext.set(new UserContext(userId, accountObject, sessionId, apiServer));
 	}
 
 	public static void unregisterContext() {

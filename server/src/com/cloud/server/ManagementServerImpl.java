@@ -3595,7 +3595,7 @@ public class ManagementServerImpl implements ManagementServer {
     public DomainVO createDomain(CreateDomainCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
         String name = cmd.getDomainName();
         Long parentId = cmd.getParentDomainId();
-        Long ownerId = UserContext.current().getAccountId();
+        Long ownerId = UserContext.current().getAccount().getId();
         Account account = UserContext.current().getAccount();
 
         if (ownerId == null) {
@@ -4277,10 +4277,10 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         // treat any requests from API server as trusted requests
-        if (!UserContext.current().isApiServer() && job.getAccountId() != UserContext.current().getAccountId()) {
+        if (!UserContext.current().isApiServer() && job.getAccountId() != UserContext.current().getAccount().getId()) {
             if (s_logger.isDebugEnabled())
                 s_logger.debug("Mismatched account id in job and user context, perform further securty check. job id: "
-                	+ jobId + ", job owner account: " + job.getAccountId() + ", accound id in current context: " + UserContext.current().getAccountId());
+                	+ jobId + ", job owner account: " + job.getAccountId() + ", accound id in current context: " + UserContext.current().getAccount().getId());
         	
         	Account account = UserContext.current().getAccount();
         	if (account != null) {
@@ -4868,7 +4868,7 @@ public class ManagementServerImpl implements ManagementServer {
     public VirtualMachine startSystemVm(long vmId) {
         UserContext context = UserContext.current();
         long callerId = context.getUserId();
-        long callerAccountId = context.getAccountId(); 
+        long callerAccountId = context.getAccount().getId(); 
         
         VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(vmId, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
         if (systemVm == null) {
@@ -4891,7 +4891,7 @@ public class ManagementServerImpl implements ManagementServer {
         UserContext context = UserContext.current();
         
         long callerId = context.getUserId();
-        long callerAccountId = context.getAccountId();
+        long callerAccountId = context.getAccount().getId();
         
         // verify parameters      
         VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(vmId, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);

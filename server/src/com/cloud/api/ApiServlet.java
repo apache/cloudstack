@@ -33,10 +33,12 @@ import javax.servlet.http.HttpSession;
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.CloudAuthenticationException;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.maid.StackMaid;
+import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
+import com.cloud.user.AccountService;
 import com.cloud.user.UserContext;
+import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @SuppressWarnings("serial")
@@ -45,6 +47,7 @@ public class ApiServlet extends HttpServlet {
     private static final Logger s_accessLogger = Logger.getLogger("apiserver." + ApiServer.class.getName());
 
     private ApiServer _apiServer = null;
+    private AccountService _accountMgr = null;
     
     public ApiServlet() {
         super();
@@ -52,6 +55,8 @@ public class ApiServlet extends HttpServlet {
         if (_apiServer == null) {
             throw new CloudRuntimeException("ApiServer not initialized");
         }
+        ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
+        _accountMgr = locator.getManager(AccountService.class);
     }
 
 	@Override
@@ -188,7 +193,7 @@ public class ApiServlet extends HttpServlet {
             // Initialize an empty context and we will update it after we have verified the request below,
             // we no longer rely on web-session here, verifyRequest will populate user/account information
             // if a API key exists
-            UserContext.registerContext(null, null, null, null, null, null, false);
+            UserContext.registerContext(_accountMgr.getSystemUser().getId(), _accountMgr.getSystemAccount(), null, false);
             Long userId = null;
 
             if (!isNew) {
@@ -216,7 +221,7 @@ public class ApiServlet extends HttpServlet {
                         resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "no command specified");
                         return;
                     }
-                    UserContext.updateContext(userId, (Account)accountObj, account, ((Account)accountObj).getId(), domainId, session.getId());
+                    UserContext.updateContext(userId, (Account)accountObj, session.getId());
                 } else {
                     // Invalidate the session to ensure we won't allow a request across management server restarts if the userId was serialized to the
                     // stored session
@@ -249,7 +254,7 @@ public class ApiServlet extends HttpServlet {
             	updateUserContext(params, session != null ? session.getId() : null);
                 */
 
-            	auditTrailSb.insert(0, "(userId="+UserContext.current().getUserId()+ " accountId="+UserContext.current().getAccountId()+ " sessionId="+(session != null ? session.getId() : null)+ ")" );
+            	auditTrailSb.insert(0, "(userId="+UserContext.current().getUserId()+ " accountId="+UserContext.current().getAccount().getId()+ " sessionId="+(session != null ? session.getId() : null)+ ")" );
 
             	try {
             		String response = _apiServer.handleRequest(params, true, responseType, auditTrailSb);            		

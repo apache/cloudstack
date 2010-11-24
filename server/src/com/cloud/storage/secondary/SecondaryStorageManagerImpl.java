@@ -113,10 +113,9 @@ import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
+import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
-import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
@@ -220,7 +219,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     @Inject private ConfigurationDao _configDao;
     @Inject private EventDao _eventDao;
     @Inject private ServiceOfferingDao _offeringDao;
-    @Inject private AccountManager _accountMgr;
+    @Inject private AccountService _accountMgr;
     @Inject GuestOSDao _guestOSDao = null;
     @Inject private VmManager _itMgr;
     
@@ -276,8 +275,8 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 	
 	public SecondaryStorageVmVO start2(long secStorageVmId, long startEventId) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException {
 		SecondaryStorageVmVO secStorageVm = _secStorageVmDao.findById(secStorageVmId);
-		AccountVO systemAcct = _accountMgr.getSystemAccount();
-		UserVO systemUser = _accountMgr.getSystemUser();
+		Account systemAcct = _accountMgr.getSystemAccount();
+		User systemUser = _accountMgr.getSystemUser();
 		return _itMgr.start(secStorageVm, null, systemUser, systemAcct);
 	}
 
@@ -732,7 +731,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 	        
 	        long id = _secStorageVmDao.getNextInSequence(Long.class, "id");
 	        String name = VirtualMachineName.getSystemVmName(id, _instance, "s").intern();
-	        AccountVO systemAcct = _accountMgr.getSystemAccount();
+	        Account systemAcct = _accountMgr.getSystemAccount();
 	        
 	        DataCenterDeployment plan = new DataCenterDeployment(dataCenterId);
 
@@ -831,7 +830,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
             String vlanGateway = publicIpAndVlan._gateWay;
             String vlanNetmask = publicIpAndVlan._netMask;
 
-            AccountVO systemAcct = _accountMgr.getSystemAccount();
+            Account systemAcct = _accountMgr.getSystemAccount();
 			txn.start();
 			SecondaryStorageVmVO secStorageVm;
 			String name = VirtualMachineName.getSystemVmName(id, _instance, "s").intern();

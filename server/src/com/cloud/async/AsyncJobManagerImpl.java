@@ -369,7 +369,7 @@ public class AsyncJobManagerImpl implements AsyncJobManager {
                         accountObject = _accountDao.findById(Long.parseLong(acctIdStr));
                     }
 
-                    UserContext.registerContext(userId, accountObject, null, null, null, null, false);
+                    UserContext.registerContext(userId, accountObject, null, false);
 
                     // dispatch could ultimately queue the job
                     _dispatcher.dispatch(cmdObj, params);

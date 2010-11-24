@@ -171,6 +171,7 @@ import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
@@ -237,6 +238,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     @Inject HighAvailabilityManager _haMgr = null;
     @Inject AlertManager _alertMgr = null;
     @Inject AccountManager _accountMgr;
+    @Inject AccountService _accountService;
     @Inject AsyncJobManager _asyncMgr;
     @Inject VlanDao _vlanDao;
     @Inject AccountVlanMapDao _accountVlanMapDao;

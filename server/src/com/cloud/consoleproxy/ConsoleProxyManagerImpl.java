@@ -133,7 +133,7 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
+import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.UserVO;
@@ -243,7 +243,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     @Inject private StorageManager _storageMgr;
     @Inject private HighAvailabilityManager _haMgr;
     @Inject NetworkManager _networkMgr;
-    @Inject AccountManager _accountMgr;
+    @Inject AccountService _accountMgr;
     @Inject private EventDao _eventDao;
     @Inject GuestOSDao _guestOSDao = null;
     @Inject ServiceOfferingDao _offeringDao;
@@ -554,8 +554,8 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
             return start(proxyVmId, startEventId);
         }
         ConsoleProxyVO proxy = _consoleProxyDao.findById(proxyVmId);
-        AccountVO systemAcct = _accountMgr.getSystemAccount();
-        UserVO systemUser = _accountMgr.getSystemUser();
+        Account systemAcct = _accountMgr.getSystemAccount();
+        User systemUser = _accountMgr.getSystemUser();
         return _itMgr.start(proxy, null, systemUser, systemAcct);
     }
 
@@ -1023,7 +1023,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
             String vlanGateway = publicIpAndVlan._gateWay;
             String vlanNetmask = publicIpAndVlan._netMask;
             
-            AccountVO systemAccount = _accountMgr.getSystemAccount();
+            Account systemAccount = _accountMgr.getSystemAccount();
 
             txn.start();
             ConsoleProxyVO proxy;
@@ -1061,7 +1061,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         long id = _consoleProxyDao.getNextInSequence(Long.class, "id");
         String name = VirtualMachineName.getConsoleProxyName(id, _instance);
         DataCenterVO dc = _dcDao.findById(dataCenterId);
-        AccountVO systemAcct = _accountMgr.getSystemAccount();
+        Account systemAcct = _accountMgr.getSystemAccount();
         
         DataCenterDeployment plan = new DataCenterDeployment(dataCenterId);
 

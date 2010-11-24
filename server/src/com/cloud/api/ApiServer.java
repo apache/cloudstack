@@ -91,7 +91,7 @@ import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.maid.StackMaid;
 import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
+import com.cloud.user.AccountService;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.user.UserContext;
@@ -114,7 +114,7 @@ public class ApiServer implements HttpRequestHandler {
     private Properties _apiCommands = null;
     private ApiDispatcher _dispatcher;
     private ManagementServer _ms = null;
-    private AccountManager _accountMgr = null;
+    private AccountService _accountMgr = null;
     private AsyncJobManager _asyncMgr = null;
     private Account _systemAccount = null;
     private User _systemUser = null;
@@ -200,7 +200,7 @@ public class ApiServer implements HttpRequestHandler {
 
         _ms = (ManagementServer)ComponentLocator.getComponent(ManagementServer.Name);
         ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
-        _accountMgr = locator.getManager(AccountManager.class);
+        _accountMgr = locator.getManager(AccountService.class);
         _asyncMgr = locator.getManager(AsyncJobManager.class);
         _systemAccount = _accountMgr.getSystemAccount();
         _systemUser = _accountMgr.getSystemUser();
@@ -263,7 +263,7 @@ public class ApiServer implements HttpRequestHandler {
             }
             try {
             	// always trust commands from API port, user context will always be UID_SYSTEM/ACCOUNT_ID_SYSTEM
-            	UserContext.registerContext(_systemUser.getId(), _systemAccount, _systemAccount.getAccountName(), _systemAccount.getId(), null, null, true);
+            	UserContext.registerContext(_systemUser.getId(), _systemAccount, null, true);
             	sb.insert(0,"(userId="+User.UID_SYSTEM+ " accountId="+Account.ACCOUNT_ID_SYSTEM+ " sessionId="+null+ ") " );
                 String responseText = handleRequest(parameterMap, true, responseType, sb);
                 sb.append(" 200 " + ((responseText == null) ? 0 : responseText.length()));
@@ -397,7 +397,7 @@ public class ApiServer implements HttpRequestHandler {
             AsyncJobVO job = new AsyncJobVO();
             job.setUserId(userId);
             if (account != null) {
-                job.setAccountId(ctx.getAccountId());
+                job.setAccountId(ctx.getAccount().getId());
             } else {
                 // Just have SYSTEM own the job for now.  Users won't be able to see this job,
                 // but in an admin case (like domain admin) they won't be able to see it anyway
@@ -547,7 +547,7 @@ public class ApiServer implements HttpRequestHandler {
                 return false;
             }
 
-            UserContext.updateContext(user.getId(), account, account.getAccountName(), account.getId(), account.getDomainId(), null);
+            UserContext.updateContext(user.getId(), account, null);
 
             if (!isCommandAvailable(account.getType(), commandName)) {
         		return false;

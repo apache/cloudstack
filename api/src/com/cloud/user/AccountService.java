@@ -128,5 +128,9 @@ public interface AccountService {
      * @throws PermissionDeniedException
      */
     List<? extends ResourceLimit> searchForLimits(ListResourceLimitsCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+    
+    Account getSystemAccount();
+    
+    User getSystemUser();
 
 }

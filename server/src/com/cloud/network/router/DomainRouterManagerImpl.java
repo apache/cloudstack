@@ -140,6 +140,7 @@ import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
@@ -209,6 +210,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
     @Inject HighAvailabilityManager _haMgr;
     @Inject AlertManager _alertMgr;
     @Inject AccountManager _accountMgr;
+    @Inject AccountService _accountService;
     @Inject ConfigurationManager _configMgr;
     @Inject AsyncJobManager _asyncMgr;
     @Inject StoragePoolDao _storagePoolDao = null;
@@ -247,7 +249,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
     
     ScheduledExecutorService _executor;
     
-    AccountVO _systemAcct;
+    Account _systemAcct;
     boolean _useNewNetworking;
 	
     @Override
@@ -1512,7 +1514,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         
         _useNewNetworking = Boolean.parseBoolean(configs.get("use.new.networking"));
         
-        _systemAcct = _accountMgr.getSystemAccount();
+        _systemAcct = _accountService.getSystemAccount();
         
         s_logger.info("DomainRouterManager is configured.");
 
@@ -2090,7 +2092,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
     	    router = _itMgr.allocate(router, _template, _offering, networks, plan, owner);
         }
         
-        return _itMgr.start(router, null, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
+        return _itMgr.start(router, null, _accountService.getSystemUser(), _accountService.getSystemAccount());
 	}
 	
 	@Override
@@ -2376,7 +2378,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
     public VirtualRouter stopRouter(long routerId) throws ResourceUnavailableException, ConcurrentOperationException {
         UserContext context = UserContext.current();
         Account account = context.getAccount();
-        long accountId = context.getAccountId();
+        long accountId = account.getId();
         long userId = context.getUserId();
         
 
