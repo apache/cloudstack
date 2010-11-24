@@ -40,7 +40,7 @@ public class DeleteStoragePoolCommand extends Command {
     }
     
     public DeleteStoragePoolCommand(StoragePoolVO pool) {
-		this(pool, LOCAL_PATH_PREFIX + File.separator + UUID.nameUUIDFromBytes((pool.getHostAddress() + pool.getPath()).getBytes()));
+		this(new StoragePoolVO(pool), LOCAL_PATH_PREFIX + File.separator + UUID.nameUUIDFromBytes((pool.getHostAddress() + pool.getPath()).getBytes()));
 	}
 
     public StoragePoolVO getPool() {
