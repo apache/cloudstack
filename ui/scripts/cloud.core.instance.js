@@ -1317,7 +1317,8 @@ function vmJsonToDetailsTab(){
 			var items = json.listvirtualmachinesresponse.virtualmachine;
 			if(items != null && items.length > 0) {
 				jsonObj = items[0]; //override jsonObj declared above				
-				$midmenuItem1.data("jsonObj", jsonObj); 				
+				$midmenuItem1.data("jsonObj", jsonObj); 
+				updateVmStateInMidMenu(jsonObj, $midmenuItem1);    				
 	        }   
 		}
 	});  	  
