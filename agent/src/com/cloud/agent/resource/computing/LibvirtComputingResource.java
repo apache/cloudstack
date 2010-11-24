@@ -1537,16 +1537,28 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
     
     protected CreateVolumeFromSnapshotAnswer execute(final CreateVolumeFromSnapshotCommand cmd) {
-    	String snapshotPath = cmd.getSnapshotUuid();
-    	String primaryUuid = cmd.getPrimaryStoragePoolNameLabel();
-    	String primaryPath = _mountPoint + File.separator + primaryUuid;
-    	String volUuid = UUID.randomUUID().toString();
-    	String volPath = primaryPath + File.separator + volUuid;
-    	String result = Script.runSimpleBashScript("cp " + snapshotPath + " " + volPath);
-    	if (result != null) {
-    		return new CreateVolumeFromSnapshotAnswer(cmd, false, result, null);
+    	StoragePool secondaryPool = null;
+    	try {
+    		/*Make sure secondary storage is mounted*/
+    		secondaryPool = getNfsSPbyURI(_conn, new URI(cmd.getSecondaryStoragePoolURL()));
+    		
+    		String snapshotPath = cmd.getSnapshotUuid();
+    		String primaryUuid = cmd.getPrimaryStoragePoolNameLabel();
+    		String primaryPath = _mountPoint + File.separator + primaryUuid;
+    		String volUuid = UUID.randomUUID().toString();
+    		String volPath = primaryPath + File.separator + volUuid;
+    		String result = executeBashScript("cp " + snapshotPath + " " + volPath);
+    		if (result != null) {
+    			return new CreateVolumeFromSnapshotAnswer(cmd, false, result, null);
+    		}
+    		return new CreateVolumeFromSnapshotAnswer(cmd, true, "", volPath);
+    	} catch (LibvirtException e) {
+    		return new CreateVolumeFromSnapshotAnswer(cmd, false, e.toString(), null);
+    	} catch (URISyntaxException e) {
+    		return new CreateVolumeFromSnapshotAnswer(cmd, false, e.toString(), null);
+    	} finally {
+    		
     	}
-    	return new CreateVolumeFromSnapshotAnswer(cmd, true, "", volPath);
     }
     
     protected CreatePrivateTemplateAnswer execute(final CreatePrivateTemplateFromSnapshotCommand cmd) {
@@ -4244,5 +4256,21 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     		}
     		return _storagePools.get(uuid);
     	}
+    }
+    
+    private void destroyStoragePool(StoragePool sp) {
+    	if (sp != null) {
+			try {
+				String uuid = sp.getUUIDString();
+				synchronized (getStoragePool(uuid)) {
+					sp.destroy();
+					sp.undefine();
+					sp.free();
+				}
+				rmStoragePool(uuid);
+			} catch (LibvirtException e) {
+				s_logger.debug("Failed to destroy storage pool: " + e.toString());
+			}
+		}
     }
 }
