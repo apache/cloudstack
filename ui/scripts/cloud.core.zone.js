@@ -875,6 +875,7 @@ function doEditZone2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $
 		    success: function(json) {		   
 		        var item = json.updatezoneresponse.zone;		  
 		        $midmenuItem1.data("jsonObj", item);
+		        $midmenuItem1.find("#zone_name").text(item.name);
 		        zoneJsonToRightPanel($midmenuItem1);	
     		    
 		        $editFields.hide();      
