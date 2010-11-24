@@ -210,15 +210,19 @@ function isoToRightPanel($midmenuItem1) {
     isoJsonToDetailsTab();   
 }
 
-function isoJsonToDetailsTab() { 
+function isoJsonToDetailsTab() {     
+    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
+    if($midmenuItem1 == null)
+        return;
+    
+    var jsonObj = $midmenuItem1.data("jsonObj");
+    if(jsonObj == null)
+        return;          
+    
     var $thisTab = $("#right_panel_content #tab_content_details");  
     $thisTab.find("#tab_container").hide(); 
-    $thisTab.find("#tab_spinning_wheel").show();        
-    
-    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");  
-    var jsonObj = $midmenuItem1.data("jsonObj");       
-    $thisTab.data("jsonObj", jsonObj);    
-     
+    $thisTab.find("#tab_spinning_wheel").show();  
+         
     $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));
         
     $thisTab.find("#id").text(noNull(jsonObj.id));
@@ -314,12 +318,15 @@ function isoClearDetailsTab() {
     $thisTab.find("#displaytext").text("");
     $thisTab.find("#displaytext_edit").val("");
     
+    $thisTab.find("#ostypename").text("");
+    
     $thisTab.find("#account").text("");  
 	$thisTab.find("#domain").text("");
 	$thisTab.find("#ostypename_edit").val(null);   
     $thisTab.find("#size").text("");  
 	$thisTab.find("#status").text(""); 
 	$thisTab.find("#bootable").text("");
+	$thisTab.find("#ispublic").text("")
 	$thisTab.find("#crossZones").text("");
     $thisTab.find("#created").text("");   
 }
@@ -390,7 +397,7 @@ function doEditISO2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $e
     if (!isValid) 
         return;
        
-    var jsonObj = $detailsTab.data("jsonObj"); 
+    var jsonObj = $midmenuItem1.data("jsonObj"); 
 	var id = jsonObj.id;
 	
 	var array1 = [];
@@ -413,6 +420,7 @@ function doEditISO2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $e
 		async: false,
 		success: function(json) {	
 		    $detailsTab.find("#name").text(name);
+		    $midmenuItem1.find("#first_row").text(name.substring(0,25)); 
 		    $detailsTab.find("#displaytext").text(displaytext);		           
 		    $detailsTab.find("#ostypename").text($detailsTab.find("#ostypename_edit option:selected").text());		   					
 		}
@@ -441,9 +449,8 @@ function doEditISO2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $e
     $("#save_button, #cancel_button").hide();       
 }
 
-function doDeleteIso($actionLink, $detailsTab, $midmenuItem1) {   
-    var $detailsTab = $("#right_panel_content #tab_content_details"); 
-    var jsonObj = $detailsTab.data("jsonObj");
+function doDeleteIso($actionLink, $detailsTab, $midmenuItem1) {       
+    var jsonObj = $midmenuItem1.data("jsonObj");
 	var id = jsonObj.id;
 	var name = jsonObj.name;			
 	var zoneId = jsonObj.zoneid;
@@ -482,7 +489,7 @@ function populateZoneFieldExcludeSourceZone(zoneField, excludeZoneId) {
 }
 
 function doCopyIso($actionLink, $detailsTab, $midmenuItem1) {   
-	var jsonObj = $detailsTab.data("jsonObj");
+	var jsonObj = $midmenuItem1.data("jsonObj");
 	var id = jsonObj.id;
 	var name = jsonObj.name;			
 	var sourceZoneId = jsonObj.zoneid;				
@@ -510,7 +517,7 @@ function doCopyIso($actionLink, $detailsTab, $midmenuItem1) {
 }	
 
 function doCreateVMFromIso($actionLink, $detailsTab, $midmenuItem1) { 
-    var jsonObj = $detailsTab.data("jsonObj");	
+    var jsonObj = $midmenuItem1.data("jsonObj");	
 	var id = jsonObj.id;		
 	var name = jsonObj.name;				
 	var zoneId = jsonObj.zoneid;
@@ -564,7 +571,7 @@ function doCreateVMFromIso($actionLink, $detailsTab, $midmenuItem1) {
 }	
 
 function doDownloadISO($actionLink, $detailsTab, $midmenuItem1) { 
-	var jsonObj = $detailsTab.data("jsonObj");
+	var jsonObj = $midmenuItem1.data("jsonObj");
 	var id = jsonObj.id;						
 	var zoneId = jsonObj.zoneid;	
 	
