@@ -128,7 +128,7 @@ function buildZoneTree() {
 	});  
 }    
 
-function refreshClusterUnderPod($podNode, newClusterName, existingClusterId) {  
+function refreshClusterUnderPod($podNode, newClusterName, existingClusterId, noClicking) {  
     var podId = $podNode.data("podId"); 
     $.ajax({
         data: createURL("command=listClusters&podid="+podId+maxPageSize),
@@ -142,16 +142,15 @@ function refreshClusterUnderPod($podNode, newClusterName, existingClusterId) {
                     var $clusterNode = $("#leftmenu_cluster_node_template").clone(true); 
                     var item = items[i];
                     clusterJSONToTreeNode(item, $clusterNode);
-                    container.append($clusterNode.show());   
-                                        
-                    if(newClusterName != null && fromdb(item.name) == newClusterName) {   
+                    container.append($clusterNode.show());                                     
+                    if(newClusterName != null && fromdb(item.name) == newClusterName && noClicking!=true) {   
                         $clusterNode.find("#cluster_name").click();                
                     }                 
                 }                         
                 $podNode.find("#pod_arrow").removeClass("white_nonexpanded_close").addClass("expanded_open");
                 $podNode.find("#pod_content").show();                  
                 
-                if(existingClusterId != null) {
+                if(existingClusterId != null && noClicking!=true) {
                     $("#cluster_"+existingClusterId).find("#cluster_name").click();	
                 }                      
             }            
@@ -509,10 +508,13 @@ function initAddHostShortcut() {
                         clickClusterNodeAfterAddHost(clusterRadio, podId, newClusterName, existingClusterId, $thisDialog);                                  
 			        },			
                     error: function(XMLHttpResponse) {	
-						handleError(XMLHttpResponse, function() {					
-							clickClusterNodeAfterAddHost(clusterRadio, podId, newClusterName, existingClusterId, $thisDialog);    
+						handleError(XMLHttpResponse, function() {							 
 							refreshClsuterFieldInAddHostDialog($thisDialog, podId, null);                     
 							handleErrorInDialog(XMLHttpResponse, $thisDialog);
+							if(clusterRadio == "new_cluster_radio") {    //*** new cluster ***                         
+                               refreshClusterUnderPod($("#pod_" + podId), newClusterName, null, true);  //refresh clusters under pod, but no clicking at any cluster                        
+                               $thisDialog.find("#new_cluster_name").val("");   
+                           }   
 						});
                     }				
 		        });

@@ -995,10 +995,13 @@ function initAddHostButtonOnZonePage($button, zoneId, zoneName) {
                         clickClusterNodeAfterAddHost(clusterRadio, podId, newClusterName, existingClusterId, $thisDialog);                                  
 			        },			
                     error: function(XMLHttpResponse) {	            
-						handleError(XMLHttpResponse, function() {						  				
-							clickClusterNodeAfterAddHost(clusterRadio, podId, newClusterName, existingClusterId, $thisDialog);    
+						handleError(XMLHttpResponse, function() {						  
 							refreshClsuterFieldInAddHostDialog($thisDialog, podId, null);                     
 							handleErrorInDialog(XMLHttpResponse, $thisDialog);
+							if(clusterRadio == "new_cluster_radio") {    //*** new cluster ***                         
+                               refreshClusterUnderPod($("#pod_" + podId), newClusterName, null, true);  //refresh clusters under pod, but no clicking at any cluster                        
+                               $thisDialog.find("#new_cluster_name").val("");   
+                           }   
 						});
                     }				
 		        });
