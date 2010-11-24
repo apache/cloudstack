@@ -209,6 +209,7 @@ function afterLoadTemplateJSP() {
     initDialog("dialog_add_template", 450);	
 	initDialog("dialog_copy_template", 300);	
 	initDialog("dialog_create_vm_from_template", 300);	
+	initDialog("dialog_download_template");
 }
 
 function templateGetMidmenuId(jsonObj) {
@@ -287,7 +288,7 @@ function templateJsonToDetailsTab() {
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty();
     var noAvailableActions = true;
-
+    
     // action Edit, Copy, Create VM 			
 	if ((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) || jsonObj.id==DomRTemplateId || jsonObj.isready == false) {
 		//$("#edit_button").hide();		
@@ -310,6 +311,9 @@ function templateJsonToDetailsTab() {
         noAvailableActions = false;	
     }
     
+    buildActionLinkForTab("Download Template", templateActionMap, $actionMenu, $midmenuItem1, $thisTab);	
+    noAvailableActions = false;	
+        
     // no available actions 
 	if(noAvailableActions == true) {
 	    $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());
@@ -399,7 +403,10 @@ var templateActionMap = {
         dialogBeforeActionFn : doCreateVMFromTemplate,
         inProcessText: "Creating VM....",
         afterActionSeccessFn: function(json, $midmenuItem1, id){}   
-    }  
+    },
+    "Download Template": {               
+        dialogBeforeActionFn : doDownloadTemplate        
+    }   
 }   
 
 function doEditTemplate($actionLink, $detailsTab, $midmenuItem1) {   
@@ -626,3 +633,71 @@ function doCreateVMFromTemplate($actionLink, $detailsTab, $midmenuItem1) {
 	    }
 	}).dialog("open");			
 }		
+
+function doDownloadTemplate($actionLink, $detailsTab, $midmenuItem1) { 
+	var jsonObj = $detailsTab.data("jsonObj");
+	var id = jsonObj.id;						
+	var zoneId = jsonObj.zoneid;	
+	
+    var apiCommand = "command=extractTemplate&id="+id+"&zoneid="+zoneId+"&mode=HTTP_DOWNLOAD";
+    
+    var $dialogDownloadTemplate = $("#dialog_download_template");
+    $spinningWheel = $dialogDownloadTemplate.find("#spinning_wheel");
+    $spinningWheel.show();
+    var $infoContainer = $dialogDownloadTemplate.find("#info_container");
+    $infoContainer.hide();	
+    
+    $dialogDownloadTemplate
+	.dialog('option', 'buttons', {	
+	    "Close": function() {				        
+		    $(this).dialog("close");
+	    }				
+	}).dialog("open");	
+			  
+    $.ajax({
+        data: createURL(apiCommand),
+        dataType: "json",           
+        success: function(json) {	                       	                        
+            var jobId = json.extracttemplateresponse.jobid;                  			                        
+            var timerKey = "asyncJob_" + jobId;					                       
+            $("body").everyTime(
+                10000,
+                timerKey,
+                function() {
+                    $.ajax({
+                        data: createURL("command=queryAsyncJobResult&jobId="+jobId),
+                        dataType: "json",									                    					                    
+                        success: function(json) {		                                                     							                       
+	                        var result = json.queryasyncjobresultresponse;										                   
+	                        if (result.jobstatus == 0) {
+		                        return; //Job has not completed
+	                        } else {											                    
+		                        $("body").stopTime(timerKey);				                        
+		                        $spinningWheel.hide(); 		                 		                          			                                             
+		                        if (result.jobstatus == 1) { // Succeeded 			                            
+		                            $infoContainer.find("#info").html("download template succeeded");
+		                            $infoContainer.show();		                        
+		                        } else if (result.jobstatus == 2) { // Failed	
+		                            handleErrorInDialog2(fromdb(result.jobresult.errortext), $dialogDownloadTemplate);		                        
+		                        }											                    
+	                        }
+                        },
+                        error: function(XMLHttpResponse) {	                            
+	                        $("body").stopTime(timerKey);	
+							handleError(XMLHttpResponse, function() {
+							    handleErrorInDialog(XMLHttpResponse, $dialogDownloadTemplate);									
+							});
+                        }
+                    });
+                },
+                0
+            );
+        },
+        error: function(XMLHttpResponse) {
+			handleError(XMLHttpResponse, function() {
+				handleErrorInDialog(XMLHttpResponse, $dialogDownloadTemplate);			
+			});
+        }
+    });    
+    //???						
+}

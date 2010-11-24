@@ -1005,6 +1005,10 @@ function bindAndListMidMenuItems($leftmenu, commandString, jsonResponse1, jsonRe
 
 function handleErrorInDialog(XMLHttpResponse, $thisDialog) {    
 	var errorMsg = parseXMLHttpResponse(XMLHttpResponse);	
+	handleErrorInDialog2(errorMsg, $thisDialog);
+}
+
+function handleErrorInDialog2(errorMsg, $thisDialog) { 
 	var $infoContainer = $thisDialog.find("#info_container");
 
 	if(errorMsg != null && errorMsg.length > 0) 	    
