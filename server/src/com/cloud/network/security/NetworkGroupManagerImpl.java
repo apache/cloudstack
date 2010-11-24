@@ -642,6 +642,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager, NetworkGrou
 		Account account = UserContext.current().getAccount();
 		Long userId  = UserContext.current().getUserId();
         Long domainId = cmd.getDomainId();
+        String accountName = cmd.getAccountName();
         Integer startPort = cmd.getStartPort();
         Integer endPort = cmd.getEndPort();
         Integer icmpType = cmd.getIcmpType();
@@ -704,7 +705,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager, NetworkGrou
         }
 
         if ((account == null) || isAdmin(account.getType())) {
-            if ((account.getAccountName() != null) && (domainId != null)) {
+            if ((accountName != null) && (domainId != null)) {
                 // if it's an admin account, do a quick permission check
                 if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
                     if (s_logger.isDebugEnabled()) {
@@ -712,9 +713,9 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager, NetworkGrou
                     }
                     throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to find rules for network security group id = " + networkGroup + ", permission denied.");
                 }
-                Account groupOwner =  _accountDao.findActiveAccount(account.getAccountName(), domainId);
+                Account groupOwner =  _accountDao.findActiveAccount(accountName, domainId);
                 if (groupOwner == null) {
-                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find account " + account.getAccountName() + " in domain " + domainId);
+                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find account " + accountName + " in domain " + domainId);
                 }
                 accountId = groupOwner.getId();
             } else {

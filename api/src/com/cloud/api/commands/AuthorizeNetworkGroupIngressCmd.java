@@ -18,7 +18,6 @@
 
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -34,7 +33,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.IngressRuleResponse;
-import com.cloud.api.response.ListResponse;
+import com.cloud.api.response.NetworkGroupResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.network.security.IngressRule;
 import com.cloud.user.Account;
@@ -209,37 +208,11 @@ public class AuthorizeNetworkGroupIngressCmd extends BaseAsyncCmd {
     @Override
     public void execute(){
         List<? extends IngressRule> ingressRules = _networkGroupMgr.authorizeNetworkGroupIngress(this);
-        ListResponse<IngressRuleResponse> response = new ListResponse<IngressRuleResponse>();
-        if ((ingressRules != null) && !ingressRules.isEmpty()) {
-            List<IngressRuleResponse> responses = new ArrayList<IngressRuleResponse>();
-            for (IngressRule ingressRule : ingressRules) {
-                IngressRuleResponse ingressData = new IngressRuleResponse();
-
-                ingressData.setRuleId(ingressRule.getId());
-                ingressData.setProtocol(ingressRule.getProtocol());
-                if ("icmp".equalsIgnoreCase(ingressRule.getProtocol())) {
-                    ingressData.setIcmpType(ingressRule.getStartPort());
-                    ingressData.setIcmpCode(ingressRule.getEndPort());
-                } else {
-                    ingressData.setStartPort(ingressRule.getStartPort());
-                    ingressData.setEndPort(ingressRule.getEndPort());
-                }
-
-                if (ingressRule.getAllowedNetworkGroup() != null) {
-                    ingressData.setNetworkGroupName(ingressRule.getAllowedNetworkGroup());
-                    ingressData.setAccountName(ingressRule.getAllowedNetGrpAcct());
-                } else {
-                    ingressData.setCidr(ingressRule.getAllowedSourceIpCidr());
-                }
-
-                ingressData.setObjectName("ingressrule");
-                responses.add(ingressData);
-            }
-            response.setResponses(responses);
-            response.setResponseName("securitygroupingressrule");
+        if (ingressRules != null && ! ingressRules.isEmpty()) {
+        NetworkGroupResponse response = _responseGenerator.createNetworkGroupResponseFromIngressRule(ingressRules);
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to authorize network group ingress rule");
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to authorize network group ingress rule(s)");
         }
         
     }

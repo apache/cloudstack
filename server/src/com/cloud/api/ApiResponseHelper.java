@@ -101,6 +101,7 @@ import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VpnUser;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.security.IngressRule;
 import com.cloud.network.security.NetworkGroup;
 import com.cloud.network.security.NetworkGroupRules;
 import com.cloud.offering.DiskOffering;
@@ -2268,6 +2269,52 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
         }
 
+        return response;
+    }
+    
+    
+    
+    @Override
+    public NetworkGroupResponse createNetworkGroupResponseFromIngressRule(List<? extends IngressRule> ingressRules) {
+        NetworkGroupResponse response = new NetworkGroupResponse();
+
+        if ((ingressRules != null) && !ingressRules.isEmpty()) {
+            NetworkGroup networkGroup  = ApiDBUtils.findNetworkGroupById(ingressRules.get(0).getNetworkGroupId());
+            response.setId(networkGroup.getId());
+            response.setName(networkGroup.getName());
+            response.setDescription(networkGroup.getDescription());
+            response.setAccountName(networkGroup.getAccountName());
+            response.setDomainId(networkGroup.getDomainId());
+            response.setDomainName(ApiDBUtils.findDomainById(networkGroup.getDomainId()).getName());
+
+            List<IngressRuleResponse> responses = new ArrayList<IngressRuleResponse>();
+            for (IngressRule ingressRule : ingressRules) {
+                IngressRuleResponse ingressData = new IngressRuleResponse();
+
+                ingressData.setRuleId(ingressRule.getId());
+                ingressData.setProtocol(ingressRule.getProtocol());
+                if ("icmp".equalsIgnoreCase(ingressRule.getProtocol())) {
+                    ingressData.setIcmpType(ingressRule.getStartPort());
+                    ingressData.setIcmpCode(ingressRule.getEndPort());
+                } else {
+                    ingressData.setStartPort(ingressRule.getStartPort());
+                    ingressData.setEndPort(ingressRule.getEndPort());
+                }
+
+                if (ingressRule.getAllowedNetworkGroup() != null) {
+                    ingressData.setNetworkGroupName(ingressRule.getAllowedNetworkGroup());
+                    ingressData.setAccountName(ingressRule.getAllowedNetGrpAcct());
+                } else {
+                    ingressData.setCidr(ingressRule.getAllowedSourceIpCidr());
+                }
+
+                ingressData.setObjectName("ingressrule");
+                responses.add(ingressData);
+            }
+            response.setIngressRules(responses);
+            response.setObjectName("networkgroup");
+
+        }
         return response;
     }
 }

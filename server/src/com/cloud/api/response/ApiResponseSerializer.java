@@ -6,6 +6,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.log4j.Logger;
@@ -133,11 +134,14 @@ public class ApiResponseSerializer {
                             if (isAsync) {
                                 sb.append("</jobresult>");
                             }
-                        } else if (fieldValue instanceof ArrayList<?>){
-                            ArrayList<?> subResponseList = (ArrayList<Object>)fieldValue;
+                        } else if (fieldValue instanceof List<?>){
+                            List<?> subResponseList = (List<Object>)fieldValue;
                             for (Object value: subResponseList) {
                                 if (value instanceof ResponseObject){
                                     ResponseObject subObj = (ResponseObject)value;
+                                    if (serializedName != null) {
+                                        subObj.setObjectName(serializedName.value());
+                                    }
                                     serializeResponseObjXML(sb, subObj);
                                 }
                             }

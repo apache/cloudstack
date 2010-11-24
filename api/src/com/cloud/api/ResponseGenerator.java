@@ -73,6 +73,7 @@ import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VpnUser;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.security.IngressRule;
 import com.cloud.network.security.NetworkGroup;
 import com.cloud.network.security.NetworkGroupRules;
 import com.cloud.offering.DiskOffering;
@@ -171,6 +172,8 @@ public interface ResponseGenerator {
     ListResponse<TemplateResponse> createIsoResponses(VirtualMachineTemplate template, Long zoneId);
 
     ListResponse<NetworkGroupResponse> createNetworkGroupResponses(List<? extends NetworkGroupRules> networkGroups);
+    
+    NetworkGroupResponse createNetworkGroupResponseFromIngressRule(List<? extends IngressRule> ingressRules);
 
     NetworkGroupResponse createNetworkGroupResponse(NetworkGroup group);
 

@@ -33,7 +33,9 @@ import com.cloud.network.NetworkRuleConfigVO;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkRuleConfigDao;
+import com.cloud.network.security.NetworkGroup;
 import com.cloud.network.security.NetworkGroupManager;
+import com.cloud.network.security.dao.NetworkGroupDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.server.Criteria;
 import com.cloud.server.ManagementServer;
@@ -108,6 +110,7 @@ public class ApiDBUtils {
     private static HostDao _hostDao;
     private static IPAddressDao _ipAddressDao;
     private static LoadBalancerDao _loadBalancerDao;
+    private static NetworkGroupDao _networkGroupDao;
     private static NetworkRuleConfigDao _networkRuleConfigDao;
     private static HostPodDao _podDao;
     private static ServiceOfferingDao _serviceOfferingDao;
@@ -161,6 +164,7 @@ public class ApiDBUtils {
         _vlanDao = locator.getDao(VlanDao.class);
         _volumeDao = locator.getDao(VolumeDao.class);
         _zoneDao = locator.getDao(DataCenterDao.class);
+        _networkGroupDao = locator.getDao(NetworkGroupDao.class);
 
         // Note:  stats collector should already have been initialized by this time, otherwise a null instance is returned
         _statsCollector = StatsCollector.getInstance();
@@ -336,6 +340,10 @@ public class ApiDBUtils {
 
     public static NetworkRuleConfigVO findNetworkRuleById(Long ruleId) {
         return _networkRuleConfigDao.findById(ruleId);
+    }
+    
+    public static NetworkGroup findNetworkGroupById(Long groupId) {
+        return _networkGroupDao.findById(groupId);
     }
 
     public static HostPodVO findPodById(Long podId) {
