@@ -968,7 +968,7 @@ function portForwardingJsonToTemplate(jsonObj, $template) {
     $template.find("#row_container #protocol").text(fromdb(jsonObj.protocol));
     $template.find("#row_container_edit #protocol").text(fromdb(jsonObj.protocol));
        
-    var vmName = getVmName(jsonObj.vmname, jsonObj.vmdisplayname); //jsonObj doesn't include vmdisplayname property(incorrect). Waiting for Bug 7189 to be fixed....
+    var vmName = getVmName(jsonObj.virtualmachinename, jsonObj.virtualmachinedisplayname); 
     $template.find("#row_container #vm_name").text(vmName);		    
     var virtualMachineId = noNull(jsonObj.virtualmachineid);
    
