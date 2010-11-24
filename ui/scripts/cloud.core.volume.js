@@ -307,22 +307,29 @@ function volumeJsonToDetailsTab(){
     $thisTab.find("#tab_spinning_wheel").show();        
     
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    var id = noNull($midmenuItem1.data("jsonObj").id);
+    if($midmenuItem1 == null)
+        return;
     
-    var jsonObj;   
+    var jsonObj = $midmenuItem1.data("jsonObj");
+    if(jsonObj == null)
+        return;
+    
+    var id = jsonObj.id;
+        
     $.ajax({
         data: createURL("command=listVolumes&id="+id),
         dataType: "json",
         async: false,
         success: function(json) {  
             var items = json.listvolumesresponse.volume;
-            if(items != null && items.length > 0)
+            if(items != null && items.length > 0) {
                 jsonObj = items[0];
+                $midmenuItem1.data("jsonObj", jsonObj); 
+                $thisTab.data("jsonObj", jsonObj);       
+            }
         }
-    });        
-    $thisTab.data("jsonObj", jsonObj);    
-    $midmenuItem1.data("jsonObj", jsonObj);    
-        
+    });      
+           
     $thisTab.find("#id").text(noNull(jsonObj.id));
     $thisTab.find("#name").text(fromdb(jsonObj.name));    
     $thisTab.find("#zonename").text(fromdb(jsonObj.zonename));    
@@ -374,12 +381,18 @@ function volumeJsonToDetailsTab(){
 } 
 
 function volumeJsonToSnapshotTab() {   
-    var $thisTab = $("#right_panel_content #tab_content_snapshot");
+    var $thisTab = $("#right_panel_content").find("#tab_content_snapshot");
+			
+	var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");	
+	if($midmenuItem1 == null)
+	    return;
+	
+	var jsonObj = $midmenuItem1.data("jsonObj");	
+	if(jsonObj == null)
+	    return;
+	    
 	$thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();   
-		
-	var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");	
-	var jsonObj = $midmenuItem1.data("jsonObj");	
     
     $.ajax({
 		cache: false,
