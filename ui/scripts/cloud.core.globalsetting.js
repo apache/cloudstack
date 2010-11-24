@@ -58,17 +58,11 @@ function populateGlobalSettingGrid() {
     });    
 }
 
-var notApplicable = "Not applicable";
 var globalsettingGridIndex = 0;
 function globalsettingJSONToTemplate(jsonObj, template) {      
     (globalsettingGridIndex++ % 2 == 0)? template.addClass("even"): template.addClass("odd");		
-	template.find("#name").text(fromdb(jsonObj.name));
-	
-	if(fromdb(jsonObj.value).length > 0)
-	    template.find("#value").text(fromdb(jsonObj.value));
-	else
-	    template.find("#value").text(notApplicable);
-	
+	template.find("#name").text(fromdb(jsonObj.name));	
+	template.find("#value").text(fromdb(jsonObj.value));	
 	template.find("#value_edit").val(fromdb(jsonObj.value));	
 	template.find("#description").text(fromdb(jsonObj.description));
 }
@@ -98,9 +92,6 @@ function doEditGlobalSetting2($readonlyFields, $editFields) {
     $("#right_panel_content #tab_content_details").find("#globalsetting_template").each(function(index) {        
         var $thisRow =$(this);  
         
-        if($thisRow.find("#value_edit").val() == "" && $thisRow.find("#value").text() == notApplicable)
-            return;
-              
         if($thisRow.find("#value_edit").val() != $thisRow.find("#value").text()) {            
             // validate values        
             var isValid = true;					

@@ -77,7 +77,7 @@
             <div class="row_celltitles" id="name">
             </div>
         </div>
-        <div class="grid_row_cell" style="width: 23%; border:none;">
+        <div class="grid_row_cell" style="width: 23%; border:none; padding:1px;">
             <div class="row_celltitles" id="value">
             </div>
             <input class="text" id="value_edit" style="width: 120px; display: none;" type="text" />
