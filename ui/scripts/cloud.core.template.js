@@ -16,7 +16,7 @@
  * 
  */
 
-var DomRTemplateId = 1;
+//var DomRTemplateId = 1;
 
 var g_zoneIds = []; 
 var g_zoneNames = [];	
@@ -290,14 +290,15 @@ function templateJsonToDetailsTab() {
     var noAvailableActions = true;
     
     // action Edit, Copy, Create VM 			
-	if ((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) || jsonObj.id==DomRTemplateId || jsonObj.isready == false) {
+	if ((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) || jsonObj.templatetype == "SYSTEM" || jsonObj.isready == false) {
 		//$("#edit_button").hide();		
     }
     else {
         buildActionLinkForTab("Edit Template", templateActionMap, $actionMenu, $midmenuItem1, $thisTab);      
         //$("#edit_button").show();
         buildActionLinkForTab("Copy Template", templateActionMap, $actionMenu, $midmenuItem1, $thisTab);			
-        buildActionLinkForTab("Create VM", templateActionMap, $actionMenu, $midmenuItem1, $thisTab);	
+        buildActionLinkForTab("Create VM", templateActionMap, $actionMenu, $midmenuItem1, $thisTab);	        
+        buildActionLinkForTab("Download Template", templateActionMap, $actionMenu, $midmenuItem1, $thisTab);
         noAvailableActions = false;		
     }
 	
@@ -310,10 +311,7 @@ function templateJsonToDetailsTab() {
         buildActionLinkForTab("Delete Template", templateActionMap, $actionMenu, $midmenuItem1, $thisTab);
         noAvailableActions = false;	
     }
-    
-    buildActionLinkForTab("Download Template", templateActionMap, $actionMenu, $midmenuItem1, $thisTab);	
-    noAvailableActions = false;	
-        
+            
     // no available actions 
 	if(noAvailableActions == true) {
 	    $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());
