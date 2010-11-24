@@ -901,7 +901,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         }
 
         ConsoleProxyVO proxy = _consoleProxyDao.findById(proxyVmId); 
-            //allocProxyStorage(dataCenterId, proxyVmId);
+        allocProxyStorage(dataCenterId, proxyVmId);
         if (proxy != null) {
             SubscriptionMgr.getInstance().notifySubscribers(ConsoleProxyManager.ALERT_SUBJECT, this,
                     new ConsoleProxyAlertEventArgs(ConsoleProxyAlertEventArgs.PROXY_CREATED, dataCenterId, proxy.getId(), proxy, null));
@@ -941,7 +941,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         }
 
         ConsoleProxyVO proxy = _consoleProxyDao.findById(proxyVmId); 
-            //allocProxyStorage(dataCenterId, proxyVmId);
+        allocProxyStorage(dataCenterId, proxyVmId);
         if (proxy != null) {
             SubscriptionMgr.getInstance().notifySubscribers(ConsoleProxyManager.ALERT_SUBJECT, this,
                     new ConsoleProxyAlertEventArgs(ConsoleProxyAlertEventArgs.PROXY_CREATED, dataCenterId, proxy.getId(), proxy, null));
