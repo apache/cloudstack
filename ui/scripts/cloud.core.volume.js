@@ -301,11 +301,7 @@ function volumeToRightPanel($midmenuItem1) {
     $("#tab_details").click();   
 }
  
-function volumeJsonToDetailsTab(){    
-    var $thisTab = $("#right_panel_content #tab_content_details");  
-    $thisTab.find("#tab_container").hide(); 
-    $thisTab.find("#tab_spinning_wheel").show();        
-    
+function volumeJsonToDetailsTab(){  
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
     if($midmenuItem1 == null)
         return;
@@ -313,6 +309,10 @@ function volumeJsonToDetailsTab(){
     var jsonObj = $midmenuItem1.data("jsonObj");
     if(jsonObj == null)
         return;
+     
+    var $thisTab = $("#right_panel_content #tab_content_details");      
+    $thisTab.find("#tab_container").hide(); 
+    $thisTab.find("#tab_spinning_wheel").show();   
     
     var id = jsonObj.id;
         
@@ -324,8 +324,7 @@ function volumeJsonToDetailsTab(){
             var items = json.listvolumesresponse.volume;
             if(items != null && items.length > 0) {
                 jsonObj = items[0];
-                $midmenuItem1.data("jsonObj", jsonObj); 
-                $thisTab.data("jsonObj", jsonObj);       
+                $midmenuItem1.data("jsonObj", jsonObj);                     
             }
         }
     });      
@@ -380,9 +379,7 @@ function volumeJsonToDetailsTab(){
     $thisTab.find("#tab_container").show();     
 } 
 
-function volumeJsonToSnapshotTab() {   
-    var $thisTab = $("#right_panel_content").find("#tab_content_snapshot");
-			
+function volumeJsonToSnapshotTab() {       		
 	var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");	
 	if($midmenuItem1 == null)
 	    return;
@@ -390,7 +387,8 @@ function volumeJsonToSnapshotTab() {
 	var jsonObj = $midmenuItem1.data("jsonObj");	
 	if(jsonObj == null)
 	    return;
-	    
+	
+	var $thisTab = $("#right_panel_content").find("#tab_content_snapshot");	    
 	$thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();   
     
@@ -515,7 +513,7 @@ var volumeActionMap = {
 }   
 
 function doCreateTemplateFromVolume($actionLink, $detailsTab, $midmenuItem1) {       
-    var jsonObj = $detailsTab.data("jsonObj");
+    var jsonObj = $midmenuItem1.data("jsonObj");
     $("#dialog_create_template").find("#volume_name").text(jsonObj.name);
     
 	$("#dialog_create_template")
@@ -536,7 +534,7 @@ function doCreateTemplateFromVolume($actionLink, $detailsTab, $midmenuItem1) {
 			var isPublic = thisDialog.find("#create_template_public").val();
             var password = thisDialog.find("#create_template_password").val();				
 			
-			var id = $detailsTab.data("jsonObj").id;			
+			var id = $midmenuItem1.data("jsonObj").id;			
 			var apiCommand = "command=createTemplate&volumeId="+id+"&name="+todb(name)+"&displayText="+todb(desc)+"&osTypeId="+osType+"&isPublic="+isPublic+"&passwordEnabled="+password;
 	    	doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);					
 		}, 
@@ -552,7 +550,7 @@ function doTakeSnapshot($actionLink, $detailsTab, $midmenuItem1) {
 	    "Confirm": function() { 	
 	        $(this).dialog("close");	
 	    	
-            var id = $detailsTab.data("jsonObj").id;	
+            var id = $midmenuItem1.data("jsonObj").id;	
 			var apiCommand = "command=createSnapshot&volumeid="+id;
 	    	doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	
 	    },
@@ -614,9 +612,8 @@ function clearBottomPanel() {
     cleanErrMsg(dialogBox.find("#edit_day_of_month"), dialogBox.find("#edit_day_of_month_errormsg"));
 }	   
 	
-function doRecurringSnapshot($actionLink, $detailsTab, $midmenuItem1) {   
-    var $detailsTab = $("#right_panel_content #tab_content_details");  
-	var volumeId = $detailsTab.data("jsonObj").id;
+function doRecurringSnapshot($actionLink, $detailsTab, $midmenuItem1) {     
+	var volumeId = $midmenuItem1.data("jsonObj").id;
 	
 	var dialogBox = $("#dialog_recurring_snapshot"); 
 	clearTopPanel();
@@ -799,7 +796,7 @@ function populateVirtualMachineField(domainId, account, zoneId) {
 }		
 
 function doAttachDisk($actionLink, $detailsTab, $midmenuItem1) {       
-    var jsonObj = $detailsTab.data("jsonObj");    
+    var jsonObj = $midmenuItem1.data("jsonObj");    
     populateVirtualMachineField(jsonObj.domainid, jsonObj.account, jsonObj.zoneid);
 	    
     $("#dialog_attach_volume")					

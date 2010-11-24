@@ -25,7 +25,7 @@ function buildActionLinkForTab(label, actionMap, $actionMenu, $midmenuItem1, $th
     $listItem.data("label", label);	  
     $listItem.data("apiInfo", apiInfo);	 
       
-    var id = $thisTab.data("jsonObj").id;
+    var id = $midmenuItem1.data("jsonObj").id;
     
     $listItem.bind("click", function(event) {   
         $actionMenu.hide();    	 

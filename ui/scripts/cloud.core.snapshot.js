@@ -57,27 +57,34 @@ function snapshotToRightPanel($midmenuItem1) {
 }
 
 function snapshotJsonToDetailsTab() { 
-    var $thisTab = $("#right_panel_content #tab_content_details");  
-    $thisTab.find("#tab_container").hide(); 
-    $thisTab.find("#tab_spinning_wheel").show();        
+    var $thisTab = $("#right_panel_content").find("#tab_content_details");             
     
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    var id = $midmenuItem1.data("jsonObj").id;
+    if($midmenuItem1 == null)
+        return;
+        
+    var jsonObj = $midmenuItem1.data("jsonObj");
+    if(jsonObj == null)
+        return;
     
-    var jsonObj;   
+    $thisTab.find("#tab_container").hide(); 
+    $thisTab.find("#tab_spinning_wheel").show(); 
+    
+    var id = jsonObj.id;
+        
     $.ajax({
         data: createURL("command=listSnapshots&id="+id),
         dataType: "json",
         async: false,
         success: function(json) {  
             var items = json.listsnapshotsresponse.snapshot;
-            if(items != null && items.length > 0)
+            if(items != null && items.length > 0) {
                 jsonObj = items[0];
+                $midmenuItem1.data("jsonObj", jsonObj);                  
+            }
         }
     });        
-    $thisTab.data("jsonObj", jsonObj);    
-    $midmenuItem1.data("jsonObj", jsonObj);    
- 
+     
     $thisTab.find("#id").text(noNull(jsonObj.id));
     $thisTab.find("#name").text(fromdb(jsonObj.name));
     $thisTab.find("#volume_name").text(fromdb(jsonObj.volumename));
@@ -150,7 +157,7 @@ function doSnapshotDelete($actionLink, $thisTab, $midmenuItem1) {
     .dialog('option', 'buttons', { 						
 	    "Confirm": function() { 
 		    $(this).dialog("close"); 	
-			var id = $thisTab.data("jsonObj").id;
+			var id = $midmenuItem1.data("jsonObj").id;
 			var apiCommand = "command=deleteSnapshot&id="+id;                      
             doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $thisTab); 
 	    }, 
@@ -162,7 +169,7 @@ function doSnapshotDelete($actionLink, $thisTab, $midmenuItem1) {
 }
 
 function doCreateVolumeFromSnapshotInSnapshotPage($actionLink, $detailsTab, $midmenuItem1){ 
-    var jsonObj = $detailsTab.data("jsonObj");
+    var jsonObj = $midmenuItem1.data("jsonObj");
        
     $("#dialog_add_volume_from_snapshot")
     .dialog("option", "buttons", {	                    
@@ -188,7 +195,7 @@ function doCreateVolumeFromSnapshotInSnapshotPage($actionLink, $detailsTab, $mid
 }
 
 function doCreateTemplateFromSnapshotInSnapshotPage($actionLink, $detailsTab, $midmenuItem1){ 
-    var jsonObj = $detailsTab.data("jsonObj");
+    var jsonObj = $midmenuItem1.data("jsonObj");
        
     $("#dialog_create_template_from_snapshot")
     .dialog("option", "buttons", {
