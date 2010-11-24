@@ -444,7 +444,11 @@ function volumeSnapshotJSONToTemplate(jsonObj, template) {
 } 
  
 function volumeClearRightPanel() {       
-    var $thisTab = $("#right_panel_content #tab_content_details");  
+    volumeJsonClearDetailsTab();   
+} 
+  
+function volumeJsonClearDetailsTab(){   
+    var $thisTab = $("#right_panel_content").find("#tab_content_details");  
     $thisTab.find("#id").text("");
     $thisTab.find("#name").text("");    
     $thisTab.find("#zonename").text("");    
@@ -456,7 +460,8 @@ function volumeClearRightPanel() {
     $thisTab.find("#size").text("");		
     $thisTab.find("#vm_name").text("");
     $thisTab.find("#created").text("");
-} 
+    $thisTab.find("#domain").text("");
+}
    
 var volumeActionMap = {  
     "Attach Disk": {

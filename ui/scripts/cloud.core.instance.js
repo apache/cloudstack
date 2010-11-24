@@ -1112,7 +1112,7 @@ function doEditVM2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $ed
     if (!isValid) 
         return;
        
-    var jsonObj = $detailsTab.data("jsonObj"); 
+    var jsonObj = $midmenuItem1.data("jsonObj"); 
 	var id = jsonObj.id;	
 	
 	var array1 = [];						
@@ -1295,8 +1295,6 @@ function vmToRightPanel($midmenuItem1) {
 }
   
 function vmJsonToDetailsTab(){  
-    var $thisTab = $("#right_panel_content").find("#tab_content_details"); 
-     
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
 	if ($midmenuItem1 == null)
 	    return;	 
@@ -1304,7 +1302,8 @@ function vmJsonToDetailsTab(){
 	var jsonObj = $midmenuItem1.data("jsonObj");    
 	if(jsonObj == null)
 	    return;
-	    
+	
+	var $thisTab = $("#right_panel_content").find("#tab_content_details");     
 	$thisTab.find("#tab_container").hide(); 
 	$thisTab.find("#tab_spinning_wheel").show();    
 	  
@@ -1318,8 +1317,7 @@ function vmJsonToDetailsTab(){
 			var items = json.listvirtualmachinesresponse.virtualmachine;
 			if(items != null && items.length > 0) {
 				jsonObj = items[0]; //override jsonObj declared above				
-				$midmenuItem1.data("jsonObj", jsonObj); 
-				$thisTab.data("jsonObj", jsonObj);  
+				$midmenuItem1.data("jsonObj", jsonObj); 				
 	        }   
 		}
 	});  	  
@@ -1408,9 +1406,7 @@ function vmJsonToDetailsTab(){
 	
 }
 
-function vmJsonToVolumeTab() {       	
-	var $thisTab = $("#right_panel_content").find("#tab_content_volume");  
-	
+function vmJsonToVolumeTab() {  
 	var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");	
 	if ($midmenuItem1 == null) 
 	    return;
@@ -1418,7 +1414,8 @@ function vmJsonToVolumeTab() {
 	var jsonObj = $midmenuItem1.data("jsonObj");	
     if(jsonObj == null)
         return;	
-		
+	
+	var $thisTab = $("#right_panel_content").find("#tab_content_volume");  		
 	$thisTab.find("#tab_container").hide(); 
 	$thisTab.find("#tab_spinning_wheel").show();   
 	
@@ -1444,9 +1441,7 @@ function vmJsonToVolumeTab() {
 	
 }
  
-function vmJsonToStatisticsTab() {
-    var $thisTab = $("#right_panel_content #tab_content_statistics");  
-	
+function vmJsonToStatisticsTab() {    
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
 	if ($midmenuItem1 == null) 
 	    return;	
@@ -1455,6 +1450,7 @@ function vmJsonToStatisticsTab() {
 	if(jsonObj == null)
 	    return;
 
+    var $thisTab = $("#right_panel_content #tab_content_statistics");  	
 	var $barChartContainer = $thisTab.find("#cpu_barchart");
 		 
 	var cpuNumber = ((jsonObj.cpunumber==null)? "":jsonObj.cpunumber.toString());
@@ -1472,12 +1468,10 @@ function vmJsonToStatisticsTab() {
 	$thisTab.find("#networkkbsread").text(networkKbsRead);
 	
 	var networkKbsWrite = ((jsonObj.networkkbswrite==null)? "":convertBytes(jsonObj.networkkbswrite * 1024));
-	$thisTab.find("#networkkbswrite").text(networkKbsWrite);
-	
+	$thisTab.find("#networkkbswrite").text(networkKbsWrite);	
 }
 
-function vmJsonToRouterTab() {   
-    var $thisTab = $("#right_panel_content #tab_content_router");  
+function vmJsonToRouterTab() {       
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
 	if ($midmenuItem1 == null) 
 	    return;
@@ -1486,6 +1480,7 @@ function vmJsonToRouterTab() {
 	if(vmObj == null)
 	    return;
 	
+	var $thisTab = $("#right_panel_content").find("#tab_content_router");  
 	$thisTab.find("#tab_container").hide(); 
 	$thisTab.find("#tab_spinning_wheel").show();  	
 
@@ -1733,14 +1728,9 @@ function doCreateTemplateFromVmVolume($actionLink, $subgridItem) {
 
 //***** Routers tab (begin) ***************************************************************************************
 
-function vmRouterAfterSubgridItemAction(json, id, $subgridItem) {        
-    //var jsonObj = json.queryasyncjobresultresponse.router[0];  
-    //vmRouterJSONToTemplate(jsonObj, $subgridItem);
-    
-    //This is a temporary fix until bug 6787("RebootRouter API should return an embedded object on success") is fixed.
-    var $detailsTab = $("#right_panel_content #tab_content_details");  
-    var vmObj = $detailsTab.data("jsonObj");  
-    vmJsonToRouterTab(vmObj);   
+function vmRouterAfterSubgridItemAction(json, id, $subgridItem) {  
+    var jsonObj = json.queryasyncjobresultresponse.jobresult.domainrouter;
+    vmRouterJSONToTemplate(jsonObj, $subgridItem);
 }     
   
 var vmRouterActionMap = {      
