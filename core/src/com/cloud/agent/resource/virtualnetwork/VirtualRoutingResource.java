@@ -448,7 +448,6 @@ public class VirtualRoutingResource implements Manager {
     
     protected Answer execute(final SetFirewallRuleCommand cmd) {
     	String args;
-
     	if(cmd.getProtocol().toLowerCase().equals(NetUtils.NAT_PROTO)){
     		//1:1 NAT needs instanceip;publicip;domrip;op
     		if(cmd.isCreate())
