@@ -639,7 +639,7 @@
                                 <div class="vmpopup_offdescriptionbox_bot">
                                     <p>
                                        A network where the virtual instance is directly assigned an IP from.
-									</p?
+									</p>
                                 </div>
                             </div>
                         </div>
@@ -658,7 +658,7 @@
                                 <div class="vmpopup_offdescriptionbox_bot">
                                     <p>
                                        A network where the virtual instance is directly assigned an IP from.  A VLAN must be selected.
-									</p?
+									</p>
                                 </div>
                             </div>
                         </div>
