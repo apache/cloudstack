@@ -1885,6 +1885,14 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                         }
 
                     }
+                    Set<VBD> vbds = vm.getVBDs(conn);
+                    for( VBD vbd : vbds) {
+                        VBD.Record vbdRec = vbd.getRecord(conn);
+                        if( vbdRec.type.equals(Types.VbdType.CD.toString()) && !vbdRec.empty ) {
+                            vbd.eject(conn);
+                            break;
+                        }
+                    }
 
                     if (i >= 20) {
                         String msg = "migration failed due to can not fake PV driver for " + vmName;
