@@ -103,8 +103,9 @@ function afterLoadIpJSP() {
 	    var $spinningWheel = $template.find("#row_container").find("#spinning_wheel");	
 	    $spinningWheel.find("#description").text("Adding....");	
         $spinningWheel.show();   
-	    
-	    var ipObj = $("#right_panel_content #tab_content_details").data("jsonObj");  
+	    	    
+	    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");       
+        var ipObj = $midmenuItem1.data("jsonObj");            	        
 		var ipAddress = ipObj.ipaddress;
 				
 	    var publicPort = $createPortForwardingRow.find("#public_port").val();
@@ -158,8 +159,10 @@ function afterLoadIpJSP() {
 		var $spinningWheel = $template.find("#row_container").find("#spinning_wheel");	
 	    $spinningWheel.find("#description").text("Adding load balancer rule....");	
         $spinningWheel.show();            			 
-		 		 
-		var ipObj = $("#right_panel_content #tab_content_details").data("jsonObj");  
+		 			
+		var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");        
+        var ipObj = $midmenuItem1.data("jsonObj");
+       
 		var ipAddress = ipObj.ipaddress;
 		 	 
 	    var name = createLoadBalancerRow.find("#name").val();  
@@ -255,19 +258,25 @@ function ipToRightPanel($midmenuItem1) {
     }        
 }
 
-function ipJsonToPortForwardingTab() {
+function ipJsonToPortForwardingTab() {   
+    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
+    if($midmenuItem1 == null)
+        return;    
+        
+    var ipObj = $midmenuItem1.data("jsonObj");
+    if(ipObj == null)
+        return;   
+    
+    var ipAddress = ipObj.ipaddress;
+    if(ipAddress == null || ipAddress.length == 0)
+        return;    
+   
     var $thisTab = $("#right_panel_content #tab_content_port_forwarding");  
 	$thisTab.find("#tab_container").hide(); 
-    $thisTab.find("#tab_spinning_wheel").show();   
-		
-	var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");	
-	var ipObj = $midmenuItem1.data("jsonObj");	
+    $thisTab.find("#tab_spinning_wheel").show();   		
    
-    refreshCreatePortForwardingRow(); 
-        
-    var ipAddress = noNull(ipObj.ipaddress);
-    if(ipAddress.length == 0)
-        return;           		
+    refreshCreatePortForwardingRow();         
+           		
     $.ajax({
         data: createURL("command=listPortForwardingRules&ipaddress=" + ipAddress),
         dataType: "json",        
@@ -289,18 +298,24 @@ function ipJsonToPortForwardingTab() {
 }
 
 function ipJsonToLoadBalancerTab() {
+    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
+    if($midmenuItem1 == null)
+        return;
+    
+    var ipObj = $midmenuItem1.data("jsonObj");
+    if(ipObj == null)
+        return;
+   
+    var ipAddress = ipObj.ipaddress;
+    if(ipAddress == null || ipAddress.length == 0)
+        return;          
+    
     var $thisTab = $("#right_panel_content #tab_content_load_balancer");  
 	$thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();   
 		
-	var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");	
-	var ipObj = $midmenuItem1.data("jsonObj");	
-
-    refreshCreateLoadBalancerRow();
+    refreshCreateLoadBalancerRow();            
         
-    var ipAddress = noNull(ipObj.ipaddress);
-    if(ipAddress.length == 0)
-        return;  
     $.ajax({
         data: createURL("command=listLoadBalancerRules&publicip="+ipAddress),
         dataType: "json",
@@ -392,10 +407,20 @@ function showEnableVPNDialog($thisTab) {
 }
 
 function ipJsonToVPNTab() {
-	var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");	
-	var ipObj = $midmenuItem1.data("jsonObj");	
-	var $thisTab = $("#right_panel_content #tab_content_vpn");  
+    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
+    if($midmenuItem1 == null)
+        return;
+    
+    var ipObj = $midmenuItem1.data("jsonObj");
+    if(ipObj == null)
+        return;
+	
 	var ipAddress = ipObj.ipaddress;
+	if(ipAddress == null || ipAddress.length == 0)
+	    return;
+	
+	var $thisTab = $("#right_panel_content").find("#tab_content_vpn");  	
+	
 	$.ajax({
         data: createURL("command=listRemoteAccessVpns&publicip="+ipAddress),
         dataType: "json",
@@ -701,27 +726,35 @@ function ipClearRightPanel() {
 
 //***** Details tab (begin) ****************************************************************************************************************
 function ipJsonToDetailsTab() {  
-    var $thisTab = $("#right_panel_content #tab_content_details");  
-    $thisTab.find("#tab_container").hide(); 
-    $thisTab.find("#tab_spinning_wheel").show();        
-    
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    var ipaddress = noNull($midmenuItem1.data("jsonObj").ipaddress);
+    if($midmenuItem1 == null)
+        return;
     
-    var ipObj;   
+    var ipObj = $midmenuItem1.data("jsonObj");
+    if(ipObj == null)
+        return;
+    
+    var ipaddress = ipObj.ipaddress;   
+    if(ipaddress == null || ipaddress.length == 0)
+        return;
+    
+    var $thisTab = $("#right_panel_content").find("#tab_content_details");  
+    $thisTab.find("#tab_container").hide(); 
+    $thisTab.find("#tab_spinning_wheel").show();   
+         
     $.ajax({
         data: createURL("command=listPublicIpAddresses&ipaddress="+ipaddress),
         dataType: "json",
         async: false,
         success: function(json) {  
             var items = json.listpublicipaddressesresponse.publicipaddress;
-            if(items != null && items.length > 0)
+            if(items != null && items.length > 0) {
                 ipObj = items[0];
+                $midmenuItem1.data("jsonObj", ipObj);    
+            }
         }
     });        
-    $thisTab.data("jsonObj", ipObj);    
-    $midmenuItem1.data("jsonObj", ipObj);    
-   
+       
     $thisTab.find("#grid_header_title").text(noNull(ipObj.ipaddress));       
     $thisTab.find("#ipaddress").text(noNull(ipObj.ipaddress));
     $thisTab.find("#zonename").text(fromdb(ipObj.zonename));
@@ -870,9 +903,8 @@ var ipActionMap = {
     }
 }   
 
-function doReleaseIp($actionLink, $detailsTab, $midmenuItem1) {  
-    var $detailsTab = $("#right_panel_content #tab_content_details"); 
-    var jsonObj = $detailsTab.data("jsonObj");
+function doReleaseIp($actionLink, $detailsTab, $midmenuItem1) {      
+    var jsonObj = $midmenuItem1.data("jsonObj");
     var ipaddress = jsonObj.ipaddress;
     
     $("#dialog_confirmation_release_ip")	
@@ -888,9 +920,8 @@ function doReleaseIp($actionLink, $detailsTab, $midmenuItem1) {
 	}).dialog("open");
 }
 
-function doEnableStaticNAT($actionLink, $detailsTab, $midmenuItem1) {  
-    var $detailsTab = $("#right_panel_content #tab_content_details"); 
-    var jsonObj = $detailsTab.data("jsonObj");
+function doEnableStaticNAT($actionLink, $detailsTab, $midmenuItem1) {    
+    var jsonObj = $midmenuItem1.data("jsonObj");
     var ipaddress = jsonObj.ipaddress;
     
     $("#dialog_enable_static_NAT")    
@@ -915,8 +946,7 @@ function doEnableStaticNAT($actionLink, $detailsTab, $midmenuItem1) {
 }
 
 function doDisableStaticNAT($actionLink, $detailsTab, $midmenuItem1) {  
-    var $detailsTab = $("#right_panel_content #tab_content_details"); 
-    var jsonObj = $detailsTab.data("jsonObj");
+    var jsonObj = $midmenuItem1.data("jsonObj");
     var ipaddress = jsonObj.ipaddress;
     
     $("#dialog_info")
@@ -972,8 +1002,12 @@ function portForwardingJsonToTemplate(jsonObj, $template) {
     $template.find("#row_container #vm_name").text(vmName);		    
     var virtualMachineId = noNull(jsonObj.virtualmachineid);
    
-    var $detailsTab = $("#right_panel_content #tab_content_details");   
-    var ipObj = $detailsTab.data("jsonObj");  
+    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
+    if($midmenuItem1 == null)
+        return;    
+    var ipObj = $midmenuItem1.data("jsonObj");
+    if(ipObj == null)
+        return;    
     var ipAddress = noNull(ipObj.ipaddress);  
     var IpDomainid = noNull(ipObj.domainid);
     var IpAccount = fromdb(ipObj.account);    
@@ -1088,8 +1122,12 @@ function refreshCreatePortForwardingRow() {
     $createPortForwardingRow.find("#private_port").val("");
     $createPortForwardingRow.find("#protocol").val("TCP");  		    
        
-    var $detailsTab = $("#right_panel_content #tab_content_details");   
-    var ipObj = $detailsTab.data("jsonObj");    
+    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
+    if($midmenuItem1 == null)
+        return;    
+    var ipObj = $midmenuItem1.data("jsonObj");
+    if(ipObj == null)
+        return;   
     var IpDomainid = ipObj.domainid;
     var IpAccount = ipObj.account;
 
