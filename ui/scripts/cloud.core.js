@@ -780,7 +780,10 @@ function updateHostStateInMidMenu(jsonObj, $midmenuItem1) {
 function enableConsoleHover($viewConsoleTemplate) {
     var imgUrl = $viewConsoleTemplate.data("imgUrl");		
     var time = new Date();	
-	$viewConsoleTemplate.find("#box1").hide().css("background", "url("+imgUrl+"&t="+time.getTime()+")");				
+	
+	$viewConsoleTemplate.find("#box0").css("background", "url("+imgUrl+"&t="+time.getTime()+")");
+	$viewConsoleTemplate.find("#box1").css("background", "url("+imgUrl+"&t="+time.getTime()+")");
+				
 	var index = 0;
 	$viewConsoleTemplate.everyTime(2000, function() {
 		var time = new Date();	
