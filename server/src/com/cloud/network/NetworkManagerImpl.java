@@ -3132,6 +3132,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 				throw new NetworkRuleConflictException("The specified rule for public ip:"+ipAddr+" vm id:"+virtualMachineId+" already exists");
 			}
 			
+			//if given ip address is already source nat, return error
+			if(ipAddress.isSourceNat()){
+				throw new PermissionDeniedException("Cannot create a static nat rule for the ip:"+ipAddress.getAddress()+" ,this is already a source nat ip address");
+			}
+			
 			newFwRule = new FirewallRuleVO();
 			newFwRule.setEnabled(true);
 			newFwRule.setForwarding(true);
