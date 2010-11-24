@@ -335,7 +335,14 @@
                                 <input class="text" type="text" id="guestnetmask" />
                                 <div id="guestnetmask_errormsg" class="dialog_formcontent_errormsg" style="display: none; margin-left:0;">
                                 </div>
-                            </li>	
+                            </li>	                            
+                            <li id="guestgateway_container">
+                                <label style="width: 115px;">
+                                    Guest Gateway:</label>
+                                <input class="text" type="text" id="guestgateway" />
+                                <div id="guestgateway_errormsg" class="dialog_formcontent_errormsg" style="display: none; margin-left:0;">
+                                </div>
+                            </li>                            
                         </ol>
                         </form>
                     </div>
