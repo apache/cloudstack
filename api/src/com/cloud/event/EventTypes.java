@@ -25,8 +25,7 @@ public class EventTypes {
 	public static final String EVENT_VM_START = "VM.START";
 	public static final String EVENT_VM_STOP = "VM.STOP";
 	public static final String EVENT_VM_REBOOT = "VM.REBOOT";
-    public static final String EVENT_VM_DISABLE_HA = "VM.DISABLEHA";
-	public static final String EVENT_VM_ENABLE_HA = "VM.ENABLEHA";
+    public static final String EVENT_VM_UPDATE = "VM.UPDATE";	
 	public static final String EVENT_VM_UPGRADE = "VM.UPGRADE";
 	public static final String EVENT_VM_RESETPASSWORD = "VM.RESETPASSWORD";
 
@@ -84,7 +83,8 @@ public class EventTypes {
     public static final String EVENT_TEMPLATE_DOWNLOAD_FAILED = "TEMPLATE.DOWNLOAD.FAILED";
 	public static final String EVENT_TEMPLATE_COPY = "TEMPLATE.COPY";	
     public static final String EVENT_TEMPLATE_EXTRACT = "TEMPLATE.EXTRACT";
-	public static final String EVENT_TEMPLATE_UPLOAD = "TEMPLATE.UPLOAD";	
+    public static final String EVENT_TEMPLATE_UPLOAD = "TEMPLATE.UPLOAD";
+    public static final String EVENT_TEMPLATE_CLEANUP = "TEMPLATE.CLEANUP";
 
 	// Volume Events
 	public static final String EVENT_VOLUME_CREATE = "VOLUME.CREATE";

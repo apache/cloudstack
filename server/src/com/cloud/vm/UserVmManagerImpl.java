@@ -3129,7 +3129,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         }
 
         userId = accountAndUserValidation(id, account, userId,vmInstance);  
-
+        
     	if (displayName == null) {
     		displayName = vmInstance.getDisplayName();
     	}
@@ -3144,25 +3144,31 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
             throw new CloudRuntimeException("Unable to find virual machine with id " + id);
         }
 
-        if (group != null) {
-            addInstanceToGroup(id, group);
+        String description = "";
+        
+        if(displayName != vmInstance.getDisplayName()){
+            description += "New display name: "+displayName+". ";
+        }
+        
+        if(ha != vmInstance.isHaEnabled()){
+            if(ha){
+                description += "Enabled HA. ";
+            } else {
+                description += "Disabled HA. ";
+            }
         }
 
-        boolean haEnabled = vm.isHaEnabled();
-        _vmDao.updateVM(id, displayName, ha);
-        if (haEnabled != ha) {
-            String description = null;
-            String type = null;
-            if (ha) {
-                description = "Successfully enabled HA for virtual machine " + vm.getHostName();
-                type = EventTypes.EVENT_VM_ENABLE_HA;
-            } else {
-                description = "Successfully disabled HA for virtual machine " + vm.getHostName();
-                type = EventTypes.EVENT_VM_DISABLE_HA;
+        
+        if (group != null) {
+            if(addInstanceToGroup(id, group)){
+                description += "Added to group: "+group+".";
             }
-            // create a event for the change in HA Enabled flag
-            EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_INFO, type, description, null);
         }
+
+        _vmDao.updateVM(id, displayName, ha);
+
+         // create a event for the change in HA Enabled flag
+        EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_INFO, EventTypes.EVENT_VM_UPDATE, "Successfully updated virtual machine: "+vm.getHostName()+". "+description, null);
         return _vmDao.findById(id);
     }
 
