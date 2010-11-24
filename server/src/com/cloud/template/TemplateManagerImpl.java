@@ -504,7 +504,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
                 throw new InvalidParameterValueException("Unsupported format, could not extract the template");
             }
         }
-        if(!template.isExtractable()){
+        if(!template.isExtractable() && account!=null && account.getType() != Account.ACCOUNT_TYPE_ADMIN){ // Global admins are always allowed to extract
         	throw new PermissionDeniedException("The "+ desc + " is not allowed to be extracted" );
         }
         if (_dcDao.findById(zoneId) == null) {
