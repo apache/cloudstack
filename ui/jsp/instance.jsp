@@ -454,6 +454,18 @@
                     <h3>
                         <!--Service Offering-->
                     </h3>
+                    
+                    <div class="revwiz_message_container" style="display: none;" id="wiz_message">
+                        <div class="revwiz_message_top">
+                            <p id="wiz_message_text">
+                                Please select a service offering to continue</p>
+                        </div>
+                        <div class="revwiz_message_bottom">
+                            <div class="revwizcontinue_button" id="wiz_message_continue">
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div class="vmpopup_offeringpanel" id="service_offering_container">
                         <!--
                         <div class="vmpopup_offeringbox">
@@ -550,6 +562,18 @@
                 <div class="vmpopup_contentpanel">
                     <h3>
                     </h3>
+                    
+                    <div class="revwiz_message_container" style="display: none;" id="wiz_message">
+                        <div class="revwiz_message_top">
+                            <p id="wiz_message_text">
+                                Please select a disk offering to continue</p>
+                        </div>
+                        <div class="revwiz_message_bottom">
+                            <div class="revwizcontinue_button" id="wiz_message_continue">
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div class="vmpopup_offeringpanel" id="data_disk_offering_container" style="display: none">
                     </div>
                     <div class="vmpopup_offeringpanel" id="root_disk_offering_container" style="display: none">

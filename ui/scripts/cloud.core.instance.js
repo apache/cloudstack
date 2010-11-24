@@ -462,6 +462,11 @@ function initVMWizard() {
 	    return false;
     });
 	
+	$vmPopup.find("#step3 #wiz_message_continue").bind("click", function(event) {			    
+	    $vmPopup.find("#step3 #wiz_message").hide();
+	    return false;
+    });
+	
     function getIconForOS(osType) {
 	    if (osType == null || osType.length == 0) {
 		    return "";
@@ -730,7 +735,13 @@ function initVMWizard() {
 	            $thisPopup.find("#wizard_review_disk_offering_label").text("Data Disk Offering:");
 	            var checkedRadioButton = $thisPopup.find("#data_disk_offering_container input[name=data_disk_offering_radio]:checked");	
 	        }
-	        else {  //*** ISO ***
+	        else {  //*** ISO ***	            
+	            // prevent a person from moving on if no disk offering is selected
+	            if($thisPopup.find("input:radio[name=root_disk_offering_radio]:checked").length == 0) {
+	                $thisPopup.find("#step3 #wiz_message #wiz_message_text").text("Please select a disk offering to continue");
+	                $thisPopup.find("#step3 #wiz_message").show();
+		            return false;
+		        }   
 	            $thisPopup.find("#wizard_review_disk_offering_label").text("Root Disk Offering:");
 	            var checkedRadioButton = $thisPopup.find("#root_disk_offering_container input[name=root_disk_offering_radio]:checked");	
 		    }
