@@ -44,14 +44,21 @@ function accountToMidmenu(jsonObj, $midmenuItem1) {
 
 function accountToRightPanel($midmenuItem1) { 
     copyActionInfoFromMidMenuToRightPanel($midmenuItem1);  
-    accountJsonToDetailsTab($midmenuItem1);   
+    $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);  
+    accountJsonToDetailsTab();   
 }
 
-function accountJsonToDetailsTab($midmenuItem1) {  
-    var jsonObj = $midmenuItem1.data("jsonObj");    
-    var $detailsTab = $("#right_panel_content #tab_content_details");   
-    $detailsTab.data("jsonObj", jsonObj);  
+function accountJsonToDetailsTab() {  
+    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
+    if($midmenuItem1 == null)
+        return;
     
+    var jsonObj = $midmenuItem1.data("jsonObj");
+    if(jsonObj == null)
+        return;
+  
+    var $detailsTab = $("#right_panel_content").find("#tab_content_details");   
+        
     $detailsTab.find("#grid_header_title").text(fromdb(jsonObj.name));
     $detailsTab.find("#id").text(noNull(jsonObj.id));
     $detailsTab.find("#role").text(toRole(jsonObj.accounttype));
@@ -142,7 +149,7 @@ function updateResourceLimitForAccount(domainId, account, type, max) {
 
 function doResourceLimitsForAccount($actionLink, $detailsTab, $midmenuItem1) {
     var $detailsTab = $("#right_panel_content #tab_content_details");  
-	var jsonObj = $detailsTab.data("jsonObj");
+	var jsonObj = $midmenuItem1.data("jsonObj");
 	var domainId = jsonObj.domainid;
 	var account = jsonObj.name;
 	$.ajax({
@@ -223,7 +230,7 @@ function doResourceLimitsForAccount($actionLink, $detailsTab, $midmenuItem1) {
 }
 
 function doDisableAccount($actionLink, $detailsTab, $midmenuItem1) {       
-    var jsonObj = $detailsTab.data("jsonObj");    
+    var jsonObj = $midmenuItem1.data("jsonObj");    
     var id = jsonObj.id;
     
     $("#dialog_disable_account")    
@@ -240,7 +247,7 @@ function doDisableAccount($actionLink, $detailsTab, $midmenuItem1) {
 }
 
 function doLockAccount($actionLink, $detailsTab, $midmenuItem1) {       
-    var jsonObj = $detailsTab.data("jsonObj");    
+    var jsonObj = $midmenuItem1.data("jsonObj");    
     
     $("#dialog_lock_account")    
     .dialog('option', 'buttons', {                    
@@ -256,7 +263,7 @@ function doLockAccount($actionLink, $detailsTab, $midmenuItem1) {
 }
 
 function doEnableAccount($actionLink, $detailsTab, $midmenuItem1) {       
-    var jsonObj = $detailsTab.data("jsonObj");    
+    var jsonObj = $midmenuItem1.data("jsonObj");    
     
     $("#dialog_enable_account")    
     .dialog('option', 'buttons', {                    
