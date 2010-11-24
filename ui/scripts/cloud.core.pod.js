@@ -584,6 +584,7 @@ function initAddPodVLANButton($button) {
 				// validate values
 				var isValid = true;	
 				isValid &= validateIp("Netmask", $thisDialog.find("#netmask"), $thisDialog.find("#netmask_errormsg"));
+				isValid &= validateIp("Gateway", $thisDialog.find("#guestgateway"), $thisDialog.find("#guestgateway_errormsg"));
 				isValid &= validateIp("Start IP Range", $thisDialog.find("#startip"), $thisDialog.find("#startip_errormsg"));   //required
 				isValid &= validateIp("End IP Range", $thisDialog.find("#endip"), $thisDialog.find("#endip_errormsg"), true);  //optional
 				if (!isValid) 
@@ -592,6 +593,7 @@ function initAddPodVLANButton($button) {
 				$thisDialog.find("#spinning_wheel").show(); 									
 				
 				var netmask = trim($thisDialog.find("#netmask").val());
+				var guestgateway = trim($thisDialog.find("#guestgateway").val());
 				var startip = trim($thisDialog.find("#startip").val());
 				var endip = trim($thisDialog.find("#endip").val());		
 				
@@ -600,7 +602,7 @@ function initAddPodVLANButton($button) {
 				array1.push("&zoneid=" + zoneId);
 				array1.push("&podId=" + podId);	
 				array1.push("&forVirtualNetwork=false"); //direct VLAN			
-				array1.push("&gateway="+encodeURIComponent(podObj.gateway));
+				array1.push("&gateway="+encodeURIComponent(guestgateway));
 				array1.push("&netmask="+encodeURIComponent(netmask));	
 				array1.push("&startip="+encodeURIComponent(startip));
 				if(endip != null && endip.length > 0)

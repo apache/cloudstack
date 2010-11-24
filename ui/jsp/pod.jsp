@@ -402,6 +402,13 @@
 					<input class="text" type="text" id="netmask"/>
 					<div id="netmask_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
 				</li>
+				
+				<li>
+					<label>Guest Gateway:</label>
+					<input class="text" type="text" id="guestgateway"/>
+					<div id="guestgateway_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+				</li>
+				
 			</ol>
 		</form>
 	</div>
