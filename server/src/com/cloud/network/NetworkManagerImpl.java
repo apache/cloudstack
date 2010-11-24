@@ -870,7 +870,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
             if (rule.isForwarding()) {
                 fwdRules.add(rule);
-                final SetFirewallRuleCommand cmd = new SetFirewallRuleCommand(routerName, routerIp, false, rule, false);
+                final SetFirewallRuleCommand cmd = new SetFirewallRuleCommand(routerName, routerIp,rule, false);
                 cmds.addCommand(cmd);
             } else if (rule.getGroupId() != null){
                 lbRules.add(rule);
@@ -952,7 +952,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         	rule.setVlanNetmask(vlanNetmask);
             if (rule.isForwarding()) {
                 fwdRules.add(rule);
-                final SetFirewallRuleCommand cmd = new SetFirewallRuleCommand(router.getInstanceName(), router.getPrivateIpAddress(), false, rule, false);
+                final SetFirewallRuleCommand cmd = new SetFirewallRuleCommand(router.getInstanceName(), router.getPrivateIpAddress(),rule, false);
                 cmds.addCommand(cmd);
             }
         }
@@ -3251,7 +3251,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     private boolean  createOrDeleteIpForwardingRuleOnDomr(FirewallRuleVO fwRule, DomainRouterVO router, String guestIp, boolean create){
     	
         Commands cmds = new Commands(OnError.Continue);
-        final SetFirewallRuleCommand cmd = new SetFirewallRuleCommand(router.getInstanceName(), router.getPrivateIpAddress(), true, fwRule, create);
+        final SetFirewallRuleCommand cmd = new SetFirewallRuleCommand(router.getInstanceName(), router.getPrivateIpAddress(),fwRule, create);
         cmds.addCommand(cmd);       
         try {
             _agentMgr.send(router.getHostId(), cmds);
