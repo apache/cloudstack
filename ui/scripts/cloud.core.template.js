@@ -24,14 +24,7 @@ var g_zoneNames = [];
 function afterLoadTemplateJSP() {      
     var $detailsTab = $("#right_panel_content #tab_content_details");   
     
-    //add button ***
-    /*
-    var formatSelect = $("#dialog_add_template #add_template_format").empty();
-	if (getHypervisorType() == "kvm") 
-		formatSelect.append("<option value='QCOW2'>QCOW2</option>");
-	else if (getHypervisorType() == "xenserver") 
-		formatSelect.append("<option value='VHD'>VHD</option>");
-	*/	
+    //add button ***   
 	$("#dialog_add_template #add_template_hypervisor").bind("change", function(event) {	      
 	    var formatSelect = $("#dialog_add_template #add_template_format").empty();	     
 	    var selectedHypervisorType = $(this).val();
@@ -235,16 +228,18 @@ function templateToRightPanel($midmenuItem1) {
 }
 
 function templateJsonToDetailsTab() {   
-    var $thisTab = $("#right_panel_content #tab_content_details");  
+     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
+    if($midmenuItem1 == null)
+        return;
+    
+    var jsonObj = $midmenuItem1.data("jsonObj");
+    if(jsonObj == null)
+        return;      
+    
+    var $thisTab = $("#right_panel_content").find("#tab_content_details");  
     $thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();        
-    
-    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");    
-    var jsonObj = $midmenuItem1.data("jsonObj");   
-    
-    $thisTab.data("jsonObj", jsonObj);    
-    $midmenuItem1.data("jsonObj", jsonObj);    
-    
+             
     $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name)); 
      
     $thisTab.find("#id").text(noNull(jsonObj.id));
@@ -338,8 +333,8 @@ function templateClearRightPanel() {
 }
 
 function templateClearDetailsTab() {
-    var $thisTab = $("#right_panel_content #tab_content_details");   
-    $thisTab.data("jsonObj", null);
+    var $thisTab = $("#right_panel_content").find("#tab_content_details");   
+   
     $thisTab.find("#id").text("");
     $thisTab.find("#zonename").text("");
     
@@ -366,6 +361,8 @@ function templateClearDetailsTab() {
     $thisTab.find("#ostypename_edit").val(null);    
     
     $thisTab.find("#account").text("");  
+    $thisTab.find("#domain").text(""); 
+    
 	$thisTab.find("#size").text("");  
     $thisTab.find("#created").text("");      
 }
@@ -436,11 +433,10 @@ function doEditTemplate2($actionLink, $detailsTab, $midmenuItem1, $readonlyField
     if (!isValid) 
         return;					
 	
-	var jsonObj = $detailsTab.data("jsonObj"); 
+	var jsonObj = $midmenuItem1.data("jsonObj"); 
 	var id = jsonObj.id;
 	var midmenuId = templateGetMidmenuId(jsonObj);
-	
-	//updateTemplate	
+		
 	var array1 = [];
 	var oldName = jsonObj.name
 	var newName = trim($detailsTab.find("#name_edit").val());
@@ -469,6 +465,7 @@ function doEditTemplate2($actionLink, $detailsTab, $midmenuItem1, $readonlyField
 		    async: false,
 		    success: function(json) {				       
 		        $detailsTab.find("#name").text(newName);
+		        $midmenuItem1.find("#first_row").text(newName.substring(0,25)); 		        
 		        $detailsTab.find("#displaytext").text(newDesc);
 		        setBooleanReadField(newPasswordEnabled, $detailsTab.find("#passwordenabled"));		        
 		        $detailsTab.find("#ostypename").text($detailsTab.find("#ostypename_edit option:selected").text());		        
@@ -506,7 +503,7 @@ function doEditTemplate2($actionLink, $detailsTab, $midmenuItem1, $readonlyField
 }
 
 function doDeleteTemplate($actionLink, $detailsTab, $midmenuItem1) {   
-    var jsonObj = $detailsTab.data("jsonObj");
+    var jsonObj = $midmenuItem1.data("jsonObj");
 	var id = jsonObj.id;
 	var name = jsonObj.name;			
 	var zoneId = jsonObj.zoneid;
@@ -545,7 +542,7 @@ function populateZoneFieldExcludeSourceZone(zoneField, excludeZoneId) {
 }
 
 function doCopyTemplate($actionLink, $detailsTab, $midmenuItem1) { 
-	var jsonObj = $detailsTab.data("jsonObj");
+	var jsonObj = $midmenuItem1.data("jsonObj");
 	var id = jsonObj.id;
 	var name = jsonObj.name;						
 	var sourceZoneId = jsonObj.zoneid;				
@@ -568,8 +565,7 @@ function doCopyTemplate($actionLink, $detailsTab, $midmenuItem1) {
 	        if (!isValid) return;     
 	        				        
 	        var destZoneId = thisDialog.find("#copy_template_zone").val();	
-	        
-            var id = $detailsTab.data("jsonObj").id;			
+	                    		
 	        var apiCommand = "command=copyTemplate&id="+id+"&sourcezoneid="+sourceZoneId+"&destzoneid="+destZoneId;
 	        doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	
 	    }, 
@@ -580,7 +576,7 @@ function doCopyTemplate($actionLink, $detailsTab, $midmenuItem1) {
 }
 
 function doCreateVMFromTemplate($actionLink, $detailsTab, $midmenuItem1) { 
-    var jsonObj = $detailsTab.data("jsonObj");
+    var jsonObj = $midmenuItem1.data("jsonObj");
 	var id = jsonObj.id;		
 	var name = jsonObj.name;				
 	var zoneId = jsonObj.zoneid;		
@@ -633,7 +629,7 @@ function doCreateVMFromTemplate($actionLink, $detailsTab, $midmenuItem1) {
 }		
 
 function doDownloadTemplate($actionLink, $detailsTab, $midmenuItem1) { 
-	var jsonObj = $detailsTab.data("jsonObj");
+	var jsonObj = $midmenuItem1.data("jsonObj");
 	var id = jsonObj.id;						
 	var zoneId = jsonObj.zoneid;	
 	
