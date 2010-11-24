@@ -189,6 +189,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         UnmanagedDirectConnectSearch = createSearchBuilder();
         UnmanagedDirectConnectSearch.and("resource", UnmanagedDirectConnectSearch.entity().getResource(), SearchCriteria.Op.NNULL);
         UnmanagedDirectConnectSearch.and("server", UnmanagedDirectConnectSearch.entity().getManagementServerId(), SearchCriteria.Op.NULL);
+        UnmanagedDirectConnectSearch.and("avoidstatus", UnmanagedDirectConnectSearch.entity().getStatus(), SearchCriteria.Op.NEQ);
         /*
         UnmanagedDirectConnectSearch.op(SearchCriteria.Op.OR, "managementServerId", UnmanagedDirectConnectSearch.entity().getManagementServerId(), SearchCriteria.Op.EQ);
         UnmanagedDirectConnectSearch.and("lastPinged", UnmanagedDirectConnectSearch.entity().getLastPinged(), SearchCriteria.Op.LTEQ);
@@ -247,6 +248,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     @Override
     public List<HostVO> findDirectAgentToLoad(long msid, long lastPingSecondsAfter, Long limit) {
     	SearchCriteria<HostVO> sc = UnmanagedDirectConnectSearch.create();
+    	sc.setParameters("avoidstatus", Status.Removed.toString());
     //	sc.setParameters("lastPinged", lastPingSecondsAfter);
     	//sc.setParameters("managementServerId", msid);
     	
