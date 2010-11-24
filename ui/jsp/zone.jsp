@@ -41,7 +41,7 @@
         <div id="tab_container">
             <div class="grid_container">
                 <div class="grid_header">
-                    <div id="title" class="grid_header_title">
+                    <div id="grid_header_title" class="grid_header_title">
                         Title</div>
                     <div class="grid_actionbox" id="action_link">
                         <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
