@@ -1727,33 +1727,36 @@ function doCreateTemplateFromVmVolume($actionLink, $subgridItem) {
 }   
 
 //***** Routers tab (begin) ***************************************************************************************
-
-function vmRouterAfterSubgridItemAction(json, id, $subgridItem) {  
-    var jsonObj = json.queryasyncjobresultresponse.jobresult.domainrouter;
-    vmRouterJSONToTemplate(jsonObj, $subgridItem);
-}     
-  
 var vmRouterActionMap = {      
     "Start Router": {                
         isAsyncJob: true,
         asyncJobResponse: "startrouterresponse",
         inProcessText: "Starting Router....",
         dialogBeforeActionFn : doStartVmRouter,
-        afterActionSeccessFn: vmRouterAfterSubgridItemAction
+        afterActionSeccessFn: function(json, id, $subgridItem) {  
+            var jsonObj = json.queryasyncjobresultresponse.jobresult.domainrouter;
+            vmRouterJSONToTemplate(jsonObj, $subgridItem);
+        }     
     },
     "Stop Router": {        
         isAsyncJob: true,
         asyncJobResponse: "stoprouterresponse",
         inProcessText: "Stopping Router....",
         dialogBeforeActionFn : doStopVmRouter,
-        afterActionSeccessFn: vmRouterAfterSubgridItemAction
+        afterActionSeccessFn: function(json, id, $subgridItem) {  
+            var jsonObj = json.queryasyncjobresultresponse.jobresult.domainrouter;
+            vmRouterJSONToTemplate(jsonObj, $subgridItem);
+        }     
     },
     "Reboot Router": {        
         isAsyncJob: true,
         asyncJobResponse: "rebootrouterresponse",
         inProcessText: "Rebooting Router....",
         dialogBeforeActionFn : doRebootVmRouter,
-        afterActionSeccessFn: vmRouterAfterSubgridItemAction
+        afterActionSeccessFn: function(json, id, $subgridItem) {  
+            var jsonObj = json.queryasyncjobresultresponse.jobresult.domainrouter;
+            vmRouterJSONToTemplate(jsonObj, $subgridItem);
+        }     
     }
 }   
 
