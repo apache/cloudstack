@@ -1571,6 +1571,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             templateResponse.setName(template.getName());
             templateResponse.setDisplayText(template.getDisplayText());
             templateResponse.setPublic(template.isPublicTemplate());
+            templateResponse.setExtractable(template.isExtractable());
             templateResponse.setCrossZones(template.isCrossZones());
 
             VMTemplateHostVO isoHostRef = ApiDBUtils.findTemplateHostRef(template.getId(), zone.getId());

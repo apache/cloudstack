@@ -248,7 +248,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         	throw new ServerApiException(BaseCmd.PARAM_ERROR, "File:// type urls are currently unsupported");
         }
         
-        return createTemplateOrIso(userId, accountId, zoneId, name, displayText, isPublic.booleanValue(), featured.booleanValue(), ImageFormat.ISO.toString(), null, url, null, true, 64 /*bits*/, false, guestOSId, bootable, HypervisorType.None);
+        return createTemplateOrIso(userId, accountId, zoneId, name, displayText, isPublic.booleanValue(), featured.booleanValue(), true, ImageFormat.ISO.toString(), null, url, null, true, 64 /*bits*/, false, guestOSId, bootable, HypervisorType.None);
     }
 
     @Override
@@ -264,6 +264,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         String url = cmd.getUrl();
         Boolean isPublic = cmd.isPublic();
         Boolean featured = cmd.isFeatured();
+        Boolean isExtractable = cmd.isExtractable();
         String format = cmd.getFormat();
         Long guestOSId = cmd.getOsTypeId();
         Long zoneId = cmd.getZoneId();
@@ -285,6 +286,9 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         }
         if (isPublic == null) {
             isPublic = Boolean.FALSE;
+        }
+        if(isExtractable == null){
+        	isExtractable = Boolean.TRUE;
         }
         
         if (zoneId.longValue() == -1) {
@@ -353,11 +357,11 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             userId = Long.valueOf(1);
         }
         
-        return createTemplateOrIso(userId, accountId, zoneId, name, displayText, isPublic, featured, format, "ext3", url, null, requiresHVM, bits, passwordEnabled, guestOSId, true, hypervisorType);
+        return createTemplateOrIso(userId, accountId, zoneId, name, displayText, isPublic, featured, isExtractable, format, "ext3", url, null, requiresHVM, bits, passwordEnabled, guestOSId, true, hypervisorType);
     	
     }
     
-    private VMTemplateVO createTemplateOrIso(long userId, Long accountId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, String format, String diskType, String url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable, HypervisorType hypervisorType) throws IllegalArgumentException, ResourceAllocationException {
+    private VMTemplateVO createTemplateOrIso(long userId, Long accountId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, boolean isExtractable, String format, String diskType, String url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable, HypervisorType hypervisorType) throws IllegalArgumentException, ResourceAllocationException {
         try
         {
             if (name.length() > 32)
@@ -419,13 +423,13 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             	throw new IllegalArgumentException("Cannot use reserved names for templates");
             }
             
-            return create(userId, accountId, zoneId, name, displayText, isPublic, featured, imgfmt, null, uri, chksum, requiresHvm, bits, enablePassword, guestOSId, bootable, hypervisorType);
+            return create(userId, accountId, zoneId, name, displayText, isPublic, featured, isExtractable, imgfmt, null, uri, chksum, requiresHvm, bits, enablePassword, guestOSId, bootable, hypervisorType);
         } catch (URISyntaxException e) {
             throw new IllegalArgumentException("Invalid URL " + url);
         }
     }
 
-    private VMTemplateVO create(long userId, long accountId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, ImageFormat format,  TemplateType type, URI url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable, HypervisorType hyperType) {
+    private VMTemplateVO create(long userId, long accountId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, boolean isExtractable, ImageFormat format,  TemplateType type, URI url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable, HypervisorType hyperType) {
         Long id = _tmpltDao.getNextInSequence(Long.class, "id");
                 
         AccountVO account = _accountDao.findById(accountId);
@@ -433,7 +437,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         	throw new IllegalArgumentException("Only admins can create templates in all zones");
         }
         
-        VMTemplateVO template = new VMTemplateVO(id, name, format, isPublic, featured, type, url.toString(), requiresHvm, bits, accountId, chksum, displayText, enablePassword, guestOSId, bootable, hyperType);
+        VMTemplateVO template = new VMTemplateVO(id, name, format, isPublic, featured, isExtractable, type, url.toString(), requiresHvm, bits, accountId, chksum, displayText, enablePassword, guestOSId, bootable, hyperType);
         if (zoneId == null) {
             List<DataCenterVO> dcs = _dcDao.listAllIncludingRemoved();
 
@@ -500,7 +504,9 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
                 throw new InvalidParameterValueException("Unsupported format, could not extract the template");
             }
         }
-
+        if(!template.isExtractable()){
+        	throw new PermissionDeniedException("The "+ desc + " is not allowed to be extracted" );
+        }
         if (_dcDao.findById(zoneId) == null) {
             throw new IllegalArgumentException("Please specify a valid zone.");
         }
@@ -1117,7 +1123,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 
 	@Override
 	public Long createInZone(long zoneId, long userId, String displayText,
-			boolean isPublic, boolean featured, ImageFormat format,
+			boolean isPublic, boolean featured, boolean isExtractable, ImageFormat format,
 			TemplateType type, URI url, String chksum, boolean requiresHvm,
 			int bits, boolean enablePassword, long guestOSId, boolean bootable) {
 		Long id = _tmpltDao.getNextInSequence(Long.class, "id");
@@ -1125,7 +1131,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 		UserVO user = _userDao.findById(userId);
 		long accountId = user.getAccountId();
 
-		VMTemplateVO template = new VMTemplateVO(id, displayText, format, isPublic, featured, type, url.toString(), requiresHvm, bits, accountId, chksum, displayText, enablePassword, guestOSId, bootable, null);
+		VMTemplateVO template = new VMTemplateVO(id, displayText, format, isPublic, featured, isExtractable, type, url.toString(), requiresHvm, bits, accountId, chksum, displayText, enablePassword, guestOSId, bootable, null);
 
 		Long templateId = _tmpltDao.addTemplateToZone(template, zoneId);
 		UserAccount userAccount = _userAccountDao.findById(userId);

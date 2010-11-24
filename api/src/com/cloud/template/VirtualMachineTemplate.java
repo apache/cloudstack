@@ -49,6 +49,8 @@ public interface VirtualMachineTemplate extends ControlledEntity {
      */
     boolean isPublicTemplate();
     
+    boolean isExtractable();
+    
     /**
      * @return name
      */

@@ -46,6 +46,7 @@ public interface TemplateManager {
      * @param displayText user readable name.
      * @param isPublic is this a public template?
      * @param featured is this template featured?
+     * @param isExtractable is this template extractable?
      * @param format which image format is the template.
      * @param fs what is the file system on the template
      * @param url url to download the template from.
@@ -57,7 +58,7 @@ public interface TemplateManager {
      * @param bootable true if this template will represent a bootable ISO
      * @return id of the template created.
      */
-    Long createInZone(long zoneId, long userId, String displayText, boolean isPublic, boolean featured, ImageFormat format, TemplateType type, URI url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable);
+    Long createInZone(long zoneId, long userId, String displayText, boolean isPublic, boolean featured, boolean isExtractable, ImageFormat format, TemplateType type, URI url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable);
     
     /**
      * Prepares a template for vm creation for a certain storage pool.

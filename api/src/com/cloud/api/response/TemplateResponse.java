@@ -104,6 +104,9 @@ public class TemplateResponse extends BaseResponse {
     @SerializedName("domainid") @Param(description="the ID of the domain to which the template belongs")
     private Long domainId;
 
+    @SerializedName("isextractable") @Param(description="true if the template is extractable, false otherwise")
+    private Boolean extractable;
+    
     public Long getZoneId() {
         return zoneId;
     }
@@ -311,4 +314,12 @@ public class TemplateResponse extends BaseResponse {
     public void setDomainId(long domainId) {
         this.domainId = domainId;
     }
+
+	public Boolean isExtractable() {
+		return extractable;
+	}
+
+	public void setExtractable(Boolean extractable) {
+		this.extractable = extractable;
+	}
 }

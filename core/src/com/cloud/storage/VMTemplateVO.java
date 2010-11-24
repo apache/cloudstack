@@ -106,7 +106,9 @@ public class VMTemplateVO implements VirtualMachineTemplate {
     @Column(name="hypervisor_type")
     private String hypervisorType;
     
-
+    @Column(name="extractable")
+    private boolean extractable = true;
+    
 	public String getUniqueName() {
 		return uniqueName;
 	}
@@ -121,8 +123,8 @@ public class VMTemplateVO implements VirtualMachineTemplate {
 	/**
 	 * Proper constructor for a new vm template.
 	 */
-    public VMTemplateVO(long id, String name, ImageFormat format, boolean isPublic, boolean featured, TemplateType type, String url, boolean requiresHvm, int bits, long accountId, String cksum, String displayText, boolean enablePassword, long guestOSId, boolean bootable, HypervisorType hyperType) {
-	    this(id, generateUniqueName(id, accountId, name), name, format, isPublic, featured, type, url, null, requiresHvm, bits, accountId, cksum, displayText, enablePassword, guestOSId, bootable, hyperType);
+    public VMTemplateVO(long id, String name, ImageFormat format, boolean isPublic, boolean featured, boolean isExtractable, TemplateType type, String url, boolean requiresHvm, int bits, long accountId, String cksum, String displayText, boolean enablePassword, long guestOSId, boolean bootable, HypervisorType hyperType) {
+	    this(id, generateUniqueName(id, accountId, name), name, format, isPublic, featured, isExtractable, type, url, null, requiresHvm, bits, accountId, cksum, displayText, enablePassword, guestOSId, bootable, hyperType);
     }
 
 	public VMTemplateVO(Long id, String uniqueName, String name, ImageFormat format, boolean isPublic, boolean featured, TemplateType type, String url, Date created, boolean requiresHvm, int bits, long accountId, String cksum, String displayText, boolean enablePassword, long guestOSId, boolean bootable, HypervisorType hyperType) {
@@ -145,9 +147,32 @@ public class VMTemplateVO implements VirtualMachineTemplate {
 	    this.bootable = bootable;
 	    this.hypervisorType = hyperType.toString();
     }
-	
+		
+	// Has an extra attribute - isExtractable
+	public VMTemplateVO(Long id, String uniqueName, String name, ImageFormat format, boolean isPublic, boolean featured, boolean isExtractable, TemplateType type, String url, Date created, boolean requiresHvm, int bits, long accountId, String cksum, String displayText, boolean enablePassword, long guestOSId, boolean bootable, HypervisorType hyperType) {
+	    this.id = id;
+	    this.name = name;
+	    this.publicTemplate = isPublic;
+	    this.featured = featured;
+	    this.extractable = isExtractable;
+	    this.templateType = type;
+	    this.url = url;
+	    this.requiresHvm = requiresHvm;
+	    this.bits = bits;
+	    this.accountId = accountId;
+	    this.checksum = cksum;
+	    this.uniqueName = uniqueName;
+	    this.displayText = displayText;
+	    this.enablePassword = enablePassword;
+	    this.format = format;
+	    this.created = created;
+	    this.guestOSId = guestOSId;
+	    this.bootable = bootable;
+	    this.hypervisorType = hyperType.toString();
+    }
+
 	@Override
-    public boolean getEnablePassword() {
+	public boolean getEnablePassword() {
 		return enablePassword;
 	}
 	
@@ -310,6 +335,15 @@ public class VMTemplateVO implements VirtualMachineTemplate {
 		hypervisorType = hyperType.toString();
 	}
 	
+	@Override
+	public boolean isExtractable() {
+		return extractable;
+	}
+
+	public void setExtractable(boolean extractable) {
+		this.extractable = extractable;
+	}
+
 	@Override
     public long getDomainId() {
 	    return -1;

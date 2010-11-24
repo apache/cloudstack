@@ -5197,6 +5197,12 @@ public class ManagementServerImpl implements ManagementServer {
             throw new PermissionDeniedException("Invalid state of the volume with ID: " + volumeId + ". It should be either detached or the VM should be in stopped state.");
         }
         
+        VMTemplateVO template = ApiDBUtils.findTemplateById(volume.getTemplateId());    	
+    	boolean isExtractable = template != null && template.isExtractable() && !(template.getTemplateType()== Storage.TemplateType.SYSTEM || template.getTemplateType()== Storage.TemplateType.BUILTIN);
+        if( !isExtractable ){
+        	throw new PermissionDeniedException("The volume:" +volumeId+ " is not allowed to be extracted");
+        }
+        
         Upload.Mode extractMode;
         if( mode == null || (!mode.equals(Upload.Mode.FTP_UPLOAD.toString()) && !mode.equals(Upload.Mode.HTTP_DOWNLOAD.toString())) ){
             throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please specify a valid extract Mode ");

@@ -63,6 +63,7 @@ import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.AttachVolumeCmd;
@@ -2472,6 +2473,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 
     	Long nextTemplateId = _templateDao.getNextInSequence(Long.class, "id");
     	String description = cmd.getDisplayText();
+    	VMTemplateVO template = ApiDBUtils.findTemplateById(volume.getTemplateId());    	
+    	boolean isExtractable = template != null && template.isExtractable() && !(template.getTemplateType()== Storage.TemplateType.SYSTEM || template.getTemplateType()== Storage.TemplateType.BUILTIN);
 
         privateTemplate = new VMTemplateVO(nextTemplateId,
                                            uniqueName,
@@ -2479,6 +2482,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
                                            ImageFormat.RAW,
                                            isPublic,
                                            featured,
+                                           isExtractable,
                                            null,
                                            null,
                                            null,
@@ -2490,7 +2494,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
                                            passwordEnabledValue,
                                            guestOS.getId(),
                                            true,
-                                           hyperType);
+                                           hyperType);        
 
         // FIXME:  scheduled events should get saved when the command is actually scheduled, not when it starts executing, need another callback
         //         for when the command is scheduled?  Could this fit into the setup / execute / response lifecycle?  Right after setup you would
