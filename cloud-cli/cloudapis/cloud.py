@@ -6,14 +6,17 @@ import urllib
 import urllib2
 import os
 import xml.dom.minidom
+import re
 
 class CloudAPI:
     
 	@describe("server", "Management Server host name or address")
 	@describe("responseformat", "Response format: xml or json")
+	@describe("stripxml", "True if xml tags have to be stripped in the output, false otherwise")
 	def __init__(self,
 			server="127.0.0.1:8096",
 			responseformat="xml",
+			stripxml="false"
 			):
 		self.__dict__.update(locals())
         
@@ -35,9 +38,19 @@ class CloudAPI:
 		url += querystring
 		
 		f = urllib2.urlopen(url)
-		
 		data = f.read()
-		
+		if self.stripxml == "true":
+			data=re.sub("<\?.*\?>", "\n", data);
+			data=re.sub("</[a-z]*>", "\n", data);
+			data=data.replace(">", "=");
+			data=data.replace("=<", "\n");
+			data=data.replace("\n<", "\n");
+			data=re.sub("\n.*cloud-stack-version=.*", "", data);
+			data=data.replace("\n\n\n", "\n");
+                else:
+                        data="\n"+data+"\n"
+                return data
+
 		return data
 
 
