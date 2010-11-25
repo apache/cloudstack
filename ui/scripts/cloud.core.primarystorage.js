@@ -39,8 +39,8 @@ function primarystorageToRightPanel($midmenuItem1) {
 }
 
  function afterLoadPrimaryStorageJSP($midmenuItem1) {
-    initAddHostButton($("#midmenu_add_host_button"), "primarystorage_page"); 
-    initAddPrimaryStorageButton($("#midmenu_add_primarystorage_button"), "primarystorage_page");  
+    initAddHostButton($("#midmenu_add_host_button"), "primarystorage_page", $midmenuItem1); 
+    initAddPrimaryStorageButton($("#midmenu_add_primarystorage_button"), "primarystorage_page", $midmenuItem1);  
     
     initDialog("dialog_add_host");
     initDialog("dialog_add_pool");

@@ -19,8 +19,8 @@
  function afterLoadPodJSP($leftmenuItem1) {   
     hideMiddleMenu();	
           	
-    initAddHostButton($("#midmenu_add_host_button"), "pod_page"); 
-    initAddPrimaryStorageButton($("#midmenu_add_primarystorage_button"), "pod_page");  
+    initAddHostButton($("#midmenu_add_host_button"), "pod_page", $leftmenuItem1); 
+    initAddPrimaryStorageButton($("#midmenu_add_primarystorage_button"), "pod_page", $leftmenuItem1);  
            
     initDialog("dialog_add_host");
     initDialog("dialog_add_pool");
@@ -44,15 +44,19 @@ function podJsonToRightPanel($leftmenuItem1) {
     $("#tab_details").click();   
 }
 
-function podJsonToDetailsTab() {	
+function podJsonToDetailsTab() {	    
+    var $leftmenuItem1 = $("#right_panel_content").data("$leftmenuItem1");
+    if($leftmenuItem1 == null)
+        return;
+    
+    var jsonObj = $leftmenuItem1.data("jsonObj");    
+    if(jsonObj == null) 
+	    return;	
+    
     var $thisTab = $("#right_panel_content #tab_content_details");  
     $thisTab.find("#tab_container").hide(); 
-    $thisTab.find("#tab_spinning_wheel").show();        
-    
-    var $leftmenuItem1 = $("#right_panel_content").data("$leftmenuItem1");
-    var jsonObj = $leftmenuItem1.data("jsonObj");
-    $thisTab.data("jsonObj", jsonObj);  
-     
+    $thisTab.find("#tab_spinning_wheel").show();       
+        
     $thisTab.find("#id").text(noNull(jsonObj.id));
     $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));
     
@@ -94,7 +98,7 @@ function podJsonToDetailsTab() {
 	});	
     if(networkType == "Basic") { //basic-mode network (pod-wide VLAN)
         $("#tab_network").show();  
-        initAddPodVLANButton($("#midmenu_add_directIpRange_button"));  
+        initAddPodVLANButton($("#midmenu_add_directIpRange_button"), $leftmenuItem1);  
     }
     else if(networkType == "Advanced") { //advanced-mode network (zone-wide VLAN)
         $("#tab_network").hide();
@@ -121,13 +125,18 @@ function podJsonToDetailsTab() {
     $thisTab.find("#tab_container").show();      
 }	
 
-function podJsonToNetworkTab() {   
+function podJsonToNetworkTab() {       
+	var $leftmenuItem1 = $("#right_panel_content").data("$leftmenuItem1");
+    if($leftmenuItem1 == null)
+        return;
+    
+    var jsonObj = $leftmenuItem1.data("jsonObj");    
+    if(jsonObj == null) 
+	    return;	
+     
     var $thisTab = $("#right_panel_content #tab_content_network");
 	$thisTab.find("#tab_container").hide(); 
-    $thisTab.find("#tab_spinning_wheel").show();   
-		
-	var $leftmenuItem1 = $("#right_panel_content").data("$leftmenuItem1");	
-	var jsonObj = $leftmenuItem1.data("jsonObj");	
+    $thisTab.find("#tab_spinning_wheel").show();   		 
         
     $.ajax({
 		data: createURL("command=listVlanIpRanges&zoneid="+noNull(jsonObj.zoneid)+"&podid="+noNull(jsonObj.id)),
@@ -248,7 +257,7 @@ function refreshClsuterFieldInAddHostDialog(dialogAddHost, podId, clusterId) {
     });     
 }      
 
-function initAddHostButton($button, currentPageInRightPanel) {    
+function initAddHostButton($button, currentPageInRightPanel, $leftmenuItem1) {    
     $button.show();
     $button.unbind("click").bind("click", function(event) {     
         dialogAddHost = $("#dialog_add_host");      
@@ -257,14 +266,14 @@ function initAddHostButton($button, currentPageInRightPanel) {
        
         var zoneId, podId, clusterId;               
         if(currentPageInRightPanel == "pod_page") {
-            var podObj = $("#tab_content_details").data("jsonObj");   
+            var podObj = $leftmenuItem1.data("jsonObj");   
             zoneId = podObj.zoneid;
             podId = podObj.id;
             dialogAddHost.find("#zone_name").text(fromdb(podObj.zonename));  
             dialogAddHost.find("#pod_name").text(fromdb(podObj.name)); 
         }
         else if(currentPageInRightPanel == "cluster_page") {
-            var clusterObj = $("#tab_content_details").data("jsonObj");   
+            var clusterObj = $leftmenuItem1.data("jsonObj");   
             zoneId = clusterObj.zoneid;
             podId = clusterObj.podid;    
             clusterId = clusterObj.id;  
@@ -272,7 +281,7 @@ function initAddHostButton($button, currentPageInRightPanel) {
             dialogAddHost.find("#pod_name").text(fromdb(clusterObj.podname)); 
         }
         else if(currentPageInRightPanel == "host_page") {
-            var hostObj = $("#tab_content_details").data("jsonObj");  
+            var hostObj = $leftmenuItem1.data("jsonObj");  
             zoneId = hostObj.zoneid;
             podId = hostObj.podid; 
             clusterId = hostObj.clusterid;   
@@ -280,7 +289,7 @@ function initAddHostButton($button, currentPageInRightPanel) {
             dialogAddHost.find("#pod_name").text(fromdb(hostObj.podname)); 
         }
         else if(currentPageInRightPanel == "primarystorage_page") {
-            var primarystorageObj = $("#tab_content_details").data("jsonObj");   
+            var primarystorageObj = $leftmenuItem1.data("jsonObj");   
             zoneId = primarystorageObj.zoneid;
             podId = primarystorageObj.podid;    
             clusterId = primarystorageObj.clusterid;          
@@ -403,7 +412,7 @@ function clickClusterNodeAfterAddHost(clusterRadio, podId, newClusterName, exist
     }         
 }
 
-function initAddPrimaryStorageButton($button, currentPageInRightPanel) {    
+function initAddPrimaryStorageButton($button, currentPageInRightPanel, $leftmenuItem1) {    
     $button.show();   
     $button.unbind("click").bind("click", function(event) {   
         dialogAddPool = $("#dialog_add_pool");  
@@ -411,14 +420,14 @@ function initAddPrimaryStorageButton($button, currentPageInRightPanel) {
              
         var zoneId, podId, sourceClusterId;        
         if(currentPageInRightPanel == "pod_page") {
-            var podObj = $("#tab_content_details").data("jsonObj");  
+            var podObj = $leftmenuItem1.data("jsonObj");  
             zoneId = podObj.zoneid;
             podId = podObj.id;
             dialogAddPool.find("#zone_name").text(fromdb(podObj.zonename));  
             dialogAddPool.find("#pod_name").text(fromdb(podObj.name)); 
         }        
         else if(currentPageInRightPanel == "cluster_page") {
-            var clusterObj = $("#tab_content_details").data("jsonObj");   
+            var clusterObj = $leftmenuItem1.data("jsonObj");   
             zoneId = clusterObj.zoneid;
             podId = clusterObj.podid;    
             sourceClusterId = clusterObj.id;   
@@ -426,7 +435,7 @@ function initAddPrimaryStorageButton($button, currentPageInRightPanel) {
             dialogAddPool.find("#pod_name").text(fromdb(clusterObj.podname)); 
         }        
         else if(currentPageInRightPanel == "host_page") {
-            var hostObj = $("#tab_content_details").data("jsonObj");  
+            var hostObj = $leftmenuItem1.data("jsonObj");  
             zoneId = hostObj.zoneid;
             podId = hostObj.podid; 
             sourceClusterId = hostObj.clusterid;            
@@ -434,7 +443,7 @@ function initAddPrimaryStorageButton($button, currentPageInRightPanel) {
             dialogAddPool.find("#pod_name").text(fromdb(hostObj.podname)); 
         }
         else if(currentPageInRightPanel == "primarystorage_page") {
-            var primarystorageObj = $("#tab_content_details").data("jsonObj");   
+            var primarystorageObj = $leftmenuItem1.data("jsonObj");   
             zoneId = primarystorageObj.zoneid;
             podId = primarystorageObj.podid;  
             sourceClusterId = primarystorageObj.clusterid;   
@@ -560,7 +569,7 @@ function initAddPrimaryStorageButton($button, currentPageInRightPanel) {
     });             
 }
 
-function initAddPodVLANButton($button) {
+function initAddPodVLANButton($button, $leftmenuItem1) {
     initDialog("dialog_add_vlan_for_pod");
 
     $button.find("#label").text("Add Direct IP Range"); 
@@ -569,7 +578,7 @@ function initAddPodVLANButton($button) {
         if($("#tab_content_network").css("display") == "none")
             $("#tab_network").click();    
             
-        var podObj = $("#tab_content_details").data("jsonObj");               
+        var podObj = $leftmenuItem1.data("jsonObj");               
         var zoneId = podObj.zoneid;        
         var podId = podObj.id;
         var podName = podObj.name;      
