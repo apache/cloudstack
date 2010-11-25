@@ -64,6 +64,9 @@ public class VMTemplateHostVO implements VMTemplateStorageResourceAssoc {
 	@Column (name="size")
 	private long size;
 	
+	@Column (name="physicalSize")
+	private long physicalSize;
+	
 	@Column (name="download_state")
 	@Enumerated(EnumType.STRING)
 	private Status downloadState;
@@ -240,6 +243,14 @@ public class VMTemplateHostVO implements VMTemplateStorageResourceAssoc {
     }
 	
     
+    public void setPhysicalSize(long physicalSize) {
+        this.physicalSize = physicalSize;
+    }
+
+    public long getPhysicalSize() {
+        return physicalSize;
+    }
+
     public void setDestroyed(boolean destroyed) {
     	this.destroyed = destroyed;
     }

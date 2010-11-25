@@ -147,8 +147,8 @@ import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
 import com.cloud.agent.api.storage.CreatePrivateTemplateCommand;
 import com.cloud.agent.api.storage.DestroyCommand;
-import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
+import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
@@ -1765,7 +1765,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         	  return sp;
           }
     }
-    protected Answer execute(final PrimaryStorageDownloadCommand cmd) {
+    protected PrimaryStorageDownloadAnswer execute(final PrimaryStorageDownloadCommand cmd) {
     	 String tmplturl = cmd.getUrl();
          int index = tmplturl.lastIndexOf("/");
          String mountpoint = tmplturl.substring(0, index);
@@ -1781,7 +1781,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
          try {
         	 secondaryPool = getNfsSPbyURI(_conn, new URI(mountpoint));
         	 if (secondaryPool == null) {
-        		 return new Answer(cmd, false, " Failed to create storage pool");
+        		 return new PrimaryStorageDownloadAnswer(" Failed to create storage pool");
         	 }
         	 if (tmpltname == null) {
         		 /*Hack: server just pass the directory of system vm template, need to scan the folder */
@@ -1790,7 +1790,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         		 }
         		 String[] volumes = secondaryPool.listVolumes();
         		 if (volumes == null) {
-        			 return new Answer(cmd, false, "Failed to get volumes from pool: " + secondaryPool.getName());
+        			 return new PrimaryStorageDownloadAnswer("Failed to get volumes from pool: " + secondaryPool.getName());
         		 }
         		 for (String volumeName : volumes) {
         			 if (volumeName.endsWith("qcow2")) {
@@ -1799,40 +1799,32 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         			 }
         		 }
         		 if (tmpltname == null) {
-        			 return new Answer(cmd, false, "Failed to get template from pool: " + secondaryPool.getName());
+        			 return new PrimaryStorageDownloadAnswer("Failed to get template from pool: " + secondaryPool.getName());
         		 }
         	 }
         	 tmplVol = getVolume(secondaryPool, getPathOfStoragePool(secondaryPool) + tmpltname);
         	 if (tmplVol == null) {
-        		 return new Answer(cmd, false, " Can't find volume");
+        		 return new PrimaryStorageDownloadAnswer(" Can't find volume");
         	 }
         	 primaryPool = _conn.storagePoolLookupByUUIDString(cmd.getPoolUuid());
         	 if (primaryPool == null) {
-        		 return new Answer(cmd, false, " Can't find primary storage pool");
+        		 return new PrimaryStorageDownloadAnswer(" Can't find primary storage pool");
         	 }
         	 LibvirtStorageVolumeDef vol = new LibvirtStorageVolumeDef(UUID.randomUUID().toString(), tmplVol.getInfo().capacity, volFormat.QCOW2, null, null);
         	 s_logger.debug(vol.toString());
         	 primaryVol = copyVolume(primaryPool, vol, tmplVol);
         	 if (primaryVol == null) {
-        		 return new Answer(cmd, false, " Can't create storage volume on storage pool");
+        		 return new PrimaryStorageDownloadAnswer(" Can't create storage volume on storage pool");
         	 }
-        	 
         	 StorageVolInfo priVolInfo = primaryVol.getInfo();
-        	 DownloadAnswer answer = new DownloadAnswer(null,
-                     100,
-                     cmd,
-                     com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOADED,
-                     primaryVol.getKey(),
-                     primaryVol.getKey());
-        	 answer.setTemplateSize(priVolInfo.allocation);
-        	 return answer;
+        	 return new PrimaryStorageDownloadAnswer(primaryVol.getKey(), priVolInfo.allocation);
          } catch (LibvirtException e) {
         	 result = "Failed to download template: " + e.toString();
         	 s_logger.debug(result);
-        	 return new Answer(cmd, false, result);
+        	 return new PrimaryStorageDownloadAnswer(result);
          } catch (URISyntaxException e) {
 			// TODO Auto-generated catch block
-        	 return new Answer(cmd, false, e.toString());
+        	 return new PrimaryStorageDownloadAnswer(e.toString());
 		} finally {
 			try {
 				if (primaryVol != null) {

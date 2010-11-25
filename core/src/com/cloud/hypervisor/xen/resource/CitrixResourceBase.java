@@ -142,8 +142,8 @@ import com.cloud.agent.api.storage.CreateAnswer;
 import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
 import com.cloud.agent.api.storage.DestroyCommand;
-import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
+import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.ShareAnswer;
 import com.cloud.agent.api.storage.ShareCommand;
 import com.cloud.agent.api.to.NicTO;
@@ -2066,7 +2066,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     }
 
     @Override
-    public DownloadAnswer execute(final PrimaryStorageDownloadCommand cmd) {
+    public PrimaryStorageDownloadAnswer execute(final PrimaryStorageDownloadCommand cmd) {
         SR tmpltsr = null;
         String tmplturl = cmd.getUrl();
         int index = tmplturl.lastIndexOf("/");
@@ -2082,7 +2082,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             if (srs.size() != 1) {
                 String msg = "There are " + srs.size() + " SRs with same name: " + pUuid;
                 s_logger.warn(msg);
-                return new DownloadAnswer(null, 0, msg, com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR, "", "", 0);
+                return new PrimaryStorageDownloadAnswer(msg);
             } else {
                 poolsr = srs.iterator().next();
             }
@@ -2119,7 +2119,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 if (tmpltvdi == null) {
                     String msg = "Unable to find template vdi on secondary storage" + "host:" + _host.uuid + "pool: " + tmplturl;
                     s_logger.warn(msg);
-                    return new DownloadAnswer(null, 0, msg, com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR, "", "", 0);
+                    return new PrimaryStorageDownloadAnswer(msg);
                 }
                 vmtmpltvdi = cloudVDIcopy(tmpltvdi, poolsr);
                 snapshotvdi = vmtmpltvdi.snapshot(conn, new HashMap<String, String>());
@@ -2138,20 +2138,16 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
             // Determine the size of the template
             long phySize = vmtmpltvdi.getPhysicalUtilisation(conn);
-
-            DownloadAnswer answer = new DownloadAnswer(null, 100, cmd, com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOADED, uuid, uuid);
-            answer.setTemplateSize(phySize);
-
-            return answer;
+            return new PrimaryStorageDownloadAnswer(uuid, phySize);
 
         } catch (XenAPIException e) {
             String msg = "XenAPIException:" + e.toString() + "host:" + _host.uuid + "pool: " + tmplturl;
             s_logger.warn(msg, e);
-            return new DownloadAnswer(null, 0, msg, com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR, "", "", 0);
+            return new PrimaryStorageDownloadAnswer(msg);
         } catch (Exception e) {
             String msg = "XenAPIException:" + e.getMessage() + "host:" + _host.uuid + "pool: " + tmplturl;
             s_logger.warn(msg, e);
-            return new DownloadAnswer(null, 0, msg, com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR, "", "", 0);
+            return new PrimaryStorageDownloadAnswer(msg);
         } finally {
             removeSR(tmpltsr);
         }
@@ -3901,7 +3897,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             VDI pvISO = vids.iterator().next();
             String uuid = pvISO.getUuid(conn);
             Map<String, TemplateInfo> pvISOtmlt = new HashMap<String, TemplateInfo>();
-            TemplateInfo tmplt = new TemplateInfo("xs-tools.iso", uuid, pvISO.getVirtualSize(conn), true, false);
+            TemplateInfo tmplt = new TemplateInfo("xs-tools.iso", uuid, pvISO.getVirtualSize(conn), pvISO.getVirtualSize(conn), true, false);
             pvISOtmlt.put("xs-tools", tmplt);
             sscmd.setTemplateInfo(pvISOtmlt);
         } catch (XenAPIException e) {

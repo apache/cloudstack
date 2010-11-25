@@ -106,8 +106,8 @@ public class TemplateLocation {
                     continue;
                 }
                 info.size = NumbersUtil.parseLong(_props.getProperty(format.getFileExtension() + ".size"), -1);
+                _props.setProperty("physicalSize", Long.toString(info.size));
                 info.virtualSize = NumbersUtil.parseLong(_props.getProperty(format.getFileExtension() + ".virtualsize"), -1);
-                
                 _formats.add(info);               
                 
                 if (!checkFormatValidity(info)) {
@@ -145,14 +145,12 @@ public class TemplateLocation {
                 } catch (IOException e) {
                 }
             }
-        }
-        
+        }        
         return true;
     }
     
     public TemplateInfo getTemplateInfo() {
-        TemplateInfo tmplInfo = new TemplateInfo();
-        
+        TemplateInfo tmplInfo = new TemplateInfo();       
         tmplInfo.id = Long.parseLong(_props.getProperty("id"));
         tmplInfo.installPath = _templatePath + File.separator + _props.getProperty("filename");
         tmplInfo.installPath = tmplInfo.installPath.substring(tmplInfo.installPath.indexOf("template"));
@@ -160,6 +158,7 @@ public class TemplateLocation {
         tmplInfo.isPublic = Boolean.parseBoolean(_props.getProperty("public"));
         tmplInfo.templateName = _props.getProperty("uniquename");
         tmplInfo.size = Long.parseLong(_props.getProperty("virtualsize"));
+        tmplInfo.physicalSize = Long.parseLong(_props.getProperty("physicalSize"));
         
         return tmplInfo;
     }

@@ -58,6 +58,7 @@ import com.cloud.utils.component.ComponentLocator.ComponentInfo;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
 
 /**
  * @author chiradeep
@@ -94,6 +95,7 @@ public class DownloadManagerImpl implements DownloadManager {
         private Long accountId;
         private String installPathPrefix;
         private long templatesize;
+        private long templatePhysicalSize;
         private long id;
 
         public DownloadJob(TemplateDownloader td, String jobId, long id, String tmpltName, ImageFormat format, boolean hvm, Long accountId, String descr, String cksum, String installPathPrefix) {
@@ -191,6 +193,14 @@ public class DownloadManagerImpl implements DownloadManager {
 
         public long getTemplatesize() {
             return templatesize;
+        }
+        
+        public void setTemplatePhysicalSize(long templatePhysicalSize) {
+            this.templatePhysicalSize = templatePhysicalSize;
+        }
+
+        public long getTemplatePhysicalSize() {
+            return templatePhysicalSize;
         }
     }
 
@@ -348,6 +358,7 @@ public class DownloadManagerImpl implements DownloadManager {
             if (info != null) {
                 loc.addFormat(info);
                 dnld.setTemplatesize(info.virtualSize);
+                dnld.setTemplatePhysicalSize(info.size);
                 break;
             }
         }
@@ -448,6 +459,14 @@ public class DownloadManagerImpl implements DownloadManager {
         }
         return 0;
     }
+    
+    public long getDownloadTemplatePhysicalSize(String jobId) {
+        DownloadJob dj = jobs.get(jobId);
+        if (dj != null) {
+            return dj.getTemplatePhysicalSize();
+        }
+        return 0;
+    }
 
     // @Override
     public String getDownloadLocalPath(String jobId) {
@@ -502,11 +521,11 @@ public class DownloadManagerImpl implements DownloadManager {
         }
 
         if (cmd.getUrl() == null) {
-            return new DownloadAnswer(null, 0, "Template is corrupted on storage due to an invalid url , cannot download", com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR, "", "", 0);
+            return new DownloadAnswer("Template is corrupted on storage due to an invalid url , cannot download", VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR);
         }
 
         if (cmd.getName() == null) {
-            return new DownloadAnswer(null, 0, "Invalid Name", com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR, "", "", 0);
+            return new DownloadAnswer("Invalid Name", VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR);
         }
 
         String installPathPrefix = null;
@@ -523,10 +542,10 @@ public class DownloadManagerImpl implements DownloadManager {
         String jobId = downloadPublicTemplate(cmd.getId(), cmd.getUrl(), cmd.getName(), cmd.getFormat(), cmd.isHvm(), cmd.getAccountId(), cmd.getDescription(), cmd.getChecksum(), installPathPrefix, user, password, maxDownloadSizeInBytes);
         sleep();
         if (jobId == null) {
-            return new DownloadAnswer(null, 0, "Internal Error", com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR, "", "", 0);
+            return new DownloadAnswer("Internal Error", VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR);
         }
         return new DownloadAnswer(jobId, getDownloadPct(jobId), getDownloadError(jobId), getDownloadStatus2(jobId), getDownloadLocalPath(jobId), getInstallPath(jobId),
-                getDownloadTemplateSize(jobId));
+                getDownloadTemplateSize(jobId), getDownloadTemplateSize(jobId));
     }
 
     private void sleep() {
@@ -548,7 +567,7 @@ public class DownloadManagerImpl implements DownloadManager {
                 DownloadCommand dcmd = new DownloadCommand(cmd);
                 return handleDownloadCommand(dcmd);
             } else {
-                return new DownloadAnswer(null, 0, "Cannot find job", com.cloud.storage.VMTemplateHostVO.Status.UNKNOWN, "", "", 0);
+                return new DownloadAnswer("Cannot find job", VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR.UNKNOWN);
             }
         }
         TemplateDownloader td = dj.getTemplateDownloader();
@@ -566,14 +585,15 @@ public class DownloadManagerImpl implements DownloadManager {
             break;
         case PURGE:
             td.stopDownload();
-            answer = new DownloadAnswer(jobId, getDownloadPct(jobId), getDownloadError(jobId), getDownloadStatus2(jobId), getDownloadLocalPath(jobId), getInstallPath(jobId), getDownloadTemplateSize(jobId));
+            answer = new DownloadAnswer(jobId, getDownloadPct(jobId), getDownloadError(jobId), getDownloadStatus2(jobId), getDownloadLocalPath(jobId), 
+                    getInstallPath(jobId), getDownloadTemplateSize(jobId), getDownloadTemplatePhysicalSize(jobId));
             jobs.remove(jobId);
             return answer;
         default:
             break; // TODO
         }
-        return new DownloadAnswer(jobId, getDownloadPct(jobId), getDownloadError(jobId), getDownloadStatus2(jobId), getDownloadLocalPath(jobId), getInstallPath(jobId),
-                getDownloadTemplateSize(jobId));
+        return new DownloadAnswer(jobId, getDownloadPct(jobId), getDownloadError(jobId), getDownloadStatus2(jobId), getDownloadLocalPath(jobId), 
+                getInstallPath(jobId), getDownloadTemplateSize(jobId), getDownloadTemplatePhysicalSize(jobId));
     }
 
     private String getInstallPath(String jobId) {

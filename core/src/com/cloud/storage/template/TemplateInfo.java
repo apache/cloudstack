@@ -23,6 +23,7 @@ public class TemplateInfo {
     String templateName;
     String installPath;
     long size;
+    long physicalSize;
     long id;
     boolean isPublic;
     boolean isCorrupted;
@@ -31,16 +32,17 @@ public class TemplateInfo {
         
     }
     
-    public TemplateInfo(String templateName, String installPath, long size, boolean isPublic, boolean isCorrupted) {
+    public TemplateInfo(String templateName, String installPath, long size, long physicalSize, boolean isPublic, boolean isCorrupted) {
         this.templateName = templateName;
         this.installPath = installPath;
         this.size = size;
+        this.physicalSize = physicalSize;
         this.isPublic = isPublic;
         this.isCorrupted = isCorrupted;
     }
 
     public TemplateInfo(String templateName, String installPath, boolean isPublic, boolean isCorrupted) {
-        this(templateName, installPath, 0, isPublic, isCorrupted);
+        this(templateName, installPath, 0, 0, isPublic, isCorrupted);
     }
     
     public long getId() {
@@ -69,6 +71,10 @@ public class TemplateInfo {
     
     public long getSize() {
         return size;
+    }
+    
+    public long getPhysicalSize() {
+        return physicalSize;
     }
     
     public void setSize(long size) {

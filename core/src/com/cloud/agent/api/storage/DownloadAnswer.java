@@ -31,7 +31,8 @@ public class DownloadAnswer extends Answer  {
 	private VMTemplateHostVO.Status downloadStatus;
 	private String downloadPath;
 	private String installPath;
-	public Long templateSize = 0L;
+	private long templateSize = 0L;
+	private long templatePhySicalSize = 0L;
 	
 	public int getDownloadPct() {
 		return downloadPct;
@@ -62,8 +63,15 @@ public class DownloadAnswer extends Answer  {
 		this.jobId = jobId;
 	}
 	
+    public DownloadAnswer(String errorString, Status status) {
+        super();
+        this.downloadPct = 0;
+        this.errorString = errorString;
+        this.downloadStatus = status;
+    }
+	
 	public DownloadAnswer(String jobId, int downloadPct, String errorString,
-			Status downloadStatus, String fileSystemPath, String installPath, long templateSize) {
+			Status downloadStatus, String fileSystemPath, String installPath, long templateSize, long templatePhySicalSize ) {
 		super();
 		this.jobId = jobId;
 		this.downloadPct = downloadPct;
@@ -72,6 +80,7 @@ public class DownloadAnswer extends Answer  {
 		this.downloadPath = fileSystemPath;
 		this.installPath = fixPath(installPath);
 		this.templateSize = templateSize;
+		this.templatePhySicalSize = templatePhySicalSize;
 	}
 	
    public DownloadAnswer(String jobId, int downloadPct, Command command,
@@ -114,5 +123,11 @@ public class DownloadAnswer extends Answer  {
 	public Long getTemplateSize() {
 		return templateSize;
 	}
+    public void setTemplatePhySicalSize(long templatePhySicalSize) {
+        this.templatePhySicalSize = templatePhySicalSize;
+    }
+    public long getTemplatePhySicalSize() {
+        return templatePhySicalSize;
+    }
 	
 }

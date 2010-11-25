@@ -187,16 +187,13 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 
 		for (VMTemplateStoragePoolVO templatePoolVO : templatePoolVOs) {
 			VMTemplateVO templateInPool = _templateDao.findById(templatePoolVO.getTemplateId());
-			int templateSizeMultiplier = pool.getPoolType() == StoragePoolType.NetworkFilesystem ? 1 : 2;
 
 			if ((template != null) && !tmpinstalled && (templateInPool.getId() == template.getId())) {
 				tmpinstalled = true;
 			}
 			
-			s_logger.debug("For template: " + templateInPool.getName() + ", using template size multiplier: " + templateSizeMultiplier);
-
 			long templateSize = templatePoolVO.getTemplateSize();
-			totalAllocatedSize += templateSizeMultiplier * (templateSize + _extraBytesPerVolume);
+			totalAllocatedSize += templateSize + _extraBytesPerVolume;
 		}
 
 		if ((template != null) && !tmpinstalled) {
@@ -212,7 +209,8 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 				} else {
 					s_logger.debug("For template: " + template.getName() + ", using template size multiplier: " + 2);
 					long templateSize = templateHostVO.getSize();
-					totalAllocatedSize += 2 * (templateSize + _extraBytesPerVolume);
+	                long templatePhysicalSize = templateHostVO.getPhysicalSize();
+					totalAllocatedSize +=  (templateSize + _extraBytesPerVolume) + (templatePhysicalSize + _extraBytesPerVolume);
 				}
 			}
 		}

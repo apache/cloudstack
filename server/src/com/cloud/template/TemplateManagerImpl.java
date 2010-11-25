@@ -35,6 +35,7 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.DownloadAnswer;
+import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
@@ -687,11 +688,11 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
                 }
             	dcmd.setLocalPath(vo.getLocalPath());
             	// set 120 min timeout for this command
-                DownloadAnswer answer = (DownloadAnswer)_agentMgr.easySend(vo.getHostId(), dcmd, 120*60*1000);
-                if (answer != null) {
-            		templateStoragePoolRef.setDownloadPercent(templateStoragePoolRef.getDownloadPercent());
-            		templateStoragePoolRef.setDownloadState(answer.getDownloadStatus());
-            		templateStoragePoolRef.setLocalDownloadPath(answer.getDownloadPath());
+            	PrimaryStorageDownloadAnswer answer = (PrimaryStorageDownloadAnswer)_agentMgr.easySend(vo.getHostId(), dcmd, 120*60*1000);
+                if (answer != null && answer.getResult() ) {
+            		templateStoragePoolRef.setDownloadPercent(100);
+            		templateStoragePoolRef.setDownloadState(Status.DOWNLOADED);
+            		templateStoragePoolRef.setLocalDownloadPath(answer.getInstallPath());
             		templateStoragePoolRef.setInstallPath(answer.getInstallPath());
             		templateStoragePoolRef.setTemplateSize(answer.getTemplateSize());
             		_tmpltPoolDao.update(templateStoragePoolRef.getId(), templateStoragePoolRef);
@@ -699,6 +700,9 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             			s_logger.debug("Template " + templateId + " is downloaded via " + vo.getHostId());
             		}
             		return templateStoragePoolRef;
+                } else {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Template " + templateId + " download to pool " + vo.getPoolId() + " failed due to " + (answer!=null?answer.getDetails():"return null"));                }
                 }
             }
         } finally {
