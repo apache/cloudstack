@@ -16,15 +16,15 @@
  * 
  */
  
- function afterLoadZoneJSP($midmenuItem1) {
+ function afterLoadZoneJSP($leftmenuItem1) {
     hideMiddleMenu();  
                  
-    initAddPodButton($("#midmenu_add_pod_button"));                  
-    initAddVLANButton($("#midmenu_add_vlan_button"));
-    initAddSecondaryStorageButton($("#midmenu_add_secondarystorage_button"));
+    initAddPodButton($("#midmenu_add_pod_button"), $leftmenuItem1);                  
+    initAddVLANButton($("#midmenu_add_vlan_button"), $leftmenuItem1);
+    initAddSecondaryStorageButton($("#midmenu_add_secondarystorage_button"), $leftmenuItem1);
           
     var pods;
-    var zoneObj = $midmenuItem1.data("jsonObj");
+    var zoneObj = $leftmenuItem1.data("jsonObj");
     var zoneId = zoneObj.id;
     var zoneName = zoneObj.name;
     $.ajax({
@@ -56,7 +56,7 @@
     var afterSwitchFnArray = [zoneJsonToDetailsTab, zoneJsonToSecondaryStorageTab, zoneJsonToNetworkTab];
     switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray); 
                  
-	zoneJsonToRightPanel($midmenuItem1);		  
+	zoneJsonToRightPanel($leftmenuItem1);		  
 }
 
 function zoneJsonToRightPanel($leftmenuItem1) {	 
@@ -72,6 +72,9 @@ function zoneJsonClearRightPanel() {
 
 function zoneJsonToDetailsTab() {	 
     var $leftmenuItem1 = $("#right_panel_content").data("$leftmenuItem1");
+    if($leftmenuItem1 == null)
+        return;
+    
     var jsonObj = $leftmenuItem1.data("jsonObj");    
     if(jsonObj == null) 
 	    return;	
@@ -79,9 +82,7 @@ function zoneJsonToDetailsTab() {
     var $thisTab = $("#right_panel_content").find("#tab_content_details");  
     $thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();        
-        
-    $thisTab.data("jsonObj", jsonObj);  
-             
+                 
     $thisTab.find("#id").text(noNull(jsonObj.id));
     $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));
     
@@ -184,10 +185,13 @@ function zoneJsonClearDetailsTab() {
 }	
 
 function zoneJsonToSecondaryStorageTab() {      	
-	var $leftmenuItem1 = $("#right_panel_content").data("$leftmenuItem1");	
-	var jsonObj = $leftmenuItem1.data("jsonObj");	
-	if(jsonObj == null) 
-	    return;	
+	var $leftmenuItem1 = $("#right_panel_content").data("$leftmenuItem1");
+    if($leftmenuItem1 == null)
+        return;
+    
+    var jsonObj = $leftmenuItem1.data("jsonObj");    
+    if(jsonObj == null) 
+	    return;		
       
     var $thisTab = $("#right_panel_content").find("#tab_content_secondarystorage");
 	$thisTab.find("#tab_container").hide(); 
@@ -221,6 +225,9 @@ function zoneJsonClearSecondaryStorageTab() {
 var $vlanContainer;
 function zoneJsonToNetworkTab(jsonObj) {	
     var $leftmenuItem1 = $("#right_panel_content").data("$leftmenuItem1");	
+    if($leftmenuItem1 == null)
+        return;
+        
 	var jsonObj = $leftmenuItem1.data("jsonObj");	    
     if(jsonObj == null) 	    
 	    return;	
@@ -333,13 +340,13 @@ function vlanJsonToTemplate(jsonObj, $template1) {
 } 	
 
 
-function initAddVLANButton($button) {    
+function initAddVLANButton($button, $leftmenuItem1) {    
     $button.show();   
     $button.unbind("click").bind("click", function(event) {  
         if($("#tab_content_network").css("display") == "none")
             $("#tab_network").click();      
             
-        var zoneObj = $("#tab_content_details").data("jsonObj");       
+        var zoneObj = $leftmenuItem1.data("jsonObj");  
         var dialogAddVlanForZone = $("#dialog_add_vlan_for_zone");       
         dialogAddVlanForZone.find("#info_container").hide();
         dialogAddVlanForZone.find("#zone_name").text(fromdb(zoneObj.name));         
@@ -493,13 +500,13 @@ function initAddVLANButton($button) {
 }
 
 
-function initAddSecondaryStorageButton($button) {    
+function initAddSecondaryStorageButton($button, $leftmenuItem1) {    
     $button.show();      
     $button.unbind("click").bind("click", function(event) {
         if($("#tab_content_secondarystorage").css("display") == "none")
             $("#tab_secondarystorage").click();    
         
-        var zoneObj = $("#tab_content_details").data("jsonObj");       
+        var zoneObj = $leftmenuItem1.data("jsonObj");    
         $("#dialog_add_secondarystorage").find("#zone_name").text(fromdb(zoneObj.name));   
         $("#dialog_add_secondarystorage").find("#info_container").hide();		    
    
@@ -550,10 +557,10 @@ function initAddSecondaryStorageButton($button) {
     });
 }
 
-function initAddPodButton($button) {
+function initAddPodButton($button, $leftmenuItem1) {
     $button.show();     
     $button.unbind("click").bind("click", function(event) {   
-        var zoneObj = $("#tab_content_details").data("jsonObj"); 
+        var zoneObj = $leftmenuItem1.data("jsonObj"); 
         $("#dialog_add_pod").find("#info_container").hide();				  	
         $("#dialog_add_pod").find("#add_pod_zone_name").text(fromdb(zoneObj.name));
         $("#dialog_add_pod #add_pod_name, #dialog_add_pod #add_pod_cidr, #dialog_add_pod #add_pod_startip, #dialog_add_pod #add_pod_endip, #add_pod_gateway").val("");
@@ -775,8 +782,8 @@ var zoneActionMap = {
         api: "deleteZone",            
         isAsyncJob: false,        
         inProcessText: "Deleting Zone....",
-        afterActionSeccessFn: function(json, $midmenuItem1, id) {   
-            $midmenuItem1.slideUp(function() {
+        afterActionSeccessFn: function(json, $leftmenuItem1, id) {   
+            $leftmenuItem1.slideUp(function() {
                 $(this).remove();
             });
             clearRightPanel();
@@ -786,7 +793,7 @@ var zoneActionMap = {
 }
 
 
-function doEditZone($actionLink, $detailsTab, $midmenuItem1) {       
+function doEditZone($actionLink, $detailsTab, $leftmenuItem1) {       
     var $readonlyFields  = $detailsTab.find("#name, #dns1, #dns2, #internaldns1, #internaldns2, #vlan, #guestcidraddress");
     var $editFields = $detailsTab.find("#name_edit, #dns1_edit, #dns2_edit, #internaldns1_edit, #internaldns2_edit, #startvlan_edit, #endvlan_edit, #guestcidraddress_edit");
            
@@ -801,12 +808,12 @@ function doEditZone($actionLink, $detailsTab, $midmenuItem1) {
         return false;
     });
     $detailsTab.find("#save_button").unbind("click").bind("click", function(event){        
-        doEditZone2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $editFields);   
+        doEditZone2($actionLink, $detailsTab, $leftmenuItem1, $readonlyFields, $editFields);   
         return false;
     });   
 }
 
-function doEditZone2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $editFields) {    
+function doEditZone2($actionLink, $detailsTab, $leftmenuItem1, $readonlyFields, $editFields) {    
     // validate values
 	var isValid = true;			
 	isValid &= validateString("Name", $detailsTab.find("#name_edit"), $detailsTab.find("#name_edit_errormsg"));
@@ -824,7 +831,7 @@ function doEditZone2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $
 	
 	var moreCriteria = [];	
 	
-	var jsonObj = $detailsTab.data("jsonObj"); 
+	var jsonObj = $leftmenuItem1.data("jsonObj"); 
 	
 	var oldDns1 = jsonObj.dns1;
 	var oldDns2 = jsonObj.dns2;	
@@ -874,9 +881,9 @@ function doEditZone2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $
 		    dataType: "json",
 		    success: function(json) {		   
 		        var item = json.updatezoneresponse.zone;		  
-		        $midmenuItem1.data("jsonObj", item);
-		        $midmenuItem1.find("#zone_name").text(item.name);
-		        zoneJsonToRightPanel($midmenuItem1);	
+		        $leftmenuItem1.data("jsonObj", item);
+		        $leftmenuItem1.find("#zone_name").text(item.name);
+		        zoneJsonToRightPanel($leftmenuItem1);	
     		    
 		        $editFields.hide();      
                 $readonlyFields.show();       
