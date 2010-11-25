@@ -214,9 +214,10 @@ function serviceOfferingJsonToDetailsTab() {
         async: false,
         success: function(json) {  
             var items = json.listserviceofferingsresponse.serviceoffering;
-            if(items != null && items.length > 0)
+            if(items != null && items.length > 0) {
                 jsonObj = items[0];
                 $midmenuItem1.data("jsonObj", jsonObj);    
+            }
         }
     });        
         
