@@ -60,15 +60,19 @@ function afterLoadHostJSP($midmenuItem1) {
     $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);         
 }
 
-function hostJsonToDetailsTab() {    
+function hostJsonToDetailsTab() {   
+    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
+    if($midmenuItem1 == null)
+        return;
+    
+    var jsonObj = $midmenuItem1.data("jsonObj");
+    if(jsonObj == null)
+        return;    
+    
     var $thisTab = $("#right_panel_content #tab_content_details");  
     $thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();        
-    
-    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    var jsonObj = $midmenuItem1.data("jsonObj");	    
-    
-    $thisTab.data("jsonObj", jsonObj);           
+                
     $thisTab.find("#id").text(noNull(jsonObj.id));
     $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));
     $thisTab.find("#name").text(fromdb(jsonObj.name));
@@ -153,13 +157,18 @@ function hostJsonToDetailsTab() {
     $thisTab.find("#tab_container").show();               
 }
 
-function hostJsonToStatisticsTab() {
-    var $thisTab = $("#right_panel_content #tab_content_statistics");  
+function hostJsonToStatisticsTab() {    
+    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
+    if($midmenuItem1 == null)
+        return;
+    
+    var jsonObj = $midmenuItem1.data("jsonObj");
+    if(jsonObj == null)
+        return;
+    
+    var $thisTab = $("#right_panel_content").find("#tab_content_statistics");  
 	$thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();   
-
-    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    var jsonObj = $midmenuItem1.data("jsonObj");
     
     var $barChartContainer = $thisTab.find("#cpu_barchart");
          
@@ -196,14 +205,19 @@ function hostJsonToStatisticsTab() {
     $thisTab.find("#tab_container").show();  
 }
 
-function hostJsonToInstanceTab() {   
+function hostJsonToInstanceTab() {       	
+	var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
+    if($midmenuItem1 == null)
+        return;
+    
+    var jsonObj = $midmenuItem1.data("jsonObj");
+    if(jsonObj == null)
+        return;
+    
     var $thisTab = $("#right_panel_content #tab_content_instance");
 	$thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show(); 
-    		
-	var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");	
-	var jsonObj = $midmenuItem1.data("jsonObj");	
-    
+    	    
     $.ajax({
 		cache: false,
 		data: createURL("command=listVirtualMachines&hostid="+jsonObj.id),
@@ -239,13 +253,18 @@ function hostInstanceJSONToTemplate(jsonObj, template) {
 } 
 
 function hostJsonToRouterTab() {   
+    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
+    if($midmenuItem1 == null)
+        return;
+    
+    var jsonObj = $midmenuItem1.data("jsonObj");
+    if(jsonObj == null)
+        return;
+    
     var $thisTab = $("#right_panel_content #tab_content_router");
 	$thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show(); 
-    		
-	var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");	
-	var jsonObj = $midmenuItem1.data("jsonObj");	
-    
+        
     $.ajax({
 		cache: false,
 		data: createURL("command=listRouters&hostid="+jsonObj.id),
@@ -282,13 +301,18 @@ function hostRouterJSONToTemplate(jsonObj, template) {
 }  
 
 function hostJsonToSystemvmTab() {   
+    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
+    if($midmenuItem1 == null)
+        return;
+    
+    var jsonObj = $midmenuItem1.data("jsonObj");
+    if(jsonObj == null)
+        return;
+    
     var $thisTab = $("#right_panel_content #tab_content_systemvm");
 	$thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show(); 
-    		
-	var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");	
-	var jsonObj = $midmenuItem1.data("jsonObj");	
-    
+        
     $.ajax({
 		cache: false,
 		data: createURL("command=listSystemVms&hostid="+jsonObj.id),
@@ -429,7 +453,7 @@ var hostActionMap = {
 } 
 
 function doEnableMaintenanceMode($actionLink, $detailsTab, $midmenuItem1){ 
-    var jsonObj = $detailsTab.data("jsonObj");
+    var jsonObj = $midmenuItem1.data("jsonObj");
        
     $("#dialog_confirmation_enable_maintenance")
     .dialog("option", "buttons", {	                    
@@ -446,7 +470,7 @@ function doEnableMaintenanceMode($actionLink, $detailsTab, $midmenuItem1){
 } 
 
 function doCancelMaintenanceMode($actionLink, $detailsTab, $midmenuItem1){ 
-    var jsonObj = $detailsTab.data("jsonObj");
+    var jsonObj = $midmenuItem1.data("jsonObj");
        
     $("#dialog_confirmation_cancel_maintenance")
     .dialog("option", "buttons", {	                    
@@ -463,7 +487,7 @@ function doCancelMaintenanceMode($actionLink, $detailsTab, $midmenuItem1){
 } 
 
 function doForceReconnect($actionLink, $detailsTab, $midmenuItem1){ 
-    var jsonObj = $detailsTab.data("jsonObj");
+    var jsonObj = $midmenuItem1.data("jsonObj");
        
     $("#dialog_confirmation_force_reconnect")
     .dialog("option", "buttons", {	                    
@@ -480,7 +504,7 @@ function doForceReconnect($actionLink, $detailsTab, $midmenuItem1){
 } 
 
 function doRemoveHost($actionLink, $detailsTab, $midmenuItem1){ 
-    var jsonObj = $detailsTab.data("jsonObj");
+    var jsonObj = $midmenuItem1.data("jsonObj");
        
     $("#dialog_confirmation_remove_host")
     .dialog("option", "buttons", {	                    
@@ -497,7 +521,7 @@ function doRemoveHost($actionLink, $detailsTab, $midmenuItem1){
 } 
 
 function doUpdateOSPreference($actionLink, $detailsTab, $midmenuItem1){ 
-    var jsonObj = $detailsTab.data("jsonObj");
+    var jsonObj = $midmenuItem1.data("jsonObj");
        
     $("#dialog_update_os")
     .dialog("option", "buttons", {	                    
