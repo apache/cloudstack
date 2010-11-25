@@ -130,9 +130,8 @@ function doEditDiskOffering($actionLink, $detailsTab, $midmenuItem1) {
     });   
 }
 
-function doEditDiskOffering2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $editFields) { 
-    var $detailsTab = $("#right_panel_content #tab_content_details");   
-    var jsonObj = $detailsTab.data("jsonObj");
+function doEditDiskOffering2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $editFields) {     
+    var jsonObj = $midmenuItem1.data("jsonObj");
     var id = jsonObj.id;
     
     // validate values   
@@ -185,12 +184,19 @@ function diskOfferingToRightPanel($midmenuItem1) {
 }
 
 function diskOfferingJsonToDetailsTab() { 
+    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
+    if($midmenuItem1 == null)
+        return;
+    
+    var jsonObj = $midmenuItem1.data("jsonObj");
+    if(jsonObj == null)
+        return;
+     
     var $thisTab = $("#right_panel_content #tab_content_details");  
     $thisTab.find("#tab_container").hide(); 
-    $thisTab.find("#tab_spinning_wheel").show();        
+    $thisTab.find("#tab_spinning_wheel").show();   
     
-    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    var id = $midmenuItem1.data("jsonObj").id;
+    var id = jsonObj.id;
     
     var jsonObj;   
     $.ajax({
@@ -201,11 +207,10 @@ function diskOfferingJsonToDetailsTab() {
             var items = json.listdiskofferingsresponse.diskoffering;
             if(items != null && items.length > 0)
                 jsonObj = items[0];
+                $midmenuItem1.data("jsonObj", jsonObj);  
         }
-    });        
-    $thisTab.data("jsonObj", jsonObj);    
-    $midmenuItem1.data("jsonObj", jsonObj);    
-   
+    });       
+    
     $thisTab.find("#id").text(noNull(jsonObj.id));
     
     $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));
@@ -247,8 +252,9 @@ function diskOfferingClearRightPanel() {
 }
 
 function diskOfferingClearDetailsTab() {
-    var $thisTab = $("#right_panel_content #tab_content_details");     
+    var $thisTab = $("#right_panel_content").find("#tab_content_details");     
     $thisTab.find("#id").text("");    
+    $thisTab.find("#grid_header_title").text("");
     $thisTab.find("#name").text("");
     $thisTab.find("#name_edit").val("");    
     $thisTab.find("#displaytext").text("");

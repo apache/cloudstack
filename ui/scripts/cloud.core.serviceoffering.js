@@ -133,9 +133,8 @@ function doEditServiceOffering($actionLink, $detailsTab, $midmenuItem1) {
     });   
 }
 
-function doEditServiceOffering2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $editFields) { 
-    var $detailsTab = $("#right_panel_content #tab_content_details");   
-    var jsonObj = $detailsTab.data("jsonObj");
+function doEditServiceOffering2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $editFields) {     
+    var jsonObj = $midmenuItem1.data("jsonObj");
     var id = jsonObj.id;
     
     // validate values   
@@ -195,14 +194,20 @@ function serviceOfferingToRightPanel($midmenuItem1) {
 }
 
 function serviceOfferingJsonToDetailsTab() { 
+    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
+    if($midmenuItem1 == null)
+        return;
+    
+    var jsonObj = $midmenuItem1.data("jsonObj");
+    if(jsonObj == null)
+        return;     
+    
     var $thisTab = $("#right_panel_content #tab_content_details");  
     $thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();        
-    
-    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    var id = $midmenuItem1.data("jsonObj").id;
-    
-    var jsonObj;   
+      
+    var id = jsonObj.id;
+          
     $.ajax({
         data: createURL("command=listServiceOfferings&id="+id),
         dataType: "json",
@@ -211,11 +216,10 @@ function serviceOfferingJsonToDetailsTab() {
             var items = json.listserviceofferingsresponse.serviceoffering;
             if(items != null && items.length > 0)
                 jsonObj = items[0];
+                $midmenuItem1.data("jsonObj", jsonObj);    
         }
     });        
-    $thisTab.data("jsonObj", jsonObj);    
-    $midmenuItem1.data("jsonObj", jsonObj);    
-    
+        
     $thisTab.find("#id").text(noNull(jsonObj.id));
    
     $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name)); 
@@ -256,7 +260,8 @@ function serviceOfferingClearRightPanel() {
 
 function serviceOfferingClearDetailsTab() {
     var $thisTab = $("#right_panel_content #tab_content_details");    
-    $thisTab.find("#id").text("");    
+    $thisTab.find("#id").text("");  
+    $thisTab.find("#grid_header_title").text("");   
     $thisTab.find("#name").text("");
     $thisTab.find("#name_edit").val("");    
     $thisTab.find("#displaytext").text("");
