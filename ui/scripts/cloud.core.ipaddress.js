@@ -826,7 +826,8 @@ function ipJsonToDetailsTab() {
 
 function ipClearDetailsTab() {
     var $thisTab = $("#right_panel_content #tab_content_details");   
-        
+       
+    $thisTab.find("#grid_header_title").text("");    
     $thisTab.find("#ipaddress").text("");
     $thisTab.find("#zonename").text("");
     $thisTab.find("#vlanname").text("");   
@@ -834,7 +835,10 @@ function ipClearDetailsTab() {
     $thisTab.find("#network_type").text("");
     $thisTab.find("#domain").text("");
     $thisTab.find("#account").text("");
-    $thisTab.find("#allocated").text("");
+    $thisTab.find("#allocated").text("");    
+    $thisTab.find("#static_nat").text("");
+    $thisTab.find("#vm_of_static_nat").text("");
+    
     
     //actions ***  
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");  
