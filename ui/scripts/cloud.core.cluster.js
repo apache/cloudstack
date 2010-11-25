@@ -16,19 +16,19 @@
  * 
  */
   
-function afterLoadClusterJSP($midmenuItem1) {
+function afterLoadClusterJSP($leftmenuItem1) {
     showMiddleMenu();
      
     clearAddButtonsOnTop(); 
-    initAddHostButton($("#midmenu_add_host_button"), "cluster_page"); 
-    initAddPrimaryStorageButton($("#midmenu_add_primarystorage_button"), "cluster_page");  
+    initAddHostButton($("#midmenu_add_host_button"), "cluster_page", $leftmenuItem1); 
+    initAddPrimaryStorageButton($("#midmenu_add_primarystorage_button"), "cluster_page", $leftmenuItem1);  
     
     initDialog("dialog_add_host");
     initDialog("dialog_add_pool");    
     bindEventHandlerToDialogAddPool($("#dialog_add_pool"));	       
     
-	clusterJsonToRightPanel($midmenuItem1);	
-	var clusterId = $midmenuItem1.data("jsonObj").id;            
+	clusterJsonToRightPanel($leftmenuItem1);	
+	var clusterId = $leftmenuItem1.data("jsonObj").id;            
     var $midmenuContainer = $("#midmenu_container").empty();	
        
     var $container_host = $("<div id='midmenu_host_container'></div>"); 
@@ -47,14 +47,20 @@ function afterLoadClusterJSP($midmenuItem1) {
 }
 
 function clusterJsonToRightPanel($leftmenuItem1) {
-    clusterJsonToDetailsTab($leftmenuItem1);
+    $("#right_panel_content").data("$leftmenuItem1", $leftmenuItem1);
+    clusterJsonToDetailsTab();    
 }
 
-function clusterJsonToDetailsTab($leftmenuItem1) {	 
+function clusterJsonToDetailsTab() {	
+    var $leftmenuItem1 = $("#right_panel_content").data("$leftmenuItem1");
+    if($leftmenuItem1 == null)
+        return;
+    
     var jsonObj = $leftmenuItem1.data("jsonObj");    
-    var $detailsTab = $("#tab_content_details");   
-    $detailsTab.data("jsonObj", jsonObj);   
-            
+    if(jsonObj == null) 
+	    return;	
+     
+    var $detailsTab = $("#right_panel_content").find("#tab_content_details");   
     $detailsTab.find("#id").text(fromdb(jsonObj.id));
     $detailsTab.find("#name").text(fromdb(jsonObj.name));
     $detailsTab.find("#zonename").text(fromdb(jsonObj.zonename));        
