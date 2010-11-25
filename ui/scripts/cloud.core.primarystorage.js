@@ -52,14 +52,18 @@ function primarystorageToRightPanel($midmenuItem1) {
 }
 
 function primarystorageJsonToDetailsTab() {	
+    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
+    if($midmenuItem1 == null)
+        return;
+    
+    var jsonObj = $midmenuItem1.data("jsonObj");
+    if(jsonObj == null)
+        return; 
+    
     var $thisTab = $("#right_panel_content").find("#tab_content_details");  
     $thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();        
-    
-    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    var jsonObj = $midmenuItem1.data("jsonObj");  
-    $thisTab.data("jsonObj", jsonObj);   
-            
+                
     $thisTab.find("#id").text(noNull(jsonObj.id));
     $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));
     $thisTab.find("#name").text(fromdb(jsonObj.name));
@@ -192,7 +196,7 @@ var primarystorageActionMap = {
 
 function doEditPrimaryStorage($actionLink, $detailsTab, $midmenuItem1) {       
     var $readonlyFields  = $detailsTab.find("#tags");
-    var $editFields = $detailsTab.find("##tags_edit"); 
+    var $editFields = $detailsTab.find("#tags_edit"); 
              
     $readonlyFields.hide();
     $editFields.show();  
@@ -210,9 +214,8 @@ function doEditPrimaryStorage($actionLink, $detailsTab, $midmenuItem1) {
     });   
 }
 
-function doEditPrimaryStorage2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $editFields) { 
-    var $detailsTab = $("#right_panel_content #tab_content_details");   
-    var jsonObj = $detailsTab.data("jsonObj");
+function doEditPrimaryStorage2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $editFields) {       
+    var jsonObj = $midmenuItem1.data("jsonObj");
     var id = jsonObj.id;
     
     // validate values   
@@ -225,6 +228,9 @@ function doEditPrimaryStorage2($actionLink, $detailsTab, $midmenuItem1, $readonl
 	
 	var tags = $detailsTab.find("#tags_edit").val();
 	array1.push("&tags="+encodeURIComponent(tags));	
+	
+	if(array1.length == 0)
+	    return;
 	
 	$.ajax({
 	    data: createURL("command=updateStoragePool&id="+id+array1.join("")),
@@ -241,7 +247,7 @@ function doEditPrimaryStorage2($actionLink, $detailsTab, $midmenuItem1, $readonl
 }
 
 function doEnableMaintenanceModeForPrimaryStorage($actionLink, $detailsTab, $midmenuItem1){ 
-    var jsonObj = $detailsTab.data("jsonObj");
+    var jsonObj = $midmenuItem1.data("jsonObj");
        
     $("#dialog_confirmation")
     .text("Warning: placing the primary storage into maintenance mode will cause all VMs using volumes from it to be stopped.  Do you want to continue?")
@@ -259,7 +265,7 @@ function doEnableMaintenanceModeForPrimaryStorage($actionLink, $detailsTab, $mid
 } 
 
 function doCancelMaintenanceModeForPrimaryStorage($actionLink, $detailsTab, $midmenuItem1){ 
-    var jsonObj = $detailsTab.data("jsonObj");
+    var jsonObj = $midmenuItem1.data("jsonObj");
        
     $("#dialog_confirmation")
     .text("Please confirm you want to cancel maintenace")
@@ -277,7 +283,7 @@ function doCancelMaintenanceModeForPrimaryStorage($actionLink, $detailsTab, $mid
 } 
 
 function doDeletePrimaryStorage($actionLink, $detailsTab, $midmenuItem1){ 
-    var jsonObj = $detailsTab.data("jsonObj");
+    var jsonObj = $midmenuItem1.data("jsonObj");
        
     $("#dialog_confirmation_delete_primarystorage")
     .dialog("option", "buttons", {	                    
