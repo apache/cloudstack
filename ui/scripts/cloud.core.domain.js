@@ -21,14 +21,6 @@ var defaultRootLevel = 0;
 var childParentMap = {};  //map childDomainId to parentDomainId
 var domainIdNameMap = {}; //map domainId to domainName    
 
-function afterLoadDomainJSP() {   
-	//***** switch between different tabs (begin) ********************************************************************
-    var tabArray = [$("#tab_details"), $("#tab_resource_limits"), $("#tab_admin_account")];
-    var tabContentArray = [$("#tab_content_details"), $("#tab_content_resource_limits"), $("#tab_content_admin_account")];
-    switchBetweenDifferentTabs(tabArray, tabContentArray);       
-    //***** switch between different tabs (end) **********************************************************************	
-}
-
 function refreshWholeTree(rootDomainId, rootLevel) {
     drawRootNode(rootDomainId);
     drawTree(rootDomainId, (rootLevel+1), $("#domain_children_container_"+rootDomainId));  //draw the whole tree (under root node)			

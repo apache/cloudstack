@@ -43,14 +43,17 @@ $(document).ready(function() {
 	});		
 				
 	$("#leftmenu_domain").bind("click", function(event) {
-		if (selectLeftMenu($(this), true)) {
-			hideMiddleMenu();		
-			disableMultipleSelectionInMidMenu();      
-			clearMiddleMenu();
-					
-			bindEventHandlerToDomainTreeNode();		
-			refreshWholeTree(g_domainid, defaultRootLevel); 
-		}
+		selectLeftMenu($(this), true);
+				
+		hideMiddleMenu();		
+		disableMultipleSelectionInMidMenu();      
+		clearMiddleMenu();
+		
+		$("#right_panel").data("leftmenuId", "leftmenu_domain");
+				
+		bindEventHandlerToDomainTreeNode();		
+		refreshWholeTree(g_domainid, defaultRootLevel); 
+		
 		return false;
 	});	
 	$("#leftmenu_account").bind("click", function(event) {
