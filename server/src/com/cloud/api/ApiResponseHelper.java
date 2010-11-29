@@ -1076,9 +1076,11 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setPublicIpAddress(fwRule.getPublicIpAddress());
         if (fwRule.getPublicIpAddress() != null && fwRule.getPrivateIpAddress() != null) {
             UserVm vm = ApiDBUtils.findUserVmByPublicIpAndGuestIp(fwRule.getPublicIpAddress(), fwRule.getPrivateIpAddress());
-            response.setVirtualMachineId(vm.getId());
-            response.setVirtualMachineName(vm.getHostName());
-            response.setVirtualMachineDisplayName(vm.getDisplayName());
+            if(vm != null){
+            	response.setVirtualMachineId(vm.getId());
+            	response.setVirtualMachineName(vm.getHostName());
+            	response.setVirtualMachineDisplayName(vm.getDisplayName());
+            }
         }
         response.setObjectName("portforwardingrule");
         return response;
