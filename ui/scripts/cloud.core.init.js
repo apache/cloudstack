@@ -55,7 +55,7 @@ $(document).ready(function() {
 	});	
 	$("#leftmenu_account").bind("click", function(event) {
 		if (selectLeftMenu($(this))) {
-			listMidMenuItems("listAccounts", "listaccountsresponse", "account", "jsp/account.jsp", afterLoadAccountJSP, accountToMidmenu, accountToRightPanel, getMidmenuId, false);
+			listMidMenuItems("listAccounts", "listaccountsresponse", "account", "jsp/account.jsp", afterLoadAccountJSP, accountToMidmenu, accountToRightPanel, getMidmenuId, false, "leftmenu_account");
 		}
 		return false;
 	});	
@@ -191,6 +191,14 @@ $(document).ready(function() {
 		alert("Only IE7, IE8, FireFox 3.x, Chrome, and Safari browsers are supported at this time.");
 		return;
 	}
+	
+	// refresh button
+	$("#refresh_link").bind("click", function(event) {		
+		var leftmenuId = $("#right_panel").data("leftmenuId");
+		if(leftmenuId != null && leftmenuId.length > 0)
+		    $("#"+leftmenuId).click();
+		return false;
+	});
 	
 	// Initialize help drop down dialog
 	$("#help_link").bind("click", function(event) {
