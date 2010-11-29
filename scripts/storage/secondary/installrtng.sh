@@ -62,7 +62,7 @@ elif [ "$hyper" == "xen" ]
 then
    ext="vhd"
    templateId=1
-elif [ "hyper" == "vmware" ]
+elif [ "$hyper" == "vmware" ]
 then
    ext="ova"
    templateId=8
