@@ -11,7 +11,7 @@
 	<classpathentry kind="lib" path="/thirdparty/commons-pool-1.4.jar"/>
 	<classpathentry kind="lib" path="/thirdparty/ehcache-1.5.0.jar"/>
 	<classpathentry kind="lib" path="/thirdparty/junit-4.8.1.jar"/>
-	<classpathentry kind="lib" path="/thirdparty/xenserver-5.5.0-1.jar" sourcepath="/thirdparty/xen/XenServerJava"/>
+	<classpathentry kind="lib" path="/thirdparty/xenserver-5.6.0-1.jar" sourcepath="/thirdparty/XenServerJava"/>
 	<classpathentry kind="lib" path="/thirdparty/trilead-ssh2-build213.jar"/>
 	<classpathentry kind="lib" path="/thirdparty/commons-httpclient-3.1.jar"/>
 	<classpathentry kind="lib" path="/thirdparty/commons-codec-1.4.jar"/>
