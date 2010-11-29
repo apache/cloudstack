@@ -272,7 +272,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         s_statesTable.put(Types.VmPowerState.PAUSED, State.Running);
         s_statesTable.put(Types.VmPowerState.RUNNING, State.Running);
         s_statesTable.put(Types.VmPowerState.SUSPENDED, State.Running);
-        s_statesTable.put(Types.VmPowerState.UNKNOWN, State.Unknown);
         s_statesTable.put(Types.VmPowerState.UNRECOGNIZED, State.Unknown);
     }
     
@@ -473,7 +472,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                         VM.Record vmr = vbdr.VM.getRecord(conn);
                         if ((!isRefNull(vmr.residentOn) && vmr.residentOn.getUuid(conn).equals(_host.uuid))
                                 || (isRefNull(vmr.residentOn) && !isRefNull(vmr.affinity) && vmr.affinity.getUuid(conn).equals(_host.uuid))) {
-                            if (vmr.powerState != VmPowerState.HALTED && vmr.powerState != VmPowerState.UNKNOWN && vmr.powerState != VmPowerState.UNRECOGNIZED) {
+                            if (vmr.powerState != VmPowerState.HALTED && vmr.powerState != VmPowerState.UNRECOGNIZED) {
                                 try {
                                     vbdr.VM.hardShutdown(conn);
                                 } catch (XenAPIException e) {
@@ -2352,7 +2351,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 VM vm = vms.iterator().next();
 
                 VmPowerState vps = vm.getPowerState(conn);
-                if (vps != null && vps != VmPowerState.HALTED && vps != VmPowerState.UNKNOWN && vps != VmPowerState.UNRECOGNIZED) {
+                if (vps != null && vps != VmPowerState.HALTED && vps != VmPowerState.UNRECOGNIZED) {
                     return convertToState(vps);
                 }
             } catch (XenAPIException e) {
