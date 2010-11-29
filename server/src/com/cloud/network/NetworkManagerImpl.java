@@ -3146,6 +3146,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 throw new PermissionDeniedException("Cannot create a static nat rule for the ip:"+ipAddress.getAddress()+" ,this is already a source nat ip address");
             }
 
+            //if given ip address is already static nat, return error
+            if(ipAddress.isOneToOneNat()){
+                throw new PermissionDeniedException("Cannot create a static nat rule for the ip:"+ipAddress.getAddress()+" ,this is already a static nat ip address");
+            }
+            
             newFwRule = new FirewallRuleVO();
             newFwRule.setEnabled(true);
             newFwRule.setForwarding(true);
