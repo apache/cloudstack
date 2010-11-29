@@ -2100,7 +2100,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                     break;
                 }
             }
-            String uuid;
             if (vmtmpltvdi == null) {
                 tmpltsr = createNfsSRbyURI(new URI(mountpoint), false);
                 tmpltsr.scan(conn);
@@ -2130,14 +2129,19 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 }
                 snapshotvdi.setNameLabel(conn, "Template " + cmd.getName());
                 // vmtmpltvdi.setNameDescription(conn, cmd.getDescription());
-                uuid = snapshotvdi.getUuid(conn);
                 vmtmpltvdi = snapshotvdi;
 
-            } else
-                uuid = vmtmpltvdi.getUuid(conn);
-
+            }
             // Determine the size of the template
-            long phySize = vmtmpltvdi.getPhysicalUtilisation(conn);
+            VDI.Record vdiRec = vmtmpltvdi.getRecord(conn);
+            long phySize = vdiRec.physicalUtilisation;
+            String uuid = vdiRec.uuid;
+            String parentUuid = vdiRec.smConfig.get("vhd-parent");
+            if( parentUuid != null ) {
+                // base copy
+                VDI parentVdi = getVDIbyUuid(parentUuid);
+                phySize += parentVdi.getPhysicalUtilisation(conn);
+            }        
             return new PrimaryStorageDownloadAnswer(uuid, phySize);
 
         } catch (XenAPIException e) {
