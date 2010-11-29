@@ -62,13 +62,17 @@ $(document).ready(function() {
 	
 	
 	$("#leftmenu_dashboard").bind("click", function(event) {
-		if (selectLeftMenu($(this))) {
-			clearMiddleMenu();
-			hideMiddleMenu();
-			$("#right_panel").load("jsp/dashboard.jsp", function(){
-				afterLoadDashboardJSP();        
-			});
-		}
+	    selectLeftMenu($(this), false);	    
+		
+		clearMiddleMenu();
+		hideMiddleMenu();
+		
+		$("#right_panel").data("leftmenuId", "leftmenu_dashboard");
+		
+		$("#right_panel").load("jsp/dashboard.jsp", function(){
+			afterLoadDashboardJSP();        
+		});
+		
 		return false;
 	});	
 	$("#leftmenu_storage").bind("click", function(event) {
