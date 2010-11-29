@@ -40,16 +40,14 @@ function buildZoneTree() {
 	});  
     
 	$("#leftmenu_zone_node_template").unbind("click").bind("click", function(event) {
-		var template = $(this);
+		var $zoneNode = $(this);
 		var target = $(event.target);
 		var action = target.attr("id");
-		var id = template.data("id");
-		var name = template.data("name");
+		var id = $zoneNode.data("id");
+		var name = $zoneNode.data("name");
 		
 		switch (action) {
-			case "zone_arrow" :		
-			    selectRowInZoneTree(target.parent().parent());
-			    var $zoneNode = target.parent().parent().parent().parent();			   
+			case "zone_arrow" :				    
 			    var zoneObj = $zoneNode.data("jsonObj");
 			    var $zoneContent = $zoneNode.find("#zone_content");				  	   
 				if(target.hasClass("expanded_close")) {						
@@ -78,44 +76,12 @@ function buildZoneTree() {
 					$zoneContent.hide();
 					$zoneContent.find("#pods_container").empty();	
 				}				
-				break;
-											    
-			case "pod_arrow" :	
-			    selectRowInZoneTree(target.parent().parent());
-			    var $podNode = target.parent().parent().parent().parent();
-			    var podObj = $podNode.data("jsonObj");
-			    var $podContent = $podNode.find("#pod_content");					 	   
-				if(target.hasClass("expanded_close")) {						
-					target.removeClass("expanded_close").addClass("expanded_open");		
-					$podContent.show();				
-					target.parent().parent().siblings("#pod_content").show();
-					refreshClusterUnderPod($podNode); 
-				} 
-				else if(target.hasClass("expanded_open")) {					
-					target.removeClass("expanded_open").addClass("expanded_close");		
-					$podContent.hide();			
-					target.parent().parent().siblings("#pod_content").hide();		
-					$podContent.find("#clusters_container").empty();									
-				}
-				break;	
-				
+				break;					
 			
-			case "zone_name_label":	
-			case "zone_name":				    		    
-			    selectRowInZoneTree(target.parent().parent());			    
-			    var $leftmenuItem1 = target.parent().parent().parent().parent();	
-			    resourceLoadPage("jsp/zone.jsp", $leftmenuItem1);			    		   				    		   			    
-			    break;		
-			    	
-			case "pod_name_label" :	
-			case "pod_name" :				    
-			    selectRowInZoneTree(target.parent().parent());
-			    var $leftmenuItem1 = target.parent().parent().parent().parent();
-			    resourceLoadPage("jsp/pod.jsp", $leftmenuItem1);				   			
-				break;					    			
-			    
-			default:
-				break;
+			default:				    		    
+			    selectRowInZoneTree($(this).find("#zone_head"));	
+			    resourceLoadPage("jsp/zone.jsp", $(this));			    		   				    		   			    
+			    break;	
 		}
 		return false;
 	});  

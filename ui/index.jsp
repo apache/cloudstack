@@ -934,7 +934,7 @@ long milliseconds = new Date().getTime();
             <p> Adding Zone &hellip; </p>
         </div>
         <div id="row_container">
-	        <div class="leftmenu_content" id="header">  
+	        <div id="zone_header" class="leftmenu_content">  
 	            <div class="leftmenu_thirdindent">
 	                <div class="leftmenu_arrows white_nonexpanded_close" id="zone_arrow">
 	                </div>	                
