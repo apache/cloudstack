@@ -254,6 +254,7 @@ public class DownloadListener implements Listener {
 		updateBuilder.setLocalDownloadPath(answer.getDownloadPath());
 		updateBuilder.setInstallPath(answer.getInstallPath());
 		updateBuilder.setSize(answer.getTemplateSize());
+		updateBuilder.setPhysicalSize(answer.getTemplatePhySicalSize());
 		
 		vmTemplateHostDao.update(getTemplateHostId(), updateBuilder);
  	}
