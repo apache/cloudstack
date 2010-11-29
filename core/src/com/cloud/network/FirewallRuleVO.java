@@ -40,146 +40,147 @@ public class FirewallRuleVO implements FirewallRule {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
-	private long id;
+    private long id;
 
     @Column(name="group_id")
     private Long groupId;
 
-	@Column(name="public_ip_address")
-	private String publicIpAddress = null;
+    @Column(name="public_ip_address")
+    private String publicIpAddress = null;
 
-	@Column(name="public_port")
-	private String publicPort = null;
-	
-	@Column(name="private_ip_address")
-	private String privateIpAddress = null;
-	
-	@Column(name="private_port")
-	private String privatePort = null;
-	
-	@Column(name="enabled")
-	private boolean enabled = false;
-	
-	@Column(name="protocol")
-	private String protocol = "TCP";
-	
-	@Column(name="forwarding")
-	private boolean forwarding = true;
-	
-	@Column(name="algorithm")
-	private String algorithm = null;
-	
-	@Transient
-	private String vlanNetmask;
-	
-	public FirewallRuleVO() {
-	}
-	
-	public FirewallRuleVO(Long id, Long groupId, String publicIpAddress, String publicPort, String privateIpAddress, String privatePort, boolean enabled, String protocol,
-			boolean forwarding, String algorithm) {
-	    this.id = id;
-	    this.groupId = groupId;
-	    this.publicIpAddress = publicIpAddress;
-	    this.publicPort = publicPort;
-	    this.privateIpAddress = privateIpAddress;
-	    this.privatePort = privatePort;
-	    this.enabled = enabled;
-	    this.protocol = protocol;
-	    this.forwarding = forwarding;
-	}
-	
-	public FirewallRuleVO(FirewallRuleVO fwRule) {
-		this(fwRule.getId(), fwRule.getGroupId(), fwRule.getPublicIpAddress(), 
-			 fwRule.getPublicPort(), fwRule.getPrivateIpAddress(), 
-			 fwRule.getPrivatePort(), fwRule.isEnabled(), fwRule.getProtocol(),
-			 fwRule.isForwarding(), fwRule.getAlgorithm());
-	}
+    @Column(name="public_port")
+    private String publicPort = null;
 
-	@Override
+    @Column(name="private_ip_address")
+    private String privateIpAddress = null;
+
+    @Column(name="private_port")
+    private String privatePort = null;
+
+    @Column(name="enabled")
+    private boolean enabled = false;
+
+    @Column(name="protocol")
+    private String protocol = "TCP";
+
+    @Column(name="forwarding")
+    private boolean forwarding = true;
+
+    @Column(name="algorithm")
+    private String algorithm = null;
+
+    @Transient
+    private String vlanNetmask;
+
+    public FirewallRuleVO() {
+    }
+
+    public FirewallRuleVO(Long groupId, String publicIpAddress, String publicPort, String privateIpAddress, String privatePort, boolean enabled, String protocol,
+            boolean forwarding, String algorithm) {
+        this.groupId = groupId;
+        this.publicIpAddress = publicIpAddress;
+        this.publicPort = publicPort;
+        this.privateIpAddress = privateIpAddress;
+        this.privatePort = privatePort;
+        this.enabled = enabled;
+        this.protocol = protocol;
+        this.forwarding = forwarding;
+    }
+
+    public FirewallRuleVO(FirewallRuleVO fwRule) {
+        this(fwRule.getGroupId(), fwRule.getPublicIpAddress(), 
+                fwRule.getPublicPort(), fwRule.getPrivateIpAddress(), 
+                fwRule.getPrivatePort(), fwRule.isEnabled(), fwRule.getProtocol(),
+                fwRule.isForwarding(), fwRule.getAlgorithm());
+        id = fwRule.id;
+    }
+
+    @Override
     public long getId() {
-		return id;
-	}
-	
-	@Override
+        return id;
+    }
+
+    @Override
     public String getXid() {
-	    return Long.toHexString(id);
-	}
+        return Long.toHexString(id);
+    }
 
-	public Long getGroupId() {
-	    return groupId;
-	}
+    public Long getGroupId() {
+        return groupId;
+    }
 
-	public void setGroupId(Long groupId) {
-	    this.groupId = groupId;
-	}
+    public void setGroupId(Long groupId) {
+        this.groupId = groupId;
+    }
 
-	@Override
+    @Override
     public String getPublicIpAddress() {
-		return publicIpAddress;
-	}
-	
-	public void setPublicIpAddress(String address) {
-		this.publicIpAddress = address;
-	}
-	
-	@Override
+        return publicIpAddress;
+    }
+
+    public void setPublicIpAddress(String address) {
+        this.publicIpAddress = address;
+    }
+
+    @Override
     public String getPublicPort() {
-		return publicPort;
-	}
-	
-	public void setPublicPort(String port) {
-		this.publicPort = port;
-	}
-	
-	@Override
+        return publicPort;
+    }
+
+    public void setPublicPort(String port) {
+        this.publicPort = port;
+    }
+
+    @Override
     public String getPrivateIpAddress() {
-		return privateIpAddress;
-	}
-	
-	public void setPrivateIpAddress(String privateIpAddress) {
-		this.privateIpAddress = privateIpAddress;
-	}
-	
-	@Override
+        return privateIpAddress;
+    }
+
+    public void setPrivateIpAddress(String privateIpAddress) {
+        this.privateIpAddress = privateIpAddress;
+    }
+
+    @Override
     public String getPrivatePort() {
-		return privatePort;
-	}
-	
-	public void setPrivatePort(String privatePort) {
-		this.privatePort = privatePort;
-	}
-	public boolean isEnabled() {
-		return enabled;
-	}
-	public void setEnabled(boolean enabled) {
-		this.enabled = enabled;
-	}
-	public String getProtocol() {
-		return this.protocol;
-	}
-	public void setProtocol(String protocol) {
-		this.protocol = protocol.toLowerCase();
-	}
-	public boolean isForwarding() {
-		return forwarding;
-	}
-	public void setForwarding(boolean forwarding) {
-		this.forwarding = forwarding;
-	}
-	public String getAlgorithm() {
-		return algorithm;
-	}
-	public void setAlgorithm(String algorithm) {
-		this.algorithm = algorithm;
-	}
-	
-	public void setVlanNetmask(String vlanNetmask) {
-		this.vlanNetmask = vlanNetmask;
-	}
-	
-	public String getVlanNetmask() {
-		return vlanNetmask;
-	}
+        return privatePort;
+    }
+
+    public void setPrivatePort(String privatePort) {
+        this.privatePort = privatePort;
+    }
+    public boolean isEnabled() {
+        return enabled;
+    }
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
+    @Override
+    public String getProtocol() {
+        return this.protocol;
+    }
+    public void setProtocol(String protocol) {
+        this.protocol = protocol.toLowerCase();
+    }
+    public boolean isForwarding() {
+        return forwarding;
+    }
+    public void setForwarding(boolean forwarding) {
+        this.forwarding = forwarding;
+    }
+    public String getAlgorithm() {
+        return algorithm;
+    }
+    public void setAlgorithm(String algorithm) {
+        this.algorithm = algorithm;
+    }
+
+    public void setVlanNetmask(String vlanNetmask) {
+        this.vlanNetmask = vlanNetmask;
+    }
+
+    public String getVlanNetmask() {
+        return vlanNetmask;
+    }
 
 }
 
