@@ -272,7 +272,7 @@ function bindEventHandlerToDomainTreeNode() {
 		if (action.indexOf("domain_expand_icon")!=-1) {		
 		    clickExpandIcon(domainId);					
 		}
-		else if(action.indexOf("domain_name")!=-1) {
+		else {
             if($selectedDomainTreeNode != null && $selectedDomainTreeNode.data("jsonObj") != null)
                 $selectedDomainTreeNode.find("#domain_title_container_"+$selectedDomainTreeNode.data("jsonObj").id).removeClass("selected");      
             $thisNode.find("#domain_title_container_"+domainId).addClass("selected");
