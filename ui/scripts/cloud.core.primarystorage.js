@@ -97,7 +97,7 @@ function primarystorageJsonToDetailsTab() {
     });	  
     var $actionMenu = $thisTab.find("#action_link #action_menu");
     $actionMenu.find("#action_list").empty(); 
-    buildActionLinkForTab("Edit Primary Storage", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab);     
+    //buildActionLinkForTab("Edit Primary Storage", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab);  //because updateStoragePool API is commented out.
       
     if (jsonObj.state == 'Up' || jsonObj.state == "Connecting") {
 		buildActionLinkForTab("Enable Maintenance Mode", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab);  
