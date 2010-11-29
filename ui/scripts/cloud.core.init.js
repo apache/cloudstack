@@ -57,9 +57,8 @@ $(document).ready(function() {
 		return false;
 	});	
 	$("#leftmenu_account").bind("click", function(event) {
-		if (selectLeftMenu($(this))) {
-			listMidMenuItems("listAccounts", "listaccountsresponse", "account", "jsp/account.jsp", afterLoadAccountJSP, accountToMidmenu, accountToRightPanel, getMidmenuId, false, "leftmenu_account");
-		}
+		selectLeftMenu($(this), false);
+		listMidMenuItems("listAccounts", "listaccountsresponse", "account", "jsp/account.jsp", afterLoadAccountJSP, accountToMidmenu, accountToRightPanel, getMidmenuId, false, "leftmenu_account");
 		return false;
 	});	
 	
