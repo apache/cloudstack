@@ -956,7 +956,7 @@ long milliseconds = new Date().getTime();
             <p> Adding Pod &hellip; </p>
         </div>
         <div id="row_container">
-	        <div class="leftmenu_content" id="header">
+	        <div id="pod_header" class="leftmenu_content">
 	            <div class="leftmenu_fourthindent">
 	                <div class="leftmenu_arrows white_nonexpanded_close" id="pod_arrow">
 	                </div>	               
@@ -978,7 +978,7 @@ long milliseconds = new Date().getTime();
             <p> Adding Cluster &hellip; </p>
         </div>
         <div id="row_container">
-	        <div class="leftmenu_content" id="header">
+	        <div id="cluster_header" class="leftmenu_content">
 	            <div class="leftmenu_fifthindent">
 	                <div class="leftmenu_arrows white_nonexpanded_close" id="cluster_arrow">
 	                </div>	                
@@ -986,12 +986,6 @@ long milliseconds = new Date().getTime();
                     <span id="cluster_name"></span>
 	            </div>
 	        </div>	
-			<div id="cluster_content">
-	            <div id="hosts_container">
-	            </div>
-	            <div id="primarystorages_container">
-	            </div>
-	        </div>
 	    </div>
     </div> 
     <!-- Cluster Template (end) -->   

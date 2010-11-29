@@ -112,19 +112,48 @@ function buildZoneTree() {
 			    selectRowInZoneTree(target.parent().parent());
 			    var $leftmenuItem1 = target.parent().parent().parent().parent();
 			    resourceLoadPage("jsp/pod.jsp", $leftmenuItem1);				   			
-				break;		
-				    
-			case "cluster_name_label" :	
-			case "cluster_name" :	
-			    selectRowInZoneTree(target.parent().parent());
-			    var $leftmenuItem1 = target.parent().parent().parent().parent();	
-			    resourceLoadPage("jsp/cluster.jsp", $leftmenuItem1);
-			    break;	
+				break;					    			
 			    
 			default:
 				break;
 		}
 		return false;
+	});  
+	
+	$("#leftmenu_pod_node_template").unbind("click").bind("click", function(event) {
+	    var $podNode = $(this);
+		var target = $(event.target);
+		var action = target.attr("id");
+		var id = $podNode.data("id");
+		var name = $podNode.data("name");
+		
+		switch (action) {
+			case "pod_arrow" :				    		    
+			    var podObj = $podNode.data("jsonObj");
+			    var $podContent = $podNode.find("#pod_content");					 	   
+				if(target.hasClass("expanded_close")) {						
+					target.removeClass("expanded_close").addClass("expanded_open");									
+					$podContent.show();
+					refreshClusterUnderPod($podNode); 
+				} 
+				else if(target.hasClass("expanded_open")) {					
+					target.removeClass("expanded_open").addClass("expanded_close");	
+					$podContent.hide();		
+					$podContent.find("#clusters_container").empty();									
+				}	
+			    break;
+			default:			
+			    selectRowInZoneTree($(this).find("#pod_head"));	    
+	            resourceLoadPage("jsp/pod.jsp", $(this));			
+			    break;
+	    }		    	    
+	    return false;
+	});  
+	
+	$("#leftmenu_cluster_node_template").unbind("click").bind("click", function(event) {
+	    selectRowInZoneTree($(this).find("#cluster_head"));	    
+	    resourceLoadPage("jsp/cluster.jsp", $(this));
+	    return false;
 	});  
 }    
 
