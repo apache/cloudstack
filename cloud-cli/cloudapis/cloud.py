@@ -16,7 +16,7 @@ class CloudAPI:
 	def __init__(self,
 			server="127.0.0.1:8096",
 			responseformat="xml",
-			stripxml="false"
+			stripxml="true"
 			):
 		self.__dict__.update(locals())
         
