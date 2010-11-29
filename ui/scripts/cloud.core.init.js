@@ -160,6 +160,8 @@ $(document).ready(function() {
 		   
 			expandOrCollapseZoneTree();
 			
+			$("#right_panel").data("leftmenuId", "leftmenu_physical_resource");	
+			
 			resourceLoadPage("jsp/resource.jsp", null);			
 			return false;
 		});
