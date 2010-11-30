@@ -225,6 +225,10 @@ function resourceLoadPage(pageToShow, $midmenuItem1) {   //$midmenuItem1 is eith
         }
         else if(pageToShow == "jsp/pod.jsp") {
             afterLoadPodJSP($midmenuItem1); 
+            
+            $(this).data("onRefreshFn", function() {
+		        podJsonToDetailsTab();
+		    });  
         }
         else if(pageToShow == "jsp/cluster.jsp") {
             afterLoadClusterJSP($midmenuItem1); 

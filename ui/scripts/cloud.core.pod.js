@@ -53,6 +53,19 @@ function podJsonToDetailsTab() {
     if(jsonObj == null) 
 	    return;	
     
+    $.ajax({
+        data: createURL("command=listPods&id="+jsonObj.id),
+        dataType: "json",
+        async: false,
+        success: function(json) {            
+            var items = json.listpodsresponse.pod;			
+			if(items != null && items.length > 0) {
+                jsonObj = items[0];
+                $leftmenuItem1.data("jsonObj", jsonObj);                  
+            }
+        }
+    });    
+    
     var $thisTab = $("#right_panel_content #tab_content_details");  
     $thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();       
@@ -76,23 +89,14 @@ function podJsonToDetailsTab() {
     
     // hide network tab upon zone vlan
     var networkType;  
-    $.ajax({
-	    data: createURL("command=listZones"),
-	    //data: createURL("command=listZones&id="+noNull(jsonObj.zoneid)),
+    $.ajax({	    
+	    data: createURL("command=listZones&id="+noNull(jsonObj.zoneid)),
 		dataType: "json",	
 		async: false,	
 		success: function(json) {
 			var items = json.listzonesresponse.zone;						
 			if (items != null && items.length > 0) {					    
-				//zoneVlan = items[0].vlan;  //comment this one out until bug 7162 is fixed ("listZones API should take in id parameter")
-				
-				//temporary code before bug 7162 is fixed ********(begin)***********		
-				for(var i=0; i<items.length; i++) {				   		    
-				    if(items[i].id == jsonObj.zoneid) {
-				        networkType = items[i].networktype; 
-				    }
-				}	
-				//temporary code before bug 7162 is fixed ********(end)*************	
+				networkType = items[0].networktype;
 			}				
 		}
 	});	
