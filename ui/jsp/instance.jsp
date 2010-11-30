@@ -1,3 +1,6 @@
+<%@ taglib uri="http://java.sun.com/jstl/fmt" prefix="fmt" %>
+<fmt:setBundle basename="resources/messages"/>
+
 <%@ page import="java.util.*" %>
 
 <%@ page import="com.cloud.utils.*" %>
@@ -24,7 +27,7 @@
     </div>
     <div class="tabbox" style="margin-top: 15px;">
         <div class="content_tabs on" id="tab_details">
-            <%=t.t("Details")%></div>
+            <fmt:message key="label.details" /></div>
         <div class="content_tabs off" id="tab_volume">
             <%=t.t("Volume")%></div>
         <div class="content_tabs off" id="tab_statistics">

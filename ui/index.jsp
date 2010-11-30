@@ -1,14 +1,7 @@
-<%@ page import="java.util.*" %>
+<%@ taglib uri="http://java.sun.com/jstl/fmt" prefix="fmt" %>
+<fmt:setBundle basename="resources/messages"/>
+<% long now = System.currentTimeMillis(); %>
 
-<%@ page import="com.cloud.utils.*" %>
-
-<%
-    Locale browserLocale = request.getLocale();
-    CloudResourceBundle t = CloudResourceBundle.getBundle("resources/resource", browserLocale);
-%>
-<%
-long milliseconds = new Date().getTime();
-%>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -16,7 +9,6 @@ long milliseconds = new Date().getTime();
     <meta http-equiv='cache-control' content='no-cache'>
     <meta http-equiv='expires' content='0'>
     <meta http-equiv='pragma' content='no-cache'>
-    <meta name="version" content="1.9.1.2010-08-25T16:16:56Z" />
     <link rel="stylesheet" href="css/jquery-ui.custom.css" type="text/css" />
     <link rel="stylesheet" href="css/logger.css" type="text/css" />
     <link rel="stylesheet" href="css/main.css" type="text/css" />
@@ -30,37 +22,37 @@ long milliseconds = new Date().getTime();
     <script type="text/javascript" src="scripts/jquery.md5.js"></script>
 
     <!-- cloud.com scripts -->
-    <script type="text/javascript" src="scripts/cloud.logger.js?t=<%=milliseconds%>"></script>
-	<script type="text/javascript" src="scripts/cloud.core.callbacks.js?t=<%=milliseconds%>"></script>
-    <script type="text/javascript" src="scripts/cloud.core.js?t=<%=milliseconds%>"></script>
-	<script type="text/javascript" src="scripts/cloud.core.init.js?t=<%=milliseconds%>"></script>
-    <script type="text/javascript" src="scripts/cloud.core.instance.js?t=<%=milliseconds%>"></script>
-    <script type="text/javascript" src="scripts/cloud.core.event.js?t=<%=milliseconds%>"></script>
-    <script type="text/javascript" src="scripts/cloud.core.alert.js?t=<%=milliseconds%>"></script>
-    <script type="text/javascript" src="scripts/cloud.core.account.js?t=<%=milliseconds%>"></script>
-    <script type="text/javascript" src="scripts/cloud.core.volume.js?t=<%=milliseconds%>"></script>
-    <script type="text/javascript" src="scripts/cloud.core.snapshot.js?t=<%=milliseconds%>"></script>
-    <script type="text/javascript" src="scripts/cloud.core.ipaddress.js?t=<%=milliseconds%>"></script>
-    <script type="text/javascript" src="scripts/cloud.core.template.js?t=<%=milliseconds%>"></script>
-    <script type="text/javascript" src="scripts/cloud.core.iso.js?t=<%=milliseconds%>"></script>
-    <script type="text/javascript" src="scripts/cloud.core.router.js?t=<%=milliseconds%>"></script>
-    <script type="text/javascript" src="scripts/cloud.core.dashboard.js?t=<%=milliseconds%>"></script>
-    <script type="text/javascript" src="scripts/cloud.core.domain.js?t=<%=milliseconds%>"></script>    
-    <script type="text/javascript" src="scripts/cloud.core.serviceoffering.js?t=<%=milliseconds%>"></script>
-    <script type="text/javascript" src="scripts/cloud.core.diskoffering.js?t=<%=milliseconds%>"></script>
-    <script type="text/javascript" src="scripts/cloud.core.globalsetting.js?t=<%=milliseconds%>"></script>
-    <script type="text/javascript" src="scripts/cloud.core.resource.js?t=<%=milliseconds%>"></script>
-    <script type="text/javascript" src="scripts/cloud.core.zone.js?t=<%=milliseconds%>"></script>
-    <script type="text/javascript" src="scripts/cloud.core.pod.js?t=<%=milliseconds%>"></script>
-    <script type="text/javascript" src="scripts/cloud.core.cluster.js?t=<%=milliseconds%>"></script>
-    <script type="text/javascript" src="scripts/cloud.core.host.js?t=<%=milliseconds%>"></script>
-    <script type="text/javascript" src="scripts/cloud.core.primarystorage.js?t=<%=milliseconds%>"></script>
-    <script type="text/javascript" src="scripts/cloud.core.systemvm.js?t=<%=milliseconds%>"></script>
+    <script type="text/javascript" src="scripts/cloud.logger.js?t=<%=now%>"></script>
+	<script type="text/javascript" src="scripts/cloud.core.callbacks.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core.js?t=<%=now%>"></script>
+	<script type="text/javascript" src="scripts/cloud.core.init.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core.instance.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core.event.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core.alert.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core.account.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core.volume.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core.snapshot.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core.ipaddress.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core.template.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core.iso.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core.router.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core.dashboard.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core.domain.js?t=<%=now%>"></script>    
+    <script type="text/javascript" src="scripts/cloud.core.serviceoffering.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core.diskoffering.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core.globalsetting.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core.resource.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core.zone.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core.pod.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core.cluster.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core.host.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core.primarystorage.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core.systemvm.js?t=<%=now%>"></script>
 	
 	<!-- Favicon -->
 	<link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
 
-    <title>Cloud.com CloudStack Management Console</title>
+    <title><fmt:message key="label.cloud.console"/></title>
 </head>
 <body>
 	<!-- Main Login Dialog (begin)-->
@@ -74,40 +66,40 @@ long milliseconds = new Date().getTime();
                 <div class="main_loginbox_mid">
                 	<div class="login_contentbox">
                     	<div class="login_contentbox_title">
-                        	<h1>Welcome to Management Console &hellip;</h1>
+                        	<h1><fmt:message key="label.welcome.cloud.console"/>&hellip;</h1>
                         </div>
                         
                         <div class="login_formbox">
                         	<form id="loginForm" action="#" method="post" name="loginForm">
                             	<ol>
                                 	<li>
-                                    	<label for="user_name">Username: </label>
+                                    	<label for="user_name"><fmt:message key="label.username"/>: </label>
                                         <div class="login_formbox_textbg">
                                         	<input id="account_username" class="text" type="text" name="account_username" AUTOCOMPLETE="off"/>
                                         </div>
                                     </li>
                                     
                                     <li>
-                                    	<label for="user_name">Password: </label>
+                                    	<label for="user_name"><fmt:message key="label.password"/>: </label>
                                         <div class="login_formbox_textbg">
                                         	<input id="account_password" class="text" type="password" name="account_password" AUTOCOMPLETE="off"/>
                                         </div>
                                     </li>
                                     
                                     <li>
-                                    	<label for="user_name">Domain: </label>
+                                    	<label for="user_name"><fmt:message key="label.domain"/>: </label>
                                         <div class="login_formbox_textbg">
                                         	<input id="account_domain" class="text" type="text" name="account_domain" />
                                         </div>
                                     </li>
                                 </ol>
                                 <div class="loginbutton_box">
-                                	<div class="login_button" id="loginbutton" >Login</div>
+                                	<div class="login_button" id="loginbutton" ><fmt:message key="label.login"/></div>
                                 </div>
                             </form>
                             
                             <div class="error_box" id="login_error" style="display:none;">
-                            	<p>Your username/password does not match our records.</p>
+                            	<p><fmt:message key="error.login"/></p>
                             </div>
                         </div>
                     </div>
@@ -132,7 +124,7 @@ long milliseconds = new Date().getTime();
             <div class="header_right">
                 <div class="userlinks">
                     <p>
-                        Welcome <span id="main_username">Anonymous</span>, <a href="#" id="main_logout">Logout</a>
+                        <fmt:message key="label.welcome"/> <span id="main_username"></span>, <a href="#" id="main_logout"><fmt:message key="label.logout"/></a>
                     </p>
                 </div>
             </div>
@@ -155,22 +147,21 @@ long milliseconds = new Date().getTime();
                             </ol>
                             </form>
                             <a href="#">
-                                <%=t.t("advanced")%></a>
+                                <fmt:message key="label.advanced"/></a>
                             <div class="adv_searchpopup" id="adv_search_dialog" style="display: none;">
                                 <div class="adv_searchformbox">
-                                    <h3>
-                                        Advance Search</h3>
-                                    <a id="advanced_search_close" href="#">Close </a>
+                                    <h3><fmt:message key="label.advanced.search"/></h3>
+                                    <a id="advanced_search_close" href="#"><fmt:message key="label.close"/> </a>
                                     <form action="#" method="post">
                                     <ol style="margin-top: 8px;">
                                         <li>
                                             <label for="filter">
-                                                Name:</label>
+                                                <fmt:message key="label.name"/>:</label>
                                             <input class="text" type="text" name="adv_search_name" id="adv_search_name" />
                                         </li>
                                         <li>
                                             <label for="filter">
-                                                Status:</label>
+                                                <fmt:message key="label.status"/>:</label>
                                             <select class="select" id="adv_search_state">
                                                 <option value=""></option>
                                                 <option value="Creating">Creating</option>
@@ -187,7 +178,7 @@ long milliseconds = new Date().getTime();
                                         </li>
                                         <li>
                                             <label for="filter">
-                                                Zone:</label>
+                                                <fmt:message key="label.zone"/>:</label>
                                             <select class="select" id="adv_search_zone">
                                             </select>
                                         </li>
@@ -206,7 +197,8 @@ long milliseconds = new Date().getTime();
                                 <div class="actionpanel_button_icons">
                                     <img src="images/actions_actionicon.png" alt="Add" /></div>
                                 <div class="actionpanel_button_links">
-                                    <%=t.t("actions")%></div>
+									<fmt:message key="label.actions"/>
+                                </div>
                                 <div class="action_ddarrow">
                                 </div>
                             </div>
@@ -221,7 +213,8 @@ long milliseconds = new Date().getTime();
                                 <div class="actionpanel_button_icons">
                                     <img src="images/addvm_actionicon.png" alt="Add" /></div>
                                 <div class="actionpanel_button_links" id="label">
-                                    <%=t.t("add")%></div>
+									<fmt:message key="label.add"/>
+                                </div>
                             </div>
                         </div>
                          
@@ -230,7 +223,8 @@ long milliseconds = new Date().getTime();
                                 <div class="actionpanel_button_icons">
                                     <img src="images/addvm_actionicon.png" alt="Add Zone" /></div>
                                 <div class="actionpanel_button_links" id="Div3">
-                                    <%=t.t("add.zone")%></div>
+									<fmt:message key="label.add.zone"/>
+                                </div>
                             </div>
                         </div> 
                         <div class="actionpanel_button_wrapper" id="midmenu_add_host_button" style="display: none;">
@@ -238,7 +232,8 @@ long milliseconds = new Date().getTime();
                                 <div class="actionpanel_button_icons">
                                     <img src="images/addvm_actionicon.png" alt="Add Host" /></div>
                                 <div class="actionpanel_button_links" id="label">
-                                    <%=t.t("add.host")%></div>
+									<fmt:message key="label.add.host"/>
+                                </div>
                             </div>
                         </div>
                         
@@ -247,7 +242,8 @@ long milliseconds = new Date().getTime();
                                 <div class="actionpanel_button_icons">
                                     <img src="images/addvm_actionicon.png" alt="Add Primary Storage" /></div>
                                 <div class="actionpanel_button_links" id="Div2">
-                                    <%=t.t("add.primarystorage")%></div>
+									<fmt:message key="label.add.primarystorage"/>
+                                </div>
                             </div>
                         </div>
                         
@@ -256,7 +252,8 @@ long milliseconds = new Date().getTime();
                                 <div class="actionpanel_button_icons">
                                     <img src="images/addvm_actionicon.png" alt="Add Secondary Storage" /></div>
                                 <div class="actionpanel_button_links" id="Div4">
-                                    <%=t.t("add.secondarystorage")%></div>
+									<fmt:message key="label.add.secondarystorage"/>
+                                </div>
                             </div>
                         </div>
                         
@@ -265,7 +262,8 @@ long milliseconds = new Date().getTime();
                                 <div class="actionpanel_button_icons">
                                     <img src="images/addvm_actionicon.png" alt="Add pod" /></div>
                                 <div class="actionpanel_button_links" id="Div6">
-                                    <%=t.t("add.pod")%></div>
+									<fmt:message key="label.add.pod"/>
+                                </div>
                             </div>
                         </div>
                         
@@ -274,7 +272,8 @@ long milliseconds = new Date().getTime();
                                 <div class="actionpanel_button_icons">
                                     <img src="images/addvm_actionicon.png" alt="Add VLAN" /></div>
                                 <div class="actionpanel_button_links" id="Div8">
-                                    <%=t.t("add.vlan")%></div>
+									<fmt:message key="label.add.vlan"/>
+                                </div>
                             </div>
                         </div>
                         
@@ -283,7 +282,8 @@ long milliseconds = new Date().getTime();
                                 <div class="actionpanel_button_icons">
                                     <img src="images/addvm_actionicon.png" alt="Add Direct IP Range" /></div>
                                 <div class="actionpanel_button_links" id="Div10">
-                                    <%=t.t("add.direct.ip.range")%></div>
+									<fmt:message key="label.add.direct.iprange"/>
+                                </div>
                             </div>
                         </div>
                         
@@ -292,7 +292,8 @@ long milliseconds = new Date().getTime();
                                 <div class="actionpanel_button_icons">
                                     <img src="images/addvm_actionicon.png" alt="Update SSL Certificate" /></div>
                                 <div class="actionpanel_button_links" id="Div12">
-                                    <%=t.t("update.SSL.certificate")%></div>
+									<fmt:message key="label.update.ssl.cert"/>
+                                </div>
                             </div>
                         </div>
                         <!--  
@@ -301,7 +302,8 @@ long milliseconds = new Date().getTime();
                                 <div class="actionpanel_button_icons">
                                     <img src="images/addvm_actionicon.png" alt="Add" /></div>
                                 <div class="actionpanel_button_links" id="label">
-                                    <%=t.t("add")%></div>
+									<fmt:message key="label.add"/>
+                                </div>
                             </div>
                         </div>
                         <div class="actionpanel_button_wrapper" id="midmenu_add3_link" style="display: none;">
@@ -309,7 +311,8 @@ long milliseconds = new Date().getTime();
                                 <div class="actionpanel_button_icons">
                                     <img src="images/addvm_actionicon.png" alt="Add" /></div>
                                 <div class="actionpanel_button_links" id="label">
-                                    <%=t.t("add")%></div>
+                                    <fmt:message key="label.add"/>
+								</div>
                             </div>
                         </div>                        
                         -->
@@ -318,7 +321,8 @@ long milliseconds = new Date().getTime();
                                 <div class="actionpanel_button_icons">
                                     <img src="images/startvm_actionicon.png" alt="Start VM" /></div>
                                 <div class="actionpanel_button_links">
-                                    Start VM</div>
+									<fmt:message key="label.vm.start"/>
+								</div>
                             </div>
                         </div>
                         <div class="actionpanel_button_wrapper" id="midmenu_stopvm_link" style="display: none;">
@@ -326,7 +330,8 @@ long milliseconds = new Date().getTime();
                                 <div class="actionpanel_button_icons">
                                     <img src="images/stopvm_actionicon.png" alt="Stop VM" /></div>
                                 <div class="actionpanel_button_links">
-                                    Stop VM</div>
+                                    <fmt:message key="label.vm.stop"/>
+								</div>
                             </div>
                         </div>
                         <div class="actionpanel_button_wrapper" id="midmenu_rebootvm_link" style="display: none;">
@@ -334,7 +339,8 @@ long milliseconds = new Date().getTime();
                                 <div class="actionpanel_button_icons">
                                     <img src="images/rebootvm_actionicon.png" alt="Reboot VM" /></div>
                                 <div class="actionpanel_button_links">
-                                    Reboot VM</div>
+                                    <fmt:message key="label.vm.reboot"/>
+								</div>
                             </div>
                         </div>
                         <div class="actionpanel_button_wrapper" id="midmenu_destroyvm_link" style="display: none;">
@@ -342,7 +348,8 @@ long milliseconds = new Date().getTime();
                                 <div class="actionpanel_button_icons">
                                     <img src="images/destroyvm_actionicon.png" alt="Destroy VM" /></div>
                                 <div class="actionpanel_button_links">
-                                    Destroy VM</div>
+                                    <fmt:message key="label.vm.destroy"/>
+								</div>
                             </div>
                         </div>
                         <div class="actionpanel_button_wrapper" id="help_link" style="display: block; border:none; float: right;
@@ -351,7 +358,8 @@ long milliseconds = new Date().getTime();
                                 <div class="actionpanel_button_icons">
                                     <img src="images/help_actionicon.png" alt="Help" /></div>
                                 <div class="actionpanel_button_links">
-                                    <%=t.t("help")%></div>
+                                    <fmt:message key="label.help"/>
+								</div>
                             </div>
                         </div>
                         
@@ -361,14 +369,14 @@ long milliseconds = new Date().getTime();
                                 <div class="actionpanel_button_icons">
                                     <img src="images/refresh_actionicon.png" alt="Refresh" /></div>
                                 <div class="actionpanel_button_links">
-                                    Refresh</div>
+                                    <fmt:message key="label.refresh"/></div>
                             </div>
                         </div>
                         
 						<div class="help_dropdown_box" id="help_dropdown_dialog" style="display:none;">
                             	<div class="help_dropdown_box_titlebox">
-                                	<h2>Help</h2>
-                                    <a id="help_dropdown_close" href="#"> Close</a>
+                                	<h2><fmt:message key="label.help"/></h2>
+                                    <a id="help_dropdown_close" href="#"> <fmt:message key="label.close"/></a>
                                 </div>
                                 
                                 <div class="help_dropdown_box_textbox" id="help_dropdown_body">
@@ -409,7 +417,7 @@ long milliseconds = new Date().getTime();
                             <div class="midmenu_mainloader_animatedicon">
                             </div>
                             <p>
-                                Loading &hellip;</p>
+                                <fmt:message key="label.loading"/> &hellip;</p>
                         </div>
                         <div id="midmenu_container">                            
                         </div>
@@ -432,7 +440,7 @@ long milliseconds = new Date().getTime();
                         <div class="leftmenu_firstindent">
                             <div class="leftmenu_list_icons">
                                 <img src="images/leftmenu_dashboardicon.png" alt="Dashboard" /></div>
-                            <%=t.t("dashboard")%>
+                            <fmt:message key="label.menu.dashboard"/>
                         </div>
                     </div>
                     
@@ -443,7 +451,7 @@ long milliseconds = new Date().getTime();
                             <div class="leftmenu_arrows_firstlevel_open" id="expandable_first_level_arrow" style="display:none;"></div>
                             <div class="leftmenu_list_icons">
                                 <img src="images/instance_leftmenuicon.png" alt="Instances" /></div>
-                            <%=t.t("instances")%>
+                            <fmt:message key="label.menu.instances"/>
                         </div>
                     </div>
                     
@@ -453,7 +461,7 @@ long milliseconds = new Date().getTime();
 								<div class="leftmenu_secondindent">
 									<div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
 									</div>
-									<span id="label">My Instances</span>
+									<span id="label"><fmt:message key="label.menu.my.instances"/></span>
 								</div>
 							</div>
 						</div>
@@ -462,7 +470,7 @@ long milliseconds = new Date().getTime();
 								<div class="leftmenu_secondindent">
 									<div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
 									</div>
-									<span id="label">All Instances</span>
+									<span id="label"><fmt:message key="label.menu.all.instances"/></span>
 								</div>
 							</div>
 						</div>
@@ -471,7 +479,7 @@ long milliseconds = new Date().getTime();
 								<div class="leftmenu_secondindent">
 									<div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
 									</div>
-									<span id="label">Running Instances</span>
+									<span id="label"><fmt:message key="label.menu.running.instances"/></span>
 								</div>
 							</div>
 						</div>
@@ -480,7 +488,7 @@ long milliseconds = new Date().getTime();
 								<div class="leftmenu_secondindent">
 									<div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
 									</div>
-									<span id="label">Stopped Instances</span>
+									<span id="label"><fmt:message key="label.menu.stopped.instances"/></span>
 								</div>
 							</div>
 						</div>
@@ -489,7 +497,7 @@ long milliseconds = new Date().getTime();
 								<div class="leftmenu_secondindent">
 									<div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
 									</div>
-									<span id="label">Destroyed Instances</span>
+									<span id="label"><fmt:message key="label.menu.destroyed.instances"/></span>
 								</div>
 							</div>
 						</div>
@@ -502,7 +510,7 @@ long milliseconds = new Date().getTime();
                             <div class="leftmenu_arrows_firstlevel_open" id="expandable_first_level_arrow" style="display:none;"></div>
                             <div class="leftmenu_list_icons">
                                 <img src="images/storage_leftmenuicon.png" alt="Storage" /></div>
-                            <%=t.t("storage")%>
+                            <fmt:message key="label.menu.storage"/>
                         </div>
                     </div>
                     <div class="leftmenu_expandedbox" style="display: none">
@@ -514,7 +522,7 @@ long milliseconds = new Date().getTime();
                                    	<div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
                                     </div>
                                       
-                                    <%=t.t("volumes")%>
+                                    <fmt:message key="label.menu.volumes"/>
                                 </div>
                             </div>
                         </div>
@@ -524,7 +532,7 @@ long milliseconds = new Date().getTime();
                                 	  <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
                                             </div>
                                    
-                                    <%=t.t("snapshots")%>
+                                    <fmt:message key="label.menu.snapshots"/>
                                 </div>
                             </div>
                         </div>
@@ -536,7 +544,7 @@ long milliseconds = new Date().getTime();
                             <div class="leftmenu_arrows_firstlevel_open" id="expandable_first_level_arrow" style="display:none;"></div>
                             <div class="leftmenu_list_icons">
                                 <img src="images/network_leftmenuicon.png" alt="Network" /></div>
-                            <%=t.t("Network")%>
+                            <fmt:message key="label.menu.network"/>
                         </div>
                     </div>
                     <div class="leftmenu_expandedbox" style="display: none">
@@ -546,7 +554,7 @@ long milliseconds = new Date().getTime();
                                    	<div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
                                     </div>
                                     
-                                    <%=t.t("ip.addresses")%>
+                                    <fmt:message key="label.menu.ipaddresses"/>
                                 </div>
                             </div>
                         </div>                        
@@ -558,7 +566,7 @@ long milliseconds = new Date().getTime();
                             <div class="leftmenu_arrows_firstlevel_open" id="expandable_first_level_arrow" style="display:none;"></div>
                             <div class="leftmenu_list_icons">
                                 <img src="images/templates_leftmenuicon.png" alt="Templates" /></div>
-                            <%=t.t("templates")%>
+                            <fmt:message key="label.menu.templates"/>
                         </div>
                     </div>
                     <div class="leftmenu_expandedbox" style="display: none">
@@ -568,7 +576,7 @@ long milliseconds = new Date().getTime();
                                     <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
                                     </div>
                                     
-                                    <%=t.t("templates")%>
+                                    <fmt:message key="label.menu.templates"/>
                                 </div>
                             </div>
                             <div id="leftmenu_template_filter_container">
@@ -578,8 +586,7 @@ long milliseconds = new Date().getTime();
                                             <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
                                             </div>
                                             
-                                            <div>
-                                                <%=t.t("my.templates")%></div>
+                                            <div><fmt:message key="label.menu.my.templates"/></div>
                                         </div>
                                     </div>
                                 </div>
@@ -589,8 +596,7 @@ long milliseconds = new Date().getTime();
                                             <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
                                             </div>
                                           
-                                            <div>
-                                                <%=t.t("featured.templates")%></div>
+                                            <div><fmt:message key="label.menu.featured.templates"/></div>
                                         </div>
                                     </div>
                                 </div>
@@ -600,8 +606,7 @@ long milliseconds = new Date().getTime();
                                             <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
                                             </div>
                                             
-                                            <div>
-                                                <%=t.t("community.templates")%></div>
+                                            <div><fmt:message key="label.menu.community.templates"/></div>
                                         </div>
                                     </div>
                                 </div>
@@ -613,7 +618,7 @@ long milliseconds = new Date().getTime();
                                     <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
                                     </div>
                                     
-                                    <%=t.t("isos")%>
+                                    <fmt:message key="label.menu.isos"/>
                                 </div>
                             </div>
                             <div id="leftmenu_iso_filter_container">
@@ -623,8 +628,7 @@ long milliseconds = new Date().getTime();
                                             <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
                                             </div>
                                             
-                                            <div>
-                                                <%=t.t("my.isos")%></div>
+                                            <div><fmt:message key="label.menu.my.isos"/></div>
                                         </div>
                                     </div>
                                 </div>
@@ -634,8 +638,7 @@ long milliseconds = new Date().getTime();
                                             <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
                                             </div>
                                             
-                                            <div>
-                                                <%=t.t("featured.isos")%></div>
+                                            <div><fmt:message key="label.menu.featured.isos"/></div>
                                         </div>
                                     </div>
                                 </div>
@@ -645,8 +648,7 @@ long milliseconds = new Date().getTime();
                                             <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
                                             </div>
                                             
-                                            <div>
-                                                <%=t.t("community.isos")%></div>
+                                            <div><fmt:message key="label.menu.community.isos"/></div>
                                         </div>
                                     </div>
                                 </div>
@@ -660,7 +662,7 @@ long milliseconds = new Date().getTime();
                             <!-- <div class="leftmenu_arrows_firstlevel_open" id="expandable_first_level_arrow" style="display:none;"></div> -->
                             <div class="leftmenu_list_icons">
                                 <img src="images/accounts_leftmenuicon.png" alt="Accounts" /></div>
-                            <%=t.t("accounts")%>
+                            <fmt:message key="label.menu.accounts"/>
                         </div>
                     </div>
                     
@@ -671,7 +673,7 @@ long milliseconds = new Date().getTime();
                             <div class="leftmenu_arrows_firstlevel_open" id="expandable_first_level_arrow" style="display:none;"></div>
                             <div class="leftmenu_list_icons">
                                 <img src="images/domain_leftmenuicon.png" alt="Domains" /></div>
-                            <%=t.t("domains")%>
+                            <fmt:message key="label.menu.domains"/>
                         </div>
                     </div>
                     <div class="leftmenu_expandedbox" style="display: none">
@@ -679,7 +681,7 @@ long milliseconds = new Date().getTime();
                                 <div class="leftmenu_loader">
                                 </div>
                                 <p>
-                                    Loading &hellip;
+                                    <fmt:message key="label.loading"/> &hellip;
                                 </p>
                         </div>
                         <div id="leftmenu_domain_tree">
@@ -695,7 +697,7 @@ long milliseconds = new Date().getTime();
                              <div class="leftmenu_arrows_firstlevel_open" id="expandable_first_level_arrow" style="display:none;"></div>
                             <div class="leftmenu_list_icons">
                                 <img src="images/events_leftmenuicon.png" alt="Events" /></div>
-                            <%=t.t("events")%>
+                            <fmt:message key="label.menu.events"/>
                         </div>
                     </div>
                     <div class="leftmenu_expandedbox" style="display: none">
@@ -705,7 +707,7 @@ long milliseconds = new Date().getTime();
                                     <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
                                     </div>
                                     
-                                    <%=t.t("events")%>
+                                    <fmt:message key="label.menu.events"/>
                                 </div>
                             </div>
                         </div>
@@ -715,7 +717,7 @@ long milliseconds = new Date().getTime();
                                     <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
                                     </div>
                                     
-                                    <%=t.t("alerts")%>
+                                    <fmt:message key="label.menu.alerts"/>
                                 </div>
                             </div>
                         </div>
@@ -728,7 +730,7 @@ long milliseconds = new Date().getTime();
                             <div class="leftmenu_arrows_firstlevel_open" id="expandable_first_level_arrow" style="display:none;"></div>
                             <div class="leftmenu_list_icons">
                                 <img src="images/resource_leftmenuicon.png" alt="System" /></div>
-                            <%=t.t("system")%>
+                            <fmt:message key="label.menu.system"/>
                         </div>
                     </div>
                     <div class="leftmenu_expandedbox" style="display: none">
@@ -738,7 +740,7 @@ long milliseconds = new Date().getTime();
                                     <div class="leftmenu_arrows expanded_close" id="physical_resource_arrow">
                                     </div>
                                    
-                                    <%=t.t("physical.resources")%>
+                                    <fmt:message key="label.menu.physical.resources"/>
                                 </div>
                             </div>
                         </div>
@@ -746,7 +748,7 @@ long milliseconds = new Date().getTime();
                         <div id="leftmenu_zone_tree">
                         	<div id="loading_container" class="leftmenu_loadingbox" style="display:none;">
                                 <div class="leftmenu_loader"></div>
-                                <p> Loading &hellip; </p>
+                                <p> <fmt:message key="label.loading"/> &hellip; </p>
                             </div>
 						    <div id="tree_container"></div>
                         </div>              
@@ -757,7 +759,7 @@ long milliseconds = new Date().getTime();
                                     <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
                                     </div>
                                     
-                                    <%=t.t("virtual.resources")%>
+                                    <fmt:message key="label.menu.virtual.resources"/>
                                 </div>
                             </div>
                             <div>
@@ -767,8 +769,7 @@ long milliseconds = new Date().getTime();
                                             <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
                                             </div>
                                             
-                                            <div>
-                                                <%=t.t("virtual.routers")%></div>
+                                            <div><fmt:message key="label.menu.virtual.routers"/></div>
                                         </div>
                                     </div>
                                 </div>
@@ -778,8 +779,7 @@ long milliseconds = new Date().getTime();
                                             <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
                                             </div>
                                           
-                                            <div>
-                                                <%=t.t("system.vms")%></div>
+                                            <div><fmt:message key="label.menu.system.vms"/></div>
                                         </div>
                                     </div>
                                 </div>                                
@@ -794,7 +794,7 @@ long milliseconds = new Date().getTime();
                             <div class="leftmenu_arrows_firstlevel_open" id="expandable_first_level_arrow" style="display:none;"></div>
                             <div class="leftmenu_list_icons">
                                 <img src="images/configuration_leftmenuicon.png" alt="Configuration" /></div>
-                            <%=t.t("configuration")%>
+                            <fmt:message key="label.menu.configuration"/>
                         </div>
                     </div>
                     <div class="leftmenu_expandedbox" style="display: none">                                                          
@@ -804,7 +804,7 @@ long milliseconds = new Date().getTime();
                                     <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
                                     </div>
                                     
-                                    <%=t.t("service.offerings")%>
+                                    <fmt:message key="label.menu.service.offerings"/>
                                 </div>
                             </div>
                         </div>
@@ -814,7 +814,7 @@ long milliseconds = new Date().getTime();
                                     <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
                                     </div>
                                     
-                                    <%=t.t("disk.offerings")%>
+                                    <fmt:message key="label.menu.disk.offerings"/>
                                 </div>
                             </div>
                         </div>
@@ -824,7 +824,7 @@ long milliseconds = new Date().getTime();
                                     <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
                                     </div>
                                     
-                                    <%=t.t("global.settings")%>
+                                    <fmt:message key="label.menu.global.settings"/>
                                 </div>
                             </div>
                         </div>
@@ -855,23 +855,23 @@ long milliseconds = new Date().getTime();
     </div>
     <div id="dialog_session_expired" title="Session Expired" style="display: none">
         <p>
-            <%=t.t("your.session.has.expired")%>
+			<fmt:message key="error.session.expired"/>
         </p>
     </div>
     <div id="dialog_error_internet_not_resolved" title="Error" style="display: none">
         <p style="color: red">
-            <%=t.t("internet.name.can.not.be.resolved")%>
+			<fmt:message key="error.unresolved.internet.name"/>
         </p>
     </div>
     <div id="dialog_error_management_server_not_accessible" title="Error" style="display: none">
         <p style="color: red">
-            <%=t.t("management.server.is.not.accessible")%>
+			<fmt:message key="error.mgmt.server.inaccessible"/>
         </p>
     </div>
     <!-- Dialogs 2 -->
     <div id="dialog_info_please_select_one_item_in_middle_menu" title="Alert" style="display: none">
         <p>
-            <%=t.t("please.select.at.least.one.item.in.middle.menu")%>
+			<fmt:message key="error.menu.select"/>
         </p>
     </div>
     <!-- ***** templates (begin) *************************************************************************************************-->
@@ -918,12 +918,12 @@ long milliseconds = new Date().getTime();
     <!-- action list item for details tab, subgrid item-->
     <li id="action_list_item" style="display: none;"><a id="link" href="#">(action)</a></li>
     <li id="no_available_actions" style="display: none">
-        <%=t.t("no.available.actions")%></li>
+		<fmt:message key="label.no.actions"/>
+    </li>
     
     <!-- middle menu: no items available (begin) --> 
     <div id="midmenu_container_no_items_available" class="midmenu_emptymsgbox" style="display:none">
-        <p>
-            No Items Available</p>
+        <p><fmt:message key="label.no.items"/></p>
     </div>
     <!-- middle menu: no items available (end) --> 
     
@@ -931,14 +931,14 @@ long milliseconds = new Date().getTime();
     <div class="leftmenu_expandedlist" id="leftmenu_zone_node_template" style="display:none">
      	<div class="leftmenu_loadingbox" style="display:none;" id="loading_container">
         	<div class="leftmenu_loader"></div>
-            <p> Adding Zone &hellip; </p>
+            <p> <fmt:message key="label.adding.zone"/> &hellip; </p>
         </div>
         <div id="row_container">
 	        <div id="zone_header" class="leftmenu_content">  
 	            <div class="leftmenu_thirdindent">
 	                <div class="leftmenu_arrows white_nonexpanded_close" id="zone_arrow">
 	                </div>	                
-	                <span id="zone_name_label">Zone: </span>
+	                <span id="zone_name_label"><fmt:message key="label.zone"/>: </span>
 	                <span id="zone_name"></span>
 	            </div>  
 	        </div>			
@@ -953,14 +953,14 @@ long milliseconds = new Date().getTime();
     <div class="leftmenu_expandedlist" id="leftmenu_pod_node_template" style="display:none">
     	<div class="leftmenu_loadingbox" style="display:none;"  id="loading_container">
         	<div class="leftmenu_loader"></div>
-            <p> Adding Pod &hellip; </p>
+            <p> <fmt:message key="label.adding.pod"/> &hellip; </p>
         </div>
         <div id="row_container">
 	        <div id="pod_header" class="leftmenu_content">
 	            <div class="leftmenu_fourthindent">
 	                <div class="leftmenu_arrows white_nonexpanded_close" id="pod_arrow">
 	                </div>	               
-	                <span id="pod_name_label">Pod: </span>
+	                <span id="pod_name_label"><fmt:message key="label.pod"/>: </span>
 	                <span id="pod_name"></span>
 	            </div>
 	        </div>	
@@ -975,14 +975,14 @@ long milliseconds = new Date().getTime();
     <div class="leftmenu_expandedlist" id="leftmenu_cluster_node_template" style="display:none">
     	<div class="leftmenu_loadingbox" style="display:none;" id="loading_container">
         	<div class="leftmenu_loader"></div>
-            <p> Adding Cluster &hellip; </p>
+            <p> <fmt:message key="label.adding.cluster"/> &hellip; </p>
         </div>
         <div id="row_container">
 	        <div id="cluster_header" class="leftmenu_content">
 	            <div class="leftmenu_fifthindent">
 	                <div class="leftmenu_arrows white_nonexpanded_close" id="cluster_arrow">
 	                </div>	                
-	                <span id="cluster_name_label">Cluster: </span>	                
+	                <span id="cluster_name_label"><fmt:message key="label.cluster"/>: </span>	                
                     <span id="cluster_name"></span>
 	            </div>
 	        </div>	
@@ -997,7 +997,7 @@ long milliseconds = new Date().getTime();
 	                <div class="leftmenu_arrows expanded_close" id="domain_expand_icon">
 	                </div>
 	                <span id="domain_name">
-	                    Domain Name</span>
+	                    <fmt:message key="label.domain.name"/></span>
 	          	</div>
             </div>                        
             <div id="domain_children_container" style="display: none">

@@ -75,6 +75,8 @@ $(document).ready(function() {
 			
 			$.cookie('timezone', null);   //comment this line and uncomment the next line if you want to set a specific timezone. This value is used for any default timezone dropdown
 			//$.cookie('timezone', 'America/Los_Angeles');
+			
+			$.cookie('sessionKey', json.loginresponse.sessionkey);
 		},
 		error: function() {
 			// This means the login failed.  You should redirect to your login page.
