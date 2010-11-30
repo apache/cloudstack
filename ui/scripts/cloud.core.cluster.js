@@ -59,6 +59,19 @@ function clusterJsonToDetailsTab() {
     var jsonObj = $leftmenuItem1.data("jsonObj");    
     if(jsonObj == null) 
 	    return;	
+        
+    $.ajax({
+        data: createURL("command=listClusters&id="+jsonObj.id),
+        dataType: "json",
+        async: false,
+        success: function(json) {            
+            var items = json.listclustersresponse.cluster;	           
+			if(items != null && items.length > 0) {
+                jsonObj = items[0];
+                $leftmenuItem1.data("jsonObj", jsonObj);                  
+            }
+        }
+    });     
      
     var $detailsTab = $("#right_panel_content").find("#tab_content_details");   
     $detailsTab.find("#id").text(fromdb(jsonObj.id));

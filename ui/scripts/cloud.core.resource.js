@@ -232,6 +232,10 @@ function resourceLoadPage(pageToShow, $midmenuItem1) {   //$midmenuItem1 is eith
         }
         else if(pageToShow == "jsp/cluster.jsp") {
             afterLoadClusterJSP($midmenuItem1); 
+            
+            $(this).data("onRefreshFn", function() {
+		        clusterJsonToDetailsTab();
+		    }); 
         }
         else if(pageToShow == "jsp/host.jsp") {
             afterLoadHostJSP($midmenuItem1); 
