@@ -218,6 +218,10 @@ function resourceLoadPage(pageToShow, $midmenuItem1) {   //$midmenuItem1 is eith
         }
         else if(pageToShow == "jsp/zone.jsp") {
             afterLoadZoneJSP($midmenuItem1); 
+            
+            $(this).data("onRefreshFn", function() {
+		        zoneJsonToDetailsTab();
+		    });    
         }
         else if(pageToShow == "jsp/pod.jsp") {
             afterLoadPodJSP($midmenuItem1); 

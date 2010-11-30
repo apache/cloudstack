@@ -78,6 +78,19 @@ function zoneJsonToDetailsTab() {
     var jsonObj = $leftmenuItem1.data("jsonObj");    
     if(jsonObj == null) 
 	    return;	
+       
+    $.ajax({
+        data: createURL("command=listZones&available=true&id="+jsonObj.id),
+        dataType: "json",
+        async: false,
+        success: function(json) {            
+            var items = json.listzonesresponse.zone;			
+			if(items != null && items.length > 0) {
+                jsonObj = items[0];
+                $leftmenuItem1.data("jsonObj", jsonObj);                  
+            }
+        }
+    });    
     
     var $thisTab = $("#right_panel_content").find("#tab_content_details");  
     $thisTab.find("#tab_container").hide(); 
