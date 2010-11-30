@@ -216,32 +216,29 @@ function resourceLoadPage(pageToShow, $midmenuItem1) {   //$midmenuItem1 is eith
 	    if(pageToShow == "jsp/resource.jsp") {
             afterLoadResourceJSP($midmenuItem1); 
         }
-        else if(pageToShow == "jsp/zone.jsp") {
-            afterLoadZoneJSP($midmenuItem1); 
-            
+        else if(pageToShow == "jsp/zone.jsp") {            
             $(this).data("onRefreshFn", function() {
 		        zoneJsonToDetailsTab();
-		    });    
+		    });  
+            afterLoadZoneJSP($midmenuItem1);               
         }
-        else if(pageToShow == "jsp/pod.jsp") {
-            afterLoadPodJSP($midmenuItem1); 
-            
+        else if(pageToShow == "jsp/pod.jsp") {            
             $(this).data("onRefreshFn", function() {
 		        podJsonToDetailsTab();
 		    });  
+		    afterLoadPodJSP($midmenuItem1);             
         }
         else if(pageToShow == "jsp/cluster.jsp") {
-            afterLoadClusterJSP($midmenuItem1); 
-            
             $(this).data("onRefreshFn", function() {
 		        clusterJsonToDetailsTab();
 		    }); 
+            afterLoadClusterJSP($midmenuItem1);   
         }
-        else if(pageToShow == "jsp/host.jsp") {
-            afterLoadHostJSP($midmenuItem1);             
+        else if(pageToShow == "jsp/host.jsp") {                 
             $(this).data("onRefreshFn", function() {                
 		        hostJsonToDetailsTab();
 		    }); 
+            afterLoadHostJSP($midmenuItem1);        
             
             copyActionInfoFromMidMenuToRightPanel($midmenuItem1);                   
             $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);
