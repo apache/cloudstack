@@ -91,8 +91,6 @@ add_one_to_one_nat_entry() {
   if [ "$op" == "-A" ]
   then
     iptables -P FORWARD DROP
-  else
-    iptables -P FORWARD ACCEPT
   fi
   iptables $op FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
   iptables $op FORWARD -i eth2 -o eth0 -d $guestIp -m state --state NEW -j ACCEPT
