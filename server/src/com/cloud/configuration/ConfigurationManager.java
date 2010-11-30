@@ -56,9 +56,10 @@ public interface ConfigurationManager extends Manager {
 	 * @param localStorageRequired
 	 * @param offerHA
 	 * @param useVirtualNetwork
+	 * @param domainId
 	 * @return ID
 	 */
-	ServiceOfferingVO createServiceOffering(long userId, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired, boolean offerHA, boolean useVirtualNetwork, String tags);
+	ServiceOfferingVO createServiceOffering(long userId, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired, boolean offerHA, boolean useVirtualNetwork, String tags, Long domainId);
 	
 
 

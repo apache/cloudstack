@@ -56,6 +56,9 @@ public class ServiceOfferingResponse extends BaseResponse {
     @SerializedName("tags") @Param(description="the tags for the service offering")
     private String tags;
 
+	@SerializedName("domainId") @Param(description="the domain id of the service offering")
+    private Long domainId;
+    
     public Long getId() {
         return id;
     }
@@ -143,4 +146,13 @@ public class ServiceOfferingResponse extends BaseResponse {
     public void setTags(String tags) {
         this.tags = tags;
     }
+
+    public Long getDomainId() {
+		return domainId;
+	}
+
+	public void setDomainId(Long domainId) {
+		this.domainId = domainId;
+	}
+
 }

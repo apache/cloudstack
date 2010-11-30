@@ -18,6 +18,8 @@
 
 package com.cloud.service.dao;
 
+import java.util.List;
+
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.utils.db.GenericDao;
 
@@ -27,4 +29,6 @@ import com.cloud.utils.db.GenericDao;
 public interface ServiceOfferingDao extends GenericDao<ServiceOfferingVO, Long> {
     ServiceOfferingVO findByName(String name);
     ServiceOfferingVO persistSystemServiceOffering(ServiceOfferingVO vo);
+	List<ServiceOfferingVO> findPublicServiceOfferings();
+	List<ServiceOfferingVO> findServiceOfferingByDomainId(Long domainId);
 }

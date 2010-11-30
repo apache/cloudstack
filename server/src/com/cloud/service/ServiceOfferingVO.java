@@ -73,6 +73,17 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
         this.guestIpType = guestIpType;
     }
 
+    public ServiceOfferingVO(String name, int cpu, int ramSize, int speed, int rateMbps, int multicastRateMbps, boolean offerHA, String displayText, NetworkOffering.GuestIpType guestIpType, boolean useLocalStorage, boolean recreatable, String tags, boolean systemUse, Long domainId) {
+        super(name, displayText, false, tags, recreatable, useLocalStorage, systemUse,false,domainId);
+        this.cpu = cpu;
+        this.ramSize = ramSize;
+        this.speed = speed;
+        this.rateMbps = rateMbps;
+        this.multicastRateMbps = multicastRateMbps;
+        this.offerHA = offerHA;
+        this.guestIpType = guestIpType;
+    }
+
 	@Override
 	public boolean getOfferHA() {
 	    return offerHA;
@@ -146,4 +157,5 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
     public NetworkOffering.GuestIpType getGuestIpType() {
 		return guestIpType;
 	}
+	
 }

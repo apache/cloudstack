@@ -1138,18 +1138,18 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
 
         return createServiceOffering(userId, cmd.getServiceOfferingName(), cpuNumber.intValue(), memory.intValue(), cpuSpeed.intValue(), cmd.getDisplayText(),
-                localStorageRequired, offerHA, useVirtualNetwork, cmd.getTags());
+                localStorageRequired, offerHA, useVirtualNetwork, cmd.getTags(),cmd.getDomainId());
     }
 
     @Override
-    public ServiceOfferingVO createServiceOffering(long userId, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired, boolean offerHA, boolean useVirtualNetwork, String tags) {
+    public ServiceOfferingVO createServiceOffering(long userId, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired, boolean offerHA, boolean useVirtualNetwork, String tags, Long domainId) {
     	String networkRateStr = _configDao.getValue("network.throttling.rate");
     	String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
     	int networkRate = ((networkRateStr == null) ? 200 : Integer.parseInt(networkRateStr));
     	int multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));
     	NetworkOffering.GuestIpType guestIpType = useVirtualNetwork ? NetworkOffering.GuestIpType.Virtualized : NetworkOffering.GuestIpType.DirectSingle;        
     	tags = cleanupTags(tags);
-    	ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, networkRate, multicastRate, offerHA, displayText, guestIpType, localStorageRequired, false, tags, false);
+    	ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, networkRate, multicastRate, offerHA, displayText, guestIpType, localStorageRequired, false, tags, false,domainId);
     	
     	if ((offering = _serviceOfferingDao.persist(offering)) != null) {
     		saveConfigurationEvent(userId, null, EventTypes.EVENT_SERVICE_OFFERING_CREATE, "Successfully created new service offering with name: " + name + ".", "soId=" + offering.getId(), "name=" + name, "numCPUs=" + cpu, "ram=" + ramSize, "cpuSpeed=" + speed,
