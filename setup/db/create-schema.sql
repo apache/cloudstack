@@ -862,6 +862,7 @@ CREATE TABLE `cloud`.`op_host_capacity` (
   `data_center_id` bigint unsigned NOT NULL,
   `pod_id` bigint unsigned,
   `used_capacity` bigint unsigned NOT NULL,
+  `reserved_capacity` bigint unsigned NOT NULL,
   `total_capacity` bigint unsigned NOT NULL,
   `capacity_type` int(1) unsigned NOT NULL,
   PRIMARY KEY  (`id`)
