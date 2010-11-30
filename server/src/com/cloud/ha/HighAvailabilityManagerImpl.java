@@ -71,6 +71,7 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.VmManager;
 import com.cloud.vm.dao.VMInstanceDao;
 
 /**
@@ -130,6 +131,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
     @Inject StorageManager _storageMgr;
     @Inject GuestOSDao _guestOSDao;
     @Inject GuestOSCategoryDao _guestOSCategoryDao;
+    @Inject VmManager _itMgr;
     
     String _instance;
     ScheduledExecutorService _executor;
@@ -358,7 +360,8 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
             if (vm.getHostId() == null || vm.getHostId() != work.getHostId()) {
                 s_logger.info("VM " + vm.toString() + " is now no longer on host " + work.getHostId());
                 if (vm.getState() == State.Starting && vm.getUpdated() == work.getUpdateTime()) {
-                	_instanceDao.updateIf(vm, Event.AgentReportStopped, null);
+                	vm.setHostId(null);
+                	_itMgr.stateTransitTo(vm, Event.AgentReportStopped);
                 }
                 return null;
             }
@@ -518,7 +521,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
                 s_logger.debug("Both states are " + agentState.toString() + " for " + serverName);
             }
             assert (agentState == State.Stopped || agentState == State.Running) : "If the states we send up is changed, this must be changed.";
-            _instanceDao.updateIf(vm, agentState == State.Stopped ? VirtualMachine.Event.AgentReportStopped : VirtualMachine.Event.AgentReportRunning, vm.getHostId());
+            _itMgr.stateTransitTo(vm, agentState == State.Stopped ? VirtualMachine.Event.AgentReportStopped : VirtualMachine.Event.AgentReportRunning);
             if (agentState == State.Stopped) {
                 s_logger.debug("State matches but the agent said stopped so let's send a cleanup anyways.");
                 return info.mgr.cleanup(vm, agentName);
@@ -549,7 +552,8 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
                 s_logger.debug("Ignoring VM in starting mode: " + vm.getHostName());
             } else {
                 s_logger.debug("Sending cleanup to a stopped vm: " + agentName);
-                _instanceDao.updateIf(vm, VirtualMachine.Event.AgentReportStopped, null);
+                vm.setHostId(null);
+                _itMgr.stateTransitTo(vm, VirtualMachine.Event.AgentReportStopped);
                 command = info.mgr.cleanup(vm, agentName);
             }
         } else if (agentState == State.Running) {
@@ -573,7 +577,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
             	vm = info.mgr.get(vm.getId());
             	command = info.mgr.cleanup(vm, agentName);
             } else {
-            	_instanceDao.updateIf(vm, VirtualMachine.Event.AgentReportRunning, vm.getHostId());
+            	_itMgr.stateTransitTo(vm, VirtualMachine.Event.AgentReportRunning);
             }
         } /*else if (agentState == State.Unknown) {
             if (serverState == State.Running) {
@@ -745,7 +749,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
         if (work.getStep() == Step.Migrating) {
         	vm = mgr.get(vmId);	// let's see if anything has changed.
             boolean migrated = false;
-        	if (vm == null || vm.getRemoved() != null || vm.getHostId() == null || !_instanceDao.updateIf(vm, Event.MigrationRequested, vm.getHostId())) {
+        	if (vm == null || vm.getRemoved() != null || vm.getHostId() == null || !_itMgr.stateTransitTo(vm, Event.MigrationRequested)) {
             	s_logger.info("Migration cancelled because state has changed: " + vm.toString());
         	} else {
                 try {
@@ -775,7 +779,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
                 HostPodVO podVO = _podDao.findById(vm.getPodId());
                 _alertMgr.sendAlert(alertType, fromHost.getDataCenterId(), fromHost.getPodId(), "Unable to migrate vm " + vm.getHostName() + " from host " + fromHost.getName() + " in zone " + dcVO.getName() + " and pod " + podVO.getName(), "Migrate Command failed.  Please check logs.");
 
-                _instanceDao.updateIf(vm, Event.OperationFailed, vm.getHostId());
+                _itMgr.stateTransitTo(vm, Event.OperationFailed);
                 _agentMgr.maintenanceFailed(vm.getHostId());
                 
                 Command cleanup = mgr.cleanup(vm, null);
@@ -805,7 +809,8 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
         } catch (final OperationTimedoutException e) {
         	s_logger.warn("Operation timed outfor " + vm.toString());
         }
-    	_instanceDao.updateIf(vm, Event.OperationFailed, toHost.getId());
+        vm.setHostId(toHost.getId());
+    	_itMgr.stateTransitTo(vm, Event.OperationFailed);
     	return (System.currentTimeMillis() >> 10) + _migrateRetryInterval;
     }
     

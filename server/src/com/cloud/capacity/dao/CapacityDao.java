@@ -24,4 +24,5 @@ import com.cloud.utils.db.GenericDao;
 public interface CapacityDao extends GenericDao<CapacityVO, Long> {
     void clearNonStorageCapacities();
     void clearStorageCapacities();
+	CapacityVO findByHostIdType(Long hostId, short capacityType);
 }

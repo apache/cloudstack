@@ -35,6 +35,7 @@ import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
+import com.cloud.vm.VirtualMachine.Event;
 
 /**
  * Manages allocating resources to vms.
@@ -75,5 +76,7 @@ public interface VmManager extends Manager {
 ;
     
     <T extends VMInstanceVO> void registerGuru(VirtualMachine.Type type, VirtualMachineGuru<T> guru);
+
+	boolean stateTransitTo(VMInstanceVO vm, Event e);
     
 }
