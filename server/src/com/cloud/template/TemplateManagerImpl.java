@@ -1285,7 +1285,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 		            throw new PermissionDeniedException(msg + ". Permission denied.");
 		        }
 
-	    		if ((template != null) && (!template.isPublicTemplate() && (account.getId() != template.getAccountId()) && (!template.getName().startsWith("xs-tools")))) {
+	    		if ((template != null) && (!template.isPublicTemplate() && (account.getId() != template.getAccountId()) && (template.getTemplateType() != TemplateType.PERHOST))) {
                     throw new PermissionDeniedException(msg + ". Permission denied.");
                 }
                 

@@ -115,6 +115,7 @@ import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Snapshot.Type;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
@@ -1996,30 +1997,27 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public ListResponse<TemplateResponse> createIsoResponse(List<? extends VirtualMachineTemplate> isos, Long zoneId, boolean onlyReady, boolean isAdmin, Account account)  {
         Map<Long, List<VMTemplateHostVO>> isoHostsMap = new HashMap<Long, List<VMTemplateHostVO>>();
-        for (VirtualMachineTemplate iso : isos) {
-            // TODO:  implement
-            List<VMTemplateHostVO> isoHosts = ApiDBUtils.listTemplateHostBy(iso.getId(), zoneId);
-            if (iso.getName().equals("xs-tools.iso")) {
-                List<Long> xstoolsZones = new ArrayList<Long>();
-                // the xs-tools.iso is a special case since it will be available on every computing host in the zone and we want to return it once per zone
-                List<VMTemplateHostVO> xstoolsHosts = new ArrayList<VMTemplateHostVO>();
-                for (VMTemplateHostVO isoHost : isoHosts) {
-                    // TODO:  implement
-                    HostVO host = ApiDBUtils.findHostById(isoHost.getHostId());
-                    if (!xstoolsZones.contains(Long.valueOf(host.getDataCenterId()))) {
-                        xstoolsZones.add(Long.valueOf(host.getDataCenterId()));
-                        xstoolsHosts.add(isoHost);
-                    }
-                }
-                isoHostsMap.put(iso.getId(), xstoolsHosts);
-            } else {
-                isoHostsMap.put(iso.getId(), isoHosts);
-            }
-        }
 
         ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
         List<TemplateResponse> isoResponses = new ArrayList<TemplateResponse>();
         for (VirtualMachineTemplate iso : isos) {
+            if ( iso.getTemplateType() == TemplateType.PERHOST ) {
+                TemplateResponse isoResponse = new TemplateResponse();
+                isoResponse.setId(iso.getId());
+                isoResponse.setName(iso.getName());
+                isoResponse.setDisplayText(iso.getDisplayText());
+                isoResponse.setPublic(iso.isPublicTemplate());
+                isoResponse.setReady(true);
+                isoResponse.setBootable(iso.isBootable());
+                isoResponse.setFeatured(iso.isFeatured());
+                isoResponse.setCrossZones(iso.isCrossZones());
+                isoResponse.setPublic(iso.isPublicTemplate());
+                isoResponse.setObjectName("iso");
+                isoResponses.add(isoResponse);
+                response.setResponses(isoResponses);
+                continue;
+            }
+           
             List<VMTemplateHostVO> isoHosts = isoHostsMap.get(iso.getId());
             for (VMTemplateHostVO isoHost : isoHosts) {
                 if (onlyReady && isoHost.getDownloadState() != Status.DOWNLOADED) {

@@ -3890,25 +3890,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     public Type getType() {
         return com.cloud.host.Host.Type.Routing;
     }
-
-    protected void getPVISO(StartupStorageCommand sscmd) {
-        Connection conn = getConnection();
-        try {
-            Set<VDI> vids = VDI.getByNameLabel(conn, "xs-tools.iso");
-            if (vids.isEmpty())
-                return;
-            VDI pvISO = vids.iterator().next();
-            String uuid = pvISO.getUuid(conn);
-            Map<String, TemplateInfo> pvISOtmlt = new HashMap<String, TemplateInfo>();
-            TemplateInfo tmplt = new TemplateInfo("xs-tools.iso", uuid, pvISO.getVirtualSize(conn), pvISO.getVirtualSize(conn), true, false);
-            pvISOtmlt.put("xs-tools", tmplt);
-            sscmd.setTemplateInfo(pvISOtmlt);
-        } catch (XenAPIException e) {
-            s_logger.debug("Can't get xs-tools.iso: " + e.toString());
-        } catch (XmlRpcException e) {
-            s_logger.debug("Can't get xs-tools.iso: " + e.toString());
-        }
-    }
     
     protected boolean can_bridge_firewall() {
         return false;
@@ -4158,8 +4139,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
         StartupStorageCommand sscmd = initializeLocalSR();
         if (sscmd != null) {
-            /* report pv driver iso */
-            getPVISO(sscmd);
             return new StartupCommand[] { cmd, sscmd };
         }
 

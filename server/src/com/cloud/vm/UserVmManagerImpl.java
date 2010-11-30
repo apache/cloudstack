@@ -151,6 +151,7 @@ import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateHostVO;
@@ -730,34 +731,37 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     	} else if (vm.getState() != State.Running) {
     		return true;
     	}
-
+        String isoPath;
+        VMTemplateVO tmplt = _templateDao.findById(isoId);   
+        if ( tmplt == null ) {
+            s_logger.warn("ISO: " + isoId +" does not exist");
+            return false;
+        }
         // Get the path of the ISO
-    	Pair<String, String> isoPathPair = _storageMgr.getAbsoluteIsoPath(isoId, vm.getDataCenterId());
-    	String isoPath;
-    	String isoName = _templateDao.findById(isoId).getName();
-    	
-	    if (isoPathPair == null) {
-	        // we can't send a null path to the ServerResource, so return false if we are unable to find the isoPath
-	    	if (isoName.startsWith("xs-tools"))
-	    		isoPath = isoName;
-	    	else {
+        Pair<String, String> isoPathPair = null;
+        if ( tmplt.getTemplateType() == TemplateType.PERHOST ) {
+            isoPath = tmplt.getName();
+        } else {
+            isoPathPair = _storageMgr.getAbsoluteIsoPath(isoId, vm.getDataCenterId()); 	
+            if (isoPathPair == null) {
 	    	    s_logger.warn("Couldn't get absolute iso path");
 	    	    return false;
+	    	} else {
+	    	    isoPath = isoPathPair.first();
 	    	}
-	    		
-	    } else {
-	    	isoPath = isoPathPair.first();
-	    }
+        }
 
     	String vmName = vm.getInstanceName();
 
     	HostVO host = _hostDao.findById(vm.getHostId());
-    	if (host == null)
-    		return false;
-
+    	if (host == null) {
+            s_logger.warn("Host: " + vm.getHostId() +" does not exist");
+            return false;
+    	}
     	AttachIsoCommand cmd = new AttachIsoCommand(vmName, isoPath, attach);
-    	if(isoPathPair != null)
+    	if (isoPathPair != null) {
     		cmd.setStoreUrl(isoPathPair.second());
+    	}
     	Answer a = _agentMgr.easySend(vm.getHostId(), cmd);
     	return (a != null);
     }

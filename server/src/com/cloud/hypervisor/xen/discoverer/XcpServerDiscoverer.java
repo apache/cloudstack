@@ -61,6 +61,7 @@ import com.cloud.resource.Discoverer;
 import com.cloud.resource.DiscovererBase;
 import com.cloud.resource.ServerResource;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
@@ -474,6 +475,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         
         _agentMgr.registerForHostEvents(this, true, false, true);
         
+        createXsToolsISO();
         return true;
     }
 
@@ -502,37 +504,26 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         return false;
     }
     
-    private void createPVTemplate(long Hostid, StartupStorageCommand cmd) {
-        Map<String, TemplateInfo> tmplts = cmd.getTemplateInfo();
-        if ((tmplts != null) && !tmplts.isEmpty()) {
-            TemplateInfo xenPVISO = tmplts.get("xs-tools");
-            if (xenPVISO != null) {
-                VMTemplateVO tmplt = _tmpltDao.findByTemplateName(xenPVISO.getTemplateName());
-                Long id;
-                if (tmplt == null) {
-                    id = _tmpltDao.getNextInSequence(Long.class, "id");
-                    VMTemplateVO template = new VMTemplateVO(id, xenPVISO.getTemplateName(), xenPVISO.getTemplateName(), ImageFormat.ISO , true, true, null, "/opt/xensource/packages/iso/xs-tools-5.5.0.iso", null, true, 64, Account.ACCOUNT_ID_SYSTEM, null, "xen-pv-drv-iso", false, 1, false, HypervisorType.None);
-                    _tmpltDao.persist(template);
-                } else {
-                    id = _tmpltDao.findByTemplateName(xenPVISO.getTemplateName()).getId();
-                }
-
-                VMTemplateHostVO tmpltHost = _vmTemplateHostDao.findByHostTemplate(Hostid, id);
-
-                if (tmpltHost == null) {
-                    VMTemplateHostVO vmTemplateHost = new VMTemplateHostVO(Hostid, id, new Date(), 100, VMTemplateStorageResourceAssoc.Status.DOWNLOADED, null, null, null, "iso/users/2/xs-tools", null);
-                    vmTemplateHost.setSize(xenPVISO.getSize());
-                    _vmTemplateHostDao.persist(vmTemplateHost);
-                }
-            }
+    private void createXsToolsISO() {
+        String isoName = "xs-tools.iso";
+        VMTemplateVO tmplt = _tmpltDao.findByTemplateName(isoName);
+        Long id;
+        if (tmplt == null) {
+            id = _tmpltDao.getNextInSequence(Long.class, "id");
+            VMTemplateVO template = new VMTemplateVO(id, isoName, isoName, ImageFormat.ISO, true, true,
+                    TemplateType.PERHOST, null, null, true, 64,
+                    Account.ACCOUNT_ID_SYSTEM, null, "xen-pv-drv-iso", false, 1, false, HypervisorType.None);
+            _tmpltDao.persist(template);
+        } else {
+            id = tmplt.getId();
+            tmplt.setTemplateType(TemplateType.PERHOST);
+            tmplt.setUrl(null);
+            _tmpltDao.update(id, tmplt);
         }
     }
 
     @Override
     public void processConnect(HostVO agent, StartupCommand cmd) throws ConnectionException {
-        if (cmd instanceof StartupStorageCommand) {
-            createPVTemplate(agent.getId(), (StartupStorageCommand)cmd);
-        }
     }
 
     @Override

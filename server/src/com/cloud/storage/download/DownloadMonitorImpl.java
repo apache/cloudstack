@@ -437,12 +437,6 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 			}
 		}
 
-		for (Iterator<VMTemplateVO> i = allTemplates.iterator();i.hasNext();) {
-			if (i.next().getName().startsWith("xs-tools")) {
-				i.remove();
-			}
-		}
-		
         toBeDownloaded.addAll(allTemplates);
         
 		for (VMTemplateVO tmplt: allTemplates) {

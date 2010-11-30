@@ -263,6 +263,10 @@ public class VMTemplateVO implements VirtualMachineTemplate {
 	public String getUrl() {
 		return url;
 	}
+	
+	public void setUrl(String url) {
+	     this.url = url;
+	}
 
 	@Override
     public boolean isRequiresHvm() {

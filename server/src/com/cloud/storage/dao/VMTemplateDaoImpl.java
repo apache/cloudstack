@@ -37,6 +37,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
+import com.cloud.storage.Storage.TemplateType;
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
 import com.cloud.utils.component.Inject;
@@ -217,6 +218,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 		
 		TmpltsInZoneSearch = createSearchBuilder();
 		TmpltsInZoneSearch.and("removed", TmpltsInZoneSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
+	    TmpltsInZoneSearch.and("avoidtype", TmpltsInZoneSearch.entity().getTemplateType(), SearchCriteria.Op.NEQ);
 		TmpltsInZoneSearch.join("tmpltzone", tmpltZoneSearch, tmpltZoneSearch.entity().getTemplateId(), TmpltsInZoneSearch.entity().getId(), JoinBuilder.JoinType.INNER);
 		tmpltZoneSearch.done();
 		TmpltsInZoneSearch.done();
@@ -385,6 +387,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 	@DB
 	public List<VMTemplateVO> listAllInZone(long dataCenterId) {
 		SearchCriteria<VMTemplateVO> sc = TmpltsInZoneSearch.create();
+		sc.setParameters("avoidtype", TemplateType.PERHOST.toString());
 		sc.setJoinParameters("tmpltzone", "zoneId", dataCenterId);
 		return listBy(sc);
 	}

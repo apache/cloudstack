@@ -64,7 +64,7 @@ public class VMTemplateHostVO implements VMTemplateStorageResourceAssoc {
 	@Column (name="size")
 	private long size;
 	
-	@Column (name="physicalSize")
+	@Column (name="physical_size")
 	private long physicalSize;
 	
 	@Column (name="download_state")
