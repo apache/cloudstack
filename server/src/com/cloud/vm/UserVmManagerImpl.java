@@ -2487,7 +2487,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     	Long nextTemplateId = _templateDao.getNextInSequence(Long.class, "id");
     	String description = cmd.getDisplayText();
     	VMTemplateVO template = ApiDBUtils.findTemplateById(volume.getTemplateId());    	
-    	boolean isExtractable = template != null && template.isExtractable() && !(template.getTemplateType()== Storage.TemplateType.SYSTEM || template.getTemplateType()== Storage.TemplateType.BUILTIN);
+    	boolean isExtractable = template != null && template.isExtractable() && template.getTemplateType() != Storage.TemplateType.SYSTEM ;
 
         privateTemplate = new VMTemplateVO(nextTemplateId,
                                            uniqueName,
@@ -2591,13 +2591,14 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
             if( volume == null ) {
                 throw new CloudRuntimeException("Unable to find volume for Id " + volumeId);
             }
-            long instanceId = volume.getInstanceId();
-            VMInstanceVO vm = _vmDao.findById(instanceId);
-            State vmState = vm.getState();
-            if( !vmState.equals(State.Stopped) && !vmState.equals(State.Destroyed)) {
-                throw new CloudRuntimeException("Please put VM " + vm.getHostName() + " into Stopped state first");
-            }
-                           
+            Long instanceId = volume.getInstanceId();
+            if (instanceId != null){
+            	VMInstanceVO vm = _vmDao.findById(instanceId);
+            	State vmState = vm.getState();
+            	if( !vmState.equals(State.Stopped) && !vmState.equals(State.Destroyed)) {
+            		throw new CloudRuntimeException("Please put VM " + vm.getHostName() + " into Stopped state first");
+            	}
+            }           
             cmd = new CreatePrivateTemplateFromVolumeCommand(secondaryStorageURL, templateId, volume.getAccountId(),
                     command.getTemplateName(), uniqueName, volume.getPath(), vmName);
 

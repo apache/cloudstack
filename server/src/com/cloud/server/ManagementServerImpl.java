@@ -5196,7 +5196,7 @@ public class ManagementServerImpl implements ManagementServer {
         }
         
         VMTemplateVO template = ApiDBUtils.findTemplateById(volume.getTemplateId());    	
-    	boolean isExtractable = template != null && template.isExtractable() && !(template.getTemplateType()== Storage.TemplateType.SYSTEM || template.getTemplateType()== Storage.TemplateType.BUILTIN);
+    	boolean isExtractable = template != null && template.isExtractable() && template.getTemplateType() != Storage.TemplateType.SYSTEM;
         if( !isExtractable && account!=null && account.getType() != Account.ACCOUNT_TYPE_ADMIN){ // Global admins are allowed to extract
         	throw new PermissionDeniedException("The volume:" +volumeId+ " is not allowed to be extracted");
         }
