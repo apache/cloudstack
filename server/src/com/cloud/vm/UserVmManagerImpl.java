@@ -2547,7 +2547,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
             if (s_logger.isInfoEnabled()) {
                 s_logger.info(msg);
             }
-
+            _templateDao.remove(command.getId()); // Mark it removed so that templates with the same name can be created subsequently. Bug 7366
             throw new CloudRuntimeException(msg);
         }
 
