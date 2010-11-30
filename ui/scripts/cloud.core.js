@@ -1331,6 +1331,7 @@ function convertMilliseconds(string) {
     }
 }    
 
+/*
 function drawGrid(items, submenuContent, template, fnJSONToTemplate) {
     var grid = submenuContent.find("#grid_content").empty();		    	    		
     if (items != null && items.length > 0) {				        			        
@@ -1537,6 +1538,7 @@ function submenuContentEventBinder(submenuContent, listFunction) {
 	    });		    
 	} 	  
 }
+*/
 
 // Validation functions
 function showError(isValid, field, errMsgField, errMsg) {    
