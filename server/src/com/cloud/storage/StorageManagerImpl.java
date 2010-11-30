@@ -1726,7 +1726,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             if ((diskOfferingId == null) && (size == null)) {
                 throw new InvalidParameterValueException("Missing parameter(s),either a positive volume size or a valid disk offering id must be specified.");
             } else if ((diskOfferingId == null) && (size != null)) {
-                boolean ok = validateCustomVolumeSizeRange(size);
+                boolean ok = validateVolumeSizeRange(size);
 
                 if (!ok) {
                     throw new InvalidParameterValueException("Invalid size for custom volume creation: " + size);
@@ -1742,10 +1742,14 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                     throw new InvalidParameterValueException("Please specify a valid disk offering.");
                 }
                 
+                if(!validateVolumeSizeRange(diskOffering.getDiskSize()/1024)){//convert size from mb to gb for validation
+            		throw new InvalidParameterValueException("Invalid size for custom volume creation: " + size+" ,max volume size is:"+_maxVolumeSizeInGb);
+            	}
+                
                 if(diskOffering.getDiskSize() > 0)
                 	size = (diskOffering.getDiskSize()*1024*1024);//the disk offering size is in MB, which needs to be converted into bytes
                 else{
-                	if(!validateCustomVolumeSizeRange(size)){
+                	if(!validateVolumeSizeRange(size)){
                 		throw new InvalidParameterValueException("Invalid size for custom volume creation: " + size+" ,max volume size is:"+_maxVolumeSizeInGb);
                 	}
                 	size = (size*1024*1024*1024);//custom size entered is in GB, to be converted to bytes
@@ -2618,7 +2622,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     	
 	}
 
-	private boolean validateCustomVolumeSizeRange(long size) throws InvalidParameterValueException {
+	private boolean validateVolumeSizeRange(long size) throws InvalidParameterValueException {
 	    if (size<0 || (size>0 && size < 1)) {
 	        throw new InvalidParameterValueException("Please specify a size of at least 1 Gb.");
 	    } else if (size > _maxVolumeSizeInGb) {
