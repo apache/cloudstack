@@ -69,6 +69,19 @@ function hostJsonToDetailsTab() {
     if(jsonObj == null)
         return;    
     
+    $.ajax({
+        data: createURL("command=listHosts&id="+jsonObj.id),
+        dataType: "json",
+        async: false,
+        success: function(json) {            
+            var items = json.listhostsresponse.host;
+			if(items != null && items.length > 0) {
+                jsonObj = items[0];
+                $midmenuItem1.data("jsonObj", jsonObj);                  
+            }
+        }
+    });     
+       
     var $thisTab = $("#right_panel_content #tab_content_details");  
     $thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();        

@@ -238,7 +238,11 @@ function resourceLoadPage(pageToShow, $midmenuItem1) {   //$midmenuItem1 is eith
 		    }); 
         }
         else if(pageToShow == "jsp/host.jsp") {
-            afterLoadHostJSP($midmenuItem1); 
+            afterLoadHostJSP($midmenuItem1);             
+            $(this).data("onRefreshFn", function() {                
+		        hostJsonToDetailsTab();
+		    }); 
+            
             copyActionInfoFromMidMenuToRightPanel($midmenuItem1);                   
             $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);
             $("#tab_details").click();     
