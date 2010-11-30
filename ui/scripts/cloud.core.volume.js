@@ -43,7 +43,7 @@ function afterLoadVolumeJSP() {
     });   
      
     $.ajax({
-        data: createURL("command=listZones&available=true"+maxPageSize),
+        data: createURL("command=listZones&available=true"),
 	    dataType: "json",
 	    success: function(json) {
 		    var zones = json.listzonesresponse.zone;
@@ -773,7 +773,7 @@ function doRecurringSnapshot($actionLink, $detailsTab, $midmenuItem1) {
 function populateVirtualMachineField(domainId, account, zoneId) {        
     $.ajax({
 	    cache: false,
-	    data: createURL("command=listVirtualMachines&state=Running&zoneid="+zoneId+"&domainid="+domainId+"&account="+account+maxPageSize),
+	    data: createURL("command=listVirtualMachines&state=Running&zoneid="+zoneId+"&domainid="+domainId+"&account="+account),
 	    dataType: "json",
 	    success: function(json) {			    
 		    var instances = json.listvirtualmachinesresponse.virtualmachine;				
@@ -785,7 +785,7 @@ function populateVirtualMachineField(domainId, account, zoneId) {
 		    }
 			$.ajax({
 				cache: false,
-				data: createURL("command=listVirtualMachines&state=Stopped&zoneid="+zoneId+"&domainid="+domainId+"&account="+account+maxPageSize),
+				data: createURL("command=listVirtualMachines&state=Stopped&zoneid="+zoneId+"&domainid="+domainId+"&account="+account),
 				dataType: "json",
 				success: function(json) {			    
 					var instances = json.listvirtualmachinesresponse.virtualmachine;								

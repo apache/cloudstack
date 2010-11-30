@@ -370,7 +370,7 @@ function hostClearDetailsTab() {
 
 function populateForUpdateOSDialog(oscategoryid) {	
 	$.ajax({
-	    data: createURL("command=listOsCategories"+maxPageSize),
+	    data: createURL("command=listOsCategories"),
 		dataType: "json",
 		success: function(json) {
 			var categories = json.listoscategoriesresponse.oscategory;

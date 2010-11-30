@@ -1422,7 +1422,7 @@ function vmJsonToVolumeTab() {
 	
 	$.ajax({
 		cache: false,
-		data: createURL("command=listVolumes&virtualMachineId="+jsonObj.id+maxPageSize),
+		data: createURL("command=listVolumes&virtualMachineId="+jsonObj.id),
 		dataType: "json",
 		success: function(json) {			    
 			var items = json.listvolumesresponse.volume;
@@ -1487,7 +1487,7 @@ function vmJsonToRouterTab() {
 
 	$.ajax({
 		cache: false,
-		data: createURL("command=listRouters&domainid="+vmObj.domainid+"&account="+vmObj.account+maxPageSize),
+		data: createURL("command=listRouters&domainid="+vmObj.domainid+"&account="+vmObj.account),
 		dataType: "json",
 		success: function(json) {				      
 			var items = json.listroutersresponse.router;

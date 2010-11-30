@@ -22,7 +22,7 @@ function buildZoneTree() {
     var $zoneTree = $("#leftmenu_zone_tree").find("#tree_container").hide();
   
     $.ajax({
-	    data: createURL("command=listZones&available=true"+maxPageSize),
+	    data: createURL("command=listZones&available=true"),
 		dataType: "json",		
 		success: function(json) {
 			var items = json.listzonesresponse.zone;
@@ -55,7 +55,7 @@ function buildZoneTree() {
 					$zoneContent.show();	
 									
 					$.ajax({
-                        data: createURL("command=listPods&zoneid="+zoneObj.id+maxPageSize),
+                        data: createURL("command=listPods&zoneid="+zoneObj.id),
 	                    dataType: "json",
 	                    async: false,
 	                    success: function(json) {
@@ -126,7 +126,7 @@ function buildZoneTree() {
 function refreshClusterUnderPod($podNode, newClusterName, existingClusterId, noClicking) {  
     var podId = $podNode.data("podId"); 
     $.ajax({
-        data: createURL("command=listClusters&podid="+podId+maxPageSize),
+        data: createURL("command=listClusters&podid="+podId),
         dataType: "json",
         async: false,
         success: function(json) {
@@ -176,7 +176,7 @@ function zoneJSONToTreeNode(json, $zoneNode) {
     zoneName.data("jsonObj", json);	    
 		
 	$.ajax({
-        data: createURL("command=listPods&zoneid="+zoneid+maxPageSize),
+        data: createURL("command=listPods&zoneid="+zoneid),
 	    dataType: "json",
 	    async: false,
 	    success: function(json) {
@@ -624,7 +624,7 @@ function initAddZoneWizard() {
          
     var domainDropdown = $addZoneWizard.find("#domain_dropdown").empty();	
 	$.ajax({
-	  data: createURL("command=listDomains"+maxPageSize),
+	  data: createURL("command=listDomains"),
 		dataType: "json",
 		async: false,
 		success: function(json) {

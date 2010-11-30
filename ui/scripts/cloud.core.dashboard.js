@@ -30,7 +30,7 @@ function afterLoadDashboardJSP() {
 		//$("#menutab_dashboard_root, #menutab_vm, #menutab_networking_old, #menutab_networking, #menutab_templates, #menutab_events, #menutab_hosts, #menutab_storage, #menutab_accounts, #menutab_domain").hide();							
    
         $.ajax({
-		    data: createURL("command=listZones&available=true"+maxPageSize),
+		    data: createURL("command=listZones&available=true"),
 			dataType: "json",
 			async: false,
 			success: function(json) {
@@ -165,7 +165,7 @@ function afterLoadDashboardJSP() {
         $thisSection.find("#capacity_zone_select").bind("change", function(event) {
 			var zoneId = $(this).val();
 			$.ajax({
-			    data: createURL("command=listPods&zoneId="+zoneId+maxPageSize),
+			    data: createURL("command=listPods&zoneId="+zoneId),
 				dataType: "json",
 				async: false,
 				success: function(json) {

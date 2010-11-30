@@ -120,7 +120,7 @@ function afterLoadTemplateJSP() {
 	if (isAdmin())  
 		addTemplateZoneField.append("<option value='-1'>All Zones</option>"); 	
     $.ajax({
-        data: createURL("command=listZones&available=true"+maxPageSize),
+        data: createURL("command=listZones&available=true"),
 	    dataType: "json",
 	    success: function(json) {		        
 		    var zones = json.listzonesresponse.zone;	 			     			    	
@@ -135,7 +135,7 @@ function afterLoadTemplateJSP() {
 	});	
     
     $.ajax({
-	    data: createURL("command=listOsTypes&response=json"+maxPageSize),
+	    data: createURL("command=listOsTypes&response=json"),
 		dataType: "json",
 		success: function(json) {
 			types = json.listostypesresponse.ostype;
@@ -154,7 +154,7 @@ function afterLoadTemplateJSP() {
 	});
 	
 	$.ajax({
-	    data: createURL("command=listServiceOfferings&response=json"+maxPageSize),
+	    data: createURL("command=listServiceOfferings&response=json"),
 	    dataType: "json",
 	    success: function(json) {
 	        var items = json.listserviceofferingsresponse.serviceoffering;
@@ -167,7 +167,7 @@ function afterLoadTemplateJSP() {
 	});		
 	
 	$.ajax({
-	    data: createURL("command=listDiskOfferings&response=json"+maxPageSize),
+	    data: createURL("command=listDiskOfferings&response=json"),
 	    dataType: "json",
 	    success: function(json) {
 	        var items = json.listdiskofferingsresponse.diskoffering;

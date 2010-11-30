@@ -39,7 +39,7 @@ function populateGlobalSettingGrid() {
     $thisTab.find("#tab_spinning_wheel").show();   
  
     $.ajax({
-        data: createURL("command=listConfigurations"+maxPageSize),
+        data: createURL("command=listConfigurations"),
         dataType: "json",
         success: function(json) {           
             var items = json.listconfigurationsresponse.configuration;

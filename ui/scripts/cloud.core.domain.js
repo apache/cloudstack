@@ -142,7 +142,7 @@ function domainToRightPanel2($leftmenuItem1) {
 			  	
   	$.ajax({
 	    cache: false,				
-	    data: createURL("command=listAccounts&domainid="+domainId+maxPageSize),
+	    data: createURL("command=listAccounts&domainid="+domainId),
 	    dataType: "json",
 	    success: function(json) {				       
 		    var accounts = json.listaccountsresponse.account;					
@@ -298,7 +298,7 @@ function listAdminAccounts(domainId) {
     var accountType = (domainId==1)? 1: 2; 	    		
     $.ajax({
 		cache: false,				
-	    data: createURL("command=listAccounts&domainid="+domainId+"&accounttype="+accountType+maxPageSize),
+	    data: createURL("command=listAccounts&domainid="+domainId+"&accounttype="+accountType),
 		dataType: "json",
 		success: function(json) {
 			var items = json.listaccountsresponse.account;		
