@@ -37,6 +37,7 @@ import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.AttachIsoCmd;
@@ -69,6 +70,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
@@ -1237,6 +1239,12 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         
         String errMsg = "Unable to attach ISO" + isoId + "to virtual machine " + vmId;
         userId = accountAndUserValidation(account, userId, vmInstanceCheck, iso, errMsg);
+        
+        VMInstanceVO vm = ApiDBUtils.findVMInstanceById(vmId);
+        VMTemplateVO vmTemplate = ApiDBUtils.findTemplateById(vm.getTemplateId());
+        if ("xen-pv-drv-iso".equals(iso.getDisplayText()) && vmTemplate.getHypervisorType() != Hypervisor.HypervisorType.XenServer){
+        	throw new InvalidParameterValueException("Cannot attach Xenserver PV drivers to incompatible hypervisor " +vmTemplate.getHypervisorType());
+        }
         
         return attachISOToVM(vmId, userId, isoId, true);
 	}
