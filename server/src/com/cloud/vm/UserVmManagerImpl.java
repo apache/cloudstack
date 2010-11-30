@@ -2652,6 +2652,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
             templateHostVO.setInstallPath(answer.getPath());
             templateHostVO.setLastUpdated(new Date());
             templateHostVO.setSize(answer.getVirtualSize());
+            templateHostVO.setPhysicalSize(answer.getphysicalSize());
             _templateHostDao.persist(templateHostVO);
 
             // Increment the number of templates

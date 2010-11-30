@@ -5458,14 +5458,14 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             String tmpltUUID = tmpltVDI.getUuid(conn);
             String tmpltFilename = tmpltUUID + ".vhd";
             long virtualSize = tmpltVDI.getVirtualSize(conn);
-            long size = tmpltVDI.getPhysicalUtilisation(conn);
+            long physicalSize = tmpltVDI.getPhysicalUtilisation(conn);
             // create the template.properties file
-            result = postCreatePrivateTemplate(tmpltSrUUID, tmpltFilename, tmpltUUID, userSpecifiedName, null, size, virtualSize, templateId);
+            result = postCreatePrivateTemplate(tmpltSrUUID, tmpltFilename, tmpltUUID, userSpecifiedName, null, physicalSize, virtualSize, templateId);
             if (!result) {
                 throw new CloudRuntimeException("Could not create the template.properties file on secondary storage dir: " + tmpltURI);
             }
             installPath = installPath + "/" + tmpltFilename;
-            return new CreatePrivateTemplateAnswer(cmd, true, null, installPath, virtualSize, tmpltUUID, ImageFormat.VHD);
+            return new CreatePrivateTemplateAnswer(cmd, true, null, installPath, virtualSize, physicalSize, tmpltUUID, ImageFormat.VHD);
         } catch (XenAPIException e) {
             details = "Creating template from volume " + volumeUUID + " failed due to " + e.getMessage();
             s_logger.error(details, e);
@@ -5520,15 +5520,15 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             String tmpltUUID = tmpltVDI.getUuid(conn);
             String tmpltFilename = tmpltUUID + ".vhd";
             long virtualSize = tmpltVDI.getVirtualSize(conn);
-            long size = tmpltVDI.getPhysicalUtilisation(conn);
+            long physicalSize = tmpltVDI.getPhysicalUtilisation(conn);
 
             // create the template.properties file
-            result = postCreatePrivateTemplate(tmpltSrUUID, tmpltFilename, tmpltUUID, userSpecifiedName, null, size, virtualSize, newTemplateId);
+            result = postCreatePrivateTemplate(tmpltSrUUID, tmpltFilename, tmpltUUID, userSpecifiedName, null, physicalSize, virtualSize, newTemplateId);
             if (!result) {
                 throw new CloudRuntimeException("Could not create the template.properties file on secondary storage dir: " + tmpltURI);
             } 
             
-            return new CreatePrivateTemplateAnswer(cmd, true, null, installPath, virtualSize, tmpltUUID, ImageFormat.VHD);
+            return new CreatePrivateTemplateAnswer(cmd, true, null, installPath, virtualSize, physicalSize, tmpltUUID, ImageFormat.VHD);
         } catch (XenAPIException e) {
             details = "Creating template from snapshot " + backedUpSnapshotUuid + " failed due to " + e.getMessage();
             s_logger.error(details, e);

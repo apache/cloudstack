@@ -25,15 +25,18 @@ import com.cloud.storage.Storage.ImageFormat;
 public class CreatePrivateTemplateAnswer extends Answer {
     private String _path;
     private long _virtualSize;
+    private long _physicalSize;
     private String _uniqueName;
     private ImageFormat _format;
 
     public CreatePrivateTemplateAnswer() {}
 
-    public CreatePrivateTemplateAnswer(Command cmd, boolean success, String result, String path, long virtualSize, String uniqueName, ImageFormat format) {
+    public CreatePrivateTemplateAnswer(Command cmd, boolean success, String result, String path, long virtualSize, 
+            long physicalSize, String uniqueName, ImageFormat format) {
         super(cmd, success, result);
         _path = path;
         _virtualSize = virtualSize;
+        _physicalSize = physicalSize;
         _uniqueName = uniqueName;
         _format = format;
     }
@@ -58,6 +61,14 @@ public class CreatePrivateTemplateAnswer extends Answer {
     	_virtualSize = virtualSize;
     }
     
+    public void setphysicalSize(long _physicalSize) {
+        this._physicalSize = _physicalSize;
+    }
+
+    public long getphysicalSize() {
+        return _physicalSize;
+    }
+
     public String getUniqueName() {
     	return _uniqueName;
     }

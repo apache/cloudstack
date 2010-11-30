@@ -1593,17 +1593,17 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     		 loc.addFormat(info);
     		 loc.save();
     		 
-    		 return new CreatePrivateTemplateAnswer(cmd, true, "", tmplPath, info.virtualSize, tmplName, info.format);
+    		 return new CreatePrivateTemplateAnswer(cmd, true, "", tmplPath, info.virtualSize, info.size, tmplName, info.format);
 		} catch (LibvirtException e) {
-			return new CreatePrivateTemplateAnswer(cmd, false, e.getMessage(), null, 0, null, null);
+			return new CreatePrivateTemplateAnswer(cmd, false, e.getMessage());
 		} catch (URISyntaxException e) {
-			return new CreatePrivateTemplateAnswer(cmd, false, e.getMessage(), null, 0, null, null);
+			return new CreatePrivateTemplateAnswer(cmd, false, e.getMessage());
 		} catch (ConfigurationException e) {
-			return new CreatePrivateTemplateAnswer(cmd, false, e.getMessage(), null, 0, null, null);
+			return new CreatePrivateTemplateAnswer(cmd, false, e.getMessage());
 		} catch (InternalErrorException e) {
-			return new CreatePrivateTemplateAnswer(cmd, false, e.getMessage(), null, 0, null, null);
+			return new CreatePrivateTemplateAnswer(cmd, false, e.getMessage());
 		} catch (IOException e) {
-			return new CreatePrivateTemplateAnswer(cmd, false, e.getMessage(), null, 0, null, null);
+			return new CreatePrivateTemplateAnswer(cmd, false, e.getMessage());
 		}	 
     }
     
@@ -1642,13 +1642,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         	 
         	 if (result != null) {
         		 s_logger.debug("failed to create template: " + result);
-        		 return new CreatePrivateTemplateAnswer(cmd,
-            			 false,
-            			 result,
-            			 null,
-            			 0,
-            			 null,
-            			 null);
+        		 return new CreatePrivateTemplateAnswer(cmd, false, result);
         	 }
 
         	 Map<String, Object> params = new HashMap<String, Object>();
@@ -1669,49 +1663,21 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         			 null,
         			 templateInstallFolder + cmd.getUniqueName() + ".qcow2",
         			 info.virtualSize,
+        			 info.size,
         			 cmd.getUniqueName(),
         			 ImageFormat.QCOW2);
          } catch (URISyntaxException e) {
-        	 return new CreatePrivateTemplateAnswer(cmd,
-        			 false,
-        			 e.toString(),
-        			 null,
-        			 0,
-        			 null,
-        			 null);
+        	 return new CreatePrivateTemplateAnswer(cmd, false, e.toString());
          } catch (LibvirtException e) {
         	 s_logger.debug("Failed to get secondary storage pool: " + e.toString());
-        	 return new CreatePrivateTemplateAnswer(cmd,
-        			 false,
-        			 e.toString(),
-        			 null,
-        			 0,
-        			 null,
-        			 null);
+        	 return new CreatePrivateTemplateAnswer(cmd, false, e.toString());
          } catch (InternalErrorException e) {
-        	 return new CreatePrivateTemplateAnswer(cmd,
-        			 false,
-        			 e.toString(),
-        			 null,
-        			 0,
-        			 null,
-        			 null);
+        	 return new CreatePrivateTemplateAnswer(cmd, false, e.toString());
 		} catch (IOException e) {
-			return new CreatePrivateTemplateAnswer(cmd,
-       			 false,
-       			 e.toString(),
-       			 null,
-       			 0,
-       			 null,
-       			 null);
+			return new CreatePrivateTemplateAnswer(cmd, false, e.toString());
+
 		} catch (ConfigurationException e) {
-			return new CreatePrivateTemplateAnswer(cmd,
-	       			 false,
-	       			 e.toString(),
-	       			 null,
-	       			 0,
-	       			 null,
-	       			 null);
+			return new CreatePrivateTemplateAnswer(cmd, false, e.toString());
 		}
     }
     
