@@ -49,7 +49,9 @@ $(document).ready(function() {
 		disableMultipleSelectionInMidMenu();      
 		clearMiddleMenu();
 		
-		$("#right_panel").data("leftmenuId", "leftmenu_domain");
+		$("#right_panel").data("onRefresh", function() {
+		    $("#leftmenu_domain").click();
+		});
 				
 		bindEventHandlerToDomainTreeNode();		
 		refreshWholeTree(g_domainid, defaultRootLevel); 
@@ -69,7 +71,9 @@ $(document).ready(function() {
 		clearMiddleMenu();
 		hideMiddleMenu();
 		
-		$("#right_panel").data("leftmenuId", "leftmenu_dashboard");
+		$("#right_panel").data("onRefreshFn", function() {
+		    $("#leftmenu_dashboard").click();
+		});
 		
 		$("#right_panel").load("jsp/dashboard.jsp", function(){
 			afterLoadDashboardJSP();        
@@ -136,7 +140,9 @@ $(document).ready(function() {
 		    hideMiddleMenu();	
 	        clearMiddleMenu();
 		    	
-		    $("#right_panel").data("leftmenuId", "leftmenu_global_setting");	
+		    $("#right_panel").data("onRefreshFn", function() {
+		        $("#leftmenu_global_setting").click();
+		    });
 		    		    
 		    $("#right_panel").load("jsp/globalsetting.jsp", function(){     
 		        var $actionLink = $("#right_panel_content #tab_content_details #action_link");
@@ -162,7 +168,9 @@ $(document).ready(function() {
 		   
 			expandOrCollapseZoneTree();
 			
-			$("#right_panel").data("leftmenuId", "leftmenu_physical_resource");	
+			$("#right_panel").data("onRefreshFn", function() {
+		        $("#leftmenu_physical_resource").click();
+		    });
 			
 			resourceLoadPage("jsp/resource.jsp", null);			
 			return false;
@@ -204,9 +212,9 @@ $(document).ready(function() {
 	
 	// refresh button
 	$("#refresh_link").bind("click", function(event) {		
-		var leftmenuId = $("#right_panel").data("leftmenuId");
-		if(leftmenuId != null && leftmenuId.length > 0)
-		    $("#"+leftmenuId).click();
+		var onRefreshFn = $("#right_panel").data("onRefreshFn");
+		if(onRefreshFn != null)
+		    onRefreshFn();
 		return false;
 	});
 	

@@ -981,8 +981,10 @@ function listMidMenuItems(commandString, jsonResponse1, jsonResponse2, rightPane
 	$("#midmenu_container").hide();
 	$("#midmenu_spinning_wheel").show();
 	
-	$("#right_panel").data("leftmenuId", leftmenuId);
-	
+	$("#right_panel").data("onRefreshFn", function() {
+	    $("#"+leftmenuId).click();
+	});
+
 	$("#right_panel").load(rightPanelJSP, function(){     
 		var $actionLink = $("#right_panel_content #tab_content_details #action_link");
 		$actionLink.bind("mouseover", function(event) {	    
