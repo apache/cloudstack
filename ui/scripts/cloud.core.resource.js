@@ -245,6 +245,9 @@ function resourceLoadPage(pageToShow, $midmenuItem1) {   //$midmenuItem1 is eith
             $("#tab_details").click();     
         }
         else if(pageToShow == "jsp/primarystorage.jsp") {
+            $(this).data("onRefreshFn", function() {                
+		        primarystorageJsonToDetailsTab();
+		    }); 
             afterLoadPrimaryStorageJSP($midmenuItem1);    
         }         
     });    
