@@ -38,6 +38,6 @@
 	<classpathentry kind="lib" path="/thirdparty/vmware-vim.jar"/>
 	<classpathentry kind="lib" path="/thirdparty/vmware-vim25.jar"/>
 	<classpathentry kind="lib" path="/thirdparty/gson.jar"/>
-	<classpathentry kind="lib" path="/thirdparty/xenserver-5.5.0-1.jar" sourcepath="/thirdparty/xen/XenServerJava"/>
+	<classpathentry kind="lib" path="/thirdparty/xenserver-5.6.0-1.jar" sourcepath="/thirdparty/XenServerJava"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
