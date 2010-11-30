@@ -13,6 +13,7 @@ import com.cloud.vm.VirtualMachineProfile;
 @Local(value=HypervisorGuru.class)
 public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
     @Inject GuestOSDao _guestOsDao;
+    
 	@Override
 	public HypervisorType getHypervisorType() {
 		return HypervisorType.KVM;
@@ -33,5 +34,4 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
 
 		return to;
 	}
-
 }

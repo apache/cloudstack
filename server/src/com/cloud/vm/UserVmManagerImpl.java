@@ -2245,9 +2245,15 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 						{
 							if((publicIp.getAccountId().longValue() == vm.getAccountId()))
 							{
-								_networkMgr.deletePortForwardingRule(rule.getId(),true);//delete the rule with the sys user's credentials
-								if(s_logger.isDebugEnabled())
-									s_logger.debug("Rule "+rule.getId()+" for vm:"+vm.getHostName()+" is deleted successfully during expunge operation");
+								if(publicIp.isOneToOneNat()){
+									_networkMgr.deleteIpForwardingRule(rule.getId());
+									if(s_logger.isDebugEnabled())
+										s_logger.debug("Rule "+rule.getId()+" for vm:"+vm.getHostName()+" is deleted successfully during expunge operation");									
+								}else{
+									_networkMgr.deletePortForwardingRule(rule.getId(),true);//delete the rule with the sys user's credentials
+									if(s_logger.isDebugEnabled())
+										s_logger.debug("Rule "+rule.getId()+" for vm:"+vm.getHostName()+" is deleted successfully during expunge operation");
+								}
 							}
 						}
 					}

@@ -321,13 +321,9 @@ public class ApiServlet extends HttpServlet {
                 resp.setContentType("text/xml");
             }
             resp.setStatus(isError? HttpServletResponse.SC_INTERNAL_SERVER_ERROR : HttpServletResponse.SC_OK);
-            byte[] respBytes = response.getBytes();
-            resp.setContentLength(respBytes.length);
-            OutputStream os = resp.getOutputStream();
-            os.write(respBytes);
-            os.flush();
-            os.close();
-            resp.flushBuffer();
+            
+            // use getWriter() instead of manually manipulate encoding to have better localization support
+			resp.getWriter().print(response);
         } catch (IOException ioex) {
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace("exception writing response: " + ioex);

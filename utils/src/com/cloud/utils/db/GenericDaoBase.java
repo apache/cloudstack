@@ -18,6 +18,7 @@
 package com.cloud.utils.db;
 
 import java.io.Serializable;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -448,7 +449,20 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
         try {
             final Class<?> type = field.getType();
             if (type == String.class) {
-                field.set(entity, rs.getString(index));
+            	byte[] bytes = rs.getBytes(index);
+            	if(bytes != null) {
+            		try {
+						field.set(entity, new String(bytes, "UTF-8"));
+					} catch (IllegalArgumentException e) {
+						assert(false);
+						throw new CloudRuntimeException("IllegalArgumentException when converting UTF-8 data");
+					} catch (UnsupportedEncodingException e) {
+						assert(false);
+						throw new CloudRuntimeException("UnsupportedEncodingException when converting UTF-8 data");
+					}
+            	} else {
+            		field.set(entity, null);
+            	}
             } else if (type == long.class) {
                 field.setLong(entity, rs.getLong(index));
             } else if (type == Long.class) {
@@ -560,7 +574,16 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     @DB(txn=false) @SuppressWarnings("unchecked")
     protected <M> M getObject(Class<M> type, ResultSet rs, int index) throws SQLException {
         if (type == String.class) {
-            return (M)rs.getString(index);
+        	byte[] bytes = rs.getBytes(index);
+        	if(bytes != null) {
+        		try {
+					return (M)new String(bytes, "UTF-8");
+				} catch (UnsupportedEncodingException e) {
+					throw new CloudRuntimeException("UnsupportedEncodingException exception while converting UTF-8 data");
+				}	
+        	} else {
+        		return (M)null;
+        	}
         } else if (type == int.class) {
             return (M)new Integer(rs.getInt(index));
         } else if (type == Integer.class) {
@@ -1197,10 +1220,23 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
             final Column column = attr.field.getAnnotation(Column.class);
             final int length = column != null ? column.length() : 255;
 
+            // to support generic localization, utilize MySql UTF-8 support 
             if (length < str.length()) {
-                pstmt.setString(j, str.substring(0, column.length()));
+        		try {
+					pstmt.setBytes(j, str.substring(0, column.length()).getBytes("UTF-8"));
+				} catch (UnsupportedEncodingException e) {
+					// no-way it can't support UTF-8 encoding
+					assert(false);
+					throw new CloudRuntimeException("UnsupportedEncodingException when saving string as UTF-8 data");
+				}
             } else {
-                pstmt.setString(j, str);
+        		try {
+        			pstmt.setBytes(j, str.getBytes("UTF-8"));
+				} catch (UnsupportedEncodingException e) {
+					// no-way it can't support UTF-8 encoding
+					assert(false);
+					throw new CloudRuntimeException("UnsupportedEncodingException when saving string as UTF-8 data");
+				}
             }
         } else if (attr.field.getType() == Date.class) {
             final Date date = (Date)value;

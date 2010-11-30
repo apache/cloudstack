@@ -43,7 +43,7 @@ public class IpForwardingRuleResponse extends BaseResponse {
     @SerializedName("virtualmachinedisplayname") @Param(description="the VM display name for the port forwarding rule")
     private String virtualMachineDisplayName;
 
-    @SerializedName("publicipaddress") @Param(description="the public ip address for the port forwarding rule")
+    @SerializedName("ipaddress") @Param(description="the public ip address for the port forwarding rule")
     private String publicIpAddress;
     
     public Long getId() {

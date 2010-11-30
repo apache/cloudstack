@@ -537,11 +537,11 @@ function createURL(url) {
 }
 
 function fromdb(val) {
-    return sanitizeXSS(unescape(noNull(val)));
+    return sanitizeXSS(noNull(val));
 }
 
 function todb(val) {
-    return encodeURIComponent(escape(val));
+    return encodeURIComponent(val);
 }
 
 var midmenuItemCount = 20;

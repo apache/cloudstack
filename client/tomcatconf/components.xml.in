@@ -64,6 +64,7 @@
         <adapters key="com.cloud.hypervisor.HypervisorGuru">
             <adapter name="XenServerGuru" class="com.cloud.hypervisor.XenServerGuru"/>
             <adapter name="KVMGuru" class="com.cloud.hypervisor.KVMGuru"/>
+            <adapter name="VMwareGuru" class="com.cloud.hypervisor.VMwareGuru"/>
         </adapters>
         <adapters key="com.cloud.resource.Discoverer">
             <adapter name="XCP Agent" class="com.cloud.hypervisor.xen.discoverer.XcpServerDiscoverer"/>

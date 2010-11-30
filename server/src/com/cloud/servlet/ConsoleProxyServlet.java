@@ -67,14 +67,15 @@ public class ConsoleProxyServlet extends HttpServlet {
 	
 	@Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
+		
 		try {
             String userId = null;
             String account = null;
             Account accountObj = null;
-			
+            
             Map<String, Object[]> params = new HashMap<String, Object[]>();
             params.putAll(req.getParameterMap());
-            
+
             HttpSession session = req.getSession(false);
             if(session == null) {
             	if(verifyRequest(params)) {
