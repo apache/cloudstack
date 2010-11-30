@@ -810,7 +810,9 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         if (!(guestOsTypeName.startsWith("Windows") || guestOsTypeName.startsWith("Citrix") || guestOsTypeName.startsWith("Other"))) {
             if (vmSpec.getBootloader() == BootloaderType.CD) {
                 vm.setPVBootloader(conn, "eliloader");
-                vm.addToOtherConfig(conn, "install-repository", "cdrom");
+                Map<String, String> otherConfig = vm.getOtherConfig(conn);
+                otherConfig.put( "install-repository", "cdrom");
+                vm.setOtherConfig(conn, otherConfig);
             } else if (vmSpec.getBootloader() == BootloaderType.PyGrub ){
                 vm.setPVBootloader(conn, "pygrub");
             } else {
