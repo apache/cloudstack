@@ -1196,6 +1196,16 @@ public class ManagementServerImpl implements ManagementServer {
             throw new InvalidParameterValueException("Unable to find service offering: " + serviceOfferingId);
         }
 
+        if(offering.getDomainId() == null){
+        	//do nothing as offering is public
+        }else{
+        	if(userAccount != null){
+    			_configMgr.checkAccess(userAccount, offering);//user deploying his own vm
+    		}else{
+    			_configMgr.checkAccess(ctxAccount, offering);
+    		}
+        }
+        
         VMTemplateVO template = _templateDao.findById(templateId);
         // Make sure a valid template ID was specified
         if (template == null) {

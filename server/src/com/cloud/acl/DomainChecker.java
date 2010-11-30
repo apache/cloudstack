@@ -25,6 +25,7 @@ import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.storage.dao.LaunchPermissionDao;
 import com.cloud.template.VirtualMachineTemplate;
@@ -100,6 +101,54 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
         return checkAccess(account, entity);
     }
 
+
+	@Override
+	public boolean checkAccess(Account account, ServiceOffering so) throws PermissionDeniedException 
+	{
+		if(account == null || so.getDomainId() == null)
+		{//public offering
+			return true;
+		}
+		else
+		{
+			//admin has all permissions
+			if(account.getType() == Account.ACCOUNT_TYPE_ADMIN)
+			{
+				return true;
+			}		
+			//if account is normal user
+			//check if account's domain is a child of zone's domain
+			else if(account.getType() == Account.ACCOUNT_TYPE_NORMAL || account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)
+			{
+				if(account.getDomainId() == so.getDomainId())
+				{
+					return true; //service offering and account at exact node
+				}
+				else
+				{
+		    		DomainVO domainRecord = _domainDao.findById(account.getDomainId());
+		    		if(domainRecord != null)
+		    		{
+		    			while(true)
+		    			{
+		    				if(domainRecord.getId() == so.getDomainId())
+		    				{
+		    					//found as a child
+		    					return true;
+		    				}
+		    				if(domainRecord.getParent() != null)
+		    					domainRecord = _domainDao.findById(domainRecord.getParent());
+		    				else
+		    					break;
+		    			}
+		    		}
+				}
+			}
+		}
+		//not found
+		return false;
+	}	
+    
 	@Override
 	public boolean checkAccess(Account account, DataCenter zone) throws PermissionDeniedException {
 		if(account == null || zone.getDomainId() == null){//public zone
