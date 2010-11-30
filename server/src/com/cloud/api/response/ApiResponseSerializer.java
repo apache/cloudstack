@@ -4,10 +4,10 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.LinkedList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
 
@@ -28,6 +28,16 @@ public class ApiResponseSerializer {
             return toXMLSerializedString(result);
         }
     }
+    
+    private static final Pattern s_unicodeEscapePattern = Pattern.compile("\\\\u([0-9A-Fa-f]{4})");
+    public static String unescape(String escaped) {
+	    String str = escaped;
+	    Matcher matcher = s_unicodeEscapePattern.matcher(str);
+	    while(matcher.find()) {
+	    	str = str.replaceAll("\\" + matcher.group(0), Character.toString((char)Integer.parseInt(matcher.group(1), 16)));
+	    }
+	    return str;
+    }
 
     private static String toJSONSerializedString(ResponseObject result) {
         if (result != null) {
@@ -39,10 +49,12 @@ public class ApiResponseSerializer {
                 List<? extends ResponseObject> responses = ((ListResponse)result).getResponses();
                 if ((responses != null) && !responses.isEmpty()) {
                     int count = responses.size();
-                    String jsonStr = gson.toJson(responses.get(0));
+                    String jsonStr = gson.toJson(responses.get(0));;
+                    jsonStr = unescape(jsonStr);
                     sb.append("{ \"" + responses.get(0).getObjectName() + "\" : [  " + jsonStr);
                     for (int i = 1; i < count; i++) {
                         jsonStr = gson.toJson(responses.get(i));
+                        jsonStr = unescape(jsonStr);
                         sb.append(", " + jsonStr);
                     }
                     sb.append(" ] }");
@@ -54,6 +66,7 @@ public class ApiResponseSerializer {
             } else {
                 String jsonStr = gson.toJson(result);
                 if ((jsonStr != null) && !"".equals(jsonStr)) {
+                	jsonStr = unescape(jsonStr);
                 	if (result instanceof AsyncJobResponse || result instanceof CreateCmdResponse) {
                 		sb.append(jsonStr);
                 	} else {

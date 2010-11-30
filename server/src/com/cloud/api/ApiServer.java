@@ -274,9 +274,9 @@ public class ApiServer implements HttpRequestHandler {
                     response.setStatusCode(se.getErrorCode());
                     response.setReasonPhrase(se.getDescription());
                     BasicHttpEntity body = new BasicHttpEntity();
-                    body.setContentType("text/xml; charset=UTF-8");
+                    body.setContentType("text/xml");
                     String responseStr = "<error>"+se.getErrorCode()+" : "+se.getDescription()+"</error>";
-                    body.setContent(new ByteArrayInputStream(responseStr.getBytes()));
+                    body.setContent(new ByteArrayInputStream(responseStr.getBytes("UTF-8")));
                     response.setEntity(body);
 
                     sb.append(" " + se.getErrorCode() + " " + responseStr.length());
@@ -714,19 +714,19 @@ public class ApiServer implements HttpRequestHandler {
             BasicHttpEntity body = new BasicHttpEntity();
             if (BaseCmd.RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
                 // JSON response
-                body.setContentType("text/javascript; charset=UTF-8");
+                body.setContentType("text/javascript");
                 if (responseText == null) {
-                    body.setContent(new ByteArrayInputStream("{ \"error\" : { \"description\" : \"Internal Server Error\" } }".getBytes()));
+                    body.setContent(new ByteArrayInputStream("{ \"error\" : { \"description\" : \"Internal Server Error\" } }".getBytes("UTF-8")));
                 }
             } else {
-                body.setContentType("text/xml; charset=UTF-8");
+                body.setContentType("text/xml");
                 if (responseText == null) {
-                    body.setContent(new ByteArrayInputStream("<error>Internal Server Error</error>".getBytes()));
+                    body.setContent(new ByteArrayInputStream("<error>Internal Server Error</error>".getBytes("UTF-8")));
                 }
             }
 
             if (responseText != null) {
-                body.setContent(new ByteArrayInputStream(responseText.getBytes()));
+                body.setContent(new ByteArrayInputStream(responseText.getBytes("UTF-8")));
             }
             resp.setEntity(body);
         } catch (Exception ex) {
