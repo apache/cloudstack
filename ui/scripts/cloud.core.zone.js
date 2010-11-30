@@ -891,7 +891,7 @@ function doEditZone2($actionLink, $detailsTab, $leftmenuItem1, $readonlyFields, 
                            
                 if(item.dns1 != oldDns1 || item.dns2 != oldDns2) {
                     $("#dialog_info")
-                    .text("DNS update will not take effect until all virtual routers are stopped and then started")
+                    .text("DNS update will not take effect until all virtual routers and system vms are stopped and then started")
                     .dialog("open"); 
                 }               	    
 		    }
