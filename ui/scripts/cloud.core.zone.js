@@ -395,7 +395,7 @@ function initAddVLANButton($button, $leftmenuItem1) {
 			        									
 			    function populateDomainDropdown(id) {					        
                     $.ajax({
-	                    data: createURL("command=listDomainChildren&id="+id+"&pageSize=-1"),
+	                    data: createURL("command=listDomainChildren&id="+id),
 	                    dataType: "json",
 	                    async: false,
 	                    success: function(json) {					        

@@ -34,7 +34,7 @@ function drawRootNode(rootDomainId) {
     var $domainTree = $("#leftmenu_domain_tree").find("#tree_container").hide();
    
     $.ajax({
-        data: createURL("command=listDomains&id="+rootDomainId+"&pageSize=-1"), //pageSize=-1 will return all items (no limitation)
+        data: createURL("command=listDomains&id="+rootDomainId), 
         dataType: "json",
         async: false,
         success: function(json) {					        
@@ -72,7 +72,7 @@ function drawNode(json, level, container) {
 
 function drawTree(id, level, container) {		        
     $.ajax({
-	    data: createURL("command=listDomainChildren&id="+id+"&pageSize=-1"),
+	    data: createURL("command=listDomainChildren&id="+id),
 	    dataType: "json",
 	    async: false,
 	    success: function(json) {					        

@@ -1669,7 +1669,7 @@ function appendInstanceGroup(groupId, groupName) {
         var groupId = $(this).data("groupId");                                   
         $.ajax({
             cache: false,
-            data: createURL("command=listVirtualMachines&groupid="+groupId+"&pagesize="+midmenuItemCount),
+            data: createURL("command=listVirtualMachines&groupid="+groupId+"&pagesize="+midmenuItemCount+"&page=1"),
             dataType: "json",
             success: function(json) {		                                                             
                 var instances = json.listvirtualmachinesresponse.virtualmachine;    
