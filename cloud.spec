@@ -487,6 +487,7 @@ fi
 %{_javadir}/%{name}-xenserver-5.6.0-1.jar
 %{_javadir}/%{name}-xmlrpc-common-3.*.jar
 %{_javadir}/%{name}-xmlrpc-client-3.*.jar
+%{_javadir}/%{name}-jstl-1.2.jar
 
 %files core
 %defattr(0644,root,root,0755)
