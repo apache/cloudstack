@@ -138,8 +138,8 @@
                             <form method="post" action="#">
                             <ol>
                                 <li>
-                                    <div class="search_textbg">
-                                        <input class="text" type="text" name="search_input" />
+                                    <div id="basic_search" class="search_textbg">
+                                        <input class="text" type="text" id="search_input" />
                                         <div class="search_closebutton" style="display: none;">
                                         </div>
                                     </div>

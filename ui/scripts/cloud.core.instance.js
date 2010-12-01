@@ -17,9 +17,40 @@
  */
 
 function vmGetSearchParams() {
-    return "";
+    var moreCriteria = [];	
+    
+	var advanced;       
+	if (advanced != null && advanced) {		
+	    var name = $("#advanced_search #adv_search_name").val();	
+	    var state = $("#advanced_search #adv_search_state").val();
+	    var zone = $("#advanced_search #adv_search_zone").val();
+	    var pod = $("#advanced_search #adv_search_pod").val();
+	    var domainId = $("#advanced_search #adv_search_domain").val();
+	    var account = $("#advanced_search #adv_search_account").val();
+	    							
+		if (name!=null && trim(name).length > 0) 
+			moreCriteria.push("&name="+todb(name));				
+		if (state!=null && state.length > 0) 
+			moreCriteria.push("&state="+state);		
+	    if (zone!=null && zone.length > 0) 
+			moreCriteria.push("&zoneid="+zone);		
+	    if (domainId!=null && domainId.length > 0) 
+			moreCriteria.push("&domainid="+domainId);		
+	    if (pod!=null && pod.length > 0) 
+			moreCriteria.push("&podId="+pod);		
+		if (account!=null && account.length > 0) 
+			moreCriteria.push("&account="+account);		       
+		commandString = "command=listVirtualMachines&page="+currentPage+moreCriteria.join("")+"&response=json";
+	} 
+	else {     			    		
+	    var searchInput = $("#basic_search").find("#search_input").val();	 
+        if (searchInput != null && searchInput.length > 0) {	           
+            moreCriteria.push("&name="+searchInput);	       
+        }        
+	}
+	
+	return moreCriteria.join("");          
 }
-
 function instanceBuildSubMenu() {    
     if (isAdmin() || isDomainAdmin()) {
 		$("#leftmenu_instance_expandedbox").find("#leftmenu_instances_my_instances_container, #leftmenu_instances_all_instances_container, #leftmenu_instances_running_instances_container, #leftmenu_instances_stopped_instances_container, #leftmenu_instances_destroyed_instances_container ").show();

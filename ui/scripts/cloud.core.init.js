@@ -210,6 +210,18 @@ $(document).ready(function() {
 		return;
 	}
 	
+	//basic search	
+	$("#basic_search").find("#search_input").unbind("keypress").bind("keypress", function(event) { 	 
+	    event.stopPropagation();   
+	    if(event.keyCode == keycode_Enter) { 
+	        event.preventDefault();
+	        var params = $("#middle_menu_pagination").data("params");
+	        if(params == null)
+	            return;	        	    
+	        listMidMenuItems2(params.commandString, params.getSearchParamsFn, params.jsonResponse1, params.jsonResponse2, params.toMidmenuFn, params.toRightPanelFn, params.getMidmenuIdFn, params.isMultipleSelectionInMidMenu, 1);
+	    }		    
+	});
+	
 	//pagination
 	$("#middle_menu_pagination").unbind("clik").bind("click", function(event) {	
 	    var params = $(this).data("params");
