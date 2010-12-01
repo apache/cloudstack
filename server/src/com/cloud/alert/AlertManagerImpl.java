@@ -263,6 +263,7 @@ public class AlertManagerImpl implements AlertManager {
         for (ServiceOfferingVO offering : offerings) {
             offeringsMap.put(offering.getId(), offering);
         }
+        /*
         for (HostVO host : hosts) {
             if (host.getType() != Host.Type.Routing) {
                 continue;
@@ -311,7 +312,7 @@ public class AlertManagerImpl implements AlertManager {
             CapacityVO newCPUCapacity = new CapacityVO(host.getId(), host.getDataCenterId(), host.getPodId(), cpu, (long)(host.getCpus()*host.getSpeed()* _cpuOverProvisioningFactor), CapacityVO.CAPACITY_TYPE_CPU);
             newCapacities.add(newMemoryCapacity);
             newCapacities.add(newCPUCapacity);
-        }
+        } */
 
         // Calculate storage pool capacity
         List<StoragePoolVO> storagePools = _storagePoolDao.listAll();

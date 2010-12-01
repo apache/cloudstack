@@ -363,6 +363,7 @@ public class MauriceMoss implements VmManager, ClusterManagerListener {
                 throw e;
             } catch (StorageUnavailableException e) {
                 s_logger.warn("Unable to contact storage.", e);
+                avoids.addCluster(dest.getCluster().getId());
                 continue;
             }
             _networkMgr.prepare(vmProfile, dest, context);
