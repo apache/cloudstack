@@ -345,7 +345,10 @@ public class ApiResponseHelper implements ResponseGenerator {
         offeringResponse.setOfferHa(offering.getOfferHA());
         offeringResponse.setUseVirtualNetwork(offering.getGuestIpType().equals(GuestIpType.Virtualized));
         offeringResponse.setTags(offering.getTags());
-        offeringResponse.setDomainId(offering.getDomainId());
+        if(offering.getDomainId() != null){
+        	offeringResponse.setDomain(ApiDBUtils.findDomainById(offering.getDomainId()).getName());
+            offeringResponse.setDomainId(offering.getDomainId());
+        }
         offeringResponse.setObjectName("serviceoffering");
 
         return offeringResponse;

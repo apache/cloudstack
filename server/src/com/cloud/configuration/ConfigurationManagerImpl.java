@@ -1166,7 +1166,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     		return null;
     	}
     }
-
+    
     @Override
     public ServiceOffering updateServiceOffering(UpdateServiceOfferingCmd cmd) {
     	String displayText = cmd.getDisplayText();
@@ -1176,7 +1176,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 //    	String tags = cmd.getTags();
     	Boolean useVirtualNetwork = cmd.getUseVirtualNetwork();
     	Long userId = UserContext.current().getUserId();
-
+    	Long domainId = cmd.getDomainId();
+    	    	
         if (userId == null) {
             userId = Long.valueOf(User.UID_SYSTEM);
         }
@@ -1186,8 +1187,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     	if (offeringHandle == null) {
     		throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find service offering " + id);
     	}
-    	
-    	boolean updateNeeded = (name != null || displayText != null || ha != null || useVirtualNetwork != null);
+    	    	
+    	boolean updateNeeded = (name != null || displayText != null || ha != null || useVirtualNetwork != null || domainId != null);
     	if (!updateNeeded) {
     		return _serviceOfferingDao.findById(id);
     	}
@@ -1211,6 +1212,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             offering.setGuestIpType(guestIpType);
         }
 
+        if (domainId != null){
+        	offering.setDomainId(domainId);
+        }
 //        if (tags != null) 
 //        {
 //        	if (tags.trim().isEmpty() && offeringHandle.getTags() == null) 
@@ -1236,7 +1240,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if (_serviceOfferingDao.update(id, offering)) {
         	offering = _serviceOfferingDao.findById(id);
     		saveConfigurationEvent(userId, null, EventTypes.EVENT_SERVICE_OFFERING_EDIT, "Successfully updated service offering with name: " + offering.getName() + ".", "soId=" + offering.getId(), "name=" + offering.getName(),
-    				"displayText=" + offering.getDisplayText(), "offerHA=" + offering.getOfferHA(), "useVirtualNetwork=" + (offering.getGuestIpType() == NetworkOffering.GuestIpType.Virtualized), "tags=" + offering.getTags());
+    				"displayText=" + offering.getDisplayText(), "offerHA=" + offering.getOfferHA(), "useVirtualNetwork=" + (offering.getGuestIpType() == NetworkOffering.GuestIpType.Virtualized), "tags=" + offering.getTags(), "domainId=" + offering.getDomainId());
         	return offering;
         } else {
         	return null;
@@ -1287,6 +1291,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     	String name = cmd.getDiskOfferingName();
     	String displayText = cmd.getDisplayText();
 //    	String tags = cmd.getTags();
+    	Long domainId = cmd.getDomainId();
     	
     	//Check if diskOffering exists
     	DiskOfferingVO diskOfferingHandle = _diskOfferingDao.findById(diskOfferingId);
@@ -1308,6 +1313,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     	
     	if (displayText != null) {
     		diskOffering.setDisplayText(displayText);
+    	}
+    	
+    	if (domainId != null){
+    		diskOffering.setDomainId(domainId);
     	}
     	
 //        if (tags != null) 
@@ -1334,7 +1343,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
     	if (_diskOfferingDao.update(diskOfferingId, diskOffering)) {
             saveConfigurationEvent(UserContext.current().getUserId(), null, EventTypes.EVENT_DISK_OFFERING_EDIT, "Successfully updated disk offering with name: " + diskOffering.getName() + ".", "doId=" + diskOffering.getId(), "name=" + diskOffering.getName(),
-                    "displayText=" + diskOffering.getDisplayText(), "diskSize=" + diskOffering.getDiskSize(),"tags=" + diskOffering.getTags());
+                    "displayText=" + diskOffering.getDisplayText(), "diskSize=" + diskOffering.getDiskSize(),"tags=" + diskOffering.getTags(),"domainId="+cmd.getDomainId());
     		return _diskOfferingDao.findById(diskOfferingId);
     	} else { 
     		return null;
