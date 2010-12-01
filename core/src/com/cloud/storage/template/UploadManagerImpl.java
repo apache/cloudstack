@@ -321,8 +321,14 @@ public class UploadManagerImpl implements UploadManager {
     }
     
     @Override
-    public CreateEntityDownloadURLAnswer handleCreateEntityURLCommand(CreateEntityDownloadURLCommand cmd){
-        
+    public CreateEntityDownloadURLAnswer handleCreateEntityURLCommand(CreateEntityDownloadURLCommand cmd){       
+    	
+    	boolean isApacheUp = checkAndStartApache();
+    	if (!isApacheUp){
+    		String errorString = "Error in starting Apache server ";
+            s_logger.error(errorString);
+            return new CreateEntityDownloadURLAnswer(errorString, CreateEntityDownloadURLAnswer.RESULT_FAILURE);
+    	}
         // Create the directory structure so that its visible under apache server root
         Script command = new Script("mkdir", s_logger);
         command.add("-p");
@@ -330,7 +336,7 @@ public class UploadManagerImpl implements UploadManager {
         String result = command.execute();
         if (result != null) {
             String errorString = "Error in creating directory =" + result;
-            s_logger.warn(errorString);
+            s_logger.error(errorString);
             return new CreateEntityDownloadURLAnswer(errorString, CreateEntityDownloadURLAnswer.RESULT_FAILURE);
         }
         
@@ -342,7 +348,7 @@ public class UploadManagerImpl implements UploadManager {
         result = command.execute();
         if (result != null) {
             String errorString = "Error in linking  err=" + result; 
-            s_logger.warn(errorString);
+            s_logger.error(errorString);
             return new CreateEntityDownloadURLAnswer(errorString, CreateEntityDownloadURLAnswer.RESULT_FAILURE);
         }
         
@@ -582,62 +588,51 @@ public class UploadManagerImpl implements UploadManager {
     	}		
 	}
 
-  private void startAdditionalServices() {
-    	
-    	Script command = new Script("/bin/bash", s_logger);
-		command.add("-c");
-    	command.add("service httpd stop ");
-    	String result = command.execute();
-    	if (result != null) {
-    		s_logger.warn("Error in stopping httpd service err=" + result );
-    	}
-    	String port = Integer.toString(TemplateConstants.DEFAULT_TMPLT_COPY_PORT);
-    	String intf = TemplateConstants.DEFAULT_TMPLT_COPY_INTF;
-    	
-    	command = new Script("/bin/bash", s_logger);
-		command.add("-c");
-    	command.add("iptables -D INPUT -i " + intf + " -p tcp -m state --state NEW -m tcp --dport " + port + " -j DROP;" +
-			        "iptables -D INPUT -i " + intf + " -p tcp -m state --state NEW -m tcp --dport " + port + " -j HTTP;" +
-			        "iptables -D INPUT -i " + intf + " -p tcp -m state --state NEW -m tcp --dport " + "443" + " -j DROP;" +
-			        "iptables -D INPUT -i " + intf + " -p tcp -m state --state NEW -m tcp --dport " + "443" + " -j HTTP;" +
-			        "iptables -F HTTP;" +
-			        "iptables -X HTTP;" +
-			        "iptables -N HTTP;" +
-    			    "iptables -I INPUT -i " + intf + " -p tcp -m state --state NEW -m tcp --dport " + port + " -j DROP;" +
-    			    "iptables -I INPUT -i " + intf + " -p tcp -m state --state NEW -m tcp --dport " + "443" + " -j DROP;" +
-    			    "iptables -I INPUT -i " + intf + " -p tcp -m state --state NEW -m tcp --dport " + port + " -j HTTP;" +
-    	            "iptables -I INPUT -i " + intf + " -p tcp -m state --state NEW -m tcp --dport " + "443" + " -j HTTP;");
-
-    	result = command.execute();
-    	if (result != null) {
-    		s_logger.warn("Error in opening up httpd port err=" + result );
-    		return;
-    	}
-    	
-    	command = new Script("/bin/bash", s_logger);
-		command.add("-c");
-    	command.add("service httpd start ");
-    	result = command.execute();
-    	if (result != null) {
-    		s_logger.warn("Error in starting httpd service err=" + result );
-    		return;
-    	}
-    	command = new Script("mkdir", s_logger);
-		command.add("-p");
-    	command.add("/var/www/html/copy/template");
-    	result = command.execute();
-    	if (result != null) {
-    		s_logger.warn("Error in creating directory =" + result );
-    		return;
-    	}
-    	
-    	command = new Script("/bin/bash", s_logger);
-		command.add("-c");
-    	command.add("ln -sf " + publicTemplateRepo + " /var/www/html/copy/template");
-    	result = command.execute();
-    	if (result != null) {
-    		s_logger.warn("Error in linking  err=" + result );
-    		return;
-    	}
+  private boolean checkAndStartApache() {
+    			  
+	  	//Check whether the Apache server is running
+	  	Script command = new Script("/bin/bash", s_logger);
+			command.add("-c");
+	  	command.add("if [ -d /etc/apache2 ] ; then service apache2 status | grep pid; else service httpd status | grep pid; fi ");
+	  	String result = command.execute();
+	  	
+	  	//Apache Server is not running. Try to start it.
+	  	if (result != null) { 				  	
+		  	
+	  		s_logger.warn("Apache server not running, trying to start it");
+			String port = Integer.toString(TemplateConstants.DEFAULT_TMPLT_COPY_PORT);
+			String intf = TemplateConstants.DEFAULT_TMPLT_COPY_INTF;
+			
+			command = new Script("/bin/bash", s_logger);
+			command.add("-c");
+			command.add("iptables -D INPUT -i " + intf + " -p tcp -m state --state NEW -m tcp --dport " + port + " -j DROP;" +
+				        "iptables -D INPUT -i " + intf + " -p tcp -m state --state NEW -m tcp --dport " + port + " -j HTTP;" +
+				        "iptables -D INPUT -i " + intf + " -p tcp -m state --state NEW -m tcp --dport " + "443" + " -j DROP;" +
+				        "iptables -D INPUT -i " + intf + " -p tcp -m state --state NEW -m tcp --dport " + "443" + " -j HTTP;" +
+				        "iptables -F HTTP;" +
+				        "iptables -X HTTP;" +
+				        "iptables -N HTTP;" +
+					    "iptables -I INPUT -i " + intf + " -p tcp -m state --state NEW -m tcp --dport " + port + " -j DROP;" +
+					    "iptables -I INPUT -i " + intf + " -p tcp -m state --state NEW -m tcp --dport " + "443" + " -j DROP;" +
+					    "iptables -I INPUT -i " + intf + " -p tcp -m state --state NEW -m tcp --dport " + port + " -j HTTP;" +
+			            "iptables -I INPUT -i " + intf + " -p tcp -m state --state NEW -m tcp --dport " + "443" + " -j HTTP;");
+		
+			result = command.execute();
+			if (result != null) {
+				s_logger.warn("Error in opening up httpd port err=" + result );
+				return false;
+			}			
+			
+			command = new Script("/bin/bash", s_logger);
+			command.add("-c");
+			command.add("if [ -d /etc/apache2 ] ; then service apache2 start; else service httpd start; fi ");
+			result = command.execute();
+			if (result != null) {
+				s_logger.warn("Error in starting httpd service err=" + result );
+				return false;
+			}
+	  	}
+	  	
+		return true;
 	}
 }    
