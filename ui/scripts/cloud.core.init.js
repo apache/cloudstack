@@ -213,6 +213,8 @@ $(document).ready(function() {
 	//pagination
 	$("#middle_menu_pagination").unbind("clik").bind("click", function(event) {	
 	    var params = $(this).data("params");
+	    if(params == null)
+	        return;	    
 	    
 	    var $target = $(event.target);
 	    var targetId = $target.attr("id");
