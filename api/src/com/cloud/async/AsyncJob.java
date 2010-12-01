@@ -20,6 +20,15 @@ package com.cloud.async;
 import java.util.Date;
 
 public interface AsyncJob {
+	public enum Type {
+        None,
+		VirtualMachine,
+        Router,
+        Volume,
+        ConsoleProxy,
+        Snapshot
+    }
+	
     Long getId();
     long getUserId();
     long getAccountId();
@@ -38,7 +47,7 @@ public interface AsyncJob {
     Date getLastUpdated();
     Date getLastPolled();
     Date getRemoved();
-    String getInstanceType();
+    Type getInstanceType();
     Long getInstanceId();
     String getSessionKey();
     String getCmdOriginator();

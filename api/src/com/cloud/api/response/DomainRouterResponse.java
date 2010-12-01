@@ -28,12 +28,6 @@ public class DomainRouterResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the id of the router")
     private Long id;
  
-    @SerializedName(ApiConstants.JOB_ID) @Param(description="the job ID associated with the router. This is only displayed if the router listed is part of a currently running asynchronous job.")
-    private Long jobId;
-
-    @SerializedName("jobstatus") @Param(description="the job status associated with the router.  This is only displayed if the router listed is part of a currently running asynchronous job.")
-    private Integer jobStatus;
-
     @SerializedName(ApiConstants.ZONE_ID) @Param(description="the Zone ID for the router")
     private Long zoneId;
 
@@ -115,22 +109,6 @@ public class DomainRouterResponse extends BaseResponse {
 
     public void setId(Long id) {
         this.id = id;
-    }
-
-    public Long getJobId() {
-        return jobId;
-    }
-
-    public void setJobId(Long jobId) {
-        this.jobId = jobId;
-    }
-
-    public Integer getJobStatus() {
-        return jobStatus;
-    }
-
-    public void setJobStatus(Integer jobStatus) {
-        this.jobStatus = jobStatus;
     }
 
     public Long getZoneId() {

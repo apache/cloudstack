@@ -26,6 +26,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.UserVmResponse;
+import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -87,6 +88,14 @@ public class StartVMCmd extends BaseAsyncCmd {
     @Override
     public String getEventDescription() {
         return  "starting user vm: " + getId();
+    }
+    
+    public AsyncJob.Type getInstanceType() {
+    	return AsyncJob.Type.VirtualMachine;
+    }
+    
+    public Long getInstanceId() {
+    	return getId();
     }
     
     @Override

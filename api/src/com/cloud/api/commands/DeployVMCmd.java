@@ -29,6 +29,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.UserVmResponse;
+import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InsufficientStorageCapacityException;
 import com.cloud.exception.ResourceAllocationException;
@@ -189,6 +190,10 @@ public class DeployVMCmd extends BaseAsyncCmd {
     @Override
     public String getEventDescription() {
         return  "deploying Vm";
+    }
+    
+    public AsyncJob.Type getInstanceType() {
+    	return AsyncJob.Type.VirtualMachine;
     }
     
     @Override

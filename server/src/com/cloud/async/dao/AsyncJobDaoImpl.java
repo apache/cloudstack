@@ -25,6 +25,7 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.async.AsyncJob;
 import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.utils.db.Filter;
@@ -36,7 +37,8 @@ import com.cloud.utils.db.SearchCriteria;
 public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements AsyncJobDao {
     private static final Logger s_logger = Logger.getLogger(AsyncJobDaoImpl.class.getName());
 	
-	private SearchBuilder<AsyncJobVO> pendingAsyncJobSearch;		
+	private SearchBuilder<AsyncJobVO> pendingAsyncJobSearch;	
+	private SearchBuilder<AsyncJobVO> pendingAsyncJobsSearch;	
 	private SearchBuilder<AsyncJobVO> expiringAsyncJobSearch;		
 	
 	public AsyncJobDaoImpl() {
@@ -48,6 +50,15 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
 		pendingAsyncJobSearch.and("status", pendingAsyncJobSearch.entity().getStatus(), 
 				SearchCriteria.Op.EQ);
 		pendingAsyncJobSearch.done();
+		
+		pendingAsyncJobsSearch = createSearchBuilder();
+		pendingAsyncJobsSearch.and("instanceType", pendingAsyncJobsSearch.entity().getInstanceType(), 
+			SearchCriteria.Op.EQ);
+		pendingAsyncJobsSearch.and("accountId", pendingAsyncJobsSearch.entity().getAccountId(), 
+			SearchCriteria.Op.EQ);
+		pendingAsyncJobsSearch.and("status", pendingAsyncJobsSearch.entity().getStatus(), 
+				SearchCriteria.Op.EQ);
+		pendingAsyncJobsSearch.done();
 		
 		expiringAsyncJobSearch = createSearchBuilder();
 		expiringAsyncJobSearch.and("created", expiringAsyncJobSearch.entity().getCreated(), 
@@ -70,6 +81,15 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
         	return l.get(0);
         }
         return null;
+	}
+	
+	public List<AsyncJobVO> findInstancePendingAsyncJobs(AsyncJob.Type instanceType, long accountId) {
+		SearchCriteria<AsyncJobVO> sc = pendingAsyncJobsSearch.create();
+        sc.setParameters("instanceType", instanceType);
+        sc.setParameters("accountId", accountId);
+        sc.setParameters("status", AsyncJobResult.STATUS_IN_PROGRESS);
+        
+        return listBy(sc);
 	}
 	
 	public List<AsyncJobVO> getExpiredJobs(Date cutTime, int limit) {

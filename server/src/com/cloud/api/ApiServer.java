@@ -80,6 +80,8 @@ import org.apache.http.protocol.ResponseServer;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.response.ListResponse;
+import com.cloud.async.AsyncJob;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.configuration.ConfigurationVO;
@@ -363,6 +365,9 @@ public class ApiServer implements HttpRequestHandler {
     }
 
     private String queueCommand(BaseCmd cmdObj, Map<String, String> params) {
+    	UserContext ctx = UserContext.current();
+        Long userId = ctx.getUserId();
+        Account account = ctx.getAccount();
         if (cmdObj instanceof BaseAsyncCmd) {
             Long objectId = null;
             if (cmdObj instanceof BaseAsyncCreateCmd) {
@@ -375,10 +380,10 @@ public class ApiServer implements HttpRequestHandler {
             }
 
             BaseAsyncCmd asyncCmd = (BaseAsyncCmd)cmdObj;
+            if (objectId != null) {
+            	objectId = asyncCmd.getInstanceId();
+            }
 
-            UserContext ctx = UserContext.current();
-            Long userId = ctx.getUserId();
-            Account account = ctx.getAccount();
             if (userId != null) {
                 params.put("ctxUserId", userId.toString());
             }
@@ -395,6 +400,8 @@ public class ApiServer implements HttpRequestHandler {
             }
 
             AsyncJobVO job = new AsyncJobVO();
+            job.setInstanceId(asyncCmd.getInstanceId());
+            job.setInstanceType(asyncCmd.getInstanceType());
             job.setUserId(userId);
             if (account != null) {
                 job.setAccountId(ctx.getAccount().getId());
@@ -414,8 +421,36 @@ public class ApiServer implements HttpRequestHandler {
             return ApiResponseSerializer.toSerializedString(asyncCmd.getResponse(jobId), asyncCmd.getResponseType());
         } else {
             _dispatcher.dispatch(cmdObj, params);
+            
+            // if the command is of the listXXXCommand, we will need to also return the 
+            // the job id and status if possible
+            if (cmdObj instanceof BaseListCmd) {
+            	buildAsyncListResponse((BaseListCmd)cmdObj, account);
+            }
             return ApiResponseSerializer.toSerializedString((ResponseObject)cmdObj.getResponseObject(), cmdObj.getResponseType());    
         }
+    }
+    
+    private void buildAsyncListResponse(BaseListCmd command, Account account) {
+    	List<ResponseObject> responses = ((ListResponse)command.getResponseObject()).getResponses();
+    	if (responses != null && responses.size() > 0) {
+    		List<? extends AsyncJob> jobs = _asyncMgr.findInstancePendingAsyncJobs(command.getInstanceType(), account.getId());
+        	if (jobs.size() == 0) {
+        		return;
+        	}
+        	
+        	// Using maps might possibly be more efficient if the set is large enough but for now, we'll just n squared
+        	// comparison of two lists.  Either way, there shouldn't be too many async jobs active for the account.
+        	for (AsyncJob job : jobs) {
+        		if (job.getInstanceId() == null) continue;
+        		for (ResponseObject response : responses) {
+        			if (job.getInstanceId() == response.getObjectId()) {
+        				response.setJobId(job.getId());
+        				response.setJobStatus(job.getStatus());
+        			}
+        		}
+        	}
+    	}
     }
      
    private void buildAuditTrail(StringBuffer auditTrailSb, String command, String result) {
