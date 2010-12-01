@@ -2554,6 +2554,30 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public List<FirewallRuleVO> searchForIpForwardingRules(ListIpForwardingRulesCmd cmd){
         String ipAddress = cmd.getPublicIpAddress();
+        Account account = UserContext.current().getAccount();
+
+        IPAddressVO ipAddressVO = _publicIpAddressDao.findById(ipAddress);
+        if (ipAddressVO == null) {
+            throw new InvalidParameterValueException("Unable to find IP address " + ipAddress);
+        }
+
+        Account addrOwner = _accountDao.findById(ipAddressVO.getAccountId());
+
+        // if an admin account was passed in, or no account was passed in, make sure we honor the accountName/domainId parameters
+        if ((account != null) && isAdmin(account.getType())) {
+            if (ipAddressVO.getAccountId() != null) {
+                if ((addrOwner != null) && !_domainDao.isChildDomain(account.getDomainId(), addrOwner.getDomainId())) {
+                    throw new PermissionDeniedException("Unable to list ip forwarding rules for address " + ipAddress + ", permission denied for account " + account.getId());
+                }
+            } 
+        } else {
+            if (account != null) {
+                if ((ipAddressVO.getAccountId() == null) || (account.getId() != ipAddressVO.getAccountId().longValue())) {
+                    throw new PermissionDeniedException("Unable to list ip forwarding rules for address " + ipAddress + ", permission denied for account " + account.getId());
+                }
+            }
+        }
+        
         Filter searchFilter = new Filter(FirewallRuleVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchCriteria<FirewallRuleVO> sc = _firewallRulesDao.createSearchCriteria();
 
