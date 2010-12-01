@@ -941,6 +941,8 @@ function listMidMenuItems2(commandString, jsonResponse1, jsonResponse2, toMidmen
     }                    
     $("#middle_menu_pagination").data("params", params);
 	
+	(page > 1)? $("#midmenu_prevbutton").show(): $("#midmenu_prevbutton").hide();
+	
 	if(isMultipleSelectionInMidMenu == true)
         enableMultipleSelectionInMidMenu();
     else
@@ -957,6 +959,7 @@ function listMidMenuItems2(commandString, jsonResponse1, jsonResponse2, toMidmen
             $("#midmenu_container").empty();	                
             var items = json[jsonResponse1][jsonResponse2];      
             if(items != null && items.length > 0) {
+                (items.length == midmenuItemCount)? $("#midmenu_nextbutton").show(): $("#midmenu_nextbutton").hide();
                 for(var i=0; i<items.length;i++) { 
                     var $midmenuItem1 = $("#midmenu_item").clone();                      
                     $midmenuItem1.data("toRightPanelFn", toRightPanelFn);                             
