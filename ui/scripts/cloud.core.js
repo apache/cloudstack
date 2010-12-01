@@ -568,6 +568,7 @@ function clearMiddleMenu() {
     $("#midmenu_container").empty();
     $("#midmenu_action_link").hide();
     clearAddButtonsOnTop();        
+    $("#basic_search").find("#search_input").val("");
     $("#midmenu_prevbutton, #midmenu_nextbutton").hide();
     $("#middle_menu_pagination").data("params", null);
 }
