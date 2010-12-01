@@ -70,7 +70,7 @@ function podJsonToDetailsTab() {
     $thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();       
         
-    $thisTab.find("#id").text(noNull(jsonObj.id));
+    $thisTab.find("#id").text(fromdb(jsonObj.id));
     $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));
     
     $thisTab.find("#name").text(fromdb(jsonObj.name));
@@ -90,7 +90,7 @@ function podJsonToDetailsTab() {
     // hide network tab upon zone vlan
     var networkType;  
     $.ajax({	    
-	    data: createURL("command=listZones&id="+noNull(jsonObj.zoneid)),
+	    data: createURL("command=listZones&id="+fromdb(jsonObj.zoneid)),
 		dataType: "json",	
 		async: false,	
 		success: function(json) {
@@ -143,7 +143,7 @@ function podJsonToNetworkTab() {
     $thisTab.find("#tab_spinning_wheel").show();   		 
         
     $.ajax({
-		data: createURL("command=listVlanIpRanges&zoneid="+noNull(jsonObj.zoneid)+"&podid="+noNull(jsonObj.id)),
+		data: createURL("command=listVlanIpRanges&zoneid="+fromdb(jsonObj.zoneid)+"&podid="+fromdb(jsonObj.id)),
 		dataType: "json",
 		success: function(json) {			       
 			var items = json.listvlaniprangesresponse.vlaniprange;
@@ -164,12 +164,12 @@ function podJsonToNetworkTab() {
 
 function podNetworkJsonToTemplate(jsonObj, template) {
     template.data("jsonObj", jsonObj);     
-    template.attr("id", "pod_VLAN_"+noNull(jsonObj.id)).data("podVLANId", noNull(jsonObj.id));    
+    template.attr("id", "pod_VLAN_"+fromdb(jsonObj.id)).data("podVLANId", fromdb(jsonObj.id));    
     template.find("#grid_header_title").text(fromdb(jsonObj.description));			   
-    template.find("#id").text(noNull(jsonObj.id));    
+    template.find("#id").text(fromdb(jsonObj.id));    
     template.find("#iprange").text(fromdb(jsonObj.description));
-    template.find("#netmask").text(noNull(jsonObj.netmask));
-    template.find("#gateway").text(noNull(jsonObj.gateway));
+    template.find("#netmask").text(fromdb(jsonObj.netmask));
+    template.find("#gateway").text(fromdb(jsonObj.gateway));
     template.find("#podname").text(fromdb(jsonObj.podname)); 
    
     var $actionLink = template.find("#network_action_link");		
@@ -247,9 +247,9 @@ function refreshClsuterFieldInAddHostDialog(dialogAddHost, podId, clusterId) {
             if(items != null && items.length > 0) {		                                        
                 for(var i=0; i<items.length; i++) {	
                     if(clusterId != null && items[i].id == clusterId)
-                        clusterSelect.append("<option value='" + noNull(items[i].id) + "' selected>" + fromdb(items[i].name) + "</option>");	
+                        clusterSelect.append("<option value='" + fromdb(items[i].id) + "' selected>" + fromdb(items[i].name) + "</option>");	
                     else               
-                        clusterSelect.append("<option value='" + noNull(items[i].id) + "'>" + fromdb(items[i].name) + "</option>");		
+                        clusterSelect.append("<option value='" + fromdb(items[i].id) + "'>" + fromdb(items[i].name) + "</option>");		
                 }                             
                 dialogAddHost.find("input[value=existing_cluster_radio]").attr("checked", true);
             }

@@ -329,7 +329,7 @@ function volumeJsonToDetailsTab(){
         }
     });      
            
-    $thisTab.find("#id").text(noNull(jsonObj.id));
+    $thisTab.find("#id").text(fromdb(jsonObj.id));
     $thisTab.find("#name").text(fromdb(jsonObj.name));    
     $thisTab.find("#zonename").text(fromdb(jsonObj.zonename));    
     $thisTab.find("#device_id").text(fromdb(jsonObj.deviceid));   
@@ -394,7 +394,7 @@ function volumeJsonToSnapshotTab() {
     
     $.ajax({
 		cache: false,
-		data: createURL("command=listSnapshots&volumeid="+noNull(jsonObj.id)),
+		data: createURL("command=listSnapshots&volumeid="+fromdb(jsonObj.id)),
 		dataType: "json",
 		success: function(json) {							    
 			var items = json.listsnapshotsresponse.snapshot;																						
@@ -415,9 +415,9 @@ function volumeJsonToSnapshotTab() {
  
 function volumeSnapshotJSONToTemplate(jsonObj, template) {
     template.data("jsonObj", jsonObj);     
-    template.attr("id", "volume_snapshot_"+noNull(jsonObj.id)).data("volumeSnapshotId", noNull(jsonObj.id));    
+    template.attr("id", "volume_snapshot_"+fromdb(jsonObj.id)).data("volumeSnapshotId", fromdb(jsonObj.id));    
     template.find("#grid_header_title").text(fromdb(jsonObj.name));			   
-    template.find("#id").text(noNull(jsonObj.id));
+    template.find("#id").text(fromdb(jsonObj.id));
     template.find("#name").text(fromdb(jsonObj.name));			      
     template.find("#volumename").text(fromdb(jsonObj.volumename));	
     template.find("#intervaltype").text(fromdb(jsonObj.intervaltype));	    		   

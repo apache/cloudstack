@@ -242,7 +242,7 @@ function templateJsonToDetailsTab() {
              
     $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name)); 
      
-    $thisTab.find("#id").text(noNull(jsonObj.id));
+    $thisTab.find("#id").text(fromdb(jsonObj.id));
     $thisTab.find("#zonename").text(fromdb(jsonObj.zonename));
     
     $thisTab.find("#name").text(fromdb(jsonObj.name));

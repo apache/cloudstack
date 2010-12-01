@@ -85,7 +85,7 @@ function snapshotJsonToDetailsTab() {
         }
     });        
      
-    $thisTab.find("#id").text(noNull(jsonObj.id));
+    $thisTab.find("#id").text(fromdb(jsonObj.id));
     $thisTab.find("#name").text(fromdb(jsonObj.name));
     $thisTab.find("#volume_name").text(fromdb(jsonObj.volumename));
     $thisTab.find("#interval_type").text(fromdb(jsonObj.intervaltype));

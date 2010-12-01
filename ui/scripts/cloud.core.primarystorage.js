@@ -77,7 +77,7 @@ function primarystorageJsonToDetailsTab() {
     $thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();        
                 
-    $thisTab.find("#id").text(noNull(jsonObj.id));
+    $thisTab.find("#id").text(fromdb(jsonObj.id));
     $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));
     $thisTab.find("#name").text(fromdb(jsonObj.name));
     
@@ -90,7 +90,7 @@ function primarystorageJsonToDetailsTab() {
 	if (jsonObj.type == 'NetworkFilesystem') 
 	    storageType = "NFS Share";
     $thisTab.find("#type").text(fromdb(storageType));
-    $thisTab.find("#ipaddress").text(noNull(jsonObj.ipaddress));
+    $thisTab.find("#ipaddress").text(fromdb(jsonObj.ipaddress));
     $thisTab.find("#path").text(fromdb(jsonObj.path));                
 	$thisTab.find("#disksizetotal").text(convertBytes(jsonObj.disksizetotal));
 	$thisTab.find("#disksizeallocated").text(convertBytes(jsonObj.disksizeallocated));

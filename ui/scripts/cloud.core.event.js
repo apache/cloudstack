@@ -55,7 +55,7 @@ function eventJsonToDetailsTab() {
     $thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();    
          
-    $thisTab.find("#id").text(noNull(jsonObj.id));
+    $thisTab.find("#id").text(fromdb(jsonObj.id));
     $thisTab.find("#username").text(fromdb(jsonObj.username));
     $thisTab.find("#account").text(fromdb(jsonObj.account));
     $thisTab.find("#type").text(fromdb(jsonObj.type));

@@ -1327,9 +1327,9 @@ function vmJsonToDetailsTab(){
 
 	resetViewConsoleAction(jsonObj, $thisTab);      
 	setVmStateInRightPanel(jsonObj.state, $thisTab.find("#state"));		
-	$thisTab.find("#ipAddress").text(noNull(jsonObj.ipaddress));
+	$thisTab.find("#ipAddress").text(fromdb(jsonObj.ipaddress));
 	
-	$thisTab.find("#id").text(noNull(jsonObj.id));
+	$thisTab.find("#id").text(fromdb(jsonObj.id));
 	$thisTab.find("#zoneName").text(fromdb(jsonObj.zonename));
 		   
 	var vmName = getVmName(jsonObj.name, jsonObj.displayname);        
@@ -1549,10 +1549,10 @@ var vmVolumeActionMap = {
 }     
 
 function vmVolumeJSONToTemplate(json, $template) {
-    $template.attr("id","vm_volume_"+noNull(json.id));	        
+    $template.attr("id","vm_volume_"+fromdb(json.id));	        
     $template.data("jsonObj", json);    
     $template.find("#title").text(fromdb(json.name));    
-	$template.find("#id").text(noNull(json.id));	
+	$template.find("#id").text(fromdb(json.id));	
 	$template.find("#name").text(fromdb(json.name));
 	if (json.storagetype == "shared") 
 		$template.find("#type").text(fromdb(json.type) + " (shared storage)");
@@ -1608,7 +1608,7 @@ function vmRouterJSONToTemplate(jsonObj, $template) {
      
     resetViewConsoleAction(jsonObj, $template);   
     setVmStateInRightPanel(fromdb(jsonObj.state), $template.find("#state"));
-    $template.find("#ipAddress").text(noNull(jsonObj.publicip));
+    $template.find("#ipAddress").text(fromdb(jsonObj.publicip));
     
     $template.find("#zonename").text(fromdb(jsonObj.zonename));
     $template.find("#name").text(fromdb(jsonObj.name));

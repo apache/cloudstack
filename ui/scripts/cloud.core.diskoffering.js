@@ -212,7 +212,7 @@ function diskOfferingJsonToDetailsTab() {
         }
     });       
     
-    $thisTab.find("#id").text(noNull(jsonObj.id));
+    $thisTab.find("#id").text(fromdb(jsonObj.id));
     
     $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));
     $thisTab.find("#name").text(fromdb(jsonObj.name));
