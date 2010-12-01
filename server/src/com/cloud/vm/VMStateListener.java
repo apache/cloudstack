@@ -114,8 +114,9 @@ public class VMStateListener implements StateListener<State, VirtualMachine.Even
 
         	_capacityDao.update(capacityCpu.getId(), capacityCpu);
         	_capacityDao.update(capacityMemory.getId(), capacityMemory);
-        } finally {
         	txn.commit();
+        } catch (Exception e) {
+        	txn.rollback();
         }
 	}
 }

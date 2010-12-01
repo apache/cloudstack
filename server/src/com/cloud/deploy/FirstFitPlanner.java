@@ -56,18 +56,28 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 		
 		/*Go through all the pods/clusters under zone*/
 		List<HostPodVO> pods = _podDao.listByDataCenterId(plan.getDataCenterId());
-		Collections.shuffle(pods);
+		//Collections.shuffle(pods);
 		
 		for (HostPodVO hostPod : pods) {
 			List<ClusterVO> clusters = _clusterDao.listByPodId(hostPod.getId());
-			Collections.shuffle(clusters);
+			//Collections.shuffle(clusters);
 			
 			for (ClusterVO clusterVO : clusters) {
+				
+				if (clusterVO.getHypervisorType() != vmProfile.getHypervisorType()) {
+					continue;
+				}
+				
 				List<HostVO> hosts = _hostDao.listByCluster(clusterVO.getId());
-				Collections.shuffle(hosts);
+				//Collections.shuffle(hosts);
+				
 				
 				for (HostVO hostVO : hosts) {
 					if (hostVO.getStatus() != Status.Up) {
+						continue;
+					}
+					
+					if (avoid.shouldAvoid(hostVO)) {
 						continue;
 					}
 					
@@ -126,11 +136,12 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
     			_capacityDao.update(capacityMem.getId(), capacityMem);
         	}
         	
-        	return success;
-        } finally {
         	txn.commit();
-        }
-		
+        	return success;
+        } catch (Exception e) {
+        	txn.rollback();
+        	return false;
+        }        		
 	}
 	@Override
 	public boolean check(VirtualMachineProfile vm, DeploymentPlan plan,

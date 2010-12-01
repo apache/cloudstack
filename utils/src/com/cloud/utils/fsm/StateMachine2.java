@@ -24,6 +24,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Transaction;
+
 /**
  * StateMachine is a partial implementation of a finite state machine.
  * Specifically, it implements the Moore machine.
@@ -94,6 +97,7 @@ public class StateMachine2<S, E, V extends StateObject<S>> {
         return entry.prevStates.get(e);
     }
     
+    @DB
     public boolean transitTO(V vo, E e) {
     	S currentState = vo.getState();
     	S nextState = getNextState(currentState, e);
@@ -102,13 +106,23 @@ public class StateMachine2<S, E, V extends StateObject<S>> {
     	if (nextState == null) {
     		transitionStatus = false;
     	}
+
+    	Transaction txn = Transaction.currentTxn();
+    	txn.start();
     	
-    	transitionStatus = _instanceDao.updateState(currentState, e, nextState, vo);
+    	try {
     	
-    	for (StateListener<S,E, V> listener : _listeners) {
-    		listener.processStateTransitionEvent(currentState, e, nextState, vo, transitionStatus);
+    		transitionStatus = _instanceDao.updateState(currentState, e, nextState, vo);
+
+    		for (StateListener<S,E, V> listener : _listeners) {
+    			listener.processStateTransitionEvent(currentState, e, nextState, vo, transitionStatus);
+    		}
+    		txn.commit();
+    	
+    	} catch (Exception ex) {
+    		txn.rollback();
     	}
-    	
+
     	return transitionStatus;
     }
     
