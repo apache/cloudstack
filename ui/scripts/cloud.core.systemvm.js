@@ -16,6 +16,10 @@
  * 
  */
  
+ function systemVmGetSearchParams() {
+     return "";
+ }
+ 
  function afterLoadSystemVmJSP($midmenuItem1) {
     //hideMiddleMenu();			
     //systemvmToRightPanel($midmenuItem1);		

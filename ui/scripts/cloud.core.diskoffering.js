@@ -16,6 +16,10 @@
  * 
  */
 
+function diskOfferingGetSearchParams() {
+    return "";
+}
+
 function afterLoadDiskOfferingJSP() {
     var $detailsTab = $("#right_panel_content #tab_content_details");      
     initAddDiskOfferingButton($("#midmenu_add_link"));     

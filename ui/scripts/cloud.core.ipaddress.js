@@ -16,6 +16,10 @@
  * 
  */
 
+function ipGetSearchParams() {
+    return "";
+}
+
 function afterLoadIpJSP() {
     //***** switch between different tabs (begin) ********************************************************************
     var tabArray = [$("#tab_details"), $("#tab_port_forwarding"), $("#tab_load_balancer"), $("#tab_vpn")];

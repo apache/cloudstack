@@ -16,6 +16,10 @@
  * 
  */
 
+function snapshotGetSearchParams() {
+    return "";
+}
+
 function afterLoadSnapshotJSP() {
     //initialize dialog
     initDialog("dialog_add_volume_from_snapshot");       

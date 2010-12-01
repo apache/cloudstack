@@ -21,6 +21,10 @@ var xsToolsIsoId = 200;
 var g_zoneIds = []; 
 var g_zoneNames = [];	
 
+function isoGetSearchParams() {
+    return "";
+}
+
 function afterLoadIsoJSP() {
     var $detailsTab = $("#right_panel_content #tab_content_details");   
     

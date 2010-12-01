@@ -16,6 +16,10 @@
  * 
  */
 
+function eventGetSearchParams() {
+    return "";
+}
+
 function afterLoadEventJSP() {
 
 }

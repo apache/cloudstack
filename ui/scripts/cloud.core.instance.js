@@ -16,6 +16,10 @@
  * 
  */
 
+function vmGetSearchParams() {
+    return "";
+}
+
 function instanceBuildSubMenu() {    
     if (isAdmin() || isDomainAdmin()) {
 		$("#leftmenu_instance_expandedbox").find("#leftmenu_instances_my_instances_container, #leftmenu_instances_all_instances_container, #leftmenu_instances_running_instances_container, #leftmenu_instances_stopped_instances_container, #leftmenu_instances_destroyed_instances_container ").show();
@@ -41,7 +45,7 @@ function instanceBuildSubMenu() {
 function instanceBuildSubMenu2(label, commandString) {   
     var $newSubMenu = $("#leftmenu_secondindent_template").clone();
     $newSubMenu.find("#label").text(label);    
-    bindAndListMidMenuItems($newSubMenu, commandString, "listvirtualmachinesresponse", "virtualmachine", "jsp/instance.jsp", afterLoadInstanceJSP, vmToMidmenu, vmToRightPanel, getMidmenuId, true);
+    bindAndListMidMenuItems($newSubMenu, commandString, vmGetSearchParams, "listvirtualmachinesresponse", "virtualmachine", "jsp/instance.jsp", afterLoadInstanceJSP, vmToMidmenu, vmToRightPanel, getMidmenuId, true);
     $("#leftmenu_instance_expandedbox").append($newSubMenu.show());
 }
 

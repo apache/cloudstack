@@ -16,6 +16,10 @@
  * 
  */
 
+function routerGetSearchParams() {
+    return "";
+}
+
 function afterLoadRouterJSP() {
     
 }

@@ -16,6 +16,10 @@
  * 
  */
 
+function volumeGetSearchParams() {
+    return "";
+}
+
 function afterLoadVolumeJSP() {
     initDialog("dialog_create_template", 400); 
     initDialog("dialog_create_snapshot");        

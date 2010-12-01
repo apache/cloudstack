@@ -16,6 +16,10 @@
  * 
  */
 
+function serviceOfferingGetSearchParams() {
+    return "";
+}
+
 function afterLoadServiceOfferingJSP() {
     var $detailsTab = $("#right_panel_content #tab_content_details"); 
    

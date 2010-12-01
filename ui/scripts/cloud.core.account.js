@@ -19,6 +19,10 @@
 var systemAccountId = 1;
 var adminAccountId = 2;
 
+function accountGetSearchParams() {
+    return "";
+}
+
 function afterLoadAccountJSP() {
     initDialog("dialog_resource_limits");
     initDialog("dialog_disable_account");

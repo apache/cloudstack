@@ -21,6 +21,10 @@
 var g_zoneIds = []; 
 var g_zoneNames = [];	
 
+function templateGetSearchParams() {
+    return "";
+}
+
 function afterLoadTemplateJSP() {      
     var $detailsTab = $("#right_panel_content #tab_content_details");   
     
