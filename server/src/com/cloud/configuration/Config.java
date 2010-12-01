@@ -183,7 +183,6 @@ public enum Config {
     VmwarePrivateNetworkVSwitch("Advanced", ManagementServer.class, String.class, "vmware.private.vswitch", null, "Specify the vSwitch on host for private network", null),
     VmwarePublicNetworkVSwitch("Advanced", ManagementServer.class, String.class, "vmware.public.vswitch", null, "Specify the vSwitch on host for public network", null),
     VmwareGuestNetworkVSwitch("Advanced", ManagementServer.class, String.class, "vmware.guest.vswitch", null, "Specify the vSwitch on host for guest network", null),
-    VmwarePrivateNetwork("Advanced", ManagementServer.class, String.class, "vmware.private.network", null, "Specify the private network on the vSwitch", null),
     
 	// Premium
 	
