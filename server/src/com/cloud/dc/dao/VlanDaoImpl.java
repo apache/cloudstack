@@ -55,6 +55,7 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
 	protected SearchBuilder<VlanVO> ZoneTypeAllPodsSearch;
 	protected SearchBuilder<VlanVO> ZoneTypePodSearch;
 	protected SearchBuilder<VlanVO> ZoneVlanSearch;
+	protected SearchBuilder<VlanVO> NetworkVlanSearch;
 
 	protected PodVlanMapDaoImpl _podVlanMapDao = new PodVlanMapDaoImpl();
 	protected AccountVlanMapDao _accountVlanMapDao = new AccountVlanMapDaoImpl();
@@ -90,6 +91,9 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
         ZoneTypeSearch.and("vlanType", ZoneTypeSearch.entity().getVlanType(), SearchCriteria.Op.EQ);
         ZoneTypeSearch.done();
         
+        NetworkVlanSearch = createSearchBuilder();
+        NetworkVlanSearch.and("networkOfferingId", NetworkVlanSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
+        NetworkVlanSearch.done();
     }
 
     @Override
@@ -299,7 +303,13 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
 	    } catch (SQLException e) {
 	        throw new CloudRuntimeException("Unable to execute " + pstmt.toString(), e);
 	    }
-
 	}
     
+	@Override
+    public List<VlanVO> listVlansByNetworkId(long networkOfferingId) {
+       SearchCriteria<VlanVO> sc = NetworkVlanSearch.create();
+        sc.setParameters("networkOfferingId", networkOfferingId);
+        return listBy(sc);
+    }
+	
 }

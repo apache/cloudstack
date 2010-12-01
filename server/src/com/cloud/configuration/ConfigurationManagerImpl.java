@@ -34,15 +34,18 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.CreateCfgCmd;
 import com.cloud.api.commands.CreateDiskOfferingCmd;
+import com.cloud.api.commands.CreateNetworkOfferingCmd;
 import com.cloud.api.commands.CreatePodCmd;
 import com.cloud.api.commands.CreateServiceOfferingCmd;
 import com.cloud.api.commands.CreateVlanIpRangeCmd;
 import com.cloud.api.commands.CreateZoneCmd;
 import com.cloud.api.commands.DeleteDiskOfferingCmd;
+import com.cloud.api.commands.DeleteNetworkOfferingCmd;
 import com.cloud.api.commands.DeletePodCmd;
 import com.cloud.api.commands.DeleteServiceOfferingCmd;
 import com.cloud.api.commands.DeleteVlanIpRangeCmd;
 import com.cloud.api.commands.DeleteZoneCmd;
+import com.cloud.api.commands.ListNetworkOfferingsCmd;
 import com.cloud.api.commands.UpdateCfgCmd;
 import com.cloud.api.commands.UpdateDiskOfferingCmd;
 import com.cloud.api.commands.UpdatePodCmd;
@@ -81,11 +84,14 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.offerings.NetworkOfferingVO;
+import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
@@ -103,6 +109,8 @@ import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
@@ -131,6 +139,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 	@Inject DomainDao _domainDao;
 	@Inject ServiceOfferingDao _serviceOfferingDao;
 	@Inject DiskOfferingDao _diskOfferingDao;
+	@Inject NetworkOfferingDao _networkOfferingDao;
 	@Inject VlanDao _vlanDao;
 	@Inject IPAddressDao _publicIpAddressDao;
 	@Inject DataCenterIpAddressDao _privateIpAddressDao;
@@ -1053,7 +1062,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String internalDns2 = cmd.getInternalDns2();
         String vnetRange = cmd.getVlan();
         String guestCidr = cmd.getGuestCidrAddress();
-        String domain = cmd.getDomain();//we are not passing domain right now, always null
         Long domainId = cmd.getDomainId();
         String type = cmd.getNetworkType();
         Boolean isBasic = false;
@@ -1412,9 +1420,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 			return genChangeRangeSuccessString(problemIPs, add);
 		}
     }
-
+    
     @Override
-    public Vlan createVlanAndPublicIpRange(CreateVlanIpRangeCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException {
+    public Vlan createVlanAndPublicIpRange(CreateVlanIpRangeCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, InvalidParameterValueException {
         Long zoneId = cmd.getZoneId();
         Long podId = cmd.getPodId();
         String startIP = cmd.getStartIp();
@@ -1422,12 +1430,25 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String vlanGateway = cmd.getGateway();
         String vlanNetmask = cmd.getNetmask();
         Long userId = UserContext.current().getUserId();
-        
-        if (userId == null) {
-            userId = Long.valueOf(User.UID_SYSTEM);
+        String vlanId = cmd.getVlan();
+        // If an account name and domain ID are specified, look up the account
+        String accountName = cmd.getAccountName();
+        Long domainId = cmd.getDomainId();
+        Account account = null;
+        if ((accountName != null) && (domainId != null)) {
+            account = _accountDao.findActiveAccount(accountName, domainId);
+            if (account == null) {
+                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please specify a valid account.");
+            }
         }
+        return createVlanAndPublicIpRange(userId, zoneId, podId, startIP, endIP, vlanGateway, vlanNetmask, true, vlanId, account, null);
+    }
+    
+
+    @Override
+    public Vlan createVlanAndPublicIpRange(Long userId, Long zoneId, Long podId, String startIP, String endIP, String vlanGateway, String vlanNetmask, boolean forVirtualNetwork, String vlanId, Account account, Long networkId) throws InsufficientCapacityException, ConcurrentOperationException, InvalidParameterValueException{
         
-     // Check that the pod ID is valid
+        // Check that the pod ID is valid
         if (podId != null && ((_podDao.findById(podId)) == null)) {
             throw new InvalidParameterValueException("Please specify a valid pod.");
         }
@@ -1436,15 +1457,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if (podId != null && _podDao.findById(podId).getDataCenterId() != zoneId) {
             throw new InvalidParameterValueException("Pod id=" + podId + " doesn't belong to zone id=" + zoneId);
         }
-
-        // If forVirtualNetworks isn't specified, default it to true
-        Boolean forVirtualNetwork = cmd.isForVirtualNetwork();
-        if (forVirtualNetwork == null) {
-            forVirtualNetwork = Boolean.TRUE;
-        }
-
         // If the VLAN id is null, default it to untagged
-        String vlanId = cmd.getVlan();
         if (vlanId == null) {
             vlanId = Vlan.UNTAGGED;
         }
@@ -1466,17 +1479,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             throw new InvalidParameterValueException("Can't add virtual network to the zone id=" + zone.getId() + " as zone doesn't have guest vlan configured");
         }
 
-        // If an account name and domain ID are specified, look up the account
-        String accountName = cmd.getAccountName();
-        Long domainId = cmd.getDomainId();
-        Account account = null;
-        if ((accountName != null) && (domainId != null)) {
-            account = _accountDao.findActiveAccount(accountName, domainId);
-            if (account == null) {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please specify a valid account.");
-            }
-        }       
-        
         VlanType vlanType = forVirtualNetwork ? VlanType.VirtualNetwork : VlanType.DirectAttached;
         
 
@@ -1643,7 +1645,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 		if (endIP != null) {
 			ipRange += "-" + endIP;
 		}
-		VlanVO vlan = new VlanVO(vlanType, vlanId, vlanGateway, vlanNetmask, zone.getId(), ipRange);
+		VlanVO vlan = new VlanVO(vlanType, vlanId, vlanGateway, vlanNetmask, zone.getId(), ipRange, networkId);
 		vlan = _vlanDao.persist(vlan);
 		
 		// Persist the IP range
@@ -1685,7 +1687,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 	        // if this is an account VLAN, now associate the IP Addresses to the account
 	        associateIpAddressListToAccount(userId, account.getId(), zoneId, vlan.getId());
 		}
-
 		return vlan;
     }
 
@@ -2377,5 +2378,156 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         
         assert false : "How can all of the security checkers pass on checking this caller?";
         throw new PermissionDeniedException("There's no way to confirm " + caller + " has access to zone:" + zone.getId());
+    }
+	
+	
+	
+    @Override
+    public NetworkOffering createNetworkOffering(CreateNetworkOfferingCmd cmd) throws InvalidParameterValueException {
+        Long userId = UserContext.current().getUserId();
+        String name = cmd.getNetworkOfferingName();
+        String displayText = cmd.getDisplayText();
+        String tags = cmd.getTags();
+        String typeString = cmd.getType();
+        String trafficTypeString = cmd.getTraffictype();
+        Boolean specifyVlan = cmd.getSpecifyVlan();
+        Boolean isShared = cmd.getIsShared();
+        TrafficType trafficType = null;
+        GuestIpType type = null;
+        
+        //Verify traffic type
+        for (TrafficType tType : TrafficType.values()) {
+            if (tType.name().equalsIgnoreCase(trafficTypeString)) {
+                trafficType = tType;
+            }
+        }
+        if (trafficType == null) {
+            throw new InvalidParameterValueException("Invalid value for traffictype. Supported traffic types: Public, Management, Control, Guest, Vlan or Storage");
+        }
+        
+        //Verify type
+        for (GuestIpType gType : GuestIpType.values()) {
+            if (gType.name().equalsIgnoreCase(typeString)) {
+                type = gType;
+            }
+        }
+        if (type == null) {
+            throw new InvalidParameterValueException("Invalid value for type. Supported types: Virtualized, DirectSingle, DirectDual");
+        }
+        
+        if (specifyVlan == null) {
+            specifyVlan = false;
+        }
+        
+        if (isShared == null) {
+            isShared = false;
+        }
+
+        Integer maxConnections = cmd.getMaxconnections();
+        return createNetworkOffering(userId, name, displayText, type, trafficType, tags, maxConnections, specifyVlan, isShared);
+    }
+    
+    @Override
+    public NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, GuestIpType type, TrafficType trafficType, String tags, Integer maxConnections, boolean specifyVlan, boolean isShared) {
+        String networkRateStr = _configDao.getValue("network.throttling.rate");
+        String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
+        int networkRate = ((networkRateStr == null) ? 200 : Integer.parseInt(networkRateStr));
+        int multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));      
+        tags = cleanupTags(tags);
+        NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, type, false, specifyVlan, networkRate, multicastRate, maxConnections, isShared, false);
+        
+        if ((offering = _networkOfferingDao.persist(offering)) != null) {
+            saveConfigurationEvent(userId, null, EventTypes.EVENT_NETWORK_OFFERING_CREATE, "Successfully created new network offering with name: " + name + ".", "noId=" + offering.getId(), "name=" + name,
+                    "displayText=" + displayText, "tags=" + tags);
+            return offering;
+        } else {
+            return null;
+        }
+    }
+    
+    @Override
+    public List<? extends NetworkOffering> searchForNetworkOfferings(ListNetworkOfferingsCmd cmd) {
+        Filter searchFilter = new Filter(NetworkOfferingVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
+        SearchCriteria<NetworkOfferingVO> sc = _networkOfferingDao.createSearchCriteria();
+        
+        Object id = cmd.getId();
+        Object name = cmd.getNetworkOfferingName();
+        Object displayText = cmd.getDisplayText();
+        Object type = cmd.getType();
+        Object trafficType = cmd.getTrafficType();
+        Object isDefault = cmd.getIsDefault();
+        Object specifyVlan = cmd.getSpecifyVlan();
+        Object isShared = cmd.getIsShared();
+        
+        Object keyword = cmd.getKeyword();
+
+        if (keyword != null) {
+            SearchCriteria<NetworkOfferingVO> ssc = _networkOfferingDao.createSearchCriteria();
+            ssc.addOr("displayText", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+
+            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
+        } 
+
+        if (id != null) {
+            sc.addAnd("id", SearchCriteria.Op.EQ, id);
+        }
+        if (name != null) {
+            sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + name + "%");
+        }
+        if (displayText != null) {
+            sc.addAnd("displayText", SearchCriteria.Op.LIKE, "%" + displayText + "%");
+        }
+        if (type != null) {
+            sc.addAnd("guestIpType", SearchCriteria.Op.EQ, type);
+        }
+        
+        if (trafficType != null) {
+            sc.addAnd("trafficType", SearchCriteria.Op.EQ, trafficType);
+        }
+        
+        if (isDefault != null) {
+            sc.addAnd("isDefault", SearchCriteria.Op.EQ, isDefault);
+        }
+        
+        if (specifyVlan != null) {
+            sc.addAnd("specifyVlan", SearchCriteria.Op.EQ, specifyVlan);
+        }
+        
+        if (isShared != null) {
+            sc.addAnd("isShared", SearchCriteria.Op.EQ, isShared);
+        }
+        
+        //Don't return system network offerings to the user
+        sc.addAnd("systemOnly", SearchCriteria.Op.EQ, false);
+        
+        return _networkOfferingDao.search(sc, searchFilter);
+    }
+    
+    @Override
+    public boolean deleteNetworkOffering(DeleteNetworkOfferingCmd cmd) throws InvalidParameterValueException{        
+        Long offeringId = cmd.getId();
+        Long userId = UserContext.current().getUserId();
+
+        //Verify network offering id
+        NetworkOfferingVO offering = _networkOfferingDao.findById(offeringId);
+        if (offering == null) {
+            throw new InvalidParameterValueException("unable to find network offering " + offeringId);
+        } else if (offering.getRemoved() != null || offering.isSystemOnly()) {
+            throw new InvalidParameterValueException("unable to find network offering " + offeringId);
+        }
+        
+        //Don't allow to delete default network offerings
+        if (offering.isDefault() == true) {
+            throw new InvalidParameterValueException("Default network offering can't be deleted");
+        }
+        
+        if (_networkOfferingDao.remove(offeringId)) {
+            saveConfigurationEvent(userId, null, EventTypes.EVENT_NETWORK_OFFERING_DELETE, "Successfully deleted network offering with name: " + offering.getName(), "noId=" + offeringId, "name=" + offering.getName(),
+                    "displayText=" + offering.getDisplayText());
+            return true;
+        } else {
+            return false;
+        }
     }
 }

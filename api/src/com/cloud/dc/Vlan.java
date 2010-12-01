@@ -43,5 +43,7 @@ public interface Vlan {
 	public void setVlanType(VlanType ipRange);
 
 	public VlanType getVlanType();
+	
+	public Long getNetworkId();
 
 }

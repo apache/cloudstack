@@ -50,11 +50,14 @@ import com.cloud.api.commands.AddVpnUserCmd;
 import com.cloud.api.commands.AssignToLoadBalancerRuleCmd;
 import com.cloud.api.commands.AssociateIPAddrCmd;
 import com.cloud.api.commands.CreateLoadBalancerRuleCmd;
+import com.cloud.api.commands.CreateNetworkCmd;
 import com.cloud.api.commands.CreatePortForwardingRuleCmd;
 import com.cloud.api.commands.CreateRemoteAccessVpnCmd;
 import com.cloud.api.commands.DeleteLoadBalancerRuleCmd;
+import com.cloud.api.commands.DeleteNetworkCmd;
 import com.cloud.api.commands.DeleteRemoteAccessVpnCmd;
 import com.cloud.api.commands.DisassociateIPAddrCmd;
+import com.cloud.api.commands.ListNetworksCmd;
 import com.cloud.api.commands.ListPortForwardingRulesCmd;
 import com.cloud.api.commands.RemoveFromLoadBalancerRuleCmd;
 import com.cloud.api.commands.RemoveVpnUserCmd;
@@ -69,12 +72,14 @@ import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
+import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.domain.dao.DomainDao;
@@ -97,6 +102,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.configuration.NetworkGuru;
 import com.cloud.network.dao.FirewallRulesDao;
@@ -143,6 +149,7 @@ import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
@@ -206,7 +213,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Inject UserStatisticsDao _statsDao = null;
     @Inject NetworkOfferingDao _networkOfferingDao = null;
     @Inject NetworkDao _networkConfigDao = null;
-    @Inject NicDao _nicDao;
+    @Inject NicDao _nicDao = null;
     @Inject GuestOSDao _guestOSDao = null;
     @Inject RemoteAccessVpnDao _remoteAccessVpnDao = null;
     @Inject VpnUserDao _vpnUsersDao = null;
@@ -1720,9 +1727,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         storageNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(storageNetworkOffering);
         _systemNetworks.put(NetworkOfferingVO.SystemVmStorageNetwork, storageNetworkOffering);
 
-        NetworkOfferingVO defaultGuestNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultVirtualizedNetworkOffering, "Virtual Vlan", TrafficType.Guest, GuestIpType.Virtualized, false, false, rateMbps, multicastRateMbps, null);
+        NetworkOfferingVO defaultGuestNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultVirtualizedNetworkOffering, "Virtual Vlan", TrafficType.Guest, GuestIpType.Virtualized, false, false, rateMbps, multicastRateMbps, null, false, true);
         defaultGuestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestNetworkOffering);
-        NetworkOfferingVO defaultGuestDirectNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultDirectNetworkOffering, "Direct", TrafficType.Guest, GuestIpType.DirectSingle, false, false, rateMbps, multicastRateMbps, null);
+        NetworkOfferingVO defaultGuestDirectNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultDirectNetworkOffering, "Direct", TrafficType.Guest, GuestIpType.DirectSingle, false, false, rateMbps, multicastRateMbps, null, false, true);
         defaultGuestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestDirectNetworkOffering);
 
         AccountsUsingNetworkConfigurationSearch = _accountDao.createSearchBuilder();
@@ -1802,12 +1809,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    public List<NetworkVO> setupNetworkConfiguration(Account owner, NetworkOfferingVO offering, DeploymentPlan plan) {
-        return setupNetworkConfiguration(owner, offering, null, plan);
+    public List<NetworkVO> setupNetworkConfiguration(Account owner, NetworkOfferingVO offering, DeploymentPlan plan, String name, String displayText) {
+        return setupNetworkConfiguration(owner, offering, null, plan, name, displayText);
     }
 
     @Override
-    public List<NetworkVO> setupNetworkConfiguration(Account owner, NetworkOfferingVO offering, Network predefined, DeploymentPlan plan) {
+    public List<NetworkVO> setupNetworkConfiguration(Account owner, NetworkOfferingVO offering, Network predefined, DeploymentPlan plan, String name, String displayText) {
         List<NetworkVO> configs = _networkConfigDao.listBy(owner.getId(), offering.getId(), plan.getDataCenterId());
         if (configs.size() > 0) {
             if (s_logger.isDebugEnabled()) {
@@ -1840,7 +1847,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 related = id;
             } 
 
-            NetworkVO vo = new NetworkVO(id, config, offering.getId(), plan.getDataCenterId(), guru.getName(), owner.getDomainId(), owner.getId(), related);
+            NetworkVO vo = new NetworkVO(id, config, offering.getId(), plan.getDataCenterId(), guru.getName(), owner.getDomainId(), owner.getId(), related, name, displayText);
             configs.add(_networkConfigDao.persist(vo));
         }
 
@@ -1881,12 +1888,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             NetworkVO config = network.first();
             NetworkGuru concierge = _networkGurus.get(config.getGuruName());
             NicProfile requested = network.second();
+            if (requested != null && requested.getMode() == null) {
+                requested.setMode(config.getMode());
+            }
             NicProfile profile = concierge.allocate(config, requested, vm);
             if (profile == null) {
                 continue;
             }
             NicVO vo = new NicVO(concierge.getName(), vm.getId(), config.getId());
-            vo.setMode(network.first().getMode());
 
             while (deviceIds[deviceId] && deviceId < deviceIds.length) {
                 deviceId++;
@@ -1931,12 +1940,15 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         } else if (deviceId != null ) {
             vo.setDeviceId(deviceId++);
         }
+        
+        vo.setReservationStrategy(profile.getReservationStrategy());
 
         vo.setDefaultNic(profile.isDefaultNic());
 
         if (profile.getIp4Address() != null) {
             vo.setIp4Address(profile.getIp4Address());
             vo.setState(NicVO.State.Reserved);
+            vo.setAddressFormat(AddressFormat.Ip4);
         }
 
         if (profile.getMacAddress() != null) {
@@ -2079,6 +2091,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     }
                     element.prepare(config, profile, vmProfile, dest, context);
                 }
+            } else {
+                profile = new NicProfile(nic, config, nic.getBroadcastUri(), nic.getIsolationUri());
             }
 
             vmProfile.addNic(profile);
@@ -2670,7 +2684,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     public List<NetworkVO> setupNetworkConfiguration(Account owner, ServiceOfferingVO offering, DeploymentPlan plan) {
         NetworkOfferingVO networkOffering = _networkOfferingDao.findByServiceOffering(offering);
-        return setupNetworkConfiguration(owner, networkOffering, plan);
+        return setupNetworkConfiguration(owner, networkOffering, plan, null, null);
     }
 
     private String [] getGuestIpRange() {
@@ -3288,5 +3302,235 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }else{
             return true;
         }
+    }
+    
+    @Override @DB
+    public Network createNetwork(CreateNetworkCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
+        Account ctxAccount = UserContext.current().getAccount();
+        Long userId = UserContext.current().getUserId();
+        Long networkOfferingId = cmd.getNetworkOfferingId();
+        Long zoneId = cmd.getZoneId();
+        Long podId = cmd.getPodId();
+        String gateway = cmd.getGateway();
+        String cidr = cmd.getCidr();
+        String startIP = cmd.getStartIp();
+        String endIP = cmd.getEndIp();
+        String vlanNetmask = cmd.getNetmask();
+        String accountName = cmd.getAccountName();
+        Long domainId = cmd.getDomainId();
+        String vlanId = cmd.getVlan();
+        String name = cmd.getNetworkName();
+        String displayText = cmd.getDisplayText();
+        Account owner = null;
+        
+        //Check if network offering exists
+        NetworkOfferingVO networkOffering = _networkOfferingDao.findById(networkOfferingId);
+        if (networkOffering == null || networkOffering.isSystemOnly()) {
+            throw new InvalidParameterValueException("Unable to find network offeirng by id " + networkOfferingId);
+        }
+        
+        //Check if zone exists
+        if (zoneId == null || ((_dcDao.findById(zoneId)) == null)) {
+            throw new InvalidParameterValueException("Please specify a valid zone.");
+        }
+        
+        //Check permissions
+        if (isAdmin(ctxAccount.getType())) {
+            if (domainId != null) {
+                if ((ctxAccount != null) && !_domainDao.isChildDomain(ctxAccount.getDomainId(), domainId)) {
+                    throw new PermissionDeniedException("Failed to create a newtwork, invalid domain id (" + domainId + ") given.");
+                }
+                if (accountName != null) {
+                    owner = _accountDao.findActiveAccount(accountName, domainId);
+                    if (owner == null) {
+                        throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
+                    }
+                }
+            } else {
+                owner = ctxAccount;
+            }
+        } else {
+            owner = ctxAccount;
+        }
+       
+        if (owner.getId() == Account.ACCOUNT_ID_SYSTEM && !networkOffering.isShared()) {
+            throw new InvalidParameterValueException("Non-system account is required when create a network from Dedicated network offering with id=" + networkOfferingId);
+        } 
+        
+       //VlanId can be specified only when network offering supports it
+        if (vlanId != null && !networkOffering.getSpecifyVlan()) {
+            throw new InvalidParameterValueException("Can't specify vlan because network offering doesn't support it");
+        }
+        
+        //If gateway, startIp, endIp are speicified, cidr should be present as well
+        if (gateway != null && startIP != null && endIP != null && cidr == null) {
+            throw new InvalidParameterValueException("Cidr is missing");
+        }
+            
+       Transaction txn = Transaction.currentTxn();
+       txn.start();
+       try {
+           //Create network
+           DataCenterDeployment plan = new DataCenterDeployment(zoneId, null, null, null);
+           NetworkVO userNetwork = new NetworkVO();
+           
+           //cidr should be set only when the user is admin
+           if (ctxAccount.getType() == Account.ACCOUNT_TYPE_ADMIN && cidr != null && gateway != null) {
+               userNetwork.setCidr(cidr);
+               userNetwork.setGateway(gateway);
+               if (vlanId != null) {
+                   userNetwork.setBroadcastUri(URI.create("vlan://" + vlanId));
+               }
+           }
+           
+           List<NetworkVO> networks = setupNetworkConfiguration(owner, networkOffering, userNetwork, plan, name, displayText);
+           Long networkId = null;
+           
+           if (networks == null || networks.isEmpty()) {
+               txn.rollback();
+               throw new CloudRuntimeException("Fail to create a network");
+           } else {
+               networkId = networks.get(0).getId();
+           }
+           
+           //If network offering is shared, don't pass owner account and networkOfferingId for vlan
+           if (networkOffering.isShared()) {
+               owner = null;
+           }
+           
+           if (ctxAccount.getType() == Account.ACCOUNT_TYPE_ADMIN && networkOffering.getGuestIpType() != GuestIpType.Virtualized && startIP != null && endIP != null && gateway != null) {
+               //Create vlan ip range
+               Vlan vlan = _configMgr.createVlanAndPublicIpRange(userId, zoneId, podId, startIP, endIP, gateway, vlanNetmask, false, vlanId, owner, networkId);
+               if (vlan == null) {
+                   txn.rollback();
+                   throw new CloudRuntimeException("Fail to create a vlan");
+               }
+           }  
+           txn.commit();
+           return networks.get(0);
+       } catch (Exception ex) {
+           s_logger.warn("Unexpected exception while creating network ", ex);
+           txn.rollback();
+       }finally {
+           txn.close();
+       }
+       return null;
+    }
+    
+    @Override
+    public List<? extends Network> searchForNetworks(ListNetworksCmd cmd) { 
+        Object id = cmd.getId(); 
+        Object keyword = cmd.getKeyword();
+        Account account = UserContext.current().getAccount();
+        Long domainId = cmd.getDomainId();
+        String accountName = cmd.getAccountName();
+        Long accountId = null;
+        if (isAdmin(account.getType())) {
+            if (domainId != null) {
+                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
+                    throw new PermissionDeniedException("Invalid domain id (" + domainId + ") given, unable to list networks");
+                }
+
+                if (accountName != null) {
+                    account = _accountDao.findActiveAccount(accountName, domainId);
+                    if (account == null) {
+                        throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
+                    }
+                    accountId = account.getId();
+                }
+            } 
+        } else {
+            accountId = account.getId();
+        }
+        
+        
+        Filter searchFilter = new Filter(NetworkVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
+        SearchCriteria<NetworkVO> sc = _networkConfigDao.createSearchCriteria();
+        
+        if (keyword != null) {
+            SearchCriteria<NetworkVO> ssc = _networkConfigDao.createSearchCriteria();
+            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
+        } 
+
+        if (id != null) {
+            sc.addAnd("id", SearchCriteria.Op.EQ, id);
+        }
+        
+        if (accountId != null) {
+            sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
+        }
+        return _networkConfigDao.search(sc, searchFilter);
+    }
+    
+    @Override @DB
+    public boolean deleteNetwork(DeleteNetworkCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{        
+        Long networkId = cmd.getId();
+        Long userId = UserContext.current().getUserId();
+        Account account = UserContext.current().getAccount();
+
+        //Verify network id
+        NetworkVO network = _networkConfigDao.findById(networkId);
+        if (network == null) {
+            throw new InvalidParameterValueException("unable to find network " + networkId);
+        } 
+        
+        //Perform permission check
+        if (account != null) {
+            if (!isAdmin(account.getType())) {
+                if (network.getAccountId() != account.getId()) {
+                    throw new PermissionDeniedException("Account " + account.getAccountName() + " does not own network id=" + networkId + ", permission denied");
+                }
+            } else if (!(account.getType() == Account.ACCOUNT_TYPE_ADMIN) && !_domainDao.isChildDomain(account.getDomainId(), _accountDao.findById(network.getAccountId()).getId())) {
+                throw new PermissionDeniedException("Unable to delete network " + networkId + ", permission denied.");
+            }
+        }
+        
+        //Don't allow to remove network if there are non-destroyed vms using it
+        List<NicVO> nics = _nicDao.listByNetworkId(networkId);
+        for (NicVO nic : nics) {
+            UserVm vm = _vmDao.findById(nic.getId());
+            if (vm.getState() != State.Destroyed || vm.getState() != State.Expunging || vm.getState() != State.Error) {
+                throw new CloudRuntimeException("Can't delete a network; make sure that all vms using the network are destroyed");
+            }
+        }
+        
+        //for regular user don't allow to remove network when it's in any other states but allocated
+        if (account.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+            if (network.getState() != Network.State.Allocated) {
+                throw new InvalidParameterValueException("Non-admin user can delete network in " + Network.State.Allocated + " state only.");
+            }    
+        } else {
+            if (!(network.getState() == Network.State.Allocated || network.getState() == Network.State.Setup)) {
+                throw new InvalidParameterValueException("Can delete network in " + Network.State.Allocated + " and " + Network.State.Setup + " states only.");
+            }    
+        }
+        
+        //remove all the vlans associated with the network
+        Transaction txn = Transaction.currentTxn();
+        try {
+            //remove corresponding vlans
+            List<VlanVO> vlans = _vlanDao.listVlansByNetworkId(networkId);
+            for (VlanVO vlan : vlans) {
+                boolean result = _configMgr.deleteVlanAndPublicIpRange(userId, vlan.getId());
+                if (result == false) {
+                    txn.rollback();
+                    throw new CloudRuntimeException("Unable to delete a network: failed to delete corresponding vlan with id " + vlan.getId());
+                }
+            }
+            
+            //remove networks
+            _networkConfigDao.remove(networkId);
+            
+            txn.commit();
+            return true;
+        } catch (Exception ex) {
+            txn.rollback();
+            s_logger.warn("Unexpected exception during deleting a network ", ex);
+            return false;
+        } finally {
+            txn.close();
+        }
+        
     }
 }

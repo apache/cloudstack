@@ -16,14 +16,14 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
+import com.cloud.network.Network;
+import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.Network;
-import com.cloud.network.NetworkVO;
-import com.cloud.network.NetworkManager;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.resource.Resource.ReservationStrategy;
@@ -87,8 +87,6 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
         
         if (nic == null) {
             nic = new NicProfile(ReservationStrategy.Create, null, null, null, null);
-        } else {
-            nic.setStrategy(ReservationStrategy.Create);
         }
         
         String mac = _networkMgr.getNextAvailableMacAddressInNetwork(config.getId());
@@ -97,6 +95,12 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
         DataCenter dc = _dcDao.findById(config.getDataCenterId());
         getIp(nic, dc, vm);
         
+        if (nic.getIp4Address() == null) {
+            nic.setStrategy(ReservationStrategy.Start);
+        } else {
+            nic.setStrategy(ReservationStrategy.Create);
+        }
+        
         return nic;
     }
 
@@ -104,7 +108,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     public void reserve(NicProfile nic, Network configuration, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
         if (nic.getIp4Address() == null) {
             getIp(nic, dest.getDataCenter(), vm);
-        }
+        } 
     }
 
     @Override

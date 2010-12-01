@@ -18,6 +18,7 @@
 package com.cloud.api.response;
 
 import java.util.Date;
+import java.util.List;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.serializer.Param;
@@ -144,6 +145,9 @@ public class UserVmResponse extends BaseResponse {
     public Long getObjectId() {
     	return getId();
     }
+
+    @SerializedName("nics")  @Param(description="the list of nics associated with vm")
+    private List<NicResponse> nics;
     
     public Long getId() {
         return id;
@@ -455,5 +459,13 @@ public class UserVmResponse extends BaseResponse {
 
     public void setForVirtualNetwork(Boolean forVirtualNetwork) {
         this.forVirtualNetwork = forVirtualNetwork;
+    }
+
+    public List<NicResponse> getNics() {
+        return nics;
+    }
+
+    public void setNics(List<NicResponse> nics) {
+        this.nics = nics;
     }
 }

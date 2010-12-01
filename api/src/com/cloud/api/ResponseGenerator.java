@@ -40,6 +40,8 @@ import com.cloud.api.response.IpForwardingRuleResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.LoadBalancerResponse;
 import com.cloud.api.response.NetworkGroupResponse;
+import com.cloud.api.response.NetworkOfferingResponse;
+import com.cloud.api.response.NetworkResponse;
 import com.cloud.api.response.PodResponse;
 import com.cloud.api.response.PreallocatedLunResponse;
 import com.cloud.api.response.RemoteAccessVpnResponse;
@@ -69,6 +71,7 @@ import com.cloud.event.Event;
 import com.cloud.host.Host;
 import com.cloud.network.IpAddress;
 import com.cloud.network.LoadBalancer;
+import com.cloud.network.Network;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VpnUser;
 import com.cloud.network.router.VirtualRouter;
@@ -77,6 +80,7 @@ import com.cloud.network.security.IngressRule;
 import com.cloud.network.security.NetworkGroup;
 import com.cloud.network.security.NetworkGroupRules;
 import com.cloud.offering.DiskOffering;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
 import com.cloud.storage.Snapshot;
@@ -201,5 +205,9 @@ public interface ResponseGenerator {
     TemplatePermissionsResponse createTemplatePermissionsResponse(List<String> accountNames, Long id, boolean isAdmin);
 
     AsyncJobResponse queryJobResult(QueryAsyncJobResultCmd cmd);
+    
+    NetworkOfferingResponse createNetworkOfferingResponse(NetworkOffering offering);
+    
+    NetworkResponse createNetworkResponse(Network network);
 
 }

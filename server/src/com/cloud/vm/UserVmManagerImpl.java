@@ -134,15 +134,19 @@ import com.cloud.network.IpAddrAllocator;
 import com.cloud.network.LoadBalancerVMMapVO;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
+import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
+import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.security.NetworkGroupManager;
 import com.cloud.network.security.NetworkGroupVO;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.offerings.NetworkOfferingVO;
+import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
@@ -246,10 +250,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     @Inject VMTemplateHostDao _vmTemplateHostDao;
     @Inject NetworkGroupManager _networkGroupMgr;
     @Inject ServiceOfferingDao _serviceOfferingDao;
+    @Inject NetworkOfferingDao _networkOfferingDao;
     @Inject EventDao _eventDao = null;
     @Inject InstanceGroupDao _vmGroupDao;
     @Inject InstanceGroupVMMapDao _groupVMMapDao;
     @Inject VmManager _itMgr;
+    @Inject NetworkDao _networkDao;
     
     private IpAddrAllocator _IpAllocator;
     ScheduledExecutorService _executor = null;
@@ -846,7 +852,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Starting VM: " + vmId);
         }
-
+        
         State state = vm.getState();
         if (state == State.Running) {
             if (s_logger.isDebugEnabled()) {
@@ -1043,6 +1049,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
                 } else {
                 	bits = template.getBits();
                 }
+                
+//                NetworkVO vmNetwork = _networkDao.findById(Long.valueOf(vm.getVnet()));
+//                NetworkOfferingVO vmNetworkOffering = _networkOfferingDao.findById(vmNetwork.getNetworkOfferingId());
 
                 StartCommand cmdStart = new StartCommand(vm, vm.getInstanceName(), offering, offering.getRateMbps(), offering.getMulticastRateMbps(), router, storageIps, vol.getFolder(), vm.getVnet(), utilization, cpuWeight, vols, mirroredVols, bits, isoPath, bootFromISO, guestOSDescription);
                 if (Storage.ImageFormat.ISO.equals(template.getFormat()) || template.isRequiresHvm()) {
@@ -3497,6 +3506,34 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 	@Override @DB
     public UserVm createVirtualMachine(DeployVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException {
         Account caller = UserContext.current().getAccount();
+        String accountName = cmd.getAccountName();
+        Long domainId = cmd.getDomainId();
+        Account userAccount = null;
+        Long accountId = null;
+        List<Long> networkList = cmd.getNetworkIds();
+        
+        if ((caller == null) || isAdmin(caller.getType())) {
+            if (domainId != null) {
+                if ((caller != null) && !_domainDao.isChildDomain(caller.getDomainId(), domainId)) {
+                    throw new PermissionDeniedException("Failed to deploy VM, invalid domain id (" + domainId + ") given.");
+                }
+                if (accountName != null) {
+                    userAccount = _accountDao.findActiveAccount(accountName, domainId);
+                    if (userAccount == null) {
+                        throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
+                    }
+                    accountId = userAccount.getId();
+                }
+            } else {
+                accountId = ((caller != null) ? caller.getId() : null);
+            }
+        } else {
+            accountId = caller.getId();
+        }
+
+        if (accountId == null) {
+            throw new InvalidParameterValueException("No valid account specified for deploying a virtual machine.");
+        }
         
         AccountVO owner = _accountDao.findById(cmd.getAccountId());
         if (owner == null || owner.getRemoved() != null) {
@@ -3605,12 +3642,25 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         
         s_logger.debug("Allocating in the DB for vm");
         
-        List<NetworkVO> configs = _networkMgr.setupNetworkConfiguration(owner, offering, plan);
-        List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>(); 
-        for (NetworkVO config : configs) {
-            networks.add(new Pair<NetworkVO, NicProfile>(config, null));
+        if (networkList == null || networkList.isEmpty()) {
+            throw new InvalidParameterValueException("NetworkIds have to be specified");
         }
-
+        
+        List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>();
+        for (Long networkId : networkList) {
+            NetworkVO network = _networkDao.findById(networkId);
+            if (network == null) {
+                throw new InvalidParameterValueException("Unable to find network by id " + networkId);
+            } else {
+                if (network.getAccountId() != Account.ACCOUNT_ID_SYSTEM && network.getAccountId() != accountId) {
+                    throw new PermissionDeniedException("Unable to create a vm using network with id " + networkId + ", permission denied");
+                } else if (network.getTrafficType() != TrafficType.Guest) {
+                    throw new InvalidParameterValueException("Unable to create a vm using network which traffic type is " + network.getTrafficType() + ". " +
+                    		"Only Guest traffic type is acceptes");
+                }
+                networks.add(new Pair<NetworkVO, NicProfile>(network, null));
+            }
+        }
         
         long id = _vmDao.getNextInSequence(Long.class, "id");
         

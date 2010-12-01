@@ -2047,7 +2047,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Starting a router for network configurations: virtual="  + guestConfig + " in " + dest);
         }
-	    assert guestConfig.getState() == Network.State.Implemented : "Network is not yet fully implemented: " + guestConfig;
+	    assert guestConfig.getState() == Network.State.Implemented || guestConfig.getState() == Network.State.Setup : "Network is not yet fully implemented: " + guestConfig;
 	    assert guestConfig.getTrafficType() == TrafficType.Guest;
 	    
         DataCenterDeployment plan = new DataCenterDeployment(dcId);
@@ -2068,11 +2068,11 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         
             List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemVmControlNetwork);
             NetworkOfferingVO controlOffering = offerings.get(0);
-            NetworkVO controlConfig = _networkMgr.setupNetworkConfiguration(_systemAcct, controlOffering, plan).get(0);
+            NetworkVO controlConfig = _networkMgr.setupNetworkConfiguration(_systemAcct, controlOffering, plan, null, null).get(0);
             
             List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>(3);
             NetworkOfferingVO publicOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemVmPublicNetwork).get(0);
-            List<NetworkVO> publicConfigs = _networkMgr.setupNetworkConfiguration(_systemAcct, publicOffering, plan);
+            List<NetworkVO> publicConfigs = _networkMgr.setupNetworkConfiguration(_systemAcct, publicOffering, plan, null, null);
             NicProfile defaultNic = new NicProfile();
             defaultNic.setDefaultNic(true);
             //defaultNic.setIp4Address(sourceNatIp);

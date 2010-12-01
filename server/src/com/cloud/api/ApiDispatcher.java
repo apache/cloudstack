@@ -68,22 +68,22 @@ public class ApiDispatcher {
             cmd.callCreate();
         } catch (Throwable t) {
             if (t instanceof  InvalidParameterValueException || t instanceof IllegalArgumentException) {
-                s_logger.info(t);
+                s_logger.info("Exception: ", t);
                 throw new ServerApiException(BaseCmd.PARAM_ERROR, t.getMessage());
             }else if (t instanceof PermissionDeniedException) {
-                s_logger.info(t);
+                s_logger.info("Exception: ", t);
                 throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, t.getMessage());
             }else if (t instanceof AccountLimitException) {
-                s_logger.info(t);
+                s_logger.info("Exception: ", t);
                 throw new ServerApiException(BaseCmd.ACCOUNT_RESOURCE_LIMIT_ERROR, t.getMessage());
             }else if (t instanceof InsufficientCapacityException) {
-                s_logger.info(t);
+                s_logger.info("Exception: ", t);
                 throw new ServerApiException(BaseCmd.INSUFFICIENT_CAPACITY_ERROR, t.getMessage());
             }else if (t instanceof ResourceAllocationException) {
-                s_logger.info(t);
+                s_logger.info("Exception: ", t);
                 throw new ServerApiException(BaseCmd.RESOURCE_ALLOCATION_ERROR, t.getMessage());
             }else if (t instanceof ResourceUnavailableException) {
-                s_logger.warn(t);
+                s_logger.warn("Exception: ", t);
                 throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, t.getMessage());
             }else if (t instanceof ServerApiException) {
                 s_logger.warn(t.getClass() + " : " + ((ServerApiException) t).getDescription());
@@ -91,7 +91,6 @@ public class ApiDispatcher {
             }else if (t instanceof AsyncCommandQueued) {
                 throw (AsyncCommandQueued)t;
             }else {
-                s_logger.warn(t);
                 s_logger.error("Exception while executing " + cmd.getClass().getSimpleName() + ":", t);
                 if (UserContext.current().getAccount() == null || UserContext.current().getAccount().getType() == Account.ACCOUNT_TYPE_ADMIN)
                     throw new ServerApiException(BaseCmd.INTERNAL_ERROR, t.getMessage());
@@ -107,22 +106,22 @@ public class ApiDispatcher {
             cmd.execute();
         } catch (Throwable t) {
             if (t instanceof  InvalidParameterValueException || t instanceof IllegalArgumentException) {
-                s_logger.info(t);
+                s_logger.info("Exception: ", t);
                 throw new ServerApiException(BaseCmd.PARAM_ERROR, t.getMessage());
             }else if (t instanceof PermissionDeniedException) {
-                s_logger.info(t);
+                s_logger.info("Exception: ", t);
                 throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, t.getMessage());
             }else if (t instanceof AccountLimitException) {
-                s_logger.info(t);
+                s_logger.info("Exception: ", t);
                 throw new ServerApiException(BaseCmd.ACCOUNT_RESOURCE_LIMIT_ERROR, t.getMessage());
             }else if (t instanceof InsufficientCapacityException) {
-                s_logger.info(t);
+                s_logger.info("Exception: ", t);
                 throw new ServerApiException(BaseCmd.INSUFFICIENT_CAPACITY_ERROR, t.getMessage());
             }else if (t instanceof ResourceAllocationException) {
-                s_logger.warn(t);
+                s_logger.warn("Exception: ", t);
                 throw new ServerApiException(BaseCmd.RESOURCE_ALLOCATION_ERROR, t.getMessage());
             }else if (t instanceof ResourceUnavailableException) {
-                s_logger.warn(t);
+                s_logger.warn("Exception: ", t);
                 throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, t.getMessage());
             }else if (t instanceof ServerApiException) {
                 s_logger.warn(t.getClass()  + " : " + ((ServerApiException) t).getDescription());
@@ -130,7 +129,6 @@ public class ApiDispatcher {
             } else if (t instanceof AsyncCommandQueued) {
                 throw (AsyncCommandQueued)t;
             }else {
-                s_logger.warn(t);
                 s_logger.error("Exception while executing " + cmd.getClass().getSimpleName() + ":", t);
                 if (UserContext.current().getAccount() == null || UserContext.current().getAccount().getType() == Account.ACCOUNT_TYPE_ADMIN)
                     throw new ServerApiException(BaseCmd.INTERNAL_ERROR, t.getMessage());

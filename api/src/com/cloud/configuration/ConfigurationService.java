@@ -1,16 +1,21 @@
 package com.cloud.configuration;
 
+import java.util.List;
+
 import com.cloud.api.commands.CreateCfgCmd;
 import com.cloud.api.commands.CreateDiskOfferingCmd;
+import com.cloud.api.commands.CreateNetworkOfferingCmd;
 import com.cloud.api.commands.CreatePodCmd;
 import com.cloud.api.commands.CreateServiceOfferingCmd;
 import com.cloud.api.commands.CreateVlanIpRangeCmd;
 import com.cloud.api.commands.CreateZoneCmd;
 import com.cloud.api.commands.DeleteDiskOfferingCmd;
+import com.cloud.api.commands.DeleteNetworkOfferingCmd;
 import com.cloud.api.commands.DeletePodCmd;
 import com.cloud.api.commands.DeleteServiceOfferingCmd;
 import com.cloud.api.commands.DeleteVlanIpRangeCmd;
 import com.cloud.api.commands.DeleteZoneCmd;
+import com.cloud.api.commands.ListNetworkOfferingsCmd;
 import com.cloud.api.commands.UpdateCfgCmd;
 import com.cloud.api.commands.UpdateDiskOfferingCmd;
 import com.cloud.api.commands.UpdatePodCmd;
@@ -23,6 +28,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.offering.DiskOffering;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 
 public interface ConfigurationService {
@@ -166,7 +172,14 @@ public interface ConfigurationService {
      * @throws 
      * @return The new Vlan object
      */
-    Vlan createVlanAndPublicIpRange(CreateVlanIpRangeCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException;
+    Vlan createVlanAndPublicIpRange(CreateVlanIpRangeCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, InvalidParameterValueException;
 
     boolean deleteVlanIpRange(DeleteVlanIpRangeCmd cmd);
+    
+    NetworkOffering createNetworkOffering(CreateNetworkOfferingCmd cmd);
+    
+    List<? extends NetworkOffering> searchForNetworkOfferings(ListNetworkOfferingsCmd cmd);
+    
+    boolean deleteNetworkOffering(DeleteNetworkOfferingCmd cmd);
+   
 }

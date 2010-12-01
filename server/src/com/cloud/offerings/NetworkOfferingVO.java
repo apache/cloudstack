@@ -81,6 +81,12 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Column(name="tags")
     String tags;
     
+    @Column(name="shared")
+    boolean isShared;
+    
+    @Column(name="default")
+    boolean isDefault;
+    
     @Column(name=GenericDao.REMOVED_COLUMN)
     Date removed;
     
@@ -134,14 +140,6 @@ public class NetworkOfferingVO implements NetworkOffering {
         return removed;
     }
     
-    public Long getServiceOfferingId() {
-        return serviceOfferingId;
-    }
-    
-    public void setServiceOfferingId(long serviceOfferingId) {
-        this.serviceOfferingId = serviceOfferingId;
-    }
-    
     @Override
     public Integer getConcurrentConnections() {
         return concurrentConnections;
@@ -190,12 +188,31 @@ public class NetworkOfferingVO implements NetworkOffering {
         this.systemOnly = systemOnly;
     }
 
-    public void setServiceOfferingId(Long serviceOfferingId) {
-        this.serviceOfferingId = serviceOfferingId;
-    }
 
     public void setRemoved(Date removed) {
         this.removed = removed;
+    }
+    
+    public Long getServiceOfferingId() {
+        return serviceOfferingId;
+    }
+    
+    public void setServiceOfferingId(long serviceOfferingId) {
+        this.serviceOfferingId = serviceOfferingId;
+    }
+    
+    @Override
+    public boolean isShared() {
+        return isShared;
+    }
+
+    public void setShared(boolean isShared) {
+        this.isShared = isShared;
+    }
+    
+    @Override
+    public boolean isDefault() {
+        return isDefault;
     }
     
     @Override
@@ -207,7 +224,7 @@ public class NetworkOfferingVO implements NetworkOffering {
         this.created = created;
     }
 
-    public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, GuestIpType type, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps, Integer concurrentConnections) {
+    public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, GuestIpType type, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps, Integer concurrentConnections, boolean isShared, boolean isDefault) {
         this.name = name;
         this.displayText = displayText;
         this.guestIpType = type;
@@ -217,13 +234,16 @@ public class NetworkOfferingVO implements NetworkOffering {
         this.trafficType = trafficType;
         this.systemOnly = systemOnly;
         this.specifyVlan = specifyVlan;
+        this.isDefault = isDefault;
+        this.isShared = isShared;
     }
     
     public NetworkOfferingVO(ServiceOfferingVO offering) {
-        this("Network Offering for " + offering.getName(), "Network Offering for " + offering.getDisplayText(), TrafficType.Guest, offering.getGuestIpType(), false, false, offering.getRateMbps(), offering.getMulticastRateMbps(), null);
+        this("Network Offering for " + offering.getName(), "Network Offering for " + offering.getDisplayText(), TrafficType.Guest, offering.getGuestIpType(), false, false, offering.getRateMbps(), offering.getMulticastRateMbps(), null, false, false);
         this.serviceOfferingId = offering.getId();
     }
     
+
     /**
      * Network Offering for all system vms.
      * @param name
@@ -231,7 +251,7 @@ public class NetworkOfferingVO implements NetworkOffering {
      * @param type
      */
     public NetworkOfferingVO(String name, TrafficType trafficType, GuestIpType type) {
-        this(name, "System Offering for " + name, trafficType, type, true, false, null, null, null);
+        this(name, "System Offering for " + name, trafficType, type, true, false, null, null, null, false, false);
     }
     
     @Override

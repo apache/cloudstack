@@ -86,6 +86,7 @@ public class ApiConstants {
     public static final String IS_PUBLIC = "ispublic";
     public static final String IS_READY = "isready";
     public static final String IS_RECURSIVE = "isrecursive";
+    public static final String IS_SHARED = "isshared";
     public static final String ISO_FILTER = "isofilter";
     public static final String JOB_ID = "jobid";
     public static final String JOB_STATUS = "jobstatus";
@@ -165,4 +166,11 @@ public class ApiConstants {
     public static final String NETWORK_TYPE = "networktype";
     public static final String PAGE = "page";
     public static final String PAGE_SIZE = "pagesize";
+    public static final String TRAFFIC_TYPE = "traffictype";
+    public static final String MAX_CONNECTIONS = "maxconnections";
+    public static final String NETWORK_OFFERING_ID = "networkofferingid";
+    public static final String NETWORK_IDS = "networkids";
+    public static final String SPECIFY_VLAN = "specifyvlan";
+    public static final String IS_DEFAULT = "isdefault";
 }
+ 
