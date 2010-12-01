@@ -328,10 +328,10 @@ function initAddHostButton($button, currentPageInRightPanel, $leftmenuItem1) {
 		        array1.push("&podId="+podId);
 						      
 		        var username = trim($thisDialog.find("#host_username").val());
-		        array1.push("&username="+encodeURIComponent(username));
+		        array1.push("&username="+todb(username));
 				
 		        var password = trim($thisDialog.find("#host_password").val());
-		        array1.push("&password="+encodeURIComponent(password));
+		        array1.push("&password="+todb(password));
 					
 				var newClusterName, existingClusterId;							
 			    if(clusterRadio == "new_cluster_radio") {
@@ -352,7 +352,7 @@ function initAddHostButton($button, currentPageInRightPanel, $leftmenuItem1) {
 		            url = "http://" + todb(hostname);
 		        else
 		            url = hostname;
-		        array1.push("&url="+encodeURIComponent(url));
+		        array1.push("&url="+todb(url));
 									
 		        //var $midmenuItem1 = beforeAddingMidMenuItem() ;    				
 		        
@@ -521,11 +521,11 @@ function initAddPrimaryStorageButton($button, currentPageInRightPanel, $leftmenu
 					var lun = trim($thisDialog.find("#add_pool_lun").val());
 					url = iscsiURL(server, iqn, lun);
 				}
-				array1.push("&url="+encodeURIComponent(url));
+				array1.push("&url="+todb(url));
 				
 			    var tags = trim($thisDialog.find("#add_pool_tags").val());
 				if(tags != null && tags.length > 0)
-				    array1.push("&tags="+encodeURIComponent(tags));				    
+				    array1.push("&tags="+todb(tags));				    
 			    
 			    $.ajax({
 				    data: createURL("command=createStoragePool" + array1.join("")),
@@ -615,11 +615,11 @@ function initAddPodVLANButton($button, $leftmenuItem1) {
 				array1.push("&zoneid=" + zoneId);
 				array1.push("&podId=" + podId);	
 				array1.push("&forVirtualNetwork=false"); //direct VLAN			
-				array1.push("&gateway="+encodeURIComponent(guestgateway));
-				array1.push("&netmask="+encodeURIComponent(netmask));	
-				array1.push("&startip="+encodeURIComponent(startip));
+				array1.push("&gateway="+todb(guestgateway));
+				array1.push("&netmask="+todb(netmask));	
+				array1.push("&startip="+todb(startip));
 				if(endip != null && endip.length > 0)
-				    array1.push("&endip="+encodeURIComponent(endip));	
+				    array1.push("&endip="+todb(endip));	
 				
 				$.ajax({
 				  data: createURL("command=createVlanIpRange" + array1.join("")),
@@ -751,17 +751,17 @@ function doEditPod2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $e
     if(newName != oldName)
         array1.push("&name="+todb(newName));
     if(newCidr != oldCidr)
-        array1.push("&cidr="+encodeURIComponent(newCidr));
+        array1.push("&cidr="+todb(newCidr));
     if(newStartip != oldStartip)
-        array1.push("&startIp="+encodeURIComponent(newStartip));    
+        array1.push("&startIp="+todb(newStartip));    
     if(newEndip != oldEndip && newEndip != null && newEndip.length > 0) { 
         if(newStartip == oldStartip) {
-            array1.push("&startIp="+encodeURIComponent(newStartip));  //startIp needs to be passed to updatePod API when endIp is passed to updatePod API.
+            array1.push("&startIp="+todb(newStartip));  //startIp needs to be passed to updatePod API when endIp is passed to updatePod API.
         }
-		array1.push("&endIp="+encodeURIComponent(newEndip));	
+		array1.push("&endIp="+todb(newEndip));	
     }
 	if(newGateway != oldGateway && newGateway != null && newGateway.length > 0)				             
-	    array1.push("&gateway="+encodeURIComponent(newGateway)); 	
+	    array1.push("&gateway="+todb(newGateway)); 	
 	
 	if(array1.length > 0) {
 	    $.ajax({

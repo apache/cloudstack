@@ -240,7 +240,7 @@ function doEditPrimaryStorage2($actionLink, $detailsTab, $midmenuItem1, $readonl
     var array1 = [];       
 	
 	var tags = $detailsTab.find("#tags_edit").val();
-	array1.push("&tags="+encodeURIComponent(tags));	
+	array1.push("&tags="+todb(tags));	
 	
 	if(array1.length == 0)
 	    return;

@@ -52,7 +52,7 @@ function afterLoadIsoJSP() {
 			    array1.push("&displayText="+todb(desc));
 			    
 			    var url = trim(thisDialog.find("#add_iso_url").val());	
-			    array1.push("&url="+encodeURIComponent(url));
+			    array1.push("&url="+todb(url));
 			    					
 			    var zoneId = thisDialog.find("#add_iso_zone").val();
 			    array1.push("&zoneId="+zoneId);	

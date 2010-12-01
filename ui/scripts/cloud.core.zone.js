@@ -479,7 +479,7 @@ function initAddVLANButton($button, $leftmenuItem1) {
 				var endip = trim($thisDialog.find("#add_publicip_vlan_endip").val());													
 																				
 				$.ajax({
-				    data: createURL("command=createVlanIpRange&forVirtualNetwork="+type+"&zoneId="+zoneObj.id+vlan+scopeParams+"&gateway="+encodeURIComponent(gateway)+"&netmask="+encodeURIComponent(netmask)+"&startip="+encodeURIComponent(startip)+"&endip="+encodeURIComponent(endip)),
+				    data: createURL("command=createVlanIpRange&forVirtualNetwork="+type+"&zoneId="+zoneObj.id+vlan+scopeParams+"&gateway="+todb(gateway)+"&netmask="+todb(netmask)+"&startip="+todb(startip)+"&endip="+todb(endip)),
 					dataType: "json",
 					success: function(json) {	
 					    $thisDialog.find("#spinning_wheel").hide();
@@ -543,7 +543,7 @@ function initAddSecondaryStorageButton($button, $leftmenuItem1) {
 				var url = nfsURL(nfs_server, path);  
 			    				  
 			    $.ajax({
-				    data: createURL("command=addSecondaryStorage&zoneId="+zoneId+"&url="+encodeURIComponent(url)),
+				    data: createURL("command=addSecondaryStorage&zoneId="+zoneId+"&url="+todb(url)),
 				    dataType: "json",
 				    success: function(json) {	
 				        $thisDialog.find("#spinning_wheel").hide();				        
@@ -604,11 +604,11 @@ function initAddPodButton($button, $leftmenuItem1) {
                 var array1 = [];
                 array1.push("&zoneId="+zoneObj.id);
                 array1.push("&name="+todb(name));
-                array1.push("&cidr="+encodeURIComponent(cidr));
-                array1.push("&startIp="+encodeURIComponent(startip));
+                array1.push("&cidr="+todb(cidr));
+                array1.push("&startIp="+todb(startip));
                 if (endip != null && endip.length > 0)
-                    array1.push("&endIp="+encodeURIComponent(endip));
-                array1.push("&gateway="+encodeURIComponent(gateway));			
+                    array1.push("&endIp="+todb(endip));
+                array1.push("&gateway="+todb(gateway));			
 								
 		        $.ajax({
 		          data: createURL("command=createPod"+array1.join("")), 
@@ -855,19 +855,19 @@ function doEditZone2($actionLink, $detailsTab, $leftmenuItem1, $readonlyFields, 
 	
 	var dns1 = $detailsTab.find("#dns1_edit").val();
 	if(dns1 != jsonObj.dns1)
-	    moreCriteria.push("&dns1="+encodeURIComponent(dns1));
+	    moreCriteria.push("&dns1="+todb(dns1));
 	
 	var dns2 = $detailsTab.find("#dns2_edit").val();
 	if (dns2 != null && dns2.length > 0 && dns2 != jsonObj.dns2) 
-		moreCriteria.push("&dns2="+encodeURIComponent(dns2));	
+		moreCriteria.push("&dns2="+todb(dns2));	
 	
 	var internaldns1 = $detailsTab.find("#internaldns1_edit").val();
 	if(internaldns1 != jsonObj.internaldns1)
-	    moreCriteria.push("&internaldns1="+encodeURIComponent(internaldns1));
+	    moreCriteria.push("&internaldns1="+todb(internaldns1));
 	
 	var internaldns2 = $detailsTab.find("#internaldns2_edit").val();	
 	if (internaldns2 != null && internaldns2.length > 0 && internaldns2 != jsonObj.internaldns2) 
-		moreCriteria.push("&internaldns2="+encodeURIComponent(internaldns2));						
+		moreCriteria.push("&internaldns2="+todb(internaldns2));						
 	
 	var vlan;				
 	if ($("#tab_content_details #vlan_container").css("display") != "none") {
@@ -880,13 +880,13 @@ function doEditZone2($actionLink, $detailsTab, $leftmenuItem1, $readonlyFields, 
 		        vlan = vlanStart;							
                       
             if(vlan != jsonObj.vlan)
-               moreCriteria.push("&vlan=" + encodeURIComponent(vlan));	
+               moreCriteria.push("&vlan=" + todb(vlan));	
         }
 	}				
 	
 	var guestcidraddress = $detailsTab.find("#guestcidraddress_edit").val();
 	if(guestcidraddress != jsonObj.guestcidraddress)
-	    moreCriteria.push("&guestcidraddress="+encodeURIComponent(guestcidraddress));				    		 
+	    moreCriteria.push("&guestcidraddress="+todb(guestcidraddress));				    		 
 	 
 	if(moreCriteria.length > 0) { 	        	
 	    $.ajax({
@@ -986,10 +986,10 @@ function initAddHostButtonOnZonePage($button, zoneId, zoneName) {
 		        array1.push("&podid="+podId);
 						      
 		        var username = trim($thisDialog.find("#host_username").val());
-		        array1.push("&username="+encodeURIComponent(username));
+		        array1.push("&username="+todb(username));
 				
 		        var password = trim($thisDialog.find("#host_password").val());
-		        array1.push("&password="+encodeURIComponent(password));
+		        array1.push("&password="+todb(password));
 					
 				var newClusterName, existingClusterId;							
 			    if(clusterRadio == "new_cluster_radio") {
@@ -1010,7 +1010,7 @@ function initAddHostButtonOnZonePage($button, zoneId, zoneName) {
 		            url = "http://" + todb(hostname);
 		        else
 		            url = hostname;
-		        array1.push("&url="+encodeURIComponent(url));
+		        array1.push("&url="+todb(url));
 									
 		        //var $midmenuItem1 = beforeAddingMidMenuItem() ;    				
 		        
@@ -1176,7 +1176,7 @@ function initAddPrimaryStorageButtonOnZonePage($button, zoneId, zoneName) {
 					var lun = trim($thisDialog.find("#add_pool_lun").val());
 					url = iscsiURL(server, iqn, lun);
 				}
-				array1.push("&url="+encodeURIComponent(url));
+				array1.push("&url="+todb(url));
 				
 			    var tags = trim($thisDialog.find("#add_pool_tags").val());
 				if(tags != null && tags.length > 0)

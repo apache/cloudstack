@@ -84,7 +84,7 @@ function initAddDiskOfferingButton($midmenuAddLink1) {
 				
 				var tags = trim(thisDialog.find("#add_disk_tags").val());
 				if(tags != null && tags.length > 0)
-				    array1.push("&tags="+encodeURIComponent(tags));								
+				    array1.push("&tags="+todb(tags));								
 				
 				$.ajax({
 				  data: createURL("command=createDiskOffering&isMirrored=false" + array1.join("")),
@@ -149,7 +149,7 @@ function doEditDiskOffering2($actionLink, $detailsTab, $midmenuItem1, $readonlyF
     array1.push("&displayText="+todb(displaytext));
 	
 	var tags = $detailsTab.find("#tags_edit").val();
-	array1.push("&tags="+encodeURIComponent(tags));	
+	array1.push("&tags="+todb(tags));	
 	
 	$.ajax({
 	    data: createURL("command=updateDiskOffering&id="+id+array1.join("")),

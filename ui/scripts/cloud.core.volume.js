@@ -732,7 +732,7 @@ function doRecurringSnapshot($actionLink, $detailsTab, $midmenuItem1) {
 					}	
 					var thisLink;
 					$.ajax({
-						data: createURL("command=createSnapshotPolicy&intervaltype="+intervalType+"&schedule="+schedule+"&volumeid="+volumeId+"&maxsnaps="+max+"&timezone="+encodeURIComponent(timezone)),
+						data: createURL("command=createSnapshotPolicy&intervaltype="+intervalType+"&schedule="+schedule+"&volumeid="+volumeId+"&maxsnaps="+max+"&timezone="+todb(timezone)),
 						dataType: "json",                        
 						success: function(json) {	
 							thisDialog.dialog("close");								
