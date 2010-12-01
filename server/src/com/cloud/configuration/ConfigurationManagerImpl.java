@@ -2320,7 +2320,24 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 	}   
 
 	@Override
-    public void checkAccess(Account caller, ServiceOffering so) throws PermissionDeniedException {
+    public void checkDiskOfferingAccess(Account caller, DiskOffering dof) throws PermissionDeniedException {
+        for (SecurityChecker checker : _secChecker) {
+            if (checker.checkAccess(caller, dof)) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Access granted to " + caller + " to disk offering:" + dof.getId() + " by " + checker.getName());
+                }
+                return;
+            }else{
+            	throw new PermissionDeniedException("Access denied to "+caller+" by "+checker.getName());
+            }
+        }
+        
+        assert false : "How can all of the security checkers pass on checking this caller?";
+        throw new PermissionDeniedException("There's no way to confirm " + caller + " has access to disk offering:" + dof.getId());
+    }
+	
+	@Override
+    public void checkServiceOfferingAccess(Account caller, ServiceOffering so) throws PermissionDeniedException {
         for (SecurityChecker checker : _secChecker) {
             if (checker.checkAccess(caller, so)) {
                 if (s_logger.isDebugEnabled()) {

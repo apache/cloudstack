@@ -1742,6 +1742,12 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                     throw new InvalidParameterValueException("Please specify a valid disk offering.");
                 }
                 
+                if(diskOffering.getDomainId() == null){
+                	//do nothing as offering is public
+                }else{
+            			_configMgr.checkDiskOfferingAccess(account, diskOffering);
+                }
+                
                 if(!validateVolumeSizeRange(diskOffering.getDiskSize()/1024)){//convert size from mb to gb for validation
             		throw new InvalidParameterValueException("Invalid size for custom volume creation: " + size+" ,max volume size is:"+_maxVolumeSizeInGb);
             	}

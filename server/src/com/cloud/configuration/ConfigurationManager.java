@@ -26,6 +26,7 @@ import com.cloud.dc.HostPodVO;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
@@ -155,6 +156,9 @@ public interface ConfigurationManager extends Manager {
 	void checkAccess(Account caller, DataCenter zone)
 			throws PermissionDeniedException;
 
-	void checkAccess(Account caller, ServiceOffering so)
+	void checkServiceOfferingAccess(Account caller, ServiceOffering so)
 	throws PermissionDeniedException;
+
+	void checkDiskOfferingAccess(Account caller, DiskOffering dof)
+			throws PermissionDeniedException;
 }

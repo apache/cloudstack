@@ -1200,9 +1200,9 @@ public class ManagementServerImpl implements ManagementServer {
         	//do nothing as offering is public
         }else{
         	if(userAccount != null){
-    			_configMgr.checkAccess(userAccount, offering);//user deploying his own vm
+    			_configMgr.checkServiceOfferingAccess(userAccount, offering);//user deploying his own vm
     		}else{
-    			_configMgr.checkAccess(ctxAccount, offering);
+    			_configMgr.checkServiceOfferingAccess(ctxAccount, offering);
     		}
         }
         
@@ -1228,6 +1228,18 @@ public class ManagementServerImpl implements ManagementServer {
  
         if (isIso && diskOffering == null) {
         	throw new InvalidParameterValueException("Please specify a valid disk offering ID.");
+        }
+        
+        if(diskOffering != null){
+            if(diskOffering.getDomainId() == null){
+            	//do nothing as offering is public
+            }else{
+            	if(userAccount != null){
+        			_configMgr.checkDiskOfferingAccess(userAccount, diskOffering);//user deploying his own vm
+        		}else{
+        			_configMgr.checkDiskOfferingAccess(ctxAccount, diskOffering);
+        		}
+            }
         }
         
         if (isIso) {
@@ -4416,7 +4428,6 @@ public class ManagementServerImpl implements ManagementServer {
         Object id = cmd.getId();
         Object keyword = cmd.getKeyword();
         Long domainId = cmd.getDomainId();
-        
         //Keeping this logic consistent with domain specific zones
         //if a domainId is provided, we just return the disk offering associated with this domain
         if(domainId != null){
