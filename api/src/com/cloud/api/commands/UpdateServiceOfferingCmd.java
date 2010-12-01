@@ -93,6 +93,8 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
 
     @Override
     public void execute(){
+    	//Note
+    	//Once an offering is created, we cannot update the domainId field (keeping consistent with zones logic)
         ServiceOffering result = _configService.updateServiceOffering(this);
         if (result != null){
             ServiceOfferingResponse response = _responseGenerator.createServiceOfferingResponse(result);

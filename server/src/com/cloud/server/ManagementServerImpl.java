@@ -1603,16 +1603,17 @@ public class ManagementServerImpl implements ManagementServer {
         return _userAccountDao.search(sc, searchFilter);
     }
     
-    private boolean isPermissible(Long accountDomainId, Long serviceOfferingDomainId){
+    //This method is used for permissions check for both disk and service offerings
+    private boolean isPermissible(Long accountDomainId, Long offeringDomainId){
     	
-    	if(accountDomainId == serviceOfferingDomainId)
+    	if(accountDomainId == offeringDomainId)
     		return true; // account and service offering in same domain
     	
     	DomainVO domainRecord = _domainDao.findById(accountDomainId);
     	
     	if(domainRecord != null){
     		while(true){
-    			if(domainRecord.getId() == serviceOfferingDomainId)
+    			if(domainRecord.getId() == offeringDomainId)
     				return true;
     			
 				//try and move on to the next domain
@@ -1662,7 +1663,7 @@ public class ManagementServerImpl implements ManagementServer {
         
         //For non-root users
         if((account.getType() == Account.ACCOUNT_TYPE_NORMAL || account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)){
-        	return searchOfferingsInternal(account, name, id, vmId, keyword, searchFilter);
+        	return searchServiceOfferingsInternal(account, name, id, vmId, keyword, searchFilter);
         }
         
         //for root users, the existing flow
@@ -1703,7 +1704,7 @@ public class ManagementServerImpl implements ManagementServer {
         return _offeringsDao.search(sc, searchFilter);
     }
 
-    private List<ServiceOfferingVO> searchOfferingsInternal(Account account, Object name, Object id, Long vmId, Object keyword, Filter searchFilter){
+    private List<ServiceOfferingVO> searchServiceOfferingsInternal(Account account, Object name, Object id, Long vmId, Object keyword, Filter searchFilter){
 
 		//it was decided to return all offerings for the user's domain, and everything above till root (for normal user or domain admin)
 		//list all offerings belonging to this domain, and all of its parents
@@ -4337,17 +4338,107 @@ public class ManagementServerImpl implements ManagementServer {
         return accountNames;
     }
 
+    private List<DiskOfferingVO> searchDiskOfferingsInternal(Account account, Object name, Object id, Object keyword, Filter searchFilter){
+		//it was decided to return all offerings for the user's domain, and everything above till root (for normal user or domain admin)
+		//list all offerings belonging to this domain, and all of its parents
+		//check the parent, if not null, add offerings for that parent to list
+    	List<DiskOfferingVO> dol = new ArrayList<DiskOfferingVO>();
+		DomainVO domainRecord = _domainDao.findById(account.getDomainId());
+		boolean includePublicOfferings = true;
+		if(domainRecord != null)
+		{
+			while(true){
+		        SearchBuilder<DiskOfferingVO> sb = _diskOfferingDao.createSearchBuilder();
+
+		        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+		        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+
+		        SearchCriteria<DiskOfferingVO> sc = sb.create();
+		        if (keyword != null) {
+		        	includePublicOfferings = false;
+		            SearchCriteria<DiskOfferingVO> ssc = _diskOfferingDao.createSearchCriteria();
+		            ssc.addOr("displayText", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+		            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+
+		            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
+		        }
+
+		        if (name != null) {
+		        	includePublicOfferings = false;
+		            sc.setParameters("name", "%" + name + "%");
+		        }
+
+		        if (id != null) {
+		        	includePublicOfferings = false;
+		            sc.setParameters("id", id);
+		        }
+
+		        //for this domain
+		        sc.addAnd("domainId", SearchCriteria.Op.EQ, domainRecord.getId());
+		        
+		        //search and add for this domain
+				dol.addAll(_diskOfferingDao.search(sc, searchFilter));
+				
+				//try and move on to the next domain
+				if(domainRecord.getParent() != null)
+					domainRecord = _domainDao.findById(domainRecord.getParent());
+				else
+					break;//now we got all the offerings for this user/dom adm
+			}
+		}else{
+			s_logger.error("Could not find the domainId for account:"+account.getAccountName());
+			throw new CloudAuthenticationException("Could not find the domainId for account:"+account.getAccountName());
+		}
+		
+		//add all the public offerings to the sol list before returning
+		if(includePublicOfferings)
+			dol.addAll(_diskOfferingDao.findPublicDiskOfferings());
+		
+    	return dol;
+    	
+    }
+    
     @Override
     public List<DiskOfferingVO> searchForDiskOfferings(ListDiskOfferingsCmd cmd) {
+    	//Note
+    	//The list method for offerings is being modified in accordance with discussion with Will/Kevin
+    	//For now, we will be listing the following based on the usertype
+    	//1. For root, we will list all offerings
+    	//2. For domainAdmin and regular users, we will list everything in their domains+parent domains ... all the way till root
+    	
         Filter searchFilter = new Filter(DiskOfferingVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<DiskOfferingVO> sb = _diskOfferingDao.createSearchBuilder();
 
         // SearchBuilder and SearchCriteria are now flexible so that the search builder can be built with all possible
         // search terms and only those with criteria can be set.  The proper SQL should be generated as a result.
+        Account account = UserContext.current().getAccount();
         Object name = cmd.getDiskOfferingName();
         Object id = cmd.getId();
         Object keyword = cmd.getKeyword();
-
+        Long domainId = cmd.getDomainId();
+        
+        //Keeping this logic consistent with domain specific zones
+        //if a domainId is provided, we just return the disk offering associated with this domain
+        if(domainId != null){
+        	if(account.getType() == Account.ACCOUNT_TYPE_ADMIN){
+        		return _diskOfferingDao.listByDomainId(domainId);//no perm check
+        	}else{
+        		//check if the user's domain == do's domain || user's domain is a child of so's domain
+        		if(isPermissible(account.getDomainId(), domainId)){
+        			//perm check succeeded
+        			return _diskOfferingDao.listByDomainId(domainId);
+        		}else{
+        			throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "The account:"+account.getAccountName()+" does not fall in the same domain hierarchy as the disk offering");
+        		}
+        	}
+        }
+        
+        //For non-root users
+        if((account.getType() == Account.ACCOUNT_TYPE_NORMAL || account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)){
+        	return searchDiskOfferingsInternal(account, name, id, keyword, searchFilter);
+        }
+        
+        //For root users, preserving existing flow
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
 

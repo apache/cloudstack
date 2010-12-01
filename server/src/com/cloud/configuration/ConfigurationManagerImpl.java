@@ -1115,6 +1115,13 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             throw new ServerApiException(BaseCmd.PARAM_ERROR, "Failed to create service offering " + name + ": specify the memory value between 1 and 2147483647");
         }
 
+    	//check if valid domain
+    	if(cmd.getDomainId() != null){
+    		DomainVO domain = _domainDao.findById(cmd.getDomainId());   	
+    		if(domain == null)
+    			throw new InvalidParameterValueException("Please specify a valid domain id");
+    	}
+    	
         boolean localStorageRequired = false;
         String storageType = cmd.getStorageType();
         if (storageType == null) {
