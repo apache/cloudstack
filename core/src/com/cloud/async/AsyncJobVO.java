@@ -22,6 +22,8 @@ import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -82,8 +84,9 @@ public class AsyncJobVO implements AsyncJob {
     @Column(name="job_result", length=65535)
     private String result;
     
+    @Enumerated(value=EnumType.STRING)
     @Column(name="instance_type", length=64)
-    private String instanceType;
+    private Type instanceType;
     
 	@Column(name="instance_id", length=64)
     private Long instanceId;
@@ -296,11 +299,11 @@ public class AsyncJobVO implements AsyncJob {
 	}
 	
     @Override
-    public String getInstanceType() {
+    public Type getInstanceType() {
 		return instanceType;
 	}
 
-	public void setInstanceType(String instanceType) {
+	public void setInstanceType(Type instanceType) {
 		this.instanceType = instanceType;
 	}
 

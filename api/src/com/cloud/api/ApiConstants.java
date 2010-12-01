@@ -88,6 +88,7 @@ public class ApiConstants {
     public static final String IS_RECURSIVE = "isrecursive";
     public static final String ISO_FILTER = "isofilter";
     public static final String JOB_ID = "jobid";
+    public static final String JOB_STATUS = "jobstatus";
     public static final String LASTNAME = "lastname";
     public static final String LEVEL = "level";
     public static final String LUN = "lun";

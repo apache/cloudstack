@@ -102,6 +102,11 @@ public class AsyncJobManagerImpl implements AsyncJobManager {
     }
     
     @Override
+    public List<AsyncJobVO> findInstancePendingAsyncJobs(AsyncJob.Type instanceType, long accountId) {
+    	return _jobDao.findInstancePendingAsyncJobs(instanceType, accountId);
+    }
+    
+    @Override
 	public long submitAsyncJob(AsyncJobVO job) {
     	return submitAsyncJob(job, false);
     }
@@ -210,7 +215,7 @@ public class AsyncJobManagerImpl implements AsyncJobManager {
     		txt.start();
 
 	    	AsyncJobVO job = _jobDao.createForUpdate();
-	    	job.setInstanceType(instanceType);
+	    	//job.setInstanceType(instanceType);
 	    	job.setInstanceId(instanceId);
 			job.setLastUpdated(DateUtil.currentGMTTime());
 			_jobDao.update(jobId, job);

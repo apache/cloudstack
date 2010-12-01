@@ -60,6 +60,19 @@ function primarystorageJsonToDetailsTab() {
     if(jsonObj == null)
         return; 
     
+    $.ajax({
+        data: createURL("command=listStoragePools&id="+jsonObj.id),
+        dataType: "json",
+        async: false,
+        success: function(json) {            
+            var items = json.liststoragepoolsresponse.storagepool;	           
+			if(items != null && items.length > 0) {
+                jsonObj = items[0];
+                $midmenuItem1.data("jsonObj", jsonObj);                  
+            }
+        }
+    });     
+    
     var $thisTab = $("#right_panel_content").find("#tab_content_details");  
     $thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();        

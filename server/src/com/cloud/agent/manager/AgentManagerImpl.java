@@ -21,6 +21,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLEncoder;
 import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -143,6 +144,7 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.ActionDelegate;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
@@ -583,7 +585,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         }
         
         try {
-    		uri = new URI(url);
+    		uri = new URI(UriUtils.encodeURIComponent(url));
     		if (uri.getScheme() == null)
     			throw new InvalidParameterValueException("uri.scheme is null " + url + ", add nfs:// as a prefix");
     		else if (uri.getScheme().equalsIgnoreCase("nfs")) {

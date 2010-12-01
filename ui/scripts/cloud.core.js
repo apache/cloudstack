@@ -567,7 +567,9 @@ function setBooleanEditField(value, $field) {
 function clearMiddleMenu() {
     $("#midmenu_container").empty();
     $("#midmenu_action_link").hide();
-    clearAddButtonsOnTop();
+    clearAddButtonsOnTop();        
+    $("#midmenu_prevbutton, #midmenu_nextbutton").hide();
+    $("#middle_menu_pagination").data("params", null);
 }
 
 function clearAddButtonsOnTop() {
@@ -581,11 +583,7 @@ function clearAddButtonsOnTop() {
     $("#midmenu_add_vlan_button").unbind("click").hide(); 
     $("#midmenu_add_directIpRange_button").unbind("click").hide(); 
     $("#midmenu_Update_SSL_Certificate_button").unbind("click").hide();   
-    /*   
-    $("#midmenu_add2_link").unbind("click").hide();     
-    $("#midmenu_add3_link").unbind("click").hide(); 
-    */       
-    
+         
     $("#midmenu_startvm_link").unbind("click").hide();     
     $("#midmenu_stopvm_link").unbind("click").hide(); 
     $("#midmenu_rebootvm_link").unbind("click").hide(); 
@@ -928,7 +926,21 @@ function getMidmenuId(jsonObj) {
     return "midmenuItem_" + jsonObj.id; 
 }
 
-function listMidMenuItems2(commandString, jsonResponse1, jsonResponse2, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu, clickFirstItem, $midMenuContainer) {                
+function listMidMenuItems2(commandString, jsonResponse1, jsonResponse2, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu, page) {                
+	var params = {
+        "commandString": commandString,
+        "jsonResponse1": jsonResponse1,
+        "jsonResponse2": jsonResponse2,
+        "toMidmenuFn": toMidmenuFn,
+        "toRightPanelFn": toRightPanelFn,
+        "getMidmenuIdFn": getMidmenuIdFn,
+        "isMultipleSelectionInMidMenu": isMultipleSelectionInMidMenu,        
+        "page": page
+    }                    
+    $("#middle_menu_pagination").data("params", params);
+	
+	(page > 1)? $("#midmenu_prevbutton").show(): $("#midmenu_prevbutton").hide();
+	
 	if(isMultipleSelectionInMidMenu == true)
         enableMultipleSelectionInMidMenu();
     else
@@ -937,24 +949,23 @@ function listMidMenuItems2(commandString, jsonResponse1, jsonResponse2, toMidmen
     var count = 0;    
     $.ajax({
         cache: false,
-        data: createURL("command="+commandString+"&pagesize="+midmenuItemCount),
+        data: createURL("command="+commandString+"&pagesize="+midmenuItemCount+"&page="+page),
         dataType: "json",
         async: false,
-        success: function(json) {		                    
-            selectedItemsInMidMenu = {};    	                
+        success: function(json) {   
+            selectedItemsInMidMenu = {};    
+            $("#midmenu_container").empty();	                
             var items = json[jsonResponse1][jsonResponse2];      
             if(items != null && items.length > 0) {
+                (items.length == midmenuItemCount)? $("#midmenu_nextbutton").show(): $("#midmenu_nextbutton").hide();
                 for(var i=0; i<items.length;i++) { 
                     var $midmenuItem1 = $("#midmenu_item").clone();                      
                     $midmenuItem1.data("toRightPanelFn", toRightPanelFn);                             
                     toMidmenuFn(items[i], $midmenuItem1);    
                     bindClickToMidMenu($midmenuItem1, toRightPanelFn, getMidmenuIdFn);             
-                                        
-                    if($midMenuContainer == null)
-                        $midMenuContainer = $("#midmenu_container");
-                        
-                    $midMenuContainer.append($midmenuItem1.show());   
-                    if(clickFirstItem == true && i == 0)  { //click the 1st item in middle menu as default                        
+                      
+                    $("#midmenu_container").append($midmenuItem1.show());   
+                    if(i == 0)  { //click the 1st item in middle menu as default                        
                         $midmenuItem1.click();                           
                         if(isMultipleSelectionInMidMenu == true) {                           
                             $midmenuItem1.addClass("ui-selected");  //because instance page is using JQuery selectable widget to do multiple-selection
@@ -997,7 +1008,7 @@ function listMidMenuItems(commandString, jsonResponse1, jsonResponse2, rightPane
 		});	   
 		removeDialogs();
 		afterLoadRightPanelJSPFn();                
-		listMidMenuItems2(commandString, jsonResponse1, jsonResponse2, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu, true);            
+		listMidMenuItems2(commandString, jsonResponse1, jsonResponse2, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu, 1);            
 	});     
 	return false;
 }
@@ -1149,9 +1160,6 @@ function getSystemVmUseLocalStorage() { return g_systemVmUseLocalStorage; }
 
 //keyboard keycode
 var keycode_Enter = 13;
-
-//dropdown field size 
-var maxPageSize = "&pagesize=500"; 
 
 //XMLHttpResponse.status
 var ERROR_ACCESS_DENIED_DUE_TO_UNAUTHORIZED = 401;
@@ -1334,6 +1342,7 @@ function convertMilliseconds(string) {
     }
 }    
 
+/*
 function drawGrid(items, submenuContent, template, fnJSONToTemplate) {
     var grid = submenuContent.find("#grid_content").empty();		    	    		
     if (items != null && items.length > 0) {				        			        
@@ -1457,7 +1466,7 @@ function submenuContentEventBinder(submenuContent, listFunction) {
     var zoneSelect = submenuContent.find("#advanced_search #adv_search_zone");	    
 	if(zoneSelect.length>0) {  //if zone dropdown is found on Advanced Search dialog 	    		
 	    $.ajax({
-		    data: createURL("command=listZones&available=true&response=json"+maxPageSize),
+		    data: createURL("command=listZones&available=true&response=json"),
 		    dataType: "json",
 		    success: function(json) {
 			    var zones = json.listzonesresponse.zone;			   
@@ -1484,7 +1493,7 @@ function submenuContentEventBinder(submenuContent, listFunction) {
 		            podLabel.css("color", "black");	
 		            podSelect.removeAttr("disabled");
 		            $.ajax({
-				    data: createURL("command=listPods&zoneId="+zoneId+"&response=json"+maxPageSize),
+				    data: createURL("command=listPods&zoneId="+zoneId+"&response=json"),
 			            dataType: "json",
 			            async: false,
 			            success: function(json) {
@@ -1509,7 +1518,7 @@ function submenuContentEventBinder(submenuContent, listFunction) {
 	if(domainSelect.length>0 && isAdmin()) {
 	    var domainSelect = domainSelect.empty();			
 	    $.ajax({
-		    data: createURL("command=listDomains&available=true&response=json"+maxPageSize),
+		    data: createURL("command=listDomains&available=true&response=json"),
 		    dataType: "json",
 		    success: function(json) {			        
 			    var domains = json.listdomainsresponse.domain;			 
@@ -1527,7 +1536,7 @@ function submenuContentEventBinder(submenuContent, listFunction) {
 	    vmSelect.empty();		
 	    vmSelect.append("<option value=''></option>"); 	
 	    $.ajax({
-		    data: createURL("command=listVirtualMachines&response=json"+maxPageSize),
+		    data: createURL("command=listVirtualMachines&response=json"),
 		    dataType: "json",
 		    success: function(json) {			        
 			    var items = json.listvirtualmachinesresponse.virtualmachine;		 
@@ -1540,6 +1549,7 @@ function submenuContentEventBinder(submenuContent, listFunction) {
 	    });		    
 	} 	  
 }
+*/
 
 // Validation functions
 function showError(isValid, field, errMsgField, errMsg) {    

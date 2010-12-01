@@ -141,6 +141,10 @@ public class UserVmResponse extends BaseResponse {
     @SerializedName("jobstatus") @Param(description="shows the current pending asynchronous job status")
     private Integer jobStatus;
     
+    public Long getObjectId() {
+    	return getId();
+    }
+    
     public Long getId() {
         return id;
     }

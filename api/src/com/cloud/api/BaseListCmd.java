@@ -1,5 +1,7 @@
 package com.cloud.api;
 
+import com.cloud.async.AsyncJob;
+
 
 public abstract class BaseListCmd extends BaseCmd {
 
@@ -60,5 +62,9 @@ public abstract class BaseListCmd extends BaseCmd {
             }
         }
         return startIndex;
+    }
+    
+    public AsyncJob.Type getInstanceType() {
+    	return AsyncJob.Type.None;
     }
 }

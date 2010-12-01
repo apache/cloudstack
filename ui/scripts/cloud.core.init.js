@@ -210,8 +210,27 @@ $(document).ready(function() {
 		return;
 	}
 	
+	//pagination
+	$("#middle_menu_pagination").unbind("clik").bind("click", function(event) {	
+	    var params = $(this).data("params");
+	    if(params == null)
+	        return;	    
+	    
+	    var $target = $(event.target);
+	    var targetId = $target.attr("id");
+	    
+	    if(targetId == "midmenu_prevbutton") {
+	        listMidMenuItems2(params.commandString, params.jsonResponse1, params.jsonResponse2, params.toMidmenuFn, params.toRightPanelFn, params.getMidmenuIdFn, params.isMultipleSelectionInMidMenu, (params.page-1));
+	    }	        
+	    else if(targetId == "midmenu_nextbutton") {	        
+	        listMidMenuItems2(params.commandString, params.jsonResponse1, params.jsonResponse2, params.toMidmenuFn, params.toRightPanelFn, params.getMidmenuIdFn, params.isMultipleSelectionInMidMenu, (params.page+1));
+	    }	
+	    
+	    return false;    
+	});
+	
 	// refresh button
-	$("#refresh_link").bind("click", function(event) {		
+	$("#refresh_link").unbind("clik").bind("click", function(event) {		
 		var onRefreshFn = $("#right_panel").data("onRefreshFn");
 		if(onRefreshFn != null)
 		    onRefreshFn();
@@ -219,13 +238,13 @@ $(document).ready(function() {
 	});
 	
 	// Initialize help drop down dialog
-	$("#help_link").bind("click", function(event) {
+	$("#help_link").unbind("clik").bind("click", function(event) {
 		$("#help_dropdown_dialog").show();
 		$("#help_button").addClass("selected");
 		return false;
 	});
 	
-	$("#help_dropdown_close").bind("click", function(event) {
+	$("#help_dropdown_close").unbind("clik").bind("click", function(event) {
 		$("#help_dropdown_dialog").hide();
 		$("#help_button").removeClass("selected");
 		return false;

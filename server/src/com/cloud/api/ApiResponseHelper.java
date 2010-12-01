@@ -606,12 +606,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         DomainRouterResponse routerResponse = new DomainRouterResponse();
         routerResponse.setId(router.getId());
 
-        AsyncJobVO asyncJob = ApiDBUtils.findInstancePendingAsyncJob("domain_router", router.getId());
-        if (asyncJob != null) {
-            routerResponse.setJobId(asyncJob.getId());
-            routerResponse.setJobStatus(asyncJob.getStatus());
-        }
-
         routerResponse.setZoneId(router.getDataCenterId());
         routerResponse.setZoneName(ApiDBUtils.findZoneById(router.getDataCenterId()).getName());
         routerResponse.setDns1(router.getDns1());
@@ -1266,12 +1260,6 @@ public class ApiResponseHelper implements ResponseGenerator {
             routerResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
         }
 
-        AsyncJobVO asyncJob = ApiDBUtils.findInstancePendingAsyncJob("domain_router", router.getId());
-        if (asyncJob != null) {
-            routerResponse.setJobId(asyncJob.getId());
-            routerResponse.setJobStatus(asyncJob.getStatus());
-        }
-
         List<? extends Nic> nics = ApiDBUtils.getNics(router);
         for (Nic singleNic : nics) {
             Long configId = singleNic.getNetworkId();
@@ -1912,7 +1900,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         jobResponse.setCreated(job.getCreated());
         jobResponse.setId(job.getId());
         jobResponse.setJobInstanceId(job.getInstanceId());
-        jobResponse.setJobInstanceType(job.getInstanceType());
+        jobResponse.setJobInstanceType(job.getInstanceType().toString());
         jobResponse.setJobProcStatus(job.getProcessStatus());
         jobResponse.setJobResult((ResponseObject)ApiSerializerHelper.fromSerializedString(job.getResult()));
         jobResponse.setJobResultCode(job.getResultCode());

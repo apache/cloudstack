@@ -507,7 +507,7 @@ function initVMWizard() {
         return false;   //event.preventDefault() + event.stopPropagation() 
     });	
 						
-    var vmPopupStep2PageSize = 11; //max number of templates each page in step2 of New VM wizard is 11 
+    var vmPopupTemplatePageSize = 6; //max number of templates in VM wizard 
     function listTemplatesInVmPopup() {		
         var zoneId = $vmPopup.find("#wizard_zone").val();
         if(zoneId == null || zoneId.length == 0)
@@ -520,18 +520,20 @@ function initVMWizard() {
         if (selectedTemplateTypeInVmPopup != "blank") {  //*** template ***  
             templateType = "template";
             if (searchInput != null && searchInput.length > 0)                 
-                commandString = "command=listTemplates&templatefilter="+selectedTemplateTypeInVmPopup+"&zoneid="+zoneId+"&keyword="+searchInput+"&page="+currentPageInTemplateGridInVmPopup; 
+                commandString = "command=listTemplates&templatefilter="+selectedTemplateTypeInVmPopup+"&zoneid="+zoneId+"&keyword="+searchInput; 
             else
-                commandString = "command=listTemplates&templatefilter="+selectedTemplateTypeInVmPopup+"&zoneid="+zoneId+"&page="+currentPageInTemplateGridInVmPopup;           		    		
+                commandString = "command=listTemplates&templatefilter="+selectedTemplateTypeInVmPopup+"&zoneid="+zoneId;           		    		
 	    } 
 	    else {  //*** ISO ***
 	        templateType = "ISO";
 	        if (searchInput != null && searchInput.length > 0)                 
-                commandString = "command=listIsos&isReady=true&bootable=true&zoneid="+zoneId+"&keyword="+searchInput+"&page="+currentPageInTemplateGridInVmPopup;  
+                commandString = "command=listIsos&isReady=true&bootable=true&zoneid="+zoneId+"&keyword="+searchInput;  
             else
-                commandString = "command=listIsos&isReady=true&bootable=true&zoneid="+zoneId+"&page="+currentPageInTemplateGridInVmPopup;  
+                commandString = "command=listIsos&isReady=true&bootable=true&zoneid="+zoneId;  
 	    }
-		    		
+	  
+		commandString += "&pagesize="+vmPopupTemplatePageSize+"&page="+currentPageInTemplateGridInVmPopup;
+		   		
 	    var loading = $vmPopup.find("#wiz_template_loading").show();				
 	    if(currentPageInTemplateGridInVmPopup==1)
             $vmPopup.find("#prevPage").hide();
@@ -561,7 +563,7 @@ function initVMWizard() {
 				        vmWizardTemplateJsonToTemplate(items[i], $newTemplate, templateType, i);
 				        container.append($newTemplate.show());				       
 				    }						
-				    if(items.length < vmPopupStep2PageSize)
+				    if(items.length < vmPopupTemplatePageSize)
 	                    $vmPopup.find("#nextPage").hide();
 	                else
 	                    $vmPopup.find("#nextPage").show();
@@ -1422,7 +1424,7 @@ function vmJsonToVolumeTab() {
 	
 	$.ajax({
 		cache: false,
-		data: createURL("command=listVolumes&virtualMachineId="+jsonObj.id+maxPageSize),
+		data: createURL("command=listVolumes&virtualMachineId="+jsonObj.id),
 		dataType: "json",
 		success: function(json) {			    
 			var items = json.listvolumesresponse.volume;
@@ -1487,7 +1489,7 @@ function vmJsonToRouterTab() {
 
 	$.ajax({
 		cache: false,
-		data: createURL("command=listRouters&domainid="+vmObj.domainid+"&account="+vmObj.account+maxPageSize),
+		data: createURL("command=listRouters&domainid="+vmObj.domainid+"&account="+vmObj.account),
 		dataType: "json",
 		success: function(json) {				      
 			var items = json.listroutersresponse.router;
@@ -1669,7 +1671,7 @@ function appendInstanceGroup(groupId, groupName) {
         var groupId = $(this).data("groupId");                                   
         $.ajax({
             cache: false,
-            data: createURL("command=listVirtualMachines&groupid="+groupId+"&pagesize="+midmenuItemCount),
+            data: createURL("command=listVirtualMachines&groupid="+groupId+"&pagesize="+midmenuItemCount+"&page=1"),
             dataType: "json",
             success: function(json) {		                                                             
                 var instances = json.listvirtualmachinesresponse.virtualmachine;    

@@ -423,9 +423,9 @@
                         </div>
                     </div>
                     <div class="midmenu_navigationbox" id="middle_menu_pagination" style="display:none;">
-                        <div class="midmenu_prevbutton">
+                        <div id="midmenu_prevbutton" class="midmenu_prevbutton" style="display:none;">
                         </div>
-                        <div class="midmenu_nextbutton">
+                        <div id="midmenu_nextbutton" class="midmenu_nextbutton" style="display:none;">
                         </div>
                     </div>
                 </div>

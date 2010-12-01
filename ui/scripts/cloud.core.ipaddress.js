@@ -35,7 +35,7 @@ function afterLoadIpJSP() {
     
     //*** Acquire New IP (begin) ***
 	$.ajax({
-	    data: createURL("command=listZones&available=true"+maxPageSize),
+	    data: createURL("command=listZones&available=true"),
 		dataType: "json",
 		success: function(json) {
 			var zones = json.listzonesresponse.zone;				

@@ -21,10 +21,12 @@ package com.cloud.async.dao;
 import java.util.Date;
 import java.util.List;
 
+import com.cloud.async.AsyncJob;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface AsyncJobDao extends GenericDao<AsyncJobVO, Long> {
 	AsyncJobVO findInstancePendingAsyncJob(String instanceType, long instanceId);
+	List<AsyncJobVO> findInstancePendingAsyncJobs(AsyncJob.Type instanceType, long accountId);
 	List<AsyncJobVO> getExpiredJobs(Date cutTime, int limit); 
 }

@@ -28,6 +28,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.UserVmResponse;
+import com.cloud.async.AsyncJob;
 import com.cloud.uservm.UserVm;
 
 @Implementation(description="List the virtual machines owned by the account.", responseObject=UserVmResponse.class)
@@ -124,6 +125,10 @@ public class ListVMsCmd extends BaseListCmd {
     @Override
 	public String getName() {
         return s_name;
+    }
+    
+    public AsyncJob.Type getInstanceType() {
+    	return AsyncJob.Type.VirtualMachine;
     }
     
     @Override

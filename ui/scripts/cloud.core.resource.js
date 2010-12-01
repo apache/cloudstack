@@ -22,7 +22,7 @@ function buildZoneTree() {
     var $zoneTree = $("#leftmenu_zone_tree").find("#tree_container").hide();
   
     $.ajax({
-	    data: createURL("command=listZones&available=true"+maxPageSize),
+	    data: createURL("command=listZones&available=true"),
 		dataType: "json",		
 		success: function(json) {
 			var items = json.listzonesresponse.zone;
@@ -55,7 +55,7 @@ function buildZoneTree() {
 					$zoneContent.show();	
 									
 					$.ajax({
-                        data: createURL("command=listPods&zoneid="+zoneObj.id+maxPageSize),
+                        data: createURL("command=listPods&zoneid="+zoneObj.id),
 	                    dataType: "json",
 	                    async: false,
 	                    success: function(json) {
@@ -126,7 +126,7 @@ function buildZoneTree() {
 function refreshClusterUnderPod($podNode, newClusterName, existingClusterId, noClicking) {  
     var podId = $podNode.data("podId"); 
     $.ajax({
-        data: createURL("command=listClusters&podid="+podId+maxPageSize),
+        data: createURL("command=listClusters&podid="+podId),
         dataType: "json",
         async: false,
         success: function(json) {
@@ -176,7 +176,7 @@ function zoneJSONToTreeNode(json, $zoneNode) {
     zoneName.data("jsonObj", json);	    
 		
 	$.ajax({
-        data: createURL("command=listPods&zoneid="+zoneid+maxPageSize),
+        data: createURL("command=listPods&zoneid="+zoneid),
 	    dataType: "json",
 	    async: false,
 	    success: function(json) {
@@ -216,34 +216,38 @@ function resourceLoadPage(pageToShow, $midmenuItem1) {   //$midmenuItem1 is eith
 	    if(pageToShow == "jsp/resource.jsp") {
             afterLoadResourceJSP($midmenuItem1); 
         }
-        else if(pageToShow == "jsp/zone.jsp") {
-            afterLoadZoneJSP($midmenuItem1); 
-            
+        else if(pageToShow == "jsp/zone.jsp") {            
             $(this).data("onRefreshFn", function() {
 		        zoneJsonToDetailsTab();
-		    });    
+		    });  
+            afterLoadZoneJSP($midmenuItem1);               
         }
-        else if(pageToShow == "jsp/pod.jsp") {
-            afterLoadPodJSP($midmenuItem1); 
-            
+        else if(pageToShow == "jsp/pod.jsp") {            
             $(this).data("onRefreshFn", function() {
 		        podJsonToDetailsTab();
 		    });  
+		    afterLoadPodJSP($midmenuItem1);             
         }
         else if(pageToShow == "jsp/cluster.jsp") {
-            afterLoadClusterJSP($midmenuItem1); 
-            
             $(this).data("onRefreshFn", function() {
 		        clusterJsonToDetailsTab();
 		    }); 
+            afterLoadClusterJSP($midmenuItem1);   
         }
-        else if(pageToShow == "jsp/host.jsp") {
-            afterLoadHostJSP($midmenuItem1); 
+        else if(pageToShow == "jsp/host.jsp") {                 
+            $(this).data("onRefreshFn", function() {                
+		        hostJsonToDetailsTab();
+		    }); 
+            afterLoadHostJSP($midmenuItem1);        
+            
             copyActionInfoFromMidMenuToRightPanel($midmenuItem1);                   
             $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);
             $("#tab_details").click();     
         }
         else if(pageToShow == "jsp/primarystorage.jsp") {
+            $(this).data("onRefreshFn", function() {                
+		        primarystorageJsonToDetailsTab();
+		    }); 
             afterLoadPrimaryStorageJSP($midmenuItem1);    
         }         
     });    
@@ -624,7 +628,7 @@ function initAddZoneWizard() {
          
     var domainDropdown = $addZoneWizard.find("#domain_dropdown").empty();	
 	$.ajax({
-	  data: createURL("command=listDomains"+maxPageSize),
+	  data: createURL("command=listDomains"),
 		dataType: "json",
 		async: false,
 		success: function(json) {

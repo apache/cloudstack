@@ -18,6 +18,7 @@
 package com.cloud.api;
 
 import com.cloud.api.response.AsyncJobResponse;
+import com.cloud.async.AsyncJob;
 
 /**
  * A base command for supporting asynchronous API calls.  When an API command is received, the command will be
@@ -75,5 +76,20 @@ public abstract class BaseAsyncCmd extends BaseCmd {
 
     public void setStartEventId(Long startEventId) {
         this.startEventId = startEventId;
+    }
+    
+    /**
+     * Async commands that want to be tracked as part of the listXXX commands need to
+     * provide implementations of the two following methods, getInstanceId() and getInstanceType()
+     * 
+     * getObjectId() should return the id of the object the async command is executing on
+     * getObjectType() should return a type from the AsyncJobVO.Type enumeration
+     */
+    public Long getInstanceId() {
+    	return null;
+    }
+    
+    public AsyncJob.Type getInstanceType() {
+    	return AsyncJob.Type.None;
     }
 }

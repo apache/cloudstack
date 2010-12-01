@@ -374,7 +374,7 @@ function initAddVLANButton($button, $leftmenuItem1) {
 			dialogAddVlanForZone.find("#add_publicip_vlan_type_container").show();
 			var podSelect = dialogAddVlanForZone.find("#add_publicip_vlan_pod").empty();		
 			$.ajax({
-			    data: createURL("command=listPods&zoneId="+zoneObj.id+maxPageSize),
+			    data: createURL("command=listPods&zoneId="+zoneObj.id),
 				dataType: "json",
 				async: false,
 				success: function(json) {
@@ -395,7 +395,7 @@ function initAddVLANButton($button, $leftmenuItem1) {
 			        									
 			    function populateDomainDropdown(id) {					        
                     $.ajax({
-	                    data: createURL("command=listDomainChildren&id="+id+"&pageSize=-1"),
+	                    data: createURL("command=listDomainChildren&id="+id),
 	                    dataType: "json",
 	                    async: false,
 	                    success: function(json) {					        
