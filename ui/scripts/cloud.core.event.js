@@ -17,7 +17,38 @@
  */
 
 function eventGetSearchParams() {
-    return "";
+    var moreCriteria = [];	
+    
+	var advanced;       
+	if (advanced != null && advanced) {		
+	    var type = $("#advanced_search #adv_search_type").val();	
+	    var level = $("#advanced_search #adv_search_level").val();
+	    var domainId = $("#advanced_search #adv_search_domain").val();	
+	    var account = $("#advanced_search #adv_search_account").val();
+	    var startdate = $("#advanced_search #adv_search_startdate").val();	
+	    var enddate = $("#advanced_search #adv_search_enddate").val();	
+	    var moreCriteria = [];								
+		if (type!=null && trim(type).length > 0) 
+			moreCriteria.push("&type="+type);		
+	    if (level!=null && level.length > 0) 
+			moreCriteria.push("&level="+level);	
+		if (domainId!=null && domainId.length > 0) 
+			moreCriteria.push("&domainid="+domainId);					
+		if (account!=null && account.length > 0) 
+			moreCriteria.push("&account="+todb(account));					
+		if (startdate!=null && startdate.length > 0) 
+			moreCriteria.push("&startdate="+todb(startdate));		
+		if (enddate!=null && enddate.length > 0) 
+			moreCriteria.push("&enddate="+todb(enddate));	
+	} 
+	else {     			    		
+	    var searchInput = $("#basic_search").find("#search_input").val();	 
+        if (searchInput != null && searchInput.length > 0) {	           
+            moreCriteria.push("&type="+searchInput);	       
+        }        
+	}
+	
+	return moreCriteria.join("");          
 }
 
 function afterLoadEventJSP() {

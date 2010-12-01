@@ -39,8 +39,7 @@ function vmGetSearchParams() {
 	    if (pod!=null && pod.length > 0) 
 			moreCriteria.push("&podId="+pod);		
 		if (account!=null && account.length > 0) 
-			moreCriteria.push("&account="+account);		       
-		commandString = "command=listVirtualMachines&page="+currentPage+moreCriteria.join("")+"&response=json";
+			moreCriteria.push("&account="+account);		
 	} 
 	else {     			    		
 	    var searchInput = $("#basic_search").find("#search_input").val();	 
