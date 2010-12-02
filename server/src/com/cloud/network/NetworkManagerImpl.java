@@ -3134,13 +3134,20 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 }
             }
 
-            // check for ip address/port conflicts by checking existing forwarding and load balancing rules
-            List<FirewallRuleVO> existingNatRules = _rulesDao.findByPublicIpPrivateIpForNatRule(ipAddr, userVM.getGuestIpAddress());
+            // check for ip address/port conflicts by checking existing port/ip forwarding rules
+            List<FirewallRuleVO> existingFirewallRules = _rulesDao.findRuleByPublicIp(ipAddr);
 
-            if(existingNatRules.size() > 0){
-                throw new NetworkRuleConflictException("The specified rule for public ip:"+ipAddr+" vm id:"+virtualMachineId+" already exists");
+            if(existingFirewallRules.size() > 0){
+                throw new NetworkRuleConflictException("There already exists a firewall rule for public ip:"+ipAddr);
             }
 
+            //check for ip address/port conflicts by checking existing load balancing rules
+            List<LoadBalancerVO> existingLoadBalancerRules = _loadBalancerDao.listByIpAddress(ipAddr);
+
+            if(existingLoadBalancerRules.size() > 0){
+                throw new NetworkRuleConflictException("There already exists a load balancer rule for public ip:"+ipAddr);
+            }
+            
             //if given ip address is already source nat, return error
             if(ipAddress.isSourceNat()){
                 throw new PermissionDeniedException("Cannot create a static nat rule for the ip:"+ipAddress.getAddress()+" ,this is already a source nat ip address");
