@@ -555,6 +555,7 @@ function clearMiddleMenu() {
     $("#midmenu_action_link").hide();
     clearAddButtonsOnTop();        
     $("#basic_search").find("#search_input").val("");
+    $("#advanced_search_container").empty();
     $("#midmenu_prevbutton, #midmenu_nextbutton").hide();
     $("#middle_menu_pagination").data("params", null);
 }

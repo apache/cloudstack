@@ -146,49 +146,9 @@
                                 </li>
                             </ol>
                             </form>
-                            <a href="#">
+                            <a id="advanced_search_icon" href="#">
                                 <fmt:message key="label.advanced"/></a>
-                            <div class="adv_searchpopup" id="adv_search_dialog" style="display: none;">
-                                <div class="adv_searchformbox">
-                                    <h3><fmt:message key="label.advanced.search"/></h3>
-                                    <a id="advanced_search_close" href="#"><fmt:message key="label.close"/> </a>
-                                    <form action="#" method="post">
-                                    <ol style="margin-top: 8px;">
-                                        <li>
-                                            <label for="filter">
-                                                <fmt:message key="label.name"/>:</label>
-                                            <input class="text" type="text" name="adv_search_name" id="adv_search_name" />
-                                        </li>
-                                        <li>
-                                            <label for="filter">
-                                                <fmt:message key="label.status"/>:</label>
-                                            <select class="select" id="adv_search_state">
-                                                <option value=""></option>
-                                                <option value="Creating">Creating</option>
-                                                <option value="Starting">Starting</option>
-                                                <option value="Running">Running</option>
-                                                <option value="Stopping">Stopping</option>
-                                                <option value="Stopped">Stopped</option>
-                                                <option value="Destroyed">Destroyed</option>
-                                                <option value="Expunging">Expunging</option>
-                                                <option value="Migrating">Migrating</option>
-                                                <option value="Error">Error</option>
-                                                <option value="Unknown">Unknown</option>
-                                            </select>
-                                        </li>
-                                        <li>
-                                            <label for="filter">
-                                                <fmt:message key="label.zone"/>:</label>
-                                            <select class="select" id="adv_search_zone">
-                                            </select>
-                                        </li>
-                                    </ol>
-                                    </form>
-                                    <div class="adv_search_actionbox">
-                                        <div class="adv_searchpopup_button" id="adv_search_button">
-                                        </div>
-                                    </div>
-                                </div>
+                            <div id="advanced_search_container">
                             </div>
                         </div>
                         <div class="actionpanel_button_wrapper" id="midmenu_action_link" style="position: relative;
