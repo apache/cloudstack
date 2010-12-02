@@ -655,7 +655,7 @@ function isMiddleMenuShown() {
 
 // adding middle menu item ***
 function beforeAddingMidMenuItem() {
-    var $midmenuItem1 = $("#midmenu_item").clone();
+    var $midmenuItem1 = $("#midmenu_item").clone().attr("id", "midmenu_item_clone");
 	$midmenuItem1.find("#first_row").text("Adding....");    	
 	$midmenuItem1.find("#second_row").html("&nbsp;");    			
 	$midmenuItem1.find("#content").addClass("inaction"); 
