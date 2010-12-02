@@ -18,28 +18,32 @@
 
 function vmGetSearchParams() {
     var moreCriteria = [];	
-    
-	var advanced;       
-	if (advanced != null && advanced) {		
-	    var name = $("#advanced_search #adv_search_name").val();	
-	    var state = $("#advanced_search #adv_search_state").val();
-	    var zone = $("#advanced_search #adv_search_zone").val();
-	    var pod = $("#advanced_search #adv_search_pod").val();
-	    var domainId = $("#advanced_search #adv_search_domain").val();
-	    var account = $("#advanced_search #adv_search_account").val();
-	    							
+        
+    var $advancedSearchPopup = $("#advanced_search_template");
+	if ($advancedSearchPopup.css("display") != "none") {	
+	    var name = $advancedSearchPopup.find("#adv_search_name").val();								
 		if (name!=null && trim(name).length > 0) 
-			moreCriteria.push("&name="+todb(name));				
+			moreCriteria.push("&name="+todb(name));	
+		
+		var state = $advancedSearchPopup.find("#adv_search_state").val();				
 		if (state!=null && state.length > 0) 
-			moreCriteria.push("&state="+todb(state));		
+			moreCriteria.push("&state="+todb(state));	
+		
+		var zone = $advancedSearchPopup.find("#adv_search_zone").val();		
 	    if (zone!=null && zone.length > 0) 
-			moreCriteria.push("&zoneid="+todb(zone));		
-	    if (domainId!=null && domainId.length > 0) 
-			moreCriteria.push("&domainid="+todb(domainId));		
-	    if (pod!=null && pod.length > 0) 
-			moreCriteria.push("&podId="+todb(pod));		
-		if (account!=null && account.length > 0) 
-			moreCriteria.push("&account="+todb(account));		
+			moreCriteria.push("&zoneid="+todb(zone));			
+		
+	    if ($advancedSearchPopup.find("#adv_search_domain_li").css("display") != "none") {
+	        var domainId = $advancedSearchPopup.find("#adv_search_domain").val();		
+	        if(domainId!=null && domainId.length > 0) 
+			    moreCriteria.push("&domainid="+todb(domainId));		
+	    }
+						
+		if ($advancedSearchPopup.find("#adv_search_account_li").css("display") != "none") {
+		    var account = $advancedSearchPopup.find("#adv_search_account").val();	
+		    if(account!=null && account.length > 0) 
+			    moreCriteria.push("&account="+todb(account));		
+        }
 	} 
 	else {     			    		
 	    var searchInput = $("#basic_search").find("#search_input").val();	 

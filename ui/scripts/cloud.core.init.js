@@ -233,8 +233,12 @@ $(document).ready(function() {
 	            $(this).hide();
 	            return false;
 	        }
-	        else if(targetId == "adv_search_button") {
-    	      
+	        else if(targetId == "adv_search_button") {    	        
+    	        var params = $("#middle_menu_pagination").data("params");
+	            if(params == null)
+	                return;	        	    
+	            listMidMenuItems2(params.commandString, params.getSearchParamsFn, params.jsonResponse1, params.jsonResponse2, params.toMidmenuFn, params.toRightPanelFn, params.getMidmenuIdFn, params.isMultipleSelectionInMidMenu, 1);
+    	        $(this).hide();
 	            return false;
 	        }
 	        return true;
