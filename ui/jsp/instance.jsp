@@ -1354,7 +1354,7 @@
 
 <!--  ***** Dialogs (end) ***** -->
 
-<!-- advanced search (begin) -->
+<!-- advanced search template (begin) -->
 <div id="advanced_search_template" class="adv_searchpopup" style="display: none;">
     <div class="adv_searchformbox">
         <h3>
@@ -1409,4 +1409,4 @@
         </div>
     </div>
 </div>
-<!-- advanced search (end) -->
+<!-- advanced search template (end) -->

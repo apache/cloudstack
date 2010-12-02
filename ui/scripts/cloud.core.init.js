@@ -224,7 +224,7 @@ $(document).ready(function() {
 	
 	//advanced search	
 	$("#advanced_search_icon").unbind("click").bind("click", function(event) {
-	    var $advancedSearch = $("#advanced_search_template").clone();
+	    var $advancedSearch = $("#advanced_search_template").clone().attr("id", "advanced_search_popup");
 	    
 	    $advancedSearch.unbind("click").bind("click", function(event) {
 	        var $target = $(event.target);

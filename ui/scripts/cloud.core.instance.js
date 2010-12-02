@@ -19,8 +19,8 @@
 function vmGetSearchParams() {
     var moreCriteria = [];	
         
-    var $advancedSearchPopup = $("#advanced_search_template");
-	if ($advancedSearchPopup.css("display") != "none") {	
+    var $advancedSearchPopup = $("#advanced_search_popup");
+	if ($advancedSearchPopup.length > 0 && $advancedSearchPopup.css("display") != "none") {	
 	    var name = $advancedSearchPopup.find("#adv_search_name").val();								
 		if (name!=null && trim(name).length > 0) 
 			moreCriteria.push("&name="+todb(name));	

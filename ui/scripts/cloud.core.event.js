@@ -18,26 +18,34 @@
 
 function eventGetSearchParams() {
     var moreCriteria = [];	
-    
-	var advanced;       
-	if (advanced != null && advanced) {		
-	    var type = $("#advanced_search #adv_search_type").val();	
-	    var level = $("#advanced_search #adv_search_level").val();
-	    var domainId = $("#advanced_search #adv_search_domain").val();	
-	    var account = $("#advanced_search #adv_search_account").val();
-	    var startdate = $("#advanced_search #adv_search_startdate").val();	
-	    var enddate = $("#advanced_search #adv_search_enddate").val();	
-	    var moreCriteria = [];								
+
+	var $advancedSearchPopup = $("#advanced_search_popup");
+	if ($advancedSearchPopup.length > 0 && $advancedSearchPopup.css("display") != "none") {		    
+	    var type = $advancedSearchPopup.find("#adv_search_type").val();							
 		if (type!=null && trim(type).length > 0) 
 			moreCriteria.push("&type="+todb(type));		
+		
+		var level = $advancedSearchPopup.find("#adv_search_level").val();	
 	    if (level!=null && level.length > 0) 
 			moreCriteria.push("&level="+todb(level));	
-		if (domainId!=null && domainId.length > 0) 
-			moreCriteria.push("&domainid="+todb(domainId));					
-		if (account!=null && account.length > 0) 
-			moreCriteria.push("&account="+todb(account));					
+		
+		if ($advancedSearchPopup.find("#adv_search_domain_li").css("display") != "none") {
+		    var domainId = $advancedSearchPopup.find("#adv_search_domain").val();		
+		    if (domainId!=null && domainId.length > 0) 
+			    moreCriteria.push("&domainid="+todb(domainId));	
+	    }
+    	
+    	if ($advancedSearchPopup.find("#adv_search_account_li").css("display") != "none") {	
+		    var account = $advancedSearchPopup.find("#adv_search_account").val();					
+		    if (account!=null && account.length > 0) 
+			    moreCriteria.push("&account="+todb(account));	
+		}
+		
+		var startdate = $advancedSearchPopup.find("#adv_search_startdate").val();						
 		if (startdate!=null && startdate.length > 0) 
-			moreCriteria.push("&startdate="+todb(startdate));		
+			moreCriteria.push("&startdate="+todb(startdate));	
+		
+		var enddate = $advancedSearchPopup.find("#adv_search_enddate").val();			
 		if (enddate!=null && enddate.length > 0) 
 			moreCriteria.push("&enddate="+todb(enddate));	
 	} 
