@@ -17,7 +17,22 @@
  */
 
 function alertGetSearchParams() {
-    return "";
+    var moreCriteria = [];	
+
+	var $advancedSearchPopup = $("#advanced_search_popup");
+	if (lastSearchType == "advanced_search" && $advancedSearchPopup.length > 0) {
+	    var type = $advancedSearchPopup.find("#adv_search_type").val();							
+		if (type!=null && type.length > 0) 
+			moreCriteria.push("&type="+todb(type));			
+	} 
+	else {     			    		
+	    var searchInput = $("#basic_search").find("#search_input").val();	 
+        if (lastSearchType == "basic_search" && searchInput != null && searchInput.length > 0) {	           
+            moreCriteria.push("&type="+todb(searchInput));	       
+        }        
+	}
+	
+	return moreCriteria.join("");          
 }
 
 function afterLoadAlertJSP() {
