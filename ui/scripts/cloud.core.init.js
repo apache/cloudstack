@@ -245,6 +245,14 @@ $(document).ready(function() {
 	        }
 	        return true;
 	    });
+	    	
+	    $advancedSearch.unbind("keypress").bind("keypress", function(event) {	       
+	        event.stopPropagation();   
+	        if(event.keyCode == keycode_Enter) { 
+	            event.preventDefault();
+	            $(this).find("#adv_search_button").click();
+	        }	
+	    });	
 	    	    
 	    if(isAdmin())
 	        $advancedSearch.find("#adv_search_domain_li, #adv_search_account_li, #adv_search_pod_li").show();
