@@ -17,7 +17,35 @@
  */
 
 function volumeGetSearchParams() {
-    return "";
+    var moreCriteria = [];	
+    
+	var advanced;       
+	if (advanced != null && advanced) {		
+	    var name = $("#advanced_search #adv_search_name").val();	
+	    var zone = $("#advanced_search #adv_search_zone").val();
+	    var pod = $("#advanced_search #adv_search_pod").val();
+	    var domainId = $("#advanced_search #adv_search_domain").val();
+	    var account = $("#advanced_search #adv_search_account").val();
+	    var moreCriteria = [];								
+		if (name!=null && trim(name).length > 0) 
+			moreCriteria.push("&name="+todb(name));	
+	    if (zone!=null && zone.length > 0) 
+			moreCriteria.push("&zoneId="+todb(zone));		
+	    if (pod!=null && pod.length > 0) 
+			moreCriteria.push("&podId="+todb(pod));	
+		if (domainId!=null && domainId.length > 0) 
+			moreCriteria.push("&domainid="+todb(domainId));		
+		if (account!=null && account.length > 0) 
+			moreCriteria.push("&account="+todb(account));			
+	} 
+	else {     			    		
+	    var searchInput = $("#basic_search").find("#search_input").val();	 
+        if (searchInput != null && searchInput.length > 0) {	           
+            moreCriteria.push("&name="+todb(searchInput));	       
+        }        
+	}
+	
+	return moreCriteria.join("");          
 }
 
 function afterLoadVolumeJSP() {

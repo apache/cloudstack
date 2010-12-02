@@ -31,20 +31,20 @@ function vmGetSearchParams() {
 		if (name!=null && trim(name).length > 0) 
 			moreCriteria.push("&name="+todb(name));				
 		if (state!=null && state.length > 0) 
-			moreCriteria.push("&state="+state);		
+			moreCriteria.push("&state="+todb(state));		
 	    if (zone!=null && zone.length > 0) 
-			moreCriteria.push("&zoneid="+zone);		
+			moreCriteria.push("&zoneid="+todb(zone));		
 	    if (domainId!=null && domainId.length > 0) 
-			moreCriteria.push("&domainid="+domainId);		
+			moreCriteria.push("&domainid="+todb(domainId));		
 	    if (pod!=null && pod.length > 0) 
-			moreCriteria.push("&podId="+pod);		
+			moreCriteria.push("&podId="+todb(pod));		
 		if (account!=null && account.length > 0) 
-			moreCriteria.push("&account="+account);		
+			moreCriteria.push("&account="+todb(account));		
 	} 
 	else {     			    		
 	    var searchInput = $("#basic_search").find("#search_input").val();	 
         if (searchInput != null && searchInput.length > 0) {	           
-            moreCriteria.push("&name="+searchInput);	       
+            moreCriteria.push("&name="+todb(searchInput));	       
         }        
 	}
 	
