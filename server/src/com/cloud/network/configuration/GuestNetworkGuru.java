@@ -32,13 +32,13 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.network.Network;
+import com.cloud.network.Network.State;
+import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.Network;
-import com.cloud.network.Network.State;
-import com.cloud.network.NetworkVO;
-import com.cloud.network.NetworkManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.resource.Resource.ReservationStrategy;
@@ -229,7 +229,6 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
 
     @Override
     public boolean trash(Network config, NetworkOffering offering, Account owner) {
-        // TODO Auto-generated method stub
         return true;
     }
 }

@@ -63,7 +63,7 @@ public class DeleteIpForwardingRuleCmd extends BaseAsyncCmd {
     @Override
     public void execute(){
         boolean result = false;
-    	result = _networkService.deleteIpForwardingRule(id);
+    	result = _rulesService.deleteIpForwardingRule(id);
         if (result) {
             SuccessResponse response = new SuccessResponse(getName());
             this.setResponseObject(response);

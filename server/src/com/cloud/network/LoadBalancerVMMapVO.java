@@ -31,7 +31,7 @@ public class LoadBalancerVMMapVO {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
-    private Long id;
+    private long id;
 
     @Column(name="load_balancer_id")
     private long loadBalancerId;
@@ -55,7 +55,7 @@ public class LoadBalancerVMMapVO {
         this.pending = pending;
     }
 
-    public Long getId() {
+    public long getId() {
         return id;
     }
 

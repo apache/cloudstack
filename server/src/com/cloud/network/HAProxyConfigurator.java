@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.utils.net.NetUtils;
 
 
@@ -64,17 +65,17 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
 	};
 
 	@Override
-	public String[] generateConfiguration(List<FirewallRuleVO> fwRules) {
+	public String[] generateConfiguration(List<PortForwardingRuleTO> fwRules) {
 		//Group the rules by publicip:publicport
-		Map<String, List<FirewallRuleVO>> pools = new HashMap<String, List<FirewallRuleVO>>();
+		Map<String, List<PortForwardingRuleTO>> pools = new HashMap<String, List<PortForwardingRuleTO>>();
 		
-		for(FirewallRuleVO rule:fwRules) {
+		for(PortForwardingRuleTO rule:fwRules) {
 			StringBuilder sb = new StringBuilder();
-			String poolName = sb.append(rule.getPublicIpAddress().replace(".", "_")).append('-').append(rule.getPublicPort()).toString();
-			if (rule.isEnabled() && !rule.isForwarding()) {	
-				List<FirewallRuleVO> fwList = pools.get(poolName);
+			String poolName = sb.append(rule.getSrcIp().replace(".", "_")).append('-').append(rule.getSrcPortRange()[0]).toString();
+			if (!rule.revoked()) {	
+				List<PortForwardingRuleTO> fwList = pools.get(poolName);
 				if (fwList == null) {
-					fwList = new ArrayList<FirewallRuleVO>();
+					fwList = new ArrayList<PortForwardingRuleTO>();
 					pools.put(poolName, fwList);
 				}
 				fwList.add(rule);
@@ -95,7 +96,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
 		}
 		result.add(getBlankLine());
 		
-		for (Map.Entry<String, List<FirewallRuleVO>> e : pools.entrySet()){
+		for (Map.Entry<String, List<PortForwardingRuleTO>> e : pools.entrySet()){
 		    List<String> poolRules = getRulesForPool(e.getKey(), e.getValue());
 		    result.addAll(poolRules);
 		}
@@ -103,11 +104,11 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
 		return result.toArray(new String[result.size()]);
 	}
 
-	private List<String> getRulesForPool(String poolName, List<FirewallRuleVO> fwRules) {
-		FirewallRuleVO firstRule = fwRules.get(0);
-		String publicIP = firstRule.getPublicIpAddress();
-		String publicPort = firstRule.getPublicPort();
-		String algorithm = firstRule.getAlgorithm();
+	private List<String> getRulesForPool(String poolName, List<PortForwardingRuleTO> fwRules) {
+		PortForwardingRuleTO firstRule = fwRules.get(0);
+		String publicIP = firstRule.getSrcIp();
+		String publicPort = Integer.toString(firstRule.getSrcPortRange()[0]);
+// FIXEME:		String algorithm = firstRule.getAlgorithm();
 		
 		List<String> result = new ArrayList<String>();
 		//add line like this: "listen  65_37_141_30-80 65.37.141.30:80"
@@ -116,7 +117,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
 		  .append(publicIP).append(":").append(publicPort);
 		result.add(sb.toString());
 		sb = new StringBuilder();
-		sb.append("\t").append("balance ").append(algorithm);
+//FIXME		sb.append("\t").append("balance ").append(algorithm);
 		result.add(sb.toString());
 		if (publicPort.equals(NetUtils.HTTP_PORT)) {
 			sb = new StringBuilder();
@@ -127,14 +128,15 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
 			result.add(sb.toString());
 		}
 		int i=0;
-		for (FirewallRuleVO rule: fwRules) {
+		for (PortForwardingRuleTO rule: fwRules) {
 			//add line like this: "server  65_37_141_30-80_3 10.1.1.4:80 check"
-			if (!rule.isEnabled())
-				continue;
+			if (rule.revoked()) {
+                continue;
+            }
 			sb = new StringBuilder();
 			sb.append("\t").append("server ").append(poolName)
 			   .append("_").append(Integer.toString(i++)).append(" ")
-			   .append(rule.getPrivateIpAddress()).append(":").append(rule.getPrivatePort())
+			   .append(rule.getDstIp()).append(":").append(rule.getDstPortRange()[0])
 			   .append(" check");
 			result.add(sb.toString());
 		}
@@ -147,24 +149,22 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
 	}
 	
 	@Override
-	public String[][] generateFwRules(List<FirewallRuleVO> fwRules) {
+	public String[][] generateFwRules(List<PortForwardingRuleTO> fwRules) {
 		String [][] result = new String [2][];
 		Set<String> toAdd = new HashSet<String>();
 		Set<String> toRemove = new HashSet<String>();
 		
 		for (int i = 0; i < fwRules.size(); i++) {
-			FirewallRuleVO rule = fwRules.get(i);
-			if (rule.isForwarding()) 
-				continue;
+			PortForwardingRuleTO rule = fwRules.get(i);
 			
 			String vlanNetmask = rule.getVlanNetmask();
 			
 			StringBuilder sb = new StringBuilder();
-			sb.append(rule.getPublicIpAddress()).append(":");
-			sb.append(rule.getPublicPort()).append(":");
+			sb.append(rule.getSrcIp()).append(":");
+			sb.append(rule.getSrcPortRange()[0]).append(":");
 			sb.append(vlanNetmask);
 			String lbRuleEntry = sb.toString();
-			if (rule.isEnabled()) {	
+			if (!rule.revoked()) {	
 				toAdd.add(lbRuleEntry);
 			} else {
 				toRemove.add(lbRuleEntry);
@@ -176,5 +176,4 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
 
 		return result;
 	}
-
 }

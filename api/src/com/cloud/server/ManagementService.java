@@ -45,10 +45,7 @@ import com.cloud.api.commands.ListGuestOsCategoriesCmd;
 import com.cloud.api.commands.ListGuestOsCmd;
 import com.cloud.api.commands.ListHostsCmd;
 import com.cloud.api.commands.ListHypervisorsCmd;
-import com.cloud.api.commands.ListIpForwardingRulesCmd;
 import com.cloud.api.commands.ListIsosCmd;
-import com.cloud.api.commands.ListLoadBalancerRuleInstancesCmd;
-import com.cloud.api.commands.ListLoadBalancerRulesCmd;
 import com.cloud.api.commands.ListPodsByCmd;
 import com.cloud.api.commands.ListPreallocatedLunsCmd;
 import com.cloud.api.commands.ListPublicIpAddressesCmd;
@@ -75,7 +72,6 @@ import com.cloud.api.commands.StopSystemVmCmd;
 import com.cloud.api.commands.UpdateDomainCmd;
 import com.cloud.api.commands.UpdateIsoCmd;
 import com.cloud.api.commands.UpdateIsoPermissionsCmd;
-import com.cloud.api.commands.UpdatePortForwardingRuleCmd;
 import com.cloud.api.commands.UpdateTemplateCmd;
 import com.cloud.api.commands.UpdateTemplatePermissionsCmd;
 import com.cloud.api.commands.UpdateVMGroupCmd;
@@ -99,11 +95,9 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.network.IpAddress;
-import com.cloud.network.LoadBalancer;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VpnUser;
 import com.cloud.network.router.VirtualRouter;
-import com.cloud.network.rules.FirewallRule;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
@@ -221,13 +215,6 @@ public interface ManagementService {
      * @return List of UserVMs.
      */
     List<? extends UserVm> searchForUserVMs(ListVMsCmd cmd);
-
-    /**
-     * Update an existing port forwarding rule on the given public IP / public port for the given protocol
-     * @param cmd - the UpdatePortForwardingRuleCmd command that wraps publicIp, privateIp, publicPort, privatePort, protocol of the rule to update
-     * @return the new firewall rule if updated, null if no rule on public IP / public port of that protocol could be found
-     */
-    FirewallRule updatePortForwardingRule(UpdatePortForwardingRuleCmd cmd);
 
     /**
      * Obtains a list of events by the specified search criteria.
@@ -373,21 +360,6 @@ public interface ManagementService {
     List<? extends DiskOffering> searchForDiskOfferings(ListDiskOfferingsCmd cmd);
 
     /**
-     * List instances that have either been applied to a load balancer or are eligible to be assigned to a load balancer.
-     * @param cmd
-     * @return list of vm instances that have been or can be applied to a load balancer
-     */
-    List<? extends UserVm> listLoadBalancerInstances(ListLoadBalancerRuleInstancesCmd cmd);
-
-    /**
-     * List load balancer rules based on the given criteria
-     * @param cmd the command that specifies the criteria to use for listing load balancers.  Load balancers can be listed
-     *            by id, name, public ip, and vm instance id
-     * @return list of load balancers that match the criteria
-     */
-    List<? extends LoadBalancer> searchForLoadBalancers(ListLoadBalancerRulesCmd cmd);
-
-    /**
      * List storage pools that match the given criteria
      * @param cmd the command that wraps the search criteria (zone, pod, name, IP address, path, and cluster id)
      * @return a list of storage pools that match the given criteria
@@ -448,8 +420,6 @@ public interface ManagementService {
     public List<? extends RemoteAccessVpn> searchForRemoteAccessVpns(ListRemoteAccessVpnsCmd cmd);
     
     public List<? extends VpnUser> searchForVpnUsers(ListVpnUsersCmd cmd);
-
-    List<? extends FirewallRule> searchForIpForwardingRules(ListIpForwardingRulesCmd cmd);
 
     String getVersion();
     

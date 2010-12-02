@@ -70,12 +70,12 @@ import com.cloud.domain.Domain;
 import com.cloud.event.Event;
 import com.cloud.host.Host;
 import com.cloud.network.IpAddress;
-import com.cloud.network.LoadBalancer;
 import com.cloud.network.Network;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VpnUser;
 import com.cloud.network.router.VirtualRouter;
-import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.LoadBalancer;
+import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.security.IngressRule;
 import com.cloud.network.security.NetworkGroup;
 import com.cloud.network.security.NetworkGroupRules;
@@ -142,9 +142,9 @@ public interface ResponseGenerator {
 
     ClusterResponse createClusterResponse(Cluster cluster);
 
-    FirewallRuleResponse createFirewallRuleResponse(FirewallRule fwRule);
+    FirewallRuleResponse createFirewallRuleResponse(PortForwardingRule fwRule);
 
-    IpForwardingRuleResponse createIpForwardingRuleResponse(FirewallRule fwRule);
+    IpForwardingRuleResponse createIpForwardingRuleResponse(PortForwardingRule fwRule);
 
     UserVmResponse createUserVm2Response(UserVm userVm);
 

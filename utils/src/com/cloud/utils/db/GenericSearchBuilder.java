@@ -142,12 +142,21 @@ public class GenericSearchBuilder<T, K> implements MethodInterceptor {
         if (name.startsWith("get")) {
             String fieldName = Character.toLowerCase(name.charAt(3)) + name.substring(4);
             set(fieldName);
+            return null;
         } else if (name.startsWith("is")) {
             String fieldName = Character.toLowerCase(name.charAt(2)) + name.substring(3);
             set(fieldName);
+            return null;
         } else {
+            name = name.toLowerCase();
+            for (String fieldName : _attrs.keySet()) {
+                if (name.endsWith(fieldName.toLowerCase())) {
+                    set(fieldName);
+                    return null;
+                }
+            }
             assert false : "Perhaps you need to make the method start with get or is?";
-        }
+        } 
         return methodProxy.invokeSuper(object, args);
     }
     
@@ -207,8 +216,9 @@ public class GenericSearchBuilder<T, K> implements MethodInterceptor {
         }
         
         Attribute[] attrs = _specifiedAttrs.toArray(new Attribute[_specifiedAttrs.size()]);
-        for(Attribute attr : attrs)
+        for(Attribute attr : attrs) {
             _groupBys.add(attr);
+        }
         
         _specifiedAttrs.clear();
         return this;

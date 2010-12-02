@@ -41,6 +41,7 @@ import com.cloud.configuration.dao.ConfigurationDaoImpl;
 import com.cloud.configuration.dao.ResourceCountDaoImpl;
 import com.cloud.configuration.dao.ResourceLimitDaoImpl;
 import com.cloud.consoleproxy.AgentBasedStandaloneConsoleProxyManager;
+import com.cloud.dao.EntityManager;
 import com.cloud.dao.EntityManagerImpl;
 import com.cloud.dc.dao.AccountVlanMapDaoImpl;
 import com.cloud.dc.dao.ClusterDaoImpl;
@@ -60,6 +61,7 @@ import com.cloud.maid.dao.StackMaidDaoImpl;
 import com.cloud.maint.UpgradeManagerImpl;
 import com.cloud.maint.dao.AgentUpgradeDaoImpl;
 import com.cloud.network.NetworkManagerImpl;
+import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.FirewallRulesDaoImpl;
 import com.cloud.network.dao.IPAddressDaoImpl;
 import com.cloud.network.dao.LoadBalancerDaoImpl;
@@ -68,6 +70,7 @@ import com.cloud.network.dao.NetworkDaoImpl;
 import com.cloud.network.dao.NetworkRuleConfigDaoImpl;
 import com.cloud.network.dao.RemoteAccessVpnDaoImpl;
 import com.cloud.network.dao.VpnUserDaoImpl;
+import com.cloud.network.lb.LoadBalancingRulesManagerImpl;
 import com.cloud.network.router.DomainRouterManagerImpl;
 import com.cloud.network.security.NetworkGroupManagerImpl;
 import com.cloud.network.security.dao.IngressRuleDaoImpl;
@@ -126,7 +129,7 @@ import com.cloud.vm.dao.VMInstanceDaoImpl;
 
 public class DefaultComponentLibrary implements ComponentLibrary {
 
-    protected final Map<String, ComponentInfo<GenericDao<?, ? extends Serializable>>> _daos = new LinkedHashMap<String, ComponentInfo<GenericDao<?, ?>>>();
+    protected final Map<String, ComponentInfo<GenericDao<?, ? extends Serializable>>> _daos = new LinkedHashMap<String, ComponentInfo<GenericDao<?, ? extends Serializable>>>();
 
     protected ComponentInfo<? extends GenericDao<?, ? extends Serializable>> addDao(String name, Class<? extends GenericDao<?, ? extends Serializable>> clazz) {
         return addDao(name, clazz, new ArrayList<Pair<String, Object>>(), true);
@@ -223,6 +226,7 @@ public class DefaultComponentLibrary implements ComponentLibrary {
         addDao("RemoteAccessVpnDao", RemoteAccessVpnDaoImpl.class);
         addDao("VpnUserDao", VpnUserDaoImpl.class);
         addDao("ItWorkDao", ItWorkDaoImpl.class);
+        addDao("FirewallRulesDao", FirewallRulesDao.class);
     }
 
     Map<String, ComponentInfo<Manager>> _managers = new HashMap<String, ComponentInfo<Manager>>();
@@ -274,6 +278,7 @@ public class DefaultComponentLibrary implements ComponentLibrary {
         addManager("VmManager", MauriceMoss.class);
         addManager("DomainRouterManager", DomainRouterManagerImpl.class);
         addManager("EntityManager", EntityManagerImpl.class);
+        addManager("LoadBalancingRulesManager", LoadBalancingRulesManagerImpl.class);
     }
 
     protected <T> List<ComponentInfo<Adapter>> addAdapterChain(Class<T> interphace, List<Pair<String, Class<? extends T>>> adapters) {
@@ -310,5 +315,12 @@ public class DefaultComponentLibrary implements ComponentLibrary {
             populateAdapters();
         }
         return _adapters;
+    }
+    
+    @Override
+    public synchronized Map<Class<?>, Class<?>> getFactories() { 
+        HashMap<Class<?>, Class<?>> factories = new HashMap<Class<?>, Class<?>>();
+        factories.put(EntityManager.class, EntityManagerImpl.class);
+        return factories;
     }
 }

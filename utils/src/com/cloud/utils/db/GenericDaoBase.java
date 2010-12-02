@@ -40,6 +40,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.UUID;
 
 import javax.naming.ConfigurationException;
 import javax.persistence.AttributeOverride;
@@ -67,6 +68,8 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.db.SearchCriteria.SelectType;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.Ip;
+import com.cloud.utils.net.NetUtils;
 
 /**
  *  GenericDaoBase is a simple way to implement DAOs.  It DOES NOT
@@ -529,6 +532,17 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
                 } catch (MalformedURLException e) {
                     throw new CloudRuntimeException("Invalid URL: " + rs.getString(index), e);
                 }
+            } else if (type == Ip.class) {
+                final Enumerated enumerated = field.getAnnotation(Enumerated.class);
+                final EnumType enumType = (enumerated == null) ? EnumType.STRING : enumerated.value();
+
+                Ip ip = null;
+                if (enumType == EnumType.STRING) {
+                    ip = new Ip(NetUtils.ip2Long(rs.getString(index)));
+                } else {
+                    ip = new Ip(rs.getLong(index));
+                }
+                field.set(entity, ip);
             } else if (type == short.class) {
                 field.setShort(entity, rs.getShort(index));
             } else if (type == Short.class) {
@@ -582,7 +596,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
 					throw new CloudRuntimeException("UnsupportedEncodingException exception while converting UTF-8 data");
 				}	
         	} else {
-        		return (M)null;
+        		return null;
         	}
         } else if (type == int.class) {
             return (M)new Integer(rs.getInt(index));
@@ -827,8 +841,9 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     
     @Override @DB(txn=false)
     public T findById(final ID id, boolean fresh) {
-    	if(!fresh)
-    		return findById(id);
+    	if(!fresh) {
+            return findById(id);
+        }
     	
         if (_cache != null) {
         	_cache.remove(id);
@@ -909,8 +924,9 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     		for(int i = 0; i < groupBys.size(); i++) {
     			Attribute attr = groupBys.get(i);
     			sql.append(attr.table).append(".").append(attr.columnName);
-    			if(i < groupBys.size() - 1)
-    				sql.append(", ");
+    			if(i < groupBys.size() - 1) {
+                    sql.append(", ");
+                }
     		}
     	}
     }
@@ -1188,6 +1204,9 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
             return null;
             // Not sure what to do here.
         } else if (attr.is(Attribute.Flag.AutoGV)) {
+            if (attr.columnName == GenericDao.XID_COLUMN) {
+                UUID.randomUUID().toString();
+            }
             assert (false) : "Auto generation is not supported.";
             return null;
         } else if (attr.is(Attribute.Flag.SequenceGV)) {
@@ -1278,6 +1297,14 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
             pstmt.setURL(j, (URL)value);
         } else if (attr.field.getType() == byte[].class) {
             pstmt.setBytes(j, (byte[])value);
+        } else if (attr.field.getType() == Ip.class) {
+            final Enumerated enumerated = attr.field.getType().getAnnotation(Enumerated.class);
+            final EnumType type = (enumerated == null) ? EnumType.ORDINAL : enumerated.value();
+            if (type == EnumType.STRING) {
+                pstmt.setString(j, value == null ? null : value.toString());
+            } else if (type == EnumType.ORDINAL) {
+                pstmt.setLong(j, value != null ? null : ((Ip)value).longValue());
+            }
         } else {
             pstmt.setObject(j, value);
         }

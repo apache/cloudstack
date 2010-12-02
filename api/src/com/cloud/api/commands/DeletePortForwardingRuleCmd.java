@@ -25,6 +25,9 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.rules.PortForwardingRule;
+import com.cloud.user.UserContext;
 
 @Implementation(description="Deletes a port forwarding rule", responseObject=SuccessResponse.class)
 public class DeletePortForwardingRuleCmd extends BaseCmd {
@@ -57,9 +60,9 @@ public class DeletePortForwardingRuleCmd extends BaseCmd {
     }
 	
     @Override
-    public void execute(){
-        boolean result = _networkService.deletePortForwardingRule(id,false);
-        if (result) {
+    public void execute() throws ResourceUnavailableException {
+        PortForwardingRule result = _rulesService.revokePortForwardingRule(id, true, UserContext.current().getAccount());
+        if (result != null) {
             SuccessResponse response = new SuccessResponse(getName());
             this.setResponseObject(response);
         } else {

@@ -34,11 +34,13 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.router.VirtualRouter;
+import com.cloud.network.rules.FirewallRule;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.utils.Pair;
+import com.cloud.utils.net.Ip;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
@@ -141,28 +143,6 @@ public interface NetworkManager extends NetworkService {
     public String assignSourceNatIpAddress(Account account, DataCenterVO dc, String domain, ServiceOfferingVO so, long startEventId, HypervisorType hyperType) throws ResourceAllocationException;
     
     /**
-     * @param fwRules list of rules to be updated
-     * @param router  router where the rules have to be updated
-     * @return list of rules successfully updated
-     */
-    public List<FirewallRuleVO> updatePortForwardingRules(List<FirewallRuleVO> fwRules, DomainRouterVO router, Long hostId);
-
-    /**
-     * @param fwRules list of rules to be updated
-     * @param router  router where the rules have to be updated
-     * @return success
-     */
-    public boolean updateLoadBalancerRules(List<FirewallRuleVO> fwRules, DomainRouterVO router, Long hostId);
-    
-    /**
-     * @param publicIpAddress public ip address associated with the fwRules
-     * @param fwRules list of rules to be updated
-     * @param router router where the rules have to be updated
-     * @return list of rules successfully updated
-     */
-    public List<FirewallRuleVO> updateFirewallRules(String publicIpAddress, List<FirewallRuleVO> fwRules, DomainRouterVO router);
-
-    /**
      * Associates or disassociates a list of public IP address for a router.
      * @param router router object to send the association to
      * @param ipAddrList list of public IP addresses
@@ -181,8 +161,6 @@ public interface NetworkManager extends NetworkService {
      */
     boolean associateIP(DomainRouterVO router, String ipAddress, boolean add, long vmId) throws ResourceAllocationException;
     
-    boolean updateFirewallRule(FirewallRuleVO fwRule, String oldPrivateIP, String oldPrivatePort);
-
     
     /**
      * Add a DHCP entry on the domr dhcp server
@@ -240,7 +218,8 @@ public interface NetworkManager extends NetworkService {
     List<NetworkVO> setupNetworkConfiguration(Account owner, ServiceOfferingVO offering, DeploymentPlan plan);
     
     String assignSourceNatIpAddress(Account account, DataCenter dc) throws InsufficientAddressCapacityException;
-	Network getNetworkConfiguration(long id);
+	Network getNetwork(long id);
 	String getNextAvailableMacAddressInNetwork(long networkConfigurationId) throws InsufficientAddressCapacityException;
 
+	boolean applyRules(Ip ip, List<? extends FirewallRule> rules, boolean continueOnError) throws ResourceUnavailableException;
 }

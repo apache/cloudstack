@@ -23,8 +23,31 @@ import java.util.Map;
 import com.cloud.utils.component.ComponentLocator.ComponentInfo;
 import com.cloud.utils.db.GenericDao;
 
+/**
+ * ComponentLibrary specifies the implementation classes that a server needs
+ * to do its work.  You can specify the implementation class in the "library"
+ * attribute of the server element within components.xml.  ComponentLocator
+ * first loads the implementations specified here, then, it loads the 
+ * implementations from components.xml.  If an interface is specified in both
+ * the ComponentLibrary and the components.xml for the same server, the interface 
+ * within the components.xml overrides the one within ComponentLibrary.
+ *
+ */
 public interface ComponentLibrary {
+    /**
+     * @return all of the daos
+     */
     Map<String, ComponentInfo<GenericDao<?,?>>> getDaos();
+    
+    /**
+     * @return all of the Managers
+     */
     Map<String, ComponentInfo<Manager>> getManagers();
+    
+    /**
+     * @return all of the adapters
+     */
     Map<String, List<ComponentInfo<Adapter>>> getAdapters();
+    
+    Map<Class<?>, Class<?>> getFactories();
 }

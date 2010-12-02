@@ -105,7 +105,6 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.DomainRouterService;
-import com.cloud.network.FirewallRuleVO;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
@@ -123,6 +122,7 @@ import com.cloud.network.dao.NetworkRuleConfigDao;
 import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.router.VirtualRouter.Role;
+import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -272,10 +272,11 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
     	ModifySshKeysCommand cmd = new ModifySshKeysCommand(pubKey, prvKey);
     	final Answer answer = _agentMgr.easySend(hostId, cmd);
     	
-    	if (answer != null)
-    		return true;
-    	else
-    		return false;
+    	if (answer != null) {
+            return true;
+        } else {
+            return false;
+        }
     }
     
     @Override
@@ -297,8 +298,9 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         if (pod == null) {
             	throw new ConcurrentOperationException("Unable to acquire lock on pod " + podId );
         }
-        if(s_logger.isDebugEnabled())
-        	s_logger.debug("Lock on pod " + podId + " is acquired");
+        if(s_logger.isDebugEnabled()) {
+            s_logger.debug("Lock on pod " + podId + " is acquired");
+        }
         
         final long id = _routerDao.getNextInSequence(Long.class, "id");
         final String[] macAddresses = _dcDao.getNextAvailableMacAddressPair(dc.getId());
@@ -407,8 +409,9 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
                 _routerDao.releaseFromLockTable(id);
             }
             if (pod != null) {
-                if(s_logger.isDebugEnabled())
-                	s_logger.debug("Releasing lock on pod " + podId);
+                if(s_logger.isDebugEnabled()) {
+                    s_logger.debug("Releasing lock on pod " + podId);
+                }
             	_podDao.releaseFromLockTable(pod.getId());
             }
         }
@@ -432,8 +435,9 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         	throw new ConcurrentOperationException("Unable to acquire account " + accountId);
         }
         
-        if(s_logger.isDebugEnabled())
-        	s_logger.debug("lock on account " + accountId + " for createRouter is acquired");
+        if(s_logger.isDebugEnabled()) {
+            s_logger.debug("lock on account " + accountId + " for createRouter is acquired");
+        }
 
         final Transaction txn = Transaction.currentTxn();
         DomainRouterVO router = null;
@@ -574,8 +578,9 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
             return null;
         } finally {
             if (account != null) {
-            	if(s_logger.isDebugEnabled())
-            		s_logger.debug("Releasing lock on account " + account.getId() + " for createRouter");
+            	if(s_logger.isDebugEnabled()) {
+                    s_logger.debug("Releasing lock on account " + account.getId() + " for createRouter");
+                }
             	_accountDao.releaseFromLockTable(account.getId());
             }
             if(!success){
@@ -632,8 +637,9 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
                 return false;
             }
         } finally {
-            if (s_logger.isDebugEnabled())
+            if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Release lock on router " + routerId + " for stop");
+            }
             _routerDao.releaseFromLockTable(routerId);
         }
                         
@@ -699,10 +705,11 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         }
 
         router.setServiceOfferingId(serviceOfferingId);
-        if (_routerDao.update(routerId, router))
-                return _routerDao.findById(routerId);
-        else 
+        if (_routerDao.update(routerId, router)) {
+            return _routerDao.findById(routerId);
+        } else {
             throw new CloudRuntimeException("Unable to upgrade router " + routerId);
+        }
         
     }
 
@@ -781,8 +788,9 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor.getCurrentExecutor();
         if (asyncExecutor != null) {
             AsyncJobVO job = asyncExecutor.getJob();
-            if (s_logger.isInfoEnabled())
+            if (s_logger.isInfoEnabled()) {
                 s_logger.info("Start router " + routerId + ", update async job-" + job.getId());
+            }
             _asyncMgr.updateAsyncJobAttachment(job.getId(), "domain_router", routerId);
         }
     	
@@ -792,8 +800,9 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         	return router;
         }
         
-        if(s_logger.isDebugEnabled())
-        	s_logger.debug("Lock on router " + routerId + " is acquired");
+        if(s_logger.isDebugEnabled()) {
+            s_logger.debug("Lock on router " + routerId + " is acquired");
+        }
         
         boolean started = false;
         String vnet = null;
@@ -1024,10 +1033,11 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
 	                
 	                router.setPrivateIpAddress(null);
 	                
-	                if(_defaultHypervisorType == null || !_defaultHypervisorType.equalsIgnoreCase(Hypervisor.HypervisorType.VmWare.toString()))
-	                	_dcDao.releaseLinkLocalIpAddress(privateIpAddress, router.getDataCenterId(), router.getId());
-	                else
-	                	_dcDao.releasePrivateIpAddress(privateIpAddress, router.getDataCenterId(), router.getId());
+	                if(_defaultHypervisorType == null || !_defaultHypervisorType.equalsIgnoreCase(Hypervisor.HypervisorType.VmWare.toString())) {
+                        _dcDao.releaseLinkLocalIpAddress(privateIpAddress, router.getDataCenterId(), router.getId());
+                    } else {
+                        _dcDao.releasePrivateIpAddress(privateIpAddress, router.getDataCenterId(), router.getId());
+                    }
 	
 	                _storageMgr.unshare(router, vols, routingHost);
 	            } while (--retry > 0 && (routingHost = (HostVO)_agentMgr.findHost(Host.Type.Routing, dc, pod, sp,  offering, template, router, null, avoid)) != null);
@@ -1093,8 +1103,9 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
             }
             
         	if (router != null) {
-                if(s_logger.isDebugEnabled())
-                	s_logger.debug("Releasing lock on router " + routerId);
+                if(s_logger.isDebugEnabled()) {
+                    s_logger.debug("Releasing lock on router " + routerId);
+                }
         		_routerDao.releaseFromLockTable(routerId);
         	}
 
@@ -1138,17 +1149,17 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
                     return false;
                 }
 			}
-			final List<FirewallRuleVO> fwRules = new ArrayList<FirewallRuleVO>();
-			for (final IPAddressVO ipVO : ipAddrs) {
-				//We need only firewall rules that are either forwarding or for load balancers
-				fwRules.addAll(_rulesDao.listIPForwarding(ipVO.getAddress(), true));
-				fwRules.addAll(_rulesDao.listIpForwardingRulesForLoadBalancers(ipVO.getAddress()));
-			}
-			final List<FirewallRuleVO> result = _networkMgr.updateFirewallRules(router
-					.getPublicIpAddress(), fwRules, router);
-			if (result.size() != fwRules.size()) {
-				return false;
-			}
+			final List<PortForwardingRuleVO> fwRules = new ArrayList<PortForwardingRuleVO>();
+//FIXME:			for (final IPAddressVO ipVO : ipAddrs) {
+//				//We need only firewall rules that are either forwarding or for load balancers
+//				fwRules.addAll(_rulesDao.listIPForwarding(ipVO.getAddress(), true));
+//				fwRules.addAll(_rulesDao.listIpForwardingRulesForLoadBalancers(ipVO.getAddress()));
+//			}
+//			final List<PortForwardingRuleVO> result = _networkMgr.updateFirewallRules(router
+//					.getPublicIpAddress(), fwRules, router);
+//			if (result.size() != fwRules.size()) {
+//				return false;
+//			}
 		}
 		return resendDhcpEntries(router) && resendVpnServerData(router);
       
@@ -1158,8 +1169,9 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
     	final List<UserVmVO> vms = _vmDao.listBy(router.getId(), State.Creating, State.Starting, State.Running, State.Stopping, State.Stopped, State.Migrating);
     	Commands cmds = new Commands(OnError.Continue);
     	for (UserVmVO vm: vms) {
-    		if (vm.getGuestIpAddress() == null || vm.getGuestMacAddress() == null || vm.getHostName() == null)
-    			continue;
+    		if (vm.getGuestIpAddress() == null || vm.getGuestMacAddress() == null || vm.getHostName() == null) {
+                continue;
+            }
     		DhcpEntryCommand decmd = new DhcpEntryCommand(vm.getGuestMacAddress(), vm.getGuestIpAddress(), router.getPrivateIpAddress(), vm.getHostName());
     		cmds.addCommand(decmd);
     	}
@@ -1248,8 +1260,9 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         if (asyncExecutor != null) {
             AsyncJobVO job = asyncExecutor.getJob();
 
-            if (s_logger.isInfoEnabled())
+            if (s_logger.isInfoEnabled()) {
                 s_logger.info("Stop router " + routerId + ", update async job-" + job.getId());
+            }
             _asyncMgr.updateAsyncJobAttachment(job.getId(), "domain_router", routerId);
         }
     	
@@ -1365,8 +1378,9 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         if (asyncExecutor != null) {
             AsyncJobVO job = asyncExecutor.getJob();
 
-            if (s_logger.isInfoEnabled())
+            if (s_logger.isInfoEnabled()) {
                 s_logger.info("Reboot router " + routerId + ", update async job-" + job.getId());
+            }
             _asyncMgr.updateAsyncJobAttachment(job.getId(), "domain_router", routerId);
         }
     	
@@ -1428,10 +1442,11 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         }
         long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_ROUTER_REBOOT, "rebooting Router with Id: "+routerId);
         
-    	if (rebootRouter(routerId, eventId))
-    	    return _routerDao.findById(routerId);
-    	else
-    	    throw new CloudRuntimeException("Fail to reboot router " + routerId);
+    	if (rebootRouter(routerId, eventId)) {
+            return _routerDao.findById(routerId);
+        } else {
+            throw new CloudRuntimeException("Fail to reboot router " + routerId);
+        }
     }
 
     @Override
@@ -1579,10 +1594,11 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
             String privateIpAddress = router.getPrivateIpAddress();
             
             if (privateIpAddress != null) {
-            	if(_defaultHypervisorType == null || !_defaultHypervisorType.equalsIgnoreCase(Hypervisor.HypervisorType.VmWare.toString()))
-            		_dcDao.releaseLinkLocalIpAddress(privateIpAddress, router.getDataCenterId(), router.getId());
-            	else
-            		_dcDao.releasePrivateIpAddress(privateIpAddress, router.getDataCenterId(), router.getId());
+            	if(_defaultHypervisorType == null || !_defaultHypervisorType.equalsIgnoreCase(Hypervisor.HypervisorType.VmWare.toString())) {
+                    _dcDao.releaseLinkLocalIpAddress(privateIpAddress, router.getDataCenterId(), router.getId());
+                } else {
+                    _dcDao.releasePrivateIpAddress(privateIpAddress, router.getDataCenterId(), router.getId());
+                }
             }
             router.setPrivateIpAddress(null);
 
@@ -1661,8 +1677,9 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         
         try {
             
-        	if(s_logger.isDebugEnabled())
-        		s_logger.debug("Lock on router " + routerId + " for stop is acquired");
+        	if(s_logger.isDebugEnabled()) {
+                s_logger.debug("Lock on router " + routerId + " for stop is acquired");
+            }
         	
             if (router.getRemoved() != null) {
                 s_logger.debug("router " + routerId + " is removed");
@@ -1730,8 +1747,9 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
     
             processStopOrRebootAnswer(router, answer);
         } finally {
-            if(s_logger.isDebugEnabled())
+            if(s_logger.isDebugEnabled()) {
                 s_logger.debug("Release lock on router " + routerId + " for stop");
+            }
             _routerDao.releaseFromLockTable(routerId);
         }
         return true;
@@ -2427,15 +2445,15 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
                     return false;
                 }
             }
-            final List<FirewallRuleVO> fwRules = new ArrayList<FirewallRuleVO>();
-            for (final IPAddressVO ipVO : ipAddrs) {
-                fwRules.addAll(_rulesDao.listIPForwarding(ipVO.getAddress()));
-            }
-            final List<FirewallRuleVO> result = _networkMgr.updateFirewallRules(router
-                    .getPublicIpAddress(), fwRules, router);
-            if (result.size() != fwRules.size()) {
-                return false;
-            }
+// FIXME            final List<PortForwardingRuleVO> fwRules = new ArrayList<PortForwardingRuleVO>();
+//            for (final IPAddressVO ipVO : ipAddrs) {
+//                fwRules.addAll(_rulesDao.listIPForwarding(ipVO.getAddress()));
+//            }
+//            final List<PortForwardingRuleVO> result = _networkMgr.updateFirewallRules(router
+//                    .getPublicIpAddress(), fwRules, router);
+//            if (result.size() != fwRules.size()) {
+//                return false;
+//            }
         }
         return resendDhcpEntries(router) && resendVpnServerData(router);
       
@@ -2445,8 +2463,9 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         final List<UserVmVO> vms = _vmDao.listBy(router.getId(), State.Creating, State.Starting, State.Running, State.Stopping, State.Stopped, State.Migrating);
         Commands cmds = new Commands(OnError.Continue);
         for (UserVmVO vm: vms) {
-            if (vm.getGuestIpAddress() == null || vm.getGuestMacAddress() == null || vm.getHostName() == null)
+            if (vm.getGuestIpAddress() == null || vm.getGuestMacAddress() == null || vm.getHostName() == null) {
                 continue;
+            }
             DhcpEntryCommand decmd = new DhcpEntryCommand(vm.getGuestMacAddress(), vm.getGuestIpAddress(), router.getPrivateIpAddress(), vm.getHostName());
             cmds.addCommand(decmd);
         }

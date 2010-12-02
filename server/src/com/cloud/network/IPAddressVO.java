@@ -142,5 +142,9 @@ public class IPAddressVO implements IpAddress {
     public void setOneToOneNat(boolean oneToOneNat) {
 		this.oneToOneNat = oneToOneNat;
 	}
-
+	
+	@Override
+    public String toString() {
+	    return new StringBuilder("Ip[").append(address).append("-").append(dataCenterId).append("]").toString();
+	}
 }

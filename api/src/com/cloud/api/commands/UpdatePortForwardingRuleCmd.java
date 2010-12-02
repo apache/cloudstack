@@ -4,14 +4,11 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseAsyncCmd;
-import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
 import com.cloud.api.response.FirewallRuleResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.network.IpAddress;
-import com.cloud.network.rules.FirewallRule;
 import com.cloud.user.Account;
 
 @Implementation(responseObject=FirewallRuleResponse.class, description="Updates a port forwarding rule.  Only the private port and the virtual machine can be updated.")
@@ -101,13 +98,13 @@ public class UpdatePortForwardingRuleCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
-        FirewallRule result = _mgr.updatePortForwardingRule(this);
-        if (result != null) {
-            FirewallRuleResponse response = _responseGenerator.createFirewallRuleResponse(result);
-            response.setResponseName(getName());
-            this.setResponseObject(response);
-        } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update port forwarding rule");
-        }
+//FIXME:        PortForwardingRule result = _mgr.updatePortForwardingRule(this);
+//        if (result != null) {
+//            FirewallRuleResponse response = _responseGenerator.createFirewallRuleResponse(result);
+//            response.setResponseName(getName());
+//            this.setResponseObject(response);
+//        } else {
+//            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update port forwarding rule");
+//        }
     }
 }

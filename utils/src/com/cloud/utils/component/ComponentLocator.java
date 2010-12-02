@@ -89,6 +89,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
     protected LinkedHashMap<String, ComponentInfo<GenericDao<?, ?>>>    _daoMap;
     protected String                                                    _serverName;
     protected Object                                                    _component;
+    protected HashMap<Class<?>, Class<?>>                               _factories;
     
     static {
         Runtime.getRuntime().addShutdownHook(new CleanupThread());
@@ -114,6 +115,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
             _daoMap = new LinkedHashMap<String, ComponentInfo<GenericDao<?, ? extends Serializable>>>();
             _managerMap = new LinkedHashMap<String, ComponentInfo<Manager>>();
             _adapterMap = new HashMap<String, Adapters<? extends Adapter>>();
+            _factories = new HashMap<Class<?>, Class<?>>();
             File file = PropertiesUtil.findConfigFile(filename);
             if (file == null) {
                 s_logger.info("Unable to find " + filename);
@@ -136,6 +138,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
                 adapters.putAll(parentLocator.parse2(parentFile).second());
                 _daoMap.putAll(parentLocator._daoMap);
                 _managerMap.putAll(parentLocator._managerMap);
+                _factories.putAll(parentLocator._factories);
             }
 
             ComponentLibrary library = null;
@@ -145,6 +148,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
                 _daoMap.putAll(library.getDaos());
                 _managerMap.putAll(library.getManagers());
                 adapters.putAll(library.getAdapters());
+                _factories.putAll(library.getFactories());
             }
 
             _daoMap.putAll(handler.daos);
@@ -592,6 +596,14 @@ public class ComponentLocator implements ComponentLocatorMBean {
 
     public static <T> T inject(Class<T> clazz) {
         return (T)createInstance(clazz, true, false);
+    }
+    
+    public <T> T createInstance(Class<T> clazz) {
+        Class<? extends T> impl = (Class<? extends T>)_factories.get(clazz);
+        if (impl == null) {
+            throw new CloudRuntimeException("Unable to find a factory for " + clazz);
+        }
+        return inject(impl);
     }
     
     public static <T> T inject(Class<T> clazz, Object... args) {

@@ -89,8 +89,9 @@ public class NetUtils {
     	}
     	
     	InetAddress[] addrs = new InetAddress[addrList.size()];
-    	if(addrList.size() > 0)
-    		System.arraycopy(addrList.toArray(), 0, addrs, 0, addrList.size());
+    	if(addrList.size() > 0) {
+            System.arraycopy(addrList.toArray(), 0, addrs, 0, addrList.size());
+        }
     	return addrs;
     }
     
@@ -98,11 +99,13 @@ public class NetUtils {
     	InetAddress[] addrs = getAllLocalInetAddresses();
     	if(addrs != null) {
     		for(InetAddress addr : addrs) {
-    			if(s_logger.isInfoEnabled())
-    				s_logger.info("Check local InetAddress : " + addr.toString() + ", total count :" + addrs.length);
+    			if(s_logger.isInfoEnabled()) {
+                    s_logger.info("Check local InetAddress : " + addr.toString() + ", total count :" + addrs.length);
+                }
     			
-    			if(!addr.isLoopbackAddress())
-    				return addr;
+    			if(!addr.isLoopbackAddress()) {
+                    return addr;
+                }
     		}
     	}
     	
@@ -125,8 +128,9 @@ public class NetUtils {
     	}
     	
     	InetAddress[] addrs = new InetAddress[addrList.size()];
-    	if(addrList.size() > 0)
-    		System.arraycopy(addrList.toArray(), 0, addrs, 0, addrList.size());
+    	if(addrList.size() > 0) {
+            System.arraycopy(addrList.toArray(), 0, addrs, 0, addrList.size());
+        }
     	return addrs;
     }
     
@@ -151,8 +155,9 @@ public class NetUtils {
 		
 		if(addrs != null) {
 			for(InetAddress self : addrs) {
-				if(self.equals(addr))
-					return true;
+				if(self.equals(addr)) {
+                    return true;
+                }
 			}
 		}
 		return false;
@@ -191,8 +196,9 @@ public class NetUtils {
     		NetworkInterface ni = NetworkInterface.getByInetAddress(address);
     		byte[] mac = ni.getHardwareAddress();
 	
-			for (int i = 0; i < mac.length; i++)
-				macAddressAsLong |= ((long)(mac[i] & 0xff) << (mac.length - i - 1)*8);
+			for (int i = 0; i < mac.length; i++) {
+                macAddressAsLong |= ((long)(mac[i] & 0xff) << (mac.length - i - 1)*8);
+            }
 			 
 		} catch (SocketException e) {
 			s_logger.error("SocketException when trying to retrieve MAC address", e);
@@ -337,8 +343,9 @@ public class NetUtils {
     public static boolean isValidPrivateIp(String ipAddress, String guestIPAddress) {
     	
     	InetAddress privIp = parseIpAddress(ipAddress);
-    	if (privIp == null)
-    		return false;
+    	if (privIp == null) {
+            return false;
+        }
     	if (!privIp.isSiteLocalAddress()) {
     		return false;
     	}
@@ -350,7 +357,9 @@ public class NetUtils {
     	}
     	
     	String[] ipList = ipAddress.split("\\.");
-    	if (!ipList[0].equals(firstGuestOctet)) return false;
+    	if (!ipList[0].equals(firstGuestOctet)) {
+            return false;
+        }
     	
     	return true;
     }
@@ -365,7 +374,9 @@ public class NetUtils {
     }
     
     public static boolean validIpRange(String startIP, String endIP) {
-    	if (endIP == null || endIP.isEmpty()) return true;
+    	if (endIP == null || endIP.isEmpty()) {
+            return true;
+        }
     	
     	long startIPLong = NetUtils.ip2Long(startIP);
     	long endIPLong =  NetUtils.ip2Long(endIP);
@@ -390,10 +401,14 @@ public class NetUtils {
 	    		return false;
 	   		}
 	    	// Each octet must be between 0 and 255, inclusive
-	    	if (octet < 0 || octet > 255) return false;
+	    	if (octet < 0 || octet > 255) {
+                return false;
+            }
 
 	    	// Each octetString must have between 1 and 3 characters
-	    	if (octetString.length() < 1 || octetString.length() > 3) return false;
+	    	if (octetString.length() < 1 || octetString.length() > 3) {
+                return false;
+            }
 	   		
 	   	}
 	    
@@ -402,12 +417,18 @@ public class NetUtils {
 	}
 	
 	public static boolean isValidCIDR(final String cidr) {
-		if (cidr == null || cidr.isEmpty()) return false;
+		if (cidr == null || cidr.isEmpty()) {
+            return false;
+        }
         String[] cidrPair = cidr.split("\\/");
-        if (cidrPair.length != 2) return false;
+        if (cidrPair.length != 2) {
+            return false;
+        }
         String cidrAddress = cidrPair[0];
         String cidrSize = cidrPair[1];
-        if (!isValidIp(cidrAddress)) return false;
+        if (!isValidIp(cidrAddress)) {
+            return false;
+        }
         int cidrSizeNum = -1;
         
         try {
@@ -416,14 +437,17 @@ public class NetUtils {
         	return false;
         }
         
-        if (cidrSizeNum < 0 || cidrSizeNum > 32) return false;
+        if (cidrSizeNum < 0 || cidrSizeNum > 32) {
+            return false;
+        }
         
         return true;
 	}
 	
 	public static boolean isValidNetmask(String netmask) {
-		if (!isValidIp(netmask))
-			return false;
+		if (!isValidIp(netmask)) {
+            return false;
+        }
 		
 		long ip = ip2Long(netmask);
 		int count = 0;
@@ -432,14 +456,16 @@ public class NetUtils {
     		if (((ip >> i) & 0x1) == 0) {
     			finished = true;
     		} else {
-    			if (finished)
-    				return false;
+    			if (finished) {
+                    return false;
+                }
     			count += 1;
     		}
     	}
     	
-    	if (count == 0)
-    		return false;
+    	if (count == 0) {
+            return false;
+        }
 		
 		return true;
 	}
@@ -523,7 +549,9 @@ public class NetUtils {
     }
     
     public static boolean sameSubnet(final String ip1, final String ip2, final String netmask) {
-    	if (ip1 == null || ip1.isEmpty() || ip2 == null || ip2.isEmpty()) return true;
+    	if (ip1 == null || ip1.isEmpty() || ip2 == null || ip2.isEmpty()) {
+            return true;
+        }
     	String subnet1 = NetUtils.getSubNet(ip1, netmask);
     	String subnet2 = NetUtils.getSubNet(ip2, netmask);
     	
@@ -531,7 +559,9 @@ public class NetUtils {
     }
     
     public static boolean sameSubnetCIDR(final String ip1, final String ip2, final long cidrSize) {
-    	if (ip1 == null || ip1.isEmpty() || ip2 == null || ip2.isEmpty()) return true;
+    	if (ip1 == null || ip1.isEmpty() || ip2 == null || ip2.isEmpty()) {
+            return true;
+        }
     	String subnet1 = NetUtils.getCidrSubNet(ip1, cidrSize);
     	String subnet2 = NetUtils.getCidrSubNet(ip2, cidrSize);
     	
@@ -557,8 +587,9 @@ public class NetUtils {
     	long result = ipAddr & subnet;
     	int bits = (subnet == 0)?0:1;
     	long subnet2 = subnet;
-    	while ((subnet2 = (subnet2 >> 1) & subnet) != 0 )
-    		bits++;
+    	while ((subnet2 = (subnet2 >> 1) & subnet) != 0 ) {
+            bits++;
+        }
 
     	return long2Ip(result) + "/" + Integer.toString(bits);
     }
@@ -569,8 +600,9 @@ public class NetUtils {
     	long start = (ipAddr & subnet) + 1;
         long end = start;
         int bits = (subnet == 0)?0:1;
-    	while ((subnet = (subnet >> 1) & subnet) != 0 )
-    		bits++;
+    	while ((subnet = (subnet >> 1) & subnet) != 0 ) {
+            bits++;
+        }
         end = end >> (32 - bits);
         
         end++;
@@ -590,12 +622,18 @@ public class NetUtils {
     }
     
     public static Long cidrToLong(String cidr) {
-    	if (cidr == null || cidr.isEmpty()) return null;
+    	if (cidr == null || cidr.isEmpty()) {
+            return null;
+        }
         String[] cidrPair = cidr.split("\\/");
-        if (cidrPair.length != 2) return null;
+        if (cidrPair.length != 2) {
+            return null;
+        }
         String cidrAddress = cidrPair[0];
         String cidrSize = cidrPair[1];
-        if (!isValidIp(cidrAddress)) return null;
+        if (!isValidIp(cidrAddress)) {
+            return null;
+        }
         int cidrSizeNum = -1;
         
         try {
@@ -609,12 +647,18 @@ public class NetUtils {
     }
     
     public static String getCidrSubNet(String cidr) {
-    	if (cidr == null || cidr.isEmpty()) return null;
+    	if (cidr == null || cidr.isEmpty()) {
+            return null;
+        }
         String[] cidrPair = cidr.split("\\/");
-        if (cidrPair.length != 2) return null;
+        if (cidrPair.length != 2) {
+            return null;
+        }
         String cidrAddress = cidrPair[0];
         String cidrSize = cidrPair[1];
-        if (!isValidIp(cidrAddress)) return null;
+        if (!isValidIp(cidrAddress)) {
+            return null;
+        }
         int cidrSizeNum = -1;
         
         try {
@@ -658,6 +702,10 @@ public class NetUtils {
 		} catch (NumberFormatException e) {
 			return false;
 		}
+    }
+    
+    public static boolean isValidPort(int p) {
+        return !(p > 65535 || p < 1);
     }
     
     public static boolean isValidLBPort(String p) {

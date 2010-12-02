@@ -27,7 +27,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
-import com.cloud.network.LoadBalancer;
+import com.cloud.network.rules.LoadBalancer;
 import com.cloud.user.Account;
 
 @Implementation(description="Deletes a load balancer rule.", responseObject=SuccessResponse.class)
@@ -81,7 +81,7 @@ public class DeleteLoadBalancerRuleCmd extends BaseAsyncCmd {
 	
     @Override
     public void execute(){
-        boolean result = _networkService.deleteLoadBalancerRule(this);
+        boolean result = _lbService.deleteLoadBalancerRule(id, true);
         if (result) {
             SuccessResponse response = new SuccessResponse(getName());
             this.setResponseObject(response);

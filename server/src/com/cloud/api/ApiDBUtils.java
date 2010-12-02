@@ -484,7 +484,7 @@ public class ApiDBUtils {
     }
     
     public static Network getNetwork(long id) {
-        return _networkMgr.getNetworkConfiguration(id);
+        return _networkMgr.getNetwork(id);
     }
     
     public static void synchronizeCommand(Object job, String syncObjType, long syncObjId) {

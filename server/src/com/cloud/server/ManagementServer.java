@@ -34,9 +34,7 @@ import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.HostVO;
 import com.cloud.info.ConsoleProxyInfo;
-import com.cloud.network.FirewallRuleVO;
 import com.cloud.network.IPAddressVO;
-import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.security.NetworkGroupVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
@@ -332,13 +330,6 @@ public interface ManagementServer extends ManagementService {
     List<UserVmVO> searchForUserVMs(Criteria c);
 
     /**
-     * Find a firewall rule by rule id
-     * @param ruleId
-     * @return
-     */
-    FirewallRuleVO findForwardingRuleById(Long ruleId);
-
-    /**
      * Find an IP Address VO object by ip address string
      * @param ipAddress
      * @return IP Address VO object corresponding to the given address string, null if not found
@@ -532,9 +523,6 @@ public interface ManagementServer extends ManagementService {
 
 
     AsyncJobVO findAsyncJobById(long jobId);
-
-    LoadBalancerVO findLoadBalancer(Long accountId, String name);
-    LoadBalancerVO findLoadBalancerById(long loadBalancerId);
 
     String[] getApiConfig();
     StoragePoolVO findPoolById(Long id);

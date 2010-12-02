@@ -74,7 +74,6 @@ import com.cloud.api.response.VpnUsersResponse;
 import com.cloud.api.response.ZoneResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.async.AsyncJobResult;
-import com.cloud.async.AsyncJobVO;
 import com.cloud.async.executor.IngressRuleResultObject;
 import com.cloud.async.executor.NetworkGroupResultObject;
 import com.cloud.capacity.Capacity;
@@ -97,12 +96,12 @@ import com.cloud.host.Host;
 import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.network.IpAddress;
-import com.cloud.network.LoadBalancer;
 import com.cloud.network.Network;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VpnUser;
 import com.cloud.network.router.VirtualRouter;
-import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.LoadBalancer;
+import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.security.IngressRule;
 import com.cloud.network.security.NetworkGroup;
 import com.cloud.network.security.NetworkGroupRules;
@@ -807,9 +806,9 @@ public class ApiResponseHelper implements ResponseGenerator {
         lbResponse.setId(loadBalancer.getId());
         lbResponse.setName(loadBalancer.getName());
         lbResponse.setDescription(loadBalancer.getDescription());
-        lbResponse.setPublicIp(loadBalancer.getIpAddress());
-        lbResponse.setPublicPort(loadBalancer.getPublicPort());
-        lbResponse.setPrivatePort(loadBalancer.getPrivatePort());
+        lbResponse.setPublicIp(loadBalancer.getSourceIpAddress().toString());
+        lbResponse.setPublicPort(Integer.toString(loadBalancer.getSourcePortStart()));
+        lbResponse.setPrivatePort(Integer.toString(loadBalancer.getDefaultPortStart()));
         lbResponse.setAlgorithm(loadBalancer.getAlgorithm());
 
         Account accountTemp = ApiDBUtils.findAccountById(loadBalancer.getAccountId());
@@ -1050,15 +1049,15 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public FirewallRuleResponse createFirewallRuleResponse(FirewallRule fwRule) {
+    public FirewallRuleResponse createFirewallRuleResponse(PortForwardingRule fwRule) {
         FirewallRuleResponse response = new FirewallRuleResponse();
         response.setId(fwRule.getId());
-        response.setPrivatePort(fwRule.getPrivatePort());
+        response.setPrivatePort(Integer.toString(fwRule.getDestinationPortStart()));
         response.setProtocol(fwRule.getProtocol());
-        response.setPublicPort(fwRule.getPublicPort());
-        response.setPublicIpAddress(fwRule.getPublicIpAddress());
-        if (fwRule.getPublicIpAddress() != null && fwRule.getPrivateIpAddress() != null) {
-            UserVm vm = ApiDBUtils.findUserVmByPublicIpAndGuestIp(fwRule.getPublicIpAddress(), fwRule.getPrivateIpAddress());
+        response.setPublicPort(Integer.toString(fwRule.getSourcePortStart()));
+        response.setPublicIpAddress(fwRule.getSourceIpAddress().toString());
+        if (fwRule.getSourceIpAddress() != null && fwRule.getDestinationIpAddress() != null) {
+            UserVm vm = ApiDBUtils.findUserVmByPublicIpAndGuestIp(fwRule.getSourceIpAddress().toString(), fwRule.getDestinationIpAddress().toString());
             if(vm != null){
             	response.setVirtualMachineId(vm.getId());
             	response.setVirtualMachineName(vm.getHostName());
@@ -1070,13 +1069,13 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public IpForwardingRuleResponse createIpForwardingRuleResponse(FirewallRule fwRule) {
+    public IpForwardingRuleResponse createIpForwardingRuleResponse(PortForwardingRule fwRule) {
         IpForwardingRuleResponse response = new IpForwardingRuleResponse();
         response.setId(fwRule.getId());
         response.setProtocol(fwRule.getProtocol());
-        response.setPublicIpAddress(fwRule.getPublicIpAddress());
-        if (fwRule.getPublicIpAddress() != null && fwRule.getPrivateIpAddress() != null) {
-            UserVm vm = ApiDBUtils.findUserVmByPublicIpAndGuestIp(fwRule.getPublicIpAddress(), fwRule.getPrivateIpAddress());
+        response.setPublicIpAddress(fwRule.getSourceIpAddress().addr());
+        if (fwRule.getSourceIpAddress() != null && fwRule.getDestinationIpAddress() != null) {
+            UserVm vm = ApiDBUtils.findUserVmByPublicIpAndGuestIp(fwRule.getSourceIpAddress().addr(), fwRule.getDestinationIpAddress().addr());
             if(vm != null){//vm might be destroyed
             	response.setVirtualMachineId(vm.getId());
             	response.setVirtualMachineName(vm.getHostName());

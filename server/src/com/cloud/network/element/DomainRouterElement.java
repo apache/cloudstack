@@ -17,6 +17,8 @@
  */
 package com.cloud.network.element;
 
+import java.util.List;
+
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
@@ -26,11 +28,12 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.router.DomainRouterManager;
+import com.cloud.network.rules.FirewallRule;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.uservm.UserVm;
@@ -114,17 +117,12 @@ public class DomainRouterElement extends AdapterBase implements NetworkElement {
         return _routerMgr.stopRouter(router.getId(), 1);
     }
     
-    @Override
-    public boolean addRule() {
-        return false;
-    }
-    
-    @Override
-    public boolean revokeRule() {
-        return false;
-    }
-
     protected DomainRouterElement() {
         super();
+    }
+
+    @Override
+    public boolean applyRules(Network config, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
+        return false;
     }
 }

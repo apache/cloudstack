@@ -223,6 +223,18 @@ public class SqlGenerator {
             attr.setTrue(Attribute.Flag.Nullable);
             attr.setTrue(Attribute.Flag.Removed);
         }
+        
+        attr = findAttribute(GenericDao.XID_COLUMN);
+        if (attr != null && attr.field.getType() == String.class) {
+            attr.setTrue(Attribute.Flag.DaoGenerated);
+            attr.setFalse(Attribute.Flag.Insertable);
+            attr.setFalse(Attribute.Flag.Updatable);
+            attr.setFalse(Attribute.Flag.TimeStamp);
+            attr.setFalse(Attribute.Flag.Time);
+            attr.setFalse(Attribute.Flag.Date);
+            attr.setFalse(Attribute.Flag.Nullable);
+            attr.setFalse(Attribute.Flag.Removed);
+        }
     }
     
     public Attribute findAttribute(String name) {

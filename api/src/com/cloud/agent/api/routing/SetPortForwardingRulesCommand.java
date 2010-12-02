@@ -17,10 +17,21 @@
  */
 package com.cloud.agent.api.routing;
 
-import com.cloud.agent.api.Command;
+import java.util.List;
 
-public abstract class RoutingCommand extends Command {
-    protected RoutingCommand() {
-        super();
+import com.cloud.agent.api.to.PortForwardingRuleTO;
+
+public class SetPortForwardingRulesCommand extends RoutingCommand {
+    PortForwardingRuleTO[] rules;
+
+    protected SetPortForwardingRulesCommand() {
+    }
+    
+    public SetPortForwardingRulesCommand(List<PortForwardingRuleTO> rules) {
+        this.rules = rules.toArray(new PortForwardingRuleTO[rules.size()]); 
+    }
+    
+    public PortForwardingRuleTO[] getRules() {
+        return rules;
     }
 }

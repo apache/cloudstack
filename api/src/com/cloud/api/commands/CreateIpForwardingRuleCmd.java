@@ -28,7 +28,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.FirewallRuleResponse;
 import com.cloud.event.EventTypes;
-import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.user.Account;
 
 @Implementation(description="Creates an ip forwarding rule", responseObject=FirewallRuleResponse.class)
@@ -72,7 +72,7 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void execute(){ 
-        FirewallRule result = _networkService.createIpForwardingRuleOnDomr(this.getId());
+        PortForwardingRule result = _rulesService.createIpForwardingRuleOnDomr(this.getId());
         if (result != null) {
             FirewallRuleResponse fwResponse = _responseGenerator.createFirewallRuleResponse(result);
             fwResponse.setResponseName(getName());
@@ -85,7 +85,7 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd {
 
 	@Override
 	public void callCreate(){
-		FirewallRule rule = _networkService.createIpForwardingRuleInDb(ipAddress,virtualMachineId);
+		PortForwardingRule rule = _rulesService.createIpForwardingRuleInDb(ipAddress,virtualMachineId);
 		if (rule != null){
 		    this.setId(rule.getId());
 		} else {

@@ -50,12 +50,12 @@ public class LoadBalancerDaoImpl extends GenericDaoBase<LoadBalancerVO, Long> im
 
     protected LoadBalancerDaoImpl() {
         ListByIp  = createSearchBuilder();
-        ListByIp.and("ipAddress", ListByIp.entity().getIpAddress(), SearchCriteria.Op.EQ);
+        ListByIp.and("ipAddress", ListByIp.entity().getSourceIpAddress(), SearchCriteria.Op.EQ);
         ListByIp.done();
 
         IpAndPublicPortSearch = createSearchBuilder();
-        IpAndPublicPortSearch.and("ipAddress", IpAndPublicPortSearch.entity().getIpAddress(), SearchCriteria.Op.EQ);
-        IpAndPublicPortSearch.and("publicPort", IpAndPublicPortSearch.entity().getPublicPort(), SearchCriteria.Op.EQ);
+        IpAndPublicPortSearch.and("ipAddress", IpAndPublicPortSearch.entity().getSourceIpAddress(), SearchCriteria.Op.EQ);
+        IpAndPublicPortSearch.and("publicPort", IpAndPublicPortSearch.entity().getSourcePortStart(), SearchCriteria.Op.EQ);
         IpAndPublicPortSearch.done();
 
         AccountAndNameSearch = createSearchBuilder();

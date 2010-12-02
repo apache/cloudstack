@@ -30,16 +30,14 @@ import java.net.InetSocketAddress;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.channels.SocketChannel;
-import java.util.ArrayList;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -50,11 +48,9 @@ import com.cloud.agent.api.routing.DhcpEntryCommand;
 import com.cloud.agent.api.routing.IPAssocCommand;
 import com.cloud.agent.api.routing.LoadBalancerCfgCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
-import com.cloud.agent.api.routing.SetFirewallRuleCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.Manager;
-import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 
@@ -90,9 +86,10 @@ public class VirtualRoutingResource implements Manager {
 
     public Answer executeRequest(final Command cmd) {
         try {
-        	if (cmd instanceof SetFirewallRuleCommand) {
-                return execute((SetFirewallRuleCommand)cmd);
-            }else if (cmd instanceof LoadBalancerCfgCommand) {
+//        	if (cmd instanceof SetFirewallRuleCommand) {
+//                return execute((SetFirewallRuleCommand)cmd);
+//            }else 
+                if (cmd instanceof LoadBalancerCfgCommand) {
                 return execute((LoadBalancerCfgCommand)cmd);
             } else if (cmd instanceof IPAssocCommand) {
                 return execute((IPAssocCommand)cmd);
@@ -216,7 +213,9 @@ public class VirtualRoutingResource implements Manager {
 	private String setLoadBalancerConfig(final String cfgFile,
 			final String[] addRules, final String[] removeRules, String routerIp) {
 		
-		if (routerIp == null) routerIp = "none";
+		if (routerIp == null) {
+            routerIp = "none";
+        }
 		
         final Script command = new Script(_loadbPath, _timeout, s_logger);
         
@@ -293,8 +292,9 @@ public class VirtualRoutingResource implements Manager {
 			final StringBuilder sb2 = new StringBuilder();
 			String line = null;
 			try {
-				while ((line = reader.readLine()) != null)
-					sb2.append(line + "\n");
+				while ((line = reader.readLine()) != null) {
+                    sb2.append(line + "\n");
+                }
 				result = sb2.toString();
 			} catch (final IOException e) {
 				success = false;
@@ -377,8 +377,12 @@ public class VirtualRoutingResource implements Manager {
             return null;    
         }
     	
-    	if (oldPrivateIP == null) oldPrivateIP = "";
-    	if (oldPrivatePort == null) oldPrivatePort = "";
+    	if (oldPrivateIP == null) {
+            oldPrivateIP = "";
+        }
+    	if (oldPrivatePort == null) {
+            oldPrivatePort = "";
+        }
     	
         final Script command = new Script(_firewallPath, _timeout, s_logger);
         
@@ -424,8 +428,9 @@ public class VirtualRoutingResource implements Manager {
     	String result = cmd.execute();
     	if (result != null) {
     		return false;
-    	} else
-    		return true;
+    	} else {
+            return true;
+        }
     }
     
     private void stopDnsmasq(String dnsmasqName) {
@@ -446,55 +451,56 @@ public class VirtualRoutingResource implements Manager {
     	
     }
     
-    protected Answer execute(final SetFirewallRuleCommand cmd) {
-    	String args;
-    	if(cmd.getProtocol().toLowerCase().equals(NetUtils.NAT_PROTO)){
-    		//1:1 NAT needs instanceip;publicip;domrip;op
-    		if(cmd.isCreate())
-    			args = "-A";
-    		else
-    			args = "-D";
-
-    		args += " -l " + cmd.getPublicIpAddress();
-    		args += " -i " + cmd.getRouterIpAddress();
-    		args += " -r " + cmd.getPrivateIpAddress();
-    		args += " -G " + cmd.getProtocol();
-    	}else{
-    		if (cmd.isEnable()) {
-    			args = "-A";
-    		} else {
-    			args = "-D";
-    		}
-
-    		args += " -P " + cmd.getProtocol().toLowerCase();
-    		args += " -l " + cmd.getPublicIpAddress();
-    		args += " -p " + cmd.getPublicPort();
-    		args += " -n " + cmd.getRouterName();
-    		args += " -i " + cmd.getRouterIpAddress();
-    		args += " -r " + cmd.getPrivateIpAddress();
-    		args += " -d " + cmd.getPrivatePort();
-    		args += " -N " + cmd.getVlanNetmask();
-
-    		String oldPrivateIP = cmd.getOldPrivateIP();
-    		String oldPrivatePort = cmd.getOldPrivatePort();
-
-    		if (oldPrivateIP != null) {
-    			args += " -w " + oldPrivateIP;
-    		}
-
-    		if (oldPrivatePort != null) {
-    			args += " -x " + oldPrivatePort;
-    		}
-    	}
-
-    	final Script command = new Script(_firewallPath, _timeout, s_logger);
-    	String [] argsArray = args.split(" ");
-    	for (String param : argsArray) {
-    		command.add(param);
-    	}
-    	String result = command.execute();
-    	return new Answer(cmd, result == null, result);
-    }
+//    protected Answer execute(final SetFirewallRuleCommand cmd) {
+//    	String args;
+//    	if(cmd.getProtocol().toLowerCase().equals(NetUtils.NAT_PROTO)){
+//    		//1:1 NAT needs instanceip;publicip;domrip;op
+//    		if(cmd.isCreate()) {
+//                args = "-A";
+//            } else {
+//                args = "-D";
+//            }
+//
+//    		args += " -l " + cmd.getPublicIpAddress();
+//    		args += " -i " + cmd.getRouterIpAddress();
+//    		args += " -r " + cmd.getPrivateIpAddress();
+//    		args += " -G " + cmd.getProtocol();
+//    	}else{
+//    		if (cmd.isEnable()) {
+//    			args = "-A";
+//    		} else {
+//    			args = "-D";
+//    		}
+//
+//    		args += " -P " + cmd.getProtocol().toLowerCase();
+//    		args += " -l " + cmd.getPublicIpAddress();
+//    		args += " -p " + cmd.getPublicPort();
+//    		args += " -n " + cmd.getRouterName();
+//    		args += " -i " + cmd.getRouterIpAddress();
+//    		args += " -r " + cmd.getPrivateIpAddress();
+//    		args += " -d " + cmd.getPrivatePort();
+//    		args += " -N " + cmd.getVlanNetmask();
+//
+//    		String oldPrivateIP = cmd.getOldPrivateIP();
+//    		String oldPrivatePort = cmd.getOldPrivatePort();
+//
+//    		if (oldPrivateIP != null) {
+//    			args += " -w " + oldPrivateIP;
+//    		}
+//
+//    		if (oldPrivatePort != null) {
+//    			args += " -x " + oldPrivatePort;
+//    		}
+//    	}
+//
+//    	final Script command = new Script(_firewallPath, _timeout, s_logger);
+//    	String [] argsArray = args.split(" ");
+//    	for (String param : argsArray) {
+//    		command.add(param);
+//    	}
+//    	String result = command.execute();
+//    	return new Answer(cmd, result == null, result);
+//    }
     
     protected String getDefaultScriptsDir() {
         return "scripts/network/domr/dom0";
@@ -510,13 +516,15 @@ public class VirtualRoutingResource implements Manager {
 
         _scriptsDir = (String)params.get("domr.scripts.dir");
         if (_scriptsDir == null) {
-        	if(s_logger.isInfoEnabled())
-        		s_logger.info("VirtualRoutingResource _scriptDir can't be initialized from domr.scripts.dir param, use default" );
+        	if(s_logger.isInfoEnabled()) {
+                s_logger.info("VirtualRoutingResource _scriptDir can't be initialized from domr.scripts.dir param, use default" );
+            }
             _scriptsDir = getDefaultScriptsDir();
         }
         
-    	if(s_logger.isInfoEnabled())
-    		s_logger.info("VirtualRoutingResource _scriptDir to use: " + _scriptsDir);
+    	if(s_logger.isInfoEnabled()) {
+            s_logger.info("VirtualRoutingResource _scriptDir to use: " + _scriptsDir);
+        }
         
         String value = (String)params.get("scripts.timeout");
         _timeout = NumbersUtil.parseInt(value, 120) * 1000;

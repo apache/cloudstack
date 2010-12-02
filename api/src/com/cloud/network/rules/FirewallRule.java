@@ -17,10 +17,22 @@
  */
 package com.cloud.network.rules;
 
-/**
- * Specifies the port forwarding for firewall rule.
- */
-public interface FirewallRule {
+import com.cloud.acl.ControlledEntity;
+import com.cloud.utils.net.Ip;
+
+public interface FirewallRule extends ControlledEntity {
+    enum Purpose {
+        PortForwarding,
+        LoadBalancing,
+        Vpn,
+    }
+    
+    enum State {
+        Staged, // Rule been created but has never got through network rule conflict detection.  Rules in this state can not be sent to network elements.
+        Add,    // Add means the rule has been created and has gone through network rule conflict detection.
+        Revoke  // Revoke means this rule has been revoked. If this rule has been sent to the network elements, the rule will be deleted from database.
+    }
+    
     /**
      * @return database id.
      */
@@ -34,22 +46,26 @@ public interface FirewallRule {
     /**
      * @return public ip address.
      */
-    String getPublicIpAddress();
+    Ip getSourceIpAddress();
     
     /**
-     * @return public port.
+     * @return first port of the source port range.
      */
-    String getPublicPort();
+    int getSourcePortStart();
     
     /**
-     * @return private ip address.
+     * @return last port of the source prot range.  If this is null, that means only one port is mapped.
      */
-    String getPrivateIpAddress();
-    
+    int getSourcePortEnd();
+
     /**
-     * @return private port.
+     * @return protocol to open these ports for.
      */
-    String getPrivatePort();
-    
     String getProtocol();
+    
+    Purpose getPurpose();
+    
+    State getState();
+    
+    long getNetworkId();
 }
