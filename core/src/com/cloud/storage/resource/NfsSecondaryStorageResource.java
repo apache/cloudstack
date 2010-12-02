@@ -224,7 +224,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     protected Answer execute(final DeleteTemplateCommand cmd) {
     	String relativeTemplatePath = cmd.getTemplatePath();
     	String parent = _parent;
-    	
+    	    
     	if (relativeTemplatePath.startsWith(File.separator)) {
     		relativeTemplatePath = relativeTemplatePath.substring(1);
     	}
@@ -234,24 +234,37 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
     	String absoluteTemplatePath = parent + relativeTemplatePath;
 		File tmpltParent = new File(absoluteTemplatePath).getParentFile();
-		
-		boolean result = true;
-		if (tmpltParent.exists()) {
-			File [] tmpltFiles = tmpltParent.listFiles();
-			if (tmpltFiles != null) {
-				for (File f : tmpltFiles) {
-					f.delete();
-				}
-			}
-		
-			result = _storage.delete(tmpltParent.getAbsolutePath());
-		}
-    	
-    	if (result) {
-    		return new Answer(cmd, true, null);
-    	} else {
-    		return new Answer(cmd, false, "Failed to delete file");
-    	}
+	    if (!tmpltParent.exists()) {
+            return new Answer(cmd, false, "template parent directory " + tmpltParent.getName()
+                    + " doesn't exist, Template path ( " + relativeTemplatePath + " ) is wrong");
+        }
+        File[] tmpltFiles = tmpltParent.listFiles();
+        if (tmpltFiles == null || tmpltFiles.length == 0) {
+            return new Answer(cmd, false, "No files under template parent directory " + tmpltParent.getName()
+                    + " Template path ( " + relativeTemplatePath + " ) is wrong");
+        }
+        boolean found = false;
+        for (File f : tmpltFiles) {
+            if (f.getName().equals("template.properties")) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            return new Answer(cmd, false, "Can not find template.properties, Template path ( " + relativeTemplatePath
+                    + " ) is wrong");
+        }
+        for (File f : tmpltFiles) {
+            if( !f.delete() ) {
+                return new Answer(cmd, false, "Unable to delete file " + f.getName() 
+                        + " Template path ( " + relativeTemplatePath + " ) is wrong");
+            }
+        }
+        if ( !tmpltParent.delete() ) {
+            return new Answer(cmd, false, "Unable to delete directory " + tmpltParent.getName() 
+                    + " Template path ( " + relativeTemplatePath + " ) is wrong");
+        }
+        return new Answer(cmd, true, null);
     }
     
     protected long getUsedSize() {

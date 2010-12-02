@@ -1196,6 +1196,16 @@ public class ManagementServerImpl implements ManagementServer {
             throw new InvalidParameterValueException("Unable to find service offering: " + serviceOfferingId);
         }
 
+        if(offering.getDomainId() == null){
+        	//do nothing as offering is public
+        }else{
+        	if(userAccount != null){
+    			_configMgr.checkServiceOfferingAccess(userAccount, offering);//user deploying his own vm
+    		}else{
+    			_configMgr.checkServiceOfferingAccess(ctxAccount, offering);
+    		}
+        }
+        
         VMTemplateVO template = _templateDao.findById(templateId);
         // Make sure a valid template ID was specified
         if (template == null) {
@@ -1218,6 +1228,18 @@ public class ManagementServerImpl implements ManagementServer {
  
         if (isIso && diskOffering == null) {
         	throw new InvalidParameterValueException("Please specify a valid disk offering ID.");
+        }
+        
+        if(diskOffering != null){
+            if(diskOffering.getDomainId() == null){
+            	//do nothing as offering is public
+            }else{
+            	if(userAccount != null){
+        			_configMgr.checkDiskOfferingAccess(userAccount, diskOffering);//user deploying his own vm
+        		}else{
+        			_configMgr.checkDiskOfferingAccess(ctxAccount, diskOffering);
+        		}
+            }
         }
         
         if (isIso) {
@@ -1592,17 +1614,71 @@ public class ManagementServerImpl implements ManagementServer {
 
         return _userAccountDao.search(sc, searchFilter);
     }
+    
+    //This method is used for permissions check for both disk and service offerings
+    private boolean isPermissible(Long accountDomainId, Long offeringDomainId){
+    	
+    	if(accountDomainId == offeringDomainId)
+    		return true; // account and service offering in same domain
+    	
+    	DomainVO domainRecord = _domainDao.findById(accountDomainId);
+    	
+    	if(domainRecord != null){
+    		while(true){
+    			if(domainRecord.getId() == offeringDomainId)
+    				return true;
+    			
+				//try and move on to the next domain
+				if(domainRecord.getParent() != null)
+					domainRecord = _domainDao.findById(domainRecord.getParent());
+				else
+					break;
+    		}
+    	}
+    	
+    	return false;
+    }
 
     @Override
     public List<ServiceOfferingVO> searchForServiceOfferings(ListServiceOfferingsCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
-        Filter searchFilter = new Filter(ServiceOfferingVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
+
+    	//Note
+    	//The list method for offerings is being modified in accordance with discussion with Will/Kevin
+    	//For now, we will be listing the following based on the usertype
+    	//1. For root, we will list all offerings
+    	//2. For domainAdmin and regular users, we will list everything in their domains+parent domains ... all the way till root
+    	Filter searchFilter = new Filter(ServiceOfferingVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchCriteria<ServiceOfferingVO> sc = _offeringsDao.createSearchCriteria();
 
+        Account account = UserContext.current().getAccount();
         Object name = cmd.getServiceOfferingName();
         Object id = cmd.getId();
         Object keyword = cmd.getKeyword();
         Long vmId = cmd.getVirtualMachineId();
-
+        Long domainId = cmd.getDomainId();
+        
+        //Keeping this logic consistent with domain specific zones
+        //if a domainId is provided, we just return the so associated with this domain
+        if(domainId != null){
+        	if(account.getType() == Account.ACCOUNT_TYPE_ADMIN){
+        		return _offeringsDao.findServiceOfferingByDomainId(domainId);//no perm check
+        	}else{
+        		//check if the user's domain == so's domain || user's domain is a child of so's domain
+        		if(isPermissible(account.getDomainId(), domainId)){
+        			//perm check succeeded
+        			return _offeringsDao.findServiceOfferingByDomainId(domainId);
+        		}else{
+        			throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "The account:"+account.getAccountName()+" does not fall in the same domain hierarchy as the service offering");
+        		}
+        	}
+        }
+        
+        //For non-root users
+        if((account.getType() == Account.ACCOUNT_TYPE_NORMAL || account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)){
+        	return searchServiceOfferingsInternal(account, name, id, vmId, keyword, searchFilter);
+        }
+        
+        //for root users, the existing flow
         if (keyword != null) {
             SearchCriteria<ServiceOfferingVO> ssc = _offeringsDao.createSearchCriteria();
             ssc.addOr("displayText", SearchCriteria.Op.LIKE, "%" + keyword + "%");
@@ -1610,8 +1686,6 @@ public class ManagementServerImpl implements ManagementServer {
 
             sc.addAnd("name", SearchCriteria.Op.SC, ssc);
         } else if (vmId != null) {
-            Account account = UserContext.current().getAccount();
-
             UserVmVO vmInstance = _userVmDao.findById(vmId);
             if ((vmInstance == null) || (vmInstance.getRemoved() != null)) {
                 throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
@@ -1642,6 +1716,80 @@ public class ManagementServerImpl implements ManagementServer {
         return _offeringsDao.search(sc, searchFilter);
     }
 
+    private List<ServiceOfferingVO> searchServiceOfferingsInternal(Account account, Object name, Object id, Long vmId, Object keyword, Filter searchFilter){
+
+		//it was decided to return all offerings for the user's domain, and everything above till root (for normal user or domain admin)
+		//list all offerings belonging to this domain, and all of its parents
+		//check the parent, if not null, add offerings for that parent to list
+    	List<ServiceOfferingVO> sol = new ArrayList<ServiceOfferingVO>();
+		DomainVO domainRecord = _domainDao.findById(account.getDomainId());
+		boolean includePublicOfferings = true;
+		if(domainRecord != null)
+		{
+			while(true){
+				SearchCriteria<ServiceOfferingVO> sc = _offeringsDao.createSearchCriteria();
+				
+		        if (keyword != null) {
+		        	includePublicOfferings = false;
+		            SearchCriteria<ServiceOfferingVO> ssc = _offeringsDao.createSearchCriteria();
+		            ssc.addOr("displayText", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+		            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+
+		            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
+		        } else if (vmId != null) {
+		        	includePublicOfferings = false;
+		            UserVmVO vmInstance = _userVmDao.findById(vmId);
+		            if ((vmInstance == null) || (vmInstance.getRemoved() != null)) {
+		                throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
+		            }
+		            if ((account != null) && !isAdmin(account.getType())) {
+		                if (account.getId() != vmInstance.getAccountId()) {
+		                    throw new PermissionDeniedException("unable to find a virtual machine with id " + vmId + " for this account");
+		                }
+		            }
+
+		            ServiceOfferingVO offering = _offeringsDao.findById(vmInstance.getServiceOfferingId());
+		            sc.addAnd("id", SearchCriteria.Op.NEQ, offering.getId());
+		            
+		            // Only return offerings with the same Guest IP type and storage pool preference
+		            sc.addAnd("guestIpType", SearchCriteria.Op.EQ, offering.getGuestIpType());
+		            sc.addAnd("useLocalStorage", SearchCriteria.Op.EQ, offering.getUseLocalStorage());
+		        }
+
+		        if (id != null) {
+		        	includePublicOfferings = false;
+		            sc.addAnd("id", SearchCriteria.Op.EQ, id);
+		        }
+
+		        if (name != null) {
+		        	includePublicOfferings = false;
+		            sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + name + "%");
+		        }
+		        sc.addAnd("systemUse", SearchCriteria.Op.EQ, false);
+
+		        //for this domain
+		        sc.addAnd("domainId", SearchCriteria.Op.EQ, domainRecord.getId());
+		        
+		        //search and add for this domain
+				sol.addAll(_offeringsDao.search(sc, searchFilter));
+				
+				//try and move on to the next domain
+				if(domainRecord.getParent() != null)
+					domainRecord = _domainDao.findById(domainRecord.getParent());
+				else
+					break;//now we got all the offerings for this user/dom adm
+			}
+		}else{
+			s_logger.error("Could not find the domainId for account:"+account.getAccountName());
+			throw new CloudAuthenticationException("Could not find the domainId for account:"+account.getAccountName());
+		}
+		
+		//add all the public offerings to the sol list before returning
+		if(includePublicOfferings)
+			sol.addAll(_offeringsDao.findPublicServiceOfferings());
+		
+    	return sol;
+    }
     @Override
     public List<ClusterVO> searchForClusters(ListClustersCmd cmd) {
         Filter searchFilter = new Filter(ClusterVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
@@ -4202,17 +4350,106 @@ public class ManagementServerImpl implements ManagementServer {
         return accountNames;
     }
 
+    private List<DiskOfferingVO> searchDiskOfferingsInternal(Account account, Object name, Object id, Object keyword, Filter searchFilter){
+		//it was decided to return all offerings for the user's domain, and everything above till root (for normal user or domain admin)
+		//list all offerings belonging to this domain, and all of its parents
+		//check the parent, if not null, add offerings for that parent to list
+    	List<DiskOfferingVO> dol = new ArrayList<DiskOfferingVO>();
+		DomainVO domainRecord = _domainDao.findById(account.getDomainId());
+		boolean includePublicOfferings = true;
+		if(domainRecord != null)
+		{
+			while(true){
+		        SearchBuilder<DiskOfferingVO> sb = _diskOfferingDao.createSearchBuilder();
+
+		        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+		        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+
+		        SearchCriteria<DiskOfferingVO> sc = sb.create();
+		        if (keyword != null) {
+		        	includePublicOfferings = false;
+		            SearchCriteria<DiskOfferingVO> ssc = _diskOfferingDao.createSearchCriteria();
+		            ssc.addOr("displayText", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+		            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+
+		            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
+		        }
+
+		        if (name != null) {
+		        	includePublicOfferings = false;
+		            sc.setParameters("name", "%" + name + "%");
+		        }
+
+		        if (id != null) {
+		        	includePublicOfferings = false;
+		            sc.setParameters("id", id);
+		        }
+
+		        //for this domain
+		        sc.addAnd("domainId", SearchCriteria.Op.EQ, domainRecord.getId());
+		        
+		        //search and add for this domain
+				dol.addAll(_diskOfferingDao.search(sc, searchFilter));
+				
+				//try and move on to the next domain
+				if(domainRecord.getParent() != null)
+					domainRecord = _domainDao.findById(domainRecord.getParent());
+				else
+					break;//now we got all the offerings for this user/dom adm
+			}
+		}else{
+			s_logger.error("Could not find the domainId for account:"+account.getAccountName());
+			throw new CloudAuthenticationException("Could not find the domainId for account:"+account.getAccountName());
+		}
+		
+		//add all the public offerings to the sol list before returning
+		if(includePublicOfferings)
+			dol.addAll(_diskOfferingDao.findPublicDiskOfferings());
+		
+    	return dol;
+    	
+    }
+    
     @Override
     public List<DiskOfferingVO> searchForDiskOfferings(ListDiskOfferingsCmd cmd) {
+    	//Note
+    	//The list method for offerings is being modified in accordance with discussion with Will/Kevin
+    	//For now, we will be listing the following based on the usertype
+    	//1. For root, we will list all offerings
+    	//2. For domainAdmin and regular users, we will list everything in their domains+parent domains ... all the way till root
+    	
         Filter searchFilter = new Filter(DiskOfferingVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<DiskOfferingVO> sb = _diskOfferingDao.createSearchBuilder();
 
         // SearchBuilder and SearchCriteria are now flexible so that the search builder can be built with all possible
         // search terms and only those with criteria can be set.  The proper SQL should be generated as a result.
+        Account account = UserContext.current().getAccount();
         Object name = cmd.getDiskOfferingName();
         Object id = cmd.getId();
         Object keyword = cmd.getKeyword();
-
+        Long domainId = cmd.getDomainId();
+        //Keeping this logic consistent with domain specific zones
+        //if a domainId is provided, we just return the disk offering associated with this domain
+        if(domainId != null){
+        	if(account.getType() == Account.ACCOUNT_TYPE_ADMIN){
+        		return _diskOfferingDao.listByDomainId(domainId);//no perm check
+        	}else{
+        		//check if the user's domain == do's domain || user's domain is a child of so's domain
+        		if(isPermissible(account.getDomainId(), domainId)){
+        			//perm check succeeded
+        			return _diskOfferingDao.listByDomainId(domainId);
+        		}else{
+        			throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "The account:"+account.getAccountName()+" does not fall in the same domain hierarchy as the disk offering");
+        		}
+        	}
+        }
+        
+        //For non-root users
+        if((account.getType() == Account.ACCOUNT_TYPE_NORMAL || account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)){
+        	return searchDiskOfferingsInternal(account, name, id, keyword, searchFilter);
+        }
+        
+        //For root users, preserving existing flow
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
 

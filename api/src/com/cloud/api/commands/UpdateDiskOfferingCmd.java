@@ -24,6 +24,7 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.DiskOfferingResponse;
 import com.cloud.offering.DiskOffering;
 
@@ -48,6 +49,9 @@ public class UpdateDiskOfferingCmd extends BaseCmd{
 //    @Parameter(name=ApiConstants.TAGS, type=CommandType.STRING, description="update tags of the disk offering with this value")
 //    private String tags;
 
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the ID of the containing domain, null for public offerings")
+    private Long domainId; 
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -67,6 +71,10 @@ public class UpdateDiskOfferingCmd extends BaseCmd{
 //    public String getTags() {
 //        return tags;
 //    }
+    
+    public Long getDomainId() {
+		return domainId;
+	}
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

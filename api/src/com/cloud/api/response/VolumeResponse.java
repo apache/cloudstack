@@ -119,6 +119,10 @@ public class VolumeResponse extends BaseResponse {
 
     @SerializedName("serviceofferingdisplaytext") @Param(description="the display text of the service offering for root disk")
     private String serviceOfferingDisplayText;
+    
+    public Long getObjectId() {
+    	return getId();
+    }
 
     public Boolean getDestroyed() {
 		return destroyed;

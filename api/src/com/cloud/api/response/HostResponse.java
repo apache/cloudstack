@@ -131,6 +131,10 @@ public class HostResponse extends BaseResponse {
 
     @SerializedName("events") @Param(description="events available for the host")
     private String events;
+    
+    public Long getObjectId() {
+    	return getId();
+    }
 
     public Long getId() {
         return id;

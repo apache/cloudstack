@@ -19,6 +19,7 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
@@ -56,6 +57,12 @@ public class ServiceOfferingResponse extends BaseResponse {
     @SerializedName("tags") @Param(description="the tags for the service offering")
     private String tags;
 
+	@SerializedName("domainId") @Param(description="the domain id of the service offering")
+    private Long domainId;
+	
+    @SerializedName(ApiConstants.DOMAIN) @Param(description="Domain name for the offering")
+    private String domain;
+    
     public Long getId() {
         return id;
     }
@@ -143,4 +150,23 @@ public class ServiceOfferingResponse extends BaseResponse {
     public void setTags(String tags) {
         this.tags = tags;
     }
+
+    public Long getDomainId() {
+		return domainId;
+	}
+
+	public void setDomainId(Long domainId) {
+		this.domainId = domainId;
+	}
+
+	public String getDomain() {
+		return domain;
+	}
+
+	public void setDomain(String domain) {
+		this.domain = domain;
+	}
+	
+	
+
 }

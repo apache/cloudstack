@@ -21,6 +21,10 @@ var xsToolsIsoId = 200;
 var g_zoneIds = []; 
 var g_zoneNames = [];	
 
+function isoGetSearchParams() {
+    return "";
+}
+
 function afterLoadIsoJSP() {
     var $detailsTab = $("#right_panel_content #tab_content_details");   
     
@@ -52,7 +56,7 @@ function afterLoadIsoJSP() {
 			    array1.push("&displayText="+todb(desc));
 			    
 			    var url = trim(thisDialog.find("#add_iso_url").val());	
-			    array1.push("&url="+encodeURIComponent(url));
+			    array1.push("&url="+todb(url));
 			    					
 			    var zoneId = thisDialog.find("#add_iso_zone").val();
 			    array1.push("&zoneId="+zoneId);	
@@ -225,7 +229,7 @@ function isoJsonToDetailsTab() {
          
     $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));
         
-    $thisTab.find("#id").text(noNull(jsonObj.id));
+    $thisTab.find("#id").text(fromdb(jsonObj.id));
     $thisTab.find("#zonename").text(fromdb(jsonObj.zonename));
     
     $thisTab.find("#name").text(fromdb(jsonObj.name));
@@ -234,7 +238,7 @@ function isoJsonToDetailsTab() {
     $thisTab.find("#displaytext").text(fromdb(jsonObj.displaytext));
     $thisTab.find("#displaytext_edit").val(fromdb(jsonObj.displaytext));
     $thisTab.find("#ostypename").text(fromdb(jsonObj.ostypename));
-    $thisTab.find("#ostypename_edit").val(noNull(jsonObj.ostypeid));    
+    $thisTab.find("#ostypename_edit").val(fromdb(jsonObj.ostypeid));    
     $thisTab.find("#account").text(fromdb(jsonObj.account));
 	$thisTab.find("#domain").text(fromdb(jsonObj.domain));
                       

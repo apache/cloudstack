@@ -28,6 +28,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.ExtractResponse;
+import com.cloud.async.AsyncJob;
 import com.cloud.dc.DataCenter;
 import com.cloud.event.EventTypes;
 import com.cloud.storage.Upload;
@@ -90,6 +91,14 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
     
     public static String getStaticName() {
         return s_name;
+    }
+    
+    public AsyncJob.Type getInstanceType() {
+    	return AsyncJob.Type.Volume;
+    }
+    
+    public Long getInstanceId() {
+    	return getId();
     }
 
     @Override

@@ -26,6 +26,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.ExtractResponse;
+import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.template.VirtualMachineTemplate;
@@ -105,6 +106,14 @@ public class ExtractTemplateCmd extends BaseAsyncCmd {
     @Override
     public String getEventDescription() {
         return  "Extraction job";
+    }
+    
+    public AsyncJob.Type getInstanceType() {
+    	return AsyncJob.Type.Template;
+    }
+    
+    public Long getInstanceId() {
+    	return getId();
     }
 	
     @Override

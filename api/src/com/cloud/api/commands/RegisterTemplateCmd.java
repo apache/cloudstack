@@ -28,6 +28,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.TemplateResponse;
+import com.cloud.async.AsyncJob;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.template.VirtualMachineTemplate;
 
@@ -157,6 +158,10 @@ public class RegisterTemplateCmd extends BaseCmd {
 	@Override
     public String getName() {
         return s_name;
+    }
+	
+	public AsyncJob.Type getInstanceType() {
+    	return AsyncJob.Type.Template;
     }
 
     @Override

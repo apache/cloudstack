@@ -70,7 +70,7 @@ function podJsonToDetailsTab() {
     $thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();       
         
-    $thisTab.find("#id").text(noNull(jsonObj.id));
+    $thisTab.find("#id").text(fromdb(jsonObj.id));
     $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));
     
     $thisTab.find("#name").text(fromdb(jsonObj.name));
@@ -90,7 +90,7 @@ function podJsonToDetailsTab() {
     // hide network tab upon zone vlan
     var networkType;  
     $.ajax({	    
-	    data: createURL("command=listZones&id="+noNull(jsonObj.zoneid)),
+	    data: createURL("command=listZones&id="+fromdb(jsonObj.zoneid)),
 		dataType: "json",	
 		async: false,	
 		success: function(json) {
@@ -143,7 +143,7 @@ function podJsonToNetworkTab() {
     $thisTab.find("#tab_spinning_wheel").show();   		 
         
     $.ajax({
-		data: createURL("command=listVlanIpRanges&zoneid="+noNull(jsonObj.zoneid)+"&podid="+noNull(jsonObj.id)),
+		data: createURL("command=listVlanIpRanges&zoneid="+fromdb(jsonObj.zoneid)+"&podid="+fromdb(jsonObj.id)),
 		dataType: "json",
 		success: function(json) {			       
 			var items = json.listvlaniprangesresponse.vlaniprange;
@@ -164,12 +164,12 @@ function podJsonToNetworkTab() {
 
 function podNetworkJsonToTemplate(jsonObj, template) {
     template.data("jsonObj", jsonObj);     
-    template.attr("id", "pod_VLAN_"+noNull(jsonObj.id)).data("podVLANId", noNull(jsonObj.id));    
+    template.attr("id", "pod_VLAN_"+fromdb(jsonObj.id)).data("podVLANId", fromdb(jsonObj.id));    
     template.find("#grid_header_title").text(fromdb(jsonObj.description));			   
-    template.find("#id").text(noNull(jsonObj.id));    
+    template.find("#id").text(fromdb(jsonObj.id));    
     template.find("#iprange").text(fromdb(jsonObj.description));
-    template.find("#netmask").text(noNull(jsonObj.netmask));
-    template.find("#gateway").text(noNull(jsonObj.gateway));
+    template.find("#netmask").text(fromdb(jsonObj.netmask));
+    template.find("#gateway").text(fromdb(jsonObj.gateway));
     template.find("#podname").text(fromdb(jsonObj.podname)); 
    
     var $actionLink = template.find("#network_action_link");		
@@ -247,9 +247,9 @@ function refreshClsuterFieldInAddHostDialog(dialogAddHost, podId, clusterId) {
             if(items != null && items.length > 0) {		                                        
                 for(var i=0; i<items.length; i++) {	
                     if(clusterId != null && items[i].id == clusterId)
-                        clusterSelect.append("<option value='" + noNull(items[i].id) + "' selected>" + fromdb(items[i].name) + "</option>");	
+                        clusterSelect.append("<option value='" + fromdb(items[i].id) + "' selected>" + fromdb(items[i].name) + "</option>");	
                     else               
-                        clusterSelect.append("<option value='" + noNull(items[i].id) + "'>" + fromdb(items[i].name) + "</option>");		
+                        clusterSelect.append("<option value='" + fromdb(items[i].id) + "'>" + fromdb(items[i].name) + "</option>");		
                 }                             
                 dialogAddHost.find("input[value=existing_cluster_radio]").attr("checked", true);
             }
@@ -328,10 +328,10 @@ function initAddHostButton($button, currentPageInRightPanel, $leftmenuItem1) {
 		        array1.push("&podId="+podId);
 						      
 		        var username = trim($thisDialog.find("#host_username").val());
-		        array1.push("&username="+encodeURIComponent(username));
+		        array1.push("&username="+todb(username));
 				
 		        var password = trim($thisDialog.find("#host_password").val());
-		        array1.push("&password="+encodeURIComponent(password));
+		        array1.push("&password="+todb(password));
 					
 				var newClusterName, existingClusterId;							
 			    if(clusterRadio == "new_cluster_radio") {
@@ -352,7 +352,7 @@ function initAddHostButton($button, currentPageInRightPanel, $leftmenuItem1) {
 		            url = "http://" + todb(hostname);
 		        else
 		            url = hostname;
-		        array1.push("&url="+encodeURIComponent(url));
+		        array1.push("&url="+todb(url));
 									
 		        //var $midmenuItem1 = beforeAddingMidMenuItem() ;    				
 		        
@@ -521,11 +521,11 @@ function initAddPrimaryStorageButton($button, currentPageInRightPanel, $leftmenu
 					var lun = trim($thisDialog.find("#add_pool_lun").val());
 					url = iscsiURL(server, iqn, lun);
 				}
-				array1.push("&url="+encodeURIComponent(url));
+				array1.push("&url="+todb(url));
 				
 			    var tags = trim($thisDialog.find("#add_pool_tags").val());
 				if(tags != null && tags.length > 0)
-				    array1.push("&tags="+encodeURIComponent(tags));				    
+				    array1.push("&tags="+todb(tags));				    
 			    
 			    $.ajax({
 				    data: createURL("command=createStoragePool" + array1.join("")),
@@ -615,11 +615,11 @@ function initAddPodVLANButton($button, $leftmenuItem1) {
 				array1.push("&zoneid=" + zoneId);
 				array1.push("&podId=" + podId);	
 				array1.push("&forVirtualNetwork=false"); //direct VLAN			
-				array1.push("&gateway="+encodeURIComponent(guestgateway));
-				array1.push("&netmask="+encodeURIComponent(netmask));	
-				array1.push("&startip="+encodeURIComponent(startip));
+				array1.push("&gateway="+todb(guestgateway));
+				array1.push("&netmask="+todb(netmask));	
+				array1.push("&startip="+todb(startip));
 				if(endip != null && endip.length > 0)
-				    array1.push("&endip="+encodeURIComponent(endip));	
+				    array1.push("&endip="+todb(endip));	
 				
 				$.ajax({
 				  data: createURL("command=createVlanIpRange" + array1.join("")),
@@ -751,17 +751,17 @@ function doEditPod2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $e
     if(newName != oldName)
         array1.push("&name="+todb(newName));
     if(newCidr != oldCidr)
-        array1.push("&cidr="+encodeURIComponent(newCidr));
+        array1.push("&cidr="+todb(newCidr));
     if(newStartip != oldStartip)
-        array1.push("&startIp="+encodeURIComponent(newStartip));    
+        array1.push("&startIp="+todb(newStartip));    
     if(newEndip != oldEndip && newEndip != null && newEndip.length > 0) { 
         if(newStartip == oldStartip) {
-            array1.push("&startIp="+encodeURIComponent(newStartip));  //startIp needs to be passed to updatePod API when endIp is passed to updatePod API.
+            array1.push("&startIp="+todb(newStartip));  //startIp needs to be passed to updatePod API when endIp is passed to updatePod API.
         }
-		array1.push("&endIp="+encodeURIComponent(newEndip));	
+		array1.push("&endIp="+todb(newEndip));	
     }
 	if(newGateway != oldGateway && newGateway != null && newGateway.length > 0)				             
-	    array1.push("&gateway="+encodeURIComponent(newGateway)); 	
+	    array1.push("&gateway="+todb(newGateway)); 	
 	
 	if(array1.length > 0) {
 	    $.ajax({

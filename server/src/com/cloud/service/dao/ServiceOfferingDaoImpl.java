@@ -25,6 +25,7 @@ import javax.persistence.EntityExistsException;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.dc.DataCenterVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
@@ -36,6 +37,10 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
     protected static final Logger s_logger = Logger.getLogger(ServiceOfferingDaoImpl.class);
 
     protected final SearchBuilder<ServiceOfferingVO> UniqueNameSearch;
+    protected final SearchBuilder<ServiceOfferingVO> ServiceOfferingsByDomainIdSearch;
+    protected final SearchBuilder<ServiceOfferingVO> ServiceOfferingsByKeywordSearch;
+    protected final SearchBuilder<ServiceOfferingVO> PublicServiceOfferingSearch;
+    
     protected ServiceOfferingDaoImpl() {
         super();
         
@@ -43,6 +48,20 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
         UniqueNameSearch.and("name", UniqueNameSearch.entity().getUniqueName(), SearchCriteria.Op.EQ);
         UniqueNameSearch.and("system", UniqueNameSearch.entity().isSystemUse(), SearchCriteria.Op.EQ);
         UniqueNameSearch.done();
+        
+        ServiceOfferingsByDomainIdSearch = createSearchBuilder();
+        ServiceOfferingsByDomainIdSearch.and("domainId", ServiceOfferingsByDomainIdSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
+        ServiceOfferingsByDomainIdSearch.done();
+        
+        PublicServiceOfferingSearch = createSearchBuilder();
+        PublicServiceOfferingSearch.and("domainId", PublicServiceOfferingSearch.entity().getDomainId(), SearchCriteria.Op.NULL);
+        PublicServiceOfferingSearch.and("system", PublicServiceOfferingSearch.entity().isSystemUse(), SearchCriteria.Op.EQ);
+        PublicServiceOfferingSearch.done();
+        
+        ServiceOfferingsByKeywordSearch = createSearchBuilder();
+        ServiceOfferingsByKeywordSearch.or("name", ServiceOfferingsByKeywordSearch.entity().getName(), SearchCriteria.Op.EQ);        
+        ServiceOfferingsByKeywordSearch.or("displayText", ServiceOfferingsByKeywordSearch.entity().getDisplayText(), SearchCriteria.Op.EQ);
+        ServiceOfferingsByKeywordSearch.done();
     }
     
     @Override
@@ -71,5 +90,19 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
             // Assume it's conflict on unique name
             return findByName(offering.getUniqueName());
         }
+    }
+    
+    @Override
+    public List<ServiceOfferingVO> findServiceOfferingByDomainId(Long domainId){
+    	SearchCriteria<ServiceOfferingVO> sc = ServiceOfferingsByDomainIdSearch.create();
+    	sc.setParameters("domainId", domainId);
+        return listBy(sc);    	
+    }
+    
+    @Override
+    public List<ServiceOfferingVO> findPublicServiceOfferings(){
+    	SearchCriteria<ServiceOfferingVO> sc = PublicServiceOfferingSearch.create();
+    	sc.setParameters("system", false);
+        return listBy(sc);    	
     }
 }

@@ -383,8 +383,15 @@ public class AlertManagerImpl implements AlertManager {
 
                 for (CapacityVO capacity : capacityList) {
                     long dataCenterId = capacity.getDataCenterId();
+                    Long podId = capacity.getPodId();
                     short type = capacity.getCapacityType();
-                    String key = "dc" + dataCenterId + "t" + type;
+                    String key = null;
+                    if((type == CapacityVO.CAPACITY_TYPE_PUBLIC_IP) || (type == CapacityVO.CAPACITY_TYPE_SECONDARY_STORAGE)){
+                        key = "dc" + dataCenterId + "t" + type;    
+                    } else {
+                        key = "pod" + podId + "t" + type;
+                    }
+                    
                     List<CapacityVO> list = capacityDcTypeMap.get(key);
                     if (list == null) {
                         list = new ArrayList<CapacityVO>();
@@ -400,6 +407,7 @@ public class AlertManagerImpl implements AlertManager {
                     CapacityVO cap = capacities.get(0);
                     short capacityType = cap.getCapacityType();
                     long dataCenterId = cap.getDataCenterId();
+                    Long podId = cap.getPodId();
 
                     for (CapacityVO capacity : capacities) {
                         totalCapacity += capacity.getTotalCapacity();
@@ -410,6 +418,11 @@ public class AlertManagerImpl implements AlertManager {
                     double thresholdLimit = 1.0;
                     DataCenterVO dcVO = _dcDao.findById(dataCenterId);
                     String dcName = ((dcVO == null) ? "unknown" : dcVO.getName());
+                    String podName = "";
+                    if( podId != null){
+                        HostPodVO pod = _podDao.findById(podId);
+                        podName = ((pod == null) ? "unknown" : pod.getName());
+                    }
                     String msgSubject = "";
                     String msgContent = "";
                     String totalStr = "";
@@ -420,28 +433,28 @@ public class AlertManagerImpl implements AlertManager {
                     switch (capacityType) {
                     case CapacityVO.CAPACITY_TYPE_MEMORY:
                         thresholdLimit = _memoryCapacityThreshold;
-                        msgSubject = "System Alert: Low Available Memory in availablity zone " + dcName;
+                        msgSubject = "System Alert: Low Available Memory in pod "+podName+" of availablity zone " + dcName;
                         totalStr = formatBytesToMegabytes(totalCapacity);
                         usedStr = formatBytesToMegabytes(usedCapacity);
                         msgContent = "System memory is low, total: " + totalStr + " MB, used: " + usedStr + " MB (" + pctStr + "%)";
                         break;
                     case CapacityVO.CAPACITY_TYPE_CPU:
                         thresholdLimit = _cpuCapacityThreshold;
-                        msgSubject = "System Alert: Low Unallocated CPU in availablity zone " + dcName;
+                        msgSubject = "System Alert: Low Unallocated CPU in pod "+podName+" of availablity zone " + dcName;
                         totalStr = _dfWhole.format(totalCapacity);
                         usedStr = _dfWhole.format(usedCapacity);
                         msgContent = "Unallocated CPU is low, total: " + totalStr + " Mhz, used: " + usedStr + " Mhz (" + pctStr + "%)";
                         break;
                     case CapacityVO.CAPACITY_TYPE_STORAGE:
                         thresholdLimit = _storageCapacityThreshold;
-                        msgSubject = "System Alert: Low Available Storage in availablity zone " + dcName;
+                        msgSubject = "System Alert: Low Available Storage in pod "+podName+" of availablity zone " + dcName;
                         totalStr = formatBytesToMegabytes(totalCapacity);
                         usedStr = formatBytesToMegabytes(usedCapacity);
                         msgContent = "Available storage space is low, total: " + totalStr + " MB, used: " + usedStr + " MB (" + pctStr + "%)";
                         break;
                     case CapacityVO.CAPACITY_TYPE_STORAGE_ALLOCATED:
                         thresholdLimit = _storageAllocCapacityThreshold;
-                        msgSubject = "System Alert: Remaining unallocated Storage is low in availablity zone " + dcName;
+                        msgSubject = "System Alert: Remaining unallocated Storage is low in pod "+podName+" of availablity zone " + dcName;
                         totalStr = formatBytesToMegabytes(totalCapacity);
                         usedStr = formatBytesToMegabytes(usedCapacity);
                         msgContent = "Unallocated storage space is low, total: " + totalStr + " MB, allocated: " + usedStr + " MB (" + pctStr + "%)";
@@ -455,7 +468,7 @@ public class AlertManagerImpl implements AlertManager {
                         break;
                     case CapacityVO.CAPACITY_TYPE_PRIVATE_IP:
                     	thresholdLimit = _privateIPCapacityThreshold;
-                    	msgSubject = "System Alert: Number of unallocated private IPs is low in availablity zone " + dcName;
+                    	msgSubject = "System Alert: Number of unallocated private IPs is low in pod "+podName+" of availablity zone " + dcName;
                     	totalStr = Double.toString(totalCapacity);
                         usedStr = Double.toString(usedCapacity);
                     	msgContent = "Number of unallocated private IPs is low, total: " + totalStr + ", allocated: " + usedStr + " (" + pctStr + "%)";

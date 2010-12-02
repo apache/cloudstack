@@ -29,6 +29,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.TemplateResponse;
+import com.cloud.async.AsyncJob;
 import com.cloud.storage.Storage;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
@@ -109,6 +110,10 @@ public class ListTemplatesCmd extends BaseListCmd {
     @Override
     public String getName() {
         return s_name;
+    }
+    
+    public AsyncJob.Type getInstanceType() {
+    	return AsyncJob.Type.Template;
     }
     
     @Override

@@ -27,6 +27,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.DomainRouterResponse;
+import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.user.Account;
@@ -78,6 +79,14 @@ public class RebootRouterCmd extends BaseAsyncCmd {
     @Override
     public String getEventDescription() {
         return  "rebooting router: " + getId();
+    }
+    
+    public AsyncJob.Type getInstanceType() {
+    	return AsyncJob.Type.DomainRouter;
+    }
+    
+    public Long getInstanceId() {
+    	return getId();
     }
 
     

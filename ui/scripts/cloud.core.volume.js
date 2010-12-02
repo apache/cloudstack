@@ -16,6 +16,47 @@
  * 
  */
 
+function volumeGetSearchParams() {
+    var moreCriteria = [];	
+
+	var $advancedSearchPopup = $("#advanced_search_popup");
+	if (lastSearchType == "advanced_search" && $advancedSearchPopup.length > 0) {
+	    var name = $advancedSearchPopup.find("#adv_search_name").val();							
+		if (name!=null && trim(name).length > 0) 
+			moreCriteria.push("&name="+todb(name));	
+		
+		var zone = $advancedSearchPopup.find("#adv_search_zone").val();	
+	    if (zone!=null && zone.length > 0) 
+			moreCriteria.push("&zoneId="+zone);	
+		
+		if ($advancedSearchPopup.find("#adv_search_pod_li").css("display") != "none") {	
+		    var pod = $advancedSearchPopup.find("#adv_search_pod").val();		
+	        if (pod!=null && pod.length > 0) 
+			    moreCriteria.push("&podId="+pod);
+        }
+        
+        if ($advancedSearchPopup.find("#adv_search_domain_li").css("display") != "none") {		
+		    var domainId = $advancedSearchPopup.find("#adv_search_domain").val();		
+		    if (domainId!=null && domainId.length > 0) 
+			    moreCriteria.push("&domainid="+domainId);	
+    	}	
+    	
+		if ($advancedSearchPopup.find("#adv_search_account_li").css("display") != "none") {	
+		    var account = $advancedSearchPopup.find("#adv_search_account").val();		
+		    if (account!=null && account.length > 0) 
+			    moreCriteria.push("&account="+account);		
+		}	
+	} 
+	else {     			    		
+	    var searchInput = $("#basic_search").find("#search_input").val();	 
+        if (lastSearchType == "basic_search" && searchInput != null && searchInput.length > 0) {	           
+            moreCriteria.push("&name="+todb(searchInput));	       
+        }        
+	}
+	
+	return moreCriteria.join("");          
+}
+
 function afterLoadVolumeJSP() {
     initDialog("dialog_create_template", 400); 
     initDialog("dialog_create_snapshot");        
@@ -329,7 +370,7 @@ function volumeJsonToDetailsTab(){
         }
     });      
            
-    $thisTab.find("#id").text(noNull(jsonObj.id));
+    $thisTab.find("#id").text(fromdb(jsonObj.id));
     $thisTab.find("#name").text(fromdb(jsonObj.name));    
     $thisTab.find("#zonename").text(fromdb(jsonObj.zonename));    
     $thisTab.find("#device_id").text(fromdb(jsonObj.deviceid));   
@@ -394,7 +435,7 @@ function volumeJsonToSnapshotTab() {
     
     $.ajax({
 		cache: false,
-		data: createURL("command=listSnapshots&volumeid="+noNull(jsonObj.id)),
+		data: createURL("command=listSnapshots&volumeid="+fromdb(jsonObj.id)),
 		dataType: "json",
 		success: function(json) {							    
 			var items = json.listsnapshotsresponse.snapshot;																						
@@ -415,9 +456,9 @@ function volumeJsonToSnapshotTab() {
  
 function volumeSnapshotJSONToTemplate(jsonObj, template) {
     template.data("jsonObj", jsonObj);     
-    template.attr("id", "volume_snapshot_"+noNull(jsonObj.id)).data("volumeSnapshotId", noNull(jsonObj.id));    
+    template.attr("id", "volume_snapshot_"+fromdb(jsonObj.id)).data("volumeSnapshotId", fromdb(jsonObj.id));    
     template.find("#grid_header_title").text(fromdb(jsonObj.name));			   
-    template.find("#id").text(noNull(jsonObj.id));
+    template.find("#id").text(fromdb(jsonObj.id));
     template.find("#name").text(fromdb(jsonObj.name));			      
     template.find("#volumename").text(fromdb(jsonObj.volumename));	
     template.find("#intervaltype").text(fromdb(jsonObj.intervaltype));	    		   
@@ -732,7 +773,7 @@ function doRecurringSnapshot($actionLink, $detailsTab, $midmenuItem1) {
 					}	
 					var thisLink;
 					$.ajax({
-						data: createURL("command=createSnapshotPolicy&intervaltype="+intervalType+"&schedule="+schedule+"&volumeid="+volumeId+"&maxsnaps="+max+"&timezone="+encodeURIComponent(timezone)),
+						data: createURL("command=createSnapshotPolicy&intervaltype="+intervalType+"&schedule="+schedule+"&volumeid="+volumeId+"&maxsnaps="+max+"&timezone="+todb(timezone)),
 						dataType: "json",                        
 						success: function(json) {	
 							thisDialog.dialog("close");								

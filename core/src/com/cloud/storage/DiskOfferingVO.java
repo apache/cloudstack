@@ -121,6 +121,21 @@ public class DiskOfferingVO implements DiskOffering {
         this.customized = customized;
     }
 
+    //domain specific offerings constructor (null domainId implies public offering)
+    public DiskOfferingVO(String name, String displayText, boolean mirrored, String tags, boolean recreatable, boolean useLocalStorage, boolean systemUse, boolean customized, Long domainId) {
+        this.domainId = null;
+        this.type = Type.Service;
+        this.name = name;
+        this.displayText = displayText;
+        this.mirrored = mirrored;
+        this.tags = tags;
+        this.recreatable = recreatable;
+        this.useLocalStorage = useLocalStorage;
+        this.systemUse = systemUse;
+        this.customized = customized;
+        this.domainId = domainId;
+    }
+
     @Override
     public long getId() {
         return id;

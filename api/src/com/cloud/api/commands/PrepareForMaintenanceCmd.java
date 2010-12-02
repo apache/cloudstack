@@ -26,6 +26,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.HostResponse;
+import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.host.Host;
 import com.cloud.user.Account;
@@ -83,6 +84,14 @@ public class PrepareForMaintenanceCmd extends BaseAsyncCmd {
     @Override
     public String getEventDescription() {
         return  "preparing host: " + getId() + " for maintenance";
+    }
+    
+    public AsyncJob.Type getInstanceType() {
+    	return AsyncJob.Type.Host;
+    }
+    
+    public Long getInstanceId() {
+    	return getId();
     }
     
     @Override

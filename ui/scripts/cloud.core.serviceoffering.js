@@ -16,6 +16,10 @@
  * 
  */
 
+function serviceOfferingGetSearchParams() {
+    return "";
+}
+
 function afterLoadServiceOfferingJSP() {
     var $detailsTab = $("#right_panel_content #tab_content_details"); 
    
@@ -84,7 +88,7 @@ function afterLoadServiceOfferingJSP() {
 				
 				var tags = trim(thisDialog.find("#add_service_tags").val());
 				if(tags != null && tags.length > 0)
-				    array1.push("&tags="+encodeURIComponent(tags));	
+				    array1.push("&tags="+todb(tags));	
 				
 				$.ajax({
 				  data: createURL("command=createServiceOffering"+array1.join("")+"&response=json"),
@@ -159,7 +163,7 @@ function doEditServiceOffering2($actionLink, $detailsTab, $midmenuItem1, $readon
 	*/		
 	
 	var tags = $detailsTab.find("#tags_edit").val();
-	array1.push("&tags="+encodeURIComponent(tags));	
+	array1.push("&tags="+todb(tags));	
 	
 	$.ajax({
 	    data: createURL("command=updateServiceOffering&id="+id+array1.join("")),
@@ -221,7 +225,7 @@ function serviceOfferingJsonToDetailsTab() {
         }
     });        
         
-    $thisTab.find("#id").text(noNull(jsonObj.id));
+    $thisTab.find("#id").text(fromdb(jsonObj.id));
    
     $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name)); 
     $thisTab.find("#name").text(fromdb(jsonObj.name));

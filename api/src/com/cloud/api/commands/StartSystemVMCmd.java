@@ -27,6 +27,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SystemVmResponse;
+import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
@@ -84,6 +85,14 @@ public class StartSystemVMCmd extends BaseAsyncCmd {
     @Override
     public String getEventDescription() {
         return  "starting system vm: " + getId();
+    }
+    
+    public AsyncJob.Type getInstanceType() {
+    	return AsyncJob.Type.SystemVm;
+    }
+    
+    public Long getInstanceId() {
+    	return getId();
     }
 	
     @Override

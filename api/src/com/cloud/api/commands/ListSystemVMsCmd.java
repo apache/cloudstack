@@ -28,6 +28,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.SystemVmResponse;
+import com.cloud.async.AsyncJob;
 import com.cloud.vm.VirtualMachine;
 
 @Implementation(description="List system virtual machines.", responseObject=SystemVmResponse.class)
@@ -100,6 +101,10 @@ public class ListSystemVMsCmd extends BaseListCmd {
     @Override
     public String getName() {
         return s_name;
+    }
+    
+    public AsyncJob.Type getInstanceType() {
+    	return AsyncJob.Type.SystemVm;
     }
     
     @Override

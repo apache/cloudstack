@@ -19,6 +19,10 @@
 var systemAccountId = 1;
 var adminAccountId = 2;
 
+function accountGetSearchParams() {
+    return "";
+}
+
 function afterLoadAccountJSP() {
     initDialog("dialog_resource_limits");
     initDialog("dialog_disable_account");
@@ -60,15 +64,15 @@ function accountJsonToDetailsTab() {
     var $detailsTab = $("#right_panel_content").find("#tab_content_details");   
         
     $detailsTab.find("#grid_header_title").text(fromdb(jsonObj.name));
-    $detailsTab.find("#id").text(noNull(jsonObj.id));
+    $detailsTab.find("#id").text(fromdb(jsonObj.id));
     $detailsTab.find("#role").text(toRole(jsonObj.accounttype));
     $detailsTab.find("#account").text(fromdb(jsonObj.name));
     $detailsTab.find("#domain").text(fromdb(jsonObj.domain));
-    $detailsTab.find("#vm_total").text(noNull(jsonObj.vmtotal));
-    $detailsTab.find("#ip_total").text(noNull(jsonObj.iptotal));
+    $detailsTab.find("#vm_total").text(fromdb(jsonObj.vmtotal));
+    $detailsTab.find("#ip_total").text(fromdb(jsonObj.iptotal));
     $detailsTab.find("#bytes_received").text(convertBytes(jsonObj.receivedbytes));
     $detailsTab.find("#bytes_sent").text(convertBytes(jsonObj.sentbytes));
-    $detailsTab.find("#state").text(noNull(jsonObj.state));
+    $detailsTab.find("#state").text(fromdb(jsonObj.state));
     
     //actions ***
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");

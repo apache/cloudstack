@@ -24,6 +24,7 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.DiskOfferingVO.Type;
 import com.cloud.utils.db.Attribute;
@@ -39,6 +40,7 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
 
     private final SearchBuilder<DiskOfferingVO> DomainIdSearch;
     private final SearchBuilder<DiskOfferingVO> PrivateDiskOfferingSearch;
+    private final SearchBuilder<DiskOfferingVO> PublicDiskOfferingSearch;
     private final Attribute _typeAttr;
 
     protected DiskOfferingDaoImpl() {
@@ -49,6 +51,11 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
         PrivateDiskOfferingSearch  = createSearchBuilder();
         PrivateDiskOfferingSearch.and("diskSize", PrivateDiskOfferingSearch.entity().getDiskSize(), SearchCriteria.Op.EQ);
         PrivateDiskOfferingSearch.done();
+        
+        PublicDiskOfferingSearch = createSearchBuilder();
+        PublicDiskOfferingSearch.and("domainId", PublicDiskOfferingSearch.entity().getDomainId(), SearchCriteria.Op.NULL);
+        PublicDiskOfferingSearch.and("system", PublicDiskOfferingSearch.entity().isSystemUse(), SearchCriteria.Op.EQ);
+        PublicDiskOfferingSearch.done();
         
         _typeAttr = _allAttributes.get("type");
     }
@@ -91,5 +98,12 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
         }
         
         return super.executeList(sql, Type.Disk, params);
+    }
+    
+    @Override
+    public List<DiskOfferingVO> findPublicDiskOfferings(){
+    	SearchCriteria<DiskOfferingVO> sc = PublicDiskOfferingSearch.create();
+    	sc.setParameters("system", false);
+        return listBy(sc);    	
     }
 }

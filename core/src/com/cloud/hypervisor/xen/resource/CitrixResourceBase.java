@@ -810,7 +810,9 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         if (!(guestOsTypeName.startsWith("Windows") || guestOsTypeName.startsWith("Citrix") || guestOsTypeName.startsWith("Other"))) {
             if (vmSpec.getBootloader() == BootloaderType.CD) {
                 vm.setPVBootloader(conn, "eliloader");
-                vm.addToOtherConfig(conn, "install-repository", "cdrom");
+                Map<String, String> otherConfig = vm.getOtherConfig(conn);
+                otherConfig.put( "install-repository", "cdrom");
+                vm.setOtherConfig(conn, otherConfig);
             } else if (vmSpec.getBootloader() == BootloaderType.PyGrub ){
                 vm.setPVBootloader(conn, "pygrub");
             } else {
@@ -5527,7 +5529,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             if (!result) {
                 throw new CloudRuntimeException("Could not create the template.properties file on secondary storage dir: " + tmpltURI);
             } 
-            
+            installPath = installPath + "/" + tmpltFilename;
             return new CreatePrivateTemplateAnswer(cmd, true, null, installPath, virtualSize, physicalSize, tmpltUUID, ImageFormat.VHD);
         } catch (XenAPIException e) {
             details = "Creating template from snapshot " + backedUpSnapshotUuid + " failed due to " + e.getMessage();
@@ -6197,103 +6199,4 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 	protected String getGuestOsType(String stdType) {
 		return stdType;
 	}
-
-/*
-    protected boolean patchSystemVm(VDI vdi, String vmName, VirtualMachine.Type type) {
-        if (type == VirtualMachine.Type.DomainRouter) {
-            return patchSpecialVM(vdi, vmName, "router");
-        } else if (type == VirtualMachine.Type.ConsoleProxy) {
-            return patchSpecialVM(vdi, vmName, "consoleproxy");
-        } else if (type == VirtualMachine.Type.SecondaryStorageVm) {
-            return patchSpecialVM(vdi, vmName, "secstorage");
-        } else {
-            throw new CloudRuntimeException("Tried to patch unknown type of system vm");
-        }
-    }
-
-    protected boolean patchSystemVm(VDI vdi, String vmName) {
-        if (vmName.startsWith("r-")) {
-            return patchSpecialVM(vdi, vmName, "router");
-        } else if (vmName.startsWith("v-")) {
-            return patchSpecialVM(vdi, vmName, "consoleproxy");
-        } else if (vmName.startsWith("s-")) {
-            return patchSpecialVM(vdi, vmName, "secstorage");
-        } else {
-            throw new CloudRuntimeException("Tried to patch unknown type of system vm");
-        }
-    }
-    
-    protected boolean patchSpecialVM(VDI vdi, String vmname, String vmtype) {
-        // patch special vm here, domr, domp
-        VBD vbd = null;
-        Connection conn = getConnection();
-        try {
-            Host host = Host.getByUuid(conn, _host.uuid);
-
-            Set<VM> vms = host.getResidentVMs(conn);
-
-            for (VM vm : vms) {
-                VM.Record vmrec = null;
-                try {
-                    vmrec = vm.getRecord(conn);
-                } catch (Exception e) {
-                    String msg = "VM.getRecord failed due to " + e.toString() + " " + e.getMessage();
-                    s_logger.warn(msg);
-                    continue;
-                }
-                if (vmrec.isControlDomain) {
-
-                    VBD.Record vbdr = new VBD.Record();
-                    vbdr.VM = vm;
-                    vbdr.VDI = vdi;
-                    vbdr.bootable = false;
-                    vbdr.userdevice = getUnusedDeviceNum(vm);
-                    vbdr.unpluggable = true;
-                    vbdr.mode = Types.VbdMode.RW;
-                    vbdr.type = Types.VbdType.DISK;
-
-                    vbd = VBD.create(conn, vbdr);
-
-                    vbd.plug(conn);
-
-                    String device = vbd.getDevice(conn);
-
-                    return patchspecialvm(vmname, device, vmtype);
-                }
-            }
-
-        } catch (XenAPIException e) {
-            String msg = "patchSpecialVM faile on " + _host.uuid + " due to " + e.toString();
-            s_logger.warn(msg, e);
-        } catch (Exception e) {
-            String msg = "patchSpecialVM faile on " + _host.uuid + " due to " + e.getMessage();
-            s_logger.warn(msg, e);
-        } finally {
-            if (vbd != null) {
-                try {
-                    if (vbd.getCurrentlyAttached(conn)) {
-                        vbd.unplug(conn);
-                    }
-                    vbd.destroy(conn);
-                } catch (XmlRpcException e) {
-                    String msg = "Catch XmlRpcException due to " + e.getMessage();
-                    s_logger.warn(msg, e);
-                } catch (XenAPIException e) {
-                    String msg = "Catch XenAPIException due to " + e.toString();
-                    s_logger.warn(msg, e);
-                }
-
-            }
-        }
-        return false;
-    }
-
-    protected boolean patchspecialvm(String vmname, String device, String vmtype) {
-        String result = callHostPlugin("vmops", "patchdomr", "vmname", vmname, "vmtype", vmtype, "device", "/dev/" + device);
-        if (result == null || result.isEmpty())
-            return false;
-        return true;
-    }
-*/
-	
 }

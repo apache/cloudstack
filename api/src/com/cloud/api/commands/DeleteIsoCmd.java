@@ -26,6 +26,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
@@ -89,6 +90,14 @@ public class DeleteIsoCmd extends BaseAsyncCmd {
     @Override
     public String getEventDescription() {
         return "Deleting iso " + getId();
+    }
+    
+    public AsyncJob.Type getInstanceType() {
+    	return AsyncJob.Type.Iso;
+    }
+    
+    public Long getInstanceId() {
+    	return getId();
     }
     
     @Override

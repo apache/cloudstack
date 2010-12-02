@@ -16,7 +16,44 @@
  * 
  */
 
-var $instanceSubMenuContainer;
+function vmGetSearchParams() {
+    var moreCriteria = [];	
+        
+    var $advancedSearchPopup = $("#advanced_search_popup");
+	if (lastSearchType == "advanced_search" && $advancedSearchPopup.length > 0) {		 
+	    var name = $advancedSearchPopup.find("#adv_search_name").val();								
+		if (name!=null && trim(name).length > 0) 
+			moreCriteria.push("&name="+todb(name));	
+		
+		var state = $advancedSearchPopup.find("#adv_search_state").val();				
+		if (state!=null && state.length > 0) 
+			moreCriteria.push("&state="+todb(state));	
+		
+		var zone = $advancedSearchPopup.find("#adv_search_zone").val();		
+	    if (zone!=null && zone.length > 0) 
+			moreCriteria.push("&zoneid="+todb(zone));			
+		
+	    if ($advancedSearchPopup.find("#adv_search_domain_li").css("display") != "none") {
+	        var domainId = $advancedSearchPopup.find("#adv_search_domain").val();		
+	        if(domainId!=null && domainId.length > 0) 
+			    moreCriteria.push("&domainid="+todb(domainId));		
+	    }
+						
+		if ($advancedSearchPopup.find("#adv_search_account_li").css("display") != "none") {
+		    var account = $advancedSearchPopup.find("#adv_search_account").val();	
+		    if(account!=null && account.length > 0) 
+			    moreCriteria.push("&account="+todb(account));		
+        }
+	} 
+	else {     			    		
+	    var searchInput = $("#basic_search").find("#search_input").val();	 
+        if (lastSearchType == "basic_search" && searchInput != null && searchInput.length > 0) {	       
+            moreCriteria.push("&name="+todb(searchInput));	       
+        }        
+	}
+	
+	return moreCriteria.join("");          
+}
 function instanceBuildSubMenu() {    
     if (isAdmin() || isDomainAdmin()) {
 		$("#leftmenu_instance_expandedbox").find("#leftmenu_instances_my_instances_container, #leftmenu_instances_all_instances_container, #leftmenu_instances_running_instances_container, #leftmenu_instances_stopped_instances_container, #leftmenu_instances_destroyed_instances_container ").show();
@@ -27,7 +64,8 @@ function instanceBuildSubMenu() {
             cache: false,
             data: createURL("command=listInstanceGroups"),	       
             dataType: "json",
-            success: function(json) {	            
+            success: function(json) {	  
+                $("#leftmenu_instance_group_container").empty();          
                 var instancegroups = json.listinstancegroupsresponse.instancegroup;	        	
         	    if(instancegroups!=null && instancegroups.length>0) {           
 	                for(var i=0; i < instancegroups.length; i++) {		                
@@ -42,8 +80,8 @@ function instanceBuildSubMenu() {
 function instanceBuildSubMenu2(label, commandString) {   
     var $newSubMenu = $("#leftmenu_secondindent_template").clone();
     $newSubMenu.find("#label").text(label);    
-    bindAndListMidMenuItems($newSubMenu, commandString, "listvirtualmachinesresponse", "virtualmachine", "jsp/instance.jsp", afterLoadInstanceJSP, vmToMidmenu, vmToRightPanel, getMidmenuId, true);
-    $instanceSubMenuContainer.append($newSubMenu.show());
+    bindAndListMidMenuItems($newSubMenu, commandString, vmGetSearchParams, "listvirtualmachinesresponse", "virtualmachine", "jsp/instance.jsp", afterLoadInstanceJSP, vmToMidmenu, vmToRightPanel, getMidmenuId, true);
+    $("#leftmenu_instance_group_container").append($newSubMenu.show());
 }
 
 var $doTemplateNo, $doTemplateCustom,$doTemplateExisting;
@@ -1327,9 +1365,9 @@ function vmJsonToDetailsTab(){
 
 	resetViewConsoleAction(jsonObj, $thisTab);      
 	setVmStateInRightPanel(jsonObj.state, $thisTab.find("#state"));		
-	$thisTab.find("#ipAddress").text(noNull(jsonObj.ipaddress));
+	$thisTab.find("#ipAddress").text(fromdb(jsonObj.ipaddress));
 	
-	$thisTab.find("#id").text(noNull(jsonObj.id));
+	$thisTab.find("#id").text(fromdb(jsonObj.id));
 	$thisTab.find("#zoneName").text(fromdb(jsonObj.zonename));
 		   
 	var vmName = getVmName(jsonObj.name, jsonObj.displayname);        
@@ -1549,10 +1587,10 @@ var vmVolumeActionMap = {
 }     
 
 function vmVolumeJSONToTemplate(json, $template) {
-    $template.attr("id","vm_volume_"+noNull(json.id));	        
+    $template.attr("id","vm_volume_"+fromdb(json.id));	        
     $template.data("jsonObj", json);    
     $template.find("#title").text(fromdb(json.name));    
-	$template.find("#id").text(noNull(json.id));	
+	$template.find("#id").text(fromdb(json.id));	
 	$template.find("#name").text(fromdb(json.name));
 	if (json.storagetype == "shared") 
 		$template.find("#type").text(fromdb(json.type) + " (shared storage)");
@@ -1608,7 +1646,7 @@ function vmRouterJSONToTemplate(jsonObj, $template) {
      
     resetViewConsoleAction(jsonObj, $template);   
     setVmStateInRightPanel(fromdb(jsonObj.state), $template.find("#state"));
-    $template.find("#ipAddress").text(noNull(jsonObj.publicip));
+    $template.find("#ipAddress").text(fromdb(jsonObj.publicip));
     
     $template.find("#zonename").text(fromdb(jsonObj.zonename));
     $template.find("#name").text(fromdb(jsonObj.name));

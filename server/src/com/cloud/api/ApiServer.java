@@ -380,9 +380,6 @@ public class ApiServer implements HttpRequestHandler {
             }
 
             BaseAsyncCmd asyncCmd = (BaseAsyncCmd)cmdObj;
-            if (objectId != null) {
-            	objectId = asyncCmd.getInstanceId();
-            }
 
             if (userId != null) {
                 params.put("ctxUserId", userId.toString());
@@ -400,7 +397,7 @@ public class ApiServer implements HttpRequestHandler {
             }
 
             AsyncJobVO job = new AsyncJobVO();
-            job.setInstanceId(asyncCmd.getInstanceId());
+            job.setInstanceId((objectId == null) ? asyncCmd.getInstanceId() : objectId);
             job.setInstanceType(asyncCmd.getInstanceType());
             job.setUserId(userId);
             if (account != null) {
@@ -439,7 +436,7 @@ public class ApiServer implements HttpRequestHandler {
         		return;
         	}
         	
-        	// Using maps might possibly be more efficient if the set is large enough but for now, we'll just n squared
+        	// Using maps might possibly be more efficient if the set is large enough but for now, we'll just do a
         	// comparison of two lists.  Either way, there shouldn't be too many async jobs active for the account.
         	for (AsyncJob job : jobs) {
         		if (job.getInstanceId() == null) continue;

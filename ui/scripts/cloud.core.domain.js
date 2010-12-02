@@ -60,12 +60,12 @@ function drawNode(json, level, container) {
 
     var $treeNode = $("#domain_tree_node_template").clone(true);	  
     $treeNode.find("#domain_indent").css("marginLeft", (30*(level+1)));           
-    $treeNode.attr("id", "domain_"+noNull(json.id));	         
+    $treeNode.attr("id", "domain_"+fromdb(json.id));	         
     $treeNode.data("jsonObj", json).data("domainLevel", level); 	      
-    $treeNode.find("#domain_title_container").attr("id", "domain_title_container_"+noNull(json.id)); 	        
-    $treeNode.find("#domain_expand_icon").attr("id", "domain_expand_icon_"+noNull(json.id)); 
-    $treeNode.find("#domain_name").attr("id", "domain_name_"+noNull(json.id)).text(fromdb(json.name));        	              	
-    $treeNode.find("#domain_children_container").attr("id", "domain_children_container_"+noNull(json.id));          
+    $treeNode.find("#domain_title_container").attr("id", "domain_title_container_"+fromdb(json.id)); 	        
+    $treeNode.find("#domain_expand_icon").attr("id", "domain_expand_icon_"+fromdb(json.id)); 
+    $treeNode.find("#domain_name").attr("id", "domain_name_"+fromdb(json.id)).text(fromdb(json.name));        	              	
+    $treeNode.find("#domain_children_container").attr("id", "domain_children_container_"+fromdb(json.id));          
     container.append($treeNode.show());	 
     return $treeNode;   	       
 }          

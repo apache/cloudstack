@@ -16,6 +16,49 @@
  * 
  */
 
+function eventGetSearchParams() {
+    var moreCriteria = [];	
+
+	var $advancedSearchPopup = $("#advanced_search_popup");
+	if (lastSearchType == "advanced_search" && $advancedSearchPopup.length > 0) {		    
+	    var type = $advancedSearchPopup.find("#adv_search_type").val();							
+		if (type!=null && trim(type).length > 0) 
+			moreCriteria.push("&type="+todb(type));		
+		
+		var level = $advancedSearchPopup.find("#adv_search_level").val();	
+	    if (level!=null && level.length > 0) 
+			moreCriteria.push("&level="+todb(level));	
+		
+		if ($advancedSearchPopup.find("#adv_search_domain_li").css("display") != "none") {
+		    var domainId = $advancedSearchPopup.find("#adv_search_domain").val();		
+		    if (domainId!=null && domainId.length > 0) 
+			    moreCriteria.push("&domainid="+todb(domainId));	
+	    }
+    	
+    	if ($advancedSearchPopup.find("#adv_search_account_li").css("display") != "none") {	
+		    var account = $advancedSearchPopup.find("#adv_search_account").val();					
+		    if (account!=null && account.length > 0) 
+			    moreCriteria.push("&account="+todb(account));	
+		}
+		
+		var startdate = $advancedSearchPopup.find("#adv_search_startdate").val();						
+		if (startdate!=null && startdate.length > 0) 
+			moreCriteria.push("&startdate="+todb(startdate));	
+		
+		var enddate = $advancedSearchPopup.find("#adv_search_enddate").val();			
+		if (enddate!=null && enddate.length > 0) 
+			moreCriteria.push("&enddate="+todb(enddate));	
+	} 
+	else {     			    		
+	    var searchInput = $("#basic_search").find("#search_input").val();	 
+        if (lastSearchType == "basic_search" && searchInput != null && searchInput.length > 0) {	           
+            moreCriteria.push("&type="+todb(searchInput));	       
+        }        
+	}
+	
+	return moreCriteria.join("");          
+}
+
 function afterLoadEventJSP() {
 
 }
@@ -55,7 +98,7 @@ function eventJsonToDetailsTab() {
     $thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();    
          
-    $thisTab.find("#id").text(noNull(jsonObj.id));
+    $thisTab.find("#id").text(fromdb(jsonObj.id));
     $thisTab.find("#username").text(fromdb(jsonObj.username));
     $thisTab.find("#account").text(fromdb(jsonObj.account));
     $thisTab.find("#type").text(fromdb(jsonObj.type));

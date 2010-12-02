@@ -475,20 +475,6 @@ function hideDetailsTabActionSpinningWheel(id, inProcessText) {
 }	
 
 /*
-function handleAsyncJobFailInMidMenu(errorMsg, $midmenuItem1) { 
-    $midmenuItem1.find("#content").removeClass("inaction");
-	$midmenuItem1.find("#spinning_wheel").hide();	
-	$midmenuItem1.find("#info_icon").addClass("error").show();		
-	$midmenuItem1.find("#first_row").text("Adding failed");			                       
-    
-    if(errorMsg.length > 0) 
-        $midmenuItem1.find("#second_row").text(fromdb(errorMsg));   
-    else
-        $midmenuItem1.find("#second_row").html("&nbsp;");   
-}       
-*/
-
-/*
 If Cancel button in dialog is clicked, action won't preceed. 
 i.e. doActionToMidMenu() won't get called => highlight won't be removd from middle menu. 
 So, we need to remove highlight here. Otherwise, it won't be consistent of selectedItemsInMidMenu which will be emptied soon.
@@ -568,6 +554,9 @@ function clearMiddleMenu() {
     $("#midmenu_container").empty();
     $("#midmenu_action_link").hide();
     clearAddButtonsOnTop();        
+    lastSearchType = null;
+    $("#basic_search").find("#search_input").val("");
+    $("#advanced_search_container").empty();
     $("#midmenu_prevbutton, #midmenu_nextbutton").hide();
     $("#middle_menu_pagination").data("params", null);
 }
@@ -926,9 +915,11 @@ function getMidmenuId(jsonObj) {
     return "midmenuItem_" + jsonObj.id; 
 }
 
-function listMidMenuItems2(commandString, jsonResponse1, jsonResponse2, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu, page) {                
+var lastSearchType;
+function listMidMenuItems2(commandString, getSearchParamsFn, jsonResponse1, jsonResponse2, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu, page) {                
 	var params = {
         "commandString": commandString,
+        "getSearchParamsFn": getSearchParamsFn,
         "jsonResponse1": jsonResponse1,
         "jsonResponse2": jsonResponse2,
         "toMidmenuFn": toMidmenuFn,
@@ -949,7 +940,7 @@ function listMidMenuItems2(commandString, jsonResponse1, jsonResponse2, toMidmen
     var count = 0;    
     $.ajax({
         cache: false,
-        data: createURL("command="+commandString+"&pagesize="+midmenuItemCount+"&page="+page),
+        data: createURL("command="+commandString+getSearchParamsFn()+"&pagesize="+midmenuItemCount+"&page="+page),
         dataType: "json",
         async: false,
         success: function(json) {   
@@ -986,7 +977,7 @@ function listMidMenuItems2(commandString, jsonResponse1, jsonResponse2, toMidmen
     return count;
 }
 
-function listMidMenuItems(commandString, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSPFn, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu, leftmenuId) { 
+function listMidMenuItems(commandString, getSearchParamsFn, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSPFn, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu, leftmenuId) { 
 	clearMiddleMenu();
 	showMiddleMenu();	
 	$("#midmenu_container").hide();
@@ -1008,15 +999,15 @@ function listMidMenuItems(commandString, jsonResponse1, jsonResponse2, rightPane
 		});	   
 		removeDialogs();
 		afterLoadRightPanelJSPFn();                
-		listMidMenuItems2(commandString, jsonResponse1, jsonResponse2, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu, 1);            
+		listMidMenuItems2(commandString, getSearchParamsFn, jsonResponse1, jsonResponse2, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu, 1);            
 	});     
 	return false;
 }
 
-function bindAndListMidMenuItems($leftmenu, commandString, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSPFn, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu) {	
+function bindAndListMidMenuItems($leftmenu, commandString, getSearchParamsFn, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSPFn, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu) {	
 	$leftmenu.bind("click", function(event) {
 		selectLeftSubMenu($(this));		
-        listMidMenuItems(commandString, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSPFn, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu, $(this).attr("id"));
+        listMidMenuItems(commandString, getSearchParamsFn, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSPFn, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu, $(this).attr("id"));
         return false;
     });
 }
@@ -1341,215 +1332,6 @@ function convertMilliseconds(string) {
         return null;
     }
 }    
-
-/*
-function drawGrid(items, submenuContent, template, fnJSONToTemplate) {
-    var grid = submenuContent.find("#grid_content").empty();		    	    		
-    if (items != null && items.length > 0) {				        			        
-	    for (var i = 0; i < items.length; i++) {
-		    var newTemplate = template.clone(true);
-		    fnJSONToTemplate(items[i], newTemplate); 
-		    grid.append(newTemplate.show());						   
-	    }
-	    setGridRowsTotal(submenuContent.find("#grid_rows_total"), items.length);
-	    if(items.length < pageSize)
-	        submenuContent.find("#nextPage_div").hide();
-	    else
-	        submenuContent.find("#nextPage_div").show();
-    } else {				        
-        setGridRowsTotal(submenuContent.find("#grid_rows_total"), null);
-        submenuContent.find("#nextPage_div").hide();
-    }	
-}
-
-//listItems() function takes care of loading image, pagination
-var items = []; 
-function listItems(submenuContent, commandString, jsonResponse1, jsonResponse2, template, fnJSONToTemplate ) {
-    if(currentPage==1)
-        submenuContent.find("#prevPage_div").hide();
-    else 
-	    submenuContent.find("#prevPage_div").show();
-
-    submenuContent.find("#loading_gridtable").show();
-    submenuContent.find("#pagination_panel").hide();
-
-    index = 0;
-    $.ajax({
-	    data: createURL(commandString),
-	    dataType: "json",
-	    async: false,
-	    success: function(json) {
-	        //IF jsonResponse1=="listaccountsresponse", jsonResponse2=="account", THEN json[jsonResponse1][jsonResponse2] == json.listaccountsresponse.account
-		    items = json[jsonResponse1][jsonResponse2]; 
-		    drawGrid(items, submenuContent, template, fnJSONToTemplate);				    
-	        submenuContent.find("#loading_gridtable").hide();     
-            submenuContent.find("#pagination_panel").show();	      		    						
-	    },
-		error: function(XMLHttpResponse) {	
-		    submenuContent.find("#loading_gridtable").hide();     						
-			handleError(XMLHttpResponse, function() {			    
-			    if(XMLHttpResponse.status == ERROR_VMOPS_ACCOUNT_ERROR) {
-			        submenuContent.find("#grid_content").empty();
-			        setGridRowsTotal(submenuContent.find("#grid_rows_total"), null);
-	                submenuContent.find("#nextPage_div").hide();	                 
-			    }
-			    submenuContent.find("#loading_gridtable").hide();     
-                submenuContent.find("#pagination_panel").show();	 
-			});							
-		}
-    });
-}
-
-
-//event binder
-var currentPage = 1;
-var pageSize = 50;  //consistent with server-side
-function submenuContentEventBinder(submenuContent, listFunction) {       
-    submenuContent.find("#nextPage").bind("click", function(event){	
-        event.preventDefault();          
-        currentPage++;        
-        listFunction(); 
-    });		
-    
-    submenuContent.find("#prevPage").bind("click", function(event){	
-        event.preventDefault();           
-        currentPage--;	              	    
-        listFunction(); 
-    });				
-		
-    submenuContent.find("#refresh").bind("click", function(event){
-        event.preventDefault();         
-        currentPage=1;       
-        listFunction(); 
-    });    
-        
-    submenuContent.find("#search_button").bind("click", function(event) {	       
-        event.preventDefault();   
-        currentPage = 1;           	        	
-        listFunction();                
-    });
-    
-    submenuContent.find("#adv_search_button").bind("click", function(event) {	       
-        event.preventDefault();   
-        currentPage = 1;           	        	
-        listFunction();         
-        submenuContent.find("#search_button").data("advanced", false);
-	    submenuContent.find("#advanced_search").hide();	
-    });
-	
-	submenuContent.find("#search_input").bind("keypress", function(event) {		        
-        if(event.keyCode == keycode_Enter) {           
-            event.preventDefault();   		        
-	        submenuContent.find("#search_button").click();			     
-	    }		    
-    });   	    
-
-    submenuContent.find("#advanced_search").bind("keypress", function(event) {		        
-        if(event.keyCode == keycode_Enter) {           
-            event.preventDefault();   		        
-	        submenuContent.find("#adv_search_button").click();			     
-	    }		    
-    });		   
-     
-    submenuContent.find("#advanced_search_close").bind("click", function(event) {	    
-        event.preventDefault();               
-	    submenuContent.find("#search_button").data("advanced", false);	
-        submenuContent.find("#advanced_search").hide();
-    });	 
-        
-    submenuContent.find("#advanced_search_link").bind("click", function(event) {	
-        event.preventDefault();   
-		submenuContent.find("#search_button").data("advanced", true);   	
-        submenuContent.find("#advanced_search").show();
-    });	 
-       
-    var zoneSelect = submenuContent.find("#advanced_search #adv_search_zone");	    
-	if(zoneSelect.length>0) {  //if zone dropdown is found on Advanced Search dialog 	    		
-	    $.ajax({
-		    data: createURL("command=listZones&available=true&response=json"),
-		    dataType: "json",
-		    success: function(json) {
-			    var zones = json.listzonesresponse.zone;			   
-			    zoneSelect.empty();					
-			    zoneSelect.append("<option value=''></option>"); 
-			    if (zones != null && zones.length > 0) {
-			        for (var i = 0; i < zones.length; i++) {
-				        zoneSelect.append("<option value='" + zones[i].id + "'>" + fromdb(zones[i].name) + "</option>"); 
-			        }
-			    }
-		    }
-	    });
-		
-	    var podSelect = submenuContent.find("#advanced_search #adv_search_pod").empty();	
-	    var podLabel = submenuContent.find("#advanced_search #adv_search_pod_label");
-	    if(podSelect.length>0 && isAdmin()) {	//if pod dropdown is found on Advanced Search dialog and if its role is admin   	        
-	        zoneSelect.bind("change", function(event) { 	            
-		        var zoneId = $(this).val();
-		        if (zoneId == null || zoneId.length == 0) {			            
-		            podLabel.css("color", "gray");	
-		            podSelect.attr("disabled", "disabled");	 
-		            podSelect.empty();	        
-		        } else {		            
-		            podLabel.css("color", "black");	
-		            podSelect.removeAttr("disabled");
-		            $.ajax({
-				    data: createURL("command=listPods&zoneId="+zoneId+"&response=json"),
-			            dataType: "json",
-			            async: false,
-			            success: function(json) {
-				            var pods = json.listpodsresponse.pod;	
-				            podSelect.empty();			            
-				            if (pods != null && pods.length > 0) {
-				                for (var i = 0; i < pods.length; i++) {
-					                podSelect.append("<option value='" + pods[i].id + "'>" + fromdb(pods[i].name) + "</option>"); 
-				                }
-				            }
-			            }
-		            });
-		        }
-		        return false;		        
-	        });		
-	        
-	        zoneSelect.change();
-	    }
-	}
-	
-	var domainSelect = submenuContent.find("#advanced_search #adv_search_domain");	
-	if(domainSelect.length>0 && isAdmin()) {
-	    var domainSelect = domainSelect.empty();			
-	    $.ajax({
-		    data: createURL("command=listDomains&available=true&response=json"),
-		    dataType: "json",
-		    success: function(json) {			        
-			    var domains = json.listdomainsresponse.domain;			 
-			    if (domains != null && domains.length > 0) {
-			        for (var i = 0; i < domains.length; i++) {
-				        domainSelect.append("<option value='" + domains[i].id + "'>" + fromdb(domains[i].name) + "</option>"); 
-			        }
-			    }
-		    }
-	    });		    
-	} 	
-	    	
-	var vmSelect = submenuContent.find("#advanced_search").find("#adv_search_vm");	
-	if(vmSelect.length>0) {		   
-	    vmSelect.empty();		
-	    vmSelect.append("<option value=''></option>"); 	
-	    $.ajax({
-		    data: createURL("command=listVirtualMachines&response=json"),
-		    dataType: "json",
-		    success: function(json) {			        
-			    var items = json.listvirtualmachinesresponse.virtualmachine;		 
-			    if (items != null && items.length > 0) {
-			        for (var i = 0; i < items.length; i++) {
-				        vmSelect.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>"); 
-			        }
-			    }
-		    }
-	    });		    
-	} 	  
-}
-*/
 
 // Validation functions
 function showError(isValid, field, errMsgField, errMsg) {    

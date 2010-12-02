@@ -27,6 +27,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.VolumeResponse;
+import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.Volume;
@@ -108,7 +109,11 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     public static String getResultObjectName() {
     	return "volume";
     }
-
+    
+    public AsyncJob.Type getInstanceType() {
+    	return AsyncJob.Type.Volume;
+    }
+    
     @Override
     public long getAccountId() {
         Account account = UserContext.current().getAccount();

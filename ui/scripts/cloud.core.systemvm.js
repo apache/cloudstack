@@ -16,6 +16,10 @@
  * 
  */
  
+ function systemVmGetSearchParams() {
+     return "";
+ }
+ 
  function afterLoadSystemVmJSP($midmenuItem1) {
     //hideMiddleMenu();			
     //systemvmToRightPanel($midmenuItem1);		
@@ -61,7 +65,7 @@ function systemvmJsonToDetailsTab() {
        
     resetViewConsoleAction(jsonObj, $thisTab);         
     setVmStateInRightPanel(fromdb(jsonObj.state), $thisTab.find("#state"));		
-    $thisTab.find("#ipAddress").text(noNull(jsonObj.publicip));
+    $thisTab.find("#ipAddress").text(fromdb(jsonObj.publicip));
         
     $thisTab.find("#state").text(fromdb(jsonObj.state));     
     $thisTab.find("#systemvmtype").text(toSystemVMTypeText(jsonObj.systemvmtype));    

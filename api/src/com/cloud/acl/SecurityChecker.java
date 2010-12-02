@@ -6,6 +6,8 @@ package com.cloud.acl;
 import com.cloud.dc.DataCenter;
 import com.cloud.domain.Domain;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.offering.DiskOffering;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.component.Adapter;
@@ -57,6 +59,10 @@ public interface SecurityChecker extends Adapter {
     
     boolean checkAccess(Account account, DataCenter zone) throws PermissionDeniedException;
 
+    public boolean checkAccess(Account account, ServiceOffering so) throws PermissionDeniedException;
+
+	boolean checkAccess(Account account, DiskOffering dof) throws PermissionDeniedException;
+    
 // We should be able to use this method to check against commands.  For example, we can
 // annotate the command with access annotations and this method can use it to extract
 // OwnedBy and PartOf interfaces on the object and use it to verify against a user.

@@ -61,6 +61,10 @@ public class SnapshotResponse extends BaseResponse {
 
     @SerializedName("intervaltype") @Param(description="valid types are hourly, daily, weekly, monthy, template, and none.")
     private String intervalType;
+    
+    public Long getObjectId() {
+    	return getId();
+    }
 
     public Long getId() {
         return id;

@@ -320,11 +320,11 @@ function initAddPodShortcut() {
                 var array1 = [];
                 array1.push("&zoneId="+zoneId);
                 array1.push("&name="+todb(name));
-                array1.push("&cidr="+encodeURIComponent(cidr));
-                array1.push("&startIp="+encodeURIComponent(startip));
+                array1.push("&cidr="+todb(cidr));
+                array1.push("&startIp="+todb(startip));
                 if (endip != null && endip.length > 0)
-                    array1.push("&endIp="+encodeURIComponent(endip));
-                array1.push("&gateway="+encodeURIComponent(gateway));			
+                    array1.push("&endIp="+todb(endip));
+                array1.push("&gateway="+todb(gateway));			
 								
 		        $.ajax({
 		          data: createURL("command=createPod"+array1.join("")), 
@@ -458,10 +458,10 @@ function initAddHostShortcut() {
 		        array1.push("&podid="+podId);
 						      
 		        var username = trim($thisDialog.find("#host_username").val());
-		        array1.push("&username="+encodeURIComponent(username));
+		        array1.push("&username="+todb(username));
 				
 		        var password = trim($thisDialog.find("#host_password").val());
-		        array1.push("&password="+encodeURIComponent(password));
+		        array1.push("&password="+todb(password));
 					
 				var newClusterName, existingClusterId;							
 			    if(clusterRadio == "new_cluster_radio") {
@@ -482,7 +482,7 @@ function initAddHostShortcut() {
 		            url = "http://" + todb(hostname);
 		        else
 		            url = hostname;
-		        array1.push("&url="+encodeURIComponent(url));
+		        array1.push("&url="+todb(url));
 									
 		        //var $midmenuItem1 = beforeAddingMidMenuItem() ;    				
 		        
@@ -751,32 +751,32 @@ function addZoneWizardSubmit($thisWizard) {
 	moreCriteria.push("&name="+todb(name));
 	
 	var dns1 = trim($thisWizard.find("#add_zone_dns1").val());
-	moreCriteria.push("&dns1="+encodeURIComponent(dns1));
+	moreCriteria.push("&dns1="+todb(dns1));
 	
 	var dns2 = trim($thisWizard.find("#add_zone_dns2").val());
 	if (dns2 != null && dns2.length > 0) 
-	    moreCriteria.push("&dns2="+encodeURIComponent(dns2));						
+	    moreCriteria.push("&dns2="+todb(dns2));						
 						
 	var internaldns1 = trim($thisWizard.find("#add_zone_internaldns1").val());
-	moreCriteria.push("&internaldns1="+encodeURIComponent(internaldns1));
+	moreCriteria.push("&internaldns1="+todb(internaldns1));
 	
 	var internaldns2 = trim($thisWizard.find("#add_zone_internaldns2").val());
 	if (internaldns2 != null && internaldns2.length > 0) 
-	    moreCriteria.push("&internaldns2="+encodeURIComponent(internaldns2));						
+	    moreCriteria.push("&internaldns2="+todb(internaldns2));						
 	 											
     if($thisWizard.find("#step2").find("#add_zone_vlan_container").css("display") != "none") {
 		var vlanStart = $thisWizard.find("#add_zone_startvlan").val();
 		if(vlanStart != null && vlanStart.length > 0) {	
 		    var vlanEnd = $thisWizard.find("#add_zone_endvlan").val();						
 		    if (vlanEnd != null && vlanEnd.length > 0) 
-		        moreCriteria.push("&vlan=" + encodeURIComponent(vlanStart + "-" + vlanEnd));									
+		        moreCriteria.push("&vlan=" + todb(vlanStart + "-" + vlanEnd));									
 		    else 							
-			    moreCriteria.push("&vlan=" + encodeURIComponent(vlanStart));		
+			    moreCriteria.push("&vlan=" + todb(vlanStart));		
         }
 	}	
 	
 	var guestcidraddress = trim($thisWizard.find("#add_zone_guestcidraddress").val());
-	moreCriteria.push("&guestcidraddress="+encodeURIComponent(guestcidraddress));	
+	moreCriteria.push("&guestcidraddress="+todb(guestcidraddress));	
 					
 	if($thisWizard.find("#domain_dropdown_container").css("display") != "none") {
 	    var domainId = trim($thisWizard.find("#domain_dropdown").val());
@@ -825,11 +825,11 @@ function addZoneWizardSubmit($thisWizard) {
         var array1 = [];
         array1.push("&zoneId="+zoneId);
         array1.push("&name="+todb(name));
-        array1.push("&cidr="+encodeURIComponent(cidr));
-        array1.push("&startIp="+encodeURIComponent(startip));
+        array1.push("&cidr="+todb(cidr));
+        array1.push("&startIp="+todb(startip));
         if (endip != null && endip.length > 0)
-            array1.push("&endIp="+encodeURIComponent(endip));
-        array1.push("&gateway="+encodeURIComponent(gateway));			
+            array1.push("&endIp="+todb(endip));
+        array1.push("&gateway="+todb(gateway));			
 						
         $.ajax({
             data: createURL("command=createPod"+array1.join("")), 
@@ -885,11 +885,11 @@ function addZoneWizardSubmit($thisWizard) {
 		array1.push("&zoneid=" + zoneId);
 		array1.push("&podId=" + podId);	
 		array1.push("&forVirtualNetwork=false"); //direct VLAN	
-		array1.push("&gateway="+encodeURIComponent(guestgateway));
-		array1.push("&netmask="+encodeURIComponent(netmask));	
-		array1.push("&startip="+encodeURIComponent(startip));
+		array1.push("&gateway="+todb(guestgateway));
+		array1.push("&netmask="+todb(netmask));	
+		array1.push("&startip="+todb(startip));
 		if(endip != null && endip.length > 0)
-		    array1.push("&endip="+encodeURIComponent(endip));
+		    array1.push("&endip="+todb(endip));
         
         $.ajax({
 		    data: createURL("command=createVlanIpRange" + array1.join("")),
@@ -936,7 +936,7 @@ function initUpdateConsoleCertButton($midMenuAddLink2) {
 				var cert = trim($thisDialog.find("#update_cert").val());
 				
 				$.ajax({
-			        data: createURL("command=uploadCustomCertificate&certificate="+encodeURIComponent(cert)),
+			        data: createURL("command=uploadCustomCertificate&certificate="+todb(cert)),
 				    dataType: "json",
 				    success: function(json) {
 						var jobId = json.uploadcustomcertificateresponse.jobid;
@@ -1123,7 +1123,7 @@ function initAddPrimaryStorageShortcut($midmenuAddLink2, currentPageInRightPanel
 					var lun = trim($thisDialog.find("#add_pool_lun").val());
 					url = iscsiURL(server, iqn, lun);
 				}
-				array1.push("&url="+encodeURIComponent(url));
+				array1.push("&url="+todb(url));
 				
 			    var tags = trim($thisDialog.find("#add_pool_tags").val());
 				if(tags != null && tags.length > 0)

@@ -60,7 +60,7 @@ $(document).ready(function() {
 	});	
 	$("#leftmenu_account").bind("click", function(event) {
 		selectLeftMenu($(this), false);
-		listMidMenuItems("listAccounts", "listaccountsresponse", "account", "jsp/account.jsp", afterLoadAccountJSP, accountToMidmenu, accountToRightPanel, getMidmenuId, false, "leftmenu_account");
+		listMidMenuItems("listAccounts", accountGetSearchParams, "listaccountsresponse", "account", "jsp/account.jsp", afterLoadAccountJSP, accountToMidmenu, accountToRightPanel, getMidmenuId, false, "leftmenu_account");
 		return false;
 	});	
 	
@@ -109,31 +109,31 @@ $(document).ready(function() {
 	function buildSecondLevelNavigation() {
 	
 		// Instance sub menus
-		bindAndListMidMenuItems($("#leftmenu_instances_my_instances"), "listVirtualMachines&domainid="+g_domainid+"&account="+g_account, "listvirtualmachinesresponse", "virtualmachine", "jsp/instance.jsp", afterLoadInstanceJSP, vmToMidmenu, vmToRightPanel, getMidmenuId, true);
-		bindAndListMidMenuItems($("#leftmenu_instances_all_instances"), "listVirtualMachines", "listvirtualmachinesresponse", "virtualmachine", "jsp/instance.jsp", afterLoadInstanceJSP, vmToMidmenu, vmToRightPanel, getMidmenuId, true);
-		bindAndListMidMenuItems($("#leftmenu_instances_running_instances"), "listVirtualMachines&state=Running", "listvirtualmachinesresponse", "virtualmachine", "jsp/instance.jsp", afterLoadInstanceJSP, vmToMidmenu, vmToRightPanel, getMidmenuId, true);
-		bindAndListMidMenuItems($("#leftmenu_instances_stopped_instances"), "listVirtualMachines&state=Stopped", "listvirtualmachinesresponse", "virtualmachine", "jsp/instance.jsp", afterLoadInstanceJSP, vmToMidmenu, vmToRightPanel, getMidmenuId, true);
-		bindAndListMidMenuItems($("#leftmenu_instances_destroyed_instances"), "listVirtualMachines&state=Destroyed", "listvirtualmachinesresponse", "virtualmachine", "jsp/instance.jsp", afterLoadInstanceJSP, vmToMidmenu, vmToRightPanel, getMidmenuId, true);
+		bindAndListMidMenuItems($("#leftmenu_instances_my_instances"), "listVirtualMachines&domainid="+g_domainid+"&account="+g_account, vmGetSearchParams, "listvirtualmachinesresponse", "virtualmachine", "jsp/instance.jsp", afterLoadInstanceJSP, vmToMidmenu, vmToRightPanel, getMidmenuId, true);
+		bindAndListMidMenuItems($("#leftmenu_instances_all_instances"), "listVirtualMachines", vmGetSearchParams, "listvirtualmachinesresponse", "virtualmachine", "jsp/instance.jsp", afterLoadInstanceJSP, vmToMidmenu, vmToRightPanel, getMidmenuId, true);
+		bindAndListMidMenuItems($("#leftmenu_instances_running_instances"), "listVirtualMachines&state=Running", vmGetSearchParams, "listvirtualmachinesresponse", "virtualmachine", "jsp/instance.jsp", afterLoadInstanceJSP, vmToMidmenu, vmToRightPanel, getMidmenuId, true);
+		bindAndListMidMenuItems($("#leftmenu_instances_stopped_instances"), "listVirtualMachines&state=Stopped", vmGetSearchParams, "listvirtualmachinesresponse", "virtualmachine", "jsp/instance.jsp", afterLoadInstanceJSP, vmToMidmenu, vmToRightPanel, getMidmenuId, true);
+		bindAndListMidMenuItems($("#leftmenu_instances_destroyed_instances"), "listVirtualMachines&state=Destroyed", vmGetSearchParams, "listvirtualmachinesresponse", "virtualmachine", "jsp/instance.jsp", afterLoadInstanceJSP, vmToMidmenu, vmToRightPanel, getMidmenuId, true);
 		
-		bindAndListMidMenuItems($("#leftmenu_event"), "listEvents", "listeventsresponse", "event", "jsp/event.jsp", afterLoadEventJSP, eventToMidmenu, eventToRightPanel, getMidmenuId, false);
-		bindAndListMidMenuItems($("#leftmenu_alert"), "listAlerts", "listalertsresponse", "alert", "jsp/alert.jsp", afterLoadAlertJSP, alertToMidmenu, alertToRightPanel, getMidmenuId, false);
-		bindAndListMidMenuItems($("#leftmenu_volume"), "listVolumes", "listvolumesresponse", "volume", "jsp/volume.jsp", afterLoadVolumeJSP, volumeToMidmenu, volumeToRightPanel, getMidmenuId, false);
-		bindAndListMidMenuItems($("#leftmenu_snapshot"), "listSnapshots", "listsnapshotsresponse", "snapshot", "jsp/snapshot.jsp", afterLoadSnapshotJSP, snapshotToMidmenu, snapshotToRightPanel, getMidmenuId, false);
-		bindAndListMidMenuItems($("#leftmenu_ip"), "listPublicIpAddresses", "listpublicipaddressesresponse", "publicipaddress", "jsp/ipaddress.jsp", afterLoadIpJSP, ipToMidmenu, ipToRightPanel, ipGetMidmenuId, false);
+		bindAndListMidMenuItems($("#leftmenu_event"), "listEvents", eventGetSearchParams, "listeventsresponse", "event", "jsp/event.jsp", afterLoadEventJSP, eventToMidmenu, eventToRightPanel, getMidmenuId, false);
+		bindAndListMidMenuItems($("#leftmenu_alert"), "listAlerts", alertGetSearchParams, "listalertsresponse", "alert", "jsp/alert.jsp", afterLoadAlertJSP, alertToMidmenu, alertToRightPanel, getMidmenuId, false);
+		bindAndListMidMenuItems($("#leftmenu_volume"), "listVolumes", volumeGetSearchParams, "listvolumesresponse", "volume", "jsp/volume.jsp", afterLoadVolumeJSP, volumeToMidmenu, volumeToRightPanel, getMidmenuId, false);
+		bindAndListMidMenuItems($("#leftmenu_snapshot"), "listSnapshots", snapshotGetSearchParams, "listsnapshotsresponse", "snapshot", "jsp/snapshot.jsp", afterLoadSnapshotJSP, snapshotToMidmenu, snapshotToRightPanel, getMidmenuId, false);
+		bindAndListMidMenuItems($("#leftmenu_ip"), "listPublicIpAddresses", ipGetSearchParams, "listpublicipaddressesresponse", "publicipaddress", "jsp/ipaddress.jsp", afterLoadIpJSP, ipToMidmenu, ipToRightPanel, ipGetMidmenuId, false);
 		 
-		bindAndListMidMenuItems($("#leftmenu_submenu_my_template"), "listTemplates&templatefilter=self", "listtemplatesresponse", "template", "jsp/template.jsp", afterLoadTemplateJSP, templateToMidmenu, templateToRightPanel, templateGetMidmenuId, false);
-		bindAndListMidMenuItems($("#leftmenu_submenu_featured_template"), "listTemplates&templatefilter=featured", "listtemplatesresponse", "template", "jsp/template.jsp", afterLoadTemplateJSP, templateToMidmenu, templateToRightPanel, templateGetMidmenuId, false);
-		bindAndListMidMenuItems($("#leftmenu_submenu_community_template"), "listTemplates&templatefilter=community", "listtemplatesresponse", "template", "jsp/template.jsp", afterLoadTemplateJSP, templateToMidmenu, templateToRightPanel, templateGetMidmenuId, false);
+		bindAndListMidMenuItems($("#leftmenu_submenu_my_template"), "listTemplates&templatefilter=self", templateGetSearchParams, "listtemplatesresponse", "template", "jsp/template.jsp", afterLoadTemplateJSP, templateToMidmenu, templateToRightPanel, templateGetMidmenuId, false);
+		bindAndListMidMenuItems($("#leftmenu_submenu_featured_template"), "listTemplates&templatefilter=featured", templateGetSearchParams, "listtemplatesresponse", "template", "jsp/template.jsp", afterLoadTemplateJSP, templateToMidmenu, templateToRightPanel, templateGetMidmenuId, false);
+		bindAndListMidMenuItems($("#leftmenu_submenu_community_template"), "listTemplates&templatefilter=community", templateGetSearchParams, "listtemplatesresponse", "template", "jsp/template.jsp", afterLoadTemplateJSP, templateToMidmenu, templateToRightPanel, templateGetMidmenuId, false);
 		
-		bindAndListMidMenuItems($("#leftmenu_submenu_my_iso"), "listIsos&isofilter=self", "listisosresponse", "iso", "jsp/iso.jsp", afterLoadIsoJSP, isoToMidmenu, isoToRightPanel, isoGetMidmenuId, false);
-		bindAndListMidMenuItems($("#leftmenu_submenu_featured_iso"), "listIsos&isofilter=featured", "listisosresponse", "iso", "jsp/iso.jsp", afterLoadIsoJSP, isoToMidmenu, isoToRightPanel, isoGetMidmenuId, false);
-		bindAndListMidMenuItems($("#leftmenu_submenu_community_iso"), "listIsos&isofilter=community", "listisosresponse", "iso", "jsp/iso.jsp", afterLoadIsoJSP, isoToMidmenu, isoToRightPanel, isoGetMidmenuId, false);
+		bindAndListMidMenuItems($("#leftmenu_submenu_my_iso"), "listIsos&isofilter=self", isoGetSearchParams, "listisosresponse", "iso", "jsp/iso.jsp", afterLoadIsoJSP, isoToMidmenu, isoToRightPanel, isoGetMidmenuId, false);
+		bindAndListMidMenuItems($("#leftmenu_submenu_featured_iso"), "listIsos&isofilter=featured", isoGetSearchParams, "listisosresponse", "iso", "jsp/iso.jsp", afterLoadIsoJSP, isoToMidmenu, isoToRightPanel, isoGetMidmenuId, false);
+		bindAndListMidMenuItems($("#leftmenu_submenu_community_iso"), "listIsos&isofilter=community", isoGetSearchParams, "listisosresponse", "iso", "jsp/iso.jsp", afterLoadIsoJSP, isoToMidmenu, isoToRightPanel, isoGetMidmenuId, false);
 		
-		bindAndListMidMenuItems($("#leftmenu_service_offering"), "listServiceOfferings", "listserviceofferingsresponse", "serviceoffering", "jsp/serviceoffering.jsp", afterLoadServiceOfferingJSP, serviceOfferingToMidmenu, serviceOfferingToRightPanel, getMidmenuId, false); 
-		bindAndListMidMenuItems($("#leftmenu_disk_offering"), "listDiskOfferings", "listdiskofferingsresponse", "diskoffering", "jsp/diskoffering.jsp", afterLoadDiskOfferingJSP, diskOfferingToMidmenu, diskOfferingToRightPanel, getMidmenuId, false); 
+		bindAndListMidMenuItems($("#leftmenu_service_offering"), "listServiceOfferings", serviceOfferingGetSearchParams, "listserviceofferingsresponse", "serviceoffering", "jsp/serviceoffering.jsp", afterLoadServiceOfferingJSP, serviceOfferingToMidmenu, serviceOfferingToRightPanel, getMidmenuId, false); 
+		bindAndListMidMenuItems($("#leftmenu_disk_offering"), "listDiskOfferings", diskOfferingGetSearchParams, "listdiskofferingsresponse", "diskoffering", "jsp/diskoffering.jsp", afterLoadDiskOfferingJSP, diskOfferingToMidmenu, diskOfferingToRightPanel, getMidmenuId, false); 
 		
-		bindAndListMidMenuItems($("#leftmenu_submenu_virtual_router"), "listRouters", "listroutersresponse", "router", "jsp/router.jsp", afterLoadRouterJSP, routerToMidmenu, routerToRightPanel, getMidmenuId, false);
-		bindAndListMidMenuItems($("#leftmenu_submenu_systemvm"), "listSystemVms", "listsystemvmsresponse", "systemvm", "jsp/systemvm.jsp", afterLoadSystemVmJSP, systemvmToMidmenu, systemvmToRightPanel, getMidmenuId, false);
+		bindAndListMidMenuItems($("#leftmenu_submenu_virtual_router"), "listRouters", routerGetSearchParams, "listroutersresponse", "router", "jsp/router.jsp", afterLoadRouterJSP, routerToMidmenu, routerToRightPanel, getMidmenuId, false);
+		bindAndListMidMenuItems($("#leftmenu_submenu_systemvm"), "listSystemVms", systemVmGetSearchParams, "listsystemvmsresponse", "systemvm", "jsp/systemvm.jsp", afterLoadSystemVmJSP, systemvmToMidmenu, systemvmToRightPanel, getMidmenuId, false);
 		
 		$("#leftmenu_global_setting").bind("click", function(event) {
 		    selectLeftSubMenu($(this));		
@@ -210,6 +210,147 @@ $(document).ready(function() {
 		return;
 	}
 	
+	//basic search	
+	$("#basic_search").find("#search_input").unbind("keypress").bind("keypress", function(event) { 	 
+	    event.stopPropagation();   
+	    if(event.keyCode == keycode_Enter) { 
+	        event.preventDefault();
+	        var params = $("#middle_menu_pagination").data("params");
+	        if(params == null)
+	            return;	 
+	        lastSearchType = "basic_search";       	    
+	        listMidMenuItems2(params.commandString, params.getSearchParamsFn, params.jsonResponse1, params.jsonResponse2, params.toMidmenuFn, params.toRightPanelFn, params.getMidmenuIdFn, params.isMultipleSelectionInMidMenu, 1);
+	    }		    
+	});
+	
+	//advanced search	
+	$("#advanced_search_icon").unbind("click").bind("click", function(event) {
+	    var $advancedSearch = $("#advanced_search_template").clone().attr("id", "advanced_search_popup");
+	    
+	    $advancedSearch.unbind("click").bind("click", function(event) {
+	        var $target = $(event.target);
+	        var targetId = $target.attr("id");	        
+	        if(targetId == "advanced_search_close") {
+	            $(this).hide();
+	            return false;
+	        }
+	        else if(targetId == "adv_search_button") {    	        
+    	        var params = $("#middle_menu_pagination").data("params");
+	            if(params == null)
+	                return;	        	    
+	            lastSearchType = "advanced_search";  
+	            $("#basic_search").find("#search_input").val("");
+	            listMidMenuItems2(params.commandString, params.getSearchParamsFn, params.jsonResponse1, params.jsonResponse2, params.toMidmenuFn, params.toRightPanelFn, params.getMidmenuIdFn, params.isMultipleSelectionInMidMenu, 1);
+    	        $(this).hide();
+	            return false;
+	        }
+	        return true;
+	    });
+	    	
+	    $advancedSearch.unbind("keypress").bind("keypress", function(event) {	       
+	        event.stopPropagation();   
+	        if(event.keyCode == keycode_Enter) { 
+	            event.preventDefault();
+	            $(this).find("#adv_search_button").click();
+	        }	
+	    });	
+	    	    
+	    if(isAdmin())
+	        $advancedSearch.find("#adv_search_domain_li, #adv_search_account_li, #adv_search_pod_li").show();
+	    else
+	        $advancedSearch.find("#adv_search_domain_li, #adv_search_account_li, #adv_search_pod_li").hide(); 
+	    
+        var zoneSelect = $advancedSearch.find("#adv_search_zone");	    
+	    if(zoneSelect.length>0) {  //if zone dropdown is found on Advanced Search dialog 	    		
+	        $.ajax({
+		        data: createURL("command=listZones&available=true"),
+		        dataType: "json",
+		        success: function(json) {
+			        var zones = json.listzonesresponse.zone;			   
+			        zoneSelect.empty();					
+			        zoneSelect.append("<option value=''></option>"); 
+			        if (zones != null && zones.length > 0) {
+			            for (var i = 0; i < zones.length; i++) {
+				            zoneSelect.append("<option value='" + zones[i].id + "'>" + fromdb(zones[i].name) + "</option>"); 
+			            }
+			        }
+		        }
+	        });
+    		
+	        var podSelect = $advancedSearch.find("#adv_search_pod").empty();	
+	        var podLabel = $advancedSearch.find("#adv_search_pod_label");
+	        if(podSelect.length>0 && $advancedSearch.find("#adv_search_pod_li").css("display")!="none") {		        
+	            zoneSelect.bind("change", function(event) { 	            
+		            var zoneId = $(this).val();
+		            if (zoneId == null || zoneId.length == 0) {			            
+		                podLabel.css("color", "gray");	
+		                podSelect.attr("disabled", "disabled");	 
+		                podSelect.empty();	        
+		            } else {		            
+		                podLabel.css("color", "black");	
+		                podSelect.removeAttr("disabled");
+		                $.ajax({
+				        data: createURL("command=listPods&zoneId="+zoneId+""),
+			                dataType: "json",
+			                async: false,
+			                success: function(json) {
+				                var pods = json.listpodsresponse.pod;	
+				                podSelect.empty();			            
+				                if (pods != null && pods.length > 0) {
+				                    for (var i = 0; i < pods.length; i++) {
+					                    podSelect.append("<option value='" + pods[i].id + "'>" + fromdb(pods[i].name) + "</option>"); 
+				                    }
+				                }
+			                }
+		                });
+		            }
+		            return false;		        
+	            });		
+    	        
+	            zoneSelect.change();
+	        }
+	    }
+    	
+	    var domainSelect = $advancedSearch.find("#adv_search_domain");	
+	    if(domainSelect.length>0 && $advancedSearch.find("#adv_search_domain_li").css("display")!="none") {
+	        var domainSelect = domainSelect.empty();			
+	        $.ajax({
+		        data: createURL("command=listDomains&available=true"),
+		        dataType: "json",
+		        success: function(json) {			        
+			        var domains = json.listdomainsresponse.domain;			 
+			        if (domains != null && domains.length > 0) {
+			            for (var i = 0; i < domains.length; i++) {
+				            domainSelect.append("<option value='" + domains[i].id + "'>" + fromdb(domains[i].name) + "</option>"); 
+			            }
+			        }
+		        }
+	        });		    
+	    } 	
+    	    	
+	    var vmSelect = $advancedSearch.find("#adv_search_vm");	
+	    if(vmSelect.length>0) {		   
+	        vmSelect.empty();		
+	        vmSelect.append("<option value=''></option>"); 	
+	        $.ajax({
+		        data: createURL("command=listVirtualMachines"),
+		        dataType: "json",
+		        success: function(json) {			        
+			        var items = json.listvirtualmachinesresponse.virtualmachine;		 
+			        if (items != null && items.length > 0) {
+			            for (var i = 0; i < items.length; i++) {
+				            vmSelect.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>"); 
+			            }
+			        }
+		        }
+	        });		    
+	    } 	  
+	    	    
+	    $("#advanced_search_container").empty().append($advancedSearch.show());	 
+	    	   
+	    return false;
+	});
+	
 	//pagination
 	$("#middle_menu_pagination").unbind("clik").bind("click", function(event) {	
 	    var params = $(this).data("params");
@@ -220,10 +361,10 @@ $(document).ready(function() {
 	    var targetId = $target.attr("id");
 	    
 	    if(targetId == "midmenu_prevbutton") {
-	        listMidMenuItems2(params.commandString, params.jsonResponse1, params.jsonResponse2, params.toMidmenuFn, params.toRightPanelFn, params.getMidmenuIdFn, params.isMultipleSelectionInMidMenu, (params.page-1));
+	        listMidMenuItems2(params.commandString, params.getSearchParamsFn, params.jsonResponse1, params.jsonResponse2, params.toMidmenuFn, params.toRightPanelFn, params.getMidmenuIdFn, params.isMultipleSelectionInMidMenu, (params.page-1));
 	    }	        
 	    else if(targetId == "midmenu_nextbutton") {	        
-	        listMidMenuItems2(params.commandString, params.jsonResponse1, params.jsonResponse2, params.toMidmenuFn, params.toRightPanelFn, params.getMidmenuIdFn, params.isMultipleSelectionInMidMenu, (params.page+1));
+	        listMidMenuItems2(params.commandString, params.getSearchParamsFn, params.jsonResponse1, params.jsonResponse2, params.toMidmenuFn, params.toRightPanelFn, params.getMidmenuIdFn, params.isMultipleSelectionInMidMenu, (params.page+1));
 	    }	
 	    
 	    return false;    
