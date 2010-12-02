@@ -1363,12 +1363,13 @@
         <form action="#" method="post">
         <ol>
             <li>
-                <label for="filter">
+                <label>
                     Name:</label>
                 <input class="text" type="text" name="adv_search_name" id="adv_search_name" />
             </li>
+            <!--  
             <li>
-                <label for="filter">
+                <label>
                     Status:</label>
                 <select class="select" id="adv_search_state">
                     <option value=""></option>
@@ -1384,20 +1385,21 @@
                     <option value="Unknown">Unknown</option>
                 </select>
             </li>
+            -->
             <li>
-                <label for="filter">
+                <label>
                     Zone:</label>
                 <select class="select" id="adv_search_zone">
                 </select>
             </li>            
             <li id="adv_search_domain_li" style="display: none;">
-                <label for="filter">
+                <label>
                     Domain:</label>
                 <select class="select" id="adv_search_domain">
                 </select>
             </li>
             <li id="adv_search_account_li" style="display: none;">
-                <label for="filter">
+                <label>
                     Account:</label>
                 <input class="text" type="text" id="adv_search_account" />
             </li>

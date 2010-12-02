@@ -25,9 +25,11 @@ function vmGetSearchParams() {
 		if (name!=null && trim(name).length > 0) 
 			moreCriteria.push("&name="+todb(name));	
 		
+		/*
 		var state = $advancedSearchPopup.find("#adv_search_state").val();				
 		if (state!=null && state.length > 0) 
 			moreCriteria.push("&state="+todb(state));	
+		*/
 		
 		var zone = $advancedSearchPopup.find("#adv_search_zone").val();		
 	    if (zone!=null && zone.length > 0) 
