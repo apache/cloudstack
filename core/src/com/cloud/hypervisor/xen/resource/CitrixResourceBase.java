@@ -5529,7 +5529,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             if (!result) {
                 throw new CloudRuntimeException("Could not create the template.properties file on secondary storage dir: " + tmpltURI);
             } 
-            
+            installPath = installPath + "/" + tmpltFilename;
             return new CreatePrivateTemplateAnswer(cmd, true, null, installPath, virtualSize, physicalSize, tmpltUUID, ImageFormat.VHD);
         } catch (XenAPIException e) {
             details = "Creating template from snapshot " + backedUpSnapshotUuid + " failed due to " + e.getMessage();
