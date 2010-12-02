@@ -420,7 +420,7 @@ public class ApiDBUtils {
     }
 
     public static VolumeVO findVolumeById(Long volumeId) {
-        return _volumeDao.findById(volumeId);
+        return _volumeDao.findByIdIncludingRemoved(volumeId);
     }
 
     public static DataCenterVO findZoneById(Long zoneId) {

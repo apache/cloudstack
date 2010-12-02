@@ -378,12 +378,14 @@ public class ApiResponseHelper implements ResponseGenerator {
             snapshotResponse.setDomainName(ApiDBUtils.findDomainById(acct.getDomainId()).getName());
         }
 
-        VolumeVO volume = ApiDBUtils.findVolumeById(snapshot.getVolumeId());
+        VolumeVO volume = findVolumeById(snapshot.getVolumeId());
         String snapshotTypeStr = Type.values()[snapshot.getSnapshotType()].name();
         snapshotResponse.setSnapshotType(snapshotTypeStr);
         snapshotResponse.setVolumeId(snapshot.getVolumeId());
-        snapshotResponse.setVolumeName(volume.getName());
-        snapshotResponse.setVolumeType(volume.getVolumeType().name());
+        if( volume != null ) {
+            snapshotResponse.setVolumeName(volume.getName());
+            snapshotResponse.setVolumeType(volume.getVolumeType().name());
+        }
         snapshotResponse.setCreated(snapshot.getCreated());
         snapshotResponse.setName(snapshot.getName());
         snapshotResponse.setIntervalType(ApiDBUtils.getSnapshotIntervalTypes(snapshot.getId()));
@@ -1396,7 +1398,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public Volume findVolumeById(Long volumeId) {
+    public VolumeVO findVolumeById(Long volumeId) {
         return ApiDBUtils.findVolumeById(volumeId);
     }
     
@@ -1925,12 +1927,12 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setPasswordEnabled(template.getEnablePassword());
         response.setCrossZones(template.isCrossZones());
 
-        Volume volume = null;
+        VolumeVO volume = null;
         if (snapshotId != null) {
             Snapshot snapshot = ApiDBUtils.findSnapshotById(snapshotId);
-            volume = ApiDBUtils.findVolumeById(snapshot.getVolumeId());
+            volume = findVolumeById(snapshot.getVolumeId());
         } else {
-            volume = ApiDBUtils.findVolumeById(volumeId);
+            volume = findVolumeById(volumeId);
         }
 
         VMTemplateHostVO templateHostRef = ApiDBUtils.findTemplateHostRef(template.getId(), volume.getDataCenterId());
