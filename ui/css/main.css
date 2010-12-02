@@ -1813,11 +1813,11 @@ a:hover {
 }
 
 .adv_searchpopup {
-	width:156px;
+	width:207px;
 	height:auto;
 	float:left;
 	position:absolute;
-	background:#fefae7 repeat top left;
+	background:#FFF repeat top left;
 	border:1px solid #999;
 	top:5px;
 	left:8px;
@@ -1827,7 +1827,7 @@ a:hover {
 }
 
 .adv_searchformbox {
-	width:140px;
+	width:190px;
 	height:auto;
 	float:left;
 	margin:0 0 10px 10px;
@@ -1894,7 +1894,7 @@ a:hover {
 }
 
 .adv_searchformbox li {
-	width:140px;
+	width:190px;
 	float:left;
 	clear:left; 
 	font-family:Arial, Helvetica, sans-serif;
@@ -1904,7 +1904,7 @@ a:hover {
 }
 
 .adv_searchformbox label {
-	width:45px;
+	width:60px;
 	float:left;
 	clear:left; 
 	font-family:Arial, Helvetica, sans-serif;
@@ -1920,7 +1920,7 @@ a:hover {
 	float:left;
 	border: 1px solid #CCC;
 	height: 13px;
-	width: 80px;
+	width: 100px;
 	color:#666;
 	margin:0;
 	padding:1px 0 0 2px; 
@@ -1933,7 +1933,7 @@ a:hover {
 	float:left; 
 	border: 1px solid #CCC; 
 	height: 17px; 
-	width: 83px;
+	width: 103px;
 	margin:0; 
 	padding:1px 0 0 2px; 
 	color:#666;
