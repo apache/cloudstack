@@ -18,29 +18,38 @@
 
 function volumeGetSearchParams() {
     var moreCriteria = [];	
-    
-	var advanced;       
-	if (advanced != null && advanced) {		
-	    var name = $("#advanced_search #adv_search_name").val();	
-	    var zone = $("#advanced_search #adv_search_zone").val();
-	    var pod = $("#advanced_search #adv_search_pod").val();
-	    var domainId = $("#advanced_search #adv_search_domain").val();
-	    var account = $("#advanced_search #adv_search_account").val();
-	    var moreCriteria = [];								
+
+	var $advancedSearchPopup = $("#advanced_search_popup");
+	if (lastSearchType == "advanced_search" && $advancedSearchPopup.length > 0) {
+	    var name = $advancedSearchPopup.find("#adv_search_name").val();							
 		if (name!=null && trim(name).length > 0) 
 			moreCriteria.push("&name="+todb(name));	
+		
+		var zone = $advancedSearchPopup.find("#adv_search_zone").val();	
 	    if (zone!=null && zone.length > 0) 
-			moreCriteria.push("&zoneId="+todb(zone));		
-	    if (pod!=null && pod.length > 0) 
-			moreCriteria.push("&podId="+todb(pod));	
-		if (domainId!=null && domainId.length > 0) 
-			moreCriteria.push("&domainid="+todb(domainId));		
-		if (account!=null && account.length > 0) 
-			moreCriteria.push("&account="+todb(account));			
+			moreCriteria.push("&zoneId="+zone);	
+		
+		if ($advancedSearchPopup.find("#adv_search_pod_li").css("display") != "none") {	
+		    var pod = $advancedSearchPopup.find("#adv_search_pod").val();		
+	        if (pod!=null && pod.length > 0) 
+			    moreCriteria.push("&podId="+pod);
+        }
+        
+        if ($advancedSearchPopup.find("#adv_search_domain_li").css("display") != "none") {		
+		    var domainId = $advancedSearchPopup.find("#adv_search_domain").val();		
+		    if (domainId!=null && domainId.length > 0) 
+			    moreCriteria.push("&domainid="+domainId);	
+    	}	
+    	
+		if ($advancedSearchPopup.find("#adv_search_account_li").css("display") != "none") {	
+		    var account = $advancedSearchPopup.find("#adv_search_account").val();		
+		    if (account!=null && account.length > 0) 
+			    moreCriteria.push("&account="+account);		
+		}	
 	} 
 	else {     			    		
 	    var searchInput = $("#basic_search").find("#search_input").val();	 
-        if (searchInput != null && searchInput.length > 0) {	           
+        if (lastSearchType == "basic_search" && searchInput != null && searchInput.length > 0) {	           
             moreCriteria.push("&name="+todb(searchInput));	       
         }        
 	}
