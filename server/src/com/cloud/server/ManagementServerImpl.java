@@ -107,7 +107,6 @@ import com.cloud.api.commands.ListPublicIpAddressesCmd;
 import com.cloud.api.commands.ListRemoteAccessVpnsCmd;
 import com.cloud.api.commands.ListRoutersCmd;
 import com.cloud.api.commands.ListServiceOfferingsCmd;
-import com.cloud.api.commands.ListSnapshotsCmd;
 import com.cloud.api.commands.ListStoragePoolsCmd;
 import com.cloud.api.commands.ListSystemVMsCmd;
 import com.cloud.api.commands.ListTemplateOrIsoPermissionsCmd;
@@ -218,10 +217,6 @@ import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.LaunchPermissionVO;
-import com.cloud.storage.Snapshot;
-import com.cloud.storage.Snapshot.Type;
-import com.cloud.storage.SnapshotPolicyVO;
-import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
@@ -234,15 +229,12 @@ import com.cloud.storage.Upload.Mode;
 import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
-import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.VolumeStats;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.LaunchPermissionDao;
-import com.cloud.storage.dao.SnapshotDao;
-import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.UploadDao;
@@ -346,8 +338,6 @@ public class ManagementServerImpl implements ManagementServer {
     private final UserAccountDao _userAccountDao;
     private final AlertDao _alertDao;
     private final CapacityDao _capacityDao;
-    private final SnapshotDao _snapshotDao;
-    private final SnapshotPolicyDao _snapshotPolicyDao;
     private final GuestOSDao _guestOSDao;
     private final GuestOSCategoryDao _guestOSCategoryDao;
     private final StoragePoolDao _poolDao;
@@ -443,8 +433,6 @@ public class ManagementServerImpl implements ManagementServer {
         _userAccountDao = locator.getDao(UserAccountDao.class);
         _alertDao = locator.getDao(AlertDao.class);
         _capacityDao = locator.getDao(CapacityDao.class);
-        _snapshotDao = locator.getDao(SnapshotDao.class);
-        _snapshotPolicyDao = locator.getDao(SnapshotPolicyDao.class);
         _guestOSDao = locator.getDao(GuestOSDao.class);
         _guestOSCategoryDao = locator.getDao(GuestOSCategoryDao.class);
         _poolDao = locator.getDao(StoragePoolDao.class);
@@ -4122,117 +4110,6 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public boolean destroyTemplateSnapshot(Long userId, long snapshotId) {
-        return _vmMgr.destroyTemplateSnapshot(userId, snapshotId);
-    }
-
-    @Override
-    public List<SnapshotVO> listSnapshots(ListSnapshotsCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
-        Long volumeId = cmd.getVolumeId();
-
-        // Verify parameters
-        if(volumeId != null){
-            VolumeVO volume = _volumeDao.findById(volumeId);
-            if (volume == null) {
-                throw new InvalidParameterValueException("unable to find a volume with id " + volumeId);
-            }
-            checkAccountPermissions(volume.getAccountId(), volume.getDomainId(), "volume", volumeId);
-        }
-
-        Account account = UserContext.current().getAccount();
-        Long domainId = cmd.getDomainId();
-        String accountName = cmd.getAccountName();
-        Long accountId = null;
-        if ((account == null) || isAdmin(account.getType())) {
-            if (domainId != null) {
-                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
-                    throw new PermissionDeniedException("Unable to list templates for domain " + domainId + ", permission denied.");
-                }
-            } else if ((account != null) && (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)) {
-                domainId = account.getDomainId();
-            }
-
-            if (domainId != null && accountName != null) {
-                Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
-                if (userAccount != null) {
-                    accountId = userAccount.getId();
-                }
-            }
-        } else {
-            accountId = account.getId();
-        }
-
-        Object name = cmd.getSnapshotName();
-        Object id = cmd.getId();
-        Object keyword = cmd.getKeyword();
-        Object snapshotTypeStr = cmd.getSnapshotType();
-
-        Filter searchFilter = new Filter(SnapshotVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
-        SearchBuilder<SnapshotVO> sb = _snapshotDao.createSearchBuilder();
-        sb.and("status", sb.entity().getStatus(), SearchCriteria.Op.EQ);
-        sb.and("volumeId", sb.entity().getVolumeId(), SearchCriteria.Op.EQ);
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
-        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
-        sb.and("snapshotTypeEQ", sb.entity().getSnapshotType(), SearchCriteria.Op.EQ);
-        sb.and("snapshotTypeNEQ", sb.entity().getSnapshotType(), SearchCriteria.Op.NEQ);
-
-        if ((accountId == null) && (domainId != null)) {
-            // if accountId isn't specified, we can do a domain match for the admin case
-            SearchBuilder<AccountVO> accountSearch = _accountDao.createSearchBuilder();
-            sb.join("accountSearch", accountSearch, sb.entity().getAccountId(), accountSearch.entity().getId(), JoinType.INNER);
-
-            SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
-            domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
-            accountSearch.join("domainSearch", domainSearch, accountSearch.entity().getDomainId(), domainSearch.entity().getId(), JoinType.INNER);
-        }
-
-        SearchCriteria<SnapshotVO> sc = sb.create();
-
-        sc.setParameters("status", Snapshot.Status.BackedUp);
-
-        if (volumeId != null) {
-            sc.setParameters("volumeId", volumeId);
-        }
-
-        if (name != null) {
-            sc.setParameters("name", "%" + name + "%");
-        }
-
-        if (id != null) {
-            sc.setParameters("id", id);
-        }
-
-        if (keyword != null) {
-            SearchCriteria<SnapshotVO> ssc = _snapshotDao.createSearchCriteria();
-            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            
-            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
-        }
-
-        if (accountId != null) {
-            sc.setParameters("accountId", accountId);
-        } else if (domainId != null) {
-            DomainVO domain = _domainDao.findById(domainId);
-            SearchCriteria<?> joinSearch = sc.getJoin("accountSearch");
-            joinSearch.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
-        }
-
-        if (snapshotTypeStr != null) {
-            Type snapshotType = SnapshotVO.getSnapshotType((String)snapshotTypeStr);
-            if (snapshotType == null) {
-                throw new InvalidParameterValueException("Unsupported snapshot type " + snapshotTypeStr);
-            }
-            sc.setParameters("snapshotTypeEQ", snapshotType.ordinal());
-        } else {
-            // Show only MANUAL and RECURRING snapshot types
-            sc.setParameters("snapshotTypeNEQ", Snapshot.Type.TEMPLATE.ordinal());
-        }
-        
-        return _snapshotDao.search(sc, searchFilter);
-    }
-
-    @Override
     public DiskOfferingVO findDiskOfferingById(long diskOfferingId) {
         return _diskOfferingDao.findById(diskOfferingId);
     }
@@ -5083,11 +4960,6 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public SnapshotPolicyVO findSnapshotPolicyById(Long policyId) {
-        return _snapshotPolicyDao.findById(policyId);
-    }
-
-    @Override
     public boolean isChildDomain(Long parentId, Long childId) {
         return _domainDao.isChildDomain(parentId, childId);
     }
@@ -5261,25 +5133,6 @@ public class ManagementServerImpl implements ManagementServer {
             return stopSecondaryStorageVm(vmId, eventId);
         }
     }
-    
-	private void checkIfStoragePoolAvailable(Long id) throws StorageUnavailableException {
-		//check if the sp is up before starting
-        List<VolumeVO> rootVolList = _volumeDao.findByInstanceAndType(id, VolumeType.ROOT); 
-        if(rootVolList == null || rootVolList.size() == 0){
-        	throw new StorageUnavailableException("Could not find the root disk for this vm to verify if the pool on which it exists is Up or not");
-        }else{
-        	Long poolId = rootVolList.get(0).getPoolId();//each vm has 1 root vol
-        	StoragePoolVO sp = _poolDao.findById(poolId);
-        	if(sp == null){
-        		throw new StorageUnavailableException("Could not find the pool for the root disk of vm"+id+", to confirm if it is Up or not");
-        	}else{
-        		//found pool
-        		if(!sp.getStatus().equals(com.cloud.host.Status.Up)){
-        			throw new StorageUnavailableException("Could not start the vm; the associated storage pool is in:"+sp.getStatus().toString()+" state");
-        		}
-        	}
-        }
-	}
 
 	@Override
 	public VMInstanceVO stopSystemVM(StopSystemVmCmd cmd) {
@@ -5963,25 +5816,7 @@ public class ManagementServerImpl implements ManagementServer {
     	return hypers.split(",");
     }
 
-	private Long checkAccountPermissions(long targetAccountId, long targetDomainId, String targetDesc, long targetId) throws ServerApiException {
-        Long accountId = null;
-
-        Account account = UserContext.current().getAccount();
-        if (account != null) {
-            if (!isAdmin(account.getType())) {
-                if (account.getId() != targetAccountId) {
-                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find a " + targetDesc + " with id " + targetId + " for this account");
-                }
-            } else if (!_domainDao.isChildDomain(account.getDomainId(), targetDomainId)) {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to perform operation for " + targetDesc + " with id " + targetId + ", permission denied.");
-            }
-            accountId = account.getId();
-        }
-    
-        return accountId;
-    }
-
-	@Override
+    @Override
 	public List<RemoteAccessVpnVO> searchForRemoteAccessVpns(ListRemoteAccessVpnsCmd cmd) throws InvalidParameterValueException,
 			PermissionDeniedException {
 		// do some parameter validation

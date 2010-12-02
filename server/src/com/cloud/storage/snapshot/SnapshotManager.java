@@ -19,6 +19,9 @@ package com.cloud.storage.snapshot;
 
 import java.util.List;
 
+import com.cloud.api.commands.ListSnapshotsCmd;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotVO;

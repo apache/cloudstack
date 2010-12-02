@@ -51,7 +51,6 @@ import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
 import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.GetVmStatsAnswer;
 import com.cloud.agent.api.GetVmStatsCommand;
-import com.cloud.agent.api.ManageSnapshotCommand;
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.RebootAnswer;
@@ -2317,34 +2316,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
             return false;
         }
     }
-
-    @Override
-    public boolean destroyTemplateSnapshot(Long userId, long snapshotId) {
-        boolean success = false;
-        SnapshotVO snapshot = _snapshotDao.findById(Long.valueOf(snapshotId));
-        if (snapshot != null) {
-            VolumeVO volume = _volsDao.findById(snapshot.getVolumeId());
-            ManageSnapshotCommand cmd = new ManageSnapshotCommand(snapshotId, snapshot.getPath());
-
-            Answer answer = null;
-            String basicErrMsg = "Failed to destroy template snapshot: " + snapshot.getName();
-            Long storagePoolId = volume.getPoolId();
-            answer = _storageMgr.sendToHostsOnStoragePool(storagePoolId, cmd, basicErrMsg);
-
-            if ((answer != null) && answer.getResult()) {
-                // delete the snapshot from the database
-                _snapshotDao.expunge(snapshotId);
-                success = true;
-            }
-            if (answer != null) {
-                s_logger.error(answer.getDetails());
-            }
-        }
-
-        return success;
-    }
-    
-    
+  
     @Override
     public void cleanNetworkRules(long userId, long instanceId) {
         UserVmVO vm = _vmDao.findById(instanceId);

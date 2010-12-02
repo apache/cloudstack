@@ -49,7 +49,6 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     public List<SnapshotVO> listByVolumeIdType(long volumeId, String type ) {
         return listByVolumeIdType(null, volumeId, type);
     }
-    
 
     @Override
     public List<SnapshotVO> listByVolumeId(long volumeId) {

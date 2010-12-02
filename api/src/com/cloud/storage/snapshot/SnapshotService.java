@@ -26,7 +26,9 @@ import com.cloud.api.commands.DeleteSnapshotCmd;
 import com.cloud.api.commands.DeleteSnapshotPoliciesCmd;
 import com.cloud.api.commands.ListRecurringSnapshotScheduleCmd;
 import com.cloud.api.commands.ListSnapshotPoliciesCmd;
+import com.cloud.api.commands.ListSnapshotsCmd;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.Snapshot;
 
@@ -45,6 +47,15 @@ public interface SnapshotService {
      * @throws ResourceAllocationException
      */
     Snapshot createSnapshotInternal(CreateSnapshotInternalCmd cmd) throws ResourceAllocationException;
+
+    /**
+     * List all snapshots of a disk volume. Optionally lists snapshots created by specified interval
+     * @param cmd the command containing the search criteria (order by, limit, etc.)
+     * @return list of snapshots
+     * @throws InvalidParameterValueException
+     * @throws PermissionDeniedException
+     */
+    List<? extends Snapshot> listSnapshots(ListSnapshotsCmd cmd);
 
     /**
      * Delete specified snapshot from the specified.
