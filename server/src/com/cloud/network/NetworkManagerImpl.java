@@ -3040,7 +3040,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             ipAddress = _ipAddressDao.acquireInLockTable(ipAddress.getAddress());
 
             if(ipAddress == null){
-                s_logger.warn("Unable to acquire lock on ipAddress for creating 1-1 NAT rule");
+                s_logger.warn("Unable to acquire lock on ipAddress for creating static NAT rule");
                 return rule;
             }else{
                 locked = true;
@@ -3106,7 +3106,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             userVM = _vmDao.acquireInLockTable(userVM.getId());
 
             if(userVM == null){
-                s_logger.warn("Unable to acquire lock on user vm for creating 1-1 NAT rule");
+                s_logger.warn("Unable to acquire lock on user vm for creating static NAT rule");
                 return newFwRule;
             }else{
                 locked = true;
@@ -3171,9 +3171,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             _rulesDao.persist(newFwRule);			
             txn.commit();
         } catch (Exception e) {
-            s_logger.warn("Unable to create new firewall rule for 1:1 NAT");
+            s_logger.warn("Unable to create new firewall rule for static NAT");
             txn.rollback();
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR,"Unable to create new firewall rule for 1:1 NAT:"+e.getMessage());
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR,"Unable to create new firewall rule for static NAT:"+e.getMessage());
         }finally{
             if(locked) {
                 _vmDao.releaseFromLockTable(userVM.getId());
