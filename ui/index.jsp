@@ -126,6 +126,19 @@
                     <p>
                         <fmt:message key="label.welcome"/> <span id="main_username"></span>, <a href="#" id="main_logout"><fmt:message key="label.logout"/></a>
                     </p>
+                    <div class="language_dropdownpanel">
+                    	<div class="language_icon"></div>
+                        <p>International</p>
+                        <div class="language_ddarrow"></div>
+                        <div class="language_dropdownbox" style="display:none;">
+                        	<ul>
+                            	<li>English</li>
+                                <li>汉语 </li>
+                                <li>Fran&ccedil;ais</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
                 </div>
             </div>
         </div>
