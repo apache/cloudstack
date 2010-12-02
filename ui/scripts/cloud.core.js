@@ -554,6 +554,7 @@ function clearMiddleMenu() {
     $("#midmenu_container").empty();
     $("#midmenu_action_link").hide();
     clearAddButtonsOnTop();        
+    lastSearchType = null;
     $("#basic_search").find("#search_input").val("");
     $("#advanced_search_container").empty();
     $("#midmenu_prevbutton, #midmenu_nextbutton").hide();
@@ -914,6 +915,7 @@ function getMidmenuId(jsonObj) {
     return "midmenuItem_" + jsonObj.id; 
 }
 
+var lastSearchType;
 function listMidMenuItems2(commandString, getSearchParamsFn, jsonResponse1, jsonResponse2, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu, page) {                
 	var params = {
         "commandString": commandString,
