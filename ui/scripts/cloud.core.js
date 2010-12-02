@@ -977,12 +977,14 @@ function listMidMenuItems2(commandString, getSearchParamsFn, jsonResponse1, json
     return count;
 }
 
+var currentLeftMenuId;
 function listMidMenuItems(commandString, getSearchParamsFn, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSPFn, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu, leftmenuId) { 
 	clearMiddleMenu();
 	showMiddleMenu();	
 	$("#midmenu_container").hide();
 	$("#midmenu_spinning_wheel").show();
 	
+	currentLeftMenuId = leftmenuId;
 	$("#right_panel").data("onRefreshFn", function() {
 	    $("#"+leftmenuId).click();
 	});
