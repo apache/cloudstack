@@ -874,7 +874,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
             if (rule.isForwarding()) {
                 fwdRules.add(rule);
-                final SetFirewallRuleCommand cmd = new SetFirewallRuleCommand(routerName, routerIp,rule, false);
+                final SetFirewallRuleCommand cmd = new SetFirewallRuleCommand(routerName, routerIp, rule, true);
                 cmds.addCommand(cmd);
             } else if (rule.getGroupId() != null){
                 lbRules.add(rule);
