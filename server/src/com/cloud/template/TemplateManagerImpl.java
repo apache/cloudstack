@@ -586,14 +586,11 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         
         EventUtils.saveStartedEvent(userId, accountId, event, "Starting extraction of " +template.getName()+ " in mode:" +extractMode.toString(), eventId);
         UploadVO vo = _uploadMonitor.createEntityDownloadURL(template, tmpltHostRef, zoneId, eventId);
-        if (vo!=null){
-            ExtractJobResultObject resultObject = new ExtractJobResultObject(template.getAccountId(), template.getName(), Upload.Status.DOWNLOAD_URL_CREATED.toString(), vo.getId(), url);
-            mgr.completeAsyncJob(job.getId(), AsyncJobResult.STATUS_SUCCEEDED, 1, resultObject);            
+        if (vo!=null){                                  
             EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_INFO, event, "Completed extraction of "+template.getName()+ " in mode:" +mode, null, eventId);
             return vo.getId();
         }else{
             EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_ERROR, event, "Failed extraction of "+template.getName()+ " in mode:" +mode, null, eventId);
-            mgr.completeAsyncJob(job.getId(), AsyncJobResult.STATUS_FAILED, 2, null);
             return null;
         }
     }    

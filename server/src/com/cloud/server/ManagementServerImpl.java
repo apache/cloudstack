@@ -5268,8 +5268,12 @@ public class ManagementServerImpl implements ManagementServer {
             // Update the async Job
             ExtractResponse resultObj = new ExtractResponse(volumeId, volume.getName(), accountId, UploadVO.Status.COPY_IN_PROGRESS.toString(), uploadJob.getId());
             resultObj.setResponseName(cmd.getName());
-            _asyncMgr.updateAsyncJobAttachment(job.getId(), Upload.Type.VOLUME.toString(), volumeId);
-            _asyncMgr.updateAsyncJobStatus(job.getId(), AsyncJobResult.STATUS_IN_PROGRESS, resultObj);
+            AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor.getCurrentExecutor();
+            if (asyncExecutor != null) {
+            	 job = asyncExecutor.getJob();
+            	_asyncMgr.updateAsyncJobAttachment(job.getId(), Upload.Type.VOLUME.toString(), volumeId);
+            	_asyncMgr.updateAsyncJobStatus(job.getId(), AsyncJobResult.STATUS_IN_PROGRESS, resultObj);
+            }
     
             // Copy the volume from the source storage pool to secondary storage
             CopyVolumeCommand cvCmd = new CopyVolumeCommand(volume.getId(), volume.getPath(), srcPool, secondaryStorageURL, true);
@@ -5282,7 +5286,9 @@ public class ManagementServerImpl implements ManagementServer {
                 //Update the async job.
                 resultObj.setResultString(errorString);
                 resultObj.setUploadStatus(UploadVO.Status.COPY_ERROR.toString());
-                _asyncMgr.completeAsyncJob(job.getId(), AsyncJobResult.STATUS_FAILED, 0, resultObj);
+                if (asyncExecutor != null) {
+                	_asyncMgr.completeAsyncJob(job.getId(), AsyncJobResult.STATUS_FAILED, 0, resultObj);
+                }
 
                 //Update the DB that volume couldn't be copied
                 uploadJob.setUploadState(UploadVO.Status.COPY_ERROR);            
