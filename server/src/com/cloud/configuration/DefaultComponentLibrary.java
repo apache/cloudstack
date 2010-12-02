@@ -61,7 +61,6 @@ import com.cloud.maid.dao.StackMaidDaoImpl;
 import com.cloud.maint.UpgradeManagerImpl;
 import com.cloud.maint.dao.AgentUpgradeDaoImpl;
 import com.cloud.network.NetworkManagerImpl;
-import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.FirewallRulesDaoImpl;
 import com.cloud.network.dao.IPAddressDaoImpl;
 import com.cloud.network.dao.LoadBalancerDaoImpl;
@@ -72,6 +71,8 @@ import com.cloud.network.dao.RemoteAccessVpnDaoImpl;
 import com.cloud.network.dao.VpnUserDaoImpl;
 import com.cloud.network.lb.LoadBalancingRulesManagerImpl;
 import com.cloud.network.router.DomainRouterManagerImpl;
+import com.cloud.network.rules.RulesManagerImpl;
+import com.cloud.network.rules.dao.PortForwardingRulesDaoImpl;
 import com.cloud.network.security.NetworkGroupManagerImpl;
 import com.cloud.network.security.dao.IngressRuleDaoImpl;
 import com.cloud.network.security.dao.NetworkGroupDaoImpl;
@@ -226,7 +227,8 @@ public class DefaultComponentLibrary implements ComponentLibrary {
         addDao("RemoteAccessVpnDao", RemoteAccessVpnDaoImpl.class);
         addDao("VpnUserDao", VpnUserDaoImpl.class);
         addDao("ItWorkDao", ItWorkDaoImpl.class);
-        addDao("FirewallRulesDao", FirewallRulesDao.class);
+        addDao("FirewallRulesDao", FirewallRulesDaoImpl.class);
+        addDao("PortForwardingRulesDao", PortForwardingRulesDaoImpl.class);
     }
 
     Map<String, ComponentInfo<Manager>> _managers = new HashMap<String, ComponentInfo<Manager>>();
@@ -279,6 +281,7 @@ public class DefaultComponentLibrary implements ComponentLibrary {
         addManager("DomainRouterManager", DomainRouterManagerImpl.class);
         addManager("EntityManager", EntityManagerImpl.class);
         addManager("LoadBalancingRulesManager", LoadBalancingRulesManagerImpl.class);
+        addManager("RulesManager", RulesManagerImpl.class);
     }
 
     protected <T> List<ComponentInfo<Adapter>> addAdapterChain(Class<T> interphace, List<Pair<String, Class<? extends T>>> adapters) {

@@ -433,7 +433,7 @@ CREATE TABLE `cloud`.`op_dc_vnet_alloc` (
 
 CREATE TABLE `cloud`.`firewall_rules` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
-  `ip_address` bigint unsigned NOT NULL COMMENT 'id_address',
+  `ip_address` bigint unsigned NOT NULL COMMENT 'ip_address',
   `start_port` int(10) NOT NULL default -1 COMMENT 'starting port of a port range',
   `end_port` int(10) NOT NULL default -1 COMMENT 'end port of a port range',
   `state` char(32) NOT NULL COMMENT 'current state of this rule',
@@ -441,9 +441,13 @@ CREATE TABLE `cloud`.`firewall_rules` (
   `purpose` char(32) NOT NULL COMMENT 'why are these ports opened?',
   `account_id` bigint unsigned NOT NULL COMMENT 'owner id',
   `domain_id` bigint unsigned NOT NULL COMMENT 'domain id',
+  `network_id` bigint unsigned NOT NULL COMMENT 'network id',
   `xid` char(40) NOT NULL COMMENT 'external id',
   `created` datetime COMMENT 'Date created',
-  PRIMARY KEY  (`id`)
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_firewall_rules__network_id` FOREIGN KEY(`network_id`) REFERENCES `network`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_firewall_rules__account_id` FOREIGN KEY(`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_firewall_rules__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`load_balancing_rules` (

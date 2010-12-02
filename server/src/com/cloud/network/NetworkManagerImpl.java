@@ -2124,7 +2124,24 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     
     @Override
     public boolean applyRules(Ip ip, List<? extends FirewallRule> rules, boolean continueOnError) throws ResourceUnavailableException {
-        // TODO Auto-generated method stub
-        return false;
+        if (rules.size() == 0) {
+            s_logger.debug("There are no rules to forward to the network elements");
+            return true;
+        }
+        
+        Network network = _networkConfigDao.findById(rules.get(0).getNetworkId());
+        for (NetworkElement ne : _networkElements) {
+            try {
+                boolean handled = ne.applyRules(network, rules);
+                s_logger.debug("Network Rules for " + ip + " were " + (handled ? "" : " not") + " handled by " + ne.getName());
+            } catch (ResourceUnavailableException e) {
+                if (!continueOnError) {
+                    throw e;
+                }
+                s_logger.warn("Problems with " + ne.getName() + " but pushing on", e);
+            }
+        }
+        
+        return true;
     }
 }

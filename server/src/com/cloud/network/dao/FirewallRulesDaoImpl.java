@@ -33,7 +33,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.net.Ip;
 
-@Local(value = { FirewallRulesDao.class }) @DB(txn=false)
+@Local(value=FirewallRulesDao.class) @DB(txn=false)
 public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> implements FirewallRulesDao {
     private static final Logger s_logger = Logger.getLogger(FirewallRulesDaoImpl.class);
     

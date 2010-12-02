@@ -56,7 +56,7 @@ import com.cloud.vm.Nic;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.dao.UserVmDao;
 
-@Local(value=RulesManager.class)
+@Local(value={RulesManager.class, RulesService.class})
 public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     private static final Logger s_logger = Logger.getLogger(RulesManagerImpl.class);
     String _name;
@@ -254,11 +254,21 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         // FIXME: Not working yet.
         return null;
     }
-
+    
     @Override
     public List<? extends PortForwardingRule> listPortForwardingRules(ListPortForwardingRulesCmd cmd) {
-        // TODO Auto-generated method stub
-        return null;
+        Ip ipAddress = new Ip(cmd.getIpAddress());
+        Account caller = UserContext.current().getAccount();
+
+        IPAddressVO ipAddressVO = _ipAddressDao.findById(ipAddress.addr());
+        if (ipAddressVO == null || ipAddressVO.getAllocated() == null) {
+            throw new InvalidParameterValueException("Unable to find IP address " + ipAddress);
+        }
+
+        List<PortForwardingRuleVO> rules = _forwardingDao.listByIpAndNotRevoked(ipAddress);
+        _accountMgr.checkAccess(caller, rules.toArray(new PortForwardingRuleVO[rules.size()]));
+        
+        return rules;
     }
 
     @Override
@@ -666,36 +676,6 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 //        return newFwRule;
 //    }
 //
-//    @Override
-//    public List<PortForwardingRuleVO> listPortForwardingRules(ListPortForwardingRulesCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
-//        String ipAddress = cmd.getIpAddress();
-//        Account account = UserContext.current().getAccount();
-//
-//        IPAddressVO ipAddressVO = _ipAddressDao.findById(ipAddress);
-//        if (ipAddressVO == null) {
-//            throw new InvalidParameterValueException("Unable to find IP address " + ipAddress);
-//        }
-//
-//        Account addrOwner = _accountDao.findById(ipAddressVO.getAccountId());
-//
-//        // if an admin account was passed in, or no account was passed in, make sure we honor the accountName/domainId parameters
-//        if ((account != null) && isAdmin(account.getType())) {
-//            if (ipAddressVO.getAccountId() != null) {
-//                if ((addrOwner != null) && !_domainDao.isChildDomain(account.getDomainId(), addrOwner.getDomainId())) {
-//                    throw new PermissionDeniedException("Unable to list port forwarding rules for address " + ipAddress + ", permission denied for account " + account.getId());
-//                }
-//            } 
-//        } else {
-//            if (account != null) {
-//                if ((ipAddressVO.getAccountId() == null) || (account.getId() != ipAddressVO.getAccountId().longValue())) {
-//                    throw new PermissionDeniedException("Unable to list port forwarding rules for address " + ipAddress + ", permission denied for account " + account.getId());
-//                }
-//            }
-//        }
-//
-//        return _rulesDao.listIPForwarding(cmd.getIpAddress(), true);
-//    }
-    
 //  @Override @DB
 //  public boolean deletePortForwardingRule(Long id, boolean sysContext) {
 //      Long ruleId = id;

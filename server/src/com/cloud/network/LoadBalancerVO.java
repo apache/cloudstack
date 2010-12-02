@@ -21,9 +21,9 @@ package com.cloud.network;
 import java.util.List;
 
 import javax.persistence.Column;
+import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 import javax.persistence.PrimaryKeyJoinColumn;
-import javax.persistence.SecondaryTable;
 import javax.persistence.Table;
 
 import com.cloud.network.rules.FirewallRuleVO;
@@ -33,8 +33,8 @@ import com.cloud.utils.net.NetUtils;
 
 @Entity
 @Table(name=("load_balancer"))
-@SecondaryTable(name="account",
-        pkJoinColumns={@PrimaryKeyJoinColumn(name="account_id", referencedColumnName="id")})
+@DiscriminatorValue(value="LoadBalancing")
+@PrimaryKeyJoinColumn(name="id")
 public class LoadBalancerVO extends FirewallRuleVO implements LoadBalancer {
     
     @Column(name="name")

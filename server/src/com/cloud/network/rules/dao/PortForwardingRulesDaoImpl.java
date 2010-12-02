@@ -30,12 +30,13 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.net.Ip;
 
 @Local(value=PortForwardingRulesDao.class)
-public class PortForwardingRuleDaoImpl extends GenericDaoBase<PortForwardingRuleVO, Long> implements PortForwardingRulesDao {
+public class PortForwardingRulesDaoImpl extends GenericDaoBase<PortForwardingRuleVO, Long> implements PortForwardingRulesDao {
 
     protected final SearchBuilder<PortForwardingRuleVO> AllFieldsSearch;
-    protected final SearchBuilder<PortForwardingRuleVO> ApplicationSearch; 
+    protected final SearchBuilder<PortForwardingRuleVO> ApplicationSearch;
+    protected final SearchBuilder<PortForwardingRuleVO> ActiveRulesSearch;
     
-    protected PortForwardingRuleDaoImpl() {
+    protected PortForwardingRulesDaoImpl() {
         super();
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("id", AllFieldsSearch.entity().getId(), Op.EQ);
@@ -44,6 +45,11 @@ public class PortForwardingRuleDaoImpl extends GenericDaoBase<PortForwardingRule
         ApplicationSearch = createSearchBuilder();
         ApplicationSearch.and("ip", ApplicationSearch.entity().getSourceIpAddress(), Op.EQ);
         ApplicationSearch.and("state", ApplicationSearch.entity().getState(), Op.NEQ);
+        
+        ActiveRulesSearch = createSearchBuilder();
+        ActiveRulesSearch.and("ip", ActiveRulesSearch.entity().getSourceIpAddress(), Op.EQ);
+        ActiveRulesSearch.and("state", ActiveRulesSearch.entity().getState(), Op.NEQ);
+        ActiveRulesSearch.done();
     }
 
     @Override
@@ -51,6 +57,15 @@ public class PortForwardingRuleDaoImpl extends GenericDaoBase<PortForwardingRule
         SearchCriteria<PortForwardingRuleVO> sc = ApplicationSearch.create();
         sc.setParameters("ip", ip);
         sc.setParameters("state", State.Staged);
+        
+        return listBy(sc, null);
+    }
+
+    @Override
+    public List<PortForwardingRuleVO> listByIpAndNotRevoked(Ip ip) {
+        SearchCriteria<PortForwardingRuleVO> sc = ActiveRulesSearch.create();
+        sc.setParameters("ip", ip);
+        sc.setParameters("state", State.Revoke);
         
         return listBy(sc, null);
     }

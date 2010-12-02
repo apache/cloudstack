@@ -171,7 +171,7 @@ public class CreatePortForwardingRuleCmd extends BaseCmd implements PortForwardi
 
     @Override
     public Ip getDestinationIpAddress() {
-        throw new UnsupportedOperationException("Not implemented yet");
+        return null;
     }
 
     @Override

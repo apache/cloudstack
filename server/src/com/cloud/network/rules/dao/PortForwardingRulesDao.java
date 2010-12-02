@@ -25,4 +25,12 @@ import com.cloud.utils.net.Ip;
 
 public interface PortForwardingRulesDao extends GenericDao<PortForwardingRuleVO, Long> {
     List<PortForwardingRuleVO> listForApplication(Ip ip);
+    
+    /**
+     * Find all port forwarding rules that have not been revoked.
+     * 
+     * @param ip ip address 
+     * @return List of PortForwardingRuleVO
+     */
+    List<PortForwardingRuleVO> listByIpAndNotRevoked(Ip ip);
 }

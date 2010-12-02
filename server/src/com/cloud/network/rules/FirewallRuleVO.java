@@ -58,10 +58,10 @@ public class FirewallRuleVO implements FirewallRule {
     @Column(name="ip_address", updatable=false)
     Ip sourceIpAddress;
     
-    @Column(name="port_start", updatable=false)
+    @Column(name="start_port", updatable=false)
     int sourcePortStart;
 
-    @Column(name="port_end", updatable=false)
+    @Column(name="end_port", updatable=false)
     int sourcePortEnd;
     
     @Column(name="protocol", updatable=false)
@@ -135,6 +135,7 @@ public class FirewallRuleVO implements FirewallRule {
         return state;
     }
     
+    @Override
     public long getNetworkId() {
         return networkId;
     }
