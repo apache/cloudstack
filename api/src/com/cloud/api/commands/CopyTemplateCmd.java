@@ -27,6 +27,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.TemplateResponse;
+import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.template.VirtualMachineTemplate;
@@ -99,6 +100,14 @@ public class CopyTemplateCmd extends BaseAsyncCmd {
     @Override
     public String getEventDescription() {
         return  "copying template: " + getId() + " from zone: " + getSourceZoneId() + " to zone: " + getDestinationZoneId();
+    }
+    
+    public AsyncJob.Type getInstanceType() {
+    	return AsyncJob.Type.Template;
+    }
+    
+    public Long getInstanceId() {
+    	return getId();
     }
 
     @Override

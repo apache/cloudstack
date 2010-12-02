@@ -27,6 +27,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.VolumeResponse;
+import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
@@ -85,6 +86,14 @@ public class AttachVolumeCmd extends BaseAsyncCmd {
     public String getName() {
         return s_name;
     }
+    
+    public AsyncJob.Type getInstanceType() {
+    	return AsyncJob.Type.Volume;
+    }
+    
+    public Long getInstanceId() {
+    	return getId();
+    }
 
     @Override
     public long getAccountId() {
@@ -107,6 +116,11 @@ public class AttachVolumeCmd extends BaseAsyncCmd {
     
     @Override
     public void execute(){
+    	try {
+    		Thread.sleep(2000);
+    	} catch (Exception e) {
+    		
+    	}
         Volume result = _userVmService.attachVolumeToVM(this);
         if (result != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(result);

@@ -27,6 +27,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SnapshotResponse;
+import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.Snapshot;
@@ -100,7 +101,11 @@ public class CreateSnapshotCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  "creating snapshot for volume: " + getVolumeId();
     }
-
+    
+    public AsyncJob.Type getInstanceType() {
+    	return AsyncJob.Type.Snapshot;
+    }
+    
     @Override
     public void execute(){
         try {

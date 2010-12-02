@@ -26,6 +26,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.VolumeResponse;
+import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
@@ -76,6 +77,14 @@ public class DetachVolumeCmd extends BaseAsyncCmd {
     
     public static String getResultObjectName() {
     	return "volume";
+    }
+    
+    public AsyncJob.Type getInstanceType() {
+    	return AsyncJob.Type.Volume;
+    }
+    
+    public Long getInstanceId() {
+    	return getId();
     }
 
     @Override

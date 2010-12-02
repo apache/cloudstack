@@ -389,11 +389,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         snapshotResponse.setCreated(snapshot.getCreated());
         snapshotResponse.setName(snapshot.getName());
         snapshotResponse.setIntervalType(ApiDBUtils.getSnapshotIntervalTypes(snapshot.getId()));
-        AsyncJobVO asyncJob = ApiDBUtils.findInstancePendingAsyncJob("snapshot", snapshot.getId());
-        if (asyncJob != null) {
-            snapshotResponse.setJobId(asyncJob.getId());
-            snapshotResponse.setJobStatus(asyncJob.getStatus());
-        }
         snapshotResponse.setObjectName("snapshot");
         return snapshotResponse;
     }
@@ -433,12 +428,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         userVmResponse.setId(userVm.getId());
-        AsyncJobVO asyncJob = ApiDBUtils.findInstancePendingAsyncJob("vm_instance", userVm.getId());
-        if (asyncJob != null) {
-            userVmResponse.setJobId(asyncJob.getId());
-            userVmResponse.setJobStatus(asyncJob.getStatus());
-        }
-
         userVmResponse.setName(userVm.getHostName());
         userVmResponse.setCreated(userVm.getCreated());
         userVmResponse.setIpAddress(userVm.getPrivateIpAddress());
@@ -562,12 +551,6 @@ public class ApiResponseHelper implements ResponseGenerator {
                                                  // are using
                                                  // different instance types at
                                                  // the moment
-            }
-
-            AsyncJobVO asyncJob = ApiDBUtils.findInstancePendingAsyncJob(instanceType, vm.getId());
-            if (asyncJob != null) {
-                vmResponse.setJobId(asyncJob.getId());
-                vmResponse.setJobStatus(asyncJob.getStatus());
             }
 
             vmResponse.setZoneId(vm.getDataCenterId());
@@ -888,12 +871,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         VolumeResponse volResponse = new VolumeResponse();
         volResponse.setId(volume.getId());
 
-        AsyncJobVO asyncJob = ApiDBUtils.findInstancePendingAsyncJob("volume", volume.getId());
-        if (asyncJob != null) {
-            volResponse.setJobId(asyncJob.getId());
-            volResponse.setJobStatus(asyncJob.getStatus());
-        }
-
         if (volume.getName() != null) {
             volResponse.setName(volume.getName());
         } else {
@@ -1125,12 +1102,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         userVmResponse.setId(userVm.getId());
-        AsyncJobVO asyncJob = ApiDBUtils.findInstancePendingAsyncJob("vm_instance", userVm.getId());
-        if (asyncJob != null) {
-            userVmResponse.setJobId(asyncJob.getId());
-            userVmResponse.setJobStatus(asyncJob.getStatus());
-        }
-
         userVmResponse.setName(userVm.getHostName());
         userVmResponse.setCreated(userVm.getCreated());
 
@@ -1338,12 +1309,6 @@ public class ApiResponseHelper implements ResponseGenerator {
                                                  // the moment
             }
 
-            AsyncJobVO asyncJob = ApiDBUtils.findInstancePendingAsyncJob(instanceType, vm.getId());
-            if (asyncJob != null) {
-                vmResponse.setJobId(asyncJob.getId());
-                vmResponse.setJobStatus(asyncJob.getStatus());
-            }
-
             // for console proxies, add the active sessions
             if (systemVM instanceof ConsoleProxyVO) {
                 ConsoleProxyVO proxy = (ConsoleProxyVO) systemVM;
@@ -1541,12 +1506,6 @@ public class ApiResponseHelper implements ResponseGenerator {
                 templateResponse.setSize(templateSize);
             }
             
-            AsyncJobVO asyncJob = ApiDBUtils.findInstancePendingAsyncJob("vm_template", template.getId());
-            if (asyncJob != null) {
-                templateResponse.setJobId(asyncJob.getId());
-                templateResponse.setJobStatus(asyncJob.getStatus());
-            }
-
             templateResponse.setObjectName("template");
             responses.add(templateResponse);
         }
@@ -2083,12 +2042,6 @@ public class ApiResponseHelper implements ResponseGenerator {
                     isoResponse.setSize(isoSize);
                 }
                 
-                AsyncJobVO asyncJob = ApiDBUtils.findInstancePendingAsyncJob("vm_template", iso.getId());
-                if(asyncJob != null) {
-                    isoResponse.setJobId(asyncJob.getId());
-                    isoResponse.setJobStatus(asyncJob.getStatus());
-                }
-
                 isoResponse.setObjectName("iso");
                 isoResponses.add(isoResponse);
             }

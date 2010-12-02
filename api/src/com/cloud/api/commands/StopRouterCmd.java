@@ -27,6 +27,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.DomainRouterResponse;
+import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -82,6 +83,14 @@ public class StopRouterCmd extends BaseAsyncCmd {
     @Override
     public String getEventDescription() {
         return  "stopping router: " + getId();
+    }
+    
+    public AsyncJob.Type getInstanceType() {
+    	return AsyncJob.Type.DomainRouter;
+    }
+    
+    public Long getInstanceId() {
+    	return getId();
     }
 
     @Override

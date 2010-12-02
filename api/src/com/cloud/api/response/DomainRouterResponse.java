@@ -102,6 +102,10 @@ public class DomainRouterResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain associated with the router")
     private String domainName;
+    
+    public Long getObjectId() {
+    	return getId();
+    }
 
     public Long getId() {
         return id;

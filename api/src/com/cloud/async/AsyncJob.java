@@ -23,10 +23,13 @@ public interface AsyncJob {
 	public enum Type {
         None,
 		VirtualMachine,
-        Router,
+        DomainRouter,
         Volume,
         ConsoleProxy,
-        Snapshot
+        Snapshot,
+        Template,
+        Iso,
+        SystemVm
     }
 	
     Long getId();

@@ -28,6 +28,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.StoragePoolResponse;
 import com.cloud.api.response.TemplateResponse;
+import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Volume;
@@ -160,6 +161,10 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
     @Override
     public String getEventDescription() {
         return  "creating template: " + getTemplateName();
+    }
+    
+    public AsyncJob.Type getInstanceType() {
+    	return AsyncJob.Type.Template;
     }
 
     @Override

@@ -29,6 +29,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.DomainRouterResponse;
 import com.cloud.api.response.ListResponse;
+import com.cloud.async.AsyncJob;
 import com.cloud.network.router.VirtualRouter;
 
 @Implementation(description="List routers.", responseObject=DomainRouterResponse.class)
@@ -101,6 +102,10 @@ public class ListRoutersCmd extends BaseListCmd {
     @Override
     public String getName() {
         return s_name;
+    }
+    
+    public AsyncJob.Type getInstanceType() {
+    	return AsyncJob.Type.DomainRouter;
     }
 
     @Override

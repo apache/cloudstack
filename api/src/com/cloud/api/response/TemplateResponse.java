@@ -107,6 +107,10 @@ public class TemplateResponse extends BaseResponse {
     @SerializedName("isextractable") @Param(description="true if the template is extractable, false otherwise")
     private Boolean extractable;
     
+    public Long getObjectId() {
+    	return getId();
+    }
+    
     public Long getZoneId() {
         return zoneId;
     }

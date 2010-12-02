@@ -28,6 +28,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.SnapshotResponse;
+import com.cloud.async.AsyncJob;
 import com.cloud.storage.Snapshot;
 
 @Implementation(description="Lists all available snapshots for the account.", responseObject=SnapshotResponse.class)
@@ -100,6 +101,10 @@ public class ListSnapshotsCmd extends BaseListCmd {
     @Override
     public String getName() {
         return s_name;
+    }
+    
+    public AsyncJob.Type getInstanceType() {
+    	return AsyncJob.Type.Snapshot;
     }
 
     @Override
