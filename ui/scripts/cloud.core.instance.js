@@ -60,7 +60,8 @@ function instanceBuildSubMenu() {
             cache: false,
             data: createURL("command=listInstanceGroups"),	       
             dataType: "json",
-            success: function(json) {	            
+            success: function(json) {	  
+                $("#leftmenu_instance_group_container").empty();          
                 var instancegroups = json.listinstancegroupsresponse.instancegroup;	        	
         	    if(instancegroups!=null && instancegroups.length>0) {           
 	                for(var i=0; i < instancegroups.length; i++) {		                
@@ -76,7 +77,7 @@ function instanceBuildSubMenu2(label, commandString) {
     var $newSubMenu = $("#leftmenu_secondindent_template").clone();
     $newSubMenu.find("#label").text(label);    
     bindAndListMidMenuItems($newSubMenu, commandString, vmGetSearchParams, "listvirtualmachinesresponse", "virtualmachine", "jsp/instance.jsp", afterLoadInstanceJSP, vmToMidmenu, vmToRightPanel, getMidmenuId, true);
-    $("#leftmenu_instance_expandedbox").append($newSubMenu.show());
+    $("#leftmenu_instance_group_container").append($newSubMenu.show());
 }
 
 var $doTemplateNo, $doTemplateCustom,$doTemplateExisting;

@@ -460,9 +460,12 @@
 									<span id="label"><fmt:message key="label.menu.destroyed.instances"/></span>
 								</div>
 							</div>
-						</div>
-                    </div>
-
+						</div>		
+										
+						<div id="leftmenu_instance_group_container">
+                    	</div>	
+                    						
+                    </div>                    
                 </div>
                 <div class="leftmenu_list">
                     <div class="leftmenu_content_flevel" id="leftmenu_storage">
