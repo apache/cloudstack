@@ -2553,42 +2553,136 @@ public class ManagementServerImpl implements ManagementServer {
     
     @Override
     public List<FirewallRuleVO> searchForIpForwardingRules(ListIpForwardingRulesCmd cmd){
+    	//Note
+    	//The following was decided after discussing with Will
+    	//ListIpForwardingRules with no params lists the rules for that user ; with a listAll() for admin
+    	//ListIpForwardingRules with accountName and domainId lists the rule for that account (provided the executing user has the right perms)
+    	//ListIpForwardingRules with ipAddress lists the rule for that ip address (provided the executing user has the right perms)
+    	
         String ipAddress = cmd.getPublicIpAddress();
-        Account account = UserContext.current().getAccount();
-
-        IPAddressVO ipAddressVO = _publicIpAddressDao.findById(ipAddress);
-        if (ipAddressVO == null) {
-            throw new InvalidParameterValueException("Unable to find IP address " + ipAddress);
-        }
-
-        Account addrOwner = _accountDao.findById(ipAddressVO.getAccountId());
-
-        // if an admin account was passed in, or no account was passed in, make sure we honor the accountName/domainId parameters
-        if ((account != null) && isAdmin(account.getType())) {
-            if (ipAddressVO.getAccountId() != null) {
-                if ((addrOwner != null) && !_domainDao.isChildDomain(account.getDomainId(), addrOwner.getDomainId())) {
-                    throw new PermissionDeniedException("Unable to list ip forwarding rules for address " + ipAddress + ", permission denied for account " + account.getId());
-                }
-            } 
-        } else {
-            if (account != null) {
-                if ((ipAddressVO.getAccountId() == null) || (account.getId() != ipAddressVO.getAccountId().longValue())) {
-                    throw new PermissionDeniedException("Unable to list ip forwarding rules for address " + ipAddress + ", permission denied for account " + account.getId());
-                }
-            }
+        String accountName = cmd.getAccountName();
+        Long domainId = cmd.getDomainId();
+        Account account = null;
+        
+        if((accountName != null && domainId == null) || (accountName == null && domainId != null)){
+        	throw new ServerApiException(BaseCmd.PARAM_ERROR, "Account name and domain id both have to be passed as a tuple");
         }
         
+        if(accountName != null && domainId != null && ipAddress != null){
+        	throw new ServerApiException(BaseCmd.PARAM_ERROR, "Either Account name and domain id both have to be passed as a tuple; or the ip address has to be passed whilst searching");
+        }
+        
+        //account and domainId both provided case
+        if(accountName != null && domainId != null){
+        	account = _accountDao.findAccount(accountName, domainId);        	
+        	if(account == null)
+        		throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Specified account for domainId:"+domainId+" account name:"+accountName+" doesn't exist");
+        	else{
+        		//get the ctxaccount to see if he has permissions
+        		Account ctxAccount = UserContext.current().getAccount();
+        		
+        		if(!isChildDomain(ctxAccount.getDomainId(), account.getDomainId())){
+        			throw new PermissionDeniedException("Unable to list ip forwarding rules for address " + ipAddress + ", permission denied for the executing account: " + ctxAccount.getId()+" to view rules for account: "+account.getId());
+        		}
+        		
+	        	Filter searchFilter = new Filter(FirewallRuleVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+	        	SearchBuilder<FirewallRuleVO> sb = _firewallRulesDao.createSearchBuilder();
+	        	
+	            SearchBuilder<IPAddressVO> sb1 = _publicIpAddressDao.createSearchBuilder();
+	        	sb1.and("accountId", sb1.entity().getAccountId(), SearchCriteria.Op.EQ);
+	        	sb1.and("oneToOneNat", sb1.entity().isOneToOneNat(), SearchCriteria.Op.EQ);
+	        	sb.join("sb1", sb1, sb.entity().getPublicIpAddress(),sb1.entity().getAddress(), JoinBuilder.JoinType.INNER);
+	            
+	            SearchCriteria<FirewallRuleVO> sc = sb.create();
+	            sc.setJoinParameters("sb1","oneToOneNat", new Long(1));
+	            sc.setJoinParameters("sb1", "accountId", account.getId());
+		
+	            return _firewallRulesDao.search(sc, searchFilter);
+        	}
+        }
+
+        if(account == null){
+            account = UserContext.current().getAccount();//use user context
+        }
+
+        if(account == null || account.getType() == Account.ACCOUNT_TYPE_ADMIN){
+        	return searchIpForwardingRulesInternal(ipAddress, cmd, null, Account.ACCOUNT_TYPE_ADMIN);
+        }
+
+        if((account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)){
+        	if(ipAddress != null){
+        		IPAddressVO ipAddressVO = _publicIpAddressDao.findById(ipAddress);
+        		if (ipAddressVO == null) {
+        			throw new InvalidParameterValueException("Unable to find IP address " + ipAddress);
+        		}else{
+        			//check permissions
+        			Account addrOwner = _accountDao.findById(ipAddressVO.getAccountId());
+        			if ((addrOwner != null) && !_domainDao.isChildDomain(account.getDomainId(), addrOwner.getDomainId())) {
+                        throw new PermissionDeniedException("Unable to list ip forwarding rule for address " + ipAddress + ", permission denied for account " + account.getId());
+                    }else{
+                    	return searchIpForwardingRulesInternal(ipAddress, cmd, null, Account.ACCOUNT_TYPE_DOMAIN_ADMIN);
+                    }
+        		}
+        	}else{
+        		//need to list all rules visible to the domain admin
+        		//join with the ip_address table where account_id = user's account id
+        		return searchIpForwardingRulesInternal(ipAddress, cmd, account.getId(), Account.ACCOUNT_TYPE_DOMAIN_ADMIN);
+        	}
+        }
+        
+        if(account.getType() == Account.ACCOUNT_TYPE_NORMAL){
+        	if(ipAddress != null){
+        		IPAddressVO ipAddressVO = _publicIpAddressDao.findById(ipAddress);
+        		if (ipAddressVO == null) {
+        			throw new InvalidParameterValueException("Unable to find IP address " + ipAddress);
+        		}else{
+        			//check permissions
+        			if ((ipAddressVO.getAccountId() == null) || (account.getId() != ipAddressVO.getAccountId().longValue())) {
+        				throw new PermissionDeniedException("Unable to list ip forwarding rule for address " + ipAddress + ", permission denied for account " + account.getId());
+                    }else{
+                    	return searchIpForwardingRulesInternal(ipAddress, cmd, null, Account.ACCOUNT_TYPE_NORMAL);
+                    }
+        		}
+        	}else{
+        		//need to list all rules visible to the user
+        		//join with the ip_address table where account_id = user's account id
+        		return searchIpForwardingRulesInternal(ipAddress, cmd, account.getId(), Account.ACCOUNT_TYPE_NORMAL);
+        	}
+        }
+        
+		return new ArrayList<FirewallRuleVO>();
+    }
+    
+    private List<FirewallRuleVO> searchIpForwardingRulesInternal(String ipAddress, ListIpForwardingRulesCmd cmd, Long accountId, short accountType){
         Filter searchFilter = new Filter(FirewallRuleVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
-        SearchCriteria<FirewallRuleVO> sc = _firewallRulesDao.createSearchCriteria();
-
-        if (ipAddress != null) {
-            sc.addAnd("publicIpAddress", SearchCriteria.Op.EQ, ipAddress);
+        if(accountId == null){
+        	SearchCriteria<FirewallRuleVO> sc = _firewallRulesDao.createSearchCriteria();
+	        if (ipAddress != null) {
+	            sc.addAnd("publicIpAddress", SearchCriteria.Op.EQ, ipAddress);
+	        }
+	        //search for rules with protocol = nat
+	        sc.addAnd("protocol", SearchCriteria.Op.EQ, NetUtils.NAT_PROTO);	
+	        return _firewallRulesDao.search(sc, searchFilter);
+        	
+        }else{
+        	//accountId and accountType both given
+        	if((accountType == Account.ACCOUNT_TYPE_NORMAL) || (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)){
+	        	SearchBuilder<FirewallRuleVO> sb = _firewallRulesDao.createSearchBuilder();
+	
+	            SearchBuilder<IPAddressVO> sb1 = _publicIpAddressDao.createSearchBuilder();
+	        	sb1.and("accountId", sb1.entity().getAccountId(), SearchCriteria.Op.EQ);
+	        	sb1.and("oneToOneNat", sb1.entity().isOneToOneNat(), SearchCriteria.Op.EQ);
+	        	sb.join("sb1", sb1, sb.entity().getPublicIpAddress(),sb1.entity().getAddress(), JoinBuilder.JoinType.INNER);
+	            
+	            SearchCriteria<FirewallRuleVO> sc = sb.create();
+	            sc.setJoinParameters("sb1","oneToOneNat", new Long(1));
+	            sc.setJoinParameters("sb1", "accountId", accountId);
+		
+	            return _firewallRulesDao.search(sc, searchFilter);
+        	}
         }
         
-        //search for rules with protocol = nat
-        sc.addAnd("protocol", SearchCriteria.Op.EQ, NetUtils.NAT_PROTO);
-
-        return _firewallRulesDao.search(sc, searchFilter); 	
+        return new ArrayList<FirewallRuleVO>();
     }
     
     @Override
