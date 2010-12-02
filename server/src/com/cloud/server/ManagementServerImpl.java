@@ -2553,7 +2553,7 @@ public class ManagementServerImpl implements ManagementServer {
     
     @Override
     public List<FirewallRuleVO> searchForIpForwardingRules(ListIpForwardingRulesCmd cmd){
-    	//Note
+    	//Note::
     	//The following was decided after discussing with Will
     	//ListIpForwardingRules with no params lists the rules for that user ; with a listAll() for admin
     	//ListIpForwardingRules with accountName and domainId lists the rule for that account (provided the executing user has the right perms)
