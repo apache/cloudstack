@@ -29,6 +29,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.HostResponse;
 import com.cloud.api.response.ListResponse;
+import com.cloud.async.AsyncJob;
 import com.cloud.host.Host;
 
 @Implementation(description="Lists hosts.", responseObject=HostResponse.class)
@@ -103,6 +104,10 @@ public class ListHostsCmd extends BaseListCmd {
     @Override
     public String getName() {
         return s_name;
+    }
+    
+    public AsyncJob.Type getInstanceType() {
+    	return AsyncJob.Type.Host;
     }
 
     @Override

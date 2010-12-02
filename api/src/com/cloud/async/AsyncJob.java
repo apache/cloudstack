@@ -29,7 +29,8 @@ public interface AsyncJob {
         Snapshot,
         Template,
         Iso,
-        SystemVm
+        SystemVm,
+        Host
     }
 	
     Long getId();
