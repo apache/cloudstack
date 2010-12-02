@@ -383,7 +383,7 @@ public class AlertManagerImpl implements AlertManager {
 
                 for (CapacityVO capacity : capacityList) {
                     long dataCenterId = capacity.getDataCenterId();
-                    long podId = capacity.getPodId();
+                    Long podId = capacity.getPodId();
                     short type = capacity.getCapacityType();
                     String key = null;
                     if((type == CapacityVO.CAPACITY_TYPE_PUBLIC_IP) || (type == CapacityVO.CAPACITY_TYPE_SECONDARY_STORAGE)){
@@ -407,7 +407,7 @@ public class AlertManagerImpl implements AlertManager {
                     CapacityVO cap = capacities.get(0);
                     short capacityType = cap.getCapacityType();
                     long dataCenterId = cap.getDataCenterId();
-                    long podId = cap.getPodId();
+                    Long podId = cap.getPodId();
 
                     for (CapacityVO capacity : capacities) {
                         totalCapacity += capacity.getTotalCapacity();
@@ -418,8 +418,11 @@ public class AlertManagerImpl implements AlertManager {
                     double thresholdLimit = 1.0;
                     DataCenterVO dcVO = _dcDao.findById(dataCenterId);
                     String dcName = ((dcVO == null) ? "unknown" : dcVO.getName());
-                    HostPodVO pod = _podDao.findById(podId);
-                    String podName = ((pod == null) ? "unknown" : pod.getName());
+                    String podName = "";
+                    if( podId != null){
+                        HostPodVO pod = _podDao.findById(podId);
+                        podName = ((pod == null) ? "unknown" : pod.getName());
+                    }
                     String msgSubject = "";
                     String msgContent = "";
                     String totalStr = "";
