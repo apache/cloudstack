@@ -239,6 +239,7 @@ $(document).ready(function() {
 	            if(params == null)
 	                return;	        	    
 	            lastSearchType = "advanced_search";  
+	            $("#basic_search").find("#search_input").val("");
 	            listMidMenuItems2(params.commandString, params.getSearchParamsFn, params.jsonResponse1, params.jsonResponse2, params.toMidmenuFn, params.toRightPanelFn, params.getMidmenuIdFn, params.isMultipleSelectionInMidMenu, 1);
     	        $(this).hide();
 	            return false;
