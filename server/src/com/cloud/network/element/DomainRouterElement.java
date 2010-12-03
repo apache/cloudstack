@@ -39,6 +39,7 @@ import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
+import com.cloud.utils.net.Ip;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
@@ -123,6 +124,19 @@ public class DomainRouterElement extends AdapterBase implements NetworkElement {
 
     @Override
     public boolean applyRules(Network config, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
+        
+        return false;
+    }
+
+    @Override
+    public boolean associate(Network network, Ip ipAddress) throws ResourceUnavailableException {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public boolean disassociate(Network network, Ip ipAddress) throws ResourceUnavailableException {
+        // TODO Auto-generated method stub
         return false;
     }
 }

@@ -47,26 +47,26 @@ public interface NetworkService {
      * @throws ResourceAllocationException, InsufficientCapacityException 
      */
     IpAddress associateIP(AssociateIPAddrCmd cmd) throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException;    
-    public boolean disassociateIpAddress(DisassociateIPAddrCmd cmd);
+    boolean disassociateIpAddress(DisassociateIPAddrCmd cmd);
 
     /**
-     * Create a remote access vpn from the given public ip address and client ip range
+     * Create a remote access vpn from the given ip address and client ip range
      * @param cmd the command specifying the ip address, ip range
      * @return the newly created RemoteAccessVpnVO if successful, null otherwise
      * @throws InvalidParameterValueException
      * @throws PermissionDeniedException
      * @throws ConcurrentOperationException 
      */
-    public RemoteAccessVpn createRemoteAccessVpn(CreateRemoteAccessVpnCmd cmd) throws ConcurrentOperationException, InvalidParameterValueException, PermissionDeniedException;
+    RemoteAccessVpn createRemoteAccessVpn(CreateRemoteAccessVpnCmd cmd) throws ConcurrentOperationException, InvalidParameterValueException, PermissionDeniedException;
     
     /**
-     * Start a remote access vpn for the given public ip address and client ip range
+     * Start a remote access vpn for the given ip address and client ip range
      * @param cmd the command specifying the ip address, ip range
      * @return the RemoteAccessVpnVO if successful, null otherwise
      * @throws ConcurrentOperationException 
      * @throws ResourceUnavailableException 
      */
-    public RemoteAccessVpn startRemoteAccessVpn(CreateRemoteAccessVpnCmd cmd) throws ConcurrentOperationException, ResourceUnavailableException;
+    RemoteAccessVpn startRemoteAccessVpn(CreateRemoteAccessVpnCmd cmd) throws ConcurrentOperationException, ResourceUnavailableException;
     
     /**
      * Destroy a previously created remote access VPN
@@ -74,7 +74,7 @@ public interface NetworkService {
      * @return success if successful, false otherwise
      * @throws ConcurrentOperationException 
      */
-    public boolean destroyRemoteAccessVpn(DeleteRemoteAccessVpnCmd cmd) throws ConcurrentOperationException;
+    boolean destroyRemoteAccessVpn(DeleteRemoteAccessVpnCmd cmd) throws ConcurrentOperationException;
 
     VpnUser addVpnUser(AddVpnUserCmd cmd) throws ConcurrentOperationException, AccountLimitException;
 

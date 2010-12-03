@@ -29,6 +29,7 @@ import com.cloud.api.commands.ListPortForwardingRulesCmd;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
+import com.cloud.event.dao.EventDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.PermissionDeniedException;
@@ -39,6 +40,7 @@ import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRule.State;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.offering.NetworkOffering.GuestIpType;
@@ -69,6 +71,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     @Inject UserVmDao _vmDao;
     @Inject AccountManager _accountMgr;
     @Inject NetworkManager _networkMgr;
+    @Inject EventDao _eventDao;
 
     @Override
     public void detectRulesConflict(FirewallRule newRule, IpAddress ipAddress) throws NetworkRuleConflictException {
@@ -264,8 +267,10 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     }
     
     @DB
-    protected void revokeRule(FirewallRuleVO rule, Account caller) {
-        _accountMgr.checkAccess(caller, rule);
+    protected void revokeRule(FirewallRuleVO rule, Account caller, long userId) {
+        if (caller != null) {
+            _accountMgr.checkAccess(caller, rule);
+        }
        
         Transaction txn = Transaction.currentTxn();
         txn.start();
@@ -286,6 +291,24 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             ipAddress.setOneToOneNat(false);
             _ipAddressDao.update(ipAddress.getAddress(), ipAddress);
         }
+        
+        // Save and create the event
+        String ruleName = rule.getPurpose() == Purpose.Firewall ? "Firewall" : (rule.getProtocol().equals(NetUtils.NAT_PROTO) ? "ip forwarding" : "port forwarding");
+        StringBuilder description = new StringBuilder("deleted ").append(ruleName).append(" rule [").append(rule.getSourceIpAddress()).append(":").append(rule.getSourcePortStart()).append("-").append(rule.getSourcePortEnd()).append("]");
+        if (rule.getPurpose() == Purpose.PortForwarding) {
+            PortForwardingRuleVO pfRule = (PortForwardingRuleVO)rule;
+            description.append("->[").append(pfRule.getDestinationIpAddress()).append(":").append(pfRule.getDestinationPortStart()).append("-").append(pfRule.getDestinationPortEnd()).append("]");
+        }
+        description.append(" ").append(rule.getProtocol());
+
+        // save off an event for removing the network rule
+        EventVO event = new EventVO();
+        event.setUserId(userId);
+        event.setAccountId(rule.getAccountId());
+        event.setType(EventTypes.EVENT_NET_RULE_DELETE);
+        event.setDescription(description.toString());
+        event.setLevel(EventVO.LEVEL_INFO);
+        _eventDao.persist(event);
     }
     
     @Override
@@ -299,13 +322,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
         
         _accountMgr.checkAccess(caller, rule);
-        revokeRule(rule, caller);
-        String description;
-        String type = EventTypes.EVENT_NET_RULE_DELETE;
-        String level = EventVO.LEVEL_INFO;
-
-        description = "deleted ip forwarding rule [" + rule.getSourceIpAddress() + ":" + rule.getSourcePortStart() + "]->[" + rule.getDestinationIpAddress() + ":" + rule.getDestinationPortStart() + "] " + rule.getProtocol();
-        EventUtils.saveEvent(ctx.getUserId(), rule.getAccountId(), level, type, description);
+        revokeRule(rule, caller, ctx.getUserId());
         
         if (apply) {
             applyPortForwardingRules(rule.getSourceIpAddress(), true);
@@ -378,6 +395,29 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     @Override
     public boolean applyPortForwardingRules(Ip ip, Account caller) throws ResourceUnavailableException {
         return applyPortForwardingRules(ip, false, caller);
+    }
+    
+    @Override @DB
+    public boolean revokeAllRules(Ip ip, long userId) throws ResourceUnavailableException {
+        List<PortForwardingRuleVO> rules = _forwardingDao.listByIpAndNotRevoked(ip);
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Releasing " + rules.size() + " rules for " + ip);
+        }
+
+        for (PortForwardingRuleVO rule : rules) {
+            revokeRule(rule, null, userId);
+        }
+      
+        applyPortForwardingRules(ip, true, null);
+        
+        // Now we check again in case more rules have been inserted.
+        rules = _forwardingDao.listByIpAndNotRevoked(ip);
+        
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Successfully released rules for " + ip + " and # of rules now = " + rules.size());
+        }
+        
+        return rules.size() == 0;
     }
 
     @Override

@@ -61,6 +61,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, String> implem
         AccountSearch.done();
     }
     
+    @Override
     public boolean mark(long dcId, String ip) {
         SearchCriteria<IPAddressVO> sc = DcIpSearch.create();
         sc.setParameters("dataCenterId", dcId);
@@ -72,6 +73,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, String> implem
         return update(vo, sc) >= 1;
     }
 
+    @Override
     @DB
     public List<String> assignAcccountSpecificIps(long accountId, long domainId, Long vlanDbId, boolean sourceNat) {
     	
@@ -110,6 +112,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, String> implem
 		return null;
     	
     }
+    @Override
     public void setIpAsSourceNat(String ipAddr){
 
     		IPAddressVO ip = createForUpdate(ipAddr);    	    
@@ -159,6 +162,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, String> implem
 	    address.setDomainId(null);
 	    address.setAllocated(null);
 	    address.setSourceNat(false);
+	    address.setOneToOneNat(false);
 	    update(ipAddress, address);
 	}
 	
@@ -176,7 +180,8 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, String> implem
         return listIncludingRemovedBy(sc);
     }
 	
-	public List<IPAddressVO> listByDcIdIpAddress(long dcId, String ipAddress) {
+	@Override
+    public List<IPAddressVO> listByDcIdIpAddress(long dcId, String ipAddress) {
 		SearchCriteria<IPAddressVO> sc = DcIpSearch.create();
 		sc.setParameters("dataCenterId", dcId);
 		sc.setParameters("ipAddress", ipAddress);

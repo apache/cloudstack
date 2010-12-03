@@ -101,9 +101,11 @@ import com.cloud.network.dao.NetworkRuleConfigDao;
 import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.element.NetworkElement;
+import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.DomainRouterManager;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.RulesManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.offerings.NetworkOfferingVO;
@@ -202,6 +204,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Inject RemoteAccessVpnDao _remoteAccessVpnDao = null;
     @Inject VpnUserDao _vpnUsersDao = null;
     @Inject DomainRouterManager _routerMgr;
+    @Inject RulesManager _rulesMgr;
+    @Inject LoadBalancingRulesManager _lbMgr;
 
     @Inject(adapter=NetworkGuru.class)
     Adapters<NetworkGuru> _networkGurus;
@@ -215,6 +219,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     SearchBuilder<AccountVO> AccountsUsingNetworkConfigurationSearch;
 
     private Map<String, String> _configs;
+    
 
     @Override
     public boolean sendSshKeysToHost(Long hostId, String pubKey, String prvKey) {
@@ -805,78 +810,81 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return  answers[0].getResult();        
     }
 
-    @Override @DB
+    @DB
+    protected IPAddressVO releaseOwnershipOfIpAddress(String ipAddress) {
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        IPAddressVO ip = _ipAddressDao.lockRow(ipAddress, true);
+        if (ip == null) {
+            s_logger.warn("Unable to find allocated ip: " + ipAddress);
+            return null;
+        }
+        
+        if (ip.getAllocated() == null) {
+            s_logger.debug("Ip Address is already rleeased: " + ipAddress);
+            return null;
+        }
+        
+        ip.setAccountId(null);
+        ip.setDomainId(null);
+        _ipAddressDao.update(ip.getAddress(), ip);
+        txn.commit();
+        return ip;
+    }
+    
+    @Override
     public boolean releasePublicIpAddress(long userId, final String ipAddress) {
-        return false; // FIXME
-//        IPAddressVO ip = null;
-//        try {
-//            ip = _ipAddressDao.acquireInLockTable(ipAddress);
-//
-//            if (ip == null) {
-//                s_logger.warn("Unable to find allocated ip: " + ipAddress);
-//                return false;
-//            }
-//
-//            if(s_logger.isDebugEnabled()) {
-//                s_logger.debug("lock on ip " + ipAddress + " is acquired");
-//            }
-//
-//            if (ip.getAllocated() == null) {
-//                s_logger.warn("ip: " + ipAddress + " is already released");
-//                return false;
-//            }
-//
-//            if (s_logger.isDebugEnabled()) {
-//                s_logger.debug("Releasing ip " + ipAddress + "; sourceNat = " + ip.isSourceNat());
-//            }
-//            
-//
-//            final List<String> ipAddrs = new ArrayList<String>();
-//            ipAddrs.add(ip.getAddress());
-//            final List<PortForwardingRuleVO> firewallRules = _rulesDao.listIPForwardingForUpdate(ipAddress);
-//
-//            if (s_logger.isDebugEnabled()) {
-//                s_logger.debug("Found firewall rules: " + firewallRules.size());
-//            }
-//
-//            for (final PortForwardingRuleVO fw: firewallRules) {
-//                fw.setEnabled(false);
-//            }
-//
-//            DomainRouterVO router = null;
-//            if (ip.isSourceNat()) {
-//                router = _routerMgr.getRouter(ipAddress);
-//                if (router != null) {
-//                    if (router.getPublicIpAddress() != null) {
-//                        return false;
-//                    }
-//                }
-//            } else {
-//                router = _routerMgr.getRouter(ip.getAccountId(), ip.getDataCenterId());
-//            }
-//
-//            // Now send the updates  down to the domR (note: we still hold locks on address and firewall)
-//            updateFirewallRules(ipAddress, firewallRules, router);
-//
-//            for (final PortForwardingRuleVO rule: firewallRules) {
-//                _rulesDao.remove(rule.getId());
-//
-//                // Save and create the event
-//                String ruleName = (rule.isForwarding() ? "ip forwarding" : "load balancer");
-//                String description = "deleted " + ruleName + " rule [" + rule.getSourceIpAddress() + ":" + rule.getSourcePort()
-//                + "]->[" + rule.getDestinationIpAddress() + ":" + rule.getDestinationPort() + "]" + " "
-//                + rule.getProtocol();
-//
-//                // save off an event for removing the network rule
-//                EventVO event = new EventVO();
-//                event.setUserId(userId);
-//                event.setAccountId(ip.getAccountId());
-//                event.setType(EventTypes.EVENT_NET_RULE_DELETE);
-//                event.setDescription(description);
-//                event.setLevel(EventVO.LEVEL_INFO);
-//                _eventDao.persist(event);
-//            }
-//
+        IPAddressVO ip = releaseOwnershipOfIpAddress(ipAddress);
+        if (ip == null) {
+            return true;
+        }
+        
+        Ip addr = new Ip(ipAddress);
+        
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Releasing ip " + ipAddress + "; sourceNat = " + ip.isSourceNat());
+        }
+
+        boolean success = true;
+        try {
+            if (!_rulesMgr.revokeAllRules(addr, userId)) {
+                s_logger.warn("Unable to revoke all the port forwarding rules for ip " + ip);
+                success = false;
+            }
+        } catch (ResourceUnavailableException e) {
+            s_logger.warn("Unable to revoke all the port forwarding rules for ip " + ip, e);
+            success = false;
+        }
+        
+        if (!_lbMgr.removeAllLoadBalanacers(addr)) {
+            s_logger.warn("Unable to revoke all the load balancer rules for ip " + ip);
+            success = false;
+        }
+        
+        for (NetworkElement ne : _networkElements) {
+            try {
+                ne.disassociate(null, new Ip(ipAddress));
+            } catch (ResourceUnavailableException e) {
+                s_logger.warn("Unable to release the ip address " + ip, e);
+                success = false;
+            }
+        }
+        
+        if (success) {
+            _ipAddressDao.unassignIpAddress(ipAddress);
+            s_logger.debug("released a public ip: " + ipAddress);
+        }
+        
+        final EventVO event = new EventVO();
+        event.setUserId(userId);
+        event.setAccountId(ip.getAccountId());
+        event.setType(EventTypes.EVENT_NET_IP_RELEASE);
+        event.setParameters("address=" + ipAddress + "\nsourceNat="+ip.isSourceNat());
+        event.setDescription("released a public ip: " + ipAddress);
+        _eventDao.persist(event);
+        
+        return success;
+        
 //            List<LoadBalancerVO> loadBalancers = _loadBalancerDao.listByIpAddress(ipAddress);
 //            for (LoadBalancerVO loadBalancer : loadBalancers) {
 //                _loadBalancerDao.remove(loadBalancer.getId());
@@ -892,7 +900,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 //                event.setLevel(EventVO.LEVEL_INFO);
 //                _eventDao.persist(event);
 //            }
-//
+
 //            if ((router != null) && (router.getState() == State.Running)) {
 //                if (s_logger.isDebugEnabled()) {
 //                    s_logger.debug("Disassociate ip " + router.getHostName());
@@ -917,29 +925,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 //                    return false;
 //                }
 //            } else {
-//                _ipAddressDao.unassignIpAddress(ipAddress);
-//            }
-//            s_logger.debug("released a public ip: " + ipAddress);
-//            final EventVO event = new EventVO();
-//            event.setUserId(userId);
-//            event.setAccountId(ip.getAccountId());
-//            event.setType(EventTypes.EVENT_NET_IP_RELEASE);
-//            event.setParameters("address=" + ipAddress + "\nsourceNat="+ip.isSourceNat());
-//            event.setDescription("released a public ip: " + ipAddress);
-//            _eventDao.persist(event);
-//
-//            return true;
-//        } catch (final Throwable e) {
-//            s_logger.warn("ManagementServer error", e);
-//            return false;
-//        } finally {
-//            if(ip != null) {
-//                if(s_logger.isDebugEnabled()) {
-//                    s_logger.debug("Releasing lock on ip " + ipAddress);
-//                }
-//                _ipAddressDao.releaseFromLockTable(ipAddress);
-//            }
-//        }
     }
 
     @Override
