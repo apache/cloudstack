@@ -1284,7 +1284,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         Long numGibibytes = cmd.getDiskSize();
         Boolean isCustomized = cmd.isCustomized() != null ? cmd.isCustomized() : false; //false by default
         String tags = cmd.getTags();        
-        Long domainId = Long.valueOf(DomainVO.ROOT_DOMAIN); // disk offering always gets created under the root domain.Bug # 6055        
+        Long domainId = cmd.getDomainId() != null ? cmd.getDomainId() : Long.valueOf(DomainVO.ROOT_DOMAIN); // disk offering always gets created under the root domain.Bug # 6055 if not passed in cmd        
 
         if(!isCustomized && numGibibytes == null){
         	throw new InvalidParameterValueException("Disksize is required for non-customized disk offering");

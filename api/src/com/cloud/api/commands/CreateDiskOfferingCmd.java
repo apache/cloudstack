@@ -24,6 +24,7 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.DiskOfferingResponse;
 import com.cloud.offering.DiskOffering;
 
@@ -51,6 +52,10 @@ public class CreateDiskOfferingCmd extends BaseCmd {
 
     @Parameter(name=ApiConstants.CUSTOMIZED, type=CommandType.BOOLEAN, description="whether disk offering is custom or not")
     private Boolean customized;
+    
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the ID of the containing domain, null for public offerings")
+    private Long domainId; 
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -75,6 +80,9 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     	return customized;
     }
     
+    public Long getDomainId(){
+    	return domainId;
+    }
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
