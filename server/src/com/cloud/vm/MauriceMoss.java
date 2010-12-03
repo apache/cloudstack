@@ -260,7 +260,7 @@ public class MauriceMoss implements VmManager, ClusterManagerListener {
         ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
         Map<String, String> params = configDao.getConfiguration(xmlParams);
         
-        _retry = NumbersUtil.parseInt(params.get(Config.StartRetry.key()), 2);
+        _retry = NumbersUtil.parseInt(params.get(Config.StartRetry.key()), 10);
         
         ReservationContextImpl.setComponents(_userDao, _domainDao, _accountDao);
         VirtualMachineProfileImpl.setComponents(_offeringDao, _templateDao, _accountDao);
