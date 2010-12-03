@@ -2012,7 +2012,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     }
                     accountId = account.getId();
                 }
-            } 
+            } else {
+                accountId = account.getId();
+            }
         } else {
             accountId = account.getId();
         }
@@ -2039,9 +2041,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             sc.addAnd("id", SearchCriteria.Op.EQ, id);
         }
         
-        if (accountId != null) {
-            sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
+        SearchCriteria<NetworkVO> ssc = _networkConfigDao.createSearchCriteria();
+        ssc.addOr("accountId", SearchCriteria.Op.EQ, accountId);
+        if (accountName == null && domainId == null) {
+            ssc.addOr("accountId", SearchCriteria.Op.EQ, 1L);
         }
+        sc.addAnd("accountId", SearchCriteria.Op.SC, ssc);
         
         return _networkConfigDao.search(sc, searchFilter);
     }
