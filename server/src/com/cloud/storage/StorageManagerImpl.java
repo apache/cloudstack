@@ -953,7 +953,7 @@ public class StorageManagerImpl implements StorageManager {
             _overProvisioningFactor = Integer.parseInt(overProvisioningFactorStr);
         }
 
-        _retry = NumbersUtil.parseInt(configs.get(Config.StartRetry.key()), 2);
+        _retry = NumbersUtil.parseInt(configs.get(Config.StartRetry.key()), 10);
         _pingInterval = NumbersUtil.parseInt(configs.get("ping.interval"), 60);
         _hostRetry = NumbersUtil.parseInt(configs.get("host.retry"), 2);
         _storagePoolAcquisitionWaitSeconds = NumbersUtil.parseInt(configs.get("pool.acquisition.wait.seconds"), 1800);
