@@ -63,12 +63,11 @@ import com.cloud.event.dao.EventDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.UsageServerException;
 import com.cloud.host.dao.DetailsDao;
 import com.cloud.host.dao.HostDao;
 import com.cloud.storage.Snapshot;
-import com.cloud.storage.Snapshot.Type;
 import com.cloud.storage.Snapshot.Status;
+import com.cloud.storage.Snapshot.Type;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotScheduleVO;
 import com.cloud.storage.SnapshotVO;
@@ -101,10 +100,10 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
-import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.UserVmDao;
@@ -361,7 +360,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     public SnapshotVO createSnapshot(CreateSnapshotCmd cmd) throws ResourceAllocationException {
         Long volumeId = cmd.getVolumeId();
         Long policyId = cmd.getPolicyId();
-        Long snapshotId = cmd.getId();
+        Long snapshotId = cmd.getEntityId();
         Long startEventId = cmd.getStartEventId();
         return createSnapshotImpl(volumeId, policyId, snapshotId, startEventId);
     }
