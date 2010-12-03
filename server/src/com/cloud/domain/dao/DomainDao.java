@@ -24,7 +24,7 @@ import com.cloud.domain.DomainVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface DomainDao extends GenericDao<DomainVO, Long> {
-    public void update(Long id, String domainName);
+    public void update(Long id, String domainName, String domainPath);
     public DomainVO create(DomainVO domain);
     public DomainVO findDomainByPath(String domainPath);
     public boolean isChildDomain(Long parentId, Long childId);

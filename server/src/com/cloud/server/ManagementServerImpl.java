@@ -3791,16 +3791,39 @@ public class ManagementServerImpl implements ManagementServer {
         sc.addAnd("name", SearchCriteria.Op.EQ, domainName);
         List<DomainVO> domains = _domainDao.search(sc, null);
         if ((domains == null) || domains.isEmpty()) {
-            _domainDao.update(domainId, domainName);
+        	//whilst updating a domain name, update its path and update all its children's path
             domain = _domainDao.findById(domainId);
+            String updatedDomainPath = getUpdatedDomainPath(domain.getPath(),domainName);
+            updateDomainChildren(domain,updatedDomainPath);
+            _domainDao.update(domainId, domainName, updatedDomainPath);
             EventUtils.saveEvent(new Long(1), domain.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_DOMAIN_UPDATE, "Domain, " + domainName + " was updated");
             return _domainDao.findById(domainId);
         } else {
             domain = _domainDao.findById(domainId);
             EventUtils.saveEvent(new Long(1), domain.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_DOMAIN_UPDATE, "Failed to update domain " + domain.getName() + " with name " + domainName + ", name in use.");
             s_logger.error("Domain with name " + domainName + " already exists in the system");
-            throw new CloudRuntimeException("Fail to update domain " + domainId);
+            throw new CloudRuntimeException("Failed to update domain " + domainId);
         }
+    }
+    
+    private String getUpdatedDomainPath(String oldPath, String newName){
+    	String[] tokenizedPath = oldPath.split("/");
+    	tokenizedPath[tokenizedPath.length-1] = newName;
+    	StringBuilder finalPath = new StringBuilder();
+    	for(String token : tokenizedPath){
+    		finalPath.append(token);
+    		finalPath.append("/");
+    	}
+    	return finalPath.toString();
+    }
+    
+    private void updateDomainChildren(DomainVO domain, String updatedDomainPrefix){
+    	List<DomainVO> domainChildren = _domainDao.findAllChildren(domain.getPath(), domain.getId());
+    	//for each child, update the path
+    	for(DomainVO dom : domainChildren){
+    		dom.setPath(dom.getPath().replaceFirst(domain.getPath(), updatedDomainPrefix));
+    		_domainDao.update(dom.getId(), dom);
+    	}
     }
 
     @Override
