@@ -2323,12 +2323,12 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setBroadcastUri(network.getBroadcastUri().toString());
         }
         
-        if (response.getTrafficType() != null) {
-            response.setTrafficType(network.getTrafficType().toString());
+        if (network.getTrafficType() != null) {
+            response.setTrafficType(network.getTrafficType().name());
         }
         
-        if (response.getType() != null) {
-            response.setType(network.getGuestType().toString());
+        if (network.getGuestType() != null) {
+            response.setType(network.getGuestType().name());
         }
         response.setGateway(network.getGateway());
         response.setCidr(network.getCidr());
@@ -2340,6 +2340,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setNetworkOfferingId(networkOffering.getId());
             response.setNetworkOfferingName(networkOffering.getName());
             response.setNetworkOfferingDisplayText(networkOffering.getDisplayText());
+            response.setIsShared(networkOffering.isShared());
         }
         response.setState(network.getState().toString());
         response.setRelated(network.getRelated());

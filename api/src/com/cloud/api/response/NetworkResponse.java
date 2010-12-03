@@ -47,6 +47,13 @@ public class NetworkResponse extends BaseResponse{
     @SerializedName("networkofferingdisplaytext")
     private String networkOfferingDisplayText;
     
+  //TODO - add description
+    @SerializedName("isshared")
+    private Boolean isShared;
+    
+    @SerializedName("isdefault") @Param(description="true if network offering is default, false otherwise")
+    private Boolean isDefault;
+    
     //TODO - add description
     @SerializedName("state")
     private String state;
@@ -227,5 +234,13 @@ public class NetworkResponse extends BaseResponse{
 
     public void setDisplaytext(String displaytext) {
         this.displaytext = displaytext;
+    }
+
+    public Boolean getIsShared() {
+        return isShared;
+    }
+
+    public void setIsShared(Boolean isShared) {
+        this.isShared = isShared;
     }
 }
