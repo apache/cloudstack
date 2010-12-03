@@ -54,7 +54,7 @@ public class TemplateResponse extends BaseResponse {
     private ImageFormat format;
 
     @SerializedName("bootable") @Param(description="true if the ISO is bootable, false otherwise")
-    private boolean bootable;
+    private Boolean bootable;
 
     @SerializedName("isfeatured") @Param(description="true if this template is a featured template, false otherwise")
     private boolean featured;
@@ -231,11 +231,11 @@ public class TemplateResponse extends BaseResponse {
         this.format = format;
     }
 
-    public boolean isBootable() {
+    public Boolean isBootable() {
         return bootable;
     }
 
-    public void setBootable(boolean bootable) {
+    public void setBootable(Boolean bootable) {
         this.bootable = bootable;
     }
 

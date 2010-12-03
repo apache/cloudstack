@@ -117,6 +117,7 @@ import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Snapshot.Type;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.StoragePool;
@@ -1436,7 +1437,9 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setFormat(result.getFormat());
         response.setOsTypeId(result.getGuestOSId());
         response.setOsTypeName(ApiDBUtils.findGuestOSById(result.getGuestOSId()).getDisplayName());
-        response.setBootable(result.isBootable());
+        if(result.getFormat() == ImageFormat.ISO){ // Templates are always bootable
+        	response.setBootable(result.isBootable());
+        }
         response.setObjectName("iso");
         return response;
     }

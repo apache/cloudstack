@@ -266,4 +266,4 @@ ALTER TABLE `cloud`.`vpn_users` ADD CONSTRAINT `fk_vpn_users___account_id` FOREI
 ALTER TABLE `cloud`.`vpn_users` ADD INDEX `i_vpn_users_username`(`username`);
 ALTER TABLE `cloud`.`vpn_users` ADD UNIQUE `i_vpn_users__account_id__username`(`account_id`, `username`); 
 
-ALTER TABLE `cloud`.`vlan` ADD CONSTRAINT `fk_vlan__network_offering_id` FOREIGN KEY `fk_vlan__network_offering_id` (`network_offering_id`) REFERENCES `networks` (`id`) ON DELETE CASCADE;
+ALTER TABLE `cloud`.`vlan` ADD CONSTRAINT `fk_vlan__network_id` FOREIGN KEY `fk_vlan__network_id` (`network_id`) REFERENCES `networks` (`id`) ON DELETE CASCADE;
