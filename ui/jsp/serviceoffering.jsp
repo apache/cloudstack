@@ -158,7 +158,21 @@
 	                    <div id="tags_edit_errormsg" style="display:none"></div>  
 	                </div>
 	            </div>
+	            
 	            <div class="grid_rows even">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <%=t.t("domain")%>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="domain">
+	                    </div>	                    
+	                    <select class="select" id="domain_edit" style="width: 202px; display: none;">	                       
+	                    </select>	
+	                </div>
+	            </div>
+	            
+	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <%=t.t("created")%>:</div>

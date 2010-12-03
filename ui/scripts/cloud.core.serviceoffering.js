@@ -41,6 +41,10 @@ function serviceOfferingGetSearchParams() {
 	return moreCriteria.join("");          
 }
 
+function afterLoadServiceOfferingJSP() {
+    initAddServiceOfferingDialog();        
+}
+
 function initAddServiceOfferingDialog() {
     initDialog("dialog_add_service");
     var $dialogAddService = $("#dialog_add_service");
@@ -53,17 +57,19 @@ function initAddServiceOfferingDialog() {
         }
         return false;
     });
-         
-    var $domainDropdown = $dialogAddService.find("#domain_dropdown").empty();	
+           
 	$.ajax({
 	  data: createURL("command=listDomains"),
 		dataType: "json",
 		async: false,
 		success: function(json) {
+		    var $domainDropdown1 = $("#dialog_add_service").find("#domain_dropdown").empty();
+		    var $domainDropdown2 = $("#tab_content_details").find("#domain_edit").empty();
 			var domains = json.listdomainsresponse.domain;						
 			if (domains != null && domains.length > 0) {
 				for (var i = 0; i < domains.length; i++) {
-					$domainDropdown.append("<option value='" + fromdb(domains[i].id) + "'>" + fromdb(domains[i].name) + "</option>"); 
+					$domainDropdown1.append("<option value='" + fromdb(domains[i].id) + "'>" + fromdb(domains[i].name) + "</option>"); 
+					$domainDropdown2.append("<option value='" + fromdb(domains[i].id) + "'>" + fromdb(domains[i].name) + "</option>"); 
 				}
 			} 
 		}
@@ -161,15 +167,9 @@ function initAddServiceOfferingDialog() {
     }); 
 }
 
-function afterLoadServiceOfferingJSP() {
-    initAddServiceOfferingDialog();        
-}
-
 function doEditServiceOffering($actionLink, $detailsTab, $midmenuItem1) {       
-    //var $readonlyFields  = $detailsTab.find("#name, #displaytext, #offerha, #networktype, #tags");
-    var $readonlyFields  = $detailsTab.find("#name, #displaytext, #offerha, #tags");
-    //var $editFields = $detailsTab.find("#name_edit, #displaytext_edit, #offerha_edit, #networktype_edit, #tags_edit");
-    var $editFields = $detailsTab.find("#name_edit, #displaytext_edit, #offerha_edit, #tags_edit");
+    var $readonlyFields  = $detailsTab.find("#name, #displaytext, #offerha, #tags, #domain");    
+    var $editFields = $detailsTab.find("#name_edit, #displaytext_edit, #offerha_edit, #tags_edit, #domain_edit");
              
     $readonlyFields.hide();
     $editFields.show();  
@@ -214,6 +214,9 @@ function doEditServiceOffering2($actionLink, $detailsTab, $midmenuItem1, $readon
 	
 	var tags = $detailsTab.find("#tags_edit").val();
 	array1.push("&tags="+todb(tags));	
+	
+	var domainid = $detailsTab.find("#domain_edit").val();
+	array1.push("&domainid="+todb(domainid));	
 	
 	$.ajax({
 	    data: createURL("command=updateServiceOffering&id="+id+array1.join("")),
@@ -267,7 +270,7 @@ function serviceOfferingJsonToDetailsTab() {
         dataType: "json",
         async: false,
         success: function(json) {  
-            var items = json.listserviceofferingsresponse.serviceoffering;
+            var items = json.listserviceofferingsresponse.serviceoffering;            
             if(items != null && items.length > 0) {
                 jsonObj = items[0];
                 $midmenuItem1.data("jsonObj", jsonObj);    
@@ -296,7 +299,10 @@ function serviceOfferingJsonToDetailsTab() {
     
     $thisTab.find("#tags").text(fromdb(jsonObj.tags)); 
     $thisTab.find("#tags_edit").val(fromdb(jsonObj.tags));
-      
+    
+    $thisTab.find("#domain").text(fromdb(jsonObj.domain)); 
+    $thisTab.find("#domain_edit").val(fromdb(jsonObj.domainid));   
+     
     setDateField(jsonObj.created, $thisTab.find("#created"));	
     
     //actions ***
