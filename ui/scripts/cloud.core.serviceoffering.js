@@ -47,6 +47,7 @@ function afterLoadServiceOfferingJSP() {
 
 function initAddServiceOfferingDialog() {
     initDialog("dialog_add_service");
+    
     var $dialogAddService = $("#dialog_add_service");
     $dialogAddService.find("#public_dropdown").unbind("change").bind("change", function(event) {        
         if($(this).val() == "true") {  //public zone
@@ -63,7 +64,7 @@ function initAddServiceOfferingDialog() {
 		dataType: "json",
 		async: false,
 		success: function(json) {
-		    var $domainDropdown1 = $("#dialog_add_service").find("#domain_dropdown").empty();
+		    var $domainDropdown1 = $dialogAddService.find("#domain_dropdown").empty();
 		    var $domainDropdown2 = $("#tab_content_details").find("#domain_edit").empty();
 			var domains = json.listdomainsresponse.domain;						
 			if (domains != null && domains.length > 0) {

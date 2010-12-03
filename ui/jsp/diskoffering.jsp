@@ -119,6 +119,8 @@
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="domain">
 	                    </div>
+	                    <select class="select" id="domain_edit" style="width: 202px; display: none;">	                       
+	                    </select>	
 	                </div>
 	            </div>      
 	            <!-- 	            
@@ -177,6 +179,20 @@
                     <div id="add_disk_tags_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                     </div>
                 </li>	
+                <li>
+				    <label>
+				        Public?:</label>
+				    <select class="select" id="public_dropdown">
+				        <option value="true">Yes</option>
+				        <option value="false">No</option>
+				    </select>
+				</li>
+				<li id="domain_dropdown_container" style="display: none">
+				    <label>
+				        Domain:</label>
+				    <select class="select" id="domain_dropdown">
+				    </select>
+				</li>    	
 			</ol>
 		</form>
 	</div>
