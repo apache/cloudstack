@@ -140,7 +140,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         return listBy(sc);
     }
 
-    @Override
+   /* @Override
     public boolean updateIf(VMInstanceVO vm, VirtualMachine.Event event, Long hostId) {
 
         State oldState = vm.getState();
@@ -174,7 +174,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
             s_logger.debug(str.toString());
         }
         return result > 0;
-    }
+    }*/
 
     @Override
     public List<VMInstanceVO> listByHostId(long hostid) {

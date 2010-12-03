@@ -57,7 +57,7 @@ public interface UserVmDao extends GenericDao<UserVmVO, Long> {
      * @param hostId
      * @return true if updated, false if not.
      */
-    boolean updateIf(UserVmVO vm, VirtualMachine.Event event, Long hostId);
+    //boolean updateIf(UserVmVO vm, VirtualMachine.Event event, Long hostId);
     
     /**
      * Updates display name and group for vm; enables/disables ha

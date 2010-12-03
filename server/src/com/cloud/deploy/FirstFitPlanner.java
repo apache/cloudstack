@@ -1,5 +1,6 @@
 package com.cloud.deploy;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -15,12 +16,20 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.exception.InsufficientServerCapacityException;
+import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
+import com.cloud.host.dao.DetailsDao;
 import com.cloud.host.dao.HostDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
+import com.cloud.storage.GuestOSCategoryVO;
+import com.cloud.storage.GuestOSVO;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.GuestOSCategoryDao;
+import com.cloud.storage.dao.GuestOSDao;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
@@ -33,6 +42,9 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 	@Inject private DataCenterDao _dcDao;
 	@Inject private HostPodDao _podDao;
 	@Inject private ClusterDao _clusterDao;
+	@Inject DetailsDao _hostDetailsDao = null;
+	@Inject GuestOSDao _guestOSDao = null; 
+    @Inject GuestOSCategoryDao _guestOSCategoryDao = null;
 	
 	@Override
 	public DeployDestination plan(VirtualMachineProfile vmProfile,
@@ -42,13 +54,13 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 		ServiceOffering offering = vmProfile.getServiceOffering();
 		DataCenter dc = _dcDao.findById(vm.getDataCenterId());
 		int cpu_requested = offering.getCpu() * offering.getSpeed();
-		int ram_requested = offering.getRamSize();
+		long ram_requested = offering.getRamSize() * 1024L * 1024L;
 		
 		if (vm.getLastHostId() != null) {
 			HostVO host = _hostDao.findById(vm.getLastHostId());
 			
 			if (host.getStatus() == Status.Up) {
-				boolean canDepployToLastHost = deployToHost(vm.getLastHostId(), cpu_requested, ram_requested, true);
+				boolean canDepployToLastHost = deployToHost(host, cpu_requested, ram_requested, true, avoid);
 				if (canDepployToLastHost) {
 					Pod pod = _podDao.findById(vm.getPodId());
 					Cluster cluster = _clusterDao.findById(host.getClusterId());
@@ -58,12 +70,25 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 		}
 		
 		/*Go through all the pods/clusters under zone*/
-		List<HostPodVO> pods = _podDao.listByDataCenterId(plan.getDataCenterId());
+		List<HostPodVO> pods;
+		if (plan.getPodId() != null) {
+			pods = new ArrayList<HostPodVO>(1);
+			pods.add(_podDao.findById(plan.getPodId()));
+		} else {
+		 pods = _podDao.listByDataCenterId(plan.getDataCenterId());
+		}
 		//Collections.shuffle(pods);
 		
 		for (HostPodVO hostPod : pods) {
-			List<ClusterVO> clusters = _clusterDao.listByPodId(hostPod.getId());
+			
 			//Collections.shuffle(clusters);
+			List<ClusterVO> clusters;
+			if (plan.getClusterId() != null) {
+				clusters = new ArrayList<ClusterVO>(1);
+				clusters.add(_clusterDao.findById(plan.getClusterId()));
+			} else {
+				clusters = _clusterDao.listByPodId(hostPod.getId());
+			}
 			
 			for (ClusterVO clusterVO : clusters) {
 				
@@ -71,20 +96,15 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 					continue;
 				}
 				
-				List<HostVO> hosts = _hostDao.listByCluster(clusterVO.getId());
+				List<HostVO> hosts = _hostDao.listBy(Host.Type.Routing, clusterVO.getId(), hostPod.getId(), dc.getId());
 				//Collections.shuffle(hosts);
 				
+				 // We will try to reorder the host lists such that we give priority to hosts that have
+		        // the minimums to support a VM's requirements
+		        hosts = prioritizeHosts(vmProfile.getTemplate(), hosts);
 				
-				for (HostVO hostVO : hosts) {
-					if (hostVO.getStatus() != Status.Up) {
-						continue;
-					}
-					
-					if (avoid.shouldAvoid(hostVO)) {
-						continue;
-					}
-					
-					boolean canDeployToHost = deployToHost(hostVO.getId(), cpu_requested, ram_requested, false);
+				for (HostVO hostVO : hosts) {																				
+					boolean canDeployToHost = deployToHost(hostVO, cpu_requested, ram_requested, false, avoid);
 					if (canDeployToHost) {
 						Pod pod = _podDao.findById(hostPod.getId());
 						Cluster cluster = _clusterDao.findById(clusterVO.getId());
@@ -107,10 +127,13 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 	}
 	  
     @DB
-	protected boolean deployToHost(Long hostId, Integer cpu, long ram, boolean fromLastHost) {
-		
-		CapacityVO capacityCpu = _capacityDao.findByHostIdType(hostId, CapacityVO.CAPACITY_TYPE_CPU);
-		CapacityVO capacityMem = _capacityDao.findByHostIdType(hostId, CapacityVO.CAPACITY_TYPE_MEMORY);
+	protected boolean deployToHost(HostVO host, Integer cpu, long ram, boolean fromLastHost, ExcludeList avoid) {		
+    	if (avoid.shouldAvoid(host)) {
+			return false;
+		}
+    	
+		CapacityVO capacityCpu = _capacityDao.findByHostIdType(host.getId(), CapacityVO.CAPACITY_TYPE_CPU);
+		CapacityVO capacityMem = _capacityDao.findByHostIdType(host.getId(), CapacityVO.CAPACITY_TYPE_MEMORY);
 				
 		Transaction txn = Transaction.currentTxn();
        
@@ -158,4 +181,109 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
         }        		
 	}
     
+    protected List<HostVO> prioritizeHosts(VirtualMachineTemplate template, List<HostVO> hosts) {
+    	if (template == null) {
+    		return hosts;
+    	}
+    	
+    	// Determine the guest OS category of the template
+    	String templateGuestOSCategory = getTemplateGuestOSCategory(template);
+    	
+    	List<HostVO> prioritizedHosts = new ArrayList<HostVO>();
+    	
+    	// If a template requires HVM and a host doesn't support HVM, remove it from consideration
+    	List<HostVO> hostsToCheck = new ArrayList<HostVO>();
+    	if (template.isRequiresHvm()) {
+    		for (HostVO host : hosts) {
+    			if (hostSupportsHVM(host)) {
+    				hostsToCheck.add(host);
+    			}
+    		}
+    	} else {
+    		hostsToCheck.addAll(hosts);
+    	}
+    	
+    	// If a host is tagged with the same guest OS category as the template, move it to a high priority list
+    	// If a host is tagged with a different guest OS category than the template, move it to a low priority list
+    	List<HostVO> highPriorityHosts = new ArrayList<HostVO>();
+    	List<HostVO> lowPriorityHosts = new ArrayList<HostVO>();
+    	for (HostVO host : hostsToCheck) {
+    		String hostGuestOSCategory = getHostGuestOSCategory(host);
+    		if (hostGuestOSCategory == null) {
+    			continue;
+    		} else if (templateGuestOSCategory.equals(hostGuestOSCategory)) {
+    			highPriorityHosts.add(host);
+    		} else {
+    			lowPriorityHosts.add(host);
+    		}
+    	}
+    	
+    	hostsToCheck.removeAll(highPriorityHosts);
+    	hostsToCheck.removeAll(lowPriorityHosts);
+    	
+    	// Prioritize the remaining hosts by HVM capability
+    	for (HostVO host : hostsToCheck) {
+    		if (!template.isRequiresHvm() && !hostSupportsHVM(host)) {
+    			// Host and template both do not support hvm, put it as first consideration
+    			prioritizedHosts.add(0, host);
+    		} else {
+    			// Template doesn't require hvm, but the machine supports it, make it last for consideration
+    			prioritizedHosts.add(host);
+    		}
+    	}
+    	
+    	// Merge the lists
+    	prioritizedHosts.addAll(0, highPriorityHosts);
+    	prioritizedHosts.addAll(lowPriorityHosts);
+    	
+    	return prioritizedHosts;
+    }
+    
+    protected boolean hostSupportsHVM(HostVO host) {
+    	// Determine host capabilities
+		String caps = host.getCapabilities();
+		
+		if (caps != null) {
+            String[] tokens = caps.split(",");
+            for (String token : tokens) {
+            	if (token.contains("hvm")) {
+            	    return true;
+            	}
+            }
+		}
+		
+		return false;
+    }
+    
+    protected String getHostGuestOSCategory(HostVO host) {
+		DetailVO hostDetail = _hostDetailsDao.findDetail(host.getId(), "guest.os.category.id");
+		if (hostDetail != null) {
+			String guestOSCategoryIdString = hostDetail.getValue();
+			long guestOSCategoryId;
+			
+			try {
+				guestOSCategoryId = Long.parseLong(guestOSCategoryIdString);
+			} catch (Exception e) {
+				return null;
+			}
+			
+			GuestOSCategoryVO guestOSCategory = _guestOSCategoryDao.findById(guestOSCategoryId);
+			
+			if (guestOSCategory != null) {
+				return guestOSCategory.getName();
+			} else {
+				return null;
+			}
+		} else {
+			return null;
+		}
+    }
+    
+    protected String getTemplateGuestOSCategory(VirtualMachineTemplate template) {
+    	long guestOSId = template.getGuestOSId();
+    	GuestOSVO guestOS = _guestOSDao.findById(guestOSId);
+    	long guestOSCategoryId = guestOS.getCategoryId();
+    	GuestOSCategoryVO guestOSCategory = _guestOSCategoryDao.findById(guestOSCategoryId);
+    	return guestOSCategory.getName();
+    }
 }

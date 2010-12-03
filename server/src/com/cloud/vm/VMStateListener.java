@@ -1,16 +1,18 @@
 package com.cloud.vm;
 
+import org.apache.log4j.Logger;
+
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.fsm.StateListener;
 import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class VMStateListener implements StateListener<State, VirtualMachine.Event, VMInstanceVO>{
+	private static final Logger s_logger = Logger.getLogger(VMStateListener.class);
 	CapacityDao _capacityDao;
 	ServiceOfferingDao _offeringDao;
 	VMInstanceDao _vmDao;
@@ -49,7 +51,23 @@ public class VMStateListener implements StateListener<State, VirtualMachine.Even
 				}
 			} else if (oldState == State.Migrating) {
 				if (event == Event.AgentReportStopped) {
+					/*Release capacity from original host*/
 					releaseResource(vm, false, true);
+				} else if (event == Event.OperationFailed) {
+					if (vm.getHostId() == id) {
+						/*Migrate command failed, vm still on the orginal host*/
+						/*no change for the capacity*/
+					} else {
+						/*CheckVirtualMachineCommand cmd got exception, assume vm is running on dest host*/
+						/*Need to clean up capacity*/
+						releaseResource(vm, false, false);
+						if (id != null) {
+							addResource(vm, id);
+						}
+					}
+				} else if (event == Event.OperationSucceeded) {
+					releaseResource(vm, false, false);
+					addResource(vm, id);
 				}
 			} else if (oldState == State.Stopping) {
 				if (event == Event.AgentReportStopped || event == Event.OperationSucceeded) {
@@ -84,7 +102,7 @@ public class VMStateListener implements StateListener<State, VirtualMachine.Even
 		CapacityVO capacityCpu = _capacityDao.findByHostIdType(vm.getHostId(), CapacityVO.CAPACITY_TYPE_CPU);
 		CapacityVO capacityMemory = _capacityDao.findByHostIdType(vm.getHostId(), CapacityVO.CAPACITY_TYPE_MEMORY);
 		int vmCPU = svo.getCpu() * svo.getSpeed();
-		int vmMem = svo.getRamSize();
+		long vmMem = svo.getRamSize() * 1024L * 1024L;
 
 		capacityCpu = _capacityDao.lockRow(capacityCpu.getId(), true);
 		capacityMemory = _capacityDao.lockRow(capacityMemory.getId(), true);
@@ -118,6 +136,41 @@ public class VMStateListener implements StateListener<State, VirtualMachine.Even
 			if (reservedMem >= vmMem) {
 				capacityMemory.setReservedCapacity(reservedMem - vmMem);
 			}
+		}
+
+		_capacityDao.update(capacityCpu.getId(), capacityCpu);
+		_capacityDao.update(capacityMemory.getId(), capacityMemory);
+
+	}
+	
+	/*Add capacity to destination host, for migration*/
+	private void addResource(VMInstanceVO vm, Long destHostId) {
+		ServiceOfferingVO svo = _offeringDao.findById(vm.getServiceOfferingId());
+		CapacityVO capacityCpu = _capacityDao.findByHostIdType(destHostId, CapacityVO.CAPACITY_TYPE_CPU);
+		CapacityVO capacityMemory = _capacityDao.findByHostIdType(destHostId, CapacityVO.CAPACITY_TYPE_MEMORY);
+		int vmCPU = svo.getCpu() * svo.getSpeed();
+		long vmMem = svo.getRamSize() * 1024L * 1024L;
+
+		capacityCpu = _capacityDao.lockRow(capacityCpu.getId(), true);
+		capacityMemory = _capacityDao.lockRow(capacityMemory.getId(), true);
+
+		long usedCpu = capacityCpu.getUsedCapacity();
+		long usedMem = capacityMemory.getUsedCapacity();
+		long reservedCpu = capacityCpu.getReservedCapacity();
+		long reservedMem = capacityMemory.getReservedCapacity();
+		long totalCpu = capacityCpu.getTotalCapacity();
+		long totalMem = capacityMemory.getTotalCapacity();
+
+		if (usedCpu + reservedCpu + vmCPU <= totalCpu) {
+			capacityCpu.setUsedCapacity(usedCpu + vmCPU);
+		} else {
+			s_logger.debug("What's the heck? :u:" + usedCpu + ",r:" + reservedCpu + ",vm:" + vmCPU + " > " + totalCpu);
+		}
+		
+		if (usedMem + reservedMem + vmMem <= totalMem) {
+			capacityMemory.setUsedCapacity(usedMem + vmMem);
+		} else {
+			s_logger.debug("What's the heck? :u:" + usedMem + ",r:" + reservedMem + ",vm:" + vmMem + " > " + totalMem);
 		}
 
 		_capacityDao.update(capacityCpu.getId(), capacityCpu);

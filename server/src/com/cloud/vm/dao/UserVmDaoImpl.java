@@ -175,7 +175,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         return listIncludingRemovedBy(sc);
     }
 
-    @Override
+   /* @Override
     public boolean updateIf(UserVmVO vm, VirtualMachine.Event event, Long hostId) {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("UpdateIf called " + vm.toString() + " event " + event.toString() + " host " + hostId);
@@ -224,7 +224,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         }
         
         return result > 0;
-    }
+    }*/
     
     @Override
     public List<UserVmVO> findDestroyedVms(Date date) {

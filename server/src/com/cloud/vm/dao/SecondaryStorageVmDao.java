@@ -39,5 +39,5 @@ public interface SecondaryStorageVmDao extends GenericDao<SecondaryStorageVmVO, 
 
     public List<Long> getRunningSecStorageVmListByMsid(long msid);
     
-    public boolean updateIf(SecondaryStorageVmVO vm, VirtualMachine.Event event, Long hostId);
+    //public boolean updateIf(SecondaryStorageVmVO vm, VirtualMachine.Event event, Long hostId);
 }

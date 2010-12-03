@@ -145,7 +145,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         return result;
     }
 
-    @Override
+  /*  @Override
     public boolean updateIf(DomainRouterVO router, VirtualMachine.Event event, Long hostId) {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("updateIf called on " + router.toString() + " event " + event.toString() + " host " + hostId);
@@ -194,7 +194,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         }
 
         return result > 0;
-    }
+    }*/
 
     @Override
     public List<DomainRouterVO> listByDataCenter(long dcId) {

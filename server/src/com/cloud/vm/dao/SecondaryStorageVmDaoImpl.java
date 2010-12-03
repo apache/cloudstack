@@ -85,7 +85,7 @@ public class SecondaryStorageVmDaoImpl extends GenericDaoBase<SecondaryStorageVm
         assert _updateTimeAttr != null : "Couldn't get this updateTime attribute";
     }
     
-    @Override
+  /*  @Override
     public boolean updateIf(SecondaryStorageVmVO vm, VirtualMachine.Event event, Long hostId) {
     	State oldState = vm.getState();
     	State newState = oldState.getNextState(event);
@@ -132,7 +132,7 @@ public class SecondaryStorageVmDaoImpl extends GenericDaoBase<SecondaryStorageVm
         }
         
         return result > 0;
-    }
+    }*/
     
 
     @Override

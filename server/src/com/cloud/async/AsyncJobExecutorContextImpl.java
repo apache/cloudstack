@@ -37,6 +37,7 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.vm.UserVmManager;
+import com.cloud.vm.VmManager;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 
@@ -58,6 +59,7 @@ public class AsyncJobExecutorContextImpl implements AsyncJobExecutorContext {
     private IPAddressDao _ipAddressDao;
     private AsyncJobDao _jobDao;
     private UserDao _userDao;
+    private VmManager _itMgr;
     
     private ManagementServer _managementServer;
     
@@ -139,6 +141,11 @@ public class AsyncJobExecutorContextImpl implements AsyncJobExecutorContext {
     	return _userDao;
     }
 	
+	@Override
+	public VmManager getItMgr() {
+		return _itMgr;
+	}
+	
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
     	_name = name;
@@ -219,6 +226,10 @@ public class AsyncJobExecutorContextImpl implements AsyncJobExecutorContext {
             throw new ConfigurationException("unable to get " + UserDao.class.getName());
         }
         
+        _itMgr = locator.getManager(VmManager.class);
+        if (_itMgr == null) {
+        	throw new ConfigurationException("unable to get " + VmManager.class.getName());
+        }
     	return true;
     }
 	

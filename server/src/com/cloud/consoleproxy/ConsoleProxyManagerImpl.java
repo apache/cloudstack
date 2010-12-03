@@ -632,7 +632,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
                 }
             }
             // to ensure atomic state transition to Starting state
-            if (!_consoleProxyDao.updateIf(proxy, com.cloud.vm.VirtualMachine.Event.StartRequested, routingHost.getId())) {
+            if (!_itMgr.stateTransitTo(proxy, com.cloud.vm.VirtualMachine.Event.StartRequested, routingHost.getId())) {
                 if (s_logger.isDebugEnabled()) {
                     ConsoleProxyVO temp = _consoleProxyDao.findById(proxyId);
                     s_logger.debug("Unable to start console proxy " + proxy.getHostName() + " because it is not in a startable state : "
@@ -664,7 +664,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
                     String guestIpAddress = _dcDao.allocateLinkLocalIpAddress(proxy.getDataCenterId(), routingHost.getPodId(), proxy.getId(), null);
                     proxy.setGuestIpAddress(guestIpAddress);
 
-                    _consoleProxyDao.updateIf(proxy, VirtualMachine.Event.OperationRetry, routingHost.getId());
+                    _itMgr.stateTransitTo(proxy, VirtualMachine.Event.OperationRetry, routingHost.getId());
                     proxy = _consoleProxyDao.findById(proxy.getId());
 
                     List<VolumeVO> vols = _storageMgr.prepare(proxy, routingHost);
@@ -768,7 +768,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
                     throw new ExecutionException("Couldn't find a routingHost to run console proxy");
                 }
 
-                _consoleProxyDao.updateIf(proxy, VirtualMachine.Event.OperationSucceeded, routingHost.getId());
+                _itMgr.stateTransitTo(proxy, VirtualMachine.Event.OperationSucceeded, routingHost.getId());
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Console proxy is now started, vm id : " + proxy.getId());
                 }
@@ -817,7 +817,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
                         freePrivateIpAddress(privateIpAddress, proxy.getDataCenterId(), proxy.getId());
                     }
 
-                    _consoleProxyDao.updateIf(proxy, VirtualMachine.Event.OperationFailed, null);
+                    _itMgr.stateTransitTo(proxy, VirtualMachine.Event.OperationFailed, null);
                     txn.commit();
                 } catch (Exception e) {
                     s_logger.error("Caught exception during error recovery");
@@ -1120,7 +1120,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
             _consoleProxyDao.update(proxy.getId(), vo);
 
             // kick the state machine
-            _consoleProxyDao.updateIf(proxy, VirtualMachine.Event.OperationSucceeded, null);
+            _itMgr.stateTransitTo(proxy, VirtualMachine.Event.OperationSucceeded, null);
 
             txn.commit();
             return proxy;
@@ -1788,7 +1788,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 
     @Override
     public void completeStartCommand(ConsoleProxyVO vm) {
-        _consoleProxyDao.updateIf(vm, VirtualMachine.Event.AgentReportRunning, vm.getHostId());
+        _itMgr.stateTransitTo(vm, VirtualMachine.Event.AgentReportRunning, vm.getHostId());
     }
 
     @Override
@@ -1812,7 +1812,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
                 _dcDao.releaseLinkLocalIpAddress(guestIpAddress, proxy.getDataCenterId(), proxy.getId());
             }
 
-            if (!_consoleProxyDao.updateIf(proxy, ev, null)) {
+            if (!_itMgr.stateTransitTo(proxy, ev, null)) {
                 s_logger.debug("Unable to update the console proxy");
                 return;
             }
@@ -1969,7 +1969,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
             s_logger.debug("Destroying console proxy vm " + vmId);
         }
 
-        if (!_consoleProxyDao.updateIf(vm, VirtualMachine.Event.DestroyRequested, null)) {
+        if (!_itMgr.stateTransitTo(vm, VirtualMachine.Event.DestroyRequested, null)) {
             s_logger.debug("Unable to destroy the vm because it is not in the correct state: " + vmId);
             return false;
         }
@@ -2050,7 +2050,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 
     @Override
     public boolean stop(ConsoleProxyVO proxy, long startEventId) throws AgentUnavailableException {
-        if (!_consoleProxyDao.updateIf(proxy, VirtualMachine.Event.StopRequested, proxy.getHostId())) {
+        if (!_itMgr.stateTransitTo(proxy, VirtualMachine.Event.StopRequested, proxy.getHostId())) {
             s_logger.debug("Unable to stop console proxy: " + proxy.toString());
             return false;
         }
@@ -2129,7 +2129,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     public boolean migrate(ConsoleProxyVO proxy, HostVO host) {
         HostVO fromHost = _hostDao.findById(proxy.getId());
 
-        if (!_consoleProxyDao.updateIf(proxy, VirtualMachine.Event.MigrationRequested, proxy.getHostId())) {
+        if (! _itMgr.stateTransitTo(proxy, VirtualMachine.Event.MigrationRequested, proxy.getHostId())) {
             s_logger.debug("State for " + proxy.toString() + " has changed so migration can not take place.");
             return false;
         }
@@ -2152,18 +2152,18 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         CheckVirtualMachineAnswer answer = (CheckVirtualMachineAnswer) _agentMgr.send(host.getId(), cvm);
         if (!answer.getResult()) {
             s_logger.debug("Unable to complete migration for " + proxy.getId());
-            _consoleProxyDao.updateIf(proxy, VirtualMachine.Event.AgentReportStopped, null);
+            _itMgr.stateTransitTo(proxy, VirtualMachine.Event.AgentReportStopped, null);
             return false;
         }
 
         State state = answer.getState();
         if (state == State.Stopped) {
             s_logger.warn("Unable to complete migration as we can not detect it on " + host.getId());
-            _consoleProxyDao.updateIf(proxy, VirtualMachine.Event.AgentReportStopped, null);
+            _itMgr.stateTransitTo(proxy, VirtualMachine.Event.AgentReportStopped, null);
             return false;
         }
 
-        _consoleProxyDao.updateIf(proxy, VirtualMachine.Event.OperationSucceeded, host.getId());
+        _itMgr.stateTransitTo(proxy, VirtualMachine.Event.OperationSucceeded, host.getId());
         return true;
     }
 

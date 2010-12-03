@@ -95,10 +95,15 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterIpAddressDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.deploy.DataCenterDeployment;
+import com.cloud.deploy.DeployDestination;
+import com.cloud.deploy.DeploymentPlanner;
+import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.event.dao.EventDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.DiscoveryException;
+import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.UnsupportedVersionException;
@@ -217,6 +222,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
     @Inject protected GuestOSCategoryDao _guestOSCategoryDao = null;
     @Inject protected DetailsDao _hostDetailsDao = null;
     @Inject protected ClusterDao _clusterDao;
+    
+    @Inject(adapter=DeploymentPlanner.class)
+    private Adapters<DeploymentPlanner> _planners;
     
     protected Adapters<Discoverer> _discoverers = null;
     protected int _port;
@@ -434,23 +442,32 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
 
     @Override
 	public Host findHost(final Host.Type type, final DataCenterVO dc, final HostPodVO pod, final StoragePoolVO sp,
-    		final ServiceOffering offering, final VMTemplateVO template, VMInstanceVO vm,
+    		final ServiceOfferingVO offering, final VMTemplateVO template, VMInstanceVO vm,
     		Host currentHost, final Set<Host> avoid) {
-        VirtualMachineProfile<VMInstanceVO> vmc = new VirtualMachineProfileImpl<VMInstanceVO>(vm.getType());
-        Enumeration<HostAllocator> en = _hostAllocators.enumeration();
-        while (en.hasMoreElements()) {
-            final HostAllocator allocator = en.nextElement();
-            final Host host = allocator.allocateTo(vmc, offering, type, dc, pod, sp.getClusterId(), template, avoid);
-            if (host == null) {
-                continue;
-            } else {
-            	return host;
-            }
+        VirtualMachineProfileImpl<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vm, template, offering, null, null);
+        DeployDestination dest = null;
+        DataCenterDeployment plan = new DataCenterDeployment(dc.getId(), pod.getId(), sp.getClusterId(), null);
+        ExcludeList avoids = new ExcludeList();
+        for (Host h : avoid) {
+        	avoids.addHost(h.getId());
+        }
+        
+        for (DeploymentPlanner planner : _planners) {
+        	try {
+        		dest = planner.plan(vmProfile, plan, avoids);
+        		if (dest != null) {
+        			return dest.getHost();
+        		}
+        	} catch (InsufficientServerCapacityException e) {
+
+        	}
+
         }
 
         s_logger.warn("findHost() could not find a non-null host.");
         return null;
     }
+    
     
     @Override
     public List<PodCluster> listByDataCenter(long dcId) {

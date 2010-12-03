@@ -896,7 +896,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         StoragePoolVO sp = _storageMgr.getStoragePoolForVm(vm.getId());
 
         VMTemplateVO template = _templateDao.findById(vm.getTemplateId());
-        ServiceOffering offering = _offeringDao.findById(vm.getServiceOfferingId());
+        ServiceOfferingVO offering = _offeringDao.findById(vm.getServiceOfferingId());
 
         // If an ISO path is passed in, boot from that ISO
         // Else, check if the VM already has an ISO attached to it. If so, start the VM with that ISO inserted, but don't boot from it.
@@ -945,7 +945,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
             return null;
         }
 
-        if (!_vmDao.updateIf(vm, VirtualMachine.Event.StartRequested, host.getId())) {
+        if (!_itMgr.stateTransitTo(vm, VirtualMachine.Event.StartRequested, host.getId())) {
             String description = "Unable to start VM " + vm.toString() + " because the state is not correct.";
             s_logger.error(description);
             event.setDescription(description);
@@ -965,7 +965,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
                 router = _networkMgr.addVirtualMachineToGuestNetwork(vm, password, startEventId);
             	if (router == null) {
             		s_logger.error("Unable to add vm " + vm.getId() + " - " + vm.getHostName());
-            		_vmDao.updateIf(vm, VirtualMachine.Event.OperationFailed, null);
+            		_itMgr.stateTransitTo(vm, VirtualMachine.Event.OperationFailed, null);
                     if(!vm.getHostName().equals(vm.getDisplayName())) {
                         event.setDescription("Unable to start VM: " + vm.getHostName()+"("+vm.getDisplayName()+")" + "; Unable to add VM to guest network");
                     } else {
@@ -1033,7 +1033,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
                 	
                 	
                 if( retry < _retry ) {
-                    if (!_vmDao.updateIf(vm, VirtualMachine.Event.OperationRetry, host.getId())) {
+                    if (!_itMgr.stateTransitTo(vm, VirtualMachine.Event.OperationRetry, host.getId())) {
                         String description = "Unable to start VM " + vm.toString() + " because the state is not correct.";
                         s_logger.debug(description);
                         event.setDescription(description);
@@ -1125,7 +1125,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
                 throw new ExecutionException("Unable to start VM: " + vm.getHostName()+ " Reason: "+answer.getDetails());
             }
 
-            if (!_vmDao.updateIf(vm, VirtualMachine.Event.OperationSucceeded, host.getId())) {
+            if (!_itMgr.stateTransitTo(vm, VirtualMachine.Event.OperationSucceeded, host.getId())) {
                 if(!vm.getHostName().equals(vm.getDisplayName())) {
                     event.setDescription("unable to start VM: " + vm.getHostName()+"("+vm.getDisplayName()+")");
                 } else {
@@ -1158,7 +1158,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 	            vm.setVnet(null);
 
 	            txn.start();
-	            if (_vmDao.updateIf(vm, VirtualMachine.Event.OperationFailed, null)) {
+	            if (_itMgr.stateTransitTo(vm, VirtualMachine.Event.OperationFailed, null)) {
 		            txn.commit();
 	            }
             }
@@ -1273,7 +1273,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
             return response;
         }
         
-        if (!_vmDao.updateIf(vm, VirtualMachine.Event.StopRequested, vm.getHostId())) {
+        if (!_itMgr.stateTransitTo(vm, VirtualMachine.Event.StopRequested, vm.getHostId())) {
         	resultDescription = "VM is not in a state to stop";
         	executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
             		AsyncJobResult.STATUS_FAILED, 0, resultDescription);
@@ -1316,7 +1316,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 			resultDescription = "Agent is not available";
         	executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
         		AsyncJobResult.STATUS_FAILED, 0, resultDescription);
-            _vmDao.updateIf(vm, VirtualMachine.Event.OperationFailed, vm.getHostId());
+        	_itMgr.stateTransitTo(vm, VirtualMachine.Event.OperationFailed, vm.getHostId());
             response = new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
             
             return response;
@@ -1663,7 +1663,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
                     vm = _vmDao.persist(vm);
                 } else {
                     vm.setPodId(pod.first().getId());
-                    _vmDao.updateIf(vm, VirtualMachine.Event.OperationRetry, null);
+                    _itMgr.stateTransitTo(vm, VirtualMachine.Event.OperationRetry, null);
                 }
                 
                 String ipAddressStr = acquireGuestIpAddress(dataCenterId, accountId, vm);
@@ -1715,7 +1715,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
             
             _eventDao.persist(event);
             
-            _vmDao.updateIf(vm, VirtualMachine.Event.OperationSucceeded, null);
+            _itMgr.stateTransitTo(vm, VirtualMachine.Event.OperationSucceeded, null);
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("vm created " + vmId);
             }
@@ -1876,7 +1876,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 
         _accountMgr.incrementResourceCount(account.getId(), ResourceType.user_vm);
 
-        if (!_vmDao.updateIf(vm, VirtualMachine.Event.RecoveryRequested, null)) {
+        if (!_itMgr.stateTransitTo(vm, VirtualMachine.Event.RecoveryRequested, null)) {
             s_logger.debug("Unable to recover the vm because it is not in the correct state: " + vmId);
             throw new InvalidParameterValueException("Unable to recover the vm because it is not in the correct state: " + vmId);
         }
@@ -2010,7 +2010,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 
     @Override
     public void completeStartCommand(UserVmVO vm) {
-    	_vmDao.updateIf(vm, VirtualMachine.Event.AgentReportRunning, vm.getHostId());
+    	_itMgr.stateTransitTo(vm, VirtualMachine.Event.AgentReportRunning, vm.getHostId());
         _networkGroupMgr.handleVmStateTransition(vm, State.Running);
 
     }
@@ -2032,7 +2032,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 
             txn.start();
             
-            if (!_vmDao.updateIf(vm, e, null)) {
+            if (!_itMgr.stateTransitTo(vm, e, null)) {
             	s_logger.debug("Unable to update ");
             	return;
             }
@@ -2111,7 +2111,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         	return true;
         }
         
-        if (!_vmDao.updateIf(vm, VirtualMachine.Event.StopRequested, vm.getHostId())) {
+        if (!_itMgr.stateTransitTo(vm, VirtualMachine.Event.StopRequested, vm.getHostId())) {
             s_logger.debug("VM is not in a state to stop: " + vm.getState().toString());
             return false;
         }
@@ -2155,7 +2155,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
             }
             event.setLevel(EventVO.LEVEL_ERROR);
             _eventDao.persist(event);
-            _vmDao.updateIf(vm, VirtualMachine.Event.OperationFailed, vm.getHostId());
+            _itMgr.stateTransitTo(vm, VirtualMachine.Event.OperationFailed, vm.getHostId());
             s_logger.error("Unable to stop vm " + vm.getHostName());
         }
 
@@ -2167,7 +2167,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Destroying vm " + vm.toString());
         }
-        if (!_vmDao.updateIf(vm, VirtualMachine.Event.DestroyRequested, vm.getHostId())) {
+        if (!_itMgr.stateTransitTo(vm, VirtualMachine.Event.DestroyRequested, vm.getHostId())) {
             s_logger.debug("Unable to destroy the vm because it is not in the correct state: " + vm.toString());
             return false;
         }
@@ -2234,7 +2234,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     public boolean migrate(UserVmVO vm, HostVO host) throws AgentUnavailableException, OperationTimedoutException {
         HostVO fromHost = _hostDao.findById(vm.getHostId());
 
-    	if (!_vmDao.updateIf(vm, VirtualMachine.Event.MigrationRequested, vm.getHostId())) {
+    	if (!_itMgr.stateTransitTo(vm, VirtualMachine.Event.MigrationRequested, vm.getHostId())) {
     		s_logger.debug("State for " + vm.toString() + " has changed so migration can not take place.");
     		return false;
     	}
@@ -2266,7 +2266,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     		releaseGuestIpAddress(vm);
             vm.setGuestNetmask(null);
             vm.setGuestMacAddress(null);
-    		if (!_vmDao.updateIf(vm, VirtualMachine.Event.ExpungeOperation, null)) {
+    		if (!_itMgr.stateTransitTo(vm, VirtualMachine.Event.ExpungeOperation, null)) {
     			s_logger.info("vm " + vmId + " is skipped because it is no longer in Destroyed state");
     			continue;
     		}
@@ -2335,14 +2335,14 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         CheckVirtualMachineAnswer answer = (CheckVirtualMachineAnswer)_agentMgr.send(host.getId(), cvm);
         if (!answer.getResult()) {
             s_logger.debug("Unable to complete migration for " + vm.toString());
-            _vmDao.updateIf(vm, VirtualMachine.Event.AgentReportStopped, null);
+            _itMgr.stateTransitTo(vm, VirtualMachine.Event.AgentReportStopped, null);
             return false;
         }
 
         State state = answer.getState();
         if (state == State.Stopped) {
             s_logger.warn("Unable to complete migration as we can not detect it on " + host.toString());
-            _vmDao.updateIf(vm, VirtualMachine.Event.AgentReportStopped, null);
+            _itMgr.stateTransitTo(vm, VirtualMachine.Event.AgentReportStopped, null);
             return false;
         }
 
@@ -2353,7 +2353,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         Transaction txn = Transaction.currentTxn();
         try {
             txn.start();
-            _vmDao.updateIf(vm, VirtualMachine.Event.OperationSucceeded, host.getId());
+            _itMgr.stateTransitTo(vm, VirtualMachine.Event.OperationSucceeded, host.getId());
             txn.commit();
             _networkGroupMgr.handleVmStateTransition(vm, State.Running);
             return true;
@@ -2936,7 +2936,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
             }
 	        _eventDao.persist(event);
 	        
-	        _vmDao.updateIf(vm, VirtualMachine.Event.OperationSucceeded, null);
+	        _itMgr.stateTransitTo(vm, VirtualMachine.Event.OperationSucceeded, null);
 	        if (s_logger.isDebugEnabled()) {
 	            s_logger.debug("vm created " + vmId);
 	        }
@@ -3093,7 +3093,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
             }
 	        _eventDao.persist(event);
 	        
-	        _vmDao.updateIf(vm, VirtualMachine.Event.OperationSucceeded, null);
+	        _itMgr.stateTransitTo(vm, VirtualMachine.Event.OperationSucceeded, null);
 	        if (s_logger.isDebugEnabled()) {
 	            s_logger.debug("vm created " + vmId);
 	        }

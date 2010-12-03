@@ -27,6 +27,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.host.HostVO;
 import com.cloud.network.NetworkVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
@@ -78,5 +79,6 @@ public interface VmManager extends Manager {
     <T extends VMInstanceVO> void registerGuru(VirtualMachine.Type type, VirtualMachineGuru<T> guru);
 
 	boolean stateTransitTo(VMInstanceVO vm, Event e, Long id);
+	
     
 }

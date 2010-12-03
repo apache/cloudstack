@@ -92,7 +92,7 @@ public class StopVMExecutor extends VMOperationExecutor {
 		        		AsyncJobResult.STATUS_SUCCEEDED, 0, VMExecutorHelper.composeResultObject(asyncMgr.getExecutorContext().getManagementServer(), vm, null));
 	    		jobStatusUpdated = true;
 	    	} else {
-	            asyncMgr.getExecutorContext().getVmDao().updateIf(vm, Event.OperationFailed, vm.getHostId());
+	            asyncMgr.getExecutorContext().getItMgr().stateTransitTo(vm, Event.OperationFailed, vm.getHostId());
 	            asyncMgr.completeAsyncJob(getJob().getId(), 
 		        		AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR, "Agent failed to stop VM");
 	    		jobStatusUpdated = true;
