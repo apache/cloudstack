@@ -1437,8 +1437,19 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setFormat(result.getFormat());
         response.setOsTypeId(result.getGuestOSId());
         response.setOsTypeName(ApiDBUtils.findGuestOSById(result.getGuestOSId()).getDisplayName());
+        
         if(result.getFormat() == ImageFormat.ISO){ // Templates are always bootable
         	response.setBootable(result.isBootable());
+        }else{
+        	response.setHypervisor(result.getHypervisorType().toString());// hypervisors are associated with templates
+        }
+        
+        // add account ID and name
+        Account owner = ApiDBUtils.findAccountById(result.getAccountId());
+        if (owner != null) {
+            response.setAccount(owner.getAccountName());
+            response.setDomainId(owner.getDomainId());
+            response.setDomainName(ApiDBUtils.findDomainById(owner.getDomainId()).getName());
         }
         response.setObjectName("iso");
         return response;
