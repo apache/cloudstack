@@ -314,8 +314,6 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         }
 
         return createdSnapshot;
-        
-
     }
 
 

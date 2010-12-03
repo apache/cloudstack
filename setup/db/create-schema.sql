@@ -445,7 +445,7 @@ CREATE TABLE `cloud`.`firewall_rules` (
   `xid` char(40) NOT NULL COMMENT 'external id',
   `created` datetime COMMENT 'Date created',
   PRIMARY KEY  (`id`),
-  CONSTRAINT `fk_firewall_rules__network_id` FOREIGN KEY(`network_id`) REFERENCES `network`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_firewall_rules__network_id` FOREIGN KEY(`network_id`) REFERENCES `networks`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_firewall_rules__account_id` FOREIGN KEY(`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_firewall_rules__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
