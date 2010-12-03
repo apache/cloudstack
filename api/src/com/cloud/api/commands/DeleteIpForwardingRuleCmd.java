@@ -73,7 +73,7 @@ public class DeleteIpForwardingRuleCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public long getAccountId() {
+    public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
     }
 

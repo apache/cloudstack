@@ -134,7 +134,7 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
     }
 
     @Override
-    public long getAccountId() {
+    public long getEntityOwnerId() {
         Long volumeId = getVolumeId();
         Long snapshotId = getSnapshotId();
         if (volumeId != null) {

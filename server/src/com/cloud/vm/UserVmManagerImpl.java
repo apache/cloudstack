@@ -3579,9 +3579,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
             throw new InvalidParameterValueException("No valid account specified for deploying a virtual machine.");
         }
         
-        AccountVO owner = _accountDao.findById(cmd.getAccountId());
+        AccountVO owner = _accountDao.findById(cmd.getEntityOwnerId());
         if (owner == null || owner.getRemoved() != null) {
-            throw new InvalidParameterValueException("Unable to find account: " + cmd.getAccountId());
+            throw new InvalidParameterValueException("Unable to find account: " + cmd.getEntityOwnerId());
         }
         
         Domain domain = _domainDao.findById(owner.getDomainId());

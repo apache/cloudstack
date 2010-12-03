@@ -389,7 +389,7 @@ public class ApiServer implements HttpRequestHandler {
             }
 
             // save the scheduled event
-            Long eventId = EventUtils.saveScheduledEvent((userId == null) ? User.UID_SYSTEM : userId, asyncCmd.getAccountId(),
+            Long eventId = EventUtils.saveScheduledEvent((userId == null) ? User.UID_SYSTEM : userId, asyncCmd.getEntityOwnerId(),
                     asyncCmd.getEventType(), asyncCmd.getEventDescription());
 
             if (eventId != null) {

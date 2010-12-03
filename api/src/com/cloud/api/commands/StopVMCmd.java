@@ -67,7 +67,7 @@ public class StopVMCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public long getAccountId() {
+    public long getEntityOwnerId() {
         UserVm vm = _responseGenerator.findUserVmById(getId());
         if (vm != null) {
             return vm.getAccountId();

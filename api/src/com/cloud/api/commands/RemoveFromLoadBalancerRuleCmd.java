@@ -80,7 +80,7 @@ public class RemoveFromLoadBalancerRuleCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public long getAccountId() {
+    public long getEntityOwnerId() {
         LoadBalancer lb = _entityMgr.findById(LoadBalancer.class, getId());
         if (lb == null) {
             return Account.ACCOUNT_ID_SYSTEM; // bad id given, parent this command to SYSTEM so ERROR events are tracked

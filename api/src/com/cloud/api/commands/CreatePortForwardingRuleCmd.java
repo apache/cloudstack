@@ -35,7 +35,7 @@ import com.cloud.user.UserContext;
 import com.cloud.utils.net.Ip;
 
 @Implementation(description="Creates a port forwarding rule", responseObject=FirewallRuleResponse.class)
-public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements PortForwardingRule {
+public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd  implements PortForwardingRule {
     public static final Logger s_logger = Logger.getLogger(CreatePortForwardingRuleCmd.class.getName());
 
     private static final String s_name = "createportforwardingruleresponse";
@@ -162,8 +162,8 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
     }
 
     @Override
-    public long getAccountId() {
-        throw new UnsupportedOperationException("Get the account id from network");
+    public long getEntityOwnerId() {
+        return _entityMgr.findById(PortForwardingRule.class, getEntityId()).getAccountId();
     }
 
     @Override
@@ -205,6 +205,11 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
     @Override
     public String getEventDescription() {
         return  ("Creating an port forwarding  rule for "+ipAddress+" with virtual machine:"+virtualMachineId);
+    }
+
+    @Override
+    public long getAccountId() {
+        throw new UnsupportedOperationException("Get the account id from network");
     }
 
 }

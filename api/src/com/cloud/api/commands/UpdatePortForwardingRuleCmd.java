@@ -76,7 +76,7 @@ public class UpdatePortForwardingRuleCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public long getAccountId() {
+    public long getEntityOwnerId() {
         IpAddress addr = _entityMgr.findById(IpAddress.class, getPublicIp());
         if (addr != null) {
             return addr.getAccountId();

@@ -88,7 +88,7 @@ public class DetachVolumeCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public long getAccountId() {
+    public long getEntityOwnerId() {
         Long volumeId = getId();
         if (volumeId != null) {
             Volume volume = _responseGenerator.findVolumeById(volumeId);

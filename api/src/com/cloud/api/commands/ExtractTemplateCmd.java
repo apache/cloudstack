@@ -88,7 +88,7 @@ public class ExtractTemplateCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public long getAccountId() {
+    public long getEntityOwnerId() {
         VirtualMachineTemplate template = _entityMgr.findById(VirtualMachineTemplate.class, getId());
         if (template != null) {
             return template.getAccountId();
@@ -121,7 +121,7 @@ public class ExtractTemplateCmd extends BaseAsyncCmd {
         try {
             Long uploadId = _templateService.extract(this);
             if (uploadId != null){
-                ExtractResponse response = _responseGenerator.createExtractResponse(uploadId, id, zoneId, getAccountId(), mode);
+                ExtractResponse response = _responseGenerator.createExtractResponse(uploadId, id, zoneId, getEntityOwnerId(), mode);
                 response.setResponseName(getName());
                 this.setResponseObject(response);
             } else {

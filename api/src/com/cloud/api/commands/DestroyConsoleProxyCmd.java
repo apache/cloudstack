@@ -64,7 +64,7 @@ public class DestroyConsoleProxyCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public long getAccountId() {
+    public long getEntityOwnerId() {
         Account account = (Account)UserContext.current().getAccount();
         if (account != null) {
             return account.getId();

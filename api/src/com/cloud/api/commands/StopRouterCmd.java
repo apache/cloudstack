@@ -66,7 +66,7 @@ public class StopRouterCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public long getAccountId() {
+    public long getEntityOwnerId() {
         UserVm vm = _entityMgr.findById(UserVm.class, getId());
         if (vm != null) {
             return vm.getAccountId();

@@ -23,18 +23,20 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.LoadBalancerResponse;
+import com.cloud.event.EventTypes;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 
 @Implementation(description="Creates a load balancer rule", responseObject=LoadBalancerResponse.class)
-public class CreateLoadBalancerRuleCmd extends BaseCmd implements LoadBalancer {
+public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  implements LoadBalancer {
     public static final Logger s_logger = Logger.getLogger(CreateLoadBalancerRuleCmd.class.getName());
 
     private static final String s_name = "createloadbalancerruleresponse";
@@ -184,5 +186,26 @@ public class CreateLoadBalancerRuleCmd extends BaseCmd implements LoadBalancer {
     @Override
     public List<? extends Destination> getDestinations() {
         throw new UnsupportedOperationException("not supported");
+    }
+
+    @Override
+    public void callCreate() {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public long getEntityOwnerId() {
+        return _entityMgr.findById(LoadBalancer.class, getEntityId()).getAccountId();
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_LOAD_BALANCER_CREATE;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return "Create load balancer";
     }
 }

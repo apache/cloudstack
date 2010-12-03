@@ -88,7 +88,7 @@ public class ExtractIsoCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public long getAccountId() {
+    public long getEntityOwnerId() {
         VirtualMachineTemplate iso = _entityMgr.findById(VirtualMachineTemplate.class, getId());
         if (iso != null) {
             return iso.getAccountId();
@@ -120,7 +120,7 @@ public class ExtractIsoCmd extends BaseAsyncCmd {
         try {
             Long uploadId = _templateService.extract(this);
             if (uploadId != null){
-                ExtractResponse response = _responseGenerator.createExtractResponse(uploadId, id, zoneId, getAccountId(), mode);
+                ExtractResponse response = _responseGenerator.createExtractResponse(uploadId, id, zoneId, getEntityOwnerId(), mode);
                 response.setResponseName(getName());
                 response.setObjectName("iso");
                 this.setResponseObject(response);

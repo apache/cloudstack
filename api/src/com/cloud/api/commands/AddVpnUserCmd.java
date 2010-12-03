@@ -93,7 +93,7 @@ public class AddVpnUserCmd extends BaseAsyncCmd {
     }
 
 	@Override
-	public long getAccountId() {
+	public long getEntityOwnerId() {
 		Account account = UserContext.current().getAccount();
         if ((account == null) || isAdmin(account.getType())) {
             if ((domainId != null) && (accountName != null)) {
@@ -113,7 +113,7 @@ public class AddVpnUserCmd extends BaseAsyncCmd {
 
 	@Override
 	public String getEventDescription() {
-		return "Add Remote Access VPN user for account " + getAccountId() + " username= " + getUserName();
+		return "Add Remote Access VPN user for account " + getEntityOwnerId() + " username= " + getUserName();
 	}
 
 

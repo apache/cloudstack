@@ -93,7 +93,7 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
     }
 
     @Override
-    public long getAccountId() {
+    public long getEntityOwnerId() {
         Volume volume = _entityMgr.findById(Volume.class, getVolumeId());
         if (volume != null) {
             return volume.getAccountId();

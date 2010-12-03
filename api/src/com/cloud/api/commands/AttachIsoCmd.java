@@ -71,7 +71,7 @@ public class AttachIsoCmd extends BaseAsyncCmd {
     }
     
     @Override
-    public long getAccountId() {
+    public long getEntityOwnerId() {
         VirtualMachineTemplate iso = _responseGenerator.findTemplateById(getId());
         if (iso == null) {
             return Account.ACCOUNT_ID_SYSTEM; // bad id given, parent this command to SYSTEM so ERROR events are tracked

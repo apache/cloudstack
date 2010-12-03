@@ -37,7 +37,7 @@ public abstract class BaseAsyncCmd extends BaseCmd {
      * used to determine that information.
      * @return the id of the account that owns the object being acted upon
      */
-    public abstract long getAccountId();
+    public abstract long getEntityOwnerId();
 
     /**
      * For proper tracking of async commands through the system, events must be generated when the command is
