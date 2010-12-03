@@ -235,7 +235,21 @@
                     <input class="text" type="text" id="add_service_tags" />
                     <div id="add_service_tags_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                     </div>
-                </li>						
+                </li>	
+                <li>
+				    <label>
+				        Public?:</label>
+				    <select class="select" id="public_dropdown">
+				        <option value="true">Yes</option>
+				        <option value="false">No</option>
+				    </select>
+				</li>
+				<li id="domain_dropdown_container" style="display: none">
+				    <label>
+				        Domain:</label>
+				    <select class="select" id="domain_dropdown">
+				    </select>
+				</li>    			
 			</ol>
 		</form>
 	</div>

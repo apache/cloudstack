@@ -638,7 +638,7 @@ function initAddZoneWizard() {
 			var domains = json.listdomainsresponse.domain;						
 			if (domains != null && domains.length > 0) {
 				for (var i = 0; i < domains.length; i++) {
-					domainDropdown.append("<option value='" + domains[i].id + "'>" + fromdb(domains[i].name) + "</option>"); 
+					domainDropdown.append("<option value='" + fromdb(domains[i].id) + "'>" + fromdb(domains[i].name) + "</option>"); 
 				}
 			} 
 		}

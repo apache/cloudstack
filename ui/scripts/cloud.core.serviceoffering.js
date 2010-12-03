@@ -41,28 +41,48 @@ function serviceOfferingGetSearchParams() {
 	return moreCriteria.join("");          
 }
 
-function afterLoadServiceOfferingJSP() {
-    var $detailsTab = $("#right_panel_content #tab_content_details"); 
-   
-    //dialogs
+function initAddServiceOfferingDialog() {
     initDialog("dialog_add_service");
-     
+    var $dialogAddService = $("#dialog_add_service");
+    $dialogAddService.find("#public_dropdown").unbind("change").bind("change", function(event) {        
+        if($(this).val() == "true") {  //public zone
+            $dialogAddService.find("#domain_dropdown_container").hide();  
+        }
+        else {  //private zone
+            $dialogAddService.find("#domain_dropdown_container").show();  
+        }
+        return false;
+    });
+         
+    var $domainDropdown = $dialogAddService.find("#domain_dropdown").empty();	
+	$.ajax({
+	  data: createURL("command=listDomains"),
+		dataType: "json",
+		async: false,
+		success: function(json) {
+			var domains = json.listdomainsresponse.domain;						
+			if (domains != null && domains.length > 0) {
+				for (var i = 0; i < domains.length; i++) {
+					$domainDropdown.append("<option value='" + fromdb(domains[i].id) + "'>" + fromdb(domains[i].name) + "</option>"); 
+				}
+			} 
+		}
+	});   
+		 
     //add button ***
     $("#midmenu_add_link").find("#label").text("Add Service Offering"); 
     $("#midmenu_add_link").show();     
-    $("#midmenu_add_link").unbind("click").bind("click", function(event) {      
-        var dialogAddService = $("#dialog_add_service");
-		
-		dialogAddService.find("#add_service_name").val("");
-		dialogAddService.find("#add_service_display").val("");
-		dialogAddService.find("#add_service_cpucore").val("");
-		dialogAddService.find("#add_service_cpu").val("");
-		dialogAddService.find("#add_service_memory").val("");
-		dialogAddService.find("#add_service_offerha").val("false");
+    $("#midmenu_add_link").unbind("click").bind("click", function(event) {    
+		$dialogAddService.find("#add_service_name").val("");
+		$dialogAddService.find("#add_service_display").val("");
+		$dialogAddService.find("#add_service_cpucore").val("");
+		$dialogAddService.find("#add_service_cpu").val("");
+		$dialogAddService.find("#add_service_memory").val("");
+		$dialogAddService.find("#add_service_offerha").val("false");
 			
-		(g_hypervisorType == "kvm")? dialogAddService.find("#add_service_offerha_container").hide():dialogAddService.find("#add_service_offerha_container").show();            
+		(g_hypervisorType == "kvm")? $dialogAddService.find("#add_service_offerha_container").hide():$dialogAddService.find("#add_service_offerha_container").show();            
 				
-		dialogAddService
+		$dialogAddService
 		.dialog('option', 'buttons', { 				
 			"Add": function() { 	
 			    var thisDialog = $(this);
@@ -107,12 +127,17 @@ function afterLoadServiceOfferingJSP() {
 				var useVirtualNetwork = (networkType=="Direct")? false:true;
 				array1.push("&usevirtualnetwork="+useVirtualNetwork);		
 				
-				var tags = trim(thisDialog.find("#add_service_tags").val());
+				var tags = thisDialog.find("#add_service_tags").val();
 				if(tags != null && tags.length > 0)
 				    array1.push("&tags="+todb(tags));	
 				
+				if(thisDialog.find("#domain_dropdown_container").css("display") != "none") {
+	                var domainId = thisDialog.find("#domain_dropdown").val();
+	                array1.push("&domainid="+domainId);	
+	            }
+								
 				$.ajax({
-				  data: createURL("command=createServiceOffering"+array1.join("")+"&response=json"),
+				  data: createURL("command=createServiceOffering"+array1.join("")),
 					dataType: "json",
 					success: function(json) {					    				
 						var item = json.createserviceofferingresponse.serviceoffering;							
@@ -133,7 +158,11 @@ function afterLoadServiceOfferingJSP() {
 			} 
 		}).dialog("open");            
         return false;
-    });
+    }); 
+}
+
+function afterLoadServiceOfferingJSP() {
+    initAddServiceOfferingDialog();        
 }
 
 function doEditServiceOffering($actionLink, $detailsTab, $midmenuItem1) {       
