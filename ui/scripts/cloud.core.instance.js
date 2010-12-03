@@ -543,26 +543,26 @@ function initVMWizard() {
     }
 	
     //vm wizard search and pagination
-    $vmPopup.find("#search_button").bind("click", function(event) {	              
+    $vmPopup.find("#step1").find("#search_button").bind("click", function(event) {	              
         currentPageInTemplateGridInVmPopup = 1;           	        	
         listTemplatesInVmPopup();  
         return false;   //event.preventDefault() + event.stopPropagation() 
     });
 	
-    $vmPopup.find("#search_input").bind("keypress", function(event) {		        
+    $vmPopup.find("#step1").find("#search_input").bind("keypress", function(event) {		        
         if(event.keyCode == keycode_Enter) {                	        
-            $vmPopup.find("#search_button").click();	
+            $vmPopup.find("#step1").find("#search_button").click();	
             return false;   //event.preventDefault() + event.stopPropagation() 		     
         }		    
     });   
 			
-    $vmPopup.find("#nextPage").bind("click", function(event){	            
+    $vmPopup.find("#step1").find("#next_page").bind("click", function(event){	            
         currentPageInTemplateGridInVmPopup++;        
         listTemplatesInVmPopup(); 
         return false;   //event.preventDefault() + event.stopPropagation() 
     });		
     
-    $vmPopup.find("#prevPage").bind("click", function(event){	                 
+    $vmPopup.find("#step1").find("#prev_page").bind("click", function(event){	                 
         currentPageInTemplateGridInVmPopup--;	              	    
         listTemplatesInVmPopup(); 
         return false;   //event.preventDefault() + event.stopPropagation() 
@@ -577,7 +577,8 @@ function initVMWizard() {
         var container = $vmPopup.find("#template_container");	 		    	
 		   
         var commandString, templateType;    		  	   
-        var searchInput = $vmPopup.find("#search_input").val();   
+        var searchInput = $vmPopup.find("#step1").find("#search_input").val();  
+
         if (selectedTemplateTypeInVmPopup != "blank") {  //*** template ***  
             templateType = "template";
             if (searchInput != null && searchInput.length > 0)                 
@@ -595,11 +596,11 @@ function initVMWizard() {
 	  
 		commandString += "&pagesize="+vmPopupTemplatePageSize+"&page="+currentPageInTemplateGridInVmPopup;
 		   		
-	    var loading = $vmPopup.find("#wiz_template_loading").show();				
+	    var loading = $vmPopup.find("#wiz_template_loading").show();	
 	    if(currentPageInTemplateGridInVmPopup==1)
-            $vmPopup.find("#prevPage").hide();
+            $vmPopup.find("#step1").find("#prev_page").hide();
         else 
-            $vmPopup.find("#prevPage").show();  		
+            $vmPopup.find("#step1").find("#prev_page").show();  		
 		
 	    $.ajax({
 		    data: createURL(commandString),
@@ -624,10 +625,16 @@ function initVMWizard() {
 				        vmWizardTemplateJsonToTemplate(items[i], $newTemplate, templateType, i);
 				        container.append($newTemplate.show());				       
 				    }						
+				    
+				    
+				    $vmPopup.find("#step1").find("#next_page").show(); //delete this line and uncomment the next 4 lines when bug 7410 is fixed ("pagesize is not working correctly on listTemplates API and listISOs API")
+				    /*
 				    if(items.length < vmPopupTemplatePageSize)
-	                    $vmPopup.find("#nextPage").hide();
+	                    $vmPopup.find("#step1").find("#next_page").hide();
 	                else
-	                    $vmPopup.find("#nextPage").show();
+	                    $vmPopup.find("#step1").find("#next_page").show();
+	                */
+	                
 		        
 			    } else {
 			        var msg;
@@ -640,7 +647,7 @@ function initVMWizard() {
 							      +'<div class="rev_wiztemp_listtext">'+msg+'</div>'
 						      +'</div>';
 				    container.append(html);						
-				    $vmPopup.find("#nextPage").hide();
+				    $vmPopup.find("#step1").find("#next_page").hide();
 			    }
 		    }
 	    });
