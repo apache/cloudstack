@@ -21,11 +21,12 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.SnapshotResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
@@ -35,7 +36,7 @@ import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 
 @Implementation(description="Creates an instant snapshot of a volume.", responseObject=SnapshotResponse.class)
-public class CreateSnapshotCmd extends BaseAsyncCmd {
+public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
 	public static final Logger s_logger = Logger.getLogger(CreateSnapshotCmd.class.getName());
 	private static final String s_name = "createsnapshotresponse";
 
@@ -52,6 +53,9 @@ public class CreateSnapshotCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.VOLUME_ID, type=CommandType.LONG, required=true, description="The ID of the disk volume")
     private Long volumeId;
 
+    @Parameter(name=ApiConstants.POLICY_ID, type=CommandType.LONG, description="polocy id of the snapshot, if this is null, then use MANUAL_POLICY.")
+    private Long policyId;
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -66,6 +70,14 @@ public class CreateSnapshotCmd extends BaseAsyncCmd {
 
     public Long getVolumeId() {
         return volumeId;
+    }
+    
+    public Long getPolicyId() {
+    	if( policyId != null) {
+    		return policyId;
+    	} else {
+    		return Snapshot.MANUAL_POLICY_ID;
+    	}
     }
 
     /////////////////////////////////////////////////////
@@ -104,6 +116,12 @@ public class CreateSnapshotCmd extends BaseAsyncCmd {
     
     public AsyncJob.Type getInstanceType() {
     	return AsyncJob.Type.Snapshot;
+    }
+    
+    @Override
+    public void callCreate(){
+        long id = _snapshotMgr.getNextInSequence(this);
+        this.setId(id);
     }
     
     @Override

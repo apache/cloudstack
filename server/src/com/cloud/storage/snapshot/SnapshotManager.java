@@ -19,9 +19,6 @@ package com.cloud.storage.snapshot;
 
 import java.util.List;
 
-import com.cloud.api.commands.ListSnapshotsCmd;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotVO;
@@ -46,7 +43,7 @@ public interface SnapshotManager {
      * @param cmd the API command wrapping the parameters for creating the snapshot (mainly volumeId) 
      * @return the Snapshot that was created
      */
-    SnapshotVO createSnapshotImpl(Long volumeId, Long policyId, Long startEventId) throws ResourceAllocationException;
+    SnapshotVO createSnapshotImpl(Long volumeId, Long policyId, Long startEventId, Long snapshotId) throws ResourceAllocationException;
 
     /**
      * After successfully creating a snapshot of a volume, copy the snapshot to the secondary storage for 
@@ -130,5 +127,5 @@ public interface SnapshotManager {
      * @param cmd the API command wrapping the parameters for creating the snapshot (mainly volumeId) 
      * @return the Snapshot that was created
      */
-	SnapshotVO createSnapshotOnPrimary(VolumeVO volume, Long polocyId) throws ResourceAllocationException;
+	SnapshotVO createSnapshotOnPrimary(VolumeVO volume, Long polocyId, Long snapshotId) throws ResourceAllocationException;
 }

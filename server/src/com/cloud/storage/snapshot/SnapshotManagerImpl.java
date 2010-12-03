@@ -18,6 +18,8 @@
 
 package com.cloud.storage.snapshot;
 
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -41,7 +43,6 @@ import com.cloud.agent.api.ManageSnapshotCommand;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.CreateSnapshotCmd;
-import com.cloud.api.commands.CreateSnapshotInternalCmd;
 import com.cloud.api.commands.CreateSnapshotPolicyCmd;
 import com.cloud.api.commands.DeleteSnapshotCmd;
 import com.cloud.api.commands.DeleteSnapshotPoliciesCmd;
@@ -62,6 +63,7 @@ import com.cloud.event.dao.EventDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.UsageServerException;
 import com.cloud.host.dao.DetailsDao;
 import com.cloud.host.dao.HostDao;
 import com.cloud.storage.Snapshot;
@@ -110,6 +112,8 @@ import com.cloud.vm.dao.UserVmDao;
 @Local(value={SnapshotManager.class, SnapshotService.class})
 public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Manager {
     private static final Logger s_logger = Logger.getLogger(SnapshotManagerImpl.class);
+    private static final String GET_LAST_ID = "SELECT id FROM cloud.snapshots ORDER BY id DESC LIMIT 1";
+    private static final String UPDATE_SNAPSHOT_SEQ = "UPDATE cloud.sequence SET value=? WHERE name='snapshots_seq'";
 
     @Inject protected HostDao _hostDao;
     @Inject protected UserVmDao _vmDao;
@@ -193,7 +197,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     }
 
     @Override
-    public SnapshotVO createSnapshotOnPrimary(VolumeVO volume, Long policyId) throws ResourceAllocationException {
+    public SnapshotVO createSnapshotOnPrimary(VolumeVO volume, Long policyId, Long snapshotId) throws ResourceAllocationException {
         SnapshotVO createdSnapshot = null;
     	Long volumeId = volume.getId();
         if (volume.getStatus() != AsyncInstanceCreateStatus.Created) {
@@ -227,7 +231,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         // Create the Snapshot object and save it so we can return it to the
         // user
         Type snapshotType = SnapshotVO.getSnapshotType(policyId);
-        SnapshotVO snapshotVO = new SnapshotVO(volume.getAccountId(), volume.getId(), null, snapshotName,
+        SnapshotVO snapshotVO = new SnapshotVO(snapshotId, volume.getAccountId(), volume.getId(), null, snapshotName,
                 (short) snapshotType.ordinal(), snapshotType.name());
         snapshotVO = _snapshotDao.persist(snapshotVO);
         id = snapshotVO.getId();
@@ -321,7 +325,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     }
     
     @Override @DB
-    public SnapshotVO createSnapshotImpl(Long volumeId, Long policyId, Long startEventId) throws ResourceAllocationException {    
+    public SnapshotVO createSnapshotImpl(Long volumeId, Long policyId, Long snapshotId, Long startEventId) throws ResourceAllocationException {    
         VolumeVO volume = _volsDao.acquireInLockTable(volumeId, 10);       
         if( volume == null ) {
             volume = _volsDao.findById(volumeId);
@@ -333,9 +337,8 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         }
         SnapshotVO snapshot = null;
         boolean backedUp = false;
-        Long snapshotId = null;
         try {
-	    	snapshot = createSnapshotOnPrimary(volume, policyId);
+	    	snapshot = createSnapshotOnPrimary(volume, policyId, snapshotId);
 	        if (snapshot != null && snapshot.getStatus() == Snapshot.Status.CreatedOnPrimary ) {
                 snapshotId = snapshot.getId();
 	            backedUp = backupSnapshotToSecondaryStorage(snapshot, startEventId);
@@ -357,18 +360,11 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     @Override
     public SnapshotVO createSnapshot(CreateSnapshotCmd cmd) throws ResourceAllocationException {
         Long volumeId = cmd.getVolumeId();
-        Long policyId = Snapshot.MANUAL_POLICY_ID ;
-        Long startEventId = cmd.getStartEventId();
-        return createSnapshotImpl(volumeId, policyId, startEventId);
-    }
-
-    @Override
-    public SnapshotVO createSnapshotInternal(CreateSnapshotInternalCmd cmd) throws ResourceAllocationException {
-        Long volumeId = cmd.getVolumeId();
         Long policyId = cmd.getPolicyId();
+        Long snapshotId = cmd.getId();
         Long startEventId = cmd.getStartEventId();
-        return createSnapshotImpl(volumeId, policyId, startEventId);
-     }
+        return createSnapshotImpl(volumeId, policyId, snapshotId, startEventId);
+    }
 
     private SnapshotVO updateDBOnCreate(Long id, String snapshotPath, long preSnapshotId) {
         SnapshotVO createdSnapshot = _snapshotDao.findByIdIncludingRemoved(id);
@@ -887,20 +883,11 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         	Long dcId = volume.getDataCenterId();
         	String secondaryStoragePoolURL = _storageMgr.getSecondaryStorageURL(dcId);
         	String primaryStoragePoolNameLabel = _storageMgr.getPrimaryStorageNameLabel(volume);
-        	long mostRecentSnapshotId = _snapshotDao.getLastSnapshot(volumeId, -1L);
-        	if (mostRecentSnapshotId == 0L) {
+        	if (_snapshotDao.listByVolumeIdIncludingRemoved(volumeId).isEmpty() ) {
         	    // This volume doesn't have any snapshots. Nothing do delete.
         	    continue;
         	}
-        	SnapshotVO mostRecentSnapshot = _snapshotDao.findByIdIncludingRemoved(mostRecentSnapshotId);
-        	if (mostRecentSnapshot == null) {
-        	    // Huh. The code should never reach here.
-        	    s_logger.error("Volume Id's mostRecentSnapshot with id: " + mostRecentSnapshotId + " turns out to be null");
-        	}
-        	// even if mostRecentSnapshot.removed() != null, we still have to explicitly remove it from the primary storage.
-        	// Then deleting the volume VDI will GC the base copy and nothing will be left on primary storage.
-        	String mostRecentSnapshotUuid = mostRecentSnapshot.getPath();
-        	DeleteSnapshotsDirCommand cmd = new DeleteSnapshotsDirCommand(primaryStoragePoolNameLabel, secondaryStoragePoolURL, dcId, accountId, volumeId, mostRecentSnapshotUuid, mostRecentSnapshot.getName());
+        	DeleteSnapshotsDirCommand cmd = new DeleteSnapshotsDirCommand(primaryStoragePoolNameLabel, secondaryStoragePoolURL, dcId, accountId, volumeId, volume.getPath());
         	String basicErrMsg = "Failed to destroy snapshotsDir for: " + volume.getId() + " under account: " + accountId;
         	Answer answer = null;
         	Long poolId = volume.getPoolId();
@@ -1161,6 +1148,45 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         return _snapshotPolicyDao.findOneByVolume(volumeId);
     }
 
+    @Override
+    public long getNextInSequence(CreateSnapshotCmd cmd) {
+        return  _snapshotDao.getNextInSequence(Long.class, "id");
+    }
+    
+    private Long _getLastId() {
+        Transaction txn = Transaction.open(Transaction.CLOUD_DB);
+        PreparedStatement pstmt = null;
+        String sql = GET_LAST_ID;
+        try {
+            pstmt = txn.prepareAutoCloseStatement(sql);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return Long.valueOf(rs.getLong(1));
+            }
+        } catch (Exception ex) {
+            s_logger.error("error getting last id", ex);
+        }
+        return null;
+    }
+
+    private void _updateSnapshotSeq(Long seq) {
+        Transaction txn = Transaction.open(Transaction.CLOUD_DB);
+        try {
+            txn.start();
+            String sql = UPDATE_SNAPSHOT_SEQ;
+            PreparedStatement pstmt = null;
+            pstmt = txn.prepareAutoCloseStatement(sql);
+            pstmt.setLong(1, seq.longValue());
+            pstmt.execute();
+            txn.commit();
+        } catch (Exception ex) {
+            txn.rollback();
+            String msg = "error seting snapshots_seq to " + seq;
+            s_logger.error(msg, ex);
+            throw new CloudRuntimeException(msg, ex);
+        }
+    }
+
 	@Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _name = name;
@@ -1179,7 +1205,15 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         _deltaSnapshotMax = NumbersUtil.parseInt(configDao.getValue("snapshot.delta.max"), DELTAMAX);
         _totalRetries = NumbersUtil.parseInt(configDao.getValue("total.retries"), 4);
         _pauseInterval = 2*NumbersUtil.parseInt(configDao.getValue("ping.interval"), 60);
-
+        
+        Long lastId = _getLastId();
+        if ( lastId == null ) {
+            String msg = "Can not get last id of snapshots";
+            s_logger.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+        s_logger.info("Set shapshot sequence to " + (lastId + 1));
+        _updateSnapshotSeq( lastId + 1 );
         s_logger.info("Snapshot Manager is configured.");
 
         return true;
@@ -1248,5 +1282,6 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
 		
 		return success;
 	}
+
 
 }

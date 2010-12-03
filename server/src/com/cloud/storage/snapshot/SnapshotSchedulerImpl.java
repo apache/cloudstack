@@ -30,7 +30,7 @@ import javax.persistence.EntityExistsException;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.commands.CreateSnapshotInternalCmd;
+import com.cloud.api.commands.CreateSnapshotCmd;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
@@ -228,7 +228,7 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
                 // Just have SYSTEM own the job for now.  Users won't be able to see this job, but
                 // it's an internal job so probably not a huge deal.
                 job.setAccountId(1L);
-                job.setCmd(CreateSnapshotInternalCmd.class.getName());
+                job.setCmd(CreateSnapshotCmd.class.getName());
                 job.setCmdInfo(GsonHelper.getBuilder().create().toJson(params));
 
                 long jobId = _asyncMgr.submitAsyncJob(job);

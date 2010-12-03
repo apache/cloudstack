@@ -277,6 +277,7 @@ INSERT INTO `cloud`.`sequence` (name, value) VALUES ('private_mac_address_seq', 
 INSERT INTO `cloud`.`sequence` (name, value) VALUES ('storage_pool_seq', 200);
 INSERT INTO `cloud`.`sequence` (name, value) VALUES ('volume_seq', 1);
 INSERT INTO `cloud`.`sequence` (name, value) VALUES ('networks_seq', 1);
+INSERT INTO `cloud`.`sequence` (name, value) VALUES ('snapshots_seq', 1);
 
 CREATE TABLE `cloud`.`volumes` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'Primary Key',
@@ -315,7 +316,7 @@ CREATE TABLE `cloud`.`volumes` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`snapshots` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'Primary Key',
+  `id` bigint unsigned UNIQUE NOT NULL 'Primary Key',
   `account_id` bigint unsigned NOT NULL COMMENT 'owner.  foreign key to account table',
   `volume_id` bigint unsigned NOT NULL COMMENT 'volume it belongs to. foreign key to volume table',
   `status` varchar(32) COMMENT 'snapshot creation status',

@@ -18,25 +18,29 @@
 
 package com.cloud.storage.dao;
 
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.List;
 
 import javax.ejb.Local;
 
-import com.cloud.storage.Snapshot;
+import org.apache.log4j.Logger;
+
 import com.cloud.storage.SnapshotVO;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
-import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.Transaction;
 
 @Local (value={SnapshotDao.class})
 public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements SnapshotDao {
+    public static final Logger s_logger = Logger.getLogger(SnapshotDaoImpl.class.getName());
+    private static final String GET_LAST_SNAPSHOT = "SELECT id FROM snapshots where volume_id = ? AND id != ? ORDER BY created DESC";
     
     private final SearchBuilder<SnapshotVO> VolumeIdSearch;
     private final SearchBuilder<SnapshotVO> VolumeIdTypeSearch;
     private final SearchBuilder<SnapshotVO> ParentIdSearch;
-    private final GenericSearchBuilder<SnapshotVO, Long> lastSnapSearch;
     
     @Override
     public SnapshotVO findNextSnapshot(long snapshotId) {
@@ -62,6 +66,12 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
         return listBy(sc, filter);
     }
     
+    @Override
+    public List<SnapshotVO> listByVolumeIdIncludingRemoved(long volumeId) {
+        SearchCriteria<SnapshotVO> sc = VolumeIdSearch.create();
+        sc.setParameters("volumeId", volumeId);
+        return listIncludingRemovedBy(sc, null);
+    }
     
     public List<SnapshotVO> listByVolumeIdType(Filter filter, long volumeId, String type ) {
         SearchCriteria<SnapshotVO> sc = VolumeIdTypeSearch.create();
@@ -83,24 +93,28 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
         ParentIdSearch = createSearchBuilder();
         ParentIdSearch.and("prevSnapshotId", ParentIdSearch.entity().getPrevSnapshotId(), SearchCriteria.Op.EQ);
         ParentIdSearch.done();
-        
-        lastSnapSearch = createSearchBuilder(Long.class);
-        lastSnapSearch.select(null, SearchCriteria.Func.MAX, lastSnapSearch.entity().getId());
-        lastSnapSearch.and("volumeId", lastSnapSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
-        lastSnapSearch.and("snapId", lastSnapSearch.entity().getId(), SearchCriteria.Op.NEQ);
-        lastSnapSearch.done();
+       
+    }
+    
+    @Override
+    public long getLastSnapshot(long volumeId, long snapId) {
+        Transaction txn = Transaction.currentTxn();
+        PreparedStatement pstmt = null;
+        String sql = GET_LAST_SNAPSHOT;
+        try {
+            pstmt = txn.prepareAutoCloseStatement(sql);
+            pstmt.setLong(1, volumeId);
+            pstmt.setLong(2, snapId);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rs.getLong(1);
+            }
+        } catch (Exception ex) {
+            s_logger.error("error getting last snapshot", ex);
+        }
+        return 0;
     }
 
-	@Override
-	public long getLastSnapshot(long volumeId, long snapId) {
-		SearchCriteria<Long> sc = lastSnapSearch.create();
-		sc.setParameters("volumeId", volumeId);
-		sc.setParameters("snapId", snapId);
-		List<Long> prevSnapshots = searchIncludingRemoved(sc, null);
-		if(prevSnapshots != null && prevSnapshots.size() > 0 && prevSnapshots.get(0) != null) {
-			return prevSnapshots.get(0);
-		}
-		return 0;
-	}
+
 	
 }
