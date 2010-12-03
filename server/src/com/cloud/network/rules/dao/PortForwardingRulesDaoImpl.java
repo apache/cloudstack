@@ -23,11 +23,13 @@ import javax.ejb.Local;
 
 import com.cloud.network.rules.FirewallRule.State;
 import com.cloud.network.rules.PortForwardingRuleVO;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.net.Ip;
+import com.cloud.utils.net.NetUtils;
 
 @Local(value=PortForwardingRulesDao.class)
 public class PortForwardingRulesDaoImpl extends GenericDaoBase<PortForwardingRuleVO, Long> implements PortForwardingRulesDao {
@@ -40,6 +42,9 @@ public class PortForwardingRulesDaoImpl extends GenericDaoBase<PortForwardingRul
         super();
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("id", AllFieldsSearch.entity().getId(), Op.EQ);
+        AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), Op.EQ);
+        AllFieldsSearch.and("ip", AllFieldsSearch.entity().getSourceIpAddress(), Op.EQ);
+        AllFieldsSearch.and("proto", AllFieldsSearch.entity().getProtocol(), Op.EQ);
         AllFieldsSearch.done();
         
         ApplicationSearch = createSearchBuilder();
@@ -69,4 +74,20 @@ public class PortForwardingRulesDaoImpl extends GenericDaoBase<PortForwardingRul
         
         return listBy(sc, null);
     }
+    
+    @Override
+    public List<PortForwardingRuleVO> searchNatRules(Ip ip, Long startIndex, Long pageSize) {
+        Filter searchFilter = new Filter(PortForwardingRuleVO.class, "id", true, startIndex, pageSize);
+        SearchCriteria<PortForwardingRuleVO> sc = AllFieldsSearch.create();
+
+        if (ip != null) {
+            sc.setParameters("ip", ip);
+        }
+        
+        //search for rules with protocol = nat
+        sc.setParameters("protocol", NetUtils.NAT_PROTO);
+
+        return listBy(sc, searchFilter);
+    }
+    
 }

@@ -107,7 +107,7 @@ public class CreatePortForwardingRuleCmd extends BaseCmd implements PortForwardi
                 success = _rulesService.applyPortForwardingRules(result.getSourceIpAddress(), callerContext.getAccount());
             }  finally {
                 if (!success) {
-                    _rulesService.revokePortForwardingRule(result.getId(), true, callerContext.getAccount());
+                    _rulesService.revokePortForwardingRule(result.getId(), true);
                 }
             }
             FirewallRuleResponse fwResponse = _responseGenerator.createFirewallRuleResponse(result);

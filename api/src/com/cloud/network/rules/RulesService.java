@@ -19,7 +19,6 @@ package com.cloud.network.rules;
 
 import java.util.List;
 
-import com.cloud.api.commands.ListIpForwardingRulesCmd;
 import com.cloud.api.commands.ListPortForwardingRulesCmd;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -27,26 +26,11 @@ import com.cloud.user.Account;
 import com.cloud.utils.net.Ip;
 
 public interface RulesService {
-    List<? extends PortForwardingRule> searchForIpForwardingRules(ListIpForwardingRulesCmd cmd);
-
-    /**
-     * List port forwarding rules assigned to an ip address
-     * @param cmd the command object holding the criteria for listing port forwarding rules (the ipAddress)
-     * @return list of port forwarding rules on the given address, empty list if no rules exist
-     */
-    public List<? extends PortForwardingRule> listPortForwardingRules(ListPortForwardingRulesCmd cmd);
-
+    List<? extends PortForwardingRule> searchForIpForwardingRules(Ip ip, Long start, Long size);
     PortForwardingRule createIpForwardingRuleInDb(String ipAddr, long virtualMachineId);
-    
-    PortForwardingRule createIpForwardingRuleOnDomr(long ruleId);
-
     boolean deleteIpForwardingRule(Long id);
-    boolean deletePortForwardingRule(Long id, boolean sysContext);
-    
-    boolean applyFirewallRules(Ip ip, Account caller) throws ResourceUnavailableException;
-    boolean applyNatRules(Ip ip, Account caller) throws ResourceUnavailableException;
-    boolean applyPortForwardingRules(Ip ip, Account caller) throws ResourceUnavailableException;
-    
+
+
     /**
      * Creates a port forwarding rule between two ip addresses or between
      * an ip address and a virtual machine.
@@ -57,12 +41,22 @@ public interface RulesService {
      * @throws NetworkRuleConflictException if conflicts in the network rules are detected.
      */
     PortForwardingRule createPortForwardingRule(PortForwardingRule rule, Long vmId, Account caller) throws NetworkRuleConflictException;
+    
     /**
      * Revokes a port forwarding rule 
      * @param ruleId the id of the rule to revoke.
      * @param caller 
      * @return
      */
-    PortForwardingRule revokePortForwardingRule(long ruleId, boolean apply, Account caller);
+    PortForwardingRule revokePortForwardingRule(long ruleId, boolean apply);
+    /**
+     * List port forwarding rules assigned to an ip address
+     * @param cmd the command object holding the criteria for listing port forwarding rules (the ipAddress)
+     * @return list of port forwarding rules on the given address, empty list if no rules exist
+     */
+    public List<? extends PortForwardingRule> listPortForwardingRules(ListPortForwardingRulesCmd cmd);
 
+    boolean applyFirewallRules(Ip ip, Account caller) throws ResourceUnavailableException;
+    boolean applyNatRules(Ip ip) throws ResourceUnavailableException;
+    boolean applyPortForwardingRules(Ip ip, Account caller) throws ResourceUnavailableException;
 }

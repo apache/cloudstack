@@ -56,6 +56,7 @@ public class FirewallRuleVO implements FirewallRule {
     long accountId;
     
     @Column(name="ip_address", updatable=false)
+    @Enumerated(value=EnumType.ORDINAL)
     Ip sourceIpAddress;
     
     @Column(name="start_port", updatable=false)

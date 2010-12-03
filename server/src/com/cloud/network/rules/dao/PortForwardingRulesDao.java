@@ -33,4 +33,6 @@ public interface PortForwardingRulesDao extends GenericDao<PortForwardingRuleVO,
      * @return List of PortForwardingRuleVO
      */
     List<PortForwardingRuleVO> listByIpAndNotRevoked(Ip ip);
+    
+    List<PortForwardingRuleVO> searchNatRules(Ip ip, Long startIndex, Long pageSize);
 }

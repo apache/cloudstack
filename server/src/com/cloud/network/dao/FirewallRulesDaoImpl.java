@@ -56,9 +56,8 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
         
         IpNotRevokedSearch = createSearchBuilder();
         IpNotRevokedSearch.and("ip", IpNotRevokedSearch.entity().getSourceIpAddress(), Op.EQ);
-        IpNotRevokedSearch.and("state", IpNotRevokedSearch.entity().getSourceIpAddress(), Op.NEQ);
+        IpNotRevokedSearch.and("state", IpNotRevokedSearch.entity().getState(), Op.NEQ);
         IpNotRevokedSearch.done();
-        
         
     }
 

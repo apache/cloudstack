@@ -227,7 +227,7 @@ public class SqlGenerator {
         attr = findAttribute(GenericDao.XID_COLUMN);
         if (attr != null && attr.field.getType() == String.class) {
             attr.setTrue(Attribute.Flag.DaoGenerated);
-            attr.setFalse(Attribute.Flag.Insertable);
+            attr.setTrue(Attribute.Flag.Insertable);
             attr.setFalse(Attribute.Flag.Updatable);
             attr.setFalse(Attribute.Flag.TimeStamp);
             attr.setFalse(Attribute.Flag.Time);

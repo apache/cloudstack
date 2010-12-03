@@ -25,7 +25,6 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.commands.ListIpForwardingRulesCmd;
 import com.cloud.api.commands.ListPortForwardingRulesCmd;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventUtils;
@@ -134,7 +133,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         IPAddressVO ipAddress = _ipAddressDao.findById(ipAddr);
         
         Ip dstIp = rule.getDestinationIpAddress();
-        long networkId = rule.getNetworkId();
+        long networkId;
         UserVmVO vm = null;
         Network network = null;
         if (vmId != null) {
@@ -164,6 +163,8 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
                 throw new InvalidParameterValueException("Unable to get the network " + rule.getNetworkId());
             }
         }
+
+        _accountMgr.checkAccess(caller, network);
         
         networkId = network.getId();
         long accountId = network.getAccountId();
@@ -236,13 +237,24 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     }
     
     @Override
-    public PortForwardingRule revokePortForwardingRule(long ruleId, boolean apply, Account caller) {
+    public PortForwardingRule revokePortForwardingRule(long ruleId, boolean apply) {
+        UserContext ctx = UserContext.current();
+        Account caller = ctx.getAccount();
+        
         PortForwardingRuleVO rule = _forwardingDao.findById(ruleId);
         if (rule == null) {
             throw new InvalidParameterValueException("Unable to find " + ruleId);
         }
         
+        _accountMgr.checkAccess(caller, rule);
         revokeRule(rule, caller);
+        String description;
+        String type = EventTypes.EVENT_NET_RULE_DELETE;
+        String level = EventVO.LEVEL_INFO;
+
+        description = "deleted ip forwarding rule [" + rule.getSourceIpAddress() + ":" + rule.getSourcePortStart() + "]->[" + rule.getDestinationIpAddress() + ":" + rule.getDestinationPortStart() + "] " + rule.getProtocol();
+        EventUtils.saveEvent(ctx.getUserId(), rule.getAccountId(), level, type, description);
+        
         if (apply) {
             applyPortForwardingRules(rule.getSourceIpAddress(), true);
         }
@@ -278,19 +290,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     }
 
     @Override
-    public PortForwardingRule createIpForwardingRuleOnDomr(long ruleId) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
     public boolean deleteIpForwardingRule(Long id) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public boolean deletePortForwardingRule(Long id, boolean sysContext) {
         // TODO Auto-generated method stub
         return false;
     }
@@ -316,24 +316,23 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             _accountMgr.checkAccess(caller, rules.toArray(new PortForwardingRuleVO[rules.size()]));
         }
         
-        return _networkMgr.applyRules(ip, rules, continueOnError);
+        if (!_networkMgr.applyRules(ip, rules, continueOnError)) {
+            s_logger.debug("Rules are not completely applied");
+            return false;
+        }
+        
+        for (PortForwardingRuleVO rule : rules) {
+            if (rule.getState() == FirewallRule.State.Revoke) {
+                _forwardingDao.remove(rule.getId());
+            }
+        }
+        
+        return true;
     }
     
     @Override
-    public List<PortForwardingRuleVO> searchForIpForwardingRules(ListIpForwardingRulesCmd cmd){
-//        String ipAddress = cmd.getPublicIpAddress();
-//        Filter searchFilter = new Filter(PortForwardingRuleVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
-//        SearchCriteria<PortForwardingRuleVO> sc = _firewallRulesDao.createSearchCriteria();
-//
-//        if (ipAddress != null) {
-//            sc.addAnd("publicIpAddress", SearchCriteria.Op.EQ, ipAddress);
-//        }
-//        
-//        //search for rules with protocol = nat
-//        sc.addAnd("protocol", SearchCriteria.Op.EQ, NetUtils.NAT_PROTO);
-//
-//        return _firewallRulesDao.search(sc, searchFilter);
-        return null;
+    public List<PortForwardingRuleVO> searchForIpForwardingRules(Ip ip, Long start, Long size) {
+        return _forwardingDao.searchNatRules(ip, start, size);
     }
     
     
@@ -344,7 +343,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     }
 
     @Override
-    public boolean applyNatRules(Ip ip, Account caller) throws ResourceUnavailableException {
+    public boolean applyNatRules(Ip ip) throws ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;
     }
@@ -678,118 +677,6 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 //
 //  @Override @DB
 //  public boolean deletePortForwardingRule(Long id, boolean sysContext) {
-//      Long ruleId = id;
-//      Long userId = null;
-//      Account account = null;
-//      if(sysContext){
-//          userId = User.UID_SYSTEM;
-//          account = _accountDao.findById(User.UID_SYSTEM);
-//      }else{
-//          userId = UserContext.current().getUserId();
-//          account = UserContext.current().getAccount();         
-//      }
-//
-//
-//      //verify input parameters here
-//      PortForwardingRuleVO rule = _firewallRulesDao.findById(ruleId);
-//      if (rule == null) {
-//          throw new InvalidParameterValueException("Unable to find port forwarding rule " + ruleId);
-//      }
-//
-//      String publicIp = rule.getSourceIpAddress();
-//      String privateIp = rule.getDestinationIpAddress();
-//
-//      IPAddressVO ipAddress = _ipAddressDao.findById(publicIp);
-//      if (ipAddress == null) {
-//          throw new InvalidParameterValueException("Unable to find IP address for port forwarding rule " + ruleId);
-//      }
-//
-//      // although we are not writing these values to the DB, we will check
-//      // them out of an abundance
-//      // of caution (may not be warranted)
-//      String privatePort = rule.getDestinationPort();
-//      String publicPort = rule.getSourcePort();
-//      if (!NetUtils.isValidPort(publicPort) || !NetUtils.isValidPort(privatePort)) {
-//          throw new InvalidParameterValueException("Invalid value for port");
-//      }
-//
-//      String proto = rule.getProtocol();
-//      if (!NetUtils.isValidProto(proto)) {
-//          throw new InvalidParameterValueException("Invalid protocol");
-//      }
-//
-//      Account ruleOwner = _accountDao.findById(ipAddress.getAccountId());
-//      if (ruleOwner == null) {
-//          throw new InvalidParameterValueException("Unable to find owning account for port forwarding rule " + ruleId);
-//      }
-//
-//      // if an admin account was passed in, or no account was passed in, make sure we honor the accountName/domainId parameters
-//      if (account != null) {
-//          if (isAdmin(account.getType())) {
-//              if (!_domainDao.isChildDomain(account.getDomainId(), ruleOwner.getDomainId())) {
-//                  throw new PermissionDeniedException("Unable to delete port forwarding rule " + ruleId + ", permission denied.");
-//              }
-//          } else if (account.getId() != ruleOwner.getId()) {
-//              throw new PermissionDeniedException("Unable to delete port forwarding rule " + ruleId + ", permission denied.");
-//          }
-//      }
-//
-//      Transaction txn = Transaction.currentTxn();
-//      boolean locked = false;
-//      boolean success = false;
-//      try {
-//
-//          IPAddressVO ipVO = _ipAddressDao.acquireInLockTable(publicIp);
-//          if (ipVO == null) {
-//              // throw this exception because hackers can use the api to probe for allocated ips
-//              throw new PermissionDeniedException("User does not own supplied address");
-//          }
-//
-//          locked = true;
-//          txn.start();
-//          List<PortForwardingRuleVO> fwdings = _firewallRulesDao.listIPForwardingForUpdate(publicIp, publicPort, proto);
-//          PortForwardingRuleVO fwRule = null;
-//          if (fwdings.size() == 0) {
-//              throw new InvalidParameterValueException("No such rule");
-//          } else if (fwdings.size() == 1) {
-//              fwRule = fwdings.get(0);
-//              if (fwRule.getDestinationIpAddress().equalsIgnoreCase(privateIp) && fwRule.getDestinationPort().equals(privatePort)) {
-//                  _firewallRulesDao.expunge(fwRule.getId());
-//              } else {
-//                  throw new InvalidParameterValueException("No such rule");
-//              }
-//          } else {
-//              throw new CloudRuntimeException("Multiple matches. Please contact support");
-//          }
-//          fwRule.setEnabled(false);
-//          success = updateFirewallRule(fwRule, null, null);
-//
-//          String description;
-//          String type = EventTypes.EVENT_NET_RULE_DELETE;
-//          String level = EventVO.LEVEL_INFO;
-//          String ruleName = rule.isForwarding() ? "ip forwarding" : "load balancer";
-//
-//          if (success) {
-//              description = "deleted " + ruleName + " rule [" + publicIp + ":" + rule.getSourcePort() + "]->[" + rule.getDestinationIpAddress() + ":"
-//              + rule.getDestinationPort() + "] " + rule.getProtocol();
-//          } else {
-//              level = EventVO.LEVEL_ERROR;
-//              description = "Error while deleting " + ruleName + " rule [" + publicIp + ":" + rule.getSourcePort() + "]->[" + rule.getDestinationIpAddress() + ":"
-//              + rule.getDestinationPort() + "] " + rule.getProtocol();
-//          }
-//          EventUtils.saveEvent(userId, ipAddress.getAccountId(), level, type, description);
-//          txn.commit();
-//      }catch (Exception ex) {
-//          txn.rollback();
-//          s_logger.error("Unexpected exception deleting port forwarding rule " + ruleId, ex);
-//          return false;
-//      }finally {
-//          if (locked) {
-//              _ipAddressDao.releaseFromLockTable(publicIp);
-//          }
-//          txn.close();
-//      }
-//      return success;
 //  }
 //    @Override @DB
 //    public PortForwardingRule createIpForwardingRuleOnDomr(long ruleId) {

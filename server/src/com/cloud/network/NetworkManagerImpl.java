@@ -2129,6 +2129,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             return true;
         }
         
+        boolean success = true;
         Network network = _networkConfigDao.findById(rules.get(0).getNetworkId());
         for (NetworkElement ne : _networkElements) {
             try {
@@ -2139,9 +2140,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     throw e;
                 }
                 s_logger.warn("Problems with " + ne.getName() + " but pushing on", e);
+                success = false;
             }
         }
         
-        return true;
+        return success;
     }
 }

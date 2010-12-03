@@ -72,7 +72,7 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void execute(){ 
-        PortForwardingRule result = _rulesService.createIpForwardingRuleOnDomr(this.getId());
+        PortForwardingRule result = _rulesService.createIpForwardingRuleInDb(ipAddress, virtualMachineId);
         if (result != null) {
             FirewallRuleResponse fwResponse = _responseGenerator.createFirewallRuleResponse(result);
             fwResponse.setResponseName(getName());

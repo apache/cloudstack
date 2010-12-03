@@ -538,7 +538,8 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
 
                 Ip ip = null;
                 if (enumType == EnumType.STRING) {
-                    ip = new Ip(NetUtils.ip2Long(rs.getString(index)));
+                    String s = rs.getString(index);
+                    ip = s == null ? null : new Ip(NetUtils.ip2Long(s));
                 } else {
                     ip = new Ip(rs.getLong(index));
                 }
@@ -1204,9 +1205,9 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
             return null;
             // Not sure what to do here.
         } else if (attr.is(Attribute.Flag.AutoGV)) {
-            if (attr.columnName == GenericDao.XID_COLUMN) {
-                UUID.randomUUID().toString();
-            }
+            if (attr.columnName.equals(GenericDao.XID_COLUMN)) {
+                return UUID.randomUUID().toString();
+            } 
             assert (false) : "Auto generation is not supported.";
             return null;
         } else if (attr.is(Attribute.Flag.SequenceGV)) {
