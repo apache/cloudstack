@@ -504,23 +504,9 @@ fi
 %attr(0755,root,root) %{_bindir}/%{name}-setup-databases
 %attr(0755,root,root) %{_bindir}/%{name}-migrate-databases
 %dir %{_datadir}/%{name}/setup
-%{_datadir}/%{name}/setup/create-database.sql
-%{_datadir}/%{name}/setup/create-index-fk.sql
-%{_datadir}/%{name}/setup/create-schema.sql
-%{_datadir}/%{name}/setup/server-setup.sql
-%{_datadir}/%{name}/setup/templates.*.sql
-%{_datadir}/%{name}/setup/templates.sql
+%{_datadir}/%{name}/setup/*.sql
 %{_datadir}/%{name}/setup/deploy-db-dev.sh
 %{_datadir}/%{name}/setup/server-setup.xml
-%{_datadir}/%{name}/setup/data-20to21.sql
-%{_datadir}/%{name}/setup/index-20to21.sql
-%{_datadir}/%{name}/setup/index-212to213.sql
-%{_datadir}/%{name}/setup/postprocess-20to21.sql
-%{_datadir}/%{name}/setup/schema-20to21.sql
-%{_datadir}/%{name}/setup/schema-level.sql
-%{_datadir}/%{name}/setup/schema-21to22.sql
-%{_datadir}/%{name}/setup/data-21to22.sql
-%{_datadir}/%{name}/setup/index-21to22.sql
 
 %files client
 %defattr(0644,root,root,0755)
