@@ -322,6 +322,7 @@ CREATE TABLE `cloud`.`volumes` (
   `state` varchar(32) COMMENT 'State machine',
   `source_id` bigint unsigned  COMMENT 'id for the source',
   `source_type` varchar(32) COMMENT 'source from which the volume is created -- snapshot, diskoffering, template, blank',
+  `chain_info` text COMMENT 'save possible disk chain info in primary storage',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

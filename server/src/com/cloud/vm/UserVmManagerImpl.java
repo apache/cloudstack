@@ -561,7 +561,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     	
     	if (sendCommand) {
     		StoragePoolVO volumePool = _storagePoolDao.findById(volume.getPoolId());
-    		AttachVolumeCommand cmd = new AttachVolumeCommand(true, vm.getInstanceName(), volume.getPoolType(), volume.getFolder(), volume.getPath(), volume.getName(), deviceId);
+    		AttachVolumeCommand cmd = new AttachVolumeCommand(true, vm.getInstanceName(), volume.getPoolType(), volume.getFolder(), volume.getPath(), volume.getName(), deviceId, volume.getChainInfo());
 			cmd.setPoolUuid(volumePool.getUuid());
     		
     		try {
@@ -694,7 +694,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     	Answer answer = null;
     	
     	if (sendCommand) {
-			AttachVolumeCommand cmd = new AttachVolumeCommand(false, vm.getInstanceName(), volume.getPoolType(), volume.getFolder(), volume.getPath(), volume.getName(), cmmd.getDeviceId() != null ? cmmd.getDeviceId() : volume.getDeviceId());
+			AttachVolumeCommand cmd = new AttachVolumeCommand(false, vm.getInstanceName(), volume.getPoolType(), volume.getFolder(), volume.getPath(), volume.getName(), 
+				cmmd.getDeviceId() != null ? cmmd.getDeviceId() : volume.getDeviceId(), volume.getChainInfo());
 
 			StoragePoolVO volumePool = _storagePoolDao.findById(volume.getPoolId());
 			cmd.setPoolUuid(volumePool.getUuid());
@@ -715,11 +716,15 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 		if (!sendCommand || (answer != null && answer.getResult())) {
 			// Mark the volume as detached
     		_volsDao.detachVolume(volume.getId());
-            if(!vm.getHostName().equals(vm.getDisplayName())) {
-                event.setDescription("Volume: " +volume.getName()+ " successfully detached from VM: "+vm.getHostName()+"("+vm.getDisplayName()+")");
-            } else {
-                event.setDescription("Volume: " +volume.getName()+ " successfully detached from VM: "+vm.getHostName());
-            }
+    		if(answer != null && answer instanceof AttachVolumeAnswer) {
+    			volume.setChainInfo(((AttachVolumeAnswer)answer).getChainInfo());
+    			_volsDao.update(volume.getId(), volume);
+    		}
+    		
+            if(!vm.getHostName().equals(vm.getDisplayName()))
+            	event.setDescription("Volume: " +volume.getName()+ " successfully detached from VM: "+vm.getHostName()+"("+vm.getDisplayName()+")");
+            else
+            	event.setDescription("Volume: " +volume.getName()+ " successfully detached from VM: "+vm.getHostName());
             event.setLevel(EventVO.LEVEL_INFO);
             _eventDao.persist(event);
             

@@ -37,8 +37,9 @@ public class VolumeTO {
     private StoragePoolType storagePoolType;
     private long poolId;
     private int deviceId;
+    private String chainInfo;
     
-    public VolumeTO(long id, Volume.VolumeType type, Storage.StorageResourceType resourceType, StoragePoolType poolType, String name, String mountPoint, String path, long size) {
+    public VolumeTO(long id, Volume.VolumeType type, Storage.StorageResourceType resourceType, StoragePoolType poolType, String name, String mountPoint, String path, long size, String chainInfo) {
         this.id = id;
         this.name= name;
         this.path = path;
@@ -47,6 +48,7 @@ public class VolumeTO {
         this.resourceType = resourceType;
         this.storagePoolType = poolType;
         this.mountPoint = mountPoint;
+        this.chainInfo = chainInfo;
     }
     
     public VolumeTO(Volume volume, StoragePool pool) {
@@ -58,6 +60,7 @@ public class VolumeTO {
         this.resourceType = volume.getStorageResourceType();
         this.storagePoolType = pool.getPoolType();
         this.mountPoint = volume.getFolder();
+        this.chainInfo = volume.getChainInfo();
     }
     
    
@@ -95,6 +98,10 @@ public class VolumeTO {
     
     public StoragePoolType getPoolType() {
         return storagePoolType;
+    }
+    
+    public String getChainInfo() {
+    	return chainInfo;
     }
     
     @Override
