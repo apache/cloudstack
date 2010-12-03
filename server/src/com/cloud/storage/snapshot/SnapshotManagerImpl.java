@@ -1165,7 +1165,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         } catch (Exception ex) {
             s_logger.error("error getting last id", ex);
         }
-        return null;
+        return 1l;
     }
 
     private void _updateSnapshotSeq(Long seq) {
