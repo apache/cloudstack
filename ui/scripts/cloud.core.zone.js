@@ -1195,7 +1195,7 @@ function initAddPrimaryStorageButtonOnZonePage($button, zoneId, zoneName) {
 					    }
 					    else {	
 					        var $container = $("#midmenu_container").find("#midmenu_primarystorage_container");
-					        var $noItemsAvailable = $container.siblings("#midmenu_container_no_items_available");
+					        var $noItemsAvailable = $container.find("#midmenu_container_no_items_available_clone");
 					        if($noItemsAvailable.length > 0) {
 					            $noItemsAvailable.slideUp("slow", function() {
 					                $(this).remove();
