@@ -71,6 +71,7 @@ import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
+import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventUtils;
@@ -2016,9 +2017,17 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             accountId = account.getId();
         }
         
-        
         Filter searchFilter = new Filter(NetworkVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
-        SearchCriteria<NetworkVO> sc = _networkConfigDao.createSearchCriteria();
+        SearchBuilder<NetworkVO> sb = _networkConfigDao.createSearchBuilder();
+        
+        //Don't display networks created of system network offerings
+        SearchBuilder<NetworkOfferingVO> networkOfferingSearch = _networkOfferingDao.createSearchBuilder();
+        networkOfferingSearch.and("systemOnly", networkOfferingSearch.entity().isSystemOnly(), SearchCriteria.Op.EQ);
+        sb.join("networkOfferingSearch", networkOfferingSearch, sb.entity().getNetworkOfferingId(), networkOfferingSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+        
+        
+        SearchCriteria<NetworkVO> sc = sb.create();
+        sc.setJoinParameters("networkOfferingSearch", "systemOnly", false);
         
         if (keyword != null) {
             SearchCriteria<NetworkVO> ssc = _networkConfigDao.createSearchCriteria();
@@ -2033,6 +2042,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (accountId != null) {
             sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
         }
+        
         return _networkConfigDao.search(sc, searchFilter);
     }
     
