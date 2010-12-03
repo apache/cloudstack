@@ -25,10 +25,13 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 
 import com.cloud.capacity.CapacityVO;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.vm.VMInstanceVO;
 
 @Local(value = { CapacityDao.class })
 public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements CapacityDao {
@@ -37,10 +40,10 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     private static final String ADD_ALLOCATED_SQL = "UPDATE `cloud`.`op_host_capacity` SET used_capacity = used_capacity + ? WHERE host_id = ? AND capacity_type = ?";
     private static final String SUBTRACT_ALLOCATED_SQL = "UPDATE `cloud`.`op_host_capacity` SET used_capacity = used_capacity - ? WHERE host_id = ? AND capacity_type = ?";
     private static final String CLEAR_STORAGE_CAPACITIES = "DELETE FROM `cloud`.`op_host_capacity` WHERE capacity_type=2 OR capacity_type=3 OR capacity_type=6"; //clear storage and secondary_storage capacities
-    private static final String CLEAR_NON_STORAGE_CAPACITIES = "DELETE FROM `cloud`.`op_host_capacity` WHERE capacity_type<>2 AND capacity_type<>3 AND capacity_type<>6"; //clear non-storage and non-secondary_storage capacities
+    private static final String CLEAR_NON_STORAGE_CAPACITIES = "DELETE FROM `cloud`.`op_host_capacity` WHERE capacity_type<>2 AND capacity_type<>3 AND capacity_type<>6 AND capacity_type<>0 AND capacity_type<>1"; //clear non-storage and non-secondary_storage capacities
     private SearchBuilder<CapacityVO> _hostIdTypeSearch;
     
-    public void CapacityDaoImple() {
+    public CapacityDaoImpl() {
     	_hostIdTypeSearch = createSearchBuilder();
     	_hostIdTypeSearch.and("hostId", _hostIdTypeSearch.entity().getHostOrPoolId(), SearchCriteria.Op.EQ);
     	_hostIdTypeSearch.and("type", _hostIdTypeSearch.entity().getCapacityType(), SearchCriteria.Op.EQ);

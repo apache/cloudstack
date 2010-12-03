@@ -1517,7 +1517,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
         _networkRate = ((networkRateStr == null) ? 200 : Integer.parseInt(networkRateStr));
         _multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));
-        _offering = new ServiceOfferingVO("System Offering For Software Router", 1, _routerRamSize, 0, 0, 0, false, null, NetworkOffering.GuestIpType.Virtualized, useLocalStorage, true, null, true);
+        _offering = new ServiceOfferingVO("System Offering For Software Router", 1, _routerRamSize, 500, 0, 0, false, null, NetworkOffering.GuestIpType.Virtualized, useLocalStorage, true, null, true);
         _offering.setUniqueName("Cloud.Com-SoftwareRouter");
         _offering = _serviceOfferingDao.persistSystemServiceOffering(_offering);
         _template = _templateDao.findRoutingTemplate();

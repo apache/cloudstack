@@ -3,6 +3,8 @@ package com.cloud.deploy;
 import java.util.Collections;
 import java.util.List;
 
+import javax.ejb.Local;
+
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.dc.ClusterVO;
@@ -20,10 +22,11 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
 import com.cloud.utils.component.Inject;
+import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
-
+@Local(value=DeploymentPlanner.class)
 public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 	@Inject private HostDao _hostDao;
 	@Inject private CapacityDao _capacityDao;
@@ -95,15 +98,24 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 		return null;
 	}
 
-	private boolean deployToHost(Long hostId, Integer cpu, long ram, boolean fromLastHost) {
+	
+	@Override
+	public boolean check(VirtualMachineProfile vm, DeploymentPlan plan,
+			DeployDestination dest, ExcludeList exclude) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+	  
+    @DB
+	protected boolean deployToHost(Long hostId, Integer cpu, long ram, boolean fromLastHost) {
 		
 		CapacityVO capacityCpu = _capacityDao.findByHostIdType(hostId, CapacityVO.CAPACITY_TYPE_CPU);
 		CapacityVO capacityMem = _capacityDao.findByHostIdType(hostId, CapacityVO.CAPACITY_TYPE_MEMORY);
 				
 		Transaction txn = Transaction.currentTxn();
-        txn.start();
-
+       
         try {
+        	txn.start();
         	capacityCpu = _capacityDao.lockRow(capacityCpu.getId(), true);
         	capacityMem = _capacityDao.lockRow(capacityMem.getId(), true);
         	
@@ -119,21 +131,23 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
         		/*alloc from reserved*/
         		if (reservedCpu >= cpu && reservedMem >= ram) {
         			capacityCpu.setReservedCapacity(reservedCpu - cpu);
-        			capacityMem.setReservedCapacity(reservedMem - ram);        			
+        			capacityMem.setReservedCapacity(reservedMem - ram);        
+        			capacityCpu.setUsedCapacity(usedCpu + cpu);
+        			capacityMem.setUsedCapacity(usedMem + ram);
         			success = true;
         		}		
         	} else {
         		/*alloc from free resource*/
         		if ((reservedCpu + usedCpu + cpu <= totalCpu) && (reservedMem + usedMem + ram <= totalMem)) {
         			capacityCpu.setUsedCapacity(usedCpu + cpu);
-        			capacityMem.setUsedCapacity(totalMem + ram);
+        			capacityMem.setUsedCapacity(usedMem + ram);
         			success = true;
         		}
         	}
         	
         	if (success) {
         		_capacityDao.update(capacityCpu.getId(), capacityCpu);
-    			_capacityDao.update(capacityMem.getId(), capacityMem);
+        		_capacityDao.update(capacityMem.getId(), capacityMem);
         	}
         	
         	txn.commit();
@@ -143,11 +157,5 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
         	return false;
         }        		
 	}
-	@Override
-	public boolean check(VirtualMachineProfile vm, DeploymentPlan plan,
-			DeployDestination dest, ExcludeList exclude) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
+    
 }

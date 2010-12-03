@@ -174,7 +174,7 @@ public class MauriceMoss implements VmManager, ClusterManagerListener {
             _storageMgr.allocateRawVolume(VolumeType.DATADISK, "DATA-" + vm.getId(), offering.first(), offering.second(), vm, owner);
         }
 
-        stateTransitTo(vm, Event.OperationSucceeded);
+        stateTransitTo(vm, Event.OperationSucceeded, null);
         txn.commit();
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Allocation completed for VM: " + vm);
@@ -238,7 +238,7 @@ public class MauriceMoss implements VmManager, ClusterManagerListener {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Destroying vm " + vm);
         }
-        if (!stateTransitTo(vm, VirtualMachine.Event.DestroyRequested)) {
+        if (!stateTransitTo(vm, VirtualMachine.Event.DestroyRequested, vm.getHostId())) {
             s_logger.debug("Unable to destroy the vm because it is not in the correct state: " + vm.toString());
             return false;
         }
@@ -326,7 +326,7 @@ public class MauriceMoss implements VmManager, ClusterManagerListener {
         
         vm.setReservationId(work.getId());
         
-        if (!stateTransitTo(vm, Event.StartRequested)) {
+        if (!stateTransitTo(vm, Event.StartRequested, null)) {
             throw new ConcurrentOperationException("Unable to start vm "  + vm + " due to concurrent operations");
         }
 
@@ -334,7 +334,7 @@ public class MauriceMoss implements VmManager, ClusterManagerListener {
         int retry = _retry;
         while (retry-- != 0) { // It's != so that it can match -1.
         	if (retry < (_retry -1)) {
-        		stateTransitTo(vm, Event.OperationRetry);
+        		stateTransitTo(vm, Event.OperationRetry, null);
         	}
         	
             VirtualMachineProfileImpl<T> vmProfile = new VirtualMachineProfileImpl<T>(vm, template, offering, null, params);
@@ -353,13 +353,12 @@ public class MauriceMoss implements VmManager, ClusterManagerListener {
             }
             
             vm.setDataCenterId(dest.getDataCenter().getId());
-            vm.setPodId(dest.getPod().getId());
-            vm.setHostId(dest.getHost().getId());
+            vm.setPodId(dest.getPod().getId());         
 
             try {
                 _storageMgr.prepare(vmProfile, dest);
             } catch (ConcurrentOperationException e) {
-            	stateTransitTo(vm, Event.OperationFailed);
+            	stateTransitTo(vm, Event.OperationFailed, null);
                 throw e;
             } catch (StorageUnavailableException e) {
                 s_logger.warn("Unable to contact storage.", e);
@@ -379,7 +378,7 @@ public class MauriceMoss implements VmManager, ClusterManagerListener {
             try {
                 Answer[] answers = _agentMgr.send(dest.getHost().getId(), cmds);
                 if (answers[0].getResult() && vmGuru.finalizeStart(cmds, vmProfile, dest, context)) {
-                    if (!stateTransitTo(vm, Event.OperationSucceeded)) {
+                    if (!stateTransitTo(vm, Event.OperationSucceeded, dest.getHost().getId())) {
                         throw new CloudRuntimeException("Unable to transition to a new state.");
                     }
                     return vm;
@@ -394,7 +393,7 @@ public class MauriceMoss implements VmManager, ClusterManagerListener {
             }
         }
         
-        stateTransitTo(vm, Event.OperationFailed);
+        stateTransitTo(vm, Event.OperationFailed, null);
         
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Creation complete for VM " + vm);
@@ -418,7 +417,7 @@ public class MauriceMoss implements VmManager, ClusterManagerListener {
             return true;
         }
         
-        if (!stateTransitTo(vm, Event.StopRequested)) {
+        if (!stateTransitTo(vm, Event.StopRequested, vm.getHostId())) {
             throw new ConcurrentOperationException("VM is being operated on by someone else.");
         }
         
@@ -447,7 +446,7 @@ public class MauriceMoss implements VmManager, ClusterManagerListener {
             }
         } finally {
             if (!stopped) {
-            	stateTransitTo(vm, Event.OperationFailed);
+            	stateTransitTo(vm, Event.OperationFailed, vm.getHostId());
             }
         }
         
@@ -482,8 +481,8 @@ public class MauriceMoss implements VmManager, ClusterManagerListener {
         }
             
         vm.setReservationId(null);
-        vm.setHostId(null);
-        stateTransitTo(vm, Event.OperationSucceeded);
+        
+        stateTransitTo(vm, Event.OperationSucceeded, null);
 
         if (cleanup) {
             ItWorkVO work = new ItWorkVO(reservationId, _nodeId, Type.Cleanup);
@@ -541,7 +540,7 @@ public class MauriceMoss implements VmManager, ClusterManagerListener {
     }
     
     @Override
-    public boolean stateTransitTo(VMInstanceVO vm, VirtualMachine.Event e) {
-    	return _stateMachine.transitTO(vm, e);
+    public boolean stateTransitTo(VMInstanceVO vm, VirtualMachine.Event e, Long id) {
+    	return _stateMachine.transitTO(vm, e, id);
     }
 }

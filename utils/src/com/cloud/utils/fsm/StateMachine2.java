@@ -97,35 +97,23 @@ public class StateMachine2<S, E, V extends StateObject<S>> {
         return entry.prevStates.get(e);
     }
     
-    @DB
-    public boolean transitTO(V vo, E e) {
+ 
+    public boolean transitTO(V vo, E e, Long id) {
     	S currentState = vo.getState();
     	S nextState = getNextState(currentState, e);
-    	
+
     	boolean transitionStatus = true;
     	if (nextState == null) {
     		transitionStatus = false;
     	}
 
-    	Transaction txn = Transaction.currentTxn();
-    	txn.start();
-    	
-    	try {
-    	
-    		transitionStatus = _instanceDao.updateState(currentState, e, nextState, vo);
-
-    		for (StateListener<S,E, V> listener : _listeners) {
-    			listener.processStateTransitionEvent(currentState, e, nextState, vo, transitionStatus);
-    		}
-    		txn.commit();
-    	
-    	} catch (Exception ex) {
-    		txn.rollback();
+    	for (StateListener<S,E, V> listener : _listeners) {
+    		transitionStatus = listener.processStateTransitionEvent(currentState, e, nextState, vo, transitionStatus, id);
     	}
 
     	return transitionStatus;
     }
-    
+
     public boolean registerListener(StateListener<S,E,V> listener) {
     	return _listeners.add(listener);
     }

@@ -295,7 +295,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
 
     @Override
     public boolean updateState(State oldState, Event event,
-    		State newState, VMInstanceVO vm) {
+    		State newState, VMInstanceVO vm, Long hostId) {
     	if (newState == null) {
     		if (s_logger.isDebugEnabled()) {
     			s_logger.debug("There's no way to transition from old state: " + oldState.toString() + " event: " + event.toString());
@@ -312,7 +312,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     	vm.incrUpdated();
     	UpdateBuilder ub = getUpdateBuilder(vm);
     	ub.set(vm, "state", newState);
-    	ub.set(vm, "hostId", vm.getHostId());
+    	ub.set(vm, "hostId", hostId);
     	ub.set(vm, _updateTimeAttr, new Date());
 
     	int result = update(vm, sc);

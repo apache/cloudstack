@@ -77,6 +77,6 @@ public interface VmManager extends Manager {
     
     <T extends VMInstanceVO> void registerGuru(VirtualMachine.Type type, VirtualMachineGuru<T> guru);
 
-	boolean stateTransitTo(VMInstanceVO vm, Event e);
+	boolean stateTransitTo(VMInstanceVO vm, Event e, Long id);
     
 }
