@@ -124,7 +124,10 @@ function buildZoneTree() {
 }    
 
 function refreshClusterUnderPod($podNode, newClusterName, existingClusterId, noClicking) {  
-    var podId = $podNode.data("podId"); 
+    var podId = $podNode.data("podId");     
+    if(podId == null)  //e.g. $podNode is not on the screen (when zone tree is hidden) ($podNode.length==0) 
+        return;
+    
     $.ajax({
         data: createURL("command=listClusters&podid="+podId),
         dataType: "json",
