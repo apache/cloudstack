@@ -17,5 +17,6 @@ INSERT INTO vm_template (id, unique_name, name, public, created, type, hvm, bits
 Update configuration set name='storage.max.volume.size' where name='max.volume.size.mb';
 INSERT INTO sequence (name, value)
     VALUES ('snapshots_seq', '1')
+UPDATE cloud.sequence SET value=IF((SELECT COUNT(*) FROM cloud.snapshots)  > 0, (SELECT max(id) FROM cloud.snapshots) + 1, 1) WHERE name='snapshots_seq'
 
 COMMIT;
