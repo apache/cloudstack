@@ -1687,7 +1687,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Long userId = UserContext.current().getUserId();
         Account account = getAccountForApiCommand(cmd.getAccountName(), cmd.getDomainId());
         EventUtils.saveStartedEvent(userId, account.getId(), EventTypes.EVENT_REMOTE_ACCESS_VPN_CREATE, "Creating a Remote Access VPN for account: " + account.getAccountName() + " in zone " + cmd.getZoneId(), cmd.getStartEventId());
-        RemoteAccessVpnVO vpnVO = _remoteAccessVpnDao.findById(cmd.getId());
+        RemoteAccessVpnVO vpnVO = _remoteAccessVpnDao.findById(cmd.getEntityId());
         String publicIp = vpnVO.getVpnServerAddress();
         Long  vpnId = vpnVO.getId();
         Transaction txn = Transaction.currentTxn();

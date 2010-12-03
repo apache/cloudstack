@@ -2567,13 +2567,13 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
             if (s_logger.isInfoEnabled()) {
                 s_logger.info(msg);
             }
-            _templateDao.remove(command.getId()); // Mark it removed so that templates with the same name can be created subsequently. Bug 7366
+            _templateDao.remove(command.getEntityId()); // Mark it removed so that templates with the same name can be created subsequently. Bug 7366
             throw new CloudRuntimeException(msg);
         }
 
         SnapshotCommand cmd = null;        
         VMTemplateVO privateTemplate = null;
-    	long templateId = command.getId();
+    	long templateId = command.getEntityId();
     	long zoneId = volume.getDataCenterId();
     	String uniqueName = getRandomPrivateTemplateName();
 
@@ -3722,7 +3722,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 	
 	@Override
 	public UserVm startVirtualMachine(DeployVm2Cmd cmd) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException {
-	    long vmId = cmd.getId();
+	    long vmId = cmd.getEntityId();
 	    UserVmVO vm = _vmDao.findById(vmId);
 	    
         // Check that the password was passed in and is valid

@@ -22,6 +22,7 @@ import com.cloud.utils.net.Ip;
 
 public interface FirewallRule extends ControlledEntity {
     enum Purpose {
+        Firewall,
         PortForwarding,
         LoadBalancing,
         Vpn,

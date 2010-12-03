@@ -1094,7 +1094,7 @@ public class ManagementServerImpl implements ManagementServer {
             }
             
             DeployVm2Cmd cmd2 = new DeployVm2Cmd();
-            cmd2.setId(vm.getId());
+            cmd2.setEntityId(vm.getId());
             vm = _userVmService.startVirtualMachine(cmd2);
             return vm;
         }

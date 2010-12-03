@@ -8,11 +8,11 @@ public abstract class BaseAsyncCreateCmd extends BaseAsyncCmd {
     
     public abstract void callCreate();
 
-    public Long getId() {
+    public Long getEntityId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setEntityId(Long id) {
         this.id = id;
     }
 

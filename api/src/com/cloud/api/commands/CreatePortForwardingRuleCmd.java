@@ -21,11 +21,13 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.FirewallRuleResponse;
+import com.cloud.event.EventTypes;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.rules.PortForwardingRule;
@@ -33,7 +35,7 @@ import com.cloud.user.UserContext;
 import com.cloud.utils.net.Ip;
 
 @Implementation(description="Creates a port forwarding rule", responseObject=FirewallRuleResponse.class)
-public class CreatePortForwardingRuleCmd extends BaseCmd implements PortForwardingRule {
+public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements PortForwardingRule {
     public static final Logger s_logger = Logger.getLogger(CreatePortForwardingRuleCmd.class.getName());
 
     private static final String s_name = "createportforwardingruleresponse";
@@ -98,7 +100,7 @@ public class CreatePortForwardingRuleCmd extends BaseCmd implements PortForwardi
         try {
             UserContext callerContext = UserContext.current();
             
-            PortForwardingRule result = _rulesService.createPortForwardingRule(this, virtualMachineId, callerContext.getAccount());
+            PortForwardingRule result = _rulesService.createPortForwardingRule(this, virtualMachineId);
             if (result == null) {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "An existing rule for ipAddress / port / protocol of " + ipAddress + " / " + publicPort + " / " + protocol + " exits.");
             }
@@ -183,4 +185,26 @@ public class CreatePortForwardingRuleCmd extends BaseCmd implements PortForwardi
     public int getDestinationPortEnd() {
         return Integer.parseInt(privatePort);
     }
+
+    @Override
+    public void callCreate() {
+        try {
+            PortForwardingRule result = _rulesService.createPortForwardingRule(this, virtualMachineId);
+            setEntityId(result.getId());
+        } catch (NetworkRuleConflictException ex) {
+            s_logger.info("Network rule conflict: " + ex.getMessage());
+            throw new ServerApiException(BaseCmd.NETWORK_RULE_CONFLICT_ERROR, ex.getMessage());
+        }
+    }
+    
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_NET_RULE_ADD;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  ("Creating an port forwarding  rule for "+ipAddress+" with virtual machine:"+virtualMachineId);
+    }
+
 }

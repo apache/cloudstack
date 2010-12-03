@@ -1831,7 +1831,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
     @Override @DB
     public VolumeVO createVolume(CreateVolumeCmd cmd) {
-        VolumeVO volume = _volsDao.findById(cmd.getId());
+        VolumeVO volume = _volsDao.findById(cmd.getEntityId());
 //        VolumeVO createdVolume = null;
         Long userId = UserContext.current().getUserId();
 

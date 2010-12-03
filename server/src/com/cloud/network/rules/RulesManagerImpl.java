@@ -46,8 +46,11 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
@@ -66,7 +69,6 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     @Inject UserVmDao _vmDao;
     @Inject AccountManager _accountMgr;
     @Inject NetworkManager _networkMgr;
-    
 
     @Override
     public void detectRulesConflict(FirewallRule newRule, IpAddress ipAddress) throws NetworkRuleConflictException {
@@ -113,6 +115,10 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             return;
         }
         
+        if (userVm.getState() == com.cloud.vm.State.Destroyed || userVm.getState() == com.cloud.vm.State.Expunging) {
+            throw new InvalidParameterValueException("Invalid user vm: " + userVm.getId());
+        }
+        
         _accountMgr.checkAccess(caller, userVm);
         
         // validate that IP address and userVM belong to the same account
@@ -124,10 +130,14 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         if (ipAddress.getDataCenterId() != userVm.getDataCenterId()) {
             throw new InvalidParameterValueException("Unable to create ip forwarding rule, IP address " + ipAddress + " is not in the same availability zone as virtual machine " + userVm.toString());
         }
+        
     }
 
-    @Override
-    public PortForwardingRule createPortForwardingRule(PortForwardingRule rule, Long vmId, Account caller) throws NetworkRuleConflictException {
+    @Override @DB
+    public PortForwardingRule createPortForwardingRule(PortForwardingRule rule, Long vmId) throws NetworkRuleConflictException {
+        UserContext ctx = UserContext.current();
+        Account caller = ctx.getAccount();
+        
         String ipAddr = rule.getSourceIpAddress().addr();
         
         IPAddressVO ipAddress = _ipAddressDao.findById(ipAddr);
@@ -171,7 +181,13 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         long domainId = network.getDomainId();
         
         checkIpAndUserVm(ipAddress, vm, caller);
+        boolean isNat = NetUtils.NAT_PROTO.equals(rule.getProtocol());
+        if (isNat && (ipAddress.isSourceNat() || ipAddress.isOneToOneNat())) {
+            throw new NetworkRuleConflictException("Can't do one to one NAT on ip address: " + ipAddress.getAddress());
+        }
         
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
         PortForwardingRuleVO newRule = 
             new PortForwardingRuleVO(rule.getXid(), 
                     rule.getSourceIpAddress(), 
@@ -185,6 +201,12 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
                     accountId,
                     domainId);
         newRule = _forwardingDao.persist(newRule);
+        
+        if (isNat) {
+            ipAddress.setOneToOneNat(true);
+            _ipAddressDao.update(ipAddress.getAddress(), ipAddress);
+        }
+        txn.commit();
 
         boolean success = false;
         try {
@@ -196,7 +218,13 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             success = true;
             return newRule;
         } catch (Exception e) {
+            txn.start();
             _forwardingDao.remove(newRule.getId());
+            if (isNat) {
+                ipAddress.setOneToOneNat(false);
+                _ipAddressDao.update(ipAddress.getAddress(), ipAddress);
+            }
+            txn.commit();
             if (e instanceof NetworkRuleConflictException) {
                 throw (NetworkRuleConflictException)e;
             }
@@ -221,18 +249,42 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
     }
     
+    protected Pair<Network, Ip> getUserVmGuestIpAddress(UserVm vm) {
+        Ip dstIp = null;
+        List<? extends Nic> nics = _networkMgr.getNics(vm);
+        for (Nic nic : nics) {
+            Network ntwk = _networkMgr.getNetwork(nic.getNetworkId());
+            if (ntwk.getGuestType() == GuestIpType.Virtualized) {
+                dstIp = new Ip(nic.getIp4Address());
+                return new Pair<Network, Ip>(ntwk, dstIp);
+            }
+        }
+        
+        throw new CloudRuntimeException("Unable to find ip address to map to in " + vm.getId());
+    }
+    
+    @DB
     protected void revokeRule(FirewallRuleVO rule, Account caller) {
         _accountMgr.checkAccess(caller, rule);
-        
+       
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
         if (rule.getState() == State.Staged) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Found a rule that is still in stage state so just removing it: " + rule);
             }
             _firewallDao.remove(rule.getId());
-            return;
         } else if (rule.getState() == State.Add) {
             rule.setState(State.Revoke);
             _firewallDao.update(rule.getId(), rule);
+        }
+        if (NetUtils.NAT_PROTO.equals(rule.protocol) && rule.getSourcePortStart() == -1) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Removing one to one nat so setting the ip back to one to one nat is false: "  + rule.getSourceIpAddress());
+            }
+            IPAddressVO ipAddress = _ipAddressDao.findById(rule.getSourceIpAddress().addr());
+            ipAddress.setOneToOneNat(false);
+            _ipAddressDao.update(ipAddress.getAddress(), ipAddress);
         }
     }
     
@@ -283,18 +335,6 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         return rules;
     }
 
-    @Override
-    public PortForwardingRule createIpForwardingRuleInDb(String ipAddr, long virtualMachineId) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public boolean deleteIpForwardingRule(Long id) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
     @Override 
     public boolean applyPortForwardingRules(Ip ip, boolean continueOnError) {
         try {
@@ -335,25 +375,11 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         return _forwardingDao.searchNatRules(ip, start, size);
     }
     
-    
-    
     @Override
     public boolean applyPortForwardingRules(Ip ip, Account caller) throws ResourceUnavailableException {
         return applyPortForwardingRules(ip, false, caller);
     }
 
-    @Override
-    public boolean applyNatRules(Ip ip) throws ResourceUnavailableException {
-        // TODO Auto-generated method stub
-        return false;
-    }
-    
-    @Override
-    public boolean applyFirewallRules(Ip ip, Account caller) throws ResourceUnavailableException {
-        // TODO Auto-generated method stub
-        return false;
-    }
-    
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _name = name;
@@ -675,9 +701,6 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 //        return newFwRule;
 //    }
 //
-//  @Override @DB
-//  public boolean deletePortForwardingRule(Long id, boolean sysContext) {
-//  }
 //    @Override @DB
 //    public PortForwardingRule createIpForwardingRuleOnDomr(long ruleId) {
 //        Transaction txn = Transaction.currentTxn();

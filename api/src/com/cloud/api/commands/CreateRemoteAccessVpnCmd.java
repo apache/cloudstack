@@ -138,7 +138,7 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
         try {
             RemoteAccessVpn vpn = _networkService.createRemoteAccessVpn(this);
             if (vpn != null) {
-                this.setId(vpn.getId());
+                this.setEntityId(vpn.getId());
             } else {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create remote access vpn");
             }

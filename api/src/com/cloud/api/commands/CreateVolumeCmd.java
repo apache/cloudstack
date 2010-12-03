@@ -148,7 +148,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
         try {
             Volume volume = _storageMgr.allocVolume(this);
             if (volume != null) {
-                this.setId(volume.getId());
+                this.setEntityId(volume.getId());
             } else {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create volume");
             }

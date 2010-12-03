@@ -28,6 +28,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
+import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.user.Account;
 
 @Implementation(description="Deletes an ip forwarding rule", responseObject=SuccessResponse.class)
@@ -62,9 +63,8 @@ public class DeleteIpForwardingRuleCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
-        boolean result = false;
-    	result = _rulesService.deleteIpForwardingRule(id);
-        if (result) {
+    	PortForwardingRule rule = _rulesService.revokePortForwardingRule(id, true);
+        if (rule != null) {
             SuccessResponse response = new SuccessResponse(getName());
             this.setResponseObject(response);
         } else {

@@ -27,20 +27,16 @@ import com.cloud.utils.net.Ip;
 
 public interface RulesService {
     List<? extends PortForwardingRule> searchForIpForwardingRules(Ip ip, Long start, Long size);
-    PortForwardingRule createIpForwardingRuleInDb(String ipAddr, long virtualMachineId);
-    boolean deleteIpForwardingRule(Long id);
-
 
     /**
      * Creates a port forwarding rule between two ip addresses or between
      * an ip address and a virtual machine.
      * @param rule rule to be created.
      * @param vmId vm to be linked to.  If specified the destination ip address is ignored.
-     * @param caller caller 
      * @return PortForwardingRule if created.
      * @throws NetworkRuleConflictException if conflicts in the network rules are detected.
      */
-    PortForwardingRule createPortForwardingRule(PortForwardingRule rule, Long vmId, Account caller) throws NetworkRuleConflictException;
+    PortForwardingRule createPortForwardingRule(PortForwardingRule rule, Long vmId) throws NetworkRuleConflictException;
     
     /**
      * Revokes a port forwarding rule 
@@ -56,7 +52,5 @@ public interface RulesService {
      */
     public List<? extends PortForwardingRule> listPortForwardingRules(ListPortForwardingRulesCmd cmd);
 
-    boolean applyFirewallRules(Ip ip, Account caller) throws ResourceUnavailableException;
-    boolean applyNatRules(Ip ip) throws ResourceUnavailableException;
     boolean applyPortForwardingRules(Ip ip, Account caller) throws ResourceUnavailableException;
 }

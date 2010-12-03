@@ -171,7 +171,7 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
     public void callCreate(){
         VirtualMachineTemplate template = _userVmService.createPrivateTemplateRecord(this);
         if (template != null){
-            this.setId(template.getId());
+            this.setEntityId(template.getId());
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create a template");
         }
