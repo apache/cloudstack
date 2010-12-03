@@ -132,6 +132,11 @@ public class EventTypes {
     public static final String EVENT_DISK_OFFERING_CREATE = "DISK.OFFERING.CREATE";
     public static final String EVENT_DISK_OFFERING_EDIT = "DISK.OFFERING.EDIT";
     public static final String EVENT_DISK_OFFERING_DELETE = "DISK.OFFERING.DELETE";
+    
+    //Network offerings
+    public static final String EVENT_NETWORK_OFFERING_CREATE = "NETWORK.OFFERING.CREATE";
+    public static final String EVENT_NETWORK_OFFERING_EDIT = "NETWORK.OFFERING.EDIT";
+    public static final String EVENT_NETWORK_OFFERING_DELETE = "NETWORK.OFFERING.DELETE";
 
 	// Pods
 	public static final String EVENT_POD_CREATE = "POD.CREATE";

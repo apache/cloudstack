@@ -158,7 +158,21 @@
 	                    <div id="tags_edit_errormsg" style="display:none"></div>  
 	                </div>
 	            </div>
+	            
 	            <div class="grid_rows even">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <%=t.t("domain")%>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="domain">
+	                    </div>	                    
+	                    <select class="select" id="domain_edit" style="width: 202px; display: none;">	                       
+	                    </select>	
+	                </div>
+	            </div>
+	            
+	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <%=t.t("created")%>:</div>
@@ -235,8 +249,52 @@
                     <input class="text" type="text" id="add_service_tags" />
                     <div id="add_service_tags_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                     </div>
-                </li>						
+                </li>	
+                <li>
+				    <label>
+				        Public?:</label>
+				    <select class="select" id="public_dropdown">
+				        <option value="true">Yes</option>
+				        <option value="false">No</option>
+				    </select>
+				</li>
+				<li id="domain_dropdown_container" style="display: none">
+				    <label>
+				        Domain:</label>
+				    <select class="select" id="domain_dropdown">
+				    </select>
+				</li>    			
 			</ol>
 		</form>
 	</div>
 </div>
+
+
+<!-- advanced search template (begin) -->
+<div id="advanced_search_template" class="adv_searchpopup" style="display: none;">
+    <div class="adv_searchformbox">
+        <h3>
+            Advance Search</h3>
+        <a id="advanced_search_close" href="#">Close </a>
+        <form action="#" method="post">
+        <ol>
+            <li>
+                <label>
+                    Name:</label>
+                <input class="text" type="text" id="adv_search_name" />
+            </li>           
+            <li id="adv_search_domain_li" style="display: none;">
+                <label>
+                    Domain:</label>
+                <select class="select" id="adv_search_domain">
+                </select>
+            </li>           
+        </ol>
+        </form>
+        <div class="adv_search_actionbox">
+            <div class="adv_searchpopup_button" id="adv_search_button">
+            </div>
+        </div>
+    </div>
+</div>
+<!-- advanced search template (end) -->

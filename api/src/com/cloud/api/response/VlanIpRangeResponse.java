@@ -62,6 +62,9 @@ public class VlanIpRangeResponse extends BaseResponse {
 
     @SerializedName("endip") @Param(description="the end ip of the VLAN IP range")
     private String endIp;
+    
+    @SerializedName("networkid") @Param(description="the network id of vlan range")
+    private Long networkId;
 
     public Long getId() {
         return id;
@@ -173,5 +176,13 @@ public class VlanIpRangeResponse extends BaseResponse {
 
     public void setEndIp(String endIp) {
         this.endIp = endIp;
+    }
+
+    public Long getNetworkId() {
+        return networkId;
+    }
+
+    public void setNetworkId(Long networkId) {
+        this.networkId = networkId;
     }
 }

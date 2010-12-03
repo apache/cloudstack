@@ -26,6 +26,7 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.FirewallRuleResponse;
 import com.cloud.api.response.IpForwardingRuleResponse;
 import com.cloud.api.response.ListResponse;
@@ -43,6 +44,12 @@ public class ListIpForwardingRulesCmd extends BaseListCmd {
     
     @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, description="list the rule belonging to this public ip address")
     private String publicIpAddress;
+
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the account associated with the ip forwarding rule. Must be used with the domainId parameter.")
+    private String accountName;
+
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="Lists all rules for this id. If used with the account parameter, returns all rules for an account in the specified domain ID.")
+    private Long domainId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -63,6 +70,14 @@ public class ListIpForwardingRulesCmd extends BaseListCmd {
 
 	public void setPublicIpAddress(String publicIpAddress) {
 		this.publicIpAddress = publicIpAddress;
+	}
+
+	public String getAccountName() {
+		return accountName;
+	}
+
+	public Long getDomainId() {
+		return domainId;
 	}
 
 	@Override

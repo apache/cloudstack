@@ -504,13 +504,6 @@ public interface ManagementServer extends ManagementService {
     public long getMemoryUsagebyHost(Long hostId);
     
     /**
-     * Destroy a snapshot
-     * @param snapshotId the id of the snapshot to destroy
-     * @return true if snapshot successfully destroyed, false otherwise
-     */
-    boolean destroyTemplateSnapshot(Long userId, long snapshotId);
-
-    /**
      * Finds a diskOffering by the specified ID.
      * @param diskOfferingId
      * @return A DiskOffering
@@ -546,8 +539,6 @@ public interface ManagementServer extends ManagementService {
     String[] getApiConfig();
     StoragePoolVO findPoolById(Long id);
 	List<? extends StoragePoolVO> searchForStoragePools(Criteria c);
-
-	SnapshotPolicyVO findSnapshotPolicyById(Long policyId);
 
 	/**
 	 * Return whether a domain is a child domain of a given domain.

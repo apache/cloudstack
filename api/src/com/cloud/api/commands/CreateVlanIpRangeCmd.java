@@ -49,8 +49,8 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
     @Parameter(name=ApiConstants.END_IP, type=CommandType.STRING, description="the ending IP address in the VLAN IP range")
     private String endIp;
 
-    @Parameter(name=ApiConstants.FOR_VIRTUAL_NETWORK, type=CommandType.BOOLEAN, description="true if VLAN is of Virtual type, false if Direct")
-    private Boolean forVirtualNetwork;
+//    @Parameter(name=ApiConstants.FOR_VIRTUAL_NETWORK, type=CommandType.BOOLEAN, description="true if VLAN is of Virtual type, false if Direct")
+//    private Boolean forVirtualNetwork;
 
     @Parameter(name=ApiConstants.GATEWAY, type=CommandType.STRING, required=true, description="the gateway of the VLAN IP range")
     private String gateway;
@@ -86,9 +86,9 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
         return endIp;
     }
 
-    public Boolean isForVirtualNetwork() {
-        return forVirtualNetwork;
-    }
+//    public Boolean isForVirtualNetwork() {
+//        return forVirtualNetwork;
+//    }
 
     public String getGateway() {
         return gateway;

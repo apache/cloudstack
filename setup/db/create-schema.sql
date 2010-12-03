@@ -112,6 +112,7 @@ CREATE TABLE `cloud`.`op_networks`(
 CREATE TABLE `cloud`.`networks` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `name` varchar(255) COMMENT 'name for this network',
+  `display_text` varchar(255) COMMENT 'display text for this network',
   `traffic_type` varchar(32) NOT NULL COMMENT 'type of traffic going through this network',
   `broadcast_domain_type` varchar(32) NOT NULL COMMENT 'type of broadcast domain used',
   `broadcast_uri` varchar(255) COMMENT 'broadcast domain specifier',
@@ -164,6 +165,7 @@ CREATE TABLE `cloud`.`nics` (
   `network_id` bigint unsigned NOT NULL COMMENT 'network configuration id',
   `mode` varchar(32) COMMENT 'mode of getting ip address',  
   `state` varchar(32) NOT NULL COMMENT 'state of the creation',
+  `strategy` varchar(32) NOT NULL COMMENT 'reservation strategy',
   `reserver_name` varchar(255) COMMENT 'Name of the component that reserved the ip address',
   `reservation_id` varchar(64) COMMENT 'id for the reservation',
   `device_id` int(10) COMMENT 'device id for the network when plugged into the virtual machine',
@@ -189,6 +191,8 @@ CREATE TABLE `cloud`.`network_offerings` (
   `service_offering_id` bigint unsigned UNIQUE COMMENT 'service offering id that this network offering is tied to',
   `created` datetime NOT NULL COMMENT 'time the entry was created',
   `removed` datetime DEFAULT NULL COMMENT 'time the entry was removed',
+  `shared` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '0 if network is shared, 1 if network dedicated',
+  `default` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if network is default',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -277,6 +281,7 @@ INSERT INTO `cloud`.`sequence` (name, value) VALUES ('private_mac_address_seq', 
 INSERT INTO `cloud`.`sequence` (name, value) VALUES ('storage_pool_seq', 200);
 INSERT INTO `cloud`.`sequence` (name, value) VALUES ('volume_seq', 1);
 INSERT INTO `cloud`.`sequence` (name, value) VALUES ('networks_seq', 1);
+INSERT INTO `cloud`.`sequence` (name, value) VALUES ('snapshots_seq', 1);
 
 CREATE TABLE `cloud`.`volumes` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'Primary Key',
@@ -315,7 +320,7 @@ CREATE TABLE `cloud`.`volumes` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`snapshots` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'Primary Key',
+  `id` bigint unsigned UNIQUE NOT NULL 'Primary Key',
   `account_id` bigint unsigned NOT NULL COMMENT 'owner.  foreign key to account table',
   `volume_id` bigint unsigned NOT NULL COMMENT 'volume it belongs to. foreign key to volume table',
   `status` varchar(32) COMMENT 'snapshot creation status',
@@ -338,6 +343,7 @@ CREATE TABLE `cloud`.`vlan` (
   `description` varchar(255),
   `vlan_type` varchar(255),
   `data_center_id` bigint unsigned NOT NULL,
+  `network_id` bigint unsigned COMMENT 'id of corresponding network offering',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

@@ -17,7 +17,36 @@
  */
  
  function systemVmGetSearchParams() {
-     return "";
+     var moreCriteria = [];	
+
+	var $advancedSearchPopup = $("#advanced_search_popup");
+	if (lastSearchType == "advanced_search" && $advancedSearchPopup.length > 0) {
+	    var name = $advancedSearchPopup.find("#adv_search_name").val();							
+		if (name!=null && trim(name).length > 0) 
+			moreCriteria.push("&name="+todb(name));	
+		
+		var state = $advancedSearchPopup.find("#adv_search_state").val();
+		if (state!=null && state.length > 0) 
+			moreCriteria.push("&state="+todb(state));		
+				
+		var zone = $advancedSearchPopup.find("#adv_search_zone").val();	
+	    if (zone!=null && zone.length > 0) 
+			moreCriteria.push("&zoneId="+zone);	
+		
+		if ($advancedSearchPopup.find("#adv_search_pod_li").css("display") != "none") {	
+		    var pod = $advancedSearchPopup.find("#adv_search_pod").val();		
+	        if (pod!=null && pod.length > 0) 
+			    moreCriteria.push("&podId="+pod);
+        }       
+	} 
+	else {     			    		
+	    var searchInput = $("#basic_search").find("#search_input").val();	 
+        if (lastSearchType == "basic_search" && searchInput != null && searchInput.length > 0) {	           
+            moreCriteria.push("&name="+todb(searchInput));	       
+        }        
+	}
+	
+	return moreCriteria.join("");          
  }
  
  function afterLoadSystemVmJSP($midmenuItem1) {

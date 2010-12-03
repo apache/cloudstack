@@ -1071,9 +1071,9 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         NicProfile defaultNic = new NicProfile();
         defaultNic.setDefaultNic(true);
         defaultNic.setDeviceId(2);
-        networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetworkConfiguration(systemAcct, defaultOffering.get(0), plan).get(0), defaultNic));
+        networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetworkConfiguration(systemAcct, defaultOffering.get(0), plan, null, null).get(0), defaultNic));
         for (NetworkOfferingVO offering : offerings) {
-            networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetworkConfiguration(systemAcct, offering, plan).get(0), null));
+            networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetworkConfiguration(systemAcct, offering, plan, null, null).get(0), null));
         }
         ConsoleProxyVO proxy = new ConsoleProxyVO(id, _serviceOffering.getId(), name, _template.getId(), _template.getGuestOSId(), dataCenterId, systemAcct.getDomainId(), systemAcct.getId(), 0);
         try {

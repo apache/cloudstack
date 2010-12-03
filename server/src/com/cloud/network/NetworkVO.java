@@ -62,6 +62,12 @@ public class NetworkVO implements Network {
     @Column(name="guest_type")
     GuestIpType guestType;
     
+    @Column(name="name")
+    String name;
+    
+    @Column(name="display_text")
+    String displayText;;
+    
     @Column(name="broadcast_uri")
     URI broadcastUri; 
     
@@ -131,12 +137,13 @@ public class NetworkVO implements Network {
         this.guestType = guestType;
     }
     
-    public NetworkVO(long id, Network that, long offeringId, long dataCenterId, String guruName, long domainId, long accountId, long related) {
-        this(id, that.getTrafficType(), that.getGuestType(), that.getMode(), that.getBroadcastDomainType(), offeringId, dataCenterId, domainId, accountId, related);
+    public NetworkVO(long id, Network that, long offeringId, long dataCenterId, String guruName, long domainId, long accountId, long related, String name, String displayText) {
+        this(id, that.getTrafficType(), that.getGuestType(), that.getMode(), that.getBroadcastDomainType(), offeringId, dataCenterId, domainId, accountId, related, name, displayText);
         this.gateway = that.getGateway();
         this.dns1 = that.getDns1();
         this.dns2 = that.getDns2();
         this.cidr = that.getCidr();
+        this.broadcastUri = that.getBroadcastUri();
         this.guruName = guruName;
         this.state = that.getState();
         if (state == null) {
@@ -153,13 +160,17 @@ public class NetworkVO implements Network {
      * @param dataCenterId
      * @param domainId
      * @param accountId
+     * @param name
+     * @param displayText
      */
-    public NetworkVO(long id, TrafficType trafficType, GuestIpType guestType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId, long dataCenterId, long domainId, long accountId, long related) {
+    public NetworkVO(long id, TrafficType trafficType, GuestIpType guestType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId, long dataCenterId, long domainId, long accountId, long related, String name, String displayText) {
         this(trafficType, guestType, mode, broadcastDomainType, networkOfferingId, dataCenterId);
         this.domainId = domainId;
         this.accountId = accountId;
         this.related = related;
         this.id = id;
+        this.name = name;
+        this.displayText = displayText;
     }
     
     @Override
@@ -299,8 +310,24 @@ public class NetworkVO implements Network {
         this.dns2 = dns;
     }
     
+    @Override
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
     
-    
+    @Override
+    public String getDisplayText() {
+        return displayText;
+    }
+
+    public void setDisplayText(String displayText) {
+        this.displayText = displayText;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof NetworkVO)) {

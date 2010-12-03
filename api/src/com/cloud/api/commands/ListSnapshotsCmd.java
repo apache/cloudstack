@@ -109,7 +109,7 @@ public class ListSnapshotsCmd extends BaseListCmd {
 
     @Override
     public void execute(){
-        List<? extends Snapshot> result = _mgr.listSnapshots(this);
+        List<? extends Snapshot> result = _snapshotMgr.listSnapshots(this);
         ListResponse<SnapshotResponse> response = new ListResponse<SnapshotResponse>();
         List<SnapshotResponse> snapshotResponses = new ArrayList<SnapshotResponse>();
         for (Snapshot snapshot : result) {

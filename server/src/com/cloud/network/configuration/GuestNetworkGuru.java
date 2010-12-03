@@ -101,9 +101,10 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
                 String[] cidrTuple = guestNetworkCidr.split("\\/");
                 config.setGateway(NetUtils.getIpRangeStartIpFromCidr(cidrTuple[0], Long.parseLong(cidrTuple[1])));
                 config.setCidr(guestNetworkCidr);
-                config.setDns1(dc.getDns1());
-                config.setDns2(dc.getDns2());
             }
+            
+            config.setDns1(dc.getDns1());
+            config.setDns2(dc.getDns2());
             
             if (userSpecified.getBroadcastUri() != null) {
                 config.setBroadcastUri(userSpecified.getBroadcastUri());

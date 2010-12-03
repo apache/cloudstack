@@ -230,3 +230,13 @@ listRemoteAccessVpns=com.cloud.api.commands.ListRemoteAccessVpnsCmd;15
 addVpnUser=com.cloud.api.commands.AddVpnUserCmd;15
 removeVpnUser=com.cloud.api.commands.RemoveVpnUserCmd;15
 listVpnUsers=com.cloud.api.commands.ListVpnUsersCmd;15
+
+#### network offering commands
+createNetworkOffering=com.cloud.api.commands.CreateNetworkOfferingCmd;1
+deleteNetworkOffering=com.cloud.api.commands.DeleteNetworkOfferingCmd;1
+listNetworkOfferings=com.cloud.api.commands.ListNetworkOfferingsCmd;15
+
+#### network commands
+createNetwork=com.cloud.api.commands.CreateNetworkCmd;1
+deleteNetwork=com.cloud.api.commands.DeleteNetworkCmd;1
+listNetworks=com.cloud.api.commands.ListNetworksCmd;15

@@ -17,6 +17,8 @@
  */
 package com.cloud.vm;
 
+import java.net.URI;
+
 import com.cloud.network.Networks.Mode;
 import com.cloud.resource.Resource;
 
@@ -48,4 +50,9 @@ public interface Nic extends Resource {
     int getDeviceId();
     
     Mode getMode();
+    
+    URI getIsolationUri();
+    
+    URI getBroadcastUri();
+    
 }

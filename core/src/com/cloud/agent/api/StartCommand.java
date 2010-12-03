@@ -18,7 +18,6 @@
 package com.cloud.agent.api;
 
 import java.util.List;
-import java.util.Map;
 
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.offering.ServiceOffering;
@@ -69,8 +68,6 @@ public class StartCommand extends AbstractStartCommand {
         guestMacAddress = vm.getGuestMacAddress();
         vncPassword = vm.getVncPassword();
         hostName = vm.getHostName();
-//        networkRateMbps = offering.getRateMbps();
-//        networkRateMulticastMbps = offering.getMulticastRateMbps();
         networkRateMbps = networkRate;
         networkRateMulticastMbps = multicastRate;
         if (bits == 32) {

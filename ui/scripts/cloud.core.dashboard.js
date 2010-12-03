@@ -277,16 +277,16 @@ function afterLoadDashboardJSP() {
 				    data: createURL("command=listEvents&level=ERROR"),
 					dataType: "json",
 					success: function(json) {
-						var events = json.listeventsresponse.event;
-						if (events != null && events.length > 0) {
-							var errorGrid = $thisSection.find("#error_grid_content").empty();
-							var length = (events.length>=3) ? 3 : events.length;
+						var items = json.listeventsresponse.event;
+						if (items != null && items.length > 0) {
+							var $grid = $thisSection.find("#alert_grid_content").empty();
+							var length = (items.length>=3) ? 3 : items.length;
 							for (var i = 0; i < length; i++) {							    
-							    var template = $alertTemplate.clone(true);
-						        template.find("#type").text(alerts[i].type);
-						        template.find("#description").append(fromdb(alerts[i].description));											
-						        setDateField(alerts[i].created, template.find("#date"));															
-						        alertGrid.append(template.show());							    
+							    var $template = $alertTemplate.clone(true);
+						        $template.find("#type").text(items[i].type);
+						        $template.find("#description").append(fromdb(items[i].description));											
+						        setDateField(items[i].created, $template.find("#date"));															
+						        $grid.append($template.show());							    
 							}
 						}
 					}

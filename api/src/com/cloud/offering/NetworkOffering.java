@@ -70,4 +70,10 @@ public interface NetworkOffering {
     TrafficType getTrafficType();
     
     boolean getSpecifyVlan();
+    
+    String getTags();
+    
+    boolean isShared();
+    
+    boolean isDefault();
 }

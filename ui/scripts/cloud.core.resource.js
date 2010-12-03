@@ -124,7 +124,10 @@ function buildZoneTree() {
 }    
 
 function refreshClusterUnderPod($podNode, newClusterName, existingClusterId, noClicking) {  
-    var podId = $podNode.data("podId"); 
+    var podId = $podNode.data("podId");     
+    if(podId == null)  //e.g. $podNode is not on the screen (when zone tree is hidden) ($podNode.length==0) 
+        return;
+    
     $.ajax({
         data: createURL("command=listClusters&podid="+podId),
         dataType: "json",
@@ -635,7 +638,7 @@ function initAddZoneWizard() {
 			var domains = json.listdomainsresponse.domain;						
 			if (domains != null && domains.length > 0) {
 				for (var i = 0; i < domains.length; i++) {
-					domainDropdown.append("<option value='" + domains[i].id + "'>" + fromdb(domains[i].name) + "</option>"); 
+					domainDropdown.append("<option value='" + fromdb(domains[i].id) + "'>" + fromdb(domains[i].name) + "</option>"); 
 				}
 			} 
 		}

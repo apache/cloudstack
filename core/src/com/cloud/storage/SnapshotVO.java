@@ -29,6 +29,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.TableGenerator;
 
 import com.cloud.utils.db.GenericDao;
 import com.google.gson.annotations.Expose;
@@ -38,8 +39,8 @@ import com.google.gson.annotations.Expose;
 public class SnapshotVO implements Snapshot {
 	
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @TableGenerator(name="snapshots_sq", table="sequence", pkColumnName="name", valueColumnName="value", pkColumnValue="snapshots_seq", allocationSize=1)
+    @Column(name="id", updatable=false, nullable = false)
     Long id;
 
     @Column(name="account_id")
@@ -81,7 +82,8 @@ public class SnapshotVO implements Snapshot {
     
     public SnapshotVO() { }
 
-    public SnapshotVO(long accountId, long volumeId, String path, String name, short snapshotType, String typeDescription) {
+    public SnapshotVO(long id, long accountId, long volumeId, String path, String name, short snapshotType, String typeDescription) {
+        this.id = id;
         this.accountId = accountId;
         this.volumeId = volumeId;
         this.path = path;

@@ -1354,8 +1354,8 @@
 
 <!--  ***** Dialogs (end) ***** -->
 
-<!-- advanced search template (begin) -->
-<div id="advanced_search_template" class="adv_searchpopup" style="display: none;">
+<!-- advanced search templates (begin) -->
+<div id="advanced_search_template_general" class="adv_searchpopup" style="display: none;">
     <div class="adv_searchformbox">
         <h3>
             Advance Search</h3>
@@ -1363,12 +1363,12 @@
         <form action="#" method="post">
         <ol>
             <li>
-                <label for="filter">
+                <label>
                     Name:</label>
                 <input class="text" type="text" name="adv_search_name" id="adv_search_name" />
-            </li>
+            </li>           
             <li>
-                <label for="filter">
+                <label>
                     Status:</label>
                 <select class="select" id="adv_search_state">
                     <option value=""></option>
@@ -1383,21 +1383,21 @@
                     <option value="Error">Error</option>
                     <option value="Unknown">Unknown</option>
                 </select>
-            </li>
+            </li>            
             <li>
-                <label for="filter">
+                <label>
                     Zone:</label>
                 <select class="select" id="adv_search_zone">
                 </select>
             </li>            
             <li id="adv_search_domain_li" style="display: none;">
-                <label for="filter">
+                <label>
                     Domain:</label>
                 <select class="select" id="adv_search_domain">
                 </select>
             </li>
             <li id="adv_search_account_li" style="display: none;">
-                <label for="filter">
+                <label>
                     Account:</label>
                 <input class="text" type="text" id="adv_search_account" />
             </li>
@@ -1409,4 +1409,86 @@
         </div>
     </div>
 </div>
-<!-- advanced search template (end) -->
+
+<div id="advanced_search_template_nostate" class="adv_searchpopup" style="display: none;">
+    <div class="adv_searchformbox">
+        <h3>
+            Advance Search</h3>
+        <a id="advanced_search_close" href="#">Close </a>
+        <form action="#" method="post">
+        <ol>
+            <li>
+                <label>
+                    Name:</label>
+                <input class="text" type="text" name="adv_search_name" id="adv_search_name" />
+            </li>            
+            <li>
+                <label>
+                    Zone:</label>
+                <select class="select" id="adv_search_zone">
+                </select>
+            </li>            
+            <li id="adv_search_domain_li" style="display: none;">
+                <label>
+                    Domain:</label>
+                <select class="select" id="adv_search_domain">
+                </select>
+            </li>
+            <li id="adv_search_account_li" style="display: none;">
+                <label>
+                    Account:</label>
+                <input class="text" type="text" id="adv_search_account" />
+            </li>
+        </ol>
+        </form>
+        <div class="adv_search_actionbox">
+            <div class="adv_searchpopup_button" id="adv_search_button">
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="advanced_search_template_nodomainaccount" class="adv_searchpopup" style="display: none;">
+    <div class="adv_searchformbox">
+        <h3>
+            Advance Search</h3>
+        <a id="advanced_search_close" href="#">Close </a>
+        <form action="#" method="post">
+        <ol>
+            <li>
+                <label>
+                    Name:</label>
+                <input class="text" type="text" name="adv_search_name" id="adv_search_name" />
+            </li>           
+            <li>
+                <label>
+                    Status:</label>
+                <select class="select" id="adv_search_state">
+                    <option value=""></option>
+                    <option value="Creating">Creating</option>
+                    <option value="Starting">Starting</option>
+                    <option value="Running">Running</option>
+                    <option value="Stopping">Stopping</option>
+                    <option value="Stopped">Stopped</option>
+                    <option value="Destroyed">Destroyed</option>
+                    <option value="Expunging">Expunging</option>
+                    <option value="Migrating">Migrating</option>
+                    <option value="Error">Error</option>
+                    <option value="Unknown">Unknown</option>
+                </select>
+            </li>            
+            <li>
+                <label>
+                    Zone:</label>
+                <select class="select" id="adv_search_zone">
+                </select>
+            </li>   
+        </ol>
+        </form>
+        <div class="adv_search_actionbox">
+            <div class="adv_searchpopup_button" id="adv_search_button">
+            </div>
+        </div>
+    </div>
+</div>
+<!-- advanced search templates (end) -->

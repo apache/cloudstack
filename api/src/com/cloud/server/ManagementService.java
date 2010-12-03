@@ -345,15 +345,6 @@ public interface ManagementService {
     List<? extends Capacity> listCapacities(ListCapacityCmd cmd);
 
     /**
-     * List all snapshots of a disk volume. Optionaly lists snapshots created by specified interval
-     * @param cmd the command containing the search criteria (order by, limit, etc.)
-     * @return list of snapshots
-     * @throws InvalidParameterValueException
-     * @throws PermissionDeniedException
-     */
-    List<? extends Snapshot> listSnapshots(ListSnapshotsCmd cmd);
-
-    /**
      * List the permissions on a template.  This will return a list of account names that have been granted permission to launch instances from the template.
      * @param cmd the command wrapping the search criteria (template id)
      * @return list of account names that have been granted permission to launch instances from the template

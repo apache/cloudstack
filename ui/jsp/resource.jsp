@@ -30,7 +30,7 @@
                 </div>
                 <div class="dbrow_cell" style="width: 25%; border: none; background:#cacaca repeat top left; ">
                     <div class="resources_totalbg">
-                    	<p id="zone_total">N</p>
+                    	<p id="zone_total">0</p>
                     </div>
                 </div>
                 <div class="dbrow_cell" style="width: 10%; border: none;">
@@ -45,7 +45,7 @@
                 </div>
                 <div class="dbrow_cell" style="width: 25%; border: none; background:#cacaca repeat top left; ">
                      <div class="resources_totalbg">
-                    	<p id="pod_total">N</p>
+                    	<p id="pod_total">0</p>
                     </div>
                 </div>
                 <div class="dbrow_cell" style="width: 10%; border: none;">
@@ -62,7 +62,7 @@
                 </div>
                 <div class="dbrow_cell" style="width: 25%; border: none; background:#cacaca repeat top left; ">
                      <div class="resources_totalbg">
-                    	<p id="host_total">N</p>
+                    	<p id="host_total">0</p>
                     </div>
                 </div>
                 <div class="dbrow_cell" style="width: 10%; border: none;">
@@ -79,7 +79,7 @@
                 </div>
                  <div class="dbrow_cell" style="width: 25%; border: none; background:#cacaca repeat top left; ">
                      <div class="resources_totalbg">
-                    	<p id="primarystorage_total">N</p>
+                    	<p id="primarystorage_total">0</p>
                     </div>
                 </div>
                 <div class="dbrow_cell" style="width: 10%; border: none;">
@@ -621,7 +621,7 @@
         <form action="#" method="post" id="form_acquire">
         <ol>
             <li>
-                <label style="width: 115px;">
+                <label>
                     Zone:</label>
                 <select class="select" id="zone_dropdown">
                 </select>
@@ -629,7 +629,7 @@
                 </div>
             </li>   
             <li>
-                <label style="width: 115px;">
+                <label>
                     Pod:</label>
                 <select class="select" id="pod_dropdown">
                 </select>

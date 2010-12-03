@@ -19,15 +19,22 @@ package com.cloud.configuration;
 
 import java.util.List;
 
+import com.cloud.api.commands.CreateVlanIpRangeCmd;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.DataCenterNetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
+import com.cloud.dc.Vlan;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.network.Networks.TrafficType;
+import com.cloud.offering.NetworkOffering.GuestIpType;
+import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.user.Account;
@@ -63,8 +70,6 @@ public interface ConfigurationManager extends Manager {
 	 */
 	ServiceOfferingVO createServiceOffering(long userId, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired, boolean offerHA, boolean useVirtualNetwork, String tags, Long domainId);
 	
-
-
 	/**
 	 * Creates a new disk offering
 	 * @param domainId
@@ -161,4 +166,22 @@ public interface ConfigurationManager extends Manager {
 
 	void checkDiskOfferingAccess(Account caller, DiskOffering dof)
 			throws PermissionDeniedException;
+	
+	
+	   /**
+     * Creates a new network offering
+     * @param id
+     * @param name
+     * @param displayText
+     * @param type
+     * @param trafficType
+     * @param tags
+     * @param maxConnections
+     * @param specifyVlan;
+     * @return network offering object
+     */
+    NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, GuestIpType type, TrafficType trafficType, String tags, Integer maxConnections, boolean specifyVlan, boolean isShared);
+    
+    Vlan createVlanAndPublicIpRange(Long userId, Long zoneId, Long podId, String startIP, String endIP, String vlanGateway, String vlanNetmask, boolean forVirtualNetwork, String vlanId, Account account, Long networkId) throws InsufficientCapacityException, ConcurrentOperationException, InvalidParameterValueException;
+	
 }

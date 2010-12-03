@@ -81,3 +81,27 @@
     </div>    
 </div>
 <!-- alert detail panel (end) -->
+
+
+<!-- advanced search template (begin) -->
+<div id="advanced_search_template" class="adv_searchpopup" style="display: none;">
+    <div class="adv_searchformbox">
+        <h3>
+            Advance Search</h3>
+        <a id="advanced_search_close" href="#">Close </a>
+        <form action="#" method="post">
+        <ol>
+            <li>
+                <label>
+                    Type:</label>
+                <input class="text" type="text" id="adv_search_type" />
+            </li>            
+        </ol>
+        </form>
+        <div class="adv_search_actionbox">
+            <div class="adv_searchpopup_button" id="adv_search_button">
+            </div>
+        </div>
+    </div>
+</div>
+<!-- advanced search template (end) -->

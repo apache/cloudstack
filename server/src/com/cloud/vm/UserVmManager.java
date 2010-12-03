@@ -133,8 +133,6 @@ public interface UserVmManager extends VirtualMachineManager<UserVmVO> {
      */
     HashMap<Long, VmStatsEntry> getVirtualMachineStatistics(long hostId, String hostName, List<Long> vmIds);
     
-    boolean destroyTemplateSnapshot(Long userId, long snapshotId);
-
     /**
      * Clean the network rules for the given VM
      * @param userId

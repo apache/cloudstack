@@ -23,11 +23,14 @@ import com.cloud.api.commands.AddVpnUserCmd;
 import com.cloud.api.commands.AssignToLoadBalancerRuleCmd;
 import com.cloud.api.commands.AssociateIPAddrCmd;
 import com.cloud.api.commands.CreateLoadBalancerRuleCmd;
+import com.cloud.api.commands.CreateNetworkCmd;
 import com.cloud.api.commands.CreatePortForwardingRuleCmd;
 import com.cloud.api.commands.CreateRemoteAccessVpnCmd;
 import com.cloud.api.commands.DeleteLoadBalancerRuleCmd;
+import com.cloud.api.commands.DeleteNetworkCmd;
 import com.cloud.api.commands.DeleteRemoteAccessVpnCmd;
 import com.cloud.api.commands.DisassociateIPAddrCmd;
+import com.cloud.api.commands.ListNetworksCmd;
 import com.cloud.api.commands.ListPortForwardingRulesCmd;
 import com.cloud.api.commands.RemoveFromLoadBalancerRuleCmd;
 import com.cloud.api.commands.RemoveVpnUserCmd;
@@ -122,5 +125,9 @@ public interface NetworkService {
 
     boolean deleteIpForwardingRule(Long id);
     boolean deletePortForwardingRule(Long id, boolean sysContext);
+    
+    Network createNetwork(CreateNetworkCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+    List<? extends Network> searchForNetworks(ListNetworksCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+    boolean deleteNetwork(DeleteNetworkCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
 
 }

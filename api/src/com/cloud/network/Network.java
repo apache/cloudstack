@@ -80,6 +80,8 @@ public interface Network extends ControlledEntity {
      * @return id of the network profile.  Null means the network profile is not from the database.
      */
     long getId();
+    
+    String getName();
 
     Mode getMode();
 
@@ -106,4 +108,6 @@ public interface Network extends ControlledEntity {
     String getDns2();
     
     GuestIpType getGuestType();
+    
+    String getDisplayText();
 }

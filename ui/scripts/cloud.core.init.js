@@ -255,7 +255,7 @@ $(document).ready(function() {
 	        }	
 	    });	
 	    	    
-	    if(isAdmin())
+	    if(isAdmin() || isDomainAdmin())
 	        $advancedSearch.find("#adv_search_domain_li, #adv_search_account_li, #adv_search_pod_li").show();
 	    else
 	        $advancedSearch.find("#adv_search_domain_li, #adv_search_account_li, #adv_search_pod_li").hide(); 
@@ -345,7 +345,9 @@ $(document).ready(function() {
 		        }
 	        });		    
 	    } 	  
-	    	    
+	    	      
+	    $advancedSearch.find("#adv_search_startdate, #adv_search_enddate").datepicker({dateFormat: 'yy-mm-dd'});
+	    	    	    
 	    $("#advanced_search_container").empty().append($advancedSearch.show());	 
 	    	   
 	    return false;

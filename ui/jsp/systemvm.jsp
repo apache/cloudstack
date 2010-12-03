@@ -203,3 +203,56 @@
         <%=t.t("please.confirm.you.want.to.reboot.systemVM")%>
     </p>
 </div>
+
+
+<!-- advanced search template (begin) -->
+<div id="advanced_search_template" class="adv_searchpopup" style="display: none;">
+    <div class="adv_searchformbox">
+        <h3>
+            Advance Search</h3>
+        <a id="advanced_search_close" href="#">Close </a>
+        <form action="#" method="post">
+        <ol>
+            <li>
+                <label>
+                    Name:</label>
+                <input class="text" type="text" id="adv_search_name" />
+            </li>
+            <li>
+			    <label>
+			        Status:</label>
+			    <select class="select" id="adv_search_state">
+			        <option value=""></option>
+			        <option value="Creating">Creating</option>
+			        <option value="Starting">Starting</option>
+			        <option value="Running">Running</option>
+			        <option value="Stopping">Stopping</option>
+			        <option value="Stopped">Stopped</option>
+			        <option value="Destroyed">Destroyed</option>
+			        <option value="Expunging">Expunging</option>
+			        <option value="Migrating">Migrating</option>
+			        <option value="Error">Error</option>
+			        <option value="Unknown">Unknown</option>
+			    </select>
+			</li>            
+            <li>
+                <label>
+                    Zone:</label>
+                <select class="select" id="adv_search_zone">
+                </select>
+            </li>
+            <li id="adv_search_pod_li" style="display: none;">
+                <label id="adv_search_pod_label">
+                    Pod:</label>
+                <select class="select" id="adv_search_pod">
+                </select>
+            </li>           
+        </ol>
+        </form>
+        <div class="adv_search_actionbox">
+            <div class="adv_searchpopup_button" id="adv_search_button">
+            </div>
+        </div>
+    </div>
+</div>
+<!-- advanced search template (end) -->

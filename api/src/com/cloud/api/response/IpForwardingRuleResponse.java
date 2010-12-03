@@ -25,14 +25,8 @@ public class IpForwardingRuleResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the ID of the port forwarding rule")
     private Long id;
 
-    @SerializedName(ApiConstants.PRIVATE_PORT) @Param(description="the private port for the port forwarding rule")
-    private String privatePort;
-
     @SerializedName(ApiConstants.PROTOCOL) @Param(description="the protocol of the port forwarding rule")
     private String protocol;
-
-    @SerializedName(ApiConstants.PUBLIC_PORT) @Param(description="the public port for the port forwarding rule")
-    private String publicPort;
 
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID) @Param(description="the VM ID for the port forwarding rule")
     private Long virtualMachineId;
@@ -54,28 +48,12 @@ public class IpForwardingRuleResponse extends BaseResponse {
         this.id = id;
     }
 
-    public String getPrivatePort() {
-        return privatePort;
-    }
-
-    public void setPrivatePort(String privatePort) {
-        this.privatePort = privatePort;
-    }
-
     public String getProtocol() {
         return protocol;
     }
 
     public void setProtocol(String protocol) {
         this.protocol = protocol;
-    }
-
-    public String getPublicPort() {
-        return publicPort;
-    }
-
-    public void setPublicPort(String publicPort) {
-        this.publicPort = publicPort;
     }
 
     public Long getVirtualMachineId() {

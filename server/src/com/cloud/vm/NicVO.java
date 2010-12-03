@@ -95,6 +95,10 @@ public class NicVO implements Nic {
     
     @Column(name="default_nic")
     boolean defaultNic;
+    
+    @Column(name="strategy")
+    @Enumerated(value=EnumType.STRING)
+    ReservationStrategy strategy;
 
     public NicVO(String reserver, long instanceId, long configurationId) {
         this.reserver = reserver;
@@ -230,6 +234,11 @@ public class NicVO implements Nic {
         this.reservationId = id;
     }
     
+   
+    public void setReservationStrategy(ReservationStrategy strategy) {
+        this.strategy = strategy;
+    }
+
     public void setDeviceId(int deviceId) {
         this.deviceId = deviceId;
     }
@@ -254,7 +263,7 @@ public class NicVO implements Nic {
     
     @Override
     public ReservationStrategy getReservationStrategy() {
-        return ReservationStrategy.Start;
+        return strategy;
     }
 
     @Override

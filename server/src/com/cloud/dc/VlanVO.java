@@ -51,17 +51,21 @@ public class VlanVO implements Vlan {
 	@Column(name="description") 
 	String ipRange;
 	
+    @Column(name="network_id")
+    Long networkId;
+	
 	@Column(name="vlan_type")
 	@Enumerated(EnumType.STRING) 
 	VlanType vlanType;
 	
-	public VlanVO(VlanType vlanType, String vlanTag, String vlanGateway, String vlanNetmask, long dataCenterId, String ipRange) {
+	public VlanVO(VlanType vlanType, String vlanTag, String vlanGateway, String vlanNetmask, long dataCenterId, String ipRange, Long networkId) {
 		this.vlanType = vlanType;
 		this.vlanId = vlanTag;
 		this.vlanGateway = vlanGateway;
 		this.vlanNetmask = vlanNetmask;
 		this.dataCenterId = dataCenterId;
 		this.ipRange = ipRange;
+		this.networkId = networkId;
 	}
 	
 	public VlanVO() {
@@ -107,4 +111,8 @@ public class VlanVO implements Vlan {
 	public VlanType getVlanType() {
 		return vlanType;
 	}
+
+    public Long getNetworkId() {
+        return networkId;
+    }
 }

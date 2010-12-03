@@ -17,31 +17,78 @@
  */
 
 function serviceOfferingGetSearchParams() {
-    return "";
+    var moreCriteria = [];	
+
+	var $advancedSearchPopup = $("#advanced_search_popup");
+	if (lastSearchType == "advanced_search" && $advancedSearchPopup.length > 0) {
+	    var name = $advancedSearchPopup.find("#adv_search_name").val();							
+		if (name!=null && trim(name).length > 0) 
+			moreCriteria.push("&name="+todb(name));	
+        
+        if ($advancedSearchPopup.find("#adv_search_domain_li").css("display") != "none") {		
+		    var domainId = $advancedSearchPopup.find("#adv_search_domain").val();		
+		    if (domainId!=null && domainId.length > 0) 
+			    moreCriteria.push("&domainid="+domainId);	
+    	}	    
+	} 
+	else {     			    		
+	    var searchInput = $("#basic_search").find("#search_input").val();	 
+        if (lastSearchType == "basic_search" && searchInput != null && searchInput.length > 0) {	           
+            moreCriteria.push("&name="+todb(searchInput));	       
+        }        
+	}
+	
+	return moreCriteria.join("");          
 }
 
 function afterLoadServiceOfferingJSP() {
-    var $detailsTab = $("#right_panel_content #tab_content_details"); 
-   
-    //dialogs
+    initAddServiceOfferingDialog();        
+}
+
+function initAddServiceOfferingDialog() {
     initDialog("dialog_add_service");
-     
+    var $dialogAddService = $("#dialog_add_service");
+    $dialogAddService.find("#public_dropdown").unbind("change").bind("change", function(event) {        
+        if($(this).val() == "true") {  //public zone
+            $dialogAddService.find("#domain_dropdown_container").hide();  
+        }
+        else {  //private zone
+            $dialogAddService.find("#domain_dropdown_container").show();  
+        }
+        return false;
+    });
+           
+	$.ajax({
+	  data: createURL("command=listDomains"),
+		dataType: "json",
+		async: false,
+		success: function(json) {
+		    var $domainDropdown1 = $("#dialog_add_service").find("#domain_dropdown").empty();
+		    var $domainDropdown2 = $("#tab_content_details").find("#domain_edit").empty();
+			var domains = json.listdomainsresponse.domain;						
+			if (domains != null && domains.length > 0) {
+				for (var i = 0; i < domains.length; i++) {
+					$domainDropdown1.append("<option value='" + fromdb(domains[i].id) + "'>" + fromdb(domains[i].name) + "</option>"); 
+					$domainDropdown2.append("<option value='" + fromdb(domains[i].id) + "'>" + fromdb(domains[i].name) + "</option>"); 
+				}
+			} 
+		}
+	});   
+		 
     //add button ***
     $("#midmenu_add_link").find("#label").text("Add Service Offering"); 
     $("#midmenu_add_link").show();     
-    $("#midmenu_add_link").unbind("click").bind("click", function(event) {      
-        var dialogAddService = $("#dialog_add_service");
-		
-		dialogAddService.find("#add_service_name").val("");
-		dialogAddService.find("#add_service_display").val("");
-		dialogAddService.find("#add_service_cpucore").val("");
-		dialogAddService.find("#add_service_cpu").val("");
-		dialogAddService.find("#add_service_memory").val("");
-		dialogAddService.find("#add_service_offerha").val("false");
+    $("#midmenu_add_link").unbind("click").bind("click", function(event) {    
+		$dialogAddService.find("#add_service_name").val("");
+		$dialogAddService.find("#add_service_display").val("");
+		$dialogAddService.find("#add_service_cpucore").val("");
+		$dialogAddService.find("#add_service_cpu").val("");
+		$dialogAddService.find("#add_service_memory").val("");
+		$dialogAddService.find("#add_service_offerha").val("false");
 			
-		(g_hypervisorType == "kvm")? dialogAddService.find("#add_service_offerha_container").hide():dialogAddService.find("#add_service_offerha_container").show();            
+		(g_hypervisorType == "kvm")? $dialogAddService.find("#add_service_offerha_container").hide():$dialogAddService.find("#add_service_offerha_container").show();            
 				
-		dialogAddService
+		$dialogAddService
 		.dialog('option', 'buttons', { 				
 			"Add": function() { 	
 			    var thisDialog = $(this);
@@ -86,12 +133,17 @@ function afterLoadServiceOfferingJSP() {
 				var useVirtualNetwork = (networkType=="Direct")? false:true;
 				array1.push("&usevirtualnetwork="+useVirtualNetwork);		
 				
-				var tags = trim(thisDialog.find("#add_service_tags").val());
+				var tags = thisDialog.find("#add_service_tags").val();
 				if(tags != null && tags.length > 0)
 				    array1.push("&tags="+todb(tags));	
 				
+				if(thisDialog.find("#domain_dropdown_container").css("display") != "none") {
+	                var domainId = thisDialog.find("#domain_dropdown").val();
+	                array1.push("&domainid="+domainId);	
+	            }
+								
 				$.ajax({
-				  data: createURL("command=createServiceOffering"+array1.join("")+"&response=json"),
+				  data: createURL("command=createServiceOffering"+array1.join("")),
 					dataType: "json",
 					success: function(json) {					    				
 						var item = json.createserviceofferingresponse.serviceoffering;							
@@ -112,14 +164,12 @@ function afterLoadServiceOfferingJSP() {
 			} 
 		}).dialog("open");            
         return false;
-    });
+    }); 
 }
 
 function doEditServiceOffering($actionLink, $detailsTab, $midmenuItem1) {       
-    //var $readonlyFields  = $detailsTab.find("#name, #displaytext, #offerha, #networktype, #tags");
-    var $readonlyFields  = $detailsTab.find("#name, #displaytext, #offerha, #tags");
-    //var $editFields = $detailsTab.find("#name_edit, #displaytext_edit, #offerha_edit, #networktype_edit, #tags_edit");
-    var $editFields = $detailsTab.find("#name_edit, #displaytext_edit, #offerha_edit, #tags_edit");
+    var $readonlyFields  = $detailsTab.find("#name, #displaytext, #offerha, #tags, #domain");    
+    var $editFields = $detailsTab.find("#name_edit, #displaytext_edit, #offerha_edit, #tags_edit, #domain_edit");
              
     $readonlyFields.hide();
     $editFields.show();  
@@ -164,6 +214,9 @@ function doEditServiceOffering2($actionLink, $detailsTab, $midmenuItem1, $readon
 	
 	var tags = $detailsTab.find("#tags_edit").val();
 	array1.push("&tags="+todb(tags));	
+	
+	var domainid = $detailsTab.find("#domain_edit").val();
+	array1.push("&domainid="+todb(domainid));	
 	
 	$.ajax({
 	    data: createURL("command=updateServiceOffering&id="+id+array1.join("")),
@@ -217,7 +270,7 @@ function serviceOfferingJsonToDetailsTab() {
         dataType: "json",
         async: false,
         success: function(json) {  
-            var items = json.listserviceofferingsresponse.serviceoffering;
+            var items = json.listserviceofferingsresponse.serviceoffering;            
             if(items != null && items.length > 0) {
                 jsonObj = items[0];
                 $midmenuItem1.data("jsonObj", jsonObj);    
@@ -246,7 +299,10 @@ function serviceOfferingJsonToDetailsTab() {
     
     $thisTab.find("#tags").text(fromdb(jsonObj.tags)); 
     $thisTab.find("#tags_edit").val(fromdb(jsonObj.tags));
-      
+    
+    $thisTab.find("#domain").text(fromdb(jsonObj.domain)); 
+    $thisTab.find("#domain_edit").val(fromdb(jsonObj.domainid));   
+     
     setDateField(jsonObj.created, $thisTab.find("#created"));	
     
     //actions ***

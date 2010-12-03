@@ -84,6 +84,9 @@ public class DeployVMCmd extends BaseAsyncCmd {
 
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="availability zone for the virtual machine")
     private Long zoneId;
+    
+    @Parameter(name=ApiConstants.NETWORK_IDS, type=CommandType.LIST, collectionType=CommandType.LONG)
+    private List<Long> networkIds;
 
     // unexposed parameter needed for serializing/deserializing the command
     @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, expose=false)
@@ -149,11 +152,19 @@ public class DeployVMCmd extends BaseAsyncCmd {
     public void setPassword(String password) {
         this.password = password;
     }
+    
+    public List<Long> getNetworkIds() {
+        return networkIds;
+    }
+
+    public void setNetworkList(List<Long> networkIds) {
+        this.networkIds = networkIds;
+    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-    
+
     @Override
     public String getName() {
         return s_name;
@@ -216,12 +227,16 @@ public class DeployVMCmd extends BaseAsyncCmd {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to deploy vm");
             }
         } catch (ResourceAllocationException ex) {
+            s_logger.warn("Exception: ", ex);
             throw new ServerApiException(BaseCmd.RESOURCE_ALLOCATION_ERROR, ex.getMessage());
         } catch (InsufficientStorageCapacityException ex) {
+            s_logger.warn("Exception: ", ex);
             throw new ServerApiException(BaseCmd.INSUFFICIENT_CAPACITY_ERROR, ex.getMessage());
         } catch (StorageUnavailableException ex) {
+            s_logger.warn("Exception: ", ex);
             throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
         } catch (Exception ex) {
+            s_logger.warn("Exception: ", ex);
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
         }
     }

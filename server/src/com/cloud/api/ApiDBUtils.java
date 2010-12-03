@@ -37,6 +37,8 @@ import com.cloud.network.security.NetworkGroup;
 import com.cloud.network.security.NetworkGroupManager;
 import com.cloud.network.security.dao.NetworkGroupDao;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.offerings.NetworkOfferingVO;
+import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.server.Criteria;
 import com.cloud.server.ManagementServer;
 import com.cloud.server.StatsCollector;
@@ -125,6 +127,7 @@ public class ApiDBUtils {
     private static VlanDao _vlanDao;
     private static VolumeDao _volumeDao;
     private static DataCenterDao _zoneDao;
+    private static NetworkOfferingDao _networkOfferingDao;
 
     static {
         _ms = (ManagementServer)ComponentLocator.getComponent(ManagementServer.Name);
@@ -165,6 +168,7 @@ public class ApiDBUtils {
         _volumeDao = locator.getDao(VolumeDao.class);
         _zoneDao = locator.getDao(DataCenterDao.class);
         _networkGroupDao = locator.getDao(NetworkGroupDao.class);
+        _networkOfferingDao = locator.getDao(NetworkOfferingDao.class);
 
         // Note:  stats collector should already have been initialized by this time, otherwise a null instance is returned
         _statsCollector = StatsCollector.getInstance();
@@ -485,6 +489,10 @@ public class ApiDBUtils {
     
     public static void synchronizeCommand(Object job, String syncObjType, long syncObjId) {
         _asyncMgr.syncAsyncJobExecution((AsyncJobVO)job, syncObjType, syncObjId);
+    }
+    
+    public static NetworkOfferingVO findNetworkOfferingById(long networkOfferingId) {
+        return _networkOfferingDao.findByIdIncludingRemoved(networkOfferingId);
     }
     
 }

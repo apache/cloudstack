@@ -20,13 +20,14 @@ package com.cloud.storage.snapshot;
 import java.util.List;
 
 import com.cloud.api.commands.CreateSnapshotCmd;
-import com.cloud.api.commands.CreateSnapshotInternalCmd;
 import com.cloud.api.commands.CreateSnapshotPolicyCmd;
 import com.cloud.api.commands.DeleteSnapshotCmd;
 import com.cloud.api.commands.DeleteSnapshotPoliciesCmd;
 import com.cloud.api.commands.ListRecurringSnapshotScheduleCmd;
 import com.cloud.api.commands.ListSnapshotPoliciesCmd;
+import com.cloud.api.commands.ListSnapshotsCmd;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.Snapshot;
 
@@ -39,12 +40,13 @@ public interface SnapshotService {
     Snapshot createSnapshot(CreateSnapshotCmd cmd) throws InvalidParameterValueException, ResourceAllocationException;
 
     /**
-     * An internal method for creating recurring snapshots.  The command is not exposed through the API but is used to hook into the async framework.
-     * @param cmd the command specifying volumeId and policyId
-     * @return the created snapshot
-     * @throws ResourceAllocationException
+     * List all snapshots of a disk volume. Optionally lists snapshots created by specified interval
+     * @param cmd the command containing the search criteria (order by, limit, etc.)
+     * @return list of snapshots
+     * @throws InvalidParameterValueException
+     * @throws PermissionDeniedException
      */
-    Snapshot createSnapshotInternal(CreateSnapshotInternalCmd cmd) throws ResourceAllocationException;
+    List<? extends Snapshot> listSnapshots(ListSnapshotsCmd cmd);
 
     /**
      * Delete specified snapshot from the specified.
@@ -76,5 +78,7 @@ public interface SnapshotService {
     List<? extends SnapshotPolicy> listPoliciesforVolume(ListSnapshotPoliciesCmd cmd);
     
     boolean deleteSnapshotPolicies(DeleteSnapshotPoliciesCmd cmd);
+    
+	long getNextInSequence(CreateSnapshotCmd cmd);
 
 }
