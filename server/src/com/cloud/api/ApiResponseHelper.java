@@ -1948,8 +1948,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
     
     @Override
-    public ListResponse<TemplateResponse> createIsoResponse(List<? extends VirtualMachineTemplate> isos, Long zoneId, boolean onlyReady, boolean isAdmin, Account account)  {
-        Map<Long, List<VMTemplateHostVO>> isoHostsMap = new HashMap<Long, List<VMTemplateHostVO>>();
+    public ListResponse<TemplateResponse> createIsoResponse(List<? extends VirtualMachineTemplate> isos, Long zoneId, boolean onlyReady, boolean isAdmin, Account account)  {        
 
         ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
         List<TemplateResponse> isoResponses = new ArrayList<TemplateResponse>();
@@ -1971,7 +1970,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 continue;
             }
            
-            List<VMTemplateHostVO> isoHosts = isoHostsMap.get(iso.getId());
+            List<VMTemplateHostVO> isoHosts = ApiDBUtils.listTemplateHostBy(iso.getId(), zoneId);
             for (VMTemplateHostVO isoHost : isoHosts) {
                 if (onlyReady && isoHost.getDownloadState() != Status.DOWNLOADED) {
                     continue;
