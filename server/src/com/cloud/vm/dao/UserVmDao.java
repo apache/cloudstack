@@ -22,11 +22,13 @@ import java.util.List;
 
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.db.GenericDao;
+import com.cloud.utils.fsm.StateDao;
 import com.cloud.vm.State;
 import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 
-public interface UserVmDao extends GenericDao<UserVmVO, Long> {
+public interface UserVmDao extends GenericDao<UserVmVO, Long>, StateDao<State, VirtualMachine.Event, VMInstanceVO> {
     List<UserVmVO> listByAccountId(long id);
 
     List<UserVmVO> listByAccountAndPod(long accountId, long podId);

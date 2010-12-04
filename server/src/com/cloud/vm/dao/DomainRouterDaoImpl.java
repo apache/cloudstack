@@ -36,9 +36,12 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.State;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.Event;
 
 @Local(value = { DomainRouterDao.class })
 public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> implements DomainRouterDao {
@@ -307,4 +310,39 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         sc.setParameters("network", networkConfigurationId);
         return findOneBy(sc);
     }
+
+    @Override
+	public boolean updateState(State oldState, Event event,
+			State newState, VMInstanceVO vm, Long hostId) {
+		if (newState == null) {
+			if (s_logger.isDebugEnabled()) {
+				s_logger.debug("There's no way to transition from old state: " + oldState.toString() + " event: " + event.toString());
+			}
+			return false;
+		}
+		
+		DomainRouterVO routerVM = (DomainRouterVO)vm;
+
+		SearchCriteria<DomainRouterVO> sc = StateChangeSearch.create();
+		sc.setParameters("id", routerVM.getId());
+		sc.setParameters("states", oldState);
+		sc.setParameters("host", routerVM.getHostId());
+		sc.setParameters("update", routerVM.getUpdated());
+
+		vm.incrUpdated();
+		UpdateBuilder ub = getUpdateBuilder(routerVM);
+		ub.set(routerVM, "state", newState);
+		ub.set(routerVM, "hostId", hostId);
+		ub.set(routerVM, _updateTimeAttr, new Date());
+
+		int result = update(routerVM, sc);
+		if (result == 0 && s_logger.isDebugEnabled()) {
+			DomainRouterVO vo = findById(routerVM.getId());
+			StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
+			str.append(": DB Data={Host=").append(vo.getHostId()).append("; State=").append(vo.getState().toString()).append("; updated=").append(vo.getUpdated());
+			str.append("} Stale Data: {Host=").append(routerVM.getHostId()).append("; State=").append(routerVM.getState().toString()).append("; updated=").append(routerVM.getUpdated()).append("}");
+			s_logger.debug(str.toString());
+		}
+		return result > 0;
+	}
 }

@@ -1,10 +1,11 @@
 package com.cloud.deploy;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import javax.ejb.Local;
+
+import org.apache.log4j.Logger;
 
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
@@ -26,7 +27,6 @@ import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSVO;
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.template.VirtualMachineTemplate;
@@ -35,8 +35,10 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
+
 @Local(value=DeploymentPlanner.class)
 public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
+	private static final Logger s_logger = Logger.getLogger(FirstFitPlanner.class);
 	@Inject private HostDao _hostDao;
 	@Inject private CapacityDao _capacityDao;
 	@Inject private DataCenterDao _dcDao;
@@ -56,10 +58,12 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 		int cpu_requested = offering.getCpu() * offering.getSpeed();
 		long ram_requested = offering.getRamSize() * 1024L * 1024L;
 		
+		s_logger.debug("try to allocate a host from dc:" + plan.getDataCenterId() + ", pod:" + plan.getPodId() + ",cluster:" + plan.getClusterId() +
+				", requested cpu: " + cpu_requested + ", requested ram: " + ram_requested);
 		if (vm.getLastHostId() != null) {
 			HostVO host = _hostDao.findById(vm.getLastHostId());
 			
-			if (host.getStatus() == Status.Up) {
+			if (host != null && host.getStatus() == Status.Up) {
 				boolean canDepployToLastHost = deployToHost(host, cpu_requested, ram_requested, true, avoid);
 				if (canDepployToLastHost) {
 					Pod pod = _podDao.findById(vm.getPodId());
@@ -70,29 +74,52 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 		}
 		
 		/*Go through all the pods/clusters under zone*/
-		List<HostPodVO> pods;
+		List<HostPodVO> pods = null;
 		if (plan.getPodId() != null) {
-			pods = new ArrayList<HostPodVO>(1);
-			pods.add(_podDao.findById(plan.getPodId()));
-		} else {
-		 pods = _podDao.listByDataCenterId(plan.getDataCenterId());
-		}
+			HostPodVO pod = _podDao.findById(plan.getPodId());
+			if (pod != null && dc.getId() == pod.getDataCenterId()) {
+				pods = new ArrayList<HostPodVO>(1);
+				pods.add(pod);
+			} else {
+				s_logger.debug("Can't enforce the pod selector");
+				return null;
+			}
+		} 
+		
+		if (pods == null)
+			pods = _podDao.listByDataCenterId(plan.getDataCenterId());
+		
 		//Collections.shuffle(pods);
 		
 		for (HostPodVO hostPod : pods) {
+			if (avoid.shouldAvoid(hostPod)) {
+				continue;
+			}
 			
 			//Collections.shuffle(clusters);
-			List<ClusterVO> clusters;
+			List<ClusterVO> clusters = null;
 			if (plan.getClusterId() != null) {
-				clusters = new ArrayList<ClusterVO>(1);
-				clusters.add(_clusterDao.findById(plan.getClusterId()));
-			} else {
+				ClusterVO cluster = _clusterDao.findById(plan.getClusterId());
+				if (cluster != null && hostPod.getId() == cluster.getPodId()) {
+					clusters = new ArrayList<ClusterVO>(1);
+					clusters.add(cluster);
+				} else {
+					s_logger.debug("Can't enforce the cluster selector");
+					return null;
+				}
+			} 
+			
+			if (clusters == null) {			
 				clusters = _clusterDao.listByPodId(hostPod.getId());
 			}
 			
 			for (ClusterVO clusterVO : clusters) {
+				if (avoid.shouldAvoid(clusterVO)) {
+					continue;
+				}
 				
 				if (clusterVO.getHypervisorType() != vmProfile.getHypervisorType()) {
+					avoid.addCluster(clusterVO.getId());
 					continue;
 				}
 				
@@ -111,8 +138,11 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 						Host host = _hostDao.findById(hostVO.getId());
 						return new DeployDestination(dc, pod, cluster, host);
 					}
+					avoid.addHost(hostVO.getId());
 				}
+				avoid.addCluster(clusterVO.getId());
 			}
+			avoid.addPod(hostPod.getId());
 		}
 		
 		return null;

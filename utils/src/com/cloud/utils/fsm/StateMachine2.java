@@ -41,12 +41,12 @@ import com.cloud.utils.db.Transaction;
 public class StateMachine2<S, E, V extends StateObject<S>> {
     private final HashMap<S, StateEntry> _states = new HashMap<S, StateEntry>();
     private final StateEntry _initialStateEntry;
-    private StateDao<S, E, V> _instanceDao;
+
     private List<StateListener<S,E,V>> _listeners = new ArrayList<StateListener<S,E,V>>();
     
-    public StateMachine2(StateDao<S, E, V> dao) {
+    public StateMachine2() {
         _initialStateEntry = new StateEntry(null);
-        _instanceDao = dao;
+
     }
     
     public void addTransition(S currentState, E event, S toState) {
@@ -98,7 +98,7 @@ public class StateMachine2<S, E, V extends StateObject<S>> {
     }
     
  
-    public boolean transitTO(V vo, E e, Long id) {
+    public boolean transitTO(V vo, E e, Long id, StateDao<S,E,V> dao) {
     	S currentState = vo.getState();
     	S nextState = getNextState(currentState, e);
 
@@ -108,7 +108,7 @@ public class StateMachine2<S, E, V extends StateObject<S>> {
     	}
 
     	for (StateListener<S,E, V> listener : _listeners) {
-    		transitionStatus = listener.processStateTransitionEvent(currentState, e, nextState, vo, transitionStatus, id);
+    		transitionStatus = listener.processStateTransitionEvent(currentState, e, nextState, vo, transitionStatus, id, dao);
     	}
 
     	return transitionStatus;

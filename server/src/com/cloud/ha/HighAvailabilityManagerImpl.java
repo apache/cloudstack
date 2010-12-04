@@ -777,7 +777,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
                 HostPodVO podVO = _podDao.findById(vm.getPodId());
                 _alertMgr.sendAlert(alertType, fromHost.getDataCenterId(), fromHost.getPodId(), "Unable to migrate vm " + vm.getHostName() + " from host " + fromHost.getName() + " in zone " + dcVO.getName() + " and pod " + podVO.getName(), "Migrate Command failed.  Please check logs.");
 
-                _itMgr.stateTransitTo(vm, Event.OperationFailed, vm.getHostId());
+                _itMgr.stateTransitTo(vm, Event.MigrationFailedOnSource, toHost.getId());
                 _agentMgr.maintenanceFailed(vm.getHostId());
                 
                 Command cleanup = mgr.cleanup(vm, null);
@@ -807,7 +807,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
         } catch (final OperationTimedoutException e) {
         	s_logger.warn("Operation timed outfor " + vm.toString());
         }
-    	_itMgr.stateTransitTo(vm, Event.OperationFailed, toHost.getId());
+    	_itMgr.stateTransitTo(vm, Event.MigrationFailedOnDest, toHost.getId());
     	return (System.currentTimeMillis() >> 10) + _migrateRetryInterval;
     }
     

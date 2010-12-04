@@ -7,6 +7,7 @@ import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.fsm.StateDao;
 import com.cloud.utils.fsm.StateListener;
 import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -15,25 +16,20 @@ public class VMStateListener implements StateListener<State, VirtualMachine.Even
 	private static final Logger s_logger = Logger.getLogger(VMStateListener.class);
 	CapacityDao _capacityDao;
 	ServiceOfferingDao _offeringDao;
-	VMInstanceDao _vmDao;
+
 	
-	public VMStateListener(CapacityDao capacityDao, ServiceOfferingDao offering, VMInstanceDao vmDao) {
+	public VMStateListener(CapacityDao capacityDao, ServiceOfferingDao offering) {
 		_capacityDao = capacityDao;
 		_offeringDao = offering;
-		this._vmDao = vmDao;
 	}
 	
 	@Override
 	public boolean processStateTransitionEvent(State oldState,
-			Event event, State newState, VMInstanceVO vm, boolean transitionStatus, Long id) {
-		if (oldState == State.Starting) {
-			if (event == Event.OperationRetry || event == Event.OperationFailed) {
-				releaseResource(vm, false, false);
-			}
-		}
-		
+			Event event, State newState, VMInstanceVO vm, boolean transitionStatus, Long id, StateDao<State, VirtualMachine.Event, VMInstanceVO> vmDao) {
+		s_logger.debug("VM state transitted from :" + oldState + " to " + newState + " with event: " + event +
+				"vm's original host id: " + vm.getHostId() + " new host id: " + id);
 		if (!transitionStatus) {
-			return true;
+			return false;
 		}
 
 		Transaction txn = Transaction.open(Transaction.CLOUD_DB);
@@ -42,53 +38,58 @@ public class VMStateListener implements StateListener<State, VirtualMachine.Even
 			
 			if (oldState == State.Starting) {
 				if (event == Event.OperationSucceeded) {
+					if (vm.getLastHostId() != null && vm.getLastHostId() != id) {
+						/*need to release the reserved capacity on lasthost*/
+						releaseResource(vm, true, false, vm.getLastHostId());
+					}
 					vm.setLastHostId(id);
-					_vmDao.update(vm.getId(), vm);
+					
+				} else if (event == Event.OperationRetry || event == Event.OperationFailed) {
+					/*need to release resource from host, passed in from id, cause vm.gethostid is null*/
+					releaseResource(vm, false, false, id);
+					id = null;
 				}
+				
 			} else if (oldState == State.Running) {
 				if (event == Event.AgentReportStopped) {
-					releaseResource(vm, false, true);
+					releaseResource(vm, false, true, vm.getHostId());
 				}
 			} else if (oldState == State.Migrating) {
 				if (event == Event.AgentReportStopped) {
 					/*Release capacity from original host*/
-					releaseResource(vm, false, true);
-				} else if (event == Event.OperationFailed) {
-					if (vm.getHostId() == id) {
-						/*Migrate command failed, vm still on the orginal host*/
-						/*no change for the capacity*/
-					} else {
-						/*CheckVirtualMachineCommand cmd got exception, assume vm is running on dest host*/
-						/*Need to clean up capacity*/
-						releaseResource(vm, false, false);
-						if (id != null) {
-							addResource(vm, id);
-						}
-					}
+					releaseResource(vm, false, true, vm.getHostId());
+				} else if (event == Event.MigrationFailedOnSource) {
+					/*release capacity from dest host*/
+					releaseResource(vm, false, false, id);
+					id = vm.getHostId();
+				} else if (event == Event.MigrationFailedOnDest) {
+					/*release capacify from original host*/
+					releaseResource(vm, false, false, vm.getHostId());
 				} else if (event == Event.OperationSucceeded) {
-					releaseResource(vm, false, false);
-					addResource(vm, id);
+					releaseResource(vm, false, false, vm.getHostId());					
 				}
 			} else if (oldState == State.Stopping) {
 				if (event == Event.AgentReportStopped || event == Event.OperationSucceeded) {
-					releaseResource(vm, false, true);
+					releaseResource(vm, false, true, vm.getHostId());
 				}
 			} else if (oldState == State.Stopped) {
 				if (event == Event.DestroyRequested) {
-					releaseResource(vm, true, false);
+					releaseResource(vm, true, false, vm.getHostId());
 
 					vm.setLastHostId(null);
-					_vmDao.update(vm.getId(), vm);
+					
 				}
 			}
 
-			transitionStatus = _vmDao.updateState(oldState, event, newState, vm, id);
+			transitionStatus = vmDao.updateState(oldState, event, newState, vm, id);
 			if (transitionStatus) {
 				txn.commit();				
 			} else {
+				s_logger.debug("Failed to transit vm's state");
 				txn.rollback();
 			}
 		} catch (Exception e) {
+			s_logger.debug("Failed to transit vm's state, due to " + e.getMessage());
 			txn.rollback();
 		} finally {			
 			txn.close();
@@ -97,10 +98,15 @@ public class VMStateListener implements StateListener<State, VirtualMachine.Even
 		return transitionStatus;
 	}
 
-	private void releaseResource(VMInstanceVO vm, boolean moveFromReserved, boolean moveToReservered) {
+	private void releaseResource(VMInstanceVO vm, boolean moveFromReserved, boolean moveToReservered, Long hostId) {
 		ServiceOfferingVO svo = _offeringDao.findById(vm.getServiceOfferingId());
-		CapacityVO capacityCpu = _capacityDao.findByHostIdType(vm.getHostId(), CapacityVO.CAPACITY_TYPE_CPU);
-		CapacityVO capacityMemory = _capacityDao.findByHostIdType(vm.getHostId(), CapacityVO.CAPACITY_TYPE_MEMORY);
+		CapacityVO capacityCpu = _capacityDao.findByHostIdType(hostId, CapacityVO.CAPACITY_TYPE_CPU);
+		CapacityVO capacityMemory = _capacityDao.findByHostIdType(hostId, CapacityVO.CAPACITY_TYPE_MEMORY);
+		
+		if (capacityCpu == null || capacityMemory == null || svo == null) {
+			return;
+		}
+		
 		int vmCPU = svo.getCpu() * svo.getSpeed();
 		long vmMem = svo.getRamSize() * 1024L * 1024L;
 

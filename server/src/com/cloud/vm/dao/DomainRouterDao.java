@@ -21,14 +21,17 @@ import java.util.List;
 
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.utils.db.GenericDao;
+import com.cloud.utils.fsm.StateDao;
 import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.State;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 
 /**
  *
  *  DomainRouterDao implements
  */
-public interface DomainRouterDao extends GenericDao<DomainRouterVO, Long> {
+public interface DomainRouterDao extends GenericDao<DomainRouterVO, Long>, StateDao<State, VirtualMachine.Event, VMInstanceVO> {
 	//@Deprecated
     //public boolean updateIf(DomainRouterVO router, State state, State... ifStates);
 

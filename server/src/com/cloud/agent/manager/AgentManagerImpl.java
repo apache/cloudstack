@@ -2159,9 +2159,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
              if (capacityVOCpus != null && !capacityVOCpus.isEmpty()) {
             	 CapacityVO CapacityVOCpu = capacityVOCpus.get(0);
             	 long newTotalCpu = (long)(server.getCpus().longValue() * server.getSpeed().longValue()*_cpuOverProvisioningFactor);
-            	 if (CapacityVOCpu.getTotalCapacity() < newTotalCpu) {
+            	 if ((CapacityVOCpu.getTotalCapacity() <= newTotalCpu) || ((CapacityVOCpu.getUsedCapacity() + CapacityVOCpu.getReservedCapacity()) <= newTotalCpu)) {
             		 CapacityVOCpu.setTotalCapacity(newTotalCpu);
-            	 } else if (CapacityVOCpu.getUsedCapacity() + CapacityVOCpu.getReservedCapacity() > newTotalCpu && CapacityVOCpu.getUsedCapacity() < newTotalCpu) {
+            	 } else if ((CapacityVOCpu.getUsedCapacity() + CapacityVOCpu.getReservedCapacity() > newTotalCpu) && (CapacityVOCpu.getUsedCapacity() < newTotalCpu)) {
             		 CapacityVOCpu.setReservedCapacity(0);
             		 CapacityVOCpu.setTotalCapacity(newTotalCpu);
             	 } else {
@@ -2180,12 +2180,12 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
              capacityMem.addAnd("dataCenterId", SearchCriteria.Op.EQ, server.getDataCenterId());
              capacityMem.addAnd("podId", SearchCriteria.Op.EQ, server.getPodId());
              capacityMem.addAnd("capacityType", SearchCriteria.Op.EQ, CapacityVO.CAPACITY_TYPE_MEMORY);
-             List<CapacityVO> capacityVOMems = _capacityDao.search(capacitySC, null);
+             List<CapacityVO> capacityVOMems = _capacityDao.search(capacityMem, null);
              
              if (capacityVOMems != null && !capacityVOMems.isEmpty()) {
             	 CapacityVO CapacityVOMem = capacityVOMems.get(0);
             	 long newTotalMem = server.getTotalMemory();
-            	 if (CapacityVOMem.getTotalCapacity() < newTotalMem) {
+            	 if (CapacityVOMem.getTotalCapacity() <= newTotalMem || (CapacityVOMem.getUsedCapacity() + CapacityVOMem.getReservedCapacity() <= newTotalMem)) {
             		 CapacityVOMem.setTotalCapacity(newTotalMem);
             	 } else if (CapacityVOMem.getUsedCapacity() + CapacityVOMem.getReservedCapacity() > newTotalMem && CapacityVOMem.getUsedCapacity() < newTotalMem) {
             		 CapacityVOMem.setReservedCapacity(0);

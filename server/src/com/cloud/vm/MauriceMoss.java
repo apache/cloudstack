@@ -94,6 +94,10 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.vm.ItWorkVO.Type;
 import com.cloud.vm.VirtualMachine.Event;
+import com.cloud.vm.dao.ConsoleProxyDao;
+import com.cloud.vm.dao.DomainRouterDao;
+import com.cloud.vm.dao.SecondaryStorageVmDao;
+import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value=VmManager.class)
@@ -113,6 +117,10 @@ public class MauriceMoss implements VmManager, ClusterManagerListener {
     @Inject private ClusterManager _clusterMgr;
     @Inject private ItWorkDao _workDao;
     @Inject private CapacityDao _capacityDao;
+    @Inject private UserVmDao _userVmDao;
+    @Inject private DomainRouterDao _routerDao;
+    @Inject private ConsoleProxyDao _consoleDao;
+    @Inject private SecondaryStorageVmDao _secondaryDao;
     
     @Inject(adapter=DeploymentPlanner.class)
     private Adapters<DeploymentPlanner> _planners;
@@ -340,13 +348,15 @@ public class MauriceMoss implements VmManager, ClusterManagerListener {
 
         ExcludeList avoids = new ExcludeList();
         int retry = _retry;
-        while (retry-- != 0) { // It's != so that it can match -1.
+        DeployDestination dest = null;
+        while (retry-- != 0) { // It's != so that it can match -1.      	
+        	/*this will release resource allocated on dest host*/
         	if (retry < (_retry -1)) {
-        		stateTransitTo(vm, Event.OperationRetry, null);
+        		stateTransitTo(vm, Event.OperationRetry, dest.getHost().getId());
         	}
         	
             VirtualMachineProfileImpl<T> vmProfile = new VirtualMachineProfileImpl<T>(vm, template, offering, null, params);
-            DeployDestination dest = null;
+            
             for (DeploymentPlanner planner : _planners) {
                 dest = planner.plan(vmProfile, plan, avoids);
                 if (dest != null) {
@@ -366,7 +376,7 @@ public class MauriceMoss implements VmManager, ClusterManagerListener {
             try {
                 _storageMgr.prepare(vmProfile, dest);
             } catch (ConcurrentOperationException e) {
-            	stateTransitTo(vm, Event.OperationFailed, null);
+            	stateTransitTo(vm, Event.OperationFailed, dest.getHost().getId());
                 throw e;
             } catch (StorageUnavailableException e) {
                 s_logger.warn("Unable to contact storage.", e);
@@ -401,7 +411,7 @@ public class MauriceMoss implements VmManager, ClusterManagerListener {
             }
         }
         
-        stateTransitTo(vm, Event.OperationFailed, null);
+        stateTransitTo(vm, Event.OperationFailed, dest.getHost().getId());
         
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Creation complete for VM " + vm);
@@ -463,7 +473,7 @@ public class MauriceMoss implements VmManager, ClusterManagerListener {
         }
         
         boolean cleanup = false;
-
+        
         VirtualMachineProfile<T> profile = new VirtualMachineProfileImpl<T>(vm);
         try {
             _networkMgr.release(profile);
@@ -510,7 +520,7 @@ public class MauriceMoss implements VmManager, ClusterManagerListener {
     }
     
     private void setStateMachine() {
-    	_stateMachine = new StateMachine2<State, VirtualMachine.Event, VMInstanceVO >(_vmDao);
+    	_stateMachine = new StateMachine2<State, VirtualMachine.Event, VMInstanceVO>();
 
     	_stateMachine.addTransition(null, VirtualMachine.Event.CreateRequested, State.Creating);
     	_stateMachine.addTransition(State.Creating, VirtualMachine.Event.OperationSucceeded, State.Stopped);
@@ -534,6 +544,8 @@ public class MauriceMoss implements VmManager, ClusterManagerListener {
     	_stateMachine.addTransition(State.Migrating, VirtualMachine.Event.MigrationRequested, State.Migrating);
     	_stateMachine.addTransition(State.Migrating, VirtualMachine.Event.OperationSucceeded, State.Running);
     	_stateMachine.addTransition(State.Migrating, VirtualMachine.Event.OperationFailed, State.Running);
+    	_stateMachine.addTransition(State.Migrating, VirtualMachine.Event.MigrationFailedOnSource, State.Running);
+    	_stateMachine.addTransition(State.Migrating, VirtualMachine.Event.MigrationFailedOnDest, State.Running);
     	_stateMachine.addTransition(State.Migrating, VirtualMachine.Event.AgentReportRunning, State.Running);
     	_stateMachine.addTransition(State.Migrating, VirtualMachine.Event.AgentReportStopped, State.Stopped);
     	_stateMachine.addTransition(State.Stopping, VirtualMachine.Event.OperationSucceeded, State.Stopped);
@@ -544,11 +556,20 @@ public class MauriceMoss implements VmManager, ClusterManagerListener {
     	_stateMachine.addTransition(State.Expunging, VirtualMachine.Event.OperationFailed, State.Expunging);
     	_stateMachine.addTransition(State.Expunging, VirtualMachine.Event.ExpungeOperation, State.Expunging);
     	
-    	_stateMachine.registerListener(new VMStateListener(_capacityDao, _offeringDao, _vmDao));
+    	_stateMachine.registerListener(new VMStateListener(_capacityDao, _offeringDao));
     }
     
     @Override
     public boolean stateTransitTo(VMInstanceVO vm, VirtualMachine.Event e, Long id) {
-    	return _stateMachine.transitTO(vm, e, id);
+    	if (vm instanceof UserVmVO) {
+    		return _stateMachine.transitTO(vm, e, id, _userVmDao);
+    	} else if (vm instanceof ConsoleProxyVO) {
+    		return _stateMachine.transitTO(vm, e, id, _consoleDao);
+    	} else if (vm instanceof SecondaryStorageVmVO) {
+    		return _stateMachine.transitTO(vm, e, id, _secondaryDao);
+    	} else if (vm instanceof DomainRouterVO) {
+    		return _stateMachine.transitTO(vm, e, id, _routerDao);
+    	}
+    	return false;
     }
 }

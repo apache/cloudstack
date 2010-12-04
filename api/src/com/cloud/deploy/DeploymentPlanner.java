@@ -121,5 +121,32 @@ public interface DeploymentPlanner extends Adapter {
             
             return false;
         }
+        
+        public boolean shouldAvoid(Cluster cluster) {
+            if (_dcIds != null && _dcIds.contains(cluster.getDataCenterId())) {
+                return true;
+            }
+            
+            if (_podIds != null && _podIds.contains(cluster.getPodId())) {
+                return true;
+            }
+            
+            if (_clusterIds != null && _clusterIds.contains(cluster.getId())) {
+                return true;
+            }                     
+            return false;
+        }
+        
+        public boolean shouldAvoid(Pod pod) {
+            if (_dcIds != null && _dcIds.contains(pod.getDataCenterId())) {
+                return true;
+            }
+            
+            if (_podIds != null && _podIds.contains(pod.getId())) {
+                return true;
+            }
+                              
+            return false;
+        }
     }
 }

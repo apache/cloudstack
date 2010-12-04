@@ -38,6 +38,8 @@ public interface VirtualMachine extends RunningOn, ControlledEntity {
     	ExpungeOperation,
     	OperationSucceeded,
     	OperationFailed,
+    	MigrationFailedOnSource,
+    	MigrationFailedOnDest,
     	OperationRetry,
     	OperationCancelled
     };
