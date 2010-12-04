@@ -1162,7 +1162,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     	String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
     	int networkRate = ((networkRateStr == null) ? 200 : Integer.parseInt(networkRateStr));
     	int multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));
-    	NetworkOffering.GuestIpType guestIpType = useVirtualNetwork ? NetworkOffering.GuestIpType.Virtualized : NetworkOffering.GuestIpType.DirectSingle;        
+    	NetworkOffering.GuestIpType guestIpType = useVirtualNetwork ? NetworkOffering.GuestIpType.Virtual : NetworkOffering.GuestIpType.Direct;        
     	tags = cleanupTags(tags);
     	ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, networkRate, multicastRate, offerHA, displayText, guestIpType, localStorageRequired, false, tags, false,domainId);
     	
@@ -1216,7 +1216,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
 	    
         if (useVirtualNetwork != null) {
-        	NetworkOffering.GuestIpType guestIpType = useVirtualNetwork ? NetworkOffering.GuestIpType.Virtualized : NetworkOffering.GuestIpType.DirectSingle;
+        	NetworkOffering.GuestIpType guestIpType = useVirtualNetwork ? NetworkOffering.GuestIpType.Virtual : NetworkOffering.GuestIpType.Direct;
             offering.setGuestIpType(guestIpType);
         }
 
@@ -1248,7 +1248,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if (_serviceOfferingDao.update(id, offering)) {
         	offering = _serviceOfferingDao.findById(id);
     		saveConfigurationEvent(userId, null, EventTypes.EVENT_SERVICE_OFFERING_EDIT, "Successfully updated service offering with name: " + offering.getName() + ".", "soId=" + offering.getId(), "name=" + offering.getName(),
-    				"displayText=" + offering.getDisplayText(), "offerHA=" + offering.getOfferHA(), "useVirtualNetwork=" + (offering.getGuestIpType() == NetworkOffering.GuestIpType.Virtualized), "tags=" + offering.getTags(), "domainId=" + offering.getDomainId());
+    				"displayText=" + offering.getDisplayText(), "offerHA=" + offering.getOfferHA(), "useVirtualNetwork=" + (offering.getGuestIpType() == NetworkOffering.GuestIpType.Virtual), "tags=" + offering.getTags(), "domainId=" + offering.getDomainId());
         	return offering;
         } else {
         	return null;
@@ -1395,7 +1395,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     	
     	if (_serviceOfferingDao.remove(offeringId)) {
     		saveConfigurationEvent(userId, null, EventTypes.EVENT_SERVICE_OFFERING_EDIT, "Successfully deleted service offering with name: " + offering.getName(), "soId=" + offeringId, "name=" + offering.getName(),
-    				"displayText=" + offering.getDisplayText(), "offerHA=" + offering.getOfferHA(), "useVirtualNetwork=" + (offering.getGuestIpType() == GuestIpType.Virtualized));
+    				"displayText=" + offering.getDisplayText(), "offerHA=" + offering.getOfferHA(), "useVirtualNetwork=" + (offering.getGuestIpType() == GuestIpType.Virtual));
     		return true;
     	} else {
     		return false;

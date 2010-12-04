@@ -647,7 +647,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
         int networkRate = ((networkRateStr == null) ? 200 : Integer.parseInt(networkRateStr));
         int multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));
-        NetworkOffering.GuestIpType guestIpType = useVirtualNetwork ? NetworkOffering.GuestIpType.Virtualized : NetworkOffering.GuestIpType.DirectSingle;        
+        NetworkOffering.GuestIpType guestIpType = useVirtualNetwork ? NetworkOffering.GuestIpType.Virtual : NetworkOffering.GuestIpType.Direct;        
         tags = cleanupTags(tags);
         ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, networkRate, multicastRate, offerHA, displayText, guestIpType, localStorageRequired, false, tags, false);
         

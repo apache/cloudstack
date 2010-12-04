@@ -935,7 +935,7 @@ public class ManagementServerImpl implements ManagementServer {
             		throw rae;
             	}
             } else {
-            	if (offering.getGuestIpType() == NetworkOffering.GuestIpType.Virtualized) {
+            	if (offering.getGuestIpType() == NetworkOffering.GuestIpType.Virtual) {
             		try {
             			externalIp = _networkMgr.assignSourceNatIpAddress(account, dc, domain, offering, startEventId, template.getHypervisorType());
             		} catch (ResourceAllocationException rae) {
@@ -1272,12 +1272,12 @@ public class ManagementServerImpl implements ManagementServer {
         	}
 			
         }
-        if (offering.getGuestIpType() != NetworkOffering.GuestIpType.Virtualized) {
+        if (offering.getGuestIpType() != NetworkOffering.GuestIpType.Virtual) {
         	_networkGroupMgr.createDefaultNetworkGroup(accountId);
     	}
         
         if (networkGroups != null) {
-        	if (offering.getGuestIpType() == NetworkOffering.GuestIpType.Virtualized) {
+        	if (offering.getGuestIpType() == NetworkOffering.GuestIpType.Virtual) {
         		throw new InvalidParameterValueException("Network groups are not compatible with service offering " + offering.getName());
         	}
         	Set<String> nameSet = new HashSet<String>(); //handle duplicate names -- allowed
@@ -1289,7 +1289,7 @@ public class ManagementServerImpl implements ManagementServer {
         		throw new InvalidParameterValueException("Some network group names do not exist");
         	}
         } else { //create a default group if necessary
-        	if (offering.getGuestIpType() != NetworkOffering.GuestIpType.Virtualized && _networkGroupsEnabled) {
+        	if (offering.getGuestIpType() != NetworkOffering.GuestIpType.Virtual && _networkGroupsEnabled) {
         		networkGroups = new String[]{NetworkGroupManager.DEFAULT_GROUP_NAME};
         	}
         }
@@ -2709,7 +2709,7 @@ public class ManagementServerImpl implements ManagementServer {
         }
         
         if (useVirtualNetwork != null) {
-            sc.setJoinParameters("serviceSearch", "guestIpType", NetworkOffering.GuestIpType.Virtualized.toString());
+            sc.setJoinParameters("serviceSearch", "guestIpType", NetworkOffering.GuestIpType.Virtual.toString());
         }
 
         if (keyword != null) {

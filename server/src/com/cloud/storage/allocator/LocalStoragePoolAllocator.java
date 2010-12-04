@@ -147,14 +147,14 @@ public class LocalStoragePoolAllocator extends FirstFitStoragePoolAllocator {
     			so = _offeringDao.findById(userVm.getServiceOfferingId());
     	} else if(vm.getType() == VirtualMachine.Type.ConsoleProxy) {
     		so = new ServiceOfferingVO("Fake Offering For DomP", 1,
-				_proxyRamSize, 0, 0, 0, false, null, NetworkOffering.GuestIpType.Virtualized, false, true, null, true);
+				_proxyRamSize, 0, 0, 0, false, null, NetworkOffering.GuestIpType.Virtual, false, true, null, true);
     	} else if(vm.getType() == VirtualMachine.Type.SecondaryStorageVm) {
-    		so = new ServiceOfferingVO("Fake Offering For Secondary Storage VM", 1, _secStorageVmRamSize, 0, 0, 0, false, null, NetworkOffering.GuestIpType.Virtualized, false, true, null, true);
+    		so = new ServiceOfferingVO("Fake Offering For Secondary Storage VM", 1, _secStorageVmRamSize, 0, 0, 0, false, null, NetworkOffering.GuestIpType.Virtual, false, true, null, true);
     	} else if(vm.getType() == VirtualMachine.Type.DomainRouter) {
-            so = new ServiceOfferingVO("Fake Offering For DomR", 1, _routerRamSize, 0, 0, 0, false, null, NetworkOffering.GuestIpType.Virtualized, false, true, null, true);
+            so = new ServiceOfferingVO("Fake Offering For DomR", 1, _routerRamSize, 0, 0, 0, false, null, NetworkOffering.GuestIpType.Virtual, false, true, null, true);
     	} else {
     		assert(false) : "Unsupported system vm type";
-            so = new ServiceOfferingVO("Fake Offering For unknow system VM", 1, 128, 0, 0, 0, false, null, NetworkOffering.GuestIpType.Virtualized, false, true, null, false);
+            so = new ServiceOfferingVO("Fake Offering For unknow system VM", 1, 128, 0, 0, 0, false, null, NetworkOffering.GuestIpType.Virtual, false, true, null, false);
     	}
     	
     	long usedMemory = calcHostAllocatedCpuMemoryCapacity(vmOnHost, CapacityVO.CAPACITY_TYPE_MEMORY);
@@ -244,14 +244,14 @@ public class LocalStoragePoolAllocator extends FirstFitStoragePoolAllocator {
         		so = _offeringDao.findById(userVm.getServiceOfferingId());
         	} else if(vm.getType() == VirtualMachine.Type.ConsoleProxy) {
         		so = new ServiceOfferingVO("Fake Offering For DomP", 1,
-    				_proxyRamSize, 0, 0, 0, false, null, NetworkOffering.GuestIpType.Virtualized, false, true, null, true);
+    				_proxyRamSize, 0, 0, 0, false, null, NetworkOffering.GuestIpType.Virtual, false, true, null, true);
         	} else if(vm.getType() == VirtualMachine.Type.SecondaryStorageVm) {
-        		so = new ServiceOfferingVO("Fake Offering For Secondary Storage VM", 1, _secStorageVmRamSize, 0, 0, 0, false, null, NetworkOffering.GuestIpType.Virtualized, false, true, null, true);
+        		so = new ServiceOfferingVO("Fake Offering For Secondary Storage VM", 1, _secStorageVmRamSize, 0, 0, 0, false, null, NetworkOffering.GuestIpType.Virtual, false, true, null, true);
         	} else if(vm.getType() == VirtualMachine.Type.DomainRouter) {
-                so = new ServiceOfferingVO("Fake Offering For DomR", 1, _routerRamSize, 0, 0, 0, false, null, NetworkOffering.GuestIpType.Virtualized, false, true, null, true);
+                so = new ServiceOfferingVO("Fake Offering For DomR", 1, _routerRamSize, 0, 0, 0, false, null, NetworkOffering.GuestIpType.Virtual, false, true, null, true);
         	} else {
         		assert(false) : "Unsupported system vm type";
-                so = new ServiceOfferingVO("Fake Offering For unknow system VM", 1, 128, 0, 0, 0, false, null, NetworkOffering.GuestIpType.Virtualized, false, true, null, false);
+                so = new ServiceOfferingVO("Fake Offering For unknow system VM", 1, 128, 0, 0, 0, false, null, NetworkOffering.GuestIpType.Virtual, false, true, null, false);
         	}
             
             if(capacityType == CapacityVO.CAPACITY_TYPE_MEMORY) {

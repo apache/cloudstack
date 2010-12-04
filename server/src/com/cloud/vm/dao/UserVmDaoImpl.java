@@ -289,7 +289,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         SearchCriteria<UserVmVO> sc = AccountDataCenterVirtualSearch.create();
         sc.setParameters("account", accountId);
         sc.setParameters("dc", dcId);
-        sc.setJoinParameters("offeringSearch", "guestIpType", NetworkOffering.GuestIpType.Virtualized);
+        sc.setJoinParameters("offeringSearch", "guestIpType", NetworkOffering.GuestIpType.Virtual);
 
         return listBy(sc);
     }

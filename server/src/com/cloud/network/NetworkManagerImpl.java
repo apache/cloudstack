@@ -60,7 +60,6 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
@@ -103,7 +102,6 @@ import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.DomainRouterManager;
-import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.offering.NetworkOffering;
@@ -149,7 +147,6 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.State;
-import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
@@ -221,14 +218,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     private Map<String, String> _configs;
     
 
-    @Override
-    public boolean sendSshKeysToHost(Long hostId, String pubKey, String prvKey) {
-        return _routerMgr.sendSshKeysToHost(hostId, pubKey, prvKey);
-    }
-
     @Override @DB
     public String assignSourceNatIpAddress(Account account, final DataCenterVO dc, final String domain, final ServiceOfferingVO serviceOffering, long startEventId, HypervisorType hyperType) throws ResourceAllocationException {
-        if (serviceOffering.getGuestIpType() == NetworkOffering.GuestIpType.DirectDual || serviceOffering.getGuestIpType() == NetworkOffering.GuestIpType.DirectSingle) {
+        if (serviceOffering.getGuestIpType() == NetworkOffering.GuestIpType.Direct) {
             return null;
         }
         final long dcId = dc.getId();
@@ -324,7 +316,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
             DomainRouterVO router = null;
             try {
-                router = createRouter(account.getId(), sourceNat, dcId, domain, serviceOffering, startEventId);
+                router = _routerMgr.createRouter(account.getId(), sourceNat, dcId, domain, serviceOffering, startEventId);
             } catch (final Exception e) {
                 s_logger.error("Unable to create router for " + account.getAccountName(), e);
             }
@@ -467,56 +459,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 _accountDao.releaseFromLockTable(accountId);
             }
         }
-    }
-
-    @Override
-    @DB
-    public DomainRouterVO createDhcpServerForDirectlyAttachedGuests(long userId, long accountId, DataCenterVO dc, HostPodVO pod, Long candidateHost, VlanVO guestVlan) throws ConcurrentOperationException{
-        return _routerMgr.createDhcpServerForDirectlyAttachedGuests(userId, accountId, dc, pod, candidateHost, guestVlan);
-    }
-
-    @Override
-    public boolean releaseRouter(final long routerId) {
-        return destroyRouter(routerId);
-    }
-
-    @Override @DB
-    public DomainRouterVO createRouter(final long accountId, final String publicIpAddress, final long dataCenterId,  
-            String domain, final ServiceOfferingVO offering, long startEventId) 
-    throws ConcurrentOperationException {
-        return _routerMgr.createRouter(accountId, publicIpAddress, dataCenterId, domain, offering, startEventId);
-    }
-
-    @Override
-    public boolean destroyRouter(final long routerId) {
-        return _routerMgr.destroyRouter(routerId);
-    }
-
-    @Override
-    public boolean savePasswordToRouter(final long routerId, final String vmIpAddress, final String password) {
-        return _routerMgr.savePasswordToRouter(routerId, vmIpAddress, password);
-    }
-
-    @Override
-    public DomainRouterVO startRouter(final long routerId, long eventId) {
-        return _routerMgr.startRouter(routerId, eventId);
-    }
-
-    @Override
-    public boolean stopRouter(final long routerId, long eventId) {
-        return _routerMgr.stopRouter(routerId, eventId);
-    }
-
-
-    @Override
-    public boolean getRouterStatistics(final long vmId, final Map<String, long[]> netStats, final Map<String, long[]> diskStats) {
-        return _routerMgr.getRouterStatistics(vmId, netStats, diskStats);
-    }
-
-
-    @Override
-    public boolean rebootRouter(final long routerId, long startEventId) {
-        return _routerMgr.rebootRouter(routerId, startEventId);
     }
 
     @Override
@@ -927,17 +869,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 //            } else {
     }
 
-    @Override
-    public DomainRouterVO getRouter(final long routerId) {
-        return _routerMgr.getRouter(routerId);
-    }
-
-    @Override
-    public List<? extends VirtualRouter> getRouters(final long hostId) {
-        return _routerMgr.getRouters(hostId);
-    }
-
-
     private Integer getIntegerConfigValue(String configKey, Integer dflt) {
         String value = _configs.get(configKey);
         if (value != null) {
@@ -1002,9 +933,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         storageNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(storageNetworkOffering);
         _systemNetworks.put(NetworkOfferingVO.SystemVmStorageNetwork, storageNetworkOffering);
 
-        NetworkOfferingVO defaultGuestNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultVirtualizedNetworkOffering, "Virtual Vlan", TrafficType.Guest, GuestIpType.Virtualized, false, false, rateMbps, multicastRateMbps, null, true);
+        NetworkOfferingVO defaultGuestNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultVirtualizedNetworkOffering, "Virtual Vlan", TrafficType.Guest, GuestIpType.Virtual, false, false, rateMbps, multicastRateMbps, null, true);
         defaultGuestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestNetworkOffering);
-        NetworkOfferingVO defaultGuestDirectNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultDirectNetworkOffering, "Direct", TrafficType.Guest, GuestIpType.DirectSingle, false, false, rateMbps, multicastRateMbps, null, true);
+        NetworkOfferingVO defaultGuestDirectNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultDirectNetworkOffering, "Direct", TrafficType.Guest, GuestIpType.Direct, false, false, rateMbps, multicastRateMbps, null, true);
         defaultGuestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestDirectNetworkOffering);
 
         AccountsUsingNetworkConfigurationSearch = _accountDao.createSearchBuilder();
@@ -1044,19 +975,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         final Answer answer = _agentMgr.easySend(routerHostId, dhcpEntry);
         return (answer != null && answer.getResult());
-    }
-
-    @Override
-    public DomainRouterVO addVirtualMachineToGuestNetwork(UserVmVO vm, String password, long startEventId) throws ConcurrentOperationException {
-        return _routerMgr.addVirtualMachineToGuestNetwork(vm, password, startEventId);
-    }
-
-    public void releaseVirtualMachineFromGuestNetwork(UserVmVO vm) {
-    }
-
-    @Override
-    public String createZoneVlan(DomainRouterVO router) {
-        return _routerMgr.createZoneVlan(router);
     }
 
     @Override
@@ -1964,11 +1882,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
            }
            
            //Don't pass owner to create vlan when network offering is of type Direct
-           if (networkOffering.getGuestIpType() == GuestIpType.DirectSingle) {
+           if (networkOffering.getGuestIpType() == GuestIpType.Direct) {
                owner = null;
            }
            
-           if (ctxAccount.getType() == Account.ACCOUNT_TYPE_ADMIN && networkOffering.getGuestIpType() != GuestIpType.Virtualized && startIP != null && endIP != null && gateway != null) {
+           if (ctxAccount.getType() == Account.ACCOUNT_TYPE_ADMIN && networkOffering.getGuestIpType() != GuestIpType.Virtual && startIP != null && endIP != null && gateway != null) {
                //Create vlan ip range
                Vlan vlan = _configMgr.createVlanAndPublicIpRange(userId, zoneId, podId, startIP, endIP, gateway, vlanNetmask, false, vlanId, owner, networkId);
                if (vlan == null) {

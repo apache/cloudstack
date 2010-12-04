@@ -18,12 +18,9 @@
 package com.cloud.network;
 
 import java.util.List;
-import java.util.Map;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.HostPodVO;
-import com.cloud.dc.VlanVO;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.ConcurrentOperationException;
@@ -33,7 +30,6 @@ import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.service.ServiceOfferingVO;
@@ -45,7 +41,6 @@ import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
-import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
@@ -57,70 +52,6 @@ import com.cloud.vm.VirtualMachineProfile;
 public interface NetworkManager extends NetworkService {
     public static final int DEFAULT_ROUTER_VM_RAMSIZE = 128;            // 128M
     public static final boolean USE_POD_VLAN = false;
-    /**
-     * create the router.
-     * 
-     * @param accountId account Id the router belongs to.
-     * @param ipAddress public ip address the router should use to access the internet.
-     * @param dcId data center id the router should live in.
-     * @param domain domain name of this network.
-     * @param offering service offering associated with this request
-     * @return DomainRouterVO if created.  null if not.
-     */
-    DomainRouterVO createRouter(long accountId, String ipAddress, long dcId, String domain, ServiceOfferingVO offering, long startEventId) throws ConcurrentOperationException;
-
-    /**
-     * create a DHCP server/user data server for directly connected VMs
-     * @param userId the user id of the user creating the router.
-     * @param accountId the account id of the user creating the router.
-     * @param dcId data center id the router should live in.
-     * @param domain domain name of this network.
-     * @return DomainRouterVO if created.  null if not.
-     */
-	DomainRouterVO createDhcpServerForDirectlyAttachedGuests(long userId, long accountId, DataCenterVO dc, HostPodVO pod, Long candidateHost, VlanVO vlan) throws ConcurrentOperationException;
-    
-    /**
-    /*
-     * Send ssh public/private key pair to specified host
-     * @param hostId
-     * @param pubKey
-     * @param prvKey
-     */
-    boolean sendSshKeysToHost(Long hostId, String pubKey, String prvKey);
-
-    /**
-     * save a vm password on the router.
-     * 
-	 * @param routerId the ID of the router to save the password to
-	 * @param vmIpAddress the IP address of the User VM that will use the password
-	 * @param password the password to save to the router
-     */
-    boolean savePasswordToRouter(long routerId, String vmIpAddress, String password);
-    
-    DomainRouterVO startRouter(long routerId, long eventId);
-    
-    boolean releaseRouter(long routerId);
-    
-    boolean destroyRouter(long routerId);
-    
-    boolean stopRouter(long routerId, long eventId);
-    
-    boolean getRouterStatistics(long vmId, Map<String, long[]> netStats, Map<String, long[]> diskStats);
-
-    boolean rebootRouter(long routerId, long eventId);
-    
-    /**
-     * @param hostId get all of the virtual machine routers on a host.
-     * @return collection of VirtualMachineRouter
-     */
-    List<? extends VirtualRouter> getRouters(long hostId);
-    
-    /**
-     * @param routerId id of the router
-     * @return VirtualMachineRouter
-     */
-    DomainRouterVO getRouter(long routerId);
-    
     /**
      * Do all of the work of releasing public ip addresses.  Note that
      * if this method fails, there can be side effects.
@@ -172,22 +103,6 @@ public interface NetworkManager extends NetworkService {
      * @return success or failure
      */
     public boolean addDhcpEntry(long routerHostId, String routerIp, String vmName, String vmMac, String vmIp);
-    
-    /**
-     * Adds a virtual machine into the guest network.
-     *   1. Starts the domR
-     *   2. Sets the dhcp Entry on the domR
-     *   3. Sets the domR
-     * 
-     * @param vm user vm to add to the guest network
-     * @param password password for this vm.  Can be null
-     * @return DomainRouterVO if everything is successful.  null if not.
-     * 
-     * @throws ConcurrentOperationException if multiple starts are being attempted.
-     */
-	public DomainRouterVO addVirtualMachineToGuestNetwork(UserVmVO vm, String password, long startEventId) throws ConcurrentOperationException;	
-
-    String createZoneVlan(DomainRouterVO router);
     
     /**
      * Lists IP addresses that belong to VirtualNetwork VLANs

@@ -64,7 +64,7 @@ public class DomainRouterElement extends AdapterBase implements NetworkElement {
 
     @Override
     public boolean implement(Network guestConfig, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException {
-        if (offering.getGuestIpType() != GuestIpType.Virtualized) {
+        if (offering.getGuestIpType() != GuestIpType.Virtual) {
             s_logger.trace("Not handling guest ip type = " + offering.getGuestIpType());
             return false;
         }

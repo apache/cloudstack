@@ -64,6 +64,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.router.DomainRouterManager;
 import com.cloud.network.security.NetworkGroupManager;
 import com.cloud.server.Criteria;
 import com.cloud.storage.StorageManager;
@@ -120,6 +121,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
 	@Inject private StorageManager _storageMgr;
 	@Inject private TemplateManager _tmpltMgr;
 	@Inject private ConfigurationManager _configMgr;
+	@Inject private DomainRouterManager _routerMgr;
 	
 	private final GlobalLock m_resourceCountLock = GlobalLock.getInternLock("resource.count");
 	
@@ -856,7 +858,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
 
             boolean routersCleanedUp = true;
             for (DomainRouterVO router : routers) {
-                if (!_networkMgr.destroyRouter(router.getId())) {
+                if (!_routerMgr.destroyRouter(router.getId())) {
                     s_logger.error("Unable to destroy router: " + router.getId());
                     routersCleanedUp = false;
                 }
@@ -968,7 +970,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
 
         List<DomainRouterVO> routers = _routerDao.listBy(accountId);
         for (DomainRouterVO router : routers) {
-            success = (success && _networkMgr.stopRouter(router.getId(), 0));
+            success = (success && _routerMgr.stopRouter(router.getId(), 0));
         }
 
         return success;

@@ -77,7 +77,7 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
         GuestIpType ipType = offering.getGuestIpType();
         BroadcastDomainType broadcastType = null;
         Mode mode = null;
-        if (ipType == GuestIpType.Virtualized) {
+        if (ipType == GuestIpType.Virtual) {
             mode = Mode.Dhcp;
             broadcastType = BroadcastDomainType.Vlan;
         } else {

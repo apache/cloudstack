@@ -52,7 +52,7 @@ public class ServiceOffering20VO {
     
     @Column(name="guest_ip_type")
     @Enumerated(EnumType.STRING)
-    private NetworkOffering.GuestIpType guestIpType = NetworkOffering.GuestIpType.Virtualized;
+    private NetworkOffering.GuestIpType guestIpType = NetworkOffering.GuestIpType.Virtual;
     
     @Column(name="use_local_storage")
     private boolean useLocalStorage;
@@ -67,7 +67,7 @@ public class ServiceOffering20VO {
     }
 
     public ServiceOffering20VO(Long id, String name, int cpu, int ramSize, int speed, int rateMbps, int multicastRateMbps, boolean offerHA, String displayText, boolean localStorageRequired) {
-        this(id, name, cpu, ramSize, speed, rateMbps, multicastRateMbps, offerHA, displayText, NetworkOffering.GuestIpType.Virtualized, localStorageRequired);
+        this(id, name, cpu, ramSize, speed, rateMbps, multicastRateMbps, offerHA, displayText, NetworkOffering.GuestIpType.Virtual, localStorageRequired);
     }
     
     public ServiceOffering20VO(Long id, String name, int cpu, int ramSize, int speed, int rateMbps, int multicastRateMbps, boolean offerHA, String displayText, NetworkOffering.GuestIpType guestIpType, boolean useLocalStorage) {

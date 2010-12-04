@@ -346,7 +346,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         offeringResponse.setCreated(offering.getCreated());
         offeringResponse.setStorageType(offering.getUseLocalStorage() ? "local" : "shared");
         offeringResponse.setOfferHa(offering.getOfferHA());
-        offeringResponse.setUseVirtualNetwork(offering.getGuestIpType().equals(GuestIpType.Virtualized));
+        offeringResponse.setUseVirtualNetwork(offering.getGuestIpType().equals(GuestIpType.Virtual));
         offeringResponse.setTags(offering.getTags());
         if(offering.getDomainId() != null){
         	offeringResponse.setDomain(ApiDBUtils.findDomainById(offering.getDomainId()).getName());
@@ -497,7 +497,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         userVmResponse.setCpuNumber(offering.getCpu());
         userVmResponse.setCpuSpeed(offering.getSpeed());
         userVmResponse.setMemory(offering.getRamSize());
-        userVmResponse.setForVirtualNetwork(offering.getGuestIpType().equals(GuestIpType.Virtualized));
+        userVmResponse.setForVirtualNetwork(offering.getGuestIpType().equals(GuestIpType.Virtual));
 
         VolumeVO rootVolume = ApiDBUtils.findRootVolume(userVm.getId());
         if (rootVolume != null) {

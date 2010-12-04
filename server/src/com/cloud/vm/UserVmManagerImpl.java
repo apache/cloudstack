@@ -138,6 +138,7 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.router.DomainRouterManager;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.security.NetworkGroupManager;
 import com.cloud.network.security.NetworkGroupVO;
@@ -253,6 +254,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     @Inject InstanceGroupVMMapDao _groupVMMapDao;
     @Inject VmManager _itMgr;
     @Inject NetworkDao _networkDao;
+    @Inject DomainRouterManager _routerMgr;
     
     private IpAddrAllocator _IpAllocator;
     ScheduledExecutorService _executor = null;
@@ -329,7 +331,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
                 /*TODO: add it for external dhcp mode*/
         		return true;
             }
-	        if (_networkMgr.savePasswordToRouter(vmInstance.getDomainRouterId(), vmInstance.getPrivateIpAddress(), password)) {
+	        if (_routerMgr.savePasswordToRouter(vmInstance.getDomainRouterId(), vmInstance.getPrivateIpAddress(), password)) {
 	            // Need to reboot the virtual machine so that the password gets redownloaded from the DomR, and reset on the VM
 	        	if (!rebootVirtualMachine(userId, vmId)) {
 	        		if (vmInstance.getState() == State.Stopped) {
@@ -720,10 +722,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     			_volsDao.update(volume.getId(), volume);
     		}
     		
-            if(!vm.getHostName().equals(vm.getDisplayName()))
-            	event.setDescription("Volume: " +volume.getName()+ " successfully detached from VM: "+vm.getHostName()+"("+vm.getDisplayName()+")");
-            else
-            	event.setDescription("Volume: " +volume.getName()+ " successfully detached from VM: "+vm.getHostName());
+            if(!vm.getHostName().equals(vm.getDisplayName())) {
+                event.setDescription("Volume: " +volume.getName()+ " successfully detached from VM: "+vm.getHostName()+"("+vm.getDisplayName()+")");
+            } else {
+                event.setDescription("Volume: " +volume.getName()+ " successfully detached from VM: "+vm.getHostName());
+            }
             event.setLevel(EventVO.LEVEL_INFO);
             _eventDao.persist(event);
             
@@ -962,7 +965,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
             String vnet = null;
             DomainRouterVO router = null;
             if (vm.getDomainRouterId() != null) {
-                router = _networkMgr.addVirtualMachineToGuestNetwork(vm, password, startEventId);
+                router = _routerMgr.addVirtualMachineToGuestNetwork(vm, password, startEventId);
             	if (router == null) {
             		s_logger.error("Unable to add vm " + vm.getId() + " - " + vm.getHostName());
             		_itMgr.stateTransitTo(vm, VirtualMachine.Event.OperationFailed, null);
@@ -985,7 +988,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
             			//VM is in a different Pod
             			if(router.getZoneVlan() == null){
             				//Create Zone Vlan if not created already
-            				vnet = _networkMgr.createZoneVlan(router);
+            				vnet = _routerMgr.createZoneVlan(router);
             				if (vnet == null) {
             					s_logger.error("Vlan creation failed. Unable to add vm " + vm.getId() + " - " + vm.getHostName());
             					return null;
@@ -1549,7 +1552,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     public void releaseGuestIpAddress(UserVmVO userVm)  {
     	ServiceOffering offering = _offeringDao.findById(userVm.getServiceOfferingId());
     	
-    	if (offering.getGuestIpType() != NetworkOffering.GuestIpType.Virtualized) {  		
+    	if (offering.getGuestIpType() != NetworkOffering.GuestIpType.Virtual) {  		
     		IPAddressVO guestIP = (userVm.getGuestIpAddress() == null) ? null : _ipAddressDao.findById(userVm.getGuestIpAddress());
     		if (guestIP != null && guestIP.getAllocated() != null) {
     			_ipAddressDao.unassignIpAddress(userVm.getGuestIpAddress());
@@ -2799,7 +2802,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
                 	router =  rtrs.get(0);
                 	routerId = router.getId();
                 } else if (rtrs.size() == 0) {
-                	router = _networkMgr.createDhcpServerForDirectlyAttachedGuests(userId, accountId, dc, pod.first(), pod.second(), guestVlan);
+                	router = _routerMgr.createDhcpServerForDirectlyAttachedGuests(userId, accountId, dc, pod.first(), pod.second(), guestVlan);
                 	if (router == null) {
                 		avoids.add(pod.first().getId());
     	                if (s_logger.isDebugEnabled()) {

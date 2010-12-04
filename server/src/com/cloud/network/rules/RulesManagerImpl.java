@@ -160,7 +160,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             List<? extends Nic> nics = _networkMgr.getNics(vm);
             for (Nic nic : nics) {
                 Network ntwk = _networkMgr.getNetwork(nic.getNetworkId());
-                if (ntwk.getGuestType() == GuestIpType.Virtualized) {
+                if (ntwk.getGuestType() == GuestIpType.Virtual) {
                     network = ntwk;
                     dstIp = new Ip(nic.getIp4Address());
                     break;
@@ -257,7 +257,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         List<? extends Nic> nics = _networkMgr.getNics(vm);
         for (Nic nic : nics) {
             Network ntwk = _networkMgr.getNetwork(nic.getNetworkId());
-            if (ntwk.getGuestType() == GuestIpType.Virtualized) {
+            if (ntwk.getGuestType() == GuestIpType.Virtual) {
                 dstIp = new Ip(nic.getIp4Address());
                 return new Pair<Network, Ip>(ntwk, dstIp);
             }
