@@ -875,7 +875,7 @@
 <!-- VM Wizard - Service Offering template (end) -->
 <!-- VM Wizard - disk Offering template (begin)-->
 <div class="vmpopup_offeringbox" id="vm_popup_disk_offering_template_no" style="display: none">
-    <input type="radio" class="radio" value="no" checked />
+    <input type="radio" class="radio" value="no" checked="checked" />
     <label class="label">
         No Thanks</label>
 </div>

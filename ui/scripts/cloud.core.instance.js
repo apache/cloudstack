@@ -429,7 +429,6 @@ function initVMWizard() {
 		        //"no, thanks" radio button (default radio button in data disk offering)		               
 	            var $t = $doTemplateNo.clone(); 		            	     
 	            $t.find("input:radio").attr("name","data_disk_offering_radio");  
-	            $t.find("#name").text("no, thanks"); 		            
 	            $dataDiskOfferingContainer.append($t.show()); 
 		        		        
 		        //disk offerings from database
@@ -442,7 +441,7 @@ function initVMWizard() {
 				            $t = $doTemplateExisting.clone(); 	
 				        
 				        $t.data("jsonObj", offerings[i]).attr("id", "do"+offerings[i].id);				        
-				        $t.find("input:radio").attr("name","data_disk_offering_radio").attr("checked", "").val(fromdb(offerings[i].id));	 	
+				        $t.find("input:radio").attr("name","data_disk_offering_radio").removeAttr("checked").val(fromdb(offerings[i].id));	 	
 			            $t.find("#name").text(fromdb(offerings[i].name));
 			            $t.find("#description").text(fromdb(offerings[i].displaytext)); 	 
 			            $dataDiskOfferingContainer.append($t.show());	
