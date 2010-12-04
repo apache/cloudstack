@@ -453,7 +453,6 @@ fi
 # maintain the following list in sync with files agent-scripts
 %if %{_premium}
 %exclude %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/check_heartbeat.sh
-%exclude %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/find_bond.sh
 %exclude %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/launch_hb.sh
 %exclude %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/setup_heartbeat_sr.sh
 %exclude %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/vmopspremium
@@ -596,7 +595,6 @@ fi
 %{_datadir}/%{name}/setup/create-schema-premium.sql
 # maintain the following list in sync with files agent-scripts
 %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/check_heartbeat.sh
-%{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/find_bond.sh
 %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/launch_hb.sh
 %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/setup_heartbeat_sr.sh
 %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/vmopspremium
