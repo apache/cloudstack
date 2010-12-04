@@ -124,27 +124,35 @@ function afterLoadDomainJSP() {
 function initAddDomainDialog() {
     initDialog("dialog_add_domain", 450);
     
-    var $dialogAddDomain = $("#dialog_add_domain");
-               
-	$.ajax({
-	  data: createURL("command=listDomains"),
-		dataType: "json",
-		async: false,
-		success: function(json) {
-		    var $domainDropdown1 = $dialogAddDomain.find("#domain_dropdown").empty();		  
-			var domains = json.listdomainsresponse.domain;						
-			if (domains != null && domains.length > 0) {
-				for (var i = 0; i < domains.length; i++) {
-					$domainDropdown1.append("<option value='" + fromdb(domains[i].id) + "'>" + fromdb(domains[i].name) + "</option>"); 					
-				}
-			} 
-		}
-	});   
-		 
+    var $dialogAddDomain = $("#dialog_add_domain");              
+	
     //add button ***
     $("#midmenu_add_link").find("#label").text("Add Domain"); 
     $("#midmenu_add_link").show();     
-    $("#midmenu_add_link").unbind("click").bind("click", function(event) {      
+    $("#midmenu_add_link").unbind("click").bind("click", function(event) {  
+    
+        $dialogAddDomain.find("#add_domain_name").val("");
+        
+        $.ajax({
+	      data: createURL("command=listDomains"),
+		    dataType: "json",
+		    async: false,
+		    success: function(json) {
+		        var $domainDropdown1 = $dialogAddDomain.find("#domain_dropdown").empty();		  
+			    var domains = json.listdomainsresponse.domain;						
+			    if (domains != null && domains.length > 0) {
+				    for (var i = 0; i < domains.length; i++) {
+					    $domainDropdown1.append("<option value='" + fromdb(domains[i].id) + "'>" + fromdb(domains[i].name) + "</option>"); 					
+				    }
+			    } 
+			   
+			    var $thisTab = $("#right_panel_content").find("#tab_content_details");    
+                var domainId = $thisTab.find("#id").text();   //get domainId from here in case domain page is empty (e.g. when a domain was just deleted)
+                if(domainId != null && domainId.length > 0)
+                    $domainDropdown1.val(domainId);			    		    
+		    }
+	    });  
+        
 		$dialogAddDomain
 		.dialog('option', 'buttons', { 					
 			"Create": function() { 	
