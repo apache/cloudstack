@@ -209,12 +209,20 @@ function domainToRightPanel($leftmenuItem1) {
 
 function domainToRightPanel2($leftmenuItem1) {
     $("#right_panel_content").data("$leftmenuItem1", $leftmenuItem1);
-    var jsonObj = $leftmenuItem1.data("jsonObj");    
-    var $detailsTab = $("#right_panel_content").find("#tab_content_details");    
+    domainJsonToDetailsTab();
+    domainJsonToAdminAccountTab();
+    domainJsonToResourceLimitsTab();  
+}
+
+function domainJsonToDetailsTab() {
+    var $leftmenuItem1 = $("#right_panel_content").data("$leftmenuItem1");
+    var jsonObj = $leftmenuItem1.data("jsonObj");  
     var domainId = jsonObj.id;
-    $detailsTab.find("#id").text(domainId);
-    $detailsTab.find("#grid_header_title").text(fromdb(jsonObj.name));	
-    $detailsTab.find("#name").text(fromdb(jsonObj.name));	    	   
+    
+    var $thisTab = $("#right_panel_content").find("#tab_content_details");    
+    $thisTab.find("#id").text(domainId);
+    $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));	
+    $thisTab.find("#name").text(fromdb(jsonObj.name));	    	   
 			  	
   	$.ajax({
 	    cache: false,				
@@ -223,9 +231,9 @@ function domainToRightPanel2($leftmenuItem1) {
 	    success: function(json) {				       
 		    var accounts = json.listaccountsresponse.account;					
 		    if (accounts != null) 	
-		        $detailsTab.find("#redirect_to_account_page").text(accounts.length);
+		        $thisTab.find("#redirect_to_account_page").text(accounts.length);
 		    else 
-		        $detailsTab.find("#redirect_to_account_page").text("0");		
+		        $thisTab.find("#redirect_to_account_page").text("0");		
 	    }		
     });		 
   			 				 			 
@@ -236,12 +244,12 @@ function domainToRightPanel2($leftmenuItem1) {
 	    success: function(json) {
 		    var instances = json.listvirtualmachinesresponse.virtualmachine;					
 		    if (instances != null) 	
-		        $detailsTab.find("#redirect_to_instance_page").text(instances.length);	
+		        $thisTab.find("#redirect_to_instance_page").text(instances.length);	
 		    else 
-		        $detailsTab.find("#redirect_to_instance_page").text("0");	
+		        $thisTab.find("#redirect_to_instance_page").text("0");	
 	    }		
-    });		 
-    			    
+    });		
+     			    
     $.ajax({
 	    cache: false,				
 	    data: createURL("command=listVolumes&domainid="+domainId),
@@ -249,15 +257,41 @@ function domainToRightPanel2($leftmenuItem1) {
 	    success: function(json) {
 		    var volumes = json.listvolumesresponse.volume;						
 		    if (volumes != null) 	
-		        $detailsTab.find("#redirect_to_volume_page").text(volumes.length);	
+		        $thisTab.find("#redirect_to_volume_page").text(volumes.length);	
 		    else 
-		        $detailsTab.find("#redirect_to_volume_page").text("0");		
+		        $thisTab.find("#redirect_to_volume_page").text("0");		
 	    }		
     });
+    
+    //actions ***   
+    var $actionLink = $thisTab.find("#action_link"); 
+    $actionLink.bind("mouseover", function(event) {	    
+        $(this).find("#action_menu").show();    
+        return false;
+    });
+    $actionLink.bind("mouseout", function(event) {       
+        $(this).find("#action_menu").hide();    
+        return false;
+    });	  
+    var $actionMenu = $thisTab.find("#action_link #action_menu");
+    $actionMenu.find("#action_list").empty();   
+    buildActionLinkForTab("Delete Domain", domainActionMap, $actionMenu, $leftmenuItem1, $thisTab);    
+}
 
+function domainJsonToAdminAccountTab() {    
+    var $leftmenuItem1 = $("#right_panel_content").data("$leftmenuItem1");
+    var jsonObj = $leftmenuItem1.data("jsonObj");  
+    var domainId = jsonObj.id;
+   
     listAdminAccounts(domainId);  
+}
 
-	if (isAdmin() || (isDomainAdmin() && (g_domainid != domainId))) {				
+function domainJsonToResourceLimitsTab() {    
+	if (isAdmin() || (isDomainAdmin() && (g_domainid != domainId))) {	
+	    var $leftmenuItem1 = $("#right_panel_content").data("$leftmenuItem1");
+        var jsonObj = $leftmenuItem1.data("jsonObj");  
+        var domainId = jsonObj.id;    
+				
 		var $resourceLimitsTab = $("#right_panel_content #tab_content_resource_limits");	
 		$.ajax({
 			cache: false,				
@@ -307,6 +341,45 @@ function domainToRightPanel2($leftmenuItem1) {
 	else {
 		$("#tab_resource_limits").hide();
 	}		 		 
+}
+
+function domainJsonClearRightPanel() {
+    domainJsonClearDetailsTab();
+    domainJsonClearAdminAccountTab();
+    domainJsonClearResourceLimitsTab();    
+}
+
+function domainJsonClearDetailsTab() {
+    var $thisTab = $("#right_panel_content").find("#tab_content_details");
+    $thisTab.find("#id").text("");
+    $thisTab.find("#grid_header_title").text("");	
+    $thisTab.find("#name").text("");	
+    $thisTab.find("#redirect_to_account_page").text("");	
+    $thisTab.find("#redirect_to_instance_page").text("");	
+    $thisTab.find("#redirect_to_volume_page").text("");	
+}
+
+function domainJsonClearAdminAccountTab() {
+    $("#right_panel_content").find("#tab_content_admin_account").empty();	
+}
+
+function domainJsonClearResourceLimitsTab() {
+    var $thisTab = $("#right_panel_content").find("#tab_content_resource_limits");
+
+    $thisTab.find("#limits_vm").text("");
+	$thisTab.find("#limits_vm_edit").val("");
+	
+	$thisTab.find("#limits_ip").text("");
+	$thisTab.find("#limits_ip_edit").val("");
+	
+	$thisTab.find("#limits_volume").text("");
+	$thisTab.find("#limits_volume_edit").val("");
+	
+	$thisTab.find("#limits_snapshot").text("");
+	$thisTab.find("#limits_snapshot_edit").val("");
+	
+	$thisTab.find("#limits_template").text("");
+	$thisTab.find("#limits_template_edit").val("");	
 }
 
 function domainToResourceLimitsTab() {   
@@ -458,3 +531,18 @@ function doEditResourceLimits2($actionLink, $detailsTab, $midmenuItem1, $readonl
     $readonlyFields.show();       
     $("#save_button, #cancel_button").hide();      
 }
+
+var domainActionMap = {        
+    "Delete Domain": {              
+        api: "deleteDomain",     
+        isAsyncJob: false,           
+        inProcessText: "Deleting Domain....",
+        afterActionSeccessFn: function(json, $leftmenuItem1, id) {        
+            $leftmenuItem1.slideUp(function() {                
+                $(this).remove();
+            });           
+            clearRightPanel();
+            domainJsonClearRightPanel();
+        }
+    }    
+} 
