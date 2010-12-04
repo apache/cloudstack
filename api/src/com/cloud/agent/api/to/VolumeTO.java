@@ -39,7 +39,8 @@ public class VolumeTO {
     private int deviceId;
     private String chainInfo;
     
-    public VolumeTO(long id, Volume.VolumeType type, Storage.StorageResourceType resourceType, StoragePoolType poolType, String name, String mountPoint, String path, long size, String chainInfo) {
+    public VolumeTO(long id, Volume.VolumeType type, Storage.StorageResourceType resourceType, StoragePoolType poolType, 
+    	String name, String mountPoint, String path, long size, String chainInfo) {
         this.id = id;
         this.name= name;
         this.path = path;
