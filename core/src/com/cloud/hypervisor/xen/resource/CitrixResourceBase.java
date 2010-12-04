@@ -229,7 +229,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     protected String _pod;
     protected String _cluster;
     protected HashMap<String, State> _vms = new HashMap<String, State>(71);
-    protected String _patchPath;
     protected String _privateNetworkName;
     protected String _linkLocalPrivateNetworkName;
     protected String _publicNetworkName;
@@ -4219,12 +4218,12 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
                 SCPClient scp = new SCPClient(sshConnection);
 
-                String path = _patchPath.substring(0, _patchPath.lastIndexOf(File.separator) + 1);
                 List<File> files = getPatchFiles();
                 if( files == null || files.isEmpty() ) {
                     throw new CloudRuntimeException("Can not find patch file");
                 }
                 for( File file :files) {
+                    String path = file.getParentFile().getAbsolutePath() + "/";
 	                Properties props = new Properties();
 	                props.load(new FileInputStream(file));
 	
@@ -4294,8 +4293,11 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     }
 
     protected List<File> getPatchFiles() {
+        
+        String patchPath = getPatchPath();
+        String patchfilePath = Script.findScript(patchPath, "patch");
+        File file = new File(patchfilePath);
         List<File> files = new ArrayList<File>();
-        File file = new File(_patchPath);
         files.add(file);
         return files;
     }
@@ -4642,13 +4644,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
         if (_host.uuid == null) {
             throw new ConfigurationException("Unable to get the uuid");
-        }
-
-        String patchPath = getPatchPath();
-
-        _patchPath = Script.findScript(patchPath, "patch");
-        if (_patchPath == null) {
-            throw new ConfigurationException("Unable to find all of patch files for xenserver");
         }
 
         _storage = (StorageLayer) params.get(StorageLayer.InstanceConfigKey);
