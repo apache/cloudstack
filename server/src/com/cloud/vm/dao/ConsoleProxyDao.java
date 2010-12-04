@@ -49,5 +49,5 @@ public interface ConsoleProxyDao extends GenericDao<ConsoleProxyVO, Long>, State
     public int getProxyActiveLoad(long proxyVmId);
     public List<Long> getRunningProxyListByMsid(long msid);
     
-    //public boolean updateIf(ConsoleProxyVO vm, VirtualMachine.Event event, Long hostId);
+    public boolean updateIf(ConsoleProxyVO vm, VirtualMachine.Event event, Long hostId);
 }

@@ -66,7 +66,7 @@ public interface DomainRouterDao extends GenericDao<DomainRouterVO, Long>, State
      * @param hostId host id to set to.
      * @return true if update worked; false if not.
      */
-   // public boolean updateIf(DomainRouterVO router, VirtualMachine.Event event, Long hostId);
+   public boolean updateIf(DomainRouterVO router, VirtualMachine.Event event, Long hostId);
     
     /**
      * list virtual machine routers by host id.  pass in null to get all

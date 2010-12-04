@@ -117,6 +117,7 @@ public class AlertManagerImpl implements AlertManager {
     private double _storageAllocCapacityThreshold = 0.75;
     private double _publicIPCapacityThreshold = 0.75;
     private double _privateIPCapacityThreshold = 0.75;
+    private boolean _useNewNetworking;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -191,6 +192,8 @@ public class AlertManagerImpl implements AlertManager {
             	_cpuOverProvisioningFactor = 1;
             }
         }
+        
+        _useNewNetworking = Boolean.parseBoolean(configs.get("use.new.networking"));
 
         _timer = new Timer("CapacityChecker");
 
@@ -263,56 +266,58 @@ public class AlertManagerImpl implements AlertManager {
         for (ServiceOfferingVO offering : offerings) {
             offeringsMap.put(offering.getId(), offering);
         }
-        /*
-        for (HostVO host : hosts) {
-            if (host.getType() != Host.Type.Routing) {
-                continue;
-            }
+        
+        if (!_useNewNetworking) {
+        	for (HostVO host : hosts) {
+        		if (host.getType() != Host.Type.Routing) {
+        			continue;
+        		}
 
-            long cpu = 0;
-            long usedMemory = 0;
-            List<DomainRouterVO> domainRouters = _routerDao.listUpByHostId(host.getId());
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Found " + domainRouters.size() + " router domains on host " + host.getId());
-            }
-            for (DomainRouterVO router : domainRouters) {
-                usedMemory += router.getRamSize() * 1024L * 1024L;
-            }
+        		long cpu = 0;
+        		long usedMemory = 0;
+        		List<DomainRouterVO> domainRouters = _routerDao.listUpByHostId(host.getId());
+        		if (s_logger.isDebugEnabled()) {
+        			s_logger.debug("Found " + domainRouters.size() + " router domains on host " + host.getId());
+        		}
+        		for (DomainRouterVO router : domainRouters) {
+        			usedMemory += router.getRamSize() * 1024L * 1024L;
+        		}
 
-            List<ConsoleProxyVO> proxys = _consoleProxyDao.listUpByHostId(host.getId());
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Found " + proxys.size() + " console proxy on host " + host.getId());
-            }
-            for(ConsoleProxyVO proxy : proxys) {
-                usedMemory += proxy.getRamSize() * 1024L * 1024L;
-            }
+        		List<ConsoleProxyVO> proxys = _consoleProxyDao.listUpByHostId(host.getId());
+        		if (s_logger.isDebugEnabled()) {
+        			s_logger.debug("Found " + proxys.size() + " console proxy on host " + host.getId());
+        		}
+        		for(ConsoleProxyVO proxy : proxys) {
+        			usedMemory += proxy.getRamSize() * 1024L * 1024L;
+        		}
 
-            List<SecondaryStorageVmVO> secStorageVms = _secStorgaeVmDao.listUpByHostId(host.getId());
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Found " + secStorageVms.size() + " secondary storage VM on host " + host.getId());
-            }
-            for(SecondaryStorageVmVO secStorageVm : secStorageVms) {
-                usedMemory += secStorageVm.getRamSize() * 1024L * 1024L;
-            }
+        		List<SecondaryStorageVmVO> secStorageVms = _secStorgaeVmDao.listUpByHostId(host.getId());
+        		if (s_logger.isDebugEnabled()) {
+        			s_logger.debug("Found " + secStorageVms.size() + " secondary storage VM on host " + host.getId());
+        		}
+        		for(SecondaryStorageVmVO secStorageVm : secStorageVms) {
+        			usedMemory += secStorageVm.getRamSize() * 1024L * 1024L;
+        		}
 
-            List<UserVmVO> vms = _userVmDao.listUpByHostId(host.getId());
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Found " + vms.size() + " user VM on host " + host.getId());
-            }
+        		List<UserVmVO> vms = _userVmDao.listUpByHostId(host.getId());
+        		if (s_logger.isDebugEnabled()) {
+        			s_logger.debug("Found " + vms.size() + " user VM on host " + host.getId());
+        		}
 
-            for (UserVmVO vm : vms) {
-                ServiceOffering so = offeringsMap.get(vm.getServiceOfferingId());
-                usedMemory += so.getRamSize() * 1024L * 1024L;
-                cpu += so.getCpu() * (so.getSpeed() * 0.99);
-            }
+        		for (UserVmVO vm : vms) {
+        			ServiceOffering so = offeringsMap.get(vm.getServiceOfferingId());
+        			usedMemory += so.getRamSize() * 1024L * 1024L;
+        			cpu += so.getCpu() * (so.getSpeed() * 0.99);
+        		}
 
-            long totalMemory = host.getTotalMemory();
+        		long totalMemory = host.getTotalMemory();
 
-            CapacityVO newMemoryCapacity = new CapacityVO(host.getId(), host.getDataCenterId(), host.getPodId(), usedMemory, totalMemory, CapacityVO.CAPACITY_TYPE_MEMORY);
-            CapacityVO newCPUCapacity = new CapacityVO(host.getId(), host.getDataCenterId(), host.getPodId(), cpu, (long)(host.getCpus()*host.getSpeed()* _cpuOverProvisioningFactor), CapacityVO.CAPACITY_TYPE_CPU);
-            newCapacities.add(newMemoryCapacity);
-            newCapacities.add(newCPUCapacity);
-        } */
+        		CapacityVO newMemoryCapacity = new CapacityVO(host.getId(), host.getDataCenterId(), host.getPodId(), usedMemory, totalMemory, CapacityVO.CAPACITY_TYPE_MEMORY);
+        		CapacityVO newCPUCapacity = new CapacityVO(host.getId(), host.getDataCenterId(), host.getPodId(), cpu, (long)(host.getCpus()*host.getSpeed()* _cpuOverProvisioningFactor), CapacityVO.CAPACITY_TYPE_CPU);
+        		newCapacities.add(newMemoryCapacity);
+        		newCapacities.add(newCPUCapacity);
+        	} 
+        }
 
         // Calculate storage pool capacity
         List<StoragePoolVO> storagePools = _storagePoolDao.listAll();

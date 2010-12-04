@@ -48,8 +48,7 @@ public class VMStateListener implements StateListener<State, VirtualMachine.Even
 					/*need to release resource from host, passed in from id, cause vm.gethostid is null*/
 					releaseResource(vm, false, false, id);
 					id = null;
-				}
-				
+				}			
 			} else if (oldState == State.Running) {
 				if (event == Event.AgentReportStopped) {
 					releaseResource(vm, false, true, vm.getHostId());
@@ -143,8 +142,16 @@ public class VMStateListener implements StateListener<State, VirtualMachine.Even
 				capacityMemory.setReservedCapacity(reservedMem - vmMem);
 			}
 		}
+		
+		s_logger.debug("release cpu from host: " + hostId + ", old used: " + usedCpu + ",reserved: " + reservedCpu + ", total: " + totalCpu +
+				"; new used: " + capacityCpu.getUsedCapacity() + ",reserved:" + capacityCpu.getReservedCapacity() + ",total: " + capacityCpu.getTotalCapacity() +
+				"; movedfromreserved: " + moveFromReserved + ",moveToReservered" + moveToReservered);
+		
+		s_logger.debug("release mem from host: " + hostId + ", old used: " + usedMem + ",reserved: " + reservedMem + ", total: " + totalMem +
+				"; new used: " + capacityMemory.getUsedCapacity() + ",reserved:" + capacityMemory.getReservedCapacity() + ",total: " + capacityMemory.getTotalCapacity() +
+				"; movedfromreserved: " + moveFromReserved + ",moveToReservered" + moveToReservered);
 
-		_capacityDao.update(capacityCpu.getId(), capacityCpu);
+ 		_capacityDao.update(capacityCpu.getId(), capacityCpu);
 		_capacityDao.update(capacityMemory.getId(), capacityMemory);
 
 	}

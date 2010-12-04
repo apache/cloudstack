@@ -244,6 +244,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 	private String _secHostUuid;
 	private String _nfsShare;
 	private String _allowedInternalSites;
+	private boolean  _useNewNetworking;
 
 	
 
@@ -257,7 +258,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 	public SecondaryStorageVmVO startSecStorageVm(long secStorageVmId, long startEventId) {
 		try {
 
-			return start(secStorageVmId, startEventId);
+			return start2(secStorageVmId, startEventId);
 
 		} catch (StorageUnavailableException e) {
 			s_logger.warn("Exception while trying to start secondary storage vm", e);
@@ -274,6 +275,9 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 	}
 	
 	public SecondaryStorageVmVO start2(long secStorageVmId, long startEventId) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException {
+		 if (!_useNewNetworking) {
+	            return start(secStorageVmId, startEventId);
+	        }
 		SecondaryStorageVmVO secStorageVm = _secStorageVmDao.findById(secStorageVmId);
 		Account systemAcct = _accountMgr.getSystemAccount();
 		User systemUser = _accountMgr.getSystemUser();
@@ -678,7 +682,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 		if (s_logger.isDebugEnabled())
 			s_logger.debug("Assign secondary storage vm from a newly started instance for request from data center : " + dataCenterId);
 
-		Map<String, Object> context = createSecStorageVmInstance(dataCenterId);
+		Map<String, Object> context = _useNewNetworking ? createSecStorageVmInstance2(dataCenterId) : createSecStorageVmInstance(dataCenterId);
 
 		long secStorageVmId = (Long) context.get("secStorageVmId");
 		if (secStorageVmId == 0) {
@@ -981,8 +985,8 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 								GlobalLock secStorageVmLock = GlobalLock.getInternLock(getSecStorageVmLockName(readysecStorageVm.getId()));
 								try {
 									if (secStorageVmLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC)) {
-										try {
-											readysecStorageVm = start(readysecStorageVm.getId(), 0);
+										try {											
+												readysecStorageVm = start2(readysecStorageVm.getId(), 0);											
 										} finally {
 											secStorageVmLock.unlock();
 										}
@@ -1003,6 +1007,8 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 					} catch (InsufficientCapacityException e) {
 						s_logger.warn("insuffiient capacity", e);
 					} catch (ConcurrentOperationException e) {
+						s_logger.debug("Concurrent operation: " + e.getMessage());
+					} catch (ResourceUnavailableException e) {
 						s_logger.debug("Concurrent operation: " + e.getMessage());
 					}
 				}
@@ -1454,6 +1460,8 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 
 		 _itMgr.registerGuru(VirtualMachine.Type.SecondaryStorageVm, this);
 		 
+		 _useNewNetworking = Boolean.parseBoolean(configs.get("use.new.networking"));
+		 
 		Adapters<IpAddrAllocator> ipAllocators = locator.getAdapters(IpAddrAllocator.class);
 		if (ipAllocators != null && ipAllocators.isSet()) {
 			Enumeration<IpAddrAllocator> it = ipAllocators.enumeration();
@@ -1466,7 +1474,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
         _networkRate = ((networkRateStr == null) ? 200 : Integer.parseInt(networkRateStr));
         _multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));
-		_serviceOffering = new ServiceOfferingVO("System Offering For Secondary Storage VM", 1, _secStorageVmRamSize, 500, 0, 0, false, null, NetworkOffering.GuestIpType.Virtualized, useLocalStorage, true, null, true);
+		_serviceOffering = new ServiceOfferingVO("System Offering For Secondary Storage VM", 1, _secStorageVmRamSize, 256, 0, 0, false, null, NetworkOffering.GuestIpType.Virtualized, useLocalStorage, true, null, true);
 		_serviceOffering.setUniqueName("Cloud.com-SecondaryStorage");
 		_serviceOffering = _offeringDao.persistSystemServiceOffering(_serviceOffering);
         _template = _templateDao.findConsoleProxyTemplate();

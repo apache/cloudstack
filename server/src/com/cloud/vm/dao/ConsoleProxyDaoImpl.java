@@ -147,7 +147,7 @@ public class ConsoleProxyDaoImpl extends GenericDaoBase<ConsoleProxyVO, Long> im
         assert _updateTimeAttr != null : "Couldn't get this updateTime attribute";
     }
     
-   /* @Override
+    @Override
     public boolean updateIf(ConsoleProxyVO vm, VirtualMachine.Event event, Long hostId) {
     	State oldState = vm.getState();
     	State newState = oldState.getNextState(event);
@@ -197,7 +197,7 @@ public class ConsoleProxyDaoImpl extends GenericDaoBase<ConsoleProxyVO, Long> im
         }
         
         return result > 0;
-    }*/
+    }
     
 
     @Override

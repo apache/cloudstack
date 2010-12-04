@@ -165,13 +165,14 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 		CapacityVO capacityCpu = _capacityDao.findByHostIdType(host.getId(), CapacityVO.CAPACITY_TYPE_CPU);
 		CapacityVO capacityMem = _capacityDao.findByHostIdType(host.getId(), CapacityVO.CAPACITY_TYPE_MEMORY);
 				
+		capacityCpu = _capacityDao.lockRow(capacityCpu.getId(), true);
+    	capacityMem = _capacityDao.lockRow(capacityMem.getId(), true);
+    	
 		Transaction txn = Transaction.currentTxn();
        
         try {
         	txn.start();
-        	capacityCpu = _capacityDao.lockRow(capacityCpu.getId(), true);
-        	capacityMem = _capacityDao.lockRow(capacityMem.getId(), true);
-        	
+        	   	
         	long usedCpu = capacityCpu.getUsedCapacity();
     		long usedMem = capacityMem.getUsedCapacity();
     		long reservedCpu = capacityCpu.getReservedCapacity();
@@ -199,6 +200,15 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
         	}
         	
         	if (success) {
+        		s_logger.debug("alloc cpu from host: " + host.getId() + ", old used: " + usedCpu + ", old reserved: " +
+        				reservedCpu + ", old total: " + totalCpu + 
+        				"; new used:" + capacityCpu.getUsedCapacity() + ", reserved:" + capacityCpu.getReservedCapacity() + ", total: " + capacityCpu.getTotalCapacity() + 
+        				"; requested cpu:" + cpu + ",alloc_from_last:" + fromLastHost);
+        		
+        		s_logger.debug("alloc mem from host: " + host.getId() + ", old used: " + usedMem + ", old reserved: " +
+        				reservedMem + ", old total: " + totalMem + "; new used: " + capacityMem.getUsedCapacity() + ", reserved: " +
+        				capacityMem.getReservedCapacity() + ", total: " + capacityMem.getTotalCapacity() + "; requested mem: " + ram + ",alloc_from_last:" + fromLastHost);
+        		
         		_capacityDao.update(capacityCpu.getId(), capacityCpu);
         		_capacityDao.update(capacityMem.getId(), capacityMem);
         	}
