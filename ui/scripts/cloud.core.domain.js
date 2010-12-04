@@ -58,7 +58,7 @@ function drawNode(json, level, container) {
         childParentMap[json.id] = json.parentdomainid;	//map childDomainId to parentDomainId   
     domainIdNameMap[json.id] = json.name;               //map domainId to domainName
 
-    var $treeNode = $("#domain_tree_node_template").clone(true);	  
+    var $treeNode = $("#domain_tree_node_template").clone(true).attr("id", "domain_tree_node_template_clone");	  
     $treeNode.find("#domain_indent").css("marginLeft", (30*(level+1)));           
     $treeNode.attr("id", "domain_"+fromdb(json.id));	         
     $treeNode.data("jsonObj", json).data("domainLevel", level); 	      
@@ -115,9 +115,85 @@ function domainAccountJSONToTemplate(jsonObj, $template) {
     $template.find("#state").text(jsonObj.state);
 }
 
+function afterLoadDomainJSP() {
+    if(isAdmin()) {
+        initAddDomainDialog();
+    }
+}
+
+function initAddDomainDialog() {
+    initDialog("dialog_add_domain", 450);
+    
+    var $dialogAddDomain = $("#dialog_add_domain");
+               
+	$.ajax({
+	  data: createURL("command=listDomains"),
+		dataType: "json",
+		async: false,
+		success: function(json) {
+		    var $domainDropdown1 = $dialogAddDomain.find("#domain_dropdown").empty();		  
+			var domains = json.listdomainsresponse.domain;						
+			if (domains != null && domains.length > 0) {
+				for (var i = 0; i < domains.length; i++) {
+					$domainDropdown1.append("<option value='" + fromdb(domains[i].id) + "'>" + fromdb(domains[i].name) + "</option>"); 					
+				}
+			} 
+		}
+	});   
+		 
+    //add button ***
+    $("#midmenu_add_link").find("#label").text("Add Domain"); 
+    $("#midmenu_add_link").show();     
+    $("#midmenu_add_link").unbind("click").bind("click", function(event) {      
+		$dialogAddDomain
+		.dialog('option', 'buttons', { 					
+			"Create": function() { 	
+			    var $thisDialog = $(this);
+			    				    			
+				// validate values
+				var isValid = true;					
+				isValid &= validateString("Name", $thisDialog.find("#add_domain_name"), $thisDialog.find("#add_domain_name_errormsg"));					
+				if (!isValid) 
+				    return;
+				 
+				$thisDialog.dialog("close");    			
+							
+				var array1 = [];	
+				var name = trim($thisDialog.find("#add_domain_name").val());	
+				array1.push("&name="+todb(name));
+																		
+				var parentDomainId = $thisDialog.find("#domain_dropdown").val();				
+				array1.push("&parentdomainid="+parentDomainId);	
+						
+				$.ajax({
+				    data: createURL("command=createDomain"+array1.join("")),
+					dataType: "json",
+					async: false,
+					success: function(json) {	   
+						var item = json.createdomainresponse.domain;						
+						var $parentDomainNode = $("#leftmenu_domain_tree").find("#domain_"+item.parentdomainid);
+											
+					    var $expandIcon = $parentDomainNode.find("#domain_expand_icon_"+item.parentdomainid);
+					    if($expandIcon.hasClass("expanded_close"))
+					        $expandIcon.click(); //expand parentDomain node					    
+					    drawNode(item, item.level, $("#domain_children_container_"+item.parentdomainid));	
+					}							
+				});				
+			}, 
+			"Cancel": function() { 
+				$(this).dialog("close"); 
+			} 
+		}).dialog("open");
+				       
+        return false;
+    }); 
+}
+
 function domainToRightPanel($leftmenuItem1) {  
     if($("#domain_grid_container").length == 0) { //domain.jsp is not loaded in right panel        
-        $("#right_panel").load("jsp/domain.jsp", function(){         
+        $("#right_panel").load("jsp/domain.jsp", function(){      
+            afterLoadDomainJSP();
+           
             //switch between different tabs
             var tabArray = [$("#tab_details"), $("#tab_resource_limits"), $("#tab_admin_account")];
             var tabContentArray = [$("#tab_content_details"), $("#tab_content_resource_limits"), $("#tab_content_admin_account")];
