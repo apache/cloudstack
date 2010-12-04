@@ -3566,7 +3566,7 @@ public class ManagementServerImpl implements ManagementServer {
         }
         
         if (path != null) {
-            sc.setParameters("path", path);
+            sc.setParameters("path", "%" +path+"%");
         }
 
        	return _domainDao.search(sc, searchFilter);
