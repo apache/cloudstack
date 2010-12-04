@@ -451,15 +451,6 @@ fi
 %defattr(-,root,root,-)
 %{_libdir}/%{name}/agent/scripts/*
 # maintain the following list in sync with files agent-scripts
-%if %{_premium}
-%exclude %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/check_heartbeat.sh
-%exclude %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/launch_hb.sh
-%exclude %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/setup_heartbeat_sr.sh
-%exclude %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/vmopspremium
-%exclude %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/xenheartbeat.sh
-%exclude %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/xenserver56/patch-premium
-%exclude %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/xs_cleanup.sh
-%endif
 %{_libdir}/%{name}/agent/vms/systemvm.zip
 %{_libdir}/%{name}/agent/vms/systemvm.iso
 
@@ -594,13 +585,7 @@ fi
 %{_datadir}/%{name}/setup/create-database-premium.sql
 %{_datadir}/%{name}/setup/create-schema-premium.sql
 # maintain the following list in sync with files agent-scripts
-%{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/check_heartbeat.sh
-%{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/launch_hb.sh
-%{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/setup_heartbeat_sr.sh
-%{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/vmopspremium
-%{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/xenheartbeat.sh
-%{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/xenserver56/patch-premium
-%{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/xs_cleanup.sh
+%{_libdir}/%{name}/agent/premium-scripts/*
 
 %files usage
 %defattr(0644,root,root,0755)
