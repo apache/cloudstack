@@ -976,7 +976,7 @@
 	                    <fmt:message key="label.domain.name"/></span>
 	          	</div>
             </div>                        
-            <div id="domain_children_container" style="display: none">
+            <div id="domain_children_container">
             </div>
    
     </div>

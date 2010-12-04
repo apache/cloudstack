@@ -51,7 +51,8 @@ $(document).ready(function() {
 		});
 				
 		bindEventHandlerToDomainTreeNode();		
-		refreshWholeTree(g_domainid, defaultRootLevel); 
+		//refreshWholeTree(g_domainid, defaultRootLevel); 
+		drawRootNode(g_domainid);
 		
 		return false;
 	});	

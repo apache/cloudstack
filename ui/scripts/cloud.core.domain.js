@@ -21,12 +21,14 @@ var defaultRootLevel = 0;
 var childParentMap = {};  //map childDomainId to parentDomainId
 var domainIdNameMap = {}; //map domainId to domainName    
 
+/*
 function refreshWholeTree(rootDomainId, rootLevel) {
     drawRootNode(rootDomainId);
-    drawTree(rootDomainId, (rootLevel+1), $("#domain_children_container_"+rootDomainId));  //draw the whole tree (under root node)			
+    drawTree(rootDomainId, $("#domain_children_container_"+rootDomainId));  //draw the whole tree (under root node)			
     $("#domain_"+rootDomainId).show();	//show root node
     clickExpandIcon(rootDomainId);      //expand root node	    
 }
+*/
 
 //draw root node
 function drawRootNode(rootDomainId) {
@@ -41,7 +43,7 @@ function drawRootNode(rootDomainId) {
             var domains = json.listdomainsresponse.domain;	
             $domainTree.empty();			        	    
 	        if (domains != null && domains.length > 0) {				   					    
-			    var node = drawNode(domains[0], defaultRootLevel, $domainTree); 
+			    var node = drawNode(domains[0], $domainTree); 
 			    
 			    var treeLevelsbox = node.find(".tree_levelsbox");	//root node shouldn't have margin-left:20px				   
 			    if(treeLevelsbox!=null && treeLevelsbox.length >0)
@@ -53,15 +55,15 @@ function drawRootNode(rootDomainId) {
     }); 		
 }
 
-function drawNode(json, level, container) {		  
+function drawNode(json, container) {		  
     if("parentdomainid" in json)
         childParentMap[json.id] = json.parentdomainid;	//map childDomainId to parentDomainId   
     domainIdNameMap[json.id] = json.name;               //map domainId to domainName
 
     var $treeNode = $("#domain_tree_node_template").clone(true).attr("id", "domain_tree_node_template_clone");	  
-    $treeNode.find("#domain_indent").css("marginLeft", (30*(level+1)));           
+    $treeNode.find("#domain_indent").css("marginLeft", (30*(json.level+1)));           
     $treeNode.attr("id", "domain_"+fromdb(json.id));	         
-    $treeNode.data("jsonObj", json).data("domainLevel", level); 	      
+    $treeNode.data("jsonObj", json).data("domainLevel", json.level); 	      
     $treeNode.find("#domain_title_container").attr("id", "domain_title_container_"+fromdb(json.id)); 	        
     $treeNode.find("#domain_expand_icon").attr("id", "domain_expand_icon_"+fromdb(json.id)); 
     $treeNode.find("#domain_name").attr("id", "domain_name_"+fromdb(json.id)).text(fromdb(json.name));        	              	
@@ -70,7 +72,7 @@ function drawNode(json, level, container) {
     return $treeNode;   	       
 }          
 
-function drawTree(id, level, container) {		        
+function drawTree(id, container) {		        
     $.ajax({
 	    data: createURL("command=listDomainChildren&id="+id),
 	    dataType: "json",
@@ -79,9 +81,11 @@ function drawTree(id, level, container) {
 	        var domains = json.listdomainchildrenresponse.domain;				        	    
 		    if (domains != null && domains.length > 0) {					    
 			    for (var i = 0; i < domains.length; i++) {						    
-				    drawNode(domains[i], level, container);	
+				    drawNode(domains[i], container);	
+				    /*
 				    if(domains[i].haschild == true) 
-		                drawTree(domains[i].id, (level+1), $("#domain_children_container_"+domains[i].id));				   
+		                drawTree(domains[i].id, $("#domain_children_container_"+domains[i].id));	
+		            */			   
 			    }
 		    }				
 	    }
@@ -91,12 +95,12 @@ function drawTree(id, level, container) {
 function clickExpandIcon(domainId) {
     var $treeNode = $("#domain_"+domainId);
     var expandIcon = $treeNode.find("#domain_expand_icon_"+domainId);
-    if (expandIcon.hasClass("expanded_close")) {													
-		$treeNode.find("#domain_children_container_"+domainId).show();							
+    if (expandIcon.hasClass("expanded_close")) {	
+		drawTree(domainId, $treeNode.find("#domain_children_container_"+domainId));								
 		expandIcon.removeClass("expanded_close").addClass("expanded_open");
 	} 
-	else if (expandIcon.hasClass("expanded_open")) {																	
-	    $treeNode.find("#domain_children_container_"+domainId).hide();						
+	else if (expandIcon.hasClass("expanded_open")) {	
+	    $treeNode.find("#domain_children_container_"+domainId).empty();
 		expandIcon.removeClass("expanded_open").addClass("expanded_close");
 	}			
 }					
@@ -184,7 +188,7 @@ function initAddDomainDialog() {
 					    var $expandIcon = $parentDomainNode.find("#domain_expand_icon_"+item.parentdomainid);
 					    if($expandIcon.hasClass("expanded_close"))
 					        $expandIcon.click(); //expand parentDomain node					    
-					    drawNode(item, item.level, $("#domain_children_container_"+item.parentdomainid));	
+					    drawNode(item, $("#domain_children_container_"+item.parentdomainid));	
 					}							
 				});				
 			}, 
