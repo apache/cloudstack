@@ -535,7 +535,8 @@ function doEditResourceLimits2($actionLink, $detailsTab, $midmenuItem1, $readonl
 var domainActionMap = {        
     "Delete Domain": {              
         api: "deleteDomain",     
-        isAsyncJob: false,           
+        isAsyncJob: true,    
+        asyncJobResponse: "deletedomainresponse",          
         inProcessText: "Deleting Domain....",
         afterActionSeccessFn: function(json, $leftmenuItem1, id) {        
             $leftmenuItem1.slideUp(function() {                
