@@ -237,6 +237,6 @@ deleteNetworkOffering=com.cloud.api.commands.DeleteNetworkOfferingCmd;1
 listNetworkOfferings=com.cloud.api.commands.ListNetworkOfferingsCmd;15
 
 #### network commands
-createNetwork=com.cloud.api.commands.CreateNetworkCmd;1
-deleteNetwork=com.cloud.api.commands.DeleteNetworkCmd;1
+createNetwork=com.cloud.api.commands.CreateNetworkCmd;15
+deleteNetwork=com.cloud.api.commands.DeleteNetworkCmd;15
 listNetworks=com.cloud.api.commands.ListNetworksCmd;15
