@@ -29,7 +29,7 @@ $(document).ready(function() {
 	);
 
 	// Setup first level navigation
-	$("#leftmenu_system").bind("click", function(event) {
+	$("#leftmenu_configuration").bind("click", function(event) {
 		selectLeftMenu($(this), true);		
 		return false;
 	});	
