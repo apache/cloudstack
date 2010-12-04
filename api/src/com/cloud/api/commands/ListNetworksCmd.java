@@ -27,6 +27,7 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.NetworkResponse;
 import com.cloud.network.Network;
@@ -48,6 +49,9 @@ public class ListNetworksCmd extends BaseListCmd {
 
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="domain ID of the account owning a VLAN")
     private Long domainId;
+    
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the Zone ID of the network")
+    private Long zoneId;
    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -64,6 +68,11 @@ public class ListNetworksCmd extends BaseListCmd {
     public Long getDomainId() {
         return domainId;
     }
+    
+    public Long getZoneId() {
+        return zoneId;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////

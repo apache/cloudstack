@@ -70,6 +70,9 @@ public class ListVMsCmd extends BaseListCmd {
     
     @Parameter(name=ApiConstants.FOR_VIRTUAL_NETWORK, type=CommandType.BOOLEAN, description="list by network type; true if need to list vms using Virtual Network, false otherwise")
     private Boolean forVirtualNetwork;
+    
+    @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, description="list by network id")
+    private Long networkId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -117,6 +120,10 @@ public class ListVMsCmd extends BaseListCmd {
 
     public void setForVirtualNetwork(Boolean forVirtualNetwork) {
         this.forVirtualNetwork = forVirtualNetwork;
+    }
+    
+    public Long getNetworkId() {
+        return networkId;
     }
 
     /////////////////////////////////////////////////////

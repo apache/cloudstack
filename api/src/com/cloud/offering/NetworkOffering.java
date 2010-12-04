@@ -73,7 +73,5 @@ public interface NetworkOffering {
     
     String getTags();
     
-    boolean isShared();
-    
     boolean isDefault();
 }

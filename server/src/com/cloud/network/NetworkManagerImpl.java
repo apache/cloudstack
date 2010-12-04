@@ -71,7 +71,6 @@ import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
-import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventUtils;
@@ -1003,9 +1002,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         storageNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(storageNetworkOffering);
         _systemNetworks.put(NetworkOfferingVO.SystemVmStorageNetwork, storageNetworkOffering);
 
-        NetworkOfferingVO defaultGuestNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultVirtualizedNetworkOffering, "Virtual Vlan", TrafficType.Guest, GuestIpType.Virtualized, false, false, rateMbps, multicastRateMbps, null, false, true);
+        NetworkOfferingVO defaultGuestNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultVirtualizedNetworkOffering, "Virtual Vlan", TrafficType.Guest, GuestIpType.Virtualized, false, false, rateMbps, multicastRateMbps, null, true);
         defaultGuestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestNetworkOffering);
-        NetworkOfferingVO defaultGuestDirectNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultDirectNetworkOffering, "Direct", TrafficType.Guest, GuestIpType.DirectSingle, false, false, rateMbps, multicastRateMbps, null, false, true);
+        NetworkOfferingVO defaultGuestDirectNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultDirectNetworkOffering, "Direct", TrafficType.Guest, GuestIpType.DirectSingle, false, false, rateMbps, multicastRateMbps, null, true);
         defaultGuestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestDirectNetworkOffering);
 
         AccountsUsingNetworkConfigurationSearch = _accountDao.createSearchBuilder();
@@ -1085,12 +1084,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    public List<NetworkVO> setupNetworkConfiguration(Account owner, NetworkOfferingVO offering, DeploymentPlan plan, String name, String displayText) {
-        return setupNetworkConfiguration(owner, offering, null, plan, name, displayText);
+    public List<NetworkVO> setupNetworkConfiguration(Account owner, NetworkOfferingVO offering, DeploymentPlan plan, String name, String displayText, boolean isShared) {
+        return setupNetworkConfiguration(owner, offering, null, plan, name, displayText, isShared);
     }
 
     @Override
-    public List<NetworkVO> setupNetworkConfiguration(Account owner, NetworkOfferingVO offering, Network predefined, DeploymentPlan plan, String name, String displayText) {
+    public List<NetworkVO> setupNetworkConfiguration(Account owner, NetworkOfferingVO offering, Network predefined, DeploymentPlan plan, String name, String displayText, boolean isShared) {
         List<NetworkVO> configs = _networkConfigDao.listBy(owner.getId(), offering.getId(), plan.getDataCenterId());
         if (configs.size() > 0) {
             if (s_logger.isDebugEnabled()) {
@@ -1123,7 +1122,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 related = id;
             } 
 
-            NetworkVO vo = new NetworkVO(id, config, offering.getId(), plan.getDataCenterId(), guru.getName(), owner.getDomainId(), owner.getId(), related, name, displayText);
+            NetworkVO vo = new NetworkVO(id, config, offering.getId(), plan.getDataCenterId(), guru.getName(), owner.getDomainId(), owner.getId(), related, name, displayText, isShared);
             configs.add(_networkConfigDao.persist(vo));
         }
 
@@ -1532,7 +1531,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     public List<NetworkVO> setupNetworkConfiguration(Account owner, ServiceOfferingVO offering, DeploymentPlan plan) {
         NetworkOfferingVO networkOffering = _networkOfferingDao.findByServiceOffering(offering);
-        return setupNetworkConfiguration(owner, networkOffering, plan, null, null);
+        return setupNetworkConfiguration(owner, networkOffering, plan, null, null, false);
     }
 
     private String [] getGuestIpRange() {
@@ -1895,6 +1894,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         String vlanId = cmd.getVlan();
         String name = cmd.getNetworkName();
         String displayText = cmd.getDisplayText();
+        Boolean isShared = cmd.getIsShared();
         Account owner = null;
         
         //Check if network offering exists
@@ -1926,10 +1926,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         } else {
             owner = ctxAccount;
         }
-       
-        if (owner.getId() == Account.ACCOUNT_ID_SYSTEM && !networkOffering.isShared()) {
-            throw new InvalidParameterValueException("Non-system account is required when create a network from Dedicated network offering with id=" + networkOfferingId);
-        } 
         
        //VlanId can be specified only when network offering supports it
         if (vlanId != null && !networkOffering.getSpecifyVlan()) {
@@ -1957,7 +1953,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                }
            }
            
-           List<NetworkVO> networks = setupNetworkConfiguration(owner, networkOffering, userNetwork, plan, name, displayText);
+           List<NetworkVO> networks = setupNetworkConfiguration(owner, networkOffering, userNetwork, plan, name, displayText, isShared);
            Long networkId = null;
            
            if (networks == null || networks.isEmpty()) {
@@ -1967,8 +1963,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                networkId = networks.get(0).getId();
            }
            
-           //If network offering is shared, don't pass owner account and networkOfferingId for vlan
-           if (networkOffering.isShared()) {
+           //Don't pass owner to create vlan when network offering is of type Direct
+           if (networkOffering.getGuestIpType() == GuestIpType.DirectSingle) {
                owner = null;
            }
            
@@ -1995,10 +1991,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     public List<? extends Network> searchForNetworks(ListNetworksCmd cmd) { 
         Object id = cmd.getId(); 
         Object keyword = cmd.getKeyword();
+        Long zoneId= cmd.getZoneId();
         Account account = UserContext.current().getAccount();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         Long accountId = null;
+        
         if (isAdmin(account.getType())) {
             if (domainId != null) {
                 if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
@@ -2039,6 +2037,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         if (id != null) {
             sc.addAnd("id", SearchCriteria.Op.EQ, id);
+        }
+        
+        if (zoneId != null) {
+            sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
         }
         
         SearchCriteria<NetworkVO> ssc = _networkConfigDao.createSearchCriteria();

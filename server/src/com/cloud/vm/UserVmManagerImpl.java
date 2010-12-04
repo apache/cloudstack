@@ -143,7 +143,6 @@ import com.cloud.network.security.NetworkGroupManager;
 import com.cloud.network.security.NetworkGroupVO;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
-import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -3701,8 +3700,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
             if (network == null) {
                 throw new InvalidParameterValueException("Unable to find network by id " + networkId);
             } else {
-                if (network.getAccountId() != Account.ACCOUNT_ID_SYSTEM && network.getAccountId() != accountId) {
-                    throw new PermissionDeniedException("Unable to create a vm using network with id " + networkId + ", permission denied");
+                if (!network.isShared()) {
+                    //Iterate through account/network map
+                    List<NetworkVO> networkMap = _networkDao.listBy(accountId, networkId);
+                    if (networkMap == null || networkMap.isEmpty()) {
+                        throw new PermissionDeniedException("Unable to create a vm using network with id " + networkId + ", permission denied");
+                    }
                 } else if (network.getTrafficType() != TrafficType.Guest) {
                     throw new InvalidParameterValueException("Unable to create a vm using network which traffic type is " + network.getTrafficType() + ". " +
                     		"Only Guest traffic type is acceptes");

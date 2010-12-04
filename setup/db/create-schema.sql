@@ -137,6 +137,7 @@ CREATE TABLE `cloud`.`networks` (
   `guru_data` varchar(1024) COMMENT 'data stored by the network guru that setup this network',
   `set_fields` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'which fields are set already',
   `guest_type` char(32) COMMENT 'type of guest network',
+  `shared` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '0 if network is shared, 1 if network dedicated',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -197,7 +198,6 @@ CREATE TABLE `cloud`.`network_offerings` (
   `service_offering_id` bigint unsigned UNIQUE COMMENT 'service offering id that this network offering is tied to',
   `created` datetime NOT NULL COMMENT 'time the entry was created',
   `removed` datetime DEFAULT NULL COMMENT 'time the entry was removed',
-  `shared` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '0 if network is shared, 1 if network dedicated',
   `default` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if network is default',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

@@ -26,6 +26,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.StoragePoolResponse;
+import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.storage.StoragePool;
 import com.cloud.user.Account;
@@ -62,6 +63,14 @@ public class PreparePrimaryStorageForMaintenanceCmd extends BaseAsyncCmd {
     
     public static String getResultObjectName() {
     	return "primarystorage";
+    }
+    
+    public AsyncJob.Type getInstanceType() {
+        return AsyncJob.Type.Host;
+    }
+    
+    public Long getInstanceId() {
+        return getId();
     }
 
     @Override

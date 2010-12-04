@@ -2305,7 +2305,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setMaxconnections(offering.getConcurrentConnections());
         response.setIsDefault(offering.isDefault());
         response.setSpecifyVlan(offering.getSpecifyVlan());
-        response.setIsShared(offering.isShared());
         response.setObjectName("networkoffering");
         return response;
     }
@@ -2340,8 +2339,9 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setNetworkOfferingId(networkOffering.getId());
             response.setNetworkOfferingName(networkOffering.getName());
             response.setNetworkOfferingDisplayText(networkOffering.getDisplayText());
-            response.setIsShared(networkOffering.isShared());
         }
+        
+        response.setIsShared(network.isShared());
         response.setState(network.getState().toString());
         response.setRelated(network.getRelated());
         response.setDns1(network.getDns1());

@@ -31,13 +31,15 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.UserVmResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
-import com.cloud.exception.InsufficientStorageCapacityException;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.StorageUnavailableException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.exception.ExecutionException;
 
 @Implementation(description="Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.", responseObject=UserVmResponse.class)
 public class DeployVMCmd extends BaseAsyncCmd {
@@ -227,17 +229,20 @@ public class DeployVMCmd extends BaseAsyncCmd {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to deploy vm");
             }
         } catch (ResourceAllocationException ex) {
-            s_logger.warn("Exception: ", ex);
+            s_logger.info(ex);
             throw new ServerApiException(BaseCmd.RESOURCE_ALLOCATION_ERROR, ex.getMessage());
-        } catch (InsufficientStorageCapacityException ex) {
-            s_logger.warn("Exception: ", ex);
+        } catch (InsufficientCapacityException ex) {
+            s_logger.info(ex);
             throw new ServerApiException(BaseCmd.INSUFFICIENT_CAPACITY_ERROR, ex.getMessage());
-        } catch (StorageUnavailableException ex) {
+        } catch (ResourceUnavailableException ex) {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
-        } catch (Exception ex) {
+        } catch (ExecutionException ex) {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
-        }
+        }  catch (ConcurrentOperationException ex) {
+            s_logger.warn("Exception: ", ex);
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
+        } 
     }
 }

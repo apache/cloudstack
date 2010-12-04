@@ -190,9 +190,11 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkVO;
 import com.cloud.network.RemoteAccessVpnVO;
 import com.cloud.network.VpnUserVO;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.security.NetworkGroupManager;
@@ -274,6 +276,7 @@ import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.InstanceGroupVMMapVO;
 import com.cloud.vm.InstanceGroupVO;
+import com.cloud.vm.NicVO;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.State;
 import com.cloud.vm.UserVmManager;
@@ -285,6 +288,7 @@ import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.InstanceGroupVMMapDao;
+import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -331,6 +335,8 @@ public class ManagementServerImpl implements ManagementServer {
     private final StoragePoolHostDao _poolHostDao;
     private final StorageManager _storageMgr;
     private final UserVmDao _vmDao;
+    private final NetworkDao _networkDao;
+    private final NicDao _nicDao;
 
     private final Adapters<UserAuthenticator> _userAuthenticators;
     private final HostPodDao _hostPodDao;
@@ -353,6 +359,7 @@ public class ManagementServerImpl implements ManagementServer {
     private final RemoteAccessVpnDao _remoteAccessVpnDao;
     private final VpnUserDao _vpnUsersDao;
     @Inject private UserVmService _userVmService; 
+    
 
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AccountChecker"));
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
@@ -391,6 +398,8 @@ public class ManagementServerImpl implements ManagementServer {
         _hostPodDao = locator.getDao(HostPodDao.class);
         _jobDao = locator.getDao(AsyncJobDao.class);
         _clusterDao = locator.getDao(ClusterDao.class);
+        _networkDao = locator.getDao(NetworkDao.class);
+        _nicDao = locator.getDao(NicDao.class);
 
         _accountMgr = locator.getManager(AccountManager.class);
         _agentMgr = locator.getManager(AgentManager.class);
@@ -436,7 +445,7 @@ public class ManagementServerImpl implements ManagementServer {
         _asyncMgr = locator.getManager(AsyncJobManager.class);
         _tmpltMgr = locator.getManager(TemplateManager.class);
         _networkGroupMgr = locator.getManager(NetworkGroupManager.class);
-        _uploadMonitor = locator.getManager(UploadMonitor.class);        
+        _uploadMonitor = locator.getManager(UploadMonitor.class);
     	
         _userAuthenticators = locator.getAdapters(UserAuthenticator.class);
         if (_userAuthenticators == null || !_userAuthenticators.isSet()) {
@@ -2589,6 +2598,7 @@ public class ManagementServerImpl implements ManagementServer {
         c.addCriteria(Criteria.DATACENTERID, cmd.getZoneId());
         c.addCriteria(Criteria.GROUPID, cmd.getGroupId());
         c.addCriteria(Criteria.FOR_VIRTUAL_NETWORK, cmd.getForVirtualNetwork());
+        c.addCriteria(Criteria.NETWORKID, cmd.getNetworkId());
         
         if (path != null) {
             c.addCriteria(Criteria.PATH, path);
@@ -2634,6 +2644,7 @@ public class ManagementServerImpl implements ManagementServer {
         Object groupId = c.getCriteria(Criteria.GROUPID);
         Object useVirtualNetwork = c.getCriteria(Criteria.FOR_VIRTUAL_NETWORK);
         Object path = c.getCriteria(Criteria.PATH);
+        Object networkId = c.getCriteria(Criteria.NETWORKID);
         
         sb.and("displayName", sb.entity().getDisplayName(), SearchCriteria.Op.LIKE);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
@@ -2665,6 +2676,17 @@ public class ManagementServerImpl implements ManagementServer {
         	SearchBuilder<InstanceGroupVMMapVO> groupSearch = _groupVMMapDao.createSearchBuilder();
         	groupSearch.and("groupId", groupSearch.entity().getGroupId(), SearchCriteria.Op.EQ);
             sb.join("groupSearch", groupSearch, sb.entity().getId(), groupSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
+        }
+        
+        if (networkId != null) {
+            SearchBuilder<NicVO> nicSearch = _nicDao.createSearchBuilder();
+            nicSearch.and("networkId", nicSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
+            
+            SearchBuilder<NetworkVO> networkSearch = _networkDao.createSearchBuilder();
+            networkSearch.and("networkId", networkSearch.entity().getId(), SearchCriteria.Op.EQ);
+            nicSearch.join("networkSearch", networkSearch, nicSearch.entity().getNetworkId(), networkSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+            
+            sb.join("nicSearch", nicSearch, sb.entity().getId(), nicSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
         }
         
         if (useVirtualNetwork != null) {
@@ -2717,6 +2739,10 @@ public class ManagementServerImpl implements ManagementServer {
         
         if (path != null) {
             sc.setJoinParameters("domainSearch", "path", path + "%");
+        }
+        
+        if (networkId != null) {
+            sc.setJoinParameters("nicSearch", "networkId", networkId);
         }
 
         if (name != null) {

@@ -80,10 +80,7 @@ public class NetworkOfferingVO implements NetworkOffering {
     
     @Column(name="tags")
     String tags;
-    
-    @Column(name="shared")
-    boolean isShared;
-    
+   
     @Column(name="default")
     boolean isDefault;
     
@@ -202,15 +199,6 @@ public class NetworkOfferingVO implements NetworkOffering {
     }
     
     @Override
-    public boolean isShared() {
-        return isShared;
-    }
-
-    public void setShared(boolean isShared) {
-        this.isShared = isShared;
-    }
-    
-    @Override
     public boolean isDefault() {
         return isDefault;
     }
@@ -224,7 +212,7 @@ public class NetworkOfferingVO implements NetworkOffering {
         this.created = created;
     }
 
-    public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, GuestIpType type, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps, Integer concurrentConnections, boolean isShared, boolean isDefault) {
+    public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, GuestIpType type, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps, Integer concurrentConnections, boolean isDefault) {
         this.name = name;
         this.displayText = displayText;
         this.guestIpType = type;
@@ -235,11 +223,10 @@ public class NetworkOfferingVO implements NetworkOffering {
         this.systemOnly = systemOnly;
         this.specifyVlan = specifyVlan;
         this.isDefault = isDefault;
-        this.isShared = isShared;
     }
     
     public NetworkOfferingVO(ServiceOfferingVO offering) {
-        this("Network Offering for " + offering.getName(), "Network Offering for " + offering.getDisplayText(), TrafficType.Guest, offering.getGuestIpType(), false, false, offering.getRateMbps(), offering.getMulticastRateMbps(), null, false, false);
+        this("Network Offering for " + offering.getName(), "Network Offering for " + offering.getDisplayText(), TrafficType.Guest, offering.getGuestIpType(), false, false, offering.getRateMbps(), offering.getMulticastRateMbps(), null, false);
         this.serviceOfferingId = offering.getId();
     }
     
@@ -251,7 +238,7 @@ public class NetworkOfferingVO implements NetworkOffering {
      * @param type
      */
     public NetworkOfferingVO(String name, TrafficType trafficType, GuestIpType type) {
-        this(name, "System Offering for " + name, trafficType, type, true, false, null, null, null, false, false);
+        this(name, "System Offering for " + name, trafficType, type, true, false, null, null, null, false);
     }
     
     @Override

@@ -170,6 +170,7 @@ public class ApiConstants {
     public static final String MAX_CONNECTIONS = "maxconnections";
     public static final String NETWORK_OFFERING_ID = "networkofferingid";
     public static final String NETWORK_IDS = "networkids";
+    public static final String NETWORK_ID = "networkid";
     public static final String SPECIFY_VLAN = "specifyvlan";
     public static final String IS_DEFAULT = "isdefault";
 }

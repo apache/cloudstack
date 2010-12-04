@@ -198,8 +198,8 @@ public interface NetworkManager extends NetworkService {
      */
     List<IPAddressVO> listPublicIpAddressesInVirtualNetwork(long accountId, long dcId, Boolean sourceNat);	
     
-    List<NetworkVO> setupNetworkConfiguration(Account owner, NetworkOfferingVO offering, DeploymentPlan plan, String name, String displayText);
-    List<NetworkVO> setupNetworkConfiguration(Account owner, NetworkOfferingVO offering, Network predefined, DeploymentPlan plan, String name, String displayText);
+    List<NetworkVO> setupNetworkConfiguration(Account owner, NetworkOfferingVO offering, DeploymentPlan plan, String name, String displayText, boolean isShared);
+    List<NetworkVO> setupNetworkConfiguration(Account owner, NetworkOfferingVO offering, Network predefined, DeploymentPlan plan, String name, String displayText, boolean isShared);
     
     List<NetworkOfferingVO> getSystemAccountNetworkOfferings(String... offeringNames);
     

@@ -29,6 +29,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.StoragePoolResponse;
+import com.cloud.async.AsyncJob;
 import com.cloud.storage.StoragePool;
 
 @Implementation(description="Lists storage pools.", responseObject=StoragePoolResponse.class)
@@ -94,6 +95,10 @@ public class ListStoragePoolsCmd extends BaseListCmd {
     @Override
     public String getName() {
         return s_name;
+    }
+    
+    public AsyncJob.Type getInstanceType() {
+        return AsyncJob.Type.Host;
     }
 
     @Override

@@ -2391,7 +2391,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String typeString = cmd.getType();
         String trafficTypeString = cmd.getTraffictype();
         Boolean specifyVlan = cmd.getSpecifyVlan();
-        Boolean isShared = cmd.getIsShared();
         TrafficType trafficType = null;
         GuestIpType type = null;
         
@@ -2418,23 +2417,19 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if (specifyVlan == null) {
             specifyVlan = false;
         }
-        
-        if (isShared == null) {
-            isShared = false;
-        }
 
         Integer maxConnections = cmd.getMaxconnections();
-        return createNetworkOffering(userId, name, displayText, type, trafficType, tags, maxConnections, specifyVlan, isShared);
+        return createNetworkOffering(userId, name, displayText, type, trafficType, tags, maxConnections, specifyVlan);
     }
     
     @Override
-    public NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, GuestIpType type, TrafficType trafficType, String tags, Integer maxConnections, boolean specifyVlan, boolean isShared) {
+    public NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, GuestIpType type, TrafficType trafficType, String tags, Integer maxConnections, boolean specifyVlan) {
         String networkRateStr = _configDao.getValue("network.throttling.rate");
         String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
         int networkRate = ((networkRateStr == null) ? 200 : Integer.parseInt(networkRateStr));
         int multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));      
         tags = cleanupTags(tags);
-        NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, type, false, specifyVlan, networkRate, multicastRate, maxConnections, isShared, false);
+        NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, type, false, specifyVlan, networkRate, multicastRate, maxConnections, false);
         
         if ((offering = _networkOfferingDao.persist(offering)) != null) {
             saveConfigurationEvent(userId, null, EventTypes.EVENT_NETWORK_OFFERING_CREATE, "Successfully created new network offering with name: " + name + ".", "noId=" + offering.getId(), "name=" + name,
