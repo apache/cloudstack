@@ -199,7 +199,7 @@ public enum Config {
     SSOAuthTolerance("Advanced", ManagementServer.class, Long.class, "security.singlesignon.tolerance.millis", "300000", "The allowable clock difference in milliseconds between when an SSO login request is made and when it is received.", null),
 	NetworkType("Hidden", ManagementServer.class, String.class, "network.type", "vlan", "The type of network that this deployment will use.", "vlan,direct"),
 	HashKey("Hidden", ManagementServer.class, String.class, "security.hash.key", null, "for generic key-ed hash", null),
-	UseNewNetwork("Hidden", NetworkManager.class, Boolean.class, "use.new.networking", "false", null, null);
+	UseNewNetwork("Hidden", NetworkManager.class, Boolean.class, "use.new.networking", "true", null, null);
 	
 	private final String _category;
 	private final Class<?> _componentClass;
