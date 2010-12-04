@@ -481,7 +481,7 @@ CREATE TABLE `cloud`.`port_forwarding_rules` (
   CONSTRAINT `fk_port_forwarding_rules__id` FOREIGN KEY(`id`) REFERENCES `firewall_rules`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE VIEW `cloud`.`port_forwarding_rules_view` AS SELECT fw.id, INET_NTOA(fw.ip_address) as src_ip_address, INET_NTOA(pf.dest_ip_address), fw.start_port as src_port_start, pf.dest_port_start, fw.end_port as src_end_port, pf.dest_port_end as dest_end_port, fw.state, fw.protocol, fw.purpose, fw.account_id from firewall_rules as fw inner join port_forwarding_rules as pf on fw.id=pf.id; 
+CREATE VIEW `cloud`.`port_forwarding_rules_view` AS SELECT fw.id, INET_NTOA(fw.ip_address) as src_ip_address, INET_NTOA(pf.dest_ip_address), fw.start_port as src_port_start, pf.dest_port_start, fw.end_port as src_end_port, pf.dest_port_end as dest_end_port, fw.state, fw.protocol, fw.purpose, fw.account_id from cloud.firewall_rules as fw inner join cloud.port_forwarding_rules as pf on fw.id=pf.id; 
  
 CREATE TABLE  `cloud`.`ip_forwarding` (
   `id` bigint unsigned NOT NULL auto_increment,
