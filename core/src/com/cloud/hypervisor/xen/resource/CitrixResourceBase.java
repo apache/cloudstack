@@ -749,7 +749,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     }
     
     protected VM createVmFromTemplate(Connection conn, VirtualMachineTO vmSpec, Host host) throws XenAPIException, XmlRpcException {
-        String guestOsTypeName = getGuestOsType(vmSpec.getOs());
+        String guestOsTypeName = getGuestOsType(vmSpec.getOs(), vmSpec.getBootloader() == BootloaderType.CD);
         Set<VM> templates = VM.getByNameLabel(conn, guestOsTypeName);
         assert templates.size() == 1 : "Should only have 1 template but found " + templates.size();
         VM template = templates.iterator().next();
@@ -2611,7 +2611,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         Set<VM> templates;
         VM vm = null;
         String stdType = cmd.getGuestOSDescription();
-        String guestOsTypeName = getGuestOsType(stdType);
+        String guestOsTypeName = getGuestOsType(stdType, cmd.getBootFromISO());
         templates = VM.getByNameLabel(conn, guestOsTypeName);
         assert templates.size() == 1 : "Should only have 1 template but found " + templates.size();
         VM template = templates.iterator().next();
@@ -2621,7 +2621,9 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         if (!(guestOsTypeName.startsWith("Windows") || guestOsTypeName.startsWith("Citrix") || guestOsTypeName.startsWith("Other"))) {
             if (cmd.getBootFromISO()) {
                 vm.setPVBootloader(conn, "eliloader");
-                vm.addToOtherConfig(conn, "install-repository", "cdrom");
+                Map<String, String> otherConfig = vm.getOtherConfig(conn);
+                otherConfig.put( "install-repository", "cdrom");
+                vm.setOtherConfig(conn, otherConfig);
             } else {
                 vm.setPVBootloader(conn, "pygrub");
             }
@@ -3228,9 +3230,9 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
             Ternary<SR, VDI, VolumeVO> mount = mounts.get(0);
 
-            Set<VM> templates = VM.getByNameLabel(conn, getGuestOsType(getGuestOSDescription));
+            Set<VM> templates = VM.getByNameLabel(conn, getGuestOsType(getGuestOSDescription, false));
             if (templates.size() == 0) {
-            	String msg = " can not find systemvm template " + getGuestOsType(getGuestOSDescription) ;
+            	String msg = " can not find systemvm template " + getGuestOsType(getGuestOSDescription, false) ;
             	s_logger.warn(msg);
             	return msg;
 
@@ -6234,7 +6236,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     }
 
     /*Override by subclass*/
-	protected String getGuestOsType(String stdType) {
+	protected String getGuestOsType(String stdType, boolean bootFromCD) {
 		return stdType;
 	}
 }
