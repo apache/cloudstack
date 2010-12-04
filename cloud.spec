@@ -347,7 +347,7 @@ echo Doing open source build
 
 %clean
 
-[ ${RPM_BUILD_ROOT} != "/" ] && rm -rf ${RPM_BUILD_ROOT}
+#[ ${RPM_BUILD_ROOT} != "/" ] && rm -rf ${RPM_BUILD_ROOT}
 
 
 %preun client
@@ -510,33 +510,20 @@ fi
 
 %files client
 %defattr(0644,root,root,0755)
-%{_sysconfdir}/%{name}/management/catalina.policy
-%{_sysconfdir}/%{name}/management/*.properties
-%{_sysconfdir}/%{name}/management/resources/*.properties
-%{_sysconfdir}/%{name}/management/components.xml
-%{_sysconfdir}/%{name}/management/context.xml
+%{_sysconfdir}/%{name}/management/*
+%if %{_premium}
+%exclude %{_sysconfdir}/%{name}/management/*premium*
+%endif
 %config(noreplace) %attr(640,root,%{name}) %{_sysconfdir}/%{name}/management/db.properties
-%{_sysconfdir}/%{name}/management/environment.properties
-%{_sysconfdir}/%{name}/management/ehcache.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/log4j-%{name}.xml
-%{_sysconfdir}/%{name}/management/logging.properties
-%{_sysconfdir}/%{name}/management/server.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/tomcat6.conf
-%{_sysconfdir}/%{name}/management/classpath.conf
-%{_sysconfdir}/%{name}/management/tomcat-users.xml
-%{_sysconfdir}/%{name}/management/web.xml
 %dir %attr(770,root,%{name}) %{_sysconfdir}/%{name}/management/Catalina
 %dir %attr(770,root,%{name}) %{_sysconfdir}/%{name}/management/Catalina/localhost
 %dir %attr(770,root,%{name}) %{_sysconfdir}/%{name}/management/Catalina/localhost/client
 %config %{_sysconfdir}/sysconfig/%{name}-management
 %attr(0755,root,root) %{_initrddir}/%{name}-management
 %dir %{_datadir}/%{name}/management
-%{_datadir}/%{name}/management/bin
-%{_datadir}/%{name}/management/conf
-%{_datadir}/%{name}/management/lib
-%{_datadir}/%{name}/management/logs
-%{_datadir}/%{name}/management/temp
-%{_datadir}/%{name}/management/work
+%{_datadir}/%{name}/management/*
 %attr(755,root,root) %{_bindir}/%{name}-setup-management
 %attr(755,root,root) %{_bindir}/%{name}-update-xenserver-licenses
 %dir %attr(770,root,%{name}) %{_sharedstatedir}/%{name}/mnt
@@ -570,9 +557,7 @@ fi
 %files console-proxy
 %defattr(0644,root,root,0755)
 %{_javadir}/%{name}-console*.jar
-%config(noreplace) %{_sysconfdir}/%{name}/console-proxy/agent.properties
-%config(noreplace) %{_sysconfdir}/%{name}/console-proxy/consoleproxy.properties
-%config(noreplace) %{_sysconfdir}/%{name}/console-proxy/log4j-%{name}.xml
+%config(noreplace) %{_sysconfdir}/%{name}/console-proxy/*
 %attr(0755,root,root) %{_initrddir}/%{name}-console-proxy
 %attr(0755,root,root) %{_libexecdir}/console-proxy-runner
 %{_libdir}/%{name}/console-proxy/*

@@ -33,6 +33,8 @@ systemjars = {
 	'Fedora':
 	(
 		"tomcat6-servlet-2.5-api.jar",
+		"tomcat6-jsp-2.1-api-6.0.26.jar",
+		"tomcat6-el-2.1-api-6.0.26.jar",
 		#"tomcat6/catalina.jar", # all supported distros put the file there
 	),
 	'CentOS':
