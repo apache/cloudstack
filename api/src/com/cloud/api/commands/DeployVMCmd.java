@@ -23,7 +23,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -33,16 +33,13 @@ import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
-import com.cloud.utils.exception.ExecutionException;
 
 @Implementation(description="Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.", responseObject=UserVmResponse.class)
-public class DeployVMCmd extends BaseAsyncCmd {
+public class DeployVMCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(DeployVMCmd.class.getName());
     
     private static final String s_name = "deployvirtualmachineresponse";
@@ -205,41 +202,49 @@ public class DeployVMCmd extends BaseAsyncCmd {
         return  "deploying Vm";
     }
     
+    @Override
     public AsyncJob.Type getInstanceType() {
     	return AsyncJob.Type.VirtualMachine;
     }
     
     @Override
     public void execute(){
+        UserVm result;
         try {
-            String password = null;
-            if (templateId != null ) {
-                VirtualMachineTemplate template = _responseGenerator.findTemplateById(templateId);
-                if (template.getEnablePassword()) { 
-                    password = _mgr.generateRandomPassword();
-                } 
-            }
-            UserVm result = _mgr.deployVirtualMachine(this, password);
-            if (result != null){
-                UserVmResponse response = _responseGenerator.createUserVmResponse(result);
+            result = _userVmService.startVirtualMachine(this);
+            if (result != null) {
+                UserVmResponse response = _responseGenerator.createUserVm2Response(result);
                 response.setPassword(password);
                 response.setResponseName(getName());
                 this.setResponseObject(response);
             } else {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to deploy vm");
             }
-        } catch (ResourceAllocationException ex) {
-            s_logger.info(ex);
-            throw new ServerApiException(BaseCmd.RESOURCE_ALLOCATION_ERROR, ex.getMessage());
+        } catch (ResourceUnavailableException ex) {
+            throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
+        } catch (ConcurrentOperationException ex) {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage()); 
+        } catch (InsufficientCapacityException ex) {
+            throw new ServerApiException(BaseCmd.INSUFFICIENT_CAPACITY_ERROR, ex.getMessage());
+        } 
+    }
+
+    @Override
+    public void callCreate() {
+        try {
+            UserVm result = _userVmService.createVirtualMachine(this);
+            if (result != null){
+                setEntityId(result.getId());
+            } else {
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to deploy vm");
+            }
         } catch (InsufficientCapacityException ex) {
             s_logger.info(ex);
+            s_logger.trace(ex);
             throw new ServerApiException(BaseCmd.INSUFFICIENT_CAPACITY_ERROR, ex.getMessage());
         } catch (ResourceUnavailableException ex) {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
-        } catch (ExecutionException ex) {
-            s_logger.warn("Exception: ", ex);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
         }  catch (ConcurrentOperationException ex) {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());

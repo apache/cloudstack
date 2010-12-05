@@ -36,17 +36,14 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.Executors;
@@ -78,8 +75,6 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.CreateDomainCmd;
 import com.cloud.api.commands.DeleteDomainCmd;
 import com.cloud.api.commands.DeletePreallocatedLunCmd;
-import com.cloud.api.commands.DeployVMCmd;
-import com.cloud.api.commands.DeployVm2Cmd;
 import com.cloud.api.commands.ExtractVolumeCmd;
 import com.cloud.api.commands.GetCloudIdentifierCmd;
 import com.cloud.api.commands.ListAccountsCmd;
@@ -171,17 +166,11 @@ import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.CloudAuthenticationException;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InsufficientStorageCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -197,7 +186,6 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.dao.VpnUserDao;
-import com.cloud.network.security.NetworkGroupManager;
 import com.cloud.network.security.NetworkGroupVO;
 import com.cloud.network.security.dao.NetworkGroupDao;
 import com.cloud.offering.NetworkOffering;
@@ -245,20 +233,16 @@ import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.user.UserAccountVO;
 import com.cloud.user.UserContext;
-import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.user.dao.UserDao;
-import com.cloud.user.dao.UserStatisticsDao;
-import com.cloud.uservm.UserVm;
 import com.cloud.utils.EnumUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
@@ -269,7 +253,6 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.net.MacAddress;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.ConsoleProxyVO;
@@ -280,7 +263,6 @@ import com.cloud.vm.NicVO;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.State;
 import com.cloud.vm.UserVmManager;
-import com.cloud.vm.UserVmService;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -315,7 +297,6 @@ public class ManagementServerImpl implements ManagementServer {
     private final UserDao _userDao;
     private final UserVmDao _userVmDao;
     private final ConfigurationDao _configDao;
-    private final NetworkManager _networkMgr;
     private final UserVmManager _vmMgr;
     private final ConsoleProxyManager _consoleProxyMgr;
     private final SecondaryStorageVmManager _secStorageVmMgr;
@@ -334,22 +315,18 @@ public class ManagementServerImpl implements ManagementServer {
     private final StoragePoolDao _poolDao;
     private final StoragePoolHostDao _poolHostDao;
     private final StorageManager _storageMgr;
-    private final UserVmDao _vmDao;
     private final NetworkDao _networkDao;
     private final NicDao _nicDao;
 
     private final Adapters<UserAuthenticator> _userAuthenticators;
     private final HostPodDao _hostPodDao;
-    private final UserStatisticsDao _userStatsDao;
     private final VMInstanceDao _vmInstanceDao;
     private final VolumeDao _volumeDao;
     private final AlertManager _alertMgr;
     private final AsyncJobDao _jobDao;
     private final AsyncJobManager _asyncMgr;
     private final TemplateManager _tmpltMgr;
-    private final NetworkGroupManager _networkGroupMgr;
     private final int _purgeDelay;
-    private final boolean _directAttachNetworkExternalIpAllocator;
     private final PreallocatedLunDao _lunDao;
     private final InstanceGroupDao _vmGroupDao;
     private final InstanceGroupVMMapDao _groupVMMapDao;
@@ -358,7 +335,6 @@ public class ManagementServerImpl implements ManagementServer {
     private final CertificateDao _certDao;
     private final RemoteAccessVpnDao _remoteAccessVpnDao;
     private final VpnUserDao _vpnUsersDao;
-    @Inject private UserVmService _userVmService; 
     
 
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AccountChecker"));
@@ -373,13 +349,10 @@ public class ManagementServerImpl implements ManagementServer {
     private final int _routerRamSize;
     private final int _proxyRamSize;
     private final int _ssRamSize;
-    private int _maxVolumeSizeInGb;
     
     private boolean _useNewNetworking = false;
 
     private final Map<String, Boolean> _availableIdsMap;
-
-	private boolean _networkGroupsEnabled = false;
 
     private boolean _isHypervisorSnapshotCapable = false;
     private String _hashKey = null;    
@@ -404,7 +377,6 @@ public class ManagementServerImpl implements ManagementServer {
         _accountMgr = locator.getManager(AccountManager.class);
         _agentMgr = locator.getManager(AgentManager.class);
         _configMgr = locator.getManager(ConfigurationManager.class);
-        _networkMgr = locator.getManager(NetworkManager.class);
         _vmMgr = locator.getManager(UserVmManager.class);
         _consoleProxyMgr = locator.getManager(ConsoleProxyManager.class);
         _secStorageVmMgr = locator.getManager(SecondaryStorageVmManager.class);
@@ -430,7 +402,6 @@ public class ManagementServerImpl implements ManagementServer {
         _guestOSCategoryDao = locator.getDao(GuestOSCategoryDao.class);
         _poolDao = locator.getDao(StoragePoolDao.class);
         _poolHostDao = locator.getDao(StoragePoolHostDao.class);
-        _vmDao = locator.getDao(UserVmDao.class);
         _vmGroupDao = locator.getDao(InstanceGroupDao.class);
         _groupVMMapDao = locator.getDao(InstanceGroupVMMapDao.class);
         _uploadDao = locator.getDao(UploadDao.class);
@@ -438,13 +409,11 @@ public class ManagementServerImpl implements ManagementServer {
         _remoteAccessVpnDao = locator.getDao(RemoteAccessVpnDao.class);
         _vpnUsersDao = locator.getDao(VpnUserDao.class);
         _configs = _configDao.getConfiguration();
-        _userStatsDao = locator.getDao(UserStatisticsDao.class);
         _vmInstanceDao = locator.getDao(VMInstanceDao.class);
         _volumeDao = locator.getDao(VolumeDao.class);
         _alertMgr = locator.getManager(AlertManager.class);
         _asyncMgr = locator.getManager(AsyncJobManager.class);
         _tmpltMgr = locator.getManager(TemplateManager.class);
-        _networkGroupMgr = locator.getManager(NetworkGroupManager.class);
         _uploadMonitor = locator.getManager(UploadMonitor.class);
     	
         _userAuthenticators = locator.getAdapters(UserAuthenticator.class);
@@ -469,9 +438,6 @@ public class ManagementServerImpl implements ManagementServer {
         _proxyRamSize = NumbersUtil.parseInt(_configs.get("consoleproxy.ram.size"), ConsoleProxyManager.DEFAULT_PROXY_VM_RAMSIZE);
         _ssRamSize = NumbersUtil.parseInt(_configs.get("secstorage.ram.size"), SecondaryStorageVmManager.DEFAULT_SS_VM_RAMSIZE);
 
-        _directAttachNetworkExternalIpAllocator =
-        										Boolean.parseBoolean(_configs.get("direct.attach.network.externalIpAllocator.enabled"));
-        
         _statsCollector = StatsCollector.getInstance(_configs);
         _executor.scheduleAtFixedRate(new AccountCleanupTask(), cleanup, cleanup, TimeUnit.SECONDS);
 
@@ -485,15 +451,6 @@ public class ManagementServerImpl implements ManagementServer {
         for (String id: availableIds) {
             _availableIdsMap.put(id, true);
         }
-        String enabled =_configDao.getValue("direct.attach.network.groups.enabled");
-		if ("true".equalsIgnoreCase(enabled)) {
-			_networkGroupsEnabled = true;
-		}
-		
-        String maxVolumeSizeInGbString = _configDao.getValue("max.volume.size.gb");
-        int maxVolumeSizeGb = NumbersUtil.parseInt(maxVolumeSizeInGbString, (2000));//2000 gb
-        _maxVolumeSizeInGb = maxVolumeSizeGb;
-        
         _useNewNetworking = Boolean.parseBoolean(_configs.get("use.new.networking"));
     }
     
@@ -831,518 +788,6 @@ public class ManagementServerImpl implements ManagementServer {
             }
         }
         return success;
-    }
-
-    private boolean validPassword(String password) {
-        for (int i = 0; i < password.length(); i++) {
-            if (password.charAt(i) == ' ') {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private UserVm deployVirtualMachineImpl(long userId, long accountId, long dataCenterId, long serviceOfferingId, VMTemplateVO template, Long diskOfferingId,
-            String domain, String password, String displayName, String group, String userData, String [] networkGroups, long startEventId, long size) throws ResourceAllocationException, 
-            InsufficientStorageCapacityException, ExecutionException, StorageUnavailableException, ConcurrentOperationException {
-
-    	EventUtils.saveStartedEvent(userId, accountId, EventTypes.EVENT_VM_CREATE, "Deploying Vm", startEventId);
-
-        AccountVO account = _accountDao.findById(accountId);
-        DataCenterVO dc = _dcDao.findById(dataCenterId);
-        ServiceOfferingVO offering = _offeringsDao.findById(serviceOfferingId);
-      
-        // Make sure a valid template ID was specified
-        if (template == null) {
-            throw new InvalidParameterValueException("Please specify a valid template or ISO ID.");
-        }
-        
-        long templateId = template.getId();
-        
-        byte [] decodedUserData = null;
-        if (userData != null) {
-        	if (userData.length() >= 2* UserVmManager.MAX_USER_DATA_LENGTH_BYTES) {
-        		throw new InvalidParameterValueException("User data is too long");
-        	}
-        	decodedUserData = org.apache.commons.codec.binary.Base64.decodeBase64(userData.getBytes());
-        	if (decodedUserData.length > UserVmManager.MAX_USER_DATA_LENGTH_BYTES){
-        		throw new InvalidParameterValueException("User data is too long");
-        	}
-			
-        }
-
-        boolean isIso = Storage.ImageFormat.ISO.equals(template.getFormat());
-        DiskOfferingVO diskOffering = _diskOfferingDao.findById(diskOfferingId);
-        
-        // TODO: Checks such as is the user allowed to use the template and purchase the service offering id.
-
-        if (domain == null) {
-            domain = "v" + Long.toHexString(accountId) + _domain;
-        }
-
-        // Check that the password was passed in and is valid
-        if (!template.getEnablePassword()) {
-            password = "saved_password";
-        }
-
-        if (password == null || password.equals("") || (!validPassword(password))) {
-            throw new InvalidParameterValueException("A valid password for this virtual machine was not provided.");
-        }
-        List<NetworkGroupVO> networkGroupVOs = new ArrayList<NetworkGroupVO>();
-        if (networkGroups != null) {
-        	for (String groupName: networkGroups) {
-        		NetworkGroupVO networkGroupVO = _networkSecurityGroupDao.findByAccountAndName(accountId, groupName);
-        		if (networkGroupVO == null) {
-        			throw new InvalidParameterValueException("Network Group " + groupName + " does not exist");
-        		}
-        		networkGroupVOs.add(networkGroupVO);
-        	}
-        }
-        
-        UserStatisticsVO stats = _userStatsDao.findBy(account.getId(), dataCenterId);
-        if (stats == null) {
-            stats = new UserStatisticsVO(account.getId(), dataCenterId);
-            _userStatsDao.persist(stats);
-        }
-        
-    	Long vmId = _vmDao.getNextInSequence(Long.class, "id");
-    	
-        // check if we are within context of async-execution
-        AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor.getCurrentExecutor();
-        if (asyncExecutor != null) {
-            AsyncJobVO job = asyncExecutor.getJob();
-
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info("DeployVM acquired a new instance " + vmId + ", update async job-" + job.getId() + " progress status");
-            }
-
-            _asyncMgr.updateAsyncJobAttachment(job.getId(), "vm_instance", vmId);
-            _asyncMgr.updateAsyncJobStatus(job.getId(), BaseCmd.PROGRESS_INSTANCE_CREATED, vmId);
-        }
-
-        HashMap<Long, StoragePoolVO> avoids = new HashMap<Long, StoragePoolVO>();
-
-        // Pod allocator now allocate VM based on a reservation style allocation, disable retry here for now
-        for (int retry = 0; retry < 1; retry++) {
-            String externalIp = null;
-            UserVmVO created = null;
-
-            ArrayList<StoragePoolVO> a = new ArrayList<StoragePoolVO>(avoids.values());
-            if (_directAttachNetworkExternalIpAllocator) {
-            	try {
-            		created = _vmMgr.createDirectlyAttachedVMExternal(vmId, userId, account, dc, offering, template, diskOffering, displayName, userData, a, networkGroupVOs, startEventId, size);
-            	} catch (ResourceAllocationException rae) {
-            		throw rae;
-            	}
-            } else {
-            	if (offering.getGuestIpType() == NetworkOffering.GuestIpType.Virtual) {
-            		try {
-            			externalIp = _networkMgr.assignSourceNatIpAddress(account, dc, domain, offering, startEventId, template.getHypervisorType());
-            		} catch (ResourceAllocationException rae) {
-            			throw rae;
-            		}
-
-            		if (externalIp == null) {
-            			throw new CloudRuntimeException("Unable to allocate a source nat ip address");
-            		}
-
-            		if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Source Nat acquired: " + externalIp);
-                    }
-
-                    try {
-                        created = _vmMgr.createVirtualMachine(vmId, userId, account, dc, offering, template, diskOffering, displayName, userData, a, startEventId, size);
-                    } catch (ResourceAllocationException rae) {
-                        throw rae;
-                    }
-                } else {
-                    try {
-                        created = _vmMgr.createDirectlyAttachedVM(vmId, userId, account, dc, offering, template, diskOffering, displayName, userData, a, networkGroupVOs, startEventId, size);
-                    } catch (ResourceAllocationException rae) {
-                        throw rae;
-                    }
-                }
-            }
-
-            //assign vm to the group
-            try{
-                if (group != null) {
-                boolean addToGroup = _vmMgr.addInstanceToGroup(Long.valueOf(vmId), group);
-                if (!addToGroup) {
-                    throw new CloudRuntimeException("Unable to assing Vm to the group " + group);
-                }
-                }
-            } catch (Exception ex) {
-                throw new CloudRuntimeException("Unable to assing Vm to the group " + group);
-            }
-            
-            
-            if (created == null) {
-                throw new CloudRuntimeException("Unable to create VM for account (" + accountId + "): " + account.getAccountName());
-            }
-
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("VM created: " + created.getId() + "-" + created.getHostName());
-            }
-            boolean executionExceptionFlag = false;
-            boolean storageUnavailableExceptionFlag = false;
-            boolean concurrentOperationExceptionFlag = false;
-            String executionExceptionMsg= "";
-            String storageUnavailableExceptionMsg = "";
-            String concurrentOperationExceptionMsg = "";
-            UserVmVO started = null;
-
-            if (isIso)
-            {
-                Pair<String, String> isoPath = _storageMgr.getAbsoluteIsoPath(templateId, dataCenterId);
-                if (isoPath == null) {
-                    s_logger.warn("Unable to get absolute path of the iso");
-                    throw new CloudRuntimeException("Unable to get absolute path of the iso");
-                }
-                try
-                {
-                    started = _vmMgr.startVirtualMachine(userId, created.getId(), password, isoPath.first(), startEventId);
-                }
-                catch (ExecutionException e)
-                {
-                    executionExceptionFlag = true;
-                    executionExceptionMsg = e.getMessage();
-                }
-                catch (StorageUnavailableException e)
-                {
-                    storageUnavailableExceptionFlag = true;
-                    storageUnavailableExceptionMsg = e.getMessage();
-                }
-                catch (ConcurrentOperationException e)
-                {
-                    concurrentOperationExceptionFlag = true;
-                    concurrentOperationExceptionMsg = e.getMessage();
-                }
-            }
-            else
-            {
-                try
-                {
-                    started = _vmMgr.startVirtualMachine(userId, created.getId(), password, null, startEventId);
-                }
-                catch (ExecutionException e)
-                {
-                    executionExceptionFlag = true;
-                    executionExceptionMsg = e.getMessage();
-                }
-                catch (StorageUnavailableException e)
-                {
-                        storageUnavailableExceptionFlag = true;
-                        storageUnavailableExceptionMsg = e.getMessage();
-                }
-                catch (ConcurrentOperationException e)
-                {
-                        concurrentOperationExceptionFlag = true;
-                        concurrentOperationExceptionMsg = e.getMessage();
-                }
-            }
-
-            if (started == null) {
-                List<Pair<VolumeVO, StoragePoolVO>> disks = _storageMgr.isStoredOn(created);
-                // NOTE: We now destroy a VM if the deploy process fails at any step. We now
-                // have a lazy delete so there is still some time to figure out what's wrong.
-                _vmMgr.destroyVirtualMachine(userId, created.getId());
-
-                boolean retryCreate = true;
-                for (Pair<VolumeVO, StoragePoolVO> disk : disks) {
-                    if (disk.second().isLocal()) {
-                        avoids.put(disk.second().getId(), disk.second());
-                    } else {
-                        retryCreate = false;
-                    }
-                }
-
-                if (retryCreate) {
-                    continue;
-                } else if(executionExceptionFlag){
-                    throw new ExecutionException(executionExceptionMsg);
-                } else if (storageUnavailableExceptionFlag){
-                    throw new StorageUnavailableException(storageUnavailableExceptionMsg);
-                }else if (concurrentOperationExceptionFlag){
-                    throw new ConcurrentOperationException(concurrentOperationExceptionMsg);
-                }
-                else{
-                    throw new CloudRuntimeException("Unable to start the VM " + created.getId() + "-" + created.getHostName());
-                }
-                
-            } else {
-                if (isIso) {
-                    started.setIsoId(templateId);
-                    _userVmDao.update(started.getId(), started);
-                    started = _userVmDao.findById(started.getId());
-                }
-
-                try {
-                    _configMgr.associateIpAddressListToAccount(userId, accountId, dc.getId(),null);                                                         
-                } catch (InsufficientAddressCapacityException e) {
-                    s_logger.debug("Unable to assign public IP address pool: " +e.getMessage());                    
-                }
-            }
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("VM started: " + started.getId() + "-" + started.getHostName());
-            }
-            return started;
-        }
-
-        return null;
-    }
-
-    @Override
-    public UserVm deployVirtualMachine(DeployVMCmd cmd, String password) throws ResourceAllocationException,
-                                                               ExecutionException,
-                                                               ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-        if (_useNewNetworking) {
-            UserVm vm = _userVmService.createVirtualMachine(cmd);
-            if (vm == null) {
-                return null;
-            }
-            
-            DeployVm2Cmd cmd2 = new DeployVm2Cmd();
-            cmd2.setEntityId(vm.getId());
-            vm = _userVmService.startVirtualMachine(cmd2);
-            return vm;
-        }
-        Account ctxAccount = UserContext.current().getAccount();
-        Long userId = UserContext.current().getUserId();
-        String accountName = cmd.getAccountName();
-        Long domainId = cmd.getDomainId();
-        Long accountId = null;
-        long dataCenterId = cmd.getZoneId();
-        long serviceOfferingId = cmd.getServiceOfferingId();
-        long templateId = cmd.getTemplateId();
-        Long diskOfferingId = cmd.getDiskOfferingId();
-        String domain = null; // FIXME:  this was hardcoded to null in DeployVMCmd in the old framework, do we need it?
-        String displayName = cmd.getDisplayName();
-        String group = cmd.getGroup();
-        String userData = cmd.getUserData();
-        String[] networkGroups = null;
-        Long sizeObj = cmd.getSize();
-        long size = (sizeObj == null) ? 0 : sizeObj;
-        Account userAccount = null;
-        
-        DataCenterVO dc = _dcDao.findById(dataCenterId);
-        if (dc == null) {
-            throw new InvalidParameterValueException("Unable to find zone: " + dataCenterId);
-        }
-                
-        if ((ctxAccount == null) || isAdmin(ctxAccount.getType())) {
-            if (domainId != null) {
-                if ((ctxAccount != null) && !_domainDao.isChildDomain(ctxAccount.getDomainId(), domainId)) {
-                    throw new PermissionDeniedException("Failed to deploy VM, invalid domain id (" + domainId + ") given.");
-                }
-                if (accountName != null) {
-                    userAccount = _accountDao.findActiveAccount(accountName, domainId);
-                    if (userAccount == null) {
-                        throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
-                    }
-                    accountId = userAccount.getId();
-                }
-            } else {
-                accountId = ((ctxAccount != null) ? ctxAccount.getId() : null);
-            }
-        } else {
-            accountId = ctxAccount.getId();
-        }
-
-        if (accountId == null) {
-            throw new InvalidParameterValueException("No valid account specified for deploying a virtual machine.");
-        }
-
-        if(domainId == null){
-        	domainId = dc.getDomainId(); //get the domain id from zone
-        }
-  
-    	if(domainId == null){
-    		//do nothing (public zone case)
-    	}
-    	else{
-    		if(userAccount != null){
-    			_configMgr.checkAccess(userAccount, dc);//user deploying his own vm
-    		}else{
-    			_configMgr.checkAccess(ctxAccount, dc);
-    		}
-    	}        	
-
-        List<String> netGrpList = cmd.getNetworkGroupList();
-        if ((netGrpList != null) && !netGrpList.isEmpty()) {
-            networkGroups = netGrpList.toArray(new String[netGrpList.size()]);
-        }
-
-    	AccountVO account = _accountDao.findById(accountId);
-        if (account == null) {
-            throw new InvalidParameterValueException("Unable to find account: " + accountId);
-        }
-
-        ServiceOfferingVO offering = _offeringsDao.findById(serviceOfferingId);
-        if (offering == null) {
-            throw new InvalidParameterValueException("Unable to find service offering: " + serviceOfferingId);
-        }
-
-        if(offering.getDomainId() == null){
-        	//do nothing as offering is public
-        }else{
-        	if(userAccount != null){
-    			_configMgr.checkServiceOfferingAccess(userAccount, offering);//user deploying his own vm
-    		}else{
-    			_configMgr.checkServiceOfferingAccess(ctxAccount, offering);
-    		}
-        }
-        
-        VMTemplateVO template = _templateDao.findById(templateId);
-        // Make sure a valid template ID was specified
-        if (template == null) {
-            throw new InvalidParameterValueException("Please specify a valid template or ISO ID.");
-        }
-
-        boolean isIso = Storage.ImageFormat.ISO.equals(template.getFormat());
-        
-        if (isIso && !template.isBootable()) {
-        	throw new InvalidParameterValueException("Please specify a bootable ISO.");
-        }
-
-        // If the template represents an ISO, a disk offering must be passed in, and will be used to create the root disk
-        // Else, a disk offering is optional, and if present will be used to create the data disk
-        DiskOfferingVO diskOffering = null;
-
-        if (diskOfferingId != null) {
-        	diskOffering = _diskOfferingDao.findById(diskOfferingId);
-        }
- 
-        if (isIso && diskOffering == null) {
-        	throw new InvalidParameterValueException("Please specify a valid disk offering ID.");
-        }
-        
-        if(diskOffering != null){
-            if(diskOffering.getDomainId() == null){
-            	//do nothing as offering is public
-            }else{
-            	if(userAccount != null){
-        			_configMgr.checkDiskOfferingAccess(userAccount, diskOffering);//user deploying his own vm
-        		}else{
-        			_configMgr.checkDiskOfferingAccess(ctxAccount, diskOffering);
-        		}
-            }
-        }
-        
-        if (isIso) {
-        	/*iso template doesn;t have hypervisor type, temporarily set it's type as user specified, pass it to storage allocator */
-        	template.setHypervisorType(HypervisorType.getType(cmd.getHypervisor()));
-        }
-        
-        //if it is a custom disk offering,AND the size passed in here is <= 0; error out
-        if(diskOffering != null && diskOffering.isCustomized() && size <= 0){
-        	throw new InvalidParameterValueException("Please specify a valid disk size for VM creation; custom disk offering has no size set");
-        }
-        
-        if(diskOffering != null && diskOffering.isCustomized() && size > _maxVolumeSizeInGb){
-        	throw new InvalidParameterValueException("Please specify a valid disk size for VM creation; custom disk offering max size is:"+_maxVolumeSizeInGb);
-        }
-        
-        // validate that the template is usable by the account
-        if (!template.isPublicTemplate()) {
-            Long templateOwner = template.getAccountId();
-            if (!BaseCmd.isAdmin(account.getType()) && ((templateOwner == null) || (templateOwner.longValue() != accountId))) {
-                // since the current account is not the owner of the template, check the launch permissions table to see if the
-                // account can launch a VM from this template
-                LaunchPermissionVO permission = _launchPermissionDao.findByTemplateAndAccount(templateId, account.getId());
-                if (permission == null) {
-                    throw new PermissionDeniedException("Account " + account.getAccountName() + " does not have permission to launch instances from template " + template.getName());
-                }
-            }
-        }
-        
-      
-
-        byte [] decodedUserData = null;
-        if (userData != null) {
-        	if (userData.length() >= 2* UserVmManager.MAX_USER_DATA_LENGTH_BYTES) {
-        		throw new InvalidParameterValueException("User data is too long");
-        	}
-        	decodedUserData = org.apache.commons.codec.binary.Base64.decodeBase64(userData.getBytes());
-        	if (decodedUserData.length > UserVmManager.MAX_USER_DATA_LENGTH_BYTES){
-        		throw new InvalidParameterValueException("User data is too long");
-        	}
-        	if (decodedUserData.length < 1) {
-        		throw new InvalidParameterValueException("User data is too short");
-        	}
-			
-        }
-        if (offering.getGuestIpType() != NetworkOffering.GuestIpType.Virtual) {
-        	_networkGroupMgr.createDefaultNetworkGroup(accountId);
-    	}
-        
-        if (networkGroups != null) {
-        	if (offering.getGuestIpType() == NetworkOffering.GuestIpType.Virtual) {
-        		throw new InvalidParameterValueException("Network groups are not compatible with service offering " + offering.getName());
-        	}
-        	Set<String> nameSet = new HashSet<String>(); //handle duplicate names -- allowed
-        	nameSet.addAll(Arrays.asList(networkGroups));
-        	nameSet.add(NetworkGroupManager.DEFAULT_GROUP_NAME);
-        	networkGroups = nameSet.toArray(new String[nameSet.size()]);
-        	List<NetworkGroupVO> networkGroupVOs = _networkSecurityGroupDao.findByAccountAndNames(accountId, networkGroups);
-        	if (networkGroupVOs.size() != nameSet.size()) {
-        		throw new InvalidParameterValueException("Some network group names do not exist");
-        	}
-        } else { //create a default group if necessary
-        	if (offering.getGuestIpType() != NetworkOffering.GuestIpType.Virtual && _networkGroupsEnabled) {
-        		networkGroups = new String[]{NetworkGroupManager.DEFAULT_GROUP_NAME};
-        	}
-        }
-
-        Long eventId = cmd.getStartEventId();
-        try {
-            return deployVirtualMachineImpl(userId, accountId, dataCenterId, serviceOfferingId, template, diskOfferingId, domain, password, displayName, group, userData, networkGroups, eventId, (1L*size*1024));//this api expects size in MB
-        } catch (ResourceAllocationException e) {
-            if(s_logger.isDebugEnabled()) {
-                s_logger.debug("Unable to deploy VM: " + e.getMessage());
-            }
-            EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_CREATE, "Unable to deploy VM: VM_INSUFFICIENT_CAPACITY", null, eventId);
-            throw e;
-        } catch (ExecutionException e) {
-            if(s_logger.isDebugEnabled()) {
-                s_logger.debug("Unable to deploy VM: " + e.getMessage());
-            }
-            EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_CREATE, "Unable to deploy VM: VM_HOST_LICENSE_EXPIRED", null, eventId);
-            throw e;
-        } catch (InvalidParameterValueException e) {
-            if(s_logger.isDebugEnabled()) {
-                s_logger.debug("Unable to deploy VM: " + e.getMessage());
-            }
-            EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_CREATE, "Unable to deploy VM: VM_INVALID_PARAM_ERROR", null, eventId);
-            throw e;
-        } catch (InsufficientStorageCapacityException e) {
-            if(s_logger.isDebugEnabled()) {
-                s_logger.debug("Unable to deploy VM: " + e.getMessage());
-            }
-            EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_CREATE, "Unable to deploy VM: VM_INSUFFICIENT_CAPACITY", null, eventId);
-            throw e;
-        } catch (PermissionDeniedException e) {
-            if(s_logger.isDebugEnabled()) {
-                s_logger.debug("Unable to deploy VM: " + e.getMessage());
-            }
-            EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_CREATE, "Unable to deploy VM: ACCOUNT_ERROR", null, eventId);
-            throw e;
-        } catch (ConcurrentOperationException e) {
-            if(s_logger.isDebugEnabled()) {
-                s_logger.debug("Unable to deploy VM: " + e.getMessage());
-            }
-            EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_CREATE, "Unable to deploy VM: INTERNAL_ERROR", null, eventId);
-            throw e;
-        } catch(Exception e) {
-            s_logger.warn("Unable to deploy VM : " + e.getMessage(), e);
-            EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_CREATE, "Unable to deploy VM: INTERNAL_ERROR", null, eventId);
-            throw new CloudRuntimeException("Unable to deploy VM : " + e.getMessage());
-        }
-    }
-
-    @Override
-    public DomainRouterVO findDomainRouterById(long domainRouterId) {
-        return _routerDao.findById(domainRouterId);
     }
 
     @Override

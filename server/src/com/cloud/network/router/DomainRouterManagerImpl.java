@@ -316,7 +316,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
             	return rtrs.get(0);
             }
             String mgmtNetmask = NetUtils.getCidrNetmask(pod.getCidrSize());
-            final String guestIp = _ipAddressDao.assignIpAddress(accountIdForDHCPServer, domainIdForDHCPServer, guestVlan.getId(), false);
+            final String guestIp = _ipAddressDao.assignIpAddress(accountIdForDHCPServer, domainIdForDHCPServer, guestVlan.getId(), false).getAddress();
 
             router =
                 new DomainRouterVO(id,

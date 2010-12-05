@@ -39,7 +39,6 @@ import com.cloud.network.security.NetworkGroupVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOSVO;
-import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
 import com.cloud.storage.VMTemplateVO;
@@ -163,14 +162,6 @@ public interface ManagementServer extends ManagementService {
      */
     boolean attachISOToVM(long vmId, long userId, long isoId, boolean attach, long startEventId);
 
-	/**
-     * Finds a domain router by id
-     * @param router id
-     * @return a domainRouter
-     */
-	DomainRouterVO findDomainRouterById(long domainRouterId);
-    
-    
     /**
      * Retrieves a host by id
      * @param hostId

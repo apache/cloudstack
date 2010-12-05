@@ -70,7 +70,6 @@ import com.cloud.api.commands.CreateTemplateCmd;
 import com.cloud.api.commands.CreateVMGroupCmd;
 import com.cloud.api.commands.DeleteVMGroupCmd;
 import com.cloud.api.commands.DeployVMCmd;
-import com.cloud.api.commands.DeployVm2Cmd;
 import com.cloud.api.commands.DestroyVMCmd;
 import com.cloud.api.commands.DetachVolumeCmd;
 import com.cloud.api.commands.RebootVMCmd;
@@ -202,7 +201,6 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.InstanceGroupVMMapDao;
 import com.cloud.vm.dao.UserVmDao;
-
 @Local(value={UserVmManager.class, UserVmService.class})
 public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualMachineGuru<UserVmVO>, Manager, VirtualMachineManager<UserVmVO> {
     private static final Logger s_logger = Logger.getLogger(UserVmManagerImpl.class);
@@ -2818,7 +2816,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
                 {
                 	for(VlanVO vlanForAcc : vlansForAccount)
                 	{
-                		guestIp = _ipAddressDao.assignIpAddress(accountId, account.getDomainId(), vlanForAcc.getId(), false);
+                		guestIp = _ipAddressDao.assignIpAddress(accountId, account.getDomainId(), vlanForAcc.getId(), false).getAddress();
                 		if(guestIp!=null) {
                             break; //got an ip
                         }
@@ -2829,7 +2827,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
                 	//i.e. for pod
                 	for(VlanVO vlanForPod : vlansForPod)
                 	{
-                		guestIp = _ipAddressDao.assignIpAddress(accountId, account.getDomainId(), vlanForPod.getId(), false);
+                		guestIp = _ipAddressDao.assignIpAddress(accountId, account.getDomainId(), vlanForPod.getId(), false).getAddress();
                 		if(guestIp!=null) {
                             break;//got an ip
                         }
@@ -2840,7 +2838,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
                 	//for zone
                 	for(VlanVO vlanForZone : zoneWideVlans)
                 	{
-                		guestIp = _ipAddressDao.assignIpAddress(accountId, account.getDomainId(), vlanForZone.getId(), false);
+                		guestIp = _ipAddressDao.assignIpAddress(accountId, account.getDomainId(), vlanForZone.getId(), false).getAddress();
                 		if(guestIp!=null) {
                             break;//found an ip
                         }
@@ -3732,7 +3730,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 	}
 	
 	@Override
-	public UserVm startVirtualMachine(DeployVm2Cmd cmd) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException {
+	public UserVm startVirtualMachine(DeployVMCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException {
 	    long vmId = cmd.getEntityId();
 	    UserVmVO vm = _vmDao.findById(vmId);
 	    

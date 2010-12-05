@@ -31,6 +31,7 @@ import org.apache.log4j.Logger;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.IpAddress.State;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
@@ -56,6 +57,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, String> implem
         AllFieldsSearch.and("ipAddress", AllFieldsSearch.entity().getAddress(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("vlan", AllFieldsSearch.entity().getVlanId(), Op.EQ);
         AllFieldsSearch.and("accountId", AllFieldsSearch.entity().getAllocatedToAccountId(), Op.EQ);
+        AllFieldsSearch.and("sourceNat", AllFieldsSearch.entity().isSourceNat(), SearchCriteria.Op.EQ);
         AllFieldsSearch.done();
 
         VlanDbIdSearchUnallocated = createSearchBuilder();
@@ -85,6 +87,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, String> implem
 
         IPAddressVO vo = createForUpdate();
         vo.setAllocatedTime(new Date());
+        vo.setState(State.Allocated);
 
         return update(vo, sc) >= 1;
     }
@@ -92,42 +95,30 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, String> implem
     @Override
     @DB
     public List<String> assignAcccountSpecificIps(long accountId, long domainId, Long vlanDbId, boolean sourceNat) {
-
-        SearchBuilder<IPAddressVO> VlanDbIdSearch = createSearchBuilder();
-        VlanDbIdSearch.and("vlanDbId", VlanDbIdSearch.entity().getVlanId(), SearchCriteria.Op.EQ);
-        VlanDbIdSearch.and("sourceNat", VlanDbIdSearch.entity().isSourceNat(), SearchCriteria.Op.EQ);
-        VlanDbIdSearch.done();
         Transaction txn = Transaction.currentTxn();
-        try {
-            txn.start();
-            SearchCriteria<IPAddressVO> sc = VlanDbIdSearch.create();
-            sc.setParameters("vlanDbId", vlanDbId);
-            sc.setParameters("sourceNat", sourceNat);
+        txn.start();
+        SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();
+        sc.setParameters("vlan", vlanDbId);
+        sc.setParameters("sourceNat", sourceNat);
 
-            List<IPAddressVO> ipList = this.lockRows(sc, null, true);
-            List<String> ipStringList = new ArrayList<String>();
+        List<IPAddressVO> ipList = lockRows(sc, null, true);
+        List<String> ipStringList = new ArrayList<String>();
 
-            for (IPAddressVO ip : ipList) {
+        for (IPAddressVO ip : ipList) {
 
-                ip.setAllocatedToAccountId(accountId);
-                ip.setAllocatedTime(new Date());
-                ip.setAllocatedInDomainId(domainId);
-                ip.setSourceNat(sourceNat);
-                ip.setState(State.Allocated);
+            ip.setAllocatedToAccountId(accountId);
+            ip.setAllocatedTime(new Date());
+            ip.setAllocatedInDomainId(domainId);
+            ip.setSourceNat(sourceNat);
+            ip.setState(State.Allocated);
 
-                if (!update(ip.getAddress(), ip)) {
-                    s_logger.debug("Unable to retrieve ip address " + ip.getAddress());
-                    return null;
-                }
-                ipStringList.add(ip.getAddress());
+            if (!update(ip.getAddress(), ip)) {
+                throw new CloudRuntimeException("Unable to update a locked ip address " + ip.getAddress());
             }
-            txn.commit();
-            return ipStringList;
-        } catch (Exception e) {
-            s_logger.warn("Unable to assign IP", e);
+            ipStringList.add(ip.getAddress());
         }
-        return null;
-
+        txn.commit();
+        return ipStringList;
     }
 
     @Override
@@ -141,18 +132,22 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, String> implem
 
     @Override
     @DB
-    public String assignIpAddress(long accountId, long domainId, long vlanDbId, boolean sourceNat) {
+    public IPAddressVO assignIpAddress(long accountId, long domainId, long vlanDbId, boolean sourceNat) {
         Transaction txn = Transaction.currentTxn();
         txn.start();
 
         SearchCriteria<IPAddressVO> sc = VlanDbIdSearchUnallocated.create();
         sc.setParameters("vlanDbId", vlanDbId);
+        
+        Filter filter = new Filter(IPAddressVO.class, "vlanId", true, 0l, 1l);
 
-        IPAddressVO ip = this.lockOneRandomRow(sc, true);
-        if (ip == null) {
+        List<IPAddressVO> ips = this.lockRows(sc, filter, true);
+        if (ips.size() == 0) {
             s_logger.info("Unable to get an ip address in " + vlanDbId);
             return null;
         }
+        
+        IPAddressVO ip = ips.get(0);
 
         ip.setAllocatedToAccountId(accountId);
         ip.setAllocatedTime(new Date());
@@ -165,7 +160,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, String> implem
         }
 
         txn.commit();
-        return ip.getAddress();
+        return ip;
     }
 
     @Override
