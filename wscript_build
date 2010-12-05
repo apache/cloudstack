@@ -357,7 +357,8 @@ else:
 
 # =================== Subst / installation of agent scripts project ========
 
-bld.recurse(["scripts"],'build')
+start_path = bld.path.find_dir ("scripts")
+bld.substitute('**',"${AGENTLIBDIR}/scripts",chmod=0755, cwd=start_path)
 if buildpremium: bld.recurse(["cloudstack-proprietary/scripts"],'build')
 
 # ================== End agent scripts ===================
