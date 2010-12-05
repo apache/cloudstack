@@ -101,9 +101,15 @@ if buildpremium: bld.recurse(['cloudstack-proprietary/thirdparty'],'build')
 
 
 # =================== Build install declaratoin of console proxy project ========
+# binary unsubstitutable files:
+start_path = bld.path.find_dir ("console-proxy")
+bld.install_files("${CPLIBDIR}",start_path.ant_glob("images/**",src=True,bld=False,dir=False,flat=True),cwd=start_path,relative_trick=True)
 
-bld.recurse(["console-proxy"],'build')
+# text substitutable files (substitute with tokens from the environment bld.env):
+bld.substitute('css/** js/** ui/** scripts/**',install_to="${CPLIBDIR}", cwd=start_path)
 
+# config files (do not replace them if preserve config option is true)
+if not Options.options.PRESERVECONFIG: bld.install_files_filtered("${CPSYSCONFDIR}","conf.dom0/*", cwd=start_path)
 # ================== End console proxy ===================
 
 
