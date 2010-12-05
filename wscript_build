@@ -370,9 +370,26 @@ bld.install_files_filtered("${SBINDIR}","*/sbindir/* cloudstack-proprietary/*/sb
 # build / install declarations of test project
 if buildpremium: bld.recurse(["cloudstack-proprietary/test"],'build')
 
-# build / install declarations of server project <- this is actually now in client project
-bld.recurse(["client","server"],'build')
+# ================= build / install declarations of server project <- this is actually now in client project
+start_path = bld.path.find_dir("client/WEB-INF")
+bld.install_files('${MSENVIRON}/webapps/client/WEB-INF',
+	start_path.ant_glob("**",src=True,bld=False,dir=False,flat=True),
+	cwd=start_path,relative_trick=True)
+
+start_path = bld.path.find_dir("client")
+bld.install_files("${MSCONF}/resources",'WEB-INF/classes/resources/*.properties',chmod=0640, cwd=start_path)
+
+if not Options.options.PRESERVECONFIG:
+	bld.install_files_filtered("${MSCONF}","tomcatconf/*", cwd=start_path)
+	bld.install_files("${MSCONF}",'tomcatconf/db.properties',chmod=0640, cwd=start_path)
+	bld.setownership("${MSCONF}/db.properties","root",bld.env.MSUSER)
+
+start_path = bld.path.find_dir("server")
+if not Options.options.PRESERVECONFIG:
+	bld.install_files_filtered("${SERVERSYSCONFDIR}","conf/*", cwd=start_path)
+
 if buildpremium: bld.recurse(["cloudstack-proprietary/premium"],'build')
+# ================= end build / install declarations of server project <- this is actually now in client project
 
 # build / install declarations of agent project
 bld.recurse(["agent"],'build')
