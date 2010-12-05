@@ -371,8 +371,15 @@ if buildpremium: bld.recurse(["cloudstack-proprietary/premium"],'build')
 # build / install declarations of agent project
 bld.recurse(["agent"],'build')
 
-# build / install declarations of client UI project
-bld.recurse(["ui"],'build')
+# =============== build / install declarations of client UI project =======================
+# binary unsubstitutable files:
+start_path = bld.path.find_dir ("ui")
+bld.install_files ("${MSENVIRON}/webapps/client",start_path.ant_glob("*.ico **/*png **/*jpg **/*gif",src=True,bld=False,dir=False,flat=True),cwd=start_path,relative_trick=True)
+
+# text substitutable files (substitute with tokens from the environment bld.env):
+#bld.substitute ("ui/*html ui/**/*html ui/**/*js ui/**/*css ui/**/*properties ui/**/*jsp ui/*jsp",install_to="${MSENVIRON}/webapps/client")
+bld.substitute ("*html **/*html **/*js **/*css **/*properties **/*jsp *jsp",install_to="${MSENVIRON}/webapps/client", cwd=start_path)
+# =============== end build / install declarations of client UI project =======================
 
 # apply distro-specific config on top of the 'all' generic cloud-management config
 globspec = _join("*","distro",bld.env.DISTRO.lower(),"*") # matches premium/distro/centos/SYSCONFDIR
