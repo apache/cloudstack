@@ -95,7 +95,7 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Por
     }
 
 	@Override
-	public void callCreate() {
+	public void create() {
 		PortForwardingRule rule;
         try {
             rule = _rulesService.createPortForwardingRule(this, virtualMachineId);

@@ -168,7 +168,7 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
     }
 
     @Override
-    public void callCreate(){
+    public void create(){
         VirtualMachineTemplate template = _userVmService.createPrivateTemplateRecord(this);
         if (template != null){
             this.setEntityId(template.getId());

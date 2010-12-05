@@ -144,7 +144,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     }
     
     @Override
-    public void callCreate(){
+    public void create(){
         try {
             Volume volume = _storageMgr.allocVolume(this);
             if (volume != null) {

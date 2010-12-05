@@ -134,7 +134,7 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
 	}
 	
     @Override
-    public void callCreate(){
+    public void create(){
         try {
             RemoteAccessVpn vpn = _networkService.createRemoteAccessVpn(this);
             if (vpn != null) {

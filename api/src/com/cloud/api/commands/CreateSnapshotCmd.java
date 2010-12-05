@@ -119,7 +119,7 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
     }
     
     @Override
-    public void callCreate(){
+    public void create(){
         long id = _snapshotMgr.getNextInSequence(this);
         this.setEntityId(id);
     }

@@ -230,7 +230,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     }
 
     @Override
-    public void callCreate() {
+    public void create() {
         try {
             UserVm result = _userVmService.createVirtualMachine(this);
             if (result != null){

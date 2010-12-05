@@ -65,7 +65,7 @@ public class ApiDispatcher {
         setupParameters(cmd, params);
 
         try {
-            cmd.callCreate();
+            cmd.create();
         } catch (Throwable t) {
             if (t instanceof  InvalidParameterValueException || t instanceof IllegalArgumentException) {
                 s_logger.info(t.getMessage());

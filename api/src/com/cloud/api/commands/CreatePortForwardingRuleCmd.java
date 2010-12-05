@@ -187,7 +187,7 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd  implements 
     }
 
     @Override
-    public void callCreate() {
+    public void create() {
         try {
             PortForwardingRule result = _rulesService.createPortForwardingRule(this, virtualMachineId);
             setEntityId(result.getId());

@@ -189,7 +189,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  implements Lo
     }
 
     @Override
-    public void callCreate() {
+    public void create() {
         // TODO Auto-generated method stub
         
     }
