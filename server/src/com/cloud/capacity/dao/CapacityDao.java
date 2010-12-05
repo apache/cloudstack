@@ -26,5 +26,6 @@ public interface CapacityDao extends GenericDao<CapacityVO, Long> {
     void clearNonStorageCapacities();
     void clearStorageCapacities();
 	CapacityVO findByHostIdType(Long hostId, short capacityType);
+	void clearNonStorageCapacities2();
 	
 }

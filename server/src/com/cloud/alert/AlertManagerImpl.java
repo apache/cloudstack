@@ -357,8 +357,12 @@ public class AlertManagerImpl implements AlertManager {
         try {
         	txn.start();
         	// delete the old records
-            _capacityDao.clearNonStorageCapacities();
-
+        	if (_useNewNetworking) {
+        		 _capacityDao.clearNonStorageCapacities2();
+        	} else {
+        		_capacityDao.clearNonStorageCapacities();
+        	}
+        	
             for (CapacityVO newCapacity : newCapacities) {
             	s_logger.trace("Executing capacity update");
                 _capacityDao.persist(newCapacity);
