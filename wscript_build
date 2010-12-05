@@ -87,10 +87,16 @@ tgen = bld(rule=Utils.runant, name='runant', source=ant_sources, target=ant_jars
 
 # =================== C / Python compilation =========================
 
-bld.recurse(["daemonize"],'build')
 obj = bld(features = 'py',name='pythonmodules')
 obj.find_sources_in_dirs('python/lib', exts=['.py'])
 
+if bld.env.DISTRO not in ['Windows','Mac']:
+	# build / install declarations of the daemonization utility - except for Windows
+	bld(
+		name='daemonize',
+		features='cc cprogram',
+		source='daemonize/daemonize.c',
+		target='daemonize/cloud-daemonize')
 # ===================== End C / Python compilation ==========================
 
 
