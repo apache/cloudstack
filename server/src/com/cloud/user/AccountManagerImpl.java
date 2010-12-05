@@ -872,7 +872,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
                 }
 
                 for (IPAddressVO ip : ips) {
-                    List<PodVlanMapVO> podVlanMaps = _podVlanMapDao.listPodVlanMapsByVlan(ip.getVlanDbId());
+                    List<PodVlanMapVO> podVlanMaps = _podVlanMapDao.listPodVlanMapsByVlan(ip.getVlanId());
                     if (podVlanMaps != null && podVlanMaps.size() != 0) {
                         Long podId = podVlanMaps.get(0).getPodId();
                         if (podId != null) {

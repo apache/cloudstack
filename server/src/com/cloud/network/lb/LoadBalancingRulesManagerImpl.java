@@ -207,7 +207,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
 
         // make sure ip address exists
         IPAddressVO ipAddr = _ipAddressDao.findById(srcIp.addr());
-        if (ipAddr == null || ipAddr.getAllocated() == null || ipAddr.getAccountId() == null) {
+        if (ipAddr == null || ipAddr.getAllocatedTime() == null || ipAddr.getAllocatedToAccountId() == null) {
             throw new InvalidParameterValueException("Unable to create load balancer rule, invalid IP address " + srcIp);
         }
 
@@ -264,7 +264,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
 
             EventVO event = new EventVO();
             event.setUserId(userId);
-            event.setAccountId(ipAddr.getAccountId());
+            event.setAccountId(ipAddr.getAllocatedToAccountId());
             event.setType(EventTypes.EVENT_LOAD_BALANCER_CREATE);
 
             if (!success) {

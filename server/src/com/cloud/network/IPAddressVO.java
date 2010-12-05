@@ -29,18 +29,16 @@ import javax.persistence.TemporalType;
 
 /**
  * A bean representing a public IP Address
- * 
- * @author Will Chan
  *
  */
 @Entity
 @Table(name=("user_ip_address"))
 public class IPAddressVO implements IpAddress {
 	@Column(name="account_id")
-	private Long accountId = null;
+	private Long allocatedToAccountId = null;
 
     @Column(name="domain_id")
-    private Long domainId = null;
+    private Long allocatedInDomainId = null;
 
 	@Id
 	@Column(name="public_ip_address")
@@ -54,22 +52,34 @@ public class IPAddressVO implements IpAddress {
 
 	@Column(name="allocated")
 	@Temporal(value=TemporalType.TIMESTAMP)
-	private Date allocated;
+	private Date allocatedTime;
 	
 	@Column(name="vlan_db_id")
-	private long vlanDbId;
+	private long vlanId;
 
 	@Column(name="one_to_one_nat")
 	private boolean oneToOneNat;
+	
+	@Column(name="state")
+	private State state;
 
 	protected IPAddressVO() {
+	}
+	
+	@Override
+    public boolean readyToUse() {
+	    return state == State.Allocated;
 	}
 
 	public IPAddressVO(String address, long dataCenterId, long vlanDbId, boolean sourceNat) {
 		this.address = address;
 		this.dataCenterId = dataCenterId;
-		this.vlanDbId = vlanDbId;
+		this.vlanId = vlanDbId;
 		this.sourceNat = sourceNat;
+		this.allocatedInDomainId = null;
+		this.allocatedToAccountId = null;
+		this.allocatedTime = null;
+		this.state = State.Free;
 	}
 	
 	@Override
@@ -81,56 +91,50 @@ public class IPAddressVO implements IpAddress {
     public String getAddress() {
 		return address;
 	}
+	
 	@Override
-    public Long getAccountId() {
-		return accountId;
+    public Long getAllocatedToAccountId() {
+		return allocatedToAccountId;
 	}
+	
     @Override
-    public Long getDomainId() {
-        return domainId;
+    public Long getAllocatedInDomainId() {
+        return allocatedInDomainId;
     }
+    
 	@Override
-    public Date getAllocated() {
-		return allocated;
-	}
-	@Override
-    public boolean isSourceNat() {
-		return sourceNat;
+    public Date getAllocatedTime() {
+		return allocatedTime;
 	}
 
-	@Override
-    public void setAccountId(Long accountId) {
-		this.accountId = accountId;
+    public void setAllocatedToAccountId(Long accountId) {
+		this.allocatedToAccountId = accountId;
 	}
 
-	@Override
-    public void setDomainId(Long domainId) {
-        this.domainId = domainId;
+    public void setAllocatedInDomainId(Long domainId) {
+        this.allocatedInDomainId = domainId;
     }
 
-	@Override
     public void setSourceNat(boolean sourceNat) {
 		this.sourceNat = sourceNat;
 	}
 	
 	@Override
-    public boolean getSourceNat() {
-		return this.sourceNat;
+    public boolean isSourceNat() {
+		return sourceNat;
 	}
 
-	@Override
-    public void setAllocated(Date allocated) {
-		this.allocated = allocated;
+    public void setAllocatedTime(Date allocated) {
+		this.allocatedTime = allocated;
 	}
 	
 	@Override
-    public long getVlanDbId() {
-		return this.vlanDbId;
+    public long getVlanId() {
+		return this.vlanId;
 	}
 	
-	@Override
-    public void setVlanDbId(long vlanDbId) {
-		this.vlanDbId = vlanDbId;
+    public void setVlanId(long vlanDbId) {
+		this.vlanId = vlanDbId;
 	}
 
 	@Override
@@ -138,10 +142,28 @@ public class IPAddressVO implements IpAddress {
 		return oneToOneNat;
 	}
 
-	@Override
     public void setOneToOneNat(boolean oneToOneNat) {
 		this.oneToOneNat = oneToOneNat;
 	}
+    
+    @Override
+    public long getDomainId() {
+        return allocatedInDomainId == null ? -1 : allocatedInDomainId;
+    }
+    
+    @Override
+    public long getAccountId() {
+        return allocatedToAccountId == null ? -1 : allocatedToAccountId;
+    }
+    
+    @Override
+    public State getState() {
+        return state;
+    }
+    
+    public void setState(State state) {
+        this.state = state;
+    }
 	
 	@Override
     public String toString() {

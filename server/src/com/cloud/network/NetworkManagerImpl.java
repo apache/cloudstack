@@ -469,7 +469,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         for (final String ipAddress: ipAddrList) {
             IPAddressVO ip = _ipAddressDao.findById(ipAddress);
 
-            VlanVO vlan = _vlanDao.findById(ip.getVlanDbId());
+            VlanVO vlan = _vlanDao.findById(ip.getVlanId());
             ArrayList<IPAddressVO> ipList = vlanIpMap.get(vlan.getId());
             if (ipList == null) {
                 ipList = new ArrayList<IPAddressVO>();
@@ -487,7 +487,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 } });
 
             for (final IPAddressVO ip: ipList) {
-                sourceNat = ip.getSourceNat();
+                sourceNat = ip.isSourceNat();
                 VlanVO vlan = vlanAndIp.getKey();
                 String vlanId = vlan.getVlanId();
                 String vlanGateway = vlan.getVlanGateway();
@@ -713,7 +713,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     public boolean associateIP(final DomainRouterVO router, final String ipAddress, final boolean add, long vmId) {
         Commands cmds = new Commands(OnError.Continue);
         IPAddressVO ip = _ipAddressDao.findById(ipAddress);
-        VlanVO vlan = _vlanDao.findById(ip.getVlanDbId());
+        VlanVO vlan = _vlanDao.findById(ip.getVlanId());
         boolean sourceNat = ip.isSourceNat();
         boolean firstIP = (!sourceNat && (_ipAddressDao.countIPs(vlan.getDataCenterId(), router.getAccountId(), vlan.getVlanId(), vlan.getVlanGateway(), vlan.getVlanNetmask()) == 1));
         String vlanId = vlan.getVlanId();
@@ -762,13 +762,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             return null;
         }
         
-        if (ip.getAllocated() == null) {
+        if (ip.getAllocatedTime() == null) {
             s_logger.debug("Ip Address is already rleeased: " + ipAddress);
             return null;
         }
         
-        ip.setAccountId(null);
-        ip.setDomainId(null);
+        ip.setAllocatedToAccountId(null);
+        ip.setAllocatedInDomainId(null);
         _ipAddressDao.update(ip.getAddress(), ip);
         txn.commit();
         return ip;
@@ -819,7 +819,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         
         final EventVO event = new EventVO();
         event.setUserId(userId);
-        event.setAccountId(ip.getAccountId());
+        event.setAccountId(ip.getAllocatedToAccountId());
         event.setType(EventTypes.EVENT_NET_IP_RELEASE);
         event.setParameters("address=" + ipAddress + "\nsourceNat="+ip.isSourceNat());
         event.setDescription("released a public ip: " + ipAddress);
@@ -980,7 +980,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     public List<IPAddressVO> listPublicIpAddressesInVirtualNetwork(long accountId, long dcId, Boolean sourceNat) {
         SearchBuilder<IPAddressVO> ipAddressSB = _ipAddressDao.createSearchBuilder();
-        ipAddressSB.and("accountId", ipAddressSB.entity().getAccountId(), SearchCriteria.Op.EQ);
+        ipAddressSB.and("accountId", ipAddressSB.entity().getAllocatedToAccountId(), SearchCriteria.Op.EQ);
         ipAddressSB.and("dataCenterId", ipAddressSB.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         if (sourceNat != null) {
             ipAddressSB.and("sourceNat", ipAddressSB.entity().isSourceNat(), SearchCriteria.Op.EQ);
@@ -988,7 +988,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         SearchBuilder<VlanVO> virtualNetworkVlanSB = _vlanDao.createSearchBuilder();
         virtualNetworkVlanSB.and("vlanType", virtualNetworkVlanSB.entity().getVlanType(), SearchCriteria.Op.EQ);
-        ipAddressSB.join("virtualNetworkVlanSB", virtualNetworkVlanSB, ipAddressSB.entity().getVlanDbId(), virtualNetworkVlanSB.entity().getId(), JoinBuilder.JoinType.INNER);
+        ipAddressSB.join("virtualNetworkVlanSB", virtualNetworkVlanSB, ipAddressSB.entity().getVlanId(), virtualNetworkVlanSB.entity().getId(), JoinBuilder.JoinType.INNER);
 
         SearchCriteria<IPAddressVO> ipAddressSC = ipAddressSB.create();
         ipAddressSC.setParameters("accountId", accountId);
@@ -1325,8 +1325,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     private Account findAccountByIpAddress(String ipAddress) {
         IPAddressVO address = _ipAddressDao.findById(ipAddress);
-        if ((address != null) && (address.getAccountId() != null)) {
-            return _accountDao.findById(address.getAccountId());
+        if ((address != null) && (address.getAllocatedToAccountId() != null)) {
+            return _accountDao.findById(address.getAllocatedToAccountId());
         }
         return null;
     }
@@ -1368,7 +1368,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 return false;
             }
 
-            if (ipVO.getAllocated() == null) {
+            if (ipVO.getAllocatedTime() == null) {
                 return true;
             }
 
@@ -1377,18 +1377,18 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 return false;
             }
 
-            if ((ipVO.getAccountId() == null) || (ipVO.getAccountId().longValue() != accountId)) {
+            if ((ipVO.getAllocatedToAccountId() == null) || (ipVO.getAllocatedToAccountId().longValue() != accountId)) {
                 // FIXME: is the user visible in the admin account's domain????
                 if (!BaseCmd.isAdmin(Account.getType())) {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("permission denied disassociating IP address " + ipAddress + "; acct: " + accountId + "; ip (acct / dc / dom / alloc): "
-                                + ipVO.getAccountId() + " / " + ipVO.getDataCenterId() + " / " + ipVO.getDomainId() + " / " + ipVO.getAllocated());
+                                + ipVO.getAllocatedToAccountId() + " / " + ipVO.getDataCenterId() + " / " + ipVO.getAllocatedInDomainId() + " / " + ipVO.getAllocatedTime());
                     }
                     throw new PermissionDeniedException("User/account does not own supplied address");
                 }
             }
 
-            if (ipVO.getAllocated() == null) {
+            if (ipVO.getAllocatedTime() == null) {
                 return true;
             }
 
@@ -1396,13 +1396,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 throw new IllegalArgumentException("ip address is used for source nat purposes and can not be disassociated.");
             }
 
-            VlanVO vlan = _vlanDao.findById(ipVO.getVlanDbId());
+            VlanVO vlan = _vlanDao.findById(ipVO.getVlanId());
             if (!vlan.getVlanType().equals(VlanType.VirtualNetwork)) {
                 throw new IllegalArgumentException("only ip addresses that belong to a virtual network may be disassociated.");
             }
 
             //Check for account wide pool. It will have an entry for account_vlan_map. 
-            if (_accountVlanMapDao.findAccountVlanMap(accountId,ipVO.getVlanDbId()) != null){
+            if (_accountVlanMapDao.findAccountVlanMap(accountId,ipVO.getVlanId()) != null){
                 throw new PermissionDeniedException(ipAddress + " belongs to Account wide IP pool and cannot be disassociated");
             }
 

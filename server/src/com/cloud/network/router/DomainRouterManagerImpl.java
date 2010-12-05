@@ -488,7 +488,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
 
             // Find the VLAN ID, VLAN gateway, and VLAN netmask for publicIpAddress
             IPAddressVO ipVO = _ipAddressDao.findById(publicIpAddress);
-            VlanVO vlan = _vlanDao.findById(ipVO.getVlanDbId());
+            VlanVO vlan = _vlanDao.findById(ipVO.getVlanId());
             String vlanId = vlan.getVlanId();
             String vlanGateway = vlan.getVlanGateway();
             String vlanNetmask = vlan.getVlanNetmask();

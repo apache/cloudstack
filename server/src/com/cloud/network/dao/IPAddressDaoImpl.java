@@ -29,218 +29,211 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 
 import com.cloud.network.IPAddressVO;
+import com.cloud.network.IpAddress.State;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.exception.CloudRuntimeException;
 
-@Local(value={IPAddressDao.class})
+@Local(value = { IPAddressDao.class })
+@DB
 public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, String> implements IPAddressDao {
     private static final Logger s_logger = Logger.getLogger(IPAddressDaoImpl.class);
-	
-	protected SearchBuilder<IPAddressVO> DcIpSearch;
-	protected SearchBuilder<IPAddressVO> VlanDbIdSearchUnallocated;
-    protected SearchBuilder<IPAddressVO> AccountSearch;
+
+    protected final SearchBuilder<IPAddressVO> AllFieldsSearch;
+    protected final SearchBuilder<IPAddressVO> VlanDbIdSearchUnallocated;
+    protected final GenericSearchBuilder<IPAddressVO, Integer> AllIpCount;
+    protected final GenericSearchBuilder<IPAddressVO, Integer> AllocatedIpCount;
 
     // make it public for JUnit test
     public IPAddressDaoImpl() {
-	    DcIpSearch = createSearchBuilder();
-	    DcIpSearch.and("dataCenterId", DcIpSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-	    DcIpSearch.and("ipAddress", DcIpSearch.entity().getAddress(), SearchCriteria.Op.EQ);
-	    DcIpSearch.done();
-	    
-	    VlanDbIdSearchUnallocated = createSearchBuilder();
-	    VlanDbIdSearchUnallocated.and("allocated", VlanDbIdSearchUnallocated.entity().getAllocated(), SearchCriteria.Op.NULL);
-	    VlanDbIdSearchUnallocated.and("vlanDbId", VlanDbIdSearchUnallocated.entity().getVlanDbId(), SearchCriteria.Op.EQ);
-	    //VlanDbIdSearchUnallocated.addRetrieve("ipAddress", VlanDbIdSearchUnallocated.entity().getAddress());
-	    VlanDbIdSearchUnallocated.done();
-	    
-        AccountSearch = createSearchBuilder();
-        AccountSearch.and("accountId", AccountSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
-        AccountSearch.done();
+        AllFieldsSearch = createSearchBuilder();
+        AllFieldsSearch.and("dataCenterId", AllFieldsSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("ipAddress", AllFieldsSearch.entity().getAddress(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("vlan", AllFieldsSearch.entity().getVlanId(), Op.EQ);
+        AllFieldsSearch.and("accountId", AllFieldsSearch.entity().getAllocatedToAccountId(), Op.EQ);
+        AllFieldsSearch.done();
+
+        VlanDbIdSearchUnallocated = createSearchBuilder();
+        VlanDbIdSearchUnallocated.and("allocated", VlanDbIdSearchUnallocated.entity().getAllocatedTime(), SearchCriteria.Op.NULL);
+        VlanDbIdSearchUnallocated.and("vlanDbId", VlanDbIdSearchUnallocated.entity().getVlanId(), SearchCriteria.Op.EQ);
+        // VlanDbIdSearchUnallocated.addRetrieve("ipAddress",
+        // VlanDbIdSearchUnallocated.entity().getAddress());
+        VlanDbIdSearchUnallocated.done();
+
+        AllIpCount = createSearchBuilder(Integer.class);
+        AllIpCount.and("dc", AllIpCount.entity().getDataCenterId(), Op.EQ);
+        AllIpCount.and("vlan", AllIpCount.entity().getVlanId(), Op.EQ);
+        AllIpCount.done();
+
+        AllocatedIpCount = createSearchBuilder(Integer.class);
+        AllocatedIpCount.and("dc", AllocatedIpCount.entity().getDataCenterId(), Op.EQ);
+        AllocatedIpCount.and("vlan", AllocatedIpCount.entity().getVlanId(), Op.EQ);
+        AllocatedIpCount.and("allocated", AllocatedIpCount.entity().getAllocatedTime(), Op.NNULL);
+        AllocatedIpCount.done();
     }
-    
+
     @Override
     public boolean mark(long dcId, String ip) {
-        SearchCriteria<IPAddressVO> sc = DcIpSearch.create();
+        SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();
         sc.setParameters("dataCenterId", dcId);
         sc.setParameters("ipAddress", ip);
-        
+
         IPAddressVO vo = createForUpdate();
-        vo.setAllocated(new Date());
-        
+        vo.setAllocatedTime(new Date());
+
         return update(vo, sc) >= 1;
     }
 
     @Override
     @DB
     public List<String> assignAcccountSpecificIps(long accountId, long domainId, Long vlanDbId, boolean sourceNat) {
-    	
-    	SearchBuilder<IPAddressVO> VlanDbIdSearch = createSearchBuilder();    	
-    	VlanDbIdSearch.and("vlanDbId", VlanDbIdSearch.entity().getVlanDbId(), SearchCriteria.Op.EQ);
-    	VlanDbIdSearch.and("sourceNat", VlanDbIdSearch.entity().getSourceNat(), SearchCriteria.Op.EQ);	    
-	    VlanDbIdSearch.done();
-    	Transaction txn = Transaction.currentTxn();
-		try {
-			txn.start();
-	        SearchCriteria<IPAddressVO> sc = VlanDbIdSearch.create();
-	        sc.setParameters("vlanDbId", vlanDbId);
-	        sc.setParameters("sourceNat", sourceNat);
-	        
-			List<IPAddressVO> ipList = this.lockRows(sc, null, true);
-			List<String> ipStringList = new ArrayList<String>();
-			
-			for(IPAddressVO ip:ipList){
-			
-				ip.setAccountId(accountId);
-				ip.setAllocated(new Date());
-				ip.setDomainId(domainId);
-				ip.setSourceNat(sourceNat);
-				
-				if (!update(ip.getAddress(), ip)) {
-					s_logger.debug("Unable to retrieve ip address " + ip.getAddress());
-					return null;
-				}
-				ipStringList.add(ip.getAddress());
-			}
-			txn.commit();
-			return ipStringList;
-		} catch (Exception e) {
-			s_logger.warn("Unable to assign IP", e);
-		}
-		return null;
-    	
+
+        SearchBuilder<IPAddressVO> VlanDbIdSearch = createSearchBuilder();
+        VlanDbIdSearch.and("vlanDbId", VlanDbIdSearch.entity().getVlanId(), SearchCriteria.Op.EQ);
+        VlanDbIdSearch.and("sourceNat", VlanDbIdSearch.entity().isSourceNat(), SearchCriteria.Op.EQ);
+        VlanDbIdSearch.done();
+        Transaction txn = Transaction.currentTxn();
+        try {
+            txn.start();
+            SearchCriteria<IPAddressVO> sc = VlanDbIdSearch.create();
+            sc.setParameters("vlanDbId", vlanDbId);
+            sc.setParameters("sourceNat", sourceNat);
+
+            List<IPAddressVO> ipList = this.lockRows(sc, null, true);
+            List<String> ipStringList = new ArrayList<String>();
+
+            for (IPAddressVO ip : ipList) {
+
+                ip.setAllocatedToAccountId(accountId);
+                ip.setAllocatedTime(new Date());
+                ip.setAllocatedInDomainId(domainId);
+                ip.setSourceNat(sourceNat);
+                ip.setState(State.Allocated);
+
+                if (!update(ip.getAddress(), ip)) {
+                    s_logger.debug("Unable to retrieve ip address " + ip.getAddress());
+                    return null;
+                }
+                ipStringList.add(ip.getAddress());
+            }
+            txn.commit();
+            return ipStringList;
+        } catch (Exception e) {
+            s_logger.warn("Unable to assign IP", e);
+        }
+        return null;
+
     }
+
     @Override
-    public void setIpAsSourceNat(String ipAddr){
+    public void setIpAsSourceNat(String ipAddr) {
 
-    		IPAddressVO ip = createForUpdate(ipAddr);    	    
-    	    ip.setSourceNat(true);
-    	    s_logger.debug("Setting " + ipAddr + " as source Nat ");
-    	    update(ipAddr, ip);
+        IPAddressVO ip = createForUpdate(ipAddr);
+        ip.setSourceNat(true);
+        s_logger.debug("Setting " + ipAddr + " as source Nat ");
+        update(ipAddr, ip);
     }
-    
-	@Override
+
+    @Override
+    @DB
     public String assignIpAddress(long accountId, long domainId, long vlanDbId, boolean sourceNat) {
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
 
-		Transaction txn = Transaction.currentTxn();
-		try {
-			txn.start();
-	        SearchCriteria<IPAddressVO> sc = VlanDbIdSearchUnallocated.create();
-	        sc.setParameters("vlanDbId", vlanDbId);
-	        
-			IPAddressVO ip = this.lockOneRandomRow(sc, true);
-			if(ip != null) {
-				ip.setAccountId(accountId);
-				ip.setAllocated(new Date());
-				ip.setDomainId(domainId);
-				ip.setSourceNat(sourceNat);
-				
-				if (!update(ip.getAddress(), ip)) {
-					s_logger.debug("Unable to retrieve any ip addresses");
-					return null;
-				}
-	
-				txn.commit();
-				return ip.getAddress();
-			} else {
-				txn.rollback();
-				//we do not log this as an error now, as there can be multiple vlans across which we iterate
-				s_logger.warn("Unable to find an available IP address with related vlan, vlanDbId: " + vlanDbId);
-			}
-		} catch (Exception e) {
-			s_logger.warn("Unable to assign IP", e);
-		}
-		return null;
+        SearchCriteria<IPAddressVO> sc = VlanDbIdSearchUnallocated.create();
+        sc.setParameters("vlanDbId", vlanDbId);
+
+        IPAddressVO ip = this.lockOneRandomRow(sc, true);
+        if (ip == null) {
+            s_logger.info("Unable to get an ip address in " + vlanDbId);
+            return null;
+        }
+
+        ip.setAllocatedToAccountId(accountId);
+        ip.setAllocatedTime(new Date());
+        ip.setAllocatedInDomainId(domainId);
+        ip.setSourceNat(sourceNat);
+        ip.setState(State.Allocated);
+
+        if (!update(ip.getAddress(), ip)) {
+            throw new CloudRuntimeException("How can I lock the row but can't update it: " + ip.getAddress());
+        }
+
+        txn.commit();
+        return ip.getAddress();
     }
 
-	@Override
-	public void unassignIpAddress(String ipAddress) {
-		IPAddressVO address = createForUpdate();
-	    address.setAccountId(null);
-	    address.setDomainId(null);
-	    address.setAllocated(null);
-	    address.setSourceNat(false);
-	    address.setOneToOneNat(false);
-	    update(ipAddress, address);
-	}
-	
-	@Override
-	public void unassignIpAsSourceNat(String ipAddress) {
-		IPAddressVO address = createForUpdate();
-	    address.setSourceNat(false);
-	    update(ipAddress, address);
-	}
+    @Override
+    public void unassignIpAddress(String ipAddress) {
+        IPAddressVO address = createForUpdate();
+        address.setAllocatedToAccountId(null);
+        address.setAllocatedInDomainId(null);
+        address.setAllocatedTime(null);
+        address.setSourceNat(false);
+        address.setOneToOneNat(false);
+        address.setState(State.Free);
+        update(ipAddress, address);
+    }
+
+    @Override
+    public void unassignIpAsSourceNat(String ipAddress) {
+        IPAddressVO address = createForUpdate();
+        address.setSourceNat(false);
+        update(ipAddress, address);
+    }
 
     @Override
     public List<IPAddressVO> listByAccount(long accountId) {
-    	SearchCriteria<IPAddressVO> sc = AccountSearch.create();
+        SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();
         sc.setParameters("accountId", accountId);
         return listIncludingRemovedBy(sc);
     }
-	
-	@Override
+
+    @Override
     public List<IPAddressVO> listByDcIdIpAddress(long dcId, String ipAddress) {
-		SearchCriteria<IPAddressVO> sc = DcIpSearch.create();
-		sc.setParameters("dataCenterId", dcId);
-		sc.setParameters("ipAddress", ipAddress);
-		return listIncludingRemovedBy(sc);
-	}
-	
-	@Override @DB
-	public int countIPs(long dcId, long vlanDbId, boolean onlyCountAllocated) {
-		Transaction txn = Transaction.currentTxn();
-		PreparedStatement pstmt = null;
-		int ipCount = 0;
-		try {
-			String sql = "SELECT count(*) from `cloud`.`user_ip_address` where data_center_id = " + dcId;
-			
-			if (vlanDbId != -1) {
-				sql += " AND vlan_db_id = " + vlanDbId;
-			}
-			
-			if (onlyCountAllocated) {
-				sql += " AND allocated IS NOT NULL";
-			}
-			
-            pstmt = txn.prepareAutoCloseStatement(sql);
+        SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();
+        sc.setParameters("dataCenterId", dcId);
+        sc.setParameters("ipAddress", ipAddress);
+        return listIncludingRemovedBy(sc);
+    }
+
+    @Override
+    public int countIPs(long dcId, long vlanId, boolean onlyCountAllocated) {
+        SearchCriteria<Integer> sc = onlyCountAllocated ? AllocatedIpCount.create() : AllIpCount.create();
+        sc.setParameters("dc", dcId);
+        sc.setParameters("vlan", vlanId);
+
+        return customSearch(sc, null).get(0);
+    }
+
+    @Override
+    @DB
+    public int countIPs(long dcId, Long accountId, String vlanId, String vlanGateway, String vlanNetmask) {
+        Transaction txn = Transaction.currentTxn();
+        int ipCount = 0;
+        try {
+            String sql = "SELECT count(*) FROM user_ip_address u INNER JOIN vlan v on (u.vlan_db_id = v.id AND v.data_center_id = ? AND v.vlan_id = ? AND v.vlan_gateway = ? AND v.vlan_netmask = ? AND u.account_id = ?)";
+
+            PreparedStatement pstmt = txn.prepareAutoCloseStatement(sql);
+            pstmt.setLong(1, dcId);
+            pstmt.setString(2, vlanId);
+            pstmt.setString(3, vlanGateway);
+            pstmt.setString(4, vlanNetmask);
+            pstmt.setLong(5, accountId);
             ResultSet rs = pstmt.executeQuery();
-            
+
             if (rs.next()) {
-            	ipCount = rs.getInt(1);
+                ipCount = rs.getInt(1);
             }
-            
         } catch (Exception e) {
             s_logger.warn("Exception counting IP addresses", e);
         }
-        
+
         return ipCount;
-	}
-	
-	@Override @DB
-	public int countIPs(long dcId, Long accountId, String vlanId, String vlanGateway, String vlanNetmask) {
-		Transaction txn = Transaction.currentTxn();
-		int ipCount = 0;
-		try {
-			String sql = "SELECT count(*) FROM user_ip_address u INNER JOIN vlan v on (u.vlan_db_id = v.id AND v.data_center_id = ? AND v.vlan_id = ? AND v.vlan_gateway = ? AND v.vlan_netmask = ? AND u.account_id = ?)";
-			
-			
-			PreparedStatement pstmt = txn.prepareAutoCloseStatement(sql);
-			pstmt.setLong(1, dcId);
-			pstmt.setString(2, vlanId);
-			pstmt.setString(3, vlanGateway);
-			pstmt.setString(4, vlanNetmask);
-			pstmt.setLong(5, accountId);
-			ResultSet rs = pstmt.executeQuery();
-			
-			if (rs.next()) {
-				ipCount = rs.getInt(1);
-			}
-		} catch (Exception e) {
-			s_logger.warn("Exception counting IP addresses", e);
-		}
-		
-		return ipCount;
-	}
+    }
 }

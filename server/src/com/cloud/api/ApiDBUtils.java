@@ -411,7 +411,7 @@ public class ApiDBUtils {
         List<UserVmVO> vms = _userVmDao.listVmsUsingGuestIpAddress(addr.getDataCenterId(), guestIp);
         if (vms != null) {
             for (UserVmVO vm : vms) {
-                if (vm.getAccountId() == addr.getAccountId()) {
+                if (vm.getAccountId() == addr.getAllocatedToAccountId()) {
                     return vm;
                 }
             }

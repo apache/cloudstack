@@ -19,30 +19,48 @@ package com.cloud.network;
 
 import java.util.Date;
 
-public interface IpAddress {
+import com.cloud.acl.ControlledEntity;
+
+/**
+ * IpAddress represents the public ip address to be allocated in the CloudStack.
+ * 
+ * When it is not allocated, it should have
+ *   - State = Free
+ *   - Allocated = null
+ *   - AccountId = null
+ *   - DomainId = null
+ *   
+ * When it is allocated, it should have
+ *   - State = Allocated
+ *   - AccountId = account owner.
+ *   - DomainId = domain of the account owner.
+ *   - Allocated = time it was allocated.
+ */
+public interface IpAddress extends ControlledEntity {
+    enum State {
+        Allocating,  // The IP Address is being propagated to other network elements and is not ready for use yet.
+        Allocated,   // The IP address is in used.
+        Releasing,   // The IP address is being released for other network elements and is not ready for allocation.
+        Free         // The IP address is ready to be allocated. 
+    }
+    
     long getDataCenterId();
 
     String getAddress();
-    Long getAccountId();
-    Long getDomainId();
-    Date getAllocated();
+    
+    Long getAllocatedToAccountId();
+    
+    Long getAllocatedInDomainId();
+    
+    Date getAllocatedTime();
+    
     boolean isSourceNat();
 
-    void setAccountId(Long accountId);
-
-    void setDomainId(Long domainId);
-
-    void setSourceNat(boolean sourceNat);
-    
-    boolean getSourceNat();
-
-    void setAllocated(Date allocated);
-    
-    long getVlanDbId();
-    
-    void setVlanDbId(long vlanDbId);
+    long getVlanId();
 
     boolean isOneToOneNat();
-
-    void setOneToOneNat(boolean oneToOneNat);
+    
+    State getState();
+    
+    boolean readyToUse();
 }

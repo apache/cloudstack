@@ -1554,7 +1554,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     	
     	if (offering.getGuestIpType() != NetworkOffering.GuestIpType.Virtual) {  		
     		IPAddressVO guestIP = (userVm.getGuestIpAddress() == null) ? null : _ipAddressDao.findById(userVm.getGuestIpAddress());
-    		if (guestIP != null && guestIP.getAllocated() != null) {
+    		if (guestIP != null && guestIP.getAllocatedTime() != null) {
     			_ipAddressDao.unassignIpAddress(userVm.getGuestIpAddress());
             	s_logger.debug("Released guest IP address=" + userVm.getGuestIpAddress() + " vmName=" + userVm.getHostName() +  " dcId=" + userVm.getDataCenterId());
 

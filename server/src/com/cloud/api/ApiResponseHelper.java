@@ -767,20 +767,20 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public IPAddressResponse createIPAddressResponse(IpAddress ipAddress) {
-        VlanVO vlan = ApiDBUtils.findVlanById(ipAddress.getVlanDbId());
+        VlanVO vlan = ApiDBUtils.findVlanById(ipAddress.getVlanId());
         boolean forVirtualNetworks = vlan.getVlanType().equals(VlanType.VirtualNetwork);
 
         IPAddressResponse ipResponse = new IPAddressResponse();
         ipResponse.setIpAddress(ipAddress.getAddress());
-        if (ipAddress.getAllocated() != null) {
-            ipResponse.setAllocated(ipAddress.getAllocated());
+        if (ipAddress.getAllocatedTime() != null) {
+            ipResponse.setAllocated(ipAddress.getAllocatedTime());
         }
         ipResponse.setZoneId(ipAddress.getDataCenterId());
         ipResponse.setZoneName(ApiDBUtils.findZoneById(ipAddress.getDataCenterId()).getName());
         ipResponse.setSourceNat(ipAddress.isSourceNat());
 
         // get account information
-        Account accountTemp = ApiDBUtils.findAccountById(ipAddress.getAccountId());
+        Account accountTemp = ApiDBUtils.findAccountById(ipAddress.getAllocatedToAccountId());
         if (accountTemp != null) {
             ipResponse.setAccountName(accountTemp.getAccountName());
             ipResponse.setDomainId(accountTemp.getDomainId());
@@ -793,8 +793,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         // show this info to admin only
         Account account = UserContext.current().getAccount();
         if ((account == null) || account.getType() == Account.ACCOUNT_TYPE_ADMIN) {
-            ipResponse.setVlanId(ipAddress.getVlanDbId());
-            ipResponse.setVlanName(ApiDBUtils.findVlanById(ipAddress.getVlanDbId()).getVlanId());
+            ipResponse.setVlanId(ipAddress.getVlanId());
+            ipResponse.setVlanName(ApiDBUtils.findVlanById(ipAddress.getVlanId()).getVlanId());
         }
         ipResponse.setObjectName("ipaddress");
         return ipResponse;

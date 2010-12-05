@@ -98,7 +98,7 @@ public class DisassociateIpAddressExecutor extends BaseAsyncJobExecutor {
             if (ip.isSourceNat()) {
                 router = routerDao.findByPublicIpAddress(param.getIpAddress());
             } else {
-                router = routerDao.findBy(ip.getAccountId(), ip.getDataCenterId());
+                router = routerDao.findBy(ip.getAllocatedToAccountId(), ip.getDataCenterId());
             }
             
             return router;

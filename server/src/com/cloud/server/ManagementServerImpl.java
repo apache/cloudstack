@@ -2354,8 +2354,8 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public Account findAccountByIpAddress(String ipAddress) {
         IPAddressVO address = _publicIpAddressDao.findById(ipAddress);
-        if ((address != null) && (address.getAccountId() != null)) {
-            return _accountDao.findById(address.getAccountId());
+        if ((address != null) && (address.getAllocatedToAccountId() != null)) {
+            return _accountDao.findById(address.getAllocatedToAccountId());
         }
         return null;
     }
@@ -3266,26 +3266,26 @@ public class ManagementServerImpl implements ManagementServer {
         Object forVirtualNetwork  = cmd.isForVirtualNetwork();
 
         SearchBuilder<IPAddressVO> sb = _publicIpAddressDao.createSearchBuilder();
-        sb.and("accountIdEQ", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
+        sb.and("accountIdEQ", sb.entity().getAllocatedToAccountId(), SearchCriteria.Op.EQ);
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("address", sb.entity().getAddress(), SearchCriteria.Op.LIKE);
-        sb.and("vlanDbId", sb.entity().getVlanDbId(), SearchCriteria.Op.EQ);
+        sb.and("vlanDbId", sb.entity().getVlanId(), SearchCriteria.Op.EQ);
 
         if ((accountId == null) && (domainId != null)) {
             // if accountId isn't specified, we can do a domain match for the admin case
             SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
-            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+            sb.join("domainSearch", domainSearch, sb.entity().getAllocatedInDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         }
         
         if (forVirtualNetwork != null) {
         	SearchBuilder<VlanVO> vlanSearch = _vlanDao.createSearchBuilder();
         	vlanSearch.and("vlanType", vlanSearch.entity().getVlanType(), SearchCriteria.Op.EQ);
-        	sb.join("vlanSearch", vlanSearch, sb.entity().getVlanDbId(), vlanSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+        	sb.join("vlanSearch", vlanSearch, sb.entity().getVlanId(), vlanSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         }
 
         if ((isAllocated != null) && (isAllocated == true)) {
-            sb.and("allocated", sb.entity().getAllocated(), SearchCriteria.Op.NNULL);
+            sb.and("allocated", sb.entity().getAllocatedTime(), SearchCriteria.Op.NNULL);
         }
 
         SearchCriteria<IPAddressVO> sc = sb.create();
@@ -5495,7 +5495,7 @@ public class ManagementServerImpl implements ManagementServer {
             if (ipAddressVO == null) {
                 throw new InvalidParameterValueException("Unable to list remote access vpns, IP address " + ipAddress + " not found.");
             } else {
-                Long ipAddrAcctId = ipAddressVO.getAccountId();
+                Long ipAddrAcctId = ipAddressVO.getAllocatedToAccountId();
                 if (ipAddrAcctId == null) {
                     throw new InvalidParameterValueException("Unable to list remote access vpns, IP address " + ipAddress + " is not associated with an account.");
                 }

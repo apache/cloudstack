@@ -110,7 +110,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
     @Override
     public void checkIpAndUserVm(IpAddress ipAddress, UserVm userVm, Account caller) throws InvalidParameterValueException, PermissionDeniedException {
-        if (ipAddress == null || ipAddress.getAllocated() == null || ipAddress.getAccountId() == null) {
+        if (ipAddress == null || ipAddress.getAllocatedTime() == null || ipAddress.getAllocatedToAccountId() == null) {
             throw new InvalidParameterValueException("Unable to create ip forwarding rule on address " + ipAddress + ", invalid IP address specified.");
         }
         
@@ -125,7 +125,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         _accountMgr.checkAccess(caller, userVm);
         
         // validate that IP address and userVM belong to the same account
-        if (ipAddress.getAccountId().longValue() != userVm.getAccountId()) {
+        if (ipAddress.getAllocatedToAccountId().longValue() != userVm.getAccountId()) {
             throw new InvalidParameterValueException("Unable to create ip forwarding rule, IP address " + ipAddress + " owner is not the same as owner of virtual machine " + userVm.toString()); 
         }
 
@@ -342,7 +342,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         Account caller = UserContext.current().getAccount();
 
         IPAddressVO ipAddressVO = _ipAddressDao.findById(ipAddress.addr());
-        if (ipAddressVO == null || ipAddressVO.getAllocated() == null) {
+        if (ipAddressVO == null || ipAddressVO.getAllocatedTime() == null) {
             throw new InvalidParameterValueException("Unable to find IP address " + ipAddress);
         }
 
