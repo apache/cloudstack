@@ -407,8 +407,14 @@ if not Options.options.PRESERVECONFIG:
 if buildpremium: bld.recurse(["cloudstack-proprietary/premium"],'build')
 # ================= end build / install declarations of server project <- this is actually now in client project
 
-# build / install declarations of agent project
-bld.recurse(["agent"],'build')
+# ================ build / install declarations of agent project =================
+start_path = bld.path.find_dir ("agent")
+bld.install_files("${AGENTLIBDIR}",
+	start_path.ant_glob("storagepatch/**",src=True,bld=False,dir=False,flat=True),
+	cwd=start_path,relative_trick=True)
+if not Options.options.PRESERVECONFIG:
+	bld.install_files_filtered("${AGENTSYSCONFDIR}","conf/*", cwd = start_path)
+# ================ build / install declarations of agent project =================
 
 # =============== build / install declarations of client UI project =======================
 # binary unsubstitutable files:

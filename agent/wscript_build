@@ -1,7 +1,0 @@
-import Options
-
-bld.install_files("${AGENTLIBDIR}",
-	bld.path.ant_glob("storagepatch/**",src=True,bld=False,dir=False,flat=True),
-	cwd=bld.path,relative_trick=True)
-if not Options.options.PRESERVECONFIG:
-	bld.install_files_filtered("${AGENTSYSCONFDIR}","conf/*")
