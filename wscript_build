@@ -131,8 +131,24 @@ if not Options.options.PRESERVECONFIG: bld.install_files_filtered("${CPSYSCONFDI
 # ================ Creation of patch.tgz's ============================
 
 # done here because the patches require substituted files
-bld.recurse(["patches"],'build')
+start_path = bld.path.find_dir ("patches")
+bld.substitute("*/**",name="patchsubst", cwd = start_path)
 
+for virttech in Utils.to_list(start_path.ant_glob("*",dir=True)):
+	if virttech in ["shared"]: continue
+	patchfiles = start_path.ant_glob('shared/** %s/debian/config/**'%virttech,src=False,bld=True,dir=False,flat=True)
+
+	tmp = bld.path
+	bld.path = start_path
+	tgen = bld(
+		features  = 'tar',#Utils.tar_up,
+		source = patchfiles,
+		target = 'cloud-scripts.tgz',
+		name   = 'cloud-scripts_tgz',
+		root = os.path.join("patches", virttech + "/debian/config"),
+		rename = lambda x: re.sub(".subst$","",x),
+	)
+	bld.path = tmp
 # ================== End creation of patch.tgz's ====================
 
 
