@@ -151,7 +151,9 @@ pod=
 cluster=
 guid=
 dflag=
-while getopts 'h:z:p:u:c:d' OPTION
+pubNic=
+prvNic=
+while getopts 'h:z:p:u:c:P:N:d' OPTION
 do
   case $OPTION in
   h) 
@@ -172,11 +174,35 @@ do
   d)    
         dflag=1
         ;;
+  P)    
+	pubNic="$OPTARG"
+        ;;
+  N)    
+	prvNic="$OPTARG"
+	;;
   *)    ;;
   esac
 done
 
 #install_cloud_agent $dflag
 #install_cloud_consoleP $dflag
-cloud_agent_setup $host $zone $pod $cluster $guid
+paramters=
+if [ -n "$pubNic" ]
+then
+   paramters=" --pubNic=$pubNic"
+fi
+
+if [ -n "$prvNic" ]
+then
+   paramters=" --prvNic=$prvNic $paramters"
+fi
+
+selenabled=`cat /selinux/enforce`
+if [ "$selenabled" == "1" ]
+then
+    sed -i  's/\(SELINUX\)\(.*\)/\1=permissive/' /etc/selinux/config
+    setenforce 0
+fi
+
+cloud-setup-agent --host=$host --zone=$zone --pod=$pod --cluster=$cluster --guid=$guid $paramters -a > /dev/null
 #cloud_consoleP_setup $host $zone $pod

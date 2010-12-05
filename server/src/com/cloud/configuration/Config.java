@@ -184,6 +184,10 @@ public enum Config {
     VmwarePublicNetworkVSwitch("Advanced", ManagementServer.class, String.class, "vmware.public.vswitch", null, "Specify the vSwitch on host for public network", null),
     VmwareGuestNetworkVSwitch("Advanced", ManagementServer.class, String.class, "vmware.guest.vswitch", null, "Specify the vSwitch on host for guest network", null),
     
+    // KVM
+    KvmPublicNetwork("Advanced", ManagementServer.class, String.class, "kvm.public.network.device", null, "Specify the public bridge on host for public network", null),
+    KvmPrivateNetwork("Advanced", ManagementServer.class, String.class, "kvm.private.network.device", null, "Specify the private bridge on host for private network", null),
+    
 	// Premium
 	
 	UsageExecutionTimezone("Premium", ManagementServer.class, String.class, "usage.execution.timezone", null, "The timezone to use for usage job execution time", null),
