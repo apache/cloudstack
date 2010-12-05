@@ -36,6 +36,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -63,16 +64,16 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, String> implem
         VlanDbIdSearchUnallocated = createSearchBuilder();
         VlanDbIdSearchUnallocated.and("allocated", VlanDbIdSearchUnallocated.entity().getAllocatedTime(), SearchCriteria.Op.NULL);
         VlanDbIdSearchUnallocated.and("vlanDbId", VlanDbIdSearchUnallocated.entity().getVlanId(), SearchCriteria.Op.EQ);
-        // VlanDbIdSearchUnallocated.addRetrieve("ipAddress",
-        // VlanDbIdSearchUnallocated.entity().getAddress());
         VlanDbIdSearchUnallocated.done();
 
         AllIpCount = createSearchBuilder(Integer.class);
+        AllIpCount.select(null, Func.COUNT, AllIpCount.entity().getAddress());
         AllIpCount.and("dc", AllIpCount.entity().getDataCenterId(), Op.EQ);
         AllIpCount.and("vlan", AllIpCount.entity().getVlanId(), Op.EQ);
         AllIpCount.done();
 
         AllocatedIpCount = createSearchBuilder(Integer.class);
+        AllocatedIpCount.select(null, Func.COUNT, AllocatedIpCount.entity().getAddress());
         AllocatedIpCount.and("dc", AllocatedIpCount.entity().getDataCenterId(), Op.EQ);
         AllocatedIpCount.and("vlan", AllocatedIpCount.entity().getVlanId(), Op.EQ);
         AllocatedIpCount.and("allocated", AllocatedIpCount.entity().getAllocatedTime(), Op.NNULL);

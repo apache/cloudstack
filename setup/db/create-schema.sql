@@ -1,4 +1,6 @@
 SET foreign_key_checks = 0;
+use cloud;
+
 DROP VIEW IF EXISTS `cloud`.`port_forwarding_rules_view`;
 DROP TABLE IF EXISTS `cloud`.`configuration`;
 DROP TABLE IF EXISTS `cloud`.`ip_forwarding`;
@@ -610,6 +612,7 @@ CREATE TABLE  `cloud`.`user_ip_address` (
   `allocated` datetime NULL COMMENT 'Date this ip was allocated to someone',
   `vlan_db_id` bigint unsigned NOT NULL,
   `one_to_one_nat` int(1) unsigned NOT NULL default '0',
+  `state` char(32) NOT NULL default 'Free' COMMENT 'state of the ip address',
   PRIMARY KEY (`public_ip_address`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

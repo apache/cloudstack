@@ -135,8 +135,8 @@ public class CreateNetworkCmd extends BaseCmd {
         return displayText;
     }
     
-    public Boolean getIsShared() {
-        return false;
+    public boolean getIsShared() {
+        return isShared == null ? false : isShared;
     }
 
     /////////////////////////////////////////////////////
