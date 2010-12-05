@@ -87,7 +87,9 @@ tgen = bld(rule=Utils.runant, name='runant', source=ant_sources, target=ant_jars
 
 # =================== C / Python compilation =========================
 
-bld.recurse(["daemonize","python"],'build')
+bld.recurse(["daemonize"],'build')
+obj = bld(features = 'py',name='pythonmodules')
+obj.find_sources_in_dirs('python/lib', exts=['.py'])
 
 # ===================== End C / Python compilation ==========================
 
