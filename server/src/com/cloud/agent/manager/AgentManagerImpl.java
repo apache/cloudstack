@@ -447,25 +447,39 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
 	public Host findHost(final Host.Type type, final DataCenterVO dc, final HostPodVO pod, final StoragePoolVO sp,
     		final ServiceOfferingVO offering, final VMTemplateVO template, VMInstanceVO vm,
     		Host currentHost, final Set<Host> avoid) {
-        VirtualMachineProfileImpl<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vm, template, offering, null, null);
-        DeployDestination dest = null;
-        DataCenterDeployment plan = new DataCenterDeployment(dc.getId(), pod.getId(), sp.getClusterId(), null);
-        ExcludeList avoids = new ExcludeList();
-        for (Host h : avoid) {
-        	avoids.addHost(h.getId());
-        }
-        
-        for (DeploymentPlanner planner : _planners) {
-        	try {
-        		dest = planner.plan(vmProfile, plan, avoids);
-        		if (dest != null) {
-        			return dest.getHost();
-        		}
-        	} catch (InsufficientServerCapacityException e) {
+    	if (!_useNewNetworking) {
+    		VirtualMachineProfile<VMInstanceVO> vmc = new VirtualMachineProfileImpl<VMInstanceVO>(vm.getType());
+    		Enumeration<HostAllocator> en = _hostAllocators.enumeration();
+    		while (en.hasMoreElements()) {
+    			final HostAllocator allocator = en.nextElement();
+    			final Host host = allocator.allocateTo(vmc, offering, type, dc, pod, sp.getClusterId(), template, avoid);
+    			if (host == null) {
+    				continue;
+    			} else {
+    				return host;
+    			}
+    		}
+    	} else {
+    		VirtualMachineProfileImpl<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vm, template, offering, null, null);
+    		DeployDestination dest = null;
+    		DataCenterDeployment plan = new DataCenterDeployment(dc.getId(), pod.getId(), sp.getClusterId(), null);
+    		ExcludeList avoids = new ExcludeList();
+    		for (Host h : avoid) {
+    			avoids.addHost(h.getId());
+    		}
 
-        	}
+    		for (DeploymentPlanner planner : _planners) {
+    			try {
+    				dest = planner.plan(vmProfile, plan, avoids);
+    				if (dest != null) {
+    					return dest.getHost();
+    				}
+    			} catch (InsufficientServerCapacityException e) {
 
-        }
+    			}
+
+    		}
+    	}
 
         s_logger.warn("findHost() could not find a non-null host.");
         return null;
