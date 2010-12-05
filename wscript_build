@@ -94,7 +94,14 @@ bld.recurse(["daemonize","python"],'build')
 
 # ================ Third-party / dependency installation ===============
 
-bld.recurse(["deps"],'build')
+excludes = ["cloud-xstream-1.3.1.jar", "cloud-commons-dbcp-1.2.2.jar", 
+			"cloud-commons-httpclient-3.1.jar", "cloud-commons-pool-1.4.jar",
+			"cloud-servlet-api.jar", "cloud-commons-logging-1.1.1.jar",
+			"cloud-ws-commons-util-1.0.2.jar",
+			"cloud-commons-collections-3.2.1.jar", "vmware*.jar"]
+
+start_path = bld.path.find_dir ("deps")
+bld.install_files('${JAVADIR}',start_path.ant_glob("*.jar", excl = excludes), cwd=start_path)
 if buildpremium: bld.recurse(['cloudstack-proprietary/thirdparty'],'build')
 
 # =================== End 3rdparty/dep install ========================
