@@ -75,13 +75,13 @@ public class DataCenterVO implements DataCenter {
     DataCenterNetworkType networkType;
     
     @Column(name="dns_provider")
-    private String dnsProvider;
+    private String dnsProvider = "VirtualRouter";
     
     @Column(name="dhcp_provider")
-    private String dhcpProvider; 
+    private String dhcpProvider = "VirtualRouter"; 
     
     @Column(name="gateway_provider")
-    private String gatewayProvider;
+    private String gatewayProvider = "VirtualRouter";
     
     @Override
     public String getDnsProvider() {
@@ -129,10 +129,10 @@ public class DataCenterVO implements DataCenter {
     }
 
     @Column(name="lb_provider")
-    private String loadBalancerProvider;
+    private String loadBalancerProvider = "VirtualRouter";
     
     @Column(name="firewall_provider")
-    private String firewallProvider;
+    private String firewallProvider = "VirtualRouter";
     
     @Column(name="mac_address", updatable = false, nullable=false)
     @TableGenerator(name="mac_address_sq", table="data_center", pkColumnName="id", valueColumnName="mac_address", allocationSize=1)
