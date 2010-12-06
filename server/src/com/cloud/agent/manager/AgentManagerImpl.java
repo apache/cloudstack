@@ -2431,9 +2431,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
                                 if (s_logger.isDebugEnabled()) {
                                     s_logger.debug("Cant not find host " + attache.getId());
                                 }
-                            } else {
-                                s_logger.info("Host " + attache.getId() + " is now ready to processing commands.");
-                                _hostDao.updateStatus(host, Event.Ready, _nodeId);
                             }
                             answer = new Answer(cmd);
                         } else {
