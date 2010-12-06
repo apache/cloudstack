@@ -97,6 +97,7 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
+import com.cloud.dc.DataCenter.DataCenterNetworkType;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
@@ -131,6 +132,7 @@ import com.cloud.network.IPAddressVO;
 import com.cloud.network.IpAddrAllocator;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
+import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
@@ -191,6 +193,7 @@ import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -3690,6 +3693,25 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         DataCenterDeployment plan = new DataCenterDeployment(dc.getId());
         
         s_logger.debug("Allocating in the DB for vm");
+          
+        if (dc.getNetworkType() == DataCenterNetworkType.Basic && networkList == null) {
+            Long singleNetworkId = null;
+            SearchBuilder<NetworkVO> sb = _networkDao.createSearchBuilder();
+            sb.and("broadcastDomainType", sb.entity().getId(), SearchCriteria.Op.EQ);
+            sb.and("dataCenterId", sb.entity().getName(), SearchCriteria.Op.LIKE);
+            SearchCriteria<NetworkVO> sc = sb.create();
+            sc.setParameters("broadcastDomainType", BroadcastDomainType.Native);
+            sc.setParameters("dataCenterId", dc.getId());
+
+            List<NetworkVO> networks = _networkDao.search(sc, null);
+            if (networks!= null && !networks.isEmpty()) {
+                throw new InvalidParameterValueException("Unable to find a network to start a vm");
+            } else {
+                singleNetworkId = networks.get(0).getId();
+                networkList.add(singleNetworkId);
+            }
+        }
+        
         
         if (networkList == null || networkList.isEmpty()) {
             throw new InvalidParameterValueException("NetworkIds have to be specified");
