@@ -1285,8 +1285,8 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     }
     
     protected synchronized Answer execute(final VpnUsersCfgCommand cmd) {
-        String args = cmd.getRouterPrivateIpAddress();
         for (VpnUsersCfgCommand.UsernamePassword userpwd: cmd.getUserpwds()) {
+            String args = cmd.getRouterPrivateIpAddress();
         	if (!userpwd.isAdd()) {
         		args += " -U " + userpwd.getUsername();
         	} else {
