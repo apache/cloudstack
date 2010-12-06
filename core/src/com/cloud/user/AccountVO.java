@@ -125,6 +125,11 @@ public class AccountVO implements Account {
     }
     
     @Override
+    public long getAccountId() {
+        return id;
+    }
+    
+    @Override
     public String toString() {
         return new StringBuilder("Acct:").append(id).append(":").append(accountName).toString();
     }

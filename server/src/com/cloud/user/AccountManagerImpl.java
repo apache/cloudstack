@@ -668,16 +668,14 @@ public class AccountManagerImpl implements AccountManager, AccountService {
         HashMap<Long, List<ControlledEntity>> domains = new HashMap<Long, List<ControlledEntity>>();
         
         for (ControlledEntity entity : entities) {
-            if (entity.getAccountId() == -1 && entity.getDomainId() == -1) {
-                s_logger.debug("Free entity: " + entity);
-                continue;
+            if (entity.getAccountId() != -1 && entity.getDomainId() != -1) {
+                List<ControlledEntity> toBeChecked = domains.get(entity.getDomainId());
+                if (toBeChecked == null) {
+                    toBeChecked = new ArrayList<ControlledEntity>();
+                    domains.put(entity.getDomainId(), toBeChecked);
+                }
+                toBeChecked.add(entity);
             }
-            List<ControlledEntity> toBeChecked = domains.get(entity.getDomainId());
-            if (toBeChecked == null) {
-                toBeChecked = new ArrayList<ControlledEntity>();
-                domains.put(entity.getDomainId(), toBeChecked);
-            }
-            toBeChecked.add(entity);
             boolean granted = false;
             for (SecurityChecker checker : _securityCheckers) {
                 if (checker.checkAccess(caller, entity)) {

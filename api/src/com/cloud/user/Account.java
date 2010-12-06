@@ -20,9 +20,9 @@ package com.cloud.user;
 
 import java.util.Date;
 
-import com.cloud.domain.PartOf;
+import com.cloud.acl.ControlledEntity;
 
-public interface Account extends PartOf {
+public interface Account extends ControlledEntity {
     public enum Type {
         Normal,
         Admin,

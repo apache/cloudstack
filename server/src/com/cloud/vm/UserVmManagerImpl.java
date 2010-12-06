@@ -95,9 +95,9 @@ import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
+import com.cloud.dc.DataCenter.DataCenterNetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
-import com.cloud.dc.DataCenter.DataCenterNetworkType;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
@@ -106,7 +106,7 @@ import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
-import com.cloud.domain.Domain;
+import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.Event;
 import com.cloud.event.EventTypes;
@@ -3574,50 +3574,31 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 	@Override @DB
     public UserVm createVirtualMachine(DeployVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException {
         Account caller = UserContext.current().getAccount();
+        
         String accountName = cmd.getAccountName();
         Long domainId = cmd.getDomainId();
-        Account userAccount = null;
-        Long accountId = null;
         List<Long> networkList = cmd.getNetworkIds();
         
-        if ((caller == null) || isAdmin(caller.getType())) {
-            if (domainId != null) {
-                if ((caller != null) && !_domainDao.isChildDomain(caller.getDomainId(), domainId)) {
-                    throw new PermissionDeniedException("Failed to deploy VM, invalid domain id (" + domainId + ") given.");
-                }
-                if (accountName != null) {
-                    userAccount = _accountDao.findActiveAccount(accountName, domainId);
-                    if (userAccount == null) {
-                        throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
-                    }
-                    accountId = userAccount.getId();
-                }
-            } else {
-                accountId = ((caller != null) ? caller.getId() : null);
-            }
-        } else {
-            accountId = caller.getId();
+        Account owner = _accountDao.findActiveAccount(accountName, domainId);
+        if (owner == null) {
+            throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
         }
+        
+        _accountMgr.checkAccess(caller, owner);
+        long accountId = owner.getId();
 
-        if (accountId == null) {
-            throw new InvalidParameterValueException("No valid account specified for deploying a virtual machine.");
-        }
-        
-        AccountVO owner = _accountDao.findById(cmd.getEntityOwnerId());
-        if (owner == null || owner.getRemoved() != null) {
-            throw new InvalidParameterValueException("Unable to find account: " + cmd.getEntityOwnerId());
-        }
-        
-        Domain domain = _domainDao.findById(owner.getDomainId());
-        if (domain == null || domain.getRemoved() != null) {
-            throw new InvalidParameterValueException("Unable to find domain: " + cmd.getDomainId());
-        }
-        
-        _accountMgr.checkAccess(caller, domain);
-        
         DataCenterVO dc = _dcDao.findById(cmd.getZoneId());
         if (dc == null) {
             throw new InvalidParameterValueException("Unable to find zone: " + cmd.getZoneId());
+        }
+        
+        if (dc.getDomainId() != null) {
+            DomainVO domain = _domainDao.findById(dc.getDomainId());
+            if (domain == null) {
+                throw new CloudRuntimeException("Unable to find the domain " + dc.getDomainId() + " for the zone: " + dc);
+            }
+            _accountMgr.checkAccess(caller, domain);
+            _accountMgr.checkAccess(owner, domain);
         }
         
         ServiceOfferingVO offering = _serviceOfferingDao.findById(cmd.getServiceOfferingId());
@@ -3756,7 +3737,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         long id = _vmDao.getNextInSequence(Long.class, "id");
         
         UserVmVO vm = new UserVmVO(id, VirtualMachineName.getVmName(id, owner.getId(), _instance), cmd.getDisplayName(),
-                                   template.getId(), template.getGuestOSId(), offering.getOfferHA(), domain.getId(), owner.getId(), offering.getId(), userData);
+                                   template.getId(), template.getGuestOSId(), offering.getOfferHA(), domainId, owner.getId(), offering.getId(), userData);
 
         try{
 	        if (_itMgr.allocate(vm, template, offering, rootDiskOffering, dataDiskOfferings, networks, null, plan, owner) == null) {

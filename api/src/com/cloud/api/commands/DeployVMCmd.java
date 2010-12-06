@@ -96,6 +96,9 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     /////////////////////////////////////////////////////
 
     public String getAccountName() {
+        if (accountName == null) {
+            return UserContext.current().getAccount().getAccountName();
+        }
         return accountName;
     }
 
@@ -108,6 +111,9 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     }
 
     public Long getDomainId() {
+        if (domainId == null) {
+            return UserContext.current().getAccount().getDomainId();
+        }
         return domainId;
     }
 
