@@ -198,6 +198,7 @@
             </div>
         </div>
  </div>
+ </div>
 <!--Dashboard Admin (begin)-->
 <div id="dashboard_admin" style="display: none">
     <div class="contentbox">
