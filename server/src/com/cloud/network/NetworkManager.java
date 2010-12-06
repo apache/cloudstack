@@ -116,7 +116,7 @@ public interface NetworkManager extends NetworkService {
     
     List<NetworkOfferingVO> getSystemAccountNetworkOfferings(String... offeringNames);
     
-    void allocate(VirtualMachineProfile<? extends VMInstanceVO> vm, List<Pair<NetworkVO, NicProfile>> networks) throws InsufficientCapacityException;
+    void allocate(VirtualMachineProfile<? extends VMInstanceVO> vm, List<Pair<NetworkVO, NicProfile>> networks) throws InsufficientCapacityException, ConcurrentOperationException;
 
     void prepare(VirtualMachineProfile<? extends VMInstanceVO> profile, DeployDestination dest, ReservationContext context) throws InsufficientNetworkCapacityException, ConcurrentOperationException, ResourceUnavailableException;
     void release(VirtualMachineProfile<? extends VMInstanceVO> vmProfile);

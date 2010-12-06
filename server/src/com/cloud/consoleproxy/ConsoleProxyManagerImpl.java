@@ -88,7 +88,6 @@ import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.exception.AgentUnavailableException;
-import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -552,16 +551,13 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         } catch (InsufficientCapacityException e) {
             s_logger.warn("Exception while trying to start console proxy", e);
             return null;
-        } catch (ConcurrentOperationException e) {
-            s_logger.warn("Exception while trying to start console proxy", e);
-            return null;
         } catch (ResourceUnavailableException e) {
             s_logger.warn("Exception while trying to start console proxy", e);
             return null;
         }
     }
 
-    public ConsoleProxyVO start2(long proxyVmId, long startEventId) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException {
+    public ConsoleProxyVO start2(long proxyVmId, long startEventId) throws ResourceUnavailableException, InsufficientCapacityException {
         if (!_useNewNetworking) {
             return start(proxyVmId, startEventId);
         }
@@ -574,7 +570,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     @Override
     @DB
     public ConsoleProxyVO start(long proxyId, long startEventId) throws InsufficientCapacityException,
-            ConcurrentOperationException, StorageUnavailableException {
+            StorageUnavailableException {
 
         AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor.getCurrentExecutor();
         if (asyncExecutor != null) {
@@ -843,8 +839,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 
                 if (thr instanceof StorageUnavailableException) {
                     throw (StorageUnavailableException) thr;
-                } else if (thr instanceof ConcurrentOperationException) {
-                    throw (ConcurrentOperationException) thr;
                 } else if (thr instanceof ExecutionException) {
                     s_logger.error("Error while starting console proxy due to " + thr.getMessage());
                 } else {
@@ -1114,6 +1108,9 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         } catch (StorageUnavailableException e) {
             s_logger.warn("Unable to contact storage", e);
             throw new CloudRuntimeException("Unable to contact storage", e);
+        } catch (ResourceUnavailableException e) {
+            s_logger.warn("Unable to contact resource", e);
+            throw new CloudRuntimeException("Unable to contact resource", e);
         }
         
         Map<String, Object> context = new HashMap<String, Object>();
@@ -1539,8 +1536,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
                         s_logger.warn("Storage unavailable", e);
                     } catch (InsufficientCapacityException e) {
                         s_logger.warn("insuffiient capacity", e);
-                    } catch (ConcurrentOperationException e) {
-                        s_logger.debug("Concurrent operation: " + e.getMessage());
                     } catch (ResourceUnavailableException e) {
                         s_logger.debug("Concurrent operation: " + e.getMessage());
                     }

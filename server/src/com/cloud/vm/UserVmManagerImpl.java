@@ -3856,10 +3856,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 
         try {
             _itMgr.stop(vm, user, caller);
-        } catch (AgentUnavailableException e) {
+        } catch (ResourceUnavailableException e) {
             throw new CloudRuntimeException("Unable to contact the agent to stop the virtual machine " + vm, e);
-        } catch (OperationTimedoutException e) {
-            throw new CloudRuntimeException("Waiting too long for agent to stop the virtual machine " + vm, e);
         } 
         
         return _vmDao.findById(vmId);
@@ -3915,11 +3913,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         EventUtils.saveScheduledEvent(userId, vm.getAccountId(), EventTypes.EVENT_VM_DESTROY, "Destroying Vm with Id: "+vmId);
         
         boolean status;
-        try {
-            status = _itMgr.destroy(vm, caller, account);
-        } catch (OperationTimedoutException e) {
-            throw new ResourceUnavailableException("Resource not available to complete the command", e);
-        }
+        status = _itMgr.destroy(vm, caller, account);
         
         if (status) {
             EventUtils.saveEvent(userId, vm.getAccountId(), EventTypes.EVENT_VM_DESTROY, "Successfully destroyed vm with id:"+vmId);

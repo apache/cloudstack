@@ -1,7 +1,7 @@
 /**
  * 
  */
-package com.cloud.network.configuration;
+package com.cloud.network.guru;
 
 public final class GuruUtils {
     

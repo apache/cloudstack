@@ -2421,14 +2421,8 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         
         UserVO user = _userDao.findById(context.getUserId());
 
-        try {
-            if (!_itMgr.stop(router, user, account)) {
-                return null;
-            }
-        } catch (AgentUnavailableException e) {
-            throw new ResourceUnavailableException("Unable to reach the server to stop the vm", e);
-        } catch (OperationTimedoutException e) {
-            throw new ResourceUnavailableException("Stop operation timed out", e);
+        if (!_itMgr.stop(router, user, account)) {
+            return null;
         }
         
         return router;

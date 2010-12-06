@@ -140,6 +140,7 @@ CREATE TABLE `cloud`.`networks` (
   `set_fields` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'which fields are set already',
   `guest_type` char(32) COMMENT 'type of guest network',
   `shared` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '0 if network is shared, 1 if network dedicated',
+  `network_domain` varchar(255) COMMENT 'domain',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

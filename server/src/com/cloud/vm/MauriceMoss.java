@@ -19,7 +19,6 @@ package com.cloud.vm;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -32,7 +31,6 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.AgentManager.OnError;
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.Start2Command;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
@@ -45,8 +43,6 @@ import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
-import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.HostPodVO;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
@@ -62,20 +58,16 @@ import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
-import com.cloud.host.Host;
-import com.cloud.host.HostVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuru;
-import com.cloud.network.NetworkVO;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
-import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.VolumeVO;
 import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
@@ -172,7 +164,11 @@ public class MauriceMoss implements VmManager, ClusterManagerListener {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Allocating nics for " + vm);
         }
-        _networkMgr.allocate(vmProfile, networks);
+        try {
+            _networkMgr.allocate(vmProfile, networks);
+        } catch (ConcurrentOperationException e) {
+            throw new CloudRuntimeException("Concurrent operation while trying to allocate resources for the VM", e);
+        }
 
         if (dataDiskOfferings == null) {
             dataDiskOfferings = new ArrayList<Pair<DiskOfferingVO, Long>>(0);
@@ -232,7 +228,18 @@ public class MauriceMoss implements VmManager, ClusterManagerListener {
     }
     
     @Override
-    public <T extends VMInstanceVO> boolean destroy(T vm, User caller, Account account) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException {
+    public <T extends VMInstanceVO> boolean destroy(T vm, User caller, Account account) throws ResourceUnavailableException {
+        try {
+            return advanceDestroy(vm, caller, account);
+        } catch (OperationTimedoutException e) {
+            throw new CloudRuntimeException("Operation timed out", e);
+        } catch (ConcurrentOperationException e) {
+            throw new CloudRuntimeException("Concurrent operation ", e);
+        }
+    }
+    
+    @Override
+    public <T extends VMInstanceVO> boolean advanceDestroy(T vm, User caller, Account account) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException {
         if (vm == null || vm.getState() == State.Destroyed || vm.getState() == State.Expunging || vm.getRemoved() != null) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Unable to find vm or vm is destroyed: " + vm);
@@ -307,9 +314,18 @@ public class MauriceMoss implements VmManager, ClusterManagerListener {
     
     protected MauriceMoss() {
     }
+    
+    @Override
+    public <T extends VMInstanceVO> T start(T vm, Map<String, Object> params, User caller, Account account) throws InsufficientCapacityException, ResourceUnavailableException {
+        try {
+            return advanceStart(vm, params, caller, account);
+        } catch (ConcurrentOperationException e) {
+            throw new CloudRuntimeException("Unable to start a VM due to concurrent operation", e);
+        }
+    }
 
     @Override
-    public <T extends VMInstanceVO> T start(T vm, Map<String, Object> params, User caller, Account account) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
+    public <T extends VMInstanceVO> T advanceStart(T vm, Map<String, Object> params, User caller, Account account) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
         State state = vm.getState();
         if (state == State.Starting || state == State.Running) {
             s_logger.debug("VM is already started: " + vm);
@@ -422,9 +438,20 @@ public class MauriceMoss implements VmManager, ClusterManagerListener {
         
         return null;
     }
+    
+    @Override
+    public <T extends VMInstanceVO> boolean stop(T vm, User user, Account account) throws ResourceUnavailableException {
+        try {
+            return advanceStop(vm, user, account);
+        } catch (OperationTimedoutException e) {
+            throw new ResourceUnavailableException("Unable to stop vm because the operation to stop timed out", e);
+        } catch (ConcurrentOperationException e) {
+            throw new CloudRuntimeException("Unable to stop vm because of a concurrent operation", e);
+        }
+    }
 
     @Override
-    public <T extends VMInstanceVO> boolean stop(T vm, User user, Account account) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException {
+    public <T extends VMInstanceVO> boolean advanceStop(T vm, User user, Account account) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException {
         State state = vm.getState();
         if (state == State.Stopped) {
             if (s_logger.isDebugEnabled()) {

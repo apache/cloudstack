@@ -92,7 +92,6 @@ import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.addr.PublicIp;
-import com.cloud.network.configuration.NetworkGuru;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
@@ -102,6 +101,7 @@ import com.cloud.network.dao.NetworkRuleConfigDao;
 import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.element.NetworkElement;
+import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.DomainRouterManager;
 import com.cloud.network.rules.FirewallRule;
@@ -228,7 +228,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         txn.start();
         SearchCriteria<IPAddressVO> sc = AssignIpAddressSearch.create();
         sc.setParameters("dc", dcId);
-        sc.setJoinParameters("vlan", "vlanType", vlanUse);
+        sc.setJoinParameters("vlan", "type", vlanUse);
         
         Filter filter = new Filter(IPAddressVO.class, "vlanId", true, 0l, 1l);
         
@@ -891,7 +891,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override @DB
-    public void allocate(VirtualMachineProfile<? extends VMInstanceVO> vm, List<Pair<NetworkVO, NicProfile>> networks) throws InsufficientCapacityException {
+    public void allocate(VirtualMachineProfile<? extends VMInstanceVO> vm, List<Pair<NetworkVO, NicProfile>> networks) throws InsufficientCapacityException, ConcurrentOperationException {
         Transaction txn = Transaction.currentTxn();
         txn.start();
 

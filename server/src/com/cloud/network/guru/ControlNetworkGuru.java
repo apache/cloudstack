@@ -1,7 +1,7 @@
 /**
  * 
  */
-package com.cloud.network.configuration;
+package com.cloud.network.guru;
 
 import java.util.Map;
 
@@ -21,6 +21,7 @@ import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkVO;
 import com.cloud.offering.NetworkOffering;

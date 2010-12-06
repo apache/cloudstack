@@ -62,14 +62,11 @@ import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
-import com.cloud.dc.Vlan.VlanType;
-import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
-import com.cloud.domain.DomainVO;
 import com.cloud.event.Event;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
@@ -772,9 +769,9 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 	        } catch (InsufficientCapacityException e) {
 	            s_logger.warn("InsufficientCapacity", e);
 	            throw new CloudRuntimeException("Insufficient capacity exception", e);
-	        } catch (StorageUnavailableException e) {
-	            s_logger.warn("Unable to contact storage", e);
-	            throw new CloudRuntimeException("Unable to contact storage", e);
+	        } catch (ResourceUnavailableException e) {
+	            s_logger.warn("Unable to contact resource", e);
+	            throw new CloudRuntimeException("Unable to contact resource", e);
 	        }
 	        
 	        Map<String, Object> context = new HashMap<String, Object>();
@@ -923,21 +920,21 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 			return net;
 		}
 		
-        Pair<String, VlanVO> ipAndVlan = _vlanDao.assignIpAddress(dcId, Account.ACCOUNT_ID_SYSTEM, DomainVO.ROOT_DOMAIN, VlanType.VirtualNetwork, true);
-		
-        if (ipAndVlan == null) {
-        	s_logger.debug("Unable to get public ip address (type=Virtual) for secondary storage vm for data center  : " + dcId);
-        	ipAndVlan = _vlanDao.assignPodDirectAttachIpAddress(dcId, podId, Account.ACCOUNT_ID_SYSTEM, DomainVO.ROOT_DOMAIN);
-        	if (ipAndVlan == null) {
-                s_logger.debug("Unable to get public ip address (type=DirectAttach) for secondary storage vm for data center  : " + dcId);
-            }
-
-        }
-        if (ipAndVlan != null) {
-			VlanVO vlan = ipAndVlan.second();
-			networkInfo net = new networkInfo(ipAndVlan.first(), vlan.getVlanNetmask(), vlan.getVlanGateway(), vlan.getId(), vlan.getVlanId());
-			return net;
-		}
+//FIXME am I even needed any more?        Pair<String, VlanVO> ipAndVlan = _vlanDao.assignIpAddress(dcId, Account.ACCOUNT_ID_SYSTEM, DomainVO.ROOT_DOMAIN, VlanType.VirtualNetwork, true);
+//		
+//        if (ipAndVlan == null) {
+//        	s_logger.debug("Unable to get public ip address (type=Virtual) for secondary storage vm for data center  : " + dcId);
+//        	ipAndVlan = _vlanDao.assignPodDirectAttachIpAddress(dcId, podId, Account.ACCOUNT_ID_SYSTEM, DomainVO.ROOT_DOMAIN);
+//        	if (ipAndVlan == null) {
+//                s_logger.debug("Unable to get public ip address (type=DirectAttach) for secondary storage vm for data center  : " + dcId);
+//            }
+//
+//        }
+//        if (ipAndVlan != null) {
+//			VlanVO vlan = ipAndVlan.second();
+//			networkInfo net = new networkInfo(ipAndVlan.first(), vlan.getVlanNetmask(), vlan.getVlanGateway(), vlan.getId(), vlan.getVlanId());
+//			return net;
+//		}
 		return null;
 	}
 

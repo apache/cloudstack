@@ -21,13 +21,10 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.deploy.DeploymentPlan;
-import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.exception.StorageUnavailableException;
-import com.cloud.host.HostVO;
 import com.cloud.network.NetworkVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
@@ -51,7 +48,7 @@ public interface VmManager extends Manager {
             List<Pair<NetworkVO, NicProfile>> networks,
             Map<String, Object> params,
             DeploymentPlan plan,
-            Account owner) throws InsufficientCapacityException, StorageUnavailableException;
+            Account owner) throws InsufficientCapacityException, ResourceUnavailableException;
     
     <T extends VMInstanceVO> T allocate(T vm,
             VMTemplateVO template,
@@ -60,25 +57,29 @@ public interface VmManager extends Manager {
             Pair<DiskOfferingVO, Long> dataDiskOffering,
             List<Pair<NetworkVO, NicProfile>> networks,
             DeploymentPlan plan,
-            Account owner) throws InsufficientCapacityException, StorageUnavailableException;
+            Account owner) throws InsufficientCapacityException, ResourceUnavailableException;
     
     <T extends VMInstanceVO> T allocate(T vm,
             VMTemplateVO template,
             ServiceOfferingVO serviceOffering,
             List<Pair<NetworkVO, NicProfile>> networkProfiles,
             DeploymentPlan plan,
-            Account owner) throws InsufficientCapacityException, StorageUnavailableException;
+            Account owner) throws InsufficientCapacityException, ResourceUnavailableException;
     
-    <T extends VMInstanceVO> T start(T vm, Map<String, Object> params, User caller, Account account) throws InsufficientCapacityException, StorageUnavailableException, ConcurrentOperationException, ResourceUnavailableException;
+    <T extends VMInstanceVO> T start(T vm, Map<String, Object> params, User caller, Account account) throws InsufficientCapacityException, ResourceUnavailableException;
     
-    <T extends VMInstanceVO> boolean stop(T vm, User caller, Account account) throws AgentUnavailableException, ConcurrentOperationException, OperationTimedoutException;
+    <T extends VMInstanceVO> boolean stop(T vm, User caller, Account account) throws ResourceUnavailableException;
     
-    <T extends VMInstanceVO> boolean destroy(T vm, User caller, Account account) throws ResourceUnavailableException, ConcurrentOperationException, OperationTimedoutException;
-;
+    <T extends VMInstanceVO> boolean destroy(T vm, User caller, Account account) throws ResourceUnavailableException;
     
     <T extends VMInstanceVO> void registerGuru(VirtualMachine.Type type, VirtualMachineGuru<T> guru);
 
 	boolean stateTransitTo(VMInstanceVO vm, Event e, Long id);
+
 	
+    <T extends VMInstanceVO> T advanceStart(T vm, Map<String, Object> params, User caller, Account account) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException, OperationTimedoutException;
     
+	<T extends VMInstanceVO> boolean advanceStop(T vm, User caller, Account account) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException;
+	
+	<T extends VMInstanceVO> boolean advanceDestroy(T vm, User caller, Account account) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException;
 }

@@ -1,10 +1,11 @@
 /**
  * 
  */
-package com.cloud.network.configuration;
+package com.cloud.network.guru;
 
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
+import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.network.Network;
@@ -43,7 +44,7 @@ public interface NetworkGuru extends Adapter {
      * @throws InsufficientVirtualNetworkCapcityException
      * @throws InsufficientAddressCapacityException
      */
-    NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException;
+    NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException;
     
     /**
      * Fully implement the network configuration as specified.
@@ -63,8 +64,9 @@ public interface NetworkGuru extends Adapter {
      * @return
      * @throws InsufficientVirtualNetworkCapcityException
      * @throws InsufficientAddressCapacityException
+     * @throws ConcurrentOperationException 
      */
-    void reserve(NicProfile nic, Network network, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException;
+    void reserve(NicProfile nic, Network network, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException;
 
     boolean release(NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, String reservationId);
     

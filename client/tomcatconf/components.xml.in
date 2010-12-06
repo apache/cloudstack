@@ -39,11 +39,11 @@
         <adapters key="com.cloud.consoleproxy.ConsoleProxyAllocator">
             <adapter name="Balance" class="com.cloud.consoleproxy.ConsoleProxyBalanceAllocator"/>
         </adapters>
-        <adapters key="com.cloud.network.configuration.NetworkGuru">
-            <adapter name="GuestNetworkGuru" class="com.cloud.network.configuration.GuestNetworkGuru"/>
-            <adapter name="PublicNetworkGuru" class="com.cloud.network.configuration.PublicNetworkGuru"/>
-            <adapter name="PodBasedNetworkGuru" class="com.cloud.network.configuration.PodBasedNetworkGuru"/>
-            <adapter name="ControlNetworkGuru" class="com.cloud.network.configuration.ControlNetworkGuru"/>
+        <adapters key="com.cloud.network.guru.NetworkGuru">
+            <adapter name="GuestNetworkGuru" class="com.cloud.network.guru.GuestNetworkGuru"/>
+            <adapter name="PublicNetworkGuru" class="com.cloud.network.guru.PublicNetworkGuru"/>
+            <adapter name="PodBasedNetworkGuru" class="com.cloud.network.guru.PodBasedNetworkGuru"/>
+            <adapter name="ControlNetworkGuru" class="com.cloud.network.guru.ControlNetworkGuru"/>
         </adapters>
         <adapters key="com.cloud.storage.secondary.SecondaryStorageVmAllocator">
             <adapter name="Balance" class="com.cloud.storage.secondary.SecondaryStorageVmDefaultAllocator"/>
