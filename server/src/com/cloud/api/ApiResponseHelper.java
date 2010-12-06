@@ -138,6 +138,7 @@ import com.cloud.user.UserAccount;
 import com.cloud.user.UserContext;
 import com.cloud.user.UserStatisticsVO;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.InstanceGroup;
 import com.cloud.vm.InstanceGroupVO;
@@ -2328,8 +2329,20 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (network.getGuestType() != null) {
             response.setType(network.getGuestType().name());
         }
-        response.setGateway(network.getGateway());
-        response.setCidr(network.getCidr());
+        
+        //get start ip and end ip of corresponding vlan
+        List<? extends Vlan> vlan= ApiDBUtils.listVlanByNetworkId(network.getId());
+        if (vlan != null && !vlan.isEmpty()) {
+            Vlan singleVlan = vlan.get(0);
+            String ipRange = singleVlan.getIpRange();
+            String[] range = ipRange.split("-"); 
+            response.setStartIp(range[0]);
+            response.setEndIp(range[1]);
+            response.setGateway(singleVlan.getVlanGateway());
+            response.setNetmask(singleVlan.getVlanNetmask());
+        }
+        
+        
         response.setZoneId(network.getDataCenterId());
         
         //populate network offering information

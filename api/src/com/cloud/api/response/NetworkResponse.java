@@ -28,8 +28,14 @@ public class NetworkResponse extends BaseResponse{
     private String gateway;
     
     //TODO - add description
-    @SerializedName("cidr")
-    private String cidr;
+    @SerializedName("netmask")
+    private String netmask;
+    
+    @SerializedName("startip") @Param(description="the start ip of the network")
+    private String startIp;
+
+    @SerializedName("endip") @Param(description="the end ip of the network")
+    private String endIp;
     
     //TODO - add description
     @SerializedName("zoneid")
@@ -50,9 +56,6 @@ public class NetworkResponse extends BaseResponse{
   //TODO - add description
     @SerializedName("isshared")
     private Boolean isShared;
-    
-    @SerializedName("isdefault") @Param(description="true if network offering is default, false otherwise")
-    private Boolean isDefault;
     
     //TODO - add description
     @SerializedName("state")
@@ -83,6 +86,8 @@ public class NetworkResponse extends BaseResponse{
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain id associated with the network")
     private Long domainId;
+    
+
 
     public Long getId() {
         return id;
@@ -124,12 +129,12 @@ public class NetworkResponse extends BaseResponse{
         this.gateway = gateway;
     }
 
-    public String getCidr() {
-        return cidr;
+    public String getNetmask() {
+        return netmask;
     }
 
-    public void setCidr(String cidr) {
-        this.cidr = cidr;
+    public void setNetmask(String netmask) {
+        this.netmask = netmask;
     }
 
     public Long getZoneId() {
@@ -242,5 +247,21 @@ public class NetworkResponse extends BaseResponse{
 
     public void setIsShared(Boolean isShared) {
         this.isShared = isShared;
+    }
+
+    public String getStartIp() {
+        return startIp;
+    }
+
+    public void setStartIp(String startIp) {
+        this.startIp = startIp;
+    }
+
+    public String getEndIp() {
+        return endIp;
+    }
+
+    public void setEndIp(String endIp) {
+        this.endIp = endIp;
     }
 }

@@ -56,9 +56,6 @@ public class CreateNetworkCmd extends BaseCmd {
     @Parameter(name=ApiConstants.GATEWAY, type=CommandType.STRING, description="the gateway of the VLAN IP range")
     private String gateway;
     
-    @Parameter(name=ApiConstants.CIDR, type=CommandType.STRING, description="the cidr of the VLAN IP range")
-    private String cidr;
-    
     @Parameter(name=ApiConstants.NETMASK, type=CommandType.STRING, description="the netmask of the VLAN IP range")
     private String netmask;
     
@@ -97,10 +94,6 @@ public class CreateNetworkCmd extends BaseCmd {
 
     public String getGateway() {
         return gateway;
-    }
-
-    public String getCidr() {
-        return cidr;
     }
 
     public String getVlan() {

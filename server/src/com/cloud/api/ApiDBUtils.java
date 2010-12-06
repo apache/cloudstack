@@ -11,6 +11,7 @@ import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
+import com.cloud.dc.Vlan;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.ClusterDao;
@@ -32,6 +33,7 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkRuleConfigVO;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
+import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkRuleConfigDao;
 import com.cloud.network.security.NetworkGroup;
 import com.cloud.network.security.NetworkGroupManager;
@@ -493,6 +495,10 @@ public class ApiDBUtils {
     
     public static NetworkOfferingVO findNetworkOfferingById(long networkOfferingId) {
         return _networkOfferingDao.findByIdIncludingRemoved(networkOfferingId);
+    }
+    
+    public static List<? extends Vlan> listVlanByNetworkId(long networkId) {
+        return _vlanDao.listVlansByNetworkId(networkId);
     }
     
 }

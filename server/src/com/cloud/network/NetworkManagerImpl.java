@@ -1803,10 +1803,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Long zoneId = cmd.getZoneId();
         Long podId = cmd.getPodId();
         String gateway = cmd.getGateway();
-        String cidr = cmd.getCidr();
         String startIP = cmd.getStartIp();
         String endIP = cmd.getEndIp();
         String vlanNetmask = cmd.getNetmask();
+        String cidr = NetUtils.ipAndNetMaskToCidr(gateway, vlanNetmask);
         String accountName = cmd.getAccountName();
         Long domainId = cmd.getDomainId();
         String vlanId = cmd.getVlan();
@@ -1899,7 +1899,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
        } catch (Exception ex) {
            s_logger.warn("Unexpected exception while creating network ", ex);
            txn.rollback();
-       }finally {
+       } finally {
            txn.close();
        }
        return null;
