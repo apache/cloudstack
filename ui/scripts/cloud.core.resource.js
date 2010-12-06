@@ -292,7 +292,7 @@ function initAddPodShortcut() {
 
     $("#add_pod_shortcut").unbind("click").bind("click", function(event) {           
         $("#dialog_add_pod_in_resource_page").find("#info_container").hide();	
-        $("#dialog_add_pod_in_resource_page").find("#add_pod_name,#add_pod_cidr,#add_pod_startip,add_pod_endip").val("");
+        $("#dialog_add_pod_in_resource_page").find("#add_pod_name,#add_pod_netmask,#add_pod_startip,add_pod_endip").val("");
         $("#add_pod_gateway").val("");
 		
         $("#dialog_add_pod_in_resource_page")
@@ -304,7 +304,7 @@ function initAddPodShortcut() {
 		        var isValid = true;	
 		        isValid &= validateDropDownBox("Zone", $thisDialog.find("#zone_dropdown"), $thisDialog.find("#zone_dropdown_errormsg"));			
 		        isValid &= validateString("Name", $thisDialog.find("#add_pod_name"), $thisDialog.find("#add_pod_name_errormsg"));
-		        isValid &= validateCIDR("CIDR", $thisDialog.find("#add_pod_cidr"), $thisDialog.find("#add_pod_cidr_errormsg"));	
+		        isValid &= validateIp("Netmask", $thisDialog.find("#add_pod_netmask"), $thisDialog.find("#add_pod_netmask_errormsg"));	
 		        isValid &= validateIp("Start IP Range", $thisDialog.find("#add_pod_startip"), $thisDialog.find("#add_pod_startip_errormsg"));  //required
 		        isValid &= validateIp("End IP Range", $thisDialog.find("#add_pod_endip"), $thisDialog.find("#add_pod_endip_errormsg"), true);  //optional
 		        isValid &= validateIp("Gateway", $thisDialog.find("#add_pod_gateway"), $thisDialog.find("#add_pod_gateway_errormsg"));  //required when creating
@@ -315,7 +315,7 @@ function initAddPodShortcut() {
                  
                 var zoneId = $thisDialog.find("#zone_dropdown").val(); 
                 var name = trim($thisDialog.find("#add_pod_name").val());
-		        var cidr = trim($thisDialog.find("#add_pod_cidr").val());
+		        var netmask = trim($thisDialog.find("#add_pod_netmask").val());
 		        var startip = trim($thisDialog.find("#add_pod_startip").val());
 		        var endip = trim($thisDialog.find("#add_pod_endip").val());	    //optional
 		        var gateway = trim($thisDialog.find("#add_pod_gateway").val());			
@@ -323,7 +323,7 @@ function initAddPodShortcut() {
                 var array1 = [];
                 array1.push("&zoneId="+zoneId);
                 array1.push("&name="+todb(name));
-                array1.push("&cidr="+todb(cidr));
+                array1.push("&netmask="+todb(netmask));
                 array1.push("&startIp="+todb(startip));
                 if (endip != null && endip.length > 0)
                     array1.push("&endIp="+todb(endip));
@@ -727,7 +727,7 @@ function addZoneWizardValidatePod($thisWizard) {
     var isValid = true;					
     isValid &= validateString("Name", $thisWizard.find("#add_pod_name"), $thisWizard.find("#add_pod_name_errormsg"));    
     isValid &= validateIp("Gateway", $thisWizard.find("#add_pod_gateway"), $thisWizard.find("#add_pod_gateway_errormsg"));     
-    isValid &= validateCIDR("CIDR", $thisWizard.find("#add_pod_cidr"), $thisWizard.find("#add_pod_cidr_errormsg"));	
+    isValid &= validateIp("Netmask", $thisWizard.find("#add_pod_netmask"), $thisWizard.find("#add_pod_netmask_errormsg"));	
     isValid &= validateIp("Reserved System IP", $thisWizard.find("#add_pod_startip"), $thisWizard.find("#add_pod_startip_errormsg"));  //required
     isValid &= validateIp("Reserved System IP", $thisWizard.find("#add_pod_endip"), $thisWizard.find("#add_pod_endip_errormsg"), true);  //optional    
     return isValid;			
@@ -820,7 +820,7 @@ function addZoneWizardSubmit($thisWizard) {
     
     if(zoneId != null) {        
         var name = trim($thisWizard.find("#add_pod_name").val());
-        var cidr = trim($thisWizard.find("#add_pod_cidr").val());
+        var netmask = trim($thisWizard.find("#add_pod_netmask").val());
         var startip = trim($thisWizard.find("#add_pod_startip").val());
         var endip = trim($thisWizard.find("#add_pod_endip").val());	    //optional
         gateway = trim($thisWizard.find("#add_pod_gateway").val());			
@@ -828,7 +828,7 @@ function addZoneWizardSubmit($thisWizard) {
         var array1 = [];
         array1.push("&zoneId="+zoneId);
         array1.push("&name="+todb(name));
-        array1.push("&cidr="+todb(cidr));
+        array1.push("&netmask="+todb(netmask));
         array1.push("&startIp="+todb(startip));
         if (endip != null && endip.length > 0)
             array1.push("&endIp="+todb(endip));

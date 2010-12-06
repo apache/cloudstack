@@ -628,7 +628,7 @@ function initAddPodButton($button, $leftmenuItem1) {
         var zoneObj = $leftmenuItem1.data("jsonObj"); 
         $("#dialog_add_pod").find("#info_container").hide();				  	
         $("#dialog_add_pod").find("#add_pod_zone_name").text(fromdb(zoneObj.name));
-        $("#dialog_add_pod #add_pod_name, #dialog_add_pod #add_pod_cidr, #dialog_add_pod #add_pod_startip, #dialog_add_pod #add_pod_endip, #add_pod_gateway").val("");
+        $("#dialog_add_pod #add_pod_name, #dialog_add_pod #add_pod_netmask, #dialog_add_pod #add_pod_startip, #dialog_add_pod #add_pod_endip, #add_pod_gateway").val("");
 		
         $("#dialog_add_pod")
         .dialog('option', 'buttons', { 				
@@ -638,7 +638,7 @@ function initAddPodButton($button, $leftmenuItem1) {
 		        // validate values
 		        var isValid = true;					
 		        isValid &= validateString("Name", $thisDialog.find("#add_pod_name"), $thisDialog.find("#add_pod_name_errormsg"));
-		        isValid &= validateCIDR("CIDR", $thisDialog.find("#add_pod_cidr"), $thisDialog.find("#add_pod_cidr_errormsg"));	
+		        isValid &= validateIp("Netmask", $thisDialog.find("#add_pod_netmask"), $thisDialog.find("#add_pod_netmask"));	
 		        isValid &= validateIp("Start IP Range", $thisDialog.find("#add_pod_startip"), $thisDialog.find("#add_pod_startip_errormsg"));  //required
 		        isValid &= validateIp("End IP Range", $thisDialog.find("#add_pod_endip"), $thisDialog.find("#add_pod_endip_errormsg"), true);  //optional
 		        isValid &= validateIp("Gateway", $thisDialog.find("#add_pod_gateway"), $thisDialog.find("#add_pod_gateway_errormsg"));  //required when creating
@@ -648,7 +648,7 @@ function initAddPodButton($button, $leftmenuItem1) {
                 $thisDialog.find("#spinning_wheel").show()
                   
                 var name = trim($thisDialog.find("#add_pod_name").val());
-		        var cidr = trim($thisDialog.find("#add_pod_cidr").val());
+		        var netmask = trim($thisDialog.find("#add_pod_netmask").val());
 		        var startip = trim($thisDialog.find("#add_pod_startip").val());
 		        var endip = trim($thisDialog.find("#add_pod_endip").val());	    //optional
 		        var gateway = trim($thisDialog.find("#add_pod_gateway").val());			
@@ -656,7 +656,7 @@ function initAddPodButton($button, $leftmenuItem1) {
                 var array1 = [];
                 array1.push("&zoneId="+zoneObj.id);
                 array1.push("&name="+todb(name));
-                array1.push("&cidr="+todb(cidr));
+                array1.push("&netmask="+todb(netmask));
                 array1.push("&startIp="+todb(startip));
                 if (endip != null && endip.length > 0)
                     array1.push("&endIp="+todb(endip));

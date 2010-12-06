@@ -272,9 +272,9 @@
             </li>
             <li>
                 <label for="user_name" style="width: 115px;">
-                    CIDR:</label>
-                <input class="text" type="text" name="add_pod_cidr" id="add_pod_cidr" />
-                <div id="add_pod_cidr_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                    Netmask:</label>
+                <input class="text" type="text" name="add_pod_netmask" id="add_pod_netmask" />
+                <div id="add_pod_netmask_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
             <li>
