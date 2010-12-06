@@ -131,6 +131,7 @@ import com.cloud.utils.events.SubscriptionMgr;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.utils.net.NfsUtils;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.SecondaryStorageVmVO;
@@ -2085,7 +2086,14 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 		buf.append(" zone=").append(dest.getDataCenter().getId());
 		buf.append(" pod=").append(dest.getPod().getId());
 		buf.append(" guid=").append(_secHostUuid);
-		buf.append(" mount.path=").append(_nfsShare);
+		String nfsMountPoint = null;
+		try {
+			nfsMountPoint = NfsUtils.url2Mount(_nfsShare);
+		} catch (Exception e) {
+			
+		}
+		
+		buf.append(" mount.path=").append(nfsMountPoint);
 		buf.append(" resource=com.cloud.storage.resource.NfsSecondaryStorageResource");
 		buf.append(" instance=SecStorage");
 		buf.append(" sslcopy=").append(Boolean.toString(_useSSlCopy));
