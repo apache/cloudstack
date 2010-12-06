@@ -168,7 +168,7 @@ public interface ResponseGenerator {
 
     RemoteAccessVpnResponse createRemoteAccessVpnResponse(RemoteAccessVpn vpn);
 
-    void createTemplateResponse(List<TemplateResponse> responses, VirtualMachineTemplate template, boolean onlyReady, Long zoneId, boolean isAdmin,
+    void createTemplateResponse(List<TemplateResponse> responses, VirtualMachineTemplate template, Long zoneId, boolean isAdmin,
             Account account);
 
     ListResponse<TemplateResponse> createTemplateResponse2(VirtualMachineTemplate template, Long zoneId);

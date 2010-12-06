@@ -137,12 +137,6 @@ public class ListTemplatesCmd extends BaseListCmd {
             }
         }
 
-        boolean onlyReady = (templateFilterObj == TemplateFilter.featured) || 
-                            (templateFilterObj == TemplateFilter.selfexecutable) || 
-                            (templateFilterObj == TemplateFilter.sharedexecutable) ||
-                            (templateFilterObj == TemplateFilter.executable && isAccountSpecific) ||
-                            (templateFilterObj == TemplateFilter.community);
-
         boolean showDomr = (templateFilterObj != TemplateFilter.selfexecutable);
 
         ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
@@ -152,7 +146,7 @@ public class ListTemplatesCmd extends BaseListCmd {
             if (!showDomr && template.getTemplateType() == Storage.TemplateType.SYSTEM) {
                 continue;
             }
-            _responseGenerator.createTemplateResponse(templateResponses, template, onlyReady, zoneId, isAdmin, account);
+            _responseGenerator.createTemplateResponse(templateResponses, template, zoneId, isAdmin, account);
         }
 
         response.setResponses(templateResponses);

@@ -1455,13 +1455,10 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public void createTemplateResponse(List<TemplateResponse> responses, VirtualMachineTemplate template, boolean onlyReady, Long zoneId, boolean isAdmin, Account account) {
+    public void createTemplateResponse(List<TemplateResponse> responses, VirtualMachineTemplate template, Long zoneId, boolean isAdmin, Account account) {
         List<VMTemplateHostVO> templateHostRefsForTemplate = ApiDBUtils.listTemplateHostBy(template.getId(), zoneId);
 
         for (VMTemplateHostVO templateHostRef : templateHostRefsForTemplate) {
-            if (onlyReady && templateHostRef.getDownloadState() != Status.DOWNLOADED) {
-                continue;
-            }
 
             TemplateResponse templateResponse = new TemplateResponse();
             templateResponse.setId(template.getId());

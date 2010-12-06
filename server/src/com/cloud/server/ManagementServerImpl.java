@@ -1582,8 +1582,13 @@ public class ManagementServerImpl implements ManagementServer {
             accountId = account.getId();
         }
 
+      //It is account specific if account is admin type and domainId and accountName are not null
+        boolean isAccountSpecific = (account == null || isAdmin(account.getType())) 
+        							&& (accountName != null) 
+        							&& (domainId != null);
+        
         HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
-        return listTemplates(cmd.getId(), cmd.getIsoName(), cmd.getKeyword(), isoFilter, true, cmd.isBootable(), accountId, cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), hypervisorType);
+        return listTemplates(cmd.getId(), cmd.getIsoName(), cmd.getKeyword(), isoFilter, true, cmd.isBootable(), accountId, cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), hypervisorType, isAccountSpecific, true);
     }
 
     @Override
@@ -1613,11 +1618,17 @@ public class ManagementServerImpl implements ManagementServer {
             accountId = account.getId();
         }
 
+        //It is account specific if account is admin type and domainId and accountName are not null
+        boolean isAccountSpecific = (account == null || isAdmin(account.getType())) 
+        							&& (accountName != null)
+        							&& (domainId != null);        
+        boolean showDomr = (templateFilter != TemplateFilter.selfexecutable);
         HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
-        return listTemplates(cmd.getId(), cmd.getTemplateName(), cmd.getKeyword(), templateFilter, false, null, accountId, cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), hypervisorType);
+        
+        return listTemplates(cmd.getId(), cmd.getTemplateName(), cmd.getKeyword(), templateFilter, false, null, accountId, cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), hypervisorType, isAccountSpecific, showDomr);
     }
 
-    private List<VMTemplateVO> listTemplates(Long templateId, String name, String keyword, TemplateFilter templateFilter, boolean isIso, Boolean bootable, Long accountId, Long pageSize, Long startIndex, Long zoneId, HypervisorType hyperType) throws InvalidParameterValueException {
+    private List<VMTemplateVO> listTemplates(Long templateId, String name, String keyword, TemplateFilter templateFilter, boolean isIso, Boolean bootable, Long accountId, Long pageSize, Long startIndex, Long zoneId, HypervisorType hyperType, boolean isAccountSpecific, boolean showDomr) throws InvalidParameterValueException {
         VMTemplateVO template = null;
     	if (templateId != null) {
     		template = _templateDao.findById(templateId);
@@ -1634,6 +1645,13 @@ public class ManagementServerImpl implements ManagementServer {
     		}
         }
     	
+    	// Show only those that are downloaded.
+        boolean onlyReady = (templateFilter == TemplateFilter.featured) || 
+                            (templateFilter == TemplateFilter.selfexecutable) || 
+                            (templateFilter == TemplateFilter.sharedexecutable) ||
+                            (templateFilter == TemplateFilter.executable && isAccountSpecific) ||
+                            (templateFilter == TemplateFilter.community);
+    	
     	Account account = null;
     	DomainVO domain = null;
         if (accountId != null) {
@@ -1646,7 +1664,7 @@ public class ManagementServerImpl implements ManagementServer {
         List<VMTemplateVO> templates = new ArrayList<VMTemplateVO>();
         
         if (template == null) {
-    		templates = _templateDao.searchTemplates(name, keyword, templateFilter, isIso, bootable, account, domain, pageSize, startIndex, zoneId, hyperType);
+    		templates = _templateDao.searchTemplates(name, keyword, templateFilter, isIso, bootable, account, domain, pageSize, startIndex, zoneId, hyperType, onlyReady, showDomr);
     	} else {
     		templates = new ArrayList<VMTemplateVO>();
     		templates.add(template);

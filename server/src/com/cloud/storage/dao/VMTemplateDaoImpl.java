@@ -38,6 +38,7 @@ import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.Storage.TemplateType;
+import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
 import com.cloud.utils.component.Inject;
@@ -233,7 +234,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 	}
 
 	@Override
-	public List<VMTemplateVO> searchTemplates(String name, String keyword, TemplateFilter templateFilter, boolean isIso, Boolean bootable, Account account, DomainVO domain, Long pageSize, Long startIndex, Long zoneId, HypervisorType hyperType) {
+	public List<VMTemplateVO> searchTemplates(String name, String keyword, TemplateFilter templateFilter, boolean isIso, Boolean bootable, Account account, DomainVO domain, Long pageSize, Long startIndex, Long zoneId, HypervisorType hyperType, boolean onlyReady,boolean showDomr) {
         Transaction txn = Transaction.currentTxn();
         txn.start();
         List<VMTemplateVO> templates = new ArrayList<VMTemplateVO>();
@@ -249,12 +250,22 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         		accountType = Account.ACCOUNT_TYPE_ADMIN;
         	}
         	
-        	String guestOSJoin = "";        	
+        	String guestOSJoin = "";  
+        	StringBuilder templateHostRefJoin = new StringBuilder();
+        	String templateZoneRef = "";
         	if (isIso && !hyperType.equals(HypervisorType.None)) { 
         		guestOSJoin = " INNER JOIN guest_os guestOS on (guestOS.id = t.guest_os_id) INNER JOIN guest_os_hypervisor goh on ( goh.guest_os_id = guestOS.id) ";
         	}
+        	if (onlyReady){
+        		templateHostRefJoin.append(" INNER JOIN  template_host_ref thr on (t.id = thr.template_id) ");
+        	   	if(zoneId != null){        		
+        	   		templateHostRefJoin.append("INNER JOIN host h on (thr.host_id = h.id)");
+        	   	}
+        	}else if (zoneId != null){
+        		templateZoneRef = " INNER JOIN  template_zone_ref tzr on (t.id = tzr.template_id) ";
+        	}
         	
-        	String sql = SELECT_ALL + guestOSJoin;
+        	String sql = SELECT_ALL + guestOSJoin + templateHostRefJoin + templateZoneRef;
         	String whereClause = "";        	
         	
             if (templateFilter == TemplateFilter.featured) {
@@ -289,7 +300,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
             	whereClause += " AND ";
             }
             
-            sql += whereClause + getExtrasWhere(templateFilter, name, keyword, isIso, bootable, hyperType) + getOrderByLimit(pageSize, startIndex);
+            sql += whereClause + getExtrasWhere(templateFilter, name, keyword, isIso, bootable, hyperType, zoneId, onlyReady, showDomr) + getOrderByLimit(pageSize, startIndex);
 
             pstmt = txn.prepareStatement(sql);
             rs = pstmt.executeQuery();
@@ -328,7 +339,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         return templates;
 	}
 
-	private String getExtrasWhere(TemplateFilter templateFilter, String name, String keyword, boolean isIso, Boolean bootable, HypervisorType hyperType) {
+	private String getExtrasWhere(TemplateFilter templateFilter, String name, String keyword, boolean isIso, Boolean bootable, HypervisorType hyperType, Long zoneId, boolean onlyReady, boolean showDomr) {
 	    String sql = "";
         if (keyword != null) {
             sql += " t.name LIKE \"%" + keyword + "%\" AND";
@@ -351,8 +362,18 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         if (bootable != null) {
         	sql += " AND t.bootable = " + bootable;
         }
-        
-        
+
+        if (onlyReady){
+        	sql += " AND thr.download_state = '" +Status.DOWNLOADED.toString() + "'";
+        	if (zoneId != null){
+        		sql += " AND h.data_center_id = " +zoneId;
+            }
+        }else if (zoneId != null){
+        	sql += " AND tzr.zone_id = " +zoneId;
+        }
+        if (!showDomr){
+        	sql += " AND t.type = '" +Storage.TemplateType.SYSTEM.toString() + "'";
+        }        
 
         sql += " AND t.removed IS NULL";
 
