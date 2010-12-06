@@ -269,7 +269,7 @@ def runant(tsk):
 			_join(environ["ANT_HOME"],"bin","ant"),
 			"-Dthirdparty.classpath=%s"%(tsk.env.CLASSPATH.replace(os.pathsep,",")),
 		]
-	stanzas += tsk.generator.antargs + tsk.generator.anttgts
+	stanzas += tsk.generator.antargs
 	ret = Utils.exec_command(" ".join(stanzas),cwd=tsk.generator.bld.srcnode.abspath(),env=environ,log=True)
 	if ret != 0: raise Utils.WafError("Ant command %s failed with error value %s"%(stanzas,ret))
 	return ret
@@ -515,7 +515,6 @@ def dist_hook():
 	# so downloaders won't have to cry every time they download a "source"
 	# package over 90 MB in size
 	[ shutil.rmtree(f) for f in _glob(_join("*","bin")) if _isdir(f) ]
-	[ shutil.rmtree(f) for f in [ _join("build","deploy") ] if _isdir(f) ]
 	[ shutil.rmtree(f) for f in _glob(_join("cloudstack-proprietary","thirdparty","*")) if _isdir(f) ]
 	[ shutil.rmtree(f) for f in [ _join("cloudstack-proprietary","tools") ] if _isdir(f) ]
 	

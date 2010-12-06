@@ -472,7 +472,7 @@
 
   <target name="build-servers" depends="-init, build-server" />
 
-  <target name="build-opensource" depends="-init, build-server, build-agent, build-console-proxy, build-scripts, build-ui">
+  <target name="build-opensource" depends="-init, build-server, build-agent, build-console-proxy, build-scripts, build-ui, package-oss-systemvm-iso">
     <copy overwrite="true" todir="${dist.dir}">
       <fileset dir="${base.dir}/build/deploy/">
         <include name="deploy-agent.sh" />

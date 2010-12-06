@@ -135,7 +135,7 @@
     </zip>
   </target>
 
-  <target name="build-all" depends="build-opensource, build-ui, build-war-oss, package-oss-systemvm-iso">
+  <target name="build-all" depends="build-opensource, build-ui, build-war-oss">
   </target>
 
   <target name="build-war-oss" depends="-init-package" description="Compile the GWT client UI and builds WAR file.">
