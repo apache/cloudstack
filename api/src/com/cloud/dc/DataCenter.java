@@ -31,5 +31,7 @@ public interface DataCenter extends Grouping {
     String getFirewallProvider();
     String getDhcpProvider();
     String getLoadBalancerProvider();
+    String getUserDataProvider();
+    String getVpnProvider();
 
 }

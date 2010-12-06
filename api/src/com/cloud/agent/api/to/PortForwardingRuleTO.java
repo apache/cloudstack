@@ -17,9 +17,14 @@
  */
 package com.cloud.agent.api.to;
 
-import com.cloud.network.rules.FirewallRule.State;
 import com.cloud.network.rules.PortForwardingRule;
 
+/**
+ * PortForwardingRuleTO specifies one port forwarding rule.
+ * 
+ * See FirewallRuleTO for the stuff.
+ *
+ */
 public class PortForwardingRuleTO extends FirewallRuleTO {
     String dstIp;
     int[] dstPortRange;
@@ -29,11 +34,13 @@ public class PortForwardingRuleTO extends FirewallRuleTO {
     }
     
     public PortForwardingRuleTO(PortForwardingRule rule) {
-        this(rule.getSourceIpAddress().addr(), rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getDestinationIpAddress().addr(), rule.getDestinationPortStart(), rule.getDestinationPortEnd(), rule.getProtocol(), rule.getState() == State.Revoke, rule.getState() == State.Add);
+        super(rule);
+        this.dstIp = rule.getDestinationIpAddress().addr();
+        this.dstPortRange = new int[] { rule.getDestinationPortStart(), rule.getDestinationPortEnd() };
     }
     
-    protected PortForwardingRuleTO(String srcIp, int srcPortStart, int srcPortEnd, String dstIp, int dstPortStart, int dstPortEnd, String protocol, boolean revoked, boolean brandNew) {
-        super(srcIp, protocol, srcPortStart, srcPortEnd, revoked, brandNew);
+    protected PortForwardingRuleTO(long id, String srcIp, int srcPortStart, int srcPortEnd, String dstIp, int dstPortStart, int dstPortEnd, String protocol, boolean revoked, boolean brandNew) {
+        super(id, srcIp, protocol, srcPortStart, srcPortEnd, revoked, brandNew);
         this.dstIp = dstIp;
         this.dstPortRange = new int[] { dstPortStart, dstPortEnd };
     }

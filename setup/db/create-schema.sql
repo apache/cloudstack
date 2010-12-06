@@ -394,6 +394,7 @@ CREATE TABLE  `cloud`.`data_center` (
   `dhcp_provider` char(64) NOT NULL DEFAULT 'VirtualRouter',
   `lb_provider` char(64) NOT NULL DEFAULT 'VirtualRouter',
   `vpn_provider` char(64) NOT NULL DEFAULT 'VirtualRouter',
+  `userdata_provider` char(64) NOT NULL DEFAULT 'VirtualRouter',
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

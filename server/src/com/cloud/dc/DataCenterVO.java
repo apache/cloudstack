@@ -28,6 +28,8 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 
+import com.cloud.network.service.Providers;
+
 @Entity
 @Table(name="data_center")
 public class DataCenterVO implements DataCenter {
@@ -83,6 +85,22 @@ public class DataCenterVO implements DataCenter {
     @Column(name="gateway_provider")
     private String gatewayProvider = "VirtualRouter";
     
+    @Column(name="vpn_provider")
+    private String vpnProvider;
+    
+    @Column(name="userdata_provider")
+    private String userDataProvider;
+    
+    @Column(name="lb_provider")
+    private String loadBalancerProvider;
+    
+    @Column(name="firewall_provider")
+    private String firewallProvider;
+    
+    @Column(name="mac_address", updatable = false, nullable=false)
+    @TableGenerator(name="mac_address_sq", table="data_center", pkColumnName="id", valueColumnName="mac_address", allocationSize=1)
+    private long macAddress = 1;
+    
     @Override
     public String getDnsProvider() {
         return dnsProvider;
@@ -121,23 +139,13 @@ public class DataCenterVO implements DataCenter {
 
     @Override
     public String getFirewallProvider() {
-        return firewallProvider;
+        return firewallProvider; 
     }
 
     public void setFirewallProvider(String firewallProvider) {
         this.firewallProvider = firewallProvider;
     }
 
-    @Column(name="lb_provider")
-    private String loadBalancerProvider = "VirtualRouter";
-    
-    @Column(name="firewall_provider")
-    private String firewallProvider = "VirtualRouter";
-    
-    @Column(name="mac_address", updatable = false, nullable=false)
-    @TableGenerator(name="mac_address_sq", table="data_center", pkColumnName="id", valueColumnName="mac_address", allocationSize=1)
-    private long macAddress = 1;
-    
     public DataCenterVO(long id, String name, String description, String dns1, String dns2, String dns3, String dns4, String vnet, String guestCidr, String domain, Long domainId, DataCenterNetworkType zoneType) {
         this(name, description, dns1, dns2, dns3, dns4, vnet, guestCidr, domain, domainId, zoneType);
         this.id = id;
@@ -155,8 +163,33 @@ public class DataCenterVO implements DataCenter {
         this.domain = domain;
         this.domainId = domainId;
         this.networkType = zoneType;
+        loadBalancerProvider = Providers.VirtualRouter;
+        firewallProvider = Providers.VirtualRouter;
+        dhcpProvider = Providers.VirtualRouter;
+        dnsProvider = Providers.VirtualRouter;
+        gatewayProvider = Providers.VirtualRouter;
+        vpnProvider = Providers.VirtualRouter;
+        userDataProvider = Providers.VirtualRouter;
     }
     
+    @Override
+    public String getVpnProvider() {
+        return vpnProvider;
+    }
+
+    public void setVpnProvider(String vpnProvider) {
+        this.vpnProvider = vpnProvider;
+    }
+
+    @Override
+    public String getUserDataProvider() {
+        return userDataProvider;
+    }
+
+    public void setUserDataProvider(String userDataProvider) {
+        this.userDataProvider = userDataProvider;
+    }
+
     @Override
     public Long getDomainId() {
 		return domainId;

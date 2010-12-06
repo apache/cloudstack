@@ -17,23 +17,55 @@
  */
 package com.cloud.agent.api.to;
 
+import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.FirewallRule.State;
+
+/**
+ * FirewallRuleTO transfers a port range for an ip to be opened.
+ *   
+ * There are essentially three states transferred with each state.
+ *   1. revoked - the rule has been revoked.  A rule in this state may be
+ *      sent multiple times to the destination.  If the rule is not on 
+ *      the destination, the answer to a revoke rule should be successful.
+ *   2. alreadyAdded - the rule has been successfully added before.  Rules
+ *      in this state are sent for completeness and optomization.
+ *   3. neither - the rule is to be added but it might have been added before.
+ *      If the rule already exists on the destination, the destination should
+ *      reply the rule is successfully applied.
+ *      
+ * As for the information carried, it is fairly straightforward:
+ *   - srcIp: ip to be open the ports for.
+ *   - srcPortRange: port range to open.
+ *   - protocol: protocol to open for.  Usually tcp and udp.
+ *   - id: a unique id if the destination can use it to uniquly identify the rules.
+ *
+ */
 public class FirewallRuleTO {
+    long id;
     String srcIp;
     String protocol;
     int[] srcPortRange;
     boolean revoked;
-    boolean brandNew;
+    boolean alreadyAdded;
     String vlanNetmask;    // FIXME: Get rid of this!
 
     protected FirewallRuleTO() {
     }
     
-    public FirewallRuleTO(String srcIp, String protocol, int srcPortStart, int srcPortEnd, boolean revoked, boolean brandNew) {
+    public FirewallRuleTO(long id, String srcIp, String protocol, int srcPortStart, int srcPortEnd, boolean revoked, boolean alreadyAdded) {
         this.srcIp = srcIp;
         this.protocol = protocol;
         this.srcPortRange = new int[] {srcPortStart, srcPortEnd};
         this.revoked = revoked;
-        this.brandNew = brandNew;
+        this.alreadyAdded = alreadyAdded;
+    }
+    
+    public FirewallRuleTO(FirewallRule rule) {
+        this(rule.getId(), rule.getSourceIpAddress().addr(), rule.getProtocol(), rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getState()==State.Revoke, rule.getState()==State.Active);
+    }
+    
+    public long getId() {
+        return id;
     }
 
     public String getSrcIp() {
@@ -56,7 +88,7 @@ public class FirewallRuleTO {
         return vlanNetmask;
     }
     
-    public boolean isBrandNew() {
-        return brandNew;
+    public boolean isAlreadyAdded() {
+        return alreadyAdded;
     }
 }
