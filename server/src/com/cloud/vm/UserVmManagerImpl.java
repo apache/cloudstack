@@ -2960,6 +2960,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 	    }
 	}
 
+    //used for vm transitioning to error state
 	private void updateVmStateForFailedVmCreation(Long vmId) {
 		UserVmVO vm = _vmDao.findById(vmId);
 		if(vm != null){
