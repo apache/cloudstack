@@ -17,6 +17,7 @@
  */
 package com.cloud.network.rules;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -336,14 +337,23 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         return null;
     }
     
+    public List<? extends FirewallRule> listFirewallRules(Ip ip) {
+        return _firewallDao.listByIpAndNotRevoked(ip);
+    }
+
+    @Override
+    public List<? extends PortForwardingRule> listPortForwardingRulesForApplication(Ip ip) {
+        return _forwardingDao.listForApplication(ip);
+    }
+    
     @Override
     public List<? extends PortForwardingRule> listPortForwardingRules(ListPortForwardingRulesCmd cmd) {
         Ip ipAddress = new Ip(cmd.getIpAddress());
         Account caller = UserContext.current().getAccount();
 
         IPAddressVO ipAddressVO = _ipAddressDao.findById(ipAddress.addr());
-        if (ipAddressVO == null || ipAddressVO.getAllocatedTime() == null) {
-            throw new InvalidParameterValueException("Unable to find IP address " + ipAddress);
+        if (ipAddressVO == null || !ipAddressVO.readyToUse()) {
+            throw new InvalidParameterValueException("Ip address not ready for port forwarding rules yet: " + ipAddress);
         }
 
         List<PortForwardingRuleVO> rules = _forwardingDao.listByIpAndNotRevoked(ipAddress);
@@ -381,6 +391,9 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         for (PortForwardingRuleVO rule : rules) {
             if (rule.getState() == FirewallRule.State.Revoke) {
                 _forwardingDao.remove(rule.getId());
+            } else if (rule.getState() == FirewallRule.State.Add) {
+                rule.setState(FirewallRule.State.Active);
+                _forwardingDao.update(rule.getId(), rule);
             }
         }
         
@@ -419,7 +432,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         
         return rules.size() == 0;
     }
-
+    
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _name = name;
@@ -1097,6 +1110,32 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 //    public PortForwardingRuleVO findForwardingRuleById(Long ruleId) {
 //        return _firewallRulesDao.findById(ruleId);
 //    }
+
+    @Override
+    public List<? extends FirewallRule> listFirewallRulesByIp(Ip ip) {
+        return null;
+    }
+    
+    @Override
+    public List<? extends PortForwardingRule> gatherPortForwardingRulesForApplication(List<? extends IpAddress> addrs) {
+        List<PortForwardingRuleVO> allRules = new ArrayList<PortForwardingRuleVO>();
+        
+        for (IpAddress addr : addrs) {
+            if (!addr.readyToUse()) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Skipping " + addr + " because it is not ready for propation yet.");
+                }
+                continue;
+            }
+            allRules.addAll(_forwardingDao.listForApplication(new Ip(addr.getAddress())));
+        }
+        
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Found " + allRules.size() + " rules to apply for the addresses.");
+        }
+        
+        return allRules;
+    }
 
 
 }

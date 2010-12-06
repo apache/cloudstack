@@ -387,6 +387,12 @@ CREATE TABLE  `cloud`.`data_center` (
   `domain` varchar(100) COMMENT 'Network domain name of the Vms of the zone',
   `domain_id` bigint unsigned COMMENT 'domain id for the parent domain to this zone (null signifies public zone)',
   `networktype` varchar(255) NOT NULL DEFAULT 'Basic' COMMENT 'Network type of the zone',
+  `dns_provider` char(64) NOT NULL DEFAULT 'VirtualRouter',
+  `gateway_provider` char(64) NOT NULL DEFAULT 'VirtualRouter',
+  `firewall_provider` char(64) NOT NULL DEFAULT 'VirtualRouter',
+  `dhcp_provider` char(64) NOT NULL DEFAULT 'VirtualRouter',
+  `lb_provider` char(64) NOT NULL DEFAULT 'VirtualRouter',
+  `vpn_provider` char(64) NOT NULL DEFAULT 'VirtualRouter',
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -613,6 +619,7 @@ CREATE TABLE  `cloud`.`user_ip_address` (
   `vlan_db_id` bigint unsigned NOT NULL,
   `one_to_one_nat` int(1) unsigned NOT NULL default '0',
   `state` char(32) NOT NULL default 'Free' COMMENT 'state of the ip address',
+  `mac_address` bigint unsigned NOT NULL COMMENT 'mac address of this ip',
   PRIMARY KEY (`public_ip_address`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

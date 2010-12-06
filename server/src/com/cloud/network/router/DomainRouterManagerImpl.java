@@ -18,6 +18,9 @@
 package com.cloud.network.router;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -52,8 +55,10 @@ import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.routing.DhcpEntryCommand;
+import com.cloud.agent.api.routing.IPAssocCommand;
 import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
+import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.routing.VpnUsersCfgCommand;
 import com.cloud.agent.manager.Commands;
@@ -106,6 +111,7 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.DomainRouterService;
 import com.cloud.network.IPAddressVO;
+import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
@@ -122,7 +128,9 @@ import com.cloud.network.dao.NetworkRuleConfigDao;
 import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.router.VirtualRouter.Role;
+import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.PortForwardingRuleVO;
+import com.cloud.network.rules.RulesManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -228,6 +236,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
     @Inject VmManager _itMgr;
     @Inject VpnUserDao _vpnUsersDao;
     @Inject RemoteAccessVpnDao _remoteAccessVpnDao;
+    @Inject RulesManager _rulesMgr;
     
     long _routerTemplateId = -1;
     int _routerRamSize;
@@ -316,7 +325,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
             	return rtrs.get(0);
             }
             String mgmtNetmask = NetUtils.getCidrNetmask(pod.getCidrSize());
-            final String guestIp = _ipAddressDao.assignIpAddress(accountIdForDHCPServer, domainIdForDHCPServer, guestVlan.getId(), false).getAddress();
+            final String guestIp = null;//_ipAddressDao.assignIpAddress(accountIdForDHCPServer, domainIdForDHCPServer, guestVlan.getId(), false).getAddress();
 
             router =
                 new DomainRouterVO(id,
@@ -2425,8 +2434,108 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         return router;
     }
     
-    private boolean resendRouterState(Network config, DomainRouterVO router, Commands cmds) {
+    private void reconstructRouterPortForwardingRules(Commands cmds, List<? extends IpAddress> ipAddrs) {
+        List<? extends PortForwardingRule> rules = _rulesMgr.gatherPortForwardingRulesForApplication(ipAddrs);
+        if (rules.size() == 0) {
+            s_logger.debug("There are not port forwarding rules to send. ");
+            return;
+        }
+        SetPortForwardingRulesCommand pfrCmd = new SetPortForwardingRulesCommand(rules);
+        cmds.addCommand(pfrCmd);
+    }
+    /*
+    private List<? extends IpAddress> reconstructRouterIpAssocations(Commands cmds, VirtualRouter router) {
+        List<IPAddressVO> ipAddrs = _networkMgr.listPublicIpAddressesInVirtualNetwork(router.getAccountId(), router.getDataCenterId(), null);
+        
+    }
+    */
+    
+    public boolean associateIP(final DomainRouterVO router, final List<String> ipAddrList, final boolean add, long vmId) {
+        Commands cmds = new Commands(OnError.Continue);
+        boolean sourceNat = false;
+        Map<VlanVO, ArrayList<IPAddressVO>> vlanIpMap = new HashMap<VlanVO, ArrayList<IPAddressVO>>();
+        for (final String ipAddress: ipAddrList) {
+            IPAddressVO ip = _ipAddressDao.findById(ipAddress);
+
+            VlanVO vlan = _vlanDao.findById(ip.getVlanId());
+            ArrayList<IPAddressVO> ipList = vlanIpMap.get(vlan.getId());
+            if (ipList == null) {
+                ipList = new ArrayList<IPAddressVO>();
+            }
+            ipList.add(ip);
+            vlanIpMap.put(vlan, ipList);
+        }
+        for (Map.Entry<VlanVO, ArrayList<IPAddressVO>> vlanAndIp: vlanIpMap.entrySet()) {
+            boolean firstIP = true;
+            ArrayList<IPAddressVO> ipList = vlanAndIp.getValue();
+            Collections.sort(ipList, new Comparator<IPAddressVO>() {
+                @Override
+                public int compare(IPAddressVO o1, IPAddressVO o2) {
+                    return o1.getAddress().compareTo(o2.getAddress());
+                } });
+
+            for (final IPAddressVO ip: ipList) {
+                sourceNat = ip.isSourceNat();
+                VlanVO vlan = vlanAndIp.getKey();
+                String vlanId = vlan.getVlanId();
+                String vlanGateway = vlan.getVlanGateway();
+                String vlanNetmask = vlan.getVlanNetmask();
+
+                String vifMacAddress = null;
+                if (firstIP && add) {
+                    String[] macAddresses = _dcDao.getNextAvailableMacAddressPair(ip.getDataCenterId());
+                    vifMacAddress = macAddresses[1];
+                }
+                String vmGuestAddress = null;
+                if(vmId!=0){
+                    vmGuestAddress = _vmDao.findById(vmId).getGuestIpAddress();
+                }
+
+                cmds.addCommand(new IPAssocCommand(router.getInstanceName(), router.getPrivateIpAddress(), ip.getAddress(), add, firstIP, sourceNat, vlanId, vlanGateway, vlanNetmask, vifMacAddress, vmGuestAddress));
+
+                firstIP = false;
+            }
+        }
+
+        Answer[] answers = null;
+        try {
+            answers = _agentMgr.send(router.getHostId(), cmds);
+        } catch (final AgentUnavailableException e) {
+            s_logger.warn("Agent unavailable", e);
+            return false;
+        } catch (final OperationTimedoutException e) {
+            s_logger.warn("Timed Out", e);
+            return false;
+        }
+
+        if (answers == null) {
+            return false;
+        }
+
+        if (answers.length != ipAddrList.size()) {
+            return false;
+        }
+
+        // FIXME:  this used to be a loop for all answers, but then we always returned the
+        //         first one in the array, so what should really be done here?
+        if (answers.length > 0) {
+            Answer ans = answers[0];
+            return ans.getResult();
+        }
+
+        return true;
+    }
+    /*
+    
+    private boolean reconstructRouterState(Network config, DomainRouterVO router, Commands cmds) {
         if (router.getRole() == Role.DHCP_FIREWALL_LB_PASSWD_USERDATA) {
+            List<? extends IpAddress> ipAddrs = reconstructRouterIpAssocations(cmds, router);
+            reconstructRouterPortForwardingRules(cmds, ipAddrs);
+        }
+        
+        reconstructDhcpEntries(router);
+        reconstructVpnServerData(router);
+    }
             //source NAT address is stored in /proc/cmdline of the domR and gets
             //reassigned upon powerup. Source NAT rule gets configured in StartRouter command
             List<IPAddressVO> ipAddrs = _networkMgr.listPublicIpAddressesInVirtualNetwork(router.getAccountId(), router.getDataCenterId(), null);
@@ -2434,6 +2543,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
             for (final IPAddressVO ipVO : ipAddrs) {
                 ipAddrList.add(ipVO.getAddress());
             }
+            
             if (!ipAddrList.isEmpty()) {
                 try {
                     final boolean success = _networkMgr.associateIP(router, ipAddrList, true, 0);
@@ -2445,19 +2555,12 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
                     return false;
                 }
             }
-// FIXME            final List<PortForwardingRuleVO> fwRules = new ArrayList<PortForwardingRuleVO>();
-//            for (final IPAddressVO ipVO : ipAddrs) {
-//                fwRules.addAll(_rulesDao.listIPForwarding(ipVO.getAddress()));
-//            }
-//            final List<PortForwardingRuleVO> result = _networkMgr.updateFirewallRules(router
-//                    .getPublicIpAddress(), fwRules, router);
-//            if (result.size() != fwRules.size()) {
-//                return false;
-//            }
-        }
+            
+            
         return resendDhcpEntries(router) && resendVpnServerData(router);
       
     }
+    */
     
     private boolean resendDhcpEntries(Network config, DomainRouterVO router, Commands cmd){
         final List<UserVmVO> vms = _vmDao.listBy(router.getId(), State.Creating, State.Starting, State.Running, State.Stopping, State.Stopped, State.Migrating);
@@ -2494,4 +2597,6 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         }
         return true;
     }
+    
+    
 }

@@ -26,4 +26,10 @@ public interface DataCenter extends Grouping {
     DataCenterNetworkType getNetworkType();
     String getInternalDns1();
     String getInternalDns2();
+    String getDnsProvider();
+    String getGatewayProvider();
+    String getFirewallProvider();
+    String getDhcpProvider();
+    String getLoadBalancerProvider();
+
 }

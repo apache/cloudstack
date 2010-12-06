@@ -36,48 +36,48 @@ public interface NetworkGuru extends Adapter {
     /**
      * allocate a nic in this network.  This method implementation cannot take a long time as 
      * it is meant to allocate for the DB.
-     * @param config configuration to allocate the nic in.
+     * @param network configuration to allocate the nic in.
      * @param nic user specified 
      * @param vm virtual machine the network configuraiton will be in.
      * @return NicProfile.
      * @throws InsufficientVirtualNetworkCapcityException
      * @throws InsufficientAddressCapacityException
      */
-    NicProfile allocate(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException;
+    NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException;
     
     /**
      * Fully implement the network configuration as specified.
-     * @param config network configuration 
+     * @param network network configuration 
      * @param offering offering that the network configuration was based on.
      * @param destination where were deploying to.
      * @return a fully implemented NetworkConfiguration.
      */
-    Network implement(Network config, NetworkOffering offering, DeployDestination destination, ReservationContext context);
+    Network implement(Network network, NetworkOffering offering, DeployDestination destination, ReservationContext context);
     
     /**
      * reserve a nic for this VM in this network.
      * @param nic
-     * @param config
+     * @param network
      * @param vm
      * @param dest
      * @return
      * @throws InsufficientVirtualNetworkCapcityException
      * @throws InsufficientAddressCapacityException
      */
-    void reserve(NicProfile nic, Network config, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException;
+    void reserve(NicProfile nic, Network network, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException;
 
     boolean release(NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, String reservationId);
     
-    void deallocate(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm);
+    void deallocate(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm);
     
-    void destroy(Network config, NetworkOffering offering);
+    void destroy(Network network, NetworkOffering offering);
     
     /**
      * Throw away the design.
-     * @param config
+     * @param network
      * @param offering
      * @param owner
      * @return
      */
-    boolean trash(Network config, NetworkOffering offering, Account owner);
+    boolean trash(Network network, NetworkOffering offering, Account owner);
 }

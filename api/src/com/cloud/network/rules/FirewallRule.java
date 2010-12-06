@@ -31,6 +31,7 @@ public interface FirewallRule extends ControlledEntity {
     enum State {
         Staged, // Rule been created but has never got through network rule conflict detection.  Rules in this state can not be sent to network elements.
         Add,    // Add means the rule has been created and has gone through network rule conflict detection.
+        Active, // Rule has been sent to the network elements and reported to be active.
         Revoke  // Revoke means this rule has been revoked. If this rule has been sent to the network elements, the rule will be deleted from database.
     }
     

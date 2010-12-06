@@ -235,19 +235,6 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
 	}
 
 	@Override
-	public Pair<String, VlanVO> assignIpAddress(long zoneId, long accountId, long domainId, VlanType vlanType, boolean sourceNat) {
-		VlanVO vlan = findNextVlan(zoneId, vlanType);
-		if (vlan == null) {
-			return null;
-		}
-		String ipAddress = _ipAddressDao.assignIpAddress(accountId, domainId, vlan.getId(), sourceNat).getAddress();
-		if (ipAddress == null) {
-			return null;
-		}
-		return new Pair<String, VlanVO>(ipAddress, vlan);
-	}
-
-	@Override
 	public boolean zoneHasDirectAttachUntaggedVlans(long zoneId) {
 		SearchCriteria<VlanVO> sc = ZoneTypeAllPodsSearch.create();
     	sc.setParameters("zoneId", zoneId);
@@ -257,7 +244,6 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
 	}
 
 
-	@Override
 	public Pair<String, VlanVO> assignPodDirectAttachIpAddress(long zoneId,
 			long podId, long accountId, long domainId) {
 		SearchCriteria<VlanVO> sc = ZoneTypePodSearch.create();
@@ -270,11 +256,12 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
     		return null;
     	}
     	
-    	String ipAddress = _ipAddressDao.assignIpAddress(accountId, domainId, vlan.getId(), false).getAddress();
-    	if (ipAddress == null) {
-    		return null;
-    	}
-		return new Pair<String, VlanVO>(ipAddress, vlan);
+    	return null;
+//    	String ipAddress = _ipAddressDao.assignIpAddress(accountId, domainId, vlan.getId(), false).getAddress();
+//    	if (ipAddress == null) {
+//    		return null;
+//    	}
+//		return new Pair<String, VlanVO>(ipAddress, vlan);
 
 	}
 	

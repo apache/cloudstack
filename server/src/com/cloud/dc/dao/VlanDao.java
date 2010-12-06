@@ -23,7 +23,6 @@ import java.util.List;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
-import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
 
 public interface VlanDao extends GenericDao<VlanVO, Long> {
@@ -40,11 +39,11 @@ public interface VlanDao extends GenericDao<VlanVO, Long> {
 	
 	void addToPod(long podId, long vlanDbId);
 	
-    Pair<String, VlanVO>  assignIpAddress(long zoneId, long accountId, long domainId, VlanType vlanType, boolean sourceNat);
+//    Pair<String, VlanVO>  assignIpAddress(long zoneId, long accountId, long domainId, VlanType vlanType, boolean sourceNat);
 
 	List<VlanVO> listVlansForAccountByType(Long zoneId, long accountId, VlanType vlanType);
 	
-	Pair<String, VlanVO> assignPodDirectAttachIpAddress(long zoneId, long podId, long accountId, long domainId);
+//	Pair<String, VlanVO> assignPodDirectAttachIpAddress(long zoneId, long podId, long accountId, long domainId);
 	
 	boolean zoneHasDirectAttachUntaggedVlans(long zoneId);
 

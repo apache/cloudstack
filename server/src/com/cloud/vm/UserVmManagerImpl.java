@@ -2821,7 +2821,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
                 {
                 	for(VlanVO vlanForAcc : vlansForAccount)
                 	{
-                		guestIp = _ipAddressDao.assignIpAddress(accountId, account.getDomainId(), vlanForAcc.getId(), false).getAddress();
+                		guestIp = null;//_ipAddressDao.assignIpAddress(accountId, account.getDomainId(), vlanForAcc.getId(), false).getAddress();
                 		if(guestIp!=null) {
                             break; //got an ip
                         }
@@ -2832,7 +2832,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
                 	//i.e. for pod
                 	for(VlanVO vlanForPod : vlansForPod)
                 	{
-                		guestIp = _ipAddressDao.assignIpAddress(accountId, account.getDomainId(), vlanForPod.getId(), false).getAddress();
+                		guestIp = null; // _ipAddressDao.assignIpAddress(accountId, account.getDomainId(), vlanForPod.getId(), false).getAddress();
                 		if(guestIp!=null) {
                             break;//got an ip
                         }
@@ -2843,7 +2843,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
                 	//for zone
                 	for(VlanVO vlanForZone : zoneWideVlans)
                 	{
-                		guestIp = _ipAddressDao.assignIpAddress(accountId, account.getDomainId(), vlanForZone.getId(), false).getAddress();
+                		guestIp = null;// _ipAddressDao.assignIpAddress(accountId, account.getDomainId(), vlanForZone.getId(), false).getAddress();
                 		if(guestIp!=null) {
                             break;//found an ip
                         }

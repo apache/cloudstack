@@ -74,6 +74,66 @@ public class DataCenterVO implements DataCenter {
     @Enumerated(EnumType.STRING) 
     DataCenterNetworkType networkType;
     
+    @Column(name="dns_provider")
+    private String dnsProvider;
+    
+    @Column(name="dhcp_provider")
+    private String dhcpProvider; 
+    
+    @Column(name="gateway_provider")
+    private String gatewayProvider;
+    
+    @Override
+    public String getDnsProvider() {
+        return dnsProvider;
+    }
+
+    public void setDnsProvider(String dnsProvider) {
+        this.dnsProvider = dnsProvider;
+    }
+
+    @Override
+    public String getDhcpProvider() {
+        return dhcpProvider;
+    }
+
+    public void setDhcpProvider(String dhcpProvider) {
+        this.dhcpProvider = dhcpProvider;
+    }
+
+    @Override
+    public String getGatewayProvider() {
+        return gatewayProvider;
+    }
+
+    public void setGatewayProvider(String gatewayProvider) {
+        this.gatewayProvider = gatewayProvider;
+    }
+
+    @Override
+    public String getLoadBalancerProvider() {
+        return loadBalancerProvider;
+    }
+
+    public void setLoadBalancerProvider(String loadBalancerProvider) {
+        this.loadBalancerProvider = loadBalancerProvider;
+    }
+
+    @Override
+    public String getFirewallProvider() {
+        return firewallProvider;
+    }
+
+    public void setFirewallProvider(String firewallProvider) {
+        this.firewallProvider = firewallProvider;
+    }
+
+    @Column(name="lb_provider")
+    private String loadBalancerProvider;
+    
+    @Column(name="firewall_provider")
+    private String firewallProvider;
+    
     @Column(name="mac_address", updatable = false, nullable=false)
     @TableGenerator(name="mac_address_sq", table="data_center", pkColumnName="id", valueColumnName="mac_address", allocationSize=1)
     private long macAddress = 1;
@@ -97,6 +157,7 @@ public class DataCenterVO implements DataCenter {
         this.networkType = zoneType;
     }
     
+    @Override
     public Long getDomainId() {
 		return domainId;
 	}
@@ -105,6 +166,7 @@ public class DataCenterVO implements DataCenter {
 		this.domainId = domainId;
 	}
     
+    @Override
     public String getDescription() {
         return description;
     }
@@ -117,22 +179,27 @@ public class DataCenterVO implements DataCenter {
         this.vnet = vnet;
     }
 
+    @Override
     public String getDns1() {
         return dns1;
     }
     
+    @Override
     public String getVnet() {
         return vnet;
     }
 
+    @Override
     public String getDns2() {
         return dns2;
     }
 
+    @Override
     public String getInternalDns1() {
         return internalDns1;
     }
 
+    @Override
     public String getInternalDns2() {
         return internalDns2;
     }
@@ -145,7 +212,8 @@ public class DataCenterVO implements DataCenter {
 		return id;
 	}
 	
-	public String getName() {
+	@Override
+    public String getName() {
 	    return name;
 	}
 	
@@ -173,6 +241,7 @@ public class DataCenterVO implements DataCenter {
         this.routerMacAddress = routerMacAddress;
     }
     
+    @Override
     public String getGuestNetworkCidr()
     {
     	return guestNetworkCidr;
@@ -183,6 +252,7 @@ public class DataCenterVO implements DataCenter {
     	this.guestNetworkCidr = guestNetworkCidr;
     }
 
+    @Override
     public String getDomain() {
         return domain;
     }
@@ -195,6 +265,7 @@ public class DataCenterVO implements DataCenter {
         this.networkType = zoneNetworkType;
     }
 
+    @Override
     public DataCenterNetworkType getNetworkType() {
         return networkType;
     }

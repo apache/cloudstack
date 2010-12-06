@@ -27,6 +27,15 @@ import com.cloud.utils.exception.CloudRuntimeException;
  *
  */
 public class Networks {
+    
+    public enum Service {
+        Dhcp,
+        Dns,
+        Gateway,
+        LoadBalancer,
+        Firewall
+    }
+    
     /**
      * Different ways to assign ip address to this network.
      */

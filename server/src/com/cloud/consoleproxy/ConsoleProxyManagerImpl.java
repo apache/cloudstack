@@ -77,14 +77,11 @@ import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
-import com.cloud.dc.Vlan.VlanType;
-import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
-import com.cloud.domain.DomainVO;
 import com.cloud.event.Event;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventUtils;
@@ -1174,21 +1171,21 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
             return net;
         }
 
-        Pair<String, VlanVO> ipAndVlan = _vlanDao.assignIpAddress(dcId, Account.ACCOUNT_ID_SYSTEM, DomainVO.ROOT_DOMAIN, VlanType.VirtualNetwork,
-                true);
-
-        if (ipAndVlan == null) {
-            s_logger.debug("Unable to get public ip address (type=Virtual) for console proxy vm for data center  : " + dcId);
-            ipAndVlan = _vlanDao.assignPodDirectAttachIpAddress(dcId, podId, Account.ACCOUNT_ID_SYSTEM, DomainVO.ROOT_DOMAIN);
-            if (ipAndVlan == null) {
-                s_logger.debug("Unable to get public ip address (type=DirectAttach) for console proxy vm for data center  : " + dcId);
-            }
-        }
-        if (ipAndVlan != null) {
-            VlanVO vlan = ipAndVlan.second();
-            networkInfo net = new networkInfo(ipAndVlan.first(), vlan.getVlanNetmask(), vlan.getVlanGateway(), vlan.getId(), vlan.getVlanId());
-            return net;
-        }
+//        Pair<String, VlanVO> ipAndVlan = _vlanDao.assignIpAddress(dcId, Account.ACCOUNT_ID_SYSTEM, DomainVO.ROOT_DOMAIN, VlanType.VirtualNetwork,
+//                true);
+//
+//        if (ipAndVlan == null) {
+//            s_logger.debug("Unable to get public ip address (type=Virtual) for console proxy vm for data center  : " + dcId);
+//            ipAndVlan = _vlanDao.assignPodDirectAttachIpAddress(dcId, podId, Account.ACCOUNT_ID_SYSTEM, DomainVO.ROOT_DOMAIN);
+//            if (ipAndVlan == null) {
+//                s_logger.debug("Unable to get public ip address (type=DirectAttach) for console proxy vm for data center  : " + dcId);
+//            }
+//        }
+//        if (ipAndVlan != null) {
+//            VlanVO vlan = ipAndVlan.second();
+//            networkInfo net = new networkInfo(ipAndVlan.first(), vlan.getVlanNetmask(), vlan.getVlanGateway(), vlan.getId(), vlan.getVlanId());
+//            return net;
+//        }
         return null;
     }
 

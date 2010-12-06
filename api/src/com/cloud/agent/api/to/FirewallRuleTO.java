@@ -22,16 +22,18 @@ public class FirewallRuleTO {
     String protocol;
     int[] srcPortRange;
     boolean revoked;
+    boolean brandNew;
     String vlanNetmask;    // FIXME: Get rid of this!
 
     protected FirewallRuleTO() {
     }
     
-    public FirewallRuleTO(String srcIp, String protocol, int srcPortStart, int srcPortEnd, boolean revoked) {
+    public FirewallRuleTO(String srcIp, String protocol, int srcPortStart, int srcPortEnd, boolean revoked, boolean brandNew) {
         this.srcIp = srcIp;
         this.protocol = protocol;
         this.srcPortRange = new int[] {srcPortStart, srcPortEnd};
         this.revoked = revoked;
+        this.brandNew = brandNew;
     }
 
     public String getSrcIp() {
@@ -52,5 +54,9 @@ public class FirewallRuleTO {
     
     public String getVlanNetmask() {
         return vlanNetmask;
+    }
+    
+    public boolean isBrandNew() {
+        return brandNew;
     }
 }

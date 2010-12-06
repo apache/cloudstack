@@ -54,16 +54,16 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, String> implem
     // make it public for JUnit test
     public IPAddressDaoImpl() {
         AllFieldsSearch = createSearchBuilder();
-        AllFieldsSearch.and("dataCenterId", AllFieldsSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-        AllFieldsSearch.and("ipAddress", AllFieldsSearch.entity().getAddress(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("dataCenterId", AllFieldsSearch.entity().getDataCenterId(), Op.EQ);
+        AllFieldsSearch.and("ipAddress", AllFieldsSearch.entity().getAddress(), Op.EQ);
         AllFieldsSearch.and("vlan", AllFieldsSearch.entity().getVlanId(), Op.EQ);
         AllFieldsSearch.and("accountId", AllFieldsSearch.entity().getAllocatedToAccountId(), Op.EQ);
-        AllFieldsSearch.and("sourceNat", AllFieldsSearch.entity().isSourceNat(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("sourceNat", AllFieldsSearch.entity().isSourceNat(), Op.EQ);
         AllFieldsSearch.done();
 
         VlanDbIdSearchUnallocated = createSearchBuilder();
-        VlanDbIdSearchUnallocated.and("allocated", VlanDbIdSearchUnallocated.entity().getAllocatedTime(), SearchCriteria.Op.NULL);
-        VlanDbIdSearchUnallocated.and("vlanDbId", VlanDbIdSearchUnallocated.entity().getVlanId(), SearchCriteria.Op.EQ);
+        VlanDbIdSearchUnallocated.and("allocated", VlanDbIdSearchUnallocated.entity().getAllocatedTime(), Op.NULL);
+        VlanDbIdSearchUnallocated.and("vlanDbId", VlanDbIdSearchUnallocated.entity().getVlanId(), Op.EQ);
         VlanDbIdSearchUnallocated.done();
 
         AllIpCount = createSearchBuilder(Integer.class);
@@ -131,8 +131,6 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, String> implem
         update(ipAddr, ip);
     }
 
-    @Override
-    @DB
     public IPAddressVO assignIpAddress(long accountId, long domainId, long vlanDbId, boolean sourceNat) {
         Transaction txn = Transaction.currentTxn();
         txn.start();
@@ -231,5 +229,20 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, String> implem
         }
 
         return ipCount;
+    }
+
+    @Override @DB
+    public IPAddressVO markAsUnavailable(String ipAddress, long ownerId) {
+        SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();
+        sc.setParameters("accountId", ownerId);
+        sc.setParameters("ipAddress", ipAddress);
+        
+        IPAddressVO ip = createForUpdate();
+        ip.setState(State.Releasing);
+        if (update(ip, sc) != 1) {
+            return null;
+        }
+        
+        return findOneBy(sc);
     }
 }

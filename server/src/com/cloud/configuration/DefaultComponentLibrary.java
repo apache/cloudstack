@@ -164,7 +164,9 @@ public class DefaultComponentLibrary implements ComponentLibrary {
         info.addParameter("cache.size", "50");
         info.addParameter("cache.time.to.live", "600");
         addDao("IPAddressDao", IPAddressDaoImpl.class);
-        addDao("VlanDao", VlanDaoImpl.class);
+        info = addDao("VlanDao", VlanDaoImpl.class);
+        info.addParameter("cache.size", "30");
+        info.addParameter("cache.time.to.live", "3600");
         addDao("PodVlanMapDao", PodVlanMapDaoImpl.class);
         addDao("AccountVlanMapDao", AccountVlanMapDaoImpl.class);
         addDao("VolumeDao", VolumeDaoImpl.class);

@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -59,7 +60,6 @@ import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.dc.DataCenter;
-import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
@@ -88,10 +88,10 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.dao.HostDao;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.addr.PublicIp;
 import com.cloud.network.configuration.NetworkGuru;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
@@ -139,6 +139,7 @@ import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
@@ -216,253 +217,133 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     ScheduledExecutorService _executor;
 
     SearchBuilder<AccountVO> AccountsUsingNetworkConfigurationSearch;
+    SearchBuilder<IPAddressVO> AssignIpAddressSearch;
+    SearchBuilder<IPAddressVO> IpAddressSearch;
 
     private Map<String, String> _configs;
+
+    @DB
+    protected PublicIp fetchNewPublicIp(long dcId, VlanType vlanUse, Account owner, boolean sourceNat) throws InsufficientAddressCapacityException {
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        SearchCriteria<IPAddressVO> sc = AssignIpAddressSearch.create();
+        sc.setParameters("dc", dcId);
+        sc.setJoinParameters("vlan", "vlanType", vlanUse);
+        
+        Filter filter = new Filter(IPAddressVO.class, "vlanId", true, 0l, 1l);
+        
+        List<IPAddressVO> addrs = _ipAddressDao.lockRows(sc, filter, true);
+        assert (addrs.size() == 1) : "Return size is incorrect: " + addrs.size();
+        
+        if (addrs.size() == 0) {
+            throw new InsufficientAddressCapacityException("Insufficient address capacity", DataCenter.class, dcId);
+        }
+        
+        IPAddressVO addr = addrs.get(0);
+        addr.setSourceNat(sourceNat);
+        addr.setAllocatedTime(new Date());
+        addr.setAllocatedInDomainId(owner.getDomainId());
+        addr.setAllocatedToAccountId(owner.getId());
+        
+        if (!_ipAddressDao.update(addr.getAddress(), addr)) {
+            throw new CloudRuntimeException("Found address to allocate but unable to update: " + addr);
+        }
+        
+        txn.commit();
+        return new PublicIp(addr, _vlanDao.findById(addr.getVlanId()));
+    }
     
+    @Override
+    public PublicIp assignSourceNatIpAddress(Account owner, Network network, long callerId) throws ConcurrentOperationException, InsufficientAddressCapacityException {
+        assert ((network.getTrafficType() == TrafficType.Public) || (network.getTrafficType() == TrafficType.Guest && network.getGuestType() == GuestIpType.Direct)) : "You're asking for a source nat but your network can't participate in source nat.  What do you have to say for yourself?";
+        
+        long dcId = network.getDataCenterId();
+        long ownerId = owner.getId();
 
-    @Override @DB
-    public String assignSourceNatIpAddress(Account account, final DataCenterVO dc, final String domain, final ServiceOfferingVO serviceOffering, long startEventId, HypervisorType hyperType) throws ResourceAllocationException {
-        if (serviceOffering.getGuestIpType() == NetworkOffering.GuestIpType.Direct) {
-            return null;
-        }
-        final long dcId = dc.getId();
-        String sourceNat = null;
+        final EventVO event = new EventVO();
+        event.setUserId(callerId); // system user performed the action...
+        event.setAccountId(ownerId);
+        event.setType(EventTypes.EVENT_NET_IP_ASSIGN);
 
-        final long accountId = account.getId();
-
+        PublicIp ip = null;
+        
         Transaction txn = Transaction.currentTxn();
         try {
-            final EventVO event = new EventVO();
-            event.setUserId(1L); // system user performed the action...
-            event.setAccountId(account.getId());
-            event.setType(EventTypes.EVENT_NET_IP_ASSIGN);
-
             txn.start();
 
-            account = _accountDao.acquireInLockTable(accountId);
-            if (account == null) {
-                s_logger.warn("Unable to lock account " + accountId);
-                return null;
+            owner = _accountDao.acquireInLockTable(ownerId);
+            if (owner == null) {
+                throw new ConcurrentOperationException("Unable to lock account " + ownerId);
             }
-            if(s_logger.isDebugEnabled()) {
-                s_logger.debug("lock account " + accountId + " is acquired");
-            }
-
-            boolean isAccountIP = false;
-            List<IPAddressVO> addrs = listPublicIpAddressesInVirtualNetwork(account.getId(), dcId, true);            
-            if (addrs.size() == 0) {
-
-                // Check that the maximum number of public IPs for the given accountId will not be exceeded
-                if (_accountMgr.resourceLimitExceeded(account, ResourceType.public_ip)) {
-                    ResourceAllocationException rae = new ResourceAllocationException("Maximum number of public IP addresses for account: " + account.getAccountName() + " has been exceeded.");
-                    rae.setResourceType("ip");
-                    throw rae;
-                }
-
-                //check for account specific IP pool.
-                addrs = listPublicIpAddressesInVirtualNetwork(account.getId(), dcId, null);
-                if (addrs.size() == 0){
-
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("assigning a new ip address");
-                    }                
-                    Pair<String, VlanVO> ipAndVlan = _vlanDao.assignIpAddress(dc.getId(), accountId, account.getDomainId(), VlanType.VirtualNetwork, true);
-
-                    if (ipAndVlan != null) {
-                        sourceNat = ipAndVlan.first();
-
-                        // Increment the number of public IPs for this accountId in the database
-                        _accountMgr.incrementResourceCount(accountId, ResourceType.public_ip);
-                        event.setParameters("address=" + sourceNat + "\nsourceNat=true\ndcId="+dcId);
-                        event.setDescription("Acquired a public ip: " + sourceNat);
-                        _eventDao.persist(event);
-                    }
-                }else{ 
-                    isAccountIP = true;
-                    sourceNat = addrs.get(0).getAddress();
-                    _ipAddressDao.setIpAsSourceNat(sourceNat);
-                    s_logger.debug("assigning a new ip address " +sourceNat);
-
-                    // Increment the number of public IPs for this accountId in the database
-                    _accountMgr.incrementResourceCount(accountId, ResourceType.public_ip);
-                    event.setParameters("address=" + sourceNat + "\nsourceNat=true\ndcId="+dcId);
-                    event.setDescription("Acquired a public ip: " + sourceNat);
-                    _eventDao.persist(event);
-                }
-
-            } else {
-                sourceNat = addrs.get(0).getAddress();
-            }
-
-            if (sourceNat == null) {
-                txn.rollback();
-                event.setLevel(EventVO.LEVEL_ERROR);
-                event.setParameters("dcId=" + dcId);
-                event.setDescription("Failed to acquire a public ip.");
-                _eventDao.persist(event);
-                s_logger.error("Unable to get source nat ip address for account " + account.getId());
-                return null;
-            }
-
-            UserStatisticsVO stats = _userStatsDao.findBy(account.getId(), dcId);
-            if (stats == null) {
-                stats = new UserStatisticsVO(account.getId(), dcId);
-                _userStatsDao.persist(stats);
-            }
-
-            txn.commit();
-
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Source Nat is " + sourceNat);
+                s_logger.debug("lock account " + ownerId + " is acquired");
             }
 
-            DomainRouterVO router = null;
-            try {
-                router = _routerMgr.createRouter(account.getId(), sourceNat, dcId, domain, serviceOffering, startEventId);
-            } catch (final Exception e) {
-                s_logger.error("Unable to create router for " + account.getAccountName(), e);
-            }
-
-            if (router != null) {
+            IPAddressVO sourceNat = null;
+            List<IPAddressVO> addrs = listPublicIpAddressesInVirtualNetwork(ownerId, dcId, null);            
+            if (addrs.size() == 0) {
+                // Check that the maximum number of public IPs for the given accountId will not be exceeded
+                if (_accountMgr.resourceLimitExceeded(owner, ResourceType.public_ip)) {
+                    throw new AccountLimitException("Maximum number of public IP addresses for account: " + owner.getAccountName() + " has been exceeded.");
+                }
+                
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Router is " + router.getHostName());
-                }
-                return sourceNat;
-            }
+                    s_logger.debug("assigning a new ip address in " + dcId + " to " + owner);
+                }                
+                
+                ip = fetchNewPublicIp(dcId, VlanType.VirtualNetwork, owner, true);
+                sourceNat = ip.ip();
+                sourceNat.setState(IpAddress.State.Allocated);
+                _ipAddressDao.update(sourceNat.getAddress(), sourceNat);
 
-            s_logger.warn("releasing the source nat because router was not created: " + sourceNat);
-            txn.start();
-            if(isAccountIP){
-                _ipAddressDao.unassignIpAsSourceNat(sourceNat);
-            }else{
-                _ipAddressDao.unassignIpAddress(sourceNat);
-            }
-
-            _accountMgr.decrementResourceCount(accountId, ResourceType.public_ip);
-            EventVO event2 = new EventVO();
-            event2.setUserId(1L);
-            event2.setAccountId(account.getId());
-            event2.setType(EventTypes.EVENT_NET_IP_RELEASE);
-            event2.setParameters("address=" + sourceNat + "\nsourceNat=true");
-            event2.setDescription("released source nat ip " + sourceNat + " since router could not be started");
-            _eventDao.persist(event2);
-            txn.commit();
-            return null;
-        } finally {
-            if (account != null) {
-                if(s_logger.isDebugEnabled()) {
-                    s_logger.debug("Releasing lock account " + accountId);
-                }
-
-                _accountDao.releaseFromLockTable(accountId);
-            }
-        }
-    }
-
-    @Override @DB
-    public String assignSourceNatIpAddress(Account account, DataCenter dc) throws InsufficientAddressCapacityException {
-        final long dcId = dc.getId();
-        final long accountId = account.getId();
-        String sourceNat = null;
-
-
-        Transaction txn = Transaction.currentTxn();
-        try {
-            final EventVO event = new EventVO();
-            event.setUserId(1L); // system user performed the action...
-            event.setAccountId(account.getId());
-            event.setType(EventTypes.EVENT_NET_IP_ASSIGN);
-
-            txn.start();
-
-            account = _accountDao.acquireInLockTable(accountId);
-            if (account == null) {
-                s_logger.warn("Unable to lock account " + accountId);
-                return null;
-            }
-            if(s_logger.isDebugEnabled()) {
-                s_logger.debug("lock account " + accountId + " is acquired");
-            }
-
-            boolean isAccountIP = false;
-            List<IPAddressVO> addrs = listPublicIpAddressesInVirtualNetwork(account.getId(), dcId, true);            
-            if (addrs.size() == 0) {
-
-                // Check that the maximum number of public IPs for the given accountId will not be exceeded
-                if (_accountMgr.resourceLimitExceeded(account, ResourceType.public_ip)) {
-                    throw new AccountLimitException("Maximum number of public IP addresses for account: " + account.getAccountName() + " has been exceeded.");
-                }
-
-                //check for account specific IP pool.
-                addrs = listPublicIpAddressesInVirtualNetwork(account.getId(), dcId, null);
-                if (addrs.size() == 0){
-
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("assigning a new ip address");
-                    }                
-                    Pair<String, VlanVO> ipAndVlan = _vlanDao.assignIpAddress(dc.getId(), accountId, account.getDomainId(), VlanType.VirtualNetwork, true);
-
-                    if (ipAndVlan != null) {
-                        sourceNat = ipAndVlan.first();
-
-                        // Increment the number of public IPs for this accountId in the database
-                        _accountMgr.incrementResourceCount(accountId, ResourceType.public_ip);
-                        event.setParameters("address=" + sourceNat + "\nsourceNat=true\ndcId="+dcId);
-                        event.setDescription("Acquired a public ip: " + sourceNat);
-                        _eventDao.persist(event);
-                    }
-                }else{ 
-                    isAccountIP = true;
-                    sourceNat = addrs.get(0).getAddress();
-                    _ipAddressDao.setIpAsSourceNat(sourceNat);
-                    s_logger.debug("assigning a new ip address " +sourceNat);
-
-                    // Increment the number of public IPs for this accountId in the database
-                    _accountMgr.incrementResourceCount(accountId, ResourceType.public_ip);
-                    event.setParameters("address=" + sourceNat + "\nsourceNat=true\ndcId="+dcId);
-                    event.setDescription("Acquired a public ip: " + sourceNat);
-                    _eventDao.persist(event);
-                }
-
+                // Increment the number of public IPs for this accountId in the database
+                _accountMgr.incrementResourceCount(ownerId, ResourceType.public_ip);
+                event.setParameters("address=" + ip.getAddress() + "\nsourceNat=true\ndcId="+dcId);
+                event.setDescription("Acquired a public ip: " + ip.getAddress());
+                _eventDao.persist(event);
             } else {
-                sourceNat = addrs.get(0).getAddress();
+                // Account already has ip addresses
+                
+                for (IPAddressVO addr : addrs) {
+                    if (addr.isSourceNat()) {
+                        sourceNat = addr;
+                        break;
+                    }
+                }
+                
+                assert(sourceNat != null) : "How do we get a bunch of ip addresses but none of them are source nat? account=" + ownerId + "; dc=" + dcId;
+                ip = new PublicIp(sourceNat, _vlanDao.findById(sourceNat.getVlanId()));
             }
+            
+            UserStatisticsVO stats = _userStatsDao.findBy(ownerId, dcId);
+            if (stats == null) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Creating statistics for the owner: " + ownerId);
+                }
+                stats = new UserStatisticsVO(ownerId, dcId);
+                _userStatsDao.persist(stats);
+            }
+            txn.commit();
+            return ip;
+        } finally {
+            if (owner != null) {
+                if(s_logger.isDebugEnabled()) {
+                    s_logger.debug("Releasing lock account " + ownerId);
+                }
 
-            if (sourceNat == null) {
+                _accountDao.releaseFromLockTable(ownerId);
+            }
+            if (ip == null) {
                 txn.rollback();
                 event.setLevel(EventVO.LEVEL_ERROR);
                 event.setParameters("dcId=" + dcId);
                 event.setDescription("Failed to acquire a public ip.");
                 _eventDao.persist(event);
-                s_logger.error("Unable to get source nat ip address for account " + account.getId());
-                return null;
-            }
-
-            UserStatisticsVO stats = _userStatsDao.findBy(account.getId(), dcId);
-            if (stats == null) {
-                stats = new UserStatisticsVO(account.getId(), dcId);
-                _userStatsDao.persist(stats);
-            }
-
-            txn.commit();
-
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Source Nat is " + sourceNat);
-            }
-
-            return sourceNat;
-
-        } finally {
-            if (account != null) {
-                if(s_logger.isDebugEnabled()) {
-                    s_logger.debug("Releasing lock account " + accountId);
-                }
-
-                _accountDao.releaseFromLockTable(accountId);
+                s_logger.error("Unable to get source nat ip address for account " + ownerId);
             }
         }
     }
-
+    
     @Override
     public boolean associateIP(final DomainRouterVO router, final List<String> ipAddrList, final boolean add, long vmId) {
         Commands cmds = new Commands(OnError.Continue);
@@ -645,7 +526,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             txn.start();
 
             String ipAddress = null;
-            Pair<String, VlanVO> ipAndVlan = _vlanDao.assignIpAddress(zoneId, accountId, domainId, VlanType.VirtualNetwork, false);
+            Pair<String, VlanVO> ipAndVlan = null;//FIXME d_vlanDao.assignIpAddress(zoneId, accountId, domainId, VlanType.VirtualNetwork, false);
 
             if (ipAndVlan == null) {
                 throw new InsufficientAddressCapacityException("Unable to find available public IP addresses", DataCenter.class, zoneId);
@@ -754,40 +635,19 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return  answers[0].getResult();        
     }
 
-    @DB
-    protected IPAddressVO releaseOwnershipOfIpAddress(String ipAddress) {
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        IPAddressVO ip = _ipAddressDao.lockRow(ipAddress, true);
-        if (ip == null) {
-            s_logger.warn("Unable to find allocated ip: " + ipAddress);
-            return null;
-        }
-        
-        if (ip.getAllocatedTime() == null) {
-            s_logger.debug("Ip Address is already rleeased: " + ipAddress);
-            return null;
-        }
-        
-        ip.setAllocatedToAccountId(null);
-        ip.setAllocatedInDomainId(null);
-        _ipAddressDao.update(ip.getAddress(), ip);
-        txn.commit();
-        return ip;
-    }
-    
     @Override
-    public boolean releasePublicIpAddress(long userId, final String ipAddress) {
-        IPAddressVO ip = releaseOwnershipOfIpAddress(ipAddress);
+    public boolean releasePublicIpAddress(String ipAddress, long ownerId, long userId) {
+        IPAddressVO ip = _ipAddressDao.markAsUnavailable(ipAddress, ownerId);
+        assert (ip != null) : "Unable to mark the ip address " + ipAddress + " owned by " + ownerId + " as unavailable.";
         if (ip == null) {
             return true;
         }
         
-        Ip addr = new Ip(ipAddress);
-        
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Releasing ip " + ipAddress + "; sourceNat = " + ip.isSourceNat());
         }
+        
+        Ip addr = new Ip(ip.getAddress());
 
         boolean success = true;
         try {
@@ -828,47 +688,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         _eventDao.persist(event);
         
         return success;
-        
-//            List<LoadBalancerVO> loadBalancers = _loadBalancerDao.listByIpAddress(ipAddress);
-//            for (LoadBalancerVO loadBalancer : loadBalancers) {
-//                _loadBalancerDao.remove(loadBalancer.getId());
-//
-//                // save off an event for removing the load balancer
-//                EventVO event = new EventVO();
-//                event.setUserId(userId);
-//                event.setAccountId(ip.getAccountId());
-//                event.setType(EventTypes.EVENT_LOAD_BALANCER_DELETE);
-//                String params = "id="+loadBalancer.getId();
-//                event.setParameters(params);
-//                event.setDescription("Successfully deleted load balancer " + loadBalancer.getId());
-//                event.setLevel(EventVO.LEVEL_INFO);
-//                _eventDao.persist(event);
-//            }
-
-//            if ((router != null) && (router.getState() == State.Running)) {
-//                if (s_logger.isDebugEnabled()) {
-//                    s_logger.debug("Disassociate ip " + router.getHostName());
-//                }
-//
-//                if (associateIP(router, ip.getAddress(), false, 0)) {
-//                    _ipAddressDao.unassignIpAddress(ipAddress);
-//                } else {
-//                    if (s_logger.isDebugEnabled()) {
-//                        s_logger.debug("Unable to dissociate IP : " + ipAddress + " due to failing to dissociate with router: " + router.getHostName());
-//                    }
-//
-//                    final EventVO event = new EventVO();
-//                    event.setUserId(userId);
-//                    event.setAccountId(ip.getAccountId());
-//                    event.setType(EventTypes.EVENT_NET_IP_RELEASE);
-//                    event.setLevel(EventVO.LEVEL_ERROR);
-//                    event.setParameters("address=" + ipAddress + "\nsourceNat="+ip.isSourceNat());
-//                    event.setDescription("failed to released a public ip: " + ipAddress + " due to failure to disassociate with router " + router.getHostName());
-//                    _eventDao.persist(event);
-//
-//                    return false;
-//                }
-//            } else {
     }
 
     private Integer getIntegerConfigValue(String configKey, Integer dflt) {
@@ -946,12 +765,28 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         networkAccountSearch.and("config", networkAccountSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
         networkAccountSearch.and("owner", networkAccountSearch.entity().isOwner(), SearchCriteria.Op.EQ);
         AccountsUsingNetworkConfigurationSearch.done();
+        
+        AssignIpAddressSearch = _ipAddressDao.createSearchBuilder();
+        SearchBuilder<VlanVO> vlanSearch = _vlanDao.createSearchBuilder();
+        AssignIpAddressSearch.and("dc", AssignIpAddressSearch.entity().getDataCenterId(), Op.EQ);
+        AssignIpAddressSearch.and("allocated", AssignIpAddressSearch.entity().getAllocatedTime(), Op.NULL);
+        AssignIpAddressSearch.join("vlan", vlanSearch, vlanSearch.entity().getId(), AssignIpAddressSearch.entity().getVlanId(), JoinType.INNER);
+        vlanSearch.and("type", vlanSearch.entity().getVlanType(), Op.EQ);
+        AssignIpAddressSearch.done();
+        
+        IpAddressSearch = _ipAddressDao.createSearchBuilder();
+        IpAddressSearch.and("accountId", IpAddressSearch.entity().getAllocatedToAccountId(), Op.EQ);
+        IpAddressSearch.and("dataCenterId", IpAddressSearch.entity().getDataCenterId(), Op.EQ);
+        SearchBuilder<VlanVO> virtualNetworkVlanSB = _vlanDao.createSearchBuilder();
+        virtualNetworkVlanSB.and("vlanType", virtualNetworkVlanSB.entity().getVlanType(), Op.EQ);
+        IpAddressSearch.join("virtualNetworkVlanSB", virtualNetworkVlanSB, IpAddressSearch.entity().getVlanId(), virtualNetworkVlanSB.entity().getId(), JoinBuilder.JoinType.INNER);
+        IpAddressSearch.done();
 
         s_logger.info("Network Manager is configured.");
 
         return true;
     }
-
+    
     @Override
     public String getName() {
         return _name;
@@ -981,26 +816,15 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     public List<IPAddressVO> listPublicIpAddressesInVirtualNetwork(long accountId, long dcId, Boolean sourceNat) {
-        SearchBuilder<IPAddressVO> ipAddressSB = _ipAddressDao.createSearchBuilder();
-        ipAddressSB.and("accountId", ipAddressSB.entity().getAllocatedToAccountId(), SearchCriteria.Op.EQ);
-        ipAddressSB.and("dataCenterId", ipAddressSB.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        SearchCriteria<IPAddressVO> sc = IpAddressSearch.create();
+        sc.setParameters("accountId", accountId);
+        sc.setParameters("dataCenterId", dcId);
         if (sourceNat != null) {
-            ipAddressSB.and("sourceNat", ipAddressSB.entity().isSourceNat(), SearchCriteria.Op.EQ);
+            sc.addAnd("sourceNat", SearchCriteria.Op.EQ, sourceNat);
         }
+        sc.setJoinParameters("virtualNetworkVlanSB", "vlanType", VlanType.VirtualNetwork);
 
-        SearchBuilder<VlanVO> virtualNetworkVlanSB = _vlanDao.createSearchBuilder();
-        virtualNetworkVlanSB.and("vlanType", virtualNetworkVlanSB.entity().getVlanType(), SearchCriteria.Op.EQ);
-        ipAddressSB.join("virtualNetworkVlanSB", virtualNetworkVlanSB, ipAddressSB.entity().getVlanId(), virtualNetworkVlanSB.entity().getId(), JoinBuilder.JoinType.INNER);
-
-        SearchCriteria<IPAddressVO> ipAddressSC = ipAddressSB.create();
-        ipAddressSC.setParameters("accountId", accountId);
-        ipAddressSC.setParameters("dataCenterId", dcId);
-        if (sourceNat != null) {
-            ipAddressSC.setParameters("sourceNat", sourceNat);
-        }
-        ipAddressSC.setJoinParameters("virtualNetworkVlanSB", "vlanType", VlanType.VirtualNetwork);
-
-        return _ipAddressDao.search(ipAddressSC, null);
+        return _ipAddressDao.search(sc, null);
     }
 
     @Override
@@ -1409,7 +1233,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
 
             txn.start();
-            boolean success = releasePublicIpAddress(userId, ipAddress);
+            boolean success = releasePublicIpAddress(ipAddress, accountId, userId);
             if (success) {
                 _accountMgr.decrementResourceCount(accountId, ResourceType.public_ip);
             }

@@ -19,8 +19,6 @@ package com.cloud.network;
 
 import java.util.List;
 
-import com.cloud.dc.DataCenter;
-import com.cloud.dc.DataCenterVO;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.ConcurrentOperationException;
@@ -29,7 +27,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.addr.PublicIp;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.service.ServiceOfferingVO;
@@ -50,8 +48,20 @@ import com.cloud.vm.VirtualMachineProfile;
  *
  */
 public interface NetworkManager extends NetworkService {
-    public static final int DEFAULT_ROUTER_VM_RAMSIZE = 128;            // 128M
     public static final boolean USE_POD_VLAN = false;
+
+    /**
+     * assigns a source nat ip address to an account within a network.
+     * 
+     * @param owner
+     * @param network
+     * @param callerId
+     * @return
+     * @throws ConcurrentOperationException
+     * @throws InsufficientAddressCapacityException
+     */
+    PublicIp assignSourceNatIpAddress(Account owner, Network network, long callerId) throws ConcurrentOperationException, InsufficientAddressCapacityException;
+    
     /**
      * Do all of the work of releasing public ip addresses.  Note that
      * if this method fails, there can be side effects.
@@ -59,19 +69,7 @@ public interface NetworkManager extends NetworkService {
      * @param ipAddress
      * @return true if it did; false if it didn't
      */
-    public boolean releasePublicIpAddress(long userId, String ipAddress);
-    
-    /**
-     * Find or create the source nat ip address a user uses within the
-     * data center.
-     * 
-     * @param account account
-     * @param dc data center
-     * @param domain domain used for user's network.
-     * @param so service offering associated with this request
-     * @return public ip address.
-     */
-    public String assignSourceNatIpAddress(Account account, DataCenterVO dc, String domain, ServiceOfferingVO so, long startEventId, HypervisorType hyperType) throws ResourceAllocationException;
+    public boolean releasePublicIpAddress(String ipAddress, long ownerId, long userId);
     
     /**
      * Associates or disassociates a list of public IP address for a router.
@@ -132,7 +130,6 @@ public interface NetworkManager extends NetworkService {
 
     List<NetworkVO> setupNetworkConfiguration(Account owner, ServiceOfferingVO offering, DeploymentPlan plan);
     
-    String assignSourceNatIpAddress(Account account, DataCenter dc) throws InsufficientAddressCapacityException;
 	Network getNetwork(long id);
 	String getNextAvailableMacAddressInNetwork(long networkConfigurationId) throws InsufficientAddressCapacityException;
 

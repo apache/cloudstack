@@ -30,7 +30,7 @@ public class UserContext {
 
     private long userId;
     private String sessionId;
-    private Account accountObject;
+    private Account account;
 
     private boolean apiServer;
 
@@ -41,7 +41,7 @@ public class UserContext {
 
     public UserContext(long userId, Account accountObject, String sessionId, boolean apiServer) {
         this.userId = userId;
-        this.accountObject = accountObject;
+        this.account = accountObject;
         this.sessionId = sessionId;
         this.apiServer = apiServer;
     }
@@ -59,11 +59,11 @@ public class UserContext {
     }
 
     public Account getAccount() {
-        return accountObject;
+        return account;
     }
 
     public void setAccount(Account accountObject) {
-        this.accountObject = accountObject;
+        this.account = accountObject;
     }
 
     public void setSessionKey(String sessionId) {

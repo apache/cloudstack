@@ -25,30 +25,25 @@ import com.cloud.utils.db.GenericDao;
 
 public interface IPAddressDao extends GenericDao<IPAddressVO, String> {
 	
-    /**
-     * @param accountId account id
-     * @param domainId id of the account's domain
-     * @param dcId data center id
-     * @param sourceNat is it for source nat?
-     * @return public ip address
-     */
-	public IPAddressVO assignIpAddress(long accountId, long domainId, long vlanDbId, boolean sourceNat);
-	
-	public void unassignIpAddress(String ipAddress);	
+    IPAddressVO markAsUnavailable(String ipAddress, long ownerId);
+    
+	void unassignIpAddress(String ipAddress);	
 
-	public List<IPAddressVO> listByAccount(long accountId);
+	List<IPAddressVO> listByAccount(long accountId);
 	
-	public List<IPAddressVO> listByDcIdIpAddress(long dcId, String ipAddress);
+	List<IPAddressVO> listByDcIdIpAddress(long dcId, String ipAddress);
 	
-	public int countIPs(long dcId, long vlanDbId, boolean onlyCountAllocated);
+	int countIPs(long dcId, long vlanDbId, boolean onlyCountAllocated);
 	
-	public int countIPs(long dcId, Long accountId, String vlanId, String vlanGateway, String vlanNetmask);
+	int countIPs(long dcId, Long accountId, String vlanId, String vlanGateway, String vlanNetmask);
 	
-	public boolean mark(long dcId, String ip);
+	boolean mark(long dcId, String ip);
 	
-	public List<String> assignAcccountSpecificIps(long accountId, long longValue, Long vlanDbId, boolean sourceNat);
+	List<String> assignAcccountSpecificIps(long accountId, long longValue, Long vlanDbId, boolean sourceNat);
 	
-	public void setIpAsSourceNat(String ipAddr);
+	void setIpAsSourceNat(String ipAddr);
 
 	void unassignIpAsSourceNat(String ipAddress);
+	
+	
 }

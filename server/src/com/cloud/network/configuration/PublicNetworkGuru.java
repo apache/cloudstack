@@ -25,10 +25,12 @@ import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.resource.Resource.ReservationStrategy;
 import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
@@ -63,9 +65,10 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
         super();
     }
     
-    protected void getIp(NicProfile nic, DataCenter dc, VirtualMachineProfile<? extends VirtualMachine> vm) throws InsufficientVirtualNetworkCapcityException {
+    protected void getIp(NicProfile nic, DataCenter dc, VirtualMachineProfile<? extends VirtualMachine> vm, Network network) throws InsufficientVirtualNetworkCapcityException {
         if (nic.getIp4Address() == null) {
-            Pair<String, VlanVO> ipAndVlan = _vlanDao.assignIpAddress(dc.getId(), vm.getVirtualMachine().getAccountId(), vm.getVirtualMachine().getDomainId(), VlanType.VirtualNetwork, true);
+            PublicIp ip = _networkMgr.assignSourceNatIpAddress(dc, vm.getOwner(), network, UserContext.current().getUserId());
+            Pair<String, VlanVO> ipAndVlan = __vlanDao.assignIpAddress(dc.getId(), vm.getVirtualMachine().getAccountId(), vm.getVirtualMachine().getDomainId(), VlanType.VirtualNetwork, true);
             if (ipAndVlan == null) {
                 throw new InsufficientVirtualNetworkCapcityException("Unable to get public ip address in " + dc.getId(), DataCenter.class, dc.getId());
             }

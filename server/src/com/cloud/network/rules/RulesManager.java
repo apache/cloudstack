@@ -17,6 +17,8 @@
  */
 package com.cloud.network.rules;
 
+import java.util.List;
+
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.PermissionDeniedException;
@@ -57,4 +59,16 @@ public interface RulesManager extends RulesService {
     void checkIpAndUserVm(IpAddress ipAddress, UserVm userVm, Account caller) throws InvalidParameterValueException, PermissionDeniedException;
     
     boolean revokeAllRules(Ip ip, long userId) throws ResourceUnavailableException;
+    
+    List<? extends FirewallRule> listFirewallRulesByIp(Ip ip);
+    
+    /**
+     * Returns a list of port forwarding rules that are ready for application
+     * to the network elements for this ip.
+     * @param ip
+     * @return List of PortForwardingRule
+     */
+    List<? extends PortForwardingRule> listPortForwardingRulesForApplication(Ip ip);
+    
+    List<? extends PortForwardingRule> gatherPortForwardingRulesForApplication(List<? extends IpAddress> addrs);
 }

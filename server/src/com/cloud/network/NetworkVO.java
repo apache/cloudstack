@@ -118,6 +118,9 @@ public class NetworkVO implements Network {
     @Column(name="shared")
     boolean isShared;
     
+    @Column(name="network_domain")
+    String networkDomain;
+    
     public NetworkVO() {
     }
     
@@ -249,6 +252,14 @@ public class NetworkVO implements Network {
 
     public void setBroadcastDomainType(BroadcastDomainType broadcastDomainType) {
         this.broadcastDomainType = broadcastDomainType;
+    }
+    
+    public String getNetworkDomain() {
+        return networkDomain;
+    }
+    
+    public void setNetworkDomain(String networkDomain) {
+        this.networkDomain = networkDomain;
     }
 
     @Override
