@@ -17,8 +17,12 @@
  */
 
 var rootDomainId = 1;
+
 var systemAccountId = 1;
 var adminAccountId = 2;
+
+var systemUserId = 1;
+var adminUserId = 2;
 
 function accountGetSearchParams() {
     var moreCriteria = [];	
@@ -44,10 +48,13 @@ function accountGetSearchParams() {
 }
 
 function afterLoadAccountJSP() {
-    initDialog("dialog_resource_limits");
-    initDialog("dialog_disable_account");
-    initDialog("dialog_lock_account");
-    initDialog("dialog_enable_account");  
+    if(isAdmin()) {
+        initDialog("dialog_resource_limits");
+        initDialog("dialog_disable_account");
+        initDialog("dialog_lock_account");
+        initDialog("dialog_enable_account");  
+        initDialog("dialog_edit_user", 450);    
+    }
     
     // switch between different tabs 
     var tabArray = [$("#tab_details"), $("#tab_user")];
@@ -386,22 +393,24 @@ function accountJsonToDetailsTab() {
     $actionMenu.find("#action_list").empty(); 
     var noAvailableActions = true;
   
-    if(jsonObj.id != systemAccountId && jsonObj.id != adminAccountId) {        
-        if (jsonObj.accounttype == roleTypeUser || jsonObj.accounttype == roleTypeDomainAdmin) {
-            buildActionLinkForTab("Resource limits", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);	
-            noAvailableActions = false;	
-        }
-         
-        if(jsonObj.state == "enabled") {
-            buildActionLinkForTab("Disable account", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);  
-            buildActionLinkForTab("Lock account", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);
-            noAvailableActions = false;	
-        }          	        
-        else if(jsonObj.state == "disabled" || jsonObj.state == "locked") {
-            buildActionLinkForTab("Enable account", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);   
-            noAvailableActions = false;	
-        }                
-    }  
+    if(isAdmin()) {
+        if(jsonObj.id != systemAccountId && jsonObj.id != adminAccountId) {        
+            if (jsonObj.accounttype == roleTypeUser || jsonObj.accounttype == roleTypeDomainAdmin) {
+                buildActionLinkForTab("Resource limits", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);	
+                noAvailableActions = false;	
+            }
+             
+            if(jsonObj.state == "enabled") {
+                buildActionLinkForTab("Disable account", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);  
+                buildActionLinkForTab("Lock account", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);
+                noAvailableActions = false;	
+            }          	        
+            else if(jsonObj.state == "disabled" || jsonObj.state == "locked") {
+                buildActionLinkForTab("Enable account", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);   
+                noAvailableActions = false;	
+            }                
+        }  
+    }
     
     // no available actions 
 	if(noAvailableActions == true) {
@@ -478,6 +487,7 @@ function accountUserJSONToTemplate(jsonObj, $template) {
     var noAvailableActions = true;
     
     if(isAdmin()) {
+        buildActionLinkForSubgridItem("Edit User", accountUserActionMap, $actionMenu, $template);	   
         buildActionLinkForSubgridItem("Generate Keys", accountUserActionMap, $actionMenu, $template);	    
         noAvailableActions = false;
         
@@ -532,19 +542,6 @@ var accountActionMap = {
         }
     }    
 }; 
-
-var accountUserActionMap = {
-    "Generate Keys": {  
-        api: "registerUserKeys",            
-        isAsyncJob: false,
-        inProcessText: "Generate Keys....",
-        afterActionSeccessFn: function(json, id, $subgridItem) {
-            var jsonObj = json.registeruserkeysresponse.userkeys;
-            $subgridItem.find("#apikey").text(fromdb(jsonObj.apikey));    
-            $subgridItem.find("#secretkey").text(fromdb(jsonObj.secretkey));	
-        }            
-    }
-}
 
 function updateResourceLimitForAccount(domainId, account, type, max) {
 	$.ajax({
@@ -684,4 +681,79 @@ function doEnableAccount($actionLink, $detailsTab, $midmenuItem1) {
             $(this).dialog("close");		     
         }
     }).dialog("open");  
+}
+
+
+var accountUserActionMap = {
+    "Edit User": {
+        dialogBeforeActionFn : doEditUser
+    },
+    "Generate Keys": {  
+        api: "registerUserKeys",            
+        isAsyncJob: false,
+        inProcessText: "Generate Keys....",
+        afterActionSeccessFn: function(json, id, $subgridItem) {
+            var jsonObj = json.registeruserkeysresponse.userkeys;
+            $subgridItem.find("#apikey").text(fromdb(jsonObj.apikey));    
+            $subgridItem.find("#secretkey").text(fromdb(jsonObj.secretkey));	
+        }            
+    }
+}
+
+function doEditUser($actionLink, $subgridItem) {   
+    var jsonObj = $subgridItem.data("jsonObj");
+    var id = jsonObj.id;
+
+    var $dialogEditUser = $("#dialog_edit_user");		           
+						
+	$dialogEditUser.find("#edit_user_username").val($subgridItem.find("#username").text());   
+	if(id==systemUserId || id==adminUserId)
+		$dialogEditUser.find("#edit_user_username").attr("disabled", true);
+	else
+		$dialogEditUser.find("#edit_user_username").attr("disabled", false);    
+						
+	$dialogEditUser.find("#edit_user_email").val($subgridItem.find("#email").text());
+	$dialogEditUser.find("#edit_user_firstname").val($subgridItem.find("#firstname").text());
+	$dialogEditUser.find("#edit_user_lastname").val($subgridItem.find("#lastname").text());						
+	$dialogEditUser.find("#edit_user_timezone").val($subgridItem.data("timezone"));
+	
+	$dialogEditUser
+	.dialog('option', 'buttons', { 							
+		"Save": function() { 	
+		    var $thisDialog = $(this);
+			
+			// validate values						   
+			var isValid = true;					
+			isValid &= validateString("User name", $thisDialog.find("#edit_user_username"), $thisDialog.find("#edit_user_username_errormsg"), false);	  //required					      
+			isValid &= validateString("Email", $thisDialog.find("#edit_user_email"), $thisDialog.find("#edit_user_email_errormsg"), true);	          //optional
+			isValid &= validateString("First name", $thisDialog.find("#edit_user_firstname"), $thisDialog.find("#edit_user_firstname_errormsg"), true); //optional
+			isValid &= validateString("Last name", $thisDialog.find("#edit_user_lastname"), $thisDialog.find("#edit_user_lastname_errormsg"), true);	  //optional	   	
+			if (!isValid) 
+			    return;
+										
+			var username = $thisDialog.find("#edit_user_username").val();							  
+			var email = $thisDialog.find("#edit_user_email").val();
+			var firstname = $thisDialog.find("#edit_user_firstname").val();
+			var lastname = $thisDialog.find("#edit_user_lastname").val(); 	
+			var timezone = $thisDialog.find("#edit_user_timezone").val(); 							
+											
+			$thisDialog.dialog("close");
+			
+			$.ajax({
+			    data: createURL("command=updateUser&id="+id+"&username="+todb(username)+"&email="+todb(email)+"&firstname="+todb(firstname)+"&lastname="+todb(lastname)+"&timezone="+todb(timezone)),
+				dataType: "json",
+				success: function(json) {								      						    					
+					$subgridItem.find("#username").text(username);
+					$subgridItem.find("#email").text(email);
+					$subgridItem.find("#firstname").text(firstname);
+					$subgridItem.find("#lastname").text(lastname);		
+					$subgridItem.find("#timezone").text(timezones[timezone]);		
+					$subgridItem.data("timezone", timezone);
+				}
+			});
+		},
+		"Cancel": function() { 
+			$(this).dialog("close"); 
+		} 
+	}).dialog("open");
 }
