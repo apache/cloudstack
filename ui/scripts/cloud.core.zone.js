@@ -535,7 +535,7 @@ function initAddSecondaryStorageButton($button, $leftmenuItem1) {
 			    if (!isValid) 
 			        return;
 			    
-				$thisDialog.find("#spinning_wheel").show()
+				$thisDialog.find("#spinning_wheel").show();
 								     					  								            				
 			    var zoneId = zoneObj.id;		
 			    var nfs_server = trim($thisDialog.find("#nfs_server").val());		

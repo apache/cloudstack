@@ -55,11 +55,7 @@ function afterLoadAccountJSP() {
     var afterSwitchFnArray = [accountJsonToDetailsTab, accountJsonToUserTab];
     switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray);       
       
-    initTimezonesObj();  
-       
-    if(isAdmin()) {
-        initAddUserDialog();   
-    }      
+    initTimezonesObj();     
 }
 
 function initTimezonesObj() {
@@ -125,8 +121,7 @@ function initTimezonesObj() {
     timezones['Pacific/Auckland']='[UTC+12:00] New Zealand Standard Time';
 }
 
-function initAddUserDialog() { 
-    //dialogs
+function initAddAccountDialog() {     
     initDialog("dialog_add_account", 450);
                    
     var $dialogAddAccount = $("#dialog_add_account");
@@ -242,6 +237,104 @@ function initAddUserDialog() {
 	});
 }
 
+function initAddUserDialog() {     
+    initDialog("dialog_add_user", 450);
+                   
+    var $dialogAddUser = $("#dialog_add_user");
+           
+    //add button ***
+    $("#midmenu_add_link").find("#label").text("Add User"); 
+    $("#midmenu_add_link").show();     
+    $("#midmenu_add_link").unbind("click").bind("click", function(event) {    
+        var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
+        if($midmenuItem1 == null)
+            return;
+        
+        var accountObj = $midmenuItem1.data("jsonObj");
+        if(accountObj == null)
+            return;
+  
+        $dialogAddUser.find("#account_name").text(accountObj.name);
+            	
+		$dialogAddUser
+		.dialog('option', 'buttons', { 					
+			"Create": function() { 	
+			    var $thisDialog = $(this);				    			
+				// validate values
+				var isValid = true;					
+				isValid &= validateString("User name", $thisDialog.find("#add_user_username"), $thisDialog.find("#add_user_username_errormsg"), false);   //required
+				isValid &= validateString("Password", $thisDialog.find("#add_user_password"), $thisDialog.find("#add_user_password_errormsg"), false);    //required	
+				isValid &= validateString("Email", $thisDialog.find("#add_user_email"), $thisDialog.find("#add_user_email_errormsg"), true);              //optional	
+				isValid &= validateString("First name", $thisDialog.find("#add_user_firstname"), $thisDialog.find("#add_user_firstname_errormsg"), true); //optional	
+				isValid &= validateString("Last name", $thisDialog.find("#add_user_lastname"), $thisDialog.find("#add_user_lastname_errormsg"), true);    //optional					
+				if (!isValid) 
+				    return;
+				
+				$thisDialog.find("#spinning_wheel").show();
+								
+				var array1 = [];																		
+				var username = $thisDialog.find("#add_user_username").val();
+				array1.push("&username="+todb(username));
+				
+				var password = $.md5(encodeURIComponent($thisDialog.find("#add_user_password").val()));
+				array1.push("&password="+password);
+				
+				var email = $thisDialog.find("#add_user_email").val();
+				if(email == "")
+					email = username;
+				array1.push("&email="+todb(email));
+					
+				var firstname = $thisDialog.find("#add_user_firstname").val();
+				if(firstname == "")
+					firstname = username;
+				array1.push("&firstname="+todb(firstname));
+					
+				var lastname = $thisDialog.find("#add_user_lastname").val();
+				if(lastname == "")
+					lastname = username;
+			    array1.push("&lastname="+todb(lastname));
+									
+			    array1.push("&domainid="+accountObj.domainid);
+			    array1.push("&account="+accountObj.name);							
+				array1.push("&accounttype="+accountObj.accounttype);	
+								
+				var timezone = $thisDialog.find("#add_user_timezone").val();	
+				if(timezone != null && timezone.length > 0)
+	                array1.push("&timezone="+todb(timezone));		        											
+									
+				$.ajax({
+					type: "POST",
+				    data: createURL("command=createUser"+array1.join("")),
+					dataType: "json",
+					async: false,
+					success: function(json) {						    
+					    $thisDialog.find("#spinning_wheel").hide();				        
+				        $thisDialog.dialog("close");
+									    
+					    var item = json.createuserresponse.user;
+					    					    
+					    var $subgridItem = $("#user_tab_template").clone(true);	                        
+				        accountUserJSONToTemplate(item, $subgridItem);	
+	                    $subgridItem.find("#after_action_info").text("User was added successfully.");
+                        $subgridItem.find("#after_action_info_container").removeClass("error").addClass("success").show();  
+                        $("#tab_content_user").find("#tab_container").append($subgridItem.show());  					    
+					},			
+                    error: function(XMLHttpResponse) {	
+						handleError(XMLHttpResponse, function() {
+							handleErrorInDialog(XMLHttpResponse, $thisDialog);
+						});
+                    }								
+				});						
+			},
+			"Cancel": function() { 
+				$(this).dialog("close"); 
+			} 
+		}).dialog("open");		
+					
+		return false;
+	});
+}
+
 function accountToMidmenu(jsonObj, $midmenuItem1) {  
     $midmenuItem1.attr("id", getMidmenuId(jsonObj));  
     $midmenuItem1.data("jsonObj", jsonObj); 
@@ -272,9 +365,11 @@ function accountJsonToDetailsTab() {
     var jsonObj = $midmenuItem1.data("jsonObj");
     if(jsonObj == null)
         return;
+          
+    if(isAdmin()) 
+        initAddAccountDialog();         
   
-    var $detailsTab = $("#right_panel_content").find("#tab_content_details");   
-        
+    var $detailsTab = $("#right_panel_content").find("#tab_content_details");           
     $detailsTab.find("#grid_header_title").text(fromdb(jsonObj.name));
     $detailsTab.find("#id").text(fromdb(jsonObj.id));
     $detailsTab.find("#role").text(toRole(jsonObj.accounttype));
@@ -322,6 +417,9 @@ function accountJsonToUserTab() {
 	var jsonObj = $midmenuItem1.data("jsonObj");	
 	if(jsonObj == null)
 	    return;
+		    
+    if(isAdmin())
+        initAddUserDialog();           
 	
 	var $thisTab = $("#right_panel_content").find("#tab_content_user");	    
 	$thisTab.find("#tab_container").hide(); 
