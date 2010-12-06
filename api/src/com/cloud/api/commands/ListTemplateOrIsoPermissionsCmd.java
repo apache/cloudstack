@@ -22,7 +22,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseListCmd;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.TemplatePermissionsResponse;
@@ -31,7 +31,7 @@ import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
 @Implementation(description="List template visibility and all accounts that have permissions to view this template.", responseObject=TemplatePermissionsResponse.class)
-public class ListTemplateOrIsoPermissionsCmd extends BaseListCmd {
+public class ListTemplateOrIsoPermissionsCmd extends BaseCmd {
 	public Logger s_logger = getLogger();
     protected String s_name = "listtemplatepermissionsresponse";
 
