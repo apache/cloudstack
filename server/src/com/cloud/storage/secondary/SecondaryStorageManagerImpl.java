@@ -711,8 +711,8 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 			return null;
 		}
 
-		//SecondaryStorageVmVO secStorageVm = _secStorageVmDao.findById(secStorageVmId); 
-		SecondaryStorageVmVO secStorageVm = allocSecStorageVmStorage(dataCenterId, secStorageVmId);
+		SecondaryStorageVmVO secStorageVm = _secStorageVmDao.findById(secStorageVmId); 
+		//SecondaryStorageVmVO secStorageVm = allocSecStorageVmStorage(dataCenterId, secStorageVmId);
 		if (secStorageVm != null) {
 			SubscriptionMgr.getInstance().notifySubscribers(ALERT_SUBJECT, this,
 				new SecStorageVmAlertEventArgs(
