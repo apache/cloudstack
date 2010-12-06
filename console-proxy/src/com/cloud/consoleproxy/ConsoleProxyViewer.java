@@ -220,8 +220,7 @@ public class ConsoleProxyViewer implements java.lang.Runnable, RfbViewer, RfbPro
 				s_logger.warn("Authentication exception, msg: " + msg + "sid: " + this.passwordParam);
 			} catch (Exception e) {
 				status = STATUS_ERROR;
-				if(s_logger.isDebugEnabled())
-					s_logger.debug("Exception : ", e);
+				s_logger.error("Unexpected exception ", e);
 			} finally {
 				// String oldName = Thread.currentThread().getName();
 				encodingsSaved = null;
@@ -373,6 +372,8 @@ public class ConsoleProxyViewer implements java.lang.Runnable, RfbViewer, RfbPro
 		if (options == null || rfb == null || !rfb.inNormalProtocol)
 			return;
 
+		options.preferredEncoding = RfbProto.EncodingHextile;
+		
 		int preferredEncoding = options.preferredEncoding;
 		if (preferredEncoding == -1) {
 			long kbitsPerSecond = rfb.kbitsPerSecond();
