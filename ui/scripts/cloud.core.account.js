@@ -249,7 +249,7 @@ function accountToMidmenu(jsonObj, $midmenuItem1) {
 function accountToRightPanel($midmenuItem1) { 
     copyActionInfoFromMidMenuToRightPanel($midmenuItem1);  
     $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);  
-    accountJsonToDetailsTab();   
+    $("#tab_details").click();   
 }
 
 function accountJsonToDetailsTab() {  
@@ -317,7 +317,7 @@ function accountJsonToUserTab() {
         
     $.ajax({
 		cache: false,
-		data: createURL("command=listUsers&domainid="+fromdb(jsonObj.id)+"&account="+fromdb(jsonObj.name)),
+		data: createURL("command=listUsers&domainid="+fromdb(jsonObj.domainid)+"&account="+fromdb(jsonObj.name)),
 		dataType: "json",
 		success: function(json) {						    
 			var items = json.listusersresponse.user;																						
