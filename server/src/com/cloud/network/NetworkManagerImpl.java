@@ -1852,11 +1852,17 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
        //if VlanId is Direct untagged, verify if there is already network of this type in the zone
         if (networkOffering.getGuestIpType() == GuestIpType.DirectPodBased && vlanId != null && vlanId.equalsIgnoreCase(Vlan.UNTAGGED)) {
             SearchBuilder<NetworkVO> sb = _networkConfigDao.createSearchBuilder();
-            sb.and("broadcastDomainType", sb.entity().getId(), SearchCriteria.Op.EQ);
-            sb.and("dataCenterId", sb.entity().getName(), SearchCriteria.Op.LIKE);
+            sb.and("broadcastDomainType", sb.entity().getBroadcastDomainType(), SearchCriteria.Op.EQ);
+            sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+            
+            SearchBuilder<NetworkOfferingVO> networkSearch = _networkOfferingDao.createSearchBuilder();
+            networkSearch.and("guestIpType", networkSearch.entity().getGuestIpType(), SearchCriteria.Op.EQ);
+            sb.join("networkSearch", networkSearch, sb.entity().getNetworkOfferingId(), networkSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+         
             SearchCriteria<NetworkVO> sc = sb.create();
             sc.setParameters("broadcastDomainType", BroadcastDomainType.Native);
             sc.setParameters("dataCenterId", zoneId);
+            sc.setJoinParameters("networkSearch", "guestIpType", GuestIpType.DirectPodBased);
 
             List<NetworkVO> networks = _networkConfigDao.search(sc, null);
             if (networks!= null && !networks.isEmpty()) {
@@ -1864,16 +1870,16 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
         
-       //VlanId can be specified only when network offering supports it
-        if (vlanId != null && !networkOffering.getSpecifyVlan()) {
-            throw new InvalidParameterValueException("Can't specify vlan because network offering doesn't support it");
+        //Regular user can create only network of Virtual type
+        if (ctxAccount.getType() == Account.ACCOUNT_TYPE_NORMAL && networkOffering.getGuestIpType() != GuestIpType.Virtual) {
+            throw new InvalidParameterValueException("Regular user can create only networ of type " + GuestIpType.Virtual);
         }
         
-        //If gateway, startIp, endIp are speicified, cidr should be present as well
-        if (gateway != null && startIP != null && endIP != null && cidr == null) {
-            throw new InvalidParameterValueException("Cidr is missing");
+       //VlanId can be specified only when network offering supports it
+        if (ctxAccount.getType() == Account.ACCOUNT_TYPE_NORMAL && vlanId != null && !networkOffering.getSpecifyVlan()) {
+            throw new InvalidParameterValueException("Can't specify vlan because network offering doesn't support it");
         }
-            
+       
        Transaction txn = Transaction.currentTxn();
        txn.start();
        try {
@@ -1882,18 +1888,20 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
            NetworkVO userNetwork = new NetworkVO();
            
            //cidr should be set only when the user is admin
-           if (ctxAccount.getType() == Account.ACCOUNT_TYPE_ADMIN && cidr != null && gateway != null) {
-               userNetwork.setCidr(cidr);
-               userNetwork.setGateway(gateway);
-               if (vlanId != null) {
-                   userNetwork.setBroadcastUri(URI.create("vlan://" + vlanId));
-                   if (vlanId.equalsIgnoreCase(Vlan.UNTAGGED)) {
-                       userNetwork.setBroadcastDomainType(BroadcastDomainType.Native);
-                   } else {
-                       userNetwork.setBroadcastDomainType(BroadcastDomainType.Vlan);
+           if (ctxAccount.getType() == Account.ACCOUNT_TYPE_ADMIN) {
+               if (cidr != null && gateway != null) {
+                   userNetwork.setCidr(cidr);
+                   userNetwork.setGateway(gateway);
+                   if (vlanId != null) {
+                       userNetwork.setBroadcastUri(URI.create("vlan://" + vlanId));
+                       if (!vlanId.equalsIgnoreCase(Vlan.UNTAGGED)) {
+                           userNetwork.setBroadcastDomainType(BroadcastDomainType.Vlan);
+                       } else {
+                           userNetwork.setBroadcastDomainType(BroadcastDomainType.Native);
+                       }
                    }
                }
-           }
+           }   
            
            List<NetworkVO> networks = setupNetworkConfiguration(owner, networkOffering, userNetwork, plan, name, displayText, isShared);
            Long networkId = null;

@@ -2422,7 +2422,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             }
         }
         if (type == null) {
-            throw new InvalidParameterValueException("Invalid value for type. Supported types: Virtual, Direct, DirectPerPod");
+            throw new InvalidParameterValueException("Invalid value for type. Supported types: Virtual, Direct, DirectPodBased");
         }
         
         if (specifyVlan == null) {
