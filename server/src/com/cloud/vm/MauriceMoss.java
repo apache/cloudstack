@@ -433,7 +433,7 @@ public class MauriceMoss implements VmManager, ClusterManagerListener {
             return true;
         }
         
-        if (state == State.Creating || state == State.Destroyed || state == State.Expunging) {
+        if (state == State.Creating || state == State.Destroyed || state == State.Expunging || state == State.Error) {
             s_logger.warn("Stopped called on " + vm.toString() + " but the state is " + state.toString());
             return true;
         }
