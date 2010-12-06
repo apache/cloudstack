@@ -34,6 +34,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDaoImpl;
+import com.cloud.network.IPAddressVO;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressDaoImpl;
 import com.cloud.server.ManagementServer;
@@ -116,11 +117,11 @@ public class TestAsyncJobManager extends ComponentTestCase {
 		} catch (InterruptedException e) {
 		}
 	}
-	
+
 	public void ipAssignment() {
 		final IPAddressDao ipAddressDao = new IPAddressDaoImpl();
 		
-		final ConcurrentHashMap<String, String> map = new ConcurrentHashMap<String, String>();
+		final ConcurrentHashMap<String, IPAddressVO> map = new ConcurrentHashMap<String, IPAddressVO>();
 		//final Map<String, String> map = Collections.synchronizedMap(hashMap);
 		
 		s_count = 0;
@@ -133,10 +134,10 @@ public class TestAsyncJobManager extends ComponentTestCase {
 					
 					Transaction txn = Transaction.open("Alex1");
 					try {
-						String addr = ipAddressDao.assignIpAddress(1, 0, 1, false);
-						String returnStr = map.put(addr, addr);
+						IPAddressVO addr = ipAddressDao.assignIpAddress(1, 0, 1, false);
+						IPAddressVO returnStr = map.put(addr.getAddress(), addr);
 						if(returnStr != null) {
-							System.out.println("addr : " + addr);
+							System.out.println("addr : " + addr.getAddress());
 						}
 						Assert.assertTrue(returnStr == null);
 					} finally {
@@ -153,8 +154,8 @@ public class TestAsyncJobManager extends ComponentTestCase {
 					
 					Transaction txn = Transaction.open("Alex2");
 					try {
-						String addr = ipAddressDao.assignIpAddress(1, 0, 1, false);
-						Assert.assertTrue(map.put(addr, addr) == null);
+						IPAddressVO addr = ipAddressDao.assignIpAddress(1, 0, 1, false);
+						Assert.assertTrue(map.put(addr.getAddress(), addr) == null);
 					} finally {
 						txn.close();
 					}
