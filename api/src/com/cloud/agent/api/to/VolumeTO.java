@@ -22,7 +22,6 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
 
-
 public class VolumeTO {
     protected VolumeTO() {
     }
@@ -35,12 +34,12 @@ public class VolumeTO {
     private Volume.VolumeType type;
     private Storage.StorageResourceType resourceType;
     private StoragePoolType storagePoolType;
-    private long poolId;
+    private String storagePoolUuid;
     private int deviceId;
     private String chainInfo;
     
     public VolumeTO(long id, Volume.VolumeType type, Storage.StorageResourceType resourceType, StoragePoolType poolType, 
-    	String name, String mountPoint, String path, long size, String chainInfo) {
+    	String poolUuid, String name, String mountPoint, String path, long size, String chainInfo) {
         this.id = id;
         this.name= name;
         this.path = path;
@@ -48,6 +47,7 @@ public class VolumeTO {
         this.type = type;
         this.resourceType = resourceType;
         this.storagePoolType = poolType;
+        this.storagePoolUuid = poolUuid;
         this.mountPoint = mountPoint;
         this.chainInfo = chainInfo;
     }
@@ -60,10 +60,10 @@ public class VolumeTO {
         this.type = volume.getVolumeType();
         this.resourceType = volume.getStorageResourceType();
         this.storagePoolType = pool.getPoolType();
+        this.storagePoolUuid = pool.getUuid();
         this.mountPoint = volume.getFolder();
         this.chainInfo = volume.getChainInfo();
     }
-    
    
     public int getDeviceId() {
         return deviceId;
@@ -99,6 +99,10 @@ public class VolumeTO {
     
     public StoragePoolType getPoolType() {
         return storagePoolType;
+    }
+    
+    public String getPoolUuid() {
+    	return storagePoolUuid;
     }
     
     public String getChainInfo() {

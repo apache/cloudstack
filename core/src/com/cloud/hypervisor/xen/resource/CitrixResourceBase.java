@@ -4706,8 +4706,8 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             vdir = vdi.getRecord(conn);
             s_logger.debug("Succesfully created VDI for " + cmd + ".  Uuid = " + vdir.uuid);
 
-            VolumeTO vol = new VolumeTO(cmd.getVolumeId(), dskch.getType(), Storage.StorageResourceType.STORAGE_POOL, pool.getType(), vdir.nameLabel, pool.getPath(), vdir.uuid,
-                    vdir.virtualSize, null);
+            VolumeTO vol = new VolumeTO(cmd.getVolumeId(), dskch.getType(), Storage.StorageResourceType.STORAGE_POOL, pool.getType(), pool.getUuid(), 
+        		vdir.nameLabel, pool.getPath(), vdir.uuid, vdir.virtualSize, null);
             return new CreateAnswer(cmd, vol);
         } catch (Exception e) {
             s_logger.warn("Unable to create volume; Pool=" + pool + "; Disk: " + dskch, e);
