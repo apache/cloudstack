@@ -2964,7 +2964,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 		UserVmVO vm = _vmDao.findById(vmId);
 		if(vm != null){
 			if(vm.getState().equals(State.Creating)){
-				_vmDao.updateIf(vm, VirtualMachine.Event.OperationFailed, null);
+				_itMgr.stateTransitTo(vm, VirtualMachine.Event.OperationFailed, null);
 			}
 		}
 	}
