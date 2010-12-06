@@ -451,10 +451,11 @@ function accountUserJSONToTemplate(jsonObj, $template) {
     $template.attr("id", "account_user_"+fromdb(jsonObj.id)).data("accountUserId", fromdb(jsonObj.id));    
     $template.find("#grid_header_title").text(fromdb(jsonObj.username));			   
     $template.find("#id").text(fromdb(jsonObj.id));
-    $template.find("#username").text(fromdb(jsonObj.username));	
+    $template.find("#username").text(fromdb(jsonObj.username));	    
+    $template.find("#apikey").text(fromdb(jsonObj.apikey));
+    $template.find("#secretkey").text(fromdb(jsonObj.secretkey));    
     $template.find("#account").text(fromdb(jsonObj.account));	
-    $template.find("#role").text(toRole(fromdb(jsonObj.accounttype)));	
-    
+    $template.find("#role").text(toRole(fromdb(jsonObj.accounttype)));	    
     $template.find("#domain").text(fromdb(jsonObj.domain));	
     $template.find("#email").text(fromdb(jsonObj.email));	
     $template.find("#firstname").text(fromdb(jsonObj.firstname));	
@@ -471,15 +472,18 @@ function accountUserJSONToTemplate(jsonObj, $template) {
         $(this).find("#user_action_menu").hide();    
         return false;
     });		
-	
-	/*
+		
 	var $actionMenu = $actionLink.find("#user_action_menu");
     $actionMenu.find("#action_list").empty();	    
-    buildActionLinkForSubgridItem("xxxxxxx", accountUserActionMap, $actionMenu, $template);	    
     
-    if(jsonObj.id==systemUserId || jsonObj.id==adminUserId) 
-	    template.find("#delete_link").hide();
-    */
+    if(isAdmin()) {
+        buildActionLinkForSubgridItem("Generate Keys", accountUserActionMap, $actionMenu, $template);	    
+    
+        /*
+        if(jsonObj.id==systemUserId || jsonObj.id==adminUserId) 
+            buildActionLinkForSubgridItem("Delete User", accountUserActionMap, $actionMenu, $template);	
+        */	        
+	} 
 } 
 
 var accountActionMap = {  
@@ -521,6 +525,19 @@ var accountActionMap = {
         }
     }    
 }; 
+
+var accountUserActionMap = {
+    "Generate Keys": {  
+        api: "registerUserKeys",            
+        isAsyncJob: false,
+        inProcessText: "Generate Keys....",
+        afterActionSeccessFn: function(json, id, $subgridItem) {
+            var jsonObj = json.registeruserkeysresponse.userkeys;
+            $subgridItem.find("#apikey").text(fromdb(jsonObj.apikey));    
+            $subgridItem.find("#secretkey").text(fromdb(jsonObj.secretkey));	
+        }            
+    }
+}
 
 function updateResourceLimitForAccount(domainId, account, type, max) {
 	$.ajax({
