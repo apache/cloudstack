@@ -186,9 +186,15 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
 		String[] params = query.split("&");
 		Map<String, String> map = new HashMap<String, String>();
 		for (String param : params) {
-			String name = param.split("=")[0];
-			String value = param.split("=")[1];
-			map.put(name, value);
+			String[] paramTokens = param.split("=");
+			if(paramTokens != null && paramTokens.length == 2) {
+				String name = param.split("=")[0];
+				String value = param.split("=")[1];
+				map.put(name, value);
+			} else {
+				if(s_logger.isDebugEnabled())
+					s_logger.debug("Invalid paramemter in URL found. param: " + param);
+			}
 		}
 		return map;
 	}
