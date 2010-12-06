@@ -69,6 +69,11 @@ public class ConsoleProxyServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
 		
 		try {
+			if(_ms == null) {
+				sendResponse(resp, "Service is not ready");
+				return;
+			}
+				
             String userId = null;
             String account = null;
             Account accountObj = null;
