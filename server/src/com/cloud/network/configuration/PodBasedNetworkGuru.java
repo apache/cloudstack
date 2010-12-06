@@ -7,6 +7,7 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.Pod;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
@@ -46,7 +47,9 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
         }
         
         NetworkVO config = new NetworkVO(type, offering.getGuestIpType(), Mode.Static, BroadcastDomainType.Native, offering.getId(), plan.getDataCenterId());
-        
+        DataCenterVO dc = _dcDao.findById(plan.getDataCenterId());
+        config.setDns1(dc.getDns1());
+        config.setDns2(dc.getDns2());
         return config;
     }
     

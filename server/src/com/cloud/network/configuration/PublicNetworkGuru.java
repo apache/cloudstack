@@ -8,6 +8,7 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
@@ -51,7 +52,11 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
             return null;
         }
         
-        return new NetworkVO(offering.getTrafficType(), offering.getGuestIpType(), Mode.Static, BroadcastDomainType.Vlan, offering.getId(), plan.getDataCenterId());
+        NetworkVO network = new NetworkVO(offering.getTrafficType(), offering.getGuestIpType(), Mode.Static, BroadcastDomainType.Vlan, offering.getId(), plan.getDataCenterId());
+        DataCenterVO dc = _dcDao.findById(plan.getDataCenterId());
+        network.setDns1(dc.getDns1());
+        network.setDns2(dc.getDns2());
+        return network;
     }
     
     protected PublicNetworkGuru() {

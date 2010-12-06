@@ -184,7 +184,7 @@ public class NicProfile {
 
     public NicProfile(Nic nic, Network network, URI broadcastUri, URI isolationUri) {
         this.id = nic.getId();
-        this.gateway = network.getGateway();
+        this.gateway = nic.getGateway();
         this.mode = network.getMode();
         this.format = null;
         this.broadcastType = network.getBroadcastDomainType();
@@ -198,6 +198,9 @@ public class NicProfile {
         this.defaultNic = nic.isDefaultNic();
         this.broadcastUri = broadcastUri;
         this.isolationUri = isolationUri;
+        this.netmask = nic.getNetmask();
+        this.dns1 = network.getDns1();
+        this.dns2 = network.getDns2();
     }
 
     public NicProfile(long id, BroadcastDomainType type, Mode mode, long vmId) {
