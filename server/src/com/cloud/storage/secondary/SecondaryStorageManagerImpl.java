@@ -2112,10 +2112,6 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 			buf.append(" eth").append(deviceId).append("mask=").append(nic.getNetmask());
 			if (nic.isDefaultNic()) {
 				buf.append(" gateway=").append(nic.getGateway());
-				buf.append(" dns1=").append(nic.getDns1());
-				if (nic.getDns2() != null) {
-					buf.append(" dns2=").append(nic.getDns2());
-				}
 			}
 			if (nic.getTrafficType() == TrafficType.Management) {
 				buf.append(" localgw=").append(dest.getPod().getGateway());
@@ -2124,7 +2120,13 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 			}
 
 		}
-
+		
+		DataCenterVO dc = _dcDao.findById(profile.getVirtualMachine().getDataCenterId());
+		buf.append(" dns1=").append(dc.getInternalDns1());
+		if (dc.getInternalDns2() != null) {
+			buf.append(" dns2=").append(dc.getInternalDns2());
+		}
+		
 		String bootArgs = buf.toString();
 		if (s_logger.isDebugEnabled()) {
 			s_logger.debug("Boot Args for " + profile + ": " + bootArgs);
