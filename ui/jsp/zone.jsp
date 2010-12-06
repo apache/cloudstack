@@ -361,9 +361,23 @@
                 <label for="add_publicip_vlan_type">
                     Type:</label>
                 <select class="select" name="add_publicip_vlan_type" id="add_publicip_vlan_type">
-                    <option value="false">direct</option>
-                    <option value="true">public</option>
+                    <option value="false">Direct</option>
+                    <option value="true">Virtual</option>
                 </select>
+            </li>
+			<li style="display: none" id="add_publicip_vlan_network_name_container">
+                <label for="user_name">
+                    Network Name:</label>
+                <input class="text" type="text" name="add_publicip_vlan_network_name" id="add_publicip_vlan_network_name" />
+                <div id="add_publicip_vlan_network_name_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+			<li style="display: none" id="add_publicip_vlan_network_desc_container">
+                <label for="user_name">
+                    Network Desc:</label>
+                <input class="text" type="text" name="add_publicip_vlan_network_desc" id="add_publicip_vlan_network_desc" />
+                <div id="add_publicip_vlan_network_desc_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
             </li>
             <li id="add_publicip_vlan_container">
                 <label for="add_publicip_vlan_tagged">
@@ -653,6 +667,14 @@
                 <a id="close_link" href="#">Close</a>
             </div>
             <ul class="networkswitch_infodropdown_textbox">
+				<li id="network_name_container" style="display: none">
+                    <div class="networkswitch_infodropdown_textbox_label">
+                        Name:</div>
+                    <span id="network_name"></span></li>
+				<li id="network_desc_container" style="display: none">
+                    <div class="networkswitch_infodropdown_textbox_label">
+                        Desc:</div>
+                    <span id="network_desc"></span></li>
                 <li id="vlan_container">
                     <div class="networkswitch_infodropdown_textbox_label">
                         VLAN ID:</div>
