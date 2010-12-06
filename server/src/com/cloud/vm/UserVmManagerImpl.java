@@ -75,6 +75,7 @@ import com.cloud.api.commands.DetachVolumeCmd;
 import com.cloud.api.commands.RebootVMCmd;
 import com.cloud.api.commands.RecoverVMCmd;
 import com.cloud.api.commands.ResetVMPasswordCmd;
+import com.cloud.api.commands.SetVMOSTypeCmd;
 import com.cloud.api.commands.StartVMCmd;
 import com.cloud.api.commands.StopVMCmd;
 import com.cloud.api.commands.UpdateVMCmd;
@@ -3270,6 +3271,18 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         }
         return _vmDao.findById(id);
 	}
+	
+    @Override
+    public boolean setVMOSType(SetVMOSTypeCmd cmd) {
+        long id = cmd.getVirtualMachineId();
+        UserVmVO vmInstance = _vmDao.findById(id);
+        if (vmInstance == null) {
+            throw new CloudRuntimeException("Unable to find virtual machine with id " + id + ", internal error.");
+        }
+        vmInstance.setGuestOSId(cmd.getOsTypeId());
+        _vmDao.update(id, vmInstance);
+        return true;
+    }
 
 	@Override
 	public UserVm startVirtualMachine(StartVMCmd cmd) throws ExecutionException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {

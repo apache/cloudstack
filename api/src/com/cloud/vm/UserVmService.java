@@ -28,6 +28,7 @@ import com.cloud.api.commands.DetachVolumeCmd;
 import com.cloud.api.commands.RebootVMCmd;
 import com.cloud.api.commands.RecoverVMCmd;
 import com.cloud.api.commands.ResetVMPasswordCmd;
+import com.cloud.api.commands.SetVMOSTypeCmd;
 import com.cloud.api.commands.StartVMCmd;
 import com.cloud.api.commands.StopVMCmd;
 import com.cloud.api.commands.UpdateVMCmd;
@@ -62,6 +63,13 @@ public interface UserVmService {
      * @throws ResourceUnavailableException 
      */
     UserVm destroyVm(long vmId) throws ResourceUnavailableException, ConcurrentOperationException;
+    
+    /**
+     * Destroys one virtual machine
+     * @param VMId the id of virtual machine
+     * @param OSTypeId the id of guest OS type
+     */
+    boolean setVMOSType(SetVMOSTypeCmd cmd);
     
     /**
      * Resets the password of a virtual machine.
