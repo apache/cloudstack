@@ -39,7 +39,9 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.State;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.Event;
 
 @Local(value={ConsoleProxyDao.class})
 public class ConsoleProxyDaoImpl extends GenericDaoBase<ConsoleProxyVO, Long> implements ConsoleProxyDao {
@@ -387,4 +389,39 @@ public class ConsoleProxyDaoImpl extends GenericDaoBase<ConsoleProxyVO, Long> im
         }
         return l;
     }
+
+	@Override
+	public boolean updateState(State oldState, Event event,
+			State newState, VMInstanceVO vm, Long hostId) {
+		if (newState == null) {
+			if (s_logger.isDebugEnabled()) {
+				s_logger.debug("There's no way to transition from old state: " + oldState.toString() + " event: " + event.toString());
+			}
+			return false;
+		}
+		
+		ConsoleProxyVO consoleVM = (ConsoleProxyVO)vm;
+
+		SearchCriteria<ConsoleProxyVO> sc = StateChangeSearch.create();
+		sc.setParameters("id", consoleVM.getId());
+		sc.setParameters("states", oldState);
+		sc.setParameters("host", consoleVM.getHostId());
+		sc.setParameters("update", consoleVM.getUpdated());
+
+		vm.incrUpdated();
+		UpdateBuilder ub = getUpdateBuilder(consoleVM);
+		ub.set(consoleVM, "state", newState);
+		ub.set(consoleVM, "hostId", hostId);
+		ub.set(consoleVM, _updateTimeAttr, new Date());
+
+		int result = update(consoleVM, sc);
+		if (result == 0 && s_logger.isDebugEnabled()) {
+			ConsoleProxyVO vo = findById(consoleVM.getId());
+			StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
+			str.append(": DB Data={Host=").append(vo.getHostId()).append("; State=").append(vo.getState().toString()).append("; updated=").append(vo.getUpdated());
+			str.append("} Stale Data: {Host=").append(consoleVM.getHostId()).append("; State=").append(consoleVM.getState().toString()).append("; updated=").append(consoleVM.getUpdated()).append("}");
+			s_logger.debug(str.toString());
+		}
+		return result > 0;
+	}
 }

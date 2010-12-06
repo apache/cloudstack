@@ -81,7 +81,7 @@ public class RemoveVpnUserCmd extends BaseAsyncCmd {
     }
 
 	@Override
-	public long getAccountId() {
+	public long getEntityOwnerId() {
 		Account account = UserContext.current().getAccount();
         if ((account == null) || isAdmin(account.getType())) {
             if ((domainId != null) && (accountName != null)) {
@@ -101,7 +101,7 @@ public class RemoveVpnUserCmd extends BaseAsyncCmd {
 
 	@Override
 	public String getEventDescription() {
-		return "Remove Remote Access VPN user for account " + getAccountId() + " username= " + getUserName();
+		return "Remove Remote Access VPN user for account " + getEntityOwnerId() + " username= " + getUserName();
 	}
 
 	

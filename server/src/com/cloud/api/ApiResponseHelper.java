@@ -74,7 +74,6 @@ import com.cloud.api.response.VpnUsersResponse;
 import com.cloud.api.response.ZoneResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.async.AsyncJobResult;
-import com.cloud.async.AsyncJobVO;
 import com.cloud.async.executor.IngressRuleResultObject;
 import com.cloud.async.executor.NetworkGroupResultObject;
 import com.cloud.capacity.Capacity;
@@ -97,12 +96,12 @@ import com.cloud.host.Host;
 import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.network.IpAddress;
-import com.cloud.network.LoadBalancer;
 import com.cloud.network.Network;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VpnUser;
 import com.cloud.network.router.VirtualRouter;
-import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.LoadBalancer;
+import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.security.IngressRule;
 import com.cloud.network.security.NetworkGroup;
 import com.cloud.network.security.NetworkGroupRules;
@@ -347,7 +346,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         offeringResponse.setCreated(offering.getCreated());
         offeringResponse.setStorageType(offering.getUseLocalStorage() ? "local" : "shared");
         offeringResponse.setOfferHa(offering.getOfferHA());
-        offeringResponse.setUseVirtualNetwork(offering.getGuestIpType().equals(GuestIpType.Virtualized));
+        offeringResponse.setUseVirtualNetwork(offering.getGuestIpType().equals(GuestIpType.Virtual));
         offeringResponse.setTags(offering.getTags());
         if(offering.getDomainId() != null){
         	offeringResponse.setDomain(ApiDBUtils.findDomainById(offering.getDomainId()).getName());
@@ -498,7 +497,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         userVmResponse.setCpuNumber(offering.getCpu());
         userVmResponse.setCpuSpeed(offering.getSpeed());
         userVmResponse.setMemory(offering.getRamSize());
-        userVmResponse.setForVirtualNetwork(offering.getGuestIpType().equals(GuestIpType.Virtualized));
+        userVmResponse.setForVirtualNetwork(offering.getGuestIpType().equals(GuestIpType.Virtual));
 
         VolumeVO rootVolume = ApiDBUtils.findRootVolume(userVm.getId());
         if (rootVolume != null) {
@@ -768,20 +767,20 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public IPAddressResponse createIPAddressResponse(IpAddress ipAddress) {
-        VlanVO vlan = ApiDBUtils.findVlanById(ipAddress.getVlanDbId());
+        VlanVO vlan = ApiDBUtils.findVlanById(ipAddress.getVlanId());
         boolean forVirtualNetworks = vlan.getVlanType().equals(VlanType.VirtualNetwork);
 
         IPAddressResponse ipResponse = new IPAddressResponse();
         ipResponse.setIpAddress(ipAddress.getAddress());
-        if (ipAddress.getAllocated() != null) {
-            ipResponse.setAllocated(ipAddress.getAllocated());
+        if (ipAddress.getAllocatedTime() != null) {
+            ipResponse.setAllocated(ipAddress.getAllocatedTime());
         }
         ipResponse.setZoneId(ipAddress.getDataCenterId());
         ipResponse.setZoneName(ApiDBUtils.findZoneById(ipAddress.getDataCenterId()).getName());
         ipResponse.setSourceNat(ipAddress.isSourceNat());
 
         // get account information
-        Account accountTemp = ApiDBUtils.findAccountById(ipAddress.getAccountId());
+        Account accountTemp = ApiDBUtils.findAccountById(ipAddress.getAllocatedToAccountId());
         if (accountTemp != null) {
             ipResponse.setAccountName(accountTemp.getAccountName());
             ipResponse.setDomainId(accountTemp.getDomainId());
@@ -794,8 +793,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         // show this info to admin only
         Account account = UserContext.current().getAccount();
         if ((account == null) || account.getType() == Account.ACCOUNT_TYPE_ADMIN) {
-            ipResponse.setVlanId(ipAddress.getVlanDbId());
-            ipResponse.setVlanName(ApiDBUtils.findVlanById(ipAddress.getVlanDbId()).getVlanId());
+            ipResponse.setVlanId(ipAddress.getVlanId());
+            ipResponse.setVlanName(ApiDBUtils.findVlanById(ipAddress.getVlanId()).getVlanId());
         }
         ipResponse.setObjectName("ipaddress");
         return ipResponse;
@@ -807,9 +806,9 @@ public class ApiResponseHelper implements ResponseGenerator {
         lbResponse.setId(loadBalancer.getId());
         lbResponse.setName(loadBalancer.getName());
         lbResponse.setDescription(loadBalancer.getDescription());
-        lbResponse.setPublicIp(loadBalancer.getIpAddress());
-        lbResponse.setPublicPort(loadBalancer.getPublicPort());
-        lbResponse.setPrivatePort(loadBalancer.getPrivatePort());
+        lbResponse.setPublicIp(loadBalancer.getSourceIpAddress().toString());
+        lbResponse.setPublicPort(Integer.toString(loadBalancer.getSourcePortStart()));
+        lbResponse.setPrivatePort(Integer.toString(loadBalancer.getDefaultPortStart()));
         lbResponse.setAlgorithm(loadBalancer.getAlgorithm());
 
         Account accountTemp = ApiDBUtils.findAccountById(loadBalancer.getAccountId());
@@ -1050,15 +1049,15 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public FirewallRuleResponse createFirewallRuleResponse(FirewallRule fwRule) {
+    public FirewallRuleResponse createFirewallRuleResponse(PortForwardingRule fwRule) {
         FirewallRuleResponse response = new FirewallRuleResponse();
         response.setId(fwRule.getId());
-        response.setPrivatePort(fwRule.getPrivatePort());
+        response.setPrivatePort(Integer.toString(fwRule.getDestinationPortStart()));
         response.setProtocol(fwRule.getProtocol());
-        response.setPublicPort(fwRule.getPublicPort());
-        response.setPublicIpAddress(fwRule.getPublicIpAddress());
-        if (fwRule.getPublicIpAddress() != null && fwRule.getPrivateIpAddress() != null) {
-            UserVm vm = ApiDBUtils.findUserVmByPublicIpAndGuestIp(fwRule.getPublicIpAddress(), fwRule.getPrivateIpAddress());
+        response.setPublicPort(Integer.toString(fwRule.getSourcePortStart()));
+        response.setPublicIpAddress(fwRule.getSourceIpAddress().toString());
+        if (fwRule.getSourceIpAddress() != null && fwRule.getDestinationIpAddress() != null) {
+            UserVm vm = ApiDBUtils.findUserVmByPublicIpAndGuestIp(fwRule.getSourceIpAddress().toString(), fwRule.getDestinationIpAddress().toString());
             if(vm != null){
             	response.setVirtualMachineId(vm.getId());
             	response.setVirtualMachineName(vm.getHostName());
@@ -1070,13 +1069,13 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public IpForwardingRuleResponse createIpForwardingRuleResponse(FirewallRule fwRule) {
+    public IpForwardingRuleResponse createIpForwardingRuleResponse(PortForwardingRule fwRule) {
         IpForwardingRuleResponse response = new IpForwardingRuleResponse();
         response.setId(fwRule.getId());
         response.setProtocol(fwRule.getProtocol());
-        response.setPublicIpAddress(fwRule.getPublicIpAddress());
-        if (fwRule.getPublicIpAddress() != null && fwRule.getPrivateIpAddress() != null) {
-            UserVm vm = ApiDBUtils.findUserVmByPublicIpAndGuestIp(fwRule.getPublicIpAddress(), fwRule.getPrivateIpAddress());
+        response.setPublicIpAddress(fwRule.getSourceIpAddress().addr());
+        if (fwRule.getSourceIpAddress() != null && fwRule.getDestinationIpAddress() != null) {
+            UserVm vm = ApiDBUtils.findUserVmByPublicIpAndGuestIp(fwRule.getSourceIpAddress().addr(), fwRule.getDestinationIpAddress().addr());
             if(vm != null){//vm might be destroyed
             	response.setVirtualMachineId(vm.getId());
             	response.setVirtualMachineName(vm.getHostName());
@@ -2308,7 +2307,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setMaxconnections(offering.getConcurrentConnections());
         response.setIsDefault(offering.isDefault());
         response.setSpecifyVlan(offering.getSpecifyVlan());
-        response.setIsShared(offering.isShared());
         response.setObjectName("networkoffering");
         return response;
     }
@@ -2326,12 +2324,12 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setBroadcastUri(network.getBroadcastUri().toString());
         }
         
-        if (response.getTrafficType() != null) {
-            response.setTrafficType(network.getTrafficType().toString());
+        if (network.getTrafficType() != null) {
+            response.setTrafficType(network.getTrafficType().name());
         }
         
-        if (response.getType() != null) {
-            response.setType(network.getGuestType().toString());
+        if (network.getGuestType() != null) {
+            response.setType(network.getGuestType().name());
         }
         response.setGateway(network.getGateway());
         response.setCidr(network.getCidr());
@@ -2344,6 +2342,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setNetworkOfferingName(networkOffering.getName());
             response.setNetworkOfferingDisplayText(networkOffering.getDisplayText());
         }
+        
+        response.setIsShared(network.isShared());
         response.setState(network.getState().toString());
         response.setRelated(network.getRelated());
         response.setDns1(network.getDns1());

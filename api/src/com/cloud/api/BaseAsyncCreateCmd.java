@@ -6,13 +6,13 @@ public abstract class BaseAsyncCreateCmd extends BaseAsyncCmd {
     @Parameter(name="id", type=CommandType.LONG)
     private Long id;
     
-    public abstract void callCreate();
+    public abstract void create();
 
-    public Long getId() {
+    public Long getEntityId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setEntityId(Long id) {
         this.id = id;
     }
 

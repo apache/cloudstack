@@ -20,6 +20,7 @@ package com.cloud.agent.api;
 
 public class AttachVolumeAnswer extends Answer {
     private Long deviceId;
+    private String chainInfo;
     
     protected AttachVolumeAnswer() {
         
@@ -40,10 +41,19 @@ public class AttachVolumeAnswer extends Answer {
         super(cmd);
         this.deviceId = null;
     }
+    
     /**
      * @return the deviceId
      */
     public Long getDeviceId() {
         return deviceId;
+    }
+    
+    public void setChainInfo(String chainInfo) {
+    	this.chainInfo = chainInfo;
+    }
+    
+    public String getChainInfo() {
+    	return chainInfo;
     }
 }

@@ -102,7 +102,7 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public long getAccountId() {
+    public long getEntityOwnerId() {
         Volume volume = _entityMgr.findById(Volume.class, getId());
         if (volume != null) {
             return volume.getAccountId();
@@ -138,7 +138,7 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
                 response.setMode(mode);
                 response.setUploadId(uploadId);
                 response.setState(uploadInfo.getUploadState().toString());
-                response.setAccountId(getAccountId());        
+                response.setAccountId(getEntityOwnerId());        
                 //FIX ME - Need to set the url once the gson jar is upgraded since it is throwing an error right now.
                 response.setUrl(uploadInfo.getUploadUrl().replaceAll("/", "%2F"));
                 this.setResponseObject(response);

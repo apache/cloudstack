@@ -34,9 +34,12 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.UpdateBuilder;
+import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.State;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.Event;
 
 @Local(value={SecondaryStorageVmDao.class})
 public class SecondaryStorageVmDaoImpl extends GenericDaoBase<SecondaryStorageVmVO, Long> implements SecondaryStorageVmDao {
@@ -209,5 +212,40 @@ public class SecondaryStorageVmDaoImpl extends GenericDaoBase<SecondaryStorageVm
 		SearchCriteria<SecondaryStorageVmVO> sc = ZoneSearch.create();
         sc.setParameters("zone", zoneId);
         return listBy(sc);
+	}
+
+	@Override
+	public boolean updateState(State oldState, Event event,
+			State newState, VMInstanceVO vm, Long hostId) {
+		if (newState == null) {
+			if (s_logger.isDebugEnabled()) {
+				s_logger.debug("There's no way to transition from old state: " + oldState.toString() + " event: " + event.toString());
+			}
+			return false;
+		}
+		
+		SecondaryStorageVmVO secondaryVM = (SecondaryStorageVmVO)vm;
+
+		SearchCriteria<SecondaryStorageVmVO> sc = StateChangeSearch.create();
+		sc.setParameters("id", secondaryVM.getId());
+		sc.setParameters("states", oldState);
+		sc.setParameters("host", secondaryVM.getHostId());
+		sc.setParameters("update", secondaryVM.getUpdated());
+
+		vm.incrUpdated();
+		UpdateBuilder ub = getUpdateBuilder(secondaryVM);
+		ub.set(secondaryVM, "state", newState);
+		ub.set(secondaryVM, "hostId", hostId);
+		ub.set(secondaryVM, _updateTimeAttr, new Date());
+
+		int result = update(secondaryVM, sc);
+		if (result == 0 && s_logger.isDebugEnabled()) {
+			SecondaryStorageVmVO vo = findById(secondaryVM.getId());
+			StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
+			str.append(": DB Data={Host=").append(vo.getHostId()).append("; State=").append(vo.getState().toString()).append("; updated=").append(vo.getUpdated());
+			str.append("} Stale Data: {Host=").append(secondaryVM.getHostId()).append("; State=").append(secondaryVM.getState().toString()).append("; updated=").append(secondaryVM.getUpdated()).append("}");
+			s_logger.debug(str.toString());
+		}
+		return result > 0;
 	}
 }

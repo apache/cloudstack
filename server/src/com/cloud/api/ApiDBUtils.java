@@ -411,7 +411,7 @@ public class ApiDBUtils {
         List<UserVmVO> vms = _userVmDao.listVmsUsingGuestIpAddress(addr.getDataCenterId(), guestIp);
         if (vms != null) {
             for (UserVmVO vm : vms) {
-                if (vm.getAccountId() == addr.getAccountId()) {
+                if (vm.getAccountId() == addr.getAllocatedToAccountId()) {
                     return vm;
                 }
             }
@@ -484,7 +484,7 @@ public class ApiDBUtils {
     }
     
     public static Network getNetwork(long id) {
-        return _networkMgr.getNetworkConfiguration(id);
+        return _networkMgr.getNetwork(id);
     }
     
     public static void synchronizeCommand(Object job, String syncObjType, long syncObjId) {

@@ -100,7 +100,7 @@ public class DestroyVMExecutor extends VMOperationExecutor {
 	            txn.start();
 	            
 	            asyncMgr.getExecutorContext().getAccountMgr().decrementResourceCount(vm.getAccountId(), ResourceType.user_vm);
-		        if (!asyncMgr.getExecutorContext().getVmDao().updateIf(vm, VirtualMachine.Event.DestroyRequested, vm.getHostId())) {
+		        if (!asyncMgr.getExecutorContext().getItMgr().stateTransitTo(vm, VirtualMachine.Event.DestroyRequested, vm.getHostId())) {
 		            s_logger.debug("Unable to destroy the vm because it is not in the correct state: " + vm.toString());
 		            
 		            txn.rollback();
@@ -130,7 +130,7 @@ public class DestroyVMExecutor extends VMOperationExecutor {
 	        	
 	    		asyncMgr.completeAsyncJob(getJob().getId(),	AsyncJobResult.STATUS_SUCCEEDED, 0, "success");
 	    	} else {
-	            asyncMgr.getExecutorContext().getVmDao().updateIf(vm, Event.OperationFailed, vm.getHostId());
+	            asyncMgr.getExecutorContext().getItMgr().stateTransitTo(vm, Event.OperationFailed, vm.getHostId());
 	            asyncMgr.completeAsyncJob(getJob().getId(),
 	            AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR, "Agent failed to stop VM: " + vm.getHostName());
 //	            managementServer.saveEvent(param.getUserId(), vm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_STOP,

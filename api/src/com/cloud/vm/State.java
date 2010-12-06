@@ -99,6 +99,8 @@ public enum State implements FiniteState<State, Event> {
     	s_fsm.addTransition(State.Migrating, VirtualMachine.Event.MigrationRequested, State.Migrating);
     	s_fsm.addTransition(State.Migrating, VirtualMachine.Event.OperationSucceeded, State.Running);
     	s_fsm.addTransition(State.Migrating, VirtualMachine.Event.OperationFailed, State.Running);
+    	s_fsm.addTransition(State.Migrating, VirtualMachine.Event.MigrationFailedOnSource, State.Running);
+    	s_fsm.addTransition(State.Migrating, VirtualMachine.Event.MigrationFailedOnDest, State.Running);
     	s_fsm.addTransition(State.Migrating, VirtualMachine.Event.AgentReportRunning, State.Running);
     	s_fsm.addTransition(State.Migrating, VirtualMachine.Event.AgentReportStopped, State.Stopped);
     	s_fsm.addTransition(State.Stopping, VirtualMachine.Event.OperationSucceeded, State.Stopped);

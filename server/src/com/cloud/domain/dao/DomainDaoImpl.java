@@ -68,9 +68,10 @@ public class DomainDaoImpl extends GenericDaoBase<DomainVO, Long> implements Dom
 		FindAllChildrenSearch.done();
 	}
 	
-    public void update(Long id, String domainName) {
+    public void update(Long id, String domainName, String domainPath) {
         DomainVO ub = createForUpdate();
         ub.setName(domainName);
+        ub.setPath(domainPath);
         update(id, ub);
     }
     

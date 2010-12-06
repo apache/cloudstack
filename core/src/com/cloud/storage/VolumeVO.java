@@ -160,6 +160,9 @@ public class VolumeVO implements Volume {
     @Column(name="source_id")
     Long sourceId;
     
+    @Column(name="chain_info")
+    String chainInfo;
+    
     /**
      * Constructor for data disk.
      * @param type
@@ -559,5 +562,13 @@ public class VolumeVO implements Volume {
 	public void setAttached(Date attached){
 		this.attached = attached;
 	}
-
+	
+	@Override
+	public String getChainInfo() {
+		return this.chainInfo;
+	}
+	
+	public void setChainInfo(String chainInfo) {
+		this.chainInfo = chainInfo;
+	}
 }

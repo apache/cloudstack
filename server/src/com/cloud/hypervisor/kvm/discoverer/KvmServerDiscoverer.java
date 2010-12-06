@@ -20,6 +20,7 @@ import com.cloud.agent.api.AgentControlCommand;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
+import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
@@ -48,6 +49,8 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 	 private ConfigurationDao _configDao;
 	 private String _hostIp;
 	 private int _waitTime = 5; /*wait for 5 minutes*/
+	 private String _kvmPrivateNic;
+	 private String _kvmPublicNic;
 	 @Inject HostDao _hostDao = null;
 	 @Inject ClusterDao _clusterDao;
 	 
@@ -218,8 +221,18 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 			s_logger.debug("copying " + _setupAgentPath + " to host");
 			SCPClient scp = new SCPClient(sshConnection);
 			scp.put(_setupAgentPath, "/usr/bin", "0755");
+			
+			String parameters = " -h " + _hostIp + " -z " + dcId + " -p " + podId + " -c " + clusterId + " -u " + guid;
+			
+			if (_kvmPublicNic != null) {
+				parameters += " -P " + _kvmPublicNic;
+			}
+			
+			if (_kvmPrivateNic != null) {
+				parameters += " -N " + _kvmPrivateNic;
+			}
 		
-			sshExecuteCmd(sshConnection, "/usr/bin/setup_agent.sh " + " -h " + _hostIp + " -z " + dcId + " -p " + podId + " -c " + clusterId + " -u " + guid + " 1>&2", 3);
+			sshExecuteCmd(sshConnection, "/usr/bin/setup_agent.sh " + parameters + " 1>&2", 3);
 			
 			KvmDummyResourceBase kvmResource = new KvmDummyResourceBase();
 			Map<String, Object> params = new HashMap<String, Object>();
@@ -276,6 +289,8 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 		ComponentLocator locator = ComponentLocator.getCurrentLocator();
         _configDao = locator.getDao(ConfigurationDao.class);
 		_setupAgentPath = Script.findScript(getPatchPath(), "setup_agent.sh");
+		_kvmPrivateNic = _configDao.getValue(Config.KvmPrivateNetwork.key());
+		_kvmPublicNic = _configDao.getValue(Config.KvmPublicNetwork.key());
 		
 		if (_setupAgentPath == null) {
 			throw new ConfigurationException("Can't find setup_agent.sh");

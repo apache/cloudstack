@@ -32,6 +32,7 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.UserVmManager;
+import com.cloud.vm.VmManager;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 
@@ -51,4 +52,5 @@ public interface AsyncJobExecutorContext extends Manager {
     public IPAddressDao getIpAddressDao();
     public AsyncJobDao getJobDao();
     public UserDao getUserDao();
+    public VmManager getItMgr();
 }

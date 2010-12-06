@@ -57,9 +57,6 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     
     @Parameter(name=ApiConstants.SPECIFY_VLAN, type=CommandType.BOOLEAN, description="true is network offering supports vlans")
     private Boolean specifyVlan; 
-    
-    @Parameter(name=ApiConstants.IS_SHARED, type=CommandType.BOOLEAN, description="true is network offering supports vlans")
-    private Boolean isShared; 
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -91,10 +88,6 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     
     public Boolean getSpecifyVlan() {
         return specifyVlan;
-    }
-    
-    public Boolean getIsShared() {
-        return isShared;
     }
 
     /////////////////////////////////////////////////////

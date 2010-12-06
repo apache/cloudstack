@@ -29,16 +29,13 @@ $(document).ready(function() {
 	);
 
 	// Setup first level navigation
-	$("#leftmenu_system").bind("click", function(event) {
+	$("#leftmenu_configuration").bind("click", function(event) {
 		selectLeftMenu($(this), true);		
 		return false;
 	});	
 	
-	$("#leftmenu_resources").bind("click", function(event) {
-		if (selectLeftMenu($(this), true)) {
-			if($("#leftmenu_physical_resource").find("#physical_resource_arrow").hasClass("expanded_open") == true)
-				$("#leftmenu_physical_resource").click(); //if resource menu is open (i.e. zonetree is shown), empty zonetree and close resource menu.
-		}
+	$("#leftmenu_system").bind("click", function(event) {
+		selectLeftMenu($(this), true);
 		return false;
 	});		
 				
@@ -54,7 +51,8 @@ $(document).ready(function() {
 		});
 				
 		bindEventHandlerToDomainTreeNode();		
-		refreshWholeTree(g_domainid, defaultRootLevel); 
+		//refreshWholeTree(g_domainid, defaultRootLevel); 
+		drawRootNode(g_domainid);
 		
 		return false;
 	});	

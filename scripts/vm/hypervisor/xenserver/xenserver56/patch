@@ -17,7 +17,6 @@ LUNperVDI.py=/opt/xensource/sm
 nfs.py=/opt/xensource/sm
 vmops=..,0755,/etc/xapi.d/plugins
 vmopsSnapshot=..,0755,/etc/xapi.d/plugins
-xs_cleanup.sh=..,0755,/opt/xensource/bin
 systemvm.iso=../../../../../vms,0644,/opt/xensource/packages/iso
 hostvmstats.py=..,0755,/opt/xensource/sm
 id_rsa.cloud=..,0600,/root/.ssh

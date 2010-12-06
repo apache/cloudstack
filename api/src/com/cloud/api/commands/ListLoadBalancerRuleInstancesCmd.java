@@ -69,7 +69,7 @@ public class ListLoadBalancerRuleInstancesCmd extends BaseListCmd {
     
     @Override
     public void execute(){
-        List<? extends UserVm> result = _mgr.listLoadBalancerInstances(this);
+        List<? extends UserVm> result = _lbService.listLoadBalancerInstances(this);
         ListResponse<UserVmResponse> response = new ListResponse<UserVmResponse>();
         List<UserVmResponse> vmResponses = new ArrayList<UserVmResponse>();
         for (UserVm instance : result) {

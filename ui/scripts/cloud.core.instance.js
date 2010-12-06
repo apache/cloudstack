@@ -429,7 +429,6 @@ function initVMWizard() {
 		        //"no, thanks" radio button (default radio button in data disk offering)		               
 	            var $t = $doTemplateNo.clone(); 		            	     
 	            $t.find("input:radio").attr("name","data_disk_offering_radio");  
-	            $t.find("#name").text("no, thanks"); 		            
 	            $dataDiskOfferingContainer.append($t.show()); 
 		        		        
 		        //disk offerings from database
@@ -442,7 +441,7 @@ function initVMWizard() {
 				            $t = $doTemplateExisting.clone(); 	
 				        
 				        $t.data("jsonObj", offerings[i]).attr("id", "do"+offerings[i].id);				        
-				        $t.find("input:radio").attr("name","data_disk_offering_radio").attr("checked", "").val(fromdb(offerings[i].id));	 	
+				        $t.find("input:radio").attr("name","data_disk_offering_radio").removeAttr("checked").val(fromdb(offerings[i].id));	 	
 			            $t.find("#name").text(fromdb(offerings[i].name));
 			            $t.find("#description").text(fromdb(offerings[i].displaytext)); 	 
 			            $dataDiskOfferingContainer.append($t.show());	
@@ -479,9 +478,9 @@ function initVMWizard() {
 			    //Safari and Chrome are not smart enough to make checkbox checked if html markup is appended by JQuery.append(). So, the following 2 lines are added.		
 	            var html_all = $rootDiskOfferingContainer.html();        
                 $rootDiskOfferingContainer.html(html_all);                         
-			    //***** root disk offering: "custom", existing disk offerings in database (end) *********************************************************************				    
+			    //***** root disk offering: "custom", existing disk offerings in database (end) *********************************************************************	
 		    }
-	    });	 
+	    });	
 	    
 	    $vmPopup.find("#wizard_service_offering").click();	      
         return false;
@@ -833,7 +832,60 @@ function initVMWizard() {
 	    }	
 	    	
 	    if (currentStepInVmPopup == 4) { //network
-	    
+			// Setup networks
+			// hardcoded text for now
+			var networkName = "Virtual Network";
+			var networkDesc = "A dedicated virtualized network for your account.  The broadcast domain is contrained within a VLAN and all public network access is routed out by a virtual router.";
+			
+			$.ajax({
+				data: createURL("command=listNetworks&domainid="+g_domainid+"&account="+g_account+"&zoneId="+$thisPopup.find("#wizard_zone").val()),
+				dataType: "json",
+				async: false,
+				success: function(json) {
+					var networks = json.listnetworksresponse.network;
+					var virtualNetwork = null;
+					if (networks != null && networks.length > 0) {
+						for (var i = 0; i < networks.length; i++) {
+							if (networks[i].type == 'Virtualized') {
+								virtualNetwork = networks[i];
+							}
+						}
+					}
+					var $virtualNetworkElement = $("#vm_popup #network_virtual_container");
+		
+					if (virtualNetwork == null) {
+						$.ajax({
+							data: createURL("command=listNetworkOfferings"),
+							dataType: "json",
+							async: false,
+							success: function(json) {
+								var networkOfferings = json.listnetworkofferingsresponse.networkoffering;
+								if (networkOfferings != null && networkOfferings.length > 0) {
+									for (var i = 0; i < networkOfferings.length; i++) {
+										if (networkOfferings[i].type == "Virtualized" && networkOfferings[i].isdefault) {
+											// Create a network from this.
+											$.ajax({
+												data: createURL("command=createNetwork&networkOfferingId="+networkOfferings[i].id+"&name="+todb(networkName)+"&displayText="+todb(networkDesc)+"&zoneId="+$thisPopup.find("#wizard_zone").val()),
+												dataType: "json",
+												async: false,
+												success: function(json) {
+													var network = json.createnetworkresponse.network;
+													$virtualNetworkElement.data("id", network.id);
+												}
+											});
+										}
+									}
+								}
+							}
+						});
+					} else {
+						$virtualNetworkElement.data("id", virtualNetwork.id);
+						//$virtualNetworkElement.find("#network_virtual_name").text(virtualNetwork.name);
+						//$virtualNetworkElement.find("#network_virtual_desc").text(virtualNetwork.displaytext);
+					}
+				}
+			});
+			$thisPopup.find("#wizard_review_network").text(networkName);
 	    }	
 	    
 	    if (currentStepInVmPopup == 5) { //last step		        
@@ -851,6 +903,7 @@ function initVMWizard() {
 			moreCriteria.push("&hypervisor="+$selectedVmWizardTemplate.data("hypervisor"));	    								
 		    moreCriteria.push("&templateId="+$selectedVmWizardTemplate.data("templateId"));    							
 		    moreCriteria.push("&serviceOfferingId="+$thisPopup.find("input:radio[name=service_offering_radio]:checked").val());
+			moreCriteria.push("&networkIds="+$thisPopup.find("#network_virtual_container").data("id"));
 			
 			var diskOfferingId, $diskOfferingElement;    						
 		    if ($thisPopup.find("#wiz_blank").hasClass("rev_wizmid_selectedtempbut")) {  //ISO

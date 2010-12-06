@@ -27,7 +27,6 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.CreateDomainCmd;
 import com.cloud.api.commands.DeleteDomainCmd;
 import com.cloud.api.commands.DeletePreallocatedLunCmd;
-import com.cloud.api.commands.DeployVMCmd;
 import com.cloud.api.commands.ExtractVolumeCmd;
 import com.cloud.api.commands.GetCloudIdentifierCmd;
 import com.cloud.api.commands.ListAccountsCmd;
@@ -45,17 +44,13 @@ import com.cloud.api.commands.ListGuestOsCategoriesCmd;
 import com.cloud.api.commands.ListGuestOsCmd;
 import com.cloud.api.commands.ListHostsCmd;
 import com.cloud.api.commands.ListHypervisorsCmd;
-import com.cloud.api.commands.ListIpForwardingRulesCmd;
 import com.cloud.api.commands.ListIsosCmd;
-import com.cloud.api.commands.ListLoadBalancerRuleInstancesCmd;
-import com.cloud.api.commands.ListLoadBalancerRulesCmd;
 import com.cloud.api.commands.ListPodsByCmd;
 import com.cloud.api.commands.ListPreallocatedLunsCmd;
 import com.cloud.api.commands.ListPublicIpAddressesCmd;
 import com.cloud.api.commands.ListRemoteAccessVpnsCmd;
 import com.cloud.api.commands.ListRoutersCmd;
 import com.cloud.api.commands.ListServiceOfferingsCmd;
-import com.cloud.api.commands.ListSnapshotsCmd;
 import com.cloud.api.commands.ListStoragePoolsCmd;
 import com.cloud.api.commands.ListSystemVMsCmd;
 import com.cloud.api.commands.ListTemplateOrIsoPermissionsCmd;
@@ -75,7 +70,6 @@ import com.cloud.api.commands.StopSystemVmCmd;
 import com.cloud.api.commands.UpdateDomainCmd;
 import com.cloud.api.commands.UpdateIsoCmd;
 import com.cloud.api.commands.UpdateIsoPermissionsCmd;
-import com.cloud.api.commands.UpdatePortForwardingRuleCmd;
 import com.cloud.api.commands.UpdateTemplateCmd;
 import com.cloud.api.commands.UpdateTemplatePermissionsCmd;
 import com.cloud.api.commands.UpdateVMGroupCmd;
@@ -88,35 +82,25 @@ import com.cloud.dc.Pod;
 import com.cloud.dc.Vlan;
 import com.cloud.domain.Domain;
 import com.cloud.event.Event;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InsufficientStorageCapacityException;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.network.IpAddress;
-import com.cloud.network.LoadBalancer;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VpnUser;
 import com.cloud.network.router.VirtualRouter;
-import com.cloud.network.rules.FirewallRule;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOsCategory;
-import com.cloud.storage.Snapshot;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.UserAccount;
 import com.cloud.uservm.UserVm;
-import com.cloud.utils.exception.ExecutionException;
 import com.cloud.vm.InstanceGroup;
 import com.cloud.vm.VirtualMachine;
 
@@ -127,30 +111,6 @@ import com.cloud.vm.VirtualMachine;
 public interface ManagementService {
     static final String Name = "management-server";
     
-    /**
-     * Creates and starts a new Virtual Machine.
-     * 
-     * @param cmd the command with the deployment parameters
-     *   - userId
-     *   - accountId
-     *   - zoneId
-     *   - serviceOfferingId
-     *   - templateId:  the id of the template (or ISO) to use for creating the virtual machine
-     *   - diskOfferingId:  ID of the disk offering to use when creating the root disk (if deploying from an ISO) or the data disk (if deploying from a template). If deploying from a template and a disk offering ID is not passed in, the VM will have only a root disk.
-     *   - displayName:  user-supplied name to be shown in the UI or returned in the API
-     *   - groupName:  user-supplied groupname to be shown in the UI or returned in the API
-     *   - userData:  user-supplied base64-encoded data that can be retrieved by the instance from the virtual router
-     *   - size:  size to be used for volume creation in case the disk offering is private (i.e. size=0)
-     * @return VirtualMachine if successfully deployed, null otherwise
-     * @throws InvalidParameterValueException if the parameter values are incorrect.
-     * @throws ExecutionException
-     * @throws StorageUnavailableException
-     * @throws ConcurrentOperationException
-     * @throws ResourceUnavailableException 
-     * @throws InsufficientCapacityException 
-     */
-    UserVm deployVirtualMachine(DeployVMCmd cmd, String password) throws ResourceAllocationException, InsufficientStorageCapacityException, ExecutionException, StorageUnavailableException, ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException;
-
     /**
      * Retrieves the list of data centers with search criteria.
      * Currently the only search criteria is "available" zones for the account that invokes the API.  By specifying
@@ -221,13 +181,6 @@ public interface ManagementService {
      * @return List of UserVMs.
      */
     List<? extends UserVm> searchForUserVMs(ListVMsCmd cmd);
-
-    /**
-     * Update an existing port forwarding rule on the given public IP / public port for the given protocol
-     * @param cmd - the UpdatePortForwardingRuleCmd command that wraps publicIp, privateIp, publicPort, privatePort, protocol of the rule to update
-     * @return the new firewall rule if updated, null if no rule on public IP / public port of that protocol could be found
-     */
-    FirewallRule updatePortForwardingRule(UpdatePortForwardingRuleCmd cmd);
 
     /**
      * Obtains a list of events by the specified search criteria.
@@ -373,21 +326,6 @@ public interface ManagementService {
     List<? extends DiskOffering> searchForDiskOfferings(ListDiskOfferingsCmd cmd);
 
     /**
-     * List instances that have either been applied to a load balancer or are eligible to be assigned to a load balancer.
-     * @param cmd
-     * @return list of vm instances that have been or can be applied to a load balancer
-     */
-    List<? extends UserVm> listLoadBalancerInstances(ListLoadBalancerRuleInstancesCmd cmd);
-
-    /**
-     * List load balancer rules based on the given criteria
-     * @param cmd the command that specifies the criteria to use for listing load balancers.  Load balancers can be listed
-     *            by id, name, public ip, and vm instance id
-     * @return list of load balancers that match the criteria
-     */
-    List<? extends LoadBalancer> searchForLoadBalancers(ListLoadBalancerRulesCmd cmd);
-
-    /**
      * List storage pools that match the given criteria
      * @param cmd the command that wraps the search criteria (zone, pod, name, IP address, path, and cluster id)
      * @return a list of storage pools that match the given criteria
@@ -449,8 +387,6 @@ public interface ManagementService {
     
     public List<? extends VpnUser> searchForVpnUsers(ListVpnUsersCmd cmd);
 
-    List<? extends FirewallRule> searchForIpForwardingRules(ListIpForwardingRulesCmd cmd);
-
     String getVersion();
     
     /**
@@ -479,7 +415,5 @@ public interface ManagementService {
      * @throws IllegalArgumentException
      */
     boolean unregisterPreallocatedLun(DeletePreallocatedLunCmd cmd) throws IllegalArgumentException;
-
-
 
 }

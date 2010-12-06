@@ -17,6 +17,7 @@
  */
 package com.cloud.api.commands;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.log4j.Logger;
@@ -29,8 +30,8 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
-import com.cloud.exception.NetworkRuleConflictException;
-import com.cloud.network.LoadBalancer;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.network.rules.LoadBalancer;
 import com.cloud.user.Account;
 
 @Implementation(description="Assigns virtual machine or a list of virtual machines to a load balancer rule.", responseObject=SuccessResponse.class)
@@ -78,7 +79,7 @@ public class AssignToLoadBalancerRuleCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public long getAccountId() {
+    public long getEntityOwnerId() {
         LoadBalancer lb = _entityMgr.findById(LoadBalancer.class, getLoadBalancerId());
         if (lb == null) {
             return Account.ACCOUNT_ID_SYSTEM; // bad id given, parent this command to SYSTEM so ERROR events are tracked
@@ -98,16 +99,22 @@ public class AssignToLoadBalancerRuleCmd extends BaseAsyncCmd {
     
     @Override
     public void execute(){
-        try {
-            boolean result = _networkService.assignToLoadBalancer(this);
-            if (result) {
-                SuccessResponse response = new SuccessResponse(getName());
-                this.setResponseObject(response);
-            } else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to assign load balancer rule");
-            }
-        } catch (NetworkRuleConflictException ex) {
-            throw new ServerApiException(BaseCmd.NETWORK_RULE_CONFLICT_ERROR, ex.getMessage());
+        if (virtualMachineIds == null && virtualMachineId == null) {
+            throw new InvalidParameterValueException("Must specify virtual machine id");
+        } 
+        if (virtualMachineIds == null) {
+            virtualMachineIds = new ArrayList<Long>();
+        }
+        
+        if (virtualMachineId != null) {
+            virtualMachineIds.add(virtualMachineId);
+        }
+        boolean result = _lbService.assignToLoadBalancer(getLoadBalancerId(), virtualMachineIds);
+        if (result) {
+            SuccessResponse response = new SuccessResponse(getName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to assign load balancer rule");
         }
     }
 }

@@ -22,6 +22,7 @@ import java.util.Date;
 import java.util.List;
 
 import com.cloud.utils.db.GenericDao;
+import com.cloud.utils.fsm.StateDao;
 import com.cloud.vm.State;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -29,7 +30,7 @@ import com.cloud.vm.VirtualMachine;
 /*
  * Data Access Object for vm_instance table
  */
-public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long> {
+public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<State, VirtualMachine.Event, VMInstanceVO> {
     /**
      * What are the vms running on this host?
      * @param hostId host.

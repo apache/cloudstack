@@ -78,6 +78,7 @@ public class Criteria {
     public static final String NETWORKGROUP = "networkGroup";
     public static final String GROUP = "group";
     public static final String EMPTY_GROUP = "emptyGroup";
+    public static final String NETWORKID = "networkId";
 
 	public Criteria(String orderBy, Boolean ascending, Long offset, Long limit) {
 		this.offset = offset;

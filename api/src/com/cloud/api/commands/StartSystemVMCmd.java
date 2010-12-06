@@ -68,7 +68,7 @@ public class StartSystemVMCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public long getAccountId() {
+    public long getEntityOwnerId() {
         Account account = UserContext.current().getAccount();
         if (account != null) {
             return account.getId();

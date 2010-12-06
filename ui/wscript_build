@@ -1,7 +1,0 @@
-import Utils, os
-
-# binary unsubstitutable files:
-bld.install_files("${MSENVIRON}/webapps/client",bld.path.ant_glob("*.ico **/*png **/*jpg **/*gif",src=True,bld=False,dir=False,flat=True),cwd=bld.path,relative_trick=True)
-
-# text substitutable files (substitute with tokens from the environment bld.env):
-bld.substitute('*html **/*html **/*js **/*css **/*properties **/*jsp *jsp',install_to="${MSENVIRON}/webapps/client")

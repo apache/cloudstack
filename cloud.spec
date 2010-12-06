@@ -347,7 +347,7 @@ echo Doing open source build
 
 %clean
 
-[ ${RPM_BUILD_ROOT} != "/" ] && rm -rf ${RPM_BUILD_ROOT}
+#[ ${RPM_BUILD_ROOT} != "/" ] && rm -rf ${RPM_BUILD_ROOT}
 
 
 %preun client
@@ -451,16 +451,6 @@ fi
 %defattr(-,root,root,-)
 %{_libdir}/%{name}/agent/scripts/*
 # maintain the following list in sync with files agent-scripts
-%if %{_premium}
-%exclude %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/check_heartbeat.sh
-%exclude %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/find_bond.sh
-%exclude %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/launch_hb.sh
-%exclude %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/setup_heartbeat_sr.sh
-%exclude %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/vmopspremium
-%exclude %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/xenheartbeat.sh
-%exclude %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/xenserver56/patch-premium
-%exclude %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/xs_cleanup.sh
-%endif
 %{_libdir}/%{name}/agent/vms/systemvm.zip
 %{_libdir}/%{name}/agent/vms/systemvm.iso
 
@@ -504,53 +494,26 @@ fi
 %attr(0755,root,root) %{_bindir}/%{name}-setup-databases
 %attr(0755,root,root) %{_bindir}/%{name}-migrate-databases
 %dir %{_datadir}/%{name}/setup
-%{_datadir}/%{name}/setup/create-database.sql
-%{_datadir}/%{name}/setup/create-index-fk.sql
-%{_datadir}/%{name}/setup/create-schema.sql
-%{_datadir}/%{name}/setup/server-setup.sql
-%{_datadir}/%{name}/setup/templates.*.sql
-%{_datadir}/%{name}/setup/templates.sql
+%{_datadir}/%{name}/setup/*.sql
 %{_datadir}/%{name}/setup/deploy-db-dev.sh
 %{_datadir}/%{name}/setup/server-setup.xml
-%{_datadir}/%{name}/setup/data-20to21.sql
-%{_datadir}/%{name}/setup/index-20to21.sql
-%{_datadir}/%{name}/setup/index-212to213.sql
-%{_datadir}/%{name}/setup/postprocess-20to21.sql
-%{_datadir}/%{name}/setup/schema-20to21.sql
-%{_datadir}/%{name}/setup/schema-level.sql
-%{_datadir}/%{name}/setup/schema-21to22.sql
-%{_datadir}/%{name}/setup/data-21to22.sql
-%{_datadir}/%{name}/setup/index-21to22.sql
 
 %files client
 %defattr(0644,root,root,0755)
-%{_sysconfdir}/%{name}/management/catalina.policy
-%{_sysconfdir}/%{name}/management/*.properties
-%{_sysconfdir}/%{name}/management/resources/*.properties
-%{_sysconfdir}/%{name}/management/components.xml
-%{_sysconfdir}/%{name}/management/context.xml
+%{_sysconfdir}/%{name}/management/*
+%if %{_premium}
+%exclude %{_sysconfdir}/%{name}/management/*premium*
+%endif
 %config(noreplace) %attr(640,root,%{name}) %{_sysconfdir}/%{name}/management/db.properties
-%{_sysconfdir}/%{name}/management/environment.properties
-%{_sysconfdir}/%{name}/management/ehcache.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/log4j-%{name}.xml
-%{_sysconfdir}/%{name}/management/logging.properties
-%{_sysconfdir}/%{name}/management/server.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/tomcat6.conf
-%{_sysconfdir}/%{name}/management/classpath.conf
-%{_sysconfdir}/%{name}/management/tomcat-users.xml
-%{_sysconfdir}/%{name}/management/web.xml
 %dir %attr(770,root,%{name}) %{_sysconfdir}/%{name}/management/Catalina
 %dir %attr(770,root,%{name}) %{_sysconfdir}/%{name}/management/Catalina/localhost
 %dir %attr(770,root,%{name}) %{_sysconfdir}/%{name}/management/Catalina/localhost/client
 %config %{_sysconfdir}/sysconfig/%{name}-management
 %attr(0755,root,root) %{_initrddir}/%{name}-management
 %dir %{_datadir}/%{name}/management
-%{_datadir}/%{name}/management/bin
-%{_datadir}/%{name}/management/conf
-%{_datadir}/%{name}/management/lib
-%{_datadir}/%{name}/management/logs
-%{_datadir}/%{name}/management/temp
-%{_datadir}/%{name}/management/work
+%{_datadir}/%{name}/management/*
 %attr(755,root,root) %{_bindir}/%{name}-setup-management
 %attr(755,root,root) %{_bindir}/%{name}-update-xenserver-licenses
 %dir %attr(770,root,%{name}) %{_sharedstatedir}/%{name}/mnt
@@ -584,9 +547,7 @@ fi
 %files console-proxy
 %defattr(0644,root,root,0755)
 %{_javadir}/%{name}-console*.jar
-%config(noreplace) %{_sysconfdir}/%{name}/console-proxy/agent.properties
-%config(noreplace) %{_sysconfdir}/%{name}/console-proxy/consoleproxy.properties
-%config(noreplace) %{_sysconfdir}/%{name}/console-proxy/log4j-%{name}.xml
+%config(noreplace) %{_sysconfdir}/%{name}/console-proxy/*
 %attr(0755,root,root) %{_initrddir}/%{name}-console-proxy
 %attr(0755,root,root) %{_libexecdir}/console-proxy-runner
 %{_libdir}/%{name}/console-proxy/*
@@ -624,14 +585,7 @@ fi
 %{_datadir}/%{name}/setup/create-database-premium.sql
 %{_datadir}/%{name}/setup/create-schema-premium.sql
 # maintain the following list in sync with files agent-scripts
-%{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/check_heartbeat.sh
-%{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/find_bond.sh
-%{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/launch_hb.sh
-%{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/setup_heartbeat_sr.sh
-%{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/vmopspremium
-%{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/xenheartbeat.sh
-%{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/xenserver56/patch-premium
-%{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/xs_cleanup.sh
+%{_libdir}/%{name}/agent/premium-scripts/*
 
 %files usage
 %defattr(0644,root,root,0755)

@@ -1,4 +1,7 @@
 SET foreign_key_checks = 0;
+use cloud;
+
+DROP VIEW IF EXISTS `cloud`.`port_forwarding_rules_view`;
 DROP TABLE IF EXISTS `cloud`.`configuration`;
 DROP TABLE IF EXISTS `cloud`.`ip_forwarding`;
 DROP TABLE IF EXISTS `cloud`.`management_agent`;
@@ -84,6 +87,10 @@ DROP TABLE IF EXISTS `cloud`.`instance_group`;
 DROP TABLE IF EXISTS `cloud`.`instance_group_vm_map`;
 DROP TABLE IF EXISTS `cloud`.`certificate`;
 DROP TABLE IF EXISTS `cloud`.`op_it_work`;
+DROP TABLE IF EXISTS `cloud`.`load_balancing_ip_map`;
+DROP TABLE IF EXISTS `cloud`.`load_balancing_rules`;
+DROP TABLE IF EXISTS `cloud`.`port_forwarding_rules`;
+DROP TABLE IF EXISTS `cloud`.`firewall_rules`;
 
 CREATE TABLE `cloud`.`op_it_work` (
   `id` char(40) COMMENT 'id',
@@ -106,7 +113,8 @@ CREATE TABLE `cloud`.`hypervsior_properties` (
 CREATE TABLE `cloud`.`op_networks`(
   `id` bigint unsigned NOT NULL UNIQUE KEY,
   `mac_address_seq` bigint unsigned NOT NULL DEFAULT 1 COMMENT 'mac address',
-  PRIMARY KEY(`id`)
+  PRIMARY KEY(`id`),
+  CONSTRAINT `fk_op_networks__id` FOREIGN KEY (`id`) REFERENCES `networks`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`networks` (
@@ -131,6 +139,7 @@ CREATE TABLE `cloud`.`networks` (
   `guru_data` varchar(1024) COMMENT 'data stored by the network guru that setup this network',
   `set_fields` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'which fields are set already',
   `guest_type` char(32) COMMENT 'type of guest network',
+  `shared` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '0 if network is shared, 1 if network dedicated',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -191,7 +200,6 @@ CREATE TABLE `cloud`.`network_offerings` (
   `service_offering_id` bigint unsigned UNIQUE COMMENT 'service offering id that this network offering is tied to',
   `created` datetime NOT NULL COMMENT 'time the entry was created',
   `removed` datetime DEFAULT NULL COMMENT 'time the entry was removed',
-  `shared` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '0 if network is shared, 1 if network dedicated',
   `default` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if network is default',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -316,11 +324,12 @@ CREATE TABLE `cloud`.`volumes` (
   `state` varchar(32) COMMENT 'State machine',
   `source_id` bigint unsigned  COMMENT 'id for the source',
   `source_type` varchar(32) COMMENT 'source from which the volume is created -- snapshot, diskoffering, template, blank',
+  `chain_info` text COMMENT 'save possible disk chain info in primary storage',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`snapshots` (
-  `id` bigint unsigned NOT NULL COMMENT 'Primary Key',
+  `id` bigint unsigned UNIQUE NOT NULL COMMENT 'Primary Key',
   `account_id` bigint unsigned NOT NULL COMMENT 'owner.  foreign key to account table',
   `volume_id` bigint unsigned NOT NULL COMMENT 'volume it belongs to. foreign key to volume table',
   `status` varchar(32) COMMENT 'snapshot creation status',
@@ -425,6 +434,58 @@ CREATE TABLE `cloud`.`op_dc_vnet_alloc` (
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `cloud`.`firewall_rules` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `ip_address` bigint unsigned NOT NULL COMMENT 'ip_address',
+  `start_port` int(10) NOT NULL default -1 COMMENT 'starting port of a port range',
+  `end_port` int(10) NOT NULL default -1 COMMENT 'end port of a port range',
+  `state` char(32) NOT NULL COMMENT 'current state of this rule',
+  `protocol` char(16) NOT NULL default 'TCP' COMMENT 'protocol to open these ports for',
+  `purpose` char(32) NOT NULL COMMENT 'why are these ports opened?',
+  `account_id` bigint unsigned NOT NULL COMMENT 'owner id',
+  `domain_id` bigint unsigned NOT NULL COMMENT 'domain id',
+  `network_id` bigint unsigned NOT NULL COMMENT 'network id',
+  `xid` char(40) NOT NULL COMMENT 'external id',
+  `created` datetime COMMENT 'Date created',
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_firewall_rules__network_id` FOREIGN KEY(`network_id`) REFERENCES `networks`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_firewall_rules__account_id` FOREIGN KEY(`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_firewall_rules__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`load_balancing_rules` (
+  `id` bigint unsigned NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `description` varchar(4096) NULL COMMENT 'description',
+  `default_port_start` int(10) NOT NULL COMMENT 'default private port range start',
+  `default_port_end` int(10) NOT NULL COMMENT 'default destination port range end',
+  `algorithm` varchar(255) NOT NULL,
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_load_balancing_rules__id` FOREIGN KEY(`id`) REFERENCES `firewall_rules`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`load_balancer_vm_map` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `load_balancer_id` bigint unsigned NOT NULL,
+  `instance_id` bigint unsigned NOT NULL,
+  `pending` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'whether the vm is being applied to the load balancer (pending=1) or has already been applied (pending=0)',
+  PRIMARY KEY  (`id`),
+  UNIQUE KEY (`load_balancer_id`, `instance_id`),
+  CONSTRAINT `fk_load_balancer_vm_map__load_balancer_id` FOREIGN KEY(`load_balancer_id`) REFERENCES `load_balancing_rules`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_load_balancer_vm_map__instance_id` FOREIGN KEY(`instance_id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`port_forwarding_rules` (
+  `id` bigint unsigned NOT NULL COMMENT 'id',
+  `dest_ip_address` bigint unsigned NOT NULL COMMENT 'id_address',
+  `dest_port_start` int(10) NOT NULL COMMENT 'starting port of the port range to map to',
+  `dest_port_end` int(10) NOT NULL COMMENT 'end port of the the port range to map to',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_port_forwarding_rules__id` FOREIGN KEY(`id`) REFERENCES `firewall_rules`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE VIEW `cloud`.`port_forwarding_rules_view` AS SELECT fw.id, INET_NTOA(fw.ip_address) as src_ip_address, INET_NTOA(pf.dest_ip_address), fw.start_port as src_port_start, pf.dest_port_start, fw.end_port as src_end_port, pf.dest_port_end as dest_end_port, fw.state, fw.protocol, fw.purpose, fw.account_id from cloud.firewall_rules as fw inner join cloud.port_forwarding_rules as pf on fw.id=pf.id; 
+ 
 CREATE TABLE  `cloud`.`ip_forwarding` (
   `id` bigint unsigned NOT NULL auto_increment,
   `group_id` bigint unsigned default NULL,
@@ -438,6 +499,7 @@ CREATE TABLE  `cloud`.`ip_forwarding` (
   `algorithm` varchar(255) default NULL,
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+
 
 CREATE TABLE  `cloud`.`host` (
   `id` bigint unsigned NOT NULL auto_increment,
@@ -550,6 +612,7 @@ CREATE TABLE  `cloud`.`user_ip_address` (
   `allocated` datetime NULL COMMENT 'Date this ip was allocated to someone',
   `vlan_db_id` bigint unsigned NOT NULL,
   `one_to_one_nat` int(1) unsigned NOT NULL default '0',
+  `state` char(32) NOT NULL default 'Free' COMMENT 'state of the ip address',
   PRIMARY KEY (`public_ip_address`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -802,6 +865,7 @@ CREATE TABLE `cloud`.`op_host_capacity` (
   `data_center_id` bigint unsigned NOT NULL,
   `pod_id` bigint unsigned,
   `used_capacity` bigint unsigned NOT NULL,
+  `reserved_capacity` bigint unsigned NOT NULL,
   `total_capacity` bigint unsigned NOT NULL,
   `capacity_type` int(1) unsigned NOT NULL,
   PRIMARY KEY  (`id`)
@@ -943,14 +1007,6 @@ CREATE TABLE `cloud`.`security_group_vm_map` (
   `security_group_id` bigint unsigned NOT NULL,
   `ip_address` varchar(15) NOT NULL,
   `instance_id` bigint unsigned NOT NULL,
-  PRIMARY KEY  (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE `cloud`.`load_balancer_vm_map` (
-  `id` bigint unsigned NOT NULL auto_increment,
-  `load_balancer_id` bigint unsigned NOT NULL,
-  `instance_id` bigint unsigned NOT NULL,
-  `pending` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'whether the vm is being applied to the load balancer (pending=1) or has already been applied (pending=0)',
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

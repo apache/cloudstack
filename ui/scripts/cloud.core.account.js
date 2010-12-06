@@ -16,6 +16,7 @@
  * 
  */
 
+var rootDomainId = 1;
 var systemAccountId = 1;
 var adminAccountId = 2;
 
@@ -46,7 +47,116 @@ function afterLoadAccountJSP() {
     initDialog("dialog_resource_limits");
     initDialog("dialog_disable_account");
     initDialog("dialog_lock_account");
-    initDialog("dialog_enable_account");      
+    initDialog("dialog_enable_account");  
+    
+    if(isAdmin()) {
+        initAddUserDialog();   
+    }      
+}
+
+function initAddUserDialog() { 
+    //dialogs
+    initDialog("dialog_add_user", 450);
+                   
+    var $dialogAddUser = $("#dialog_add_user");
+       
+    $.ajax({
+	    data: createURL("command=listDomains"),
+		dataType: "json",
+		success: function(json) {			           
+			var domains = json.listdomainsresponse.domain;								
+			var $dropDownBox = $dialogAddUser.find("#domain_dropdown").empty();									       		            							
+			if (domains != null && domains.length > 0) {
+				for (var i = 0; i < domains.length; i++) 				
+					$dropDownBox.append("<option value='" + fromdb(domains[i].id) + "'>" + fromdb(domains[i].name) + "</option>"); 		
+			}					    	
+		}
+	});		    
+       
+    //add button ***
+    $("#midmenu_add_link").find("#label").text("Add User"); 
+    $("#midmenu_add_link").show();     
+    $("#midmenu_add_link").unbind("click").bind("click", function(event) {    		
+		$dialogAddUser
+		.dialog('option', 'buttons', { 					
+			"Create": function() { 	
+			    var $thisDialog = $(this);				    			
+				// validate values
+				var isValid = true;					
+				isValid &= validateString("User name", $thisDialog.find("#add_user_username"), $thisDialog.find("#add_user_username_errormsg"), false);   //required
+				isValid &= validateString("Password", $thisDialog.find("#add_user_password"), $thisDialog.find("#add_user_password_errormsg"), false);    //required	
+				isValid &= validateString("Email", $thisDialog.find("#add_user_email"), $thisDialog.find("#add_user_email_errormsg"), true);              //optional	
+				isValid &= validateString("First name", $thisDialog.find("#add_user_firstname"), $thisDialog.find("#add_user_firstname_errormsg"), true); //optional	
+				isValid &= validateString("Last name", $thisDialog.find("#add_user_lastname"), $thisDialog.find("#add_user_lastname_errormsg"), true);    //optional	
+				isValid &= validateString("Account", $thisDialog.find("#add_user_account"), $thisDialog.find("#add_user_account_errormsg"), true);        //optional	
+				if (!isValid) 
+				    return;
+				
+				var $midmenuItem1 = beforeAddingMidMenuItem() ;
+								
+				var array1 = [];																		
+				var username = $thisDialog.find("#add_user_username").val();
+				array1.push("&username="+todb(username));
+				
+				var password = $.md5(encodeURIComponent($thisDialog.find("#add_user_password").val()));
+				array1.push("&password="+password);
+				
+				var email = $thisDialog.find("#add_user_email").val();
+				if(email == "")
+					email = username;
+				array1.push("&email="+todb(email));
+					
+				var firstname = $thisDialog.find("#add_user_firstname").val();
+				if(firstname == "")
+					firstname = username;
+				array1.push("&firstname="+todb(firstname));
+					
+				var lastname = $thisDialog.find("#add_user_lastname").val();
+				if(lastname == "")
+					lastname = username;
+			    array1.push("&lastname="+todb(lastname));
+					
+				var account = $thisDialog.find("#add_user_account").val();					
+				if(account == "")
+					account = username;
+			    array1.push("&account="+account);
+					
+				var accountType = $thisDialog.find("#add_user_account_type").val();	
+				var domainId = $thisDialog.find("#domain_dropdown").val();				
+				if (parseInt(domainId) != rootDomainId && accountType == "1") {
+					accountType = "2"; // Change to domain admin 
+				}
+				array1.push("&accounttype="+accountType);			
+				array1.push("&domainid="+domainId);
+								
+				var timezone = $thisDialog.find("#add_user_timezone").val();	
+				if(timezone != null && timezone.length > 0)
+	                array1.push("&timezone="+todb(timezone));	
+	        						
+				$thisDialog.dialog("close");					
+									
+				$.ajax({
+					type: "POST",
+				    data: createURL("command=createUser"+array1.join("")),
+					dataType: "json",
+					async: false,
+					success: function(json) {						
+						accountToMidmenu(json.createuserresponse.user, $midmenuItem1);
+	                    bindClickToMidMenu($midmenuItem1, accountToRightPanel, getMidmenuId);  
+	                    afterAddingMidMenuItem($midmenuItem1, true);								
+					},			
+                    error: function(XMLHttpResponse) {	                        
+                        afterAddingMidMenuItem($midmenuItem1, false, parseXMLHttpResponse(XMLHttpResponse));        
+                    }								
+				});						
+			},
+			"Cancel": function() { 
+				$(this).dialog("close"); 
+			} 
+		}).dialog("open");		
+					
+		return false;
+	});
 }
 
 function accountToMidmenu(jsonObj, $midmenuItem1) {  

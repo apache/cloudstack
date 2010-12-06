@@ -134,7 +134,7 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
     }
 
     @Override
-    public long getAccountId() {
+    public long getEntityOwnerId() {
         Long volumeId = getVolumeId();
         Long snapshotId = getSnapshotId();
         if (volumeId != null) {
@@ -168,10 +168,10 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
     }
 
     @Override
-    public void callCreate(){
+    public void create(){
         VirtualMachineTemplate template = _userVmService.createPrivateTemplateRecord(this);
         if (template != null){
-            this.setId(template.getId());
+            this.setEntityId(template.getId());
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create a template");
         }

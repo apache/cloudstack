@@ -357,9 +357,11 @@ class ConfigTask:
 
 class SetupNetworking(ConfigTask):
 	name = "network setup"
-	def __init__(self,brname):
+	def __init__(self,brname, pubNic, prvNic):
 		ConfigTask.__init__(self)
 		self.brname = brname
+  	        self.pubNic = pubNic
+		self.prvNic = prvNic
 		self.runtime_state_changed = False
 		self.was_nm_service_running = None
 		self.was_net_service_running = None
@@ -373,10 +375,22 @@ class SetupNetworking(ConfigTask):
 		
 	def done(self):
 		try:
+			alreadysetup = False
 			if distro in (Fedora,CentOS):
-				alreadysetup = augtool._print("/files/etc/sysconfig/network-scripts/ifcfg-%s"%self.brname).stdout.strip()
+				if self.pubNic != None:
+					alreadysetup = alreadysetup or augtool._print("/files/etc/sysconfig/network-scripts/ifcfg-%s"%self.pubNic).stdout.strip()
+				if self.prvNic != None:
+					alreadysetup = alreadysetup or augtool._print("/files/etc/sysconfig/network-scripts/ifcfg-%s"%self.prvNic).stdout.strip()
+				if not alreadysetup:
+					alreadysetup = augtool._print("/files/etc/sysconfig/network-scripts/ifcfg-%s"%self.brname).stdout.strip()
+				
 			else:
-				alreadysetup = augtool.match("/files/etc/network/interfaces/iface",self.brname).stdout.strip()
+				if self.pubNic != None:
+					alreadysetup = alreadysetup or augtool._print("/files/etc/network/interfaces/iface",self.pubNic).stdout.strip()
+				if self.prvNic != None:
+					alreadysetup = alreadysetup or augtool._print("/files/etc/network/interfaces/iface",self.prvNic).stdout.strip()
+				if not alreadysetup:
+					alreadysetup = augtool.match("/files/etc/network/interfaces/iface",self.brname).stdout.strip()
 			return alreadysetup
 		except OSError,e:
 			if e.errno is 2: raise TaskFailed("augtool has not been properly installed on this system")
@@ -833,10 +847,10 @@ class SetupFirewall2(ConfigTask):
 
 # Tasks according to distribution -- at some point we will split them in separate modules
 
-def config_tasks(brname):
+def config_tasks(brname, pubNic, prvNic):
 	if distro is CentOS:
 		config_tasks = (
-			SetupNetworking(brname),
+			SetupNetworking(brname, pubNic, prvNic),
 			SetupLibvirt(),
 			SetupRequiredServices(),
 			SetupFirewall(),
@@ -844,7 +858,7 @@ def config_tasks(brname):
 		)
 	elif distro in (Ubuntu,Fedora):
 		config_tasks = (
-			SetupNetworking(brname),
+			SetupNetworking(brname, pubNic, prvNic),
 			SetupCgConfig(),
 			SetupCgRules(),
 			SetupCgroupControllers(),
@@ -912,7 +926,18 @@ def prompt_for_hostpods(zonespods):
 	
 # this configures the agent
 
-def setup_agent_config(configfile, host, zone, pod, cluster, guid):
+def device_exist(devName):
+	try:
+		alreadysetup = False
+		if distro in (Fedora,CentOS):
+			alreadysetup = augtool._print("/files/etc/sysconfig/network-scripts/ifcfg-%s"%devName).stdout.strip()
+		else:
+			alreadysetup = augtool.match("/files/etc/network/interfaces/iface",devName).stdout.strip()
+		return alreadysetup
+	except OSError,e:
+		return False		
+	
+def setup_agent_config(configfile, host, zone, pod, cluster, guid, pubNic, prvNic):
 	stderr("Examining Agent configuration")
 	fn = configfile
 	text = file(fn).read(-1)
@@ -937,6 +962,16 @@ def setup_agent_config(configfile, host, zone, pod, cluster, guid):
 
 	confopts["host"] = host
 	
+	if pubNic != None and device_exist(pubNic):
+		confopts["public.network.device"] = pubNic	
+		if prvNic == None or not device_exist(prvNic):
+			confopts["private.network.device"] = pubNic	
+		
+	if prvNic != None and device_exits(prvNic):
+		confopts["private.network.device"] = prvNic	
+		if pubNic == None or not device_exits(pubNic):
+			confopts["public.network.device"] = prvNic	
+
 	stderr("Querying %s for zones and pods",host)
 	
 	try:

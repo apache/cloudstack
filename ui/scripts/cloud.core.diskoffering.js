@@ -41,16 +41,15 @@ function diskOfferingGetSearchParams() {
 	return moreCriteria.join("");          
 }
 
-function afterLoadDiskOfferingJSP() {
-    var $detailsTab = $("#right_panel_content #tab_content_details");      
-    initAddDiskOfferingButton($("#midmenu_add_link"));     
+function afterLoadDiskOfferingJSP() {    
+    initAddDiskOfferingDialog();     
 }
 
-function initAddDiskOfferingButton($midmenuAddLink1) { 
+function initAddDiskOfferingDialog() { 
     //dialogs
     initDialog("dialog_add_disk");
     
-    $dialogAddDisk = $("#dialog_add_disk");
+    var $dialogAddDisk = $("#dialog_add_disk");
     $dialogAddDisk.find("#customized").bind("change", function(event) {     
         if($(this).val() == false) {
             $dialogAddDisk.find("#add_disk_disksize_container").show();
@@ -61,18 +60,44 @@ function initAddDiskOfferingButton($midmenuAddLink1) {
         }        
         return false;
     });
+        
+    $dialogAddDisk.find("#public_dropdown").unbind("change").bind("change", function(event) {        
+        if($(this).val() == "true") {  //public zone
+            $dialogAddDisk.find("#domain_dropdown_container").hide();  
+        }
+        else {  //private zone
+            $dialogAddDisk.find("#domain_dropdown_container").show();  
+        }
+        return false;
+    });
+    
+    $.ajax({
+	  data: createURL("command=listDomains"),
+		dataType: "json",
+		async: false,
+		success: function(json) {
+		    var $domainDropdown1 = $dialogAddDisk.find("#domain_dropdown").empty();
+		    var $domainDropdown2 = $("#tab_content_details").find("#domain_edit").empty();
+			var domains = json.listdomainsresponse.domain;						
+			if (domains != null && domains.length > 0) {
+				for (var i = 0; i < domains.length; i++) {
+					$domainDropdown1.append("<option value='" + fromdb(domains[i].id) + "'>" + fromdb(domains[i].name) + "</option>"); 
+					$domainDropdown2.append("<option value='" + fromdb(domains[i].id) + "'>" + fromdb(domains[i].name) + "</option>"); 
+				}
+			} 
+		}
+	});   
     
     //add button ***
-    $midmenuAddLink1.find("#label").text("Add Disk Offering"); 
-    $midmenuAddLink1.show();     
-    $midmenuAddLink1.unbind("click").bind("click", function(event) {    
-		var dialogAddDisk = $("#dialog_add_disk");
-		dialogAddDisk.find("#disk_name").val("");
-		dialogAddDisk.find("#disk_description").val("");
-		dialogAddDisk.find("#disk_disksize").val("");	
+    $("#midmenu_add_link").find("#label").text("Add Disk Offering"); 
+    $("#midmenu_add_link").show();     
+    $("#midmenu_add_link").unbind("click").bind("click", function(event) {    
+		$dialogAddDisk.find("#disk_name").val("");
+		$dialogAddDisk.find("#disk_description").val("");
+		$dialogAddDisk.find("#disk_disksize").val("");	
 		var submenuContent = $("#submenu_content_disk");
 				
-		dialogAddDisk
+		$dialogAddDisk
 		.dialog('option', 'buttons', { 				
 			"Add": function() { 
 			    var thisDialog = $(this);
@@ -111,6 +136,11 @@ function initAddDiskOfferingButton($midmenuAddLink1) {
 				if(tags != null && tags.length > 0)
 				    array1.push("&tags="+todb(tags));								
 				
+				if(thisDialog.find("#domain_dropdown_container").css("display") != "none") {
+	                var domainId = thisDialog.find("#domain_dropdown").val();
+	                array1.push("&domainid="+domainId);	
+	            }
+					
 				$.ajax({
 				  data: createURL("command=createDiskOffering&isMirrored=false" + array1.join("")),
 					dataType: "json",
@@ -136,8 +166,8 @@ function initAddDiskOfferingButton($midmenuAddLink1) {
 }
 
 function doEditDiskOffering($actionLink, $detailsTab, $midmenuItem1) {       
-    var $readonlyFields  = $detailsTab.find("#name, #displaytext, #tags");
-    var $editFields = $detailsTab.find("#name_edit, #displaytext_edit, #tags_edit"); 
+    var $readonlyFields  = $detailsTab.find("#name, #displaytext, #tags, #domain");
+    var $editFields = $detailsTab.find("#name_edit, #displaytext_edit, #tags_edit, #domain_edit"); 
              
     $readonlyFields.hide();
     $editFields.show();  
@@ -175,6 +205,9 @@ function doEditDiskOffering2($actionLink, $detailsTab, $midmenuItem1, $readonlyF
 	
 	var tags = $detailsTab.find("#tags_edit").val();
 	array1.push("&tags="+todb(tags));	
+	
+	var domainid = $detailsTab.find("#domain_edit").val();
+	array1.push("&domainid="+todb(domainid));	
 	
 	$.ajax({
 	    data: createURL("command=updateDiskOffering&id="+id+array1.join("")),
@@ -253,6 +286,7 @@ function diskOfferingJsonToDetailsTab() {
     $thisTab.find("#tags_edit").val(fromdb(jsonObj.tags));    
       
     $thisTab.find("#domain").text(fromdb(jsonObj.domain));   
+    $thisTab.find("#domain_edit").val(fromdb(jsonObj.domainid));   
     
     //actions ***
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");

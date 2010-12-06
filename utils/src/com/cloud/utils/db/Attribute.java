@@ -113,7 +113,6 @@ public class Attribute {
                 flags = Flag.Insertable.setTrue(flags);
                 flags = Flag.TableGV.setTrue(flags);
             } else if (gv.strategy() == GenerationType.AUTO) {
-                assert (false) : "Auto generation not supported.";
                 flags = Flag.DaoGenerated.setTrue(flags);
                 flags = Flag.Insertable.setTrue(flags);
                 flags = Flag.AutoGV.setTrue(flags);

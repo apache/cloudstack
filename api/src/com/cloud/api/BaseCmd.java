@@ -35,6 +35,8 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.DomainRouterService;
 import com.cloud.network.NetworkService;
+import com.cloud.network.lb.LoadBalancingRulesService;
+import com.cloud.network.rules.RulesService;
 import com.cloud.network.security.NetworkGroupService;
 import com.cloud.resource.ResourceService;
 import com.cloud.server.ManagementService;
@@ -76,7 +78,6 @@ public abstract class BaseCmd {
     public static final int RESOURCE_IN_USE_ERROR = 536;
     public static final int NETWORK_RULE_CONFLICT_ERROR = 537;
 
-
     public static final DateFormat INPUT_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
     private static final DateFormat _outputFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
     
@@ -100,9 +101,11 @@ public abstract class BaseCmd {
     public static DomainRouterService _routerService;
     public static ResponseGenerator _responseGenerator;
     public static EntityManager _entityMgr;
+    public static RulesService _rulesService;
+    public static LoadBalancingRulesService _lbService;
    
     
-    static void setComponents(ResponseGenerator generator){
+    static void setComponents(ResponseGenerator generator) {
         ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
         _mgr = (ManagementService)ComponentLocator.getComponent(ManagementService.Name);
         _accountService = locator.getManager(AccountService.class);
@@ -117,6 +120,8 @@ public abstract class BaseCmd {
         _consoleProxyMgr = locator.getManager(ConsoleProxyService.class);
         _routerService = locator.getManager(DomainRouterService.class);
         _entityMgr = locator.getManager(EntityManager.class);
+        _rulesService = locator.getManager(RulesService.class);
+        _lbService = locator.getManager(LoadBalancingRulesService.class);
         _responseGenerator = generator;
     }
     
@@ -366,7 +371,9 @@ public abstract class BaseCmd {
             Object tagValue = tagData.second();
             if (tagValue instanceof Object[]) {
                 Object[] subObjects = (Object[])tagValue;
-                if (subObjects.length < 1) continue;
+                if (subObjects.length < 1) {
+                    continue;
+                }
                 writeObjectArray(responseType, suffixSb, i++, tagName, subObjects);
             } else {
                 writeNameValuePair(suffixSb, tagName, tagValue, responseType, i++);
@@ -395,7 +402,9 @@ public abstract class BaseCmd {
 
         if (tagValue instanceof Object[]) {
             Object[] subObjects = (Object[])tagValue;
-            if (subObjects.length < 1) return;
+            if (subObjects.length < 1) {
+                return;
+            }
             writeObjectArray(responseType, sb, propertyCount, tagName, subObjects);
         } else {
             if (RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
@@ -461,24 +470,26 @@ public abstract class BaseCmd {
 			return xml;
 		}
 		int iLen = xml.length();
-		if (iLen == 0)
-			return xml;
+		if (iLen == 0) {
+            return xml;
+        }
 		StringBuffer sOUT = new StringBuffer(iLen + 256);
 		int i = 0;
 		for (; i < iLen; i++) {
 			char c = xml.charAt(i);
-			if (c == '<')
-				sOUT.append("&lt;");
-			else if (c == '>')
-				sOUT.append("&gt;");
-			else if (c == '&')
-				sOUT.append("&amp;");
-			else if (c == '"')
-				sOUT.append("&quot;");
-			else if (c == '\'')
-				sOUT.append("&apos;");
-			else
-				sOUT.append(c);
+			if (c == '<') {
+                sOUT.append("&lt;");
+            } else if (c == '>') {
+                sOUT.append("&gt;");
+            } else if (c == '&') {
+                sOUT.append("&amp;");
+            } else if (c == '"') {
+                sOUT.append("&quot;");
+            } else if (c == '\'') {
+                sOUT.append("&apos;");
+            } else {
+                sOUT.append(c);
+            }
 		}
 		return sOUT.toString();
 	}

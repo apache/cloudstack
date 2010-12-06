@@ -25,6 +25,7 @@ import java.util.Random;
 import javax.ejb.Local;
 import javax.persistence.TableGenerator;
 
+import com.cloud.domain.DomainVO;
 import com.cloud.network.NetworkAccountDaoImpl;
 import com.cloud.network.NetworkAccountVO;
 import com.cloud.network.NetworkVO;
@@ -49,6 +50,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     final SearchBuilder<NetworkVO> OfferingSearch;
     final SearchBuilder<NetworkVO> RelatedConfigSearch;
     final SearchBuilder<NetworkVO> RelatedConfigsSearch;
+    final SearchBuilder<NetworkVO> AccountNetworkSearch;
     
     NetworkAccountDaoImpl _accountsDao = new NetworkAccountDaoImpl();
     final TableGenerator _tgMacAddress;
@@ -89,6 +91,14 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         RelatedConfigsSearch = createSearchBuilder();
         RelatedConfigsSearch.and("related", RelatedConfigsSearch.entity().getRelated(), SearchCriteria.Op.EQ);
         RelatedConfigsSearch.done();
+        
+        
+        AccountNetworkSearch = createSearchBuilder();
+        AccountNetworkSearch.and("networkId", AccountNetworkSearch.entity().getId(), SearchCriteria.Op.EQ);
+        SearchBuilder<NetworkAccountVO> mapJoin = _accountsDao.createSearchBuilder();
+        mapJoin.and("accountId", mapJoin.entity().getAccountId(), SearchCriteria.Op.EQ);
+        AccountNetworkSearch.join("networkSearch", mapJoin, AccountNetworkSearch.entity().getId(), mapJoin.entity().getNetworkId(), JoinBuilder.JoinType.INNER);
+        AccountNetworkSearch.done();
         
         _tgMacAddress = _tgs.get("macAddress");
     }
@@ -177,5 +187,13 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         long seq = fetch.getNextSequence(Long.class, _tgMacAddress, networkConfigId);
         seq = seq | _prefix | ((_rand.nextInt(Short.MAX_VALUE) << 16) & 0x00000000ffff0000l);
         return NetUtils.long2Mac(seq);
+    }
+    
+    @Override
+    public List<NetworkVO> listBy(long accountId, long networkId) {
+        SearchCriteria<NetworkVO> sc = AccountNetworkSearch.create();
+        sc.setParameters("networkId", networkId);
+        sc.setJoinParameters("networkSearch", "accountId", accountId);
+        return listBy(sc);
     }
 }

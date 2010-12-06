@@ -115,6 +115,9 @@ public class NetworkVO implements Network {
     @Column(name="dns2")
     String dns2;
     
+    @Column(name="shared")
+    boolean isShared;
+    
     public NetworkVO() {
     }
     
@@ -137,8 +140,8 @@ public class NetworkVO implements Network {
         this.guestType = guestType;
     }
     
-    public NetworkVO(long id, Network that, long offeringId, long dataCenterId, String guruName, long domainId, long accountId, long related, String name, String displayText) {
-        this(id, that.getTrafficType(), that.getGuestType(), that.getMode(), that.getBroadcastDomainType(), offeringId, dataCenterId, domainId, accountId, related, name, displayText);
+    public NetworkVO(long id, Network that, long offeringId, long dataCenterId, String guruName, long domainId, long accountId, long related, String name, String displayText, Boolean isShared) {
+        this(id, that.getTrafficType(), that.getGuestType(), that.getMode(), that.getBroadcastDomainType(), offeringId, dataCenterId, domainId, accountId, related, name, displayText, isShared);
         this.gateway = that.getGateway();
         this.dns1 = that.getDns1();
         this.dns2 = that.getDns2();
@@ -162,8 +165,9 @@ public class NetworkVO implements Network {
      * @param accountId
      * @param name
      * @param displayText
+     * @param isShared TODO
      */
-    public NetworkVO(long id, TrafficType trafficType, GuestIpType guestType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId, long dataCenterId, long domainId, long accountId, long related, String name, String displayText) {
+    public NetworkVO(long id, TrafficType trafficType, GuestIpType guestType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId, long dataCenterId, long domainId, long accountId, long related, String name, String displayText, Boolean isShared) {
         this(trafficType, guestType, mode, broadcastDomainType, networkOfferingId, dataCenterId);
         this.domainId = domainId;
         this.accountId = accountId;
@@ -171,6 +175,7 @@ public class NetworkVO implements Network {
         this.id = id;
         this.name = name;
         this.displayText = displayText;
+        this.isShared = isShared;
     }
     
     @Override
@@ -327,6 +332,15 @@ public class NetworkVO implements Network {
     public void setDisplayText(String displayText) {
         this.displayText = displayText;
     }
+    
+    @Override
+    public boolean isShared() {
+        return isShared;
+    }
+
+    public void setShared(boolean isShared) {
+        this.isShared = isShared;
+    }
 
     @Override
     public boolean equals(Object obj) {
@@ -359,4 +373,6 @@ public class NetworkVO implements Network {
         buf.append(id).append("|").append(trafficType.toString()).append("|").append(networkOfferingId).append("]");
         return buf.toString();
     }
+    
+    
 }

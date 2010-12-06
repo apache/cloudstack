@@ -32,7 +32,7 @@ public interface IPAddressDao extends GenericDao<IPAddressVO, String> {
      * @param sourceNat is it for source nat?
      * @return public ip address
      */
-	public String assignIpAddress(long accountId, long domainId, long vlanDbId, boolean sourceNat);
+	public IPAddressVO assignIpAddress(long accountId, long domainId, long vlanDbId, boolean sourceNat);
 	
 	public void unassignIpAddress(String ipAddress);	
 

@@ -24,11 +24,13 @@ import java.util.List;
 import com.cloud.info.ConsoleProxyLoadInfo;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
+import com.cloud.utils.fsm.StateDao;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.State;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 
-public interface ConsoleProxyDao extends GenericDao<ConsoleProxyVO, Long> {
+public interface ConsoleProxyDao extends GenericDao<ConsoleProxyVO, Long>, StateDao<State, VirtualMachine.Event, VMInstanceVO> {
 	
     public void update(long id, int activeSession, Date updateTime, byte[] sessionDetails);
 

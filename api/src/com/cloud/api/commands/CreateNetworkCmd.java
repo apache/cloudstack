@@ -76,6 +76,9 @@ public class CreateNetworkCmd extends BaseCmd {
 
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="domain ID of the account owning a VLAN")
     private Long domainId;
+    
+    @Parameter(name=ApiConstants.IS_SHARED, type=CommandType.BOOLEAN, description="true is network offering supports vlans")
+    private Boolean isShared; 
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -130,6 +133,10 @@ public class CreateNetworkCmd extends BaseCmd {
     
     public String getDisplayText() {
         return displayText;
+    }
+    
+    public boolean getIsShared() {
+        return isShared == null ? false : isShared;
     }
 
     /////////////////////////////////////////////////////

@@ -30,11 +30,12 @@ public class AttachVolumeCommand extends Command {
 	String volumePath;
 	String volumeName;
 	Long deviceId;
+	String chainInfo;
 	
 	protected AttachVolumeCommand() {
 	}
 	
-	public AttachVolumeCommand(boolean attach, String vmName, StoragePoolType pooltype, String volumeFolder, String volumePath, String volumeName, Long deviceId) {
+	public AttachVolumeCommand(boolean attach, String vmName, StoragePoolType pooltype, String volumeFolder, String volumePath, String volumeName, Long deviceId, String chainInfo) {
 		this.attach = attach;
 		this.vmName = vmName;
 		this.pooltype = pooltype;
@@ -42,6 +43,7 @@ public class AttachVolumeCommand extends Command {
 		this.volumePath = volumePath;
 		this.volumeName = volumeName;
 		this.deviceId = deviceId;
+		this.chainInfo = chainInfo;
 	}
 	
 	@Override
@@ -91,5 +93,9 @@ public class AttachVolumeCommand extends Command {
     
     public void setPoolUuid(String poolUuid) {
     	this.poolUuid = poolUuid;
+    }
+    
+    public String getChainInfo() {
+    	return chainInfo;
     }
 }

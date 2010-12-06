@@ -110,4 +110,6 @@ public interface Network extends ControlledEntity {
     GuestIpType getGuestType();
     
     String getDisplayText();
+    
+    boolean isShared();
 }

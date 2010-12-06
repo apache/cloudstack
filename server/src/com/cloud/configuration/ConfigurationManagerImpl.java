@@ -1162,7 +1162,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     	String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
     	int networkRate = ((networkRateStr == null) ? 200 : Integer.parseInt(networkRateStr));
     	int multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));
-    	NetworkOffering.GuestIpType guestIpType = useVirtualNetwork ? NetworkOffering.GuestIpType.Virtualized : NetworkOffering.GuestIpType.DirectSingle;        
+    	NetworkOffering.GuestIpType guestIpType = useVirtualNetwork ? NetworkOffering.GuestIpType.Virtual : NetworkOffering.GuestIpType.Direct;        
     	tags = cleanupTags(tags);
     	ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, networkRate, multicastRate, offerHA, displayText, guestIpType, localStorageRequired, false, tags, false,domainId);
     	
@@ -1216,7 +1216,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
 	    
         if (useVirtualNetwork != null) {
-        	NetworkOffering.GuestIpType guestIpType = useVirtualNetwork ? NetworkOffering.GuestIpType.Virtualized : NetworkOffering.GuestIpType.DirectSingle;
+        	NetworkOffering.GuestIpType guestIpType = useVirtualNetwork ? NetworkOffering.GuestIpType.Virtual : NetworkOffering.GuestIpType.Direct;
             offering.setGuestIpType(guestIpType);
         }
 
@@ -1248,7 +1248,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if (_serviceOfferingDao.update(id, offering)) {
         	offering = _serviceOfferingDao.findById(id);
     		saveConfigurationEvent(userId, null, EventTypes.EVENT_SERVICE_OFFERING_EDIT, "Successfully updated service offering with name: " + offering.getName() + ".", "soId=" + offering.getId(), "name=" + offering.getName(),
-    				"displayText=" + offering.getDisplayText(), "offerHA=" + offering.getOfferHA(), "useVirtualNetwork=" + (offering.getGuestIpType() == NetworkOffering.GuestIpType.Virtualized), "tags=" + offering.getTags(), "domainId=" + offering.getDomainId());
+    				"displayText=" + offering.getDisplayText(), "offerHA=" + offering.getOfferHA(), "useVirtualNetwork=" + (offering.getGuestIpType() == NetworkOffering.GuestIpType.Virtual), "tags=" + offering.getTags(), "domainId=" + offering.getDomainId());
         	return offering;
         } else {
         	return null;
@@ -1284,7 +1284,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         Long numGibibytes = cmd.getDiskSize();
         Boolean isCustomized = cmd.isCustomized() != null ? cmd.isCustomized() : false; //false by default
         String tags = cmd.getTags();        
-        Long domainId = Long.valueOf(DomainVO.ROOT_DOMAIN); // disk offering always gets created under the root domain.Bug # 6055        
+        Long domainId = cmd.getDomainId() != null ? cmd.getDomainId() : Long.valueOf(DomainVO.ROOT_DOMAIN); // disk offering always gets created under the root domain.Bug # 6055 if not passed in cmd        
 
         if(!isCustomized && numGibibytes == null){
         	throw new InvalidParameterValueException("Disksize is required for non-customized disk offering");
@@ -1395,7 +1395,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     	
     	if (_serviceOfferingDao.remove(offeringId)) {
     		saveConfigurationEvent(userId, null, EventTypes.EVENT_SERVICE_OFFERING_EDIT, "Successfully deleted service offering with name: " + offering.getName(), "soId=" + offeringId, "name=" + offering.getName(),
-    				"displayText=" + offering.getDisplayText(), "offerHA=" + offering.getOfferHA(), "useVirtualNetwork=" + (offering.getGuestIpType() == GuestIpType.Virtualized));
+    				"displayText=" + offering.getDisplayText(), "offerHA=" + offering.getOfferHA(), "useVirtualNetwork=" + (offering.getGuestIpType() == GuestIpType.Virtual));
     		return true;
     	} else {
     		return false;
@@ -2391,7 +2391,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String typeString = cmd.getType();
         String trafficTypeString = cmd.getTraffictype();
         Boolean specifyVlan = cmd.getSpecifyVlan();
-        Boolean isShared = cmd.getIsShared();
         TrafficType trafficType = null;
         GuestIpType type = null;
         
@@ -2418,23 +2417,19 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if (specifyVlan == null) {
             specifyVlan = false;
         }
-        
-        if (isShared == null) {
-            isShared = false;
-        }
 
         Integer maxConnections = cmd.getMaxconnections();
-        return createNetworkOffering(userId, name, displayText, type, trafficType, tags, maxConnections, specifyVlan, isShared);
+        return createNetworkOffering(userId, name, displayText, type, trafficType, tags, maxConnections, specifyVlan);
     }
     
     @Override
-    public NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, GuestIpType type, TrafficType trafficType, String tags, Integer maxConnections, boolean specifyVlan, boolean isShared) {
+    public NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, GuestIpType type, TrafficType trafficType, String tags, Integer maxConnections, boolean specifyVlan) {
         String networkRateStr = _configDao.getValue("network.throttling.rate");
         String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
         int networkRate = ((networkRateStr == null) ? 200 : Integer.parseInt(networkRateStr));
         int multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));      
         tags = cleanupTags(tags);
-        NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, type, false, specifyVlan, networkRate, multicastRate, maxConnections, isShared, false);
+        NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, type, false, specifyVlan, networkRate, multicastRate, maxConnections, false);
         
         if ((offering = _networkOfferingDao.persist(offering)) != null) {
             saveConfigurationEvent(userId, null, EventTypes.EVENT_NETWORK_OFFERING_CREATE, "Successfully created new network offering with name: " + name + ".", "noId=" + offering.getId(), "name=" + name,

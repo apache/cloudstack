@@ -40,6 +40,11 @@ public interface GenericDao<T, ID extends Serializable> {
     static final String CREATED_COLUMN = "created";
     
     /**
+     * This column can be used if the value is exposed to the external.
+     */
+    static final String XID_COLUMN = "xid";
+    
+    /**
      * Look for an entity bean using the database id.  Does not lock the row.
      * @param id database unique id for the entity bean.
      * @return entity bean.

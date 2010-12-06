@@ -161,4 +161,6 @@ public interface Volume extends ControlledEntity, BasedOn {
 	boolean getDestroyed();
 	
 	long getDiskOfferingId();
+	
+	String getChainInfo();
 }

@@ -31,6 +31,7 @@ import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
+import com.cloud.host.Host.Type;
 import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -155,7 +156,7 @@ public interface AgentManager extends Manager {
 	 * to deploy in, service offering, template, and list of host to avoid.
 	 */
 
-	Host findHost(Host.Type type, DataCenterVO dc, HostPodVO pod, StoragePoolVO sp, ServiceOffering offering, VMTemplateVO template, VMInstanceVO vm, Host currentHost, Set<Host> avoid);
+	Host findHost(Host.Type type, DataCenterVO dc, HostPodVO pod, StoragePoolVO sp, ServiceOfferingVO offering, VMTemplateVO template, VMInstanceVO vm, Host currentHost, Set<Host> avoid);
 	List<PodCluster> listByDataCenter(long dcId);
 	List<PodCluster> listByPod(long podId);
 
@@ -212,4 +213,5 @@ public interface AgentManager extends Manager {
     public List<HostVO> discoverHosts(Long dcId, Long podId, Long clusterId, String clusterName, String url, String username, String password) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
 
 	Answer easySend(Long hostId, Command cmd, int timeout);
+
 }

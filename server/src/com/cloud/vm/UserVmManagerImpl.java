@@ -70,7 +70,6 @@ import com.cloud.api.commands.CreateTemplateCmd;
 import com.cloud.api.commands.CreateVMGroupCmd;
 import com.cloud.api.commands.DeleteVMGroupCmd;
 import com.cloud.api.commands.DeployVMCmd;
-import com.cloud.api.commands.DeployVm2Cmd;
 import com.cloud.api.commands.DestroyVMCmd;
 import com.cloud.api.commands.DetachVolumeCmd;
 import com.cloud.api.commands.RebootVMCmd;
@@ -128,10 +127,8 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.DetailsDao;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.FirewallRuleVO;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.IpAddrAllocator;
-import com.cloud.network.LoadBalancerVMMapVO;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.TrafficType;
@@ -140,12 +137,12 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.router.DomainRouterManager;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.security.NetworkGroupManager;
 import com.cloud.network.security.NetworkGroupVO;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
-import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -204,7 +201,6 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.InstanceGroupVMMapDao;
 import com.cloud.vm.dao.UserVmDao;
-
 @Local(value={UserVmManager.class, UserVmService.class})
 public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualMachineGuru<UserVmVO>, Manager, VirtualMachineManager<UserVmVO> {
     private static final Logger s_logger = Logger.getLogger(UserVmManagerImpl.class);
@@ -256,6 +252,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     @Inject InstanceGroupVMMapDao _groupVMMapDao;
     @Inject VmManager _itMgr;
     @Inject NetworkDao _networkDao;
+    @Inject DomainRouterManager _routerMgr;
     
     private IpAddrAllocator _IpAllocator;
     ScheduledExecutorService _executor = null;
@@ -328,10 +325,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 
         VMTemplateVO template = _templateDao.findById(vmInstance.getTemplateId());
         if (template.getEnablePassword()) {
-        	if (vmInstance.getDomainRouterId() == null)
-        		/*TODO: add it for external dhcp mode*/
+        	if (vmInstance.getDomainRouterId() == null) {
+                /*TODO: add it for external dhcp mode*/
         		return true;
-	        if (_networkMgr.savePasswordToRouter(vmInstance.getDomainRouterId(), vmInstance.getPrivateIpAddress(), password)) {
+            }
+	        if (_routerMgr.savePasswordToRouter(vmInstance.getDomainRouterId(), vmInstance.getPrivateIpAddress(), password)) {
 	            // Need to reboot the virtual machine so that the password gets redownloaded from the DomR, and reset on the VM
 	        	if (!rebootVirtualMachine(userId, vmId)) {
 	        		if (vmInstance.getState() == State.Stopped) {
@@ -418,11 +416,13 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     	// If the account is not an admin, check that the volume and the virtual machine are owned by the account that was passed in
     	if (account != null) {
     	    if (!isAdmin(account.getType())) {
-                if (account.getId() != volume.getAccountId())
+                if (account.getId() != volume.getAccountId()) {
                     throw new PermissionDeniedException("Unable to find volume with ID: " + volumeId + " for account: " + account.getAccountName() + ". Permission denied.");
+                }
 
-                if (account.getId() != vm.getAccountId())
+                if (account.getId() != vm.getAccountId()) {
                     throw new PermissionDeniedException("Unable to find VM with ID: " + vmId + " for account: " + account.getAccountName() + ". Permission denied");
+                }
     	    } else {
     	        if (!_domainDao.isChildDomain(account.getDomainId(), volume.getDomainId()) ||
     	            !_domainDao.isChildDomain(account.getDomainId(), vm.getDomainId())) {
@@ -538,8 +538,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         if(asyncExecutor != null) {
         	AsyncJobVO job = asyncExecutor.getJob();
 
-        	if(s_logger.isInfoEnabled())
-        		s_logger.info("Trying to attaching volume " + volumeId +" to vm instance:"+vm.getId()+ ", update async job-" + job.getId() + " progress status");
+        	if(s_logger.isInfoEnabled()) {
+                s_logger.info("Trying to attaching volume " + volumeId +" to vm instance:"+vm.getId()+ ", update async job-" + job.getId() + " progress status");
+            }
         	
         	_asyncMgr.updateAsyncJobAttachment(job.getId(), "volume", volumeId);
         	_asyncMgr.updateAsyncJobStatus(job.getId(), BaseCmd.PROGRESS_INSTANCE_CREATED, volumeId);
@@ -552,13 +553,14 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     	if(hostId  == null) {
     		hostId = vm.getLastHostId();
     		HostVO host = _hostDao.findById(hostId);
-    		if(host != null && host.getHypervisorType() == HypervisorType.VmWare)
-    			sendCommand = true;
+    		if(host != null && host.getHypervisorType() == HypervisorType.VmWare) {
+                sendCommand = true;
+            }
     	}
     	
     	if (sendCommand) {
     		StoragePoolVO volumePool = _storagePoolDao.findById(volume.getPoolId());
-    		AttachVolumeCommand cmd = new AttachVolumeCommand(true, vm.getInstanceName(), volume.getPoolType(), volume.getFolder(), volume.getPath(), volume.getName(), deviceId);
+    		AttachVolumeCommand cmd = new AttachVolumeCommand(true, vm.getInstanceName(), volume.getPoolType(), volume.getFolder(), volume.getPath(), volume.getName(), deviceId, volume.getChainInfo());
 			cmd.setPoolUuid(volumePool.getUuid());
     		
     		try {
@@ -581,18 +583,20 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
             } else {
                 _volsDao.attachVolume(volume.getId(), vmId, deviceId);
             }
-            if(!vm.getHostName().equals(vm.getDisplayName()))
-            	event.setDescription("Volume: " +volume.getName()+ " successfully attached to VM: "+vm.getHostName()+"("+vm.getDisplayName()+")");
-            else
-            	event.setDescription("Volume: " +volume.getName()+ " successfully attached to VM: "+vm.getHostName());
+            if(!vm.getHostName().equals(vm.getDisplayName())) {
+                event.setDescription("Volume: " +volume.getName()+ " successfully attached to VM: "+vm.getHostName()+"("+vm.getDisplayName()+")");
+            } else {
+                event.setDescription("Volume: " +volume.getName()+ " successfully attached to VM: "+vm.getHostName());
+            }
             event.setLevel(EventVO.LEVEL_INFO);
             _eventDao.persist(event);
             return _volsDao.findById(volumeId);
     	} else {
     		if (answer != null) {
     			String details = answer.getDetails();
-    			if (details != null && !details.isEmpty())
-    				errorMsg += "; " + details;
+    			if (details != null && !details.isEmpty()) {
+                    errorMsg += "; " + details;
+                }
     		}
     		throw new CloudRuntimeException(errorMsg);
     	}
@@ -634,13 +638,15 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     	}
 
     	// Check that the volume ID is valid
-    	if (volume == null)
-    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find volume with ID: " + volumeId);
+    	if (volume == null) {
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find volume with ID: " + volumeId);
+        }
 
     	// If the account is not an admin, check that the volume is owned by the account that was passed in
     	if (!isAdmin) {
-    		if (account.getId() != volume.getAccountId())
-    			throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find volume with ID: " + volumeId + " for account: " + account.getAccountName());
+    		if (account.getId() != volume.getAccountId()) {
+                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find volume with ID: " + volumeId + " for account: " + account.getAccountName());
+            }
     	} else if (account != null) {
     	    if (!_domainDao.isChildDomain(account.getDomainId(), volume.getDomainId())) {
                 throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to detach volume with ID: " + volumeId + ", permission denied.");
@@ -674,8 +680,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         if(asyncExecutor != null) {
         	AsyncJobVO job = asyncExecutor.getJob();
 
-        	if(s_logger.isInfoEnabled())
-        		s_logger.info("Trying to attaching volume " + volumeId +"to vm instance:"+vm.getId()+ ", update async job-" + job.getId() + " progress status");
+        	if(s_logger.isInfoEnabled()) {
+                s_logger.info("Trying to attaching volume " + volumeId +"to vm instance:"+vm.getId()+ ", update async job-" + job.getId() + " progress status");
+            }
         	
         	_asyncMgr.updateAsyncJobAttachment(job.getId(), "volume", volumeId);
         	_asyncMgr.updateAsyncJobStatus(job.getId(), BaseCmd.PROGRESS_INSTANCE_CREATED, volumeId);
@@ -686,7 +693,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     	Answer answer = null;
     	
     	if (sendCommand) {
-			AttachVolumeCommand cmd = new AttachVolumeCommand(false, vm.getInstanceName(), volume.getPoolType(), volume.getFolder(), volume.getPath(), volume.getName(), cmmd.getDeviceId() != null ? cmmd.getDeviceId() : volume.getDeviceId());
+			AttachVolumeCommand cmd = new AttachVolumeCommand(false, vm.getInstanceName(), volume.getPoolType(), volume.getFolder(), volume.getPath(), volume.getName(), 
+				cmmd.getDeviceId() != null ? cmmd.getDeviceId() : volume.getDeviceId(), volume.getChainInfo());
 
 			StoragePoolVO volumePool = _storagePoolDao.findById(volume.getPoolId());
 			cmd.setPoolUuid(volumePool.getUuid());
@@ -707,10 +715,16 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 		if (!sendCommand || (answer != null && answer.getResult())) {
 			// Mark the volume as detached
     		_volsDao.detachVolume(volume.getId());
-            if(!vm.getHostName().equals(vm.getDisplayName()))
-            	event.setDescription("Volume: " +volume.getName()+ " successfully detached from VM: "+vm.getHostName()+"("+vm.getDisplayName()+")");
-            else
-            	event.setDescription("Volume: " +volume.getName()+ " successfully detached from VM: "+vm.getHostName());
+    		if(answer != null && answer instanceof AttachVolumeAnswer) {
+    			volume.setChainInfo(((AttachVolumeAnswer)answer).getChainInfo());
+    			_volsDao.update(volume.getId(), volume);
+    		}
+    		
+            if(!vm.getHostName().equals(vm.getDisplayName())) {
+                event.setDescription("Volume: " +volume.getName()+ " successfully detached from VM: "+vm.getHostName()+"("+vm.getDisplayName()+")");
+            } else {
+                event.setDescription("Volume: " +volume.getName()+ " successfully detached from VM: "+vm.getHostName());
+            }
             event.setLevel(EventVO.LEVEL_INFO);
             _eventDao.persist(event);
             
@@ -719,8 +733,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     		
     		if (answer != null) {
     			String details = answer.getDetails();
-    			if (details != null && !details.isEmpty())
-    				errorMsg += "; " + details;
+    			if (details != null && !details.isEmpty()) {
+                    errorMsg += "; " + details;
+                }
     		}
     		
     		throw new CloudRuntimeException(errorMsg);
@@ -781,13 +796,14 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     	// TODO following implementation only do asynchronized operation at API level
         try {
             UserVmVO vm = start(param.getUserId(), param.getVmId(), null, param.getIsoPath(), param.getEventId());
-            if(vm != null)
-	        	executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
+            if(vm != null) {
+                executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
 	        		AsyncJobResult.STATUS_SUCCEEDED, 0, VMExecutorHelper.composeResultObject(
 	        			executor.getAsyncJobMgr().getExecutorContext().getManagementServer(), vm, null));
-            else
-            	executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
+            } else {
+                executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
             		AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR, "Unable to start vm");
+            }
         } catch (StorageUnavailableException e) {
             s_logger.debug("Unable to start vm because storage is unavailable: " + e.getMessage());
             
@@ -881,7 +897,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         StoragePoolVO sp = _storageMgr.getStoragePoolForVm(vm.getId());
 
         VMTemplateVO template = _templateDao.findById(vm.getTemplateId());
-        ServiceOffering offering = _offeringDao.findById(vm.getServiceOfferingId());
+        ServiceOfferingVO offering = _offeringDao.findById(vm.getServiceOfferingId());
 
         // If an ISO path is passed in, boot from that ISO
         // Else, check if the VM already has an ISO attached to it. If so, start the VM with that ISO inserted, but don't boot from it.
@@ -912,12 +928,14 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         HostVO host = null;
         if(vm.getLastHostId() != null) {
         	host = _hostDao.findById(vm.getLastHostId());
-        	if(host == null || host.getStatus() != com.cloud.host.Status.Up || host.getHypervisorType() != HypervisorType.VmWare)
-        		host = null;
+        	if(host == null || host.getStatus() != com.cloud.host.Status.Up || host.getHypervisorType() != HypervisorType.VmWare) {
+                host = null;
+            }
         }
 
-        if(host == null)
-        	host = (HostVO) _agentMgr.findHost(Host.Type.Routing, dc, pod, sp, offering, template, vm, null, avoid);
+        if(host == null) {
+            host = (HostVO) _agentMgr.findHost(Host.Type.Routing, dc, pod, sp, offering, template, vm, null, avoid);
+        }
 
         if (host == null) {	
         	String description = "Unable to find any host for " + vm.toString();
@@ -928,7 +946,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
             return null;
         }
 
-        if (!_vmDao.updateIf(vm, VirtualMachine.Event.StartRequested, host.getId())) {
+        if (!_itMgr.stateTransitTo(vm, VirtualMachine.Event.StartRequested, host.getId())) {
             String description = "Unable to start VM " + vm.toString() + " because the state is not correct.";
             s_logger.error(description);
             event.setDescription(description);
@@ -945,14 +963,15 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
             String vnet = null;
             DomainRouterVO router = null;
             if (vm.getDomainRouterId() != null) {
-                router = _networkMgr.addVirtualMachineToGuestNetwork(vm, password, startEventId);
+                router = _routerMgr.addVirtualMachineToGuestNetwork(vm, password, startEventId);
             	if (router == null) {
             		s_logger.error("Unable to add vm " + vm.getId() + " - " + vm.getHostName());
-            		_vmDao.updateIf(vm, VirtualMachine.Event.OperationFailed, null);
-                    if(!vm.getHostName().equals(vm.getDisplayName()))
-                		event.setDescription("Unable to start VM: " + vm.getHostName()+"("+vm.getDisplayName()+")" + "; Unable to add VM to guest network");
-                    else
-                		event.setDescription("Unable to start VM: " + vm.getHostName() + "; Unable to add VM to guest network");
+            		_itMgr.stateTransitTo(vm, VirtualMachine.Event.OperationFailed, null);
+                    if(!vm.getHostName().equals(vm.getDisplayName())) {
+                        event.setDescription("Unable to start VM: " + vm.getHostName()+"("+vm.getDisplayName()+")" + "; Unable to add VM to guest network");
+                    } else {
+                        event.setDescription("Unable to start VM: " + vm.getHostName() + "; Unable to add VM to guest network");
+                    }
 
             		event.setLevel(EventVO.LEVEL_ERROR);
             		_eventDao.persist(event);
@@ -967,7 +986,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
             			//VM is in a different Pod
             			if(router.getZoneVlan() == null){
             				//Create Zone Vlan if not created already
-            				vnet = _networkMgr.createZoneVlan(router);
+            				vnet = _routerMgr.createZoneVlan(router);
             				if (vnet == null) {
             					s_logger.error("Vlan creation failed. Unable to add vm " + vm.getId() + " - " + vm.getHostName());
             					return null;
@@ -1015,7 +1034,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
                 	
                 	
                 if( retry < _retry ) {
-                    if (!_vmDao.updateIf(vm, VirtualMachine.Event.OperationRetry, host.getId())) {
+                    if (!_itMgr.stateTransitTo(vm, VirtualMachine.Event.OperationRetry, host.getId())) {
                         String description = "Unable to start VM " + vm.toString() + " because the state is not correct.";
                         s_logger.debug(description);
                         event.setDescription(description);
@@ -1096,21 +1115,23 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
             } while (--retry > 0 && (host = (HostVO)_agentMgr.findHost(Host.Type.Routing, dc, pod, sp, offering, template, vm, null, avoid)) != null);
 
             if (host == null || retry <= 0) {
-                if(!vm.getHostName().equals(vm.getDisplayName()))
+                if(!vm.getHostName().equals(vm.getDisplayName())) {
                     event.setDescription("Unable to start VM: " + vm.getHostName()+"("+vm.getDisplayName()+")"+ " Reason: "+answer.getDetails());
-                else
+                } else {
                     event.setDescription("Unable to start VM: " + vm.getHostName()+ " Reason: "+answer.getDetails());
+                }
             	
                 event.setLevel(EventVO.LEVEL_ERROR);
                 _eventDao.persist(event);
                 throw new ExecutionException("Unable to start VM: " + vm.getHostName()+ " Reason: "+answer.getDetails());
             }
 
-            if (!_vmDao.updateIf(vm, VirtualMachine.Event.OperationSucceeded, host.getId())) {
-                if(!vm.getHostName().equals(vm.getDisplayName()))
-                	event.setDescription("unable to start VM: " + vm.getHostName()+"("+vm.getDisplayName()+")");
-                else
-                	event.setDescription("unable to start VM: " + vm.getHostName());
+            if (!_itMgr.stateTransitTo(vm, VirtualMachine.Event.OperationSucceeded, host.getId())) {
+                if(!vm.getHostName().equals(vm.getDisplayName())) {
+                    event.setDescription("unable to start VM: " + vm.getHostName()+"("+vm.getDisplayName()+")");
+                } else {
+                    event.setDescription("unable to start VM: " + vm.getHostName());
+                }
                 event.setLevel(EventVO.LEVEL_ERROR);
                 _eventDao.persist(event);
             	throw new ConcurrentOperationException("Starting vm " + vm.getHostName() + " didn't work.");
@@ -1120,10 +1141,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
                 s_logger.debug("Started vm " + vm.getHostName());
             }
 
-            if(!vm.getHostName().equals(vm.getDisplayName()))
-            	event.setDescription("successfully started VM: " + vm.getHostName()+"("+vm.getDisplayName()+")");
-            else
-            	event.setDescription("successfully started VM: " + vm.getHostName());
+            if(!vm.getHostName().equals(vm.getDisplayName())) {
+                event.setDescription("successfully started VM: " + vm.getHostName()+"("+vm.getDisplayName()+")");
+            } else {
+                event.setDescription("successfully started VM: " + vm.getHostName());
+            }
             
             _eventDao.persist(event);
             _networkGroupMgr.handleVmStateTransition(vm, State.Running);
@@ -1137,7 +1159,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 	            vm.setVnet(null);
 
 	            txn.start();
-	            if (_vmDao.updateIf(vm, VirtualMachine.Event.OperationFailed, null)) {
+	            if (_itMgr.stateTransitTo(vm, VirtualMachine.Event.OperationFailed, null)) {
 		            txn.commit();
 	            }
             }
@@ -1220,8 +1242,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         	resultDescription = "VM is either removed or deleted";
         	executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
         		AsyncJobResult.STATUS_SUCCEEDED, 0, resultDescription);        	
-        	if(s_logger.isDebugEnabled())
-        		s_logger.debug("Execute asynchronize stop VM command: " +resultDescription);
+        	if(s_logger.isDebugEnabled()) {
+                s_logger.debug("Execute asynchronize stop VM command: " +resultDescription);
+            }
         	response = new OperationResponse(OperationResponse.STATUS_SUCCEEDED, resultDescription);
         	return response;
         }
@@ -1232,8 +1255,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         	executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
         		AsyncJobResult.STATUS_SUCCEEDED, 0, resultDescription);
         	
-        	if(s_logger.isDebugEnabled())
-        		s_logger.debug("Execute asynchronize stop VM command: " +resultDescription);
+        	if(s_logger.isDebugEnabled()) {
+                s_logger.debug("Execute asynchronize stop VM command: " +resultDescription);
+            }
         	response = new OperationResponse(OperationResponse.STATUS_SUCCEEDED, resultDescription);
             return response;
         }
@@ -1243,19 +1267,21 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         	executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
         		AsyncJobResult.STATUS_SUCCEEDED, 0, resultDescription);
             	
-        	if(s_logger.isDebugEnabled())
-        		s_logger.debug("Execute asynchronize stop VM command: " +resultDescription);
+        	if(s_logger.isDebugEnabled()) {
+                s_logger.debug("Execute asynchronize stop VM command: " +resultDescription);
+            }
         	response = new OperationResponse(OperationResponse.STATUS_SUCCEEDED, resultDescription);
             return response;
         }
         
-        if (!_vmDao.updateIf(vm, VirtualMachine.Event.StopRequested, vm.getHostId())) {
+        if (!_itMgr.stateTransitTo(vm, VirtualMachine.Event.StopRequested, vm.getHostId())) {
         	resultDescription = "VM is not in a state to stop";
         	executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
             		AsyncJobResult.STATUS_FAILED, 0, resultDescription);
                 	
-        	if(s_logger.isDebugEnabled())
-        		s_logger.debug("Execute asynchronize stop VM command: " +resultDescription);
+        	if(s_logger.isDebugEnabled()) {
+                s_logger.debug("Execute asynchronize stop VM command: " +resultDescription);
+            }
         	response = new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
             return response;
         }
@@ -1265,8 +1291,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         	executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
             		AsyncJobResult.STATUS_FAILED, 0, resultDescription);
                 	
-        	if(s_logger.isDebugEnabled())
-        		s_logger.debug("Execute asynchronize stop VM command: " +resultDescription);
+        	if(s_logger.isDebugEnabled()) {
+                s_logger.debug("Execute asynchronize stop VM command: " +resultDescription);
+            }
         	response = new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
             return response;
         }
@@ -1281,15 +1308,16 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         try {
 			long seq = _agentMgr.send(vm.getHostId(), new Commands(cmd), new VMOperationListener(executor, param, vm, 0));
 			resultDescription = "Execute asynchronize stop VM command: sending command to agent, seq - " + seq;
-        	if(s_logger.isDebugEnabled())
-        		s_logger.debug(resultDescription);
+        	if(s_logger.isDebugEnabled()) {
+                s_logger.debug(resultDescription);
+            }
 			response = new OperationResponse(OperationResponse.STATUS_IN_PROGRESS, resultDescription);
 			return response;
 		} catch (AgentUnavailableException e) {
 			resultDescription = "Agent is not available";
         	executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
         		AsyncJobResult.STATUS_FAILED, 0, resultDescription);
-            _vmDao.updateIf(vm, VirtualMachine.Event.OperationFailed, vm.getHostId());
+        	_itMgr.stateTransitTo(vm, VirtualMachine.Event.OperationFailed, vm.getHostId());
             response = new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
             
             return response;
@@ -1314,17 +1342,19 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
             RebootAnswer answer = (RebootAnswer)_agentMgr.easySend(vm.getHostId(), cmd);
            
             if (answer != null) {
-            	if(!vm.getHostName().equals(vm.getDisplayName()))
-            		event.setDescription("Successfully rebooted VM instance : " + vm.getHostName()+"("+vm.getDisplayName()+")");
-            	else
-            		event.setDescription("Successfully rebooted VM instance : " + vm.getHostName());
+            	if(!vm.getHostName().equals(vm.getDisplayName())) {
+                    event.setDescription("Successfully rebooted VM instance : " + vm.getHostName()+"("+vm.getDisplayName()+")");
+                } else {
+                    event.setDescription("Successfully rebooted VM instance : " + vm.getHostName());
+                }
                 _eventDao.persist(event);
                 return true;
             } else {
-            	if(!vm.getHostName().equals(vm.getDisplayName()))
-            		event.setDescription("failed to reboot VM instance : " + vm.getHostName()+"("+vm.getDisplayName()+")");
-            	else
-            		event.setDescription("failed to reboot VM instance : " + vm.getHostName());
+            	if(!vm.getHostName().equals(vm.getDisplayName())) {
+                    event.setDescription("failed to reboot VM instance : " + vm.getHostName()+"("+vm.getDisplayName()+")");
+                } else {
+                    event.setDescription("failed to reboot VM instance : " + vm.getHostName());
+                }
                 event.setLevel(EventVO.LEVEL_ERROR);
                 _eventDao.persist(event);
                 return false;
@@ -1520,9 +1550,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     public void releaseGuestIpAddress(UserVmVO userVm)  {
     	ServiceOffering offering = _offeringDao.findById(userVm.getServiceOfferingId());
     	
-    	if (offering.getGuestIpType() != NetworkOffering.GuestIpType.Virtualized) {  		
+    	if (offering.getGuestIpType() != NetworkOffering.GuestIpType.Virtual) {  		
     		IPAddressVO guestIP = (userVm.getGuestIpAddress() == null) ? null : _ipAddressDao.findById(userVm.getGuestIpAddress());
-    		if (guestIP != null && guestIP.getAllocated() != null) {
+    		if (guestIP != null && guestIP.getAllocatedTime() != null) {
     			_ipAddressDao.unassignIpAddress(userVm.getGuestIpAddress());
             	s_logger.debug("Released guest IP address=" + userVm.getGuestIpAddress() + " vmName=" + userVm.getHostName() +  " dcId=" + userVm.getDataCenterId());
 
@@ -1634,7 +1664,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
                     vm = _vmDao.persist(vm);
                 } else {
                     vm.setPodId(pod.first().getId());
-                    _vmDao.updateIf(vm, VirtualMachine.Event.OperationRetry, null);
+                    _itMgr.stateTransitTo(vm, VirtualMachine.Event.OperationRetry, null);
                 }
                 
                 String ipAddressStr = acquireGuestIpAddress(dataCenterId, accountId, vm);
@@ -1673,10 +1703,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
             txn.start();
             if(vm != null && vm.getHostName() != null && vm.getDisplayName() != null)
             {
-            	if(!vm.getHostName().equals(vm.getDisplayName()))
-            		event.setDescription("successfully created VM instance : " + vm.getHostName()+"("+vm.getDisplayName()+")");
-            	else
-            		event.setDescription("successfully created VM instance : " + vm.getHostName());
+            	if(!vm.getHostName().equals(vm.getDisplayName())) {
+                    event.setDescription("successfully created VM instance : " + vm.getHostName()+"("+vm.getDisplayName()+")");
+                } else {
+                    event.setDescription("successfully created VM instance : " + vm.getHostName());
+                }
             }
             else
             {
@@ -1685,7 +1716,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
             
             _eventDao.persist(event);
             
-            _vmDao.updateIf(vm, VirtualMachine.Event.OperationSucceeded, null);
+            _itMgr.stateTransitTo(vm, VirtualMachine.Event.OperationSucceeded, null);
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("vm created " + vmId);
             }
@@ -1744,10 +1775,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         event.setAccountId(vm.getAccountId());
         event.setType(EventTypes.EVENT_VM_DESTROY);
         event.setParameters("id="+vm.getId() + "\nvmName=" + vm.getHostName() + "\nsoId=" + vm.getServiceOfferingId() + "\ntId=" + vm.getTemplateId() + "\ndcId=" + vm.getDataCenterId());
-        if(!vm.getHostName().equals(vm.getDisplayName()))
-        	event.setDescription("Successfully destroyed VM instance : " + vm.getHostName()+"("+vm.getDisplayName()+")");
-        else
-        	event.setDescription("Successfully destroyed VM instance : " + vm.getHostName());
+        if(!vm.getHostName().equals(vm.getDisplayName())) {
+            event.setDescription("Successfully destroyed VM instance : " + vm.getHostName()+"("+vm.getDisplayName()+")");
+        } else {
+            event.setDescription("Successfully destroyed VM instance : " + vm.getHostName());
+        }
         _eventDao.persist(event);
 
         _accountMgr.decrementResourceCount(vm.getAccountId(), ResourceType.user_vm);
@@ -1775,8 +1807,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         Account accountHandle = UserContext.current().getAccount();
    
         //if account is removed, return error
-        if(accountHandle!=null && accountHandle.getRemoved() != null)
-        	throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "The account " + accountHandle.getId()+" is removed");
+        if(accountHandle!=null && accountHandle.getRemoved() != null) {
+            throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "The account " + accountHandle.getId()+" is removed");
+        }
 
         // Verify input parameters
         UserVmVO vm = _vmDao.findById(vmId.longValue());
@@ -1821,18 +1854,20 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         account = _accountDao.lockRow(vm.getAccountId(), true);
         
         //if the account is deleted, throw error
-        if(account.getRemoved()!=null)
-        	throw new CloudRuntimeException("Unable to recover VM as the account is deleted");
+        if(account.getRemoved()!=null) {
+            throw new CloudRuntimeException("Unable to recover VM as the account is deleted");
+        }
         
     	// First check that the maximum number of UserVMs for the given accountId will not be exceeded
         if (_accountMgr.resourceLimitExceeded(account, ResourceType.user_vm)) {
         	ResourceAllocationException rae = new ResourceAllocationException("Maximum number of virtual machines for account: " + account.getAccountName() + " has been exceeded.");
         	rae.setResourceType("vm");
         	event.setLevel(EventVO.LEVEL_ERROR);
-        	if(!vm.getHostName().equals(vm.getDisplayName()))
-        		event.setDescription("Failed to recover VM instance : " + vm.getHostName()+"("+vm.getDisplayName()+")" + "; the resource limit for account: " + account.getAccountName() + " has been exceeded.");
-        	else
-        		event.setDescription("Failed to recover VM instance : " + vm.getHostName() + "; the resource limit for account: " + account.getAccountName() + " has been exceeded.");
+        	if(!vm.getHostName().equals(vm.getDisplayName())) {
+                event.setDescription("Failed to recover VM instance : " + vm.getHostName()+"("+vm.getDisplayName()+")" + "; the resource limit for account: " + account.getAccountName() + " has been exceeded.");
+            } else {
+                event.setDescription("Failed to recover VM instance : " + vm.getHostName() + "; the resource limit for account: " + account.getAccountName() + " has been exceeded.");
+            }
         	_eventDao.persist(event);
         	txn.commit();
         	throw rae;
@@ -1842,7 +1877,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 
         _accountMgr.incrementResourceCount(account.getId(), ResourceType.user_vm);
 
-        if (!_vmDao.updateIf(vm, VirtualMachine.Event.RecoveryRequested, null)) {
+        if (!_itMgr.stateTransitTo(vm, VirtualMachine.Event.RecoveryRequested, null)) {
             s_logger.debug("Unable to recover the vm because it is not in the correct state: " + vmId);
             throw new InvalidParameterValueException("Unable to recover the vm because it is not in the correct state: " + vmId);
         }
@@ -1873,10 +1908,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         _accountMgr.incrementResourceCount(account.getId(), ResourceType.volume, new Long(volumes.size()));
         
         event.setLevel(EventVO.LEVEL_INFO);
-        if(!vm.getHostName().equals(vm.getDisplayName()))
-        	event.setDescription("successfully recovered VM instance : " + vm.getHostName()+"("+vm.getDisplayName()+")");
-        else
+        if(!vm.getHostName().equals(vm.getDisplayName())) {
+            event.setDescription("successfully recovered VM instance : " + vm.getHostName()+"("+vm.getDisplayName()+")");
+        } else {
             event.setDescription("successfully recovered VM instance : " + vm.getHostName());
+        }
         _eventDao.persist(event);
         
         txn.commit();
@@ -1975,7 +2011,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 
     @Override
     public void completeStartCommand(UserVmVO vm) {
-    	_vmDao.updateIf(vm, VirtualMachine.Event.AgentReportRunning, vm.getHostId());
+    	_itMgr.stateTransitTo(vm, VirtualMachine.Event.AgentReportRunning, vm.getHostId());
         _networkGroupMgr.handleVmStateTransition(vm, State.Running);
 
     }
@@ -1997,7 +2033,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 
             txn.start();
             
-            if (!_vmDao.updateIf(vm, e, null)) {
+            if (!_itMgr.stateTransitTo(vm, e, null)) {
             	s_logger.debug("Unable to update ");
             	return;
             }
@@ -2023,10 +2059,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         event.setState(Event.State.Completed);
         event.setStartId(startEventId);
         event.setParameters("id="+vm.getId() + "\n" + "vmName=" + vm.getHostName() + "\nsoId=" + vm.getServiceOfferingId() + "\ntId=" + vm.getTemplateId() + "\ndcId=" + vm.getDataCenterId());
-        if(!vm.getHostName().equals(vm.getDisplayName()))
-        	event.setDescription("Successfully stopped VM instance : " + vm.getHostName()+"("+vm.getDisplayName()+")");
-        else
-        	event.setDescription("Successfully stopped VM instance : " + vm.getHostName());
+        if(!vm.getHostName().equals(vm.getDisplayName())) {
+            event.setDescription("Successfully stopped VM instance : " + vm.getHostName()+"("+vm.getDisplayName()+")");
+        } else {
+            event.setDescription("Successfully stopped VM instance : " + vm.getHostName());
+        }
         _eventDao.persist(event);
 
         if (_storageMgr.unshare(vm, null) == null) {
@@ -2075,7 +2112,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         	return true;
         }
         
-        if (!_vmDao.updateIf(vm, VirtualMachine.Event.StopRequested, vm.getHostId())) {
+        if (!_itMgr.stateTransitTo(vm, VirtualMachine.Event.StopRequested, vm.getHostId())) {
             s_logger.debug("VM is not in a state to stop: " + vm.getState().toString());
             return false;
         }
@@ -2112,13 +2149,14 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         	completeStopCommand(userId, vm, VirtualMachine.Event.OperationSucceeded, 0);
         } else
         {
-        	if(!vm.getHostName().equals(vm.getDisplayName()))
-        		event.setDescription("failed to stop VM instance : " + vm.getHostName()+"("+vm.getDisplayName()+")");
-        	else
-        		event.setDescription("failed to stop VM instance : " + vm.getHostName());
+        	if(!vm.getHostName().equals(vm.getDisplayName())) {
+                event.setDescription("failed to stop VM instance : " + vm.getHostName()+"("+vm.getDisplayName()+")");
+            } else {
+                event.setDescription("failed to stop VM instance : " + vm.getHostName());
+            }
             event.setLevel(EventVO.LEVEL_ERROR);
             _eventDao.persist(event);
-            _vmDao.updateIf(vm, VirtualMachine.Event.OperationFailed, vm.getHostId());
+            _itMgr.stateTransitTo(vm, VirtualMachine.Event.OperationFailed, vm.getHostId());
             s_logger.error("Unable to stop vm " + vm.getHostName());
         }
 
@@ -2130,7 +2168,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Destroying vm " + vm.toString());
         }
-        if (!_vmDao.updateIf(vm, VirtualMachine.Event.DestroyRequested, vm.getHostId())) {
+        if (!_itMgr.stateTransitTo(vm, VirtualMachine.Event.DestroyRequested, vm.getHostId())) {
             s_logger.debug("Unable to destroy the vm because it is not in the correct state: " + vm.toString());
             return false;
         }
@@ -2197,7 +2235,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     public boolean migrate(UserVmVO vm, HostVO host) throws AgentUnavailableException, OperationTimedoutException {
         HostVO fromHost = _hostDao.findById(vm.getHostId());
 
-    	if (!_vmDao.updateIf(vm, VirtualMachine.Event.MigrationRequested, vm.getHostId())) {
+    	if (!_itMgr.stateTransitTo(vm, VirtualMachine.Event.MigrationRequested, vm.getHostId())) {
     		s_logger.debug("State for " + vm.toString() + " has changed so migration can not take place.");
     		return false;
     	}
@@ -2229,7 +2267,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     		releaseGuestIpAddress(vm);
             vm.setGuestNetmask(null);
             vm.setGuestMacAddress(null);
-    		if (!_vmDao.updateIf(vm, VirtualMachine.Event.ExpungeOperation, null)) {
+    		if (!_itMgr.stateTransitTo(vm, VirtualMachine.Event.ExpungeOperation, null)) {
     			s_logger.info("vm " + vmId + " is skipped because it is no longer in Destroyed state");
     			continue;
     		}
@@ -2238,53 +2276,53 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
                 deleteRules = false;
             }
            
-    		if(deleteRules)
-    		{
-	    		List<FirewallRuleVO> forwardingRules = null;
-				forwardingRules = _rulesDao.listByPrivateIp(privateIpAddress);
-				
-				for(FirewallRuleVO rule: forwardingRules)
-				{
-					try
-					{
-						IPAddressVO publicIp = _ipAddressDao.findById(rule.getPublicIpAddress());
-						
-						if(publicIp != null)
-						{
-							if((publicIp.getAccountId().longValue() == vm.getAccountId()))
-							{
-								if(publicIp.isOneToOneNat()){
-									_networkMgr.deleteIpForwardingRule(rule.getId());
-									if(s_logger.isDebugEnabled())
-										s_logger.debug("Rule "+rule.getId()+" for vm:"+vm.getHostName()+" is deleted successfully during expunge operation");									
-								}else{
-									_networkMgr.deletePortForwardingRule(rule.getId(),true);//delete the rule with the sys user's credentials
-									if(s_logger.isDebugEnabled())
-										s_logger.debug("Rule "+rule.getId()+" for vm:"+vm.getHostName()+" is deleted successfully during expunge operation");
-								}
-							}
-						}
-					}
-					catch(Exception e)
-					{
-						s_logger.warn("Failed to delete rule:"+rule.getId()+" for vm:"+vm.getHostName());
-					}
-				}
-    		}
-
-            List<VolumeVO> vols = null;
-            try {
-                vols = _volsDao.findByInstanceIdDestroyed(vmId);
-                _storageMgr.destroy(vm, vols);
-                
-                _vmDao.remove(vm.getId());
-                _networkGroupMgr.removeInstanceFromGroups(vm.getId());
-                removeInstanceFromGroup(vm.getId());
-                
-                s_logger.debug("vm is destroyed");
-            } catch (Exception e) {
-            	s_logger.info("VM " + vmId +" expunge failed due to " + e.getMessage());
-			}
+//FIXME    		if(deleteRules)
+//    		{
+//	    		List<PortForwardingRuleVO> forwardingRules = null;
+//				forwardingRules = _rulesDao.listByPrivateIp(privateIpAddress);
+//				
+//				for(PortForwardingRuleVO rule: forwardingRules)
+//				{
+//					try
+//					{
+//						IPAddressVO publicIp = _ipAddressDao.findById(rule.getSourceIpAddress());
+//						
+//						if(publicIp != null)
+//						{
+//							if((publicIp.getAccountId().longValue() == vm.getAccountId()))
+//							{
+//								if(publicIp.isOneToOneNat()){
+//									_networkMgr.deleteIpForwardingRule(rule.getId());
+//									if(s_logger.isDebugEnabled())
+//										s_logger.debug("Rule "+rule.getId()+" for vm:"+vm.getHostName()+" is deleted successfully during expunge operation");									
+//								}else{
+//									_networkMgr.deletePortForwardingRule(rule.getId(),true);//delete the rule with the sys user's credentials
+//									if(s_logger.isDebugEnabled())
+//										s_logger.debug("Rule "+rule.getId()+" for vm:"+vm.getHostName()+" is deleted successfully during expunge operation");
+//								}
+//							}
+//						}
+//					}
+//					catch(Exception e)
+//					{
+//						s_logger.warn("Failed to delete rule:"+rule.getId()+" for vm:"+vm.getHostName());
+//					}
+//				}
+//    		}
+//
+//            List<VolumeVO> vols = null;
+//            try {
+//                vols = _volsDao.findByInstanceIdDestroyed(vmId);
+//                _storageMgr.destroy(vm, vols);
+//                
+//                _vmDao.remove(vm.getId());
+//                _networkGroupMgr.removeInstanceFromGroups(vm.getId());
+//                removeInstanceFromGroup(vm.getId());
+//                
+//                s_logger.debug("vm is destroyed");
+//            } catch (Exception e) {
+//            	s_logger.info("VM " + vmId +" expunge failed due to " + e.getMessage());
+//			}
     	}
     	
     	List<VolumeVO> destroyedVolumes = _volsDao.findByDetachedDestroyed();
@@ -2298,14 +2336,14 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         CheckVirtualMachineAnswer answer = (CheckVirtualMachineAnswer)_agentMgr.send(host.getId(), cvm);
         if (!answer.getResult()) {
             s_logger.debug("Unable to complete migration for " + vm.toString());
-            _vmDao.updateIf(vm, VirtualMachine.Event.AgentReportStopped, null);
+            _itMgr.stateTransitTo(vm, VirtualMachine.Event.AgentReportStopped, null);
             return false;
         }
 
         State state = answer.getState();
         if (state == State.Stopped) {
             s_logger.warn("Unable to complete migration as we can not detect it on " + host.toString());
-            _vmDao.updateIf(vm, VirtualMachine.Event.AgentReportStopped, null);
+            _itMgr.stateTransitTo(vm, VirtualMachine.Event.AgentReportStopped, null);
             return false;
         }
 
@@ -2316,7 +2354,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         Transaction txn = Transaction.currentTxn();
         try {
             txn.start();
-            _vmDao.updateIf(vm, VirtualMachine.Event.OperationSucceeded, host.getId());
+            _itMgr.stateTransitTo(vm, VirtualMachine.Event.OperationSucceeded, host.getId());
             txn.commit();
             _networkGroupMgr.handleVmStateTransition(vm, State.Running);
             return true;
@@ -2328,42 +2366,42 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
   
     @Override
     public void cleanNetworkRules(long userId, long instanceId) {
-        UserVmVO vm = _vmDao.findById(instanceId);
-        String guestIpAddr = vm.getGuestIpAddress();
-        long accountId = vm.getAccountId();
-
-        List<LoadBalancerVMMapVO> loadBalancerMappings = _loadBalancerVMMapDao.listByInstanceId(vm.getId());
-        for (LoadBalancerVMMapVO loadBalancerMapping : loadBalancerMappings) {
-            List<FirewallRuleVO> lbRules = _rulesDao.listByLoadBalancerId(loadBalancerMapping.getLoadBalancerId());
-            FirewallRuleVO targetLbRule = null;
-            for (FirewallRuleVO lbRule : lbRules) {
-                if (lbRule.getPrivateIpAddress().equals(guestIpAddr)) {
-                    targetLbRule = lbRule;
-                    targetLbRule.setEnabled(false);
-                    break;
-                }
-            }
-
-            if (targetLbRule != null) {
-                String ipAddress = targetLbRule.getPublicIpAddress();
-                DomainRouterVO router = _routerDao.findById(vm.getDomainRouterId());
-                _networkMgr.updateFirewallRules(ipAddress, lbRules, router);
-
-                // now that the rule has been disabled, delete it, also remove the mapping from the load balancer mapping table
-                _rulesDao.remove(targetLbRule.getId());
-                _loadBalancerVMMapDao.remove(loadBalancerMapping.getId());
-
-                // save off the event for deleting the LB rule
-                EventVO lbRuleEvent = new EventVO();
-                lbRuleEvent.setUserId(userId);
-                lbRuleEvent.setAccountId(accountId);
-                lbRuleEvent.setType(EventTypes.EVENT_NET_RULE_DELETE);
-                lbRuleEvent.setDescription("deleted load balancer rule [" + targetLbRule.getPublicIpAddress() + ":" + targetLbRule.getPublicPort() +
-                        "]->[" + targetLbRule.getPrivateIpAddress() + ":" + targetLbRule.getPrivatePort() + "]" + " " + targetLbRule.getAlgorithm());
-                lbRuleEvent.setLevel(EventVO.LEVEL_INFO);
-                _eventDao.persist(lbRuleEvent);
-            }
-        }
+//FIXME        UserVmVO vm = _vmDao.findById(instanceId);
+//        String guestIpAddr = vm.getGuestIpAddress();
+//        long accountId = vm.getAccountId();
+//
+//        List<LoadBalancerVMMapVO> loadBalancerMappings = _loadBalancerVMMapDao.listByInstanceId(vm.getId());
+//        for (LoadBalancerVMMapVO loadBalancerMapping : loadBalancerMappings) {
+//            List<PortForwardingRuleVO> lbRules = _rulesDao.listByLoadBalancerId(loadBalancerMapping.getLoadBalancerId());
+//            PortForwardingRuleVO targetLbRule = null;
+//            for (PortForwardingRuleVO lbRule : lbRules) {
+//                if (lbRule.getDestinationIpAddress().equals(guestIpAddr)) {
+//                    targetLbRule = lbRule;
+//                    targetLbRule.setEnabled(false);
+//                    break;
+//                }
+//            }
+//
+//            if (targetLbRule != null) {
+//                String ipAddress = targetLbRule.getSourceIpAddress();
+//                DomainRouterVO router = _routerDao.findById(vm.getDomainRouterId());
+//                _networkMgr.updateFirewallRules(ipAddress, lbRules, router);
+//
+//                // now that the rule has been disabled, delete it, also remove the mapping from the load balancer mapping table
+//                _rulesDao.remove(targetLbRule.getId());
+//                _loadBalancerVMMapDao.remove(loadBalancerMapping.getId());
+//
+//                // save off the event for deleting the LB rule
+//                EventVO lbRuleEvent = new EventVO();
+//                lbRuleEvent.setUserId(userId);
+//                lbRuleEvent.setAccountId(accountId);
+//                lbRuleEvent.setType(EventTypes.EVENT_NET_RULE_DELETE);
+//                lbRuleEvent.setDescription("deleted load balancer rule [" + targetLbRule.getSourceIpAddress() + ":" + targetLbRule.getSourcePort() +
+//                        "]->[" + targetLbRule.getDestinationIpAddress() + ":" + targetLbRule.getDestinationPort() + "]" + " " + targetLbRule.getAlgorithm());
+//                lbRuleEvent.setLevel(EventVO.LEVEL_INFO);
+//                _eventDao.persist(lbRuleEvent);
+//            }
+//        }
     }
 
     @Override
@@ -2534,13 +2572,13 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
             if (s_logger.isInfoEnabled()) {
                 s_logger.info(msg);
             }
-            _templateDao.remove(command.getId()); // Mark it removed so that templates with the same name can be created subsequently. Bug 7366
+            _templateDao.remove(command.getEntityId()); // Mark it removed so that templates with the same name can be created subsequently. Bug 7366
             throw new CloudRuntimeException(msg);
         }
 
         SnapshotCommand cmd = null;        
         VMTemplateVO privateTemplate = null;
-    	long templateId = command.getId();
+    	long templateId = command.getEntityId();
     	long zoneId = volume.getDataCenterId();
     	String uniqueName = getRandomPrivateTemplateName();
 
@@ -2664,8 +2702,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 	    long dataCenterId = dc.getId();
 	    long serviceOfferingId = offering.getId();
 	    long templateId = -1;
-	    if (template != null)
-	    	templateId = template.getId();
+	    if (template != null) {
+            templateId = template.getId();
+        }
 	    
 	    if (s_logger.isDebugEnabled()) {
 	        s_logger.debug("Creating directly attached vm for account id=" + account.getId() +
@@ -2761,7 +2800,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
                 	router =  rtrs.get(0);
                 	routerId = router.getId();
                 } else if (rtrs.size() == 0) {
-                	router = _networkMgr.createDhcpServerForDirectlyAttachedGuests(userId, accountId, dc, pod.first(), pod.second(), guestVlan);
+                	router = _routerMgr.createDhcpServerForDirectlyAttachedGuests(userId, accountId, dc, pod.first(), pod.second(), guestVlan);
                 	if (router == null) {
                 		avoids.add(pod.first().getId());
     	                if (s_logger.isDebugEnabled()) {
@@ -2777,9 +2816,10 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
                 {
                 	for(VlanVO vlanForAcc : vlansForAccount)
                 	{
-                		guestIp = _ipAddressDao.assignIpAddress(accountId, account.getDomainId(), vlanForAcc.getId(), false);
-                		if(guestIp!=null)
-                			break; //got an ip
+                		guestIp = _ipAddressDao.assignIpAddress(accountId, account.getDomainId(), vlanForAcc.getId(), false).getAddress();
+                		if(guestIp!=null) {
+                            break; //got an ip
+                        }
                 	}
                 }
                 else if(!forAccount && !forZone)
@@ -2787,9 +2827,10 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
                 	//i.e. for pod
                 	for(VlanVO vlanForPod : vlansForPod)
                 	{
-                		guestIp = _ipAddressDao.assignIpAddress(accountId, account.getDomainId(), vlanForPod.getId(), false);
-                		if(guestIp!=null)
-                			break;//got an ip
+                		guestIp = _ipAddressDao.assignIpAddress(accountId, account.getDomainId(), vlanForPod.getId(), false).getAddress();
+                		if(guestIp!=null) {
+                            break;//got an ip
+                        }
                 	}
                 }
                 else
@@ -2797,9 +2838,10 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
                 	//for zone
                 	for(VlanVO vlanForZone : zoneWideVlans)
                 	{
-                		guestIp = _ipAddressDao.assignIpAddress(accountId, account.getDomainId(), vlanForZone.getId(), false);
-                		if(guestIp!=null)
-                			break;//found an ip
+                		guestIp = _ipAddressDao.assignIpAddress(accountId, account.getDomainId(), vlanForZone.getId(), false).getAddress();
+                		if(guestIp!=null) {
+                            break;//found an ip
+                        }
                 	}
                 }
                 
@@ -2861,10 +2903,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 	        if (poolId == 0) {
 	        	if(vm != null && vm.getHostName()!=null && vm.getDisplayName() != null)
 	        	{
-	        		if(!vm.getHostName().equals(vm.getDisplayName()))
-	        			s_logger.debug("failed to create VM instance : " + name+"("+vm.getInstanceName()+")");
-	        		else
-	        			s_logger.debug("failed to create VM instance : " + name);
+	        		if(!vm.getHostName().equals(vm.getDisplayName())) {
+                        s_logger.debug("failed to create VM instance : " + name+"("+vm.getInstanceName()+")");
+                    } else {
+                        s_logger.debug("failed to create VM instance : " + name);
+                    }
 	        	}
 	        	else
 	        	{
@@ -2887,13 +2930,14 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 	        String diskOfferingIdentifier = (diskOffering != null) ? String.valueOf(diskOffering.getId()) : "-1";
 	        String eventParams = "id=" + vm.getId() + "\nvmName=" + vm.getHostName() + "\nsoId=" + vm.getServiceOfferingId() + "\ndoId=" + diskOfferingIdentifier + "\ntId=" + vm.getTemplateId() + "\ndcId=" + vm.getDataCenterId();
 	        event.setParameters(eventParams);
-	        if(!vm.getHostName().equals(vm.getDisplayName()))
-	        	event.setDescription("successfully created VM instance : " + vm.getHostName()+"("+vm.getInstanceName()+")");
-	        else
-	        	event.setDescription("successfully created VM instance : " + vm.getHostName());
+	        if(!vm.getHostName().equals(vm.getDisplayName())) {
+                event.setDescription("successfully created VM instance : " + vm.getHostName()+"("+vm.getInstanceName()+")");
+            } else {
+                event.setDescription("successfully created VM instance : " + vm.getHostName());
+            }
 	        _eventDao.persist(event);
 	        
-	        _vmDao.updateIf(vm, VirtualMachine.Event.OperationSucceeded, null);
+	        _itMgr.stateTransitTo(vm, VirtualMachine.Event.OperationSucceeded, null);
 	        if (s_logger.isDebugEnabled()) {
 	            s_logger.debug("vm created " + vmId);
 	        }
@@ -2916,8 +2960,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 	    long dataCenterId = dc.getId();
 	    long serviceOfferingId = offering.getId();
 	    long templateId = -1;
-	    if (template != null)
-	    	templateId = template.getId();
+	    if (template != null) {
+            templateId = template.getId();
+        }
 	    
 	    if (s_logger.isDebugEnabled()) {
 	        s_logger.debug("Creating directly attached vm for account id=" + account.getId() +
@@ -3015,10 +3060,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 	        if (poolId == 0) {
 	        	if(vm != null && vm.getHostName()!=null && vm.getDisplayName() != null)
 	        	{
-	        		if(!vm.getHostName().equals(vm.getDisplayName()))
-	        			s_logger.debug("failed to create VM instance : " + name+"("+vm.getDisplayName()+")");
-	        		else
-	        			s_logger.debug("failed to create VM instance : " + name);
+	        		if(!vm.getHostName().equals(vm.getDisplayName())) {
+                        s_logger.debug("failed to create VM instance : " + name+"("+vm.getDisplayName()+")");
+                    } else {
+                        s_logger.debug("failed to create VM instance : " + name);
+                    }
 	        	}
 	        	else
 	        	{
@@ -3041,13 +3087,14 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 	        String diskOfferingIdentifier = (diskOffering != null) ? String.valueOf(diskOffering.getId()) : "-1";
 	        String eventParams = "id=" + vm.getId() + "\nvmName=" + vm.getHostName() + "\nsoId=" + vm.getServiceOfferingId() + "\ndoId=" + diskOfferingIdentifier + "\ntId=" + vm.getTemplateId() + "\ndcId=" + vm.getDataCenterId();
 	        event.setParameters(eventParams);
-	        if(!vm.getHostName().equals(vm.getDisplayName()))
-	        	event.setDescription("successfully created VM instance : " + vm.getHostName()+"("+vm.getDisplayName()+")");
-	        else
-	        	event.setDescription("successfully created VM instance : " + vm.getHostName());
+	        if(!vm.getHostName().equals(vm.getDisplayName())) {
+                event.setDescription("successfully created VM instance : " + vm.getHostName()+"("+vm.getDisplayName()+")");
+            } else {
+                event.setDescription("successfully created VM instance : " + vm.getHostName());
+            }
 	        _eventDao.persist(event);
 	        
-	        _vmDao.updateIf(vm, VirtualMachine.Event.OperationSucceeded, null);
+	        _itMgr.stateTransitTo(vm, VirtualMachine.Event.OperationSucceeded, null);
 	        if (s_logger.isDebugEnabled()) {
 	            s_logger.debug("vm created " + vmId);
 	        }
@@ -3185,8 +3232,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 		Long id = cmd.getId();
 		
         //if account is removed, return error
-        if(account!=null && account.getRemoved() != null)
-        	throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "The account " + account.getId()+" is removed");
+        if(account!=null && account.getRemoved() != null) {
+            throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "The account " + account.getId()+" is removed");
+        }
         		
         UserVmVO vmInstance = _vmDao.findById(id);
         if (vmInstance == null) {
@@ -3215,8 +3263,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 		Long id = cmd.getId();
 		
         //if account is removed, return error
-        if(account!=null && account.getRemoved() != null)
-        	throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "The account " + account.getId()+" is removed");
+        if(account!=null && account.getRemoved() != null) {
+            throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "The account " + account.getId()+" is removed");
+        }
         		
         UserVmVO vmInstance = _vmDao.findById(id.longValue());
         if (vmInstance == null) {
@@ -3535,9 +3584,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
             throw new InvalidParameterValueException("No valid account specified for deploying a virtual machine.");
         }
         
-        AccountVO owner = _accountDao.findById(cmd.getAccountId());
+        AccountVO owner = _accountDao.findById(cmd.getEntityOwnerId());
         if (owner == null || owner.getRemoved() != null) {
-            throw new InvalidParameterValueException("Unable to find account: " + cmd.getAccountId());
+            throw new InvalidParameterValueException("Unable to find account: " + cmd.getEntityOwnerId());
         }
         
         Domain domain = _domainDao.findById(owner.getDomainId());
@@ -3652,8 +3701,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
             if (network == null) {
                 throw new InvalidParameterValueException("Unable to find network by id " + networkId);
             } else {
-                if (network.getAccountId() != Account.ACCOUNT_ID_SYSTEM && network.getAccountId() != accountId) {
-                    throw new PermissionDeniedException("Unable to create a vm using network with id " + networkId + ", permission denied");
+                if (!network.isShared()) {
+                    //Iterate through account/network map
+                    List<NetworkVO> networkMap = _networkDao.listBy(accountId, networkId);
+                    if (networkMap == null || networkMap.isEmpty()) {
+                        throw new PermissionDeniedException("Unable to create a vm using network with id " + networkId + ", permission denied");
+                    }
                 } else if (network.getTrafficType() != TrafficType.Guest) {
                     throw new InvalidParameterValueException("Unable to create a vm using network which traffic type is " + network.getTrafficType() + ". " +
                     		"Only Guest traffic type is acceptes");
@@ -3677,8 +3730,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 	}
 	
 	@Override
-	public UserVm startVirtualMachine(DeployVm2Cmd cmd) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException {
-	    long vmId = cmd.getId();
+	public UserVm startVirtualMachine(DeployVMCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException {
+	    long vmId = cmd.getEntityId();
 	    UserVmVO vm = _vmDao.findById(vmId);
 	    
         // Check that the password was passed in and is valid
@@ -3745,8 +3798,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         Long userId = UserContext.current().getUserId();
         
         //if account is removed, return error
-        if (caller != null && caller.getRemoved() != null)
+        if (caller != null && caller.getRemoved() != null) {
             throw new PermissionDeniedException("The account " + caller.getId()+" is removed");
+        }
                 
         UserVmVO vm = _vmDao.findById(vmId);
         if (vm == null) {
@@ -3784,8 +3838,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         Long userId = UserContext.current().getUserId();
         
         //if account is removed, return error
-        if(account!=null && account.getRemoved() != null)
+        if(account!=null && account.getRemoved() != null) {
             throw new PermissionDeniedException("The account " + account.getId()+" is removed");
+        }
                 
         UserVmVO vm = _vmDao.findById(vmId);
         if (vm == null) {

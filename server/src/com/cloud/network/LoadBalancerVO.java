@@ -18,127 +18,80 @@
 
 package com.cloud.network;
 
+import java.util.List;
+
 import javax.persistence.Column;
+import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
 import javax.persistence.PrimaryKeyJoinColumn;
-import javax.persistence.SecondaryTable;
 import javax.persistence.Table;
+
+import com.cloud.network.rules.FirewallRuleVO;
+import com.cloud.network.rules.LoadBalancer;
+import com.cloud.utils.net.Ip;
+import com.cloud.utils.net.NetUtils;
 
 @Entity
 @Table(name=("load_balancer"))
-@SecondaryTable(name="account",
-        pkJoinColumns={@PrimaryKeyJoinColumn(name="account_id", referencedColumnName="id")})
-public class LoadBalancerVO implements LoadBalancer {
-    @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
-    private long id;
-
+@DiscriminatorValue(value="LoadBalancing")
+@PrimaryKeyJoinColumn(name="id")
+public class LoadBalancerVO extends FirewallRuleVO implements LoadBalancer {
+    
     @Column(name="name")
     private String name;
 
     @Column(name="description")
     private String description;
 
-    @Column(name="account_id")
-    private long accountId;
-    
-    @Column(name="domain_id", table="account", insertable=false, updatable=false)
-    private long domainId;
-    
-    @Column(name="account_name", table="account", insertable=false, updatable=false)
-    private String accountName = null;
-
-    @Column(name="ip_address")
-    private String ipAddress;
-
-    @Column(name="public_port")
-    private String publicPort;
-
-    @Column(name="private_port")
-    private String privatePort;
-
     @Column(name="algorithm")
     private String algorithm;
 
-    public LoadBalancerVO() { }
+    @Column(name="dest_port_start")
+    private int defaultPortStart;
+    
+    @Column(name="dest_port_end")
+    private int defaultPortEnd;
+    
+    public LoadBalancerVO() { 
+    }
 
-    public LoadBalancerVO(String name, String description, long accountId, String ipAddress, String publicPort, String privatePort, String algorithm) {
+    public LoadBalancerVO(String xId, String name, String description, Ip srcIp, int srcPort, int dstPort, String algorithm, long networkId, long accountId, long domainId) {
+        super(xId, srcIp, srcPort, NetUtils.TCP_PROTO, networkId, accountId, domainId, Purpose.LoadBalancing);
         this.name = name;
         this.description = description;
-        this.accountId = accountId;
-        this.ipAddress = ipAddress;
-        this.publicPort = publicPort;
-        this.privatePort = privatePort;
         this.algorithm = algorithm;
+        this.defaultPortStart = dstPort;
+        this.defaultPortEnd = dstPort;
     }
-
-    @Override
-    public long getId() {
-        return id;
-    }
-
+    
     @Override
     public String getName() {
         return name;
-    }
-    @Override
-    public void setName(String name) {
-        this.name = name;
     }
 
     @Override
     public String getDescription() {
         return description;
     }
-    @Override
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    @Override
-    public long getAccountId() {
-        return accountId;
-    }
-
-    @Override
-    public String getIpAddress() {
-        return ipAddress;
-    }
-
-    @Override
-    public String getPublicPort() {
-        return publicPort;
-    }
-
-    @Override
-    public String getPrivatePort() {
-        return privatePort;
-    }
-    @Override
-    public void setPrivatePort(String privatePort) {
-        this.privatePort = privatePort;
-    }
 
     @Override
     public String getAlgorithm() {
         return algorithm;
     }
-    @Override
-    public void setAlgorithm(String algorithm) {
-        this.algorithm = algorithm;
-    }
     
     @Override
-    public Long getDomainId() {
-        return domainId;
+    public int getDefaultPortStart() { 
+        return defaultPortStart;
     }
-    
+
     @Override
-    public String getAccountName() {
-        return accountName;
+    public int getDefaultPortEnd() {
+        return defaultPortEnd;
+    }
+
+    @Override
+    public List<? extends Destination> getDestinations() {
+        // TODO Auto-generated method stub
+        return null;
     }
 }

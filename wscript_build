@@ -45,6 +45,7 @@ tgen = bld(features='subst', name='configure-info', source="configure-info.in", 
 tgen.dict = {"CONFIGUREVARS":bld.getconfig()}
 bld.install_files("${DOCDIR}","configure-info")
 
+
 # ==================== Java compilation ===========================
 
 # discover ant targets and properties
@@ -84,34 +85,71 @@ tgen = bld(rule=Utils.runant, name='runant', source=ant_sources, target=ant_jars
 
 # ======================= End Java compilation ======================
 
-
 # =================== C / Python compilation =========================
 
-bld.recurse(["daemonize","python"],'build')
+obj = bld(features = 'py',name='pythonmodules')
+obj.find_sources_in_dirs('python/lib', exts=['.py'])
 
+if bld.env.DISTRO not in ['Windows','Mac']:
+	# build / install declarations of the daemonization utility - except for Windows
+	bld(
+		name='daemonize',
+		features='cc cprogram',
+		source='daemonize/daemonize.c',
+		target='daemonize/cloud-daemonize')
 # ===================== End C / Python compilation ==========================
 
 
+if buildpremium: bld.recurse(["cloudstack-proprietary/"],'build')
+
 # ================ Third-party / dependency installation ===============
 
-bld.recurse(["deps"],'build')
-if buildpremium: bld.recurse(['cloudstack-proprietary/thirdparty'],'build')
+excludes = ["cloud-xstream-1.3.1.jar", "cloud-commons-dbcp-1.2.2.jar", 
+			"cloud-commons-httpclient-3.1.jar", "cloud-commons-pool-1.4.jar",
+			"cloud-servlet-api.jar", "cloud-commons-logging-1.1.1.jar",
+			"cloud-ws-commons-util-1.0.2.jar",
+			"cloud-commons-collections-3.2.1.jar", "vmware*.jar"]
+
+start_path = bld.path.find_dir ("deps")
+bld.install_files('${JAVADIR}',start_path.ant_glob("*.jar", excl = excludes), cwd=start_path)
 
 # =================== End 3rdparty/dep install ========================
 
 
 # =================== Build install declaratoin of console proxy project ========
+# binary unsubstitutable files:
+start_path = bld.path.find_dir ("console-proxy")
+bld.install_files("${CPLIBDIR}",start_path.ant_glob("images/**",src=True,bld=False,dir=False,flat=True),cwd=start_path,relative_trick=True)
 
-bld.recurse(["console-proxy"],'build')
+# text substitutable files (substitute with tokens from the environment bld.env):
+bld.substitute('css/** js/** ui/** scripts/**',install_to="${CPLIBDIR}", cwd=start_path)
 
+# config files (do not replace them if preserve config option is true)
+if not Options.options.PRESERVECONFIG: bld.install_files_filtered("${CPSYSCONFDIR}","conf.dom0/*", cwd=start_path)
 # ================== End console proxy ===================
 
 
 # ================ Creation of patch.tgz's ============================
 
 # done here because the patches require substituted files
-bld.recurse(["patches"],'build')
+start_path = bld.path.find_dir ("patches")
+bld.substitute("*/**",name="patchsubst", cwd = start_path)
 
+for virttech in Utils.to_list(start_path.ant_glob("*",dir=True)):
+	if virttech in ["shared"]: continue
+	patchfiles = start_path.ant_glob('shared/** %s/debian/config/**'%virttech,src=False,bld=True,dir=False,flat=True)
+
+	tmp = bld.path
+	bld.path = start_path
+	tgen = bld(
+		features  = 'tar',#Utils.tar_up,
+		source = patchfiles,
+		target = 'cloud-scripts.tgz',
+		name   = 'cloud-scripts_tgz',
+		root = os.path.join("patches", virttech + "/debian/config"),
+		rename = lambda x: re.sub(".subst$","",x),
+	)
+	bld.path = tmp
 # ================== End creation of patch.tgz's ====================
 
 
@@ -344,8 +382,8 @@ else:
 
 # =================== Subst / installation of agent scripts project ========
 
-bld.recurse(["scripts"],'build')
-if buildpremium: bld.recurse(["cloudstack-proprietary/scripts"],'build')
+start_path = bld.path.find_dir ("scripts")
+bld.substitute('**',"${AGENTLIBDIR}/scripts",chmod=0755, cwd=start_path)
 
 # ================== End agent scripts ===================
 
@@ -361,18 +399,44 @@ bld.install_files_filtered("${SBINDIR}","*/sbindir/* cloudstack-proprietary/*/sb
 
 # ================== Installation of scripts / bindirs / configuration files ===========================
 
-# build / install declarations of test project
-if buildpremium: bld.recurse(["cloudstack-proprietary/test"],'build')
 
-# build / install declarations of server project <- this is actually now in client project
-bld.recurse(["client","server"],'build')
-if buildpremium: bld.recurse(["cloudstack-proprietary/premium"],'build')
+# ================= build / install declarations of server project <- this is actually now in client project
+start_path = bld.path.find_dir("client/WEB-INF")
+bld.install_files('${MSENVIRON}/webapps/client/WEB-INF',
+	start_path.ant_glob("**",src=True,bld=False,dir=False,flat=True),
+	cwd=start_path,relative_trick=True)
 
-# build / install declarations of agent project
-bld.recurse(["agent"],'build')
+start_path = bld.path.find_dir("client")
+bld.install_files("${MSCONF}/resources",'WEB-INF/classes/resources/*.properties',chmod=0640, cwd=start_path)
 
-# build / install declarations of client UI project
-bld.recurse(["ui"],'build')
+if not Options.options.PRESERVECONFIG:
+	bld.install_files_filtered("${MSCONF}","tomcatconf/*", cwd=start_path)
+	bld.install_files("${MSCONF}",'tomcatconf/db.properties',chmod=0640, cwd=start_path)
+	bld.setownership("${MSCONF}/db.properties","root",bld.env.MSUSER)
+
+start_path = bld.path.find_dir("server")
+if not Options.options.PRESERVECONFIG:
+	bld.install_files_filtered("${SERVERSYSCONFDIR}","conf/*", cwd=start_path)
+# ================= end build / install declarations of server project <- this is actually now in client project
+
+# ================ build / install declarations of agent project =================
+start_path = bld.path.find_dir ("agent")
+bld.install_files("${AGENTLIBDIR}",
+	start_path.ant_glob("storagepatch/**",src=True,bld=False,dir=False,flat=True),
+	cwd=start_path,relative_trick=True)
+if not Options.options.PRESERVECONFIG:
+	bld.install_files_filtered("${AGENTSYSCONFDIR}","conf/*", cwd = start_path)
+# ================ build / install declarations of agent project =================
+
+# =============== build / install declarations of client UI project =======================
+# binary unsubstitutable files:
+start_path = bld.path.find_dir ("ui")
+bld.install_files ("${MSENVIRON}/webapps/client",start_path.ant_glob("*.ico **/*png **/*jpg **/*gif",src=True,bld=False,dir=False,flat=True),cwd=start_path,relative_trick=True)
+
+# text substitutable files (substitute with tokens from the environment bld.env):
+#bld.substitute ("ui/*html ui/**/*html ui/**/*js ui/**/*css ui/**/*properties ui/**/*jsp ui/*jsp",install_to="${MSENVIRON}/webapps/client")
+bld.substitute ("*html **/*html **/*js **/*css **/*properties **/*jsp *jsp",install_to="${MSENVIRON}/webapps/client", cwd=start_path)
+# =============== end build / install declarations of client UI project =======================
 
 # apply distro-specific config on top of the 'all' generic cloud-management config
 globspec = _join("*","distro",bld.env.DISTRO.lower(),"*") # matches premium/distro/centos/SYSCONFDIR
@@ -387,9 +451,6 @@ for dsdir in distrospecificdirs:
 		mode = 0755
 		if Options.options.PRESERVECONFIG: continue
 	bld.install_files_filtered(dsdirwithvar, files,  cwd=start_path, relative_trick=True,chmod=mode)
-
-# build / install declarations of usage
-if buildpremium: bld.recurse(["cloudstack-proprietary/usage"],'build')
 
 # install db data files
 bld.install_files_filtered("${SETUPDATADIR}",filelist("*/db/* cloudstack-proprietary/*/db/*",excl=Node.exclude_regs + "\ncloud-gate\ncloud-bridge"))

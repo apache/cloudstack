@@ -45,6 +45,9 @@ public class CapacityVO implements Capacity {
     @Column(name="used_capacity")
     private long usedCapacity;
 
+    @Column(name="reserved_capacity")
+    private long reservedCapacity;
+    
     @Column(name="total_capacity")
     private long totalCapacity;
 
@@ -96,6 +99,13 @@ public class CapacityVO implements Capacity {
     }
     public void setUsedCapacity(long usedCapacity) {
         this.usedCapacity = usedCapacity;
+    }
+    @Override
+    public long getReservedCapacity() {
+        return reservedCapacity;
+    }
+    public void setReservedCapacity(long reservedCapacity) {
+        this.usedCapacity = reservedCapacity;
     }
     @Override
     public long getTotalCapacity() {

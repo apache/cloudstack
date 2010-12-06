@@ -622,24 +622,20 @@
                     <h3>
                     </h3>
                     <div class="vmpopup_offeringpanel" style="position:relative;">
-                    	<div id="underconstruction">
-                            <div class="vmpopup_offeringpanel_overlay"></div>
-                            <div class="vmpopup_offeringpanel_underconstructionbox"><p> Under Construction </p></div>
-                        </div>
-                        <div class="vmpopup_offeringbox">
-                            <input type="radio" name="radiogroup" class="radio" selected />
-                            <label class="label">
-                                My Virtual Network</label>
+                        <div class="vmpopup_offeringbox" id="network_virtual_container">
+                            <input type="radio" id="network_virtual" name="radiogroup" class="radio" checked" />
+                            <label class="label" id="network_virtual_name">Virtual Network</label>
                             <div class="vmpopup_offdescriptionbox">
                                 <div class="vmpopup_offdescriptionbox_top">
                                 </div>
                                 <div class="vmpopup_offdescriptionbox_bot">
-                                    <p>
-                                        A virtual private network that is fronted by a virtual router. 
+                                    <p id="network_virtual_desc">
+                                        A dedicated virtualized network for your account.  The broadcast domain is contrained within a VLAN and all public network access is routed out by a virtual router.
                                     </p>
                                 </div>
                             </div>
                         </div>
+						<!--
 						<div class="vmpopup_offeringbox">
                             <input type="radio" name="radiogroup" class="radio" selected />
                             <label class="label">
@@ -689,6 +685,7 @@
                                 </div>
                             </div>
                         </div>
+						-->
                     </div>
                 </div>
                 <div class="vmpopup_navigationpanel">
@@ -878,7 +875,7 @@
 <!-- VM Wizard - Service Offering template (end) -->
 <!-- VM Wizard - disk Offering template (begin)-->
 <div class="vmpopup_offeringbox" id="vm_popup_disk_offering_template_no" style="display: none">
-    <input type="radio" class="radio" value="no" checked />
+    <input type="radio" class="radio" value="no" checked="checked" />
     <label class="label">
         No Thanks</label>
 </div>

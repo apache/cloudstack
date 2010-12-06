@@ -17,6 +17,8 @@
  */
 package com.cloud.network.element;
 
+import java.util.List;
+
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
@@ -26,16 +28,18 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.router.DomainRouterManager;
+import com.cloud.network.rules.FirewallRule;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
+import com.cloud.utils.net.Ip;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
@@ -60,7 +64,7 @@ public class DomainRouterElement extends AdapterBase implements NetworkElement {
 
     @Override
     public boolean implement(Network guestConfig, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException {
-        if (offering.getGuestIpType() != GuestIpType.Virtualized) {
+        if (offering.getGuestIpType() != GuestIpType.Virtual) {
             s_logger.trace("Not handling guest ip type = " + offering.getGuestIpType());
             return false;
         }
@@ -114,17 +118,25 @@ public class DomainRouterElement extends AdapterBase implements NetworkElement {
         return _routerMgr.stopRouter(router.getId(), 1);
     }
     
-    @Override
-    public boolean addRule() {
-        return false;
+    protected DomainRouterElement() {
+        super();
     }
-    
+
     @Override
-    public boolean revokeRule() {
+    public boolean applyRules(Network config, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
+        
         return false;
     }
 
-    protected DomainRouterElement() {
-        super();
+    @Override
+    public boolean associate(Network network, Ip ipAddress) throws ResourceUnavailableException {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public boolean disassociate(Network network, Ip ipAddress) throws ResourceUnavailableException {
+        // TODO Auto-generated method stub
+        return false;
     }
 }

@@ -28,11 +28,14 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.FirewallRuleResponse;
 import com.cloud.event.EventTypes;
-import com.cloud.network.rules.FirewallRule;
-import com.cloud.user.Account;
+import com.cloud.exception.NetworkRuleConflictException;
+import com.cloud.network.rules.PortForwardingRule;
+import com.cloud.user.UserContext;
+import com.cloud.utils.net.Ip;
+import com.cloud.utils.net.NetUtils;
 
 @Implementation(description="Creates an ip forwarding rule", responseObject=FirewallRuleResponse.class)
-public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd {
+public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements PortForwardingRule {
     public static final Logger s_logger = Logger.getLogger(CreateIpForwardingRuleCmd.class.getName());
 
     private static final String s_name = "createipforwardingruleresponse";
@@ -72,9 +75,17 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void execute(){ 
-        FirewallRule result = _networkService.createIpForwardingRuleOnDomr(this.getId());
-        if (result != null) {
-            FirewallRuleResponse fwResponse = _responseGenerator.createFirewallRuleResponse(result);
+        boolean result;
+        try {
+            result = _rulesService.applyPortForwardingRules(new Ip(ipAddress), UserContext.current().getAccount());
+        } catch (Exception e) {
+            s_logger.error("Unable to apply port forwarding rules", e);
+            _rulesService.revokePortForwardingRule(getEntityId(), true);
+            result = false;
+        }
+        if (result) {
+            PortForwardingRule rule = _entityMgr.findById(PortForwardingRule.class, getEntityId());
+            FirewallRuleResponse fwResponse = _responseGenerator.createFirewallRuleResponse(rule);
             fwResponse.setResponseName(getName());
             this.setResponseObject(fwResponse);
         } else {
@@ -84,18 +95,21 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd {
     }
 
 	@Override
-	public void callCreate(){
-		FirewallRule rule = _networkService.createIpForwardingRuleInDb(ipAddress,virtualMachineId);
-		if (rule != null){
-		    this.setId(rule.getId());
-		} else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create ip forwarding rule");
+	public void create() {
+		PortForwardingRule rule;
+        try {
+            rule = _rulesService.createPortForwardingRule(this, virtualMachineId);
+        } catch (NetworkRuleConflictException e) {
+            s_logger.info("Unable to create Port Forwarding Rule due to " + e.getMessage());
+            throw new ServerApiException(BaseCmd.NETWORK_RULE_CONFLICT_ERROR, e.getMessage());
         }
+        
+        this.setEntityId(rule.getId());
 	}
 
     @Override
-    public long getAccountId() {
-        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+    public long getEntityOwnerId() {
+        return _entityMgr.findById(PortForwardingRule.class, getEntityId()).getAccountId();
     }
 
     @Override
@@ -106,6 +120,76 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd {
     @Override
     public String getEventDescription() {
         return  ("Creating an ipforwarding 1:1 NAT rule for "+ipAddress+" with virtual machine:"+virtualMachineId);
+    }
+
+    @Override
+    public long getId() {
+        throw new UnsupportedOperationException("Don't call me");
+    }
+
+    @Override
+    public String getXid() {
+        return null;
+    }
+
+    @Override
+    public Ip getSourceIpAddress() {
+        return new Ip(ipAddress);
+    }
+
+    @Override
+    public int getSourcePortStart() {
+        return -1;
+    }
+
+    @Override
+    public int getSourcePortEnd() {
+        return -1;
+    }
+
+    @Override
+    public String getProtocol() {
+        return NetUtils.NAT_PROTO;
+    }
+
+    @Override
+    public Purpose getPurpose() {
+        return Purpose.PortForwarding;
+    }
+
+    @Override
+    public State getState() {
+        throw new UnsupportedOperationException("Don't call me");
+    }
+
+    @Override
+    public long getNetworkId() {
+        return -1;
+    }
+
+    @Override
+    public long getDomainId() {
+        throw new UnsupportedOperationException("Don't call me");
+    }
+
+    @Override
+    public Ip getDestinationIpAddress() {
+        return null;
+    }
+
+    @Override
+    public int getDestinationPortStart() {
+        return -1;
+    }
+
+    @Override
+    public int getDestinationPortEnd() {
+        return -1;
+    }
+
+    @Override
+    public long getAccountId() {
+        throw new UnsupportedOperationException("Get the account id from network");
     }
 
 }

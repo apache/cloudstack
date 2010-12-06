@@ -21,16 +21,21 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.FirewallRuleResponse;
+import com.cloud.event.EventTypes;
 import com.cloud.exception.NetworkRuleConflictException;
-import com.cloud.network.rules.FirewallRule;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.rules.PortForwardingRule;
+import com.cloud.user.UserContext;
+import com.cloud.utils.net.Ip;
 
 @Implementation(description="Creates a port forwarding rule", responseObject=FirewallRuleResponse.class)
-public class CreatePortForwardingRuleCmd extends BaseCmd {
+public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd  implements PortForwardingRule {
     public static final Logger s_logger = Logger.getLogger(CreatePortForwardingRuleCmd.class.getName());
 
     private static final String s_name = "createportforwardingruleresponse";
@@ -67,6 +72,7 @@ public class CreatePortForwardingRuleCmd extends BaseCmd {
         return privatePort;
     }
 
+    @Override
     public String getProtocol() {
         return protocol;
     }
@@ -90,19 +96,120 @@ public class CreatePortForwardingRuleCmd extends BaseCmd {
     }
     
     @Override
-    public void execute(){
+    public void execute() throws ResourceUnavailableException {
         try {
-            FirewallRule result = _networkService.createPortForwardingRule(this);
-            if (result != null) {
-                FirewallRuleResponse fwResponse = _responseGenerator.createFirewallRuleResponse(result);
-                fwResponse.setResponseName(getName());
-                this.setResponseObject(fwResponse);
-            } else {
+            UserContext callerContext = UserContext.current();
+            
+            PortForwardingRule result = _rulesService.createPortForwardingRule(this, virtualMachineId);
+            if (result == null) {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "An existing rule for ipAddress / port / protocol of " + ipAddress + " / " + publicPort + " / " + protocol + " exits.");
             }
+            boolean success = false;
+            try {
+                success = _rulesService.applyPortForwardingRules(result.getSourceIpAddress(), callerContext.getAccount());
+            }  finally {
+                if (!success) {
+                    _rulesService.revokePortForwardingRule(result.getId(), true);
+                }
+            }
+            FirewallRuleResponse fwResponse = _responseGenerator.createFirewallRuleResponse(result);
+            fwResponse.setResponseName(getName());
+            setResponseObject(fwResponse);
         } catch (NetworkRuleConflictException ex) {
             throw new ServerApiException(BaseCmd.NETWORK_RULE_CONFLICT_ERROR, ex.getMessage());
         }
+    }
+
+    @Override
+    public long getId() {
+        throw new UnsupportedOperationException("database id can only provided by VO objects"); 
+    }
+
+    @Override
+    public String getXid() {
+        // FIXME: We should allow for end user to specify Xid.
+        return null;
+    }
+
+    @Override
+    public Ip getSourceIpAddress() {
+        return new Ip(ipAddress);
+    }
+
+    @Override
+    public int getSourcePortStart() {
+        return Integer.parseInt(publicPort);
+    }
+
+    @Override
+    public int getSourcePortEnd() {
+        return Integer.parseInt(publicPort);
+    }
+
+    @Override
+    public Purpose getPurpose() {
+        return Purpose.PortForwarding;
+    }
+
+    @Override
+    public State getState() {
+        throw new UnsupportedOperationException("Should never call me to find the state");
+    }
+
+    @Override
+    public long getNetworkId() {
+        throw new UnsupportedOperationException("Not yet implemented");
+    }
+
+    @Override
+    public long getEntityOwnerId() {
+        return _entityMgr.findById(PortForwardingRule.class, getEntityId()).getAccountId();
+    }
+
+    @Override
+    public long getDomainId() {
+        throw new UnsupportedOperationException("Get the domain id from network");
+    }
+
+    @Override
+    public Ip getDestinationIpAddress() {
+        return null;
+    }
+
+    @Override
+    public int getDestinationPortStart() {
+        return Integer.parseInt(privatePort);
+    }
+
+    @Override
+    public int getDestinationPortEnd() {
+        return Integer.parseInt(privatePort);
+    }
+
+    @Override
+    public void create() {
+        try {
+            PortForwardingRule result = _rulesService.createPortForwardingRule(this, virtualMachineId);
+            setEntityId(result.getId());
+        } catch (NetworkRuleConflictException ex) {
+            s_logger.info("Network rule conflict: " + ex.getMessage());
+            throw new ServerApiException(BaseCmd.NETWORK_RULE_CONFLICT_ERROR, ex.getMessage());
+        }
+    }
+    
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_NET_RULE_ADD;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  ("Creating an port forwarding  rule for "+ipAddress+" with virtual machine:"+virtualMachineId);
+    }
+
+    @Override
+    public long getAccountId() {
+        throw new UnsupportedOperationException("Get the account id from network");
     }
 
 }

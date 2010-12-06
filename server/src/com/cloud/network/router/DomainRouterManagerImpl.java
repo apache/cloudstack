@@ -105,7 +105,6 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.DomainRouterService;
-import com.cloud.network.FirewallRuleVO;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
@@ -123,6 +122,7 @@ import com.cloud.network.dao.NetworkRuleConfigDao;
 import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.router.VirtualRouter.Role;
+import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -272,10 +272,11 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
     	ModifySshKeysCommand cmd = new ModifySshKeysCommand(pubKey, prvKey);
     	final Answer answer = _agentMgr.easySend(hostId, cmd);
     	
-    	if (answer != null)
-    		return true;
-    	else
-    		return false;
+    	if (answer != null) {
+            return true;
+        } else {
+            return false;
+        }
     }
     
     @Override
@@ -297,8 +298,9 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         if (pod == null) {
             	throw new ConcurrentOperationException("Unable to acquire lock on pod " + podId );
         }
-        if(s_logger.isDebugEnabled())
-        	s_logger.debug("Lock on pod " + podId + " is acquired");
+        if(s_logger.isDebugEnabled()) {
+            s_logger.debug("Lock on pod " + podId + " is acquired");
+        }
         
         final long id = _routerDao.getNextInSequence(Long.class, "id");
         final String[] macAddresses = _dcDao.getNextAvailableMacAddressPair(dc.getId());
@@ -314,7 +316,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
             	return rtrs.get(0);
             }
             String mgmtNetmask = NetUtils.getCidrNetmask(pod.getCidrSize());
-            final String guestIp = _ipAddressDao.assignIpAddress(accountIdForDHCPServer, domainIdForDHCPServer, guestVlan.getId(), false);
+            final String guestIp = _ipAddressDao.assignIpAddress(accountIdForDHCPServer, domainIdForDHCPServer, guestVlan.getId(), false).getAddress();
 
             router =
                 new DomainRouterVO(id,
@@ -379,7 +381,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
                 _eventDao.persist(event);
                 throw new ExecutionException("Unable to create DHCP Server");
             }
-            _routerDao.updateIf(router, VirtualMachine.Event.OperationSucceeded, null);
+            _itMgr.stateTransitTo(router, VirtualMachine.Event.OperationSucceeded, null);
 
             s_logger.info("DHCP server created: id=" + router.getId() + "; name=" + router.getHostName() + "; vlan=" + guestVlan.getVlanId() + "; pod=" + pod.getName());
 
@@ -407,8 +409,9 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
                 _routerDao.releaseFromLockTable(id);
             }
             if (pod != null) {
-                if(s_logger.isDebugEnabled())
-                	s_logger.debug("Releasing lock on pod " + podId);
+                if(s_logger.isDebugEnabled()) {
+                    s_logger.debug("Releasing lock on pod " + podId);
+                }
             	_podDao.releaseFromLockTable(pod.getId());
             }
         }
@@ -432,8 +435,9 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         	throw new ConcurrentOperationException("Unable to acquire account " + accountId);
         }
         
-        if(s_logger.isDebugEnabled())
-        	s_logger.debug("lock on account " + accountId + " for createRouter is acquired");
+        if(s_logger.isDebugEnabled()) {
+            s_logger.debug("lock on account " + accountId + " for createRouter is acquired");
+        }
 
         final Transaction txn = Transaction.currentTxn();
         DomainRouterVO router = null;
@@ -484,7 +488,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
 
             // Find the VLAN ID, VLAN gateway, and VLAN netmask for publicIpAddress
             IPAddressVO ipVO = _ipAddressDao.findById(publicIpAddress);
-            VlanVO vlan = _vlanDao.findById(ipVO.getVlanDbId());
+            VlanVO vlan = _vlanDao.findById(ipVO.getVlanId());
             String vlanId = vlan.getVlanId();
             String vlanGateway = vlan.getVlanGateway();
             String vlanNetmask = vlan.getVlanNetmask();
@@ -547,7 +551,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
                 _eventDao.persist(event);
                 throw new ExecutionException("Unable to create DomainRouter");
             }
-            _routerDao.updateIf(router, VirtualMachine.Event.OperationSucceeded, null);
+            _itMgr.stateTransitTo(router, VirtualMachine.Event.OperationSucceeded, null);
 
             s_logger.debug("Router created: id=" + router.getId() + "; name=" + router.getHostName());
             
@@ -574,8 +578,9 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
             return null;
         } finally {
             if (account != null) {
-            	if(s_logger.isDebugEnabled())
-            		s_logger.debug("Releasing lock on account " + account.getId() + " for createRouter");
+            	if(s_logger.isDebugEnabled()) {
+                    s_logger.debug("Releasing lock on account " + account.getId() + " for createRouter");
+                }
             	_accountDao.releaseFromLockTable(account.getId());
             }
             if(!success){
@@ -627,13 +632,14 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
                 return false;
             }
             router = _routerDao.findById(routerId);
-            if (!_routerDao.updateIf(router, VirtualMachine.Event.DestroyRequested, router.getHostId())) {
+            if (! _itMgr.stateTransitTo(router, VirtualMachine.Event.DestroyRequested, router.getHostId())) {
                 s_logger.debug("VM " + router.toString() + " is not in a state to be destroyed.");
                 return false;
             }
         } finally {
-            if (s_logger.isDebugEnabled())
+            if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Release lock on router " + routerId + " for stop");
+            }
             _routerDao.releaseFromLockTable(routerId);
         }
                         
@@ -699,10 +705,11 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         }
 
         router.setServiceOfferingId(serviceOfferingId);
-        if (_routerDao.update(routerId, router))
-                return _routerDao.findById(routerId);
-        else 
+        if (_routerDao.update(routerId, router)) {
+            return _routerDao.findById(routerId);
+        } else {
             throw new CloudRuntimeException("Unable to upgrade router " + routerId);
+        }
         
     }
 
@@ -781,8 +788,9 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor.getCurrentExecutor();
         if (asyncExecutor != null) {
             AsyncJobVO job = asyncExecutor.getJob();
-            if (s_logger.isInfoEnabled())
+            if (s_logger.isInfoEnabled()) {
                 s_logger.info("Start router " + routerId + ", update async job-" + job.getId());
+            }
             _asyncMgr.updateAsyncJobAttachment(job.getId(), "domain_router", routerId);
         }
     	
@@ -792,8 +800,9 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         	return router;
         }
         
-        if(s_logger.isDebugEnabled())
-        	s_logger.debug("Lock on router " + routerId + " is acquired");
+        if(s_logger.isDebugEnabled()) {
+            s_logger.debug("Lock on router " + routerId + " is acquired");
+        }
         
         boolean started = false;
         String vnet = null;
@@ -846,7 +855,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
 	        	return null;
 	        }
 	        
-	        if (!_routerDao.updateIf(router, VirtualMachine.Event.StartRequested, routingHost.getId())) {
+	        if (! _itMgr.stateTransitTo(router, VirtualMachine.Event.StartRequested, routingHost.getId())) {
 	            s_logger.debug("Unable to start router " + router.toString() + " because it is not in a startable state");
 	            throw new ConcurrentOperationException("Someone else is starting the router: " + router.toString());
 	        }
@@ -955,7 +964,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
 	                    
 	                }
 	                router.setDomain(networkDomain);
-	                _routerDao.updateIf(router, VirtualMachine.Event.OperationRetry, routingHost.getId());
+	                _itMgr.stateTransitTo(router, VirtualMachine.Event.OperationRetry, routingHost.getId());
 
 	                List<VolumeVO> vols = _storageMgr.prepare(router, routingHost);
 	                if (vols == null) {
@@ -1024,10 +1033,11 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
 	                
 	                router.setPrivateIpAddress(null);
 	                
-	                if(_defaultHypervisorType == null || !_defaultHypervisorType.equalsIgnoreCase(Hypervisor.HypervisorType.VmWare.toString()))
-	                	_dcDao.releaseLinkLocalIpAddress(privateIpAddress, router.getDataCenterId(), router.getId());
-	                else
-	                	_dcDao.releasePrivateIpAddress(privateIpAddress, router.getDataCenterId(), router.getId());
+	                if(_defaultHypervisorType == null || !_defaultHypervisorType.equalsIgnoreCase(Hypervisor.HypervisorType.VmWare.toString())) {
+                        _dcDao.releaseLinkLocalIpAddress(privateIpAddress, router.getDataCenterId(), router.getId());
+                    } else {
+                        _dcDao.releasePrivateIpAddress(privateIpAddress, router.getDataCenterId(), router.getId());
+                    }
 	
 	                _storageMgr.unshare(router, vols, routingHost);
 	            } while (--retry > 0 && (routingHost = (HostVO)_agentMgr.findHost(Host.Type.Routing, dc, pod, sp,  offering, template, router, null, avoid)) != null);
@@ -1037,7 +1047,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
 	                throw new ExecutionException("Couldn't find a routingHost");
 	            }
 	
-	            _routerDao.updateIf(router, VirtualMachine.Event.OperationSucceeded, routingHost.getId());
+	            _itMgr.stateTransitTo(router, VirtualMachine.Event.OperationSucceeded, routingHost.getId());
 	            if (s_logger.isDebugEnabled()) {
 	                s_logger.debug("Router " + router.toString() + " is now started on " + routingHost.toString());
 	            }
@@ -1078,7 +1088,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
                 }
 
 
-                if (_routerDao.updateIf(router, VirtualMachine.Event.OperationFailed, null)) {
+                if ( _itMgr.stateTransitTo(router, VirtualMachine.Event.OperationFailed, null)) {
                     txn.commit();
                 }
                 
@@ -1093,8 +1103,9 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
             }
             
         	if (router != null) {
-                if(s_logger.isDebugEnabled())
-                	s_logger.debug("Releasing lock on router " + routerId);
+                if(s_logger.isDebugEnabled()) {
+                    s_logger.debug("Releasing lock on router " + routerId);
+                }
         		_routerDao.releaseFromLockTable(routerId);
         	}
 
@@ -1138,17 +1149,17 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
                     return false;
                 }
 			}
-			final List<FirewallRuleVO> fwRules = new ArrayList<FirewallRuleVO>();
-			for (final IPAddressVO ipVO : ipAddrs) {
-				//We need only firewall rules that are either forwarding or for load balancers
-				fwRules.addAll(_rulesDao.listIPForwarding(ipVO.getAddress(), true));
-				fwRules.addAll(_rulesDao.listIpForwardingRulesForLoadBalancers(ipVO.getAddress()));
-			}
-			final List<FirewallRuleVO> result = _networkMgr.updateFirewallRules(router
-					.getPublicIpAddress(), fwRules, router);
-			if (result.size() != fwRules.size()) {
-				return false;
-			}
+			final List<PortForwardingRuleVO> fwRules = new ArrayList<PortForwardingRuleVO>();
+//FIXME:			for (final IPAddressVO ipVO : ipAddrs) {
+//				//We need only firewall rules that are either forwarding or for load balancers
+//				fwRules.addAll(_rulesDao.listIPForwarding(ipVO.getAddress(), true));
+//				fwRules.addAll(_rulesDao.listIpForwardingRulesForLoadBalancers(ipVO.getAddress()));
+//			}
+//			final List<PortForwardingRuleVO> result = _networkMgr.updateFirewallRules(router
+//					.getPublicIpAddress(), fwRules, router);
+//			if (result.size() != fwRules.size()) {
+//				return false;
+//			}
 		}
 		return resendDhcpEntries(router) && resendVpnServerData(router);
       
@@ -1158,8 +1169,9 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
     	final List<UserVmVO> vms = _vmDao.listBy(router.getId(), State.Creating, State.Starting, State.Running, State.Stopping, State.Stopped, State.Migrating);
     	Commands cmds = new Commands(OnError.Continue);
     	for (UserVmVO vm: vms) {
-    		if (vm.getGuestIpAddress() == null || vm.getGuestMacAddress() == null || vm.getHostName() == null)
-    			continue;
+    		if (vm.getGuestIpAddress() == null || vm.getGuestMacAddress() == null || vm.getHostName() == null) {
+                continue;
+            }
     		DhcpEntryCommand decmd = new DhcpEntryCommand(vm.getGuestMacAddress(), vm.getGuestIpAddress(), router.getPrivateIpAddress(), vm.getHostName());
     		cmds.addCommand(decmd);
     	}
@@ -1248,8 +1260,9 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         if (asyncExecutor != null) {
             AsyncJobVO job = asyncExecutor.getJob();
 
-            if (s_logger.isInfoEnabled())
+            if (s_logger.isInfoEnabled()) {
                 s_logger.info("Stop router " + routerId + ", update async job-" + job.getId());
+            }
             _asyncMgr.updateAsyncJobAttachment(job.getId(), "domain_router", routerId);
         }
     	
@@ -1365,8 +1378,9 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         if (asyncExecutor != null) {
             AsyncJobVO job = asyncExecutor.getJob();
 
-            if (s_logger.isInfoEnabled())
+            if (s_logger.isInfoEnabled()) {
                 s_logger.info("Reboot router " + routerId + ", update async job-" + job.getId());
+            }
             _asyncMgr.updateAsyncJobAttachment(job.getId(), "domain_router", routerId);
         }
     	
@@ -1428,10 +1442,11 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         }
         long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_ROUTER_REBOOT, "rebooting Router with Id: "+routerId);
         
-    	if (rebootRouter(routerId, eventId))
-    	    return _routerDao.findById(routerId);
-    	else
-    	    throw new CloudRuntimeException("Fail to reboot router " + routerId);
+    	if (rebootRouter(routerId, eventId)) {
+            return _routerDao.findById(routerId);
+        } else {
+            throw new CloudRuntimeException("Fail to reboot router " + routerId);
+        }
     }
 
     @Override
@@ -1502,7 +1517,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
         _networkRate = ((networkRateStr == null) ? 200 : Integer.parseInt(networkRateStr));
         _multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));
-        _offering = new ServiceOfferingVO("System Offering For Software Router", 1, _routerRamSize, 0, 0, 0, false, null, NetworkOffering.GuestIpType.Virtualized, useLocalStorage, true, null, true);
+        _offering = new ServiceOfferingVO("System Offering For Software Router", 1, _routerRamSize, 256, 0, 0, false, null, NetworkOffering.GuestIpType.Virtual, useLocalStorage, true, null, true);
         _offering.setUniqueName("Cloud.Com-SoftwareRouter");
         _offering = _serviceOfferingDao.persistSystemServiceOffering(_offering);
         _template = _templateDao.findRoutingTemplate();
@@ -1555,7 +1570,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
 
     @Override
     public void completeStartCommand(final DomainRouterVO router) {
-        _routerDao.updateIf(router, VirtualMachine.Event.AgentReportRunning, router.getHostId());
+    	 _itMgr.stateTransitTo(router, VirtualMachine.Event.AgentReportRunning, router.getHostId());
     }
 
     @Override
@@ -1579,14 +1594,15 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
             String privateIpAddress = router.getPrivateIpAddress();
             
             if (privateIpAddress != null) {
-            	if(_defaultHypervisorType == null || !_defaultHypervisorType.equalsIgnoreCase(Hypervisor.HypervisorType.VmWare.toString()))
-            		_dcDao.releaseLinkLocalIpAddress(privateIpAddress, router.getDataCenterId(), router.getId());
-            	else
-            		_dcDao.releasePrivateIpAddress(privateIpAddress, router.getDataCenterId(), router.getId());
+            	if(_defaultHypervisorType == null || !_defaultHypervisorType.equalsIgnoreCase(Hypervisor.HypervisorType.VmWare.toString())) {
+                    _dcDao.releaseLinkLocalIpAddress(privateIpAddress, router.getDataCenterId(), router.getId());
+                } else {
+                    _dcDao.releasePrivateIpAddress(privateIpAddress, router.getDataCenterId(), router.getId());
+                }
             }
             router.setPrivateIpAddress(null);
 
-            if (!_routerDao.updateIf(router, ev, null)) {
+            if (! _itMgr.stateTransitTo(router, ev, null)) {
             	s_logger.debug("Router is not updated");
             	return;
             }
@@ -1661,8 +1677,9 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         
         try {
             
-        	if(s_logger.isDebugEnabled())
-        		s_logger.debug("Lock on router " + routerId + " for stop is acquired");
+        	if(s_logger.isDebugEnabled()) {
+                s_logger.debug("Lock on router " + routerId + " for stop is acquired");
+            }
         	
             if (router.getRemoved() != null) {
                 s_logger.debug("router " + routerId + " is removed");
@@ -1682,7 +1699,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
             event.setType(EventTypes.EVENT_ROUTER_STOP);
             event.setStartId(eventId);
     
-            if (!_routerDao.updateIf(router, VirtualMachine.Event.StopRequested, hostId)) {
+            if (! _itMgr.stateTransitTo(router, VirtualMachine.Event.StopRequested, hostId)) {
                 s_logger.debug("VM " + router.toString() + " is not in a state to be stopped.");
                 return false;
             }
@@ -1717,7 +1734,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
                 event.setDescription("failed to stop Domain Router : " + router.getHostName());
                 event.setLevel(EventVO.LEVEL_ERROR);
                 _eventDao.persist(event);
-                _routerDao.updateIf(router, VirtualMachine.Event.OperationFailed, router.getHostId());
+                _itMgr.stateTransitTo(router, VirtualMachine.Event.OperationFailed, router.getHostId());
                 return false;
             }
     
@@ -1730,8 +1747,9 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
     
             processStopOrRebootAnswer(router, answer);
         } finally {
-            if(s_logger.isDebugEnabled())
+            if(s_logger.isDebugEnabled()) {
                 s_logger.debug("Release lock on router " + routerId + " for stop");
+            }
             _routerDao.releaseFromLockTable(routerId);
         }
         return true;
@@ -1793,7 +1811,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
     public boolean migrate(final DomainRouterVO router, final HostVO host) {
         final HostVO fromHost = _hostDao.findById(router.getHostId());
 
-    	if (!_routerDao.updateIf(router, VirtualMachine.Event.MigrationRequested, router.getHostId())) {
+    	if (! _itMgr.stateTransitTo(router, VirtualMachine.Event.MigrationRequested, router.getHostId())) {
     		s_logger.debug("State for " + router.toString() + " has changed so migration can not take place.");
     		return false;
     	}
@@ -1820,18 +1838,18 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         final CheckVirtualMachineAnswer answer = (CheckVirtualMachineAnswer)_agentMgr.send(host.getId(), cvm);
         if (answer == null || !answer.getResult()) {
             s_logger.debug("Unable to complete migration for " + router.getId());
-            _routerDao.updateIf(router, VirtualMachine.Event.AgentReportStopped, null);
+            _itMgr.stateTransitTo(router, VirtualMachine.Event.AgentReportStopped, null);
             return false;
         }
 
         final State state = answer.getState();
         if (state == State.Stopped) {
             s_logger.warn("Unable to complete migration as we can not detect it on " + host.getId());
-            _routerDao.updateIf(router, VirtualMachine.Event.AgentReportStopped, null);
+            _itMgr.stateTransitTo(router, VirtualMachine.Event.AgentReportStopped, null);
             return false;
         }
 
-        _routerDao.updateIf(router, VirtualMachine.Event.OperationSucceeded, host.getId());
+        _itMgr.stateTransitTo(router, VirtualMachine.Event.OperationSucceeded, host.getId());
 
         return true;
     }
@@ -2068,11 +2086,11 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         
             List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemVmControlNetwork);
             NetworkOfferingVO controlOffering = offerings.get(0);
-            NetworkVO controlConfig = _networkMgr.setupNetworkConfiguration(_systemAcct, controlOffering, plan, null, null).get(0);
+            NetworkVO controlConfig = _networkMgr.setupNetworkConfiguration(_systemAcct, controlOffering, plan, null, null, false).get(0);
             
             List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>(3);
             NetworkOfferingVO publicOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemVmPublicNetwork).get(0);
-            List<NetworkVO> publicConfigs = _networkMgr.setupNetworkConfiguration(_systemAcct, publicOffering, plan, null, null);
+            List<NetworkVO> publicConfigs = _networkMgr.setupNetworkConfiguration(_systemAcct, publicOffering, plan, null, null, false);
             NicProfile defaultNic = new NicProfile();
             defaultNic.setDefaultNic(true);
             //defaultNic.setIp4Address(sourceNatIp);
@@ -2427,15 +2445,15 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
                     return false;
                 }
             }
-            final List<FirewallRuleVO> fwRules = new ArrayList<FirewallRuleVO>();
-            for (final IPAddressVO ipVO : ipAddrs) {
-                fwRules.addAll(_rulesDao.listIPForwarding(ipVO.getAddress()));
-            }
-            final List<FirewallRuleVO> result = _networkMgr.updateFirewallRules(router
-                    .getPublicIpAddress(), fwRules, router);
-            if (result.size() != fwRules.size()) {
-                return false;
-            }
+// FIXME            final List<PortForwardingRuleVO> fwRules = new ArrayList<PortForwardingRuleVO>();
+//            for (final IPAddressVO ipVO : ipAddrs) {
+//                fwRules.addAll(_rulesDao.listIPForwarding(ipVO.getAddress()));
+//            }
+//            final List<PortForwardingRuleVO> result = _networkMgr.updateFirewallRules(router
+//                    .getPublicIpAddress(), fwRules, router);
+//            if (result.size() != fwRules.size()) {
+//                return false;
+//            }
         }
         return resendDhcpEntries(router) && resendVpnServerData(router);
       
@@ -2445,8 +2463,9 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         final List<UserVmVO> vms = _vmDao.listBy(router.getId(), State.Creating, State.Starting, State.Running, State.Stopping, State.Stopped, State.Migrating);
         Commands cmds = new Commands(OnError.Continue);
         for (UserVmVO vm: vms) {
-            if (vm.getGuestIpAddress() == null || vm.getGuestMacAddress() == null || vm.getHostName() == null)
+            if (vm.getGuestIpAddress() == null || vm.getGuestMacAddress() == null || vm.getHostName() == null) {
                 continue;
+            }
             DhcpEntryCommand decmd = new DhcpEntryCommand(vm.getGuestMacAddress(), vm.getGuestIpAddress(), router.getPrivateIpAddress(), vm.getHostName());
             cmds.addCommand(decmd);
         }

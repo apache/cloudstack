@@ -26,7 +26,6 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.SnapshotResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
@@ -94,7 +93,7 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
     }
 
     @Override
-    public long getAccountId() {
+    public long getEntityOwnerId() {
         Volume volume = _entityMgr.findById(Volume.class, getVolumeId());
         if (volume != null) {
             return volume.getAccountId();
@@ -114,14 +113,15 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
         return  "creating snapshot for volume: " + getVolumeId();
     }
     
+    @Override
     public AsyncJob.Type getInstanceType() {
     	return AsyncJob.Type.Snapshot;
     }
     
     @Override
-    public void callCreate(){
+    public void create(){
         long id = _snapshotMgr.getNextInSequence(this);
-        this.setId(id);
+        this.setEntityId(id);
     }
     
     @Override

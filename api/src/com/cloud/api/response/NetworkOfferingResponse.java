@@ -32,10 +32,7 @@ public class NetworkOfferingResponse extends BaseResponse{
     
     @SerializedName("isdefault") @Param(description="true if network offering is default, false otherwise")
     private Boolean isDefault;
-    
-    @SerializedName("isshared") @Param(description="true if network offering is shared, false otherwise")
-    private Boolean isShared;
-    
+   
     @SerializedName("specifyvlan") @Param(description="true if network offering supports vlans, false otherwise")
     private Boolean specifyVlan;
 
@@ -125,13 +122,5 @@ public class NetworkOfferingResponse extends BaseResponse{
 
     public void setSpecifyVlan(Boolean specifyVlan) {
         this.specifyVlan = specifyVlan;
-    }
-
-    public Boolean getIsShared() {
-        return isShared;
-    }
-
-    public void setIsShared(Boolean isShared) {
-        this.isShared = isShared;
     }
 }

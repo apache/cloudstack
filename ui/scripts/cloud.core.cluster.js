@@ -38,8 +38,7 @@ function afterLoadClusterJSP($leftmenuItem1) {
     var $header1 = $("#midmenu_itemheader_without_margin").clone().show();  //without margin on top
     $header1.find("#name").text("Host");
     $container_host.append($header1);    
-    //listMidMenuItems2(("listHosts&type=Routing&clusterid="+clusterId), "listhostsresponse", "host", hostToMidmenu, hostToRightPanel, hostGetMidmenuId, false, 1); 					
-	var count = 0;    
+    var count = 0;    
     $.ajax({
         cache: false,
         data: createURL("command=listHosts&type=Routing&clusterid="+clusterId),
@@ -63,7 +62,7 @@ function afterLoadClusterJSP($leftmenuItem1) {
                 count = items.length;
             }  
             else {
-                $container_host.append($("#midmenu_container_no_items_available").clone().show());  
+                $container_host.append($("#midmenu_container_no_items_available").clone().attr("id","midmenu_container_no_items_available_clone").show());  
             }                  
         }
     });	 	
@@ -75,7 +74,6 @@ function afterLoadClusterJSP($leftmenuItem1) {
 	var $header2 = $("#midmenu_itemheader_with_margin").clone().show(); //with margin on top
     $header2.find("#name").text("Primary Storage");
     $container_primarystorage.append($header2);
-	//listMidMenuItems2(("listStoragePools&clusterid="+clusterId), "liststoragepoolsresponse", "storagepool", primarystorageToMidmenu, primarystorageToRightPanel, primarystorageGetMidmenuId, false, 1); 
 	var count = 0;    
     $.ajax({
         cache: false,
@@ -96,7 +94,7 @@ function afterLoadClusterJSP($leftmenuItem1) {
                 count = items.length;
             }  
             else {
-                $container_primarystorage.append($("#midmenu_container_no_items_available").clone().show());  
+                $container_primarystorage.append($("#midmenu_container_no_items_available").clone().attr("id","midmenu_container_no_items_available_clone").show());  
             }                  
         }
     });	 

@@ -34,14 +34,11 @@ import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.HostVO;
 import com.cloud.info.ConsoleProxyInfo;
-import com.cloud.network.FirewallRuleVO;
 import com.cloud.network.IPAddressVO;
-import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.security.NetworkGroupVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOSVO;
-import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
 import com.cloud.storage.VMTemplateVO;
@@ -165,14 +162,6 @@ public interface ManagementServer extends ManagementService {
      */
     boolean attachISOToVM(long vmId, long userId, long isoId, boolean attach, long startEventId);
 
-	/**
-     * Finds a domain router by id
-     * @param router id
-     * @return a domainRouter
-     */
-	DomainRouterVO findDomainRouterById(long domainRouterId);
-    
-    
     /**
      * Retrieves a host by id
      * @param hostId
@@ -330,13 +319,6 @@ public interface ManagementServer extends ManagementService {
      * @return List of UserVMs.
      */
     List<UserVmVO> searchForUserVMs(Criteria c);
-
-    /**
-     * Find a firewall rule by rule id
-     * @param ruleId
-     * @return
-     */
-    FirewallRuleVO findForwardingRuleById(Long ruleId);
 
     /**
      * Find an IP Address VO object by ip address string
@@ -532,9 +514,6 @@ public interface ManagementServer extends ManagementService {
 
 
     AsyncJobVO findAsyncJobById(long jobId);
-
-    LoadBalancerVO findLoadBalancer(Long accountId, String name);
-    LoadBalancerVO findLoadBalancerById(long loadBalancerId);
 
     String[] getApiConfig();
     StoragePoolVO findPoolById(Long id);

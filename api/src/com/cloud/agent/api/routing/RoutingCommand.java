@@ -15,30 +15,30 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-package com.cloud.network;
+package com.cloud.agent.api.routing;
 
-public interface LoadBalancer {
-    long getId();
+import java.util.HashMap;
 
-    String getName();
-    void setName(String name);
+import com.cloud.agent.api.Command;
 
-    String getDescription();
-    void setDescription(String description);
-
-    long getAccountId();
-
-    String getIpAddress();
-
-    String getPublicPort();
-
-    String getPrivatePort();
-    void setPrivatePort(String privatePort);
-
-    String getAlgorithm();
-    void setAlgorithm(String algorithm);
+public abstract class RoutingCommand extends Command {
+    HashMap<String, String> accessDetails = new HashMap<String, String>(0);
     
-    Long getDomainId();
+    protected RoutingCommand() {
+        super();
+    }
     
-    String getAccountName();
+    public void setAccessDetail(String name, String value) {
+        accessDetails.put(name, value);
+    }
+    
+    public String getAccessDetail(String name) {
+        return accessDetails.get(name);
+    }
+    
+    @Override
+    public boolean executeInSequence() {
+        return false;
+    }
+
 }

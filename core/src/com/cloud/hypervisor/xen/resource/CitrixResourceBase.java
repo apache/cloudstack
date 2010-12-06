@@ -133,7 +133,8 @@ import com.cloud.agent.api.routing.IPAssocCommand;
 import com.cloud.agent.api.routing.LoadBalancerCfgCommand;
 import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
-import com.cloud.agent.api.routing.SetFirewallRuleCommand;
+import com.cloud.agent.api.routing.SetPortForwardingRulesAnswer;
+import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.routing.VpnUsersCfgCommand;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
@@ -142,11 +143,12 @@ import com.cloud.agent.api.storage.CreateAnswer;
 import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
 import com.cloud.agent.api.storage.DestroyCommand;
-import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
+import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.storage.ShareAnswer;
 import com.cloud.agent.api.storage.ShareCommand;
 import com.cloud.agent.api.to.NicTO;
+import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VirtualMachineTO.Monitor;
@@ -227,7 +229,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     protected String _pod;
     protected String _cluster;
     protected HashMap<String, State> _vms = new HashMap<String, State>(71);
-    protected String _patchPath;
     protected String _privateNetworkName;
     protected String _linkLocalPrivateNetworkName;
     protected String _publicNetworkName;
@@ -463,8 +464,9 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                     continue;
                 }
 
-                if (vdir.VBDs == null)
+                if (vdir.VBDs == null) {
                     continue;
+                }
 
                 for (VBD vbd : vdir.VBDs) {
                     try {
@@ -530,8 +532,8 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     public Answer executeRequest(Command cmd) {
         if (cmd instanceof CreateCommand) {
             return execute((CreateCommand) cmd);
-        } else if (cmd instanceof SetFirewallRuleCommand) {
-            return execute((SetFirewallRuleCommand) cmd);
+        } else if (cmd instanceof SetPortForwardingRulesCommand) {
+            return execute((SetPortForwardingRulesCommand) cmd);
         } else if (cmd instanceof LoadBalancerCfgCommand) {
             return execute((LoadBalancerCfgCommand) cmd);
         } else if (cmd instanceof IPAssocCommand) {
@@ -746,7 +748,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     }
     
     protected VM createVmFromTemplate(Connection conn, VirtualMachineTO vmSpec, Host host) throws XenAPIException, XmlRpcException {
-        String guestOsTypeName = getGuestOsType(vmSpec.getOs());
+        String guestOsTypeName = getGuestOsType(vmSpec.getOs(), vmSpec.getBootloader() == BootloaderType.CD);
         Set<VM> templates = VM.getByNameLabel(conn, guestOsTypeName);
         assert templates.size() == 1 : "Should only have 1 template but found " + templates.size();
         VM template = templates.iterator().next();
@@ -1038,8 +1040,9 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
         String args = "-h " + computingHostIp;
         String result = callHostPlugin("vmops", "pingtest", "args", args);
-        if (result == null || result.isEmpty())
+        if (result == null || result.isEmpty()) {
             return false;
+        }
         return true;
     }
 
@@ -1050,8 +1053,9 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     private boolean doPingTest(final String domRIp, final String vmIp) {
         String args = "-i " + domRIp + " -p " + vmIp;
         String result = callHostPlugin("vmops", "pingtest", "args", args);
-        if (result == null || result.isEmpty())
+        if (result == null || result.isEmpty()) {
             return false;
+        }
         return true;
     }
 
@@ -1145,53 +1149,51 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         }
     }
 
-    protected Answer execute(final SetFirewallRuleCommand cmd) {
+    protected SetPortForwardingRulesAnswer execute(SetPortForwardingRulesCommand cmd) {
         String args;
+        
+        String routerIp = cmd.getAccessDetail("router.ip");
+        String routerName = cmd.getAccessDetail("router.name");
 
-        if(cmd.getProtocol().toLowerCase().equals(NetUtils.NAT_PROTO)){
-        	//1:1 NAT needs instanceip;publicip;domrip;op
-        	if(cmd.isCreate())
-        		args = "-A";
-        	else
-        		args = "-D";
-        	
-	        args += " -l " + cmd.getPublicIpAddress();
-	        args += " -i " + cmd.getRouterIpAddress();
-	        args += " -r " + cmd.getPrivateIpAddress();
-	        args += " -G " + cmd.getProtocol();
-        }else{
-            if (cmd.isEnable()) {
-                args = "-A";
+        String[] results = new String[cmd.getRules().length];
+        int i = 0;
+        for (PortForwardingRuleTO rule : cmd.getRules()) {
+            if (rule.getProtocol().toLowerCase().equals(NetUtils.NAT_PROTO)){
+            	//1:1 NAT needs instanceip;publicip;domrip;op
+            	args = rule.revoked() ? "-D" : "-A";
+            	
+    	        args += " -l " + rule.getSrcIp();
+    	        args += " -i " + routerIp;
+    	        args += " -r " + rule.getDstIp();
+    	        args += " -G " + rule.getProtocol();
             } else {
-                args = "-D";
+                args = rule.revoked() ? "-D" : "-A";
+    
+    	        args += " -P " + rule.getProtocol().toLowerCase();
+    	        args += " -l " + rule.getSrcIp();
+    	        args += " -p " + rule.getSrcPortRange()[0];
+    	        args += " -n " + routerName;
+    	        args += " -i " + routerIp;
+    	        args += " -r " + rule.getDstIp();
+    	        args += " -d " + rule.getDstPortRange()[0];
+    	        args += " -N " + rule.getVlanNetmask();
+    	
+//    	        String oldPrivateIP = rule.getOldPrivateIP();
+//    	        String oldPrivatePort = rule.getOldPrivatePort();
+//    	
+//    	        if (oldPrivateIP != null) {
+//    	            args += " -w " + oldPrivateIP;
+//    	        }
+//    	
+//    	        if (oldPrivatePort != null) {
+//    	            args += " -x " + oldPrivatePort;
+//    	        }
             }
-
-	        args += " -P " + cmd.getProtocol().toLowerCase();
-	        args += " -l " + cmd.getPublicIpAddress();
-	        args += " -p " + cmd.getPublicPort();
-	        args += " -n " + cmd.getRouterName();
-	        args += " -i " + cmd.getRouterIpAddress();
-	        args += " -r " + cmd.getPrivateIpAddress();
-	        args += " -d " + cmd.getPrivatePort();
-	        args += " -N " + cmd.getVlanNetmask();
-	
-	        String oldPrivateIP = cmd.getOldPrivateIP();
-	        String oldPrivatePort = cmd.getOldPrivatePort();
-	
-	        if (oldPrivateIP != null) {
-	            args += " -w " + oldPrivateIP;
-	        }
-	
-	        if (oldPrivatePort != null) {
-	            args += " -x " + oldPrivatePort;
-	        }
+            String result = callHostPlugin("vmops", "setFirewallRule", "args", args);
+            results[i++] = (result == null || result.isEmpty()) ? "Failed" : null;
         }
-        String result = callHostPlugin("vmops", "setFirewallRule", "args", args);
 
-        if (result == null || result.isEmpty()) {
-            return new Answer(cmd, false, "SetFirewallRule failed");
-        }
-        return new Answer(cmd);
+        return new SetPortForwardingRulesAnswer(cmd, results);
     }
 
     protected Answer execute(final LoadBalancerCfgCommand cmd) {
@@ -1623,8 +1625,9 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             }
 
             HashMap<String, VmStatsEntry> vmStatsUUIDMap = getVmStats(cmd, vmUUIDs, cmd.getHostGuid());
-            if( vmStatsUUIDMap == null )
+            if( vmStatsUUIDMap == null ) {
                 return new GetVmStatsAnswer(cmd, vmStatsNameMap);
+            }
           
             for (String vmUUID : vmStatsUUIDMap.keySet()) {
                 vmStatsNameMap.put(vmNames.get(vmUUIDs.indexOf(vmUUID)), vmStatsUUIDMap.get(vmUUID));
@@ -1720,10 +1723,12 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         String stats = "";
 
         try {
-            if (flag == 1)
+            if (flag == 1) {
                 stats = getHostStatsRawXML();
-            if (flag == 2)
+            }
+            if (flag == 2) {
                 stats = getVmStatsRawXML();
+            }
         } catch (Exception e1) {
             s_logger.warn("Error whilst collecting raw stats from plugin:" + e1);
             return null;
@@ -1733,8 +1738,9 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         // s_logger.debug("Length of raw xml is:"+stats.length());
 
         //stats are null when the host plugin call fails (host down state)
-        if(stats == null)
-        	return null;
+        if(stats == null) {
+            return null;
+        }
         
         StringReader statsReader = new StringReader(stats);
         InputSource statsSource = new InputSource(statsReader);
@@ -2073,8 +2079,9 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         int index = tmplturl.lastIndexOf("/");
         String mountpoint = tmplturl.substring(0, index);
         String tmpltname = null;
-        if (index < tmplturl.length() - 1)
+        if (index < tmplturl.length() - 1) {
             tmpltname = tmplturl.substring(index + 1).replace(".vhd", "");
+        }
         try {
             Connection conn = getConnection();
             String pUuid = cmd.getPoolUuid();
@@ -2293,8 +2300,9 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                         }
                         VMGuestMetrics vmmetric = vm.getGuestMetrics(conn);
 
-                        if (isRefNull(vmmetric))
+                        if (isRefNull(vmmetric)) {
                             continue;
+                        }
 
                         Map<String, String> PVversion = vmmetric.getPVDriversVersion(conn);
                         if (PVversion != null && PVversion.containsKey("major")) {
@@ -2602,7 +2610,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         Set<VM> templates;
         VM vm = null;
         String stdType = cmd.getGuestOSDescription();
-        String guestOsTypeName = getGuestOsType(stdType);
+        String guestOsTypeName = getGuestOsType(stdType, cmd.getBootFromISO());
         templates = VM.getByNameLabel(conn, guestOsTypeName);
         assert templates.size() == 1 : "Should only have 1 template but found " + templates.size();
         VM template = templates.iterator().next();
@@ -2612,7 +2620,9 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         if (!(guestOsTypeName.startsWith("Windows") || guestOsTypeName.startsWith("Citrix") || guestOsTypeName.startsWith("Other"))) {
             if (cmd.getBootFromISO()) {
                 vm.setPVBootloader(conn, "eliloader");
-                vm.addToOtherConfig(conn, "install-repository", "cdrom");
+                Map<String, String> otherConfig = vm.getOtherConfig(conn);
+                otherConfig.put( "install-repository", "cdrom");
+                vm.setOtherConfig(conn, otherConfig);
             } else {
                 vm.setPVBootloader(conn, "pygrub");
             }
@@ -2937,7 +2947,9 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         vifr.device = devNum;
         vifr.MAC = mac;
         vifr.network = network;
-        if ( rate == 0 ) rate = 200;
+        if ( rate == 0 ) {
+            rate = 200;
+        }
         vifr.qosAlgorithmType = "ratelimit";
         vifr.qosAlgorithmParams = new HashMap<String, String>();
         // convert mbs to kilobyte per second 
@@ -2972,12 +2984,15 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             // stop vm which is running on this host or is in halted state
             for (VM vm : vms) {
                 VM.Record vmr = vm.getRecord(conn);
-                if (vmr.powerState != VmPowerState.RUNNING)
+                if (vmr.powerState != VmPowerState.RUNNING) {
                     continue;
-                if (isRefNull(vmr.residentOn))
+                }
+                if (isRefNull(vmr.residentOn)) {
                     continue;
-                if (vmr.residentOn.getUuid(conn).equals(_host.uuid))
+                }
+                if (vmr.residentOn.getUuid(conn).equals(_host.uuid)) {
                     continue;
+                }
                 vms.remove(vm);
             }
 
@@ -3143,8 +3158,9 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Trying to connect to " + ipAddress);
             }
-            if (pingdomr(ipAddress, Integer.toString(port)))
+            if (pingdomr(ipAddress, Integer.toString(port))) {
                 return null;
+            }
             try {
                 Thread.sleep(_sleep);
             } catch (final InterruptedException e) {
@@ -3213,9 +3229,9 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
             Ternary<SR, VDI, VolumeVO> mount = mounts.get(0);
 
-            Set<VM> templates = VM.getByNameLabel(conn, getGuestOsType(getGuestOSDescription));
+            Set<VM> templates = VM.getByNameLabel(conn, getGuestOsType(getGuestOSDescription, false));
             if (templates.size() == 0) {
-            	String msg = " can not find systemvm template " + getGuestOsType(getGuestOSDescription) ;
+            	String msg = " can not find systemvm template " + getGuestOsType(getGuestOSDescription, false) ;
             	s_logger.warn(msg);
             	return msg;
 
@@ -3288,8 +3304,9 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             String pvargs = vm.getPVArgs(conn);
             pvargs = pvargs + bootArgs;
 
-            if (s_logger.isInfoEnabled())
+            if (s_logger.isInfoEnabled()) {
                 s_logger.info("PV args for system vm are " + pvargs);
+            }
             vm.setPVArgs(conn, pvargs);
 
             /* destroy console */
@@ -3313,8 +3330,9 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 }
             }
 
-            if (s_logger.isInfoEnabled())
+            if (s_logger.isInfoEnabled()) {
                 s_logger.info("Ping system vm command port, " + privateIp + ":" + cmdPort);
+            }
 
             state = State.Running;
             String result = connect(vmName, privateIp, cmdPort);
@@ -3323,8 +3341,9 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 s_logger.warn(msg);
                 throw new CloudRuntimeException(msg);
             } else {
-                if (s_logger.isInfoEnabled())
+                if (s_logger.isInfoEnabled()) {
                     s_logger.info("Ping system vm command port succeeded for vm " + vmName);
+                }
             }
             return null;
 
@@ -3402,8 +3421,9 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         try {
             Connection conn = getConnection();
             Set<String> allowedVBDDevices = vm.getAllowedVBDDevices(conn);
-            if (allowedVBDDevices.size() == 0)
+            if (allowedVBDDevices.size() == 0) {
                 throw new CloudRuntimeException("Could not find an available slot in VM with name: " + vm.getNameLabel(conn) + " to attach a new disk.");
+            }
             return allowedVBDDevices.iterator().next();
         } catch (XmlRpcException e) {
             String msg = "Catch XmlRpcException due to: " + e.getMessage();
@@ -3457,8 +3477,9 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
     protected boolean setIptables() {
         String result = callHostPlugin("vmops", "setIptables");
-        if (result == null || result.isEmpty())
+        if (result == null || result.isEmpty()) {
             return false;
+        }
         return true;
     }
 
@@ -3813,8 +3834,9 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             Connection conn = getConnection();
             String lvmuuid = lvmsr.getUuid(conn);
             long cap = lvmsr.getPhysicalSize(conn);
-            if (cap < 0)
+            if (cap < 0) {
                 return null;
+            }
             long avail = cap - lvmsr.getPhysicalUtilisation(conn);
             lvmsr.setNameLabel(conn, lvmuuid);
             String name = "VMOps local storage pool in host : " + _host.uuid;
@@ -4196,12 +4218,12 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
                 SCPClient scp = new SCPClient(sshConnection);
 
-                String path = _patchPath.substring(0, _patchPath.lastIndexOf(File.separator) + 1);
                 List<File> files = getPatchFiles();
                 if( files == null || files.isEmpty() ) {
                     throw new CloudRuntimeException("Can not find patch file");
                 }
                 for( File file :files) {
+                    String path = file.getParentFile().getAbsolutePath() + "/";
 	                Properties props = new Properties();
 	                props.load(new FileInputStream(file));
 	
@@ -4271,8 +4293,11 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     }
 
     protected List<File> getPatchFiles() {
+        
+        String patchPath = getPatchPath();
+        String patchfilePath = Script.findScript(patchPath, "patch");
+        File file = new File(patchfilePath);
         List<File> files = new ArrayList<File>();
-        File file = new File(_patchPath);
         files.add(file);
         return files;
     }
@@ -4585,8 +4610,9 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         _guestNetworkName = (String)params.get("guest.network.device");
         
         _linkLocalPrivateNetworkName = (String) params.get("private.linkLocal.device");
-        if (_linkLocalPrivateNetworkName == null)
+        if (_linkLocalPrivateNetworkName == null) {
             _linkLocalPrivateNetworkName = "cloud_link_local_network";
+        }
 
         _storageNetworkName1 = (String) params.get("storage.network.device1");
         if (_storageNetworkName1 == null) {
@@ -4618,13 +4644,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
         if (_host.uuid == null) {
             throw new ConfigurationException("Unable to get the uuid");
-        }
-
-        String patchPath = getPatchPath();
-
-        _patchPath = Script.findScript(patchPath, "patch");
-        if (_patchPath == null) {
-            throw new ConfigurationException("Unable to find all of patch files for xenserver");
         }
 
         _storage = (StorageLayer) params.get(StorageLayer.InstanceConfigKey);
@@ -4688,7 +4707,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             s_logger.debug("Succesfully created VDI for " + cmd + ".  Uuid = " + vdir.uuid);
 
             VolumeTO vol = new VolumeTO(cmd.getVolumeId(), dskch.getType(), Storage.StorageResourceType.STORAGE_POOL, pool.getType(), vdir.nameLabel, pool.getPath(), vdir.uuid,
-                    vdir.virtualSize);
+                    vdir.virtualSize, null);
             return new CreateAnswer(cmd, vol);
         } catch (Exception e) {
             s_logger.warn("Unable to create volume; Pool=" + pool + "; Disk: " + dskch, e);
@@ -4853,28 +4872,34 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
                 Set<SR> srs = SR.getByNameLabel(conn, pool.getUuid());
                 for (SR sr : srs) {
-                    if (!SRType.LVMOISCSI.equals(sr.getType(conn)))
+                    if (!SRType.LVMOISCSI.equals(sr.getType(conn))) {
                         continue;
+                    }
 
                     Set<PBD> pbds = sr.getPBDs(conn);
-                    if (pbds.isEmpty())
+                    if (pbds.isEmpty()) {
                         continue;
+                    }
 
                     PBD pbd = pbds.iterator().next();
 
                     Map<String, String> dc = pbd.getDeviceConfig(conn);
 
-                    if (dc == null)
+                    if (dc == null) {
                         continue;
+                    }
 
-                    if (dc.get("target") == null)
+                    if (dc.get("target") == null) {
                         continue;
+                    }
 
-                    if (dc.get("targetIQN") == null)
+                    if (dc.get("targetIQN") == null) {
                         continue;
+                    }
 
-                    if (dc.get("lunid") == null)
+                    if (dc.get("lunid") == null) {
                         continue;
+                    }
 
                     if (target.equals(dc.get("target")) && targetiqn.equals(dc.get("targetIQN")) && lunid.equals(dc.get("lunid"))) {
                         if (checkSR(sr)) {
@@ -4950,25 +4975,30 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             serverpath = serverpath.replace("//", "/");
             Set<SR> srs = SR.getAll(conn);
             for (SR sr : srs) {
-                if (!SRType.NFS.equals(sr.getType(conn)))
+                if (!SRType.NFS.equals(sr.getType(conn))) {
                     continue;
+                }
 
                 Set<PBD> pbds = sr.getPBDs(conn);
-                if (pbds.isEmpty())
+                if (pbds.isEmpty()) {
                     continue;
+                }
 
                 PBD pbd = pbds.iterator().next();
 
                 Map<String, String> dc = pbd.getDeviceConfig(conn);
 
-                if (dc == null)
+                if (dc == null) {
                     continue;
+                }
 
-                if (dc.get("server") == null)
+                if (dc.get("server") == null) {
                     continue;
+                }
 
-                if (dc.get("serverpath") == null)
+                if (dc.get("serverpath") == null) {
                     continue;
+                }
 
                 if (server.equals(dc.get("server")) && serverpath.equals(dc.get("serverpath"))) {
                     if (checkSR(sr)) {
@@ -5170,10 +5200,11 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             VM vm = getVM(conn, vmName);
             /* For HVM guest, if no pv driver installed, no attach/detach */
             boolean isHVM;
-            if (vm.getPVBootloader(conn).equalsIgnoreCase(""))
+            if (vm.getPVBootloader(conn).equalsIgnoreCase("")) {
                 isHVM = true;
-            else
+            } else {
                 isHVM = false;
+            }
             VMGuestMetrics vgm = vm.getGuestMetrics(conn);
             boolean pvDrvInstalled = false;
             if (!isRefNull(vgm) && vgm.getPVDriversUpToDate(conn)) {
@@ -5813,12 +5844,14 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         }
 
         // If there are no VMs, throw an exception
-        if (vms.size() == 0)
+        if (vms.size() == 0) {
             throw new CloudRuntimeException("VM with name: " + vmName + " does not exist.");
+        }
 
         // If there is more than one VM, print a warning
-        if (vms.size() > 1)
+        if (vms.size() > 1) {
             s_logger.warn("Found " + vms.size() + " VMs with name: " + vmName);
+        }
 
         // Return the first VM in the set
         return vms.iterator().next();
@@ -5892,12 +5925,13 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             throw new CloudRuntimeException("SR check failed for storage pool: " + pool.getUuid() + "on host:" + _host.uuid);
         } else {
 	
-	        if (pool.getType() == StoragePoolType.NetworkFilesystem)
-	            return getNfsSR(pool);
-	        else if (pool.getType() == StoragePoolType.IscsiLUN)
-	            return getIscsiSR(pool);
-	        else
-	            throw new CloudRuntimeException("The pool type: " + pool.getType().name() + " is not supported.");
+	        if (pool.getType() == StoragePoolType.NetworkFilesystem) {
+                return getNfsSR(pool);
+            } else if (pool.getType() == StoragePoolType.IscsiLUN) {
+                return getIscsiSR(pool);
+            } else {
+                throw new CloudRuntimeException("The pool type: " + pool.getType().name() + " is not supported.");
+            }
         }
 
     }
@@ -5930,8 +5964,9 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             final StringBuilder sb2 = new StringBuilder();
             String line = null;
             try {
-                while ((line = reader.readLine()) != null)
+                while ((line = reader.readLine()) != null) {
                     sb2.append(line + "\n");
+                }
                 result = sb2.toString();
             } catch (final IOException e) {
                 success = false;
@@ -6196,7 +6231,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     }
 
     /*Override by subclass*/
-	protected String getGuestOsType(String stdType) {
+	protected String getGuestOsType(String stdType, boolean bootFromCD) {
 		return stdType;
 	}
 }

@@ -65,22 +65,22 @@ public class ApiDispatcher {
         setupParameters(cmd, params);
 
         try {
-            cmd.callCreate();
+            cmd.create();
         } catch (Throwable t) {
             if (t instanceof  InvalidParameterValueException || t instanceof IllegalArgumentException) {
-                s_logger.info("Exception: ", t);
+                s_logger.info(t.getMessage());
                 throw new ServerApiException(BaseCmd.PARAM_ERROR, t.getMessage());
             }else if (t instanceof PermissionDeniedException) {
-                s_logger.info("Exception: ", t);
+                s_logger.info(t.getMessage());
                 throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, t.getMessage());
             }else if (t instanceof AccountLimitException) {
-                s_logger.info("Exception: ", t);
+                s_logger.info(t.getMessage());
                 throw new ServerApiException(BaseCmd.ACCOUNT_RESOURCE_LIMIT_ERROR, t.getMessage());
             }else if (t instanceof InsufficientCapacityException) {
-                s_logger.info("Exception: ", t);
+                s_logger.info(t.getMessage());
                 throw new ServerApiException(BaseCmd.INSUFFICIENT_CAPACITY_ERROR, t.getMessage());
             }else if (t instanceof ResourceAllocationException) {
-                s_logger.info("Exception: ", t);
+                s_logger.info(t.getMessage());
                 throw new ServerApiException(BaseCmd.RESOURCE_ALLOCATION_ERROR, t.getMessage());
             }else if (t instanceof ResourceUnavailableException) {
                 s_logger.warn("Exception: ", t);
@@ -106,16 +106,16 @@ public class ApiDispatcher {
             cmd.execute();
         } catch (Throwable t) {
             if (t instanceof  InvalidParameterValueException || t instanceof IllegalArgumentException) {
-                s_logger.info("Exception: ", t);
+                s_logger.info(t.getMessage());
                 throw new ServerApiException(BaseCmd.PARAM_ERROR, t.getMessage());
             }else if (t instanceof PermissionDeniedException) {
-                s_logger.info("Exception: ", t);
+                s_logger.info(t.getMessage());
                 throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, t.getMessage());
             }else if (t instanceof AccountLimitException) {
-                s_logger.info("Exception: ", t);
+                s_logger.info(t.getMessage());
                 throw new ServerApiException(BaseCmd.ACCOUNT_RESOURCE_LIMIT_ERROR, t.getMessage());
             }else if (t instanceof InsufficientCapacityException) {
-                s_logger.info("Exception: ", t);
+                s_logger.info(t.getMessage());
                 throw new ServerApiException(BaseCmd.INSUFFICIENT_CAPACITY_ERROR, t.getMessage());
             }else if (t instanceof ResourceAllocationException) {
                 s_logger.warn("Exception: ", t);

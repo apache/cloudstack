@@ -18,18 +18,25 @@
 
 package com.cloud.api.commands;
 
+import java.util.List;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.LoadBalancerResponse;
-import com.cloud.network.LoadBalancer;
+import com.cloud.event.EventTypes;
+import com.cloud.exception.NetworkRuleConflictException;
+import com.cloud.network.rules.LoadBalancer;
+import com.cloud.utils.net.Ip;
+import com.cloud.utils.net.NetUtils;
 
 @Implementation(description="Creates a load balancer rule", responseObject=LoadBalancerResponse.class)
-public class CreateLoadBalancerRuleCmd extends BaseCmd {
+public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  implements LoadBalancer {
     public static final Logger s_logger = Logger.getLogger(CreateLoadBalancerRuleCmd.class.getName());
 
     private static final String s_name = "createloadbalancerruleresponse";
@@ -61,10 +68,12 @@ public class CreateLoadBalancerRuleCmd extends BaseCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
+    @Override
     public String getAlgorithm() {
         return algorithm;
     }
 
+    @Override
     public String getDescription() {
         return description;
     }
@@ -96,14 +105,107 @@ public class CreateLoadBalancerRuleCmd extends BaseCmd {
     }
     
     @Override
-    public void execute(){
-        LoadBalancer result = _networkService.createLoadBalancerRule(this);
-        if (result != null) {
-            LoadBalancerResponse response = _responseGenerator.createLoadBalancerResponse(result);
-            response.setResponseName(getName());
-            this.setResponseObject(response);
-        } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create load balancer rule");
+    public void execute() {
+        LoadBalancer result = null;
+        try {
+            result = _lbService.createLoadBalancerRule(this);
+        } catch (NetworkRuleConflictException e) {
+            throw new ServerApiException(BaseCmd.NETWORK_RULE_CONFLICT_ERROR, e.getMessage());
         }
+        LoadBalancerResponse response = _responseGenerator.createLoadBalancerResponse(result);
+        response.setResponseName(getName());
+        this.setResponseObject(response);
+    }
+
+    @Override
+    public long getId() {
+        throw new UnsupportedOperationException("not supported");
+    }
+
+    @Override
+    public String getXid() {
+        // FIXME: Should fix this.
+        return null;
+    }
+
+    @Override
+    public Ip getSourceIpAddress() {
+        return new Ip(publicIp);
+    }
+
+    @Override
+    public int getSourcePortStart() {
+        return Integer.parseInt(publicPort);
+    }
+
+    @Override
+    public int getSourcePortEnd() {
+        return Integer.parseInt(publicPort);
+    }
+
+    @Override
+    public String getProtocol() {
+        return NetUtils.TCP_PROTO;
+    }
+
+    @Override
+    public Purpose getPurpose() {
+        return Purpose.LoadBalancing;
+    }
+
+    @Override
+    public State getState() {
+        throw new UnsupportedOperationException("not supported");
+    }
+
+    @Override
+    public long getNetworkId() {
+        return -1;
+    }
+
+    @Override
+    public long getAccountId() {
+        throw new UnsupportedOperationException("not supported");
+    }
+
+    @Override
+    public long getDomainId() {
+        throw new UnsupportedOperationException("not supported");
+    }
+
+    @Override
+    public int getDefaultPortStart() {
+        return Integer.parseInt(privatePort);
+    }
+
+    @Override
+    public int getDefaultPortEnd() {
+        return Integer.parseInt(privatePort);
+    }
+
+    @Override
+    public List<? extends Destination> getDestinations() {
+        throw new UnsupportedOperationException("not supported");
+    }
+
+    @Override
+    public void create() {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public long getEntityOwnerId() {
+        return _entityMgr.findById(LoadBalancer.class, getEntityId()).getAccountId();
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_LOAD_BALANCER_CREATE;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return "Create load balancer";
     }
 }

@@ -43,7 +43,7 @@
         
         	<div class="grid_header">
             	<div id="grid_header_title" class="grid_header_title">(title)</div>
-                <div id="action_link" class="grid_actionbox" id="account_action_link" style="display: none;">
+                <div id="action_link" class="grid_actionbox">
                     <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
                         <ul class="actionsdropdown_boxlist" id="action_list">
                         	<li><%=t.t("no.available.actions")%></li>
@@ -321,3 +321,25 @@
     </div> 
 </div>
 <!-- admin account tab template (end) -->
+
+<!-- Add Domain Dialog (begin) -->
+<div id="dialog_add_domain" title="Add New Domain" style="display:none">
+	<p>Please fill in the following data to add a new domain.</p>
+	<div class="dialog_formcontent">
+		<form action="#" method="post" id="form1">
+			<ol>		
+				<li>
+					<label>Name:</label>
+					<input class="text" type="text" id="add_domain_name"/>
+					<div id="add_domain_name_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+				</li>	
+				<li>
+					<label>Parent domain:</label>
+					<select class="select" id="domain_dropdown">						
+					</select>
+				</li>		
+			</ol>
+		</form>
+	</div>
+</div>
+<!-- Add Domain Dialog (end) -->

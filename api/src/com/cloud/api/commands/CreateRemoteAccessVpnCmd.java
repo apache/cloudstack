@@ -105,7 +105,7 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
     }
 
 	@Override
-	public long getAccountId() {
+	public long getEntityOwnerId() {
 		Account account = UserContext.current().getAccount();
         if ((account == null) || isAdmin(account.getType())) {
             if ((domainId != null) && (accountName != null)) {
@@ -125,7 +125,7 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
 
 	@Override
 	public String getEventDescription() {
-		return "Create Remote Access VPN for account " + getAccountId() + " in zone " + getZoneId();
+		return "Create Remote Access VPN for account " + getEntityOwnerId() + " in zone " + getZoneId();
 	}
 
 	@Override
@@ -134,11 +134,11 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
 	}
 	
     @Override
-    public void callCreate(){
+    public void create(){
         try {
             RemoteAccessVpn vpn = _networkService.createRemoteAccessVpn(this);
             if (vpn != null) {
-                this.setId(vpn.getId());
+                this.setEntityId(vpn.getId());
             } else {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create remote access vpn");
             }

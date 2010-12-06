@@ -346,11 +346,17 @@ def _substitute(self,listoffiles,install_to=None,cwd=None,dict=None,name=None,**
 	for src in Utils.to_list(listoffiles):
 		tgt = src + ".subst"
 		inst = src # Utils.relpath(src,relative_to) <- disabled
+
+		# Use cwd path when creating task and shift back later
+		tmp = self.path
+		self.path = cwd
 		tgen = self(features='subst', source=src, target=tgt, **tgenkwargs)
+		self.path = tmp
+
 		if dict is not None: tgen.dict = dict
 		else: tgen.dict = self.env.get_merged_dict()
 		self.path.find_or_declare(tgt)
-		if install_to is not None: self.install_as("%s/%s"%(install_to,inst), tgt, **kwargs)
+		if install_to is not None: self.install_as("%s/%s"%(install_to,inst), tgt, cwd=cwd, **kwargs)
 Build.BuildContext.substitute = _substitute
 
 def set_options(opt):

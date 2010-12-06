@@ -26,9 +26,8 @@ import com.cloud.network.Networks.TrafficType;
 public interface NetworkOffering {
     
     public enum GuestIpType {
-    	Virtualized,
-    	DirectSingle,
-    	DirectDual
+    	Virtual,
+    	Direct,
     }
     
     public final String DefaultVirtualizedNetworkOffering = "DefaultVirtualizedNetworkOffering";
@@ -72,8 +71,6 @@ public interface NetworkOffering {
     boolean getSpecifyVlan();
     
     String getTags();
-    
-    boolean isShared();
     
     boolean isDefault();
 }

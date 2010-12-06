@@ -28,8 +28,8 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long> {
     List<NetworkVO> listBy(long accountId);
     List<NetworkVO> listBy(long accountId, long offeringId, long dataCenterId);
     @Override
-    NetworkVO persist(NetworkVO config);
-    void addAccountToNetworkConfiguration(long configId, long accountId);
+    NetworkVO persist(NetworkVO network);
+    void addAccountToNetworkConfiguration(long networkId, long accountId);
     SearchBuilder<NetworkAccountVO> createSearchBuilderForAccount();
     List<NetworkVO> getNetworkConfigurationsForOffering(long offeringId, long dataCenterId, long accountId);
     List<NetworkVO> getRelatedNetworkConfigurations(long related);
@@ -40,4 +40,6 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long> {
      * @return mac address if there is one.  null if not.
      */
     String getNextAvailableMacAddress(long networkConfigId);
+    
+    List<NetworkVO> listBy(long accountId, long networkId);
 }

@@ -170,17 +170,17 @@ public interface ConfigurationManager extends Manager {
 	
 	   /**
      * Creates a new network offering
-     * @param id
-     * @param name
-     * @param displayText
-     * @param type
-     * @param trafficType
-     * @param tags
-     * @param maxConnections
+	 * @param name
+	 * @param displayText
+	 * @param type
+	 * @param trafficType
+	 * @param tags
+	 * @param maxConnections
+	 * @param id
      * @param specifyVlan;
      * @return network offering object
      */
-    NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, GuestIpType type, TrafficType trafficType, String tags, Integer maxConnections, boolean specifyVlan, boolean isShared);
+    NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, GuestIpType type, TrafficType trafficType, String tags, Integer maxConnections, boolean specifyVlan);
     
     Vlan createVlanAndPublicIpRange(Long userId, Long zoneId, Long podId, String startIP, String endIP, String vlanGateway, String vlanNetmask, boolean forVirtualNetwork, String vlanId, Account account, Long networkId) throws InsufficientCapacityException, ConcurrentOperationException, InvalidParameterValueException;
 	

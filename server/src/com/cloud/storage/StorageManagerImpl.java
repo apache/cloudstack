@@ -112,6 +112,7 @@ import com.cloud.host.dao.DetailsDao;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.router.DomainRouterManager;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -210,6 +211,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     @Inject protected DomainDao _domainDao;
     @Inject protected UserDao _userDao;
     @Inject protected ClusterDao _clusterDao;
+    @Inject protected DomainRouterManager _routerMgr;
     
     @Inject(adapter=StoragePoolAllocator.class)
     protected Adapters<StoragePoolAllocator> _storagePoolAllocators;
@@ -971,8 +973,9 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     			VMInstanceVO vmInstance = _vmInstanceDao.findById(vmId);
     			if (vmInstance != null) {
     				Long hostId = vmInstance.getHostId();
-    				if (hostId != null && !avoidHosts.contains(vmInstance.getHostId()))
-    					return hostId;
+    				if (hostId != null && !avoidHosts.contains(vmInstance.getHostId())) {
+                        return hostId;
+                    }
     			}
     		}
     		/*Can't find the vm where host resides on(vm is destroyed? or volume is detached from vm), randomly choose a host to send the cmd */
@@ -1082,7 +1085,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             _overProvisioningFactor = Integer.parseInt(overProvisioningFactorStr);
         }
 
-        _retry = NumbersUtil.parseInt(configs.get(Config.StartRetry.key()), 2);
+        _retry = NumbersUtil.parseInt(configs.get(Config.StartRetry.key()), 10);
         _pingInterval = NumbersUtil.parseInt(configs.get("ping.interval"), 60);
         _hostRetry = NumbersUtil.parseInt(configs.get("host.retry"), 2);
         _storagePoolAcquisitionWaitSeconds = NumbersUtil.parseInt(configs.get("pool.acquisition.wait.seconds"), 1800);
@@ -1294,9 +1297,9 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         URI uri = null;
         try {
             uri = new URI(cmd.getUrl());
-            if (uri.getScheme() == null)
+            if (uri.getScheme() == null) {
                 throw new ServerApiException(BaseCmd.PARAM_ERROR, "scheme is null " + cmd.getUrl() + ", add nfs:// as a prefix");
-            else if (uri.getScheme().equalsIgnoreCase("nfs")) {
+            } else if (uri.getScheme().equalsIgnoreCase("nfs")) {
                 String uriHost = uri.getHost();
                 String uriPath = uri.getPath();
                 if (uriHost == null || uriPath == null || uriHost.trim().isEmpty() || uriPath.trim().isEmpty()) {
@@ -1525,8 +1528,9 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                 StoragePoolVO lock = _storagePoolDao.acquireInLockTable(sPool.getId());
                 try {
                     if (lock == null) {
-                    	if(s_logger.isDebugEnabled())
-                    		s_logger.debug("Failed to acquire lock when deleting StoragePool with ID: " + sPool.getId());
+                    	if(s_logger.isDebugEnabled()) {
+                            s_logger.debug("Failed to acquire lock when deleting StoragePool with ID: " + sPool.getId());
+                        }
                         return false;
                     }
 
@@ -1752,9 +1756,9 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             		throw new InvalidParameterValueException("Invalid size for custom volume creation: " + size+" ,max volume size is:"+_maxVolumeSizeInGb);
             	}
                 
-                if(diskOffering.getDiskSize() > 0)
-                	size = (diskOffering.getDiskSize()*1024*1024);//the disk offering size is in MB, which needs to be converted into bytes
-                else{
+                if(diskOffering.getDiskSize() > 0) {
+                    size = (diskOffering.getDiskSize()*1024*1024);//the disk offering size is in MB, which needs to be converted into bytes
+                } else{
                 	if(!validateVolumeSizeRange(size)){
                 		throw new InvalidParameterValueException("Invalid size for custom volume creation: " + size+" ,max volume size is:"+_maxVolumeSizeInGb);
                 	}
@@ -1831,7 +1835,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
     @Override @DB
     public VolumeVO createVolume(CreateVolumeCmd cmd) {
-        VolumeVO volume = _volsDao.findById(cmd.getId());
+        VolumeVO volume = _volsDao.findById(cmd.getEntityId());
 //        VolumeVO createdVolume = null;
         Long userId = UserContext.current().getUserId();
 
@@ -2241,8 +2245,9 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         	//if they dont, then just stop all vms on this one
         	List<StoragePoolVO> upPools = _storagePoolDao.listPoolsByStatus(Status.Up);
         	
-        	if(upPools == null || upPools.size() == 0)
-        		restart = false;
+        	if(upPools == null || upPools.size() == 0) {
+                restart = false;
+            }
         		
         	//2. Get a list of all the volumes within this storage pool
         	List<VolumeVO> allVolumes = _volsDao.findByPoolId(primaryStorageId);
@@ -2252,8 +2257,9 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         	{
         		VMInstanceVO vmInstance = _vmInstanceDao.findById(volume.getInstanceId());
         		
-        		if(vmInstance == null)
-        			continue;
+        		if(vmInstance == null) {
+                    continue;
+                }
         		
         		//shut down the running vms
         		if(vmInstance.getState().equals(State.Running) || vmInstance.getState().equals(State.Starting))
@@ -2347,7 +2353,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         				//create a dummy event
         				long eventId2 = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_ROUTER_STOP, "stopping domain router with Id: "+vmInstance.getId());
 
-        				if(!_networkMgr.stopRouter(vmInstance.getId(), eventId2))
+        				if(!_routerMgr.stopRouter(vmInstance.getId(), eventId2))
         				{
         				    String errorMsg = "There was an error stopping the domain router id: "+vmInstance.getId()+" ,cannot enable primary storage maintenance";
         					s_logger.warn(errorMsg);
@@ -2359,7 +2365,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         				{
     						//create a dummy event and restart the domr immediately
     						long eventId = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_START, "starting domr with Id: "+vmInstance.getId());
-    						if(_networkMgr.startRouter(vmInstance.getId(), eventId)==null)
+    						if(_routerMgr.startRouter(vmInstance.getId(), eventId)==null)
     						{
     						    String errorMsg = "There was an error starting the domain router id: "+vmInstance.getId()+" on another storage pool, cannot enable primary storage maintenance";
     							s_logger.warn(errorMsg);

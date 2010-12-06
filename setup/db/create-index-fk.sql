@@ -58,8 +58,6 @@ ALTER TABLE `cloud`.`storage_pool` ADD CONSTRAINT `fk_storage_pool__cluster_id` 
 ALTER TABLE `cloud`.`storage_pool_details` ADD CONSTRAINT `fk_storage_pool_details__pool_id` FOREIGN KEY `fk_storage_pool__pool_id`(`pool_id`) REFERENCES `storage_pool`(`id`) ON DELETE CASCADE;
 ALTER TABLE `cloud`.`storage_pool_details` ADD INDEX `i_storage_pool_details__name__value`(`name`(128), `value`(128));
 
-ALTER TABLE `cloud`.`op_networks` ADD CONSTRAINT `fk_op_networks__id` FOREIGN KEY `fk_op_networks__id`(`id`) REFERENCES `networks`(`id`) ON DELETE CASCADE;
-
 ALTER TABLE `cloud`.`user` ADD INDEX `i_user__secret_key_removed`(`secret_key`, `removed`);
 ALTER TABLE `cloud`.`user` ADD INDEX `i_user__removed`(`removed`);
 ALTER TABLE `cloud`.`user` ADD UNIQUE `i_user__api_key`(`api_key`);

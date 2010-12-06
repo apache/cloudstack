@@ -115,7 +115,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     }
     
     @Override
-    public long getAccountId() {
+    public long getEntityOwnerId() {
         Account account = UserContext.current().getAccount();
         if ((account == null) || isAdmin(account.getType())) {
             if ((domainId != null) && (accountName != null)) {
@@ -144,11 +144,11 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     }
     
     @Override
-    public void callCreate(){
+    public void create(){
         try {
             Volume volume = _storageMgr.allocVolume(this);
             if (volume != null) {
-                this.setId(volume.getId());
+                this.setEntityId(volume.getId());
             } else {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create volume");
             }

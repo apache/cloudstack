@@ -23,7 +23,6 @@ import com.cloud.api.commands.CreateTemplateCmd;
 import com.cloud.api.commands.CreateVMGroupCmd;
 import com.cloud.api.commands.DeleteVMGroupCmd;
 import com.cloud.api.commands.DeployVMCmd;
-import com.cloud.api.commands.DeployVm2Cmd;
 import com.cloud.api.commands.DestroyVMCmd;
 import com.cloud.api.commands.DetachVolumeCmd;
 import com.cloud.api.commands.RebootVMCmd;
@@ -133,7 +132,7 @@ public interface UserVmService {
      * @throws ConcurrentOperationException if there are multiple users working on the same VM.
      * @throws ResourceUnavailableException if the resources required the deploy the VM is not currently available.
      */
-    UserVm startVirtualMachine(DeployVm2Cmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException;
+    UserVm startVirtualMachine(DeployVMCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException;
     
     /**
      * Creates a vm group.

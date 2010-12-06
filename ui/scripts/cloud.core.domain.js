@@ -21,12 +21,14 @@ var defaultRootLevel = 0;
 var childParentMap = {};  //map childDomainId to parentDomainId
 var domainIdNameMap = {}; //map domainId to domainName    
 
+/*
 function refreshWholeTree(rootDomainId, rootLevel) {
     drawRootNode(rootDomainId);
-    drawTree(rootDomainId, (rootLevel+1), $("#domain_children_container_"+rootDomainId));  //draw the whole tree (under root node)			
+    drawTree(rootDomainId, $("#domain_children_container_"+rootDomainId));  //draw the whole tree (under root node)			
     $("#domain_"+rootDomainId).show();	//show root node
     clickExpandIcon(rootDomainId);      //expand root node	    
 }
+*/
 
 //draw root node
 function drawRootNode(rootDomainId) {
@@ -41,7 +43,7 @@ function drawRootNode(rootDomainId) {
             var domains = json.listdomainsresponse.domain;	
             $domainTree.empty();			        	    
 	        if (domains != null && domains.length > 0) {				   					    
-			    var node = drawNode(domains[0], defaultRootLevel, $domainTree); 
+			    var node = drawNode(domains[0], $domainTree); 
 			    
 			    var treeLevelsbox = node.find(".tree_levelsbox");	//root node shouldn't have margin-left:20px				   
 			    if(treeLevelsbox!=null && treeLevelsbox.length >0)
@@ -53,15 +55,15 @@ function drawRootNode(rootDomainId) {
     }); 		
 }
 
-function drawNode(json, level, container) {		  
+function drawNode(json, container) {		  
     if("parentdomainid" in json)
         childParentMap[json.id] = json.parentdomainid;	//map childDomainId to parentDomainId   
     domainIdNameMap[json.id] = json.name;               //map domainId to domainName
 
-    var $treeNode = $("#domain_tree_node_template").clone(true);	  
-    $treeNode.find("#domain_indent").css("marginLeft", (30*(level+1)));           
+    var $treeNode = $("#domain_tree_node_template").clone(true).attr("id", "domain_tree_node_template_clone");	  
+    $treeNode.find("#domain_indent").css("marginLeft", (30*(json.level+1)));           
     $treeNode.attr("id", "domain_"+fromdb(json.id));	         
-    $treeNode.data("jsonObj", json).data("domainLevel", level); 	      
+    $treeNode.data("jsonObj", json).data("domainLevel", json.level); 	      
     $treeNode.find("#domain_title_container").attr("id", "domain_title_container_"+fromdb(json.id)); 	        
     $treeNode.find("#domain_expand_icon").attr("id", "domain_expand_icon_"+fromdb(json.id)); 
     $treeNode.find("#domain_name").attr("id", "domain_name_"+fromdb(json.id)).text(fromdb(json.name));        	              	
@@ -70,7 +72,7 @@ function drawNode(json, level, container) {
     return $treeNode;   	       
 }          
 
-function drawTree(id, level, container) {		        
+function drawTree(id, container) {		        
     $.ajax({
 	    data: createURL("command=listDomainChildren&id="+id),
 	    dataType: "json",
@@ -79,9 +81,11 @@ function drawTree(id, level, container) {
 	        var domains = json.listdomainchildrenresponse.domain;				        	    
 		    if (domains != null && domains.length > 0) {					    
 			    for (var i = 0; i < domains.length; i++) {						    
-				    drawNode(domains[i], level, container);	
+				    drawNode(domains[i], container);	
+				    /*
 				    if(domains[i].haschild == true) 
-		                drawTree(domains[i].id, (level+1), $("#domain_children_container_"+domains[i].id));				   
+		                drawTree(domains[i].id, $("#domain_children_container_"+domains[i].id));	
+		            */			   
 			    }
 		    }				
 	    }
@@ -91,12 +95,12 @@ function drawTree(id, level, container) {
 function clickExpandIcon(domainId) {
     var $treeNode = $("#domain_"+domainId);
     var expandIcon = $treeNode.find("#domain_expand_icon_"+domainId);
-    if (expandIcon.hasClass("expanded_close")) {													
-		$treeNode.find("#domain_children_container_"+domainId).show();							
+    if (expandIcon.hasClass("expanded_close")) {	
+		drawTree(domainId, $treeNode.find("#domain_children_container_"+domainId));								
 		expandIcon.removeClass("expanded_close").addClass("expanded_open");
 	} 
-	else if (expandIcon.hasClass("expanded_open")) {																	
-	    $treeNode.find("#domain_children_container_"+domainId).hide();						
+	else if (expandIcon.hasClass("expanded_open")) {	
+	    $treeNode.find("#domain_children_container_"+domainId).empty();
 		expandIcon.removeClass("expanded_open").addClass("expanded_close");
 	}			
 }					
@@ -115,9 +119,93 @@ function domainAccountJSONToTemplate(jsonObj, $template) {
     $template.find("#state").text(jsonObj.state);
 }
 
+function afterLoadDomainJSP() {
+    if(isAdmin()) {
+        initAddDomainDialog();
+    }
+}
+
+function initAddDomainDialog() {
+    initDialog("dialog_add_domain", 450);
+    
+    var $dialogAddDomain = $("#dialog_add_domain");              
+	
+    //add button ***
+    $("#midmenu_add_link").find("#label").text("Add Domain"); 
+    $("#midmenu_add_link").show();     
+    $("#midmenu_add_link").unbind("click").bind("click", function(event) {  
+    
+        $dialogAddDomain.find("#add_domain_name").val("");
+        
+        $.ajax({
+	      data: createURL("command=listDomains"),
+		    dataType: "json",
+		    async: false,
+		    success: function(json) {
+		        var $domainDropdown1 = $dialogAddDomain.find("#domain_dropdown").empty();		  
+			    var domains = json.listdomainsresponse.domain;						
+			    if (domains != null && domains.length > 0) {
+				    for (var i = 0; i < domains.length; i++) {
+					    $domainDropdown1.append("<option value='" + fromdb(domains[i].id) + "'>" + fromdb(domains[i].name) + "</option>"); 					
+				    }
+			    } 
+			   
+			    var $thisTab = $("#right_panel_content").find("#tab_content_details");    
+                var domainId = $thisTab.find("#id").text();   //get domainId from here in case domain page is empty (e.g. when a domain was just deleted)
+                if(domainId != null && domainId.length > 0)
+                    $domainDropdown1.val(domainId);			    		    
+		    }
+	    });  
+        
+		$dialogAddDomain
+		.dialog('option', 'buttons', { 					
+			"Create": function() { 	
+			    var $thisDialog = $(this);
+			    				    			
+				// validate values
+				var isValid = true;					
+				isValid &= validateString("Name", $thisDialog.find("#add_domain_name"), $thisDialog.find("#add_domain_name_errormsg"));					
+				if (!isValid) 
+				    return;
+				 
+				$thisDialog.dialog("close");    			
+							
+				var array1 = [];	
+				var name = trim($thisDialog.find("#add_domain_name").val());	
+				array1.push("&name="+todb(name));
+																		
+				var parentDomainId = $thisDialog.find("#domain_dropdown").val();				
+				array1.push("&parentdomainid="+parentDomainId);	
+						
+				$.ajax({
+				    data: createURL("command=createDomain"+array1.join("")),
+					dataType: "json",
+					async: false,
+					success: function(json) {	   
+						var item = json.createdomainresponse.domain;						
+						var $parentDomainNode = $("#leftmenu_domain_tree").find("#domain_"+item.parentdomainid);
+											
+					    var $expandIcon = $parentDomainNode.find("#domain_expand_icon_"+item.parentdomainid);
+					    if($expandIcon.hasClass("expanded_close"))
+					        $expandIcon.click(); //expand parentDomain node					    
+					    drawNode(item, $("#domain_children_container_"+item.parentdomainid));	
+					}							
+				});				
+			}, 
+			"Cancel": function() { 
+				$(this).dialog("close"); 
+			} 
+		}).dialog("open");
+				       
+        return false;
+    }); 
+}
+
 function domainToRightPanel($leftmenuItem1) {  
     if($("#domain_grid_container").length == 0) { //domain.jsp is not loaded in right panel        
-        $("#right_panel").load("jsp/domain.jsp", function(){         
+        $("#right_panel").load("jsp/domain.jsp", function(){      
+            afterLoadDomainJSP();
+           
             //switch between different tabs
             var tabArray = [$("#tab_details"), $("#tab_resource_limits"), $("#tab_admin_account")];
             var tabContentArray = [$("#tab_content_details"), $("#tab_content_resource_limits"), $("#tab_content_admin_account")];
@@ -133,12 +221,20 @@ function domainToRightPanel($leftmenuItem1) {
 
 function domainToRightPanel2($leftmenuItem1) {
     $("#right_panel_content").data("$leftmenuItem1", $leftmenuItem1);
-    var jsonObj = $leftmenuItem1.data("jsonObj");    
-    var $detailsTab = $("#right_panel_content").find("#tab_content_details");    
+    domainJsonToDetailsTab();
+    domainJsonToAdminAccountTab();
+    domainJsonToResourceLimitsTab();  
+}
+
+function domainJsonToDetailsTab() {
+    var $leftmenuItem1 = $("#right_panel_content").data("$leftmenuItem1");
+    var jsonObj = $leftmenuItem1.data("jsonObj");  
     var domainId = jsonObj.id;
-    $detailsTab.find("#id").text(domainId);
-    $detailsTab.find("#grid_header_title").text(fromdb(jsonObj.name));	
-    $detailsTab.find("#name").text(fromdb(jsonObj.name));	    	   
+    
+    var $thisTab = $("#right_panel_content").find("#tab_content_details");    
+    $thisTab.find("#id").text(domainId);
+    $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));	
+    $thisTab.find("#name").text(fromdb(jsonObj.name));	    	   
 			  	
   	$.ajax({
 	    cache: false,				
@@ -147,9 +243,9 @@ function domainToRightPanel2($leftmenuItem1) {
 	    success: function(json) {				       
 		    var accounts = json.listaccountsresponse.account;					
 		    if (accounts != null) 	
-		        $detailsTab.find("#redirect_to_account_page").text(accounts.length);
+		        $thisTab.find("#redirect_to_account_page").text(accounts.length);
 		    else 
-		        $detailsTab.find("#redirect_to_account_page").text("0");		
+		        $thisTab.find("#redirect_to_account_page").text("0");		
 	    }		
     });		 
   			 				 			 
@@ -160,12 +256,12 @@ function domainToRightPanel2($leftmenuItem1) {
 	    success: function(json) {
 		    var instances = json.listvirtualmachinesresponse.virtualmachine;					
 		    if (instances != null) 	
-		        $detailsTab.find("#redirect_to_instance_page").text(instances.length);	
+		        $thisTab.find("#redirect_to_instance_page").text(instances.length);	
 		    else 
-		        $detailsTab.find("#redirect_to_instance_page").text("0");	
+		        $thisTab.find("#redirect_to_instance_page").text("0");	
 	    }		
-    });		 
-    			    
+    });		
+     			    
     $.ajax({
 	    cache: false,				
 	    data: createURL("command=listVolumes&domainid="+domainId),
@@ -173,15 +269,41 @@ function domainToRightPanel2($leftmenuItem1) {
 	    success: function(json) {
 		    var volumes = json.listvolumesresponse.volume;						
 		    if (volumes != null) 	
-		        $detailsTab.find("#redirect_to_volume_page").text(volumes.length);	
+		        $thisTab.find("#redirect_to_volume_page").text(volumes.length);	
 		    else 
-		        $detailsTab.find("#redirect_to_volume_page").text("0");		
+		        $thisTab.find("#redirect_to_volume_page").text("0");		
 	    }		
     });
+    
+    //actions ***   
+    var $actionLink = $thisTab.find("#action_link"); 
+    $actionLink.bind("mouseover", function(event) {	    
+        $(this).find("#action_menu").show();    
+        return false;
+    });
+    $actionLink.bind("mouseout", function(event) {       
+        $(this).find("#action_menu").hide();    
+        return false;
+    });	  
+    var $actionMenu = $thisTab.find("#action_link #action_menu");
+    $actionMenu.find("#action_list").empty();   
+    buildActionLinkForTab("Delete Domain", domainActionMap, $actionMenu, $leftmenuItem1, $thisTab);    
+}
 
+function domainJsonToAdminAccountTab() {    
+    var $leftmenuItem1 = $("#right_panel_content").data("$leftmenuItem1");
+    var jsonObj = $leftmenuItem1.data("jsonObj");  
+    var domainId = jsonObj.id;
+   
     listAdminAccounts(domainId);  
+}
 
-	if (isAdmin() || (isDomainAdmin() && (g_domainid != domainId))) {				
+function domainJsonToResourceLimitsTab() {    
+	if (isAdmin() || (isDomainAdmin() && (g_domainid != domainId))) {	
+	    var $leftmenuItem1 = $("#right_panel_content").data("$leftmenuItem1");
+        var jsonObj = $leftmenuItem1.data("jsonObj");  
+        var domainId = jsonObj.id;    
+				
 		var $resourceLimitsTab = $("#right_panel_content #tab_content_resource_limits");	
 		$.ajax({
 			cache: false,				
@@ -231,6 +353,45 @@ function domainToRightPanel2($leftmenuItem1) {
 	else {
 		$("#tab_resource_limits").hide();
 	}		 		 
+}
+
+function domainJsonClearRightPanel() {
+    domainJsonClearDetailsTab();
+    domainJsonClearAdminAccountTab();
+    domainJsonClearResourceLimitsTab();    
+}
+
+function domainJsonClearDetailsTab() {
+    var $thisTab = $("#right_panel_content").find("#tab_content_details");
+    $thisTab.find("#id").text("");
+    $thisTab.find("#grid_header_title").text("");	
+    $thisTab.find("#name").text("");	
+    $thisTab.find("#redirect_to_account_page").text("");	
+    $thisTab.find("#redirect_to_instance_page").text("");	
+    $thisTab.find("#redirect_to_volume_page").text("");	
+}
+
+function domainJsonClearAdminAccountTab() {
+    $("#right_panel_content").find("#tab_content_admin_account").empty();	
+}
+
+function domainJsonClearResourceLimitsTab() {
+    var $thisTab = $("#right_panel_content").find("#tab_content_resource_limits");
+
+    $thisTab.find("#limits_vm").text("");
+	$thisTab.find("#limits_vm_edit").val("");
+	
+	$thisTab.find("#limits_ip").text("");
+	$thisTab.find("#limits_ip_edit").val("");
+	
+	$thisTab.find("#limits_volume").text("");
+	$thisTab.find("#limits_volume_edit").val("");
+	
+	$thisTab.find("#limits_snapshot").text("");
+	$thisTab.find("#limits_snapshot_edit").val("");
+	
+	$thisTab.find("#limits_template").text("");
+	$thisTab.find("#limits_template_edit").val("");	
 }
 
 function domainToResourceLimitsTab() {   
@@ -382,3 +543,19 @@ function doEditResourceLimits2($actionLink, $detailsTab, $midmenuItem1, $readonl
     $readonlyFields.show();       
     $("#save_button, #cancel_button").hide();      
 }
+
+var domainActionMap = {        
+    "Delete Domain": {              
+        api: "deleteDomain",     
+        isAsyncJob: true,    
+        asyncJobResponse: "deletedomainresponse",          
+        inProcessText: "Deleting Domain....",
+        afterActionSeccessFn: function(json, $leftmenuItem1, id) {        
+            $leftmenuItem1.slideUp(function() {                
+                $(this).remove();
+            });           
+            clearRightPanel();
+            domainJsonClearRightPanel();
+        }
+    }    
+} 

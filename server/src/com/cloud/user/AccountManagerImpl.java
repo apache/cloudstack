@@ -64,6 +64,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.router.DomainRouterManager;
 import com.cloud.network.security.NetworkGroupManager;
 import com.cloud.server.Criteria;
 import com.cloud.storage.StorageManager;
@@ -120,6 +121,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
 	@Inject private StorageManager _storageMgr;
 	@Inject private TemplateManager _tmpltMgr;
 	@Inject private ConfigurationManager _configMgr;
+	@Inject private DomainRouterManager _routerMgr;
 	
 	private final GlobalLock m_resourceCountLock = GlobalLock.getInternLock("resource.count");
 	
@@ -557,7 +559,9 @@ public class AccountManagerImpl implements AccountManager, AccountService {
             accountId = userAccount.getId();
         }               
 
-        if (accountId != null) domainId = null;
+        if (accountId != null) {
+            domainId = null;
+        }
         
     	
 
@@ -701,7 +705,6 @@ public class AccountManagerImpl implements AccountManager, AccountService {
             }
         }
     }
- 
     
     private boolean doSetUserStatus(long userId, String state) {
         UserVO userForUpdate = _userDao.createForUpdate();
@@ -738,6 +741,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
         return success;
     }
     
+    @Override
     public boolean deleteUserInternal(long userId, long startEventId) {
         UserAccount userAccount = null;
         Long accountId = null;
@@ -789,8 +793,9 @@ public class AccountManagerImpl implements AccountManager, AccountService {
             return false;
         }finally{
             long domainId = 0L;
-            if (userAccount != null)
+            if (userAccount != null) {
                 domainId = userAccount.getDomainId();
+            }
             String description = "User " + username + " (id: " + userId + ") for accountId = " + accountId + " and domainId = " + domainId;
             if(result){
             	EventUtils.saveEvent(UserContext.current().getUserId(), accountId, EventVO.LEVEL_INFO, EventTypes.EVENT_USER_DELETE, "Successfully deleted " +description, startEventId);
@@ -800,6 +805,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
         }
     }
     
+    @Override
     public boolean deleteAccount(AccountVO account) {
         long accountId = account.getId();
         long userId = 1L; // only admins can delete users, pass in userId 1 XXX: Shouldn't it be userId 2.
@@ -852,7 +858,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
 
             boolean routersCleanedUp = true;
             for (DomainRouterVO router : routers) {
-                if (!_networkMgr.destroyRouter(router.getId())) {
+                if (!_routerMgr.destroyRouter(router.getId())) {
                     s_logger.error("Unable to destroy router: " + router.getId());
                     routersCleanedUp = false;
                 }
@@ -866,7 +872,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
                 }
 
                 for (IPAddressVO ip : ips) {
-                    List<PodVlanMapVO> podVlanMaps = _podVlanMapDao.listPodVlanMapsByVlan(ip.getVlanDbId());
+                    List<PodVlanMapVO> podVlanMaps = _podVlanMapDao.listPodVlanMapsByVlan(ip.getVlanId());
                     if (podVlanMaps != null && podVlanMaps.size() != 0) {
                         Long podId = podVlanMaps.get(0).getPodId();
                         if (podId != null) {
@@ -927,6 +933,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
         }
     }
     
+    @Override
     public boolean disableAccount(long accountId) {
         boolean success = false;
         if (accountId <= 2) {
@@ -963,7 +970,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
 
         List<DomainRouterVO> routers = _routerDao.listBy(accountId);
         for (DomainRouterVO router : routers) {
-            success = (success && _networkMgr.stopRouter(router.getId(), 0));
+            success = (success && _routerMgr.stopRouter(router.getId(), 0));
         }
 
         return success;
@@ -1168,8 +1175,9 @@ public class AccountManagerImpl implements AccountManager, AccountService {
         
         //Check if user exists in the system
         User user = _userDao.findById(userId);
-        if ((user == null) || (user.getRemoved() != null))
+        if ((user == null) || (user.getRemoved() != null)) {
             throw new InvalidParameterValueException("Unable to find active user by id " + userId);
+        }
         
         // If the user is a System user, return an error
         Account account = _accountDao.findById(user.getAccountId());
@@ -1191,10 +1199,11 @@ public class AccountManagerImpl implements AccountManager, AccountService {
             }
 
             // there are no enabled users attached to this user's account, disable the account
-            if (disableAccount(user.getAccountId()))
+            if (disableAccount(user.getAccountId())) {
                 return _userAccountDao.findById(userId);
-            else
+            } else {
                 throw new CloudRuntimeException("Unable to disable corresponding account for the user " + userId);
+            }
 
         } else {
             throw new CloudRuntimeException("Unable to disable user " + userId);
@@ -1209,8 +1218,9 @@ public class AccountManagerImpl implements AccountManager, AccountService {
         
         //Check if user exists in the system
         User user = _userDao.findById(userId);
-        if ((user == null) || (user.getRemoved() != null))
+        if ((user == null) || (user.getRemoved() != null)) {
             throw new InvalidParameterValueException("Unable to find active user by id " + userId);
+        }
         
         // If the user is a System user, return an error
         Account account = _accountDao.findById(user.getAccountId());
@@ -1227,9 +1237,11 @@ public class AccountManagerImpl implements AccountManager, AccountService {
         // make sure the account is enabled too
         success = (success && enableAccount(user.getAccountId()));
         
-        if (success)
+        if (success) {
             return _userAccountDao.findById(userId);
-        else throw new CloudRuntimeException("Unable to enable user " + userId);
+        } else {
+            throw new CloudRuntimeException("Unable to enable user " + userId);
+        }
     }
     
     @Override
@@ -1283,10 +1295,11 @@ public class AccountManagerImpl implements AccountManager, AccountService {
             }
         }
         
-        if (success)
+        if (success) {
             return _userAccountDao.findById(id);
-        else
+        } else {
             throw new CloudRuntimeException("Unable to lock user " + id);
+        }
     }
     
     @Override
@@ -1335,10 +1348,11 @@ public class AccountManagerImpl implements AccountManager, AccountService {
         }
         
         success = enableAccount(account.getId());
-        if (success)
+        if (success) {
             return _accountDao.findById(account.getId());
-        else
+        } else {
             throw new CloudRuntimeException("Unable to enable account " + accountName + " in domain " + domainId);
+        }
     }
     
     @Override
@@ -1361,10 +1375,11 @@ public class AccountManagerImpl implements AccountManager, AccountService {
             throw new InvalidParameterValueException("can not lock system account");
         }
 
-        if (lockAccountInternal(account.getId()))
+        if (lockAccountInternal(account.getId())) {
             return _accountDao.findById(account.getId());
-        else
+        } else {
             throw new CloudRuntimeException("Unable to lock account " + accountName + " in domain " + domainId);
+        }
     }
     
     @Override
@@ -1381,10 +1396,11 @@ public class AccountManagerImpl implements AccountManager, AccountService {
         if (account == null) {
             throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
         }
-        if (disableAccount(account.getId()))
+        if (disableAccount(account.getId())) {
             return _accountDao.findById(account.getId());
-        else 
+        } else {
             throw new CloudRuntimeException("Unable to update account " + accountName + " in domain " + domainId);
+        }
     }
 
     @Override
@@ -1426,10 +1442,11 @@ public class AccountManagerImpl implements AccountManager, AccountService {
             acctForUpdate.setAccountName(newAccountName);
             success = _accountDao.update(Long.valueOf(account.getId()), acctForUpdate);
         }
-        if (success)
+        if (success) {
             return _accountDao.findById(account.getId());
-        else 
+        } else {
             throw new CloudRuntimeException("Unable to update account " + accountName + " in domain " + domainId);
+        }
     }
 
 }

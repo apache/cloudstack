@@ -30,7 +30,8 @@ import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.FirewallRuleResponse;
 import com.cloud.api.response.IpForwardingRuleResponse;
 import com.cloud.api.response.ListResponse;
-import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.PortForwardingRule;
+import com.cloud.utils.net.Ip;
 
 @Implementation(description="List the ip forwarding rules", responseObject=FirewallRuleResponse.class)
 public class ListIpForwardingRulesCmd extends BaseListCmd {
@@ -82,10 +83,10 @@ public class ListIpForwardingRulesCmd extends BaseListCmd {
 
 	@Override
     public void execute(){
-        List<? extends FirewallRule> result = _mgr.searchForIpForwardingRules(this);
+        List<? extends PortForwardingRule> result = _rulesService.searchForIpForwardingRules(new Ip(publicIpAddress), this.getStartIndex(), this.getPageSizeVal());
         ListResponse<IpForwardingRuleResponse> response = new ListResponse<IpForwardingRuleResponse>();
         List<IpForwardingRuleResponse> ipForwardingResponses = new ArrayList<IpForwardingRuleResponse>();
-        for (FirewallRule rule : result) {
+        for (PortForwardingRule rule : result) {
             IpForwardingRuleResponse resp = _responseGenerator.createIpForwardingRuleResponse(rule);
             if (resp != null) {
                 ipForwardingResponses.add(resp);

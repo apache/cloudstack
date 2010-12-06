@@ -24,6 +24,8 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import net.sf.ehcache.Cache;
+
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.GenericDaoBase;
@@ -35,7 +37,8 @@ import com.cloud.utils.db.SearchCriteria;
 @SuppressWarnings("unchecked")
 public class EntityManagerImpl implements EntityManager, Manager {
     String _name;
-    
+    Cache _cache;
+
     @Override
     public <T, K extends Serializable> T findById(Class<T> entityType, K id) {
         GenericDao<? extends T, K> dao = (GenericDao<? extends T, K>)GenericDaoBase.getDao(entityType);
@@ -74,9 +77,25 @@ public class EntityManagerImpl implements EntityManager, Manager {
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _name = name;
+        /*
+        String threadId = Long.toString(Thread.currentThread().getId());
 
+        CacheManager cm = CacheManager.create();
+
+        _cache = cm.getCache(threadId);
+
+        if (_cache == null) {
+            int maxElements = NumbersUtil.parseInt((String)params.get("cache.size"), 100);
+            int live = NumbersUtil.parseInt((String)params.get("cache.time.to.live"), 300);
+            int idle = NumbersUtil.parseInt((String)params.get("cache.time.to.idle"), 300);
+
+            _cache = new Cache(threadId, maxElements, false, live == -1, live == -1 ? Integer.MAX_VALUE : live, idle);
+            cm.addCache(_cache);
+
+        }*/
+        
         return true;
-    }
+    } 
 
     @Override
     public boolean start() {

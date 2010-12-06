@@ -752,7 +752,7 @@ public class DatabaseConfig {
         String guestIpType = _currentObjectParams.get("guestIpType");
         NetworkOffering.GuestIpType type = null;
         if (guestIpType == null) {
-            type = NetworkOffering.GuestIpType.Virtualized;
+            type = NetworkOffering.GuestIpType.Virtual;
         } else {
             type = NetworkOffering.GuestIpType.valueOf(guestIpType);
         }

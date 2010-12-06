@@ -63,7 +63,7 @@ public class DeleteSnapshotCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public long getAccountId() {
+    public long getEntityOwnerId() {
         Snapshot snapshot = _entityMgr.findById(Snapshot.class, getId());
         if (snapshot != null) {
             return snapshot.getAccountId();

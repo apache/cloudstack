@@ -20,8 +20,12 @@ package com.cloud.capacity.dao;
 
 import com.cloud.capacity.CapacityVO;
 import com.cloud.utils.db.GenericDao;
+import com.cloud.vm.VMInstanceVO;
 
 public interface CapacityDao extends GenericDao<CapacityVO, Long> {
     void clearNonStorageCapacities();
     void clearStorageCapacities();
+	CapacityVO findByHostIdType(Long hostId, short capacityType);
+	void clearNonStorageCapacities2();
+	
 }

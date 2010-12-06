@@ -96,7 +96,7 @@ public class AttachVolumeCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public long getAccountId() {
+    public long getEntityOwnerId() {
         Volume volume = _responseGenerator.findVolumeById(getId());
         if (volume == null) {
             return Account.ACCOUNT_ID_SYSTEM; // bad id given, parent this command to SYSTEM so ERROR events are tracked

@@ -27,7 +27,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.LoadBalancerResponse;
 import com.cloud.event.EventTypes;
-import com.cloud.network.LoadBalancer;
+import com.cloud.network.rules.LoadBalancer;
 import com.cloud.user.Account;
 
 @Implementation(description="Updates load balancer", responseObject=LoadBalancerResponse.class)
@@ -88,7 +88,7 @@ public class UpdateLoadBalancerRuleCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public long getAccountId() {
+    public long getEntityOwnerId() {
         LoadBalancer lb = _entityMgr.findById(LoadBalancer.class, getId());
         if (lb == null) {
             return Account.ACCOUNT_ID_SYSTEM; // bad id given, parent this command to SYSTEM so ERROR events are tracked
@@ -108,7 +108,7 @@ public class UpdateLoadBalancerRuleCmd extends BaseAsyncCmd {
 	
     @Override
     public void execute(){
-        LoadBalancer result = _networkService.updateLoadBalancerRule(this);
+        LoadBalancer result = _lbService.updateLoadBalancerRule(this);
         if (result != null){
             LoadBalancerResponse response = _responseGenerator.createLoadBalancerResponse(result);
             response.setResponseName(getName());

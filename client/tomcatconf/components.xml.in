@@ -72,7 +72,7 @@
             <adapter name="KVM Agent" class="com.cloud.hypervisor.kvm.discoverer.KvmServerDiscoverer"/>
         </adapters>
         <adapters key="com.cloud.deploy.DeploymentPlanner">
-            <adapter name="Simple" class="com.cloud.deploy.SimplePlanner"/>
+            <adapter name="First Fit" class="com.cloud.deploy.FirstFitPlanner"/>
         </adapters>
         <adapters key="com.cloud.network.element.NetworkElement">
             <adapter name="DomainRouter" class="com.cloud.network.element.DomainRouterElement"/>

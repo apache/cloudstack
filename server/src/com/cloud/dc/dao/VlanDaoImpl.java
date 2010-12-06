@@ -240,7 +240,7 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
 		if (vlan == null) {
 			return null;
 		}
-		String ipAddress = _ipAddressDao.assignIpAddress(accountId, domainId, vlan.getId(), sourceNat);
+		String ipAddress = _ipAddressDao.assignIpAddress(accountId, domainId, vlan.getId(), sourceNat).getAddress();
 		if (ipAddress == null) {
 			return null;
 		}
@@ -270,7 +270,7 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
     		return null;
     	}
     	
-    	String ipAddress = _ipAddressDao.assignIpAddress(accountId, domainId, vlan.getId(), false);
+    	String ipAddress = _ipAddressDao.assignIpAddress(accountId, domainId, vlan.getId(), false).getAddress();
     	if (ipAddress == null) {
     		return null;
     	}
