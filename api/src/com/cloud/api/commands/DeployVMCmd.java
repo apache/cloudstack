@@ -84,7 +84,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="availability zone for the virtual machine")
     private Long zoneId;
     
-    @Parameter(name=ApiConstants.NETWORK_IDS, type=CommandType.LIST, collectionType=CommandType.LONG)
+    @Parameter(name=ApiConstants.NETWORK_IDS, type=CommandType.LIST, required=true, collectionType=CommandType.LONG, description="list of network ids used by virtual machine")
     private List<Long> networkIds;
 
     // unexposed parameter needed for serializing/deserializing the command

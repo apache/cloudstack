@@ -18,7 +18,6 @@
 package com.cloud.storage.secondary;
 
 import com.cloud.agent.api.StartupCommand;
-import com.cloud.host.HostVO;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.SecondaryStorageVmVO;
 
