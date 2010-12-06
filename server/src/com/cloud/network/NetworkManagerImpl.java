@@ -1803,12 +1803,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Long userId = UserContext.current().getUserId();
         Long networkOfferingId = cmd.getNetworkOfferingId();
         Long zoneId = cmd.getZoneId();
-        Long podId = cmd.getPodId();
         String gateway = cmd.getGateway();
         String startIP = cmd.getStartIp();
         String endIP = cmd.getEndIp();
         String vlanNetmask = cmd.getNetmask();
-        String cidr = NetUtils.ipAndNetMaskToCidr(gateway, vlanNetmask);
+        String cidr = null;
+        if (gateway != null && vlanNetmask != null) {
+            cidr = NetUtils.ipAndNetMaskToCidr(gateway, vlanNetmask);
+        }
         String accountName = cmd.getAccountName();
         Long domainId = cmd.getDomainId();
         String vlanId = cmd.getVlan();
@@ -1908,12 +1910,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                owner = null;
            }
            
-           if (ctxAccount.getType() == Account.ACCOUNT_TYPE_ADMIN && networkOffering.getGuestIpType() != GuestIpType.Virtual && startIP != null && endIP != null && gateway != null) {
+           if (ctxAccount.getType() == Account.ACCOUNT_TYPE_ADMIN && networkOffering.getGuestIpType() == GuestIpType.Direct && startIP != null && endIP != null && gateway != null) {
                //Create vlan ip range
-               Vlan vlan = _configMgr.createVlanAndPublicIpRange(userId, zoneId, podId, startIP, endIP, gateway, vlanNetmask, false, vlanId, owner, networkId);
+               Vlan vlan = _configMgr.createVlanAndPublicIpRange(userId, zoneId, null, startIP, endIP, gateway, vlanNetmask, false, vlanId, owner, networkId);
                if (vlan == null) {
                    txn.rollback();
-                   throw new CloudRuntimeException("Fail to create a vlan");
+                   throw new CloudRuntimeException("Failed to create a vlan");
                }
            }  
            txn.commit();

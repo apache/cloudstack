@@ -49,9 +49,6 @@ public class CreateNetworkCmd extends BaseCmd {
     
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="the Zone ID for the Vlan ip range")
     private Long zoneId;
-    
-    @Parameter(name=ApiConstants.POD_ID, type=CommandType.LONG, description="the Pod ID for the Vlan ip range")
-    private Long podId;
 
     @Parameter(name=ApiConstants.GATEWAY, type=CommandType.STRING, description="the gateway of the VLAN IP range")
     private String gateway;
@@ -86,10 +83,6 @@ public class CreateNetworkCmd extends BaseCmd {
 
     public Long getZoneId() {
         return zoneId;
-    }
-
-    public Long getPodId() {
-        return podId;
     }
 
     public String getGateway() {
