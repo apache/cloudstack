@@ -120,6 +120,10 @@ function domainAccountJSONToTemplate(jsonObj, $template) {
 }
 
 function afterLoadDomainJSP() {
+    hideMiddleMenu();		
+	disableMultipleSelectionInMidMenu();      
+	clearMiddleMenu();
+	   
     if(isAdmin()) {
         initAddDomainDialog();
     }
@@ -203,7 +207,7 @@ function initAddDomainDialog() {
 
 function domainToRightPanel($leftmenuItem1) {  
     if($("#domain_grid_container").length == 0) { //domain.jsp is not loaded in right panel        
-        $("#right_panel").load("jsp/domain.jsp", function(){      
+        $("#right_panel").load("jsp/domain.jsp", function(){     
             afterLoadDomainJSP();
            
             //switch between different tabs
@@ -220,7 +224,7 @@ function domainToRightPanel($leftmenuItem1) {
 }
 
 function domainToRightPanel2($leftmenuItem1) {
-    $("#right_panel_content").data("$leftmenuItem1", $leftmenuItem1);
+    $("#right_panel_content").data("$leftmenuItem1", $leftmenuItem1);   
     domainJsonToDetailsTab();
     domainJsonToAdminAccountTab();
     domainJsonToResourceLimitsTab();  
@@ -229,13 +233,28 @@ function domainToRightPanel2($leftmenuItem1) {
 function domainJsonToDetailsTab() {
     var $leftmenuItem1 = $("#right_panel_content").data("$leftmenuItem1");
     var jsonObj = $leftmenuItem1.data("jsonObj");  
-    var domainId = jsonObj.id;
-    
+    var domainId = jsonObj.id;   
+           
+    $("#right_panel").data("onRefreshFn", function() {	    
+	    $("#domain_name_"+domainId).click();
+	});	
+        	
+	$.ajax({
+	    data: createURL("command=listDomains&id="+domainId),
+	    dataType: "json",
+	    success: function(json) {
+	        var items = json.listdomainsresponse.domain;
+            if(items != null && items.length > 0) {
+                jsonObj = items[0];
+                $leftmenuItem1.data("jsonObj", jsonObj);                  
+            }
+	    }
+	});		 
     var $thisTab = $("#right_panel_content").find("#tab_content_details");    
     $thisTab.find("#id").text(domainId);
     $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));	
     $thisTab.find("#name").text(fromdb(jsonObj.name));	    	   
-			  	
+				  	
   	$.ajax({
 	    cache: false,				
 	    data: createURL("command=listAccounts&domainid="+domainId),

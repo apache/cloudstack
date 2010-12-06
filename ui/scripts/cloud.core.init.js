@@ -40,20 +40,9 @@ $(document).ready(function() {
 	});		
 				
 	$("#leftmenu_domain").bind("click", function(event) {
-		selectLeftMenu($(this), true);
-				
-		hideMiddleMenu();		
-		disableMultipleSelectionInMidMenu();      
-		clearMiddleMenu();
-		
-		$("#right_panel").data("onRefresh", function() {
-		    $("#leftmenu_domain").click();
-		});
-				
-		bindEventHandlerToDomainTreeNode();		
-		//refreshWholeTree(g_domainid, defaultRootLevel); 
-		drawRootNode(g_domainid);
-		
+		selectLeftMenu($(this), true);	
+		bindEventHandlerToDomainTreeNode();			
+		drawRootNode(g_domainid);		
 		return false;
 	});	
 	$("#leftmenu_account").bind("click", function(event) {
