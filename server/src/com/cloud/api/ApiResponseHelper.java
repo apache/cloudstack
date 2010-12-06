@@ -1584,6 +1584,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 templateResponse.setAccountId(owner.getId());
                 templateResponse.setAccount(owner.getAccountName());
                 templateResponse.setDomainId(owner.getDomainId());
+                templateResponse.setDomainName(ApiDBUtils.findDomainById(owner.getDomainId()).getName());
             }
 
             templateResponse.setZoneId(zone.getId());
@@ -1633,6 +1634,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 templateResponse.setAccountId(owner.getId());
                 templateResponse.setAccount(owner.getAccountName());
                 templateResponse.setDomainId(owner.getDomainId());
+                templateResponse.setDomainName(ApiDBUtils.findDomainById(owner.getDomainId()).getName());
             }
 
             templateResponse.setZoneId(zone.getId());
