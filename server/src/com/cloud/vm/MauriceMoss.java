@@ -228,7 +228,7 @@ public class MauriceMoss implements VmManager, ClusterManagerListener {
     
     @SuppressWarnings("unchecked")
     private <T extends VMInstanceVO> VirtualMachineGuru<T> getVmGuru(T vm) {
-        return (VirtualMachineGuru<T>)_vmGurus.get(vm);
+        return (VirtualMachineGuru<T>)_vmGurus.get(vm.getType());
     }
     
     @Override
