@@ -1748,6 +1748,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
                 throw (ResourceAllocationException)th;
             }
             throw new CloudRuntimeException("Unable to create vm", th);
+        }finally{
+        	updateVmStateForFailedVmCreation(vmId);
         }
     }
     
@@ -2953,7 +2955,18 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 
 	        s_logger.error("Unable to create vm", th);
 	        throw new CloudRuntimeException("Unable to create vm: "+th.getMessage(), th);
+	    } finally{
+	    	updateVmStateForFailedVmCreation(vmId);
 	    }
+	}
+
+	private void updateVmStateForFailedVmCreation(Long vmId) {
+		UserVmVO vm = _vmDao.findById(vmId);
+		if(vm != null){
+			if(vm.getState().equals(State.Creating)){
+				_vmDao.updateIf(vm, VirtualMachine.Event.OperationFailed, null);
+			}
+		}
 	}
     
     @DB
@@ -3116,6 +3129,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
             _accountMgr.decrementResourceCount(account.getId(), ResourceType.volume, numVolumes);
 	        s_logger.error("Unable to create vm", th);
 	        throw new CloudRuntimeException("Unable to create vm", th);
+	    }finally{
+	    	updateVmStateForFailedVmCreation(vmId);
 	    }
 	}
 
@@ -3741,8 +3756,13 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         
         UserVmVO vm = new UserVmVO(id, VirtualMachineName.getVmName(id, owner.getId(), _instance), cmd.getDisplayName(),
                                    template.getId(), template.getGuestOSId(), offering.getOfferHA(), domain.getId(), owner.getId(), offering.getId(), userData);
-        if (_itMgr.allocate(vm, template, offering, rootDiskOffering, dataDiskOfferings, networks, null, plan, owner) == null) {
-            return null;
+
+        try{
+	        if (_itMgr.allocate(vm, template, offering, rootDiskOffering, dataDiskOfferings, networks, null, plan, owner) == null) {
+	            return null;
+	        }
+        }finally{
+        	updateVmStateForFailedVmCreation(id);
         }
         
         if (s_logger.isDebugEnabled()) {

@@ -527,8 +527,9 @@ public class MauriceMoss implements VmManager, ClusterManagerListener {
 
     	_stateMachine.addTransition(null, VirtualMachine.Event.CreateRequested, State.Creating);
     	_stateMachine.addTransition(State.Creating, VirtualMachine.Event.OperationSucceeded, State.Stopped);
-    	_stateMachine.addTransition(State.Creating, VirtualMachine.Event.OperationFailed, State.Destroyed);
+    	_stateMachine.addTransition(State.Creating, VirtualMachine.Event.OperationFailed, State.Error);
     	_stateMachine.addTransition(State.Stopped, VirtualMachine.Event.StartRequested, State.Starting);
+    	_stateMachine.addTransition(State.Error, VirtualMachine.Event.DestroyRequested, State.Destroyed);
     	_stateMachine.addTransition(State.Stopped, VirtualMachine.Event.DestroyRequested, State.Destroyed);
     	_stateMachine.addTransition(State.Stopped, VirtualMachine.Event.StopRequested, State.Stopped);
     	_stateMachine.addTransition(State.Stopped, VirtualMachine.Event.AgentReportStopped, State.Stopped);
