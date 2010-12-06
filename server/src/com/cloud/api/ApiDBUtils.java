@@ -31,6 +31,7 @@ import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkRuleConfigVO;
+import com.cloud.network.NetworkVO;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
@@ -130,6 +131,7 @@ public class ApiDBUtils {
     private static VolumeDao _volumeDao;
     private static DataCenterDao _zoneDao;
     private static NetworkOfferingDao _networkOfferingDao;
+    private static NetworkDao _networkDao;
 
     static {
         _ms = (ManagementServer)ComponentLocator.getComponent(ManagementServer.Name);
@@ -171,6 +173,7 @@ public class ApiDBUtils {
         _zoneDao = locator.getDao(DataCenterDao.class);
         _networkGroupDao = locator.getDao(NetworkGroupDao.class);
         _networkOfferingDao = locator.getDao(NetworkOfferingDao.class);
+        _networkDao = locator.getDao(NetworkDao.class);
 
         // Note:  stats collector should already have been initialized by this time, otherwise a null instance is returned
         _statsCollector = StatsCollector.getInstance();
@@ -499,6 +502,10 @@ public class ApiDBUtils {
     
     public static List<? extends Vlan> listVlanByNetworkId(long networkId) {
         return _vlanDao.listVlansByNetworkId(networkId);
+    }
+    
+    public static NetworkVO findNetworkById(long id) {
+        return _networkDao.findById(id);
     }
     
 }

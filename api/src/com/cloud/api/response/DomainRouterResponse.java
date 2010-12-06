@@ -104,12 +104,14 @@ public class DomainRouterResponse extends BaseResponse {
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain associated with the router")
     private String domainName;
     
+    @SerializedName("nics")  @Param(description="the list of nics associated with domain router")
+    private List<NicResponse> nics;
+    
     public Long getObjectId() {
     	return getId();
     }
 
-    @SerializedName("nics")  @Param(description="the list of nics associated with domain router")
-    private List<NicResponse> nics;
+
 
     public Long getId() {
         return id;

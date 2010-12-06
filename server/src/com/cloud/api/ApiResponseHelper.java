@@ -1220,6 +1220,16 @@ public class ApiResponseHelper implements ResponseGenerator {
                     nicResponse.setIsolationUri(singleNic.getIsolationUri().toString());
                 }
             }  
+            //Set traffic type
+            Network network = ApiDBUtils.findNetworkById(singleNic.getNetworkId());
+            nicResponse.setTrafficType(network.getTrafficType().toString());
+            
+            //Set type
+            NetworkOffering networkOffering = ApiDBUtils.findNetworkOfferingById(network.getNetworkOfferingId());
+            if (networkOffering.getGuestIpType() != null) {
+                nicResponse.setType(networkOffering.getGuestIpType().toString());
+            }
+            
             nicResponse.setObjectName("nic");
             
             nicResponses.add(nicResponse);
@@ -1267,6 +1277,16 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
             if (singleNic.getIsolationUri() != null) {
                 nicResponse.setIsolationUri(singleNic.getIsolationUri().toString());
+            }
+            
+            //Set traffic type
+            Network network = ApiDBUtils.findNetworkById(singleNic.getNetworkId());
+            nicResponse.setTrafficType(network.getTrafficType().toString());
+            
+            //Set type
+            NetworkOffering networkOffering = ApiDBUtils.findNetworkOfferingById(network.getNetworkOfferingId());
+            if (networkOffering.getGuestIpType() != null) {
+                nicResponse.setType(networkOffering.getGuestIpType().toString());
             }
             
             nicResponse.setObjectName("nic"); 
@@ -1348,6 +1368,16 @@ public class ApiResponseHelper implements ResponseGenerator {
                 }
                 if (singleNic.getIsolationUri() != null) {
                     nicResponse.setIsolationUri(singleNic.getIsolationUri().toString());
+                }
+                
+                //Set traffic type
+                Network network = ApiDBUtils.findNetworkById(singleNic.getNetworkId());
+                nicResponse.setTrafficType(network.getTrafficType().toString());
+                
+                //Set type
+                NetworkOffering networkOffering = ApiDBUtils.findNetworkOfferingById(network.getNetworkOfferingId());
+                if (networkOffering.getGuestIpType() != null) {
+                    nicResponse.setType(networkOffering.getGuestIpType().toString());
                 }
                 
                 nicResponse.setObjectName("nic");
