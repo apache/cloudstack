@@ -3499,9 +3499,14 @@ a:hover.search_button {
 	padding:0;
 }
 
-
-
-
+.domain_dbicons {
+	width:48px;
+	height:36px;
+	float:left;
+	margin:0 10px 0 0;
+	display:inline;
+	padding:0;
+}
 
 .dbgraph_title_usedbox {
 	width:187px;
@@ -4145,7 +4150,7 @@ a:hover.search_button {
 }
 
 .resource_titlebox h2{
-	width:90%;
+	width:70%;
 	height:auto;
 	float:left;
 	color:#333;
@@ -4176,6 +4181,27 @@ a:hover.search_button {
 	margin:6px 0 0 30px;
 	display:inline;
 	padding:0;
+}
+
+.domain_resources_totalbg {
+	width:58px;
+	height:32px;
+	background:url(../images/resources_totalbg.png) no-repeat top left;
+	margin:6px auto 0;
+	padding:0;
+}
+
+.domain_resources_totalbg p {
+	width:50px;
+	height:auto;
+	float:left;
+	text-align:center;
+	font-size:16px;
+	font-weight:bold;
+	color:#FFF;
+	margin:7px 0 0 4px;
+	padding:0;
+	display:inline;
 }
 
 .resources_totalbg p {
