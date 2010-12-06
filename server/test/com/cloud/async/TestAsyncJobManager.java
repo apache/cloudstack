@@ -118,6 +118,7 @@ public class TestAsyncJobManager extends ComponentTestCase {
 		}
 	}
 
+	/*
 	public void ipAssignment() {
 		final IPAddressDao ipAddressDao = new IPAddressDaoImpl();
 		
@@ -172,6 +173,7 @@ public class TestAsyncJobManager extends ComponentTestCase {
 		} catch (InterruptedException e) {
 		}
 	}
+	*/
 	
 	private long getRandomLockId() {
 		return 1L;
