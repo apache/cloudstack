@@ -96,6 +96,7 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.test.IPRangeConfig;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -212,17 +213,20 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     	String value = cmd.getValue();
     	
     	//check if config value exists
-    	if (_configDao.findByName(name) == null)
-    	    throw new InvalidParameterValueException("Config parameter with name " + name + " doesn't exist");
+    	if (_configDao.findByName(name) == null) {
+            throw new InvalidParameterValueException("Config parameter with name " + name + " doesn't exist");
+        }
     	
-    	if (value == null)
-    	    return _configDao.findByName(name);
+    	if (value == null) {
+            return _configDao.findByName(name);
+        }
     	
     	updateConfiguration (userId, name, value);
-    	if (_configDao.getValue(name).equalsIgnoreCase(value))
-    		return _configDao.findByName(name);
-    	else 
-    		throw new CloudRuntimeException("Unable to update configuration parameter " + name);
+    	if (_configDao.getValue(name).equalsIgnoreCase(value)) {
+            return _configDao.findByName(name);
+        } else {
+            throw new CloudRuntimeException("Unable to update configuration parameter " + name);
+        }
     }
     
     
@@ -439,8 +443,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     	Long podId = cmd.getId();
     	Long userId = 1L;
     	
-    	if (UserContext.current() != null)
-    		userId = UserContext.current().getUserId();
+    	if (UserContext.current() != null) {
+            userId = UserContext.current().getUserId();
+        }
     	
     	// Make sure the pod exists
     	if (!validPod(podId)) {
@@ -777,8 +782,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     	if(domainId != null){
     		DomainVO domain = _domainDao.findById(domainId);
     	
-    		if(domain == null)
-    			throw new InvalidParameterValueException("Please specify a valid domain id");
+    		if(domain == null) {
+                throw new InvalidParameterValueException("Please specify a valid domain id");
+            }
     	}
     	
     	// Check IP validity for DNS addresses
@@ -932,8 +938,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     		internalDns1 = zone.getInternalDns1();
     	}
 
-    	if(guestCidr == null)
-    		guestCidr = zone.getGuestNetworkCidr();    	
+    	if(guestCidr == null) {
+            guestCidr = zone.getGuestNetworkCidr();
+        }    	
     	
 //    	if(domain == null)
 //    	    domain = zone.getDomain();
@@ -1131,8 +1138,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     	//check if valid domain
     	if(cmd.getDomainId() != null){
     		DomainVO domain = _domainDao.findById(cmd.getDomainId());   	
-    		if(domain == null)
-    			throw new InvalidParameterValueException("Please specify a valid domain id");
+    		if(domain == null) {
+                throw new InvalidParameterValueException("Please specify a valid domain id");
+            }
     	}
     	
         boolean localStorageRequired = false;
@@ -1509,9 +1517,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if (!vlanId.equals(Vlan.UNTAGGED)) {
             VlanVO vlanHandle = _vlanDao.findByZoneAndVlanId(zoneId, vlanId);
 
-            if (vlanHandle!=null && !vlanHandle.getVlanType().equals(vlanType))
+            if (vlanHandle!=null && !vlanHandle.getVlanType().equals(vlanType)) {
                 throw new InvalidParameterValueException("This vlan id is already associated with the vlan type "+vlanHandle.getVlanType().toString()
                         +",whilst you are trying to associate it with vlan type "+vlanType.toString());
+            }
         }
 
 
@@ -1740,8 +1749,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                     _accountMgr.incrementResourceCount(accountId, ResourceType.public_ip, size);
                     s_logger.debug("Assigning new ip addresses " +ipAddrsList);                 
                 }
-                if(ipAddrsList.isEmpty())
+                if(ipAddrsList.isEmpty()) {
                     return;
+                }
 
                 String params = "\nsourceNat=" + false + "\ndcId=" + zoneId;
 
@@ -1886,8 +1896,11 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         	stmt.setLong(2, zoneId);
         	stmt.setLong(3, podId);
         	ResultSet rs = stmt.executeQuery();
-        	if (rs.next()) return (rs.getString("taken") != null);
-        	else return false;
+        	if (rs.next()) {
+                return (rs.getString("taken") != null);
+            } else {
+                return false;
+            }
         } catch (SQLException ex) {
         	System.out.println(ex.getMessage());
             return true;
@@ -1954,30 +1967,14 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     
 	@DB
     protected boolean savePublicIPRange(String startIP, String endIP, long zoneId, long vlanDbId) {
-    	long startIPLong = NetUtils.ip2Long(startIP);
-    	long endIPLong = NetUtils.ip2Long(endIP);
-    	Transaction txn = Transaction.currentTxn();
-		String insertSql = "INSERT INTO `cloud`.`user_ip_address` (public_ip_address, data_center_id, vlan_db_id) VALUES (?, ?, ?)";
-		
-		txn.start();
-		PreparedStatement stmt = null;
-        while (startIPLong <= endIPLong) {
-        	try {
-        		stmt = txn.prepareAutoCloseStatement(insertSql);
-        		stmt.setString(1, NetUtils.long2Ip(startIPLong));
-        		stmt.setLong(2, zoneId);
-        		stmt.setLong(3, vlanDbId);
-        		stmt.executeUpdate();
-        		stmt.close();
-        	} catch (Exception ex) {
-        		s_logger.debug("Exception saving public IP range: " + ex);
-        		return false;
-        	}
-        	startIPLong += 1;
-        }
-        txn.commit();
-        
-        return true;
+        long startIPLong = NetUtils.ip2Long(startIP);
+        long endIPLong = NetUtils.ip2Long(endIP);
+	    Transaction txn = Transaction.currentTxn();
+	    txn.start();
+	    IPRangeConfig config = new IPRangeConfig();
+	    config.savePublicIPRange(txn, startIPLong, endIPLong, zoneId, vlanDbId);
+	    txn.commit();
+	    return true;
 	}
 	
 	@DB
@@ -2040,25 +2037,38 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 	}
     
 	private String genChangeRangeSuccessString(List<String> problemIPs, boolean add) {
-		if (problemIPs == null) return "";
+		if (problemIPs == null) {
+            return "";
+        }
 		
 		if (problemIPs.size() == 0) {
-			if (add) return "Successfully added all IPs in the specified range.";
-			else return "Successfully deleted all IPs in the specified range.";
+			if (add) {
+                return "Successfully added all IPs in the specified range.";
+            } else {
+                return "Successfully deleted all IPs in the specified range.";
+            }
 		} else {
 			String successString = "";
-			if (add) successString += "Failed to add the following IPs, because they are already in the database: ";
-			else  successString += "Failed to delete the following IPs, because they are in use: ";
+			if (add) {
+                successString += "Failed to add the following IPs, because they are already in the database: ";
+            } else {
+                successString += "Failed to delete the following IPs, because they are in use: ";
+            }
 			
 			for (int i = 0; i < problemIPs.size(); i++) {
 				successString += problemIPs.get(i);
-				if (i != (problemIPs.size() - 1)) successString += ", ";
+				if (i != (problemIPs.size() - 1)) {
+                    successString += ", ";
+                }
 			}
 			
 			successString += ". ";
 			
-			if (add) successString += "Successfully added all other IPs in the specified range.";
-			else successString += "Successfully deleted all other IPs in the specified range.";
+			if (add) {
+                successString += "Successfully added all other IPs in the specified range.";
+            } else {
+                successString += "Successfully deleted all other IPs in the specified range.";
+            }
 			
 			return successString;
 		}
@@ -2167,16 +2177,22 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 		// Iterate through all pods in this zone
 		for (Long podId : currentPodCidrSubnets.keySet()) {
 			String podName;
-			if (podId.longValue() == -1) podName = "newPod";
-			else podName = getPodName(podId.longValue());
+			if (podId.longValue() == -1) {
+                podName = "newPod";
+            } else {
+                podName = getPodName(podId.longValue());
+            }
 			
 			List<Object> cidrPair = currentPodCidrSubnets.get(podId);
 			String cidrAddress = (String) cidrPair.get(0);
 			long cidrSize = ((Long) cidrPair.get(1)).longValue();
 			
 			long cidrSizeToUse = -1;
-			if (cidrSize < guestCidrSize) cidrSizeToUse = cidrSize;
-			else cidrSizeToUse = guestCidrSize;
+			if (cidrSize < guestCidrSize) {
+                cidrSizeToUse = cidrSize;
+            } else {
+                cidrSizeToUse = guestCidrSize;
+            }
 			
 			String cidrSubnet = NetUtils.getCidrSubNet(cidrAddress, cidrSizeToUse);
 			String guestSubnet = NetUtils.getCidrSubNet(guestIpNetwork, cidrSizeToUse);
@@ -2192,15 +2208,20 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 			
 			// Iterate through the rest of the pods
 			for (Long otherPodId : currentPodCidrSubnets.keySet()) {
-				if (podId.equals(otherPodId)) continue;
+				if (podId.equals(otherPodId)) {
+                    continue;
+                }
 				
 				// Check that cidrSubnet does not equal otherCidrSubnet
 				List<Object> otherCidrPair = currentPodCidrSubnets.get(otherPodId);
 				String otherCidrAddress = (String) otherCidrPair.get(0);
 				long otherCidrSize = ((Long) otherCidrPair.get(1)).longValue();
 				
-				if (cidrSize < otherCidrSize) cidrSizeToUse = cidrSize;
-				else cidrSizeToUse = otherCidrSize;
+				if (cidrSize < otherCidrSize) {
+                    cidrSizeToUse = cidrSize;
+                } else {
+                    cidrSizeToUse = otherCidrSize;
+                }
 				
 				cidrSubnet = NetUtils.getCidrSubNet(cidrAddress, cidrSizeToUse);
 				String otherCidrSubnet = NetUtils.getCidrSubNet(otherCidrAddress, cidrSizeToUse);
@@ -2244,10 +2265,11 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     
     private String getZoneName(long zoneId) {
     	DataCenterVO zone = _zoneDao.findById(new Long(zoneId));
-    	if (zone != null)
-    		return zone.getName();
-    	else
-    		return null;
+    	if (zone != null) {
+            return zone.getName();
+        } else {
+            return null;
+        }
     }
     
     private Long saveConfigurationEvent(long userId, Long accountId, String type, String description, String... paramsList) {
@@ -2299,8 +2321,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     	}
     	/*local link ip address starts from 169.254.0.2 - 169.254.(nums)*/
     	String[] ipRanges = NetUtils.getLinkLocalIPRange(nums);
-    	if (ipRanges == null)
-    		throw new InvalidParameterValueException("The linkLocalIp.nums: " + nums + "may be wrong, should be 1~16");
+    	if (ipRanges == null) {
+            throw new InvalidParameterValueException("The linkLocalIp.nums: " + nums + "may be wrong, should be 1~16");
+        }
     	return ipRanges;
     }
 
