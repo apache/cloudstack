@@ -38,8 +38,8 @@ public class UpdatePodCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.CIDR, type=CommandType.STRING, description="the CIDR notation for the base IP address of the Pod")
-    private String cidr;
+    @Parameter(name=ApiConstants.NETMASK, type=CommandType.STRING, description="the netmask of the Pod")
+    private String netmask;
 
     @Parameter(name=ApiConstants.END_IP, type=CommandType.STRING, description="the ending IP address for the Pod")
     private String endIp;
@@ -60,8 +60,8 @@ public class UpdatePodCmd extends BaseCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public String getCidr() {
-        return cidr;
+    public String getNetmask() {
+        return netmask;
     }
 
     public String getEndIp() {

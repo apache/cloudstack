@@ -479,11 +479,15 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     public Pod editPod(UpdatePodCmd cmd)  
     {
     	
-    	//Input validation
-    	String cidr = cmd.getCidr();
+    	//Input validation 
     	String startIp = cmd.getStartIp();
     	String endIp = cmd.getEndIp();
     	String gateway = cmd.getGateway();
+    	String netmask = cmd.getNetmask();
+    	String cidr = null;
+    	if (gateway != null && netmask != null) {
+    	    cidr = NetUtils.ipAndNetMaskToCidr(gateway, netmask);
+    	}
     	Long id = cmd.getId();
     	String name = cmd.getPodName();
     	Long userId = UserContext.current().getUserId();
@@ -589,12 +593,13 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
     @Override
     public Pod createPod(CreatePodCmd cmd)  {
-        String cidr = cmd.getCidr();
         String endIp = cmd.getEndIp();
         String gateway = cmd.getGateway();
         String name = cmd.getPodName();
         String startIp = cmd.getStartIp();
+        String netmask = cmd.getNetmask();
         Long zoneId = cmd.getZoneId();
+        String cidr = NetUtils.ipAndNetMaskToCidr(gateway, netmask);
 
         //verify input parameters
         DataCenterVO zone = _zoneDao.findById(zoneId);

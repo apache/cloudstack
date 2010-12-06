@@ -36,8 +36,8 @@ public class PodResponse extends BaseResponse {
     @SerializedName("gateway") @Param(description="the gateway of the Pod")
     private String gateway;
 
-    @SerializedName("cidr") @Param(description="the CIDR notation for the base IP address of the Pod")
-    private String cidr;
+    @SerializedName("netmask") @Param(description="the netmask of the Pod")
+    private String netmask;
 
     @SerializedName("startip") @Param(description="the starting IP for the Pod")
     private String startIp;
@@ -85,12 +85,12 @@ public class PodResponse extends BaseResponse {
         this.gateway = gateway;
     }
 
-    public String getCidr() {
-        return cidr;
+    public String getNetmask() {
+        return netmask;
     }
 
-    public void setCidr(String cidr) {
-        this.cidr = cidr;
+    public void setNetmask(String netmask) {
+        this.netmask = netmask;
     }
 
     public String getStartIp() {

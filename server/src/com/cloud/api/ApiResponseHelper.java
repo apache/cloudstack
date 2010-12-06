@@ -836,7 +836,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         podResponse.setName(pod.getName());
         podResponse.setZoneId(pod.getDataCenterId());
         podResponse.setZoneName(PodZoneConfig.getZoneName(pod.getDataCenterId()));
-        podResponse.setCidr(pod.getCidrAddress() + "/" + pod.getCidrSize());
+        podResponse.setNetmask(NetUtils.getCidrNetmask(pod.getCidrSize()));
         podResponse.setStartIp(ipRange[0]);
         podResponse.setEndIp(((ipRange.length > 1) && (ipRange[1] != null)) ? ipRange[1] : "");
         podResponse.setGateway(pod.getGateway());
