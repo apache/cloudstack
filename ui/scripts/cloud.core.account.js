@@ -475,15 +475,22 @@ function accountUserJSONToTemplate(jsonObj, $template) {
 		
 	var $actionMenu = $actionLink.find("#user_action_menu");
     $actionMenu.find("#action_list").empty();	    
+    var noAvailableActions = true;
     
     if(isAdmin()) {
         buildActionLinkForSubgridItem("Generate Keys", accountUserActionMap, $actionMenu, $template);	    
-    
+        noAvailableActions = false;
+        
         /*
         if(jsonObj.id==systemUserId || jsonObj.id==adminUserId) 
             buildActionLinkForSubgridItem("Delete User", accountUserActionMap, $actionMenu, $template);	
         */	        
 	} 
+	
+	// no available actions 
+	if(noAvailableActions == true) {
+	    $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());
+	}	
 } 
 
 var accountActionMap = {  
