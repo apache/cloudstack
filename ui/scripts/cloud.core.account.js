@@ -127,16 +127,16 @@ function initTimezonesObj() {
 
 function initAddUserDialog() { 
     //dialogs
-    initDialog("dialog_add_user", 450);
+    initDialog("dialog_add_account", 450);
                    
-    var $dialogAddUser = $("#dialog_add_user");
+    var $dialogAddAccount = $("#dialog_add_account");
        
     $.ajax({
 	    data: createURL("command=listDomains"),
 		dataType: "json",
 		success: function(json) {			           
 			var domains = json.listdomainsresponse.domain;								
-			var $dropDownBox = $dialogAddUser.find("#domain_dropdown").empty();									       		            							
+			var $dropDownBox = $dialogAddAccount.find("#domain_dropdown").empty();									       		            							
 			if (domains != null && domains.length > 0) {
 				for (var i = 0; i < domains.length; i++) 				
 					$dropDownBox.append("<option value='" + fromdb(domains[i].id) + "'>" + fromdb(domains[i].name) + "</option>"); 		
@@ -145,10 +145,10 @@ function initAddUserDialog() {
 	});		    
        
     //add button ***
-    $("#midmenu_add_link").find("#label").text("Add User"); 
+    $("#midmenu_add_link").find("#label").text("Add Account"); 
     $("#midmenu_add_link").show();     
     $("#midmenu_add_link").unbind("click").bind("click", function(event) {    		
-		$dialogAddUser
+		$dialogAddAccount
 		.dialog('option', 'buttons', { 					
 			"Create": function() { 	
 			    var $thisDialog = $(this);				    			
@@ -211,8 +211,20 @@ function initAddUserDialog() {
 				    data: createURL("command=createUser"+array1.join("")),
 					dataType: "json",
 					async: false,
-					success: function(json) {						
-						accountToMidmenu(json.createuserresponse.user, $midmenuItem1);
+					success: function(json) {						    
+					    var user = json.createuserresponse.user;	
+					    var item;					    
+					    $.ajax({
+					        data: createURL("command=listAccounts&domainid="+user.domainid+"&account="+user.account),
+					        dataType: "json",
+					        async: false,
+					        success: function(json) {					            
+					            var items = json.listaccountsresponse.account;
+					            if(items != null && items.length > 0)
+					                item = items[0];
+					        }
+					    });					    			    		
+						accountToMidmenu(item, $midmenuItem1);
 	                    bindClickToMidMenu($midmenuItem1, accountToRightPanel, getMidmenuId);  
 	                    afterAddingMidMenuItem($midmenuItem1, true);								
 					},			

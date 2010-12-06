@@ -338,7 +338,7 @@
 </div>
 
 <!-- Add User Dialog (begin)-->
-<div id="dialog_add_user" title="Add New user" style="display: none">   
+<div id="dialog_add_account" title="Add New Account" style="display: none">   
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form_acquire">
         <ol>
