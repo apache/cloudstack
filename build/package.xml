@@ -23,7 +23,11 @@
   <property name="docs.dist.dir" location="${dist.dir}/docs" />
   <property name="db.dist.dir" location="${dist.dir}/db" />
   <property name="usage.dist.dir" location="${dist.dir}/usage" />
-
+  
+  <condition property="mkisofs" value="${mkisofs.override}" else="mkisofs">
+    <isset property="mkisofs.override" />
+  </condition>
+  
   <target name="-init-package">
     <mkdir dir="${dist.dir}" />
     <mkdir dir="${publish.dir}" />
@@ -103,7 +107,7 @@
   </target>
 
   <target name="package-oss-systemvm-iso" depends="-init-package, package-oss-systemvm,  build-systemvm-patch">
-    <exec executable="mkisofs" dir="${dist.dir}">
+    <exec executable="${mkisofs}" dir="${dist.dir}">
       <arg value="-quiet"/>
       <arg value="-r"/>
       <arg value="-o"/>
