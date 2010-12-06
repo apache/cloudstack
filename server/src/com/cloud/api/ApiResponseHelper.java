@@ -759,7 +759,13 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         vlanResponse.setGateway(vlan.getVlanGateway());
         vlanResponse.setNetmask(vlan.getVlanNetmask());
-        vlanResponse.setDescription(vlan.getIpRange());
+
+        //get start ip and end ip of corresponding vlan
+        String ipRange = vlan.getIpRange();
+        String[] range = ipRange.split("-"); 
+        vlanResponse.setStartIp(range[0]);
+        vlanResponse.setEndIp(range[1]);
+
         vlanResponse.setNetworkId(vlan.getNetworkId());
         vlanResponse.setObjectName("vlan");
 
@@ -2370,8 +2376,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setEndIp(range[1]);
             response.setGateway(singleVlan.getVlanGateway());
             response.setNetmask(singleVlan.getVlanNetmask());
+            response.setVlan(singleVlan.getVlanId());
         }
-        
         
         response.setZoneId(network.getDataCenterId());
         

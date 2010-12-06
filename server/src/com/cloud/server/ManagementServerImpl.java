@@ -1403,6 +1403,7 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("vlan", sb.entity().getVlanId(), SearchCriteria.Op.EQ);
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        sb.and("networkId", sb.entity().getNetworkId(), SearchCriteria.Op.NULL);
        
         if (accountId != null) {
         	SearchBuilder<AccountVlanMapVO> accountVlanMapSearch = _accountVlanMapDao.createSearchBuilder();
@@ -1442,6 +1443,7 @@ public class ManagementServerImpl implements ManagementServer {
         	if (podId != null) {
         		sc.setJoinParameters("podVlanMapSearch", "podId", podId);
         	}
+        	
         }
 
         return _vlanDao.search(sc, searchFilter);

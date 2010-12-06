@@ -28,6 +28,7 @@ public interface NetworkOffering {
     public enum GuestIpType {
     	Virtual,
     	Direct,
+    	DirectPodBased,
     }
     
     public final String DefaultVirtualizedNetworkOffering = "DefaultVirtualizedNetworkOffering";

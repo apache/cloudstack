@@ -43,7 +43,7 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, required=true, description="the display text of the network offering")
     private String displayText;
     
-    @Parameter(name=ApiConstants.TYPE, type=CommandType.STRING, required=true, description="type of the network. Supported types Virtualized, DirectSingle, DirectDual")
+    @Parameter(name=ApiConstants.TYPE, type=CommandType.STRING, required=true, description="type of the network. Supported types Virtual, Direct, DirectPodBased")
     private String type;
     
     @Parameter(name=ApiConstants.TRAFFIC_TYPE, type=CommandType.STRING, required=true, description="the traffic type for the network offering, supported types are Public, Management, Control, Guest, Vlan or Storage.")

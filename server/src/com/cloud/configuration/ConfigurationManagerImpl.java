@@ -1436,6 +1436,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String vlanNetmask = cmd.getNetmask();
         Long userId = UserContext.current().getUserId();
         String vlanId = cmd.getVlan();
+        Boolean forVirtualNetwork = cmd.isForVirtualNetwork();
         // If an account name and domain ID are specified, look up the account
         String accountName = cmd.getAccountName();
         Long domainId = cmd.getDomainId();
@@ -1446,7 +1447,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please specify a valid account.");
             }
         }
-        return createVlanAndPublicIpRange(userId, zoneId, podId, startIP, endIP, vlanGateway, vlanNetmask, true, vlanId, account, null);
+        
+        return createVlanAndPublicIpRange(userId, zoneId, podId, startIP, endIP, vlanGateway, vlanNetmask, forVirtualNetwork, vlanId, account, null);
     }
     
 
@@ -1778,6 +1780,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     	VlanVO vlan = _vlanDao.findById(vlanDbId);
     	if (vlan == null) {
     		throw new InvalidParameterValueException("Please specify a valid IP range id.");
+    	}
+    	
+    	if (vlan.getNetworkId() != null) {
+    	    throw new InvalidParameterValueException("Fail to delete a vlan range as there are networks associated with it");
     	}
     	
     	// Check if the VLAN has any allocated public IPs
@@ -2416,7 +2422,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             }
         }
         if (type == null) {
-            throw new InvalidParameterValueException("Invalid value for type. Supported types: Virtualized, DirectSingle, DirectDual");
+            throw new InvalidParameterValueException("Invalid value for type. Supported types: Virtual, Direct, DirectPerPod");
         }
         
         if (specifyVlan == null) {

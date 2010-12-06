@@ -70,6 +70,7 @@ import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
+import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventUtils;
@@ -89,6 +90,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Networks.AddressFormat;
+import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.configuration.NetworkGuru;
 import com.cloud.network.dao.FirewallRulesDao;
@@ -1845,6 +1847,21 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             owner = ctxAccount;
         }
         
+       //if VlanId is Direct untagged, verify if there is already network of this type in the zone
+        if (networkOffering.getGuestIpType() == GuestIpType.DirectPodBased && vlanId != null && vlanId.equalsIgnoreCase(Vlan.UNTAGGED)) {
+            SearchBuilder<NetworkVO> sb = _networkConfigDao.createSearchBuilder();
+            sb.and("broadcastDomainType", sb.entity().getId(), SearchCriteria.Op.EQ);
+            sb.and("dataCenterId", sb.entity().getName(), SearchCriteria.Op.LIKE);
+            SearchCriteria<NetworkVO> sc = sb.create();
+            sc.setParameters("broadcastDomainType", BroadcastDomainType.Native);
+            sc.setParameters("dataCenterId", zoneId);
+
+            List<NetworkVO> networks = _networkConfigDao.search(sc, null);
+            if (networks!= null && !networks.isEmpty()) {
+                throw new InvalidParameterValueException("Network with untagged vlan already exists for the zone " + zoneId);
+            }
+        }
+        
        //VlanId can be specified only when network offering supports it
         if (vlanId != null && !networkOffering.getSpecifyVlan()) {
             throw new InvalidParameterValueException("Can't specify vlan because network offering doesn't support it");
@@ -1868,6 +1885,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                userNetwork.setGateway(gateway);
                if (vlanId != null) {
                    userNetwork.setBroadcastUri(URI.create("vlan://" + vlanId));
+                   if (vlanId.equalsIgnoreCase(Vlan.UNTAGGED)) {
+                       userNetwork.setBroadcastDomainType(BroadcastDomainType.Native);
+                   } else {
+                       userNetwork.setBroadcastDomainType(BroadcastDomainType.Vlan);
+                   }
                }
            }
            
@@ -1913,6 +1935,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Account account = UserContext.current().getAccount();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
+        String type = cmd.getType();
         Long accountId = null;
         
         if (isAdmin(account.getType())) {
@@ -1959,6 +1982,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         
         if (zoneId != null) {
             sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
+        }
+        
+        if (type != null) {
+            sc.addAnd("guestType", SearchCriteria.Op.EQ, type);
         }
         
         SearchCriteria<NetworkVO> ssc = _networkConfigDao.createSearchCriteria();

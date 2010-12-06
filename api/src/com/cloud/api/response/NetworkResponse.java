@@ -81,6 +81,10 @@ public class NetworkResponse extends BaseResponse{
     @SerializedName("type")
     private String type;
     
+    //TODO - add description
+    @SerializedName("vlan")
+    private String vlan;
+    
     @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account associated with the network")
     private String accountName;
 
@@ -263,5 +267,13 @@ public class NetworkResponse extends BaseResponse{
 
     public void setEndIp(String endIp) {
         this.endIp = endIp;
+    }
+
+    public String getVlan() {
+        return vlan;
+    }
+
+    public void setVlan(String vlan) {
+        this.vlan = vlan;
     }
 }
