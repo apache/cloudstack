@@ -269,26 +269,7 @@
                                 </div>
                             </div>
                         </div>
-                        <!--  
-                        <div class="actionpanel_button_wrapper" id="midmenu_add2_link" style="display: none;">
-                            <div class="actionpanel_button">
-                                <div class="actionpanel_button_icons">
-                                    <img src="images/addvm_actionicon.png" alt="Add" /></div>
-                                <div class="actionpanel_button_links" id="label">
-									<fmt:message key="label.add"/>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="actionpanel_button_wrapper" id="midmenu_add3_link" style="display: none;">
-                            <div class="actionpanel_button">
-                                <div class="actionpanel_button_icons">
-                                    <img src="images/addvm_actionicon.png" alt="Add" /></div>
-                                <div class="actionpanel_button_links" id="label">
-                                    <fmt:message key="label.add"/>
-								</div>
-                            </div>
-                        </div>                        
-                        -->
+                       
                         <div class="actionpanel_button_wrapper" id="midmenu_startvm_link" style="display: none;">
                             <div class="actionpanel_button">
                                 <div class="actionpanel_button_icons">
@@ -635,12 +616,37 @@
                 <div class="leftmenu_list">
                     <div class="leftmenu_content_flevel" id="leftmenu_account" style="display: none">
                         <div class="leftmenu_firstindent">
-                            <!-- <div class="leftmenu_arrows_firstlevel_open" id="expandable_first_level_arrow" style="display:none;"></div> -->
+                            <div class="leftmenu_arrows_firstlevel_open" id="expandable_first_level_arrow" style="display:none;"></div>
                             <div class="leftmenu_list_icons">
                                 <img src="images/accounts_leftmenuicon.png" alt="Accounts" /></div>
                             <fmt:message key="label.menu.accounts"/>
                         </div>
                     </div>
+                                        
+                    <div id="leftmenu_account_expandedbox" class="leftmenu_expandedbox" style="display: none">
+				        <div class="leftmenu_expandedlist" id="leftmenu_account_my_accounts_container">
+				            <div class="leftmenu_content" id="leftmenu_account_my_accounts">
+				                <div class="leftmenu_secondindent">
+				                    <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
+				                    </div>
+				                    <span id="label">
+				                        My Accounts
+				                    </span>
+				                </div>
+				            </div>
+				        </div>
+				        <div class="leftmenu_expandedlist" id="leftmenu_account_all_accounts_container">
+				            <div class="leftmenu_content" id="leftmenu_account_all_accounts">
+				                <div class="leftmenu_secondindent">
+				                    <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
+				                    </div>
+				                    <span id="label">
+				                        All Accounts
+				                    </span>
+				                </div>
+				            </div>
+				        </div>
+				    </div>                    
                     
                 </div>                
                 <div class="leftmenu_list">
