@@ -16,16 +16,18 @@
     <h1>
         Accounts</h1>
 </div>
-<div class="contentbox" id="right_panel_content">
-	
+<div class="contentbox" id="right_panel_content">	
     <div class="info_detailbox errorbox" id="after_action_info_container_on_top" style="display: none">
         <p id="after_action_info">
         </p>
     </div>
     <div class="tabbox" style="margin-top: 15px;">
-        <div class="content_tabs on">
+        <div id="tab_details" class="content_tabs on">
             <%=t.t("Details")%></div>
+        <div id="tab_user" class="content_tabs off">
+            <%=t.t("Users")%></div>
     </div> 
+    <!--Details tab (begin)-->
     <div id="tab_content_details">
         <div class="rightpanel_mainloader_panel" style="display:none;">
               <div class="rightpanel_mainloaderbox">
@@ -143,10 +145,143 @@
             </div>
         </div>
     </div>
+    <!--Details tab (end)-->
+    <!--user tab (start)-->
+    <div style="display: none;" id="tab_content_user">
+    	<div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display:none;">
+              <div class="rightpanel_mainloaderbox">
+                   <div class="rightpanel_mainloader_animatedicon"></div>
+                   <p>Loading &hellip;</p>    
+              </div>               
+        </div>
+        <div id="tab_container">
+        </div>
+    </div> 
+    <!--user tab (end)-->    
 </div>
 <!-- account detail panel (end) -->
 
+<!-- user tab template (begin) -->
+<div class="grid_container" id="user_tab_template" style="display: none">
+    <div class="grid_header">
+        <div class="grid_header_title" id="grid_header_title">
+        </div>
+        <div class="grid_actionbox" id="user_action_link">
+            <div class="grid_actionsdropdown_box" id="user_action_menu" style="display: none;">
+                <ul class="actionsdropdown_boxlist" id="action_list">
+                </ul>
+            </div>
+        </div>
+        <div class="gridheader_loaderbox" id="spinning_wheel" style="display: none; height: 18px;">
+            <div class="gridheader_loader" id="icon">
+            </div>
+            <p id="description">
+                Waiting &hellip;
+            </p>
+        </div>       
+    </div>
+    
+    <div class="grid_rows" id="after_action_info_container" style="display:none">
+        <div class="grid_row_cell" style="width: 90%; border: none;">
+            <div class="row_celltitles">
+                <strong id="after_action_info">Message will appear here</strong></div>
+        </div>
+    </div>
+        
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                ID:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="id">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows odd">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                User Name:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="username">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                Account:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="account">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows odd">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                Role:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="role">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                Domain:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="domain">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows odd">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                Email:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="email">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                First Name:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="firstname">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows odd">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                Last Name:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="lastname">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                Timezone:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="timezone">
+            </div>
+        </div>
+    </div>    
+</div>
+<!-- user tab template (end) -->
 
+<!-- dialogs (begin) -->
 <div id="dialog_resource_limits" title="Resource Limits" style="display:none">
 	<p>
 	    <%=t.t("please.specify.limits.to.the.various.resources.-1.means.the.resource.has.no.limits")%>	    
@@ -335,6 +470,7 @@
     </div>
 </div>
 <!-- Add User Dialog (end)-->
+<!-- dialogs (end) -->
 
 <!-- advanced search template (begin) -->
 <div id="advanced_search_template" class="adv_searchpopup" style="display: none;">

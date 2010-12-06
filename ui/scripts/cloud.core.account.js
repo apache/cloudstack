@@ -49,9 +49,80 @@ function afterLoadAccountJSP() {
     initDialog("dialog_lock_account");
     initDialog("dialog_enable_account");  
     
+    // switch between different tabs 
+    var tabArray = [$("#tab_details"), $("#tab_user")];
+    var tabContentArray = [$("#tab_content_details"), $("#tab_content_user")];
+    var afterSwitchFnArray = [accountJsonToDetailsTab, accountJsonToUserTab];
+    switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray);       
+      
+    initTimezonesObj();  
+       
     if(isAdmin()) {
         initAddUserDialog();   
     }      
+}
+
+function initTimezonesObj() {
+    var timezones = new Object();    
+    timezones['Etc/GMT+12']='[UTC-12:00] GMT-12:00';
+    timezones['Etc/GMT+11']='[UTC-11:00] GMT-11:00';
+    timezones['Pacific/Samoa']='[UTC-11:00] Samoa Standard Time';
+    timezones['Pacific/Honolulu']='[UTC-10:00] Hawaii Standard Time';
+    timezones['US/Alaska']='[UTC-09:00] Alaska Standard Time';
+    timezones['America/Los_Angeles']='[UTC-08:00] Pacific Standard Time';
+    timezones['Mexico/BajaNorte']='[UTC-08:00] Baja California';
+    timezones['US/Arizona']='[UTC-07:00] Arizona';
+    timezones['US/Mountain']='[UTC-07:00] Mountain Standard Time';
+    timezones['America/Chihuahua']='[UTC-07:00] Chihuahua, La Paz';
+    timezones['America/Chicago']='[UTC-06:00] Central Standard Time';
+    timezones['America/Costa_Rica']='[UTC-06:00] Central America';
+    timezones['America/Mexico_City']='[UTC-06:00] Mexico City, Monterrey';
+    timezones['Canada/Saskatchewan']='[UTC-06:00] Saskatchewan';
+    timezones['America/Bogota']='[UTC-05:00] Bogota, Lima';
+    timezones['America/New_York']='[UTC-05:00] Eastern Standard Time';
+    timezones['America/Caracas']='[UTC-04:00] Venezuela Time';
+    timezones['America/Asuncion']='[UTC-04:00] Paraguay Time';
+    timezones['America/Cuiaba']='[UTC-04:00] Amazon Time';
+    timezones['America/Halifax']='[UTC-04:00] Atlantic Standard Time';
+    timezones['America/La_Paz']='[UTC-04:00] Bolivia Time';
+    timezones['America/Santiago']='[UTC-04:00] Chile Time';
+    timezones['America/St_Johns']='[UTC-03:30] Newfoundland Standard Time';
+    timezones['America/Araguaina']='[UTC-03:00] Brasilia Time';
+    timezones['America/Argentina/Buenos_Aires']='[UTC-03:00] Argentine Time';
+    timezones['America/Cayenne']='[UTC-03:00] French Guiana Time';
+    timezones['America/Godthab']='[UTC-03:00] Greenland Time';
+    timezones['America/Montevideo']='[UTC-03:00] Uruguay Time]';
+    timezones['Etc/GMT+2']='[UTC-02:00] GMT-02:00';
+    timezones['Atlantic/Azores']='[UTC-01:00] Azores Time';
+    timezones['Atlantic/Cape_Verde']='[UTC-01:00] Cape Verde Time';
+    timezones['Africa/Casablanca']='[UTC] Casablanca';
+    timezones['Etc/UTC']='[UTC] Coordinated Universal Time';
+    timezones['Atlantic/Reykjavik']='[UTC] Reykjavik';
+    timezones['Europe/London']='[UTC] Western European Time';
+    timezones['CET']='[UTC+01:00] Central European Time';
+    timezones['Europe/Bucharest']='[UTC+02:00] Eastern European Time';
+    timezones['Africa/Johannesburg']='[UTC+02:00] South Africa Standard Time';
+    timezones['Asia/Beirut']='[UTC+02:00] Beirut';
+    timezones['Africa/Cairo']='[UTC+02:00] Cairo';
+    timezones['Asia/Jerusalem']='[UTC+02:00] Israel Standard Time';
+    timezones['Europe/Minsk']='[UTC+02:00] Minsk';
+    timezones['Europe/Moscow']='[UTC+03:00] Moscow Standard Time';
+    timezones['Africa/Nairobi']='[UTC+03:00] Eastern African Time';
+    timezones['Asia/Karachi']='[UTC+05:00] Pakistan Time';
+    timezones['Asia/Kolkata']='[UTC+05:30] India Standard Time';
+    timezones['Asia/Bangkok']='[UTC+05:30] Indochina Time';
+    timezones['Asia/Shanghai']='[UTC+08:00] China Standard Time';
+    timezones['Asia/Kuala_Lumpur']='[UTC+08:00] Malaysia Time';
+    timezones['Australia/Perth']='[UTC+08:00] Western Standard Time (Australia)';
+    timezones['Asia/Taipei']='[UTC+08:00] Taiwan';
+    timezones['Asia/Tokyo']='[UTC+09:00] Japan Standard Time';
+    timezones['Asia/Seoul']='[UTC+09:00] Korea Standard Time';
+    timezones['Australia/Adelaide']='[UTC+09:30] Central Standard Time (South Australia)';
+    timezones['Australia/Darwin']='[UTC+09:30] Central Standard Time (Northern Territory)';
+    timezones['Australia/Brisbane']='[UTC+10:00] Eastern Standard Time (Queensland)';
+    timezones['Australia/Canberra']='[UTC+10:00] Eastern Standard Time (New South Wales)';
+    timezones['Pacific/Guam']='[UTC+10:00] Chamorro Standard Time';
+    timezones['Pacific/Auckland']='[UTC+12:00] New Zealand Standard Time';
 }
 
 function initAddUserDialog() { 
@@ -230,6 +301,76 @@ function accountJsonToDetailsTab() {
 	    $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());
 	}	  
 }
+
+function accountJsonToUserTab() {       	
+	var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");	
+	if($midmenuItem1 == null)
+	    return;
+	
+	var jsonObj = $midmenuItem1.data("jsonObj");	
+	if(jsonObj == null)
+	    return;
+	
+	var $thisTab = $("#right_panel_content").find("#tab_content_user");	    
+	$thisTab.find("#tab_container").hide(); 
+    $thisTab.find("#tab_spinning_wheel").show();   
+        
+    $.ajax({
+		cache: false,
+		data: createURL("command=listUsers&domainid="+fromdb(jsonObj.id)+"&account="+fromdb(jsonObj.name)),
+		dataType: "json",
+		success: function(json) {						    
+			var items = json.listusersresponse.user;																						
+			if (items != null && items.length > 0) {
+			    var $container = $thisTab.find("#tab_container").empty();
+				var $template = $("#user_tab_template");				
+				for (var i = 0; i < items.length; i++) {
+					var $newTemplate = $template.clone(true);	               
+	                accountUserJSONToTemplate(items[i], $newTemplate); 
+	                $container.append($newTemplate.show());	
+				}			
+			}	
+			$thisTab.find("#tab_spinning_wheel").hide();    
+            $thisTab.find("#tab_container").show();    			
+		}
+	});
+} 
+
+function accountUserJSONToTemplate(jsonObj, $template) {
+    $template.data("jsonObj", jsonObj);     
+    $template.attr("id", "account_user_"+fromdb(jsonObj.id)).data("accountUserId", fromdb(jsonObj.id));    
+    $template.find("#grid_header_title").text(fromdb(jsonObj.username));			   
+    $template.find("#id").text(fromdb(jsonObj.id));
+    $template.find("#username").text(fromdb(jsonObj.username));	
+    $template.find("#account").text(fromdb(jsonObj.account));	
+    $template.find("#role").text(toRole(fromdb(jsonObj.accounttype)));	
+    
+    $template.find("#domain").text(fromdb(jsonObj.domain));	
+    $template.find("#email").text(fromdb(jsonObj.email));	
+    $template.find("#firstname").text(fromdb(jsonObj.firstname));	
+    $template.find("#lastname").text(fromdb(jsonObj.lastname));	
+    $template.find("#timezone").text(timezones[fromdb(jsonObj.timezone)]);	
+    $template.data("timezone", jsonObj.timezone); 
+        
+	var $actionLink = $template.find("#user_action_link");		
+	$actionLink.bind("mouseover", function(event) {
+        $(this).find("#user_action_menu").show();    
+        return false;
+    });
+    $actionLink.bind("mouseout", function(event) {
+        $(this).find("#user_action_menu").hide();    
+        return false;
+    });		
+	
+	/*
+	var $actionMenu = $actionLink.find("#user_action_menu");
+    $actionMenu.find("#action_list").empty();	    
+    buildActionLinkForSubgridItem("xxxxxxx", accountUserActionMap, $actionMenu, $template);	    
+    
+    if(jsonObj.id==systemUserId || jsonObj.id==adminUserId) 
+	    template.find("#delete_link").hide();
+    */
+} 
 
 var accountActionMap = {  
     "Resource limits": {                 
