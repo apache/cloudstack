@@ -8,7 +8,8 @@ do
   ./_run.sh "$@"
   ex=$?
   if [ $ex -eq 0 ] || [ $ex -eq 1 ] || [ $ex -eq 66 ] || [ $ex -gt 128 ]; then
-    exit $ex
+      # permanent errors
+      sleep 160
   fi
   sleep 20
 done
