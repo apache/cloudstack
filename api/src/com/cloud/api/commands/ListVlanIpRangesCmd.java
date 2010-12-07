@@ -57,6 +57,9 @@ public class ListVlanIpRangesCmd extends BaseListCmd {
 
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the Zone ID of the VLAN IP range")
     private Long zoneId;
+    
+    @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, description="network id of the VLAN IP range")
+    private Long networkId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -86,9 +89,14 @@ public class ListVlanIpRangesCmd extends BaseListCmd {
         return zoneId;
     }
 
+    public Long getNetworkId() {
+        return networkId;
+    }
+   
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
+
 
     @Override
     public String getName() {
