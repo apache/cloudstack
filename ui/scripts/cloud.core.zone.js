@@ -302,6 +302,7 @@ function zoneJsonClearNetworkTab() {
 }	
 
 function vlanJsonToTemplate(jsonObj, $template1, isNetwork) {
+	$template1.attr("id", "network"+jsonObj.id);
     $template1.data("jsonObj", jsonObj);
     $template1.find("#vlan_id").text(jsonObj.vlan);
 	var ipRange = jsonObj.startip;
@@ -341,7 +342,7 @@ function vlanJsonToTemplate(jsonObj, $template1, isNetwork) {
 					var $container = $infoDropdown.find("#network_name_container").show();
 					$container.find("#network_name").text(fromdb(jsonObj.name));
 					$container = $infoDropdown.find("#network_desc_container").show();
-					$container.find("#network_desc").text(fromdb(jsonObj.diplaytext));
+					$container.find("#network_desc").text(fromdb(jsonObj.displaytext));
 				}
                 $infoDropdown.show();
                 break;
@@ -503,7 +504,7 @@ function initAddVLANButton($button, $leftmenuItem1) {
 							$template1.find("#vlan_type_icon").removeClass("direct").addClass("virtual");	
 							
 							var item = json.createvlaniprangeresponse.vlan;
-							vlanJsonToTemplate(item, $template1);	        				
+							vlanJsonToTemplate(item, $template1, false);	        				
 							$vlanContainer.prepend($template1);	
 							$template1.fadeIn("slow");
 						},
@@ -538,7 +539,7 @@ function initAddVLANButton($button, $leftmenuItem1) {
 												$template1.find("#vlan_type_icon").removeClass("virtual").addClass("direct");
 												
 												var item = json.createnetworkresponse.network;
-												vlanJsonToTemplate(item, $template1);	        				
+												vlanJsonToTemplate(item, $template1, true);	        				
 												$vlanContainer.prepend($template1);	
 												$template1.fadeIn("slow");
 											},
