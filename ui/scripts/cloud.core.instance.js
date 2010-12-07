@@ -829,9 +829,8 @@ function initVMWizard() {
 	        if(checkedRadioButton.parent().attr("id") == "vm_popup_disk_offering_template_custom")
 	            diskOfferingName += (" (Disk Size: " + $diskOfferingElement.find("#custom_disk_size").val() + " MB)");
 	        $thisPopup.find("#wizard_review_disk_offering").text(diskOfferingName);  
-	    }	
-	    	
-	    if (currentStepInVmPopup == 4) { //network
+			
+			//Setup Networking before showing it
 			// Setup networks
 			// hardcoded text for now
 			var networkName = "Virtual Network";
@@ -852,6 +851,7 @@ function initVMWizard() {
 					}
 					var $virtualNetworkElement = $("#vm_popup #network_virtual_container");
 		
+					// Setup Virtual Networks
 					if (virtualNetwork == null) {
 						$.ajax({
 							data: createURL("command=listNetworkOfferings"),
@@ -882,9 +882,50 @@ function initVMWizard() {
 						//$virtualNetworkElement.find("#network_virtual_name").text(virtualNetwork.name);
 						//$virtualNetworkElement.find("#network_virtual_desc").text(virtualNetwork.displaytext);
 					}
+					
+					// Setup Direct Networks
+					var $networkDirectTemplate = $("#wizard_network_direct_template");
+					var $networkDirectContainer = $("#network_direct_container").empty();
+					if (networks != null && networks.length > 0) {
+						for (var i = 0; i < networks.length; i++) {
+							if (networks[i].type != 'Direct') {
+								continue;
+							}
+							var $directNetworkElement = $networkDirectTemplate.clone().attr("id", "direct"+networks[i].id);
+							$directNetworkElement.find("#network_direct_checkbox").data("jsonObj", networks[i]);
+							$directNetworkElement.find("#network_direct_name").text(networks[i].name);
+							$directNetworkElement.find("#network_direct_desc").text(networks[i].displaytext);
+							$networkDirectContainer.append($directNetworkElement.show());
+						}
+					}
 				}
 			});
 			$thisPopup.find("#wizard_review_network").text(networkName);
+	    }	
+	    	
+	    if (currentStepInVmPopup == 4) { //network
+			var $selectedDirectNetworks = $thisPopup.find("input:checkbox[name=network_direct_checkbox]:checked");
+			var $reviewNetworkContainer = $("#wizard_review_direct_network_container").empty();
+			if ($selectedDirectNetworks != null) {
+				var networkIds = [];
+				var $reviewNetworkTemplate = $("#wizard_network_direct_review_template");
+				for (var i = 0; i < $selectedDirectNetworks.length; i++) {
+					var json = $selectedDirectNetworks.data("jsonObj")
+					networkIds.push(","+json.id);
+					$reviewNetworkElement = $reviewNetworkTemplate.clone().attr("id", json.id);
+					if (i % 2 == 0) {
+						$reviewNetworkTemplate.addClass("odd");
+					} else {
+						$reviewNetworkTemplate.addClass("even");
+					}
+					$reviewNetworkElement.find("#wizard_review_network_label").text("Network " + (i+2) + ":");
+					$reviewNetworkElement.find("#wizard_review_network_selected").text(json.name);
+					$reviewNetworkContainer.append($reviewNetworkElement.show());
+				}
+				$reviewNetworkContainer.data("directNetworkIds", networkIds.join(""));
+			} else {
+				$reviewNetworkContainer.data("directNetworkIds", null);
+			}
 	    }	
 	    
 	    if (currentStepInVmPopup == 5) { //last step		        
@@ -902,7 +943,13 @@ function initVMWizard() {
 			moreCriteria.push("&hypervisor="+$selectedVmWizardTemplate.data("hypervisor"));	    								
 		    moreCriteria.push("&templateId="+$selectedVmWizardTemplate.data("templateId"));    							
 		    moreCriteria.push("&serviceOfferingId="+$thisPopup.find("input:radio[name=service_offering_radio]:checked").val());
-			moreCriteria.push("&networkIds="+$thisPopup.find("#network_virtual_container").data("id"));
+			
+			var networkIds = $thisPopup.find("#network_virtual_container").data("id");
+			var directNetworkIds = $thisPopup.find("#wizard_review_direct_network_container").data("directNetworkIds");
+			if (directNetworkIds != null) {
+				networkIds += directNetworkIds;
+			}
+			moreCriteria.push("&networkIds="+networkIds);
 			
 			var diskOfferingId, $diskOfferingElement;    						
 		    if ($thisPopup.find("#wiz_blank").hasClass("rev_wizmid_selectedtempbut")) {  //ISO

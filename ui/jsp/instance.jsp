@@ -324,6 +324,33 @@
     <!--Routers tab (end)-->
 </div>
 <!-- VM detail panel (end) -->
+
+<!-- VM Network Template (begin) -->
+<div class="vmpopup_offeringbox" id="wizard_network_direct_template" style="display:none">
+	<input type="checkbox" name="network_direct_checkbox" class="radio" id="network_direct_checkbox" />
+	<label class="label" id="network_direct_name">
+	</label>
+	<div class="vmpopup_offdescriptionbox">
+		<div class="vmpopup_offdescriptionbox_top">
+		</div>
+		<div class="vmpopup_offdescriptionbox_bot">
+			<p id="network_direct_desc">
+				A virtual private network that is fronted by a virtual router.  An optional guest CIDR can be specified.
+			</p>
+		</div>
+	</div>
+</div>
+<!-- VM Network Template (end) -->
+<!-- VM Network Review Template (begin) -->
+<div class="vmpopup_reviewbox" id="wizard_network_direct_review_template" style="display:none">
+	<div class="vmopopup_reviewtextbox">
+		<div class="vmpopup_reviewtick">
+		</div>
+		<div class="vmopopup_review_label" id="wizard_review_network_label"></div>
+		<span id="wizard_review_network_selected"></span>
+	</div>
+</div>
+<!-- VM Network Review Template (end) -->
 <!-- VM wizard (begin)-->
 <div id="vm_popup" class="vmpopup_container" style="display: none">
     <div id="step1" style="display: block;">
@@ -635,6 +662,7 @@
                                 </div>
                             </div>
                         </div>
+						<div id="network_direct_container"></div>
 						<!--
 						<div class="vmpopup_offeringbox">
                             <input type="radio" name="radiogroup" class="radio" selected />
@@ -728,6 +756,29 @@
                     <h3>
                     </h3>
                     <div class="vmpopup_offeringpanel" style="margin-top: 10px;">
+						<div class="vmpopup_reviewbox odd">
+                            <div class="vmopopup_reviewtextbox">
+                                <div class="vmpopup_reviewtick">
+                                </div>
+                                <div class="vmopopup_review_label">
+                                    Name (optional):
+                                </div>
+                                <input class="text" type="text" id="wizard_vm_name" />
+                                <div id="wizard_vm_name_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="vmpopup_reviewbox even">
+                            <div class="vmopopup_reviewtextbox">
+                                <div class="vmpopup_reviewtick">
+                                </div>
+                                <div class="vmopopup_review_label">
+                                    Group (optional):</div>
+                                <input class="text" type="text" id="wizard_vm_group" />
+                                <div id="wizard_vm_group_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                                </div>
+                            </div>
+                        </div>
                         <div class="vmpopup_reviewbox odd">
                             <div class="vmopopup_reviewtextbox">
                                 <div class="vmpopup_reviewtick">
@@ -780,33 +831,11 @@
                                 <div class="vmpopup_reviewtick">
                                 </div>
                                 <div class="vmopopup_review_label">
-                                    Network:</div>
+                                    Network 1:</div>
                                 <span id="wizard_review_network"></span>
                             </div>
                         </div>
-                        <div class="vmpopup_reviewbox odd">
-                            <div class="vmopopup_reviewtextbox">
-                                <div class="vmpopup_reviewtick">
-                                </div>
-                                <div class="vmopopup_review_label">
-                                    Name (optional):
-                                </div>
-                                <input class="text" type="text" id="wizard_vm_name" />
-                                <div id="wizard_vm_name_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="vmpopup_reviewbox even">
-                            <div class="vmopopup_reviewtextbox">
-                                <div class="vmpopup_reviewtick">
-                                </div>
-                                <div class="vmopopup_review_label">
-                                    Group (optional):</div>
-                                <input class="text" type="text" id="wizard_vm_group" />
-                                <div id="wizard_vm_group_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
-                                </div>
-                            </div>
-                        </div>
+						<div id="wizard_review_direct_network_container"></div>
                     </div>
                 </div>
                 <div class="vmpopup_navigationpanel">
