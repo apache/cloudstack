@@ -650,7 +650,7 @@
                     </h3>
                     <div class="vmpopup_offeringpanel" style="position:relative;">
                         <div class="vmpopup_offeringbox" id="network_virtual_container">
-                            <input type="radio" id="network_virtual" name="radiogroup" class="radio" checked" />
+                            <input type="radio" id="network_virtual" name="radiogroup" class="radio" checked="checked" />
                             <label class="label" id="network_virtual_name">Virtual Network</label>
                             <div class="vmpopup_offdescriptionbox">
                                 <div class="vmpopup_offdescriptionbox_top">
