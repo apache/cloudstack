@@ -155,8 +155,6 @@ function afterLoadIpJSP() {
         array1.push("&protocol="+protocol);
         array1.push("&virtualmachineid=" + virtualMachineId);
         
-        
-        //???
         $.ajax({
             data: createURL("command=createPortForwardingRule"+array1.join("")),
             dataType: "json",           
@@ -215,8 +213,7 @@ function afterLoadIpJSP() {
                     $("#dialog_error").text(fromdb(errorMsg)).dialog("open");
                 });		
             }
-        });    
-	    
+        });    	    
 	    
 	    return false;
 	});
@@ -1085,6 +1082,9 @@ function portForwardingJsonToTemplate(jsonObj, $template) {
     $template.find("#row_container #vm_name").text(vmName);		    
     var virtualMachineId = fromdb(jsonObj.virtualmachineid);
    
+    $template.find("#row_container #state").text(fromdb(jsonObj.state));
+    $template.find("#row_container_edit #state").text(fromdb(jsonObj.state));
+   
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
     if($midmenuItem1 == null)
         return;    
@@ -1102,17 +1102,16 @@ function portForwardingJsonToTemplate(jsonObj, $template) {
     var $rowContainer = $template.find("#row_container");      
     var $rowContainerEdit = $template.find("#row_container_edit");    
     		    
-    $template.find("#delete_link").unbind("click").bind("click", function(event){   		                    
+    $template.find("#revoke_link").unbind("click").bind("click", function(event){   		                    
         var $spinningWheel = $rowContainer.find("#spinning_wheel");		
-        $spinningWheel.find("#description").text("Deleting....");	
+        $spinningWheel.find("#description").text("Revoking....");	
         $spinningWheel.show();   
         $.ajax({						
 	       data: createURL("command=deletePortForwardingRule&id="+fromdb(jsonObj.id)),
             dataType: "json",
             success: function(json) {             
-                $template.slideUp("slow", function(){		                    
-                    $(this).remove();
-                });	   						
+                $template.find("#state").text("Revoked");	
+                $spinningWheel.hide(); 			
             },
             error: function(XMLHttpResponse) {
                 handleError(XMLHttpResponse);

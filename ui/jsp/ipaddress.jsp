@@ -176,48 +176,55 @@
         <div id="tab_container">
 	        <div class="grid_container" id="grid_container">
 	            <div class="grid_header">
-	                <div class="grid_header_cell" style="width: 15%">
+	                <div class="grid_header_cell" style="width: 15%; padding: 1px;">
 	                    <div class="grid_header_title">
 	                        Public Port</div>
 	                </div>
-	                <div class="grid_header_cell" style="width: 15%">
+	                <div class="grid_header_cell" style="width: 15%; padding: 1px;">
 	                    <div class="grid_header_title">
 	                        Private Port</div>
 	                </div>
-	                <div class="grid_header_cell" style="width: 15%">
+	                <div class="grid_header_cell" style="width: 15%; padding: 1px;">
 	                    <div class="grid_header_title">
 	                        Protocol</div>
 	                </div>
-	                <div class="grid_header_cell" style="width: 39%; border: none;">
+	                <div class="grid_header_cell" style="width: 25%; border: none; padding: 1px;">
 	                    <div class="grid_header_title">
 	                        Instance</div>
 	                </div>
-	                <div class="grid_header_cell" style="width: 15%">
+	                <div class="grid_header_cell" style="width: 10%; padding: 1px;">
+	                    <div class="grid_header_title">
+	                        State</div>
+	                </div>
+	                <div class="grid_header_cell" style="width: 15%; padding: 1px;">
 	                    <div class="grid_header_title">
 	                        Action</div>
 	                </div>
 	            </div>
 	            <div class="grid_rows even" id="create_port_forwarding_row">
-	                <div class="grid_row_cell" style="width: 15%;">
+	                <div class="grid_row_cell" style="width: 15%; padding: 1px;">
 	                    <input id="public_port" class="text" style="width: 70%;" type="text" />
 	                    <div id="public_port_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
 	                </div>
-	                <div class="grid_row_cell" style="width: 15%;">
+	                <div class="grid_row_cell" style="width: 15%; padding: 1px;">
 	                    <input id="private_port" class="text" style="width: 70%;" type="text" />
 	                    <div id="private_port_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
 	                </div>
-	                <div class="grid_row_cell" style="width: 15%;">  
+	                <div class="grid_row_cell" style="width: 15%; padding: 1px;">  
 	                   <select class="select" id="protocol" style="width:70%;">
 	                       <option value="TCP">TCP</option>
 	                       <option value="UDP">UDP</option>
 	                   </select>
 	                </div>
-	                <div class="grid_row_cell" style="width: 39%;">                   
+	                <div class="grid_row_cell" style="width: 25%; padding: 1px;">                   
 	                    <select class="select" id="vm">
 	                    </select>
 	                    <div id="vm_errormsg" class="errormsg" style="display: none;"></div>	                    
 	                </div>
-	                <div class="grid_row_cell" style="width: 15%;">
+	                <div class="grid_row_cell" style="width: 10%; padding: 1px;">   
+	                    <div class="row_celltitles" id="state"></div>
+	                </div>  
+	                <div class="grid_row_cell" style="width: 15%; padding: 1px;">
 	                    <div class="row_celltitles">
 	                        <a id="add_link" href="#">Add</a></div>
 	                </div>
@@ -464,22 +471,25 @@
 <!-- Port Forwarding template (begin) -->
 <div class="grid_rows odd" id="port_forwarding_template" style="display: none">    
     <div id="row_container">
-        <div class="grid_row_cell" style="width: 15%;">
+        <div class="grid_row_cell" style="width: 15%; padding: 1px;">
             <div class="row_celltitles" id="public_port"></div>
         </div>
-        <div class="grid_row_cell" style="width: 15%;">
+        <div class="grid_row_cell" style="width: 15%; padding: 1px;">
             <div class="row_celltitles" id="private_port"></div>
         </div>
-        <div class="grid_row_cell" style="width: 15%;">
+        <div class="grid_row_cell" style="width: 15%; padding: 1px;">
             <div class="row_celltitles" id="protocol"></div>
         </div>
-        <div class="grid_row_cell" style="width: 39%;">
+        <div class="grid_row_cell" style="width: 25%; padding: 1px;">
             <div class="row_celltitles" id="vm_name"></div>
-        </div>       
-        <div class="grid_row_cell" style="width: 15%;">
+        </div>   
+        <div class="grid_row_cell" style="width: 10%; padding: 1px;">
+            <div class="row_celltitles" id="state"></div>
+        </div>        
+        <div class="grid_row_cell" style="width: 15%; padding: 1px;">
             <div class="row_celltitles">
                 <a id="edit_link" href="#" style="float:left;">Edit</a>
-                <a id="delete_link" href="#" style="float:left; margin-left:15px;">Delete</a>
+                <a id="revoke_link" href="#" style="float:left; margin-left:15px;">Revoke</a>
             </div>
         </div>
         <div class="gridrow_loaderbox" style="display: none;" id="spinning_wheel">
@@ -491,22 +501,25 @@
         </div>
     </div>
     <div id="row_container_edit" style="display:none">
-        <div class="grid_row_cell" style="width: 15%;">
+        <div class="grid_row_cell" style="width: 15%; padding: 1px;">
             <div class="row_celltitles" id="public_port"></div>
         </div>
-        <div class="grid_row_cell" style="width: 15%;">
+        <div class="grid_row_cell" style="width: 15%; padding: 1px;">
             <input id="private_port" class="text" style="width: 70%;" type="text" />
             <div id="private_port_errormsg" class="errormsg" style="display: none;">
                 Error msg will appear here</div>
         </div>
-        <div class="grid_row_cell" style="width: 15%;">
+        <div class="grid_row_cell" style="width: 15%; padding: 1px;">
             <div class="row_celltitles" id="protocol"></div>
         </div>
-        <div class="grid_row_cell" style="width: 39%;">
+        <div class="grid_row_cell" style="width: 25%; padding: 1px;">
             <select class="select" id="vm">
             </select>
         </div>
-        <div class="grid_row_cell" style="width: 15%;">
+        <div class="grid_row_cell" style="width: 10%; padding: 1px;">
+            <div class="row_celltitles" id="state"></div>
+        </div>
+        <div class="grid_row_cell" style="width: 15%; padding: 1px;">
             <div class="row_celltitles">
                 <a id="save_link" href="#" style="float:left;">Save</a>
                 <a id="cancel_link" href="#" style="float:left; margin-left:15px;">Cancel</a>
