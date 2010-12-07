@@ -154,25 +154,69 @@ function afterLoadIpJSP() {
         array1.push("&publicport="+publicPort);
         array1.push("&protocol="+protocol);
         array1.push("&virtualmachineid=" + virtualMachineId);
-        $.ajax({						
-	        data: createURL("command=createPortForwardingRule"+array1.join("")),
-	        dataType: "json",
-	        success: function(json) {		                      
-	            var item = json.createportforwardingruleresponse.portforwardingrule;		       	        	
-	            portForwardingJsonToTemplate(item,$template);
-	            $spinningWheel.hide();   
-	            refreshCreatePortForwardingRow();			   						
-	        },
-		    error: function(XMLHttpResponse) {				    
-			    handleError(XMLHttpResponse, function() {
-					$template.slideUp("slow", function() {
-						$(this).remove();
-					});
-					var errorMsg = parseXMLHttpResponse(XMLHttpResponse);				
-		            $("#dialog_error").text(fromdb(errorMsg)).dialog("open");
-				});
-		    }	
-        });	    
+        
+        
+        //???
+        $.ajax({
+            data: createURL("command=createPortForwardingRule"+array1.join("")),
+            dataType: "json",           
+            success: function(json) {	                               	                        
+                var jobId = json.createportforwardingruleresponse.jobid;                  			                        
+                var timerKey = "asyncJob_" + jobId;					                       
+                $("body").everyTime(
+                    10000,
+                    timerKey,
+                    function() {
+                        $.ajax({
+                            data: createURL("command=queryAsyncJobResult&jobId="+jobId),
+	                        dataType: "json",									                    					                    
+	                        success: function(json) {		                                              							                       
+		                        var result = json.queryasyncjobresultresponse;										                   
+		                        if (result.jobstatus == 0) {
+			                        return; //Job has not completed
+		                        } else {											                    
+			                        $("body").stopTime(timerKey);				                        
+			                        $spinningWheel.hide();  			                                 		                       
+			                        if (result.jobstatus == 1) { // Succeeded 	
+	                                    var item = json.createportforwardingruleresponse.portforwardingrule;		       	        	
+	                                    portForwardingJsonToTemplate(item,$template);
+	                                    $spinningWheel.hide();   
+	                                    refreshCreatePortForwardingRow();			 
+			                        } else if (result.jobstatus == 2) { // Failed			                            
+				                        $template.slideUp("slow", function() {
+					                        $(this).remove();
+				                        });
+				                        var errorMsg = "Create Port Fowarding Rule action failed. Reason: " + fromdb(result.jobresult.errortext);				
+	                                    $("#dialog_error").text(errorMsg).dialog("open");
+			                        }											                    
+		                        }
+	                        },
+	                        error: function(XMLHttpResponse) {	                  
+		                        $("body").stopTime(timerKey);	
+								handleError(XMLHttpResponse, function() {
+					                $template.slideUp("slow", function() {
+						                $(this).remove();
+					                });
+					                var errorMsg = parseXMLHttpResponse(XMLHttpResponse);				
+		                            $("#dialog_error").text(fromdb(errorMsg)).dialog("open");
+				                });								
+	                        }
+                        });
+                    },
+                    0
+                );
+            },
+            error: function(XMLHttpResponse) {	
+                handleError(XMLHttpResponse, function() {
+	                $template.slideUp("slow", function() {
+		                $(this).remove();
+	                });
+	                var errorMsg = parseXMLHttpResponse(XMLHttpResponse);				
+                    $("#dialog_error").text(fromdb(errorMsg)).dialog("open");
+                });		
+            }
+        });    
+	    
 	    
 	    return false;
 	});
