@@ -718,6 +718,23 @@
 </div>
 <!-- Edit User Dialog (end)-->
 
+<!-- Change Password Dialog (begin) -->
+<div id="dialog_change_password" title="Change Password" style="display:none">
+	<p>Please review your changes before clicking 'Save'</p>
+	<div class="dialog_formcontent">
+		<form action="#" method="post" id="form4">
+			<ol>					
+				<li>
+					<label for="change_password_password1">Password:</label>
+					<input class="text" type="password" name="change_password_password1" id="change_password_password1" AUTOCOMPLETE="off"/>
+					<div id="change_password_password1_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+				</li>							
+			</ol>
+		</form>
+	</div>
+</div>
+<!-- Change Password Dialog (end) -->
+
 <!-- dialogs (end) -->
 
 <!-- advanced search template (begin) -->

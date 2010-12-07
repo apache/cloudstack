@@ -54,6 +54,7 @@ function afterLoadAccountJSP() {
         initDialog("dialog_lock_account");
         initDialog("dialog_enable_account");  
         initDialog("dialog_edit_user", 450);    
+        initDialog("dialog_change_password", 450);    
     }
     
     // switch between different tabs 
@@ -487,7 +488,8 @@ function accountUserJSONToTemplate(jsonObj, $template) {
     var noAvailableActions = true;
     
     if(isAdmin()) {
-        buildActionLinkForSubgridItem("Edit User", accountUserActionMap, $actionMenu, $template);	   
+        buildActionLinkForSubgridItem("Edit User", accountUserActionMap, $actionMenu, $template);	 
+        buildActionLinkForSubgridItem("Change Password", accountUserActionMap, $actionMenu, $template);	  
         buildActionLinkForSubgridItem("Generate Keys", accountUserActionMap, $actionMenu, $template);	    
         noAvailableActions = false;
         
@@ -688,6 +690,9 @@ var accountUserActionMap = {
     "Edit User": {
         dialogBeforeActionFn : doEditUser
     },
+    "Change Password": {
+        dialogBeforeActionFn : doChangePassword
+    },
     "Generate Keys": {  
         api: "registerUserKeys",            
         isAsyncJob: false,
@@ -742,7 +747,10 @@ function doEditUser($actionLink, $subgridItem) {
 			$.ajax({
 			    data: createURL("command=updateUser&id="+id+"&username="+todb(username)+"&email="+todb(email)+"&firstname="+todb(firstname)+"&lastname="+todb(lastname)+"&timezone="+todb(timezone)),
 				dataType: "json",
-				success: function(json) {								      						    					
+				success: function(json) {	
+				    $subgridItem.find("#after_action_info").text("Edit User action succeeded.");
+                    $subgridItem.find("#after_action_info_container").removeClass("error").addClass("success").show(); 
+											      						    					
 					$subgridItem.find("#username").text(username);
 					$subgridItem.find("#email").text(email);
 					$subgridItem.find("#firstname").text(firstname);
@@ -757,3 +765,38 @@ function doEditUser($actionLink, $subgridItem) {
 		} 
 	}).dialog("open");
 }
+
+function doChangePassword($actionLink, $subgridItem) {   
+    var jsonObj = $subgridItem.data("jsonObj");
+    var id = jsonObj.id;
+
+    var $dialogChangePassword = $("#dialog_change_password");			             
+	$dialogChangePassword.find("#change_password_password1").val("");         
+	
+	$dialogChangePassword
+	.dialog('option', 'buttons', { 							
+		"Save": function() { 	
+		    var thisDialog = $(this);
+		    					
+			// validate values						   
+			var isValid = true;					      	
+			isValid &= validateString("Password", thisDialog.find("#change_password_password1"), thisDialog.find("#change_password_password1_errormsg"), false); //required						      		   	
+			if (!isValid) return;
+																	
+			var password = $.md5(encodeURIComponent((thisDialog.find("#change_password_password1").val())));						   					
+											
+			thisDialog.dialog("close");
+			$.ajax({
+			    data: createURL("command=updateUser&id="+id+"&password="+password),
+				dataType: "json",
+				success: function(json) {					    
+				    $subgridItem.find("#after_action_info").text("Change password action succeeded.");
+                    $subgridItem.find("#after_action_info_container").removeClass("error").addClass("success").show(); 				    				       				
+				}
+			});
+		},
+		"Cancel": function() { 
+			$(this).dialog("close"); 
+		} 
+	}).dialog("open");    
+}    
