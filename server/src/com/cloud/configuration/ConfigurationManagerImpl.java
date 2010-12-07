@@ -1118,7 +1118,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         
         if (!(type.equalsIgnoreCase(NetworkType.Basic.toString())) && !(type.equalsIgnoreCase(NetworkType.Advanced.toString()))) {
             throw new InvalidParameterValueException("Invalid zone type; only Advanced and Basic values are supported");
-        } else if (type.endsWith(NetworkType.Basic.toString())) {
+        } else if (type.equalsIgnoreCase(NetworkType.Basic.toString())) {
             isBasic = true;
         }
         
@@ -2482,8 +2482,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 type = gType;
             }
         }
-        if (type == null) {
-            throw new InvalidParameterValueException("Invalid value for type. Supported types: Virtual, Direct, DirectPodBased");
+        if (type == null || type == GuestIpType.DirectPodBased) {
+            throw new InvalidParameterValueException("Invalid value for type. Supported types: Virtual, Direct");
         }
         
         if (specifyVlan == null) {

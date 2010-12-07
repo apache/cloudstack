@@ -150,6 +150,7 @@ public class NetworkVO implements Network {
         this.dns2 = that.getDns2();
         this.cidr = that.getCidr();
         this.broadcastUri = that.getBroadcastUri();
+        this.broadcastDomainType = that.getBroadcastDomainType();
         this.guruName = guruName;
         this.state = that.getState();
         if (state == null) {

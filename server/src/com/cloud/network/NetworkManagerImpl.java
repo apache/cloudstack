@@ -836,12 +836,15 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     public List<NetworkVO> setupNetworkConfiguration(Account owner, NetworkOfferingVO offering, Network predefined, DeploymentPlan plan, String name, String displayText, boolean isShared) {
+        
         List<NetworkVO> configs = _networkConfigDao.listBy(owner.getId(), offering.getId(), plan.getDataCenterId());
-        if (configs.size() > 0) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Found existing network configuration for offering " + offering + ": " + configs.get(0));
+        if (predefined == null || (predefined.getBroadcastUri() == null && predefined.getBroadcastDomainType() != BroadcastDomainType.Vlan)) {
+            if (configs.size() > 0) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Found existing network configuration for offering " + offering + ": " + configs.get(0));
+                }
+                return configs;
             }
-            return configs;
         }
 
         configs = new ArrayList<NetworkVO>();

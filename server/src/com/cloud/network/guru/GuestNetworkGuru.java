@@ -71,7 +71,7 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
     
     @Override
     public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner) {
-        if (offering.getTrafficType() != TrafficType.Guest || offering.getGuestIpType() != GuestIpType.Virtual) {
+        if (offering.getTrafficType() != TrafficType.Guest) {
             return null;
         }
         
