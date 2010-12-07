@@ -2168,8 +2168,21 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
 	
 	@Override
     public boolean finalizeVirtualMachineProfile(VirtualMachineProfile<DomainRouterVO> profile, DeployDestination dest, ReservationContext context) {
-        StringBuilder buf = profile.getBootArgsBuilder();
-        buf.append(" template=domP type=router");
+        
+	    DomainRouterVO router = profile.getVirtualMachine();
+	    NetworkVO network = _networkDao.findById(router.getNetworkId());
+	    
+	    String type = null;
+	    String dhcpRange = network.getCidr();
+	    String domain = network.getNetworkDomain();
+	    if (router.getRole() == Role.DHCP_USERDATA) {
+	        type="dhcpsrvr";
+	    } else {
+	        type = "router";
+	    }
+	 
+	    StringBuilder buf = profile.getBootArgsBuilder();
+        buf.append(" template=domP type=" + type);
         buf.append(" name=").append(profile.getHostName());
         NicProfile controlNic = null;
         for (NicProfile nic : profile.getNics()) {
@@ -2188,6 +2201,14 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
             } else if (nic.getTrafficType() == TrafficType.Control) {
                 controlNic = nic;
             }
+            
+            if (dhcpRange != null) {
+               buf.append(" dhcprange=" + dhcpRange);
+            }
+            if (domain != null) {
+                buf.append(" domain="+router.getDomain());
+            }
+            
         }
   
         if (s_logger.isDebugEnabled()) {
@@ -2658,6 +2679,4 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         }
         return true;
     }
-    
-    
 }
