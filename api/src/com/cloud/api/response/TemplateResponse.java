@@ -48,7 +48,7 @@ public class TemplateResponse extends BaseResponse {
     private boolean isReady;
 
     @SerializedName("passwordenabled") @Param(description="true if the reset password feature is enabled, false otherwise")
-    private boolean passwordEnabled;
+    private Boolean passwordEnabled;
 
     @SerializedName("format") @Param(description="the format of the template.")
     private ImageFormat format;
