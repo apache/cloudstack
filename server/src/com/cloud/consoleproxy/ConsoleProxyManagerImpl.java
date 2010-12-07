@@ -111,6 +111,7 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.NetworkDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -150,6 +151,7 @@ import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.NicProfile;
+import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.State;
 import com.cloud.vm.VMInstanceVO;
@@ -160,6 +162,7 @@ import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VmManager;
 import com.cloud.vm.dao.ConsoleProxyDao;
+import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -243,6 +246,8 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     @Inject GuestOSDao _guestOSDao = null;
     @Inject ServiceOfferingDao _offeringDao;
     @Inject NetworkOfferingDao _networkOfferingDao;
+    @Inject NicDao _nicDao;
+    @Inject NetworkDao _networkDao;
     private IpAddrAllocator _IpAllocator;
 
     private ConsoleProxyListener _listener;
@@ -403,6 +408,8 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
                         } else {
                             proxy.setPort(80);
                         }
+                        
+                     
                         return proxy;
                     }
                 } finally {
@@ -2541,6 +2548,26 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
             s_logger.warn("Unable to ssh to the VM: " + answer.getDetails());
             return false;
         }
+        
+        ConsoleProxyVO proxy = profile.getVirtualMachine();
+        List<NicVO> nics = _nicDao.listBy(proxy.getId());
+        for (NicVO nic : nics) {
+        	NetworkVO network = _networkDao.findById(nic.getNetworkId());
+        	if (network.getTrafficType() == TrafficType.Public) {
+        		proxy.setPublicIpAddress(nic.getIp4Address());
+        		proxy.setPublicNetmask(nic.getNetmask());
+        		proxy.setPublicMacAddress(nic.getMacAddress());
+        	} else if (network.getTrafficType() == TrafficType.Control) {
+        		proxy.setGuestIpAddress(nic.getIp4Address());
+        		proxy.setGuestNetmask(nic.getNetmask());
+        		proxy.setGuestMacAddress(nic.getMacAddress());
+        	} else if (network.getTrafficType() == TrafficType.Management) {
+        		proxy.setPrivateIpAddress(nic.getIp4Address());
+        		proxy.setPrivateNetmask(nic.getNetmask());
+        		proxy.setPrivateMacAddress(nic.getMacAddress());
+        	}
+        }
+        
         return true;
     }
     

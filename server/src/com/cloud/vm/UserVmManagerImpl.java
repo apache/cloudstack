@@ -204,6 +204,7 @@ import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.InstanceGroupVMMapDao;
+import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 @Local(value={UserVmManager.class, UserVmService.class})
 public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualMachineGuru<UserVmVO>, Manager, VirtualMachineManager<UserVmVO> {
@@ -257,6 +258,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     @Inject VmManager _itMgr;
     @Inject NetworkDao _networkDao;
     @Inject DomainRouterManager _routerMgr;
+    @Inject NicDao _nicDao;
     
     private IpAddrAllocator _IpAllocator;
     ScheduledExecutorService _executor = null;
@@ -3806,6 +3808,16 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
 
     @Override
     public boolean finalizeStart(Commands cmds, VirtualMachineProfile<UserVmVO> profile, DeployDestination dest, ReservationContext context) {
+    	UserVmVO userVm = profile.getVirtualMachine();
+		 List<NicVO> nics = _nicDao.listBy(userVm.getId());
+        for (NicVO nic : nics) {
+        	NetworkVO network = _networkDao.findById(nic.getNetworkId());
+        	if (network.getTrafficType() == TrafficType.Guest) {
+        		userVm.setPrivateIpAddress(nic.getIp4Address());
+        		userVm.setPrivateNetmask(nic.getNetmask());
+        		userVm.setPrivateMacAddress(nic.getMacAddress());
+        	}
+        }
         return true;
     }
     

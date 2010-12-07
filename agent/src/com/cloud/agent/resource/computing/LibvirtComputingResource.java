@@ -2691,7 +2691,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 	}
 	
 
-	protected Start2Answer execute(Start2Command cmd) {
+	protected synchronized Start2Answer execute(Start2Command cmd) {
 		VirtualMachineTO vmSpec = cmd.getVirtualMachine();
 		String vmName = vmSpec.getName();
 		LibvirtVMDef vm = null;

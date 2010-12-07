@@ -237,6 +237,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
     @Inject VpnUserDao _vpnUsersDao;
     @Inject RemoteAccessVpnDao _remoteAccessVpnDao;
     @Inject RulesManager _rulesMgr;
+    @Inject NetworkDao _networkDao;
     
     long _routerTemplateId = -1;
     int _routerRamSize;
@@ -2174,6 +2175,24 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         if (!answer.getResult()) {
             s_logger.warn("Unable to ssh to the VM: " + answer.getDetails());
             return false;
+        }
+        
+        DomainRouterVO router = profile.getVirtualMachine();
+        List<NicVO> nics = _nicDao.listBy(router.getId());
+        for (NicVO nic : nics) {
+        	NetworkVO network = _networkDao.findById(nic.getNetworkId());
+        	if (network.getTrafficType() == TrafficType.Public) {
+        		router.setPublicIpAddress(nic.getIp4Address());
+        		router.setPublicNetmask(nic.getNetmask());
+        		router.setPublicMacAddress(nic.getMacAddress());
+        	} else if (network.getTrafficType() == TrafficType.Guest) {
+        		router.setGuestIpAddress(nic.getIp4Address());
+        		router.setGuestMacAddress(nic.getMacAddress());
+        	} else if (network.getTrafficType() == TrafficType.Control) {
+        		router.setPrivateIpAddress(nic.getIp4Address());
+        		router.setPrivateNetmask(nic.getNetmask());
+        		router.setPrivateMacAddress(nic.getMacAddress());
+        	}
         }
         return true;
     }

@@ -91,6 +91,7 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.NetworkDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.service.ServiceOfferingVO;
@@ -130,6 +131,7 @@ import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.net.NfsUtils;
 import com.cloud.vm.NicProfile;
+import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.State;
@@ -139,6 +141,7 @@ import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VmManager;
+import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -220,6 +223,8 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     @Inject private AccountService _accountMgr;
     @Inject GuestOSDao _guestOSDao = null;
     @Inject private VmManager _itMgr;
+    @Inject private NicDao _nicDao;
+    @Inject private NetworkDao _networkDao;
     
     private IpAddrAllocator _IpAllocator;
     
@@ -255,9 +260,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 	@Override
 	public SecondaryStorageVmVO startSecStorageVm(long secStorageVmId, long startEventId) {
 		try {
-
 			return start2(secStorageVmId, startEventId);
-
 		} catch (StorageUnavailableException e) {
 			s_logger.warn("Exception while trying to start secondary storage vm", e);
 			return null;
@@ -2157,6 +2160,24 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 			s_logger.warn("Unable to ssh to the VM: " + answer.getDetails());
 			return false;
 		}
+		SecondaryStorageVmVO secVm = profile.getVirtualMachine();
+		 List<NicVO> nics = _nicDao.listBy(secVm.getId());
+         for (NicVO nic : nics) {
+         	NetworkVO network = _networkDao.findById(nic.getNetworkId());
+         	if (network.getTrafficType() == TrafficType.Public) {
+         		secVm.setPublicIpAddress(nic.getIp4Address());
+         		secVm.setPublicNetmask(nic.getNetmask());
+         		secVm.setPublicMacAddress(nic.getMacAddress());
+         	} else if (network.getTrafficType() == TrafficType.Control) {
+         		secVm.setGuestIpAddress(nic.getIp4Address());
+         		secVm.setGuestNetmask(nic.getNetmask());
+         		secVm.setGuestMacAddress(nic.getMacAddress());
+         	} else if (network.getTrafficType() == TrafficType.Management) {
+         		secVm.setPrivateIpAddress(nic.getIp4Address());
+         		secVm.setPrivateNetmask(nic.getNetmask());
+         		secVm.setPrivateMacAddress(nic.getMacAddress());
+         	}
+         }
 		return true;
 	}
 
