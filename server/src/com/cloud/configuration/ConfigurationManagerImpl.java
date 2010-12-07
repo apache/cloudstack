@@ -55,7 +55,7 @@ import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.DataCenter;
-import com.cloud.dc.DataCenter.DataCenterNetworkType;
+import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
@@ -71,6 +71,7 @@ import com.cloud.dc.dao.DataCenterLinkLocalIpAddressDaoImpl;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.EventTypes;
@@ -84,6 +85,8 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkVO;
+import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.offering.DiskOffering;
@@ -897,7 +900,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     	}
     	
     	//if zone is of Basic type, don't allow to add vnet range
-    	if (vnetRange != null && zone.getNetworkType() == DataCenterNetworkType.Basic) {
+    	if (vnetRange != null && zone.getNetworkType() == NetworkType.Basic) {
     	    throw new InvalidParameterValueException("Can't add vnet range for the zone that supports Basic network");
     	}
 
@@ -1021,7 +1024,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     }
 
     @Override @DB
-    public DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String vnetRange, String guestCidr, String domain, Long domainId, DataCenterNetworkType zoneType)  {
+    public DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String vnetRange, String guestCidr, String domain, Long domainId, NetworkType zoneType)  {
         int vnetStart = 0;
         int vnetEnd = 0;
         if (vnetRange != null) {
@@ -1046,21 +1049,55 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
         checkZoneParameters(zoneName, dns1, dns2, internalDns1, internalDns2, true, domainId);
 
-        // Create the new zone in the database
-        DataCenterVO zone = new DataCenterVO(zoneName, null, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr, domain, domainId, zoneType);
-        zone = _zoneDao.persist(zone);
+        Transaction txn = Transaction.currentTxn();
+        try {
+            // Create the new zone in the database
+            DataCenterVO zone = new DataCenterVO(zoneName, null, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr, domain, domainId, zoneType);
+            zone = _zoneDao.persist(zone);
 
-        // Add vnet entries for the new zone if zone type is Advanced
-        if (vnetRange != null) {
-            _zoneDao.addVnet(zone.getId(), vnetStart, vnetEnd);
+            // Add vnet entries for the new zone if zone type is Advanced
+            if (vnetRange != null) {
+                _zoneDao.addVnet(zone.getId(), vnetStart, vnetEnd);
+            }
+            
+            //if zone is basic, create a untagged network
+            if (zone != null && zone.getNetworkType() == NetworkType.Basic) {
+                //Create network
+                DataCenterDeployment plan = new DataCenterDeployment(zone.getId(), null, null, null);
+                NetworkVO userNetwork = new NetworkVO();
+                userNetwork.setBroadcastDomainType(BroadcastDomainType.Native);
+                
+                Account systemAccount = _accountDao.findById(Account.ACCOUNT_ID_SYSTEM);
+                
+                List<NetworkOfferingVO> networkOffering = _networkOfferingDao.findByType(GuestIpType.DirectPodBased);
+                if (networkOffering == null || networkOffering.isEmpty()) {
+                    throw new CloudRuntimeException("No default DirectPodBased network offering is found");
+                }
+                
+                List<NetworkVO> networks = _networkMgr.setupNetworkConfiguration(systemAccount, networkOffering.get(0), userNetwork, plan, null, null, true);
+                
+                if (networks == null || networks.isEmpty()) {
+                    txn.rollback();
+                    throw new CloudRuntimeException("Fail to create a network");
+                } 
+            }
+            
+            if (vnetRange != null) {
+                saveConfigurationEvent(userId, null, EventTypes.EVENT_ZONE_CREATE, "Successfully created new zone with name: " + zoneName + ".", "dcId=" + zone.getId(), "dns1=" + dns1, "dns2=" + dns2, "internalDns1=" + internalDns1, "internalDns2=" + internalDns2, "vnetRange=" + vnetRange, "guestCidr=" + guestCidr);
+            } else {
+                saveConfigurationEvent(userId, null, EventTypes.EVENT_ZONE_CREATE, "Successfully created new zone with name: " + zoneName + ".", "dcId=" + zone.getId(), "dns1=" + dns1, "dns2=" + dns2, "internalDns1=" + internalDns1, "internalDns2=" + internalDns2, "guestCidr=" + guestCidr);
+            }
+            
+            txn.commit();
+            return zone;
+        } catch (Exception ex) {
+            txn.rollback();
+            s_logger.warn("Exception: ", ex);
+            throw new CloudRuntimeException("Fail to create a network");    
+        }finally {
+            txn.close();
         }
-        
-        if (vnetRange != null) {
-            saveConfigurationEvent(userId, null, EventTypes.EVENT_ZONE_CREATE, "Successfully created new zone with name: " + zoneName + ".", "dcId=" + zone.getId(), "dns1=" + dns1, "dns2=" + dns2, "internalDns1=" + internalDns1, "internalDns2=" + internalDns2, "vnetRange=" + vnetRange, "guestCidr=" + guestCidr);
-        } else {
-            saveConfigurationEvent(userId, null, EventTypes.EVENT_ZONE_CREATE, "Successfully created new zone with name: " + zoneName + ".", "dcId=" + zone.getId(), "dns1=" + dns1, "dns2=" + dns2, "internalDns1=" + internalDns1, "internalDns2=" + internalDns2, "guestCidr=" + guestCidr);
-        }
-        return zone;
+  
     }
 
     @Override
@@ -1079,13 +1116,13 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         Boolean isBasic = false;
 
         
-        if (!(type.equalsIgnoreCase(DataCenterNetworkType.Basic.toString())) && !(type.equalsIgnoreCase(DataCenterNetworkType.Advanced.toString()))) {
+        if (!(type.equalsIgnoreCase(NetworkType.Basic.toString())) && !(type.equalsIgnoreCase(NetworkType.Advanced.toString()))) {
             throw new InvalidParameterValueException("Invalid zone type; only Advanced and Basic values are supported");
-        } else if (type.endsWith(DataCenterNetworkType.Basic.toString())) {
+        } else if (type.endsWith(NetworkType.Basic.toString())) {
             isBasic = true;
         }
         
-        DataCenterNetworkType zoneType = isBasic ? DataCenterNetworkType.Basic : DataCenterNetworkType.Advanced;
+        NetworkType zoneType = isBasic ? NetworkType.Basic : NetworkType.Advanced;
         DomainVO domainVO = null;
         
         if (userId == null) {
@@ -1097,10 +1134,11 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
         
         //Verify zone type 
-        if (zoneType == DataCenterNetworkType.Basic && vnetRange != null) {
+        if (zoneType == NetworkType.Basic && vnetRange != null) {
             vnetRange = null;
         }
-        return createZone(userId, zoneName, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr, domainVO != null ? domainVO.getName() : null, domainId, zoneType);
+        
+       return createZone(userId, zoneName, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr, domainVO != null ? domainVO.getName() : null, domainId, zoneType);
     }
 
     @Override
@@ -1483,9 +1521,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
         
         //Allow adding untagged direct vlan only for Basic zone
-        if (zone.getNetworkType() == DataCenterNetworkType.Advanced && vlanId.equals(Vlan.UNTAGGED) && !forVirtualNetwork) {
+        if (zone.getNetworkType() == NetworkType.Advanced && vlanId.equals(Vlan.UNTAGGED) && !forVirtualNetwork) {
             throw new InvalidParameterValueException("Direct untagged network is not supported for the zone " + zone.getId() + " of type " + zone.getNetworkType());
-        } else if (zone.getNetworkType() == DataCenterNetworkType.Basic && !(vlanId.equals(Vlan.UNTAGGED) && !forVirtualNetwork)) {
+        } else if (zone.getNetworkType() == NetworkType.Basic && !(vlanId.equals(Vlan.UNTAGGED) && !forVirtualNetwork)) {
             throw new InvalidParameterValueException("Only direct untagged network is supported in the zone " + zone.getId() + " of type " + zone.getNetworkType());
         }
         

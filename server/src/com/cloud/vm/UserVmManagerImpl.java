@@ -96,7 +96,7 @@ import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
-import com.cloud.dc.DataCenter.DataCenterNetworkType;
+import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Vlan.VlanType;
@@ -3704,7 +3704,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
         
         s_logger.debug("Allocating in the DB for vm");
           
-        if (dc.getNetworkType() == DataCenterNetworkType.Basic && networkList == null) {
+        if (dc.getNetworkType() == NetworkType.Basic && networkList == null) {
             Long singleNetworkId = null;
             SearchBuilder<NetworkVO> sb = _networkDao.createSearchBuilder();
             sb.and("broadcastDomainType", sb.entity().getId(), SearchCriteria.Op.EQ);

@@ -43,9 +43,9 @@ import org.apache.log4j.Logger;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
-import com.cloud.dc.DataCenter.DataCenterNetworkType;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.domain.DomainVO;
@@ -78,6 +78,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
     private final DiskOfferingDao _diskOfferingDao;
     private final ServiceOfferingDao _serviceOfferingDao;
     private final DomainDao _domainDao;
+
 	
 	public ConfigurationServerImpl() {
 		ComponentLocator locator = ComponentLocator.getLocator(Name);
@@ -182,32 +183,44 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 				s_logger.debug("ConfigurationServer saved \"" + hostIpAdr + "\" as host.");
 			}
 
-			// Get the gateway and netmask of this machine
-			String[] gatewayAndNetmask = getGatewayAndNetmask();
-
-			if (gatewayAndNetmask != null) {
-				String gateway = gatewayAndNetmask[0];
-				String netmask = gatewayAndNetmask[1];
-				long cidrSize = NetUtils.getCidrSize(netmask);
-
-				// Create a default zone
-				String dns = getDNS();
-				if (dns == null) {
-					dns = "4.2.2.2";
-				}
-				DataCenterVO zone = createZone(User.UID_SYSTEM, "Default", dns, null, dns, null, null,"10.1.1.0/24", null, null, DataCenterNetworkType.Basic);
-
-				// Create a default pod
-				String networkType = _configDao.getValue("network.type");
-				if (networkType != null && networkType.equals("vnet")) {
-					createPod(User.UID_SYSTEM, "Default", zone.getId(), "169.254.1.1", "169.254.1.0/24", "169.254.1.2", "169.254.1.254");
-				} else {
-					createPod(User.UID_SYSTEM, "Default", zone.getId(), gateway, gateway + "/" + cidrSize, null, null);
-				}
-				s_logger.debug("ConfigurationServer saved a default pod and zone, with gateway: " + gateway + " and netmask: " + netmask);
-			} else {
-				s_logger.debug("ConfigurationServer could not detect the gateway and netmask of the management server.");
-			}
+//			// Get the gateway and netmask of this machine
+//			String[] gatewayAndNetmask = getGatewayAndNetmask();
+//
+//			if (gatewayAndNetmask != null) {
+//				String gateway = gatewayAndNetmask[0];
+//				String netmask = gatewayAndNetmask[1];
+//				long cidrSize = NetUtils.getCidrSize(netmask);
+//
+//				// Create a default zone
+//				String dns = getDNS();
+//				if (dns == null) {
+//					dns = "4.2.2.2";
+//				}
+//				DataCenterVO zone = createZone(User.UID_SYSTEM, "Default", dns, null, dns, null, null,"10.1.1.0/24", null, null, NetworkType.Basic);
+//				
+//				//Create untagged network
+//                DataCenterDeployment plan = new DataCenterDeployment(zone.getId(), null, null, null);
+//                NetworkVO userNetwork = new NetworkVO();
+//                userNetwork.setBroadcastDomainType(BroadcastDomainType.Native);
+//                
+//                Account systemAccount = _accountDao.findById(Account.ACCOUNT_ID_SYSTEM);
+//                List<NetworkOfferingVO> networkOffering = _networkOfferingDao.findByType(GuestIpType.DirectPodBased);
+//                if (networkOffering == null || networkOffering.isEmpty()) {
+//                    throw new CloudRuntimeException("No default DirectPodBased network offering is found");
+//                }
+//                _networkMgr.setupNetworkConfiguration(systemAccount, networkOffering.get(0), userNetwork, plan, null, null, true);
+//
+//				// Create a default pod
+//				String networkType = _configDao.getValue("network.type");
+//				if (networkType != null && networkType.equals("vnet")) {
+//					createPod(User.UID_SYSTEM, "Default", zone.getId(), "169.254.1.1", "169.254.1.0/24", "169.254.1.2", "169.254.1.254");
+//				} else {
+//					createPod(User.UID_SYSTEM, "Default", zone.getId(), gateway, gateway + "/" + cidrSize, null, null);
+//				}
+//				s_logger.debug("ConfigurationServer saved a default pod and zone, with gateway: " + gateway + " and netmask: " + netmask);
+//			} else {
+//				s_logger.debug("ConfigurationServer could not detect the gateway and netmask of the management server.");
+//			}
 
 	        // generate a single sign-on key
 	        updateSSOKey();
@@ -531,7 +544,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         }
 	}
 
-    private DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String vnetRange, String guestCidr, String domain, Long domainId, DataCenterNetworkType zoneType) throws InvalidParameterValueException, InternalErrorException {
+    private DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String vnetRange, String guestCidr, String domain, Long domainId, NetworkType zoneType) throws InvalidParameterValueException, InternalErrorException {
         int vnetStart = 0;
         int vnetEnd = 0;
         if (vnetRange != null) {

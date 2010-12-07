@@ -21,7 +21,7 @@ import java.util.List;
 
 import com.cloud.api.commands.CreateVlanIpRangeCmd;
 import com.cloud.dc.DataCenter;
-import com.cloud.dc.DataCenter.DataCenterNetworkType;
+import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Vlan;
@@ -111,7 +111,7 @@ public interface ConfigurationManager extends Manager {
      * @throws 
      * @throws 
      */
-    DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String vnetRange, String guestCidr, String domain, Long domainId, DataCenterNetworkType zoneType);
+    DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String vnetRange, String guestCidr, String domain, Long domainId, NetworkType zoneType);
     
 	/**
 	 * Associates an ip address list to an account.  The list of ip addresses are all addresses associated with the given vlan id.

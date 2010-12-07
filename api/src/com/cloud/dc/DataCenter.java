@@ -9,7 +9,7 @@ import com.cloud.org.Grouping;
  *
  */
 public interface DataCenter extends Grouping {
-    public enum DataCenterNetworkType {
+    public enum NetworkType {
         Basic,
         Advanced
     }
@@ -23,7 +23,7 @@ public interface DataCenter extends Grouping {
     String getDomain();
     String getVnet();
     
-    DataCenterNetworkType getNetworkType();
+    NetworkType getNetworkType();
     String getInternalDns1();
     String getInternalDns2();
     String getDnsProvider();

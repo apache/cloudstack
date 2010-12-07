@@ -31,7 +31,6 @@ import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
-import com.cloud.host.Host.Type;
 import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;

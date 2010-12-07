@@ -11,6 +11,7 @@ import javax.persistence.EntityExistsException;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.utils.db.DB;
@@ -27,6 +28,7 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
     final SearchBuilder<NetworkOfferingVO> NameSearch;
     final SearchBuilder<NetworkOfferingVO> ServiceOfferingSearch;
     final SearchBuilder<NetworkOfferingVO> SystemOfferingSearch;
+    final SearchBuilder<NetworkOfferingVO> TypeSearch;
     
     protected NetworkOfferingDaoImpl() {
         super();
@@ -34,6 +36,10 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
         NameSearch = createSearchBuilder();
         NameSearch.and("name", NameSearch.entity().getName(), SearchCriteria.Op.EQ);
         NameSearch.done();
+        
+        TypeSearch = createSearchBuilder();
+        TypeSearch.and("guestIpType", TypeSearch.entity().getGuestIpType(), SearchCriteria.Op.EQ);
+        TypeSearch.done();
         
         ServiceOfferingSearch = createSearchBuilder();
         ServiceOfferingSearch.and("serviceoffering", ServiceOfferingSearch.entity().getGuestIpType(), SearchCriteria.Op.EQ);
@@ -99,5 +105,11 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
         SearchCriteria<NetworkOfferingVO> sc = SystemOfferingSearch.create();
         sc.setParameters("system", false);
         return this.listIncludingRemovedBy(sc, null);
+    }
+    
+    public List<NetworkOfferingVO> findByType(GuestIpType type) {
+        SearchCriteria<NetworkOfferingVO> sc = TypeSearch.create();
+        sc.setParameters("guestIpType", type);
+        return listBy(sc);
     }
 }

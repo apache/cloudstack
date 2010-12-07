@@ -74,7 +74,7 @@ public class DataCenterVO implements DataCenter {
     
     @Column(name="networktype")
     @Enumerated(EnumType.STRING) 
-    DataCenterNetworkType networkType;
+    NetworkType networkType;
     
     @Column(name="dns_provider")
     private String dnsProvider = "VirtualRouter";
@@ -146,12 +146,12 @@ public class DataCenterVO implements DataCenter {
         this.firewallProvider = firewallProvider;
     }
 
-    public DataCenterVO(long id, String name, String description, String dns1, String dns2, String dns3, String dns4, String vnet, String guestCidr, String domain, Long domainId, DataCenterNetworkType zoneType) {
+    public DataCenterVO(long id, String name, String description, String dns1, String dns2, String dns3, String dns4, String vnet, String guestCidr, String domain, Long domainId, NetworkType zoneType) {
         this(name, description, dns1, dns2, dns3, dns4, vnet, guestCidr, domain, domainId, zoneType);
         this.id = id;
 	}
 
-    public DataCenterVO(String name, String description, String dns1, String dns2, String dns3, String dns4, String vnet, String guestCidr, String domain, Long domainId, DataCenterNetworkType zoneType) {
+    public DataCenterVO(String name, String description, String dns1, String dns2, String dns3, String dns4, String vnet, String guestCidr, String domain, Long domainId, NetworkType zoneType) {
         this.name = name;
         this.description = description;
         this.dns1 = dns1;
@@ -294,12 +294,12 @@ public class DataCenterVO implements DataCenter {
         this.domain = domain;
     }
     
-    public void setNetworkType(DataCenterNetworkType zoneNetworkType) {
+    public void setNetworkType(NetworkType zoneNetworkType) {
         this.networkType = zoneNetworkType;
     }
 
     @Override
-    public DataCenterNetworkType getNetworkType() {
+    public NetworkType getNetworkType() {
         return networkType;
     }
     

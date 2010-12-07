@@ -33,6 +33,7 @@ public interface NetworkOffering {
     
     public final String DefaultVirtualizedNetworkOffering = "DefaultVirtualizedNetworkOffering";
     public final String DefaultDirectNetworkOffering = "DefaultDirectNetworkOffering";
+    public final String DefaultDirectPodBasedNetworkOffering = "DefaultDirectPodBasedNetworkOffering";
     public final String DefaultDirectChooseVlanNetworkOffering = "DefaultDirectChooseVlanNetworkOffering";
 
     long getId();
