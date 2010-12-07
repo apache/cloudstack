@@ -169,8 +169,10 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
         
         if (nic == null) {
             nic = new NicProfile(ReservationStrategy.Start, null, null, null, null);
-        } else {
+        } else if (nic.getIp4Address() != null){
             nic.setStrategy(ReservationStrategy.Create);
+        } else {
+            nic.setStrategy(ReservationStrategy.Start);
         }
         
         if (nic.getMacAddress() == null) {

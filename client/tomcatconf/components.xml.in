@@ -76,6 +76,7 @@
         </adapters>
         <adapters key="com.cloud.network.element.NetworkElement">
             <adapter name="DomainRouter" class="com.cloud.network.element.DomainRouterElement"/>
+            <adapter name="Dhcp" class="com.cloud.network.element.DhcpElement"/>
         </adapters>
         <adapters key="com.cloud.acl.SecurityChecker">
             <adapter name="DomainChecker" class="com.cloud.acl.DomainChecker"/>

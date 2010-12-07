@@ -2069,7 +2069,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
 	}
 	
 	@Override
-	public DomainRouterVO deploy(Network guestConfig, DeployDestination dest, Account owner) throws InsufficientCapacityException, StorageUnavailableException, ConcurrentOperationException, ResourceUnavailableException {
+	public DomainRouterVO deployVirtualRouter(Network guestConfig, DeployDestination dest, Account owner) throws InsufficientCapacityException, StorageUnavailableException, ConcurrentOperationException, ResourceUnavailableException {
 	    long dcId = dest.getDataCenter().getId();
 	    
         if (s_logger.isDebugEnabled()) {
@@ -2122,6 +2122,49 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         
         return _itMgr.start(router, null, _accountService.getSystemUser(), _accountService.getSystemAccount());
 	}
+	
+	
+	   @Override
+	    public DomainRouterVO deployDhcp(Network guestConfig, DeployDestination dest, Account owner) throws InsufficientCapacityException, StorageUnavailableException, ConcurrentOperationException, ResourceUnavailableException {
+	        long dcId = dest.getDataCenter().getId();
+	        
+	        if (s_logger.isDebugEnabled()) {
+	            s_logger.debug("Starting a dhcp for network configurations: dhcp="  + guestConfig + " in " + dest);
+	        }
+	        assert guestConfig.getState() == Network.State.Implemented || guestConfig.getState() == Network.State.Setup : "Network is not yet fully implemented: " + guestConfig;
+	        assert guestConfig.getTrafficType() == TrafficType.Guest;
+	        
+	        DataCenterDeployment plan = new DataCenterDeployment(dcId);
+	        
+	        guestConfig = _networkConfigurationDao.lockRow(guestConfig.getId(), true);
+	        if (guestConfig == null) {
+	            throw new ConcurrentOperationException("Unable to get the lock on " + guestConfig);
+	        }
+	        
+	        DomainRouterVO router = _routerDao.findByNetworkConfiguration(guestConfig.getId());
+	        if (router == null) {
+	            long id = _routerDao.getNextInSequence(Long.class, "id");
+	            if (s_logger.isDebugEnabled()) {
+	                s_logger.debug("Creating the router " + id);
+	            }
+	        
+	            List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemVmControlNetwork);
+	            NetworkOfferingVO controlOffering = offerings.get(0);
+	            NetworkVO controlConfig = _networkMgr.setupNetworkConfiguration(_systemAcct, controlOffering, plan, null, null, false).get(0);
+	            
+	            List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>(3);
+	            NicProfile gatewayNic = new NicProfile();
+	            gatewayNic.setDefaultNic(true);
+	            networks.add(new Pair<NetworkVO, NicProfile>((NetworkVO)guestConfig, gatewayNic));
+	            networks.add(new Pair<NetworkVO, NicProfile>(controlConfig, null));
+	            
+	            router = new DomainRouterVO(id, _offering.getId(), VirtualMachineName.getRouterName(id, _instance), _template.getId(), _template.getGuestOSId(), owner.getDomainId(), owner.getId(), guestConfig.getId(), _offering.getOfferHA());
+	            router.setRole(Role.DHCP_USERDATA);
+	            router = _itMgr.allocate(router, _template, _offering, networks, plan, owner);
+	        }
+	        
+	        return _itMgr.start(router, null, _accountService.getSystemUser(), _accountService.getSystemAccount());
+	    }
 	
 	@Override
     public boolean finalizeVirtualMachineProfile(VirtualMachineProfile<DomainRouterVO> profile, DeployDestination dest, ReservationContext context) {
@@ -2277,10 +2320,15 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
 	}
 
     @Override
-    public DomainRouterVO addVirtualMachineIntoNetwork(Network config, NicProfile nic, VirtualMachineProfile<UserVm> profile, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientNetworkCapacityException, ResourceUnavailableException {
+    public DomainRouterVO addVirtualMachineIntoNetwork(Network config, NicProfile nic, VirtualMachineProfile<UserVm> profile, DeployDestination dest, ReservationContext context, Boolean startDhcp) throws ConcurrentOperationException, InsufficientNetworkCapacityException, ResourceUnavailableException {
         DomainRouterVO router = _routerDao.findByNetworkConfiguration(config.getId());
         try {
-            router = this.deploy(config, dest, profile.getOwner());
+            if (startDhcp) {
+                router = this.deployDhcp(config, dest, profile.getOwner());
+            } else {
+                router = this.deployVirtualRouter(config, dest, profile.getOwner());
+            }
+            
         } catch (InsufficientNetworkCapacityException e) {
             throw e;
         } catch (InsufficientCapacityException e) {

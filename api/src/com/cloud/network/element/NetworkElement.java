@@ -94,4 +94,5 @@ public interface NetworkElement extends Adapter {
      * @throws ResourceUnavailableException
      */
     boolean applyRules(Network network, List<? extends FirewallRule> rules) throws ResourceUnavailableException;
+
 }

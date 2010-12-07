@@ -38,8 +38,6 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.service.Providers;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.GuestIpType;
-import com.cloud.offerings.NetworkOfferingVO;
-import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
@@ -56,12 +54,11 @@ import com.cloud.vm.dao.UserVmDao;
 
 
 @Local(value=NetworkElement.class)
-public class DomainRouterElement extends AdapterBase implements NetworkElement {
-    private static final Logger s_logger = Logger.getLogger(DomainRouterElement.class);
+public class DhcpElement extends AdapterBase implements NetworkElement {
+    private static final Logger s_logger = Logger.getLogger(DhcpElement.class);
     
     @Inject NetworkDao _networkConfigDao;
     @Inject NetworkManager _networkMgr;
-    @Inject NetworkOfferingDao _networkOfferingDao;
     @Inject DomainRouterManager _routerMgr;
     @Inject UserVmManager _userVmMgr;
     @Inject UserVmDao _userVmDao;
@@ -70,18 +67,21 @@ public class DomainRouterElement extends AdapterBase implements NetworkElement {
     private boolean canHandle(GuestIpType ipType, DeployDestination dest) {
         DataCenter dc = dest.getDataCenter();
         String provider = dc.getGatewayProvider();
-        return (ipType == GuestIpType.Virtual && provider.equals(Providers.VirtualRouter));
+        if (!dc.getDhcpProvider().equals(Providers.VirtualRouter)) {
+            return false; 
+        }
+        return ((ipType == GuestIpType.Virtual && !provider.equals(Providers.VirtualRouter)) || (ipType == GuestIpType.Direct || ipType == GuestIpType.DirectPodBased));
     }
 
     @Override
     public boolean implement(Network guestConfig, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException {
         if (canHandle(offering.getGuestIpType(), dest)) {
-            DomainRouterVO router = _routerMgr.deployVirtualRouter(guestConfig, dest, context.getAccount());
+            DomainRouterVO router = _routerMgr.deployDhcp(guestConfig, dest, context.getAccount());
             if (router == null) {
                 throw new ResourceUnavailableException("Unable to deploy the router for " + guestConfig);
             }
-            
             return true;
+        
         } else {
             return false;
         }
@@ -91,7 +91,7 @@ public class DomainRouterElement extends AdapterBase implements NetworkElement {
     public boolean prepare(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientNetworkCapacityException, ResourceUnavailableException {
         if (canHandle(config.getGuestType(), dest)) {
             if (config.getTrafficType() != TrafficType.Guest || vm.getType() != Type.User) {
-                s_logger.trace("Domain Router only cares about guest network and User VMs");
+                s_logger.trace("DHCP only cares about guest network and User VMs");
                 return false;
             }
             
@@ -102,17 +102,16 @@ public class DomainRouterElement extends AdapterBase implements NetworkElement {
             @SuppressWarnings("unchecked")
             VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>)vm;
             
-            return _routerMgr.addVirtualMachineIntoNetwork(config, nic, uservm, dest, context, false) != null;
+            return _routerMgr.addVirtualMachineIntoNetwork(config, nic, uservm, dest, context, true) != null;
         } else {
             return false;
         }
-       
     }
 
     @Override
     public boolean release(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, ReservationContext context) {
         if (config.getTrafficType() != TrafficType.Guest || vm.getType() != Type.User) {
-            s_logger.trace("Domain Router only cares about guest network and User VMs");
+            s_logger.trace("DHCP only cares about guest network and User VMs");
             return false;
         }
         return true;
@@ -121,7 +120,7 @@ public class DomainRouterElement extends AdapterBase implements NetworkElement {
     @Override
     public boolean shutdown(Network config, ReservationContext context) throws ConcurrentOperationException {
         if (config.getTrafficType() != TrafficType.Guest) {
-            s_logger.trace("Domain Router only cares about guet network.");
+            s_logger.trace("DHCP only cares about guet network.");
             return false;
         }
         DomainRouterVO router = _routerDao.findByNetworkConfiguration(config.getId());
@@ -131,25 +130,22 @@ public class DomainRouterElement extends AdapterBase implements NetworkElement {
         return _routerMgr.stopRouter(router.getId(), 1);
     }
     
-    protected DomainRouterElement() {
+    protected DhcpElement() {
         super();
     }
 
     @Override
     public boolean applyRules(Network config, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
-        
-        return false;
+        return true;
     }
 
     @Override
     public boolean associate(Network network, Ip ipAddress) throws ResourceUnavailableException {
-        // TODO Auto-generated method stub
-        return false;
+       return true;
     }
 
     @Override
     public boolean disassociate(Network network, Ip ipAddress) throws ResourceUnavailableException {
-        // TODO Auto-generated method stub
-        return false;
+       return true;
     }
 }

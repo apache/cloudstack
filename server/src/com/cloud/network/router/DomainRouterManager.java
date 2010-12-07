@@ -147,13 +147,15 @@ public interface DomainRouterManager extends Manager {
 	DomainRouterVO getRouter(long accountId, long zoneId);
 	DomainRouterVO getRouter(String publicIpAddress);
 	
-	DomainRouterVO deploy(Network guestConfig, DeployDestination dest, Account owner) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException;
-
+	DomainRouterVO deployVirtualRouter(Network guestConfig, DeployDestination dest, Account owner) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException;
+	
+	DomainRouterVO deployDhcp(Network guestConfig, DeployDestination dest, Account owner) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException;
+	
 	RemoteAccessVpnVO startRemoteAccessVpn(RemoteAccessVpnVO vpnVO) throws ResourceUnavailableException;
 	
 	boolean addRemoveVpnUsers(RemoteAccessVpnVO vpnVO, List<VpnUserVO> addUsers, List<VpnUserVO> removeUsers);
 
 	boolean deleteRemoteAccessVpn(RemoteAccessVpnVO vpnVO);
 	
-	DomainRouterVO addVirtualMachineIntoNetwork(Network config, NicProfile nic, VirtualMachineProfile<UserVm> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientNetworkCapacityException, ResourceUnavailableException;
+	DomainRouterVO addVirtualMachineIntoNetwork(Network config, NicProfile nic, VirtualMachineProfile<UserVm> vm, DeployDestination dest, ReservationContext context, Boolean startDhcp) throws ConcurrentOperationException, InsufficientNetworkCapacityException, ResourceUnavailableException;
 }
