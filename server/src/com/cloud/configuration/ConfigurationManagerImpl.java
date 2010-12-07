@@ -1074,7 +1074,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                     throw new CloudRuntimeException("No default DirectPodBased network offering is found");
                 }
                 
-                List<NetworkVO> networks = _networkMgr.setupNetworkConfiguration(systemAccount, networkOffering.get(0), userNetwork, plan, null, null, true);
+                List<NetworkVO> networks = _networkMgr.setupNetwork(systemAccount, networkOffering.get(0), userNetwork, plan, null, null, true);
                 
                 if (networks == null || networks.isEmpty()) {
                     txn.rollback();
