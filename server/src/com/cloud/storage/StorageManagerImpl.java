@@ -2658,6 +2658,11 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             vol.setInstanceId(vm.getId());
         }
         
+        if(type.equals(VolumeType.ROOT))
+        	vol.setDeviceId(0l);
+        else
+        	vol.setDeviceId(1l);
+        
         vol = _volsDao.persist(vol);
         
         return toDiskProfile(vol, offering);
@@ -2683,6 +2688,11 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             vol.setInstanceId(vm.getId());
         }
         vol.setTemplateId(template.getId());
+        
+        if(type.equals(VolumeType.ROOT))
+        	vol.setDeviceId(0l);
+        else
+        	vol.setDeviceId(1l);
         
         vol = _volsDao.persist(vol);
         
