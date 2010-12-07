@@ -17,6 +17,8 @@
  */
 package com.cloud.api.commands;
 
+import java.util.List;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
@@ -29,6 +31,8 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.IpAddress;
+import com.cloud.network.Network;
+import com.cloud.user.UserContext;
 
 @Implementation(description="Acquires and associates a public IP to an account.", responseObject=IPAddressResponse.class)
 public class AssociateIPAddrCmd extends BaseCmd {
@@ -47,6 +51,9 @@ public class AssociateIPAddrCmd extends BaseCmd {
 
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="the ID of the availability zone you want to acquire an public IP address from")
     private Long zoneId;
+    
+    @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, description="The network this ip address should be associated to.")
+    private Long networkId;
 
 
     /////////////////////////////////////////////////////
@@ -54,15 +61,34 @@ public class AssociateIPAddrCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     public String getAccountName() {
-        return accountName;
+        if (accountName != null) { 
+            return accountName;
+        }
+        return UserContext.current().getAccount().getAccountName();
     }
 
-    public Long getDomainId() {
-        return domainId;
+    public long getDomainId() {
+        if (domainId != null) {
+            return domainId;
+        }
+        return UserContext.current().getAccount().getDomainId();
     }
 
-    public Long getZoneId() {
+    public long getZoneId() {
         return zoneId;
+    }
+    
+    public Long getNetworkId() {
+        if (networkId != null) {
+            return networkId;
+        }
+        
+        List<? extends Network> networks = _networkService.getVirtualNetworksOwnedByAccountInZone(getAccountName(), getDomainId(), getZoneId());
+        if (networks.size() == 0) {
+            return null;
+        }
+        assert (networks.size() <= 1) : "Too many virtual networks.  This logic should be obsolete";
+        return networks.get(0).getId();
     }
 
 

@@ -10,11 +10,11 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.component.Adapter;
-import com.cloud.utils.net.Ip;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
@@ -75,7 +75,7 @@ public interface NetworkElement extends Adapter {
      * @return
      * @throws ResourceUnavailableException
      */
-    boolean associate(Network network, Ip ipAddress) throws ResourceUnavailableException;
+    boolean associate(Network network, IpAddress ipAddress) throws ResourceUnavailableException;
 
     /**
      * Disassociate the ip address from this network
@@ -84,7 +84,7 @@ public interface NetworkElement extends Adapter {
      * @return
      * @throws ResourceUnavailableException
      */
-    boolean disassociate(Network network, Ip ipAddress) throws ResourceUnavailableException;
+    boolean disassociate(Network network, IpAddress ipAddress) throws ResourceUnavailableException;
     
     /**
      * Apply rules

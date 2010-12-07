@@ -25,7 +25,6 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientNetworkCapacityException;
-import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.rules.FirewallRule;
@@ -82,27 +81,6 @@ public interface NetworkManager extends NetworkService {
     boolean associateIP(DomainRouterVO router, List<String> ipAddrList, boolean add, long vmId) throws ConcurrentOperationException;
     
     /**
-     * Associates or disassociates a single IP address for a router.
-     * @param router router object to send the association to
-     * @param ipAddress  public IP addresses
-     * @param add true if associate, false if disassociate
-     * @return
-     */
-    boolean associateIP(DomainRouterVO router, String ipAddress, boolean add, long vmId) throws ResourceAllocationException;
-    
-    
-    /**
-     * Add a DHCP entry on the domr dhcp server
-     * @param routerHostId - the host id of the domr
-     * @param routerIp - the private ip address of the domr
-     * @param vmName - the name of the VM (e.g., i-10-TEST)
-     * @param vmMac  - the mac address of the eth0 interface of the VM
-     * @param vmIp   - the ip address to hand out.
-     * @return success or failure
-     */
-    public boolean addDhcpEntry(long routerHostId, String routerIp, String vmName, String vmMac, String vmIp);
-    
-    /**
      * Lists IP addresses that belong to VirtualNetwork VLANs
      * @param accountId - account that the IP address should belong to
      * @param dcId - zone that the IP address should belong to
@@ -112,7 +90,7 @@ public interface NetworkManager extends NetworkService {
     List<IPAddressVO> listPublicIpAddressesInVirtualNetwork(long accountId, long dcId, Boolean sourceNat);	
     
     List<NetworkVO> setupNetworkConfiguration(Account owner, NetworkOfferingVO offering, DeploymentPlan plan, String name, String displayText, boolean isShared);
-    List<NetworkVO> setupNetworkConfiguration(Account owner, NetworkOfferingVO offering, Network predefined, DeploymentPlan plan, String name, String displayText, boolean isShared);
+    List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, Network predefined, DeploymentPlan plan, String name, String displayText, boolean isShared);
     
     List<NetworkOfferingVO> getSystemAccountNetworkOfferings(String... offeringNames);
     
@@ -123,12 +101,12 @@ public interface NetworkManager extends NetworkService {
     
     List<? extends Nic> getNics (VirtualMachine vm);
 	
-    List<AccountVO> getAccountsUsingNetworkConfiguration(long configurationId);    
-    AccountVO getNetworkConfigurationOwner(long configurationId);
+    List<AccountVO> getAccountsUsingNetwork(long configurationId);    
+    AccountVO getNetworkOwner(long configurationId);
     
-    List<NetworkVO> getNetworkConfigurationsforOffering(long offeringId, long dataCenterId, long accountId);
+    List<NetworkVO> getNetworksforOffering(long offeringId, long dataCenterId, long accountId);
 
-    List<NetworkVO> setupNetworkConfiguration(Account owner, ServiceOfferingVO offering, DeploymentPlan plan);
+    List<NetworkVO> setupNetwork(Account owner, ServiceOfferingVO offering, DeploymentPlan plan);
     
 	Network getNetwork(long id);
 	String getNextAvailableMacAddressInNetwork(long networkConfigurationId) throws InsufficientAddressCapacityException;

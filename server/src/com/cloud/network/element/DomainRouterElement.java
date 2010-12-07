@@ -29,6 +29,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.Networks.TrafficType;
@@ -43,7 +44,6 @@ import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
-import com.cloud.utils.net.Ip;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
@@ -142,13 +142,13 @@ public class DomainRouterElement extends AdapterBase implements NetworkElement {
     }
 
     @Override
-    public boolean associate(Network network, Ip ipAddress) throws ResourceUnavailableException {
+    public boolean associate(Network network, IpAddress ipAddress) throws ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public boolean disassociate(Network network, Ip ipAddress) throws ResourceUnavailableException {
+    public boolean disassociate(Network network, IpAddress ipAddress) throws ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;
     }

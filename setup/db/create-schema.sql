@@ -626,7 +626,9 @@ CREATE TABLE  `cloud`.`user_ip_address` (
   `one_to_one_nat` int(1) unsigned NOT NULL default '0',
   `state` char(32) NOT NULL default 'Free' COMMENT 'state of the ip address',
   `mac_address` bigint unsigned NOT NULL COMMENT 'mac address of this ip',
-  PRIMARY KEY (`public_ip_address`)
+  `network_id` bigint unsigned COMMENT 'network this public ip address is associated with',
+  PRIMARY KEY (`public_ip_address`),
+  CONSTRAINT `fk_user_ip_address__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE  `cloud`.`user_statistics` (

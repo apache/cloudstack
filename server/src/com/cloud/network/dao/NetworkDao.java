@@ -21,18 +21,20 @@ import java.util.List;
 
 import com.cloud.network.NetworkAccountVO;
 import com.cloud.network.NetworkVO;
+import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.SearchBuilder;
 
 public interface NetworkDao extends GenericDao<NetworkVO, Long> {
     List<NetworkVO> listBy(long accountId);
     List<NetworkVO> listBy(long accountId, long offeringId, long dataCenterId);
+    List<NetworkVO> listBy(long accountId, long dataCenterId, GuestIpType type);
     @Override
     NetworkVO persist(NetworkVO network);
-    void addAccountToNetworkConfiguration(long networkId, long accountId);
+    void addAccountToNetwork(long networkId, long accountId);
     SearchBuilder<NetworkAccountVO> createSearchBuilderForAccount();
-    List<NetworkVO> getNetworkConfigurationsForOffering(long offeringId, long dataCenterId, long accountId);
-    List<NetworkVO> getRelatedNetworkConfigurations(long related);
+    List<NetworkVO> getNetworksForOffering(long offeringId, long dataCenterId, long accountId);
+    List<NetworkVO> getRelatedNetworks(long related);
     
     /**
      * Retrieves the next available mac address in this network configuration.

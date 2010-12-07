@@ -25,19 +25,20 @@ import java.util.Random;
 import javax.ejb.Local;
 import javax.persistence.TableGenerator;
 
-import com.cloud.domain.DomainVO;
 import com.cloud.network.NetworkAccountDaoImpl;
 import com.cloud.network.NetworkAccountVO;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SequenceFetcher;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -45,11 +46,9 @@ import com.cloud.utils.net.NetUtils;
 
 @Local(value=NetworkDao.class) @DB(txn=false)
 public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements NetworkDao {
-    final SearchBuilder<NetworkVO> ProfileSearch;
+    final SearchBuilder<NetworkVO> AllFieldsSearch;
     final SearchBuilder<NetworkVO> AccountSearch;
-    final SearchBuilder<NetworkVO> OfferingSearch;
     final SearchBuilder<NetworkVO> RelatedConfigSearch;
-    final SearchBuilder<NetworkVO> RelatedConfigsSearch;
     final SearchBuilder<NetworkVO> AccountNetworkSearch;
     
     NetworkAccountDaoImpl _accountsDao = new NetworkAccountDaoImpl();
@@ -60,51 +59,56 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     protected NetworkDaoImpl() {
         super();
         
-        ProfileSearch = createSearchBuilder();
-        ProfileSearch.and("trafficType", ProfileSearch.entity().getTrafficType(), SearchCriteria.Op.EQ);
-        ProfileSearch.and("cidr", ProfileSearch.entity().getCidr(), SearchCriteria.Op.EQ);
-        ProfileSearch.and("broadcastType", ProfileSearch.entity().getBroadcastDomainType(), SearchCriteria.Op.EQ);
-        ProfileSearch.and("offering", ProfileSearch.entity().getNetworkOfferingId(), SearchCriteria.Op.EQ);
-        ProfileSearch.and("datacenter", ProfileSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-        ProfileSearch.done();
+        AllFieldsSearch = createSearchBuilder();
+        AllFieldsSearch.and("trafficType", AllFieldsSearch.entity().getTrafficType(), Op.EQ);
+        AllFieldsSearch.and("cidr", AllFieldsSearch.entity().getCidr(), Op.EQ);
+        AllFieldsSearch.and("broadcastType", AllFieldsSearch.entity().getBroadcastDomainType(), Op.EQ);
+        AllFieldsSearch.and("offering", AllFieldsSearch.entity().getNetworkOfferingId(), Op.EQ);
+        AllFieldsSearch.and("datacenter", AllFieldsSearch.entity().getDataCenterId(), Op.EQ);
+        AllFieldsSearch.and("account", AllFieldsSearch.entity().getAccountId(), Op.EQ);
+        AllFieldsSearch.and("guesttype", AllFieldsSearch.entity().getGuestType(), Op.EQ);
+        AllFieldsSearch.and("related", AllFieldsSearch.entity().getRelated(), Op.EQ);
+        AllFieldsSearch.done();
         
         AccountSearch = createSearchBuilder();
-        AccountSearch.and("offering", AccountSearch.entity().getNetworkOfferingId(), SearchCriteria.Op.EQ);
+        AccountSearch.and("offering", AccountSearch.entity().getNetworkOfferingId(), Op.EQ);
         SearchBuilder<NetworkAccountVO> join = _accountsDao.createSearchBuilder();
-        join.and("account", join.entity().getAccountId(), SearchCriteria.Op.EQ);
+        join.and("account", join.entity().getAccountId(), Op.EQ);
         AccountSearch.join("accounts", join, AccountSearch.entity().getId(), join.entity().getNetworkId(), JoinBuilder.JoinType.INNER);
-        AccountSearch.and("datacenter", AccountSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        AccountSearch.and("datacenter", AccountSearch.entity().getDataCenterId(), Op.EQ);
         AccountSearch.done();
     
-        OfferingSearch = createSearchBuilder();
-        OfferingSearch.and("guesttype", OfferingSearch.entity().getGuestType(), SearchCriteria.Op.EQ);
-        OfferingSearch.and("datacenter", OfferingSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-        
         RelatedConfigSearch = createSearchBuilder();
-        RelatedConfigSearch.and("offering", RelatedConfigSearch.entity().getNetworkOfferingId(), SearchCriteria.Op.EQ);
-        RelatedConfigSearch.and("datacenter", RelatedConfigSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        RelatedConfigSearch.and("offering", RelatedConfigSearch.entity().getNetworkOfferingId(), Op.EQ);
+        RelatedConfigSearch.and("datacenter", RelatedConfigSearch.entity().getDataCenterId(), Op.EQ);
         SearchBuilder<NetworkAccountVO> join2 = _accountsDao.createSearchBuilder();
-        join2.and("account", join2.entity().getAccountId(), SearchCriteria.Op.EQ);
+        join2.and("account", join2.entity().getAccountId(), Op.EQ);
         RelatedConfigSearch.join("account", join2, join2.entity().getNetworkId(), RelatedConfigSearch.entity().getId(), JoinType.INNER);
         RelatedConfigSearch.done();
         
-        RelatedConfigsSearch = createSearchBuilder();
-        RelatedConfigsSearch.and("related", RelatedConfigsSearch.entity().getRelated(), SearchCriteria.Op.EQ);
-        RelatedConfigsSearch.done();
-        
-        
         AccountNetworkSearch = createSearchBuilder();
-        AccountNetworkSearch.and("networkId", AccountNetworkSearch.entity().getId(), SearchCriteria.Op.EQ);
+        AccountNetworkSearch.and("networkId", AccountNetworkSearch.entity().getId(), Op.EQ);
         SearchBuilder<NetworkAccountVO> mapJoin = _accountsDao.createSearchBuilder();
-        mapJoin.and("accountId", mapJoin.entity().getAccountId(), SearchCriteria.Op.EQ);
+        mapJoin.and("accountId", mapJoin.entity().getAccountId(), Op.EQ);
         AccountNetworkSearch.join("networkSearch", mapJoin, AccountNetworkSearch.entity().getId(), mapJoin.entity().getNetworkId(), JoinBuilder.JoinType.INNER);
         AccountNetworkSearch.done();
         
         _tgMacAddress = _tgs.get("macAddress");
     }
     
+    @Override
+    public List<NetworkVO> listBy(long accountId, long dataCenterId, GuestIpType type) {
+        SearchCriteria<NetworkVO> sc = AllFieldsSearch.create();
+        sc.setParameters("datacenter", dataCenterId);
+        sc.setParameters("account", accountId);
+        if (type != null) {
+            sc.setParameters("guesttype", type);
+        }
+        return listBy(sc, null);
+    }
+    
     public List<NetworkVO> findBy(TrafficType trafficType, Mode mode, BroadcastDomainType broadcastType, long networkOfferingId, long dataCenterId) {
-        SearchCriteria<NetworkVO> sc = ProfileSearch.create();
+        SearchCriteria<NetworkVO> sc = AllFieldsSearch.create();
         sc.setParameters("trafficType", trafficType);
         sc.setParameters("broadcastType", broadcastType);
         sc.setParameters("offering", networkOfferingId);
@@ -150,7 +154,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     }
     
     @Override
-    public void addAccountToNetworkConfiguration(long configurationId, long accountId) {
+    public void addAccountToNetwork(long configurationId, long accountId) {
         addAccountToNetworkConfiguration(configurationId, accountId, false);
     }
     
@@ -165,7 +169,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     }
     
     @Override
-    public List<NetworkVO> getNetworkConfigurationsForOffering(long offeringId, long dataCenterId, long accountId) {
+    public List<NetworkVO> getNetworksForOffering(long offeringId, long dataCenterId, long accountId) {
         SearchCriteria<NetworkVO> sc = RelatedConfigSearch.create();
         sc.setParameters("offering", offeringId);
         sc.setParameters("dc", dataCenterId);
@@ -174,8 +178,8 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     }
     
     @Override
-    public List<NetworkVO> getRelatedNetworkConfigurations(long related) {
-        SearchCriteria<NetworkVO> sc = RelatedConfigsSearch.create();
+    public List<NetworkVO> getRelatedNetworks(long related) {
+        SearchCriteria<NetworkVO> sc = AllFieldsSearch.create();
         sc.setParameters("related", related);
         return search(sc, null);
     }

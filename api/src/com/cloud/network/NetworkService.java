@@ -39,6 +39,9 @@ import com.cloud.offering.NetworkOffering;
 
 
 public interface NetworkService {
+    
+    List<? extends Network> getVirtualNetworksOwnedByAccountInZone(String accountName, long domainId, long zoneId);
+    
     List<? extends NetworkOffering> listNetworkOfferings();
     /**
      * Associates a public IP address for a router.
