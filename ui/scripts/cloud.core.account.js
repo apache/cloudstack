@@ -472,7 +472,8 @@ function accountUserJSONToTemplate(jsonObj, $template) {
     $template.find("#lastname").text(fromdb(jsonObj.lastname));	
     $template.find("#timezone").text(timezones[fromdb(jsonObj.timezone)]);	
     $template.data("timezone", jsonObj.timezone); 
-        
+      
+    //actions    
 	var $actionLink = $template.find("#user_action_link");		
 	$actionLink.bind("mouseover", function(event) {
         $(this).find("#user_action_menu").show();    
@@ -493,13 +494,10 @@ function accountUserJSONToTemplate(jsonObj, $template) {
         buildActionLinkForSubgridItem("Generate Keys", accountUserActionMap, $actionMenu, $template);	    
         noAvailableActions = false;
         
-        /*
-        if(jsonObj.id==systemUserId || jsonObj.id==adminUserId) 
-            buildActionLinkForSubgridItem("Delete User", accountUserActionMap, $actionMenu, $template);	
-        */	        
-	} 
+        if(jsonObj.id != systemUserId && jsonObj.id != adminUserId) 
+            buildActionLinkForSubgridItem("Delete User", accountUserActionMap, $actionMenu, $template);	  
+	} 	
 	
-	// no available actions 
 	if(noAvailableActions == true) {
 	    $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());
 	}	
@@ -702,7 +700,17 @@ var accountUserActionMap = {
             $subgridItem.find("#apikey").text(fromdb(jsonObj.apikey));    
             $subgridItem.find("#secretkey").text(fromdb(jsonObj.secretkey));	
         }            
-    }
+    },
+    "Delete User": {
+        api: "deleteUser",            
+        isAsyncJob: false,
+        inProcessText: "Deleting User....",
+        afterActionSeccessFn: function(json, id, $subgridItem) {
+            $subgridItem.slideUp("slow", function() {
+                $(this).remove();
+            });
+        }        
+    }    
 }
 
 function doEditUser($actionLink, $subgridItem) {   
