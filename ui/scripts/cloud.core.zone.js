@@ -482,8 +482,11 @@ function initAddVLANButton($button, $leftmenuItem1) {
 				}
 								
 				var scopeParams = "";
-				if(dialogAddVlanForZone.find("#add_publicip_vlan_scope").val()=="account-specific")
-				    scopeParams = "&domainId="+trim($thisDialog.find("#add_publicip_vlan_domain").val())+"&account="+trim($thisDialog.find("#add_publicip_vlan_account").val());    
+				if(dialogAddVlanForZone.find("#add_publicip_vlan_scope").val()=="account-specific") {
+				    scopeParams = "&domainId="+trim($thisDialog.find("#add_publicip_vlan_domain").val())+"&account="+trim($thisDialog.find("#add_publicip_vlan_account").val());  
+				} else if (isDirect) {
+					scopeParams = "&isshared=true";
+				}
 								
 				var type = trim($thisDialog.find("#add_publicip_vlan_type").val());
 				var gateway = trim($thisDialog.find("#add_publicip_vlan_gateway").val());
@@ -491,7 +494,7 @@ function initAddVLANButton($button, $leftmenuItem1) {
 				var startip = trim($thisDialog.find("#add_publicip_vlan_startip").val());
 				var endip = trim($thisDialog.find("#add_publicip_vlan_endip").val());					
 				
-				if (type == "true") {
+				if (!isDirect) {
 					// Allocating ip ranges on a vlan for virtual networking
 					$.ajax({
 						data: createURL("command=createVlanIpRange&forVirtualNetwork="+type+"&zoneId="+zoneObj.id+vlan+scopeParams+"&gateway="+todb(gateway)+"&netmask="+todb(netmask)+"&startip="+todb(startip)+"&endip="+todb(endip)),
