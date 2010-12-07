@@ -132,6 +132,11 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 		boolean localStorageAllocationNeeded = localStorageAllocationNeeded(dskCh, vm, offering);
 		return ((!localStorageAllocationNeeded && pool.getPoolType().isShared()) || (localStorageAllocationNeeded && !pool.getPoolType().isShared()));
 	}
+
+        // XXX: this is a bug, we need a new method to get the physical size, as this actually returns the virtual size
+        protected long getTemplatePhysicalSize(DiskCharacteristicsTO dskCh) {
+   	        return dskCh.getSize();
+	}    
 	
 	protected boolean checkPool(Set<? extends StoragePool> avoid, StoragePoolVO pool, DiskCharacteristicsTO dskCh, VMTemplateVO template, List<VMTemplateStoragePoolVO> templatesInPool, ServiceOffering offering,
 			VMInstanceVO vm, StatsCollector sc) {
@@ -192,7 +197,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 			// If the template that was passed into this allocator is not installed in the storage pool
 			// should add template size
 			// dskCh.getSize() should be template virtualsize
-			totalAllocatedSize += dskCh.getSize() + _extraBytesPerVolume;
+		        totalAllocatedSize += getTemplatePhysicalSize(dskCh) + _extraBytesPerVolume;
 		}
 
 		long askingSize = dskCh.getSize();

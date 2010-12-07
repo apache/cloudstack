@@ -279,6 +279,12 @@ public class LocalStoragePoolAllocator extends FirstFitStoragePoolAllocator {
     }
 
     @Override
+    protected long getTemplatePhysicalSize(DiskCharacteristicsTO dskCh) {
+	return (dskCh.getSize() > (10l * 1024l * 1024l * 1024l) ? (10l * 1024l * 1024l * 1024l) : dskCh.getSize());
+    }    
+
+
+    @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
         
