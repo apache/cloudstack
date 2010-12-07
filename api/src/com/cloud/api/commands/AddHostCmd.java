@@ -125,6 +125,7 @@ public class AddHostCmd extends BaseCmd {
             
             this.setResponseObject(response);
         } catch (DiscoveryException ex) {
+            s_logger.warn("Exception: ", ex);
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
         }
     }

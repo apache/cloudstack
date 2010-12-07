@@ -117,6 +117,7 @@ public class CopyIsoCmd extends BaseAsyncCmd {
             isoResponse.setResponseName(getName());
             this.setResponseObject(isoResponse);
         } catch (StorageUnavailableException ex) {
+            s_logger.warn("Exception: ", ex);
             throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
         }
     }

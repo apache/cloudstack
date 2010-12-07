@@ -119,6 +119,7 @@ public class CopyTemplateCmd extends BaseAsyncCmd {
             
             this.setResponseObject(templateResponse);
         } catch (StorageUnavailableException ex) {
+            s_logger.warn("Exception: ", ex);
             throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
         }
     }

@@ -177,9 +177,11 @@ public class RegisterTemplateCmd extends BaseCmd {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to register template");
             }
         } catch (ResourceAllocationException ex) {
+            s_logger.warn("Exception: ", ex);
             throw new ServerApiException(BaseCmd.RESOURCE_ALLOCATION_ERROR, ex.getMessage());
         } catch (URISyntaxException ex1) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex1.getMessage());
+            s_logger.info(ex1);
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, ex1.getMessage());
         }
     }
 }

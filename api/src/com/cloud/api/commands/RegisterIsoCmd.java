@@ -134,6 +134,7 @@ public class RegisterIsoCmd extends BaseCmd {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to register iso");
             }
         } catch (ResourceAllocationException ex) {
+            s_logger.warn("Exception: ", ex);
             throw new ServerApiException(BaseCmd.RESOURCE_ALLOCATION_ERROR, ex.getMessage());
         }
     }

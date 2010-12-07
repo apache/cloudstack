@@ -92,10 +92,14 @@ public class AssociateIPAddrCmd extends BaseCmd {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to assign ip address");
             }
         } catch (ResourceAllocationException ex) {
+            s_logger.warn("Exception: ", ex);
             throw new ServerApiException(BaseCmd.RESOURCE_ALLOCATION_ERROR, ex.getMessage());
         } catch (ConcurrentOperationException ex) {
+            s_logger.warn("Exception: ", ex);
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
         } catch (InsufficientAddressCapacityException ex) {
+            s_logger.info(ex);
+            s_logger.trace(ex);
             throw new ServerApiException(BaseCmd.INSUFFICIENT_CAPACITY_ERROR, ex.getMessage());
         }
     }

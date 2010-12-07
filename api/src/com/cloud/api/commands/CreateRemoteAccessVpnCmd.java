@@ -167,8 +167,10 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create remote access vpn");
             }
         } catch (ResourceUnavailableException ex) {
+            s_logger.warn("Exception: ", ex);
             throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
         }  catch (ConcurrentOperationException ex) {
+            s_logger.warn("Exception: ", ex);
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
         }
     }

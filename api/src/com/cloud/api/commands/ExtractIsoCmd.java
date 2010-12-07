@@ -128,6 +128,7 @@ public class ExtractIsoCmd extends BaseAsyncCmd {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to extract iso");
             }
         } catch (InternalErrorException ex) {
+            s_logger.warn("Exception: ", ex);
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
         }
     }

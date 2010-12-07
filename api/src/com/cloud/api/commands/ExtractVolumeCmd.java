@@ -146,7 +146,8 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to extract volume");
             }
         } catch (URISyntaxException ex) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
+            s_logger.info(ex);
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, ex.getMessage());
         }
     }
 }

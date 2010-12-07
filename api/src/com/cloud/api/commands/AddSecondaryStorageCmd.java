@@ -84,6 +84,7 @@ public class AddSecondaryStorageCmd extends BaseCmd {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add secondary storage");
             }
         } catch (DiscoveryException ex) {
+            s_logger.warn("Exception: ", ex);
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
         }
     }

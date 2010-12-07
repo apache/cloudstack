@@ -116,6 +116,7 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd  implements 
             fwResponse.setResponseName(getName());
             setResponseObject(fwResponse);
         } catch (NetworkRuleConflictException ex) {
+            s_logger.warn("Exception: ", ex);
             throw new ServerApiException(BaseCmd.NETWORK_RULE_CONFLICT_ERROR, ex.getMessage());
         }
     }

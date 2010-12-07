@@ -121,6 +121,7 @@ public class RemoveVpnUserCmd extends BaseAsyncCmd {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to remove vpn user");
             }
         } catch (ConcurrentOperationException ex) {
+            s_logger.warn("Exception: ", ex);
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
         } 
     }

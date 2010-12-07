@@ -118,10 +118,13 @@ public class CreateStoragePoolCmd extends BaseCmd {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add storage pool");
             }
         } catch (ResourceAllocationException ex1) {
+            s_logger.warn("Exception: ", ex1);
             throw new ServerApiException(BaseCmd.RESOURCE_ALLOCATION_ERROR, ex1.getMessage());
         }catch (ResourceInUseException ex2) {
+            s_logger.warn("Exception: ", ex2);
             throw new ServerApiException(BaseCmd.RESOURCE_IN_USE_ERROR, ex2.getMessage());
         } catch (UnknownHostException ex3) {
+            s_logger.warn("Exception: ", ex3);
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex3.getMessage());
         }
     }

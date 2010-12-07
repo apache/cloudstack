@@ -110,6 +110,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  implements Lo
         try {
             result = _lbService.createLoadBalancerRule(this);
         } catch (NetworkRuleConflictException e) {
+            s_logger.warn("Exception: ", e);
             throw new ServerApiException(BaseCmd.NETWORK_RULE_CONFLICT_ERROR, e.getMessage());
         }
         LoadBalancerResponse response = _responseGenerator.createLoadBalancerResponse(result);
