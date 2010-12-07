@@ -889,10 +889,12 @@ function ipJsonToDetailsTab() {
 	if(noAvailableActions == true) {
 	    $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());
 	}	
-    
+      
 	//populate dropdown
 	var IpDomainid = ipObj.domainid;
     var IpAccount = ipObj.account;
+    ipPopulateVMarray(IpDomainid, IpAccount); //popoulate VM array
+    
     var $vmSelect = $("#dialog_enable_static_NAT").find("#vm_dropdown").empty();		
     ipPopulateVMDropdown($vmSelect, IpDomainid, IpAccount);
 	
@@ -1216,20 +1218,15 @@ function refreshCreatePortForwardingRow() {
     var $vmSelect = $createPortForwardingRow.find("#vm").empty();		
     ipPopulateVMDropdown($vmSelect, IpDomainid, IpAccount);
 }	
-   
-function ipPopulateVMDropdown($vmSelect, IpDomainid, IpAccount) {
+
+var runningVMs, stoppedVMs;
+function ipPopulateVMarray(IpDomainid, IpAccount) {    
     $.ajax({
 	    data: createURL("command=listVirtualMachines&domainid="+IpDomainid+"&account="+IpAccount+"&state=Running"),
 	    dataType: "json",
 	    async: false,
 	    success: function(json) {			    
-		    var instances = json.listvirtualmachinesresponse.virtualmachine;
-		    if (instances != null && instances.length > 0) {
-			    for (var i = 0; i < instances.length; i++) {								
-			        var html = $("<option value='" + fromdb(instances[i].id) + "'>" + getVmName(instances[i].name, instances[i].displayname) + "</option>");							        
-		            $vmSelect.append(html); 								
-			    }			    
-		    } 
+		    runningVMs = json.listvirtualmachinesresponse.virtualmachine;
 	    }
     });	
     
@@ -1238,15 +1235,24 @@ function ipPopulateVMDropdown($vmSelect, IpDomainid, IpAccount) {
 	    dataType: "json",
 	    async: false,
 	    success: function(json) {			    
-		    var instances = json.listvirtualmachinesresponse.virtualmachine;
-		    if (instances != null && instances.length > 0) {
-			    for (var i = 0; i < instances.length; i++) {								
-			        var html = $("<option value='" + fromdb(instances[i].id) + "'>" + getVmName(instances[i].name, instances[i].displayname) + "</option>");							        
-		            $vmSelect.append(html); 								
-			    }			    
-		    } 
+		    stoppedVMs = json.listvirtualmachinesresponse.virtualmachine;		    
 	    }
     });	
+}   
+      
+function ipPopulateVMDropdown($vmSelect, IpDomainid, IpAccount) {    
+    if (runningVMs != null && runningVMs.length > 0) {
+	    for (var i = 0; i < runningVMs.length; i++) {								
+	        var html = $("<option value='" + fromdb(runningVMs[i].id) + "'>" + getVmName(runningVMs[i].name, runningVMs[i].displayname) + "</option>");							        
+            $vmSelect.append(html); 								
+	    }			    
+    } 
+    if (stoppedVMs != null && stoppedVMs.length > 0) {
+	    for (var i = 0; i < stoppedVMs.length; i++) {								
+	        var html = $("<option value='" + fromdb(stoppedVMs[i].id) + "'>" + getVmName(stoppedVMs[i].name, stoppedVMs[i].displayname) + "</option>");							        
+            $vmSelect.append(html); 								
+	    }			    
+    } 	
 }	    
 //***** Port Forwarding tab (end) **********************************************************************************************************
 
