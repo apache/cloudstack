@@ -909,19 +909,20 @@ function initVMWizard() {
 			if ($selectedDirectNetworks != null) {
 				var networkIds = [];
 				var $reviewNetworkTemplate = $("#wizard_network_direct_review_template");
-				for (var i = 0; i < $selectedDirectNetworks.length; i++) {
-					var json = $selectedDirectNetworks.data("jsonObj")
+				
+				$selectedDirectNetworks.each(function(i) {
+					var json = $(this).data("jsonObj");
 					networkIds.push(","+json.id);
 					$reviewNetworkElement = $reviewNetworkTemplate.clone().attr("id", json.id);
 					if (i % 2 == 0) {
-						$reviewNetworkTemplate.addClass("odd");
+						$reviewNetworkTemplate.removeClass("even").addClass("odd");
 					} else {
-						$reviewNetworkTemplate.addClass("even");
+						$reviewNetworkTemplate.removeClass("odd").addClass("even");
 					}
 					$reviewNetworkElement.find("#wizard_review_network_label").text("Network " + (i+2) + ":");
 					$reviewNetworkElement.find("#wizard_review_network_selected").text(json.name);
 					$reviewNetworkContainer.append($reviewNetworkElement.show());
-				}
+				});
 				$reviewNetworkContainer.data("directNetworkIds", networkIds.join(""));
 			} else {
 				$reviewNetworkContainer.data("directNetworkIds", null);
