@@ -1272,7 +1272,12 @@ public class UserVmManagerImpl implements UserVmManager {
                 	throw rae;
                 }
 
-            	poolid = _storageMgr.createUserVM(account, vm, template, dc, pod.first(), offering, diskOffering, avoids);
+                poolid = 0;
+                try {
+                	poolid = _storageMgr.createUserVM(account, vm, template, dc, pod.first(), offering, diskOffering, avoids);
+                } catch (Exception e) {
+                    s_logger.warn("Caught exception on creation but will retry.", e);
+                } 
                 if ( poolid != 0) {
                     break;
                 }
