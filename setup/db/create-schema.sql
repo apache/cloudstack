@@ -141,6 +141,8 @@ CREATE TABLE `cloud`.`networks` (
   `guest_type` char(32) COMMENT 'type of guest network',
   `shared` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '0 if network is shared, 1 if network dedicated',
   `network_domain` varchar(255) COMMENT 'domain',
+  `created` datetime NOT NULL COMMENT 'date created',
+  `removed` datetime COMMENT 'date removed if not null',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -183,6 +185,8 @@ CREATE TABLE `cloud`.`nics` (
   `isolation_uri` varchar(255) COMMENT 'id for isolation',
   `ip6_address` varchar(32) COMMENT 'ip6 address',
   `default_nic` tinyint NOT NULL COMMENT "None", 
+  `created` datetime NOT NULL COMMENT 'date created',
+  `removed` datetime COMMENT 'date removed if not null',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

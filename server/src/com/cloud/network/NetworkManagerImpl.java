@@ -1884,7 +1884,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         List<NicVO> nics = _nicDao.listByNetworkId(networkId);
         for (NicVO nic : nics) {
             UserVm vm = _vmDao.findById(nic.getId());
-            if (vm.getState() != State.Destroyed || vm.getState() != State.Expunging || vm.getState() != State.Error) {
+            if (vm != null && (vm.getState() != State.Destroyed || vm.getState() != State.Expunging || vm.getState() != State.Error)) {
                 throw new CloudRuntimeException("Can't delete a network; make sure that all vms using the network are destroyed");
             }
         }

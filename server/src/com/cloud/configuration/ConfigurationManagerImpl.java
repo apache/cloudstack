@@ -1830,10 +1830,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     		throw new InvalidParameterValueException("Please specify a valid IP range id.");
     	}
     	
-    	if (vlan.getNetworkId() != null) {
-    	    throw new InvalidParameterValueException("Fail to delete a vlan range as there are networks associated with it");
-    	}
-    	
     	// Check if the VLAN has any allocated public IPs
     	if (_publicIpAddressDao.countIPs(vlan.getDataCenterId(), vlanDbId, true) > 0) {
     		throw new InvalidParameterValueException("The IP range can't be deleted because it has allocated public IP addresses.");
@@ -2389,12 +2385,20 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
 	@Override
 	public boolean deleteVlanIpRange(DeleteVlanIpRangeCmd cmd) throws InvalidParameterValueException {
-		
     	Long vlanDbId = cmd.getId();
     	Long userId = UserContext.current().getUserId();
     	
     	if (userId == null) {
             userId = Long.valueOf(User.UID_SYSTEM);
+        }
+    	
+    	VlanVO vlan = _vlanDao.findById(vlanDbId);
+        if (vlan == null) {
+            throw new InvalidParameterValueException("Please specify a valid IP range id.");
+        }
+    	
+    	if (vlan.getNetworkId() != null) {
+            throw new InvalidParameterValueException("Fail to delete a vlan range as there are networks associated with it");
         }
 
     	return deleteVlanAndPublicIpRange(userId, vlanDbId);

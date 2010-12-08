@@ -18,6 +18,7 @@
 package com.cloud.network;
 
 import java.net.URI;
+import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -33,6 +34,7 @@ import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.net.NetUtils;
 
 /**
@@ -120,6 +122,13 @@ public class NetworkVO implements Network {
     
     @Column(name="network_domain")
     String networkDomain;
+    
+    @Column(name=GenericDao.REMOVED_COLUMN)
+    Date removed;
+    
+    @Column(name=GenericDao.CREATED_COLUMN)
+    Date created;
+    
     
     public NetworkVO() {
     }
@@ -352,6 +361,22 @@ public class NetworkVO implements Network {
 
     public void setShared(boolean isShared) {
         this.isShared = isShared;
+    }
+
+    public Date getRemoved() {
+        return removed;
+    }
+
+    public void setRemoved(Date removed) {
+        this.removed = removed;
+    }
+
+    public Date getCreated() {
+        return created;
+    }
+
+    public void setCreated(Date created) {
+        this.created = created;
     }
 
     @Override

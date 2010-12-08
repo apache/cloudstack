@@ -31,6 +31,7 @@ import javax.persistence.Table;
 
 import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.Mode;
+import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="nics")
@@ -99,6 +100,12 @@ public class NicVO implements Nic {
     @Column(name="strategy")
     @Enumerated(value=EnumType.STRING)
     ReservationStrategy strategy;
+    
+    @Column(name=GenericDao.REMOVED_COLUMN)
+    Date removed;
+    
+    @Column(name=GenericDao.CREATED_COLUMN)
+    Date created;
 
     public NicVO(String reserver, long instanceId, long configurationId) {
         this.reserver = reserver;
@@ -279,5 +286,21 @@ public class NicVO implements Nic {
     @Override
     public Date getUpdateTime() {
         return updateTime;
+    }
+
+    public Date getRemoved() {
+        return removed;
+    }
+
+    public void setRemoved(Date removed) {
+        this.removed = removed;
+    }
+
+    public Date getCreated() {
+        return created;
+    }
+
+    public void setCreated(Date created) {
+        this.created = created;
     }
 }
