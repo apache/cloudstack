@@ -55,7 +55,6 @@ public class Db21to22MigrationUtil {
      * This method migrates the zones based on bug: 7204
      * based on the param direct.attach.untagged.vlan.enabled, we update zone to basic or advanced for 2.2
      */
-    @DB 
     private void migrateZones(){
     	try {
 			System.out.println("Migrating zones");
