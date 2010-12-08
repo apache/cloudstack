@@ -978,10 +978,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             NetworkGuru guru = _networkGurus.get(config.getGuruName());
             Network.State state = config.getState();
             if (state == Network.State.Implemented || state == Network.State.Setup) {
-                if (state == Network.State.Setup) {
-                    config.setState(Network.State.Implemented);
-                    _networksDao.update(networkId, config);
-                }
                 implemented.set(guru, config);
                 return implemented;
             }
