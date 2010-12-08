@@ -26,7 +26,6 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.FirewallRuleResponse;
 import com.cloud.api.response.IpForwardingRuleResponse;
 import com.cloud.api.response.ListResponse;
@@ -43,7 +42,7 @@ public class ListIpForwardingRulesCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
     
-    @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, description="list the rule belonging to this public ip address")
+    @Parameter(name=ApiConstants.IP_ADDRESS, required=true, type=CommandType.STRING, description="list the rule belonging to this public ip address")
     private String publicIpAddress;
 
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the account associated with the ip forwarding rule. Must be used with the domainId parameter.")

@@ -44,7 +44,7 @@ public class PortForwardingRulesDaoImpl extends GenericDaoBase<PortForwardingRul
         AllFieldsSearch.and("id", AllFieldsSearch.entity().getId(), Op.EQ);
         AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), Op.EQ);
         AllFieldsSearch.and("ip", AllFieldsSearch.entity().getSourceIpAddress(), Op.EQ);
-        AllFieldsSearch.and("proto", AllFieldsSearch.entity().getProtocol(), Op.EQ);
+        AllFieldsSearch.and("protocol", AllFieldsSearch.entity().getProtocol(), Op.EQ);
         AllFieldsSearch.done();
         
         ApplicationSearch = createSearchBuilder();

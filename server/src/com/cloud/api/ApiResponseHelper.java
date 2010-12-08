@@ -1066,7 +1066,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setPublicPort(Integer.toString(fwRule.getSourcePortStart()));
         response.setPublicIpAddress(fwRule.getSourceIpAddress().toString());
         if (fwRule.getSourceIpAddress() != null && fwRule.getDestinationIpAddress() != null) {
-            //UserVm vm = ApiDBUtils.findUserVmByPublicIpAndGuestIp(fwRule.getSourceIpAddress().toString(), fwRule.getDestinationIpAddress().toString());
             UserVm vm = ApiDBUtils.findUserVmById(fwRule.getVirtualMachineId());
             if(vm != null){
             	response.setVirtualMachineId(vm.getId());
@@ -1091,13 +1090,19 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setProtocol(fwRule.getProtocol());
         response.setPublicIpAddress(fwRule.getSourceIpAddress().addr());
         if (fwRule.getSourceIpAddress() != null && fwRule.getDestinationIpAddress() != null) {
-            UserVm vm = ApiDBUtils.findUserVmByPublicIpAndGuestIp(fwRule.getSourceIpAddress().addr(), fwRule.getDestinationIpAddress().addr());
+            UserVm vm = ApiDBUtils.findUserVmById(fwRule.getVirtualMachineId());
             if(vm != null){//vm might be destroyed
             	response.setVirtualMachineId(vm.getId());
             	response.setVirtualMachineName(vm.getHostName());
             	response.setVirtualMachineDisplayName(vm.getDisplayName());
             }
         }
+        FirewallRule.State state = fwRule.getState();
+        String stateToSet = state.toString();
+        if (state.equals(FirewallRule.State.Revoke)) {
+            stateToSet = "Deleting";
+        }
+        response.setState(stateToSet);
         response.setObjectName("ipforwardingrule");
         return response;
     }
