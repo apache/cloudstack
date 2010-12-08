@@ -131,8 +131,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 			
 			// If this is a premium environment, set the network type to be "vlan"
 			if (_configDao.isPremium()) {
-				_configDao.update("network.type", "vlan");
-				s_logger.debug("ConfigurationServer changed the network type to \"vlan\".");
+//				_configDao.update("network.type", "vlan");
+//				s_logger.debug("ConfigurationServer changed the network type to \"vlan\".");
 				
 				_configDao.update("hypervisor.type", "xenserver");
 				s_logger.debug("ConfigurationServer changed the hypervisor type to \"xenserver\".");

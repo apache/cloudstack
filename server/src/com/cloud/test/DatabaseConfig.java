@@ -212,7 +212,7 @@ public class DatabaseConfig {
         s_configurationDescriptions.put("snapshot.test.days.per.month", "Set it to a smaller value to take more recurring snapshots");
         s_configurationDescriptions.put("snapshot.test.weeks.per.month", "Set it to a smaller value to take more recurring snapshots");
         s_configurationDescriptions.put("snapshot.test.months.per.year", "Set it to a smaller value to take more recurring snapshots");
-        s_configurationDescriptions.put("network.type", "The type of network that this deployment will use.");
+//        s_configurationDescriptions.put("network.type", "The type of network that this deployment will use.");
         s_configurationDescriptions.put("hypervisor.type", "The type of hypervisor that this deployment will use.");
         
         
@@ -290,7 +290,7 @@ public class DatabaseConfig {
         s_configurationComponents.put("snapshot.test.days.per.month", "SnapshotManager");
         s_configurationComponents.put("snapshot.test.weeks.per.month", "SnapshotManager");
         s_configurationComponents.put("snapshot.test.months.per.year", "SnapshotManager");
-        s_configurationComponents.put("network.type", "ManagementServer");
+//        s_configurationComponents.put("network.type", "ManagementServer");
         s_configurationComponents.put("hypervisor.type", "ManagementServer");
 
         
@@ -337,7 +337,7 @@ public class DatabaseConfig {
         s_defaultConfigurationValues.put("system.vm.use.local.storage", "false");
         s_defaultConfigurationValues.put("use.local.storage", "false");
         s_defaultConfigurationValues.put("init", "false");
-        s_defaultConfigurationValues.put("network.type", "vnet");
+//        s_defaultConfigurationValues.put("network.type", "vnet");
         s_defaultConfigurationValues.put("hypervisor.type", "kvm");
     }
     

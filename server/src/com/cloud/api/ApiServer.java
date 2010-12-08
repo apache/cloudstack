@@ -647,9 +647,9 @@ public class ApiServer implements HttpRequestHandler {
         	
         	Account account = _ms.findAccountById(userAcct.getAccountId());
 
-            String networkType = _ms.getConfigurationValue("network.type");
-            if (networkType == null) 
-            	networkType = "vnet";
+//            String networkType = _ms.getConfigurationValue("network.type");
+//            if (networkType == null) 
+//            	networkType = "vnet";
             
             String hypervisorType = _ms.getConfigurationValue("hypervisor.type");
             if (hypervisorType == null) 
@@ -676,7 +676,7 @@ public class ApiServer implements HttpRequestHandler {
             session.setAttribute("account", account.getAccountName());
             session.setAttribute("domainid", account.getDomainId());
             session.setAttribute("type", Short.valueOf(account.getType()).toString());
-            session.setAttribute("networktype", networkType);
+//            session.setAttribute("networktype", networkType);
             session.setAttribute("hypervisortype", hypervisorType);
             session.setAttribute("directattachnetworkgroupsenabled", directAttachNetworkGroupsEnabled);
             session.setAttribute("directattacheduntaggedenabled", directAttachedUntaggedEnabled);
