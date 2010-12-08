@@ -8,14 +8,20 @@ import java.util.List;
 import org.apache.log4j.xml.DOMConfigurator;
 
 import com.cloud.configuration.ResourceCount.ResourceType;
+import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.ResourceCountVO;
+import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceCountDao;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.DataCenter.NetworkType;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.user.Account;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
@@ -30,7 +36,9 @@ public class Db21to22MigrationUtil {
     private ResourceCountDao _resourceCountDao;
     private InstanceGroupDao _vmGroupDao;
     private InstanceGroupVMMapDao _groupVMMapDao;
-
+    private ConfigurationDao _configurationDao;
+    private DataCenterDao _zoneDao;
+    
     private void doMigration() {
         setupComponents();
 
@@ -38,9 +46,36 @@ public class Db21to22MigrationUtil {
         
         setupInstanceGroups();
 
+        migrateZones();
+        
         System.out.println("Migration done");
     }
 
+    /**
+     * This method migrates the zones based on bug: 7204
+     * based on the param direct.attach.untagged.vlan.enabled, we update zone to basic or advanced for 2.2
+     */
+    @DB 
+    private void migrateZones(){
+    	try {
+			System.out.println("Migrating zones");
+			String val = _configurationDao.getValue("direct.attach.untagged.vlan.enabled");
+			NetworkType networkType;
+			if(val == null || val.equalsIgnoreCase("true")){
+				networkType = NetworkType.Basic;
+			}else{
+				networkType = NetworkType.Advanced;
+			}
+			List<DataCenterVO> existingZones = _zoneDao.listAll();
+			for(DataCenterVO zone : existingZones){
+				zone.setNetworkType(networkType);
+				_zoneDao.update(zone.getId(), zone);
+			}
+		} catch (Exception e) {
+			System.out.println("Unhandled exception in migrateZones()" + e);
+		}
+    }
+    
     private void migrateResourceCounts() {
         System.out.println("migrating resource counts");
         SearchBuilder<ResourceCountVO> sb = _resourceCountDao.createSearchBuilder();
@@ -74,6 +109,8 @@ public class Db21to22MigrationUtil {
         _resourceCountDao = locator.getDao(ResourceCountDao.class);
         _vmGroupDao = locator.getDao(InstanceGroupDao.class);
         _groupVMMapDao = locator.getDao(InstanceGroupVMMapDao.class);
+        _configurationDao = locator.getDao(ConfigurationDao.class);
+        _zoneDao = locator.getDao(DataCenterDao.class);
     }
     
     private void setupInstanceGroups() {
