@@ -1038,7 +1038,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         try {
             NetworkGuru guru = _networkGurus.get(config.getGuruName());
-            if (config.getState() == Network.State.Implemented || config.getState() == Network.State.Setup) {
+            Network.State state = config.getState();
+            if (state == Network.State.Implemented || state == Network.State.Setup) {
+                if (state == Network.State.Setup) {
+                    config.setState(Network.State.Implemented);
+                    _networkConfigDao.update(configId, config);
+                }
                 implemented.set(guru, config);
                 return implemented;
             }
