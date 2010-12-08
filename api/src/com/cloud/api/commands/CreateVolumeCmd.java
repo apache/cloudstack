@@ -153,6 +153,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create volume");
             }
         } catch (ResourceAllocationException ex) {
+            s_logger.warn("Exception: ", ex);
             throw new ServerApiException(BaseCmd.RESOURCE_ALLOCATION_ERROR, ex.getMessage());
         } 
     }

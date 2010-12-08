@@ -66,6 +66,7 @@ public class DeleteNetworkGroupCmd extends BaseCmd {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete network group");
             }
         } catch (ResourceInUseException ex) {
+            s_logger.warn("Exception: ", ex);
             throw new ServerApiException(BaseCmd.RESOURCE_IN_USE_ERROR, ex.getMessage());
         }
     }

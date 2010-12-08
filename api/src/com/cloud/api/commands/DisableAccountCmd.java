@@ -93,8 +93,8 @@ public class DisableAccountCmd extends BaseAsyncCmd {
             AccountResponse response = _responseGenerator.createAccountResponse(result);
             response.setResponseName(getName());
             this.setResponseObject(response);
-    } else {
-        throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to disable account");
-    }
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to disable account");
+        }
     }
 }
