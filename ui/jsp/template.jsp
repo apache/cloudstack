@@ -182,8 +182,18 @@
 	                    <select class="select" id="ostypename_edit" style="width: 202px; display: none;">                      
 	                    </select>
 	                </div>
-	            </div>
+	            </div>	            
 	            <div class="grid_rows even">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <%=t.t("hypervisor")%>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="hypervisor">
+	                    </div>                   
+	                </div>
+	            </div>	            
+	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <%=t.t("Account")%>:</div>
@@ -193,7 +203,7 @@
 	                    </div>                   
 	                </div>
 	            </div>
-				<div class="grid_rows odd">
+				<div class="grid_rows even">
 					<div class="grid_row_cell" style="width: 20%;">
 						<div class="row_celltitles">
 							<%=t.t("Domain")%>:</div>
@@ -203,7 +213,7 @@
 						</div>
 					</div>
 				</div>
-	            <div class="grid_rows even">
+	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <%=t.t("Created")%>:</div>
