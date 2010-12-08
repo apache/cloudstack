@@ -262,7 +262,8 @@ conf.env.CLASSPATH = pathsep.join(compilecp)
 conf.check_message_2('Done','GREEN')
 
 # log4j config and property config files require backslash escapes on Windows
-conf.env.VERSION = Utils.g_module.VERSION
+#conf.env.VERSION = Utils.g_module.VERSION
+conf.env.VERSION = Utils.getbuildnumber ()
 
 conf.env.AGENTLIBDIR = Utils.subst_vars(_join("${LIBDIR}","${AGENTPATH}"),conf.env)
 conf.env.AGENTSYSCONFDIR = Utils.subst_vars(_join("${SYSCONFDIR}","${AGENTPATH}"),conf.env)

@@ -53,6 +53,7 @@ def build_jars ():
 		"-Ddist.dir=%s" % distdir,
 		"-Dbase.dir=%s" % sourcedir,
 		"-f %s" % Utils.relpath (_join(sourcedir, "build.xml")),
+		"-Dimpl.version=%s" % Utils.getbuildnumber (),
 	]
 	if not buildpremium: ant_args += ["-DOSS=true"]
 
