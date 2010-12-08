@@ -106,9 +106,9 @@ function afterLoadInstanceJSP() {
     initDestroyVMButton();
     
     // switch between different tabs 
-    var tabArray = [$("#tab_details"), $("#tab_volume"), $("#tab_statistics"), $("#tab_router")];
-    var tabContentArray = [$("#tab_content_details"), $("#tab_content_volume"), $("#tab_content_statistics"), $("#tab_content_router")];
-    var afterSwitchFnArray = [vmJsonToDetailsTab, vmJsonToVolumeTab, vmJsonToStatisticsTab, vmJsonToRouterTab];
+    var tabArray = [$("#tab_details"), $("#tab_nic"), $("#tab_volume"), $("#tab_statistics"), $("#tab_router")];
+    var tabContentArray = [$("#tab_content_details"), $("#tab_content_nic"), $("#tab_content_volume"), $("#tab_content_statistics"), $("#tab_content_router")];
+    var afterSwitchFnArray = [vmJsonToDetailsTab, vmJsonToNicTab, vmJsonToVolumeTab, vmJsonToStatisticsTab, vmJsonToRouterTab];
     switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray);       
     
     //initialize VM Wizard  
@@ -830,7 +830,7 @@ function initVMWizard() {
 	            diskOfferingName += (" (Disk Size: " + $diskOfferingElement.find("#custom_disk_size").val() + " MB)");
 	        $thisPopup.find("#wizard_review_disk_offering").text(diskOfferingName);  
 			
-			//Setup Networking before showing it
+			//Setup Networking before showing it.  This only applies to zones with Advanced Networking support.
 			// Setup networks
 			// hardcoded text for now
 			var networkName = "Virtual Network";
@@ -1593,6 +1593,27 @@ function vmJsonToDetailsTab(){
 	
 }
 
+function vmJsonToNicTab() {  
+	var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");	
+	if ($midmenuItem1 == null) 
+	    return;
+		
+	var jsonObj = $midmenuItem1.data("jsonObj");	
+    if(jsonObj == null)
+        return;	
+	
+	var $thisTab = $("#right_panel_content").find("#tab_content_nic");  		
+	
+	var nics = jsonObj.nic;
+	var template = $("#nic_tab_template");
+	var $container = $thisTab.find("#tab_container").empty();
+	for (var i = 0; i < nics.length; i++) {
+		var newTemplate = template.clone(true);
+		vmNicJSONToTemplate(nics[i], newTemplate, i+1); 
+		$container.append(newTemplate.show());
+	}
+}
+
 function vmJsonToVolumeTab() {  
 	var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");	
 	if ($midmenuItem1 == null) 
@@ -1731,6 +1752,15 @@ var vmVolumeActionMap = {
         afterActionSeccessFn: function(json, id, $subgridItem) {}         
     }  
 }     
+
+function vmNicJSONToTemplate(json, $template, index) {
+	$template.attr("id","vm_nic_"+fromdb(json.id));
+	$template.find("#title").text(fromdb("NIC " + index));
+	$template.find("#ip").text(fromdb(json.ipaddress));
+	$template.find("#type").text(fromdb(json.type)); 
+	$template.find("#gateway").text(fromdb(json.gateway)); 
+	$template.find("#netmask").text(fromdb(json.netmask)); 
+}
 
 function vmVolumeJSONToTemplate(json, $template) {
     $template.attr("id","vm_volume_"+fromdb(json.id));	        

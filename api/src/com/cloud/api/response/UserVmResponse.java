@@ -146,7 +146,7 @@ public class UserVmResponse extends BaseResponse {
     	return getId();
     }
 
-    @SerializedName("nics")  @Param(description="the list of nics associated with vm")
+    @SerializedName("nic")  @Param(description="the list of nics associated with vm")
     private List<NicResponse> nics;
     
     public Long getId() {

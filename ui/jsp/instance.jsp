@@ -10,6 +10,78 @@
     CloudResourceBundle t = CloudResourceBundle.getBundle("resources/resource", browserLocale);
 %>
 
+<!--  nic tab template (begin) -->
+<div class="grid_container" id="nic_tab_template" style="display: none">	
+    <div class="grid_header">
+        <div class="grid_header_title" id="title">
+        </div>
+		<!--
+        <div class="grid_actionbox" id="volume_action_link">
+            <div class="grid_actionsdropdown_box" id="nic_action_menu" style="display: none;">
+                <ul class="actionsdropdown_boxlist" id="action_list">
+                </ul>
+            </div>
+        </div>
+        <div class="gridheader_loaderbox" id="spinning_wheel" style="display: none; border: 1px solid #999; ">
+            <div class="gridheader_loader" id="icon">
+            </div>
+            <p id="description">
+                Waiting &hellip;
+            </p>
+        </div>    
+		-->
+    </div>
+    
+    <div class="grid_rows" id="after_action_info_container" style="display:none">
+        <div class="grid_row_cell" style="width: 90%; border: none;">
+            <div class="row_celltitles">
+                <strong id="after_action_info">Message will appear here</strong></div>
+        </div>
+    </div>
+        
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                IP:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="ip">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows odd">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                Gateway:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="gateway">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                Netmask:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="netmask">
+            </div>
+        </div>
+    </div>
+	<div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                Type:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="type">
+            </div>
+        </div>
+    </div>
+</div>
+<!--  nic tab template (end) -->
+
 
 
 <!-- VM detail panel (begin) -->
@@ -28,8 +100,10 @@
     <div class="tabbox" style="margin-top: 15px;">
         <div class="content_tabs on" id="tab_details">
             <fmt:message key="label.details" /></div>
+		<div class="content_tabs off" id="tab_nic">
+            <%=t.t("NICs")%></div>
         <div class="content_tabs off" id="tab_volume">
-            <%=t.t("Volume")%></div>
+            <%=t.t("Volumes")%></div>
         <div class="content_tabs off" id="tab_statistics">
             <%=t.t("Statistics")%></div>
         <div class="content_tabs off" id="tab_router" style="display:none">
@@ -231,6 +305,18 @@
 	    </div>
     </div>  
     <!--Details tab (end)-->
+	<!--Nic tab (start)-->
+    <div style="display: none;" id="tab_content_nic">    
+        <div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display:none;">
+              <div class="rightpanel_mainloaderbox">
+                   <div class="rightpanel_mainloader_animatedicon"></div>
+                   <p>Loading &hellip;</p>    
+              </div>               
+        </div> 
+        <div id="tab_container">        
+        </div>
+    </div>
+    <!--Nic tab (end)-->
     <!--Volume tab (start)-->
     <div style="display: none;" id="tab_content_volume">    
         <div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display:none;">
