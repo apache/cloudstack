@@ -177,3 +177,32 @@
     </div>
     <!-- ***** Direct Network (end) ***** -->
 </div>
+
+<!--  Direct Network - IP Allocation tab template (begin) -->
+<div class="grid_container" id="directnetwork_iprange_template" style="display: none">
+    <div class="grid_header">
+        <div class="grid_header_title" id="grid_header_title">
+        </div>        
+    </div>    
+    <div class="grid_rows odd">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                Start IP:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="startip">
+            </div>
+        </div>
+    </div>    
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                End IP:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="endip">
+            </div>
+        </div>
+    </div> 
+</div>
+<!--  Direct Network - IP Allocation tab template (end) -->

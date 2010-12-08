@@ -72,9 +72,8 @@ function directNetworkToMidmenu(jsonObj, $midmenuItem1) {
     $iconContainer.find("#icon").attr("src", "images/midmenuicon_storage_snapshots.png");		
     */
          
-    $midmenuItem1.find("#first_row").text("VLAN " + fromdb(jsonObj.vlan)); 
-    $midmenuItem1.find("#second_row").text(fromdb(getIpRange(jsonObj.startip, jsonObj.endip)));   
-    
+    $midmenuItem1.find("#first_row").text(fromdb(jsonObj.name).substring(0,25)); 
+    $midmenuItem1.find("#second_row").text("VLAN " + fromdb(jsonObj.vlan));   
 }
 
 function directNetworkToRightPanel($midmenuItem1) {    
@@ -133,12 +132,34 @@ function directNetworkJsonToIpAllocationTab() {
 	var $thisTab = $("#right_panel_content #direct_network_page #tab_content_ipallocation");      
     $thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();   
+         
+    $.ajax({
+		data: createURL("command=listVlanIpRanges&zoneid="+ jsonObj.zoneid + "&networkid="+jsonObj.id),
+		dataType: "json",		
+		success: function(json) {
+		    var items = json.listvlaniprangesresponse.vlaniprange;		    
+		    var $container = $thisTab.find("#tab_container").empty();
+		    var $template = $("#directnetwork_iprange_template");
+		    if(items != null && items.length > 0) {		        
+		        for(var i=0; i<items.length; i++) {
+		            var $newTemplate = $template.clone();
+		            directNetworkIprangeJsonToTemplate(items[i], $newTemplate);
+		            $container.append($newTemplate.show());
+		        }
+		    }		    
+		    $thisTab.find("#tab_container").show(); 
+            $thisTab.find("#tab_spinning_wheel").hide();    
+		}
+    });  
+}
+
+function directNetworkIprangeJsonToTemplate(jsonObj, $template) {    
+    $template.attr("id", "directNetworkIprange_" + jsonObj.id);
     
-     
+    var ipRange = getIpRange(jsonObj.startip, jsonObj.endip);
+    $template.find("#grid_header_title").text(ipRange);
     
-    
-    
-    $thisTab.find("#tab_container").show(); 
-    $thisTab.find("#tab_spinning_wheel").hide();    
+    $template.find("#startip").text(jsonObj.startip);
+    $template.find("#endip").text(jsonObj.endip);
 }
 
