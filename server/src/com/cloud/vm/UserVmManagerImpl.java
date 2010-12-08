@@ -207,7 +207,7 @@ import com.cloud.vm.dao.InstanceGroupVMMapDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 @Local(value={UserVmManager.class, UserVmService.class})
-public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualMachineGuru<UserVmVO>, Manager, VirtualMachineManager<UserVmVO> {
+public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualMachineGuru<UserVmVO>, Manager {
     private static final Logger s_logger = Logger.getLogger(UserVmManagerImpl.class);
 	private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 3; 	// 3 seconds
 
@@ -255,7 +255,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, VirtualM
     @Inject EventDao _eventDao = null;
     @Inject InstanceGroupDao _vmGroupDao;
     @Inject InstanceGroupVMMapDao _groupVMMapDao;
-    @Inject VmManager _itMgr;
+    @Inject VirtualMachineManager _itMgr;
     @Inject NetworkDao _networkDao;
     @Inject DomainRouterManager _routerMgr;
     @Inject NicDao _nicDao;

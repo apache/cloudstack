@@ -117,7 +117,7 @@ import com.cloud.utils.component.ComponentLocator.ComponentInfo;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.ItWorkDaoImpl;
-import com.cloud.vm.MauriceMoss;
+import com.cloud.vm.VirtualMachineManagerImpl;
 import com.cloud.vm.UserVmManagerImpl;
 import com.cloud.vm.dao.ConsoleProxyDaoImpl;
 import com.cloud.vm.dao.DomainRouterDaoImpl;
@@ -279,7 +279,7 @@ public class DefaultComponentLibrary implements ComponentLibrary {
         addManager("Snapshot Manager", SnapshotManagerImpl.class);
         addManager("SnapshotScheduler", SnapshotSchedulerImpl.class);
         addManager("NetworkGroupManager", NetworkGroupManagerImpl.class);
-        addManager("VmManager", MauriceMoss.class);
+        addManager("VmManager", VirtualMachineManagerImpl.class);
         addManager("DomainRouterManager", DomainRouterManagerImpl.class);
         addManager("EntityManager", EntityManagerImpl.class);
         addManager("LoadBalancingRulesManager", LoadBalancingRulesManagerImpl.class);

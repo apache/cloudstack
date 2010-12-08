@@ -137,10 +137,9 @@ import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.State;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineGuru;
-import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.VmManager;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
@@ -165,7 +164,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 // because sooner or later, it will be driven into Running state
 //
 @Local(value={SecondaryStorageVmManager.class})
-public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, VirtualMachineManager<SecondaryStorageVmVO>, VirtualMachineGuru<SecondaryStorageVmVO> {
+public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, VirtualMachineGuru<SecondaryStorageVmVO> {
 	private static final Logger s_logger = Logger.getLogger(SecondaryStorageManagerImpl.class);
 
 	private static final int DEFAULT_FIND_HOST_RETRY_COUNT = 2;
@@ -222,7 +221,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     @Inject private ServiceOfferingDao _offeringDao;
     @Inject private AccountService _accountMgr;
     @Inject GuestOSDao _guestOSDao = null;
-    @Inject private VmManager _itMgr;
+    @Inject private VirtualMachineManager _itMgr;
     @Inject private NicDao _nicDao;
     @Inject private NetworkDao _networkDao;
     

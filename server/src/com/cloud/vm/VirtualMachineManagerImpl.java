@@ -95,9 +95,9 @@ import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
-@Local(value=VmManager.class)
-public class MauriceMoss implements VmManager, ClusterManagerListener {
-    private static final Logger s_logger = Logger.getLogger(MauriceMoss.class);
+@Local(value=VirtualMachineManager.class)
+public class VirtualMachineManagerImpl implements VirtualMachineManager, ClusterManagerListener {
+    private static final Logger s_logger = Logger.getLogger(VirtualMachineManagerImpl.class);
     
     String _name;
     @Inject private StorageManager _storageMgr;
@@ -317,7 +317,7 @@ public class MauriceMoss implements VmManager, ClusterManagerListener {
         return _name;
     }
     
-    protected MauriceMoss() {
+    protected VirtualMachineManagerImpl() {
     }
     
     @Override

@@ -71,7 +71,7 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachineGuru;
-import com.cloud.vm.VmManager;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.VMInstanceDao;
 
 /**
@@ -131,7 +131,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
     @Inject StorageManager _storageMgr;
     @Inject GuestOSDao _guestOSDao;
     @Inject GuestOSCategoryDao _guestOSCategoryDao;
-    @Inject VmManager _itMgr;
+    @Inject VirtualMachineManager _itMgr;
     
     String _instance;
     ScheduledExecutorService _executor;

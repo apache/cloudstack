@@ -158,10 +158,9 @@ import com.cloud.vm.State;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineGuru;
-import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.VmManager;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -187,7 +186,7 @@ import com.google.gson.GsonBuilder;
 // because sooner or later, it will be driven into Running state
 //
 @Local(value = { ConsoleProxyManager.class, ConsoleProxyService.class })
-public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProxyService, Manager, VirtualMachineManager<ConsoleProxyVO>, AgentHook, VirtualMachineGuru<ConsoleProxyVO> {
+public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProxyService, Manager, AgentHook, VirtualMachineGuru<ConsoleProxyVO> {
     private static final Logger s_logger = Logger.getLogger(ConsoleProxyManagerImpl.class);
 
     private static final int DEFAULT_FIND_HOST_RETRY_COUNT = 2;
@@ -266,7 +265,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     private AsyncJobManager _asyncMgr;
     
     @Inject
-    private VmManager _itMgr;
+    private VirtualMachineManager _itMgr;
     
     @Inject
     private ClusterManager _clMgr;

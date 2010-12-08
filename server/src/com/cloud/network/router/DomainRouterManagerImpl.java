@@ -176,10 +176,9 @@ import com.cloud.vm.State;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineGuru;
-import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.VmManager;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
@@ -188,7 +187,7 @@ import com.cloud.vm.dao.UserVmDao;
  * NetworkManagerImpl implements NetworkManager.
  */
 @Local(value={DomainRouterManager.class, DomainRouterService.class})
-public class DomainRouterManagerImpl implements DomainRouterManager, DomainRouterService, VirtualMachineManager<DomainRouterVO>, VirtualMachineGuru<DomainRouterVO> {
+public class DomainRouterManagerImpl implements DomainRouterManager, DomainRouterService, VirtualMachineGuru<DomainRouterVO> {
     private static final Logger s_logger = Logger.getLogger(DomainRouterManagerImpl.class);
 
     String _name;
@@ -233,7 +232,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
     @Inject NicDao _nicDao;
     @Inject GuestOSDao _guestOSDao = null;
     @Inject NetworkManager _networkMgr;
-    @Inject VmManager _itMgr;
+    @Inject VirtualMachineManager _itMgr;
     @Inject VpnUserDao _vpnUsersDao;
     @Inject RemoteAccessVpnDao _remoteAccessVpnDao;
     @Inject RulesManager _rulesMgr;

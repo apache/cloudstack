@@ -38,7 +38,7 @@ import com.cloud.vm.VirtualMachine.Event;
 /**
  * Manages allocating resources to vms.
  */
-public interface VmManager extends Manager {
+public interface VirtualMachineManager extends Manager {
     
     <T extends VMInstanceVO> T allocate(T vm,
             VMTemplateVO template,
