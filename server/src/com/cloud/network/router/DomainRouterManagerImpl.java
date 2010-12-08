@@ -2201,15 +2201,14 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
             } else if (nic.getTrafficType() == TrafficType.Control) {
                 controlNic = nic;
             }
-            
-            if (dhcpRange != null) {
-               buf.append(" dhcprange=" + dhcpRange);
-            }
-            if (domain != null) {
-                buf.append(" domain="+router.getDomain());
-            }
-            
         }
+        
+        if (dhcpRange != null) {
+            buf.append(" dhcprange=" + dhcpRange);
+         }
+         if (domain != null) {
+             buf.append(" domain="+router.getDomain());
+         }
   
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Boot Args for " + profile + ": " + buf.toString());
