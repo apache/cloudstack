@@ -659,10 +659,6 @@ public class ApiServer implements HttpRequestHandler {
             if(directAttachNetworkGroupsEnabled == null) 
             	directAttachNetworkGroupsEnabled = "false";     
             
-            String directAttachedUntaggedEnabled = _ms.getConfigurationValue("direct.attach.untagged.vlan.enabled");
-            if (directAttachedUntaggedEnabled == null) 
-            	directAttachedUntaggedEnabled = "false";
-            
             String systemVmUseLocalStorage = _ms.getConfigurationValue("system.vm.use.local.storage");
             if (systemVmUseLocalStorage == null) 
             	systemVmUseLocalStorage = "false";            
@@ -679,7 +675,6 @@ public class ApiServer implements HttpRequestHandler {
 //            session.setAttribute("networktype", networkType);
             session.setAttribute("hypervisortype", hypervisorType);
             session.setAttribute("directattachnetworkgroupsenabled", directAttachNetworkGroupsEnabled);
-            session.setAttribute("directattacheduntaggedenabled", directAttachedUntaggedEnabled);
             session.setAttribute("systemvmuselocalstorage", systemVmUseLocalStorage);
 
             if (timezone != null) {

@@ -30,12 +30,11 @@ import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.manager.allocator.HostAllocator;
-import com.cloud.configuration.Config;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.PodCluster;
+import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.host.Host;
@@ -45,7 +44,6 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
@@ -59,7 +57,6 @@ public class RecreateHostAllocator extends FirstFitRoutingAllocator {
     @Inject ClusterDao _clusterDao;
     @Inject AgentManager _agentMgr;
     @Inject VolumeDao _volsDao;
-    boolean _isDirect;
     
     @Override
     public Host allocateTo(VirtualMachineProfile<? extends VirtualMachine> vm, ServiceOffering offering, Host.Type type, DataCenterVO dc, HostPodVO pod,
@@ -77,7 +74,9 @@ public class RecreateHostAllocator extends FirstFitRoutingAllocator {
         }
         
         List<PodCluster> pcs = _agentMgr.listByDataCenter(dc.getId());
-        if (_isDirect) {
+        //getting rid of direct.attached.untagged.vlan.enabled config param: Bug 7204
+        //basic network type for zone maps to direct untagged case
+        if (dc.getNetworkType().equals(NetworkType.Basic)) { 
             s_logger.debug("Direct Networking mode so we can only allow the host to be allocated in the same pod due to public ip address cannot change");
             List<VolumeVO> vols = _volsDao.findByInstance(vm.getId());
             VolumeVO vol = vols.get(0);
@@ -118,11 +117,6 @@ public class RecreateHostAllocator extends FirstFitRoutingAllocator {
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
         
-        ComponentLocator locator = ComponentLocator.getCurrentLocator();
-        ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
-        Map<String, String> dbParams = configDao.getConfiguration(params);
-        
-        _isDirect = Boolean.parseBoolean(dbParams.get(Config.DirectAttachUntaggedVlanEnabled.key()));
         return true;
     }
     

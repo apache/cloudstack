@@ -154,7 +154,6 @@ public enum Config {
 	DirectAttachNetworkGroupsEnabled("Advanced", ManagementServer.class, Boolean.class, "direct.attach.network.groups.enabled", "false", "Ec2-style distributed firewall for direct-attach VMs", "true,false"),
 	DirectAttachNetworkEnabled("Advanced", ManagementServer.class, Boolean.class, "direct.attach.network.externalIpAllocator.enabled", "false", "Direct-attach VMs using external DHCP server", "true,false"),
 	DirectAttachNetworkExternalAPIURL("Advanced", ManagementServer.class, String.class, "direct.attach.network.externalIpAllocator.url", null, "Direct-attach VMs using external DHCP server (API url)", null),
-	DirectAttachUntaggedVlanEnabled("Advanced", ManagementServer.class, String.class, "direct.attach.untagged.vlan.enabled", "false", "Indicate whether the system supports direct-attached untagged vlan", "true,false"),
 	CheckPodCIDRs("Advanced", ManagementServer.class, String.class, "check.pod.cidrs", "true", "If true, different pods must belong to different CIDR subnets.", "true,false"),
 	MD5Hashed("Advanced", ManagementServer.class, Boolean.class, "security.password.md5hashed", "true", "If set to false password is sent in clear text or else md5hashed", null),
 	
