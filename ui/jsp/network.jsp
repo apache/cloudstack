@@ -145,17 +145,7 @@
 	                        <div class="row_celltitles" id="account">
 	                        </div>
 	                    </div>
-	                </div>
-	                <div class="grid_rows even">
-	                    <div class="grid_row_cell" style="width: 20%;">
-	                        <div class="row_celltitles">
-	                            <%=t.t("podname")%>:</div>
-	                    </div>
-	                    <div class="grid_row_cell" style="width: 79%;">
-	                        <div class="row_celltitles" id="podname">
-	                        </div>
-	                    </div>
-	                </div>
+	                </div>	               
 	            </div>
 	        </div>    
         </div>   
@@ -187,6 +177,16 @@
     <div class="grid_rows odd">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
+                VLAN:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="vlan">
+            </div>
+        </div>
+    </div>   
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
                 Start IP:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
@@ -194,7 +194,7 @@
             </div>
         </div>
     </div>    
-    <div class="grid_rows even">
+    <div class="grid_rows odd">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
                 End IP:</div>

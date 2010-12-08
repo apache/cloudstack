@@ -32,12 +32,7 @@ function afterLoadNetworkJSP($leftmenuItem1) {
     switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray);  
      
     //populate items into middle menu  
-    var $midmenuContainer = $("#midmenu_container").empty();      
-    var $container_directNetwork = $("<div id='midmenu_directNetwork_container'></div>"); 
-    $midmenuContainer.append($container_directNetwork);        
-    var $header1 = $("#midmenu_itemheader_without_margin").clone().attr("id", "#midmenu_itemheader_without_margin_clone").show();  //without margin on top
-    $header1.find("#name").text("Direct Network");
-    $container_directNetwork.append($header1);    
+    var $midmenuContainer = $("#midmenu_container").empty();   
     $.ajax({
 		data: createURL("command=listNetworks&type=Direct&zoneId="+zoneObj.id),
 		dataType: "json",
@@ -50,15 +45,12 @@ function afterLoadNetworkJSP($leftmenuItem1) {
                     directNetworkToMidmenu(items[i], $midmenuItem1);    
                     bindClickToMidMenu($midmenuItem1, directNetworkToRightPanel, getMidmenuId);             
                    
-                    $container_directNetwork.append($midmenuItem1.show());   
+                    $midmenuContainer.append($midmenuItem1.show());   
                     if(i == 0)  { //click the 1st item in middle menu as default                        
                         $midmenuItem1.click();   
                     }    									
 				}
-			}			
-			else {
-                $container_directNetwork.append($("#midmenu_container_no_items_available").clone().attr("id","midmenu_container_no_items_available_clone").show());  
-            }  		
+			}	
 		}
 	});    
 }
@@ -79,15 +71,13 @@ function directNetworkToMidmenu(jsonObj, $midmenuItem1) {
 function directNetworkToRightPanel($midmenuItem1) {    
     copyActionInfoFromMidMenuToRightPanel($midmenuItem1);  
     $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);  
-    
-    $("#right_panel_header").find("#page_title").text("Direct Network");        
+            
     $("#direct_network_page").show();
     $("#public_network_page").hide();
     
     $("#direct_network_page").find("#tab_details").click();     
 }
-
-//function vlanJsonToTemplate(item, $template1, true) {			
+	
 function directNetworkJsonToDetailsTab() {	    
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
     if($midmenuItem1 == null)
@@ -110,12 +100,12 @@ function directNetworkJsonToDetailsTab() {
     $thisTab.find("#vlan").text(fromdb(jsonObj.vlan));
     $thisTab.find("#gateway").text(fromdb(jsonObj.gateway));
     $thisTab.find("#netmask").text(fromdb(jsonObj.netmask));
-    $thisTab.find("#iprange").text(fromdb(getIpRange(jsonObj.startip, jsonObj.endip)));        
+    var ipRange = getIpRange(fromdb(jsonObj.startip), fromdb(jsonObj.endip));
+    $thisTab.find("#iprange").text(ipRange);        
     
     $thisTab.find("#domain").text(fromdb(jsonObj.domain));      //might be null
     $thisTab.find("#account").text(fromdb(jsonObj.account));    //might be null
-    $thisTab.find("#podname").text(fromdb(jsonObj.podname));    //might be null  	
-    
+        
     $thisTab.find("#tab_container").show(); 
     $thisTab.find("#tab_spinning_wheel").hide();   
 }
@@ -156,10 +146,11 @@ function directNetworkJsonToIpAllocationTab() {
 function directNetworkIprangeJsonToTemplate(jsonObj, $template) {    
     $template.attr("id", "directNetworkIprange_" + jsonObj.id);
     
-    var ipRange = getIpRange(jsonObj.startip, jsonObj.endip);
+    var ipRange = getIpRange(fromdb(jsonObj.startip), fromdb(jsonObj.endip));
     $template.find("#grid_header_title").text(ipRange);
     
-    $template.find("#startip").text(jsonObj.startip);
-    $template.find("#endip").text(jsonObj.endip);
+    $template.find("#vlan").text(jsonObj.vlan)
+    $template.find("#startip").text(fromdb(jsonObj.startip));
+    $template.find("#endip").text(fromdb(jsonObj.endip));
 }
 
