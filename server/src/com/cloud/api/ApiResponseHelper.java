@@ -139,6 +139,7 @@ import com.cloud.user.UserContext;
 import com.cloud.user.UserStatisticsVO;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.utils.Pair;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.InstanceGroup;
 import com.cloud.vm.InstanceGroupVO;
@@ -1492,9 +1493,10 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public void createTemplateResponse(List<TemplateResponse> responses, VirtualMachineTemplate template, Long zoneId, boolean isAdmin, Account account) {
-        List<VMTemplateHostVO> templateHostRefsForTemplate = ApiDBUtils.listTemplateHostBy(template.getId(), zoneId);
-
+    public void createTemplateResponse(List<TemplateResponse> responses, Pair<Long,Long> templateZonePair, boolean isAdmin, Account account) {
+        List<VMTemplateHostVO> templateHostRefsForTemplate = ApiDBUtils.listTemplateHostBy(templateZonePair.first(), templateZonePair.second());
+        VMTemplateVO template = ApiDBUtils.findTemplateById(templateZonePair.first());
+        
         for (VMTemplateHostVO templateHostRef : templateHostRefsForTemplate) {
 
             TemplateResponse templateResponse = new TemplateResponse();
@@ -2009,11 +2011,13 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
     
     @Override
-    public ListResponse<TemplateResponse> createIsoResponse(List<? extends VirtualMachineTemplate> isos, Long zoneId, boolean onlyReady, boolean isAdmin, Account account)  {        
+    public ListResponse<TemplateResponse> createIsoResponse(Set<Pair<Long,Long>> isoZonePairSet, boolean isAdmin, Account account)  {        
 
         ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
         List<TemplateResponse> isoResponses = new ArrayList<TemplateResponse>();
-        for (VirtualMachineTemplate iso : isos) {
+        
+        for (Pair<Long,Long> isoZonePair : isoZonePairSet) {
+        	VMTemplateVO iso = ApiDBUtils.findTemplateById(isoZonePair.first());
             if ( iso.getTemplateType() == TemplateType.PERHOST ) {
                 TemplateResponse isoResponse = new TemplateResponse();
                 isoResponse.setId(iso.getId());
@@ -2031,12 +2035,8 @@ public class ApiResponseHelper implements ResponseGenerator {
                 continue;
             }
            
-            List<VMTemplateHostVO> isoHosts = ApiDBUtils.listTemplateHostBy(iso.getId(), zoneId);
-            for (VMTemplateHostVO isoHost : isoHosts) {
-                if (onlyReady && isoHost.getDownloadState() != Status.DOWNLOADED) {
-                    continue;
-                }
-
+            List<VMTemplateHostVO> isoHosts = ApiDBUtils.listTemplateHostBy(iso.getId(), isoZonePair.second());
+            for (VMTemplateHostVO isoHost : isoHosts) {                
                 TemplateResponse isoResponse = new TemplateResponse();
                 isoResponse.setId(iso.getId());
                 isoResponse.setName(iso.getName());

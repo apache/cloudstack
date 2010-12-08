@@ -19,12 +19,14 @@
 package com.cloud.storage.dao;
 
 import java.util.List;
+import java.util.Set;
 
 import com.cloud.domain.DomainVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
 
 /*
@@ -56,7 +58,7 @@ public interface VMTemplateDao extends GenericDao<VMTemplateVO, Long> {
 	public List<VMTemplateVO> findIsosByIdAndPath(Long domainId, Long accountId, String path);
 	public List<VMTemplateVO> listReadyTemplates();
 	public List<VMTemplateVO> listByAccountId(long accountId);
-	public List<VMTemplateVO> searchTemplates(String name, String keyword, TemplateFilter templateFilter, boolean isIso, Boolean bootable,
+	public Set<Pair<Long, Long>> searchTemplates(String name, String keyword, TemplateFilter templateFilter, boolean isIso, Boolean bootable,
 			Account account, DomainVO domain, Long pageSize, Long startIndex, Long zoneId, HypervisorType hyperType, boolean onlyReady, boolean showDomr);
 	
 	public long addTemplateToZone(VMTemplateVO tmplt, long zoneId);

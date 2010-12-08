@@ -41,9 +41,11 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.Executors;
@@ -1562,7 +1564,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public List<VMTemplateVO> listIsos(ListIsosCmd cmd) throws IllegalArgumentException, InvalidParameterValueException {
+    public Set<Pair<Long, Long>> listIsos(ListIsosCmd cmd) throws IllegalArgumentException, InvalidParameterValueException {
         TemplateFilter isoFilter = TemplateFilter.valueOf(cmd.getIsoFilter());
         Long accountId = null;
         Account account = UserContext.current().getAccount();
@@ -1598,7 +1600,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public List<VMTemplateVO> listTemplates(ListTemplatesCmd cmd) throws IllegalArgumentException, InvalidParameterValueException {
+    public Set<Pair<Long, Long>> listTemplates(ListTemplatesCmd cmd) throws IllegalArgumentException, InvalidParameterValueException {
         TemplateFilter templateFilter = TemplateFilter.valueOf(cmd.getTemplateFilter());
         Long accountId = null;
         Account account = UserContext.current().getAccount();
@@ -1634,7 +1636,7 @@ public class ManagementServerImpl implements ManagementServer {
         return listTemplates(cmd.getId(), cmd.getTemplateName(), cmd.getKeyword(), templateFilter, false, null, accountId, cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), hypervisorType, isAccountSpecific, showDomr);
     }
 
-    private List<VMTemplateVO> listTemplates(Long templateId, String name, String keyword, TemplateFilter templateFilter, boolean isIso, Boolean bootable, Long accountId, Long pageSize, Long startIndex, Long zoneId, HypervisorType hyperType, boolean isAccountSpecific, boolean showDomr) throws InvalidParameterValueException {
+    private Set<Pair<Long, Long>> listTemplates(Long templateId, String name, String keyword, TemplateFilter templateFilter, boolean isIso, Boolean bootable, Long accountId, Long pageSize, Long startIndex, Long zoneId, HypervisorType hyperType, boolean isAccountSpecific, boolean showDomr) throws InvalidParameterValueException {
         VMTemplateVO template = null;
     	if (templateId != null) {
     		template = _templateDao.findById(templateId);
@@ -1667,16 +1669,15 @@ public class ManagementServerImpl implements ManagementServer {
         	domain = _domainDao.findById(DomainVO.ROOT_DOMAIN);
         }
         
-        List<VMTemplateVO> templates = new ArrayList<VMTemplateVO>();
+        Set<Pair<Long, Long>> templateZonePairSet = new HashSet<Pair<Long,Long>>();
         
         if (template == null) {
-    		templates = _templateDao.searchTemplates(name, keyword, templateFilter, isIso, bootable, account, domain, pageSize, startIndex, zoneId, hyperType, onlyReady, showDomr);
-    	} else {
-    		templates = new ArrayList<VMTemplateVO>();
-    		templates.add(template);
+        	templateZonePairSet = _templateDao.searchTemplates(name, keyword, templateFilter, isIso, bootable, account, domain, pageSize, startIndex, zoneId, hyperType, onlyReady, showDomr);
+    	} else {    		
+    		templateZonePairSet.add(new Pair<Long,Long>(template.getId(), zoneId));
     	}
         
-        return templates;
+        return templateZonePairSet;
     }
 
     @Override

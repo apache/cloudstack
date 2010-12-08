@@ -21,6 +21,7 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.cloud.alert.Alert;
 import com.cloud.api.ServerApiException;
@@ -101,6 +102,7 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.UserAccount;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.Pair;
 import com.cloud.vm.InstanceGroup;
 import com.cloud.vm.VirtualMachine;
 
@@ -309,14 +311,14 @@ public interface ManagementService {
      * @param cmd The command that wraps the (optional) templateId, name, keyword, templateFilter, bootable, account, and zoneId parameters.
      * @return list of ISOs
      */
-    List<? extends VirtualMachineTemplate> listIsos(ListIsosCmd cmd);
+    Set<Pair<Long, Long>> listIsos(ListIsosCmd cmd);
 
     /**
      * List templates that match the specified criteria. 
      * @param cmd The command that wraps the (optional) templateId, name, keyword, templateFilter, bootable, account, and zoneId parameters.
      * @return list of ISOs
      */
-    List<? extends VirtualMachineTemplate> listTemplates(ListTemplatesCmd cmd);
+    Set<Pair<Long, Long>> listTemplates(ListTemplatesCmd cmd);
 
     /**
      * Search for disk offerings based on search criteria

@@ -19,6 +19,7 @@ package com.cloud.api;
 
 import java.text.DecimalFormat;
 import java.util.List;
+import java.util.Set;
 
 import com.cloud.api.commands.QueryAsyncJobResultCmd;
 import com.cloud.api.response.AccountResponse;
@@ -92,6 +93,7 @@ import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.Pair;
 import com.cloud.vm.InstanceGroup;
 import com.cloud.vm.VirtualMachine;
 
@@ -168,7 +170,7 @@ public interface ResponseGenerator {
 
     RemoteAccessVpnResponse createRemoteAccessVpnResponse(RemoteAccessVpn vpn);
 
-    void createTemplateResponse(List<TemplateResponse> responses, VirtualMachineTemplate template, Long zoneId, boolean isAdmin,
+    void createTemplateResponse(List<TemplateResponse> responses, Pair<Long, Long> templateZonePair, boolean isAdmin,
             Account account);
 
     ListResponse<TemplateResponse> createTemplateResponse2(VirtualMachineTemplate template, Long zoneId);
@@ -195,8 +197,7 @@ public interface ResponseGenerator {
 
     EventResponse createEventResponse(Event event);
 
-    ListResponse<TemplateResponse> createIsoResponse(List<? extends VirtualMachineTemplate> isos, Long zoneId, boolean onlyReady, boolean isAdmin,
-            Account account);
+    ListResponse<TemplateResponse> createIsoResponse(Set<Pair<Long,Long>> isoZonePairSet, boolean onlyReady, Account account);
 
     TemplateResponse createIsoResponse(VirtualMachineTemplate result);
 

@@ -19,6 +19,7 @@
 package com.cloud.api.commands;
 
 import java.util.List;
+import java.util.Set;
 
 import org.apache.log4j.Logger;
 
@@ -33,6 +34,7 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
+import com.cloud.utils.Pair;
 
 @Implementation(description="Lists all available ISO files.", responseObject=TemplateResponse.class)
 public class ListIsosCmd extends BaseListCmd {
@@ -137,7 +139,7 @@ public class ListIsosCmd extends BaseListCmd {
     
     @Override
     public void execute(){
-        List<? extends VirtualMachineTemplate> isos = _mgr.listIsos(this);
+        Set<Pair<Long, Long>> isoZonePairSet = _mgr.listIsos(this);
         TemplateFilter isoFilterObj = null;
 
         try {
@@ -152,23 +154,12 @@ public class ListIsosCmd extends BaseListCmd {
         }
 
         boolean isAdmin = false;
-        boolean isAccountSpecific = true;
         Account account = UserContext.current().getAccount();
         if ((account == null) || (account.getType() == Account.ACCOUNT_TYPE_ADMIN) || (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)) {
-            isAdmin = true;
-            if ((accountName == null) || (domainId == null)) {
-                isAccountSpecific = false;
-            }
+            isAdmin = true;            
         }
 
-        boolean onlyReady = (isoFilterObj == TemplateFilter.featured) || 
-                            (isoFilterObj == TemplateFilter.selfexecutable) || 
-                            (isoFilterObj == TemplateFilter.sharedexecutable) ||
-                            (isoFilterObj == TemplateFilter.executable && isAccountSpecific) ||
-                            (isoFilterObj == TemplateFilter.community);
-
-
-        ListResponse<TemplateResponse> response = _responseGenerator.createIsoResponse(isos, zoneId, onlyReady, isAdmin, account);
+       ListResponse<TemplateResponse> response = _responseGenerator.createIsoResponse(isoZonePairSet, isAdmin, account);
         response.setResponseName(getName());
         this.setResponseObject(response);
     }

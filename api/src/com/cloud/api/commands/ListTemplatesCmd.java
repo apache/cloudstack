@@ -20,6 +20,7 @@ package com.cloud.api.commands;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.log4j.Logger;
 
@@ -35,6 +36,7 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
+import com.cloud.utils.Pair;
 
 @Implementation(description="List all public, private, and privileged templates.", responseObject=TemplateResponse.class)
 public class ListTemplatesCmd extends BaseListCmd {
@@ -118,35 +120,19 @@ public class ListTemplatesCmd extends BaseListCmd {
     
     @Override
     public void execute(){
-        List<? extends VirtualMachineTemplate> templates = _mgr.listTemplates(this);
-        TemplateFilter templateFilterObj;
-        try {
-            templateFilterObj = TemplateFilter.valueOf(templateFilter);
-        } catch (IllegalArgumentException e) {
-            // how did we get this far?  The request should've been rejected already before the response stage...
-            templateFilterObj = TemplateFilter.selfexecutable;
-        }
-
+        Set<Pair<Long, Long>> templateZonePairSet = _mgr.listTemplates(this);
+                
         boolean isAdmin = false;
-        boolean isAccountSpecific = true;
         Account account = UserContext.current().getAccount();
         if ((account == null) || (account.getType() == Account.ACCOUNT_TYPE_ADMIN) || (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)) {
             isAdmin = true;
-            if ((accountName == null) || (domainId == null)) {
-                isAccountSpecific = false;
-            }
         }
-
-        boolean showDomr = (templateFilterObj != TemplateFilter.selfexecutable);
 
         ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
         List<TemplateResponse> templateResponses = new ArrayList<TemplateResponse>();
 
-        for (VirtualMachineTemplate template : templates) {
-            if (!showDomr && template.getTemplateType() == Storage.TemplateType.SYSTEM) {
-                continue;
-            }
-            _responseGenerator.createTemplateResponse(templateResponses, template, zoneId, isAdmin, account);
+        for (Pair<Long, Long> template : templateZonePairSet) {
+            _responseGenerator.createTemplateResponse(templateResponses, template, isAdmin, account);
         }
 
         response.setResponses(templateResponses);
