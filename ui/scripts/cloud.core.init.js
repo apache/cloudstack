@@ -528,8 +528,6 @@ $(document).ready(function() {
 				g_domainid = json.loginresponse.domainid;	
 				g_timezone = json.loginresponse.timezone;								
 				g_timezoneoffset = json.loginresponse.timezoneoffset;					
-				if (json.loginresponse.networktype != null) 
-					g_networkType = json.loginresponse.networktype;				
 				if (json.loginresponse.hypervisortype != null) 
 					g_hypervisorType = json.loginresponse.hypervisortype;				
 				if (json.loginresponse.directattachnetworkgroupsenabled != null) 
@@ -540,7 +538,6 @@ $(document).ready(function() {
 					g_systemVmUseLocalStorage = json.loginresponse.systemvmuselocalstorage;
 					
 				$.cookie('sessionKey', g_sessionKey, { expires: 1});
-				$.cookie('networktype', g_networkType, { expires: 1});
 				$.cookie('hypervisortype', g_hypervisorType, { expires: 1});
 				$.cookie('username', g_username, { expires: 1});	
 				$.cookie('account', g_account, { expires: 1});	
@@ -601,7 +598,6 @@ $(document).ready(function() {
 	g_username = $.cookie("username");
 	g_account = $.cookie("account");
 	g_domainid = $.cookie("domainid");
-	g_networkType = $.cookie("networktype");
 	g_hypervisorType = $.cookie("hypervisortype");
 	g_timezone = $.cookie("timezone");
 	g_directAttachNetworkGroupsEnabled = $.cookie("directattachnetworkgroupsenabled");
@@ -613,9 +609,6 @@ $(document).ready(function() {
 	else
 	    g_timezoneoffset = null;
 	    
-	if (!g_networkType || g_networkType.length == 0) 		
-		g_networkType = "vnet";
-	
 	if (!g_hypervisorType || g_hypervisorType.length == 0) 		
 		g_hypervisorType = "kvm";
 	

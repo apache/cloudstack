@@ -1136,9 +1136,6 @@ var g_timezoneoffset = null;
 var g_timezone = null;
 
 // capabilities
-var g_networkType = "vnet"; // vnet, vlan, direct
-function getNetworkType() { return g_networkType; }
-
 var g_hypervisorType = "kvm";
 function getHypervisorType() { return g_hypervisorType; }
 

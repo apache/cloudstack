@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
- 
+ var networkType = "Basic";
  function afterLoadZoneJSP($leftmenuItem1) {
     hideMiddleMenu();  
                  
@@ -27,6 +27,7 @@
     var zoneObj = $leftmenuItem1.data("jsonObj");
     var zoneId = zoneObj.id;
     var zoneName = zoneObj.name;
+	networkType = zoneObj.networktype;
     $.ajax({
         data: createURL("command=listPods&zoneid="+zoneId),
         dataType: "json",
@@ -46,8 +47,6 @@
     initDialog("dialog_confirmation_delete_secondarystorage"); 
     
     // If the network type is vnet, don't show any vlan stuff.
-    if (getNetworkType() == "vnet") 		
-	    $("#dialog_add_vlan_for_zone").attr("title", "Add Public IP Range");		
     bindEventHandlerToDialogAddVlanForZone();	        
             
     //switch between different tabs in zone page    
@@ -376,13 +375,13 @@ function initAddVLANButton($button, $leftmenuItem1) {
             $("#tab_network").click();      
             
         var zoneObj = $leftmenuItem1.data("jsonObj");  
-        var dialogAddVlanForZone = $("#dialog_add_vlan_for_zone");       
+        var dialogAddVlanForZone = $("#dialog_add_vlan_for_zone"); 
         dialogAddVlanForZone.find("#info_container").hide();
         dialogAddVlanForZone.find("#zone_name").text(fromdb(zoneObj.name));         
 		dialogAddVlanForZone.find("#add_publicip_vlan_vlan_container, #add_publicip_vlan_domain_container, #add_publicip_vlan_account_container").hide();
 		dialogAddVlanForZone.find("#add_publicip_vlan_tagged, #add_publicip_vlan_vlan, #add_publicip_vlan_gateway, #add_publicip_vlan_netmask, #add_publicip_vlan_startip, #add_publicip_vlan_endip, #add_publicip_vlan_account").val("");
 						
-		if (getNetworkType() == 'vnet') {
+		if (zoneObj.networktype == 'Basic') {
 			dialogAddVlanForZone.find("#add_publicip_vlan_type_container").hide();
 		} else {	
 			dialogAddVlanForZone.find("#add_publicip_vlan_pod_container").show();	
@@ -746,7 +745,6 @@ function secondaryStorageJSONToTemplate(json, template) {
 function bindEventHandlerToDialogAddVlanForZone() {
     //direct VLAN shows only "tagged" option while public VLAN shows both "tagged" and "untagged" option. 		
 	var dialogAddVlanForZone = $("#dialog_add_vlan_for_zone");
-			
 	dialogAddVlanForZone.find("#add_publicip_vlan_type").change(function(event) {
 	    var addPublicipVlanTagged = dialogAddVlanForZone.find("#add_publicip_vlan_tagged").empty();
 	   		
@@ -773,7 +771,7 @@ function bindEventHandlerToDialogAddVlanForZone() {
 		return false;
 	});
 			
-	if (getNetworkType() != "vnet") {
+	if (networkType == "Advanced") {
 		dialogAddVlanForZone.find("#add_publicip_vlan_tagged").change(function(event) {	
 			if ($(this).val() == "tagged") {
 				dialogAddVlanForZone.find("#add_publicip_vlan_vlan_container").show();

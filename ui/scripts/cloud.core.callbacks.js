@@ -63,7 +63,6 @@ $(document).ready(function() {
 		success: function(json) {
 			$.cookie('username', json.loginresponse.username);
 			$.cookie('role', json.loginresponse.type);
-			$.cookie('networktype', json.loginresponse.networktype);
 			$.cookie('hypervisortype', json.loginresponse.hypervisortype);
 			$.cookie('domainid', '1'); //e.g. domainid of ROOT domain is 1 
 			$.cookie('account', json.loginresponse.account);
