@@ -2387,6 +2387,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setNetworkOfferingId(networkOffering.getId());
             response.setNetworkOfferingName(networkOffering.getName());
             response.setNetworkOfferingDisplayText(networkOffering.getDisplayText());
+            response.setIsSystem(networkOffering.isSystemOnly());
         }
         
         response.setIsShared(network.isShared());

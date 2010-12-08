@@ -60,7 +60,9 @@ import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.Vlan;
+import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
@@ -1775,7 +1777,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         String type = cmd.getType();
+        Boolean isSystem = cmd.getIsSystem();
         Long accountId = null;
+        
+        if (isSystem == null) {
+            isSystem = false;
+        }
         
         if (isAdmin(account.getType())) {
             if (domainId != null) {
@@ -1801,13 +1808,26 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         SearchBuilder<NetworkVO> sb = _networkConfigDao.createSearchBuilder();
         
         //Don't display networks created of system network offerings
-        SearchBuilder<NetworkOfferingVO> networkOfferingSearch = _networkOfferingDao.createSearchBuilder();
+        SearchBuilder<NetworkOfferingVO> networkOfferingSearch  = _networkOfferingDao.createSearchBuilder();
         networkOfferingSearch.and("systemOnly", networkOfferingSearch.entity().isSystemOnly(), SearchCriteria.Op.EQ);
-        sb.join("networkOfferingSearch", networkOfferingSearch, sb.entity().getNetworkOfferingId(), networkOfferingSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+        if (isSystem) {
+            networkOfferingSearch.and("trafficType", networkOfferingSearch.entity().getTrafficType(), SearchCriteria.Op.EQ);
+        } 
+        sb.join("networkOfferingSearch", networkOfferingSearch, sb.entity().getNetworkOfferingId(), networkOfferingSearch.entity().getId(), JoinBuilder.JoinType.INNER); 
         
-        
+        SearchBuilder<DataCenterVO> zoneSearch  = _dcDao.createSearchBuilder();
+        zoneSearch.and("networkType", zoneSearch.entity().getNetworkType(), SearchCriteria.Op.EQ);
+        sb.join("zoneSearch", zoneSearch, sb.entity().getDataCenterId(), zoneSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+      
         SearchCriteria<NetworkVO> sc = sb.create();
-        sc.setJoinParameters("networkOfferingSearch", "systemOnly", false);
+        
+        if (!isSystem) {
+            sc.setJoinParameters("networkOfferingSearch", "systemOnly", false);
+        } else {
+            sc.setJoinParameters("networkOfferingSearch", "systemOnly", true);
+            sc.setJoinParameters("networkOfferingSearch", "trafficType", TrafficType.Public);
+            sc.setJoinParameters("zoneSearch", "networkType", NetworkType.Advanced.toString());
+        }
         
         if (keyword != null) {
             SearchCriteria<NetworkVO> ssc = _networkConfigDao.createSearchCriteria();

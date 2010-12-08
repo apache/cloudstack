@@ -58,6 +58,10 @@ public class NetworkResponse extends BaseResponse{
     private Boolean isShared;
     
     //TODO - add description
+    @SerializedName("issystem")
+    private Boolean isSystem;
+    
+    //TODO - add description
     @SerializedName("state")
     private String state;
     
@@ -275,5 +279,13 @@ public class NetworkResponse extends BaseResponse{
 
     public void setVlan(String vlan) {
         this.vlan = vlan;
+    }
+
+    public Boolean getIsSystem() {
+        return isSystem;
+    }
+
+    public void setIsSystem(Boolean isSystem) {
+        this.isSystem = isSystem;
     }
 }

@@ -173,5 +173,6 @@ public class ApiConstants {
     public static final String NETWORK_ID = "networkid";
     public static final String SPECIFY_VLAN = "specifyvlan";
     public static final String IS_DEFAULT = "isdefault";
+    public static final String IS_SYSTEM = "issystem";
 }
  

@@ -54,6 +54,9 @@ public class ListNetworksCmd extends BaseListCmd {
     
     @Parameter(name=ApiConstants.TYPE, type=CommandType.STRING, description="the type of the network")
     private String type;
+    
+    @Parameter(name=ApiConstants.IS_SYSTEM, type=CommandType.BOOLEAN, description="true if network is system, false otherwise")
+    private Boolean isSystem;
    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -77,6 +80,10 @@ public class ListNetworksCmd extends BaseListCmd {
 
     public String getType() {
         return type;
+    }
+
+    public Boolean getIsSystem() {
+        return isSystem;
     }
 
     /////////////////////////////////////////////////////

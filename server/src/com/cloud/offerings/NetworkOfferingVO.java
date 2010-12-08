@@ -129,6 +129,7 @@ public class NetworkOfferingVO implements NetworkOffering {
         return created;
     }
     
+    @Override
     public boolean isSystemOnly() {
         return systemOnly;
     }

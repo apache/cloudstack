@@ -75,4 +75,6 @@ public interface NetworkOffering {
     String getTags();
     
     boolean isDefault();
+    
+    boolean isSystemOnly();
 }
