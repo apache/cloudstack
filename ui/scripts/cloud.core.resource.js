@@ -79,12 +79,18 @@ function buildZoneTree() {
 				break;					
 			
 			default:				    		    
-			    selectRowInZoneTree($(this).find("#zone_head"));	
+			    selectRowInZoneTree($(this).find("#zone_header"));	
 			    resourceLoadPage("jsp/zone.jsp", $(this));			    		   				    		   			    
 			    break;	
 		}
 		return false;
 	});  
+	
+	$("#network_header").unbind("click").bind("click", function(event) {	   
+	    selectRowInZoneTree($(this));	
+	    resourceLoadPage("jsp/network.jsp", $(this));			    
+	    return false;
+	});
 	
 	$("#leftmenu_pod_node_template").unbind("click").bind("click", function(event) {
 	    var $podNode = $(this);
@@ -109,7 +115,7 @@ function buildZoneTree() {
 				}	
 			    break;
 			default:			
-			    selectRowInZoneTree($(this).find("#pod_head"));	    
+			    selectRowInZoneTree($(this).find("#pod_header"));	    
 	            resourceLoadPage("jsp/pod.jsp", $(this));			
 			    break;
 	    }		    	    
@@ -117,7 +123,7 @@ function buildZoneTree() {
 	});  
 	
 	$("#leftmenu_cluster_node_template").unbind("click").bind("click", function(event) {
-	    selectRowInZoneTree($(this).find("#cluster_head"));	    
+	    selectRowInZoneTree($(this).find("#cluster_header"));	    
 	    resourceLoadPage("jsp/cluster.jsp", $(this));
 	    return false;
 	});  
@@ -173,7 +179,8 @@ function selectTreeNodeInLeftMenu($menuToSelect, expandable) {
 function zoneJSONToTreeNode(json, $zoneNode) {
     var zoneid = json.id;
     $zoneNode.attr("id", "zone_" + zoneid);  
-    $zoneNode.data("jsonObj", json);	 
+    $zoneNode.data("jsonObj", json);
+    $zoneNode.find("#network_header").data("jsonObj", json);		 
     $zoneNode.data("id", zoneid).data("name", fromdb(json.name));
     var zoneName = $zoneNode.find("#zone_name").text(fromdb(json.name));	    
     zoneName.data("jsonObj", json);	    
@@ -224,6 +231,12 @@ function resourceLoadPage(pageToShow, $midmenuItem1) {   //$midmenuItem1 is eith
 		        zoneJsonToDetailsTab();
 		    });  
             afterLoadZoneJSP($midmenuItem1);               
+        }        
+        else if(pageToShow == "jsp/network.jsp") {
+            $(this).data("onRefreshFn", function() {
+		        //directNetworkJsonToDetailsTab();
+		    }); 
+            afterLoadNetworkJSP($midmenuItem1);   
         }
         else if(pageToShow == "jsp/pod.jsp") {            
             $(this).data("onRefreshFn", function() {

@@ -43,6 +43,7 @@
     <script type="text/javascript" src="scripts/cloud.core.globalsetting.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/cloud.core.resource.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/cloud.core.zone.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core.network.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/cloud.core.pod.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/cloud.core.cluster.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/cloud.core.host.js?t=<%=now%>"></script>
@@ -926,7 +927,16 @@
 	        </div>			
             <div id="zone_content" style="display: none">
 	            <div id="pods_container">
-	            </div>	            
+	            </div>	 
+	            	            
+	            <div id="network_header" class="leftmenu_content">
+		            <div class="leftmenu_fourthindent">
+		                <div class="leftmenu_arrows white_nonexpanded_close" id="cluster_arrow">
+		                </div>	                
+		                <span id="network_name_label">Network</span>	 
+		            </div>
+		        </div>	
+	            	                       
 	        </div>
 		</div>
     </div>
