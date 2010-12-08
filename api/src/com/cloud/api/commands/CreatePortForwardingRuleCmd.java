@@ -80,11 +80,11 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd  implements 
     public String getPublicPort() {
         return publicPort;
     }
-
-    public Long getVirtualMachineId() {
+    
+    @Override
+    public long getVirtualMachineId() {
         return virtualMachineId;
     }
-
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

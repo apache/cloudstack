@@ -59,7 +59,7 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Por
         return ipAddress;
     }
 
-    public Long getVirtualMachineId() {
+    public long getVirtualMachineId() {
         return virtualMachineId;
     }
 

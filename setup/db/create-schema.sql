@@ -489,6 +489,7 @@ CREATE TABLE `cloud`.`load_balancer_vm_map` (
 
 CREATE TABLE `cloud`.`port_forwarding_rules` (
   `id` bigint unsigned NOT NULL COMMENT 'id',
+  `instance_id` bigint unsigned NOT NULL COMMENT 'vm instance id',
   `dest_ip_address` bigint unsigned NOT NULL COMMENT 'id_address',
   `dest_port_start` int(10) NOT NULL COMMENT 'starting port of the port range to map to',
   `dest_port_end` int(10) NOT NULL COMMENT 'end port of the the port range to map to',

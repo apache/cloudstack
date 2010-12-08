@@ -147,6 +147,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         IPAddressVO ipAddress = _ipAddressDao.findById(ipAddr);
         
         Ip dstIp = rule.getDestinationIpAddress();
+        Long instanceId = null;
         long networkId;
         UserVmVO vm = null;
         Network network = null;
@@ -156,7 +157,6 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             if (vm == null) {
                 throw new InvalidParameterValueException("Unable to create ip forwarding rule on address " + ipAddress + ", invalid virtual machine id specified (" + vmId + ").");
             }
-            
             dstIp = null;
             List<? extends Nic> nics = _networkMgr.getNics(vm);
             for (Nic nic : nics) {
@@ -203,7 +203,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
                     rule.getProtocol(), 
                     networkId,
                     accountId,
-                    domainId);
+                    domainId, vmId);
         newRule = _forwardingDao.persist(newRule);
         
         if (isNat) {

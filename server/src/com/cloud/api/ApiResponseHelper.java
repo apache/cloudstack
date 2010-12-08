@@ -100,6 +100,7 @@ import com.cloud.network.Network;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VpnUser;
 import com.cloud.network.router.VirtualRouter;
+import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.security.IngressRule;
@@ -138,8 +139,8 @@ import com.cloud.user.UserAccount;
 import com.cloud.user.UserContext;
 import com.cloud.user.UserStatisticsVO;
 import com.cloud.uservm.UserVm;
-import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.Pair;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.InstanceGroup;
 import com.cloud.vm.InstanceGroupVO;
@@ -1065,13 +1066,20 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setPublicPort(Integer.toString(fwRule.getSourcePortStart()));
         response.setPublicIpAddress(fwRule.getSourceIpAddress().toString());
         if (fwRule.getSourceIpAddress() != null && fwRule.getDestinationIpAddress() != null) {
-            UserVm vm = ApiDBUtils.findUserVmByPublicIpAndGuestIp(fwRule.getSourceIpAddress().toString(), fwRule.getDestinationIpAddress().toString());
+            //UserVm vm = ApiDBUtils.findUserVmByPublicIpAndGuestIp(fwRule.getSourceIpAddress().toString(), fwRule.getDestinationIpAddress().toString());
+            UserVm vm = ApiDBUtils.findUserVmById(fwRule.getVirtualMachineId());
             if(vm != null){
             	response.setVirtualMachineId(vm.getId());
             	response.setVirtualMachineName(vm.getHostName());
             	response.setVirtualMachineDisplayName(vm.getDisplayName());
             }
         }
+        FirewallRule.State state = fwRule.getState();
+        String stateToSet = state.toString();
+        if (state.equals(FirewallRule.State.Revoke)) {
+            stateToSet = "Deleting";
+        }
+        response.setState(stateToSet);
         response.setObjectName("portforwardingrule");
         return response;
     }

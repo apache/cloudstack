@@ -43,19 +43,23 @@ public class PortForwardingRuleVO extends FirewallRuleVO implements PortForwardi
     
     @Column(name="dest_port_end")
     private int destinationPortEnd;
+    
+    @Column(name="instance_id")
+    private long instanceId;
 
     public PortForwardingRuleVO() {
     }
 
-    public PortForwardingRuleVO(String xId, Ip srcIp, int srcPortStart, int srcPortEnd, Ip dstIp, int dstPortStart, int dstPortEnd, String protocol, long networkId, long accountId, long domainId) {
+    public PortForwardingRuleVO(String xId, Ip srcIp, int srcPortStart, int srcPortEnd, Ip dstIp, int dstPortStart, int dstPortEnd, String protocol, long networkId, long accountId, long domainId, long instanceId) {
         super(xId, srcIp, srcPortStart, srcPortEnd, protocol, networkId, accountId, domainId, Purpose.PortForwarding);
         this.destinationIpAddress = dstIp;
+        this.instanceId = instanceId;
         this.destinationPortStart = dstPortStart;
         this.destinationPortEnd = dstPortEnd;
     }
     
-    public PortForwardingRuleVO(String xId, Ip srcIp, int srcPort, Ip dstIp, int dstPort, String protocol, long networkId, long accountId, long domainId) {
-        this(xId, srcIp, srcPort, srcPort, dstIp, dstPort, dstPort, protocol, networkId, accountId, domainId);
+    public PortForwardingRuleVO(String xId, Ip srcIp, int srcPort, Ip dstIp, int dstPort, String protocol, long networkId, long accountId, long domainId, long instanceId) {
+        this(xId, srcIp, srcPort, srcPort, dstIp, dstPort, dstPort, protocol, networkId, accountId, domainId, instanceId);
     }
 
     @Override
@@ -71,6 +75,11 @@ public class PortForwardingRuleVO extends FirewallRuleVO implements PortForwardi
     @Override
     public int getDestinationPortEnd() {
         return destinationPortEnd;
+    }
+    
+    @Override
+    public long getVirtualMachineId() {
+        return instanceId;
     }
 }
 

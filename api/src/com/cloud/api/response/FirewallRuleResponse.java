@@ -46,6 +46,9 @@ public class FirewallRuleResponse extends BaseResponse {
     @SerializedName("ipaddress") @Param(description="the public ip address for the port forwarding rule")
     private String publicIpAddress;
     
+    @SerializedName("state") @Param(description="the state of the rule")
+    private String state;
+    
     public Long getId() {
         return id;
     }
@@ -109,4 +112,12 @@ public class FirewallRuleResponse extends BaseResponse {
 	public void setPublicIpAddress(String publicIpAddress) {
 		this.publicIpAddress = publicIpAddress;
 	}
+
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
+    }
 }

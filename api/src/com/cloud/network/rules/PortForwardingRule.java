@@ -37,4 +37,9 @@ public interface PortForwardingRule extends FirewallRule {
      * @return end of destination port range
      */
     int getDestinationPortEnd();
+    
+    /**
+     * @return destination ip address.
+     */
+    long getVirtualMachineId();
 }
