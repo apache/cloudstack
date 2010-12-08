@@ -889,9 +889,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             vm.addNic(new NicProfile(vo, network.first(), vo.getBroadcastUri(), vo.getIsolationUri()));
         }
 
-        if (defaultNic == null && nics.size() > 2) {
-            throw new IllegalArgumentException("Default Nic was not set.");
-        } else if (nics.size() == 1) {
+        if (nics.size() == 1) {
             nics.get(0).setDefaultNic(true);
         }
 
