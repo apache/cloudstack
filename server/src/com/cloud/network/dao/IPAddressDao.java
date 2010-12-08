@@ -33,6 +33,8 @@ public interface IPAddressDao extends GenericDao<IPAddressVO, String> {
 	
 	List<IPAddressVO> listByDcIdIpAddress(long dcId, String ipAddress);
 	
+	List<IPAddressVO> listByNetwork(long networkId);
+	
 	int countIPs(long dcId, long vlanDbId, boolean onlyCountAllocated);
 	
 	int countIPs(long dcId, Long accountId, String vlanId, String vlanGateway, String vlanNetmask);
@@ -40,10 +42,4 @@ public interface IPAddressDao extends GenericDao<IPAddressVO, String> {
 	boolean mark(long dcId, String ip);
 	
 	List<String> assignAcccountSpecificIps(long accountId, long longValue, Long vlanDbId, boolean sourceNat);
-	
-	void setIpAsSourceNat(String ipAddr);
-
-	void unassignIpAsSourceNat(String ipAddress);
-	
-	
 }

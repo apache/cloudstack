@@ -193,7 +193,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     private Map<String, String> _configs;
 
     @DB
-    protected PublicIp fetchNewPublicIp(long dcId, VlanType vlanUse, Account owner, boolean sourceNat) throws InsufficientAddressCapacityException {
+    protected PublicIp fetchNewPublicIp(long dcId, VlanType vlanUse, Account owner, Long networkId, boolean sourceNat) throws InsufficientAddressCapacityException {
         Transaction txn = Transaction.currentTxn();
         txn.start();
         SearchCriteria<IPAddressVO> sc = AssignIpAddressSearch.create();
@@ -214,6 +214,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         addr.setAllocatedTime(new Date());
         addr.setAllocatedInDomainId(owner.getDomainId());
         addr.setAllocatedToAccountId(owner.getId());
+        addr.setAssociatedNetworkId(networkId);
         
         if (!_ipAddressDao.update(addr.getAddress(), addr)) {
             throw new CloudRuntimeException("Found address to allocate but unable to update: " + addr);
@@ -261,7 +262,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     s_logger.debug("assigning a new ip address in " + dcId + " to " + owner);
                 }                
                 
-                ip = fetchNewPublicIp(dcId, VlanType.VirtualNetwork, owner, true);
+                ip = fetchNewPublicIp(dcId, VlanType.VirtualNetwork, owner, network.getId(), true);
                 sourceNat = ip.ip();
                 sourceNat.setState(IpAddress.State.Allocated);
                 _ipAddressDao.update(sourceNat.getAddress(), sourceNat);
@@ -423,6 +424,37 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return account;
     }
     
+    public boolean applyIpAssociations(Network network, boolean continueOnError) throws ResourceUnavailableException {
+        List<IPAddressVO> userIps = _ipAddressDao.listByNetwork(network.getId());
+        
+        boolean success = true;
+        for (NetworkElement element : _networkElements) {
+            try {
+                element.associate(network, userIps);
+            } catch (ResourceUnavailableException e) {
+                success = false;
+                if (!continueOnError) {
+                    throw e;
+                } else {
+                    s_logger.debug("Resource is not available: " + element.getName(), e);
+                }
+            }
+        }
+        
+        if (success) {
+            for (IPAddressVO addr : userIps) {
+                if (addr.getState() == IpAddress.State.Allocating) {
+                    addr.setState(IpAddress.State.Allocated);
+                    _ipAddressDao.update(addr.getAddress(), addr);
+                } else if (addr.getState() == IpAddress.State.Releasing) {
+                    _ipAddressDao.unassignIpAddress(addr.getAddress());
+                }
+            }
+        }
+        
+        return success;
+    }
+    
     @Override
     public List<? extends Network> getVirtualNetworksOwnedByAccountInZone(String accountName, long domainId, long zoneId) {
         Account owner = _accountDao.findActiveAccount(accountName, domainId);
@@ -434,13 +466,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override @DB
-    public IpAddress associateIP(AssociateIPAddrCmd cmd) throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException  {
+    public IpAddress associateIP(AssociateIPAddrCmd cmd) throws ResourceAllocationException, ResourceUnavailableException, InsufficientAddressCapacityException, ConcurrentOperationException  {
         String accountName = cmd.getAccountName();
         long domainId = cmd.getDomainId();
         Long zoneId = cmd.getZoneId();
         Account caller = UserContext.current().getAccount();
         long userId = UserContext.current().getUserId();
-        Long accountId = null;
 
         Account owner = _accountDao.findActiveAccount(accountName, domainId);
         if (owner == null) {
@@ -449,6 +480,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         
         _accountMgr.checkAccess(caller, owner);
         
+        long ownerId = owner.getId();
         Long networkId = cmd.getNetworkId();
         Network network = null;
         if (networkId != null) {
@@ -460,7 +492,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         EventVO event = new EventVO();
         event.setUserId(userId);
-        event.setAccountId(accountId);
+        event.setAccountId(ownerId);
         event.setType(EventTypes.EVENT_NET_IP_ASSIGN);
 
         PublicIp ip = null;
@@ -470,11 +502,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Account accountToLock = null;
         try {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Associate IP address called for user " + userId + " account " + accountId);
+                s_logger.debug("Associate IP address called for user " + userId + " account " + ownerId);
             }
-            accountToLock = _accountDao.acquireInLockTable(accountId);
+            accountToLock = _accountDao.acquireInLockTable(ownerId);
             if (accountToLock == null) {
-                s_logger.warn("Unable to lock account: " + accountId);
+                s_logger.warn("Unable to lock account: " + ownerId);
                 throw new ConcurrentOperationException("Unable to acquire account lock");
             }
 
@@ -492,11 +524,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
             txn.start();
 
-            ip = fetchNewPublicIp(zoneId, VlanType.VirtualNetwork, owner, false);
+            ip = fetchNewPublicIp(zoneId, VlanType.VirtualNetwork, owner, network.getId(), false);
             if (ip == null) {
                 throw new InsufficientAddressCapacityException("Unable to find available public IP addresses", DataCenter.class, zoneId);
             } 
-            _accountMgr.incrementResourceCount(accountId, ResourceType.public_ip);
+            _accountMgr.incrementResourceCount(ownerId, ResourceType.public_ip);
 
             String ipAddress = ip.getAddress();
             
@@ -505,13 +537,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             _eventDao.persist(event);
 
             txn.commit();
-            if (network != null) {
-                for (NetworkElement element : _networkElements) {
-                    element.associate(network, ip);
-                }
-            }
-            
-            success = true;
+
+            success = applyIpAssociations(network, false);
             
             return ip;
         } catch (ResourceUnavailableException e) {
@@ -519,16 +546,21 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             return null;
         } finally {
             if (caller != null) {
-                _accountDao.releaseFromLockTable(accountId);
+                _accountDao.releaseFromLockTable(ownerId);
                 s_logger.debug("Associate IP address lock released");
             }
             
             if (!success) {
                 if (ip != null) {
-                    Transaction.currentTxn();
+                    try {
+                        _ipAddressDao.markAsUnavailable(ip.getAddress(), ip.getAccountId());
+                        applyIpAssociations(network, true);
+                    } catch (Exception e) {
+                        s_logger.warn("Unable to disassociate ip address for recovery", e);
+                    }
                     txn.start();
                     _ipAddressDao.unassignIpAddress(ip.getAddress());
-                    _accountMgr.decrementResourceCount(accountId, ResourceType.public_ip);
+                    _accountMgr.decrementResourceCount(ownerId, ResourceType.public_ip);
 
                     event.setLevel(EventVO.LEVEL_ERROR);
                     event.setDescription("");
@@ -569,12 +601,15 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             success = false;
         }
         
-        for (NetworkElement ne : _networkElements) {
+        if (ip.getAssociatedNetworkId() != null) {
+            Network network = _networksDao.findById(ip.getAssociatedNetworkId());
             try {
-                ne.disassociate(null, ip);
+                if (!applyIpAssociations(network, true)) {
+                    s_logger.warn("Unable to apply ip address associations for " + network);
+                    success = false;
+                }
             } catch (ResourceUnavailableException e) {
-                s_logger.warn("Unable to release the ip address " + ip, e);
-                success = false;
+                throw new CloudRuntimeException("We should nver get to here because we used true when applyIpAssociations", e);
             }
         }
         
@@ -726,56 +761,65 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    public List<NetworkVO> setupNetworkConfiguration(Account owner, NetworkOfferingVO offering, DeploymentPlan plan, String name, String displayText, boolean isShared) {
+    public List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, DeploymentPlan plan, String name, String displayText, boolean isShared) throws ConcurrentOperationException {
         return setupNetwork(owner, offering, null, plan, name, displayText, isShared);
     }
 
-    @Override
-    public List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, Network predefined, DeploymentPlan plan, String name, String displayText, boolean isShared) {
-        
-        List<NetworkVO> configs = _networksDao.listBy(owner.getId(), offering.getId(), plan.getDataCenterId());
-        if (predefined == null || (predefined.getBroadcastUri() == null && predefined.getBroadcastDomainType() != BroadcastDomainType.Vlan)) {
-            if (configs.size() > 0) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Found existing network configuration for offering " + offering + ": " + configs.get(0));
+    @Override @DB
+    public List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, Network predefined, DeploymentPlan plan, String name, String displayText, boolean isShared) throws ConcurrentOperationException {
+        Transaction.currentTxn();
+        Account locked = _accountDao.acquireInLockTable(owner.getId());
+        if (locked == null) {
+            throw new ConcurrentOperationException("Unable to acquire lock on " + owner);
+        }
+        try {
+            List<NetworkVO> configs = _networksDao.listBy(owner.getId(), offering.getId(), plan.getDataCenterId());
+            if (predefined == null || (predefined.getBroadcastUri() == null && predefined.getBroadcastDomainType() != BroadcastDomainType.Vlan)) {
+                if (configs.size() > 0) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Found existing network configuration for offering " + offering + ": " + configs.get(0));
+                    }
+                    return configs;
                 }
-                return configs;
             }
-        }
-
-        configs = new ArrayList<NetworkVO>();
-
-        long related = -1;
-
-        for (NetworkGuru guru : _networkGurus) {
-            Network config = guru.design(offering, plan, predefined, owner);
-            if (config == null) {
-                continue;
-            }
-
-            if (config.getId() != -1) {
-                if (config instanceof NetworkVO) {
-                    configs.add((NetworkVO)config);
-                } else {
-                    configs.add(_networksDao.findById(config.getId()));
+    
+            configs = new ArrayList<NetworkVO>();
+    
+            long related = -1;
+    
+            for (NetworkGuru guru : _networkGurus) {
+                Network config = guru.design(offering, plan, predefined, owner);
+                if (config == null) {
+                    continue;
                 }
-                continue;
+    
+                if (config.getId() != -1) {
+                    if (config instanceof NetworkVO) {
+                        configs.add((NetworkVO)config);
+                    } else {
+                        configs.add(_networksDao.findById(config.getId()));
+                    }
+                    continue;
+                }
+    
+                long id = _networksDao.getNextInSequence(Long.class, "id");
+                if (related == -1) {
+                    related = id;
+                } 
+    
+                NetworkVO vo = new NetworkVO(id, config, offering.getId(), plan.getDataCenterId(), guru.getName(), owner.getDomainId(), owner.getId(), related, name, displayText, isShared);
+                configs.add(_networksDao.persist(vo));
             }
-
-            long id = _networksDao.getNextInSequence(Long.class, "id");
-            if (related == -1) {
-                related = id;
-            } 
-
-            NetworkVO vo = new NetworkVO(id, config, offering.getId(), plan.getDataCenterId(), guru.getName(), owner.getDomainId(), owner.getId(), related, name, displayText, isShared);
-            configs.add(_networksDao.persist(vo));
+    
+            if (configs.size() < 1) {
+                throw new CloudRuntimeException("Unable to convert network offering to network profile: " + offering.getId());
+            }
+    
+            return configs;
+        } finally {
+            s_logger.debug("Releasing lock for " + locked);
+            _accountDao.releaseFromLockTable(locked.getId());
         }
-
-        if (configs.size() < 1) {
-            throw new CloudRuntimeException("Unable to convert network offering to network profile: " + offering.getId());
-        }
-
-        return configs;
     }
 
     @Override
@@ -1179,9 +1223,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    public List<NetworkVO> setupNetwork(Account owner, ServiceOfferingVO offering, DeploymentPlan plan) {
+    public List<NetworkVO> setupNetwork(Account owner, ServiceOfferingVO offering, DeploymentPlan plan) throws ConcurrentOperationException {
         NetworkOfferingVO networkOffering = _networkOfferingDao.findByServiceOffering(offering);
-        return setupNetworkConfiguration(owner, networkOffering, plan, null, null, false);
+        return setupNetwork(owner, networkOffering, plan, null, null, false);
     }
 
     private String [] getGuestIpRange() {

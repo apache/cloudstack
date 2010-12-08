@@ -49,7 +49,7 @@ public interface NetworkService {
      * @return ip address object
      * @throws ResourceAllocationException, InsufficientCapacityException 
      */
-    IpAddress associateIP(AssociateIPAddrCmd cmd) throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException;    
+    IpAddress associateIP(AssociateIPAddrCmd cmd) throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException, ResourceUnavailableException;    
     boolean disassociateIpAddress(DisassociateIPAddrCmd cmd);
 
     /**

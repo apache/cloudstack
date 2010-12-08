@@ -21,7 +21,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URLEncoder;
 import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -408,8 +407,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         for (Pair<Integer, Listener> listener : _cmdMonitors) {
             answer = listener.second().processControlCommand(attache.getId(), cmd);
             
-            if(answer != null)
-            	return answer;
+            if(answer != null) {
+                return answer;
+            }
         }
         
         s_logger.warn("No handling of agent control command: " + cmd.toString() + " sent from " + attache.getId());
@@ -437,8 +437,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
 
         synchronized (_agents) {
             final Set<Long> s = _agents.keySet();
-            for (final Long id : s)
+            for (final Long id : s) {
                 result.add(id);
+            }
         }
         return result;
     }
@@ -620,9 +621,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         
         try {
     		uri = new URI(UriUtils.encodeURIComponent(url));
-    		if (uri.getScheme() == null)
-    			throw new InvalidParameterValueException("uri.scheme is null " + url + ", add nfs:// as a prefix");
-    		else if (uri.getScheme().equalsIgnoreCase("nfs")) {
+    		if (uri.getScheme() == null) {
+                throw new InvalidParameterValueException("uri.scheme is null " + url + ", add nfs:// as a prefix");
+            } else if (uri.getScheme().equalsIgnoreCase("nfs")) {
     			if (uri.getHost() == null || uri.getHost().equalsIgnoreCase("") || uri.getPath() == null || uri.getPath().equalsIgnoreCase("")) {
     				throw new InvalidParameterValueException("Your host and/or path is wrong.  Make sure it's of the format nfs://hostname/path");
     			}
@@ -700,7 +701,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
                     boolean success = true;
                     for( HostVO thost: hosts ) {
                         long thostId = thost.getId();
-                        if( thostId == hostId ) continue;
+                        if( thostId == hostId ) {
+                            continue;
+                        }
                        
                         PoolEjectCommand eject = new PoolEjectCommand(host.getGuid());
                         Answer answer = easySend(thostId, eject);
@@ -1007,8 +1010,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
     }
 
     protected boolean handleDisconnect(AgentAttache attache, Status.Event event, boolean investigate) {
-        if( attache == null )
+        if( attache == null ) {
             return true;
+        }
         
         long hostId = attache.getId();
 
@@ -1254,8 +1258,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
 
     protected AgentAttache simulateStart(ServerResource resource, Map<String, String> details, boolean old) throws IllegalArgumentException{
         StartupCommand[] cmds = resource.initialize();
-        if (cmds == null )
+        if (cmds == null ) {
             return null;
+        }
         
         AgentAttache attache = null;
         if (s_logger.isDebugEnabled()) {
@@ -1643,10 +1648,11 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         }
         
         try{
-        	if (maintain(hostId))
-        	    return _hostDao.findById(hostId);
-        	else 
-        	    throw new CloudRuntimeException("Unable to prepare for maintenance host " + hostId);
+        	if (maintain(hostId)) {
+                return _hostDao.findById(hostId);
+            } else {
+                throw new CloudRuntimeException("Unable to prepare for maintenance host " + hostId);
+            }
         }catch (AgentUnavailableException e) {
             throw new CloudRuntimeException("Unable to prepare for maintenance host " + hostId);
         }
@@ -1680,8 +1686,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
     }
     protected void checkCIDR(Host.Type type, HostPodVO pod, DataCenterVO dc, String serverPrivateIP, String serverPrivateNetmask) throws IllegalArgumentException {
         // Skip this check for Storage Agents and Console Proxies
-        if (type == Host.Type.Storage || type == Host.Type.ConsoleProxy)
+        if (type == Host.Type.Storage || type == Host.Type.ConsoleProxy) {
             return;
+        }
 
         if (serverPrivateIP == null) {
             return;
@@ -2066,18 +2073,21 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
    
             // If this command is from the agent simulator, don't do the CIDR
             // check
-            if (scc.getAgentTag() != null && startup.getAgentTag().equalsIgnoreCase("vmops-simulator"))
+            if (scc.getAgentTag() != null && startup.getAgentTag().equalsIgnoreCase("vmops-simulator")) {
                 doCidrCheck = false;
+            }
 
             // If this command is from a KVM agent, or from an agent that has a
             // null hypervisor type, don't do the CIDR check
-            if (hypervisorType == null || hypervisorType == HypervisorType.KVM || hypervisorType == HypervisorType.VmWare)
+            if (hypervisorType == null || hypervisorType == HypervisorType.KVM || hypervisorType == HypervisorType.VmWare) {
                 doCidrCheck = false;
+            }
 
-            if (doCidrCheck)
+            if (doCidrCheck) {
                 s_logger.info("Host: " + host.getName() + " connected with hypervisor type: " + hypervisorType + ". Checking CIDR...");
-            else
+            } else {
                 s_logger.info("Host: " + host.getName() + " connected with hypervisor type: " + hypervisorType + ". Skipping CIDR check...");
+            }
 
             if (doCidrCheck) {
                 checkCIDR(type, p, dc, scc.getPrivateIpAddress(), scc.getPrivateNetmask());
@@ -2276,8 +2286,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
             } catch (Exception e) {
                 s_logger.warn("Unable to simulate start on resource " + id + " name " + resource.getName(), e);
             } finally {
-            	if(actionDelegate != null)
-            		actionDelegate.action(new Long(id));
+            	if(actionDelegate != null) {
+                    actionDelegate.action(new Long(id));
+                }
             	
             	StackMaid.current().exitCleanup();
             }
@@ -2316,8 +2327,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
 //                }
                 try {
                     StartupCommand[] startups = new StartupCommand[cmds.length];
-                    for (int i = 0; i < cmds.length; i++)
+                    for (int i = 0; i < cmds.length; i++) {
                         startups[i] = (StartupCommand) cmds[i];
+                    }
                     attache = handleConnect(link, startups);
                 } catch (final IllegalArgumentException e) {
                     _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, 0, new Long(0), "Agent from " + startup.getPrivateIpAddress()

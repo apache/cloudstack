@@ -142,13 +142,13 @@ public class DomainRouterElement extends AdapterBase implements NetworkElement {
     }
 
     @Override
-    public boolean associate(Network network, IpAddress ipAddress) throws ResourceUnavailableException {
+    public boolean associate(Network network, List<? extends IpAddress> ipAddress) throws ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public boolean disassociate(Network network, IpAddress ipAddress) throws ResourceUnavailableException {
+    public boolean disassociate(Network network, List<? extends IpAddress> ipAddress) throws ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;
     }

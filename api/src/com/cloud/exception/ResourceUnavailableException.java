@@ -18,8 +18,9 @@
 package com.cloud.exception;
 
 import com.cloud.utils.SerialVersionUID;
+import com.cloud.utils.exception.CloudRuntimeException;
 
-public class ResourceUnavailableException extends Exception {
+public class ResourceUnavailableException extends CloudRuntimeException {
     private static final long serialVersionUID = SerialVersionUID.ResourceUnavailableException;
     
     public ResourceUnavailableException(String msg) {

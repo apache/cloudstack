@@ -89,8 +89,8 @@ public interface NetworkManager extends NetworkService {
      */
     List<IPAddressVO> listPublicIpAddressesInVirtualNetwork(long accountId, long dcId, Boolean sourceNat);	
     
-    List<NetworkVO> setupNetworkConfiguration(Account owner, NetworkOfferingVO offering, DeploymentPlan plan, String name, String displayText, boolean isShared);
-    List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, Network predefined, DeploymentPlan plan, String name, String displayText, boolean isShared);
+    List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, DeploymentPlan plan, String name, String displayText, boolean isShared) throws ConcurrentOperationException;
+    List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, Network predefined, DeploymentPlan plan, String name, String displayText, boolean isShared) throws ConcurrentOperationException;
     
     List<NetworkOfferingVO> getSystemAccountNetworkOfferings(String... offeringNames);
     
@@ -106,7 +106,7 @@ public interface NetworkManager extends NetworkService {
     
     List<NetworkVO> getNetworksforOffering(long offeringId, long dataCenterId, long accountId);
 
-    List<NetworkVO> setupNetwork(Account owner, ServiceOfferingVO offering, DeploymentPlan plan);
+    List<NetworkVO> setupNetwork(Account owner, ServiceOfferingVO offering, DeploymentPlan plan) throws ConcurrentOperationException;
     
 	Network getNetwork(long id);
 	String getNextAvailableMacAddressInNetwork(long networkConfigurationId) throws InsufficientAddressCapacityException;

@@ -89,15 +89,6 @@ ALTER TABLE `cloud`.`cluster` ADD CONSTRAINT `fk_cluster__data_center_id` FOREIG
 ALTER TABLE `cloud`.`cluster` ADD CONSTRAINT `fk_cluster__pod_id` FOREIGN KEY `fd_cluster__pod_id`(`pod_id`) REFERENCES `cloud`.`host_pod_ref`(`id`);
 ALTER TABLE `cloud`.`cluster` ADD UNIQUE `i_cluster__pod_id__name`(`pod_id`, `name`);
 
-ALTER TABLE `cloud`.`user_ip_address` ADD CONSTRAINT `fk_user_ip_address__account_id` FOREIGN KEY `fk_user_ip_address__account_id` (`account_id`) REFERENCES `account` (`id`);
-ALTER TABLE `cloud`.`user_ip_address` ADD INDEX `i_user_ip_address__account_id`(`account_id`);
-ALTER TABLE `cloud`.`user_ip_address` ADD CONSTRAINT `fk_user_ip_address__vlan_db_id` FOREIGN KEY `fk_user_ip_address__vlan_db_id` (`vlan_db_id`) REFERENCES `vlan` (`id`) ON DELETE CASCADE;
-ALTER TABLE `cloud`.`user_ip_address` ADD INDEX `i_user_ip_address__vlan_db_id`(`vlan_db_id`);
-
-ALTER TABLE `cloud`.`user_ip_address` ADD INDEX `i_user_ip_address__data_center_id`(`data_center_id`);
-ALTER TABLE `cloud`.`user_ip_address` ADD INDEX `i_user_ip_address__source_nat`(`source_nat`);
-ALTER TABLE `cloud`.`user_ip_address` ADD INDEX `i_user_ip_address__allocated`(`allocated`);
-ALTER TABLE `cloud`.`user_ip_address` ADD INDEX `i_user_ip_address__public_ip_address`(`public_ip_address`);
 
 ALTER TABLE `cloud`.`vm_template` ADD INDEX `i_vm_template__removed`(`removed`);
 ALTER TABLE `cloud`.`vm_template` ADD INDEX `i_vm_template__public`(`public`);

@@ -65,6 +65,9 @@ public class IPAddressVO implements IpAddress {
 	
 	@Column(name="mac_address")
 	private long macAddress;
+	
+	@Column(name="network_id")
+	private Long associatedNetworkId;
 
 	protected IPAddressVO() {
 	}
@@ -103,6 +106,14 @@ public class IPAddressVO implements IpAddress {
 	@Override
     public Long getAllocatedToAccountId() {
 		return allocatedToAccountId;
+	}
+	
+	public Long getAssociatedNetworkId() {
+	    return associatedNetworkId;
+	}
+	
+	public void setAssociatedNetworkId(Long networkId) {
+	    this.associatedNetworkId = networkId;
 	}
 	
     @Override

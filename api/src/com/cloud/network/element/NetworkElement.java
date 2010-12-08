@@ -75,7 +75,7 @@ public interface NetworkElement extends Adapter {
      * @return
      * @throws ResourceUnavailableException
      */
-    boolean associate(Network network, IpAddress ipAddress) throws ResourceUnavailableException;
+    boolean associate(Network network, List<? extends IpAddress> ipAddress) throws ResourceUnavailableException;
 
     /**
      * Disassociate the ip address from this network
@@ -84,7 +84,7 @@ public interface NetworkElement extends Adapter {
      * @return
      * @throws ResourceUnavailableException
      */
-    boolean disassociate(Network network, IpAddress ipAddress) throws ResourceUnavailableException;
+    boolean disassociate(Network network, List<? extends IpAddress> ipAddress) throws ResourceUnavailableException;
     
     /**
      * Apply rules

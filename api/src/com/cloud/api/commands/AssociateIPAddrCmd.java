@@ -29,7 +29,9 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.IPAddressResponse;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.user.UserContext;
@@ -107,7 +109,7 @@ public class AssociateIPAddrCmd extends BaseCmd {
     }
     
     @Override
-    public void execute(){
+    public void execute() throws ResourceUnavailableException, ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException {
         try {
             IpAddress result = _networkService.associateIP(this);
             if (result != null) {

@@ -32,6 +32,7 @@ import com.cloud.consoleproxy.ConsoleProxyService;
 import com.cloud.dao.EntityManager;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.DomainRouterService;
 import com.cloud.network.NetworkService;
@@ -125,7 +126,7 @@ public abstract class BaseCmd {
         _responseGenerator = generator;
     }
     
-    public abstract void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException;
+    public abstract void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException;
     
     public String getResponseType() {
         if (responseType == null) {

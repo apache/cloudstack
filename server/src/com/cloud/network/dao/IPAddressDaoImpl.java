@@ -59,6 +59,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, String> implem
         AllFieldsSearch.and("vlan", AllFieldsSearch.entity().getVlanId(), Op.EQ);
         AllFieldsSearch.and("accountId", AllFieldsSearch.entity().getAllocatedToAccountId(), Op.EQ);
         AllFieldsSearch.and("sourceNat", AllFieldsSearch.entity().isSourceNat(), Op.EQ);
+        AllFieldsSearch.and("network", AllFieldsSearch.entity().getAssociatedNetworkId(), Op.EQ);
         AllFieldsSearch.done();
 
         VlanDbIdSearchUnallocated = createSearchBuilder();
@@ -122,15 +123,11 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, String> implem
         return ipStringList;
     }
 
-    @Override
-    public void setIpAsSourceNat(String ipAddr) {
-
-        IPAddressVO ip = createForUpdate(ipAddr);
-        ip.setSourceNat(true);
-        s_logger.debug("Setting " + ipAddr + " as source Nat ");
-        update(ipAddr, ip);
-    }
-
+    /**
+     * @deprecated This method is now deprecated because vlan has been
+     *             added.  The actual method is now within NetworkManager.
+     */
+    @Deprecated
     public IPAddressVO assignIpAddress(long accountId, long domainId, long vlanDbId, boolean sourceNat) {
         Transaction txn = Transaction.currentTxn();
         txn.start();
@@ -171,13 +168,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, String> implem
         address.setSourceNat(false);
         address.setOneToOneNat(false);
         address.setState(State.Free);
-        update(ipAddress, address);
-    }
-
-    @Override
-    public void unassignIpAsSourceNat(String ipAddress) {
-        IPAddressVO address = createForUpdate();
-        address.setSourceNat(false);
+        address.setAssociatedNetworkId(null);
         update(ipAddress, address);
     }
 
@@ -185,7 +176,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, String> implem
     public List<IPAddressVO> listByAccount(long accountId) {
         SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();
         sc.setParameters("accountId", accountId);
-        return listIncludingRemovedBy(sc);
+        return listBy(sc);
     }
 
     @Override
@@ -193,7 +184,15 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, String> implem
         SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();
         sc.setParameters("dataCenterId", dcId);
         sc.setParameters("ipAddress", ipAddress);
-        return listIncludingRemovedBy(sc);
+        return listBy(sc);
+    }
+    
+    @Override
+    public List<IPAddressVO> listByNetwork(long networkId) {
+        SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();
+        sc.setParameters("network", networkId);
+        
+        return listBy(sc);
     }
 
     @Override

@@ -761,9 +761,14 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 	        NicProfile defaultNic = new NicProfile();
 	        defaultNic.setDefaultNic(true);
 	        defaultNic.setDeviceId(2);
-	        networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetworkConfiguration(systemAcct, defaultOffering.get(0), plan, null, null, false).get(0), defaultNic));
-	        for (NetworkOfferingVO offering : offerings) {
-	            networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetworkConfiguration(systemAcct, offering, plan, null, null, false).get(0), null));
+	        try {
+    	        networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetwork(systemAcct, defaultOffering.get(0), plan, null, null, false).get(0), defaultNic));
+                for (NetworkOfferingVO offering : offerings) {
+                    networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetwork(systemAcct, offering, plan, null, null, false).get(0), null));
+                }
+	        } catch (ConcurrentOperationException e) {
+	            s_logger.info("Unable to setup due to concurrent operation. " + e);
+	            return new HashMap<String, Object>();
 	        }
 	        SecondaryStorageVmVO secStorageVm = new SecondaryStorageVmVO(id, _serviceOffering.getId(), name, _template.getId(), 
 	        															 _template.getGuestOSId(), dataCenterId, systemAcct.getDomainId(), systemAcct.getId());

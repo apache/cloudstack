@@ -2096,11 +2096,11 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         
             List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemVmControlNetwork);
             NetworkOfferingVO controlOffering = offerings.get(0);
-            NetworkVO controlConfig = _networkMgr.setupNetworkConfiguration(_systemAcct, controlOffering, plan, null, null, false).get(0);
+            NetworkVO controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, plan, null, null, false).get(0);
             
             List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>(3);
             NetworkOfferingVO publicOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemVmPublicNetwork).get(0);
-            List<NetworkVO> publicConfigs = _networkMgr.setupNetworkConfiguration(_systemAcct, publicOffering, plan, null, null, false);
+            List<NetworkVO> publicConfigs = _networkMgr.setupNetwork(_systemAcct, publicOffering, plan, null, null, false);
             NicProfile defaultNic = new NicProfile();
             defaultNic.setDefaultNic(true);
             //defaultNic.setIp4Address(sourceNatIp);

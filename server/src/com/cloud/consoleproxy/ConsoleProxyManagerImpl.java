@@ -88,6 +88,7 @@ import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -478,7 +479,12 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
                     s_logger.info("No stopped console proxy is available, need to allocate a new console proxy for data center : " + dataCenterId);
                 }
 
-                proxy = startNew(dataCenterId);
+                try {
+                    proxy = startNew(dataCenterId);
+                } catch (ConcurrentOperationException e) {
+                    s_logger.info("Concurrent operation caught " + e);
+                    return null;
+                }
             } else {
                 if (s_logger.isInfoEnabled()) {
                     s_logger.info("Found a stopped console proxy, bring it up to running pool. proxy vm id : " + proxy.getId() + ", data center : "
@@ -905,7 +911,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         return null;
     }
 
-    public ConsoleProxyVO startNewConsoleProxy(long dataCenterId) {
+    public ConsoleProxyVO startNewConsoleProxy(long dataCenterId) throws ConcurrentOperationException {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Assign console proxy from a newly started instance for request from data center : " + dataCenterId);
         }
@@ -948,7 +954,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         return null;
     }
 
-    public ConsoleProxyVO startNew(long dataCenterId) {
+    public ConsoleProxyVO startNew(long dataCenterId) throws ConcurrentOperationException {
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Assign console proxy from a newly started instance for request from data center : " + dataCenterId);
@@ -1087,7 +1093,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         }
     }
 
-    protected Map<String, Object> createProxyInstance2(long dataCenterId) {
+    protected Map<String, Object> createProxyInstance2(long dataCenterId) throws ConcurrentOperationException {
 
         long id = _consoleProxyDao.getNextInSequence(Long.class, "id");
         String name = VirtualMachineName.getConsoleProxyName(id, _instance);
@@ -1102,9 +1108,9 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         NicProfile defaultNic = new NicProfile();
         defaultNic.setDefaultNic(true);
         defaultNic.setDeviceId(2);
-        networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetworkConfiguration(systemAcct, defaultOffering.get(0), plan, null, null, false).get(0), defaultNic));
+        networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetwork(systemAcct, defaultOffering.get(0), plan, null, null, false).get(0), defaultNic));
         for (NetworkOfferingVO offering : offerings) {
-            networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetworkConfiguration(systemAcct, offering, plan, null, null, false).get(0), null));
+            networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetwork(systemAcct, offering, plan, null, null, false).get(0), null));
         }
         ConsoleProxyVO proxy = new ConsoleProxyVO(id, _serviceOffering.getId(), name, _template.getId(), _template.getGuestOSId(), dataCenterId, systemAcct.getDomainId(), systemAcct.getId(), 0);
         try {
@@ -1698,6 +1704,9 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
             if (_allocProxyLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC)) {
                 try {
                     proxy = startNew(dataCenterId);
+                }  catch (ConcurrentOperationException e) {
+                    s_logger.info("Concurrent Operation caught " + e)
+                    ;
                 } finally {
                     _allocProxyLock.unlock();
                 }
